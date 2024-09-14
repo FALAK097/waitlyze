@@ -11,17 +11,6 @@ import Footer from "@/components/landing/Footer";
 export default function LandingPage() {
   return (
     <div className="min-h-screen bg-background text-foreground">
-      {/* Dotted background */}
-      <div className="fixed inset-0 z-0 pointer-events-none opacity-20 dark:opacity-10">
-        <div
-          className="absolute inset-0"
-          style={{
-            backgroundImage:
-              "radial-gradient(var(--primary) 1px, transparent 1px)",
-            backgroundSize: "20px 20px",
-          }}
-        ></div>
-      </div>
       <Header />
       <Hero />
       <HowItWorks />
