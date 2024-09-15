@@ -6,25 +6,25 @@ const steps = [
     icon: Paintbrush,
     title: "Design",
     description: "Use our no-code designer to create a branded waitlist form.",
-    color: "bg-pink-500",
+    color: "bg-[#FF6F61]",
   },
   {
     icon: Sliders,
     title: "Customize",
     description: "Add fields, change colors, and set up email notifications.",
-    color: "bg-purple-500",
+    color: "bg-[#9370DB]",
   },
   {
     icon: Eye,
     title: "Preview",
     description: "See your changes in real-time with our live demo view.",
-    color: "bg-blue-500",
+    color: "bg-[#4682B4]",
   },
   {
     icon: Rocket,
     title: "Launch",
     description: "Embed the form on your site or share our hosted page.",
-    color: "bg-green-500",
+    color: "bg-[#F4A460]",
   },
 ];
 
@@ -53,7 +53,7 @@ export default function HowItWorks() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-center text-muted-foreground">
+                <p className="text-center text-secondary-foreground">
                   {step.description}
                 </p>
               </CardContent>

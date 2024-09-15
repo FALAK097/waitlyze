@@ -18,7 +18,7 @@ export default function Hero() {
               size="lg"
               className="w-full px-8 py-3 text-lg font-semibold transition-all duration-300 rounded-full shadow-lg sm:w-auto bg-primary text-primary-foreground hover:bg-primary/90 hover:shadow-xl"
             >
-              Start Creating for Free
+              Start Creating
             </Button>
             <Button
               size="lg"

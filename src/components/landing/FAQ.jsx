@@ -12,12 +12,12 @@ const faqs = [
       "Not at all! Our intuitive no-code designer allows you to create beautiful waitlist forms without any coding knowledge.",
   },
   {
-    question: "Can I customize the design to match my brand?",
+    question: "Is brand customization possible?",
     answer:
       "Absolutely! You can customize colors, fonts, fields, and layout to ensure your waitlist form perfectly matches your brand identity.",
   },
   {
-    question: "How do I embed the waitlist form on my website?",
+    question: "How do I embed the form on my website?",
     answer:
       "We provide a simple embed code that you can copy and paste into your website. If you don't have a website, you can use our hosted page option.",
   },
