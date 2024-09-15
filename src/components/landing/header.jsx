@@ -4,8 +4,8 @@ import { useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Menu, X } from "lucide-react";
-import ThemeToggle from "./ThemeToggle";
-import Logo from "@/components/Logo";
+import ThemeToggle from "./theme-toggle";
+import Logo from "@/components/custom/logo";
 
 export default function Header() {
   const [isNavOpen, setIsNavOpen] = useState(false);

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Github, Twitter } from "lucide-react";
-import Logo from "@/components/Logo";
+import Logo from "@/components/custom/logo";
 
 const footerSections = [
   {

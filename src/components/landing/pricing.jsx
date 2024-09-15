@@ -75,7 +75,7 @@ export default function Pricing() {
               key={index}
               className={`flex flex-col transition-shadow duration-300 shadow-lg hover:shadow-xl ${
                 plan.highlight ? "border-4 border-purple-500" : ""
-              }`}
+              } relative`}
             >
               {plan.highlight && (
                 <div className="absolute top-0 right-0 px-3 py-1 text-sm font-bold text-white bg-purple-500 rounded-bl-md">
@@ -114,8 +114,8 @@ export default function Pricing() {
                       <span
                         className={`${
                           feature.available
-                            ? "text-secondary-foreground"
-                            : "text-muted-foreground line-through"
+                            ? "text-muted-foreground"
+                            : "text-secondary line-through"
                         }`}
                       >
                         {feature.name}

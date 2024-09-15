@@ -53,7 +53,7 @@ export default function HowItWorks() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-center text-secondary-foreground">
+                <p className="text-center text-muted-foreground">
                   {step.description}
                 </p>
               </CardContent>
