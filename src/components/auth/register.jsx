@@ -9,8 +9,10 @@ import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ChevronLeft } from "lucide-react";
+import { ArrowLeft, Lock, Mail, User } from "lucide-react";
 import GoogleIcon from "@/components/icons/GoogleIcon";
+import Image from "next/image";
+import { useRouter } from "next/navigation";
 
 const schema = z.object({
   name: z.string().min(3, "Name must be at least 3 characters long"),
@@ -27,9 +29,9 @@ export default function Register() {
     resolver: zodResolver(schema),
   });
 
+  const router = useRouter();
   const [agreeToTerms, setAgreeToTerms] = useState(false);
 
-  // Load checkbox state from local storage on component mount
   useEffect(() => {
     const agreed = localStorage.getItem("agreeToTerms");
     if (agreed === "true") {
@@ -39,7 +41,6 @@ export default function Register() {
 
   const onSubmit = (data) => {
     if (!agreeToTerms) {
-      // Display a message if the checkbox isn't checked
       toast({
         title: "Please agree to the terms & policies.",
         description: "You must agree to the terms & policies to continue.",
@@ -48,158 +49,165 @@ export default function Register() {
       return;
     }
     console.log(data);
+
     // Handle registration logic here
+    router.push("/otp-verify");
   };
 
   const handleCheckboxChange = (event) => {
     const isChecked = event.target.checked;
     setAgreeToTerms(isChecked);
-    // Update local storage
     localStorage.setItem("agreeToTerms", isChecked ? "true" : "false");
   };
 
   return (
-    <div className="flex flex-col justify-center min-h-screen py-10 bg-gradient-to-br from-primary/20 to-accent/20 sm:px-6 lg:px-8">
-      <div className="absolute top-4 right-8">
+    <div className="flex min-h-screen overflow-hidden bg-background text-foreground">
+      <div className="hidden w-1/2 lg:block">
+        <Image
+          src="/images/register.svg"
+          alt="Register Image"
+          width={108}
+          height={108}
+          className="w-[35rem] h-[35rem] mx-auto mt-12"
+        />
+      </div>
+      <div className="flex flex-col justify-center w-full px-8 py-12 lg:w-1/2 sm:px-16">
         <Link
           href="/login"
-          className="flex items-center text-primary hover:text-primary/80"
+          className="absolute flex items-center transition-colors text-foreground top-4 right-4 hover:text-primary"
         >
-          <ChevronLeft className="mr-1" />
-          Back
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          Login
         </Link>
-      </div>
-      <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <h2 className="mt-6 text-4xl font-extrabold text-center text-foreground">
-          Create Your Account
-        </h2>
-        <p className="mt-2 text-sm text-center text-muted-foreground">
-          Sign up to get started
-        </p>
-      </div>
-
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="px-4 py-8 shadow-lg bg-card sm:rounded-xl sm:px-10">
-          <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
+        <div className="w-full max-w-md mx-auto">
+          <h2 className="mb-2 text-3xl font-bold">Create Your Account</h2>
+          <p className="mb-8 text-muted-foreground">Sign up to get started</p>
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
             <div>
-              <Label htmlFor="name" className="text-sm font-medium">
+              <Label
+                htmlFor="name"
+                className="text-sm font-medium text-foreground"
+              >
                 Name
               </Label>
-              <Input
-                id="name"
-                {...register("name")}
-                type="text"
-                className="mt-1"
-              />
+              <div className="relative">
+                <Input
+                  id="name"
+                  {...register("name")}
+                  type="text"
+                  className="w-full py-2 pl-10 pr-4 transition-all duration-200 border rounded-full bg-background/50 border-input focus:border-primary focus:ring-2 focus:ring-primary/50"
+                  placeholder="Enter your name"
+                />
+                <User className="absolute w-5 h-5 transform -translate-y-1/2 left-3 top-1/2 text-muted-foreground" />
+              </div>
               {errors.name && (
-                <p className="text-red-500">{errors.name.message}</p>
+                <p className="mt-1 text-sm text-destructive">
+                  {errors.name.message}
+                </p>
               )}
             </div>
-
             <div>
-              <Label htmlFor="email" className="text-sm font-medium">
+              <Label
+                htmlFor="email"
+                className="text-sm font-medium text-foreground"
+              >
                 Email address
               </Label>
-              <Input
-                id="email"
-                {...register("email")}
-                type="email"
-                autoComplete="email"
-                className="mt-1"
-              />
+              <div className="relative">
+                <Input
+                  id="email"
+                  {...register("email")}
+                  type="email"
+                  autoComplete="email"
+                  className="w-full py-2 pl-10 pr-4 transition-all duration-200 border rounded-full bg-background/50 border-input focus:border-primary focus:ring-2 focus:ring-primary/50"
+                  placeholder="Enter your email"
+                />
+                <Mail className="absolute w-5 h-5 transform -translate-y-1/2 left-3 top-1/2 text-muted-foreground" />
+              </div>
               {errors.email && (
-                <p className="text-red-500">{errors.email.message}</p>
+                <p className="mt-1 text-sm text-destructive">
+                  {errors.email.message}
+                </p>
               )}
             </div>
-
             <div>
-              <Label htmlFor="password" className="text-sm font-medium">
+              <Label
+                htmlFor="password"
+                className="text-sm font-medium text-foreground"
+              >
                 Password
               </Label>
-              <Input
-                id="password"
-                {...register("password")}
-                type="password"
-                autoComplete="current-password"
-                className="mt-1"
-              />
+              <div className="relative">
+                <Input
+                  id="password"
+                  {...register("password")}
+                  type="password"
+                  autoComplete="new-password"
+                  className="w-full py-2 pl-10 pr-4 transition-all duration-200 border rounded-full bg-background/50 border-input focus:border-primary focus:ring-2 focus:ring-primary/50"
+                  placeholder="Enter your password"
+                />
+                <Lock className="absolute w-5 h-5 transform -translate-y-1/2 left-3 top-1/2 text-muted-foreground" />
+              </div>
               {errors.password && (
-                <p className="text-red-500">{errors.password.message}</p>
+                <p className="mt-1 text-sm text-destructive">
+                  {errors.password.message}
+                </p>
               )}
             </div>
-
-            <div className="flex flex-col">
-              <p className="flex items-center text-sm text-muted-foreground">
-                <Input
-                  id="agreeToTerms"
-                  type="checkbox"
-                  className="w-4 h-4 mr-2 cursor-pointer"
-                  checked={agreeToTerms}
-                  onChange={handleCheckboxChange}
-                />
-                <Label
-                  htmlFor="agreeToTerms"
-                  className="cursor-pointer text-muted-foreground"
-                >
-                  I agree to the{" "}
-                  <Link
-                    href="/terms"
-                    className="underline hover:text-brand underline-offset-4"
-                  >
-                    Terms
-                  </Link>{" "}
-                  &{" "}
-                  <Link
-                    href="/privacy"
-                    className="underline hover:text-brand underline-offset-4"
-                  >
-                    Privacy
-                  </Link>
-                </Label>
-              </p>
+            <div className="flex items-center">
+              <Input
+                id="agreeToTerms"
+                type="checkbox"
+                className="w-4 h-4 mr-2"
+                checked={agreeToTerms}
+                onChange={handleCheckboxChange}
+              />
+              <Label
+                htmlFor="agreeToTerms"
+                className="text-sm text-muted-foreground"
+              >
+                I agree to the{" "}
+                <Link href="/terms" className="text-primary hover:underline">
+                  Terms
+                </Link>{" "}
+                &{" "}
+                <Link href="/privacy" className="text-primary hover:underline">
+                  Privacy Policy
+                </Link>
+              </Label>
             </div>
-
-            <div>
-              <Button type="submit" className="w-full text-lg font-semibold">
-                Sign up
-              </Button>
-            </div>
+            <Button
+              type="submit"
+              className="w-full p-4 text-lg text-white rounded-xl"
+            >
+              Sign up
+            </Button>
           </form>
-
           <div className="mt-6">
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
                 <div className="w-full border-t border-border" />
               </div>
               <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-card text-muted-foreground">
+                <span className="px-2 bg-background text-muted-foreground">
                   Or continue with
                 </span>
               </div>
             </div>
-
-            <div className="mt-6">
-              <Button
-                variant="outline"
-                className="flex items-center justify-center w-full bg-white hover:bg-white hover:text-accent"
-              >
-                <GoogleIcon className="w-5 h-5 mr-2" />
-                Sign in with Google
-              </Button>
-            </div>
+            <Button
+              variant="outline"
+              className="w-full p-6 mt-6 rounded-xl hover:text-primary hover:bg-transparent"
+            >
+              <GoogleIcon className="w-5 h-5 mr-2" />
+              Sign up with Google
+            </Button>
           </div>
-
-          <div className="mt-6 text-center">
-            <p className="text-sm text-muted-foreground">
-              Already have an account?{" "}
-              <Link
-                href="/login"
-                className="font-medium transition-colors text-primary hover:text-primary/80"
-              >
-                Sign in
-              </Link>
-            </p>
-          </div>
+          <p className="mt-8 text-sm text-center text-muted-foreground">
+            Already have an account?{" "}
+            <Link href="/login" className="text-primary hover:underline">
+              Sign in
+            </Link>
+          </p>
         </div>
       </div>
     </div>

@@ -45,12 +45,14 @@ export default function Header() {
               Pricing
             </Link>
             <ThemeToggle />
-            <Button
-              variant="outline"
-              className="px-4 py-2 font-semibold transition-all duration-300 border-2 rounded-full border-primary text-primary hover:bg-primary hover:text-primary-foreground"
-            >
-              Sign Up
-            </Button>
+            <Link href="/register" asChild>
+              <Button
+                variant="outline"
+                className="px-4 py-2 font-semibold transition-all duration-300 border-2 rounded-full border-primary text-primary hover:bg-primary hover:text-primary-foreground"
+              >
+                Sign Up
+              </Button>
+            </Link>
           </nav>
           <div className="flex items-center md:hidden">
             <ThemeToggle />
