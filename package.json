@@ -1,51 +1,59 @@
 {
-  "name": "waitlist",
-  "version": "0.1.0",
-  "private": true,
-  "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "next lint",
-    "vercel-build": "prisma generate && prisma migrate deploy && next build"
-  },
-  "dependencies": {
-    "@hookform/resolvers": "^3.9.0",
-    "@next-auth/prisma-adapter": "^1.0.7",
-    "@prisma/client": "^5.19.1",
-    "@radix-ui/react-accordion": "^1.2.0",
-    "@radix-ui/react-avatar": "^1.1.0",
-    "@radix-ui/react-checkbox": "^1.1.1",
-    "@radix-ui/react-icons": "^1.3.0",
-    "@radix-ui/react-label": "^2.1.0",
-    "@radix-ui/react-slot": "^1.1.0",
-    "@radix-ui/react-toast": "^1.2.1",
-    "@t3-oss/env-nextjs": "^0.11.1",
-    "autoprefixer": "^10.4.20",
-    "axios": "^1.7.5",
-    "bcryptjs": "^2.4.3",
-    "class-variance-authority": "^0.7.0",
-    "clsx": "^2.1.1",
-    "framer-motion": "^11.5.4",
-    "input-otp": "^1.2.4",
-    "lucide-react": "^0.441.0",
-    "next": "14.2.6",
-    "next-auth": "^5.0.0-beta.20",
-    "next-themes": "^0.3.0",
-    "prisma": "^5.18.0",
-    "react": "^18",
-    "react-dom": "^18",
-    "react-hook-form": "^7.53.0",
-    "tailwind-merge": "^2.5.2",
-    "tailwindcss-animate": "^1.0.7",
-    "zod": "^3.23.8"
-  },
-  "devDependencies": {
-    "@types/react": "^18.3.5",
-    "@types/react-dom": "^18.3.0",
-    "eslint": "^8",
-    "eslint-config-next": "14.2.6",
-    "postcss": "^8",
-    "tailwindcss": "^3.4.1"
-  }
+	"name": "waitlist",
+	"version": "0.1.0",
+	"private": true,
+	"scripts": {
+		"dev": "next dev",
+		"build": "next build",
+		"start": "next start",
+		"lint": "biome check src",
+		"format": "biome check --write src",
+		"vercel-build": "prisma generate && prisma migrate deploy && next build",
+		"prepare": "husky"
+	},
+	"dependencies": {
+		"@hookform/resolvers": "^3.9.0",
+		"@next-auth/prisma-adapter": "^1.0.7",
+		"@prisma/client": "^5.19.1",
+		"@radix-ui/react-accordion": "^1.2.0",
+		"@radix-ui/react-avatar": "^1.1.0",
+		"@radix-ui/react-checkbox": "^1.1.1",
+		"@radix-ui/react-icons": "^1.3.0",
+		"@radix-ui/react-label": "^2.1.0",
+		"@radix-ui/react-slot": "^1.1.0",
+		"@radix-ui/react-toast": "^1.2.1",
+		"@t3-oss/env-nextjs": "^0.11.1",
+		"autoprefixer": "^10.4.20",
+		"axios": "^1.7.5",
+		"bcryptjs": "^2.4.3",
+		"class-variance-authority": "^0.7.0",
+		"clsx": "^2.1.1",
+		"framer-motion": "^11.5.4",
+		"input-otp": "^1.2.4",
+		"lucide-react": "^0.441.0",
+		"next": "14.2.6",
+		"next-auth": "^5.0.0-beta.20",
+		"next-themes": "^0.3.0",
+		"prisma": "^5.18.0",
+		"react": "^18",
+		"react-dom": "^18",
+		"react-hook-form": "^7.53.0",
+		"tailwind-merge": "^2.5.2",
+		"tailwindcss-animate": "^1.0.7",
+		"zod": "^3.23.8"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "1.9.2",
+		"@types/react": "^18.3.5",
+		"@types/react-dom": "^18.3.0",
+		"husky": "^9.1.6",
+		"lint-staged": "^15.2.10",
+		"postcss": "^8",
+		"tailwindcss": "^3.4.1"
+	},
+	"lint-staged": {
+		"src/*.{js,ts,jsx,tsx,json}": [
+			"biome check --write --no-errors-on-unmatched"
+		]
+	}
 }
