@@ -7,7 +7,6 @@ import Hero from "@/components/landing/hero";
 import HowItWorks from "@/components/landing/how-it-works";
 import Pricing from "@/components/landing/pricing";
 import Testimonials from "@/components/landing/testimonials";
-import xyz from "@/xyz";
 
 export default function LandingPage() {
 	return (
