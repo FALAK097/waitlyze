@@ -52,8 +52,6 @@
 		"tailwindcss": "^3.4.1"
 	},
 	"lint-staged": {
-		"src/*.{js,ts,jsx,tsx,json}": [
-			"biome check --write --no-errors-on-unmatched"
-		]
+		"*.{js,ts,jsx,tsx,json}": ["biome check --write --no-errors-on-unmatched"]
 	}
 }
