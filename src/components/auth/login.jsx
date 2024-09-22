@@ -1,5 +1,4 @@
 "use client";
-
 import GoogleIcon from "@/components/icons/GoogleIcon";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,8 +6,10 @@ import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ArrowLeft, Lock, Mail } from "lucide-react";
+import { signIn } from "next-auth/react";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -28,6 +29,7 @@ export default function Login() {
 	});
 
 	const [agreeToTerms, setAgreeToTerms] = useState(false);
+	const router = useRouter();
 
 	useEffect(() => {
 		const agreed = localStorage.getItem("agreeToTerms");
@@ -36,7 +38,7 @@ export default function Login() {
 		}
 	}, []);
 
-	const onSubmit = (data) => {
+	const onSubmit = async (data) => {
 		if (!agreeToTerms) {
 			toast({
 				title: "Please agree to the terms & policies.",
@@ -45,8 +47,32 @@ export default function Login() {
 			});
 			return;
 		}
-		console.log(data);
-		// Handle login logic here
+	};
+
+	const handleGoogleSignIn = async (e) => {
+		e.preventDefault();
+		try {
+			const result = await signIn("google", {
+				callbackUrl: "/dashboard",
+				redirect: false,
+			});
+			if (result?.error) {
+				toast({
+					title: "Error",
+					description: "Failed to sign in with Google",
+					variant: "destructive",
+				});
+			} else if (result?.url) {
+				router.push(result.url);
+			}
+		} catch (error) {
+			console.error("Google sign-in error:", error);
+			toast({
+				title: "Error",
+				description: "An unexpected error occurred",
+				variant: "destructive",
+			});
+		}
 	};
 
 	const handleCheckboxChange = (event) => {
@@ -182,6 +208,7 @@ export default function Login() {
 						<Button
 							variant="outline"
 							className="w-full p-6 mt-6 rounded-xl hover:text-primary hover:bg-transparent"
+							onClick={handleGoogleSignIn}
 						>
 							<GoogleIcon className="w-5 h-5 mr-2" />
 							Sign in with Google

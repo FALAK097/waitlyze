@@ -45,7 +45,7 @@ export default function Header() {
 							Pricing
 						</Link>
 						<ThemeToggle />
-						<Link href="/register" asChild>
+						<Link href="/register">
 							<Button
 								variant="outline"
 								className="px-4 py-2 font-semibold transition-all duration-300 border-2 rounded-full border-primary text-primary hover:bg-primary hover:text-primary-foreground"
@@ -72,7 +72,7 @@ export default function Header() {
 			</div>
 			{/* Mobile menu */}
 			{isNavOpen && (
-				<div className="border-t md:hidden bg-background border-border">
+				<div className="border-t md:hidden bg-background dark:bg-black border-border">
 					<ul className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
 						<li>
 							<Link
@@ -103,7 +103,9 @@ export default function Header() {
 							</Link>
 						</li>
 						<li>
-							<Button className="w-full mt-2">Sign Up</Button>
+							<Link href="/register">
+								<Button className="w-full mt-2">Sign Up</Button>
+							</Link>
 						</li>
 					</ul>
 				</div>
