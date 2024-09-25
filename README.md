@@ -1,36 +1,74 @@
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# Waitlist
+
+This is a [Next.js](https://nextjs.org/) project designed to help users create stunning waitlists quickly and efficiently. The application features a no-code designer, customizable forms, and real-time analytics to enhance user engagement and conversion rates.
 
 ## Getting Started
 
-First, run the development server:
+To set up the project locally, follow these steps:
+
+### Prerequisites
+
+Make sure you have the following installed on your machine:
+
+- [Node.js](https://nodejs.org/) (version 18 or higher)
+- [Yarn](https://yarnpkg.com/)
+
+### Clone the Repository
+
+First, clone the repository to your local machine:
 
 ```bash
-npm run dev
-# or
+git clone git@github.com:FALAK097/waitlist.git
+cd waitlist
+```
+
+### Install Dependencies
+
+Next, install the project dependencies:
+
+```bash
+yarn install
+```
+
+### Set Up Environment Variables
+
+Create a `.env` file in the root of the project and add the following environment variables:
+
+```env
+POSTGRES_URL=postgresql://postgres:postgres@localhost:5432/waitlist
+NEXTAUTH_URL=http://localhost:3000
+NEXTAUTH_SECRET=your_secret_key
+GOOGLE_CLIENT_ID=your_google_client_id
+GOOGLE_CLIENT_SECRET=your_google_client_secret
+NODE_ENV=development
+```
+
+Make sure to replace the `dummy` credentials.
+
+### Run PostgreSQL Locally with Docker
+
+To run PostgreSQL locally, you can use Docker. First, ensure you have Docker installed on your machine. Then, run the following command to start a PostgreSQL container:
+
+```bash
+docker-compose up
+
+This command will create a new PostgreSQL container named "waitlist-db" with the specified user, password, and database.
+```
+
+### Run Database Migrations
+
+Run the following command to set up the database schema:
+
+``` bash
+yarn prisma migrate dev
+```
+
+### Start the Development Server
+
+Now, you can start the development server:
+
+```bash
 yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/basic-features/font-optimization) to automatically optimize and load Inter, a custom Google Font.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js/) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
