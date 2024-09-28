@@ -1,14 +1,14 @@
 import { doLogout } from "@/app/(auth)/login/actions";
 import { Button } from "@/components/ui/button";
-import { getSession } from "next-auth/react";
+import { auth } from "@/lib/auth";
 import Image from "next/image";
 import { redirect } from "next/navigation";
 
 const Dashboard = async () => {
-	const session = await getSession();
+	const session = await auth();
 
-	if (!session) {
-		redirect(router, "/login");
+	if (!session.user) {
+		return redirect("/login");
 	}
 
 	return (
