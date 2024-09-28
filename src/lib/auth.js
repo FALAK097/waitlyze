@@ -3,6 +3,7 @@ import GoogleProvider from "next-auth/providers/google";
 import { env } from "./env.mjs";
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
+	debug: true,
 	providers: [
 		GoogleProvider({
 			clientId: env.GOOGLE_CLIENT_ID,
@@ -17,4 +18,5 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 			},
 		}),
 	],
+	useSecureCookies: true,
 });
