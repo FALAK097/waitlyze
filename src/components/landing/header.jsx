@@ -45,7 +45,7 @@ export default function Header() {
 							Pricing
 						</Link>
 						<ThemeToggle />
-						<Link href="/register">
+						<Link href="/login">
 							<Button
 								variant="outline"
 								className="px-4 py-2 font-semibold transition-all duration-300 border-2 rounded-full border-primary text-primary hover:bg-primary hover:text-primary-foreground"
@@ -103,7 +103,7 @@ export default function Header() {
 							</Link>
 						</li>
 						<li>
-							<Link href="/register">
+							<Link href="/login">
 								<Button className="w-full mt-2">Sign Up</Button>
 							</Link>
 						</li>

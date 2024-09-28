@@ -1,4 +1,4 @@
-import { doLogout } from "@/actions/auth";
+import { doLogout } from "@/app/(auth)/login/actions";
 import { Button } from "@/components/ui/button";
 import { auth } from "@/lib/auth";
 import Image from "next/image";
