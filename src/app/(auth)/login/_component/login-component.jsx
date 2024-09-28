@@ -82,7 +82,7 @@ export default function LoginComponent() {
 					)}
 					onClick={() => {
 						setIsGoogleLoading(true);
-						signIn("google");
+						signIn("google", { callbackUrl: "/dashboard" });
 					}}
 					disabled={isLoading || isGoogleLoading}
 				>
