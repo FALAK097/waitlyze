@@ -18,7 +18,6 @@ const footerSections = [
 			{ name: "Privacy Policy", href: "#" },
 			{ name: "Terms of Service", href: "#" },
 			{ name: "Cookie Policy", href: "#" },
-			{ name: "GDPR Compliance", href: "#" },
 		],
 	},
 ];
@@ -42,27 +41,27 @@ export default function Footer() {
 							customers.
 						</p>
 						<div className="flex space-x-4">
-							{socialLinks.map((social, index) => (
-								<a
-									key={index}
+							{socialLinks.map((social) => (
+								<Link
+									key={social.icon}
 									href={social.href}
 									className="transition-colors duration-200 text-muted-foreground hover:text-primary"
 									target="_blank"
 									rel="noopener noreferrer"
 								>
 									<social.icon size={24} />
-								</a>
+								</Link>
 							))}
 						</div>
 					</div>
-					{footerSections.map((section, index) => (
-						<div key={index}>
+					{footerSections.map((section) => (
+						<div key={section.title}>
 							<h3 className="mb-4 text-lg font-semibold text-primary">
 								{section.title}
 							</h3>
 							<ul className="space-y-2">
-								{section.links.map((link, linkIndex) => (
-									<li key={linkIndex}>
+								{section.links.map((link) => (
+									<li key={link.name}>
 										<Link
 											href={link.href}
 											className="transition-colors duration-200 text-muted-foreground hover:text-primary"
