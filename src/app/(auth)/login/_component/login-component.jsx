@@ -7,17 +7,19 @@ import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ArrowLeft } from "lucide-react";
-import { signIn } from "next-auth/react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
 const schema = z.object({
+	name: z.string().min(2, "Name is too short").max(10, "Name is too long"),
 	email: z.string().email("Invalid email address"),
 });
 
 export default function LoginComponent() {
+	const router = useRouter();
 	const [isLoading, setIsLoading] = useState(false);
 	const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 	const {
@@ -46,12 +48,24 @@ export default function LoginComponent() {
 				</div>
 				<form className="space-y-6">
 					<div className="space-y-2">
+						<Label htmlFor="name">Name</Label>
+						<Input
+							id="name"
+							type="text"
+							className="w-full"
+							placeholder="Enter your name"
+							{...register("name")}
+						/>
+						{errors.name && (
+							<p className="text-sm text-destructive">{errors.name.message}</p>
+						)}
+					</div>
+					<div className="space-y-2">
 						<Label htmlFor="email">Email address</Label>
 						<Input
 							id="email"
 							type="email"
 							autoComplete="email"
-							required
 							className="w-full"
 							placeholder="Enter your email"
 							{...register("email")}
@@ -64,6 +78,17 @@ export default function LoginComponent() {
 						{isLoading ? "Processing..." : "Continue with Email"}
 					</Button>
 				</form>
+				<p className="text-center text-md text-muted-foreground">
+					By clicking continue you agree to our{" "}
+					<Link href="/terms" className="underline hover:text-primary">
+						Terms
+					</Link>{" "}
+					and{" "}
+					<Link href="/privacy" className="underline hover:text-primary">
+						Privacy Policy
+					</Link>
+					.
+				</p>
 				<div className="relative">
 					<div className="absolute inset-0 flex items-center">
 						<div className="w-full border-t border-border" />
@@ -80,10 +105,6 @@ export default function LoginComponent() {
 						buttonVariants({ variant: "outline" }),
 						"w-full hover:bg-transparent hover:text-primary hover:border-primary",
 					)}
-					onClick={() => {
-						setIsGoogleLoading(true);
-						signIn("google", { callbackUrl: "/dashboard" });
-					}}
 					disabled={isLoading || isGoogleLoading}
 				>
 					{isGoogleLoading ? (

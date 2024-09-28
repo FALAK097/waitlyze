@@ -5,6 +5,7 @@ import Image from "next/image";
 import { redirect } from "next/navigation";
 
 const Dashboard = async () => {
+	console.log("Dashboard");
 	const session = await auth();
 
 	if (!session.user) {

@@ -1,4 +1,4 @@
-import Logo from "@/components/custom/logo";
+import Logo from "@/components/shared/logo";
 import { Github, Twitter } from "lucide-react";
 import Link from "next/link";
 

@@ -1,6 +1,6 @@
 "use client";
 
-import Logo from "@/components/custom/logo";
+import Logo from "@/components/shared/logo";
 import { Button } from "@/components/ui/button";
 import { Menu, X } from "lucide-react";
 import Link from "next/link";
