@@ -2,14 +2,13 @@ import { doLogout } from "@/app/(auth)/login/actions";
 import { Button } from "@/components/ui/button";
 import { getSession } from "next-auth/react";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
+import { redirect } from "next/navigation";
 
 const Dashboard = async () => {
-	const router = useRouter();
 	const session = await getSession();
 
 	if (!session) {
-		return router.push("/login");
+		redirect(router, "/login");
 	}
 
 	return (
