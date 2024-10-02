@@ -1,4 +1,5 @@
 import "./globals.css";
+import { ClerkProvider } from "@clerk/nextjs";
 import { Inter } from "next/font/google";
 import { Providers } from "./_providers";
 
@@ -11,10 +12,12 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
 	return (
-		<html lang="en" suppressHydrationWarning>
-			<body className={inter.className}>
-				<Providers>{children}</Providers>
-			</body>
-		</html>
+		<ClerkProvider telemetry={false}>
+			<html lang="en" suppressHydrationWarning>
+				<body className={inter.className}>
+					<Providers>{children}</Providers>
+				</body>
+			</html>
+		</ClerkProvider>
 	);
 }

@@ -35,11 +35,9 @@ yarn install
 Create a `.env` file in the root of the project and add the following environment variables:
 
 ```env
-POSTGRES_URL=postgresql://postgres:postgres@localhost:5432/waitlist
-NEXTAUTH_URL=http://localhost:3000
-NEXTAUTH_SECRET=your_secret_key
-GOOGLE_CLIENT_ID=your_google_client_id
-GOOGLE_CLIENT_SECRET=your_google_client_secret
+POSTGRES_URL=postgresql://user:pass@localhost:5432/waitlist
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_
+CLERK_SECRET_KEY=sk_test_
 NODE_ENV=development
 ```
 

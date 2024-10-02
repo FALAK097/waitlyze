@@ -40,7 +40,7 @@ const plans = [
 			{ name: "Waitlist Analytics", available: false },
 			{ name: "Gamified Referrals", available: false },
 		],
-		highlight: false,
+		highlight: true,
 		color: "bg-purple-500",
 	},
 	{
@@ -57,7 +57,7 @@ const plans = [
 			{ name: "Waitlist Analytics", available: true },
 			{ name: "Gamified Referrals", available: true },
 		],
-		highlight: true,
+		highlight: false,
 		color: "bg-blue-500",
 	},
 ];
@@ -70,9 +70,9 @@ export default function Pricing() {
 					Choose Your Plan
 				</h2>
 				<div className="grid grid-cols-1 gap-8 md:grid-cols-3">
-					{plans.map((plan, index) => (
+					{plans.map((plan) => (
 						<Card
-							key={index}
+							key={plan.name}
 							className={`flex flex-col transition-shadow duration-300 shadow-lg hover:shadow-xl ${
 								plan.highlight ? "border-4 border-purple-500" : ""
 							} relative`}
@@ -104,8 +104,8 @@ export default function Pricing() {
 							</CardHeader>
 							<CardContent className="flex-grow">
 								<ul className="space-y-2">
-									{plan.features.map((feature, fIndex) => (
-										<li key={fIndex} className="flex items-center">
+									{plan.features.map((feature) => (
+										<li key={plan.features} className="flex items-center">
 											{feature.available ? (
 												<Check className="w-5 h-5 mr-2 text-green-500" />
 											) : (

@@ -2,6 +2,7 @@
 
 import Logo from "@/components/shared/logo";
 import { Button } from "@/components/ui/button";
+import { SignInButton, SignedIn, SignedOut, UserButton } from "@clerk/nextjs";
 import { Menu, X } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
@@ -45,14 +46,12 @@ export default function Header() {
 							Pricing
 						</Link>
 						<ThemeToggle />
-						<Link href="/login">
-							<Button
-								variant="outline"
-								className="px-4 py-2 font-semibold transition-all duration-300 border-2 rounded-full border-primary text-primary hover:bg-primary hover:text-primary-foreground"
-							>
-								Sign Up
-							</Button>
-						</Link>
+						<SignedOut>
+							<SignInButton />
+						</SignedOut>
+						<SignedIn>
+							<UserButton />
+						</SignedIn>
 					</nav>
 					<div className="flex items-center md:hidden">
 						<ThemeToggle />
