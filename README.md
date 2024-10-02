@@ -38,6 +38,7 @@ Create a `.env` file in the root of the project and add the following environmen
 POSTGRES_URL=postgresql://user:pass@localhost:5432/waitlist
 NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_
 CLERK_SECRET_KEY=sk_test_
+CLERK_WEBHOOK_SECRET=whsec
 NODE_ENV=development
 ```
 

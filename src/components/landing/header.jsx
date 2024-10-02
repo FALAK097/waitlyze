@@ -2,10 +2,18 @@
 
 import Logo from "@/components/shared/logo";
 import { Button } from "@/components/ui/button";
-import { SignInButton, SignedIn, SignedOut, UserButton } from "@clerk/nextjs";
+import {
+	ClerkLoaded,
+	ClerkLoading,
+	SignInButton,
+	SignedIn,
+	SignedOut,
+	UserButton,
+} from "@clerk/nextjs";
 import { Menu, X } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
+import Loading from "../shared/loading";
 import ThemeToggle from "./theme-toggle";
 
 export default function Header() {
@@ -46,12 +54,17 @@ export default function Header() {
 							Pricing
 						</Link>
 						<ThemeToggle />
-						<SignedOut>
-							<SignInButton />
-						</SignedOut>
-						<SignedIn>
-							<UserButton />
-						</SignedIn>
+						<ClerkLoading>
+							<Loading />
+						</ClerkLoading>
+						<ClerkLoaded>
+							<SignedIn>
+								<UserButton />
+							</SignedIn>
+							<SignedOut>
+								<SignInButton />
+							</SignedOut>
+						</ClerkLoaded>
 					</nav>
 					<div className="flex items-center md:hidden">
 						<ThemeToggle />
