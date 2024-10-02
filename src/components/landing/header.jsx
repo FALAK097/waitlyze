@@ -20,7 +20,7 @@ export default function Header() {
 	const [isNavOpen, setIsNavOpen] = useState(false);
 
 	return (
-		<header className="fixed top-0 left-0 right-0 z-50 border-b bg-background/80 backdrop-blur-sm border-border">
+		<header className="fixed top-0 left-0 right-0 z-50 border-b shadow-lg bg-background/80 backdrop-blur-sm border-border">
 			<div className="container px-4 mx-auto sm:px-6 lg:px-8">
 				<div className="flex items-center justify-between h-16">
 					<div className="flex items-center">
@@ -28,41 +28,28 @@ export default function Header() {
 							<Logo />
 						</Link>
 					</div>
-					<nav className="items-center hidden space-x-4 md:flex">
-						<Link
-							href="#howitworks"
-							className="text-foreground hover:text-primary"
-						>
-							Process
-						</Link>
-						<Link
-							href="#features"
-							className="text-foreground hover:text-primary"
-						>
-							Features
-						</Link>
-						<Link
-							href="#testimonials"
-							className="text-foreground hover:text-primary"
-						>
-							Testimonials
-						</Link>
-						<Link
-							href="#pricing"
-							className="text-foreground hover:text-primary"
-						>
-							Pricing
-						</Link>
+					<nav className="items-center hidden space-x-6 md:flex">
+						{["Process", "Features", "Testimonials", "Pricing"].map((item) => (
+							<Link
+								key={item}
+								href={`#${item.toLowerCase()}`}
+								className="transition duration-300 ease-in-out text-foreground hover:text-primary hover:underline"
+							>
+								{item}
+							</Link>
+						))}
 						<ThemeToggle />
 						<ClerkLoading>
 							<Loading />
 						</ClerkLoading>
 						<ClerkLoaded>
 							<SignedIn>
-								<UserButton />
+								<UserButton className="p-2 text-white transition duration-300 rounded-md bg-primary hover:bg-primary-dark" />
 							</SignedIn>
 							<SignedOut>
-								<SignInButton />
+								<Button className="w-full mt-2 text-white transition duration-300 bg-primary hover:bg-primary-dark">
+									<SignInButton />
+								</Button>
 							</SignedOut>
 						</ClerkLoaded>
 					</nav>
@@ -84,41 +71,30 @@ export default function Header() {
 			</div>
 			{/* Mobile menu */}
 			{isNavOpen && (
-				<div className="border-t md:hidden bg-background dark:bg-black border-border">
-					<ul className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
-						<li>
-							<Link
-								href="#process"
-								className="block px-3 py-2 rounded-md hover:bg-muted"
-							>
-								Process
-							</Link>
-							<Link
-								href="#features"
-								className="block px-3 py-2 rounded-md hover:bg-muted"
-							>
-								Features
-							</Link>
-							<Link
-								href="#testimonials"
-								className="block px-3 py-2 rounded-md hover:bg-muted"
-							>
-								Testimonials
-							</Link>
-						</li>
-						<li>
-							<Link
-								href="#pricing"
-								className="block px-3 py-2 rounded-md hover:bg-muted"
-							>
-								Pricing
-							</Link>
-						</li>
-						<li>
-							<Link href="/login">
-								<Button className="w-full mt-2">Sign Up</Button>
-							</Link>
-						</li>
+				<div className="border-t shadow-lg md:hidden bg-background dark:bg-black border-border">
+					<ul className="px-4 pt-4 pb-3 space-y-2">
+						{["Process", "Features", "Testimonials", "Pricing"].map((item) => (
+							<li key={item}>
+								<Link
+									href={`#${item.toLowerCase()}`}
+									className="block px-4 py-2 transition duration-300 ease-in-out rounded-md text-foreground hover:bg-muted hover:underline"
+								>
+									{item}
+								</Link>
+							</li>
+						))}
+						<ClerkLoaded>
+							<SignedIn>
+								<div className="ml-3">
+									<UserButton />
+								</div>
+							</SignedIn>
+							<SignedOut>
+								<Button className="mt-2 ml-3 text-white transition duration-300 bg-primary hover:bg-primary-dark">
+									<SignInButton />
+								</Button>
+							</SignedOut>
+						</ClerkLoaded>
 					</ul>
 				</div>
 			)}
