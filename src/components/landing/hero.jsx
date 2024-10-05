@@ -1,10 +1,11 @@
 "use client";
-
-import { Button } from "@/components/ui/button";
+import { useAuth } from "@clerk/nextjs";
 import { motion } from "framer-motion";
-import { ArrowRight } from "lucide-react";
+import Link from "next/link";
 
 export default function Hero() {
+	const { isSignedIn } = useAuth();
+
 	const text = "Create Stunning Waitlists in Minutes";
 
 	const typewriterVariants = {
@@ -35,8 +36,8 @@ export default function Hero() {
 						initial="hidden"
 						animate="visible"
 					>
-						{text.split("").map((char, index) => (
-							<motion.span key={`${char}-${index}`} variants={letterVariants}>
+						{text.split("").map((char) => (
+							<motion.span key={char} variants={letterVariants}>
 								{char}
 							</motion.span>
 						))}
@@ -51,20 +52,13 @@ export default function Hero() {
 						eager customers.
 					</motion.p>
 					<div className="flex flex-col items-center justify-center space-y-4 sm:flex-row sm:space-y-0 sm:space-x-4">
-						<Button
+						<Link
+							href="/dashboard"
 							size="lg"
 							className="w-full px-8 py-3 text-lg font-semibold transition-all duration-300 rounded-full shadow-lg sm:w-auto bg-primary text-primary-foreground hover:bg-primary/90 hover:shadow-xl"
 						>
-							Start Creating
-						</Button>
-						<Button
-							size="lg"
-							variant="outline"
-							className="w-full px-8 py-3 text-lg font-semibold transition-all duration-300 border-2 rounded-full sm:w-auto border-primary text-primary hover:bg-primary hover:text-primary-foreground"
-						>
-							View Demo
-							<ArrowRight className="w-5 h-5 ml-2" />
-						</Button>
+							{isSignedIn ? "Dashboard" : "Get Started"}
+						</Link>
 					</div>
 				</div>
 			</div>

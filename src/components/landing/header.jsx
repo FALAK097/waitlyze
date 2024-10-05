@@ -2,18 +2,10 @@
 
 import Logo from "@/components/shared/logo";
 import { Button } from "@/components/ui/button";
-import {
-	ClerkLoaded,
-	ClerkLoading,
-	SignInButton,
-	SignedIn,
-	SignedOut,
-	UserButton,
-} from "@clerk/nextjs";
+import { SignInButton, SignedIn, SignedOut, UserButton } from "@clerk/nextjs";
 import { Menu, X } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
-import Loading from "../shared/loading";
 import ThemeToggle from "./theme-toggle";
 
 export default function Header() {
@@ -39,19 +31,14 @@ export default function Header() {
 							</Link>
 						))}
 						<ThemeToggle />
-						<ClerkLoading>
-							<Loading />
-						</ClerkLoading>
-						<ClerkLoaded>
-							<SignedIn>
-								<UserButton className="p-2 text-white transition duration-300 rounded-md bg-primary hover:bg-primary-dark" />
-							</SignedIn>
-							<SignedOut>
-								<Button className="w-full mt-2 text-white transition duration-300 bg-primary hover:bg-primary-dark">
-									<SignInButton />
-								</Button>
-							</SignedOut>
-						</ClerkLoaded>
+						<SignedIn>
+							<UserButton className="p-2 text-white transition duration-300 rounded-md bg-primary hover:bg-primary-dark" />
+						</SignedIn>
+						<SignedOut>
+							<Button className="w-full mt-2 text-white transition duration-300 bg-primary hover:bg-primary-dark">
+								<SignInButton />
+							</Button>
+						</SignedOut>
 					</nav>
 					<div className="flex items-center md:hidden">
 						<ThemeToggle />
@@ -83,18 +70,16 @@ export default function Header() {
 								</Link>
 							</li>
 						))}
-						<ClerkLoaded>
-							<SignedIn>
-								<div className="ml-3">
-									<UserButton />
-								</div>
-							</SignedIn>
-							<SignedOut>
-								<Button className="mt-2 ml-3 text-white transition duration-300 bg-primary hover:bg-primary-dark">
-									<SignInButton />
-								</Button>
-							</SignedOut>
-						</ClerkLoaded>
+						<SignedIn>
+							<div className="ml-3">
+								<UserButton />
+							</div>
+						</SignedIn>
+						<SignedOut>
+							<Button className="mt-2 ml-3 text-white transition duration-300 bg-primary hover:bg-primary-dark">
+								<SignInButton />
+							</Button>
+						</SignedOut>
 					</ul>
 				</div>
 			)}
