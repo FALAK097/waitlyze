@@ -40,6 +40,8 @@ NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_
 CLERK_SECRET_KEY=sk_test_
 CLERK_WEBHOOK_SECRET=whsec
 NODE_ENV=development
+NEXT_PUBLIC_CLERK_SIGN_IN_FALLBACK_REDIRECT_URL=/dashboard
+NEXT_PUBLIC_CLERK_SIGN_UP_FALLBACK_REDIRECT_URL=/dashboard
 ```
 
 Make sure to replace the `dummy` credentials.
