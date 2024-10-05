@@ -6,7 +6,7 @@ import { SignInButton, SignedIn, SignedOut, UserButton } from "@clerk/nextjs";
 import { Menu, X } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
-import ThemeToggle from "./theme-toggle";
+import { ModeToggle } from "../mode-toggle";
 
 export default function Header() {
 	const [isNavOpen, setIsNavOpen] = useState(false);
@@ -30,7 +30,7 @@ export default function Header() {
 								{item}
 							</Link>
 						))}
-						<ThemeToggle />
+						<ModeToggle />
 						<SignedIn>
 							<UserButton className="p-2 text-white transition duration-300 rounded-md bg-primary hover:bg-primary-dark" />
 						</SignedIn>
@@ -41,7 +41,7 @@ export default function Header() {
 						</SignedOut>
 					</nav>
 					<div className="flex items-center md:hidden">
-						<ThemeToggle />
+						<ModeToggle />
 						<Button
 							variant="ghost"
 							size="icon"
