@@ -17,5 +17,43 @@ model User {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
+  waitLists     WaitList[]
+
   @@map("users")
+}
+
+model WaitList {
+    id            String    @id @default(cuid())
+    name          String?
+    url       String?
+    submitButtonColor String?
+    backgroundColor   String?
+    fontColor         String?
+    buttonFontColor   String?
+    borderColor       String?
+    title             String?
+    signUpButtonText  String?
+    twitterLink       String?
+    facebookLink      String?
+    instagramLink     String?
+    linkedInLink      String?
+    showSocialLinks   Boolean   @default(true)
+    userId           String
+    user             User      @relation(fields: [userId], references: [id])
+
+    signUps         SignUp[]
+
+    @@map("wait_lists")
+}
+
+model SignUp {
+  id            String    @id @default(cuid())
+  email         String
+  device        String?
+  region        String?
+  ipAddress     String?
+  lattitude     String?
+  longitude     String?
+  waitListId    String
+  waitList      WaitList   @relation(fields: [waitListId], references: [id])
 }

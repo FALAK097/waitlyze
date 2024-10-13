@@ -1,11 +1,4 @@
-import {
-	Bookmark,
-	LayoutGrid,
-	Settings,
-	SquarePen,
-	Tag,
-	Users,
-} from "lucide-react";
+import { LayoutGrid, Settings, SquarePen } from "lucide-react";
 
 export function getMenuList(pathname) {
 	return [
@@ -26,43 +19,45 @@ export function getMenuList(pathname) {
 			menus: [
 				{
 					href: "",
-					label: "Posts",
-					active: pathname.includes("/posts"),
+					label: "Wait Lists",
+					active: pathname.includes("/wait-lists"),
 					icon: SquarePen,
 					submenus: [
 						{
-							href: "/posts",
-							label: "All Posts",
+							href: "/wait-lists",
+							label: "All Wait Lists",
 						},
 						{
-							href: "/posts/new",
-							label: "New Post",
+							href: "/wait-lists/new",
+							label: "New Wait List",
 						},
 					],
 				},
-				{
-					href: "/categories",
-					label: "Categories",
-					active: pathname.includes("/categories"),
-					icon: Bookmark,
-				},
-				{
-					href: "/tags",
-					label: "Tags",
-					active: pathname.includes("/tags"),
-					icon: Tag,
-				},
+				// TODO: Remove this
+				// {
+				// 	href: "/categories",
+				// 	label: "Categories",
+				// 	active: pathname.includes("/categories"),
+				// 	icon: Bookmark,
+				// },
+				// {
+				// 	href: "/tags",
+				// 	label: "Tags",
+				// 	active: pathname.includes("/tags"),
+				// 	icon: Tag,
+				// },
 			],
 		},
 		{
 			groupLabel: "Settings",
 			menus: [
-				{
-					href: "/users",
-					label: "Users",
-					active: pathname.includes("/users"),
-					icon: Users,
-				},
+				// TODO: Remove this
+				// {
+				// 	href: "/users",
+				// 	label: "Users",
+				// 	active: pathname.includes("/users"),
+				// 	icon: Users,
+				// },
 				{
 					href: "/account",
 					label: "Account",
