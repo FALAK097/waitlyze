@@ -4,6 +4,7 @@ import { env } from "@/lib/env.mjs";
 import { ThemeProvider as NextThemesProvider } from "next-themes";
 import posthog from "posthog-js";
 import { PostHogProvider } from "posthog-js/react";
+import { Toaster } from "react-hot-toast";
 
 if (typeof window !== "undefined") {
 	posthog.init(env.NEXT_PUBLIC_POSTHOG_KEY, {
@@ -16,6 +17,7 @@ export function Providers({ children }) {
 	return (
 		<PostHogProvider client={posthog}>
 			<NextThemesProvider attribute="class" defaultTheme="system" enableSystem>
+				<Toaster position="top-right" />
 				{children}
 			</NextThemesProvider>
 		</PostHogProvider>

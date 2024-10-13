@@ -46,6 +46,8 @@ export default async function WaitListsPage() {
 			console.error("Error creating wait list:", error);
 			response.message = "Error creating wait list";
 		}
+		// wait for 2 seconds
+		await new Promise((resolve) => setTimeout(resolve, 2000));
 		return response;
 	};
 
@@ -60,7 +62,7 @@ export default async function WaitListsPage() {
 					</BreadcrumbItem>
 					<BreadcrumbSeparator />
 					<BreadcrumbItem>
-						<BreadcrumbPage>All Wait Lists</BreadcrumbPage>
+						<BreadcrumbPage>Wait Lists</BreadcrumbPage>
 					</BreadcrumbItem>
 				</BreadcrumbList>
 			</Breadcrumb>

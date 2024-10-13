@@ -47,6 +47,7 @@
 		"react": "^18",
 		"react-dom": "^18",
 		"react-hook-form": "^7.53.0",
+		"react-hot-toast": "^2.4.1",
 		"react-spinners": "^0.14.1",
 		"svix": "^1.37.0",
 		"tailwind-merge": "^2.5.2",

@@ -33,6 +33,53 @@ export default async function WaitListsEditPage({ id }) {
 		return notFound();
 	}
 
+	const saveWaitList = async (waitListId, waitList) => {
+		"use server";
+		let response = {
+			success: false,
+			waitList: null,
+			message: "Failed to save wait list",
+		};
+		const data = {
+			buttonColor: waitList.buttonColor,
+			buttonBorder: waitList.buttonBorder,
+			buttonTextColor: waitList.buttonTextColor,
+			bgColor: waitList.bgColor,
+			borderWidth: waitList.borderWidth,
+			borderRadius: waitList.borderRadius,
+			fontWeight: waitList.fontWeight,
+			logoSize: waitList.logoSize,
+			buttonText: waitList.buttonText,
+			successMessage: waitList.successMessage,
+			showLogo: waitList.showLogo,
+			showSocialProof: waitList.showSocialProof,
+			enableReferrals: waitList.enableReferrals,
+			inputColor: waitList.inputColor,
+			inputBorder: waitList.inputBorder,
+			inputTextColor: waitList.inputTextColor,
+			placeholderText: waitList.placeholderText,
+		};
+		try {
+			const waitList = await prisma.waitList.update({
+				where: {
+					id: waitListId,
+				},
+				data: {
+					...data,
+				},
+			});
+
+			response = {
+				success: true,
+				waitList: waitList,
+				message: "Wait list saved successfully",
+			};
+		} catch (error) {
+			console.error(error);
+		}
+		return response;
+	};
+
 	return (
 		<ContentLayout title="Dashboard">
 			<Breadcrumb>
@@ -44,11 +91,18 @@ export default async function WaitListsEditPage({ id }) {
 					</BreadcrumbItem>
 					<BreadcrumbSeparator />
 					<BreadcrumbItem>
-						<BreadcrumbPage>All Wait Lists</BreadcrumbPage>
+						<BreadcrumbLink asChild>
+							<Link href="/wait-lists">Wait Lists</Link>
+						</BreadcrumbLink>
 					</BreadcrumbItem>
+					<BreadcrumbSeparator />
+					<BreadcrumbPage>{waitList.name}</BreadcrumbPage>
 				</BreadcrumbList>
 			</Breadcrumb>
-			<WaitlistGenerator />
+			<WaitlistGenerator
+				initialWaitList={waitList}
+				saveWaitList={saveWaitList}
+			/>
 		</ContentLayout>
 	);
 }

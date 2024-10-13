@@ -15,26 +15,28 @@ import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Save, Zap } from "lucide-react";
 import { useState } from "react";
+import toast from "react-hot-toast";
 
-export const WaitlistGenerator = () => {
+export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
 	const [formSettings, setFormSettings] = useState({
-		buttonColor: "#8B5CF6",
-		buttonBorder: "#7C3AED",
-		buttonTextColor: "#FFFFFF",
-		bgColor: "#FFFFFF",
-		borderWidth: "0px",
-		borderRadius: "large",
-		fontWeight: "normal",
-		logoSize: "1X",
-		buttonText: "Join the waitlist",
-		successMessage: "Success! You're on the waitlist 🎉",
-		showLogo: true,
-		showSocialProof: true,
-		enableReferrals: false,
-		inputColor: "#FFFFFF",
-		inputBorder: "#E5E7EB",
-		inputTextColor: "#000000",
-		placeholderText: "Email",
+		buttonColor: initialWaitList.buttonColor ?? "#8B5CF6",
+		buttonBorder: initialWaitList.buttonBorder ?? "#7C3AED",
+		buttonTextColor: initialWaitList.buttonTextColor ?? "#FFFFFF",
+		bgColor: initialWaitList.bgColor ?? "#FFFFFF",
+		borderWidth: initialWaitList.borderWidth ?? "0px",
+		borderRadius: initialWaitList.borderRadius ?? "large",
+		fontWeight: initialWaitList.fontWeight ?? "normal",
+		logoSize: initialWaitList.logoSize ?? "1X",
+		buttonText: initialWaitList.buttonText ?? "Join the waitlist",
+		successMessage:
+			initialWaitList.successMessage ?? "Success! You're on the waitlist 🎉",
+		showLogo: initialWaitList.showLogo ?? true,
+		showSocialProof: initialWaitList.showSocialProof ?? true,
+		enableReferrals: initialWaitList.enableReferrals ?? false,
+		inputColor: initialWaitList.inputColor ?? "#FFFFFF",
+		inputBorder: initialWaitList.inputBorder ?? "#E5E7EB",
+		inputTextColor: initialWaitList.inputTextColor ?? "#000000",
+		placeholderText: initialWaitList.placeholderText ?? "Email",
 	});
 
 	const updateSetting = (key, value) => {
@@ -92,13 +94,22 @@ export const WaitlistGenerator = () => {
 		setFormSettings((prev) => ({ ...prev, ...presets[preset] }));
 	};
 
+	const handleSave = async () => {
+		const response = await saveWaitList(initialWaitList.id, formSettings);
+		if (response.success) {
+			toast.success(response.message);
+		}
+	};
+
 	return (
 		<div className="flex-1 overflow-auto">
 			<div className="p-8">
 				<div className="flex justify-between items-center mb-6">
-					<h2 className="text-2xl font-semibold">Edit Embedded Widget</h2>
+					<h2 className="text-2xl font-semibold">
+						Edit {initialWaitList.name} Wait List
+					</h2>
 					<div className="flex space-x-2">
-						<Button variant="outline" size="icon">
+						<Button onClick={handleSave} variant="outline" size="icon">
 							<Save className="h-4 w-4" />
 						</Button>
 						<Button>Get Embed Code</Button>
