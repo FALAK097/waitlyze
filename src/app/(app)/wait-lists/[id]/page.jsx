@@ -22,6 +22,10 @@ export default async function WaitListsEditPage({ id }) {
 		},
 	});
 
+	if (!user) {
+		return notFound();
+	}
+
 	const waitList = await prisma.waitList.findFirst({
 		where: {
 			id: id,

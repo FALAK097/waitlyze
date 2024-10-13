@@ -9,8 +9,11 @@ import {
 	BreadcrumbPage,
 	BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
+import { WaitListCard } from "@/components/wait-lists/wait-list-card";
 import prisma from "@/lib/prisma";
+import { waitFor } from "@/lib/utils";
 import { currentUser } from "@clerk/nextjs/server";
+import { redirect } from "next/dist/server/api-utils";
 
 export default async function WaitListsPage() {
 	const clerkUser = await currentUser();
@@ -29,11 +32,39 @@ export default async function WaitListsPage() {
 		},
 	});
 
+	if (!user) {
+		redirect("/");
+	}
+
 	const waitLists = await prisma.waitList.findMany({
 		where: {
 			userId: user.id,
 		},
 	});
+
+	const deleteWaitList = async (waitListId) => {
+		"use server";
+		const response = {
+			success: false,
+			message: "Failed to delete wait list",
+		};
+
+		try {
+			await prisma.waitList.delete({
+				where: {
+					id: waitListId,
+					userId: user.id,
+				},
+			});
+			response.success = true;
+			response.message = "Wait list deleted successfully";
+		} catch (error) {
+			console.error("Error deleting wait list:", error);
+			response.message = "Error deleting wait list";
+		}
+		await waitFor(1000);
+		return response;
+	};
 
 	return (
 		<ContentLayout title="Dashboard">
@@ -52,8 +83,13 @@ export default async function WaitListsPage() {
 			</Breadcrumb>
 			{waitLists.map((waitList) => (
 				<div key={waitList.id}>
-					<h2>{waitList.name}</h2>
-					<p>{waitList.websiteUrl}</p>
+					<WaitListCard
+						id={waitList.id}
+						name={waitList.name}
+						deleteWaitList={deleteWaitList}
+						description={waitList.description}
+						url={`/wait-lists/${waitList.id}`}
+					/>
 				</div>
 			))}
 		</ContentLayout>

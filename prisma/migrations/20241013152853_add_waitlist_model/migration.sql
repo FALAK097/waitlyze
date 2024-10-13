@@ -3,6 +3,7 @@ CREATE TABLE "wait_lists" (
     "id" TEXT NOT NULL,
     "name" TEXT,
     "url" TEXT,
+    "logoImage" TEXT,
     "submitButtonColor" TEXT,
     "backgroundColor" TEXT,
     "fontColor" TEXT,
@@ -21,7 +22,7 @@ CREATE TABLE "wait_lists" (
 );
 
 -- CreateTable
-CREATE TABLE "SignUp" (
+CREATE TABLE "sign_ups" (
     "id" TEXT NOT NULL,
     "email" TEXT NOT NULL,
     "device" TEXT,
@@ -31,11 +32,11 @@ CREATE TABLE "SignUp" (
     "longitude" TEXT,
     "waitListId" TEXT NOT NULL,
 
-    CONSTRAINT "SignUp_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "sign_ups_pkey" PRIMARY KEY ("id")
 );
 
 -- AddForeignKey
 ALTER TABLE "wait_lists" ADD CONSTRAINT "wait_lists_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "SignUp" ADD CONSTRAINT "SignUp_waitListId_fkey" FOREIGN KEY ("waitListId") REFERENCES "wait_lists"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "sign_ups" ADD CONSTRAINT "sign_ups_waitListId_fkey" FOREIGN KEY ("waitListId") REFERENCES "wait_lists"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

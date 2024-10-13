@@ -11,7 +11,9 @@ import {
 } from "@/components/ui/breadcrumb";
 import { NewWaitListForm } from "@/components/wait-lists/new-form";
 import prisma from "@/lib/prisma";
+import { waitFor } from "@/lib/utils";
 import { currentUser } from "@clerk/nextjs/server";
+import { notFound } from "next/navigation";
 
 export default async function WaitListsPage() {
 	const clerkUser = await currentUser();
@@ -20,6 +22,10 @@ export default async function WaitListsPage() {
 			clerkUserId: clerkUser.id,
 		},
 	});
+
+	if (!user) {
+		return notFound();
+	}
 
 	const createNewWaitList = async (values) => {
 		"use server";
@@ -46,8 +52,7 @@ export default async function WaitListsPage() {
 			console.error("Error creating wait list:", error);
 			response.message = "Error creating wait list";
 		}
-		// wait for 2 seconds
-		await new Promise((resolve) => setTimeout(resolve, 2000));
+		await waitFor(1000);
 		return response;
 	};
 

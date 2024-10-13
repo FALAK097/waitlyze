@@ -13,10 +13,12 @@ import {
 	CardHeader,
 	CardTitle,
 } from "../ui/card";
+import { Textarea } from "../ui/textarea";
 
 export const NewWaitListForm = ({ createNewWaitList }) => {
 	const [projectName, setProjectName] = useState("");
 	const [websiteUrl, setWebsiteUrl] = useState("");
+	const [description, setDescription] = useState("");
 	const [loading, setLoading] = useState(false);
 	const [isCreated, setIsCreated] = useState(false);
 	const { push } = useRouter();
@@ -27,6 +29,7 @@ export const NewWaitListForm = ({ createNewWaitList }) => {
 		const response = await createNewWaitList({
 			name: projectName,
 			websiteUrl,
+			description,
 		});
 
 		if (response.success) {
@@ -36,6 +39,9 @@ export const NewWaitListForm = ({ createNewWaitList }) => {
 			setTimeout(() => {
 				push(`/wait-lists/${response.waitList.id}`);
 			}, 1000);
+		} else {
+			setLoading(false);
+			toast.error("There was an error creating the wait list");
 		}
 	};
 
@@ -64,6 +70,19 @@ export const NewWaitListForm = ({ createNewWaitList }) => {
 									value={projectName}
 									onChange={(e) => setProjectName(e.target.value)}
 									placeholder="HypeItUp"
+									required
+									disabled={loading || isCreated}
+								/>
+							</div>
+							<div>
+								<Label htmlFor="description" className="text-lg font-semibold">
+									Description
+								</Label>
+								<Textarea
+									id="description"
+									value={description}
+									onChange={(e) => setDescription(e.target.value)}
+									placeholder="Explains what your project is about"
 									required
 									disabled={loading || isCreated}
 								/>

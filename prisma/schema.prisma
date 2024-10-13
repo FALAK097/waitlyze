@@ -23,35 +23,36 @@ model User {
 }
 
 model WaitList {
-  id                String  @id @default(cuid())
-  name              String?
-  websiteUrl        String?
-  logoUrl           String?
-  buttonColor       String?
-  buttonBorder      String?
-  buttonTextColor   String?
-  bgColor           String?
-  borderWidth       String?
-  borderRadius      String?
-  fontWeight        String?
-  logoSize          String?
-  buttonText        String?
-  successMessage    String?
-  showLogo          Boolean @default(true)
-  showSocialProof   Boolean @default(true)
-  enableReferrals   Boolean @default(false)
-  inputColor        String?
-  inputBorder       String?
-  inputTextColor    String?
-  placeholderText   String?
-  twitterLink       String?
-  facebookLink      String?
-  instagramLink     String?
-  linkedInLink      String?
-  showSocialLinks   Boolean @default(true)
-  userId            String
-  user              User    @relation(fields: [userId], references: [id])
-  signUps           SignUp[]
+  id              String   @id @default(cuid())
+  name            String?
+  description     String?
+  websiteUrl      String?
+  logoUrl         String?
+  buttonColor     String?
+  buttonBorder    String?
+  buttonTextColor String?
+  bgColor         String?
+  borderWidth     String?
+  borderRadius    String?
+  fontWeight      String?
+  logoSize        String?
+  buttonText      String?
+  successMessage  String?
+  showLogo        Boolean  @default(true)
+  showSocialProof Boolean  @default(true)
+  enableReferrals Boolean  @default(false)
+  inputColor      String?
+  inputBorder     String?
+  inputTextColor  String?
+  placeholderText String?
+  twitterLink     String?
+  facebookLink    String?
+  instagramLink   String?
+  linkedInLink    String?
+  showSocialLinks Boolean  @default(true)
+  userId          String
+  user            User     @relation(fields: [userId], references: [id])
+  signUps         SignUp[]
 
   @@map("wait_lists")
 }
