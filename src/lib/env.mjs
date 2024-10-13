@@ -5,13 +5,16 @@ export const env = createEnv({
 	server: {
 		POSTGRES_URL: z.string().min(1),
 		NODE_ENV: z.string().min(1),
-		NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: z.string().min(1),
 		CLERK_SECRET_KEY: z.string().min(1),
 		CLERK_WEBHOOK_SECRET: z.string().min(1),
+	},
+	client: {
+		NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: z.string().min(1),
 		NEXT_PUBLIC_CLERK_SIGN_IN_FALLBACK_REDIRECT_URL: z.string().min(1),
 		NEXT_PUBLIC_CLERK_SIGN_UP_FALLBACK_REDIRECT_URL: z.string().min(1),
+		NEXT_PUBLIC_POSTHOG_KEY: z.string().min(1),
+		NEXT_PUBLIC_POSTHOG_HOST: z.string().min(1),
 	},
-	client: {},
 	runtimeEnv: {
 		POSTGRES_URL: process.env.POSTGRES_URL,
 		NODE_ENV: process.env.NODE_ENV,
@@ -23,5 +26,7 @@ export const env = createEnv({
 			process.env.NEXT_PUBLIC_CLERK_SIGN_IN_FALLBACK_REDIRECT_URL,
 		NEXT_PUBLIC_CLERK_SIGN_UP_FALLBACK_REDIRECT_URL:
 			process.env.NEXT_PUBLIC_CLERK_SIGN_UP_FALLBACK_REDIRECT_URL,
+		NEXT_PUBLIC_POSTHOG_KEY: process.env.NEXT_PUBLIC_POSTHOG_KEY,
+		NEXT_PUBLIC_POSTHOG_HOST: process.env.NEXT_PUBLIC_POSTHOG_HOST,
 	},
 });
