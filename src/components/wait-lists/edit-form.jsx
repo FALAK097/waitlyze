@@ -17,6 +17,7 @@ import { Save, Zap } from "lucide-react";
 import Image from "next/image";
 import { useState } from "react";
 import toast from "react-hot-toast";
+import { ColorPicker } from "../ui/color-picker";
 
 export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
 	console.log("initialWaitList", initialWaitList);
@@ -199,13 +200,9 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
 							<TabsContent value="general" className="space-y-4">
 								<div>
 									<Label htmlFor="buttonColor">Button Color</Label>
-									<Input
-										id="buttonColor"
-										type="color"
+									<ColorPicker
 										value={formSettings.buttonColor}
-										onChange={(e) =>
-											updateSetting("buttonColor", e.target.value)
-										}
+										onChange={(color) => updateSetting("buttonColor", color)}
 									/>
 								</div>
 								<div>
