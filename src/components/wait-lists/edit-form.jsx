@@ -21,7 +21,6 @@ import { ColorPicker } from "../ui/color-picker";
 import UploadImage from "../upload-image";
 
 export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
-	console.log("initialWaitList", initialWaitList);
 	const [formSettings, setFormSettings] = useState(() => {
 		const defaultSettings = {
 			buttonColor: "#8B5CF6",
@@ -221,7 +220,6 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
 									<Label htmlFor="logoUrl">Logo</Label>
 									<UploadImage
 										onSuccess={(files) => {
-											console.log(formSettings, files);
 											updateSetting("logoUrl", files[0].url);
 											toast.success("Logo uploaded successfully");
 										}}
