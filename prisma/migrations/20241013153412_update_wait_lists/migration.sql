@@ -5,7 +5,6 @@
   - You are about to drop the column `borderColor` on the `wait_lists` table. All the data in the column will be lost.
   - You are about to drop the column `buttonFontColor` on the `wait_lists` table. All the data in the column will be lost.
   - You are about to drop the column `fontColor` on the `wait_lists` table. All the data in the column will be lost.
-  - You are about to drop the column `logoImage` on the `wait_lists` table. All the data in the column will be lost.
   - You are about to drop the column `signUpButtonText` on the `wait_lists` table. All the data in the column will be lost.
   - You are about to drop the column `submitButtonColor` on the `wait_lists` table. All the data in the column will be lost.
   - You are about to drop the column `title` on the `wait_lists` table. All the data in the column will be lost.
@@ -17,7 +16,6 @@ ALTER TABLE "wait_lists" DROP COLUMN "backgroundColor",
 DROP COLUMN "borderColor",
 DROP COLUMN "buttonFontColor",
 DROP COLUMN "fontColor",
-DROP COLUMN "logoImage",
 DROP COLUMN "signUpButtonText",
 DROP COLUMN "submitButtonColor",
 DROP COLUMN "title",
