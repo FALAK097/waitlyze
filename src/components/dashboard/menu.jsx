@@ -14,10 +14,12 @@ import {
 } from "@/components/ui/tooltip";
 import { getMenuList } from "@/lib/menu-list";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@clerk/nextjs";
 import { CollapseMenuButton } from "./collapse-menu-button";
 
 export function Menu({ isOpen }) {
 	const pathname = usePathname();
+	const { signOut } = useAuth();
 	const menuList = getMenuList(pathname);
 
 	return (
@@ -101,7 +103,9 @@ export function Menu({ isOpen }) {
 							<Tooltip delayDuration={100}>
 								<TooltipTrigger asChild>
 									<Button
-										onClick={() => {}}
+										onClick={() => {
+											signOut();
+										}}
 										variant="outline"
 										className="justify-center w-full h-10 mt-5"
 									>
