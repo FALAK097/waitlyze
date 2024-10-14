@@ -85,6 +85,7 @@ export default async function WaitListsPage() {
 				<div key={waitList.id}>
 					<WaitListCard
 						id={waitList.id}
+						logoUrl={waitList.logoUrl}
 						name={waitList.name}
 						deleteWaitList={deleteWaitList}
 						description={waitList.description}

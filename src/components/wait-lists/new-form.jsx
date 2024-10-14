@@ -14,22 +14,28 @@ import {
 	CardTitle,
 } from "../ui/card";
 import { Textarea } from "../ui/textarea";
+import UploadImage from "../upload-image";
 
 export const NewWaitListForm = ({ createNewWaitList }) => {
 	const [projectName, setProjectName] = useState("");
 	const [websiteUrl, setWebsiteUrl] = useState("");
 	const [description, setDescription] = useState("");
+	const [logoUrl, setLogoUrl] = useState("");
 	const [loading, setLoading] = useState(false);
 	const [isCreated, setIsCreated] = useState(false);
 	const { push } = useRouter();
 
 	const handleSubmit = async (e) => {
 		e.preventDefault();
+		if (!projectName) return toast.error("Please enter a project name");
+		if (!description) return toast.error("Please enter a description");
+		if (!logoUrl) return toast.error("Please upload a logo");
 		setLoading(true);
 		const response = await createNewWaitList({
 			name: projectName,
 			websiteUrl,
 			description,
+			logoUrl,
 		});
 
 		if (response.success) {
@@ -98,6 +104,17 @@ export const NewWaitListForm = ({ createNewWaitList }) => {
 									placeholder="https://www.hypeitup.com"
 									type="url"
 									disabled={loading || isCreated}
+								/>
+							</div>
+							<div>
+								<Label htmlFor="logoUrl" className="text-lg font-semibold">
+									Upload Logo
+								</Label>
+								<UploadImage
+									onSuccess={(files) => {
+										setLogoUrl(files[0].url);
+										toast.success("Logo uploaded successfully");
+									}}
 								/>
 							</div>
 							<Button

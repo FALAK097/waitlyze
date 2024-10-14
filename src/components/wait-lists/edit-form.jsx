@@ -14,10 +14,12 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Save, Zap } from "lucide-react";
+import Image from "next/image";
 import { useState } from "react";
 import toast from "react-hot-toast";
 
 export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
+	console.log("initialWaitList", initialWaitList);
 	const [formSettings, setFormSettings] = useState({
 		buttonColor: initialWaitList.buttonColor ?? "#8B5CF6",
 		buttonBorder: initialWaitList.buttonBorder ?? "#7C3AED",
@@ -37,6 +39,7 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
 		inputBorder: initialWaitList.inputBorder ?? "#E5E7EB",
 		inputTextColor: initialWaitList.inputTextColor ?? "#000000",
 		placeholderText: initialWaitList.placeholderText ?? "Email",
+		logoUrl: initialWaitList.logoUrl ?? "/placeholder-logo.png",
 	});
 
 	const updateSetting = (key, value) => {
@@ -126,9 +129,7 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
 							<div className="space-y-4">
 								{formSettings.showLogo && (
 									<div className="flex justify-center">
-										<div
-											className={`w-${formSettings.logoSize === "1X" ? "8" : "16"} h-${formSettings.logoSize === "1X" ? "8" : "16"} bg-purple-500 rounded-full`}
-										/>
+										<Image src={formSettings.logoUrl} width={64} height={64} />
 									</div>
 								)}
 								<Input

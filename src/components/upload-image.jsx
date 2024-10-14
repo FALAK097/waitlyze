@@ -1,24 +1,19 @@
 "use client";
 
 import { UploadButton } from "@/utils/uploadthing";
-import { useState } from "react";
+import toast from "react-hot-toast";
 
-export default function UploadImage() {
-	const [error, setError] = useState(null);
-
+export default function UploadImage({ onSuccess }) {
 	const handleUploadError = (error) => {
-		setError(`Upload failed: ${error.message}`);
+		console.log(`Upload failed: ${error.message}`);
+		toast.error("Upload Logo failed!");
 	};
 
 	return (
 		<div>
-			{error && <div className="error">{error}</div>}
 			<UploadButton
 				endpoint="imageUploader"
-				onClientUploadComplete={(res) => {
-					console.log("Files: ", res);
-					alert("Upload Completed");
-				}}
+				onClientUploadComplete={onSuccess}
 				onUploadError={handleUploadError}
 			/>
 		</div>
