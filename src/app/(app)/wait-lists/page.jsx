@@ -13,7 +13,7 @@ import { WaitListCard } from "@/components/wait-lists/wait-list-card";
 import prisma from "@/lib/prisma";
 import { waitFor } from "@/lib/utils";
 import { currentUser } from "@clerk/nextjs/server";
-import { redirect } from "next/dist/server/api-utils";
+import { redirect } from "next/navigation";
 
 export default async function WaitListsPage() {
 	const clerkUser = await currentUser();

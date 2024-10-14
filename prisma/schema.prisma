@@ -8,7 +8,7 @@ datasource db {
 }
 
 model User {
-  id          String   @id @default(cuid())
+  id          String   @id @default(cuid()) @unique
   email       String?  @unique
   firstName   String?
   lastName    String?
@@ -23,7 +23,7 @@ model User {
 }
 
 model WaitList {
-  id              String   @id @default(cuid())
+  id              String   @id @default(cuid()) @unique
   name            String?
   description     String?
   websiteUrl      String?

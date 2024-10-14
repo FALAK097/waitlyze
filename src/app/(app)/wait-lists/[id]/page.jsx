@@ -14,7 +14,8 @@ import prisma from "@/lib/prisma";
 import { currentUser } from "@clerk/nextjs/server";
 import { notFound } from "next/navigation";
 
-export default async function WaitListsEditPage({ id }) {
+export default async function WaitListsEditPage({ params }) {
+	const { id } = params;
 	const clerkUser = await currentUser();
 	const user = await prisma.user.findUnique({
 		where: {
@@ -26,7 +27,11 @@ export default async function WaitListsEditPage({ id }) {
 		return notFound();
 	}
 
-	const waitList = await prisma.waitList.findFirst({
+	if (!id) {
+		return notFound();
+	}
+
+	const waitList = await prisma.waitList.findUnique({
 		where: {
 			id: id,
 			userId: user.id,
