@@ -44,6 +44,7 @@ NEXT_PUBLIC_CLERK_SIGN_IN_FALLBACK_REDIRECT_URL=/dashboard
 NEXT_PUBLIC_CLERK_SIGN_UP_FALLBACK_REDIRECT_URL=/dashboard
 NEXT_PUBLIC_POSTHOG_KEY=your_posthog_key
 NEXT_PUBLIC_POSTHOG_HOST=https://us.i.posthog.com
+UPLOADTHING_TOKEN=uploadthing_token
 ```
 
 Make sure to replace the `dummy` credentials.

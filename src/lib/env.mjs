@@ -7,6 +7,7 @@ export const env = createEnv({
 		NODE_ENV: z.string().min(1),
 		CLERK_SECRET_KEY: z.string().min(1),
 		CLERK_WEBHOOK_SECRET: z.string().min(1),
+		UPLOADTHING_TOKEN: z.string().min(1),
 	},
 	client: {
 		NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: z.string().min(1),
@@ -28,5 +29,6 @@ export const env = createEnv({
 			process.env.NEXT_PUBLIC_CLERK_SIGN_UP_FALLBACK_REDIRECT_URL,
 		NEXT_PUBLIC_POSTHOG_KEY: process.env.NEXT_PUBLIC_POSTHOG_KEY,
 		NEXT_PUBLIC_POSTHOG_HOST: process.env.NEXT_PUBLIC_POSTHOG_HOST,
+		UPLOADTHING_TOKEN: process.env.UPLOADTHING_TOKEN,
 	},
 });

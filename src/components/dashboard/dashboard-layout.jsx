@@ -7,6 +7,7 @@ import { useAuth, useUser } from "@clerk/nextjs";
 import { usePathname, useSearchParams } from "next/navigation";
 import { usePostHog } from "posthog-js/react";
 import { useEffect } from "react";
+import UploadImage from "../upload-image";
 import { Sidebar } from "./sidebar";
 
 export default function DashboardLayout({ children }) {
@@ -50,6 +51,7 @@ export default function DashboardLayout({ children }) {
 					sidebar?.isOpen === false ? "lg:ml-[90px]" : "lg:ml-72",
 				)}
 			>
+				<UploadImage />
 				{children}
 			</main>
 		</>
