@@ -1,11 +1,10 @@
 "use client";
-
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import toast from "react-hot-toast";
+import { Button } from "../ui/button";
 import {
 	Card,
 	CardContent,
@@ -56,7 +55,7 @@ export const NewWaitListForm = ({ createNewWaitList }) => {
 			<div>
 				<Card className="max-w-md mx-auto">
 					<CardHeader>
-						<CardTitle className="text-3xl font-bold mb-6">
+						<CardTitle className="mb-6 text-3xl font-bold">
 							Let&apos;s start with{" "}
 							<span className="text-primary">the basics</span>
 						</CardTitle>
@@ -119,7 +118,7 @@ export const NewWaitListForm = ({ createNewWaitList }) => {
 							</div>
 							<Button
 								type="submit"
-								className="w-full text-md py-4 mt-6"
+								className="w-full py-4 mt-6 text-md"
 								disabled={loading || isCreated}
 							>
 								{loading

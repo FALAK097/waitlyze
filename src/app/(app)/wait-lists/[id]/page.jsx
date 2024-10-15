@@ -91,7 +91,7 @@ export default async function WaitListsEditPage({ params }) {
 	};
 
 	return (
-		<ContentLayout title="Dashboard">
+		<ContentLayout title="Wait Lists">
 			<Breadcrumb>
 				<BreadcrumbList>
 					<BreadcrumbItem>
