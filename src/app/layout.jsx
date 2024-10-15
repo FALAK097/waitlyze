@@ -9,7 +9,7 @@ import { ourFileRouter } from "./api/uploadthing/core";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata = {
-	title: "Waitlist",
+	title: "HypeItUp",
 	description: "Wait for the perfect moment",
 };
 

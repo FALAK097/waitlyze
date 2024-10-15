@@ -1,4 +1,4 @@
-# Waitlist
+# HypeItUp
 
 This is a [Next.js](https://nextjs.org/) project designed to help users create stunning waitlists quickly and efficiently. The application features a no-code designer, customizable forms, and real-time analytics to enhance user engagement and conversion rates.
 
@@ -18,8 +18,8 @@ Make sure you have the following installed on your machine:
 First, clone the repository to your local machine:
 
 ```bash
-git clone git@github.com:FALAK097/waitlist.git
-cd waitlist
+git clone git@github.com:FALAK097/HypeItUp.git
+cd HypeItUp
 ```
 
 ### Install Dependencies
