@@ -18,29 +18,47 @@ import Image from "next/image";
 import { useState } from "react";
 import toast from "react-hot-toast";
 import { ColorPicker } from "../ui/color-picker";
+import UploadImage from "../upload-image";
 
 export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
-	console.log("initialWaitList", initialWaitList);
-	const [formSettings, setFormSettings] = useState({
-		buttonColor: initialWaitList.buttonColor ?? "#8B5CF6",
-		buttonBorder: initialWaitList.buttonBorder ?? "#7C3AED",
-		buttonTextColor: initialWaitList.buttonTextColor ?? "#FFFFFF",
-		bgColor: initialWaitList.bgColor ?? "#FFFFFF",
-		borderWidth: initialWaitList.borderWidth ?? "0px",
-		borderRadius: initialWaitList.borderRadius ?? "large",
-		fontWeight: initialWaitList.fontWeight ?? "normal",
-		logoSize: initialWaitList.logoSize ?? "1X",
-		buttonText: initialWaitList.buttonText ?? "Join the waitlist",
-		successMessage:
-			initialWaitList.successMessage ?? "Success! You're on the waitlist 🎉",
-		showLogo: initialWaitList.showLogo ?? true,
-		showSocialProof: initialWaitList.showSocialProof ?? true,
-		enableReferrals: initialWaitList.enableReferrals ?? false,
-		inputColor: initialWaitList.inputColor ?? "#FFFFFF",
-		inputBorder: initialWaitList.inputBorder ?? "#E5E7EB",
-		inputTextColor: initialWaitList.inputTextColor ?? "#000000",
-		placeholderText: initialWaitList.placeholderText ?? "Email",
-		logoUrl: initialWaitList.logoUrl ?? "/placeholder-logo.png",
+	const [formSettings, setFormSettings] = useState(() => {
+		const defaultSettings = {
+			buttonColor: "#8B5CF6",
+			buttonBorder: "#7C3AED",
+			buttonTextColor: "#FFFFFF",
+			bgColor: "#FFFFFF",
+			borderWidth: "0px",
+			borderRadius: "large",
+			fontWeight: "normal",
+			logoSize: "1X",
+			buttonText: "Join the waitlist",
+			successMessage: "Success! You're on the waitlist 🎉",
+			showLogo: true,
+			showSocialProof: true,
+			enableReferrals: false,
+			inputColor: "#FFFFFF",
+			inputBorder: "#E5E7EB",
+			inputTextColor: "#000000",
+			placeholderText: "Email",
+			logoUrl: "/logo.png",
+		};
+
+		if (initialWaitList?.buttonTextColor) {
+			return {
+				...defaultSettings,
+				...initialWaitList,
+				showLogo:
+					initialWaitList.showLogo !== undefined
+						? initialWaitList.showLogo
+						: defaultSettings.showLogo,
+				showSocialProof:
+					initialWaitList.showSocialProof !== undefined
+						? initialWaitList.showSocialProof
+						: defaultSettings.showSocialProof,
+			};
+		}
+
+		return defaultSettings;
 	});
 
 	const updateSetting = (key, value) => {
@@ -128,7 +146,7 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
 							style={{ backgroundColor: formSettings.bgColor }}
 						>
 							<div className="space-y-4">
-								{formSettings.showLogo && (
+								{formSettings.showLogo && formSettings.logoUrl && (
 									<div className="flex justify-center">
 										<Image src={formSettings.logoUrl} width={64} height={64} />
 									</div>
@@ -199,9 +217,18 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
 							</TabsList>
 							<TabsContent value="general" className="space-y-4">
 								<div>
+									<Label htmlFor="logoUrl">Logo</Label>
+									<UploadImage
+										onSuccess={(files) => {
+											updateSetting("logoUrl", files[0].url);
+											toast.success("Logo uploaded successfully");
+										}}
+									/>
+								</div>
+								<div>
 									<Label htmlFor="buttonColor">Button Color</Label>
 									<ColorPicker
-										value={formSettings.buttonColor}
+										value={formSettings.buttonColor || "#8B5CF6"}
 										onChange={(color) => updateSetting("buttonColor", color)}
 									/>
 								</div>
@@ -210,7 +237,7 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
 									<Input
 										id="buttonBorder"
 										type="color"
-										value={formSettings.buttonBorder}
+										value={formSettings.buttonBorder || "#7C3AED"}
 										onChange={(e) =>
 											updateSetting("buttonBorder", e.target.value)
 										}
@@ -221,7 +248,7 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
 									<Input
 										id="buttonTextColor"
 										type="color"
-										value={formSettings.buttonTextColor}
+										value={formSettings.buttonTextColor || "#FFFFFF"}
 										onChange={(e) =>
 											updateSetting("buttonTextColor", e.target.value)
 										}
@@ -232,14 +259,14 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
 									<Input
 										id="bgColor"
 										type="color"
-										value={formSettings.bgColor}
+										value={formSettings.bgColor || "#FFFFFF"}
 										onChange={(e) => updateSetting("bgColor", e.target.value)}
 									/>
 								</div>
 								<div>
 									<Label htmlFor="borderWidth">Border Width</Label>
 									<Select
-										value={formSettings.borderWidth}
+										value={formSettings.borderWidth || "0px"}
 										onValueChange={(value) =>
 											updateSetting("borderWidth", value)
 										}
@@ -257,7 +284,7 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
 								<div>
 									<Label htmlFor="borderRadius">Border Radius</Label>
 									<Select
-										value={formSettings.borderRadius}
+										value={formSettings.borderRadius || "large"}
 										onValueChange={(value) =>
 											updateSetting("borderRadius", value)
 										}
@@ -275,7 +302,7 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
 								<div>
 									<Label htmlFor="fontWeight">Font Weight</Label>
 									<Select
-										value={formSettings.fontWeight}
+										value={formSettings.fontWeight || "normal"}
 										onValueChange={(value) =>
 											updateSetting("fontWeight", value)
 										}
@@ -292,7 +319,7 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
 								<div>
 									<Label htmlFor="logoSize">Logo Size</Label>
 									<Select
-										value={formSettings.logoSize}
+										value={formSettings.logoSize || "1X"}
 										onValueChange={(value) => updateSetting("logoSize", value)}
 									>
 										<SelectTrigger id="logoSize">
@@ -308,7 +335,7 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
 									<Label htmlFor="buttonText">Button Text</Label>
 									<Input
 										id="buttonText"
-										value={formSettings.buttonText}
+										value={formSettings.buttonText || "Join the waitlist"}
 										onChange={(e) =>
 											updateSetting("buttonText", e.target.value)
 										}
@@ -318,7 +345,10 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
 									<Label htmlFor="successMessage">Success Message</Label>
 									<Input
 										id="successMessage"
-										value={formSettings.successMessage}
+										value={
+											formSettings.successMessage ||
+											"Success! You're on the waitlist 🎉"
+										}
 										onChange={(e) =>
 											updateSetting("successMessage", e.target.value)
 										}
@@ -327,7 +357,7 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
 								<div className="flex items-center space-x-2">
 									<Switch
 										id="showLogo"
-										checked={formSettings.showLogo}
+										checked={formSettings.showLogo || true}
 										onCheckedChange={(checked) =>
 											updateSetting("showLogo", checked)
 										}
@@ -337,7 +367,7 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
 								<div className="flex items-center space-x-2">
 									<Switch
 										id="showSocialProof"
-										checked={formSettings.showSocialProof}
+										checked={formSettings.showSocialProof || true}
 										onCheckedChange={(checked) =>
 											updateSetting("showSocialProof", checked)
 										}
@@ -347,7 +377,7 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
 								<div className="flex items-center space-x-2">
 									<Switch
 										id="enableReferrals"
-										checked={formSettings.enableReferrals}
+										checked={formSettings.enableReferrals || false}
 										onCheckedChange={(checked) =>
 											updateSetting("enableReferrals", checked)
 										}
@@ -361,7 +391,7 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
 									<Input
 										id="inputColor"
 										type="color"
-										value={formSettings.inputColor}
+										value={formSettings.inputColor || "#FFFFFF"}
 										onChange={(e) =>
 											updateSetting("inputColor", e.target.value)
 										}
@@ -372,7 +402,7 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
 									<Input
 										id="inputBorder"
 										type="color"
-										value={formSettings.inputBorder}
+										value={formSettings.inputBorder || "#E5E7EB"}
 										onChange={(e) =>
 											updateSetting("inputBorder", e.target.value)
 										}
@@ -383,7 +413,7 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
 									<Input
 										id="inputTextColor"
 										type="color"
-										value={formSettings.inputTextColor}
+										value={formSettings.inputTextColor || "#000000"}
 										onChange={(e) =>
 											updateSetting("inputTextColor", e.target.value)
 										}
@@ -393,7 +423,7 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
 									<Label htmlFor="placeholderText">Placeholder Text</Label>
 									<Input
 										id="placeholderText"
-										value={formSettings.placeholderText}
+										value={formSettings.placeholderText || "Email"}
 										onChange={(e) =>
 											updateSetting("placeholderText", e.target.value)
 										}
