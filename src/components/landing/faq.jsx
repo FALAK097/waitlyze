@@ -46,7 +46,12 @@ export default function FAQ() {
 					className="w-full max-w-2xl mx-auto"
 				>
 					{faqs.map((faq, index) => (
-						<AccordionItem key={index} value={`item-${index}`}>
+						<AccordionItem
+							key={`accordion-item-${faq.question}-${index}`
+								.replace(" ", "")
+								.toLowerCase()}
+							value={`item-${index}`}
+						>
 							<AccordionTrigger>{faq.question}</AccordionTrigger>
 							<AccordionContent>{faq.answer}</AccordionContent>
 						</AccordionItem>

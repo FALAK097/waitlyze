@@ -20,6 +20,37 @@ import toast from "react-hot-toast";
 import { ColorPicker } from "../ui/color-picker";
 import UploadImage from "../upload-image";
 
+const dummyUsers = [
+	{
+		id: 1,
+		image: "https://picsum.photos/500/500",
+	},
+	{
+		id: 2,
+		image: "https://picsum.photos/500/500",
+	},
+	{
+		id: 3,
+		image: "https://picsum.photos/500/500",
+	},
+	{
+		id: 4,
+		image: "https://picsum.photos/500/500",
+	},
+	{
+		id: 5,
+		image: "https://picsum.photos/500/500",
+	},
+	{
+		id: 6,
+		image: "https://picsum.photos/500/500",
+	},
+	{
+		id: 7,
+		image: "https://picsum.photos/500/500",
+	},
+];
+
 export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
 	const [formSettings, setFormSettings] = useState(() => {
 		const defaultSettings = {
@@ -40,7 +71,7 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
 			inputBorder: "#E5E7EB",
 			inputTextColor: "#000000",
 			placeholderText: "Email",
-			logoUrl: "/logo.png",
+			logoUrl: initialWaitList.logoUrl || "/images/logo.png",
 		};
 
 		if (initialWaitList?.buttonTextColor) {
@@ -148,7 +179,12 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
 							<div className="space-y-4">
 								{formSettings.showLogo && formSettings.logoUrl && (
 									<div className="flex justify-center">
-										<Image src={formSettings.logoUrl} width={64} height={64} />
+										<Image
+											alt={`${initialWaitList.name} logo`}
+											src={formSettings.logoUrl || "/images/logo.png"}
+											width={64}
+											height={64}
+										/>
 									</div>
 								)}
 								<Input
@@ -190,15 +226,17 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
 									<div className="flex items-center space-x-2 text-sm text-gray-500">
 										<Zap className="h-4 w-4 text-purple-500" />
 										<div className="flex -space-x-1 overflow-hidden">
-											{[...Array(4)].map((_, i) => (
-												<Avatar
-													key={i + _}
-													className="inline-block border-2 border-white rounded-full"
-												>
-													<AvatarImage src={`/placeholder-user-${i + 1}.jpg`} />
-													<AvatarFallback>U{i + 1}</AvatarFallback>
-												</Avatar>
-											))}
+											{dummyUsers.map((_, i) => {
+												return (
+													<Avatar
+														key={`user-${i}-${_.id}-${_.image}`}
+														className="inline-block border-2 border-white rounded-full"
+													>
+														<AvatarImage src={_.image} />
+														<AvatarFallback>U{i + 1}</AvatarFallback>
+													</Avatar>
+												);
+											})}
 										</div>
 										<span>Be the first to join</span>
 									</div>
