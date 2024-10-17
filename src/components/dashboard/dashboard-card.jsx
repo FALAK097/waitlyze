@@ -28,6 +28,9 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import {
+	ArrowDown,
+	ArrowUp,
+	ArrowUpDown,
 	ArrowUpRight,
 	ChevronLeft,
 	ChevronRight,
@@ -108,27 +111,72 @@ export default function DashboardCard() {
 	const [selectedUsers, setSelectedUsers] = useState([]);
 	const [view, setView] = useState("daily");
 	const [currentPage, setCurrentPage] = useState(1);
+	const [sortConfig, setSortConfig] = useState({
+		key: null,
+		direction: null,
+	});
 	const usersPerPage = 10;
 
-	const filteredUsers = useMemo(() => {
-		return users.filter(
-			(user) =>
-				user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-				user.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
-				user.referralSource.toLowerCase().includes(searchTerm.toLowerCase()) ||
-				user.priority.toLowerCase().includes(searchTerm.toLowerCase()),
-		);
-	}, [users, searchTerm]);
+	const sortedAndFilteredUsers = useMemo(() => {
+		let sortableUsers = [...users];
+		if (searchTerm) {
+			sortableUsers = sortableUsers.filter(
+				(user) =>
+					user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+					user.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
+					user.referralSource
+						.toLowerCase()
+						.includes(searchTerm.toLowerCase()) ||
+					user.priority.toLowerCase().includes(searchTerm.toLowerCase()),
+			);
+		}
+		if (sortConfig.key === "priority" && sortConfig.direction) {
+			sortableUsers.sort((a, b) => {
+				const priorityOrder = { High: 0, Medium: 1, Low: 2 };
+				if (priorityOrder[a.priority] < priorityOrder[b.priority]) {
+					return sortConfig.direction === "ascending" ? -1 : 1;
+				}
+				if (priorityOrder[a.priority] > priorityOrder[b.priority]) {
+					return sortConfig.direction === "ascending" ? 1 : -1;
+				}
+				return 0;
+			});
+		}
+		return sortableUsers;
+	}, [users, searchTerm, sortConfig]);
 
-	const pageCount = Math.ceil(filteredUsers.length / usersPerPage);
-	const paginatedUsers = filteredUsers.slice(
+	const pageCount = Math.ceil(sortedAndFilteredUsers.length / usersPerPage);
+	const paginatedUsers = sortedAndFilteredUsers.slice(
 		(currentPage - 1) * usersPerPage,
 		currentPage * usersPerPage,
 	);
 
 	useEffect(() => {
 		setCurrentPage(1);
-	}, [searchTerm]);
+	}, [searchTerm, sortConfig]);
+
+	const requestSort = () => {
+		setSortConfig((prevConfig) => {
+			if (prevConfig.direction === null) {
+				return { key: "priority", direction: "ascending" };
+			}
+			if (prevConfig.direction === "ascending") {
+				return { key: "priority", direction: "descending" };
+			}
+			return { key: null, direction: null };
+		});
+	};
+
+	const getSortIcon = () => {
+		if (sortConfig.direction === null) {
+			return <ArrowUpDown className="w-4 h-4" />;
+		}
+		return sortConfig.direction === "ascending" ? (
+			<ArrowUp className="w-4 h-4" />
+		) : (
+			<ArrowDown className="w-4 h-4" />
+		);
+	};
 
 	const handleRoleChange = (userId, newRole) => {
 		setUsers(
@@ -153,7 +201,7 @@ export default function DashboardCard() {
 
 	const handleSelectAll = (checked) => {
 		if (checked) {
-			setSelectedUsers(filteredUsers.map((user) => user.id));
+			setSelectedUsers(sortedAndFilteredUsers.map((user) => user.id));
 		} else {
 			setSelectedUsers([]);
 		}
@@ -371,14 +419,24 @@ export default function DashboardCard() {
 								<TableRow>
 									<TableHead className="w-[30px]">
 										<Checkbox
-											checked={selectedUsers.length === filteredUsers.length}
+											checked={
+												selectedUsers.length === sortedAndFilteredUsers.length
+											}
 											onCheckedChange={handleSelectAll}
 										/>
 									</TableHead>
 									<TableHead className="w-[250px]">User</TableHead>
 									<TableHead>Category</TableHead>
 									<TableHead>Referral Source</TableHead>
-									<TableHead>Priority</TableHead>
+									<TableHead>
+										<Button
+											variant="ghost"
+											onClick={requestSort}
+											className="hover:bg-transparent"
+										>
+											Priority {getSortIcon()}
+										</Button>
+									</TableHead>
 									<TableHead>Action</TableHead>
 									<TableHead>
 										<DropdownMenu>
@@ -412,79 +470,87 @@ export default function DashboardCard() {
 								</TableRow>
 							</TableHeader>
 							<TableBody>
-								{paginatedUsers.map((user) => (
-									<TableRow key={user.id}>
-										<TableCell>
-											<Checkbox
-												checked={selectedUsers.includes(user.id)}
-												onCheckedChange={() => handleSelectUser(user.id)}
-											/>
-										</TableCell>
-										<TableCell className="font-medium">
-											<div className="flex items-center space-x-2">
-												<Avatar>
-													<AvatarImage src={user.avatar} alt={user.name} />
-													<AvatarFallback>
-														{user.name
-															.split(" ")
-															.map((n) => n[0])
-															.join("")}
-													</AvatarFallback>
-												</Avatar>
-												<span>{user.name}</span>
-											</div>
-										</TableCell>
-										<TableCell>
-											<Select
-												onValueChange={(value) =>
-													handleRoleChange(user.id, value)
-												}
-												defaultValue={user.category}
-											>
-												<SelectTrigger className="w-[140px]">
-													<SelectValue placeholder="Select a role" />
-												</SelectTrigger>
-												<SelectContent className="cursor-pointer">
-													{userRoles.map((role) => (
-														<SelectItem
-															className="cursor-pointer"
-															key={role}
-															value={role}
+								{paginatedUsers.length > 0 ? (
+									paginatedUsers.map((user) => (
+										<TableRow key={user.id}>
+											<TableCell>
+												<Checkbox
+													checked={selectedUsers.includes(user.id)}
+													onCheckedChange={() => handleSelectUser(user.id)}
+												/>
+											</TableCell>
+											<TableCell className="font-medium">
+												<div className="flex items-center space-x-2">
+													<Avatar>
+														<AvatarImage src={user.avatar} alt={user.name} />
+														<AvatarFallback>
+															{user.name
+																.split(" ")
+																.map((n) => n[0])
+																.join("")}
+														</AvatarFallback>
+													</Avatar>
+													<span>{user.name}</span>
+												</div>
+											</TableCell>
+											<TableCell>
+												<Select
+													onValueChange={(value) =>
+														handleRoleChange(user.id, value)
+													}
+													defaultValue={user.category}
+												>
+													<SelectTrigger className="w-[140px]">
+														<SelectValue placeholder="Select a role" />
+													</SelectTrigger>
+													<SelectContent className="cursor-pointer">
+														{userRoles.map((role) => (
+															<SelectItem
+																className="cursor-pointer"
+																key={role}
+																value={role}
+															>
+																{role}
+															</SelectItem>
+														))}
+													</SelectContent>
+												</Select>
+											</TableCell>
+											<TableCell>{user.referralSource}</TableCell>
+											<TableCell>
+												<span
+													className={`font-medium ml-5 ${priorityColors[user.priority]}`}
+												>
+													{user.priority}
+												</span>
+											</TableCell>
+											<TableCell>
+												<DropdownMenu>
+													<DropdownMenuTrigger asChild>
+														<Button variant="ghost" className="w-8 h-8 p-0">
+															<MoreVertical className="w-4 h-4" />
+														</Button>
+													</DropdownMenuTrigger>
+													<DropdownMenuContent align="end">
+														<DropdownMenuItem
+															className="text-red-600 cursor-pointer"
+															onClick={() => handleDeleteUser(user.id)}
 														>
-															{role}
-														</SelectItem>
-													))}
-												</SelectContent>
-											</Select>
-										</TableCell>
-										<TableCell>{user.referralSource}</TableCell>
-										<TableCell>
-											<span
-												className={`font-medium ${priorityColors[user.priority]}`}
-											>
-												{user.priority}
-											</span>
-										</TableCell>
-										<TableCell>
-											<DropdownMenu>
-												<DropdownMenuTrigger asChild>
-													<Button variant="ghost" className="w-8 h-8 p-0">
-														<MoreVertical className="w-4 h-4" />
-													</Button>
-												</DropdownMenuTrigger>
-												<DropdownMenuContent align="end">
-													<DropdownMenuItem
-														className="text-red-600 cursor-pointer"
-														onClick={() => handleDeleteUser(user.id)}
-													>
-														<Trash2 className="w-4 h-4 mr-2 text-red-600" />
-														<span className="text-red-600">Delete</span>
-													</DropdownMenuItem>
-												</DropdownMenuContent>
-											</DropdownMenu>
+															<Trash2 className="w-4 h-4 mr-2 text-red-600" />
+															<span className="text-red-600">Delete</span>
+														</DropdownMenuItem>
+													</DropdownMenuContent>
+												</DropdownMenu>
+											</TableCell>
+										</TableRow>
+									))
+								) : (
+									<TableRow>
+										<TableCell colSpan={7} className="h-24 text-center">
+											No users found, don't be shy to invite some!
 										</TableCell>
 									</TableRow>
-								))}
+								)}
 							</TableBody>
 						</Table>
 					</div>
@@ -492,11 +558,15 @@ export default function DashboardCard() {
 						<div className="text-sm text-muted-foreground">
 							Showing{" "}
 							{Math.min(
-								filteredUsers.length,
+								sortedAndFilteredUsers.length,
 								(currentPage - 1) * usersPerPage + 1,
 							)}{" "}
-							- {Math.min(filteredUsers.length, currentPage * usersPerPage)} of{" "}
-							{filteredUsers.length} results
+							-{" "}
+							{Math.min(
+								sortedAndFilteredUsers.length,
+								currentPage * usersPerPage,
+							)}{" "}
+							of {sortedAndFilteredUsers.length} results
 						</div>
 						<div className="flex items-center space-x-2">
 							<Button
