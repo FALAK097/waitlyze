@@ -1,5 +1,15 @@
 "use client";
 
+import {
+	AlertDialog,
+	AlertDialogAction,
+	AlertDialogCancel,
+	AlertDialogContent,
+	AlertDialogDescription,
+	AlertDialogFooter,
+	AlertDialogHeader,
+	AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -111,6 +121,8 @@ export default function DashboardCard() {
 	const [selectedUsers, setSelectedUsers] = useState([]);
 	const [view, setView] = useState("daily");
 	const [currentPage, setCurrentPage] = useState(1);
+	const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+	const [deleteTarget, setDeleteTarget] = useState(null);
 	const [sortConfig, setSortConfig] = useState({
 		key: null,
 		direction: null,
@@ -187,8 +199,8 @@ export default function DashboardCard() {
 	};
 
 	const handleDeleteUser = (userId) => {
-		setUsers(users.filter((user) => user.id !== userId));
-		setSelectedUsers(selectedUsers.filter((id) => id !== userId));
+		setDeleteTarget(userId);
+		setDeleteModalOpen(true);
 	};
 
 	const handleSelectUser = (userId) => {
@@ -210,8 +222,8 @@ export default function DashboardCard() {
 	const handleBulkAction = (action) => {
 		switch (action) {
 			case "delete":
-				setUsers(users.filter((user) => !selectedUsers.includes(user.id)));
-				setSelectedUsers([]);
+				setDeleteTarget(null);
+				setDeleteModalOpen(true);
 				break;
 			case "export": {
 				const selectedUserData = users.filter((user) =>
@@ -231,6 +243,17 @@ export default function DashboardCard() {
 			default:
 				console.log(`Bulk ${action} for users:`, selectedUsers);
 		}
+	};
+
+	const confirmDelete = () => {
+		if (deleteTarget === null) {
+			setUsers(users.filter((user) => !selectedUsers.includes(user.id)));
+			setSelectedUsers([]);
+		} else {
+			setUsers(users.filter((user) => user.id !== deleteTarget));
+			setSelectedUsers(selectedUsers.filter((id) => id !== deleteTarget));
+		}
+		setDeleteModalOpen(false);
 	};
 
 	const CustomTooltip = ({ active, payload, label }) => {
@@ -443,10 +466,15 @@ export default function DashboardCard() {
 											<DropdownMenuTrigger asChild>
 												<Button
 													variant="ghost"
-													className="w-8 h-8 p-0"
+													className="relative w-8 h-8 p-0"
 													disabled={selectedUsers.length === 0}
 												>
 													<MoreVertical className="w-4 h-4" />
+													{selectedUsers.length > 0 && (
+														<span className="absolute top-0 inline-flex items-center justify-center w-5 h-5 text-xs font-bold leading-none text-white bg-red-600 rounded-full -right-2">
+															{selectedUsers.length}
+														</span>
+													)}
 												</Button>
 											</DropdownMenuTrigger>
 											<DropdownMenuContent align="end">
@@ -455,7 +483,7 @@ export default function DashboardCard() {
 													onClick={() => handleBulkAction("delete")}
 												>
 													<Trash2 className="w-4 h-4 mr-2" />
-													<span>Delete files</span>
+													<span>Delete User</span>
 												</DropdownMenuItem>
 												<DropdownMenuItem
 													className="cursor-pointer"
@@ -610,6 +638,31 @@ export default function DashboardCard() {
 					</div>
 				</CardContent>
 			</Card>
+
+			<AlertDialog open={deleteModalOpen} onOpenChange={setDeleteModalOpen}>
+				<AlertDialogContent>
+					<AlertDialogHeader>
+						<AlertDialogTitle>
+							Are you sure you want to delete?
+						</AlertDialogTitle>
+						<AlertDialogDescription>
+							{deleteTarget === null
+								? `This will permanently delete ${selectedUsers.length} selected users.`
+								: "This will permanently delete the selected user."}
+							This action cannot be undone.
+						</AlertDialogDescription>
+					</AlertDialogHeader>
+					<AlertDialogFooter>
+						<AlertDialogCancel>Cancel</AlertDialogCancel>
+						<AlertDialogAction
+							onClick={confirmDelete}
+							className="bg-red-600 hover:bg-red-700"
+						>
+							Delete
+						</AlertDialogAction>
+					</AlertDialogFooter>
+				</AlertDialogContent>
+			</AlertDialog>
 		</div>
 	);
 }
