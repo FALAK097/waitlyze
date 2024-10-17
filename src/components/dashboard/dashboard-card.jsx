@@ -29,6 +29,8 @@ import {
 } from "@/components/ui/table";
 import {
 	ArrowUpRight,
+	ChevronLeft,
+	ChevronRight,
 	Download,
 	FileJson,
 	MoreVertical,
@@ -37,7 +39,7 @@ import {
 	UserCheck,
 	Users,
 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Bar, BarChart, XAxis, YAxis } from "recharts";
 import { Checkbox } from "../ui/checkbox";
 import {
@@ -57,9 +59,9 @@ const priorityColors = {
 
 const getCurrentWeekDates = (startDay = 0) => {
 	const today = new Date();
-	const dayOfWeek = today.getDay(); // 0-6 (Sun-Sat)
+	const dayOfWeek = today.getDay();
 	const startDate = new Date(today);
-	startDate.setDate(today.getDate() - dayOfWeek + startDay); // Adjust for start day
+	startDate.setDate(today.getDate() - dayOfWeek + startDay);
 
 	return Array.from({ length: 7 }, (_, i) => {
 		const date = new Date(startDate);
@@ -83,44 +85,50 @@ const peakInterestData = {
 	})),
 };
 
+const generateMockUsers = (count) => {
+	return Array.from({ length: count }, (_, i) => ({
+		id: i + 1,
+		name: `User ${i + 1}`,
+		avatar: `/avatars/user${i + 1}.jpg`,
+		category: userRoles[Math.floor(Math.random() * userRoles.length)],
+		referralSource: [
+			"Twitter",
+			"Direct Link",
+			"Email Campaign",
+			"Facebook",
+			"LinkedIn",
+		][Math.floor(Math.random() * 5)],
+		priority: ["High", "Medium", "Low"][Math.floor(Math.random() * 3)],
+	}));
+};
+
 export default function DashboardCard() {
-	const [users, setUsers] = useState([
-		{
-			id: 1,
-			name: "Alice Johnson",
-			avatar: "/avatars/alice.jpg",
-			category: "Influencer",
-			referralSource: "Twitter",
-			priority: "High",
-		},
-		{
-			id: 2,
-			name: "Bob Smith",
-			avatar: "/avatars/bob.jpg",
-			category: "Early Adopter",
-			referralSource: "Direct Link",
-			priority: "Medium",
-		},
-		{
-			id: 3,
-			name: "Carol White",
-			avatar: "/avatars/carol.jpg",
-			category: "VIP",
-			referralSource: "Email Campaign",
-			priority: "Low",
-		},
-	]);
+	const [users, setUsers] = useState(generateMockUsers(50));
 	const [searchTerm, setSearchTerm] = useState("");
 	const [selectedUsers, setSelectedUsers] = useState([]);
 	const [view, setView] = useState("daily");
+	const [currentPage, setCurrentPage] = useState(1);
+	const usersPerPage = 10;
 
 	const filteredUsers = useMemo(() => {
-		return users.filter((user) =>
-			Object.values(user).some((value) =>
-				value.toString().toLowerCase().includes(searchTerm.toLowerCase()),
-			),
+		return users.filter(
+			(user) =>
+				user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+				user.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
+				user.referralSource.toLowerCase().includes(searchTerm.toLowerCase()) ||
+				user.priority.toLowerCase().includes(searchTerm.toLowerCase()),
 		);
 	}, [users, searchTerm]);
+
+	const pageCount = Math.ceil(filteredUsers.length / usersPerPage);
+	const paginatedUsers = filteredUsers.slice(
+		(currentPage - 1) * usersPerPage,
+		currentPage * usersPerPage,
+	);
+
+	useEffect(() => {
+		setCurrentPage(1);
+	}, [searchTerm]);
 
 	const handleRoleChange = (userId, newRole) => {
 		setUsers(
@@ -404,7 +412,7 @@ export default function DashboardCard() {
 								</TableRow>
 							</TableHeader>
 							<TableBody>
-								{filteredUsers.map((user) => (
+								{paginatedUsers.map((user) => (
 									<TableRow key={user.id}>
 										<TableCell>
 											<Checkbox
@@ -479,6 +487,56 @@ export default function DashboardCard() {
 								))}
 							</TableBody>
 						</Table>
+					</div>
+					<div className="flex items-center justify-between mt-4">
+						<div className="text-sm text-muted-foreground">
+							Showing{" "}
+							{Math.min(
+								filteredUsers.length,
+								(currentPage - 1) * usersPerPage + 1,
+							)}{" "}
+							- {Math.min(filteredUsers.length, currentPage * usersPerPage)} of{" "}
+							{filteredUsers.length} results
+						</div>
+						<div className="flex items-center space-x-2">
+							<Button
+								variant="outline"
+								size="sm"
+								onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+								disabled={currentPage === 1}
+							>
+								<ChevronLeft className="w-4 h-4" />
+							</Button>
+							{Array.from({ length: Math.min(5, pageCount) }, (_, i) => {
+								const pageNumber =
+									currentPage <= 3 ? i + 1 : currentPage + i - 2;
+								if (pageNumber <= pageCount) {
+									return (
+										<Button
+											key={pageNumber}
+											variant={
+												currentPage === pageNumber ? "default" : "outline"
+											}
+											size="sm"
+											onClick={() => setCurrentPage(pageNumber)}
+										>
+											{pageNumber}
+										</Button>
+									);
+								}
+								return null;
+							})}
+							<Button
+								variant="outline"
+								size="sm"
+								onClick={() =>
+									setCurrentPage((prev) => Math.min(prev + 1, pageCount))
+								}
+								disabled={currentPage === pageCount}
+							>
+								<ChevronRight className="w-4 h-4" />
+							</Button>
+						</div>
 					</div>
 				</CardContent>
 			</Card>
