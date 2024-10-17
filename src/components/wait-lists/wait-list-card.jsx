@@ -54,7 +54,7 @@ export const WaitListCard = ({
 				</CardDescription>
 			</CardHeader>
 			<CardFooter className="flex justify-between">
-				<Button onClick={handleRedirect}>View</Button>
+				<Button onClick={handleRedirect}>Edit</Button>
 				<Button
 					disabled={isDeleting}
 					onClick={handleDelete}
