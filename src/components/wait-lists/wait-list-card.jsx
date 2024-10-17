@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "react-hot-toast";
@@ -16,6 +17,7 @@ export const WaitListCard = ({
 	id,
 	name,
 	url,
+	logoUrl,
 	description,
 	deleteWaitList,
 }) => {
@@ -43,7 +45,10 @@ export const WaitListCard = ({
 	return (
 		<Card className="w-[350px]">
 			<CardHeader>
-				<CardTitle>{name}</CardTitle>
+				<CardTitle className="flex items-center justify-start gap-4">
+					<Image src={logoUrl} alt={name} width={65} height={65} />
+					<p>{name}</p>
+				</CardTitle>
 				<CardDescription>
 					{description ?? "No description given"}
 				</CardDescription>

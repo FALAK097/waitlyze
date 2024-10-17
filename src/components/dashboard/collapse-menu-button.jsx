@@ -88,9 +88,11 @@ export function CollapseMenuButton({
 				</Button>
 			</CollapsibleTrigger>
 			<CollapsibleContent className="overflow-hidden data-[state=closed]:animate-collapsible-up data-[state=open]:animate-collapsible-down">
-				{submenus.map(({ href, label, active }) => (
+				{submenus.map(({ href, label, active }, i) => (
 					<Button
-						key={label}
+						key={`collapsible-${label}-${href}-${i}`
+							.replaceAll(" ", "")
+							.toLowerCase()}
 						variant={
 							(active === undefined && pathname === href) || active
 								? "secondary"
@@ -156,8 +158,13 @@ export function CollapseMenuButton({
 					{label}
 				</DropdownMenuLabel>
 				<DropdownMenuSeparator />
-				{submenus.map(({ href, label, active }) => (
-					<DropdownMenuItem key={label} asChild>
+				{submenus.map(({ href, label, active }, i) => (
+					<DropdownMenuItem
+						key={`drop-down-${href}-${label}-${i}`
+							.replaceAll(" ", "")
+							.toLowerCase()}
+						asChild
+					>
 						<Link
 							className={`cursor-pointer ${
 								((active === undefined && pathname === href) || active) &&

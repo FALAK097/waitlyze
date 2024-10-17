@@ -42,7 +42,6 @@ export default async function WaitListsPage() {
 					userId: user.id,
 				},
 			});
-			console.log("Wait list created successfully");
 			response.success = true;
 			response.message = "Wait list created successfully";
 			response.waitList = {
@@ -57,7 +56,7 @@ export default async function WaitListsPage() {
 	};
 
 	return (
-		<ContentLayout title="Dashboard">
+		<ContentLayout title="New Wait Lists">
 			<Breadcrumb>
 				<BreadcrumbList>
 					<BreadcrumbItem>

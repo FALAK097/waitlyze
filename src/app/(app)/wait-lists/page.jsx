@@ -13,7 +13,7 @@ import { WaitListCard } from "@/components/wait-lists/wait-list-card";
 import prisma from "@/lib/prisma";
 import { waitFor } from "@/lib/utils";
 import { currentUser } from "@clerk/nextjs/server";
-import { redirect } from "next/dist/server/api-utils";
+import { redirect } from "next/navigation";
 
 export default async function WaitListsPage() {
 	const clerkUser = await currentUser();
@@ -67,7 +67,7 @@ export default async function WaitListsPage() {
 	};
 
 	return (
-		<ContentLayout title="Dashboard">
+		<ContentLayout title="All Wait Lists">
 			<Breadcrumb>
 				<BreadcrumbList>
 					<BreadcrumbItem>
@@ -85,6 +85,7 @@ export default async function WaitListsPage() {
 				<div key={waitList.id}>
 					<WaitListCard
 						id={waitList.id}
+						logoUrl={waitList.logoUrl}
 						name={waitList.name}
 						deleteWaitList={deleteWaitList}
 						description={waitList.description}

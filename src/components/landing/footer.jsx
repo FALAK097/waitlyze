@@ -76,7 +76,7 @@ export default function Footer() {
 				</div>
 				<div className="pt-8 mt-8 text-center border-t border-border">
 					<p className="text-muted-foreground">
-						&copy; {new Date().getFullYear()} Waitlist Creator. All rights
+						&copy; {new Date().getFullYear()} HypeItUp Creator. All rights
 						reserved.
 					</p>
 				</div>

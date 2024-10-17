@@ -1,11 +1,10 @@
 "use client";
-
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import toast from "react-hot-toast";
+import { Button } from "../ui/button";
 import {
 	Card,
 	CardContent,
@@ -14,22 +13,28 @@ import {
 	CardTitle,
 } from "../ui/card";
 import { Textarea } from "../ui/textarea";
+import UploadImage from "../upload-image";
 
 export const NewWaitListForm = ({ createNewWaitList }) => {
 	const [projectName, setProjectName] = useState("");
 	const [websiteUrl, setWebsiteUrl] = useState("");
 	const [description, setDescription] = useState("");
+	const [logoUrl, setLogoUrl] = useState("");
 	const [loading, setLoading] = useState(false);
 	const [isCreated, setIsCreated] = useState(false);
 	const { push } = useRouter();
 
 	const handleSubmit = async (e) => {
 		e.preventDefault();
+		if (!projectName) return toast.error("Please enter a project name");
+		if (!description) return toast.error("Please enter a description");
+		if (!logoUrl) return toast.error("Please upload a logo");
 		setLoading(true);
 		const response = await createNewWaitList({
 			name: projectName,
 			websiteUrl,
 			description,
+			logoUrl,
 		});
 
 		if (response.success) {
@@ -50,7 +55,7 @@ export const NewWaitListForm = ({ createNewWaitList }) => {
 			<div>
 				<Card className="max-w-md mx-auto">
 					<CardHeader>
-						<CardTitle className="text-3xl font-bold mb-6">
+						<CardTitle className="mb-6 text-3xl font-bold">
 							Let&apos;s start with{" "}
 							<span className="text-primary">the basics</span>
 						</CardTitle>
@@ -100,9 +105,20 @@ export const NewWaitListForm = ({ createNewWaitList }) => {
 									disabled={loading || isCreated}
 								/>
 							</div>
+							<div>
+								<Label htmlFor="logoUrl" className="text-lg font-semibold">
+									Upload Logo
+								</Label>
+								<UploadImage
+									onSuccess={(files) => {
+										setLogoUrl(files[0].url);
+										toast.success("Logo uploaded successfully");
+									}}
+								/>
+							</div>
 							<Button
 								type="submit"
-								className="w-full text-md py-4 mt-6"
+								className="w-full py-4 mt-6 text-md"
 								disabled={loading || isCreated}
 							>
 								{loading
