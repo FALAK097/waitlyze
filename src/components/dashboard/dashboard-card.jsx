@@ -410,7 +410,7 @@ export default function DashboardCard() {
 				</CardContent>
 			</Card>
 
-			<Card>
+			<Card className="w-full">
 				<CardHeader>
 					<CardTitle>User Segmentation</CardTitle>
 					<CardDescription>
@@ -418,12 +418,12 @@ export default function DashboardCard() {
 					</CardDescription>
 				</CardHeader>
 				<CardContent>
-					<div className="flex items-center justify-between gap-2 mb-4">
+					<div className="flex flex-col items-center justify-between gap-4 mb-4 sm:flex-row">
 						<div className="relative w-full max-w-sm">
 							<Search
 								height={20}
 								width={20}
-								className="absolute text-sm text-gray-400 transform -translate-y-1/2 left-2 top-1/2"
+								className="absolute text-gray-400 transform -translate-y-1/2 left-2 top-1/2"
 							/>
 							<Input
 								placeholder="Search users..."
@@ -432,11 +432,11 @@ export default function DashboardCard() {
 								className="w-full pl-8 rounded-xl"
 							/>
 						</div>
-						<Button variant="outline">
+						<Button variant="outline" className="w-full sm:w-auto">
 							<Download className="w-4 h-4 mr-2" /> Download
 						</Button>
 					</div>
-					<div className="overflow-x-auto">
+					<div className="-mx-4 overflow-x-auto sm:mx-0">
 						<Table>
 							<TableHeader>
 								<TableRow>
@@ -518,7 +518,7 @@ export default function DashboardCard() {
 																.join("")}
 														</AvatarFallback>
 													</Avatar>
-													<span>{user.name}</span>
+													<span className="hidden sm:inline">{user.name}</span>
 												</div>
 											</TableCell>
 											<TableCell>
@@ -582,21 +582,17 @@ export default function DashboardCard() {
 							</TableBody>
 						</Table>
 					</div>
-					<div className="flex items-center justify-between mt-4">
-						<div className="text-sm text-muted-foreground">
+					<div className="flex flex-col items-center justify-between mt-4 space-y-4 sm:flex-row sm:space-y-0">
+						<div className="order-2 text-sm text-muted-foreground sm:order-1">
 							Showing{" "}
 							{Math.min(
 								sortedAndFilteredUsers.length,
-								(currentPage - 1) * usersPerPage + 1,
+								(currentPage - 1) * 10 + 1,
 							)}{" "}
-							-{" "}
-							{Math.min(
-								sortedAndFilteredUsers.length,
-								currentPage * usersPerPage,
-							)}{" "}
-							of {sortedAndFilteredUsers.length} results
+							-{Math.min(sortedAndFilteredUsers.length, currentPage * 10)} of{" "}
+							{sortedAndFilteredUsers.length} results
 						</div>
-						<div className="flex items-center space-x-2">
+						<div className="flex items-center order-1 space-x-2 sm:order-2">
 							<Button
 								variant="outline"
 								size="sm"
@@ -605,25 +601,31 @@ export default function DashboardCard() {
 							>
 								<ChevronLeft className="w-4 h-4" />
 							</Button>
-							{Array.from({ length: Math.min(5, pageCount) }, (_, i) => {
-								const pageNumber =
-									currentPage <= 3 ? i + 1 : currentPage + i - 2;
-								if (pageNumber <= pageCount) {
-									return (
-										<Button
-											key={pageNumber}
-											variant={
-												currentPage === pageNumber ? "default" : "outline"
-											}
-											size="sm"
-											onClick={() => setCurrentPage(pageNumber)}
-										>
-											{pageNumber}
-										</Button>
-									);
-								}
-								return null;
-							})}
+							<div className="flex items-center">
+								{Array.from({ length: Math.min(5, pageCount) }, (_, i) => {
+									const pageNumber =
+										currentPage <= 3 ? i + 1 : currentPage + i - 2;
+									if (pageNumber <= pageCount) {
+										return (
+											<Button
+												key={pageNumber}
+												variant={
+													currentPage === pageNumber ? "default" : "outline"
+												}
+												size="icon"
+												onClick={() => setCurrentPage(pageNumber)}
+												className="hidden mx-1 sm:inline-flex"
+											>
+												{pageNumber}
+											</Button>
+										);
+									}
+									return null;
+								})}
+								<span className="mx-2 sm:hidden">
+									Page {currentPage} of {pageCount}
+								</span>
+							</div>
 							<Button
 								variant="outline"
 								size="sm"
