@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { ContentLayout } from "@/components/dashboard/content-layout";
+import DashboardCard from "@/components/dashboard/dashboard-card";
 import {
 	Breadcrumb,
 	BreadcrumbItem,
@@ -12,20 +13,23 @@ import {
 
 export default function DashboardPage() {
 	return (
-		<ContentLayout title="Dashboard">
-			<Breadcrumb>
-				<BreadcrumbList>
-					<BreadcrumbItem>
-						<BreadcrumbLink asChild>
-							<Link href="/">Home</Link>
-						</BreadcrumbLink>
-					</BreadcrumbItem>
-					<BreadcrumbSeparator />
-					<BreadcrumbItem>
-						<BreadcrumbPage>Dashboard</BreadcrumbPage>
-					</BreadcrumbItem>
-				</BreadcrumbList>
-			</Breadcrumb>
-		</ContentLayout>
+		<>
+			<ContentLayout title="Dashboard">
+				<Breadcrumb>
+					<BreadcrumbList>
+						<BreadcrumbItem>
+							<BreadcrumbLink asChild>
+								<Link href="/dashboard">Home</Link>
+							</BreadcrumbLink>
+						</BreadcrumbItem>
+						<BreadcrumbSeparator />
+						<BreadcrumbItem>
+							<BreadcrumbPage>Dashboard</BreadcrumbPage>
+						</BreadcrumbItem>
+					</BreadcrumbList>
+				</Breadcrumb>
+			</ContentLayout>
+			<DashboardCard />
+		</>
 	);
 }

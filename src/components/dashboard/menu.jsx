@@ -14,18 +14,25 @@ import {
 } from "@/components/ui/tooltip";
 import { getMenuList } from "@/lib/menu-list";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@clerk/nextjs";
 import { CollapseMenuButton } from "./collapse-menu-button";
 
 export function Menu({ isOpen }) {
 	const pathname = usePathname();
+	const { signOut } = useAuth();
 	const menuList = getMenuList(pathname);
 
 	return (
 		<ScrollArea className="[&>div>div[style]]:!block">
 			<nav className="w-full h-full mt-8">
 				<ul className="flex flex-col min-h-[calc(100vh-48px-36px-16px-32px)] lg:min-h-[calc(100vh-32px-40px-32px)] items-start space-y-1 px-2">
-					{menuList.map(({ groupLabel, menus }) => (
-						<li className={cn("w-full", groupLabel ? "pt-5" : "")} key={menus}>
+					{menuList.map(({ groupLabel, menus }, i) => (
+						<li
+							className={cn("w-full", groupLabel ? "pt-5" : "")}
+							key={`menu-list-groupLabel-${groupLabel}-${i}`
+								.toLowerCase()
+								.replace(" ", "")}
+						>
 							{(isOpen && groupLabel) || isOpen === undefined ? (
 								<p className="text-sm font-medium text-muted-foreground px-4 pb-2 max-w-[248px] truncate">
 									{groupLabel}
@@ -46,9 +53,14 @@ export function Menu({ isOpen }) {
 							) : (
 								<p className="pb-2" />
 							)}
-							{menus.map(({ href, label, icon: Icon, active, submenus }) =>
+							{menus.map(({ href, label, icon: Icon, active, submenus }, i) =>
 								!submenus || submenus.length === 0 ? (
-									<div className="w-full" key={label}>
+									<div
+										className="w-full"
+										key={`menu-dropdown-${label}-${href}-${i}`
+											.replace(" ", "")
+											.toLowerCase()}
+									>
 										<TooltipProvider disableHoverableContent>
 											<Tooltip delayDuration={100}>
 												<TooltipTrigger asChild>
@@ -83,7 +95,12 @@ export function Menu({ isOpen }) {
 										</TooltipProvider>
 									</div>
 								) : (
-									<div className="w-full" key={label}>
+									<div
+										className="w-full"
+										key={`menu-dropdown-${label}-${href}-${i}`
+											.replace(" ", "")
+											.toLowerCase()}
+									>
 										<CollapseMenuButton
 											icon={Icon}
 											label={label}
@@ -101,7 +118,9 @@ export function Menu({ isOpen }) {
 							<Tooltip delayDuration={100}>
 								<TooltipTrigger asChild>
 									<Button
-										onClick={() => {}}
+										onClick={() => {
+											signOut();
+										}}
 										variant="outline"
 										className="justify-center w-full h-10 mt-5"
 									>
