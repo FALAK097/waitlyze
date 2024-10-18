@@ -22,12 +22,42 @@ export const POST = async (req, res) => {
 		const ip = (req.headers.get("x-forwarded-for") ?? "127.0.0.1").split(
 			",",
 		)[0];
-		const device = req.headers.get("user-agent");
+		const userAgent = req.headers.get("user-agent");
+
+		// Detecting mobile, tablet, or desktop
+		const isMobile = /mobile/i.test(userAgent);
+		const isTablet = /tablet/i.test(userAgent);
+		const device = isMobile ? "mobile" : isTablet ? "tablet" : "desktop";
+
+		// Detecting device type like android, ios, windows, mac, linux, other
+		const isAndroid = /android/i.test(userAgent);
+		const isIos = /iPhone|iPad|iPod/i.test(userAgent);
+		const isWindows = /windows/i.test(userAgent);
+		const isMac = /macintosh/i.test(userAgent);
+		const isLinux = /linux/i.test(userAgent) && !isAndroid;
+		const isOther = !isAndroid && !isIos && !isWindows && !isMac && !isLinux;
+
+		const deviceType = isAndroid
+			? "android"
+			: isIos
+				? "ios"
+				: isWindows
+					? "windows"
+					: isMac
+						? "mac"
+						: isLinux
+							? "linux"
+							: isOther
+								? "other"
+								: "unknown";
+
+		// Assuming geoip.lookup is defined elsewhere
 		const geo = geoip.lookup(ip);
 
 		let data = {
 			email: body.email,
 			device: device,
+			deviceType: deviceType,
 			waitListId: body.waitListId,
 			ipAddress: ip,
 		};

@@ -62,6 +62,7 @@ model SignUp {
   id         String   @id @default(cuid())
   email      String
   device     String?
+  deviceType String?
   city       String?
   country    String?
   timezone   String?
