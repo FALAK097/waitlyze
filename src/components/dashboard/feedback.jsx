@@ -26,9 +26,10 @@ import {
 	TooltipProvider,
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useUser } from "@clerk/nextjs";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { MessageCircleHeart } from "lucide-react";
-import { useState } from "react";
+import { Loader, MessageCircleHeart } from "lucide-react";
+import { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import toast from "react-hot-toast";
 import * as z from "zod";
@@ -47,15 +48,18 @@ const feedbackSchema = z.object({
 	feedback: z
 		.string()
 		.min(10, "Feedback must be at least 10 characters long")
-		.max(200, "Feedback is too long"),
+		.max(300, "Feedback is too long"),
 });
 
 export const Feedback = () => {
 	const [open, setOpen] = useState(false);
+	const [isLoading, setIsLoading] = useState(false);
+	const { user } = useUser();
 	const {
 		control,
 		handleSubmit,
 		reset,
+		setValue,
 		formState: { errors },
 	} = useForm({
 		resolver: zodResolver(feedbackSchema),
@@ -67,18 +71,31 @@ export const Feedback = () => {
 		},
 	});
 
+	useEffect(() => {
+		if (user?.primaryEmailAddress?.emailAddress) {
+			setValue("email", user.primaryEmailAddress.emailAddress);
+		}
+	}, [user, setValue]);
+
 	const onSubmit = async (data) => {
+		setIsLoading(true);
 		const formData = new FormData();
 		for (const [key, value] of Object.entries(data)) {
 			formData.append(key, value);
 		}
-		const result = await SubmitFeedback(formData);
-		if (result.success) {
-			toast.success(result.message);
-			setOpen(false);
-			reset();
-		} else {
-			toast.error(result.message);
+		try {
+			const result = await SubmitFeedback(formData);
+			if (result.success) {
+				toast.success(result.message);
+				setOpen(false);
+				reset();
+			} else {
+				toast.error(result.message);
+			}
+		} catch (error) {
+			toast.error("An unexpected error occurred");
+		} finally {
+			setIsLoading(false);
 		}
 	};
 
@@ -116,6 +133,7 @@ export const Feedback = () => {
 										type="email"
 										placeholder="your.email@example.com"
 										className="rounded-xl"
+										disabled={!!user?.primaryEmailAddress?.emailAddress}
 									/>
 								)}
 							/>
@@ -189,8 +207,15 @@ export const Feedback = () => {
 								</p>
 							)}
 						</div>
-						<Button type="submit" className="w-full">
-							Appreciate it 🙏
+						<Button type="submit" className="w-full" disabled={isLoading}>
+							{isLoading ? (
+								<>
+									<Loader className="w-4 h-4 mr-2 animate-spin" />
+									Submitting...
+								</>
+							) : (
+								"Appreciate it 🙏"
+							)}
 						</Button>
 					</form>
 				</SheetContent>
