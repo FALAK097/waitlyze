@@ -1,4 +1,4 @@
-import { Preview } from "@/components/wait-lists/preview";
+import { FormPreview } from "@/components/wait-lists/preview";
 import prisma from "@/lib/prisma";
 import { notFound } from "next/navigation";
 
@@ -15,5 +15,9 @@ export default async function WaitListsPreviewPage({ params }) {
 		return notFound();
 	}
 
-	return <Preview waitList={waitList} />;
+	return (
+		<div>
+			<FormPreview waitList={waitList} />
+		</div>
+	);
 }

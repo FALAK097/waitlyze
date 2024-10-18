@@ -37,7 +37,7 @@ const dummyUsers = [
 	},
 ];
 
-export const SignUpForm = ({ waitList, onSubmit }) => {
+export const SignUpForm = ({ waitList, onSubmit, setEmail }) => {
 	return (
 		<div
 			className="w-full max-w-md p-6 bg-white rounded-lg shadow-md"
@@ -71,6 +71,11 @@ export const SignUpForm = ({ waitList, onSubmit }) => {
 									: waitList.borderRadius === "medium"
 										? "0.5rem"
 										: "0.75rem",
+						}}
+						onChange={(e) => {
+							if (setEmail) {
+								setEmail(e.target.value);
+							}
 						}}
 					/>
 					<Button

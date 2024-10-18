@@ -8,7 +8,7 @@ datasource db {
 }
 
 model User {
-  id          String   @id @default(cuid()) @unique
+  id          String   @id @unique @default(cuid())
   email       String?  @unique
   firstName   String?
   lastName    String?
@@ -23,36 +23,37 @@ model User {
 }
 
 model WaitList {
-  id              String   @id @default(cuid()) @unique
-  name            String?
-  description     String?
-  websiteUrl      String?
-  logoUrl         String?
-  buttonColor     String?
-  buttonBorder    String?
-  buttonTextColor String?
-  bgColor         String?
-  borderWidth     String?
-  borderRadius    String?
-  fontWeight      String?
-  logoSize        String?
-  buttonText      String?
-  successMessage  String?
-  showLogo        Boolean  @default(true)
-  showSocialProof Boolean  @default(true)
-  enableReferrals Boolean  @default(false)
-  inputColor      String?
-  inputBorder     String?
-  inputTextColor  String?
-  placeholderText String?
-  twitterLink     String?
-  facebookLink    String?
-  instagramLink   String?
-  linkedInLink    String?
-  showSocialLinks Boolean  @default(true)
-  userId          String
-  user            User     @relation(fields: [userId], references: [id])
-  signUps         SignUp[]
+  id                      String   @id @unique @default(cuid())
+  name                    String?
+  description             String?
+  websiteUrl              String?
+  logoUrl                 String?
+  buttonColor             String?
+  buttonBorder            String?
+  buttonTextColor         String?
+  bgColor                 String?
+  borderWidth             String?
+  borderRadius            String?
+  fontWeight              String?
+  logoSize                String?
+  buttonText              String?
+  successMessage          String?
+  showLogo                Boolean  @default(true)
+  showSocialProof         Boolean  @default(true)
+  enableReferrals         Boolean  @default(false)
+  inputColor              String?
+  inputBorder             String?
+  inputTextColor          String?
+  placeholderText         String?
+  twitterLink             String?
+  facebookLink            String?
+  instagramLink           String?
+  linkedInLink            String?
+  showSocialLinks         Boolean  @default(true)
+  sendEmailsToSubscribers Boolean  @default(false)
+  userId                  String
+  user                    User     @relation(fields: [userId], references: [id])
+  signUps                 SignUp[]
 
   @@map("wait_lists")
 }
@@ -61,9 +62,11 @@ model SignUp {
   id         String   @id @default(cuid())
   email      String
   device     String?
-  region     String?
+  city       String?
+  country    String?
+  timezone   String?
   ipAddress  String?
-  lattitude  String?
+  latitude   String?
   longitude  String?
   waitListId String
   waitList   WaitList @relation(fields: [waitListId], references: [id])
