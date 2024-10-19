@@ -37,7 +37,13 @@ const dummyUsers = [
 	},
 ];
 
-export const SignUpForm = ({ waitList, onSubmit, setEmail }) => {
+export const SignUpForm = ({
+	email,
+	isLoading,
+	waitList,
+	onSubmit,
+	setEmail,
+}) => {
 	return (
 		<div
 			className="w-full max-w-md p-6 bg-white rounded-lg shadow-md"
@@ -56,6 +62,7 @@ export const SignUpForm = ({ waitList, onSubmit, setEmail }) => {
 						</div>
 					)}
 					<Input
+						value={email}
 						required
 						type="email"
 						placeholder={waitList.placeholderText}
@@ -79,6 +86,8 @@ export const SignUpForm = ({ waitList, onSubmit, setEmail }) => {
 						}}
 					/>
 					<Button
+						type="submit"
+						disabled={isLoading || !email}
 						className="w-full"
 						style={{
 							backgroundColor: waitList.buttonColor,
