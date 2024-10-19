@@ -109,12 +109,24 @@ export const NewWaitListForm = ({ createNewWaitList }) => {
 								<Label htmlFor="logoUrl" className="text-lg font-semibold">
 									Upload Logo
 								</Label>
-								<UploadImage
-									onSuccess={(files) => {
-										setLogoUrl(files[0].url);
-										toast.success("Logo uploaded successfully");
-									}}
-								/>
+
+								<div className="flex flex-col-reverse">
+									<UploadImage
+										onSuccess={(files) => {
+											setLogoUrl(files[0].url);
+											toast.success("Logo uploaded successfully");
+										}}
+									/>
+									{logoUrl && (
+										<div className="relative aspect-square">
+											<img
+												src={logoUrl}
+												alt="Uploaded Logo"
+												className="absolute inset-0 w-full h-full object-cover rounded-md"
+											/>
+										</div>
+									)}
+								</div>
 							</div>
 							<Button
 								type="submit"
