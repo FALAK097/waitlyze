@@ -1,6 +1,5 @@
 "use client";
 
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,43 +12,12 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Save, Zap } from "lucide-react";
-import Image from "next/image";
+import { Save } from "lucide-react";
 import { useState } from "react";
 import toast from "react-hot-toast";
 import { ColorPicker } from "../ui/color-picker";
 import UploadImage from "../upload-image";
-
-const dummyUsers = [
-	{
-		id: 1,
-		image: "https://picsum.photos/500/500",
-	},
-	{
-		id: 2,
-		image: "https://picsum.photos/500/500",
-	},
-	{
-		id: 3,
-		image: "https://picsum.photos/500/500",
-	},
-	{
-		id: 4,
-		image: "https://picsum.photos/500/500",
-	},
-	{
-		id: 5,
-		image: "https://picsum.photos/500/500",
-	},
-	{
-		id: 6,
-		image: "https://picsum.photos/500/500",
-	},
-	{
-		id: 7,
-		image: "https://picsum.photos/500/500",
-	},
-];
+import { SignUpForm } from "./sign-up-form";
 
 export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
 	const [formSettings, setFormSettings] = useState(() => {
@@ -154,6 +122,12 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
 		}
 	};
 
+	const copyShareUrlToClipboard = () => {
+		const url = `${window.location.origin}/forms/${initialWaitList.id}`;
+		navigator.clipboard.writeText(url);
+		toast.success("Copied to clipboard");
+	};
+
 	return (
 		<div className="flex-1 overflow-auto">
 			<div className="p-8">
@@ -166,88 +140,27 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
 							<Save className="h-4 w-4" />
 						</Button>
 						<Button>Get Embed Code</Button>
+						<Button onClick={copyShareUrlToClipboard}>Share</Button>
 					</div>
 				</div>
 
 				<div className="flex">
 					{/* Waitlist Form Preview */}
 					<div className="flex-1 flex items-center justify-center">
-						<div
-							className="w-full max-w-md p-6 bg-white rounded-lg shadow-md"
-							style={{ backgroundColor: formSettings.bgColor }}
-						>
-							<div className="space-y-4">
-								{formSettings.showLogo && formSettings.logoUrl && (
-									<div className="flex justify-center">
-										<Image
-											alt={`${initialWaitList.name} logo`}
-											src={formSettings.logoUrl || "/images/logo.png"}
-											width={64}
-											height={64}
-										/>
-									</div>
-								)}
-								<Input
-									type="email"
-									placeholder={formSettings.placeholderText}
-									className="w-full"
-									style={{
-										backgroundColor: formSettings.inputColor,
-										borderColor: formSettings.inputBorder,
-										color: formSettings.inputTextColor,
-										borderWidth: formSettings.borderWidth,
-										borderRadius:
-											formSettings.borderRadius === "small"
-												? "0.25rem"
-												: formSettings.borderRadius === "medium"
-													? "0.5rem"
-													: "0.75rem",
-									}}
-								/>
-								<Button
-									className="w-full"
-									style={{
-										backgroundColor: formSettings.buttonColor,
-										color: formSettings.buttonTextColor,
-										borderColor: formSettings.buttonBorder,
-										borderWidth: formSettings.borderWidth,
-										borderRadius:
-											formSettings.borderRadius === "small"
-												? "0.25rem"
-												: formSettings.borderRadius === "medium"
-													? "0.5rem"
-													: "0.75rem",
-										fontWeight: formSettings.fontWeight,
-									}}
-								>
-									{formSettings.buttonText}
-								</Button>
-								{formSettings.showSocialProof && (
-									<div className="flex items-center space-x-2 text-sm text-gray-500">
-										<Zap className="h-4 w-4 text-purple-500" />
-										<div className="flex -space-x-1 overflow-hidden">
-											{dummyUsers.map((_, i) => {
-												return (
-													<Avatar
-														key={`user-${i}-${_.id}-${_.image}`}
-														className="inline-block border-2 border-white rounded-full"
-													>
-														<AvatarImage src={_.image} />
-														<AvatarFallback>U{i + 1}</AvatarFallback>
-													</Avatar>
-												);
-											})}
-										</div>
-										<span>Be the first to join</span>
-									</div>
-								)}
-							</div>
-						</div>
+						<SignUpForm
+							waitList={formSettings}
+							onSubmit={(e) => {
+								e.preventDefault();
+								toast.success(formSettings.successMessage, {
+									position: "top-center",
+								});
+							}}
+						/>
 					</div>
 
 					{/* Settings Tabs */}
-					<div className="w-80 ml-8">
-						<Tabs defaultValue="general" className="w-full">
+					<div className="w-80 ml-8 ">
+						<Tabs defaultValue="general" className="w-full h-40">
 							<TabsList className="grid w-full grid-cols-3">
 								<TabsTrigger value="general">General</TabsTrigger>
 								<TabsTrigger value="input">Input</TabsTrigger>
@@ -266,7 +179,7 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
 								<div>
 									<Label htmlFor="buttonColor">Button Color</Label>
 									<ColorPicker
-										value={formSettings.buttonColor || "#8B5CF6"}
+										value={formSettings.buttonColor}
 										onChange={(color) => updateSetting("buttonColor", color)}
 									/>
 								</div>
@@ -275,7 +188,7 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
 									<Input
 										id="buttonBorder"
 										type="color"
-										value={formSettings.buttonBorder || "#7C3AED"}
+										value={formSettings.buttonBorder}
 										onChange={(e) =>
 											updateSetting("buttonBorder", e.target.value)
 										}
@@ -286,7 +199,7 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
 									<Input
 										id="buttonTextColor"
 										type="color"
-										value={formSettings.buttonTextColor || "#FFFFFF"}
+										value={formSettings.buttonTextColor}
 										onChange={(e) =>
 											updateSetting("buttonTextColor", e.target.value)
 										}
@@ -297,14 +210,14 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
 									<Input
 										id="bgColor"
 										type="color"
-										value={formSettings.bgColor || "#FFFFFF"}
+										value={formSettings.bgColor}
 										onChange={(e) => updateSetting("bgColor", e.target.value)}
 									/>
 								</div>
 								<div>
 									<Label htmlFor="borderWidth">Border Width</Label>
 									<Select
-										value={formSettings.borderWidth || "0px"}
+										value={formSettings.borderWidth}
 										onValueChange={(value) =>
 											updateSetting("borderWidth", value)
 										}
@@ -322,7 +235,7 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
 								<div>
 									<Label htmlFor="borderRadius">Border Radius</Label>
 									<Select
-										value={formSettings.borderRadius || "large"}
+										value={formSettings.borderRadius}
 										onValueChange={(value) =>
 											updateSetting("borderRadius", value)
 										}
@@ -340,7 +253,7 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
 								<div>
 									<Label htmlFor="fontWeight">Font Weight</Label>
 									<Select
-										value={formSettings.fontWeight || "normal"}
+										value={formSettings.fontWeight}
 										onValueChange={(value) =>
 											updateSetting("fontWeight", value)
 										}
@@ -357,7 +270,7 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
 								<div>
 									<Label htmlFor="logoSize">Logo Size</Label>
 									<Select
-										value={formSettings.logoSize || "1X"}
+										value={formSettings.logoSize}
 										onValueChange={(value) => updateSetting("logoSize", value)}
 									>
 										<SelectTrigger id="logoSize">
@@ -373,7 +286,7 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
 									<Label htmlFor="buttonText">Button Text</Label>
 									<Input
 										id="buttonText"
-										value={formSettings.buttonText || "Join the waitlist"}
+										value={formSettings.buttonText}
 										onChange={(e) =>
 											updateSetting("buttonText", e.target.value)
 										}
@@ -383,10 +296,7 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
 									<Label htmlFor="successMessage">Success Message</Label>
 									<Input
 										id="successMessage"
-										value={
-											formSettings.successMessage ||
-											"Success! You're on the waitlist 🎉"
-										}
+										value={formSettings.successMessage}
 										onChange={(e) =>
 											updateSetting("successMessage", e.target.value)
 										}
@@ -395,7 +305,7 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
 								<div className="flex items-center space-x-2">
 									<Switch
 										id="showLogo"
-										checked={formSettings.showLogo || true}
+										checked={formSettings.showLogo}
 										onCheckedChange={(checked) =>
 											updateSetting("showLogo", checked)
 										}
@@ -405,7 +315,7 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
 								<div className="flex items-center space-x-2">
 									<Switch
 										id="showSocialProof"
-										checked={formSettings.showSocialProof || true}
+										checked={formSettings.showSocialProof}
 										onCheckedChange={(checked) =>
 											updateSetting("showSocialProof", checked)
 										}
@@ -415,7 +325,7 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
 								<div className="flex items-center space-x-2">
 									<Switch
 										id="enableReferrals"
-										checked={formSettings.enableReferrals || false}
+										checked={formSettings.enableReferrals}
 										onCheckedChange={(checked) =>
 											updateSetting("enableReferrals", checked)
 										}
@@ -429,7 +339,7 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
 									<Input
 										id="inputColor"
 										type="color"
-										value={formSettings.inputColor || "#FFFFFF"}
+										value={formSettings.inputColor}
 										onChange={(e) =>
 											updateSetting("inputColor", e.target.value)
 										}
@@ -440,7 +350,7 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
 									<Input
 										id="inputBorder"
 										type="color"
-										value={formSettings.inputBorder || "#E5E7EB"}
+										value={formSettings.inputBorder}
 										onChange={(e) =>
 											updateSetting("inputBorder", e.target.value)
 										}
@@ -451,7 +361,7 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
 									<Input
 										id="inputTextColor"
 										type="color"
-										value={formSettings.inputTextColor || "#000000"}
+										value={formSettings.inputTextColor}
 										onChange={(e) =>
 											updateSetting("inputTextColor", e.target.value)
 										}
@@ -461,7 +371,7 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
 									<Label htmlFor="placeholderText">Placeholder Text</Label>
 									<Input
 										id="placeholderText"
-										value={formSettings.placeholderText || "Email"}
+										value={formSettings.placeholderText}
 										onChange={(e) =>
 											updateSetting("placeholderText", e.target.value)
 										}
