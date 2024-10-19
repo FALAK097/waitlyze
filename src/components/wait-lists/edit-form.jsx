@@ -20,6 +20,8 @@ import UploadImage from "../upload-image";
 import { SignUpForm } from "./sign-up-form";
 
 export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
+	const [testEmail, setTestEmail] = useState("");
+	const [isTestEmailLoading, setIsTestEmailLoading] = useState(false);
 	const [formSettings, setFormSettings] = useState(() => {
 		const defaultSettings = {
 			buttonColor: "#8B5CF6",
@@ -148,12 +150,18 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
 					{/* Waitlist Form Preview */}
 					<div className="flex-1 flex items-center justify-center">
 						<SignUpForm
+							email={testEmail}
+							isLoading={isTestEmailLoading}
+							setEmail={setTestEmail}
 							waitList={formSettings}
-							onSubmit={(e) => {
+							onSubmit={async (e) => {
 								e.preventDefault();
+								setIsTestEmailLoading(true);
+								await new Promise((resolve) => setTimeout(resolve, 1500));
 								toast.success(formSettings.successMessage, {
 									position: "top-center",
 								});
+								setIsTestEmailLoading(false);
 							}}
 						/>
 					</div>
