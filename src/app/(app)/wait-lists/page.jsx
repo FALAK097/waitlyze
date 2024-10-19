@@ -89,7 +89,7 @@ export default async function WaitListsPage() {
 						name={waitList.name}
 						deleteWaitList={deleteWaitList}
 						description={waitList.description}
-						url={`/wait-lists/${waitList.id}`}
+						url={`/wait-lists/${waitList.id}/edit`}
 					/>
 				</div>
 			))}
