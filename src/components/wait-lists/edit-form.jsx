@@ -1,46 +1,17 @@
 "use client";
-
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Save, Zap } from "lucide-react";
-import Image from "next/image";
+import { Save } from "lucide-react";
 import { useState } from "react";
 import toast from "react-hot-toast";
+import { removeUpload } from "../../app/actions/removeUpload";
 import { SettingsTab } from "./settings-tab";
-
-const dummyUsers = [
-	{
-		id: 1,
-		image: "https://picsum.photos/500/500",
-	},
-	{
-		id: 2,
-		image: "https://picsum.photos/500/500",
-	},
-	{
-		id: 3,
-		image: "https://picsum.photos/500/500",
-	},
-	{
-		id: 4,
-		image: "https://picsum.photos/500/500",
-	},
-	{
-		id: 5,
-		image: "https://picsum.photos/500/500",
-	},
-	{
-		id: 6,
-		image: "https://picsum.photos/500/500",
-	},
-	{
-		id: 7,
-		image: "https://picsum.photos/500/500",
-	},
-];
+import { SignUpForm } from "./sign-up-form";
 
 export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
+	const [testEmail, setTestEmail] = useState("");
+	const [isTestEmailLoading, setIsTestEmailLoading] = useState(false);
+	const [onDeleteLogo, setOnDeleteLogo] = useState(false);
+
 	const [formSettings, setFormSettings] = useState(() => {
 		const defaultSettings = {
 			buttonColor: "#8B5CF6",
@@ -61,6 +32,7 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
 			inputTextColor: "#000000",
 			placeholderText: "Email",
 			logoUrl: initialWaitList.logoUrl || "/images/logo.png",
+			logoKey: initialWaitList.logoKey || "",
 		};
 
 		if (initialWaitList?.buttonTextColor) {
@@ -143,6 +115,31 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
 		}
 	};
 
+	const copyShareUrlToClipboard = () => {
+		const url = `${window.location.origin}/forms/${initialWaitList.id}`;
+		navigator.clipboard.writeText(url);
+		toast.success("Copied to clipboard");
+	};
+
+	const handleDeleteLogo = async () => {
+		const logoKey = formSettings.logoKey; // Use the logoKey from formSettings
+		if (!logoKey) {
+			toast.error("No logo key found to delete.");
+			return;
+		}
+
+		const res = await removeUpload(logoKey);
+		if (res.success) {
+			toast.success("Logo deleted successfully");
+			// Optionally reset the logoUrl and logoKey if necessary
+			updateSetting("logoUrl", ""); // Reset logoUrl in form settings
+			updateSetting("logoKey", ""); // Reset logoKey in form settings
+		} else {
+			toast.error("Failed to delete logo");
+		}
+		console.log("Delete logo");
+	};
+
 	return (
 		<div className="flex-1 overflow-auto">
 			<div className="p-8">
@@ -155,85 +152,32 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
 							<Save className="h-4 w-4" />
 						</Button>
 						<Button>Get Embed Code</Button>
+						<Button onClick={copyShareUrlToClipboard}>Share</Button>
 					</div>
 				</div>
 
 				<div className="flex">
 					{/* Waitlist Form Preview */}
 					<div className="flex-1 flex items-center justify-center">
-						<div
-							className="w-full max-w-md p-6 bg-white rounded-lg shadow-md"
-							style={{ backgroundColor: formSettings.bgColor }}
-						>
-							<div className="space-y-4">
-								{formSettings.showLogo && formSettings.logoUrl && (
-									<div className="flex justify-center">
-										<Image
-											alt={`${initialWaitList.name} logo`}
-											src={formSettings.logoUrl || "/images/logo.png"}
-											width={64}
-											height={64}
-										/>
-									</div>
-								)}
-								<Input
-									type="email"
-									placeholder={formSettings.placeholderText}
-									className="w-full"
-									style={{
-										backgroundColor: formSettings.inputColor,
-										borderColor: formSettings.inputBorder,
-										color: formSettings.inputTextColor,
-										borderWidth: formSettings.borderWidth,
-										borderRadius:
-											formSettings.borderRadius === "small"
-												? "0.25rem"
-												: formSettings.borderRadius === "medium"
-													? "0.5rem"
-													: "0.75rem",
-									}}
-								/>
-								<Button
-									className="w-full"
-									style={{
-										backgroundColor: formSettings.buttonColor,
-										color: formSettings.buttonTextColor,
-										borderColor: formSettings.buttonBorder,
-										borderWidth: formSettings.borderWidth,
-										borderRadius:
-											formSettings.borderRadius === "small"
-												? "0.25rem"
-												: formSettings.borderRadius === "medium"
-													? "0.5rem"
-													: "0.75rem",
-										fontWeight: formSettings.fontWeight,
-									}}
-								>
-									{formSettings.buttonText}
-								</Button>
-								{formSettings.showSocialProof && (
-									<div className="flex items-center space-x-2 text-sm text-gray-500">
-										<Zap className="h-4 w-4 text-purple-500" />
-										<div className="flex -space-x-1 overflow-hidden">
-											{dummyUsers.map((_, i) => {
-												return (
-													<Avatar
-														key={`user-${i}-${_.id}-${_.image}`}
-														className="inline-block border-2 border-white rounded-full"
-													>
-														<AvatarImage src={_.image} />
-														<AvatarFallback>U{i + 1}</AvatarFallback>
-													</Avatar>
-												);
-											})}
-										</div>
-										<span>Be the first to join</span>
-									</div>
-								)}
-							</div>
-						</div>
+						<SignUpForm
+							email={testEmail}
+							isLoading={isTestEmailLoading}
+							setEmail={setTestEmail}
+							waitList={formSettings}
+							onDeleteLogo={handleDeleteLogo}
+							onSubmit={async (e) => {
+								e.preventDefault();
+								setIsTestEmailLoading(true);
+								await new Promise((resolve) => setTimeout(resolve, 1500));
+								toast.success(formSettings.successMessage, {
+									position: "top-center",
+								});
+								setIsTestEmailLoading(false);
+							}}
+						/>
 					</div>
-					{/* Settings Tab */}
+
+					{/* Settings Tabs */}
 					<SettingsTab
 						formSettings={formSettings}
 						updateSetting={updateSetting}

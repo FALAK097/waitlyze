@@ -28,6 +28,7 @@ export function SettingsTab({ formSettings, updateSetting, applyPreset }) {
 						<UploadImage
 							onSuccess={(files) => {
 								updateSetting("logoUrl", files[0].url);
+								console.log("settings-tab", files);
 							}}
 						/>
 					</div>

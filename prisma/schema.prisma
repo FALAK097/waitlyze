@@ -28,6 +28,7 @@ model WaitList {
   description             String?
   websiteUrl              String?
   logoUrl                 String?
+  logoKey                 String?
   buttonColor             String?
   buttonBorder            String?
   buttonTextColor         String?

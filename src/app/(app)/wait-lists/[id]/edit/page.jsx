@@ -68,6 +68,7 @@ export default async function WaitListsEditPage({ params }) {
 			inputTextColor: waitList.inputTextColor,
 			placeholderText: waitList.placeholderText,
 			logoUrl: waitList.logoUrl,
+			logoKey: waitList.logoKey,
 		};
 		try {
 			const waitList = await prisma.waitList.update({
