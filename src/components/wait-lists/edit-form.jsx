@@ -122,22 +122,45 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
 	};
 
 	const handleDeleteLogo = async () => {
-		const logoKey = formSettings.logoKey; // Use the logoKey from formSettings
+		const logoKey = formSettings.logoKey;
 		if (!logoKey) {
 			toast.error("No logo key found to delete.");
 			return;
 		}
 
-		const res = await removeUpload(logoKey);
-		if (res.success) {
-			toast.success("Logo deleted successfully");
-			// Optionally reset the logoUrl and logoKey if necessary
-			updateSetting("logoUrl", ""); // Reset logoUrl in form settings
-			updateSetting("logoKey", ""); // Reset logoKey in form settings
-		} else {
-			toast.error("Failed to delete logo");
+		try {
+			// Attempt to delete the logo from Uploadthing
+			const res = await removeUpload(logoKey);
+			console.log("Uploadthing response:", res); // Log the response for debugging
+
+			// Check if the deletion was successful
+			if (res.success) {
+				// Proceed to update the logo URL and logo key in the database
+				const updateResponse = await prisma.waitList.update({
+					where: {
+						id: waitList.id, // Ensure this ID corresponds to the correct waitlist entry
+					},
+					data: {
+						logoUrl: "", // Clear the logo URL
+						logoKey: "", // Clear the logo key
+					},
+				});
+
+				// Check if the update was successful
+				if (updateResponse) {
+					toast.success(
+						"Logo deleted successfully from Uploadthing and database.",
+					);
+				} else {
+					toast.error("Failed to update logo information in the database.");
+				}
+			} else {
+				toast.error("Failed to delete logo from Uploadthing.");
+			}
+		} catch (error) {
+			console.error("Error deleting logo:", error);
+			toast.error("An error occurred while deleting the logo.");
 		}
-		console.log("Delete logo");
 	};
 
 	return (

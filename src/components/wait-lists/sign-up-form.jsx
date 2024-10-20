@@ -62,6 +62,16 @@ export const SignUpForm = ({
 								height={64}
 								className="transition duration-200 ease-in-out"
 							/>
+							{onDeleteLogo && (
+								<Button
+									onClick={onDeleteLogo}
+									className="absolute top-0 right-0"
+									variant="outline"
+									size="icon"
+								>
+									Delete
+								</Button>
+							)}
 						</div>
 					)}
 
