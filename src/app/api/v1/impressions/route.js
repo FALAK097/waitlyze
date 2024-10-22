@@ -1,7 +1,8 @@
-import { createSignUp } from "@/services/sign-up";
+import { createImpression } from "@/services/impressions";
 import { getDeviceInfo } from "@/utils/server/device";
 import { getGeoInfo, getIpAddress } from "@/utils/server/geo";
-import { validateRequest } from "@/utils/server/validations/sign-up";
+import { validateRequest } from "@/utils/server/validations/impression";
+import { cookies } from "next/headers";
 
 export const POST = async (req, res) => {
 	// TODO: Remove this fake delay after implementing email verification, signup confirmation to User & Signed Up user
@@ -16,8 +17,11 @@ export const POST = async (req, res) => {
 
 		const geo = getGeoInfo(ip);
 
+		const cookieStore = cookies();
+		const uniqueUserId = cookieStore.get("hypeSession");
+
 		let data = {
-			email: body.email,
+			uniqueUserId: uniqueUserId.value,
 			device: device,
 			deviceType: deviceType,
 			waitListId: body.waitListId,
@@ -32,13 +36,13 @@ export const POST = async (req, res) => {
 			data = { ...data, city, country, latitude, longitude, timezone };
 		}
 
-		await createSignUp(data);
-		return Response.json({ message: "Signed up successfully" });
+		await createImpression(data);
+		return Response.json({ message: "Impression created successfully" });
 	} catch (error) {
 		console.error(error);
 		return Response.json(
 			{
-				message: "Failed to sign up",
+				message: "Failed to create an Impression",
 			},
 			{
 				status: 500,

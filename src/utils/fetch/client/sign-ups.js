@@ -4,7 +4,7 @@ const createSignUp = async ({ email, waitList }) => {
 		message: "Failed to sign up, Please try again later",
 	};
 	try {
-		const response = await fetch("/api/sign_up", {
+		const response = await fetch("/api/v1/sign_up", {
 			method: "POST",
 			body: JSON.stringify({ email, waitListId: waitList.id }),
 			headers: {
