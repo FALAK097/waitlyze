@@ -2,6 +2,8 @@ import prisma from "@/lib/prisma";
 import geoip from "geoip-lite";
 
 export const POST = async (req, res) => {
+	// TODO: Remove this fake delay after implementing email verification, signup confirmation to User & Signed Up user
+	await new Promise((resolve) => setTimeout(resolve, 1500));
 	try {
 		const body = await req.json();
 		const validator = checkIfRequestIsValid(body);

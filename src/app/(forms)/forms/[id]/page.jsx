@@ -1,5 +1,8 @@
 import { FormPreview } from "@/components/wait-lists/preview";
 import prisma from "@/lib/prisma";
+import { ReactQueryProvider } from "@/providers/query";
+import { nanoid } from "nanoid";
+import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
 
 export default async function WaitListsPreviewPage({ params }) {
@@ -15,9 +18,22 @@ export default async function WaitListsPreviewPage({ params }) {
 		return notFound();
 	}
 
+	const cookieStore = cookies();
+
+	const uniqueUserId = cookieStore.get("unique_user_id");
+
+	if (!uniqueUserId) {
+		cookies.set("unique_user_id", nanoid(), {
+			httpOnly: true,
+			maxAge: 60 * 60 * 24 * 365, // 1 year
+		});
+	}
+
 	return (
 		<div>
-			<FormPreview waitList={waitList} />
+			<ReactQueryProvider>
+				<FormPreview uniqueUserId={uniqueUserId} waitList={waitList} />
+			</ReactQueryProvider>
 		</div>
 	);
 }
