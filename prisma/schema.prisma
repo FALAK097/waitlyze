@@ -71,9 +71,9 @@ model SignUp {
   latitude     String?
   longitude    String?
   waitListId   String
-  impressionId String
+  impressionId String?
   waitList     WaitList   @relation(fields: [waitListId], references: [id])
-  impression   Impression @relation(fields: [impressionId], references: [id])
+  impression   Impression? @relation(fields: [impressionId], references: [id])
 
   @@map("sign_ups")
 }
