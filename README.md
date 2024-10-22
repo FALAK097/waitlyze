@@ -45,6 +45,7 @@ NEXT_PUBLIC_CLERK_SIGN_UP_FALLBACK_REDIRECT_URL=/dashboard
 NEXT_PUBLIC_POSTHOG_KEY=your_posthog_key
 NEXT_PUBLIC_POSTHOG_HOST=https://us.i.posthog.com
 UPLOADTHING_TOKEN=uploadthing_token
+PROJECT_PLANNER_AI_ID=your_project_planner_id
 ```
 
 Make sure to replace the `dummy` credentials.
