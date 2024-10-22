@@ -23,7 +23,7 @@ model User {
 }
 
 model WaitList {
-  id                      String   @id @unique @default(cuid())
+  id                      String       @id @unique @default(cuid())
   name                    String?
   description             String?
   websiteUrl              String?
@@ -38,9 +38,9 @@ model WaitList {
   logoSize                String?
   buttonText              String?
   successMessage          String?
-  showLogo                Boolean  @default(true)
-  showSocialProof         Boolean  @default(true)
-  enableReferrals         Boolean  @default(false)
+  showLogo                Boolean      @default(true)
+  showSocialProof         Boolean      @default(true)
+  enableReferrals         Boolean      @default(false)
   inputColor              String?
   inputBorder             String?
   inputTextColor          String?
@@ -49,28 +49,49 @@ model WaitList {
   facebookLink            String?
   instagramLink           String?
   linkedInLink            String?
-  showSocialLinks         Boolean  @default(true)
-  sendEmailsToSubscribers Boolean  @default(false)
+  showSocialLinks         Boolean      @default(true)
+  sendEmailsToSubscribers Boolean      @default(false)
   userId                  String
-  user                    User     @relation(fields: [userId], references: [id])
+  user                    User         @relation(fields: [userId], references: [id])
   signUps                 SignUp[]
+  impressions             Impression[]
 
   @@map("wait_lists")
 }
 
 model SignUp {
-  id         String   @id @default(cuid())
-  email      String
-  device     String?
-  deviceType String?
-  city       String?
-  country    String?
-  timezone   String?
-  ipAddress  String?
-  latitude   String?
-  longitude  String?
-  waitListId String
-  waitList   WaitList @relation(fields: [waitListId], references: [id])
+  id           String     @id @default(cuid())
+  email        String
+  device       String?
+  deviceType   String?
+  city         String?
+  country      String?
+  timezone     String?
+  ipAddress    String?
+  latitude     String?
+  longitude    String?
+  waitListId   String
+  impressionId String?
+  waitList     WaitList   @relation(fields: [waitListId], references: [id])
+  impression   Impression? @relation(fields: [impressionId], references: [id])
 
   @@map("sign_ups")
+}
+
+model Impression {
+  id           String   @id @default(cuid())
+  uniqueUserId String   @unique
+  device       String?
+  deviceType   String?
+  city         String?
+  country      String?
+  timezone     String?
+  ipAddress    String?
+  latitude     String?
+  longitude    String?
+  waitListId   String
+  waitList     WaitList @relation(fields: [waitListId], references: [id])
+  signUps      SignUp[]
+
+  @@map("impressions")
 }
