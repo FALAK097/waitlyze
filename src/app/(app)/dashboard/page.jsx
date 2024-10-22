@@ -1,7 +1,6 @@
-import Link from "next/link";
-
 import { ContentLayout } from "@/components/dashboard/content-layout";
 import DashboardCard from "@/components/dashboard/dashboard-card";
+import { SelectWaitlist } from "@/components/dashboard/select-waitlist";
 import {
 	Breadcrumb,
 	BreadcrumbItem,
@@ -10,15 +9,39 @@ import {
 	BreadcrumbPage,
 	BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "@/components/ui/select";
+import {} from "@/components/ui/select";
+import prisma from "@/lib/prisma";
+import { currentUser } from "@clerk/nextjs/server";
+import Link from "next/link";
+import { redirect } from "next/navigation";
 
-export default function DashboardPage() {
+export default async function DashboardPage() {
+	const clerkUser = await currentUser();
+	if (!clerkUser) {
+		return {
+			redirect: {
+				destination: "/",
+				permanent: false,
+			},
+		};
+	}
+
+	const user = await prisma.user.findUnique({
+		where: {
+			clerkUserId: clerkUser.id,
+		},
+	});
+
+	if (!user) {
+		redirect("/");
+	}
+
+	const waitLists = await prisma.waitList.findMany({
+		where: {
+			userId: user.id,
+		},
+	});
+
 	return (
 		<>
 			<ContentLayout title="Dashboard">
@@ -36,26 +59,11 @@ export default function DashboardPage() {
 							</BreadcrumbItem>
 						</BreadcrumbList>
 					</Breadcrumb>
-					<div className="flex items-center space-x-4">
-						<Select defaultValue="default-waitlist">
-							<SelectTrigger className="w-[200px]">
-								<SelectValue placeholder="Select a waitlist" />
-							</SelectTrigger>
-							<SelectContent>
-								<SelectItem className="cursor-pointer" value="default-waitlist">
-									Default Waitlist
-								</SelectItem>
-								<SelectItem className="cursor-pointer" value="product-launch">
-									Product Launch
-								</SelectItem>
-								<SelectItem className="cursor-pointer" value="beta-testing">
-									Beta Testing
-								</SelectItem>
-							</SelectContent>
-						</Select>
-					</div>
+
+					<SelectWaitlist waitLists={waitLists} />
 				</div>
 			</ContentLayout>
+
 			<DashboardCard />
 		</>
 	);
