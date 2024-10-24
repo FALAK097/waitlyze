@@ -1,56 +1,39 @@
 "use client";
+import { removeImage } from "@/app/actions/waitLists";
 import { Button } from "@/components/ui/button";
 import { Save } from "lucide-react";
 import { useState } from "react";
 import toast from "react-hot-toast";
-import { removeUpload } from "../../app/actions/removeUpload";
 import { SettingsTab } from "./settings-tab";
 import { SignUpForm } from "./sign-up-form";
 
 export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
 	const [testEmail, setTestEmail] = useState("");
 	const [isTestEmailLoading, setIsTestEmailLoading] = useState(false);
-	const [onDeleteLogo, setOnDeleteLogo] = useState(false);
 
 	const [formSettings, setFormSettings] = useState(() => {
-		const defaultSettings = {
-			buttonColor: "#8B5CF6",
-			buttonBorder: "#7C3AED",
-			buttonTextColor: "#FFFFFF",
-			bgColor: "#FFFFFF",
-			borderWidth: "0px",
-			borderRadius: "large",
-			fontWeight: "normal",
-			logoSize: "1X",
-			buttonText: "Join the waitlist",
-			successMessage: "Success! You're on the waitlist 🎉",
-			showLogo: true,
-			showSocialProof: true,
-			enableReferrals: false,
-			inputColor: "#FFFFFF",
-			inputBorder: "#E5E7EB",
-			inputTextColor: "#000000",
-			placeholderText: "Email",
+		return {
+			buttonColor: initialWaitList.buttonColor || "#8B5CF6",
+			buttonBorder: initialWaitList.buttonBorder || "#7C3AED",
+			buttonTextColor: initialWaitList.buttonTextColor || "#FFFFFF",
+			bgColor: initialWaitList.bgColor || "#FFFFFF",
+			borderWidth: initialWaitList.borderWidth || "0px",
+			borderRadius: initialWaitList.borderRadius || "large",
+			fontWeight: initialWaitList.fontWeight || "normal",
+			logoSize: initialWaitList.logoSize || "1X",
+			buttonText: initialWaitList.buttonText || "Join Waitlist",
+			successMessage:
+				initialWaitList.successMessage || "Success! You're on the waitlist 🎉",
+			showLogo: initialWaitList.showLogo || true,
+			showSocialProof: initialWaitList.showSocialProof || true,
+			enableReferrals: initialWaitList.enableReferrals || false,
+			inputColor: initialWaitList.inputColor || "#FFFFF",
+			inputBorder: initialWaitList.inputBorder || "#E5E7EB",
+			inputTextColor: initialWaitList.inputTextColor || "#000000",
+			placeholderText: initialWaitList.placeholderText || "Enter your email",
 			logoUrl: initialWaitList.logoUrl || "/images/logo.png",
 			logoKey: initialWaitList.logoKey || "",
 		};
-
-		if (initialWaitList?.buttonTextColor) {
-			return {
-				...defaultSettings,
-				...initialWaitList,
-				showLogo:
-					initialWaitList.showLogo !== undefined
-						? initialWaitList.showLogo
-						: defaultSettings.showLogo,
-				showSocialProof:
-					initialWaitList.showSocialProof !== undefined
-						? initialWaitList.showSocialProof
-						: defaultSettings.showSocialProof,
-			};
-		}
-
-		return defaultSettings;
 	});
 
 	const updateSetting = (key, value) => {
@@ -129,33 +112,14 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
 		}
 
 		try {
-			// Attempt to delete the logo from Uploadthing
-			const res = await removeUpload(logoKey);
-			console.log("Uploadthing response:", res); // Log the response for debugging
-
-			// Check if the deletion was successful
-			if (res.success) {
-				// Proceed to update the logo URL and logo key in the database
-				const updateResponse = await prisma.waitList.update({
-					where: {
-						id: waitList.id, // Ensure this ID corresponds to the correct waitlist entry
-					},
-					data: {
-						logoUrl: "", // Clear the logo URL
-						logoKey: "", // Clear the logo key
-					},
-				});
-
-				// Check if the update was successful
-				if (updateResponse) {
-					toast.success(
-						"Logo deleted successfully from Uploadthing and database.",
-					);
-				} else {
-					toast.error("Failed to update logo information in the database.");
-				}
+			// Remove Image from Uploads & Prisma
+			const response = await removeImage(logoKey, initialWaitList.id);
+			console.log("response", response);
+			if (response.success) {
+				toast.success("Logo deleted successfully.");
+				setFormSettings((prev) => ({ ...prev, logoUrl: "", logoKey: "" }));
 			} else {
-				toast.error("Failed to delete logo from Uploadthing.");
+				toast.error(response.message);
 			}
 		} catch (error) {
 			console.error("Error deleting logo:", error);
@@ -180,7 +144,7 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
 				</div>
 
 				<div className="flex">
-					{/* Waitlist Form Preview */}
+					{/* WaitList Form Preview */}
 					<div className="flex-1 flex items-center justify-center">
 						<SignUpForm
 							email={testEmail}

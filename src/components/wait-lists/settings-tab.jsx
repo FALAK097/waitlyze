@@ -15,7 +15,7 @@ import UploadImage from "../upload-image";
 
 export function SettingsTab({ formSettings, updateSetting, applyPreset }) {
 	return (
-		<div className="w-80 ml-8 h-[calc(100vh-200px)] overflow-y-auto">
+		<div className="w-80 px-4 ml-8 h-[calc(100vh-200px)] overflow-y-auto">
 			<Tabs defaultValue="general" className="w-full">
 				<TabsList className="grid w-full grid-cols-3 sticky top-0 bg-background z-10">
 					<TabsTrigger value="general">General</TabsTrigger>
@@ -28,7 +28,7 @@ export function SettingsTab({ formSettings, updateSetting, applyPreset }) {
 						<UploadImage
 							onSuccess={(files) => {
 								updateSetting("logoUrl", files[0].url);
-								console.log("settings-tab", files);
+								updateSetting("logoKey", files[0].key);
 							}}
 						/>
 					</div>
