@@ -30,7 +30,10 @@ export default function Features() {
 				</h2>
 				<div className="grid grid-cols-1 gap-12 md:grid-cols-3">
 					{features.map((feature, index) => (
-						<div key={index} className="flex flex-col items-center text-center">
+						<div
+							key={`${feature.title}-${index}`}
+							className="flex flex-col items-center text-center"
+						>
 							<div className="p-3 mb-4 rounded-full bg-primary/10">
 								<feature.icon className="w-8 h-8 text-primary" />
 							</div>

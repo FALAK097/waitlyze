@@ -6,7 +6,10 @@
 		"source.organizeImports.biome": "explicit"
 	},
 	"[javascriptreact]": {
-		"editor.defaultFormatter": "biomejs.biome"
+		"editor.defaultFormatter": "vscode.typescript-language-features"
 	},
-	"WillLuke.nextjs.hasPrompted": true
+	"WillLuke.nextjs.hasPrompted": true,
+	"[javascript]": {
+		"editor.defaultFormatter": "vscode.typescript-language-features"
+	}
 }

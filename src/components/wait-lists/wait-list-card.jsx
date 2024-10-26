@@ -18,6 +18,7 @@ export const WaitListCard = ({
 	name,
 	url,
 	logoUrl,
+	logoKey,
 	description,
 	deleteWaitList,
 }) => {

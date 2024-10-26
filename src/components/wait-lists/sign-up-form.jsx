@@ -2,7 +2,8 @@
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Zap } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { XIcon, Zap } from "lucide-react";
 import Image from "next/image";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { Spinner } from "../ui/spinner";
@@ -44,6 +45,7 @@ export const SignUpForm = ({
 	waitList,
 	onSubmit,
 	setEmail,
+	onDeleteLogo,
 }) => {
 	return (
 		<div
@@ -54,14 +56,32 @@ export const SignUpForm = ({
 				<div className="space-y-4">
 					{waitList.showLogo && waitList.logoUrl && (
 						<div className="flex justify-center">
-							<Image
-								alt={"WaitList logo"}
-								src={waitList.logoUrl || "/images/logo.png"}
-								width={64}
-								height={64}
-							/>
+							<div className="relative">
+								<Image
+									alt={"WaitList logo"}
+									src={waitList.logoUrl || "/images/logo.png"}
+									width={64}
+									height={64}
+									className="transition duration-200 ease-in-out"
+								/>
+								{onDeleteLogo && (
+									<Button
+										type="button"
+										onClick={onDeleteLogo}
+										className={cn(
+											"absolute top-[-10px] right-[-5px]",
+											"opacity-70",
+										)}
+										variant="ghost"
+										size="icon"
+									>
+										<XIcon className="h-4 w-4" />
+									</Button>
+								)}
+							</div>
 						</div>
 					)}
+
 					<Input
 						value={email}
 						required
