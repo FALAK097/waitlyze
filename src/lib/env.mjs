@@ -8,6 +8,7 @@ export const env = createEnv({
 		CLERK_SECRET_KEY: z.string().min(1),
 		CLERK_WEBHOOK_SECRET: z.string().min(1),
 		UPLOADTHING_TOKEN: z.string().min(1),
+		PROJECT_PLANNER_AI_ID: z.string().min(1),
 	},
 	client: {
 		NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: z.string().min(1),
@@ -30,5 +31,6 @@ export const env = createEnv({
 		NEXT_PUBLIC_POSTHOG_KEY: process.env.NEXT_PUBLIC_POSTHOG_KEY,
 		NEXT_PUBLIC_POSTHOG_HOST: process.env.NEXT_PUBLIC_POSTHOG_HOST,
 		UPLOADTHING_TOKEN: process.env.UPLOADTHING_TOKEN,
+		PROJECT_PLANNER_AI_ID: process.env.PROJECT_PLANNER_AI_ID,
 	},
 });
