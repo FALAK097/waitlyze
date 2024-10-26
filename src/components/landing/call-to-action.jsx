@@ -12,10 +12,7 @@ export default function CallToAction() {
 					Join thousands of creators and start building anticipation for your
 					next big thing.
 				</p>
-				<Button
-					size="lg"
-					className="px-8 py-3 text-lg font-semibold rounded-full bg-primary text-primary-foreground hover:bg-primary/90 transition-all duration-300 shadow-lg hover:shadow-xl group"
-				>
+				<Button size="lg" className="text-xl">
 					Get Started Now
 					<ArrowRight className="w-5 h-5 ml-2 transition-transform group-hover:translate-x-1" />
 				</Button>

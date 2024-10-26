@@ -1,12 +1,14 @@
 "use client";
+import { cn } from "@/lib/utils";
 import { useAuth } from "@clerk/nextjs";
 import { motion } from "framer-motion";
 import Link from "next/link";
+import { buttonVariants } from "../ui/button";
 
 export default function Hero() {
 	const { isSignedIn } = useAuth();
 
-	const text = "Create Stunning Waitlists in Minutes";
+	const text = "Hype your product launch with a waitlist";
 
 	const typewriterVariants = {
 		hidden: { opacity: 0 },
@@ -55,9 +57,13 @@ export default function Hero() {
 						<Link
 							href="/dashboard"
 							size="lg"
-							className="w-full px-8 py-3 text-lg font-semibold transition-all duration-300 rounded-full shadow-lg sm:w-auto bg-primary text-primary-foreground hover:bg-primary/90 hover:shadow-xl"
+							className={cn(
+								buttonVariants({
+									variant: "default",
+								}),
+							)}
 						>
-							{isSignedIn ? "Dashboard" : "Get Started"}
+							{isSignedIn ? "Dashboard" : "Create Now"}
 						</Link>
 					</div>
 				</div>

@@ -1,5 +1,6 @@
 import Logo from "@/components/shared/logo";
-import { Github, Twitter } from "lucide-react";
+import {} from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 
 const footerSections = [
@@ -22,10 +23,12 @@ const footerSections = [
 	},
 ];
 
-const socialLinks = [
-	{ icon: Github, href: "https://github.com/FALAK097" },
-	{ icon: Twitter, href: "https://x.com/falakgala097" },
-];
+// TODO: Add social links
+// const socialLinks = [
+// 	{ icon: Github, href: "https://github.com/" },
+// 	{ icon: Twitter, href: "https://x.com/" },
+// ];
+const socialLinks = [];
 
 export default function Footer() {
 	return (
@@ -33,7 +36,8 @@ export default function Footer() {
 			<div className="container px-4 mx-auto sm:px-6 lg:px-8">
 				<div className="grid grid-cols-1 gap-8 md:grid-cols-3">
 					<div className="space-y-4">
-						<Link href="/">
+						<Link className="flex" href="/">
+							<Image src="/images/logo.svg" alt="Logo" width={60} height={60} />
 							<Logo />
 						</Link>
 						<p className="text-muted-foreground">
@@ -76,8 +80,7 @@ export default function Footer() {
 				</div>
 				<div className="pt-8 mt-8 text-center border-t border-border">
 					<p className="text-muted-foreground">
-						&copy; {new Date().getFullYear()} HypeItUp Creator. All rights
-						reserved.
+						&copy; {new Date().getFullYear()} HypeItUp. All rights reserved.
 					</p>
 				</div>
 			</div>

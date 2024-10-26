@@ -41,7 +41,7 @@ const plans = [
 			{ name: "Gamified Referrals", available: false },
 		],
 		highlight: true,
-		color: "bg-purple-500",
+		color: "bg-primary",
 	},
 	{
 		name: "Hacker",
@@ -69,37 +69,35 @@ export default function Pricing() {
 				<h2 className="mb-12 text-3xl font-bold text-center text-primary">
 					Choose Your Plan
 				</h2>
-				<div className="grid grid-cols-1 gap-8 md:grid-cols-3">
+				<div className="grid grid-cols-1 gap-12 md:grid-cols-3">
 					{plans.map((plan) => (
 						<Card
 							key={plan.name}
 							className={`flex flex-col transition-shadow duration-300 shadow-lg hover:shadow-xl ${
-								plan.highlight ? "border-4 border-purple-500" : ""
+								plan.highlight ? "border-4 border-primary" : ""
 							} relative`}
 						>
 							{plan.highlight && (
-								<div className="absolute top-0 right-0 px-3 py-1 text-sm font-bold text-white bg-purple-500 rounded-bl-md">
-									MOST POPULAR
+								<div className="absolute top-0 right-0 px-3 py-1 text-sm font-bold text-white bg-primary rounded-bl-md">
+									Popular
 								</div>
 							)}
 							<CardHeader className="text-center">
-								<CardTitle className="text-lg font-semibold">
+								<CardTitle className="text-xl font-semibold">
 									{plan.name}
 								</CardTitle>
 								<div className="flex items-baseline justify-center space-x-2">
-									<p className="text-3xl font-bold text-primary">
+									<p className="text-5xl font-bold text-primary">
 										{plan.price}
 									</p>
 									{plan.originalPrice && (
-										<p className="text-sm line-through text-muted-foreground">
+										<p className="text-2xl line-through text-muted-foreground">
 											{plan.originalPrice}
 										</p>
 									)}
 								</div>
-								<p className="mt-2 text-sm text-muted-foreground">
-									{plan.name === "Starter"
-										? "One-time payment"
-										: "One-time payment"}
+								<p className="mt-2 text-lg text-muted-foreground">
+									One time payment
 								</p>
 							</CardHeader>
 							<CardContent className="flex-grow">
@@ -112,10 +110,10 @@ export default function Pricing() {
 												<X className="w-5 h-5 mr-2 text-red-500" />
 											)}
 											<span
-												className={`${
+												className={`text-lg ${
 													feature.available
 														? "text-muted-foreground"
-														: "text-secondary line-through"
+														: "text-gray-400 line-through"
 												}`}
 											>
 												{feature.name}
