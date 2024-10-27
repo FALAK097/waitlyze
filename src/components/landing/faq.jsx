@@ -52,8 +52,12 @@ export default function FAQ() {
 								.toLowerCase()}
 							value={`item-${index}`}
 						>
-							<AccordionTrigger>{faq.question}</AccordionTrigger>
-							<AccordionContent>{faq.answer}</AccordionContent>
+							<AccordionTrigger className="text-lg">
+								{faq.question}
+							</AccordionTrigger>
+							<AccordionContent className="text-lg">
+								{faq.answer}
+							</AccordionContent>
 						</AccordionItem>
 					))}
 				</Accordion>

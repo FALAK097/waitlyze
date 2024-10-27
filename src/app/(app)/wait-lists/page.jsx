@@ -14,6 +14,7 @@ import prisma from "@/lib/prisma";
 import { waitFor } from "@/lib/utils";
 import { currentUser } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
+import { removeUpload } from "../../actions/removeUpload";
 
 export default async function WaitListsPage() {
 	const clerkUser = await currentUser();
@@ -50,19 +51,44 @@ export default async function WaitListsPage() {
 		};
 
 		try {
-			await prisma.waitList.delete({
+			const waitList = await prisma.waitList.findUnique({
 				where: {
 					id: waitListId,
 					userId: user.id,
 				},
+				select: {
+					logoKey: true, // Get the logoKey associated with the waitlist
+				},
 			});
-			response.success = true;
-			response.message = "Wait list deleted successfully";
+
+			if (!waitList) {
+				response.message = "Wait list not found.";
+				return response;
+			}
+
+			// Attempt to delete the logo from Uploadthing
+			const removeUploadResponse = await removeUpload(waitList.logoKey);
+			console.log("Uploadthing response:", removeUploadResponse); // Log the response for debugging
+
+			if (removeUploadResponse.success) {
+				// Proceed to delete the waitlist entry from the database
+				await prisma.waitList.delete({
+					where: {
+						id: waitListId,
+						userId: user.id,
+					},
+				});
+				response.success = true;
+				response.message = "Wait list deleted successfully";
+			} else {
+				response.message = "Failed to delete logo from Uploadthing.";
+			}
 		} catch (error) {
 			console.error("Error deleting wait list:", error);
 			response.message = "Error deleting wait list";
 		}
-		await waitFor(1000);
+
+		await waitFor(1000); // Delay before returning the response
 		return response;
 	};
 
@@ -86,6 +112,7 @@ export default async function WaitListsPage() {
 					<WaitListCard
 						id={waitList.id}
 						logoUrl={waitList.logoUrl}
+						logoKey={waitList.logoKey}
 						name={waitList.name}
 						deleteWaitList={deleteWaitList}
 						description={waitList.description}

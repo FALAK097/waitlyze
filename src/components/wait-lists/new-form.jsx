@@ -20,6 +20,7 @@ export const NewWaitListForm = ({ createNewWaitList }) => {
 	const [websiteUrl, setWebsiteUrl] = useState("");
 	const [description, setDescription] = useState("");
 	const [logoUrl, setLogoUrl] = useState("");
+	const [logoKey, setLogoKey] = useState("");
 	const [loading, setLoading] = useState(false);
 	const [isCreated, setIsCreated] = useState(false);
 	const { push } = useRouter();
@@ -35,12 +36,14 @@ export const NewWaitListForm = ({ createNewWaitList }) => {
 			websiteUrl,
 			description,
 			logoUrl,
+			logoKey,
 		});
 
 		if (response.success) {
 			setIsCreated(true);
 			setLoading(false);
 			toast.success(response.message);
+			console.log(response);
 			setTimeout(() => {
 				push(`/wait-lists/${response.waitList.id}/edit`);
 			}, 1000);
@@ -109,12 +112,27 @@ export const NewWaitListForm = ({ createNewWaitList }) => {
 								<Label htmlFor="logoUrl" className="text-lg font-semibold">
 									Upload Logo
 								</Label>
-								<UploadImage
-									onSuccess={(files) => {
-										setLogoUrl(files[0].url);
-										toast.success("Logo uploaded successfully");
-									}}
-								/>
+
+								<div className="flex flex-col-reverse">
+									<UploadImage
+										onSuccess={(files) => {
+											setLogoUrl(files[0].url);
+											setLogoKey(files[0].key);
+											console.log("new frp", files[0]);
+											console.log("new frp key", files[0].key);
+											toast.success("Logo uploaded successfully");
+										}}
+									/>
+									{logoUrl && (
+										<div className="relative aspect-square">
+											<img
+												src={logoUrl}
+												alt="Uploaded Logo"
+												className="absolute inset-0 w-full h-full object-cover rounded-md"
+											/>
+										</div>
+									)}
+								</div>
 							</div>
 							<Button
 								type="submit"
