@@ -1,9 +1,28 @@
 "use client";
 import { removeImage } from "@/app/actions/waitLists";
 import { Button } from "@/components/ui/button";
+import {
+	Dialog,
+	DialogClose,
+	DialogContent,
+	DialogDescription,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle,
+	DialogTrigger,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Save } from "lucide-react";
+import { Copy } from "lucide-react";
 import { useState } from "react";
 import toast from "react-hot-toast";
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipProvider,
+	TooltipTrigger,
+} from "../ui/tooltip";
 import { SettingsTab } from "./settings-tab";
 import { SignUpForm } from "./sign-up-form";
 
@@ -130,22 +149,85 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
 	return (
 		<div className="flex-1 overflow-auto">
 			<div className="p-8">
-				<div className="flex justify-between items-center mb-6">
+				<div className="flex items-center justify-between mb-6">
 					<h2 className="text-2xl font-semibold">
 						Edit {initialWaitList.name} Wait List
 					</h2>
 					<div className="flex space-x-2">
-						<Button onClick={handleSave} variant="outline" size="icon">
-							<Save className="h-4 w-4" />
-						</Button>
-						<Button>Get Embed Code</Button>
-						<Button onClick={copyShareUrlToClipboard}>Share</Button>
+						<TooltipProvider>
+							<Tooltip delayDuration={100}>
+								<TooltipTrigger asChild>
+									<Button onClick={handleSave} variant="outline" size="icon">
+										<Save className="w-4 h-4" />
+									</Button>
+								</TooltipTrigger>
+								<TooltipContent side="bottom">Save Wait List</TooltipContent>
+							</Tooltip>
+						</TooltipProvider>
+
+						<TooltipProvider>
+							<Tooltip delayDuration={100}>
+								<TooltipTrigger asChild>
+									<Button>Get Embed Code</Button>
+								</TooltipTrigger>
+								<TooltipContent side="bottom">Get Embed Code</TooltipContent>
+							</Tooltip>
+						</TooltipProvider>
+
+						<Dialog>
+							<TooltipProvider>
+								<Tooltip delayDuration={100}>
+									<TooltipTrigger asChild>
+										<DialogTrigger asChild>
+											<Button>Share</Button>
+										</DialogTrigger>
+									</TooltipTrigger>
+									<TooltipContent side="bottom">Share Wait List</TooltipContent>
+								</Tooltip>
+							</TooltipProvider>
+							<DialogContent className="sm:max-w-md">
+								<DialogHeader>
+									<DialogTitle>Share link</DialogTitle>
+									<DialogDescription>
+										Copy the link below to share your waitlist form.
+									</DialogDescription>
+								</DialogHeader>
+								<div className="flex items-center space-x-2">
+									<div className="grid flex-1 gap-2">
+										<Label htmlFor="link" className="sr-only">
+											Link
+										</Label>
+										<Input
+											id="link"
+											defaultValue={`${window.location.origin}/forms/${initialWaitList.id}`}
+											readOnly
+										/>
+									</div>
+									<Button
+										onClick={copyShareUrlToClipboard}
+										type="submit"
+										size="sm"
+										className="px-3"
+									>
+										<span className="sr-only">Copy</span>
+										<Copy className="w-4 h-4" />
+									</Button>
+								</div>
+								<DialogFooter className="sm:justify-start">
+									<DialogClose asChild>
+										<Button type="button" variant="secondary">
+											Close
+										</Button>
+									</DialogClose>
+								</DialogFooter>
+							</DialogContent>
+						</Dialog>
 					</div>
 				</div>
 
 				<div className="flex">
 					{/* WaitList Form Preview */}
-					<div className="flex-1 flex items-center justify-center">
+					<div className="flex items-center justify-center flex-1">
 						<SignUpForm
 							email={testEmail}
 							isLoading={isTestEmailLoading}

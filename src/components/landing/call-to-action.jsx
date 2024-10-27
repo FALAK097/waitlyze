@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
+import Link from "next/link";
 
 export default function CallToAction() {
 	return (
@@ -12,10 +13,12 @@ export default function CallToAction() {
 					Join thousands of creators and start building anticipation for your
 					next big thing.
 				</p>
-				<Button size="lg" className="text-xl">
-					Get Started Now
-					<ArrowRight className="w-5 h-5 ml-2 transition-transform group-hover:translate-x-1" />
-				</Button>
+				<Link href="/dashboard">
+					<Button size="lg" className="text-xl">
+						Get Started Now
+						<ArrowRight className="w-5 h-5 ml-2 transition-transform group-hover:translate-x-1" />
+					</Button>
+				</Link>
 			</div>
 		</section>
 	);

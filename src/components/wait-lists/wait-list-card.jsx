@@ -44,7 +44,7 @@ export const WaitListCard = ({
 	};
 
 	return (
-		<Card className="w-[350px]">
+		<Card className="w-[350px] mt-10">
 			<CardHeader>
 				<CardTitle className="flex items-center justify-start gap-4">
 					<Image src={logoUrl} alt={name} width={65} height={65} />

@@ -1,4 +1,4 @@
-import { MenuIcon, PanelsTopLeft } from "lucide-react";
+import { MenuIcon } from "lucide-react";
 import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,7 @@ import {
 	SheetTitle,
 	SheetTrigger,
 } from "@/components/ui/sheet";
+import Image from "next/image";
 import { Menu } from "./menu";
 
 export function SheetMenu() {
@@ -33,8 +34,8 @@ export function SheetMenu() {
 						variant="link"
 						asChild
 					>
-						<Link href="/dashboard" className="flex items-center gap-2">
-							<PanelsTopLeft className="w-6 h-6 mr-1" />
+						<Link href="/dashboard" className="gap-2">
+							<Image src="/images/logo.svg" alt="Logo" width={60} height={60} />
 							<SheetTitle className="text-lg font-bold">HypeItUp</SheetTitle>
 						</Link>
 					</Button>

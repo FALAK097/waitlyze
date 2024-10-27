@@ -197,7 +197,7 @@ export const Feedback = () => {
 									<Textarea
 										{...field}
 										placeholder="I really enjoy your application"
-										className="rounded-xl"
+										className="h-32 rounded-xl"
 									/>
 								)}
 							/>

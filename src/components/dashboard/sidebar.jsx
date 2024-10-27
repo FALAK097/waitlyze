@@ -1,10 +1,10 @@
-import { PanelsTopLeft } from "lucide-react";
 import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
 import { useSidebarToggle } from "@/hooks/use-sidebar-toggle";
 import { useStore } from "@/hooks/use-store";
 import { cn } from "@/lib/utils";
+import Image from "next/image";
 import { Menu } from "./menu";
 import { SidebarToggle } from "./sidebar-toggle";
 
@@ -30,8 +30,8 @@ export function Sidebar() {
 					variant="link"
 					asChild
 				>
-					<Link href="/dashboard" className="flex items-center gap-2">
-						<PanelsTopLeft className="w-6 h-6 mr-1" />
+					<Link className="flex" href="/dashboard">
+						<Image src="/images/logo.svg" alt="Logo" width={60} height={60} />
 						<h1
 							className={cn(
 								"font-bold text-lg whitespace-nowrap transition-[transform,opacity,display] ease-in-out duration-300",
