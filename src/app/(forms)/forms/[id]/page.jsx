@@ -20,19 +20,40 @@ export default async function WaitListsPreviewPage({ params }) {
 
 	const cookieStore = cookies();
 
-	const uniqueUserId = cookieStore.get("unique_user_id");
+	const hypeSession = cookieStore.get("hypeSession");
 
-	if (!uniqueUserId) {
-		cookies.set("unique_user_id", nanoid(), {
+	if (!hypeSession) {
+		cookieStore.set("hypeSession", nanoid(), {
 			httpOnly: true,
 			maxAge: 60 * 60 * 24 * 365, // 1 year
 		});
 	}
 
+	const impression = await prisma.impression.findFirst({
+		where: {
+			AND: [
+				{
+					waitListId: id,
+				},
+				{
+					uniqueUserId: hypeSession.value,
+				},
+			],
+		},
+	});
+
+	const impressionCreated = !!impression;
+
+	console.log("impressionCreated", impressionCreated);
+
 	return (
 		<div>
 			<ReactQueryProvider>
-				<FormPreview uniqueUserId={uniqueUserId} waitList={waitList} />
+				<FormPreview
+					impressionCreated={impressionCreated}
+					uniqueUserId={hypeSession}
+					waitList={waitList}
+				/>
 			</ReactQueryProvider>
 		</div>
 	);
