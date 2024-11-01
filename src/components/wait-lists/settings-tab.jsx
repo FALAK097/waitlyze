@@ -32,38 +32,36 @@ export function SettingsTab({ formSettings, updateSetting, applyPreset }) {
 							}}
 						/>
 					</div>
-					<div>
+					<div className="flex items-center justify-between">
 						<Label htmlFor="buttonColor">Button Color</Label>
 						<ColorPicker
+							id="buttonColor"
 							value={formSettings.buttonColor}
 							onChange={(color) => updateSetting("buttonColor", color)}
 						/>
 					</div>
-					<div>
+					<div className="flex items-center justify-between">
 						<Label htmlFor="buttonBorder">Button Border</Label>
-						<Input
+						<ColorPicker
 							id="buttonBorder"
-							type="color"
 							value={formSettings.buttonBorder}
-							onChange={(e) => updateSetting("buttonBorder", e.target.value)}
+							onChange={(color) => updateSetting("buttonBorder", color)}
 						/>
 					</div>
-					<div>
+					<div className="flex items-center justify-between">
 						<Label htmlFor="buttonTextColor">Button Text Color</Label>
-						<Input
+						<ColorPicker
 							id="buttonTextColor"
-							type="color"
 							value={formSettings.buttonTextColor}
-							onChange={(e) => updateSetting("buttonTextColor", e.target.value)}
+							onChange={(color) => updateSetting("buttonTextColor", color)}
 						/>
 					</div>
-					<div>
-						<Label htmlFor="bgColor">BG Color</Label>
-						<Input
+					<div className="flex items-center justify-between">
+						<Label htmlFor="bgColor">Background Color</Label>
+						<ColorPicker
 							id="bgColor"
-							type="color"
 							value={formSettings.bgColor}
-							onChange={(e) => updateSetting("bgColor", e.target.value)}
+							onChange={(color) => updateSetting("bgColor", color)}
 						/>
 					</div>
 					<div>
@@ -174,31 +172,28 @@ export function SettingsTab({ formSettings, updateSetting, applyPreset }) {
 					</div>
 				</TabsContent>
 				<TabsContent value="input" className="space-y-4">
-					<div>
+					<div className="flex items-center justify-between">
 						<Label htmlFor="inputColor">Input Color</Label>
-						<Input
+						<ColorPicker
 							id="inputColor"
-							type="color"
 							value={formSettings.inputColor}
-							onChange={(e) => updateSetting("inputColor", e.target.value)}
+							onChange={(color) => updateSetting("inputColor", color)}
 						/>
 					</div>
-					<div>
+					<div className="flex items-center justify-between">
 						<Label htmlFor="inputBorder">Input Border</Label>
-						<Input
+						<ColorPicker
 							id="inputBorder"
-							type="color"
 							value={formSettings.inputBorder}
-							onChange={(e) => updateSetting("inputBorder", e.target.value)}
+							onChange={(color) => updateSetting("inputBorder", color)}
 						/>
 					</div>
-					<div>
+					<div className="flex items-center justify-between">
 						<Label htmlFor="inputTextColor">Input Text Color</Label>
-						<Input
+						<ColorPicker
 							id="inputTextColor"
-							type="color"
 							value={formSettings.inputTextColor}
-							onChange={(e) => updateSetting("inputTextColor", e.target.value)}
+							onChange={(color) => updateSetting("inputTextColor", color)}
 						/>
 					</div>
 					<div>
