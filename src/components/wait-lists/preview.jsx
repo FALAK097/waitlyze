@@ -10,10 +10,10 @@ import { SignUpForm } from "./sign-up-form";
 export const FormPreview = ({ uniqueUserId, waitList }) => {
 	const theme = useTheme();
 	const [mounted, setMounted] = useState(false);
-	const [isImpressionCreated, setIsImpressionCreated] = useState(() => {
+	const isImpressionCreated = useCallback(() => {
 		const isImpressionCreated = localStorage.getItem("isImpressionCreated");
 		return isImpressionCreated === "true";
-	});
+	}, []);
 	const [email, setEmail] = useState("");
 	// Sign up mutation
 	const { isSuccess, isLoading, isError, error, refetch } = useQuery({
@@ -82,7 +82,7 @@ export const FormPreview = ({ uniqueUserId, waitList }) => {
 	return (
 		<div
 			style={{
-				backgroundColor: waitList.bgColor,
+				backgroundColor: waitList.mainBgColor,
 			}}
 			className="flex flex-col items-center justify-center h-screen"
 		>

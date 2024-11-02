@@ -57,7 +57,15 @@ export function SettingsTab({ formSettings, updateSetting, applyPreset }) {
 						/>
 					</div>
 					<div className="flex items-center justify-between">
-						<Label htmlFor="bgColor">Background Color</Label>
+						<Label htmlFor="mainBgColor">Background Color</Label>
+						<ColorPicker
+							id="mainBgColor"
+							value={formSettings.mainBgColor}
+							onChange={(color) => updateSetting("mainBgColor", color)}
+						/>
+					</div>
+					<div className="flex items-center justify-between">
+						<Label htmlFor="bgColor">Widget BG Color</Label>
 						<ColorPicker
 							id="bgColor"
 							value={formSettings.bgColor}

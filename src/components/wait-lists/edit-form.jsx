@@ -72,12 +72,13 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
 			buttonColor: initialWaitList.buttonColor || "#8B5CF6",
 			buttonBorder: initialWaitList.buttonBorder || "#7C3AED",
 			buttonTextColor: initialWaitList.buttonTextColor || "#FFFFFF",
+			mainBgColor: initialWaitList.mainBgColor || "#FFFFFF",
 			bgColor: initialWaitList.bgColor || "#FFFFFF",
 			borderWidth: initialWaitList.borderWidth || "0px",
 			borderRadius: initialWaitList.borderRadius || "large",
 			fontWeight: initialWaitList.fontWeight || "normal",
 			logoSize: initialWaitList.logoSize || "1X",
-			buttonText: initialWaitList.buttonText || "Join Waitlist",
+			buttonText: initialWaitList.buttonText || "Join waitlist",
 			successMessage:
 				initialWaitList.successMessage || "Success! You're on the waitlist 🎉",
 			showLogo: initialWaitList.showLogo || true,
@@ -101,6 +102,7 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
 			buttonColor: "#8B5CF6",
 			buttonBorder: "#7C3AED",
 			buttonTextColor: "#FFFFFF",
+			mainBgColor: "#FFFFFF",
 			bgColor: "#FFFFFF",
 			borderWidth: "0px",
 			borderRadius: "medium",
@@ -112,6 +114,7 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
 			buttonColor: "#FF4136",
 			buttonBorder: "#E7040F",
 			buttonTextColor: "#FFFFFF",
+			mainBgColor: "#FFFFFF",
 			bgColor: "#FFDFDF",
 			borderWidth: "2px",
 			borderRadius: "large",
@@ -123,6 +126,7 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
 			buttonColor: "#000000",
 			buttonBorder: "#000000",
 			buttonTextColor: "#FFFFFF",
+			mainBgColor: "#FFFFFF",
 			bgColor: "#FFFFFF",
 			borderWidth: "1px",
 			borderRadius: "small",
@@ -134,6 +138,7 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
 			buttonColor: "#000000",
 			buttonBorder: "#000000",
 			buttonTextColor: "#FFB6C1",
+			mainBgColor: "#FFFFFF",
 			bgColor: "#FFB6C1",
 			borderWidth: "4px",
 			borderRadius: "none",
@@ -209,7 +214,10 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
 
 				<div className="flex">
 					{/* WaitList Form Preview */}
-					<div className="flex-1 flex items-center justify-center">
+					<div
+						style={{ backgroundColor: formSettings.mainBgColor }}
+						className="flex-1 flex items-center justify-center"
+					>
 						<SignUpForm
 							email={testEmail}
 							isLoading={isTestEmailLoading}

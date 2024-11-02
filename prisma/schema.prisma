@@ -27,25 +27,26 @@ model WaitList {
   name                    String?
   description             String?
   websiteUrl              String?
-  logoUrl                 String?
+  logoUrl                 String?      @default("/images/logo.png")
   logoKey                 String?
-  buttonColor             String?
-  buttonBorder            String?
-  buttonTextColor         String?
-  bgColor                 String?
-  borderWidth             String?
-  borderRadius            String?
-  fontWeight              String?
-  logoSize                String?
-  buttonText              String?
-  successMessage          String?
+  buttonColor             String?      @default("#8B5CF6")
+  buttonBorder            String?      @default("#7C3AED")
+  buttonTextColor         String?      @default("#FFFFFF")
+  mainBgColor             String?      @default("#FFFFFF")
+  bgColor                 String?      @default("#FFFFFF")
+  borderWidth             String?      @default("0px")
+  borderRadius            String?      @default("large")
+  fontWeight              String?      @default("normal")
+  logoSize                String?      @default("1X")
+  buttonText              String?      @default("Join the waitlist")
+  successMessage          String?      @default("Success! You're on the waitlist 🎉")
   showLogo                Boolean      @default(true)
   showSocialProof         Boolean      @default(true)
   enableReferrals         Boolean      @default(false)
-  inputColor              String?
-  inputBorder             String?
-  inputTextColor          String?
-  placeholderText         String?
+  inputColor              String?      @default("#FFFFF")
+  inputBorder             String?      @default("#E5E7EB")
+  inputTextColor          String?      @default("#000000")
+  placeholderText         String?      @default("Enter your email")
   twitterLink             String?
   facebookLink            String?
   instagramLink           String?
@@ -53,7 +54,7 @@ model WaitList {
   showSocialLinks         Boolean      @default(true)
   sendEmailsToSubscribers Boolean      @default(false)
   userId                  String
-  user                    User         @relation(fields: [userId], references: [id])
+  user                    User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   signUps                 SignUp[]
   impressions             Impression[]
 
@@ -61,7 +62,7 @@ model WaitList {
 }
 
 model SignUp {
-  id           String     @id @default(cuid())
+  id           String      @id @default(cuid())
   email        String
   device       String?
   deviceType   String?
@@ -73,8 +74,8 @@ model SignUp {
   longitude    String?
   waitListId   String
   impressionId String?
-  waitList     WaitList   @relation(fields: [waitListId], references: [id])
-  impression   Impression? @relation(fields: [impressionId], references: [id])
+  waitList     WaitList    @relation(fields: [waitListId], references: [id], onDelete: Cascade)
+  impression   Impression? @relation(fields: [impressionId], references: [id], onDelete: SetNull)
 
   @@map("sign_ups")
 }
@@ -91,7 +92,7 @@ model Impression {
   latitude     String?
   longitude    String?
   waitListId   String
-  waitList     WaitList @relation(fields: [waitListId], references: [id])
+  waitList     WaitList @relation(fields: [waitListId], references: [id], onDelete: Cascade)
   signUps      SignUp[]
 
   @@map("impressions")
