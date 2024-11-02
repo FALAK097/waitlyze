@@ -23,6 +23,7 @@ export const SelectWaitlist = ({ waitLists }) => {
 	const handleSelectChange = (value) => {
 		setSelectedWaitlist(value);
 		localStorage.setItem("selectedWaitlist", value);
+		window.location.reload();
 	};
 
 	return (
@@ -38,7 +39,7 @@ export const SelectWaitlist = ({ waitLists }) => {
 							<SelectItem
 								key={waitlist.id}
 								className="cursor-pointer"
-								value={waitlist.name}
+								value={waitlist.id}
 							>
 								{waitlist.name}
 							</SelectItem>
