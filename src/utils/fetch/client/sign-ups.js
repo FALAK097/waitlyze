@@ -1,4 +1,5 @@
 const createSignUp = async ({ email, waitList }) => {
+	const uniqueUserId = localStorage.getItem("hypeSession");
 	let createSignUpResponse = {
 		success: false,
 		message: "Failed to sign up, Please try again later",
@@ -6,7 +7,11 @@ const createSignUp = async ({ email, waitList }) => {
 	try {
 		const response = await fetch("/api/v1/sign_up", {
 			method: "POST",
-			body: JSON.stringify({ email, waitListId: waitList.id }),
+			body: JSON.stringify({
+				email,
+				waitListId: waitList.id,
+				hypeSession: uniqueUserId,
+			}),
 			headers: {
 				"Content-Type": "application/json",
 			},

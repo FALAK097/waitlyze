@@ -1,11 +1,67 @@
 "use client";
 import { removeImage } from "@/app/actions/waitLists";
 import { Button } from "@/components/ui/button";
+import {
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle,
+	DialogTrigger,
+} from "@/components/ui/dialog";
+import { DialogClose } from "@radix-ui/react-dialog";
 import { Save } from "lucide-react";
 import { useState } from "react";
 import toast from "react-hot-toast";
+import { CodeBlock } from "../ui/code-block";
 import { SettingsTab } from "./settings-tab";
 import { SignUpForm } from "./sign-up-form";
+
+const EmbedModal = ({ waitList }) => {
+	return (
+		<Dialog>
+			<DialogTrigger asChild>
+				<Button>Embed</Button>
+			</DialogTrigger>
+			<DialogContent className="sm:max-w-[625px]">
+				<DialogHeader>
+					<DialogTitle>Instructions</DialogTitle>
+					<DialogDescription>
+						Follow the bellow instructions to embed the form on your website.
+					</DialogDescription>
+				</DialogHeader>
+				<div className="grid gap-4 py-4">
+					<div>
+						<p className="col-span-3 my-2 mb-4">
+							{/* biome-ignore lint/style/noUnusedTemplateLiteral: <explanation> */}
+							{`Step 1. Copy and paste the below code in the <head> section`}
+						</p>
+						<CodeBlock
+							language="html"
+							code={`<!-- HypeItUp Widget JS -->\n<script src="${window.location.origin}/js/embed.js" defer></script>`}
+						/>
+					</div>
+					<div>
+						<p className="col-span-3 my-2 mb-4">
+							Step 2. Paste the following code anywhere on your page where you
+							want to display the form
+						</p>
+						<CodeBlock
+							language="html"
+							code={`<!-- HypeItUp Widget UI -->\n<div class="hypeitup-widget" data-key-id="${waitList.id}" data-height="380px"></div>`}
+						/>
+					</div>
+				</div>
+				<DialogFooter>
+					<DialogClose asChild>
+						<Button onClick={() => {}}>Done</Button>
+					</DialogClose>
+				</DialogFooter>
+			</DialogContent>
+		</Dialog>
+	);
+};
 
 export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
 	const [testEmail, setTestEmail] = useState("");
@@ -127,6 +183,14 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
 		}
 	};
 
+	const getEmbedCode = () => {
+		const url = `${window.location.origin}/api/embed/${initialWaitList.id}`;
+		navigator.clipboard.writeText(
+			`<iframe src="${url}" width="100%" height="100%"></iframe>`,
+		);
+		toast.success("Embed code copied to clipboard.");
+	};
+
 	return (
 		<div className="flex-1 overflow-auto">
 			<div className="p-8">
@@ -138,7 +202,7 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
 						<Button onClick={handleSave} variant="outline" size="icon">
 							<Save className="h-4 w-4" />
 						</Button>
-						<Button>Get Embed Code</Button>
+						<EmbedModal waitList={initialWaitList} />
 						<Button onClick={copyShareUrlToClipboard}>Share</Button>
 					</div>
 				</div>

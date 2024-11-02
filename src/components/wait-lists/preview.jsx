@@ -2,18 +2,24 @@
 
 import { createImpression, createSignUp } from "@/utils/fetch/client";
 import { useQuery } from "@tanstack/react-query";
+import { useTheme } from "next-themes";
 import { useCallback, useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { SignUpForm } from "./sign-up-form";
 
-export const FormPreview = ({ impressionCreated, uniqueUserId, waitList }) => {
+export const FormPreview = ({ uniqueUserId, waitList }) => {
+	const theme = useTheme();
 	const [mounted, setMounted] = useState(false);
+	const [isImpressionCreated, setIsImpressionCreated] = useState(() => {
+		const isImpressionCreated = localStorage.getItem("isImpressionCreated");
+		return isImpressionCreated === "true";
+	});
 	const [email, setEmail] = useState("");
 	// Sign up mutation
 	const { isSuccess, isLoading, isError, error, refetch } = useQuery({
 		enabled: false,
 		queryFn: async () => await createSignUp({ email, waitList }),
-		queryKey: ["createSignUp", email, waitList, uniqueUserId ?? ""],
+		queryKey: ["createSignUp", email, waitList.id, uniqueUserId ?? ""],
 		retry: 0,
 	});
 	// Impression mutation
@@ -25,9 +31,9 @@ export const FormPreview = ({ impressionCreated, uniqueUserId, waitList }) => {
 		refetch: impressionRefetch,
 	} = useQuery({
 		enabled: false,
-		queryFn: async () => await createImpression({ waitList, uniqueUserId }),
-		queryKey: ["createSignUp", waitList, uniqueUserId ?? ""],
-		retry: 0,
+		queryFn: async () => await createImpression({ waitList }),
+		queryKey: ["createImpression", waitList.id, isImpressionCreated],
+		retry: false,
 	});
 
 	const handleSignUp = async (e) => {
@@ -53,20 +59,33 @@ export const FormPreview = ({ impressionCreated, uniqueUserId, waitList }) => {
 	}, [mounted, isError, error]);
 
 	useEffect(() => {
-		if (mounted && !impressionCreated) {
-			setTimeout(() => {
-				handleCreateImpression();
-			}, 2500);
-		}
-	}, [mounted, impressionCreated, handleCreateImpression]);
-
-	useEffect(() => {
 		setMounted(true);
 		return () => setMounted(false);
 	}, []);
 
+	useEffect(() => {
+		theme.setTheme("light");
+	}, [theme]);
+
+	useEffect(() => {
+		// check if uniqueUserId is available & hypeSession is not set in storage
+		if (uniqueUserId) {
+			let hypeSession = localStorage.getItem("hypeSession");
+			if (!hypeSession && !isImpressionCreated) {
+				localStorage.setItem("hypeSession", uniqueUserId);
+				hypeSession = uniqueUserId;
+				handleCreateImpression();
+			}
+		}
+	}, [uniqueUserId, handleCreateImpression, isImpressionCreated]);
+
 	return (
-		<div className="flex flex-col items-center justify-center h-screen">
+		<div
+			style={{
+				backgroundColor: waitList.bgColor,
+			}}
+			className="flex flex-col items-center justify-center h-screen"
+		>
 			<SignUpForm
 				email={email}
 				waitList={waitList}
