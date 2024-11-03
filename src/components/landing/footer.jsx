@@ -37,7 +37,7 @@ export default function Footer() {
 				<div className="grid grid-cols-1 gap-8 md:grid-cols-3">
 					<div className="space-y-4">
 						<Link className="flex" href="/">
-							<Image src="/images/logo.svg" alt="Logo" width={60} height={60} />
+							<Image src="/images/logo.png" alt="Logo" width={60} height={60} />
 							<Logo />
 						</Link>
 						<p className="text-muted-foreground">

@@ -31,7 +31,7 @@ export function Sidebar() {
 					asChild
 				>
 					<Link className="flex" href="/dashboard">
-						<Image src="/images/logo.svg" alt="Logo" width={60} height={60} />
+						<Image src="/images/logo.png" alt="Logo" width={60} height={60} />
 						<h1
 							className={cn(
 								"font-bold text-lg whitespace-nowrap transition-[transform,opacity,display] ease-in-out duration-300",
