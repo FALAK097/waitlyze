@@ -6,25 +6,25 @@ const steps = [
 		icon: Paintbrush,
 		title: "Design",
 		description: "Use our no-code designer to create a branded waitlist form.",
-		color: "bg-[#FF6F61]",
+		color: "bg-red-600",
 	},
 	{
 		icon: Sliders,
 		title: "Customize",
 		description: "Add fields, change colors, and set up email notifications.",
-		color: "bg-[#9370DB]",
+		color: "bg-purple-600",
 	},
 	{
 		icon: Eye,
 		title: "Preview",
 		description: "See your changes in real-time with our live demo view.",
-		color: "bg-[#4682B4]",
+		color: "bg-blue-600",
 	},
 	{
 		icon: Rocket,
 		title: "Launch",
 		description: "Embed the form on your site or share our hosted page.",
-		color: "bg-[#F4A460]",
+		color: "bg-orange-600",
 	},
 ];
 
@@ -38,7 +38,7 @@ export default function HowItWorks() {
 				<div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-4">
 					{steps.map((step, index) => (
 						<Card
-							key={index}
+							key={`${step.title}-${index}`}
 							className="overflow-hidden transition-all duration-300 shadow-lg hover:shadow-xl hover:-translate-y-1"
 						>
 							<div className={`h-2 ${step.color}`} />
@@ -59,7 +59,7 @@ export default function HowItWorks() {
 							</CardContent>
 							<div className="flex justify-center pb-6">
 								<span
-									className={`px-4 py-2 text-sm font-medium text-white rounded-full ${step.color}`}
+									className={`px-4 py-2 text-sm font-medium text-white rounded-md ${step.color}`}
 								>
 									Step {index + 1}
 								</span>

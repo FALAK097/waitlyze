@@ -66,7 +66,7 @@ export default function Testimonials() {
 					<div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
 						{testimonials.map((testimonial, index) => (
 							<div
-								key={index}
+								key={`${testimonial.name}-${index}`}
 								className={`transform transition-all duration-1000 ${
 									mounted
 										? "translate-y-0 opacity-100"
@@ -102,9 +102,9 @@ export default function Testimonials() {
 						))}
 					</div>
 					{/* Floating effect elements */}
-					<div className="absolute top-0 left-0 rounded-full w-72 h-72 bg-primary/5 mix-blend-multiply filter blur-xl opacity-70 animate-blob"></div>
-					<div className="absolute top-0 right-0 rounded-full w-72 h-72 bg-secondary/5 mix-blend-multiply filter blur-xl opacity-70 animate-blob animation-delay-2000"></div>
-					<div className="absolute rounded-full -bottom-8 left-20 w-72 h-72 bg-accent/5 mix-blend-multiply filter blur-xl opacity-70 animate-blob animation-delay-4000"></div>
+					<div className="absolute top-0 left-0 rounded-full w-72 h-72 bg-primary/5 mix-blend-multiply filter blur-xl opacity-70 animate-blob" />
+					<div className="absolute top-0 right-0 rounded-full w-72 h-72 bg-secondary/5 mix-blend-multiply filter blur-xl opacity-70 animate-blob animation-delay-2000" />
+					<div className="absolute rounded-full -bottom-8 left-20 w-72 h-72 bg-accent/5 mix-blend-multiply filter blur-xl opacity-70 animate-blob animation-delay-4000" />
 				</div>
 			</div>
 		</section>

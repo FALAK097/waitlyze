@@ -4,6 +4,7 @@ import Logo from "@/components/shared/logo";
 import { Button } from "@/components/ui/button";
 import { SignInButton, SignedIn, SignedOut, UserButton } from "@clerk/nextjs";
 import { Menu, X } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 import { ModeToggle } from "../mode-toggle";
@@ -12,11 +13,12 @@ export default function Header() {
 	const [isNavOpen, setIsNavOpen] = useState(false);
 
 	return (
-		<header className="fixed top-0 left-0 right-0 z-50 border-b shadow-lg bg-background/80 backdrop-blur-sm border-border">
+		<header className="fixed top-0 left-0 right-0 z-50 border-b shadow-lg backdrop-blur-sm border-border">
 			<div className="container px-4 mx-auto sm:px-6 lg:px-8">
 				<div className="flex items-center justify-between h-16">
 					<div className="flex items-center">
-						<Link href="/">
+						<Link className="flex" href="/">
+							<Image src="/images/logo.svg" alt="Logo" width={60} height={60} />
 							<Logo />
 						</Link>
 					</div>
@@ -58,7 +60,7 @@ export default function Header() {
 			</div>
 			{/* Mobile menu */}
 			{isNavOpen && (
-				<div className="border-t shadow-lg md:hidden bg-background dark:bg-black border-border">
+				<div className="border-t shadow-lg md:hidden bg-background border-border">
 					<ul className="px-4 pt-4 pb-3 space-y-2">
 						{["Process", "Features", "Testimonials", "Pricing"].map((item) => (
 							<li key={item}>
