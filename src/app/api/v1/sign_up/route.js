@@ -18,7 +18,7 @@ export const POST = async (req, res) => {
 
 		const hypeSession = body.hypeSession;
 
-		if (hypeSession === undefined) {
+		if (!hypeSession) {
 			return Response.json(
 				{
 					message: "Unique User ID is required",

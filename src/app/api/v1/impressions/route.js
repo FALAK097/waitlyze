@@ -16,7 +16,7 @@ export const POST = async (req, res) => {
 
 		const geo = getGeoInfo(ip);
 
-		if (body.hypeSession === undefined) {
+		if (!body.hypeSession) {
 			return Response.json(
 				{
 					message: "Unique User ID is required",

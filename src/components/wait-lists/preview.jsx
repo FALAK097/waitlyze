@@ -71,7 +71,7 @@ export const FormPreview = ({ uniqueUserId, waitList }) => {
 		// check if uniqueUserId is available & hypeSession is not set in storage
 		if (uniqueUserId) {
 			let hypeSession = localStorage.getItem("hypeSession");
-			if (!hypeSession && !isImpressionCreated) {
+			if (!hypeSession && !isImpressionCreated()) {
 				localStorage.setItem("hypeSession", uniqueUserId);
 				hypeSession = uniqueUserId;
 				handleCreateImpression();
