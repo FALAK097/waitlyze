@@ -1,5 +1,6 @@
 "use client";
 
+import { Pencil, Trash2 } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -7,6 +8,7 @@ import { toast } from "react-hot-toast";
 import { Button } from "../ui/button";
 import {
 	Card,
+	CardContent,
 	CardDescription,
 	CardFooter,
 	CardHeader,
@@ -44,23 +46,43 @@ export const WaitListCard = ({
 	};
 
 	return (
-		<Card className="w-[350px]">
+		<Card className="relative w-full transition-all group hover:shadow-lg">
 			<CardHeader>
-				<CardTitle className="flex items-center justify-start gap-4">
-					<Image src={logoUrl} alt={name} width={65} height={65} />
-					<p>{name}</p>
+				<CardTitle className="flex items-center gap-4">
+					<div className="relative overflow-hidden rounded-lg size-16 bg-muted">
+						<Image
+							src={logoUrl}
+							alt={`${name} logo`}
+							fill
+							className="object-cover"
+							onError={() => setImageError(true)}
+						/>
+					</div>
+					<div className="flex-1 truncate">{name}</div>
 				</CardTitle>
-				<CardDescription>
-					{description ?? "No description given"}
+				<CardDescription className="line-clamp-2 min-h-[2.5rem]">
+					{description ?? "No description provided"}
 				</CardDescription>
 			</CardHeader>
-			<CardFooter className="flex justify-between">
-				<Button onClick={handleRedirect}>Edit</Button>
+			<CardContent>
+				<div className="w-full h-px bg-gradient-to-r from-transparent via-muted to-transparent" />
+			</CardContent>
+			<CardFooter className="grid grid-cols-2 gap-2">
+				<Button
+					onClick={handleRedirect}
+					variant="secondary"
+					className="w-full gap-2"
+				>
+					<Pencil className="size-4" />
+					Edit
+				</Button>
 				<Button
 					disabled={isDeleting}
 					onClick={handleDelete}
 					variant="destructive"
+					className="w-full gap-2"
 				>
+					<Trash2 className="size-4" />
 					{isDeleting ? "Deleting..." : "Delete"}
 				</Button>
 			</CardFooter>
