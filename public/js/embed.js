@@ -1,7 +1,7 @@
 (() => {
 	// Configuration
-	const BASE_URL = "http://localhost:3000/forms";
-	const DEFAULT_HEIGHT = "180px";
+	const BASE_URL = "http://www.hypeitup.me/forms";
+	const DEFAULT_HEIGHT = "380px";
 
 	function createIframe() {
 		const iframe = document.createElement("iframe");
