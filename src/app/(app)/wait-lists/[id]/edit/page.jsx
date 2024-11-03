@@ -53,6 +53,7 @@ export default async function WaitListsEditPage({ params }) {
 			buttonColor: waitList.buttonColor,
 			buttonBorder: waitList.buttonBorder,
 			buttonTextColor: waitList.buttonTextColor,
+			mainBgColor: waitList.mainBgColor,
 			bgColor: waitList.bgColor,
 			borderWidth: waitList.borderWidth,
 			borderRadius: waitList.borderRadius,

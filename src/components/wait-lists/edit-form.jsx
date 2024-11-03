@@ -1,11 +1,76 @@
 "use client";
 import { removeImage } from "@/app/actions/waitLists";
 import { Button } from "@/components/ui/button";
+import {
+	Dialog,
+	DialogClose,
+	DialogContent,
+	DialogDescription,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle,
+	DialogTrigger,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Save } from "lucide-react";
+import { Copy } from "lucide-react";
 import { useState } from "react";
 import toast from "react-hot-toast";
+import { CodeBlock } from "../ui/code-block";
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipProvider,
+	TooltipTrigger,
+} from "../ui/tooltip";
 import { SettingsTab } from "./settings-tab";
 import { SignUpForm } from "./sign-up-form";
+
+const EmbedModal = ({ waitList }) => {
+	return (
+		<Dialog>
+			<DialogTrigger asChild>
+				<Button>Embed</Button>
+			</DialogTrigger>
+			<DialogContent className="sm:max-w-[625px]">
+				<DialogHeader>
+					<DialogTitle>Instructions</DialogTitle>
+					<DialogDescription>
+						Follow the bellow instructions to embed the form on your website.
+					</DialogDescription>
+				</DialogHeader>
+				<div className="grid gap-4 py-4">
+					<div>
+						<p className="col-span-3 my-2 mb-4">
+							{/* biome-ignore lint/style/noUnusedTemplateLiteral: <explanation> */}
+							{`Step 1. Copy and paste the below code in the <head> section`}
+						</p>
+						<CodeBlock
+							language="html"
+							code={`<!-- HypeItUp Widget JS -->\n<script src="${window.location.origin}/js/embed.js" defer></script>`}
+						/>
+					</div>
+					<div>
+						<p className="col-span-3 my-2 mb-4">
+							Step 2. Paste the following code anywhere on your page where you
+							want to display the form
+						</p>
+						<CodeBlock
+							language="html"
+							code={`<!-- HypeItUp Widget UI -->\n<div class="hypeitup-widget" data-key-id="${waitList.id}" data-height="380px"></div>`}
+						/>
+					</div>
+				</div>
+				<DialogFooter>
+					<DialogClose asChild>
+						<Button onClick={() => {}}>Done</Button>
+					</DialogClose>
+				</DialogFooter>
+			</DialogContent>
+		</Dialog>
+	);
+};
 
 export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
 	const [testEmail, setTestEmail] = useState("");
@@ -16,12 +81,13 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
 			buttonColor: initialWaitList.buttonColor || "#8B5CF6",
 			buttonBorder: initialWaitList.buttonBorder || "#7C3AED",
 			buttonTextColor: initialWaitList.buttonTextColor || "#FFFFFF",
+			mainBgColor: initialWaitList.mainBgColor || "#FFFFFF",
 			bgColor: initialWaitList.bgColor || "#FFFFFF",
 			borderWidth: initialWaitList.borderWidth || "0px",
 			borderRadius: initialWaitList.borderRadius || "large",
 			fontWeight: initialWaitList.fontWeight || "normal",
 			logoSize: initialWaitList.logoSize || "1X",
-			buttonText: initialWaitList.buttonText || "Join Waitlist",
+			buttonText: initialWaitList.buttonText || "Join waitlist",
 			successMessage:
 				initialWaitList.successMessage || "Success! You're on the waitlist 🎉",
 			showLogo: initialWaitList.showLogo || true,
@@ -45,6 +111,7 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
 			buttonColor: "#8B5CF6",
 			buttonBorder: "#7C3AED",
 			buttonTextColor: "#FFFFFF",
+			mainBgColor: "#FFFFFF",
 			bgColor: "#FFFFFF",
 			borderWidth: "0px",
 			borderRadius: "medium",
@@ -56,6 +123,7 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
 			buttonColor: "#FF4136",
 			buttonBorder: "#E7040F",
 			buttonTextColor: "#FFFFFF",
+			mainBgColor: "#FFFFFF",
 			bgColor: "#FFDFDF",
 			borderWidth: "2px",
 			borderRadius: "large",
@@ -67,6 +135,7 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
 			buttonColor: "#000000",
 			buttonBorder: "#000000",
 			buttonTextColor: "#FFFFFF",
+			mainBgColor: "#FFFFFF",
 			bgColor: "#FFFFFF",
 			borderWidth: "1px",
 			borderRadius: "small",
@@ -78,6 +147,7 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
 			buttonColor: "#000000",
 			buttonBorder: "#000000",
 			buttonTextColor: "#FFB6C1",
+			mainBgColor: "#FFFFFF",
 			bgColor: "#FFB6C1",
 			borderWidth: "4px",
 			borderRadius: "none",
@@ -127,25 +197,92 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
 		}
 	};
 
+	const getEmbedCode = () => {
+		const url = `${window.location.origin}/api/embed/${initialWaitList.id}`;
+		navigator.clipboard.writeText(
+			`<iframe src="${url}" width="100%" height="100%"></iframe>`,
+		);
+		toast.success("Embed code copied to clipboard.");
+	};
+
 	return (
 		<div className="flex-1 overflow-auto">
 			<div className="p-8">
-				<div className="flex justify-between items-center mb-6">
+				<div className="flex items-center justify-between mb-6">
 					<h2 className="text-2xl font-semibold">
 						Edit {initialWaitList.name} Wait List
 					</h2>
 					<div className="flex space-x-2">
-						<Button onClick={handleSave} variant="outline" size="icon">
-							<Save className="h-4 w-4" />
-						</Button>
-						<Button>Get Embed Code</Button>
-						<Button onClick={copyShareUrlToClipboard}>Share</Button>
+						<TooltipProvider>
+							<Tooltip delayDuration={100}>
+								<TooltipTrigger asChild>
+									<Button onClick={handleSave} variant="outline" size="icon">
+										<Save className="w-4 h-4" />
+									</Button>
+								</TooltipTrigger>
+								<TooltipContent side="bottom">Save Wait List</TooltipContent>
+							</Tooltip>
+						</TooltipProvider>
+
+						<EmbedModal waitList={initialWaitList} />
+
+						<Dialog>
+							<TooltipProvider>
+								<Tooltip delayDuration={100}>
+									<TooltipTrigger asChild>
+										<DialogTrigger asChild>
+											<Button>Share</Button>
+										</DialogTrigger>
+									</TooltipTrigger>
+									<TooltipContent side="bottom">Share Wait List</TooltipContent>
+								</Tooltip>
+							</TooltipProvider>
+							<DialogContent className="sm:max-w-md">
+								<DialogHeader>
+									<DialogTitle>Share link</DialogTitle>
+									<DialogDescription>
+										Copy the link below to share your waitlist form.
+									</DialogDescription>
+								</DialogHeader>
+								<div className="flex items-center space-x-2">
+									<div className="grid flex-1 gap-2">
+										<Label htmlFor="link" className="sr-only">
+											Link
+										</Label>
+										<Input
+											id="link"
+											defaultValue={`${window.location.origin}/forms/${initialWaitList.id}`}
+											readOnly
+										/>
+									</div>
+									<Button
+										onClick={copyShareUrlToClipboard}
+										type="submit"
+										size="sm"
+										className="px-3"
+									>
+										<span className="sr-only">Copy</span>
+										<Copy className="w-4 h-4" />
+									</Button>
+								</div>
+								<DialogFooter className="sm:justify-start">
+									<DialogClose asChild>
+										<Button type="button" variant="secondary">
+											Close
+										</Button>
+									</DialogClose>
+								</DialogFooter>
+							</DialogContent>
+						</Dialog>
 					</div>
 				</div>
 
 				<div className="flex">
 					{/* WaitList Form Preview */}
-					<div className="flex-1 flex items-center justify-center">
+					<div
+						style={{ backgroundColor: formSettings.mainBgColor }}
+						className="flex items-center justify-center flex-1"
+					>
 						<SignUpForm
 							email={testEmail}
 							isLoading={isTestEmailLoading}

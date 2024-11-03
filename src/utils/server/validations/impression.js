@@ -1,11 +1,7 @@
-import { cookies } from "next/headers";
-
-const checkIfImpressionExists = async (waitListId) => {
-	const cookieStore = cookies();
-	const uniqueUserId = cookieStore.get("hypeSession");
+const checkIfImpressionExists = async (waitListId, hypeSession) => {
 	const signUp = await prisma.impression.findFirst({
 		where: {
-			uniqueUserId: uniqueUserId.value,
+			uniqueUserId: hypeSession,
 			waitListId,
 		},
 	});
@@ -40,7 +36,7 @@ export const validateRequest = async (body) => {
 	let validator = await checkIfRequestIsValid(body);
 	// If validator is not null, return the validator
 	if (validator) return validator;
-	validator = await checkIfImpressionExists(body.waitListId);
+	validator = await checkIfImpressionExists(body.waitListId, body.hypeSession);
 	// If validator is not null, return the validator
 	if (validator) {
 		return Response.json(

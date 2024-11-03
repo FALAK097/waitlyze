@@ -2,7 +2,6 @@ import { createSignUp } from "@/services/sign-up";
 import { getDeviceInfo } from "@/utils/server/device";
 import { getGeoInfo, getIpAddress } from "@/utils/server/geo";
 import { validateRequest } from "@/utils/server/validations/sign-up";
-import { cookies } from "next/headers";
 
 export const POST = async (req, res) => {
 	// TODO: Remove this fake delay after implementing email verification, signup confirmation to User & Signed Up user
@@ -17,8 +16,18 @@ export const POST = async (req, res) => {
 
 		const geo = getGeoInfo(ip);
 
-		const cookieStore = cookies();
-		const uniqueUserId = cookieStore.get("hypeSession");
+		const hypeSession = body.hypeSession;
+
+		if (!hypeSession) {
+			return Response.json(
+				{
+					message: "Unique User ID is required",
+				},
+				{
+					status: 400,
+				},
+			);
+		}
 
 		const impression = await prisma.impression.findFirst({
 			where: {
@@ -27,7 +36,7 @@ export const POST = async (req, res) => {
 						waitListId: body.waitListId,
 					},
 					{
-						uniqueUserId: uniqueUserId.value,
+						uniqueUserId: hypeSession,
 					},
 				],
 			},
