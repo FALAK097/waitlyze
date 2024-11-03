@@ -1,7 +1,6 @@
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
-import Script from "next/script";
 import CallToAction from "./call-to-action";
 import FAQ from "./faq";
 import Features from "./features";
@@ -45,12 +44,6 @@ export const NewLanding = () => {
 					</div>
 				</section>
 
-				<Script src="https://www.hypeitup.me/js/embed.js" defer />
-				<div
-					className="hypeitup-widget"
-					data-key-id="cm31kakv80001ub62sklgva4f"
-					data-height="380px"
-				/>
 				<HowItWorks />
 
 				<Features />
