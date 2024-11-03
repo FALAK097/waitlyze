@@ -46,16 +46,10 @@ export const NewLanding = () => {
 				</section>
 
 				<Script src="https://www.hypeitup.me/js/embed.js" defer />
-				<Script src="https://getlaunchlist.com/js/widget.js" defer />
 				<div
 					className="hypeitup-widget"
 					data-key-id="cm31kakv80001ub62sklgva4f"
 					data-height="380px"
-				/>
-				<div
-					className="launchlist-widget"
-					data-key-id="W0zujI"
-					data-height="180px"
 				/>
 				<HowItWorks />
 
