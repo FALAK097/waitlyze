@@ -35,7 +35,7 @@ export function SheetMenu() {
 						asChild
 					>
 						<Link href="/dashboard" className="gap-2">
-							<Image src="/images/logo.svg" alt="Logo" width={60} height={60} />
+							<Image src="/images/logo.png" alt="Logo" width={60} height={60} />
 							<SheetTitle className="text-lg font-bold">HypeItUp</SheetTitle>
 						</Link>
 					</Button>
