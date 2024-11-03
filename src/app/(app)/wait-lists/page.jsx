@@ -107,9 +107,10 @@ export default async function WaitListsPage() {
 					</BreadcrumbItem>
 				</BreadcrumbList>
 			</Breadcrumb>
-			{waitLists.map((waitList) => (
-				<div key={waitList.id}>
+			<div className="grid grid-cols-1 gap-6 mt-6 sm:grid-cols-2 lg:grid-cols-3">
+				{waitLists.map((waitList) => (
 					<WaitListCard
+						key={waitList.id}
 						id={waitList.id}
 						logoUrl={waitList.logoUrl}
 						logoKey={waitList.logoKey}
@@ -118,8 +119,8 @@ export default async function WaitListsPage() {
 						description={waitList.description}
 						url={`/wait-lists/${waitList.id}/edit`}
 					/>
-				</div>
-			))}
+				))}
+			</div>
 		</ContentLayout>
 	);
 }
