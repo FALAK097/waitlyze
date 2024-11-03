@@ -9,6 +9,7 @@ import {
 	BreadcrumbPage,
 	BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
+import EmptyWaitlistState from "@/components/wait-lists/empty-waitlist-state";
 import { WaitListCard } from "@/components/wait-lists/wait-list-card";
 import prisma from "@/lib/prisma";
 import { waitFor } from "@/lib/utils";
@@ -107,20 +108,24 @@ export default async function WaitListsPage() {
 					</BreadcrumbItem>
 				</BreadcrumbList>
 			</Breadcrumb>
-			<div className="grid grid-cols-1 gap-6 mt-6 sm:grid-cols-2 lg:grid-cols-3">
-				{waitLists.map((waitList) => (
-					<WaitListCard
-						key={waitList.id}
-						id={waitList.id}
-						logoUrl={waitList.logoUrl}
-						logoKey={waitList.logoKey}
-						name={waitList.name}
-						deleteWaitList={deleteWaitList}
-						description={waitList.description}
-						url={`/wait-lists/${waitList.id}/edit`}
-					/>
-				))}
-			</div>
+			{waitLists.length === 0 ? (
+				<EmptyWaitlistState />
+			) : (
+				<div className="grid grid-cols-1 gap-6 mt-6 sm:grid-cols-2 lg:grid-cols-3">
+					{waitLists.map((waitList) => (
+						<WaitListCard
+							key={waitList.id}
+							id={waitList.id}
+							logoUrl={waitList.logoUrl}
+							logoKey={waitList.logoKey}
+							name={waitList.name}
+							deleteWaitList={deleteWaitList}
+							description={waitList.description}
+							url={`/wait-lists/${waitList.id}/edit`}
+						/>
+					))}
+				</div>
+			)}
 		</ContentLayout>
 	);
 }
