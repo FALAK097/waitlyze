@@ -1,0 +1,17 @@
+-- AlterTable
+ALTER TABLE "wait_lists" ALTER COLUMN "bgColor" SET DEFAULT '#FFFFFF',
+ALTER COLUMN "borderRadius" SET DEFAULT 'large',
+ALTER COLUMN "borderWidth" SET DEFAULT '0px',
+ALTER COLUMN "buttonBorder" SET DEFAULT '#7C3AED',
+ALTER COLUMN "buttonColor" SET DEFAULT '#8B5CF6',
+ALTER COLUMN "buttonText" SET DEFAULT 'Join the waitlist',
+ALTER COLUMN "buttonTextColor" SET DEFAULT '#FFFFFF',
+ALTER COLUMN "fontWeight" SET DEFAULT 'normal',
+ALTER COLUMN "inputBorder" SET DEFAULT '#E5E7EB',
+ALTER COLUMN "inputColor" SET DEFAULT '#FFFFF',
+ALTER COLUMN "inputTextColor" SET DEFAULT '#000000',
+ALTER COLUMN "logoSize" SET DEFAULT '1X',
+ALTER COLUMN "logoUrl" SET DEFAULT '/images/logo.png',
+ALTER COLUMN "placeholderText" SET DEFAULT 'Enter your email',
+ALTER COLUMN "successMessage" SET DEFAULT 'Success! You''re on the waitlist 🎉',
+ALTER COLUMN "mainBgColor" SET DEFAULT '#FFFFFF';

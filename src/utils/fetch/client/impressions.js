@@ -1,4 +1,5 @@
-const createImpression = async ({ email, waitList }) => {
+const createImpression = async ({ waitList }) => {
+	const uniqueUserId = localStorage.getItem("hypeSession");
 	let createImpressionResponse = {
 		success: false,
 		message: "Failed to create a Impression, Please try again later",
@@ -6,7 +7,10 @@ const createImpression = async ({ email, waitList }) => {
 	try {
 		const response = await fetch("/api/v1/impressions", {
 			method: "POST",
-			body: JSON.stringify({ waitListId: waitList.id }),
+			body: JSON.stringify({
+				waitListId: waitList.id,
+				hypeSession: uniqueUserId,
+			}),
 			headers: {
 				"Content-Type": "application/json",
 			},
@@ -19,6 +23,7 @@ const createImpression = async ({ email, waitList }) => {
 			success: true,
 			message: waitList.successMessage,
 		};
+		localStorage.setItem("impressionCreated", "true");
 	} catch (error) {
 		console.error("Failed to create a Impression, Please try again later");
 	}
