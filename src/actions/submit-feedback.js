@@ -4,6 +4,7 @@ import { env } from "@/lib/env.mjs";
 import axios from "axios";
 
 export async function SubmitFeedback(formData) {
+	const name = formData.get("name");
 	const email = formData.get("email");
 	const title = formData.get("title");
 	const label = formData.get("label");
@@ -12,6 +13,7 @@ export async function SubmitFeedback(formData) {
 	try {
 		await axios.post("https://projectplannerai.com/api/feedback", {
 			projectId: env.PROJECT_PLANNER_AI_ID,
+			name,
 			email,
 			title,
 			label,

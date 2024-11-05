@@ -35,6 +35,7 @@ import toast from "react-hot-toast";
 import * as z from "zod";
 
 const feedbackSchema = z.object({
+	name: z.string().min(1, "Name is required").max(40, "Name is too long"),
 	email: z.string().email("Invalid email address"),
 	title: z.string().min(1, "Title is required").max(40, "Title is too long"),
 	label: z.enum([
@@ -64,6 +65,7 @@ export const Feedback = () => {
 	} = useForm({
 		resolver: zodResolver(feedbackSchema),
 		defaultValues: {
+			name: "",
 			email: "",
 			title: "",
 			label: "featureRequest",
@@ -74,6 +76,9 @@ export const Feedback = () => {
 	useEffect(() => {
 		if (user?.primaryEmailAddress?.emailAddress) {
 			setValue("email", user.primaryEmailAddress.emailAddress);
+		}
+		if (user?.firstName) {
+			setValue("name", `${user.firstName} ${user.lastName || ""}`);
 		}
 	}, [user, setValue]);
 
@@ -122,6 +127,24 @@ export const Feedback = () => {
 						</SheetDescription>
 					</SheetHeader>
 					<form onSubmit={handleSubmit(onSubmit)} className="mt-4 space-y-4">
+						<div className="space-y-2">
+							<Label htmlFor="name">Name</Label>
+							<Controller
+								name="name"
+								control={control}
+								render={({ field }) => (
+									<Input
+										{...field}
+										placeholder="Your name"
+										className="rounded-xl"
+										disabled={!!user?.firstName}
+									/>
+								)}
+							/>
+							{errors.name && (
+								<p className="text-sm text-red-500">{errors.name.message}</p>
+							)}
+						</div>
 						<div className="space-y-2">
 							<Label htmlFor="email">Email</Label>
 							<Controller
