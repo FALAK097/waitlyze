@@ -11,7 +11,6 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ColorPicker } from "../ui/color-picker";
-import UploadImage from "../upload-image";
 
 export function SettingsTab({ formSettings, updateSetting, applyPreset }) {
 	return (
@@ -23,15 +22,6 @@ export function SettingsTab({ formSettings, updateSetting, applyPreset }) {
 					<TabsTrigger value="presets">Presets</TabsTrigger>
 				</TabsList>
 				<TabsContent value="general" className="space-y-4">
-					<div>
-						<Label htmlFor="logoUrl">Logo</Label>
-						<UploadImage
-							onSuccess={(files) => {
-								updateSetting("logoUrl", files[0].url);
-								updateSetting("logoKey", files[0].key);
-							}}
-						/>
-					</div>
 					<div className="flex items-center justify-between">
 						<Label htmlFor="buttonColor">Button Color</Label>
 						<ColorPicker
