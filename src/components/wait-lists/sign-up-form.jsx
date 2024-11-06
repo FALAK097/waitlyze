@@ -2,40 +2,32 @@
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { cn } from "@/lib/utils";
-import { XIcon, Zap } from "lucide-react";
+import { Zap } from "lucide-react";
 import Image from "next/image";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { Spinner } from "../ui/spinner";
+import { UploadButton } from "../ui/upload-button";
 
 const dummyUsers = [
 	{
 		id: 1,
-		image: "https://picsum.photos/500/500",
+		image: "https://i.pravatar.cc/500?u=a042581f4e290267041",
 	},
 	{
 		id: 2,
-		image: "https://picsum.photos/500/500",
+		image: "https://i.pravatar.cc/500?u=a042581f4e29026704a",
 	},
 	{
 		id: 3,
-		image: "https://picsum.photos/500/500",
+		image: "https://i.pravatar.cc/500?u=a042581f4e29026704b",
 	},
 	{
 		id: 4,
-		image: "https://picsum.photos/500/500",
+		image: "https://i.pravatar.cc/500?u=a042581f4e29026704c",
 	},
 	{
 		id: 5,
-		image: "https://picsum.photos/500/500",
-	},
-	{
-		id: 6,
-		image: "https://picsum.photos/500/500",
-	},
-	{
-		id: 7,
-		image: "https://picsum.photos/500/500",
+		image: "https://i.pravatar.cc/500?u=a042581f4e29026704d",
 	},
 ];
 
@@ -46,42 +38,32 @@ export const SignUpForm = ({
 	onSubmit,
 	setEmail,
 	onDeleteLogo,
+	onImageUploadSuccess,
 }) => {
 	return (
 		<div
 			className="w-full max-w-md p-6 bg-white rounded-lg shadow-md"
 			style={{ backgroundColor: waitList.bgColor }}
 		>
-			<form onSubmit={onSubmit} className="space-y-4">
-				<div className="space-y-4">
-					{waitList.showLogo && waitList.logoUrl && (
-						<div className="flex justify-center">
-							<div className="relative">
-								<Image
-									alt={"WaitList logo"}
-									src={waitList.logoUrl || "/images/logo.png"}
-									width={64}
-									height={64}
-									className="transition duration-200 ease-in-out"
-								/>
-								{onDeleteLogo && (
-									<Button
-										type="button"
-										onClick={onDeleteLogo}
-										className={cn(
-											"absolute top-[-10px] right-[-5px]",
-											"opacity-70",
-										)}
-										variant="ghost"
-										size="icon"
-									>
-										<XIcon className="h-4 w-4" />
-									</Button>
-								)}
-							</div>
+			<div className="space-y-4">
+				{waitList.showLogo && waitList.logoUrl && (
+					<div className="flex justify-center">
+						<div className="relative">
+							<Image
+								alt={"WaitList logo"}
+								src={waitList.logoUrl || "/images/logo.png"}
+								width={64}
+								height={64}
+								className="transition duration-200 ease-in-out"
+							/>
+							{onImageUploadSuccess && (
+								<UploadButton onSuccess={onImageUploadSuccess} />
+							)}
 						</div>
-					)}
+					</div>
+				)}
 
+				<form onSubmit={onSubmit} className="space-y-4">
 					<Input
 						value={email}
 						required
@@ -166,8 +148,8 @@ export const SignUpForm = ({
 							</span>
 						</>
 					)}
-				</div>
-			</form>
+				</form>
+			</div>
 		</div>
 	);
 };

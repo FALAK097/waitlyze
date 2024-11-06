@@ -11,11 +11,10 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ColorPicker } from "../ui/color-picker";
-import UploadImage from "../upload-image";
 
 export function SettingsTab({ formSettings, updateSetting, applyPreset }) {
 	return (
-		<div className="w-80 px-4 ml-8 h-[calc(100vh-200px)] overflow-y-auto">
+		<div className="w-full md:w-80 ml-0 px-4 md:ml-8 h-[calc(100vh-200px)] overflow-y-auto">
 			<Tabs defaultValue="general" className="w-full">
 				<TabsList className="grid w-full grid-cols-3 sticky top-0 bg-background z-10">
 					<TabsTrigger value="general">General</TabsTrigger>
@@ -23,15 +22,6 @@ export function SettingsTab({ formSettings, updateSetting, applyPreset }) {
 					<TabsTrigger value="presets">Presets</TabsTrigger>
 				</TabsList>
 				<TabsContent value="general" className="space-y-4">
-					<div>
-						<Label htmlFor="logoUrl">Logo</Label>
-						<UploadImage
-							onSuccess={(files) => {
-								updateSetting("logoUrl", files[0].url);
-								updateSetting("logoKey", files[0].key);
-							}}
-						/>
-					</div>
 					<div className="flex items-center justify-between">
 						<Label htmlFor="buttonColor">Button Color</Label>
 						<ColorPicker
