@@ -197,12 +197,9 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
 		}
 	};
 
-	const getEmbedCode = () => {
-		const url = `${window.location.origin}/api/embed/${initialWaitList.id}`;
-		navigator.clipboard.writeText(
-			`<iframe src="${url}" width="100%" height="100%"></iframe>`,
-		);
-		toast.success("Embed code copied to clipboard.");
+	const onImageUploadSuccess = (files) => {
+		updateSetting("logoUrl", files[0].url);
+		updateSetting("logoKey", files[0].key);
 	};
 
 	return (
@@ -277,7 +274,7 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
 					</div>
 				</div>
 
-				<div className="flex">
+				<div className="flex flex-col md:flex-row gap-4 md:gap-0">
 					{/* WaitList Form Preview */}
 					<div
 						style={{ backgroundColor: formSettings.mainBgColor }}
@@ -298,6 +295,7 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
 								});
 								setIsTestEmailLoading(false);
 							}}
+							onImageUploadSuccess={onImageUploadSuccess}
 						/>
 					</div>
 
