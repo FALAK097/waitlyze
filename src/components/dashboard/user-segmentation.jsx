@@ -3,6 +3,8 @@
 import { getWaitlistSignups } from "@/actions/waitlist-signups";
 import { Progress } from "@/components/ui/progress";
 import { priorityColors, userRoles } from "@/utils/user";
+import { saveAs } from "file-saver";
+import jsPDF from "jspdf";
 import {
 	ArrowDown,
 	ArrowUp,
@@ -18,6 +20,7 @@ import {
 	UserCheck,
 	Users,
 } from "lucide-react";
+import Papa from "papaparse";
 import { useEffect, useMemo, useState } from "react";
 import Loading from "../shared/loading";
 import {
@@ -78,6 +81,7 @@ export const UserSegmentation = ({ waitlistId }) => {
 		direction: null,
 	});
 	const usersPerPage = 10;
+	const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
 	const sortedAndFilteredUsers = useMemo(() => {
 		let sortableUsers = [...users];
@@ -204,6 +208,38 @@ export const UserSegmentation = ({ waitlistId }) => {
 		setDeleteModalOpen(false);
 	};
 
+	// CSV Export
+	const handleCSVExport = () => {
+		const csv = Papa.unparse(users);
+		const blob = new Blob([csv], { type: "text/csv" });
+		saveAs(blob, "users.csv");
+	};
+
+	// PDF Export
+	const handlePDFExport = () => {
+		const doc = new jsPDF();
+		let yPosition = 10;
+
+		doc.text("User Segmentation", 14, yPosition);
+		yPosition += 10;
+
+		doc.text("Name", 14, yPosition);
+		doc.text("Category", 60, yPosition);
+		yPosition += 10;
+
+		// Adding user data
+		for (const user of users) {
+			if (user.name && user.category) {
+				doc.text(user.name, 14, yPosition);
+				doc.text(user.category, 60, yPosition);
+				yPosition += 10;
+			}
+		}
+
+		// Save the PDF
+		doc.save("users.pdf");
+	};
+
 	useEffect(() => {
 		async function fetchSignups() {
 			try {
@@ -317,6 +353,7 @@ export const UserSegmentation = ({ waitlistId }) => {
 						Categorize and prioritize users for early access
 					</CardDescription>
 				</CardHeader>
+
 				<CardContent>
 					<div className="flex flex-col items-center justify-between gap-4 mb-4 sm:flex-row">
 						<div className="relative w-full max-w-sm">
@@ -332,10 +369,42 @@ export const UserSegmentation = ({ waitlistId }) => {
 								className="w-full pl-8 rounded-xl"
 							/>
 						</div>
-						<Button variant="outline" className="w-full sm:w-auto">
-							<Download className="w-4 h-4 mr-2" /> Download
-						</Button>
+						<div className="relative inline-block text-left">
+							<div>
+								<Button
+									variant="outline"
+									type="button"
+									className="w-full sm:w-auto"
+									aria-haspopup="true"
+									onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+								>
+									<Download className="w-4 h-4 mr-2" /> Download
+								</Button>
+							</div>
+
+							{isDropdownOpen && (
+								<div className="absolute right-0 w-48 mt-2 origin-top-right rounded-md shadow-lg bg-white dark:bg-gray-800 focus:outline-none z-50">
+									<div className="py-1">
+										<button
+											type="button"
+											onClick={handlePDFExport}
+											className="block px-4 py-2 text-sm text-gray-900 dark:text-white w-full text-left hover:bg-primary dark:hover:bg-primary focus:outline-none"
+										>
+											PDF Export
+										</button>
+										<button
+											type="button"
+											onClick={handleCSVExport}
+											className="block px-4 py-2 text-sm text-gray-900 dark:text-white w-full text-left hover:bg-primary dark:hover:bg-primary focus:outline-none"
+										>
+											CSV Export
+										</button>
+									</div>
+								</div>
+							)}
+						</div>
 					</div>
+
 					<div className="-mx-4 overflow-x-auto sm:mx-0">
 						<Table>
 							<TableHeader>
@@ -539,6 +608,7 @@ export const UserSegmentation = ({ waitlistId }) => {
 						</div>
 					</div>
 				</CardContent>
+
 				<AlertDialog open={deleteModalOpen} onOpenChange={setDeleteModalOpen}>
 					<AlertDialogContent>
 						<AlertDialogHeader>
