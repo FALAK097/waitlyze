@@ -50,7 +50,7 @@ export const POST = async (req, res) => {
 			ipAddress: ip,
 			impression: {
 				connect: {
-					id: impression.id,
+					id: impression?.id,
 				},
 			},
 		};
