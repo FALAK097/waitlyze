@@ -148,10 +148,10 @@ export default function TermsOfService() {
 					<p className="mb-4 text-muted-foreground">
 						For questions about these Terms, please contact us at{" "}
 						<Link
-							href="mailto:support@hypeitup.me"
+							href="mailto:info@hypeitup.me"
 							className="text-purple-600 hover:text-purple-800"
 						>
-							support@hypeitup.me
+							info@hypeitup.me
 						</Link>
 						.
 					</p>

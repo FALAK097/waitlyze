@@ -46,10 +46,10 @@ export default function RefundPolicy() {
 					<p className="mb-4 text-muted-foreground">
 						To request a refund, please contact us at{" "}
 						<Link
-							href="mailto:support@hypeitup.me"
+							href="mailto:info@hypeitup.me"
 							className="text-purple-600 hover:text-purple-800"
 						>
-							support@hypeitup.me
+							info@hypeitup.me
 						</Link>{" "}
 						with the following information:
 					</p>
@@ -80,10 +80,10 @@ export default function RefundPolicy() {
 					<p className="mb-4 text-muted-foreground">
 						For any questions about this Refund Policy, please contact us at{" "}
 						<Link
-							href="mailto:support@hypeitup.me"
+							href="mailto:info@hypeitup.me"
 							className="text-purple-600 hover:text-purple-800"
 						>
-							support@hypeitup.me
+							info@hypeitup.me
 						</Link>
 						.
 					</p>

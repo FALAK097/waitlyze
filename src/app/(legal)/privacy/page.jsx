@@ -157,10 +157,10 @@ export default function PrivacyPolicy() {
 						If you have questions or concerns about this Privacy Policy or our
 						data practices, please contact us at{" "}
 						<Link
-							href="mailto:support@hypeitup.me"
+							href="mailto:info@hypeitup.me"
 							className="text-purple-600 hover:text-purple-800"
 						>
-							support@hypeitup.me
+							info@hypeitup.me
 						</Link>
 						.
 					</p>
