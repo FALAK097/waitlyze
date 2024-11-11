@@ -13,8 +13,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Save } from "lucide-react";
-import { Copy } from "lucide-react";
+import { Copy, Save } from "lucide-react";
 import { useState } from "react";
 import toast from "react-hot-toast";
 import { CodeBlock } from "../ui/code-block";
@@ -92,8 +91,13 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
 				initialWaitList.successMessage || "Success! You're on the waitlist 🎉",
 			showLogo: initialWaitList.showLogo || true,
 			showSocialProof: initialWaitList.showSocialProof || true,
+			showBadge: initialWaitList.showBadge || true,
+			badgeText:
+				initialWaitList.badgeText || "Sign Up and get 50% off on launch",
+			badgeColor: initialWaitList.badgeColor || "#8B5CF6",
+			badgeTextColor: initialWaitList.badgeTextColor || "#FFFFFF",
 			enableReferrals: initialWaitList.enableReferrals || false,
-			inputColor: initialWaitList.inputColor || "#FFFFF",
+			inputColor: initialWaitList.inputColor || "#FFFFFF",
 			inputBorder: initialWaitList.inputBorder || "#E5E7EB",
 			inputTextColor: initialWaitList.inputTextColor || "#000000",
 			placeholderText: initialWaitList.placeholderText || "Enter your email",
@@ -118,6 +122,8 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
 			inputColor: "#F3F4F6",
 			inputBorder: "#E5E7EB",
 			inputTextColor: "#000000",
+			badgeColor: "#8B5CF6",
+			badgeTextColor: "#FFFFFF",
 		},
 		hot: {
 			buttonColor: "#FF4136",
@@ -130,6 +136,8 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
 			inputColor: "#FFFFFF",
 			inputBorder: "#FF4136",
 			inputTextColor: "#FF4136",
+			badgeColor: "#FF4136",
+			badgeTextColor: "#FFFFFF",
 		},
 		minimal: {
 			buttonColor: "#000000",
@@ -142,6 +150,8 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
 			inputColor: "#FFFFFF",
 			inputBorder: "#000000",
 			inputTextColor: "#000000",
+			badgeColor: "#000000",
+			badgeTextColor: "#FFFFFF",
 		},
 		funk: {
 			buttonColor: "#000000",
@@ -154,6 +164,8 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
 			inputColor: "#FFFFFF",
 			inputBorder: "#000000",
 			inputTextColor: "#000000",
+			badgeColor: "#FF69B4",
+			badgeTextColor: "#000000",
 		},
 	};
 
@@ -274,7 +286,7 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
 					</div>
 				</div>
 
-				<div className="flex flex-col md:flex-row gap-4 md:gap-0">
+				<div className="flex flex-col gap-4 md:flex-row md:gap-0">
 					{/* WaitList Form Preview */}
 					<div
 						style={{ backgroundColor: formSettings.mainBgColor }}

@@ -16,7 +16,7 @@ export function SettingsTab({ formSettings, updateSetting, applyPreset }) {
 	return (
 		<div className="w-full md:w-80 ml-0 px-4 md:ml-8 h-[calc(100vh-200px)] overflow-y-auto">
 			<Tabs defaultValue="general" className="w-full">
-				<TabsList className="grid w-full grid-cols-3 sticky top-0 bg-background z-10">
+				<TabsList className="sticky top-0 z-10 grid w-full grid-cols-3 bg-background">
 					<TabsTrigger value="general">General</TabsTrigger>
 					<TabsTrigger value="input">Input</TabsTrigger>
 					<TabsTrigger value="presets">Presets</TabsTrigger>
@@ -124,6 +124,34 @@ export function SettingsTab({ formSettings, updateSetting, applyPreset }) {
 							</SelectContent>
 						</Select>
 					</div>
+					{formSettings.showBadge && (
+						<>
+							<div>
+								<Label htmlFor="badgeText">Badge Text</Label>
+								<Input
+									id="badgeText"
+									value={formSettings.badgeText}
+									onChange={(e) => updateSetting("badgeText", e.target.value)}
+								/>
+							</div>
+							<div className="flex items-center justify-between">
+								<Label htmlFor="badgeColor">Badge Color</Label>
+								<ColorPicker
+									id="badgeColor"
+									value={formSettings.badgeColor}
+									onChange={(color) => updateSetting("badgeColor", color)}
+								/>
+							</div>
+							<div className="flex items-center justify-between">
+								<Label htmlFor="badgeTextColor">Badge Text Color</Label>
+								<ColorPicker
+									id="badgeTextColor"
+									value={formSettings.badgeTextColor}
+									onChange={(color) => updateSetting("badgeTextColor", color)}
+								/>
+							</div>
+						</>
+					)}
 					<div>
 						<Label htmlFor="buttonText">Button Text</Label>
 						<Input
@@ -157,6 +185,14 @@ export function SettingsTab({ formSettings, updateSetting, applyPreset }) {
 							}
 						/>
 						<Label htmlFor="showSocialProof">Show Social Proof</Label>
+					</div>
+					<div className="flex items-center space-x-2">
+						<Switch
+							id="showBadge"
+							checked={formSettings.showBadge}
+							onCheckedChange={(checked) => updateSetting("showBadge", checked)}
+						/>
+						<Label htmlFor="showBadge">Show Badge</Label>
 					</div>
 					<div className="flex items-center space-x-2">
 						<Switch
