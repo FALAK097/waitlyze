@@ -19,10 +19,24 @@ export default async function WaitListsPreviewPage({ params }) {
 
 	const uniqueUserId = nanoid();
 
+	const getTotalSignUpsOnWaitList = async () => {
+		"use server";
+		const waitListSignUps = await prisma.signUp.count({
+			where: {
+				waitListId: waitList.id,
+			},
+		});
+		return waitListSignUps;
+	};
+
 	return (
 		<div>
 			<ReactQueryProvider>
-				<FormPreview uniqueUserId={uniqueUserId} waitList={waitList} />
+				<FormPreview
+					uniqueUserId={uniqueUserId}
+					waitList={waitList}
+					getTotalSignUpsOnWaitList={getTotalSignUpsOnWaitList}
+				/>
 			</ReactQueryProvider>
 		</div>
 	);

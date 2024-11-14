@@ -3,7 +3,37 @@ import { getDeviceInfo } from "@/utils/server/device";
 import { getGeoInfo, getIpAddress } from "@/utils/server/geo";
 import { validateRequest } from "@/utils/server/validations/sign-up";
 
-export const POST = async (req, res) => {
+export const GET = async (req, _) => {
+	// get signup id from params
+	const signUpId = req.nextUrl.searchParams.get("signUpId");
+	if (!signUpId) {
+		return Response.json(
+			{
+				message: "Sign up ID is required",
+			},
+			{ status: 400 },
+		);
+	}
+
+	const signUp = await prisma.signUp.findUnique({
+		where: {
+			id: signUpId,
+		},
+	});
+
+	if (!signUp) {
+		return Response.json(
+			{
+				message: "Sign up not found",
+			},
+			{ status: 404 },
+		);
+	}
+
+	return Response.json({ signUp });
+};
+
+export const POST = async (req, _) => {
 	// TODO: Remove this fake delay after implementing email verification, signup confirmation to User & Signed Up user
 	await new Promise((resolve) => setTimeout(resolve, 1500));
 	try {
@@ -43,16 +73,13 @@ export const POST = async (req, res) => {
 		});
 
 		let data = {
+			uniqueUserId: hypeSession,
 			email: body.email,
 			device: device,
 			deviceType: deviceType,
 			waitListId: body.waitListId,
 			ipAddress: ip,
-			impression: {
-				connect: {
-					id: impression?.id,
-				},
-			},
+			impressionId: impression?.id,
 		};
 
 		if (geo) {
@@ -63,10 +90,10 @@ export const POST = async (req, res) => {
 			data = { ...data, city, country, latitude, longitude, timezone };
 		}
 
-		await createSignUp(data);
-		return Response.json({ message: "Signed up successfully" });
+		const signUp = await createSignUp(data, body?.referralId);
+		return Response.json({ message: "Signed up successfully", signUp });
 	} catch (error) {
-		console.error(error);
+		console.error("Error in sign up route", error);
 		return Response.json(
 			{
 				message: "Failed to sign up",

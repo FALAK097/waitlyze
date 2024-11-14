@@ -63,6 +63,7 @@ model WaitList {
 
 model SignUp {
   id           String      @id @default(cuid())
+  uniqueUserId String      @unique
   email        String
   device       String?
   deviceType   String?
@@ -74,8 +75,13 @@ model SignUp {
   longitude    String?
   waitListId   String
   impressionId String?
+  rank         Int?
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
   waitList     WaitList    @relation(fields: [waitListId], references: [id], onDelete: Cascade)
   impression   Impression? @relation(fields: [impressionId], references: [id], onDelete: SetNull)
+  referrals    Referral[] @relation("referredByReferral")
+  referredBy   Referral[] @relation("signUpReferral")
 
   @@map("sign_ups")
 }
@@ -92,8 +98,22 @@ model Impression {
   latitude     String?
   longitude    String?
   waitListId   String
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
   waitList     WaitList @relation(fields: [waitListId], references: [id], onDelete: Cascade)
   signUps      SignUp[]
 
   @@map("impressions")
+}
+
+model Referral {
+  id           String   @id @default(cuid())
+  signUpId     String   @unique
+  referredById String?  
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  signUp       SignUp   @relation("signUpReferral", fields: [signUpId], references: [id], onDelete: Cascade)
+  referredBy   SignUp?  @relation("referredByReferral", fields: [referredById], references: [id], onDelete: Cascade)
+
+  @@map("referrals")
 }
