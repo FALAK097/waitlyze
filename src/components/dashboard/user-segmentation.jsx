@@ -1,8 +1,9 @@
 "use client";
 
+import { getWaitlistReferrals } from "@/actions/waitlist-referral";
 import { getWaitlistSignups } from "@/actions/waitlist-signups";
 import { Progress } from "@/components/ui/progress";
-import { priorityColors, userRoles } from "@/utils/user";
+import { priorityColors } from "@/utils/user";
 import {
 	ArrowDown,
 	ArrowUp,
@@ -12,6 +13,7 @@ import {
 	ChevronRight,
 	Download,
 	FileJson,
+	HelpCircle,
 	MoreVertical,
 	Search,
 	Trash2,
@@ -30,7 +32,6 @@ import {
 	AlertDialogHeader,
 	AlertDialogTitle,
 } from "../ui/alert-dialog";
-import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { Button } from "../ui/button";
 import {
 	Card,
@@ -48,13 +49,6 @@ import {
 } from "../ui/dropdown-menu";
 import { Input } from "../ui/input";
 import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "../ui/select";
-import {
 	Table,
 	TableBody,
 	TableCell,
@@ -62,10 +56,16 @@ import {
 	TableHeader,
 	TableRow,
 } from "../ui/table";
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipProvider,
+	TooltipTrigger,
+} from "../ui/tooltip";
 
 export const UserSegmentation = ({ waitlistId }) => {
-	// const [users, setUsers] = useState(generateMockUsers(50));
 	const [users, setUsers] = useState([]);
+	const [referralCounts, setReferralCounts] = useState({});
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState(null);
 	const [searchTerm, setSearchTerm] = useState("");
@@ -85,7 +85,6 @@ export const UserSegmentation = ({ waitlistId }) => {
 			sortableUsers = sortableUsers.filter(
 				(user) =>
 					user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-					user.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
 					user.device.toLowerCase().includes(searchTerm.toLowerCase()) ||
 					user.priority.toLowerCase().includes(searchTerm.toLowerCase()),
 			);
@@ -135,14 +134,6 @@ export const UserSegmentation = ({ waitlistId }) => {
 			<ArrowUp className="w-4 h-4" />
 		) : (
 			<ArrowDown className="w-4 h-4" />
-		);
-	};
-
-	const handleRoleChange = (userId, newRole) => {
-		setUsers(
-			users.map((user) =>
-				user.id === userId ? { ...user, category: newRole } : user,
-			),
 		);
 	};
 
@@ -205,24 +196,35 @@ export const UserSegmentation = ({ waitlistId }) => {
 	};
 
 	useEffect(() => {
-		async function fetchSignups() {
+		async function fetchData() {
 			try {
 				setLoading(true);
-				const result = await getWaitlistSignups(waitlistId);
-				if (result.success) {
-					setUsers(result.data);
+				const signupsResult = await getWaitlistSignups(waitlistId);
+				if (signupsResult.success) {
+					setUsers(signupsResult.data);
 				} else {
-					setError(result.error);
+					setError(signupsResult.error);
+				}
+
+				const referralsResult = await getWaitlistReferrals(waitlistId);
+				if (referralsResult.success) {
+					const counts = {};
+					for (const referral of referralsResult.data) {
+						counts[referral.referredById] = referral._count.signUpId;
+					}
+					setReferralCounts(counts);
+				} else {
+					setError(referralsResult.error);
 				}
 			} catch (err) {
-				setError("Failed to fetch signup data");
+				setError("Failed to fetch data");
 				console.error(err);
 			} finally {
 				setLoading(false);
 			}
 		}
 
-		fetchSignups();
+		fetchData();
 	}, [waitlistId]);
 
 	if (loading) {
@@ -348,8 +350,8 @@ export const UserSegmentation = ({ waitlistId }) => {
 											onCheckedChange={handleSelectAll}
 										/>
 									</TableHead>
-									<TableHead className="w-[250px]">User</TableHead>
-									<TableHead>Category</TableHead>
+									<TableHead className="w-[250px]">User Email</TableHead>
+									<TableHead className="text-center">Referral Count</TableHead>
 									<TableHead>Device</TableHead>
 									<TableHead>
 										<Button
@@ -358,6 +360,37 @@ export const UserSegmentation = ({ waitlistId }) => {
 											className="hover:bg-transparent"
 										>
 											Priority {getSortIcon()}
+											<TooltipProvider>
+												<Tooltip>
+													<TooltipTrigger>
+														<HelpCircle className="w-4 h-4 transition-colors text-muted-foreground hover:text-primary" />
+													</TooltipTrigger>
+													<TooltipContent
+														className="max-w-[280px] bg-popover text-popover-foreground shadow-lg rounded-lg border border-border p-4 dark:bg-zinc-900"
+														sideOffset={5}
+													>
+														<div className="space-y-2">
+															<p className="font-medium">
+																Priority is based on the number of referrals:
+															</p>
+															<ul className="space-y-1 list-none">
+																<li className="flex items-center gap-2">
+																	<span className="w-2 h-2 rounded-full bg-amber-500" />
+																	<span>High: More than 5 referrals</span>
+																</li>
+																<li className="flex items-center gap-2">
+																	<span className="w-2 h-2 bg-purple-500 rounded-full" />
+																	<span>Medium: 1 to 5 referrals</span>
+																</li>
+																<li className="flex items-center gap-2">
+																	<span className="w-2 h-2 bg-orange-500 rounded-full" />
+																	<span>Low: No referrals</span>
+																</li>
+															</ul>
+														</div>
+													</TooltipContent>
+												</Tooltip>
+											</TooltipProvider>
 										</Button>
 									</TableHead>
 									<TableHead>Action</TableHead>
@@ -408,46 +441,22 @@ export const UserSegmentation = ({ waitlistId }) => {
 												/>
 											</TableCell>
 											<TableCell className="font-medium">
-												<div className="flex items-center space-x-2">
-													<Avatar>
-														<AvatarImage src={user.avatar} alt={user.name} />
-														<AvatarFallback>
-															{user.name
-																.split(" ")
-																.map((n) => n[0])
-																.join("")}
-														</AvatarFallback>
-													</Avatar>
+												<div className="flex items-center">
 													<span className="hidden sm:inline">{user.name}</span>
 												</div>
 											</TableCell>
-											<TableCell>
-												<Select
-													onValueChange={(value) =>
-														handleRoleChange(user.id, value)
-													}
-													defaultValue={user.category}
-												>
-													<SelectTrigger className="w-[140px]">
-														<SelectValue placeholder="Select a role" />
-													</SelectTrigger>
-													<SelectContent className="cursor-pointer">
-														{userRoles.map((role) => (
-															<SelectItem
-																className="cursor-pointer"
-																key={role}
-																value={role}
-															>
-																{role}
-															</SelectItem>
-														))}
-													</SelectContent>
-												</Select>
+											<TableCell className="text-center">
+												{referralCounts[user.id] || 0}
 											</TableCell>
-											<TableCell>{user.device}</TableCell>
+											<TableCell>
+												{user.device.charAt(0).toUpperCase() +
+													user.device.slice(1)}
+											</TableCell>
 											<TableCell>
 												<span
-													className={`font-medium ml-5 ${priorityColors[user.priority]}`}
+													className={`font-medium ml-5 ${
+														priorityColors[user.priority]
+													}`}
 												>
 													{user.priority}
 												</span>
@@ -474,7 +483,7 @@ export const UserSegmentation = ({ waitlistId }) => {
 									))
 								) : (
 									<TableRow>
-										<TableCell colSpan={7} className="h-24 text-center">
+										<TableCell colSpan={6} className="h-24 text-center">
 											No users found, don't be shy to invite some!
 										</TableCell>
 									</TableRow>
