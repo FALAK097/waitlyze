@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Copy, Save } from "lucide-react";
+import { CodeIcon, Copy, Save, ShareIcon } from "lucide-react";
 import { useState } from "react";
 import toast from "react-hot-toast";
 import { CodeBlock } from "../ui/code-block";
@@ -29,9 +29,16 @@ import { SignUpForm } from "./sign-up-form";
 const EmbedModal = ({ waitList }) => {
 	return (
 		<Dialog>
-			<DialogTrigger asChild>
-				<Button>Embed</Button>
-			</DialogTrigger>
+			<Tooltip delayDuration={100}>
+				<TooltipTrigger asChild>
+					<DialogTrigger asChild>
+						<Button size="icon">
+							<CodeIcon className="w-4 h-4" />
+						</Button>
+					</DialogTrigger>
+				</TooltipTrigger>
+				<TooltipContent side="bottom">Embed Wait List</TooltipContent>
+			</Tooltip>
 			<DialogContent className="sm:max-w-[625px]">
 				<DialogHeader>
 					<DialogTitle>Instructions</DialogTitle>
@@ -221,69 +228,70 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
 					<h2 className="text-2xl font-semibold">
 						Edit {initialWaitList.name} Wait List
 					</h2>
-					<div className="flex space-x-2">
-						<TooltipProvider>
+					<TooltipProvider>
+						<div className="flex space-x-2">
 							<Tooltip delayDuration={100}>
 								<TooltipTrigger asChild>
-									<Button onClick={handleSave} variant="outline" size="icon">
+									<Button onClick={handleSave} size="icon">
 										<Save className="w-4 h-4" />
 									</Button>
 								</TooltipTrigger>
 								<TooltipContent side="bottom">Save Wait List</TooltipContent>
 							</Tooltip>
-						</TooltipProvider>
 
-						<EmbedModal waitList={initialWaitList} />
+							<EmbedModal waitList={initialWaitList} />
 
-						<Dialog>
-							<TooltipProvider>
+							<Dialog>
 								<Tooltip delayDuration={100}>
 									<TooltipTrigger asChild>
 										<DialogTrigger asChild>
-											<Button>Share</Button>
+											<Button size="icon">
+												<ShareIcon className="w-4 h-4" />
+											</Button>
 										</DialogTrigger>
 									</TooltipTrigger>
 									<TooltipContent side="bottom">Share Wait List</TooltipContent>
 								</Tooltip>
-							</TooltipProvider>
-							<DialogContent className="sm:max-w-md">
-								<DialogHeader>
-									<DialogTitle>Share link</DialogTitle>
-									<DialogDescription>
-										Copy the link below to share your waitlist form.
-									</DialogDescription>
-								</DialogHeader>
-								<div className="flex items-center space-x-2">
-									<div className="grid flex-1 gap-2">
-										<Label htmlFor="link" className="sr-only">
-											Link
-										</Label>
-										<Input
-											id="link"
-											defaultValue={`${window.location.origin}/forms/${initialWaitList.id}`}
-											readOnly
-										/>
-									</div>
-									<Button
-										onClick={copyShareUrlToClipboard}
-										type="submit"
-										size="sm"
-										className="px-3"
-									>
-										<span className="sr-only">Copy</span>
-										<Copy className="w-4 h-4" />
-									</Button>
-								</div>
-								<DialogFooter className="sm:justify-start">
-									<DialogClose asChild>
-										<Button type="button" variant="secondary">
-											Close
+
+								<DialogContent className="sm:max-w-md">
+									<DialogHeader>
+										<DialogTitle>Share link</DialogTitle>
+										<DialogDescription>
+											Copy the link below to share your waitlist form.
+										</DialogDescription>
+									</DialogHeader>
+									<div className="flex items-center space-x-2">
+										<div className="grid flex-1 gap-2">
+											<Label htmlFor="link" className="sr-only">
+												Link
+											</Label>
+											<Input
+												id="link"
+												defaultValue={`${window.location.origin}/forms/${initialWaitList.id}`}
+												readOnly
+											/>
+										</div>
+										<Button
+											onClick={copyShareUrlToClipboard}
+											type="submit"
+											size="sm"
+											className="px-3"
+										>
+											<span className="sr-only">Copy</span>
+											<Copy className="w-4 h-4" />
 										</Button>
-									</DialogClose>
-								</DialogFooter>
-							</DialogContent>
-						</Dialog>
-					</div>
+									</div>
+									<DialogFooter className="sm:justify-start">
+										<DialogClose asChild>
+											<Button type="button" variant="secondary">
+												Close
+											</Button>
+										</DialogClose>
+									</DialogFooter>
+								</DialogContent>
+							</Dialog>
+						</div>
+					</TooltipProvider>
 				</div>
 
 				<div className="flex flex-col gap-4 md:flex-row md:gap-0">
