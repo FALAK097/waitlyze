@@ -16,13 +16,9 @@ import { redirect } from "next/navigation";
 
 export default async function DashboardPage() {
 	const clerkUser = await currentUser();
+
 	if (!clerkUser) {
-		return {
-			redirect: {
-				destination: "/",
-				permanent: false,
-			},
-		};
+		redirect("/");
 	}
 
 	const user = await prisma.user.findUnique({

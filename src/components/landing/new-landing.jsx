@@ -18,14 +18,14 @@ export const NewLanding = () => {
 			</div>
 
 			<main className="flex-grow">
-				<section className="py-32 px-6 md:px-12 lg:px-24 bg-background">
-					<div className="max-w-6xl mx-auto grid md:grid-cols-2 gap-8 items-center">
+				<section className="px-6 py-32 md:px-12 lg:px-24 bg-background">
+					<div className="grid items-center max-w-6xl gap-8 mx-auto md:grid-cols-2">
 						<div>
-							<h1 className="text-4xl font-bold mb-4">
+							<h1 className="mb-4 text-4xl font-bold">
 								Create Stunning Waitlists in{" "}
 								<s className="text-primary">Minutes</s> Seconds
 							</h1>
-							<p className="text-xl mb-6">
+							<p className="mb-6 text-xl">
 								Design, launch, and manage waitlists that convert visitors into
 								eager customers.
 							</p>
@@ -37,10 +37,10 @@ export const NewLanding = () => {
 									}),
 								)}
 							>
-								Get Started
+								Create Your Waitlist Now
 							</Link>
 						</div>
-						<div className="aspect-video bg-gray-300 rounded-lg" />
+						<div className="bg-gray-300 rounded-lg aspect-video" />
 					</div>
 				</section>
 
