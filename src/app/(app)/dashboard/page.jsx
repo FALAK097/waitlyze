@@ -25,6 +25,9 @@ export default async function DashboardPage() {
 		where: {
 			clerkUserId: clerkUser.id,
 		},
+		include: {
+			waitLists: true,
+		},
 	});
 
 	if (!user) {
@@ -36,6 +39,8 @@ export default async function DashboardPage() {
 			userId: user.id,
 		},
 	});
+
+	const waitListIds = user.waitLists.map((waitList) => waitList.id);
 
 	return (
 		<>
@@ -59,7 +64,7 @@ export default async function DashboardPage() {
 				</div>
 			</ContentLayout>
 
-			<DashboardCard />
+			<DashboardCard waitListIds={waitListIds} />
 		</>
 	);
 }
