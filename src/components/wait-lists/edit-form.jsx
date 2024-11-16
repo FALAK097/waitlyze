@@ -13,9 +13,10 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { CodeIcon, Copy, Save, ShareIcon } from "lucide-react";
+import { CodeIcon, Save, ShareIcon } from "lucide-react";
 import { useState } from "react";
 import toast from "react-hot-toast";
+import { CopyIcon } from "../shared/icons";
 import { CodeBlock } from "../ui/code-block";
 import {
 	Tooltip,
@@ -81,6 +82,7 @@ const EmbedModal = ({ waitList }) => {
 export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
 	const [testEmail, setTestEmail] = useState("");
 	const [isTestEmailLoading, setIsTestEmailLoading] = useState(false);
+	const [isSaving, setIsSaving] = useState(false);
 
 	const [formSettings, setFormSettings] = useState(() => {
 		return {
@@ -119,10 +121,10 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
 
 	const presets = {
 		modern: {
+			mainBgColor: "#F9F9F9",
 			buttonColor: "#8B5CF6",
 			buttonBorder: "#7C3AED",
 			buttonTextColor: "#FFFFFF",
-			mainBgColor: "#FFFFFF",
 			bgColor: "#FFFFFF",
 			borderWidth: "0px",
 			borderRadius: "medium",
@@ -133,10 +135,10 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
 			badgeTextColor: "#FFFFFF",
 		},
 		hot: {
+			mainBgColor: "#FFDFDF",
 			buttonColor: "#FF4136",
 			buttonBorder: "#E7040F",
 			buttonTextColor: "#FFFFFF",
-			mainBgColor: "#FFFFFF",
 			bgColor: "#FFDFDF",
 			borderWidth: "2px",
 			borderRadius: "large",
@@ -164,7 +166,7 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
 			buttonColor: "#000000",
 			buttonBorder: "#000000",
 			buttonTextColor: "#FFB6C1",
-			mainBgColor: "#FFFFFF",
+			mainBgColor: "#FFB6C1",
 			bgColor: "#FFB6C1",
 			borderWidth: "4px",
 			borderRadius: "none",
@@ -181,7 +183,9 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
 	};
 
 	const handleSave = async () => {
+		setIsSaving(true);
 		const response = await saveWaitList(initialWaitList.id, formSettings);
+		setIsSaving(false);
 		if (response.success) {
 			toast.success(response.message);
 		}
@@ -232,9 +236,15 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
 						<div className="flex space-x-2">
 							<Tooltip delayDuration={100}>
 								<TooltipTrigger asChild>
-									<Button onClick={handleSave} size="icon">
-										<Save className="w-4 h-4" />
-									</Button>
+									{isSaving ? (
+										<Button size="icon" disabled>
+											<Save className="w-4 h-4 animate-spin" />
+										</Button>
+									) : (
+										<Button size="icon" onClick={handleSave}>
+											<Save className="w-4 h-4" />
+										</Button>
+									)}
 								</TooltipTrigger>
 								<TooltipContent side="bottom">Save Wait List</TooltipContent>
 							</Tooltip>
@@ -278,7 +288,7 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
 											className="px-3"
 										>
 											<span className="sr-only">Copy</span>
-											<Copy className="w-4 h-4" />
+											<CopyIcon />
 										</Button>
 									</div>
 									<DialogFooter className="sm:justify-start">

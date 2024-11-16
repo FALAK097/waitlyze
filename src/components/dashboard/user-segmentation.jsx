@@ -8,19 +8,22 @@ import {
 	ArrowDown,
 	ArrowUp,
 	ArrowUpDown,
-	ArrowUpRight,
 	ChevronLeft,
 	ChevronRight,
-	Download,
 	FileJson,
 	HelpCircle,
 	MoreVertical,
-	Search,
-	Trash2,
-	UserCheck,
-	Users,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import {
+	ActivityIcon,
+	DeleteIcon,
+	DownloadIcon,
+	RocketIcon,
+	SearchIcon,
+	TrendingUpIcon,
+	UsersIcon,
+} from "../shared/icons";
 import Loading from "../shared/loading";
 import {
 	AlertDialog,
@@ -217,7 +220,7 @@ export const UserSegmentation = ({ waitlistId }) => {
 					setError(referralsResult.error);
 				}
 			} catch (err) {
-				setError("Failed to fetch data");
+				setError("Please Select a Waitlist");
 				console.error(err);
 			} finally {
 				setLoading(false);
@@ -259,7 +262,7 @@ export const UserSegmentation = ({ waitlistId }) => {
 						<CardTitle className="text-sm font-medium">
 							Total Sign-ups
 						</CardTitle>
-						<Users className="w-4 h-4 text-muted-foreground" />
+						<UsersIcon />
 					</CardHeader>
 					<CardContent>
 						<div className="text-2xl font-bold">{users.length}</div>
@@ -273,7 +276,7 @@ export const UserSegmentation = ({ waitlistId }) => {
 						<CardTitle className="text-sm font-medium">
 							Conversion Rate
 						</CardTitle>
-						<ArrowUpRight className="w-4 h-4 text-muted-foreground" />
+						<TrendingUpIcon />
 					</CardHeader>
 					<CardContent>
 						<div className="text-2xl font-bold">32.5%</div>
@@ -287,7 +290,7 @@ export const UserSegmentation = ({ waitlistId }) => {
 						<CardTitle className="text-sm font-medium">
 							Referral Conversions
 						</CardTitle>
-						<Users className="w-4 h-4 text-muted-foreground" />
+						<ActivityIcon />
 					</CardHeader>
 					<CardContent>
 						<p className="text-2xl font-bold">
@@ -301,7 +304,7 @@ export const UserSegmentation = ({ waitlistId }) => {
 				<Card>
 					<CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
 						<CardTitle className="text-sm font-medium">Goal Progress</CardTitle>
-						<UserCheck className="w-4 h-4 text-muted-foreground" />
+						<RocketIcon />
 					</CardHeader>
 					<CardContent>
 						<div className="text-2xl font-bold">78%</div>
@@ -322,20 +325,16 @@ export const UserSegmentation = ({ waitlistId }) => {
 				<CardContent>
 					<div className="flex flex-col items-center justify-between gap-4 mb-4 sm:flex-row">
 						<div className="relative w-full max-w-sm">
-							<Search
-								height={20}
-								width={20}
-								className="absolute text-gray-400 transform -translate-y-1/2 left-2 top-1/2"
-							/>
+							<SearchIcon />
 							<Input
 								placeholder="Search users..."
 								value={searchTerm}
 								onChange={(e) => setSearchTerm(e.target.value)}
-								className="w-full pl-8 rounded-xl"
+								className="w-full pl-12 rounded-xl"
 							/>
 						</div>
 						<Button variant="outline" className="w-full sm:w-auto">
-							<Download className="w-4 h-4 mr-2" /> Download
+							<DownloadIcon /> Export as CSV
 						</Button>
 					</div>
 					<div className="-mx-4 overflow-x-auto sm:mx-0">
@@ -415,8 +414,8 @@ export const UserSegmentation = ({ waitlistId }) => {
 													className="cursor-pointer"
 													onClick={() => handleBulkAction("delete")}
 												>
-													<Trash2 className="w-4 h-4 mr-2" />
-													<span>Delete User</span>
+													<DeleteIcon />
+													<span className="text-red-600">Delete User</span>
 												</DropdownMenuItem>
 												<DropdownMenuItem
 													className="cursor-pointer"
@@ -473,7 +472,7 @@ export const UserSegmentation = ({ waitlistId }) => {
 															className="text-red-600 cursor-pointer"
 															onClick={() => handleDeleteUser(user.id)}
 														>
-															<Trash2 className="w-4 h-4 mr-2 text-red-600" />
+															<DeleteIcon />
 															<span className="text-red-600">Delete</span>
 														</DropdownMenuItem>
 													</DropdownMenuContent>
