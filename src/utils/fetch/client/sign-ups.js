@@ -1,4 +1,4 @@
-const createSignUp = async ({ email, waitList }) => {
+const createSignUp = async ({ email, waitList, referralId }) => {
 	const uniqueUserId = localStorage.getItem("hypeSession");
 	let createSignUpResponse = {
 		success: false,
@@ -11,6 +11,7 @@ const createSignUp = async ({ email, waitList }) => {
 				email,
 				waitListId: waitList.id,
 				hypeSession: uniqueUserId,
+				referralId,
 			}),
 			headers: {
 				"Content-Type": "application/json",
@@ -20,6 +21,8 @@ const createSignUp = async ({ email, waitList }) => {
 		if (response.status !== 200) {
 			throw new Error(data.message);
 		}
+		// set signUp in local storage
+		localStorage.setItem("signUp", JSON.stringify(data.signUp));
 		createSignUpResponse = {
 			success: true,
 			message: waitList.successMessage,
@@ -39,4 +42,33 @@ const createSignUp = async ({ email, waitList }) => {
 	return createSignUpResponse;
 };
 
-export { createSignUp };
+const fetchSignUp = async () => {
+	const signUp = localStorage.getItem("signUp");
+	if (!signUp) {
+		return null;
+	}
+
+	const signUpJson = JSON.parse(signUp);
+
+	const signUpId = signUpJson.id;
+
+	try {
+		const response = await fetch(`/api/v1/sign_up?signUpId=${signUpId}`);
+		const data = await response.json();
+
+		if (response.status !== 200) {
+			throw new Error(data.message);
+		}
+
+		const signUp = data.signUp;
+		// write to local storage
+		localStorage.setItem("signUp", JSON.stringify(signUp));
+		return signUp;
+	} catch (error) {
+		console.error("Error fetching sign up", error);
+		localStorage.removeItem("signUp");
+		return null;
+	}
+};
+
+export { createSignUp, fetchSignUp };

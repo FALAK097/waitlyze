@@ -11,17 +11,19 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ColorPicker } from "../ui/color-picker";
+import { Textarea } from "../ui/textarea";
 
 export function SettingsTab({ formSettings, updateSetting, applyPreset }) {
 	return (
 		<div className="w-full md:w-80 ml-0 px-4 md:ml-8 h-[calc(100vh-200px)] overflow-y-auto">
 			<Tabs defaultValue="general" className="w-full">
-				<TabsList className="grid w-full grid-cols-3 sticky top-0 bg-background z-10">
+				<TabsList>
 					<TabsTrigger value="general">General</TabsTrigger>
 					<TabsTrigger value="input">Input</TabsTrigger>
 					<TabsTrigger value="presets">Presets</TabsTrigger>
+					<TabsTrigger value="email">Email</TabsTrigger>
 				</TabsList>
-				<TabsContent value="general" className="space-y-4">
+				<TabsContent value="general" className="space-y-4 py-4">
 					<div className="flex items-center justify-between">
 						<Label htmlFor="buttonColor">Button Color</Label>
 						<ColorPicker
@@ -169,7 +171,7 @@ export function SettingsTab({ formSettings, updateSetting, applyPreset }) {
 						<Label htmlFor="enableReferrals">Enable Referrals</Label>
 					</div>
 				</TabsContent>
-				<TabsContent value="input" className="space-y-4">
+				<TabsContent value="input" className="space-y-4 py-4">
 					<div className="flex items-center justify-between">
 						<Label htmlFor="inputColor">Input Color</Label>
 						<ColorPicker
@@ -203,7 +205,7 @@ export function SettingsTab({ formSettings, updateSetting, applyPreset }) {
 						/>
 					</div>
 				</TabsContent>
-				<TabsContent value="presets" className="space-y-4">
+				<TabsContent value="presets" className="space-y-4 py-4">
 					<Button
 						className="w-full"
 						style={{ backgroundColor: "#8B5CF6", color: "#FFFFFF" }}
@@ -236,6 +238,24 @@ export function SettingsTab({ formSettings, updateSetting, applyPreset }) {
 					>
 						Funk
 					</Button>
+				</TabsContent>
+				<TabsContent value="email" className="space-y-4 py-4">
+					<div>
+						<Label htmlFor="emailSubject">Email Subject</Label>
+						<Input
+							id="emailSubject"
+							value={formSettings.emailSubject}
+							onChange={(e) => updateSetting("emailSubject", e.target.value)}
+						/>
+					</div>
+					<div>
+						<Label htmlFor="emailBody">Email Body</Label>
+						<Textarea
+							id="emailBody"
+							value={formSettings.emailBody}
+							onChange={(e) => updateSetting("emailBody", e.target.value)}
+						/>
+					</div>
 				</TabsContent>
 			</Tabs>
 		</div>
