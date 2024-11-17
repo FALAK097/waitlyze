@@ -3,18 +3,21 @@
 import { getWaitlistReferrals } from "@/actions/waitlist-referral";
 import { getWaitlistSignups } from "@/actions/waitlist-signups";
 import { Progress } from "@/components/ui/progress";
+import { cn } from "@/lib/utils";
 import { priorityColors } from "@/utils/user";
 import {
 	ArrowDown,
 	ArrowUp,
 	ArrowUpDown,
+	Check,
 	ChevronLeft,
 	ChevronRight,
+	Copy,
 	FileJson,
 	HelpCircle,
 	MoreVertical,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
 	ActivityIcon,
 	DeleteIcon,
@@ -76,11 +79,22 @@ export const UserSegmentation = ({ waitlistId }) => {
 	const [currentPage, setCurrentPage] = useState(1);
 	const [deleteModalOpen, setDeleteModalOpen] = useState(false);
 	const [deleteTarget, setDeleteTarget] = useState(null);
+	const [copied, setCopied] = useState(false);
+	const inputRef = useRef(null);
 	const [sortConfig, setSortConfig] = useState({
 		key: null,
 		direction: null,
 	});
 	const usersPerPage = 10;
+
+	const copyShareUrlToClipboard = () => {
+		if (inputRef.current) {
+			const url = `${window.location.origin}/forms/${waitlistId}`;
+			navigator.clipboard.writeText(url);
+			setCopied(true);
+			setTimeout(() => setCopied(false), 1500);
+		}
+	};
 
 	const sortedAndFilteredUsers = useMemo(() => {
 		let sortableUsers = [...users];
@@ -481,9 +495,90 @@ export const UserSegmentation = ({ waitlistId }) => {
 										</TableRow>
 									))
 								) : (
-									<TableRow>
-										<TableCell colSpan={6} className="h-24 text-center">
-											No users found, don't be shy to invite some!
+									<TableRow className="hover:bg-transparent">
+										<TableCell colSpan={6} className="h-[400px] p-0">
+											<div className="flex flex-col items-center justify-center h-full p-8 space-y-8">
+												<div className="p-4 rounded-full bg-primary/10">
+													<UsersIcon className="w-8 h-8 text-primary" />
+												</div>
+												<div className="space-y-2 text-center">
+													<h3 className="text-2xl font-semibold tracking-tight">
+														No users yet
+													</h3>
+													<p className="text-muted-foreground">
+														Don't be shy, invite users to your waitlist
+													</p>
+												</div>
+												<div className="w-full max-w-md space-y-4">
+													<div className="relative">
+														<Input
+															ref={inputRef}
+															readOnly
+															className="pr-12 font-mono text-sm"
+															defaultValue={`${window.location.origin}/forms/${waitlistId}`}
+															style={{
+																whiteSpace: "nowrap",
+																overflow: "hidden",
+																textOverflow: "ellipsis",
+															}}
+														/>
+														<TooltipProvider delayDuration={0}>
+															<Tooltip>
+																<TooltipTrigger asChild>
+																	<Button
+																		size="sm"
+																		variant="ghost"
+																		className={cn(
+																			"absolute right-1 top-1 h-7 w-8",
+																			"focus-visible:ring-1 focus-visible:ring-offset-1",
+																			"hover:bg-transparent active:bg-transparent",
+																			copied && "text-primary",
+																		)}
+																		disabled={copied}
+																		onClick={copyShareUrlToClipboard}
+																	>
+																		<div
+																			className={cn(
+																				"absolute inset-0 flex items-center justify-center transition-all duration-300",
+																				copied
+																					? "scale-100 opacity-100"
+																					: "scale-0 opacity-0",
+																			)}
+																		>
+																			<Check
+																				className="w-4 h-4 stroke-primary"
+																				strokeWidth={3}
+																			/>
+																		</div>
+																		<div
+																			className={cn(
+																				"absolute inset-0 flex items-center justify-center transition-all duration-300",
+																				copied
+																					? "scale-0 opacity-0"
+																					: "scale-100 opacity-100",
+																			)}
+																		>
+																			<Copy className="w-4 h-4" />
+																		</div>
+																		<span className="sr-only">
+																			{copied ? "Copied" : "Copy to clipboard"}
+																		</span>
+																	</Button>
+																</TooltipTrigger>
+																<TooltipContent
+																	side="top"
+																	className="px-2 py-1 text-xs border"
+																>
+																	{copied ? "Copied!" : "Copy to clipboard"}
+																</TooltipContent>
+															</Tooltip>
+														</TooltipProvider>
+													</div>
+													<p className="text-sm text-center text-muted-foreground">
+														Share this link to invite users to your waitlist 🚀
+													</p>
+												</div>
+											</div>
 										</TableCell>
 									</TableRow>
 								)}
