@@ -12,79 +12,88 @@ import { ModeToggle } from "../mode-toggle";
 export default function Header() {
 	const [isNavOpen, setIsNavOpen] = useState(false);
 
+	const navItems = ["How It Works", "Features", "Testimonials", "Pricing"];
+
 	return (
-		<header className="fixed top-0 left-0 right-0 z-50 border-b shadow-lg backdrop-blur-sm border-border">
-			<div className="container px-4 mx-auto sm:px-6 lg:px-8">
-				<div className="flex items-center justify-between h-16">
-					<div className="flex items-center">
-						<Link className="flex" href="/">
-							<Image src="/images/logo.png" alt="Logo" width={60} height={60} />
+		<header className="fixed z-50 w-11/12 -translate-x-1/2 top-4 left-1/2 max-w-7xl">
+			<div className="border rounded-full shadow-lg bg-background/80 backdrop-blur-md border-border">
+				<div className="container px-4 mx-auto">
+					<div className="flex items-center justify-between h-16">
+						<Link className="flex items-center" href="/">
+							<Image
+								src="/images/logo.png"
+								alt="Logo"
+								width={40}
+								height={40}
+								className="mr-2"
+							/>
 							<Logo />
 						</Link>
-					</div>
-					<nav className="items-center hidden space-x-6 md:flex">
-						{["Process", "Features", "Testimonials", "Pricing"].map((item) => (
-							<Link
-								key={item}
-								href={`#${item.toLowerCase()}`}
-								className="transition duration-300 ease-in-out text-foreground hover:text-primary hover:underline"
-							>
-								{item}
-							</Link>
-						))}
-						<div>
+						<nav className="items-center hidden space-x-1 md:flex">
+							{navItems.map((item) => (
+								<Link
+									key={item}
+									href={`#${item.toLowerCase().replace(/ /g, "")}`}
+									className="px-3 py-2 text-sm transition duration-300 ease-in-out rounded-full text-foreground hover:bg-primary/10 hover:text-primary"
+								>
+									{item}
+								</Link>
+							))}
+							<div className="px-1">
+								<ModeToggle />
+							</div>
+							<SignedIn>
+								<UserButton afterSignOutUrl="/" />
+							</SignedIn>
+							<SignedOut>
+								<SignInButton mode="modal">
+									<Button className="rounded-full">Sign in</Button>
+								</SignInButton>
+							</SignedOut>
+						</nav>
+						<div className="flex items-center md:hidden">
 							<ModeToggle />
-						</div>
-						<SignedIn>
-							<UserButton className="p-2 text-white transition duration-300 rounded-md bg-primary hover:bg-primary-dark" />
-						</SignedIn>
-						<SignedOut>
-							<Button className="w-full text-white transition duration-300 bg-primary hover:bg-primary-dark">
-								<SignInButton />
+							<Button
+								variant="ghost"
+								size="icon"
+								className="ml-2"
+								onClick={() => setIsNavOpen(!isNavOpen)}
+							>
+								{isNavOpen ? (
+									<X className="w-5 h-5" />
+								) : (
+									<Menu className="w-5 h-5" />
+								)}
 							</Button>
-						</SignedOut>
-					</nav>
-					<div className="flex items-center md:hidden">
-						<ModeToggle />
-						<Button
-							variant="ghost"
-							size="icon"
-							onClick={() => setIsNavOpen(!isNavOpen)}
-						>
-							{isNavOpen ? (
-								<X className="w-6 h-6" />
-							) : (
-								<Menu className="w-6 h-6" />
-							)}
-						</Button>
+						</div>
 					</div>
 				</div>
 			</div>
 			{/* Mobile menu */}
 			{isNavOpen && (
-				<div className="border-t shadow-lg md:hidden bg-background border-border">
-					<ul className="px-4 pt-4 pb-3 space-y-2">
-						{["Process", "Features", "Testimonials", "Pricing"].map((item) => (
-							<li key={item}>
-								<Link
-									href={`#${item.toLowerCase()}`}
-									className="block px-4 py-2 transition duration-300 ease-in-out rounded-md text-foreground hover:bg-muted hover:underline"
-								>
-									{item}
-								</Link>
-							</li>
+				<div className="mt-2 border shadow-lg md:hidden rounded-3xl bg-background/80 backdrop-blur-md border-border">
+					<nav className="px-4 pt-2 pb-4 space-y-1">
+						{navItems.map((item) => (
+							<Link
+								key={item}
+								href={`#${item.toLowerCase().replace(/ /g, "")}`}
+								className="block px-3 py-2 text-sm transition duration-300 ease-in-out rounded-full text-foreground hover:bg-primary/10 hover:text-primary"
+								onClick={() => setIsNavOpen(false)}
+							>
+								{item}
+							</Link>
 						))}
-						<SignedIn>
-							<div className="ml-3">
+						<div className="flex justify-center mt-4">
+							<SignedIn>
 								<UserButton />
-							</div>
-						</SignedIn>
-						<SignedOut>
-							<Button className="mt-2 ml-3 text-white transition duration-300 bg-primary hover:bg-primary-dark">
-								<SignInButton />
-							</Button>
-						</SignedOut>
-					</ul>
+							</SignedIn>
+							<SignedOut>
+								<SignInButton mode="modal">
+									<Button className="w-full rounded-full">Sign in</Button>
+								</SignInButton>
+							</SignedOut>
+						</div>
+					</nav>
 				</div>
 			)}
 		</header>
