@@ -19,7 +19,7 @@ export function getMenuList(pathname) {
 			menus: [
 				{
 					href: "/wait-lists",
-					label: "Wait Lists",
+					label: "WaitLists",
 					active: pathname.includes("/wait-lists"),
 					icon: LayersIcon,
 					submenus: [],
@@ -31,7 +31,7 @@ export function getMenuList(pathname) {
 			menus: [
 				{
 					href: "/wait-lists/new",
-					label: "Create Wait List",
+					label: "Create WaitList",
 					active: pathname.includes("/wait-lists/new"),
 					icon: SquarePenIcon,
 					submenus: [],
