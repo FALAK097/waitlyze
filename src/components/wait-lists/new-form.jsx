@@ -58,20 +58,19 @@ export const NewWaitListForm = ({ createNewWaitList }) => {
 			<div>
 				<Card className="max-w-md mx-auto">
 					<CardHeader>
-						<CardTitle className="mb-6 text-3xl font-bold">
+						<CardTitle className="text-3xl font-bold">
 							Let&apos;s start with{" "}
 							<span className="text-primary">the basics</span>
 						</CardTitle>
-						<CardDescription className="mb-6 text-gray-600">
-							Fill in your details below. Skip the Website URL field if you
-							don&apos;t have a website
+						<CardDescription className="text-gray-600">
+							Fill in the details below to create your new waitlist
 						</CardDescription>
 					</CardHeader>
 					<CardContent>
 						<form onSubmit={handleSubmit} className="space-y-4">
-							<div>
+							<div className="space-y-2">
 								<Label htmlFor="projectName" className="text-lg font-semibold">
-									Wait List Name
+									Waitlist Name
 								</Label>
 								<Input
 									id="projectName"
@@ -82,9 +81,12 @@ export const NewWaitListForm = ({ createNewWaitList }) => {
 									disabled={loading || isCreated}
 								/>
 							</div>
-							<div>
+							<div className="space-y-2">
 								<Label htmlFor="description" className="text-lg font-semibold">
-									Description
+									Description{" "}
+									<span className="text-sm text-muted-foreground">
+										(Optional)
+									</span>
 								</Label>
 								<Textarea
 									id="description"
@@ -95,18 +97,27 @@ export const NewWaitListForm = ({ createNewWaitList }) => {
 									disabled={loading || isCreated}
 								/>
 							</div>
-							<div>
+							<div className="space-y-2">
 								<Label htmlFor="websiteUrl" className="text-lg font-semibold">
-									Website URL
+									Website URL{" "}
+									<span className="text-sm text-muted-foreground">
+										(Optional)
+									</span>
 								</Label>
-								<Input
-									id="websiteUrl"
-									value={websiteUrl}
-									onChange={(e) => setWebsiteUrl(e.target.value)}
-									placeholder="https://www.hypeitup.com"
-									type="url"
-									disabled={loading || isCreated}
-								/>
+								<div className="relative">
+									<Input
+										id="websiteUrl"
+										value={websiteUrl}
+										onChange={(e) => setWebsiteUrl(e.target.value)}
+										placeholder="hypeitup.me"
+										disabled={loading || isCreated}
+										className="peer ps-16"
+										type="text"
+									/>
+									<span className="absolute inset-y-0 flex items-center justify-center text-sm pointer-events-none start-0 ps-3 text-muted-foreground peer-disabled:opacity-50">
+										https://
+									</span>
+								</div>
 							</div>
 							<div>
 								<Label htmlFor="logoUrl" className="text-lg font-semibold">
@@ -118,8 +129,6 @@ export const NewWaitListForm = ({ createNewWaitList }) => {
 										onSuccess={(files) => {
 											setLogoUrl(files[0].url);
 											setLogoKey(files[0].key);
-											console.log("new frp", files[0]);
-											console.log("new frp key", files[0].key);
 											toast.success("Logo uploaded successfully");
 										}}
 									/>
@@ -128,7 +137,7 @@ export const NewWaitListForm = ({ createNewWaitList }) => {
 											<img
 												src={logoUrl}
 												alt="Uploaded Logo"
-												className="absolute inset-0 w-full h-full object-cover rounded-md"
+												className="absolute inset-0 object-cover w-full h-full rounded-md"
 											/>
 										</div>
 									)}
@@ -143,7 +152,7 @@ export const NewWaitListForm = ({ createNewWaitList }) => {
 									? "Creating..."
 									: isCreated
 										? "Created!"
-										: "Create Wait List"}
+										: "Create WaitList"}
 							</Button>
 						</form>
 					</CardContent>

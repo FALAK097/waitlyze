@@ -1,10 +1,11 @@
 "use client";
 
-import { Pencil, Trash2 } from "lucide-react";
+import {} from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "react-hot-toast";
+import { Delete2Icon, SquarePenIcon } from "../shared/icons";
 import { Button } from "../ui/button";
 import {
 	Card,
@@ -73,7 +74,7 @@ export const WaitListCard = ({
 					variant="secondary"
 					className="w-full gap-2"
 				>
-					<Pencil className="size-4" />
+					<SquarePenIcon className="size-4" />
 					Edit
 				</Button>
 				<Button
@@ -82,7 +83,7 @@ export const WaitListCard = ({
 					variant="destructive"
 					className="w-full gap-2"
 				>
-					<Trash2 className="size-4" />
+					<Delete2Icon className="size-4" />
 					{isDeleting ? "Deleting..." : "Delete"}
 				</Button>
 			</CardFooter>

@@ -35,23 +35,37 @@ export async function getWaitlistSignups(waitlistId) {
 						description: true,
 					},
 				},
+				referrals: true,
 			},
 			orderBy: {
 				id: "desc",
 			},
 		});
 
-		const transformedSignups = signups.map((signup) => ({
-			id: signup.id,
-			name: signup.email,
-			email: signup.email,
-			priority: getPriorityFromSignup(signup),
-			city: signup.city,
-			country: signup.country,
-			device: signup.device,
-			deviceType: signup.deviceType,
-			waitlistName: signup.waitList.name,
-		}));
+		const transformedSignups = signups.map((signup) => {
+			const referralCount = signup.referrals.length;
+			let priority;
+
+			if (referralCount > 5) {
+				priority = "High";
+			} else if (referralCount > 0 && referralCount <= 5) {
+				priority = "Medium";
+			} else {
+				priority = "Low";
+			}
+
+			return {
+				id: signup.id,
+				name: signup.email,
+				email: signup.email,
+				priority,
+				city: signup.city,
+				country: signup.country,
+				device: signup.device,
+				deviceType: signup.deviceType,
+				waitlistName: signup.waitList.name,
+			};
+		});
 
 		return {
 			success: true,
@@ -64,14 +78,4 @@ export async function getWaitlistSignups(waitlistId) {
 			error: "Failed to fetch signups",
 		};
 	}
-}
-
-function getPriorityFromSignup(signup) {
-	if (signup.impression?.device?.includes("Mobile")) {
-		return "High";
-	}
-	if (signup.country === "US" || signup.country === "CA") {
-		return "Medium";
-	}
-	return "Low";
 }

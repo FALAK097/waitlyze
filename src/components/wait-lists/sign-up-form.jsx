@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Zap } from "lucide-react";
 import Image from "next/image";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
+import { Badge } from "../ui/badge";
 import { Spinner } from "../ui/spinner";
 import { UploadButton } from "../ui/upload-button";
 
@@ -46,6 +47,20 @@ export const SignUpForm = ({
 			style={{ backgroundColor: waitList.bgColor }}
 		>
 			<div className="space-y-4">
+				{waitList.showBadge && (
+					<div className="flex justify-center">
+						<Badge
+							className="px-4 py-1 mx-auto text-center rounded-full w-max"
+							style={{
+								backgroundColor: waitList.badgeColor,
+								color: waitList.badgeTextColor,
+							}}
+						>
+							{waitList.badgeText || "Sign Up to get early access"}
+						</Badge>
+					</div>
+				)}
+
 				{waitList.showLogo && waitList.logoUrl && (
 					<div className="flex justify-center">
 						<div className="relative">
@@ -109,7 +124,7 @@ export const SignUpForm = ({
 					>
 						{isLoading ? (
 							<>
-								<Spinner className="h-4 w-4 mr-2" />
+								<Spinner className="w-4 h-4 mr-2" />
 								Please wait...
 							</>
 						) : (
@@ -118,7 +133,7 @@ export const SignUpForm = ({
 					</Button>
 					{waitList.showSocialProof && (
 						<div className="flex items-center space-x-2 text-sm text-gray-500">
-							<Zap className="h-4 w-4 text-purple-500" />
+							<Zap className="w-4 h-4 text-purple-500" />
 							<div className="flex -space-x-1 overflow-hidden">
 								{dummyUsers.map((_, i) => {
 									return (

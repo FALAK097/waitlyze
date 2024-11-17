@@ -15,7 +15,7 @@ export default function CallToAction() {
 				</p>
 				<Link href="/dashboard">
 					<Button size="lg" className="text-xl">
-						Get Started Now
+						Create Your Waitlist Now
 						<ArrowRight className="w-5 h-5 ml-2 transition-transform group-hover:translate-x-1" />
 					</Button>
 				</Link>

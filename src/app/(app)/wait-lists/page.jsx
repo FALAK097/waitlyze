@@ -58,7 +58,7 @@ export default async function WaitListsPage() {
 					userId: user.id,
 				},
 				select: {
-					logoKey: true, // Get the logoKey associated with the waitlist
+					logoKey: true,
 				},
 			});
 
@@ -89,7 +89,7 @@ export default async function WaitListsPage() {
 			response.message = "Error deleting wait list";
 		}
 
-		await waitFor(1000); // Delay before returning the response
+		await waitFor(1000);
 		return response;
 	};
 

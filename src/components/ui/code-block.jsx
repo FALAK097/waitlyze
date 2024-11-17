@@ -1,8 +1,8 @@
 import { cn } from "@/lib/utils";
-import { CopyIcon } from "lucide-react";
 import { useTheme } from "next-themes";
 import React from "react";
 import toast from "react-hot-toast";
+import { CopyIcon } from "../shared/icons";
 import { Button } from "./button";
 
 const CodeBlock = React.forwardRef(({ className, ...props }, ref) => {
@@ -21,7 +21,7 @@ const CodeBlock = React.forwardRef(({ className, ...props }, ref) => {
 			</pre>
 			<Button
 				variant="icon"
-				className="absolute top-2 right-2 bg-primary text-white opacity-25 hover:opacity-100 ease-in-out duration-300"
+				className="absolute text-white duration-300 ease-in-out opacity-25 top-2 right-2 bg-primary hover:opacity-100"
 				onClick={() => {
 					navigator.clipboard.writeText(props.code);
 					toast.success("Copied to clipboard");

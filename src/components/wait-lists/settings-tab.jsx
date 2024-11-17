@@ -23,7 +23,7 @@ export function SettingsTab({ formSettings, updateSetting, applyPreset }) {
 					<TabsTrigger value="presets">Presets</TabsTrigger>
 					<TabsTrigger value="email">Email</TabsTrigger>
 				</TabsList>
-				<TabsContent value="general" className="space-y-4 py-4">
+				<TabsContent value="general" className="py-4 space-y-4">
 					<div className="flex items-center justify-between">
 						<Label htmlFor="buttonColor">Button Color</Label>
 						<ColorPicker
@@ -126,6 +126,34 @@ export function SettingsTab({ formSettings, updateSetting, applyPreset }) {
 							</SelectContent>
 						</Select>
 					</div>
+					{formSettings.showBadge && (
+						<>
+							<div>
+								<Label htmlFor="badgeText">Badge Text</Label>
+								<Input
+									id="badgeText"
+									value={formSettings.badgeText}
+									onChange={(e) => updateSetting("badgeText", e.target.value)}
+								/>
+							</div>
+							<div className="flex items-center justify-between">
+								<Label htmlFor="badgeColor">Badge Color</Label>
+								<ColorPicker
+									id="badgeColor"
+									value={formSettings.badgeColor}
+									onChange={(color) => updateSetting("badgeColor", color)}
+								/>
+							</div>
+							<div className="flex items-center justify-between">
+								<Label htmlFor="badgeTextColor">Badge Text Color</Label>
+								<ColorPicker
+									id="badgeTextColor"
+									value={formSettings.badgeTextColor}
+									onChange={(color) => updateSetting("badgeTextColor", color)}
+								/>
+							</div>
+						</>
+					)}
 					<div>
 						<Label htmlFor="buttonText">Button Text</Label>
 						<Input
@@ -162,6 +190,14 @@ export function SettingsTab({ formSettings, updateSetting, applyPreset }) {
 					</div>
 					<div className="flex items-center space-x-2">
 						<Switch
+							id="showBadge"
+							checked={formSettings.showBadge}
+							onCheckedChange={(checked) => updateSetting("showBadge", checked)}
+						/>
+						<Label htmlFor="showBadge">Show Badge</Label>
+					</div>
+					<div className="flex items-center space-x-2">
+						<Switch
 							id="enableReferrals"
 							checked={formSettings.enableReferrals}
 							onCheckedChange={(checked) =>
@@ -171,7 +207,7 @@ export function SettingsTab({ formSettings, updateSetting, applyPreset }) {
 						<Label htmlFor="enableReferrals">Enable Referrals</Label>
 					</div>
 				</TabsContent>
-				<TabsContent value="input" className="space-y-4 py-4">
+				<TabsContent value="input" className="py-4 space-y-4">
 					<div className="flex items-center justify-between">
 						<Label htmlFor="inputColor">Input Color</Label>
 						<ColorPicker
@@ -205,7 +241,7 @@ export function SettingsTab({ formSettings, updateSetting, applyPreset }) {
 						/>
 					</div>
 				</TabsContent>
-				<TabsContent value="presets" className="space-y-4 py-4">
+				<TabsContent value="presets" className="py-4 space-y-4">
 					<Button
 						className="w-full"
 						style={{ backgroundColor: "#8B5CF6", color: "#FFFFFF" }}
@@ -239,7 +275,7 @@ export function SettingsTab({ formSettings, updateSetting, applyPreset }) {
 						Funk
 					</Button>
 				</TabsContent>
-				<TabsContent value="email" className="space-y-4 py-4">
+				<TabsContent value="email" className="py-4 space-y-4">
 					<div>
 						<Label htmlFor="emailSubject">Email Subject</Label>
 						<Input
