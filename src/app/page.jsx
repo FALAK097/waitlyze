@@ -1,5 +1,36 @@
-import { NewLanding } from "@/components/landing/new-landing";
+import BentoGridFeatures from "@/components/landing/bento-grid-features";
+import CallToAction from "@/components/landing/call-to-action";
+import FAQ from "@/components/landing/faq";
+import Features from "@/components/landing/features";
+import Footer from "@/components/landing/footer";
+import Header from "@/components/landing/header";
+import Hero from "@/components/landing/hero";
+import HowItWorks from "@/components/landing/how-it-works";
+import Pricing from "@/components/landing/pricing";
+import Testimonials from "@/components/landing/testimonials";
 
 export default function LandingPage() {
-	return <NewLanding />;
+	return (
+		<div className="flex flex-col min-h-screen">
+			<Header />
+
+			<Hero />
+			<main className="flex-grow">
+				<HowItWorks />
+
+				<Features />
+
+				<BentoGridFeatures />
+
+				<Testimonials />
+
+				<Pricing />
+
+				<FAQ />
+
+				<CallToAction />
+			</main>
+			<Footer />
+		</div>
+	);
 }

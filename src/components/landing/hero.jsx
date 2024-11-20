@@ -236,9 +236,15 @@ export default function Hero() {
 						transition={{ delay: 0.8, duration: 0.5 }}
 						className="w-full max-w-4xl pt-40 mx-auto"
 					>
-						<h2 className="mb-12 text-4xl font-bold text-center text-primary">
+						<motion.h2
+							initial={{ opacity: 0, y: 20 }}
+							whileInView={{ opacity: 1, y: 0 }}
+							viewport={{ once: true }}
+							transition={{ duration: 0.6 }}
+							className="mb-12 text-4xl font-bold text-center text-transparent bg-clip-text bg-gradient-to-r from-primary to-primary-foreground"
+						>
 							Demo Video
-						</h2>
+						</motion.h2>
 						<div className="relative overflow-hidden aspect-video rounded-2xl">
 							<video
 								ref={videoRef}
