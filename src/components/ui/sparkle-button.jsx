@@ -89,7 +89,7 @@ export default function SparkleButton({
 						isAttracting && "scale-110",
 					)}
 				/>
-				{isAttracting ? "Go To Dashboard" : "Create Your Waitlist"}
+				{isAttracting ? "Create Your Waitlist" : "Create Your Waitlist"}
 			</span>
 		</Button>
 	);

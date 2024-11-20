@@ -6,7 +6,7 @@
 		"source.organizeImports.biome": "explicit"
 	},
 	"[javascriptreact]": {
-		"editor.defaultFormatter": "esbenp.prettier-vscode"
+		"editor.defaultFormatter": "biomejs.biome"
 	},
 	"WillLuke.nextjs.hasPrompted": true,
 	"[javascript]": {
