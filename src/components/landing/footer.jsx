@@ -10,8 +10,8 @@ const footerSections = [
 	{
 		title: "Product",
 		links: [
-			{ name: "How It Works", href: "#howitworks" },
 			{ name: "Features", href: "#features" },
+			{ name: "How It Works", href: "#howitworks" },
 			{ name: "Testimonials", href: "#testimonials" },
 			{ name: "Pricing", href: "#pricing" },
 		],

@@ -16,9 +16,9 @@ export default function LandingPage() {
 
 			<Hero />
 			<main className="flex-grow">
-				<HowItWorks />
-
 				<Features />
+
+				<HowItWorks />
 
 				<BentoGridFeatures />
 

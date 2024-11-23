@@ -1,9 +1,12 @@
+"use client";
+
 import {
 	Accordion,
 	AccordionContent,
 	AccordionItem,
 	AccordionTrigger,
 } from "@/components/ui/accordion";
+import { motion } from "framer-motion";
 
 const faqs = [
 	{
@@ -29,7 +32,7 @@ const faqs = [
 	{
 		question: "Can I export my waitlist data?",
 		answer:
-			"Yes, you can easily export your waitlist data in CSV format for use in other tools or for your own analysis.",
+			"Yes, you can easily export your waitlist data in CSV/PDF format for use in other tools or for your own analysis.",
 	},
 ];
 
@@ -37,30 +40,38 @@ export default function FAQ() {
 	return (
 		<section className="py-20 bg-background">
 			<div className="container px-4 mx-auto sm:px-6 lg:px-8">
-				<h2 className="mb-12 text-3xl font-bold text-center text-primary">
+				<motion.h2
+					initial={{ opacity: 0, y: 20 }}
+					whileInView={{ opacity: 1, y: 0 }}
+					transition={{ duration: 0.6 }}
+					className="mb-12 text-4xl font-bold text-center text-transparent bg-clip-text bg-gradient-to-r from-primary to-primary-foreground"
+				>
 					Frequently Asked Questions
-				</h2>
-				<Accordion
-					type="single"
-					collapsible
+				</motion.h2>
+				<motion.div
+					initial={{ opacity: 0, y: 20 }}
+					whileInView={{ opacity: 1, y: 0 }}
+					transition={{ duration: 0.6, delay: 0.2 }}
 					className="w-full max-w-2xl mx-auto"
 				>
-					{faqs.map((faq, index) => (
-						<AccordionItem
-							key={`accordion-item-${faq.question}-${index}`
-								.replace(" ", "")
-								.toLowerCase()}
-							value={`item-${index}`}
-						>
-							<AccordionTrigger className="text-lg">
-								{faq.question}
-							</AccordionTrigger>
-							<AccordionContent className="text-lg">
-								{faq.answer}
-							</AccordionContent>
-						</AccordionItem>
-					))}
-				</Accordion>
+					<Accordion type="single" collapsible className="w-full space-y-4">
+						{faqs.map((faq, index) => (
+							<AccordionItem
+								key={`accordion-item-${faq.question}-${index}`
+									.replace(" ", "")
+									.toLowerCase()}
+								value={`item-${index}`}
+							>
+								<AccordionTrigger className="px-4 py-4 text-lg font-medium transition-colors duration-200 rounded-t-lg hover:bg-muted/50">
+									{faq.question}
+								</AccordionTrigger>
+								<AccordionContent className="px-4 py-3 text-base text-muted-foreground">
+									{faq.answer}
+								</AccordionContent>
+							</AccordionItem>
+						))}
+					</Accordion>
+				</motion.div>
 			</div>
 		</section>
 	);

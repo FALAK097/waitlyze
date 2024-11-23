@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { motion, useInView } from "framer-motion";
-import { ArrowRight } from "lucide-react";
+import { Rocket } from "lucide-react";
 import Link from "next/link";
 import { useRef } from "react";
 
@@ -34,16 +34,16 @@ export default function CallToAction() {
 	};
 
 	return (
-		<section className="overflow-hidden" ref={ref}>
+		<section className="py-20 overflow-hidden" ref={ref}>
 			<div className="container px-4 mx-auto sm:px-6 lg:px-8">
 				<motion.div
-					className="relative p-8 text-center rounded-3xl bg-background/80 backdrop-blur-md"
+					className="relative p-8 text-center"
 					variants={containerVariants}
 					initial="hidden"
 					animate={inView ? "visible" : "hidden"}
 				>
 					<motion.h2
-						className="mb-4 text-3xl font-extrabold text-primary md:text-4xl lg:text-5xl"
+						className="mb-4 text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-primary to-primary/20 md:text-4xl lg:text-5xl"
 						variants={childVariants}
 					>
 						Ready to Launch Your Waitlist?
@@ -53,13 +53,16 @@ export default function CallToAction() {
 						variants={childVariants}
 					>
 						Join thousands of creators and start building anticipation for your
-						next big thing.
+						next big thing with HypeItUp.
 					</motion.p>
 					<motion.div variants={childVariants}>
 						<Link href="/dashboard">
-							<Button size="lg" className="text-xl group">
+							<Button
+								size="lg"
+								className="text-xl group bg-gradient-to-r from-primary to-primary/30 text-primary-foreground"
+							>
 								Create Your Waitlist Now
-								<ArrowRight className="w-5 h-5 ml-2 transition-transform group-hover:translate-x-1" />
+								<Rocket className="w-5 h-5 ml-2 transition-transform group-hover:translate-x-1" />
 							</Button>
 						</Link>
 					</motion.div>
