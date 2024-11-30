@@ -11,7 +11,7 @@ const footerSections = [
 		title: "Product",
 		links: [
 			{ name: "Features", href: "#features" },
-			{ name: "How It Works", href: "#howitworks" },
+			{ name: "How It Works", href: "#how-it-works" },
 			{ name: "Testimonials", href: "#testimonials" },
 			{ name: "Pricing", href: "#pricing" },
 		],

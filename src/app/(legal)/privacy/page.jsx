@@ -1,6 +1,12 @@
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 
+export const metadata = {
+	title: "Privacy Policy",
+	description:
+		"Learn how HypeItUp protects and handles your data, including what information we collect, how we use it, and your privacy rights.",
+};
+
 export default function PrivacyPolicy() {
 	return (
 		<div className="min-h-screen px-4 py-12 sm:px-6 lg:px-8">

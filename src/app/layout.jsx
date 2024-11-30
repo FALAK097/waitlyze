@@ -6,8 +6,15 @@ import { Providers } from "./_providers";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata = {
-	title: "HypeItUp",
-	description: "Wait for the perfect moment",
+	title: {
+		default: "HypeItUp | Create Engaging Waitlists for Your Product",
+		template: "%s | HypeItUp",
+	},
+	description:
+		"Create beautiful, customizable waitlist pages to build anticipation and convert visitors into eager customers. Get powerful analytics to understand your audience better.",
+	twitter: {
+		card: "summary_large_image",
+	},
 };
 
 export default function RootLayout({ children }) {

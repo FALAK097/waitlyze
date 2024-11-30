@@ -2,7 +2,7 @@
 
 import Logo from "@/components/shared/logo";
 import { Button } from "@/components/ui/button";
-import { SignInButton, SignedIn, SignedOut, UserButton } from "@clerk/nextjs";
+import { SignInButton, SignedIn, SignedOut } from "@clerk/nextjs";
 import { Menu, X } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -33,7 +33,7 @@ export default function Header() {
 							{navItems.map((item) => (
 								<Link
 									key={item}
-									href={`#${item.toLowerCase().replace(/ /g, "")}`}
+									href={`#${item.toLowerCase().replace(/\s+/g, "-")}`}
 									className="px-3 py-2 text-sm transition duration-300 ease-in-out rounded-full text-foreground hover:bg-primary/10 hover:text-primary"
 								>
 									{item}
@@ -43,7 +43,9 @@ export default function Header() {
 								<ModeToggle />
 							</div>
 							<SignedIn>
-								<UserButton afterSignOutUrl="/" />
+								<Link href="/dashboard">
+									<Button className="rounded-full">Dashboard</Button>
+								</Link>
 							</SignedIn>
 							<SignedOut>
 								<SignInButton mode="modal">
@@ -76,7 +78,7 @@ export default function Header() {
 						{navItems.map((item) => (
 							<Link
 								key={item}
-								href={`#${item.toLowerCase().replace(/ /g, "")}`}
+								href={`#${item.toLowerCase().replace(/\s+/g, "-")}`}
 								className="block px-3 py-2 text-sm transition duration-300 ease-in-out rounded-full text-foreground hover:bg-primary/10 hover:text-primary"
 								onClick={() => setIsNavOpen(false)}
 							>
@@ -85,7 +87,9 @@ export default function Header() {
 						))}
 						<div className="flex justify-center mt-4">
 							<SignedIn>
-								<UserButton />
+								<Link href="/dashboard">
+									<Button className="w-full rounded-full">Dashboard</Button>
+								</Link>
 							</SignedIn>
 							<SignedOut>
 								<SignInButton mode="modal">
