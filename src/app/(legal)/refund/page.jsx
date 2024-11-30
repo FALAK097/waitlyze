@@ -1,6 +1,12 @@
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 
+export const metadata = {
+	title: "Refund Policy",
+	description:
+		"Learn about our refund policy, including eligibility, process, and contact information.",
+};
+
 export default function RefundPolicy() {
 	return (
 		<div className="min-h-screen px-4 py-12 sm:px-6 lg:px-8">

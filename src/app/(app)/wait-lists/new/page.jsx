@@ -15,6 +15,12 @@ import { waitFor } from "@/lib/utils";
 import { currentUser } from "@clerk/nextjs/server";
 import { notFound } from "next/navigation";
 
+export const metadata = {
+	title: "Create New WaitList",
+	description:
+		"Create a beautiful, customizable waitlist page to collect signups and build anticipation for your product launch. Configure colors, text, and settings to match your brand.",
+};
+
 export default async function WaitListsPage() {
 	const clerkUser = await currentUser();
 	const user = await prisma.user.findUnique({

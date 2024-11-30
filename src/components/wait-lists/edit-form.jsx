@@ -229,8 +229,13 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
 		<div className="flex-1 overflow-auto">
 			<div className="p-8">
 				<div className="flex items-center justify-between mb-6">
-					<h2 className="text-2xl font-semibold">
-						Edit {initialWaitList.name} Wait List
+					<h2 className="text-3xl font-bold tracking-tight">
+						Edit{" "}
+						<span className="text-primary">
+							{initialWaitList.name.charAt(0).toUpperCase() +
+								initialWaitList.name.slice(1)}
+						</span>{" "}
+						WaitList
 					</h2>
 					<TooltipProvider>
 						<div className="flex space-x-2">

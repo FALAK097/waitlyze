@@ -17,6 +17,12 @@ import { currentUser } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { removeUpload } from "../../actions/removeUpload";
 
+export const metadata = {
+	title: "WaitLists",
+	description:
+		"View and manage all your wait lists, track signups, and analyze performance metrics. Create new wait lists or edit existing ones to optimize your audience engagement.",
+};
+
 export default async function WaitListsPage() {
 	const clerkUser = await currentUser();
 	if (!clerkUser) {

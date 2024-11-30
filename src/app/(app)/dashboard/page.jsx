@@ -14,6 +14,12 @@ import { currentUser } from "@clerk/nextjs/server";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
+export const metadata = {
+	title: "Dashboard",
+	description:
+		"Get detailed analytics and insights about your waitlists, track signups, and understand your audience better with HypeItUp's powerful dashboard.",
+};
+
 export default async function DashboardPage() {
 	const clerkUser = await currentUser();
 
