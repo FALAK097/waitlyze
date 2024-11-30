@@ -59,10 +59,10 @@ export default function CallToAction() {
 						<Link href="/dashboard">
 							<Button
 								size="lg"
-								className="text-xl group bg-gradient-to-r from-primary to-primary/30 text-primary-foreground"
+								className="w-full text-base sm:text-xl group bg-gradient-to-r from-primary to-primary/30 text-primary-foreground sm:w-auto"
 							>
 								Create Your Waitlist Now
-								<Rocket className="w-5 h-5 ml-2 transition-transform group-hover:translate-x-1" />
+								<Rocket className="w-4 h-4 ml-2 transition-transform sm:w-5 sm:h-5 group-hover:translate-x-1" />
 							</Button>
 						</Link>
 					</motion.div>
