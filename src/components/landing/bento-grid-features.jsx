@@ -86,7 +86,7 @@ export default function BentoGridFeatures() {
 							title={
 								<h3 className="text-lg font-semibold">
 									{item.title}{" "}
-									<Badge className="ml-2 text-xs text-purple-700 bg-purple-100">
+									<Badge className="ml-2 text-xs text-purple-700 bg-purple-100 cursor-default hover:bg-purple-200">
 										{item.badge}
 									</Badge>
 								</h3>
