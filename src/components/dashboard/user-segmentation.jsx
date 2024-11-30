@@ -1,8 +1,8 @@
 "use client";
 
+import { getWaitlistImpressions } from "@/actions/waitlist-impressions";
 import { getWaitlistReferrals } from "@/actions/waitlist-referral";
 import { getWaitlistSignups } from "@/actions/waitlist-signups";
-import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
 import { priorityColors } from "@/utils/user";
 import {
@@ -22,7 +22,7 @@ import {
 	ActivityIcon,
 	DeleteIcon,
 	DownloadIcon,
-	RocketIcon,
+	EyeOffIcon,
 	SearchIcon,
 	TrendingUpIcon,
 	UsersIcon,
@@ -71,7 +71,9 @@ import {
 
 export const UserSegmentation = ({ waitlistId }) => {
 	const [users, setUsers] = useState([]);
+	const [lastMonthUsers, setLastMonthUsers] = useState([]);
 	const [referralCounts, setReferralCounts] = useState({});
+	const [totalReferrals, setTotalReferrals] = useState(0);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState(null);
 	const [searchTerm, setSearchTerm] = useState("");
@@ -80,6 +82,8 @@ export const UserSegmentation = ({ waitlistId }) => {
 	const [deleteModalOpen, setDeleteModalOpen] = useState(false);
 	const [deleteTarget, setDeleteTarget] = useState(null);
 	const [copied, setCopied] = useState(false);
+	const [impressions, setImpressions] = useState([]);
+	const [lastMonthImpressions, setLastMonthImpressions] = useState([]);
 	const inputRef = useRef(null);
 	const [sortConfig, setSortConfig] = useState({
 		key: null,
@@ -217,19 +221,56 @@ export const UserSegmentation = ({ waitlistId }) => {
 			try {
 				setLoading(true);
 				const signupsResult = await getWaitlistSignups(waitlistId);
+
 				if (signupsResult.success) {
-					setUsers(signupsResult.data);
+					const currentDate = new Date();
+					const lastMonth = new Date(
+						currentDate.setMonth(currentDate.getMonth() - 1),
+					);
+
+					const currentUsers = signupsResult.data;
+					const lastMonthSignups = signupsResult.data.filter((user) => {
+						const signupDate = new Date(user.createdAt);
+						return signupDate <= lastMonth;
+					});
+
+					setUsers(currentUsers);
+					setLastMonthUsers(lastMonthSignups);
 				} else {
 					setError(signupsResult.error);
 				}
 
+				const impressionsResult = await getWaitlistImpressions(waitlistId);
+
+				if (impressionsResult.success) {
+					const currentImpressions = impressionsResult.data;
+					const currentDate = new Date();
+					const lastMonth = new Date(
+						currentDate.setMonth(currentDate.getMonth() - 1),
+					);
+					const lastMonthImpressions = currentImpressions.filter(
+						(impression) => {
+							const impressionDate = new Date(impression.createdAt);
+							return impressionDate <= lastMonth;
+						},
+					);
+
+					setImpressions(currentImpressions);
+					setLastMonthImpressions(lastMonthImpressions);
+				} else {
+					setError(impressionsResult.error);
+				}
+
 				const referralsResult = await getWaitlistReferrals(waitlistId);
 				if (referralsResult.success) {
+					let totalReferrals = 0;
 					const counts = {};
 					for (const referral of referralsResult.data) {
+						totalReferrals += referral._count.signUpId;
 						counts[referral.referredById] = referral._count.signUpId;
 					}
 					setReferralCounts(counts);
+					setTotalReferrals(totalReferrals);
 				} else {
 					setError(referralsResult.error);
 				}
@@ -243,6 +284,57 @@ export const UserSegmentation = ({ waitlistId }) => {
 
 		fetchData();
 	}, [waitlistId]);
+
+	const getMonthlyGrowthPercentage = () => {
+		if (lastMonthUsers.length === 0 && users.length > 0) {
+			return 100;
+		}
+		if (lastMonthUsers.length === 0) return 0;
+
+		const growth =
+			((users.length - lastMonthUsers.length) / lastMonthUsers.length) * 100;
+		return growth.toFixed(1);
+	};
+
+	const getMonthlyImpressionGrowthPercentage = () => {
+		if (lastMonthImpressions.length === 0 && impressions.length > 0) {
+			return 100;
+		}
+		if (lastMonthImpressions.length === 0) return 0;
+
+		const growth =
+			((impressions.length - lastMonthImpressions.length) /
+				lastMonthImpressions.length) *
+			100;
+		return growth.toFixed(1);
+	};
+
+	const getConversionRate = () => {
+		if (impressions.length === 0) return 0;
+		const rate = (users.length / impressions.length) * 100;
+		return rate.toFixed(1);
+	};
+
+	const getMonthlyConversionRate = () => {
+		if (lastMonthImpressions.length === 0 && impressions.length > 0) {
+			return 100;
+		}
+
+		if (lastMonthImpressions.length === 0) return 0;
+
+		const lastMonthRate =
+			(lastMonthUsers.length / lastMonthImpressions.length) * 100;
+		const currentRate = (users.length / impressions.length) * 100;
+
+		const growth = ((currentRate - lastMonthRate) / lastMonthRate) * 100;
+		return growth.toFixed(1);
+	};
+
+	const getReferralConversionRate = () => {
+		if (impressions.length === 0) return 0;
+		const rate = (totalReferrals / impressions.length) * 100;
+		return rate.toFixed(1);
+	};
 
 	if (loading) {
 		return (
@@ -281,7 +373,23 @@ export const UserSegmentation = ({ waitlistId }) => {
 					<CardContent>
 						<div className="text-2xl font-bold">{users.length}</div>
 						<p className="text-xs text-muted-foreground">
-							+20.1% from last month
+							{getMonthlyGrowthPercentage() > 0 ? "+" : ""}
+							{getMonthlyGrowthPercentage()}% from last month
+						</p>
+					</CardContent>
+				</Card>
+				<Card>
+					<CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+						<CardTitle className="text-sm font-medium">
+							Total Impressions
+						</CardTitle>
+						<EyeOffIcon />
+					</CardHeader>
+					<CardContent>
+						<div className="text-2xl font-bold">{impressions.length}</div>
+						<p className="text-xs text-muted-foreground">
+							{getMonthlyImpressionGrowthPercentage() > 0 ? "+" : ""}
+							{getMonthlyImpressionGrowthPercentage()}% from last month
 						</p>
 					</CardContent>
 				</Card>
@@ -293,38 +401,26 @@ export const UserSegmentation = ({ waitlistId }) => {
 						<TrendingUpIcon />
 					</CardHeader>
 					<CardContent>
-						<div className="text-2xl font-bold">32.5%</div>
+						<div className="text-2xl font-bold">{getConversionRate()}%</div>
 						<p className="text-xs text-muted-foreground">
-							+4.5% from last week
+							{getMonthlyConversionRate() > 0 ? "+" : ""}
+							{getMonthlyConversionRate()}% from last month
 						</p>
 					</CardContent>
 				</Card>
 				<Card>
 					<CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
 						<CardTitle className="text-sm font-medium">
-							Referral Conversions
+							Referral Conversion Rate
 						</CardTitle>
 						<ActivityIcon />
 					</CardHeader>
 					<CardContent>
-						<p className="text-2xl font-bold">
-							1,250 <span className="text-lg">/ 2,350</span>
-						</p>
+						<div className="text-2xl font-bold">
+							{getReferralConversionRate()}%
+						</div>
 						<p className="text-xs text-muted-foreground">
-							+15.2% from last month
-						</p>
-					</CardContent>
-				</Card>
-				<Card>
-					<CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-						<CardTitle className="text-sm font-medium">Goal Progress</CardTitle>
-						<RocketIcon />
-					</CardHeader>
-					<CardContent>
-						<div className="text-2xl font-bold">78%</div>
-						<Progress value={78} className="mt-2" />
-						<p className="mt-2 text-xs text-muted-foreground">
-							550 sign-ups to early access
+							Conversion rate from referrals
 						</p>
 					</CardContent>
 				</Card>
