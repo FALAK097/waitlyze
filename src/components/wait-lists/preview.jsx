@@ -5,10 +5,12 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { createImpression, createSignUp } from "@/utils/fetch/client";
 import { fetchSignUp } from "@/utils/fetch/client/sign-ups";
-import { TwitterLogoIcon } from "@radix-ui/react-icons";
+import { InstagramLogoIcon, TwitterLogoIcon } from "@radix-ui/react-icons";
 import { useQuery } from "@tanstack/react-query";
+import { motion } from "framer-motion";
 import { Loader2, MessageCircle } from "lucide-react";
 import { useTheme } from "next-themes";
+import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import toast from "react-hot-toast";
@@ -182,87 +184,188 @@ const ReferralPreview = ({ signUp, waitList, getTotalSignUpsOnWaitList }) => {
 	};
 
 	const shareOnTwitter = () => {
-		const text = `I'm on the waitlist for ${waitList.name}! Join me and move up in line: ${referralLink}`;
-		const url = `https://twitter.com/intent/tweet?text=${text}`;
-		window.open(url, "_blank");
+		const text = `I'm on the waitlist for ${
+			waitList.name.charAt(0).toUpperCase() + waitList.name.slice(1)
+		}! Join me and move up in line: ${referralLink}`;
+		const xUrl = `https://x.com/intent/post?text=${text}`;
+		window.open(xUrl, "_blank");
 	};
 
 	const shareOnWhatsApp = () => {
-		const text = `I'm on the waitlist for ${waitList.name}! Join me and move up in line: ${referralLink}`;
-		const url = `https://wa.me/?text=${text}`;
-		window.open(url, "_blank");
+		const text = `I'm on the waitlist for ${
+			waitList.name.charAt(0).toUpperCase() + waitList.name.slice(1)
+		}! Join me and move up in line: ${referralLink}`;
+		const whatsAppUrl = `https://wa.me/?text=${text}`;
+		window.open(whatsAppUrl, "_blank");
+	};
+
+	const shareOnInstagram = () => {
+		const text = `I'm on the waitlist for ${
+			waitList.name.charAt(0).toUpperCase() + waitList.name.slice(1)
+		}! Join me and move up in line: ${referralLink}`;
+		// Since Instagram doesn't have a direct sharing API, we'll copy the text to clipboard
+		navigator.clipboard.writeText(text);
+		toast.success("Text copied! Share it on your Instagram story or post");
+	};
+
+	const container = {
+		hidden: { opacity: 0 },
+		show: {
+			opacity: 1,
+			transition: {
+				staggerChildren: 0.1,
+			},
+		},
+	};
+
+	const item = {
+		hidden: { opacity: 0, y: 20 },
+		show: { opacity: 1, y: 0 },
 	};
 
 	return (
-		<div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 p-4">
-			<div className="w-full max-w-md space-y-6">
-				<h1 className="text-3xl font-bold text-center">
-					Signed up for <span className="text-primary">{waitList.name}</span>
-				</h1>
+		<div className="min-h-screen p-4 bg-gradient-to-b from-primary/5 to-background">
+			<motion.div
+				className="max-w-md pt-12 mx-auto space-y-8"
+				variants={container}
+				initial="hidden"
+				animate="show"
+			>
+				<motion.div variants={item} className="space-y-2 text-center">
+					<h1 className="text-4xl font-bold tracking-tight">
+						Signed up for{" "}
+						<span className="text-primary">
+							{waitList.name.charAt(0).toUpperCase() + waitList.name.slice(1)}
+						</span>
+					</h1>
+					<p className="text-muted-foreground">
+						Share your referral link to move up in line!
+					</p>
+				</motion.div>
 
-				<Card className="p-6">
-					<div className="space-y-4">
-						<div className="text-center">
-							<p className="text-sm font-medium">Referral Link</p>
-							<div className="flex mt-2">
-								<Input
-									value={referralLink}
-									readOnly
-									className="rounded-r-none"
-								/>
-								<Button className="rounded-l-none" onClick={copyToClipboard}>
-									Copy
-								</Button>
+				<motion.div variants={item}>
+					<Card className="p-6 shadow-lg">
+						<div className="space-y-4">
+							<div className="space-y-2">
+								<p className="text-sm font-medium text-center">
+									Your Unique Referral Link
+								</p>
+								<div className="flex">
+									<Input
+										value={referralLink}
+										readOnly
+										className="border-r-0 rounded-r-none bg-muted"
+									/>
+									<Button
+										className="px-8 rounded-l-none"
+										onClick={copyToClipboard}
+									>
+										Copy
+									</Button>
+								</div>
 							</div>
 						</div>
+					</Card>
+				</motion.div>
+
+				<motion.div variants={item} className="grid grid-cols-2 gap-4">
+					<Card className="p-6 shadow-lg">
+						<div className="space-y-2 text-center">
+							<p className="text-sm font-medium text-muted-foreground">
+								Your Position
+							</p>
+							<motion.p
+								className="text-5xl font-bold"
+								initial={{ scale: 0 }}
+								animate={{ scale: 1 }}
+								transition={{ type: "spring", stiffness: 200, damping: 10 }}
+							>
+								{signUp.rank}
+							</motion.p>
+						</div>
+					</Card>
+					<Card className="p-6 shadow-lg">
+						<div className="space-y-2 text-center">
+							<p className="text-sm font-medium text-muted-foreground">
+								Total Sign Ups
+							</p>
+							<motion.p
+								className="text-5xl font-bold"
+								initial={{ scale: 0 }}
+								animate={{ scale: 1 }}
+								transition={{
+									type: "spring",
+									stiffness: 200,
+									damping: 10,
+									delay: 0.1,
+								}}
+							>
+								{totalSignUps > 0 ? (
+									totalSignUps
+								) : (
+									<span className="flex items-center justify-center">
+										<Loader2 className="w-8 h-8 animate-spin" />
+									</span>
+								)}
+							</motion.p>
+						</div>
+					</Card>
+				</motion.div>
+
+				<motion.div variants={item} className="space-y-6">
+					<div className="space-y-2 text-center">
+						<p className="text-sm font-medium">Share with Friends</p>
+						<div className="flex flex-wrap justify-center gap-4">
+							<motion.div
+								whileHover={{ scale: 1.05 }}
+								whileTap={{ scale: 0.95 }}
+							>
+								<Button
+									size="lg"
+									className="bg-[#1DA1F2] hover:bg-[#1a8cd8] shadow-lg"
+									onClick={shareOnTwitter}
+								>
+									<TwitterLogoIcon className="w-5 h-5" />
+									<span className="ml-2">Twitter</span>
+								</Button>
+							</motion.div>
+							<motion.div
+								whileHover={{ scale: 1.05 }}
+								whileTap={{ scale: 0.95 }}
+							>
+								<Button
+									size="lg"
+									className="bg-[#25D366] hover:bg-[#20bd5a] shadow-lg"
+									onClick={shareOnWhatsApp}
+								>
+									<MessageCircle className="w-5 h-5" />
+									<span className="ml-2">WhatsApp</span>
+								</Button>
+							</motion.div>
+							<motion.div
+								whileHover={{ scale: 1.05 }}
+								whileTap={{ scale: 0.95 }}
+							>
+								<Button
+									size="lg"
+									className="bg-gradient-to-r from-[#833AB4] via-[#FD1D1D] to-[#FCAF45] hover:opacity-90 shadow-lg"
+									onClick={shareOnInstagram}
+								>
+									<InstagramLogoIcon className="w-5 h-5" />
+									<span className="ml-2">Instagram</span>
+								</Button>
+							</motion.div>
+						</div>
 					</div>
-				</Card>
 
-				<div className="flex justify-between">
-					<Card className="w-[48%] p-6">
-						<p className="text-sm font-medium text-center">Your Position</p>
-						<p className="text-5xl font-bold text-center mt-2">{signUp.rank}</p>
-					</Card>
-					<Card className="w-[48%] p-6">
-						<p className="text-sm font-medium text-center">
-							People on Waitlist
-						</p>
-						<p className="text-5xl font-bold text-center mt-2">
-							{totalSignUps > 0 ? (
-								totalSignUps
-							) : (
-								<div className="flex items-center justify-center">
-									<Loader2 className="w-5 h-5 animate-spin" />
-								</div>
-							)}
-						</p>
-					</Card>
-				</div>
-
-				<div className="text-center space-y-4">
-					<p className="text-sm">
-						Share and refer your friends to move up in line!
+					<p className="text-xs text-center text-muted-foreground">
+						Widget by{" "}
+						<Link href="https://hypeitup.me" className="hover:underline">
+							hypeitup.me
+						</Link>
 					</p>
-					<div className="flex justify-center space-x-4">
-						<Button
-							className="bg-blue-600 hover:bg-blue-700"
-							onClick={shareOnTwitter}
-						>
-							<TwitterLogoIcon className="w-5 h-5" />
-						</Button>
-						<Button
-							className="bg-green-600 hover:bg-green-700"
-							onClick={shareOnWhatsApp}
-						>
-							<MessageCircle className="w-5 h-5" />
-						</Button>
-					</div>
-				</div>
-
-				<p className="text-xs text-center text-gray-500">
-					Widget by hypeitup.me
-				</p>
-			</div>
+				</motion.div>
+			</motion.div>
 		</div>
 	);
 };
