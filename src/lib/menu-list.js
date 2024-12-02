@@ -1,5 +1,4 @@
-import { HamburgerMenuIcon } from "@radix-ui/react-icons";
-import { LayoutGrid, SquarePen } from "lucide-react";
+import { GripIcon, LayersIcon, SquarePenIcon } from "@/components/shared/icons";
 
 export function getMenuList(pathname) {
 	return [
@@ -10,7 +9,7 @@ export function getMenuList(pathname) {
 					href: "/dashboard",
 					label: "Dashboard",
 					active: pathname.includes("/dashboard"),
-					icon: LayoutGrid,
+					icon: GripIcon,
 					submenus: [],
 				},
 			],
@@ -20,9 +19,9 @@ export function getMenuList(pathname) {
 			menus: [
 				{
 					href: "/wait-lists",
-					label: "Wait Lists",
+					label: "WaitLists",
 					active: pathname.includes("/wait-lists"),
-					icon: HamburgerMenuIcon,
+					icon: LayersIcon,
 					submenus: [],
 				},
 			],
@@ -32,9 +31,9 @@ export function getMenuList(pathname) {
 			menus: [
 				{
 					href: "/wait-lists/new",
-					label: "Create Wait List",
+					label: "Create WaitList",
 					active: pathname.includes("/wait-lists/new"),
-					icon: SquarePen,
+					icon: SquarePenIcon,
 					submenus: [],
 				},
 			],

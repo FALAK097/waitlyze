@@ -14,20 +14,25 @@ import { currentUser } from "@clerk/nextjs/server";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
+export const metadata = {
+	title: "Dashboard",
+	description:
+		"Get detailed analytics and insights about your waitlists, track signups, and understand your audience better with HypeItUp's powerful dashboard.",
+};
+
 export default async function DashboardPage() {
 	const clerkUser = await currentUser();
+
 	if (!clerkUser) {
-		return {
-			redirect: {
-				destination: "/",
-				permanent: false,
-			},
-		};
+		redirect("/");
 	}
 
 	const user = await prisma.user.findUnique({
 		where: {
 			clerkUserId: clerkUser.id,
+		},
+		include: {
+			waitLists: true,
 		},
 	});
 
@@ -40,6 +45,8 @@ export default async function DashboardPage() {
 			userId: user.id,
 		},
 	});
+
+	const waitListIds = user.waitLists.map((waitList) => waitList.id);
 
 	return (
 		<>
@@ -63,7 +70,7 @@ export default async function DashboardPage() {
 				</div>
 			</ContentLayout>
 
-			<DashboardCard />
+			<DashboardCard waitListIds={waitListIds} />
 		</>
 	);
 }

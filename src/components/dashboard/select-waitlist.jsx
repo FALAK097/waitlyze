@@ -41,7 +41,7 @@ export const SelectWaitlist = ({ waitLists }) => {
 								className="cursor-pointer"
 								value={waitlist.id}
 							>
-								{waitlist.name}
+								{waitlist.name.charAt(0).toUpperCase() + waitlist.name.slice(1)}
 							</SelectItem>
 						))
 					) : (

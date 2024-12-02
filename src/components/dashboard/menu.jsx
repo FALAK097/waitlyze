@@ -1,6 +1,6 @@
 "use client";
 
-import { Ellipsis, LogOut } from "lucide-react";
+import { Ellipsis } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -15,6 +15,7 @@ import {
 import { getMenuList } from "@/lib/menu-list";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@clerk/nextjs";
+import { LogoutIcon } from "../shared/icons";
 import { CollapseMenuButton } from "./collapse-menu-button";
 
 export function Menu({ isOpen }) {
@@ -125,7 +126,7 @@ export function Menu({ isOpen }) {
 										className="justify-center w-full h-10 mt-5"
 									>
 										<span className={cn(isOpen === false ? "" : "mr-4")}>
-											<LogOut size={18} />
+											<LogoutIcon />
 										</span>
 										<p
 											className={cn(

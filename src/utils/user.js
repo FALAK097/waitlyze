@@ -7,9 +7,9 @@ export const userRoles = [
 ];
 
 export const priorityColors = {
-	High: "text-red-500",
-	Medium: "text-yellow-500",
-	Low: "text-green-500",
+	High: "text-amber-500",
+	Medium: "text-purple-500",
+	Low: "text-orange-500",
 };
 
 export const generateMockUsers = (count) => {

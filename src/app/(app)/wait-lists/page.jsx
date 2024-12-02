@@ -17,6 +17,12 @@ import { currentUser } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { removeUpload } from "../../actions/removeUpload";
 
+export const metadata = {
+	title: "WaitLists",
+	description:
+		"View and manage all your wait lists, track signups, and analyze performance metrics. Create new wait lists or edit existing ones to optimize your audience engagement.",
+};
+
 export default async function WaitListsPage() {
 	const clerkUser = await currentUser();
 	if (!clerkUser) {
@@ -58,7 +64,7 @@ export default async function WaitListsPage() {
 					userId: user.id,
 				},
 				select: {
-					logoKey: true, // Get the logoKey associated with the waitlist
+					logoKey: true,
 				},
 			});
 
@@ -89,7 +95,7 @@ export default async function WaitListsPage() {
 			response.message = "Error deleting wait list";
 		}
 
-		await waitFor(1000); // Delay before returning the response
+		await waitFor(1000);
 		return response;
 	};
 

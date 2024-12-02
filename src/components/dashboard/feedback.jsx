@@ -28,11 +28,12 @@ import {
 } from "@/components/ui/tooltip";
 import { useUser } from "@clerk/nextjs";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Loader, MessageCircleHeart } from "lucide-react";
+import { Loader } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import toast from "react-hot-toast";
 import * as z from "zod";
+import { MessageCircleMoreIcon } from "../shared/icons";
 
 const feedbackSchema = z.object({
 	name: z.string().min(1, "Name is required").max(40, "Name is too long"),
@@ -110,16 +111,16 @@ export const Feedback = () => {
 				<Tooltip>
 					<TooltipTrigger asChild>
 						<SheetTrigger asChild>
-							<Button size="icon" variant="ghost">
-								<MessageCircleHeart className="w-6 h-6" />
-							</Button>
+							<button type="button" onClick={() => setOpen(true)}>
+								<MessageCircleMoreIcon />
+							</button>
 						</SheetTrigger>
 					</TooltipTrigger>
 					<TooltipContent>
 						<p>Feedback</p>
 					</TooltipContent>
 				</Tooltip>
-				<SheetContent className="sm:max-w-[425px]">
+				<SheetContent className="sm:max-w-[425px] overflow-y-scroll no-scrollbar">
 					<SheetHeader>
 						<SheetTitle>Feedback</SheetTitle>
 						<SheetDescription>

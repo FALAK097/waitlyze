@@ -1,6 +1,12 @@
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 
+export const metadata = {
+	title: "Terms of Service",
+	description:
+		"Learn about our terms of service, including user responsibilities, acceptable use, and legal requirements for using HypeItUp's waitlist platform.",
+};
+
 export default function TermsOfService() {
 	return (
 		<div className="min-h-screen px-4 py-12 sm:px-6 lg:px-8">

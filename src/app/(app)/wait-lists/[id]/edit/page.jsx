@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { cache } from "react";
 
 import { ContentLayout } from "@/components/dashboard/content-layout";
 import {
@@ -14,29 +15,61 @@ import prisma from "@/lib/prisma";
 import { currentUser } from "@clerk/nextjs/server";
 import { notFound } from "next/navigation";
 
+const getWaitList = cache(async (id) => {
+	return await prisma.waitList.findUnique({
+		where: { id },
+		select: { name: true },
+	});
+});
+
+const getFullWaitList = cache(async (id, userId) => {
+	return await prisma.waitList.findUnique({
+		where: {
+			id,
+			userId,
+		},
+	});
+});
+
+const getUser = cache(async (clerkUserId) => {
+	return await prisma.user.findUnique({
+		where: { clerkUserId },
+	});
+});
+
+export async function generateMetadata({ params }) {
+	const { id } = params;
+	const waitList = await getWaitList(id);
+
+	if (!waitList) {
+		return {
+			title: "Not Found | HypeItUp",
+			description: "The requested waitlist could not be found.",
+		};
+	}
+
+	return {
+		title: `Edit ${waitList.name}`,
+		description:
+			"Customize your waitlist's appearance, configure settings like colors and text, and preview changes in real-time to create the perfect signup form",
+	};
+}
+
 export default async function WaitListsEditPage({ params }) {
 	const { id } = params;
 	const clerkUser = await currentUser();
-	const user = await prisma.user.findUnique({
-		where: {
-			clerkUserId: clerkUser.id,
-		},
-	});
+
+	if (!id || !clerkUser) {
+		return notFound();
+	}
+
+	const user = await getUser(clerkUser.id);
 
 	if (!user) {
 		return notFound();
 	}
 
-	if (!id) {
-		return notFound();
-	}
-
-	const waitList = await prisma.waitList.findUnique({
-		where: {
-			id: id,
-			userId: user.id,
-		},
-	});
+	const waitList = await getFullWaitList(id, user.id);
 
 	if (!waitList) {
 		return notFound();
@@ -49,6 +82,7 @@ export default async function WaitListsEditPage({ params }) {
 			waitList: null,
 			message: "Failed to save wait list",
 		};
+
 		const data = {
 			buttonColor: waitList.buttonColor,
 			buttonBorder: waitList.buttonBorder,
@@ -63,6 +97,10 @@ export default async function WaitListsEditPage({ params }) {
 			successMessage: waitList.successMessage,
 			showLogo: waitList.showLogo,
 			showSocialProof: waitList.showSocialProof,
+			showBadge: waitList.showBadge,
+			badgeColor: waitList.badgeColor,
+			badgeText: waitList.badgeText,
+			badgeTextColor: waitList.badgeTextColor,
 			enableReferrals: waitList.enableReferrals,
 			inputColor: waitList.inputColor,
 			inputBorder: waitList.inputBorder,
@@ -71,29 +109,27 @@ export default async function WaitListsEditPage({ params }) {
 			logoUrl: waitList.logoUrl,
 			logoKey: waitList.logoKey,
 		};
+
 		try {
-			const waitList = await prisma.waitList.update({
-				where: {
-					id: waitListId,
-				},
-				data: {
-					...data,
-				},
+			const updatedWaitList = await prisma.waitList.update({
+				where: { id: waitListId },
+				data,
 			});
 
 			response = {
 				success: true,
-				waitList: waitList,
+				waitList: updatedWaitList,
 				message: "Wait list saved successfully",
 			};
 		} catch (error) {
 			console.error(error);
 		}
+
 		return response;
 	};
 
 	return (
-		<ContentLayout title="Wait Lists">
+		<ContentLayout title="WaitLists">
 			<Breadcrumb>
 				<BreadcrumbList>
 					<BreadcrumbItem>
@@ -104,11 +140,13 @@ export default async function WaitListsEditPage({ params }) {
 					<BreadcrumbSeparator />
 					<BreadcrumbItem>
 						<BreadcrumbLink asChild>
-							<Link href="/wait-lists">Wait Lists</Link>
+							<Link href="/wait-lists">WaitLists</Link>
 						</BreadcrumbLink>
 					</BreadcrumbItem>
 					<BreadcrumbSeparator />
-					<BreadcrumbPage>{waitList.name}</BreadcrumbPage>
+					<BreadcrumbPage>
+						{waitList.name.charAt(0).toUpperCase() + waitList.name.slice(1)}
+					</BreadcrumbPage>
 				</BreadcrumbList>
 			</Breadcrumb>
 			<WaitlistGenerator
