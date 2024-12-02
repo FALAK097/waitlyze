@@ -12,8 +12,25 @@ export const metadata = {
 	},
 	description:
 		"Create beautiful, customizable waitlist pages to build anticipation and convert visitors into eager customers. Get powerful analytics to understand your audience better.",
+	openGraph: {
+		title: "HypeItUp | Create Engaging Waitlists for Your Product",
+		description:
+			"Create beautiful, customizable waitlist pages to build anticipation and convert visitors into eager customers. Get powerful analytics to understand your audience better.",
+		images: [
+			{
+				url: "/opengraph-image.png",
+				width: 1200,
+				height: 630,
+				alt: "HypeItUp Preview",
+			},
+		],
+	},
 	twitter: {
 		card: "summary_large_image",
+		title: "HypeItUp | Create Engaging Waitlists for Your Product",
+		description:
+			"Create beautiful, customizable waitlist pages to build anticipation and convert visitors into eager customers. Get powerful analytics to understand your audience better.",
+		images: ["/opengraph-image.png"],
 	},
 };
 
