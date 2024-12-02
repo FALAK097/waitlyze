@@ -132,23 +132,36 @@ export const SignUpForm = ({
 						)}
 					</Button>
 					{waitList.showSocialProof && (
-						<div className="flex items-center space-x-2 text-sm text-gray-500">
-							<Zap className="w-4 h-4 text-purple-500" />
-							<div className="flex -space-x-1 overflow-hidden">
-								{dummyUsers.map((_, i) => {
-									return (
-										<Avatar
-											key={`user-${i}-${_.id}-${_.image}`}
-											className="inline-block border-2 border-white rounded-full"
-										>
-											<AvatarImage src={_.image} />
-											<AvatarFallback>U{i + 1}</AvatarFallback>
-										</Avatar>
-									);
-								})}
+						<>
+							<div className="flex items-center space-x-2 text-sm text-gray-500">
+								<Zap className="w-4 h-4 text-purple-500" />
+								<div className="flex -space-x-1 overflow-hidden">
+									{dummyUsers.map((_, i) => {
+										return (
+											<Avatar
+												key={`user-${i}-${_.id}-${_.image}`}
+												className="inline-block border-2 border-white rounded-full"
+											>
+												<AvatarImage src={_.image} />
+												<AvatarFallback>U{i + 1}</AvatarFallback>
+											</Avatar>
+										);
+									})}
+								</div>
+								<span>Be the first to join</span>
 							</div>
-							<span>Be the first to join</span>
-						</div>
+							<span className="flex items-center justify-center text-center text-gray-500">
+								Widget by&nbsp;
+								<a
+									href="https://hypeitup.me"
+									className="font-medium text-purple-500"
+									target="_blank"
+									rel="noopener noreferrer"
+								>
+									hypeitup.me
+								</a>
+							</span>
+						</>
 					)}
 				</form>
 			</div>
