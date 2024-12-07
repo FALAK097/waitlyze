@@ -6,6 +6,7 @@ import { getWaitlistSignups } from "@/actions/waitlist-signups";
 import { cn } from "@/lib/utils";
 import { priorityColors } from "@/utils/user";
 import { saveAs } from "file-saver";
+import { AnimatePresence, motion } from "framer-motion";
 import jsPDF from "jspdf";
 import {
 	ArrowDown,
@@ -16,14 +17,18 @@ import {
 	ChevronRight,
 	Copy,
 	FileJson,
+	FileSpreadsheet,
+	FileText,
 	HelpCircle,
 	MoreVertical,
 } from "lucide-react";
 import Papa from "papaparse";
 import { useEffect, useMemo, useRef, useState } from "react";
+import toast from "react-hot-toast";
 import {
 	ActivityIcon,
 	DeleteIcon,
+	DownloadIcon,
 	EyeOffIcon,
 	SearchIcon,
 	TrendingUpIcon,
@@ -92,7 +97,7 @@ export const UserSegmentation = ({ waitlistId }) => {
 		direction: null,
 	});
 	const usersPerPage = 10;
-	const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+	const [isOpen, setIsOpen] = useState(false);
 
 	const copyShareUrlToClipboard = () => {
 		if (inputRef.current) {
@@ -219,36 +224,86 @@ export const UserSegmentation = ({ waitlistId }) => {
 		setDeleteModalOpen(false);
 	};
 
-	// CSV Export
 	const handleCSVExport = () => {
 		const csv = Papa.unparse(users);
 		const blob = new Blob([csv], { type: "text/csv" });
 		saveAs(blob, "users.csv");
 	};
 
-	// PDF Export
 	const handlePDFExport = () => {
 		const doc = new jsPDF();
-		let yPosition = 10;
+		let yPosition = 20;
+		const margin = 14;
+		const lineHeight = 10;
 
-		doc.text("User Segmentation", 14, yPosition);
-		yPosition += 10;
+		doc.setFontSize(16);
+		doc.text("User Segmentation Report", margin, yPosition);
+		yPosition += lineHeight * 2;
 
-		doc.text("Name", 14, yPosition);
-		doc.text("Category", 60, yPosition);
-		yPosition += 10;
+		doc.setFontSize(8);
+		doc.text(`Generated on: ${new Date().toLocaleString()}`, margin, yPosition);
+		yPosition += lineHeight * 2;
 
-		// Adding user data
-		for (const user of users) {
-			if (user.name && user.category) {
-				doc.text(user.name, 14, yPosition);
-				doc.text(user.category, 60, yPosition);
-				yPosition += 10;
+		doc.setFontSize(10);
+		doc.setFont(undefined, "bold");
+		doc.text("Email", margin, yPosition);
+		doc.text("Device", margin + 70, yPosition);
+		doc.text("Priority", margin + 100, yPosition);
+		doc.text("Referrals", margin + 130, yPosition);
+		yPosition += lineHeight;
+
+		doc.setFont(undefined, "normal");
+
+		for (const user of sortedAndFilteredUsers) {
+			if (yPosition >= doc.internal.pageSize.height - 30) {
+				doc.addPage();
+				yPosition = 20;
+			}
+
+			try {
+				const email = (user.name || "N/A").substring(0, 35);
+				const device = (user.device || "N/A").substring(0, 15);
+				const priority = user.priority || "N/A";
+				const referralCount = referralCounts[user.id] || 0;
+
+				doc.text(email, margin, yPosition);
+				doc.text(device, margin + 70, yPosition);
+				doc.text(priority, margin + 100, yPosition);
+				doc.text(String(referralCount), margin + 130, yPosition);
+
+				yPosition += lineHeight;
+			} catch (error) {
+				console.error("Error adding user to PDF:", error);
 			}
 		}
 
-		// Save the PDF
-		doc.save("users.pdf");
+		yPosition += lineHeight * 2;
+		doc.setFont(undefined, "bold");
+		doc.text("Summary", margin, yPosition);
+		yPosition += lineHeight;
+
+		doc.setFont(undefined, "normal");
+		doc.text(`Total Users: ${users.length}`, margin, yPosition);
+		yPosition += lineHeight;
+		doc.text(`Total Referrals: ${totalReferrals}`, margin, yPosition);
+		yPosition += lineHeight;
+
+		if (impressions.length > 0) {
+			const conversionRate = (
+				(users.length / impressions.length) *
+				100
+			).toFixed(1);
+			doc.text(`Conversion Rate: ${conversionRate}%`, margin, yPosition);
+		}
+
+		try {
+			doc.save(
+				`user-segmentation-report-${new Date().toISOString().split("T")[0]}.pdf`,
+			);
+		} catch (error) {
+			console.error("Error saving PDF:", error);
+			toast.error("There was an error generating the PDF. Please try again.");
+		}
 	};
 
 	useEffect(() => {
@@ -480,38 +535,46 @@ export const UserSegmentation = ({ waitlistId }) => {
 							/>
 						</div>
 						<div className="relative inline-block text-left">
-							<div>
-								<Button
-									variant="outline"
-									type="button"
-									className="w-full sm:w-auto"
-									aria-haspopup="true"
-									onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-								>
-									<Download className="w-4 h-4 mr-2" /> Download
-								</Button>
-							</div>
-
-							{isDropdownOpen && (
-								<div className="absolute right-0 z-50 w-48 mt-2 origin-top-right bg-white rounded-md shadow-lg dark:bg-gray-800 focus:outline-none">
-									<div className="py-1">
-										<button
-											type="button"
-											onClick={handlePDFExport}
-											className="block w-full px-4 py-2 text-sm text-left text-gray-900 dark:text-white hover:bg-primary dark:hover:bg-primary focus:outline-none"
+							<DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
+								<DropdownMenuTrigger asChild>
+									<Button variant="outline" className="w-full sm:w-auto">
+										<DownloadIcon className="w-4 h-4 mr-2" />
+										Download
+									</Button>
+								</DropdownMenuTrigger>
+								<AnimatePresence>
+									{isOpen && (
+										<DropdownMenuContent
+											align="end"
+											className="w-48"
+											asChild
+											forceMount
 										>
-											PDF Export
-										</button>
-										<button
-											type="button"
-											onClick={handleCSVExport}
-											className="block w-full px-4 py-2 text-sm text-left text-gray-900 dark:text-white hover:bg-primary dark:hover:bg-primary focus:outline-none"
-										>
-											CSV Export
-										</button>
-									</div>
-								</div>
-							)}
+											<motion.div
+												initial={{ opacity: 0, y: -10 }}
+												animate={{ opacity: 1, y: 0 }}
+												exit={{ opacity: 0, y: -10 }}
+												transition={{ duration: 0.2 }}
+											>
+												<DropdownMenuItem
+													onClick={handlePDFExport}
+													className="flex items-center cursor-pointer"
+												>
+													<FileText className="w-4 h-4 mr-2 text-primary" />
+													<span>PDF Export</span>
+												</DropdownMenuItem>
+												<DropdownMenuItem
+													onClick={handleCSVExport}
+													className="flex items-center cursor-pointer"
+												>
+													<FileSpreadsheet className="w-4 h-4 mr-2 text-primary" />
+													<span>CSV Export</span>
+												</DropdownMenuItem>
+											</motion.div>
+										</DropdownMenuContent>
+									)}
+								</AnimatePresence>
+							</DropdownMenu>
 						</div>
 					</div>
 

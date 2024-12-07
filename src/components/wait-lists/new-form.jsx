@@ -28,7 +28,6 @@ export const NewWaitListForm = ({ createNewWaitList }) => {
 	const handleSubmit = async (e) => {
 		e.preventDefault();
 		if (!projectName) return toast.error("Please enter a project name");
-		if (!description) return toast.error("Please enter a description");
 		if (!logoUrl) return toast.error("Please upload a logo");
 		setLoading(true);
 		const response = await createNewWaitList({
@@ -93,7 +92,6 @@ export const NewWaitListForm = ({ createNewWaitList }) => {
 									value={description}
 									onChange={(e) => setDescription(e.target.value)}
 									placeholder="Explains what your project is about"
-									required
 									disabled={loading || isCreated}
 								/>
 							</div>
