@@ -48,21 +48,51 @@ export function SettingsTab({ formSettings, updateSetting, applyPreset }) {
 							onChange={(color) => updateSetting("buttonTextColor", color)}
 						/>
 					</div>
-					<div className="flex items-center justify-between">
-						<Label htmlFor="mainBgColor">Background Color</Label>
-						<ColorPicker
-							id="mainBgColor"
-							value={formSettings.mainBgColor}
-							onChange={(color) => updateSetting("mainBgColor", color)}
-						/>
+					<div className="space-y-4">
+						<div className="flex items-center justify-between">
+							<Label htmlFor="enableMainBgColor">Enable Background Color</Label>
+							<Switch
+								id="enableMainBgColor"
+								checked={formSettings.enableMainBgColor}
+								onCheckedChange={(checked) =>
+									updateSetting("enableMainBgColor", checked)
+								}
+							/>
+						</div>
+
+						{formSettings.enableMainBgColor && (
+							<div className="flex items-center justify-between">
+								<Label htmlFor="mainBgColor">Background Color</Label>
+								<ColorPicker
+									id="mainBgColor"
+									value={formSettings.mainBgColor}
+									onChange={(color) => updateSetting("mainBgColor", color)}
+								/>
+							</div>
+						)}
 					</div>
-					<div className="flex items-center justify-between">
-						<Label htmlFor="bgColor">Widget BG Color</Label>
-						<ColorPicker
-							id="bgColor"
-							value={formSettings.bgColor}
-							onChange={(color) => updateSetting("bgColor", color)}
-						/>
+					<div className="space-y-4">
+						<div className="flex items-center justify-between">
+							<Label htmlFor="enableBgColor">Enable Widget BG Color</Label>
+							<Switch
+								id="enableBgColor"
+								checked={formSettings.enableBgColor}
+								onCheckedChange={(checked) =>
+									updateSetting("enableBgColor", checked)
+								}
+							/>
+						</div>
+
+						{formSettings.enableBgColor && (
+							<div className="flex items-center justify-between">
+								<Label htmlFor="bgColor">Widget BG Color</Label>
+								<ColorPicker
+									id="bgColor"
+									value={formSettings.bgColor}
+									onChange={(color) => updateSetting("bgColor", color)}
+								/>
+							</div>
+						)}
 					</div>
 					<div>
 						<Label htmlFor="borderWidth">Border Width</Label>
