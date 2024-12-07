@@ -1,22 +1,16 @@
 "use client";
 
-import { RefreshCw, Send } from "lucide-react";
+import { InfoIcon as InfoCircle, Send } from "lucide-react";
 import * as React from "react";
 import { useEffect, useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 
 import { Button } from "@/components/ui/button";
-import {
-	Card,
-	CardContent,
-	CardDescription,
-	CardHeader,
-	CardTitle,
-} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import toast from "react-hot-toast";
+import { Separator } from "../ui/separator";
 import { EmailForm } from "./email-form";
 
 export const EmailTemplateContent = ({ waitList, updateEmailTemplate }) => {
@@ -58,12 +52,13 @@ export const EmailTemplateContent = ({ waitList, updateEmailTemplate }) => {
 				subBody: "This link expires in {{expiry_time}}",
 			},
 			offboarding: {
-				subject: "Sorry to see you go - {{waitlist}}",
-				previewText: "Unsubscribe confirmation",
-				header: "Farewell",
-				subHeader: "You've been unsubscribed",
-				mainBody: "You've been successfully removed from our waitlist",
-				subBody: "We'd love to hear your feedback",
+				subject: "You're off the {{waitlist}} Waitlist!",
+				previewText: "Congratulations! Time for the next step.",
+				header: "Next Steps",
+				subHeader: "{{waitlist}} is now open!",
+				mainBody:
+					"We're excited to announce that {{waitlist}} is now open for everyone. We've got some exciting news to share with you.",
+				subBody: "We'll see you on the other side!",
 			},
 		},
 	});
@@ -105,11 +100,20 @@ export const EmailTemplateContent = ({ waitList, updateEmailTemplate }) => {
 		setPreview(getCurrentTemplatePreview());
 	};
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
 	useEffect(() => {
 		updatePreview();
 	}, [selectedTemplate]);
 
-	const handleSaveTemplate = async (values) => {
+	// biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
+	useEffect(() => {
+		const subscription = form.watch(() => {
+			updatePreview();
+		});
+		return () => subscription.unsubscribe();
+	}, [form]);
+
+	const handleSaveTemplate = async () => {
 		try {
 			await updateEmailTemplate({
 				type: selectedTemplate,
@@ -124,7 +128,6 @@ export const EmailTemplateContent = ({ waitList, updateEmailTemplate }) => {
 	const handleSendTestEmail = async () => {
 		setIsTestEmailLoading(true);
 		try {
-			// Implement your test email sending logic here
 			await new Promise((resolve) => setTimeout(resolve, 1000));
 			toast.success("Test email sent successfully");
 		} catch (error) {
@@ -134,33 +137,60 @@ export const EmailTemplateContent = ({ waitList, updateEmailTemplate }) => {
 		}
 	};
 
+	const variables = [
+		{
+			key: "position",
+			value: "22",
+		},
+		{
+			key: "total_signups",
+			value: "2",
+		},
+		{
+			key: "referral_count",
+			value: "5",
+		},
+		{
+			key: "expiry_time",
+			value: "24 hours",
+		},
+		{
+			key: "referral_link",
+			value:
+				"https://hypeitup.me/forms/cm4e8vmhr0000ye5h1jnnx8ju?r=wzH3ZcFx7dBUXahiHQGFb",
+		},
+		{
+			key: "waitlist",
+			value: "Sick",
+		},
+		{
+			key: "waitlist_url",
+			value: "http://hypeitup.me/forms/cm4e8vmhr0000ye5h1jnnx8ju",
+		},
+	];
+
 	return (
-		<div className="max-w-4xl mx-auto">
-			<Tabs
-				defaultValue="edit"
-				onValueChange={(value) => value === "preview" && updatePreview()}
-			>
-				<TabsList className="grid w-full grid-cols-2">
-					<TabsTrigger value="edit">Edit Templates</TabsTrigger>
-					<TabsTrigger value="preview">Preview</TabsTrigger>
-				</TabsList>
+		<div className="grid grid-cols-1 gap-8 md:grid-cols-2">
+			<div className="pr-4 border-r">
+				<h2 className="mb-4 text-lg font-semibold">Edit Templates</h2>
+				<FormProvider {...form}>
+					<form onSubmit={form.handleSubmit(handleSaveTemplate)}>
+						<Tabs
+							defaultValue="signup"
+							value={selectedTemplate}
+							onValueChange={(value) => {
+								setSelectedTemplate(value);
+							}}
+							className="mt-4"
+						>
+							<TabsList className="grid w-full grid-cols-4">
+								<TabsTrigger value="signup">Sign Up</TabsTrigger>
+								<TabsTrigger value="referral">Referral</TabsTrigger>
+								<TabsTrigger value="verification">Verification</TabsTrigger>
+								<TabsTrigger value="offboarding">Offboarding</TabsTrigger>
+							</TabsList>
 
-				<TabsContent value="edit">
-					<FormProvider {...form}>
-						<form onSubmit={form.handleSubmit(handleSaveTemplate)}>
-							<Tabs
-								defaultValue="signup"
-								value={selectedTemplate}
-								onValueChange={(value) => setSelectedTemplate(value)}
-								className="mt-4"
-							>
-								<TabsList className="grid w-full grid-cols-4">
-									<TabsTrigger value="signup">Sign Up</TabsTrigger>
-									<TabsTrigger value="referral">Referral</TabsTrigger>
-									<TabsTrigger value="verification">Verification</TabsTrigger>
-									<TabsTrigger value="offboarding">Offboarding</TabsTrigger>
-								</TabsList>
-
+							<div className="mt-4">
 								<TabsContent value="signup">
 									<EmailForm type="signup" form={form} />
 								</TabsContent>
@@ -173,69 +203,91 @@ export const EmailTemplateContent = ({ waitList, updateEmailTemplate }) => {
 								<TabsContent value="offboarding">
 									<EmailForm type="offboarding" form={form} />
 								</TabsContent>
-							</Tabs>
-
-							<div className="mt-4">
-								<Button type="submit">Save All Templates</Button>
 							</div>
-						</form>
-					</FormProvider>
-				</TabsContent>
+						</Tabs>
 
-				<TabsContent value="preview" className="space-y-4">
-					<div className="flex items-center justify-between">
-						<h2 className="text-lg font-semibold">Email Preview</h2>
-						<Button variant="outline" size="sm" onClick={updatePreview}>
-							<RefreshCw className="w-4 h-4 mr-2" />
-							Refresh Preview
-						</Button>
-					</div>
-
-					<Card>
-						<CardHeader>
-							<CardTitle className="text-base">{preview.subject}</CardTitle>
-							<CardDescription>
-								{testEmail || "preview@example.com"}
-							</CardDescription>
-						</CardHeader>
-						<CardContent>
-							<div className="prose-sm prose">
-								<h2>{preview.header}</h2>
-								<h3 className="text-muted-foreground">{preview.subHeader}</h3>
-								<div className="whitespace-pre-wrap">{preview.mainBody}</div>
-								<p className="mt-4 text-sm text-muted-foreground">
-									{preview.subBody}
-								</p>
-							</div>
-						</CardContent>
-					</Card>
-
-					<div className="flex items-end gap-2">
-						<div className="flex-1 space-y-2">
-							<Label htmlFor="testEmail">Send test email to</Label>
-							<Input
-								id="testEmail"
-								type="email"
-								placeholder="your@email.com"
-								value={testEmail}
-								onChange={(e) => setTestEmail(e.target.value)}
-							/>
+						<div className="mt-4">
+							<Button type="submit">Save All Templates</Button>
 						</div>
-						<Button
-							onClick={handleSendTestEmail}
-							disabled={isTestEmailLoading || !testEmail}
-						>
-							{isTestEmailLoading ? (
-								"Sending..."
-							) : (
-								<>
-									Send Test <Send className="w-4 h-4 ml-2" />
-								</>
-							)}
-						</Button>
+					</form>
+				</FormProvider>
+			</div>
+
+			<div className="pl-4">
+				<div className="max-w-2xl p-4 mx-auto rounded-md bg-muted">
+					<div className="flex justify-center mb-8">
+						<div className="text-2xl font-bold text-primary">HypeItUp</div>
 					</div>
-				</TabsContent>
-			</Tabs>
+					<div className="text-base">{preview.subject}</div>
+					<div className="prose-sm prose">
+						<h2>{preview.header}</h2>
+						<h3 className="text-muted-foreground">{preview.subHeader}</h3>
+						<div className="whitespace-pre-wrap">{preview.mainBody}</div>
+						<p className="mt-4 text-sm text-muted-foreground">
+							{preview.subBody}
+						</p>
+					</div>
+
+					<footer className="mt-8 text-sm text-center text-muted-foreground">
+						<Separator className="mb-4" />
+						<p>
+							Need help? Contact us at{" "}
+							<a
+								className="underline text-primary"
+								href="mailto:info@hypeitup.me"
+							>
+								info@hypeitup.me
+							</a>
+						</p>
+						<p className="mt-2">Mumbai, India</p>
+						<Button variant="link" className="mt-4">
+							Unsubscribe
+						</Button>
+					</footer>
+				</div>
+
+				<div className="flex items-end gap-2 mt-4">
+					<div className="flex-1 space-y-2">
+						<Label htmlFor="testEmail">Send test email to</Label>
+						<Input
+							id="testEmail"
+							type="email"
+							placeholder="info@hypeitup.me"
+							value={testEmail}
+							onChange={(e) => setTestEmail(e.target.value)}
+						/>
+					</div>
+					<Button
+						onClick={handleSendTestEmail}
+						disabled={isTestEmailLoading || !testEmail}
+					>
+						{isTestEmailLoading ? (
+							"Sending..."
+						) : (
+							<>
+								Send Test <Send className="w-4 h-4 ml-2" />
+							</>
+						)}
+					</Button>
+				</div>
+
+				<div className="w-full max-w-2xl p-4 mt-8 rounded-md bg-muted">
+					<div className="flex items-center gap-2 mb-4">
+						<InfoCircle className="w-4 h-4 text-primary" />
+						<h3 className="text-base font-medium">
+							Use these variables in your email
+						</h3>
+					</div>
+					<div className="space-y-4 text-sm">
+						{variables.map((variable) => (
+							<div key={variable.key} className="break-all">
+								<span className="text-primary">{`{{${variable.key}}}`}</span>:{" "}
+								{variable.value}
+							</div>
+						))}
+					</div>
+				</div>
+			</div>
 		</div>
 	);
 };
