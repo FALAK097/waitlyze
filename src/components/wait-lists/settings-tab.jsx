@@ -1,4 +1,6 @@
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { ColorPicker } from "@/components/ui/color-picker";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -10,8 +12,10 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ColorPicker } from "../ui/color-picker";
-import { Textarea } from "../ui/textarea";
+import { UploadButton } from "@/utils/uploadthing";
+import { X } from "lucide-react";
+import Image from "next/image";
+import { toast } from "react-hot-toast";
 
 export function SettingsTab({ formSettings, updateSetting, applyPreset }) {
 	return (
@@ -21,7 +25,7 @@ export function SettingsTab({ formSettings, updateSetting, applyPreset }) {
 					<TabsTrigger value="general">General</TabsTrigger>
 					<TabsTrigger value="input">Input</TabsTrigger>
 					<TabsTrigger value="presets">Presets</TabsTrigger>
-					<TabsTrigger value="email">Email</TabsTrigger>
+					<TabsTrigger value="social">Social</TabsTrigger>
 				</TabsList>
 				<TabsContent value="general" className="py-4 space-y-4">
 					<div className="flex items-center justify-between">
@@ -305,22 +309,274 @@ export function SettingsTab({ formSettings, updateSetting, applyPreset }) {
 						Funk
 					</Button>
 				</TabsContent>
-				<TabsContent value="email" className="py-4 space-y-4">
-					<div>
-						<Label htmlFor="emailSubject">Email Subject</Label>
-						<Input
-							id="emailSubject"
-							value={formSettings.emailSubject}
-							onChange={(e) => updateSetting("emailSubject", e.target.value)}
-						/>
-					</div>
-					<div>
-						<Label htmlFor="emailBody">Email Body</Label>
-						<Textarea
-							id="emailBody"
-							value={formSettings.emailBody}
-							onChange={(e) => updateSetting("emailBody", e.target.value)}
-						/>
+
+				<TabsContent value="social" className="py-4 space-y-4">
+					<div className="space-y-6">
+						<div className="space-y-4">
+							<div className="space-y-2">
+								<Label htmlFor="title">OG Title</Label>
+								<p className="text-sm text-muted-foreground">
+									This will be the title that shows up on social media when
+									users share your waitlist.
+								</p>
+								<Input
+									id="title"
+									placeholder="Join the waitlist"
+									value={formSettings.socialTitle}
+									onChange={(e) => updateSetting("socialTitle", e.target.value)}
+								/>
+							</div>
+
+							<div className="space-y-2">
+								<Label htmlFor="description">OG Description</Label>
+								<p className="text-sm text-muted-foreground">
+									This will be the description that shows up on social media
+									when users share your waitlist.
+								</p>
+								<Input
+									id="description"
+									placeholder="Join the waitlist to get early access"
+									value={formSettings.socialDescription}
+									onChange={(e) =>
+										updateSetting("socialDescription", e.target.value)
+									}
+								/>
+							</div>
+
+							<div className="space-y-2">
+								<Label htmlFor="image">OG Image</Label>
+								<p className="text-sm text-muted-foreground">
+									This will be the image that shows up on social media when
+									users share your waitlist.
+								</p>
+								<div className="grid w-full max-w-sm items-start gap-1.5">
+									{formSettings.socialImage && (
+										<div className="space-y-2">
+											<div className="flex justify-end">
+												<Button
+													variant="destructive"
+													size="icon"
+													className="w-6 h-6"
+													onClick={() => updateSetting("socialImage", "")}
+												>
+													<X className="w-4 h-4" />
+												</Button>
+											</div>
+											<div className="relative w-full overflow-hidden rounded-lg aspect-video">
+												<Image
+													src={formSettings.socialImage}
+													alt="OG Preview"
+													className="object-cover"
+													fill
+													sizes="(max-width: 768px) 100vw, 400px"
+													priority
+												/>
+											</div>
+										</div>
+									)}
+									<div className="flex justify-start">
+										<UploadButton
+											appearance={{
+												button:
+													"ut-ready:bg-primary ut-button:ut-readying:bg-primary ut-uploading:cursor-not-allowed rounded-md px-6 py-2 text-primary-foreground transition-colors hover:bg-primary/90 shadow-sm",
+											}}
+											endpoint="imageUploader"
+											onClientUploadComplete={(res) => {
+												if (res?.[0]?.url) {
+													updateSetting("socialImage", res[0].url);
+													toast.success("Image uploaded successfully");
+												}
+											}}
+											onUploadError={(error) => {
+												toast.error(`ERROR! ${error.message}`);
+											}}
+										/>
+									</div>
+								</div>
+							</div>
+						</div>
+
+						<div className="space-y-4">
+							<h3 className="font-medium">Sharing Options</h3>
+							<p className="text-sm text-muted-foreground">
+								Pick which links we show on the post-signup section for users to
+								share their referral links on.
+							</p>
+							<div className="space-y-4">
+								<div className="flex items-center space-x-2">
+									<Checkbox
+										id="twitter-share"
+										checked={formSettings.shareOnTwitter}
+										onCheckedChange={(checked) =>
+											updateSetting("shareOnTwitter", checked)
+										}
+									/>
+									<Label htmlFor="twitter-share">Twitter/X</Label>
+								</div>
+
+								<div className="flex items-center space-x-2">
+									<Checkbox
+										id="whatsapp-share"
+										checked={formSettings.shareOnWhatsapp}
+										onCheckedChange={(checked) =>
+											updateSetting("shareOnWhatsapp", checked)
+										}
+									/>
+									<Label htmlFor="whatsapp-share">WhatsApp</Label>
+								</div>
+
+								<div className="flex items-center space-x-2">
+									<Checkbox
+										id="instagram-share"
+										checked={formSettings.shareOnInstagram}
+										onCheckedChange={(checked) =>
+											updateSetting("shareOnInstagram", checked)
+										}
+									/>
+									<Label htmlFor="instagram-share">Instagram</Label>
+								</div>
+
+								<div className="flex items-center space-x-2">
+									<Checkbox
+										id="facebook-share"
+										checked={formSettings.shareOnFacebook}
+										onCheckedChange={(checked) =>
+											updateSetting("shareOnFacebook", checked)
+										}
+									/>
+									<Label htmlFor="facebook-share">Facebook</Label>
+								</div>
+
+								<div className="flex items-center space-x-2">
+									<Checkbox
+										id="linkedin-share"
+										checked={formSettings.shareOnLinkedin}
+										onCheckedChange={(checked) =>
+											updateSetting("shareOnLinkedin", checked)
+										}
+									/>
+									<Label htmlFor="linkedin-share">LinkedIn</Label>
+								</div>
+
+								<div className="flex items-center space-x-2">
+									<Checkbox
+										id="email-share"
+										checked={formSettings.shareOnEmail}
+										onCheckedChange={(checked) =>
+											updateSetting("shareOnEmail", checked)
+										}
+									/>
+									<Label htmlFor="email-share">Email</Label>
+								</div>
+
+								<div className="flex items-center space-x-2">
+									<Checkbox
+										id="reddit-share"
+										checked={formSettings.shareOnReddit}
+										onCheckedChange={(checked) =>
+											updateSetting("shareOnReddit", checked)
+										}
+									/>
+									<Label htmlFor="reddit-share">Reddit</Label>
+								</div>
+							</div>
+						</div>
+
+						<div className="space-y-4">
+							<h3 className="font-medium">Social Links</h3>
+							<p className="text-sm text-muted-foreground">
+								Add links to your social pages
+							</p>
+							<div className="space-y-2">
+								<Label htmlFor="twitter">Twitter/X Link</Label>
+								<div className="relative">
+									<Input
+										id="twitter"
+										value={formSettings.twitterLink}
+										onChange={(e) =>
+											updateSetting("twitterLink", e.target.value)
+										}
+										className="peer ps-[105px]"
+										type="text"
+									/>
+									<span className="absolute inset-y-0 flex items-center justify-center text-sm pointer-events-none start-0 ps-3 text-muted-foreground peer-disabled:opacity-50">
+										https://x.com/
+									</span>
+								</div>
+							</div>
+
+							<div className="space-y-2">
+								<Label htmlFor="facebook">Facebook Link</Label>
+								<div className="relative">
+									<Input
+										id="facebook"
+										value={formSettings.facebookLink}
+										onChange={(e) =>
+											updateSetting("facebookLink", e.target.value)
+										}
+										className="peer ps-[160px]"
+										type="text"
+									/>
+									<span className="absolute inset-y-0 flex items-center justify-center text-sm pointer-events-none start-0 ps-3 text-muted-foreground peer-disabled:opacity-50">
+										https://facebook.com/
+									</span>
+								</div>
+							</div>
+
+							<div className="space-y-2">
+								<Label htmlFor="instagram">Instagram Link</Label>
+								<div className="relative">
+									<Input
+										id="instagram"
+										value={formSettings.instagramLink}
+										onChange={(e) =>
+											updateSetting("instagramLink", e.target.value)
+										}
+										className="peer ps-[163px]"
+										type="text"
+									/>
+									<span className="absolute inset-y-0 flex items-center justify-center text-sm pointer-events-none start-0 ps-3 text-muted-foreground peer-disabled:opacity-50">
+										https://instagram.com/
+									</span>
+								</div>
+							</div>
+
+							<div className="space-y-2">
+								<Label htmlFor="linkedin">LinkedIn Link</Label>
+								<div className="relative">
+									<Input
+										id="linkedin"
+										value={formSettings.linkedinLink}
+										onChange={(e) =>
+											updateSetting("linkedinLink", e.target.value)
+										}
+										className="peer ps-[150px]"
+										type="text"
+									/>
+									<span className="absolute inset-y-0 flex items-center justify-center text-sm pointer-events-none start-0 ps-3 text-muted-foreground peer-disabled:opacity-50">
+										https://linkedin.com/
+									</span>
+								</div>
+							</div>
+
+							<div className="space-y-2">
+								<Label htmlFor="reddit">Reddit Link</Label>
+								<div className="relative">
+									<Input
+										id="reddit"
+										value={formSettings.redditLink}
+										onChange={(e) =>
+											updateSetting("redditLink", e.target.value)
+										}
+										className="peer ps-[137px]"
+										type="text"
+									/>
+									<span className="absolute inset-y-0 flex items-center justify-center text-sm pointer-events-none start-0 ps-3 text-muted-foreground peer-disabled:opacity-50">
+										https://reddit.com/
+									</span>
+								</div>
+							</div>
+						</div>
 					</div>
 				</TabsContent>
 			</Tabs>
