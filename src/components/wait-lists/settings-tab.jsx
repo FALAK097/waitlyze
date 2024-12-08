@@ -1,3 +1,4 @@
+import { UpgradeButton } from "@/components/shared/upgrade-button";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ColorPicker } from "@/components/ui/color-picker";
@@ -240,7 +241,29 @@ export function SettingsTab({ formSettings, updateSetting, applyPreset }) {
 						/>
 						<Label htmlFor="enableReferrals">Enable Referrals</Label>
 					</div>
+					<div className="space-y-4">
+						<div className="flex items-center justify-between">
+							<div className="flex items-center space-x-2">
+								<Checkbox
+									id="removeBranding"
+									checked={!formSettings.removeBranding}
+									onCheckedChange={(checked) =>
+										updateSetting("removeBranding", !checked)
+									}
+									disabled={!formSettings.isPremium}
+								/>
+								<Label
+									htmlFor="removeBranding"
+									className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+								>
+									Remove HypeItUp branding
+								</Label>
+							</div>
+							{!formSettings.isPremium && <UpgradeButton />}
+						</div>
+					</div>
 				</TabsContent>
+
 				<TabsContent value="input" className="py-4 space-y-4">
 					<div className="flex items-center justify-between">
 						<Label htmlFor="inputColor">Input Color</Label>
