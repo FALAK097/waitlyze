@@ -1,16 +1,20 @@
 "use client";
 
-import { InfoIcon as InfoCircle, Send } from "lucide-react";
-import * as React from "react";
-import { useEffect, useState } from "react";
-import { FormProvider, useForm } from "react-hook-form";
-
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipProvider,
+	TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { HelpCircle, Send } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { FormProvider, useForm } from "react-hook-form";
 import toast from "react-hot-toast";
-import { Separator } from "../ui/separator";
 import { EmailForm } from "./email-form";
 
 export const EmailTemplateContent = ({ waitList, updateEmailTemplate }) => {
@@ -18,7 +22,7 @@ export const EmailTemplateContent = ({ waitList, updateEmailTemplate }) => {
 	const [testEmail, setTestEmail] = useState("");
 	const [selectedTemplate, setSelectedTemplate] = useState("signup");
 
-	const selectedTemplateRef = React.useRef(selectedTemplate);
+	const selectedTemplateRef = useRef(selectedTemplate);
 
 	useEffect(() => {
 		selectedTemplateRef.current = selectedTemplate;
@@ -172,7 +176,34 @@ export const EmailTemplateContent = ({ waitList, updateEmailTemplate }) => {
 	return (
 		<div className="grid grid-cols-1 gap-8 md:grid-cols-2">
 			<div className="pr-4 border-r">
-				<h2 className="mb-4 text-lg font-semibold">Edit Templates</h2>
+				<div className="flex items-center gap-2">
+					<h2 className="text-lg font-semibold">Edit Templates</h2>
+					<TooltipProvider>
+						<Tooltip>
+							<TooltipTrigger>
+								<HelpCircle className="w-4 h-4 text-muted-foreground mt-[2px]" />
+							</TooltipTrigger>
+							<TooltipContent className="p-4 w-80 bg-background">
+								<div className="space-y-2">
+									<h3 className="font-medium text-primary">
+										Variables you can use in Email Templates:
+									</h3>
+									<div className="space-y-2 text-sm">
+										{variables.map((variable) => (
+											<div key={variable.key} className="break-all">
+												<span className="text-primary">{`{{${variable.key}}}`}</span>
+												<span className="text-muted-foreground">
+													: {variable.value}
+												</span>
+											</div>
+										))}
+									</div>
+								</div>
+							</TooltipContent>
+						</Tooltip>
+					</TooltipProvider>
+				</div>
+
 				<FormProvider {...form}>
 					<form onSubmit={form.handleSubmit(handleSaveTemplate)}>
 						<Tabs
@@ -269,23 +300,6 @@ export const EmailTemplateContent = ({ waitList, updateEmailTemplate }) => {
 							</>
 						)}
 					</Button>
-				</div>
-
-				<div className="w-full max-w-2xl p-4 mt-8 rounded-md bg-muted">
-					<div className="flex items-center gap-2 mb-4">
-						<InfoCircle className="w-4 h-4 text-primary" />
-						<h3 className="text-base font-medium">
-							Use these variables in your email
-						</h3>
-					</div>
-					<div className="space-y-4 text-sm">
-						{variables.map((variable) => (
-							<div key={variable.key} className="break-all">
-								<span className="text-primary">{`{{${variable.key}}}`}</span>:{" "}
-								{variable.value}
-							</div>
-						))}
-					</div>
 				</div>
 			</div>
 		</div>
