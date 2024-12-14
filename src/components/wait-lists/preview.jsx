@@ -5,7 +5,7 @@ import { fetchSignUp } from "@/utils/fetch/client/sign-ups";
 import { useQuery } from "@tanstack/react-query";
 import { useTheme } from "next-themes";
 import { useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import { ReferralPreview } from "./referral-preview";
 import { SignUpForm } from "./sign-up-form";
@@ -20,11 +20,15 @@ export const FormPreview = ({
 	const [mounted, setMounted] = useState(false);
 	const searchParams = useSearchParams();
 	const referralId = searchParams.get("r");
-	const isImpressionCreated = useCallback(() => {
-		if (typeof window === "undefined") return false;
-		const isImpressionCreated = localStorage.getItem("isImpressionCreated");
-		return isImpressionCreated === "true";
-	}, []);
+	const isImpressionCreated = useMemo(() => {
+		if (typeof window === "undefined") return;
+		const existingImpressions = JSON.parse(
+			localStorage.getItem("waitlist_impressions") || "[]",
+		);
+		return existingImpressions.some(
+			(impression) => impression.waitListId === waitList.id,
+		);
+	}, [waitList.id]);
 	const [email, setEmail] = useState("");
 	// Sign up mutation
 	const { isSuccess, isLoading, isError, error, refetch } = useQuery({
@@ -47,13 +51,12 @@ export const FormPreview = ({
 		retry: 0,
 	});
 	const [signUp, setSignUp] = useState(() => {
+		if (typeof window === "undefined") return;
 		// fetch sign up from local storage
-		if (typeof window === "undefined") return null;
-		const signUp = localStorage.getItem("signUp");
-		if (signUp) {
-			return JSON.parse(signUp);
-		}
-		return null;
+		const existingSignups = JSON.parse(
+			localStorage.getItem("waitlist_sign_ups") || "[]",
+		);
+		return existingSignups.find((signUp) => signUp.waitListId === waitList.id);
 	});
 	// Impression mutation
 	const {
@@ -108,13 +111,14 @@ export const FormPreview = ({
 	useEffect(() => {
 		if (!mounted) return;
 		// check if uniqueUserId is available & hypeSession is not set in storage
-		if (uniqueUserId) {
-			let hypeSession = localStorage.getItem("hypeSession");
-			if (!hypeSession && !isImpressionCreated()) {
-				localStorage.setItem("hypeSession", uniqueUserId);
-				hypeSession = uniqueUserId;
-				handleCreateImpression();
-			}
+		if (!uniqueUserId) return;
+		let hypeSession = localStorage.getItem("hypeSession");
+		if (!hypeSession) {
+			hypeSession = uniqueUserId;
+			localStorage.setItem("hypeSession", uniqueUserId);
+		}
+		if (!isImpressionCreated) {
+			handleCreateImpression();
 		}
 	}, [uniqueUserId, handleCreateImpression, isImpressionCreated, mounted]);
 
