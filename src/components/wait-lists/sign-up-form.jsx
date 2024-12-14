@@ -43,8 +43,14 @@ export const SignUpForm = ({
 }) => {
 	return (
 		<div
-			className="w-full max-w-md p-6 bg-white rounded-lg shadow-md"
-			style={{ backgroundColor: waitList.bgColor }}
+			className={`w-full max-w-md p-6 rounded-lg ${
+				waitList.enableBgColor ? "shadow-md" : ""
+			}`}
+			style={{
+				backgroundColor: waitList.enableBgColor
+					? waitList.bgColor
+					: "transparent",
+			}}
 		>
 			<div className="space-y-4">
 				{waitList.showBadge && (

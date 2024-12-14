@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { cache } from "react";
 
+import { ClientOnly } from "@/components/client-only";
 import { ContentLayout } from "@/components/dashboard/content-layout";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
 	Breadcrumb,
 	BreadcrumbItem,
@@ -13,6 +15,7 @@ import {
 import { WaitlistGenerator } from "@/components/wait-lists/edit-form";
 import prisma from "@/lib/prisma";
 import { currentUser } from "@clerk/nextjs/server";
+import { Laptop } from "lucide-react";
 import { notFound } from "next/navigation";
 
 const getWaitList = cache(async (id) => {
@@ -87,8 +90,10 @@ export default async function WaitListsEditPage({ params }) {
 			buttonColor: waitList.buttonColor,
 			buttonBorder: waitList.buttonBorder,
 			buttonTextColor: waitList.buttonTextColor,
-			mainBgColor: waitList.mainBgColor,
+			mainBgColor: waitList.enableMainBgColor ? waitList.mainBgColor : null,
+			enableMainBgColor: waitList.enableMainBgColor,
 			bgColor: waitList.bgColor,
+			enableBgColor: waitList.enableBgColor,
 			borderWidth: waitList.borderWidth,
 			borderRadius: waitList.borderRadius,
 			fontWeight: waitList.fontWeight,
@@ -149,6 +154,19 @@ export default async function WaitListsEditPage({ params }) {
 					</BreadcrumbPage>
 				</BreadcrumbList>
 			</Breadcrumb>
+
+			<ClientOnly>
+				<div className="mt-4 mb-4 md:hidden">
+					<Alert className="border-yellow-200 bg-yellow-50">
+						<Laptop className="w-4 h-4 text-yellow-600" />
+						<AlertDescription className="ml-2 text-yellow-800">
+							For the best experience customizing your waitlist, we recommend
+							using a desktop or laptop computer.
+						</AlertDescription>
+					</Alert>
+				</div>
+			</ClientOnly>
+
 			<WaitlistGenerator
 				initialWaitList={waitList}
 				saveWaitList={saveWaitList}

@@ -33,7 +33,9 @@ model WaitList {
   buttonBorder            String?      @default("#7C3AED")
   buttonTextColor         String?      @default("#FFFFFF")
   mainBgColor             String?      @default("#FFFFFF")
+  enableMainBgColor       Boolean      @default(false)
   bgColor                 String?      @default("#FFFFFF")
+  enableBgColor           Boolean      @default(false)
   borderWidth             String?      @default("0px")
   borderRadius            String?      @default("large")
   fontWeight              String?      @default("normal")
@@ -67,7 +69,7 @@ model WaitList {
 
 model SignUp {
   id           String      @id @default(cuid())
-  uniqueUserId String      @unique
+  uniqueUserId String
   email        String
   device       String?
   deviceType   String?
@@ -84,15 +86,15 @@ model SignUp {
   updatedAt    DateTime    @updatedAt
   waitList     WaitList    @relation(fields: [waitListId], references: [id], onDelete: Cascade)
   impression   Impression? @relation(fields: [impressionId], references: [id], onDelete: SetNull)
-  referrals    Referral[] @relation("referredByReferral")
-  referredBy   Referral[] @relation("signUpReferral")
+  referrals    Referral[]  @relation("referredByReferral")
+  referredBy   Referral[]  @relation("signUpReferral")
 
   @@map("sign_ups")
 }
 
 model Impression {
   id           String   @id @default(cuid())
-  uniqueUserId String   @unique
+  uniqueUserId String
   device       String?
   deviceType   String?
   city         String?
@@ -102,8 +104,8 @@ model Impression {
   latitude     String?
   longitude    String?
   waitListId   String
-  createdAt    DateTime    @default(now())
-  updatedAt    DateTime    @updatedAt
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
   waitList     WaitList @relation(fields: [waitListId], references: [id], onDelete: Cascade)
   signUps      SignUp[]
 
@@ -113,9 +115,9 @@ model Impression {
 model Referral {
   id           String   @id @default(cuid())
   signUpId     String   @unique
-  referredById String?  
-  createdAt    DateTime    @default(now())
-  updatedAt    DateTime    @updatedAt
+  referredById String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
   signUp       SignUp   @relation("signUpReferral", fields: [signUpId], references: [id], onDelete: Cascade)
   referredBy   SignUp?  @relation("referredByReferral", fields: [referredById], references: [id], onDelete: Cascade)
 

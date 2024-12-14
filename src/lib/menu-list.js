@@ -8,7 +8,7 @@ export function getMenuList(pathname) {
 				{
 					href: "/dashboard",
 					label: "Dashboard",
-					active: pathname.includes("/dashboard"),
+					active: pathname === "/dashboard",
 					icon: GripIcon,
 					submenus: [],
 				},
@@ -20,7 +20,10 @@ export function getMenuList(pathname) {
 				{
 					href: "/wait-lists",
 					label: "WaitLists",
-					active: pathname.includes("/wait-lists"),
+					active:
+						pathname === "/wait-lists" ||
+						(pathname.startsWith("/wait-lists") &&
+							pathname !== "/wait-lists/new"),
 					icon: LayersIcon,
 					submenus: [],
 				},
@@ -32,7 +35,7 @@ export function getMenuList(pathname) {
 				{
 					href: "/wait-lists/new",
 					label: "Create WaitList",
-					active: pathname.includes("/wait-lists/new"),
+					active: pathname === "/wait-lists/new",
 					icon: SquarePenIcon,
 					submenus: [],
 				},

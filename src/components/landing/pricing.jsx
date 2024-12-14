@@ -44,7 +44,7 @@ const plans = [
 			{ name: "Gamified Referrals", available: false },
 		],
 		highlight: true,
-		color: "from-primary to-primary-foreground",
+		color: "from-primary to-primary/40",
 	},
 	{
 		name: "Hacker",
@@ -65,15 +65,22 @@ const plans = [
 	},
 ];
 
-export default function Pricing() {
+export default function Pricing({ isModal = false }) {
 	return (
-		<section id="pricing" className="py-20 bg-background">
-			<div className="container px-4 mx-auto sm:px-6 lg:px-8">
+		<section
+			className={`${isModal ? "py-4" : "py-20 bg-background"}`}
+			id="pricing"
+		>
+			<div
+				className={`${isModal ? "" : "container px-4 mx-auto sm:px-6 lg:px-8"}`}
+			>
 				<motion.h2
 					initial={{ opacity: 0, y: 20 }}
 					whileInView={{ opacity: 1, y: 0 }}
 					transition={{ duration: 0.6 }}
-					className="mb-12 text-4xl font-bold text-center text-transparent bg-clip-text bg-gradient-to-r from-primary to-primary/20"
+					className={`${
+						isModal ? "text-2xl mb-6" : "text-4xl mb-12"
+					} font-bold text-center text-transparent bg-clip-text bg-gradient-to-r from-primary to-primary/20`}
 				>
 					Choose Your Plan
 				</motion.h2>
@@ -93,7 +100,7 @@ export default function Pricing() {
 								} relative overflow-hidden`}
 							>
 								{plan.highlight && (
-									<div className="absolute top-0 right-0 px-3 py-1 text-sm font-bold text-white bg-gradient-to-r from-primary to-primary-foreground">
+									<div className="absolute top-0 right-0 px-3 py-1 text-sm font-bold text-white bg-gradient-to-r from-primary to-primary/40">
 										Popular
 									</div>
 								)}

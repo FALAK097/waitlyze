@@ -6,8 +6,12 @@ const createImpression = async ({ waitList }) => {
 		localStorage.setItem("hypeSession", uniqueUserId);
 	}
 
-	const impressionKey = `impression_${waitList.id}`;
-	const hasCreatedImpression = localStorage.getItem(impressionKey);
+	const existingImpressions = JSON.parse(
+		localStorage.getItem("waitlist_impressions") || "[]",
+	);
+	const hasCreatedImpression = existingImpressions.some(
+		(impression) => impression.waitListId === waitList.id,
+	);
 
 	if (!hasCreatedImpression) {
 		try {
@@ -25,7 +29,14 @@ const createImpression = async ({ waitList }) => {
 			const data = await response.json();
 
 			if (response.status === 200) {
-				localStorage.setItem(impressionKey, "true");
+				existingImpressions.push({
+					waitListId: waitList.id,
+					hypeSession: uniqueUserId,
+				});
+				localStorage.setItem(
+					"waitlist_impressions",
+					JSON.stringify(existingImpressions),
+				);
 			} else {
 				throw new Error(data.message);
 			}

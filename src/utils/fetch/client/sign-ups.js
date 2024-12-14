@@ -22,7 +22,14 @@ const createSignUp = async ({ email, waitList, referralId }) => {
 			throw new Error(data.message);
 		}
 		// set signUp in local storage
-		localStorage.setItem("signUp", JSON.stringify(data.signUp));
+		const existingSignUps = JSON.parse(
+			localStorage.getItem("waitlist_sign_ups") || "[]",
+		);
+		existingSignUps.push({
+			waitListId: waitList.id,
+			hypeSession: uniqueUserId,
+		});
+		localStorage.setItem("waitlist_sign_ups", JSON.stringify(existingSignUps));
 		createSignUpResponse = {
 			success: true,
 			message: waitList.successMessage,
