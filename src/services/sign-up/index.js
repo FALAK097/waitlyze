@@ -10,6 +10,8 @@ export const createSignUp = async (signupData, referralId) => {
 		throw new Error("Invalid WaitList ID");
 	}
 
+	console.log("signupData", signupData);
+
 	const signUp = await prisma.signUp.create({
 		data: {
 			...signupData,

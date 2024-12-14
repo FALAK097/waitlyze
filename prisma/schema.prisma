@@ -69,7 +69,7 @@ model WaitList {
 
 model SignUp {
   id           String      @id @default(cuid())
-  uniqueUserId String      @unique
+  uniqueUserId String
   email        String
   device       String?
   deviceType   String?
@@ -94,7 +94,7 @@ model SignUp {
 
 model Impression {
   id           String   @id @default(cuid())
-  uniqueUserId String   @unique
+  uniqueUserId String
   device       String?
   deviceType   String?
   city         String?
