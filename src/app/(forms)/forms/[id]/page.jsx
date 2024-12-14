@@ -17,6 +17,9 @@ const getWaitListMetadata = cache(async (id) => {
 		select: {
 			name: true,
 			description: true,
+			ogTitle: true,
+			ogDescription: true,
+			ogImage: true,
 		},
 	});
 });
@@ -41,11 +44,39 @@ export async function generateMetadata({ params }) {
 		};
 	}
 
+	const title =
+		waitList.ogTitle ||
+		waitList.name.charAt(0).toUpperCase() + waitList.name.slice(1);
+	const description =
+		waitList.ogDescription ||
+		waitList.description ||
+		"Preview and test your waitlist form before sharing it with your audience.";
+
 	return {
-		title: waitList.name.charAt(0).toUpperCase() + waitList.name.slice(1),
-		description:
-			waitList.description ||
-			"Preview and test your waitlist form before sharing it with your audience.",
+		title,
+		description,
+		openGraph: {
+			title,
+			description,
+			...(waitList.ogImage && {
+				images: [
+					{
+						url: waitList.ogImage,
+						width: 1200,
+						height: 630,
+						alt: `${title} Preview`,
+					},
+				],
+			}),
+		},
+		twitter: {
+			card: "summary_large_image",
+			title,
+			description,
+			...(waitList.ogImage && {
+				images: [waitList.ogImage],
+			}),
+		},
 	};
 }
 
@@ -59,10 +90,11 @@ export default async function WaitListsPreviewPage({ params }) {
 	}
 
 	const uniqueUserId = nanoid();
+	const initialSignUpsCount = await getSignUpsCount(id);
 
-	const getTotalSignUpsOnWaitList = async () => {
+	const getTotalSignUpsOnWaitList = async (waitListId) => {
 		"use server";
-		return getSignUpsCount(waitList.id);
+		return getSignUpsCount(waitListId);
 	};
 
 	return (
@@ -71,7 +103,8 @@ export default async function WaitListsPreviewPage({ params }) {
 				<FormPreview
 					uniqueUserId={uniqueUserId}
 					waitList={waitList}
-					getTotalSignUpsOnWaitList={getTotalSignUpsOnWaitList}
+					initialSignUpsCount={initialSignUpsCount}
+					getTotalSignUpsOnWaitList={getTotalSignUpsOnWaitList.bind(null, id)}
 				/>
 			</ReactQueryProvider>
 		</div>
