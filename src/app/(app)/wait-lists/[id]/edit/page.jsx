@@ -113,6 +113,16 @@ export default async function WaitListsEditPage({ params }) {
 			placeholderText: waitList.placeholderText,
 			logoUrl: waitList.logoUrl,
 			logoKey: waitList.logoKey,
+			shareOnTwitter: waitList.shareOnTwitter,
+			shareOnWhatsapp: waitList.shareOnWhatsapp,
+			shareOnInstagram: waitList.shareOnInstagram,
+			shareOnFacebook: waitList.shareOnFacebook,
+			shareOnLinkedin: waitList.shareOnLinkedin,
+			shareOnEmail: waitList.shareOnEmail,
+			shareOnReddit: waitList.shareOnReddit,
+			ogTitle: waitList.ogTitle,
+			ogDescription: waitList.ogDescription,
+			ogImage: waitList.ogImage,
 		};
 
 		try {

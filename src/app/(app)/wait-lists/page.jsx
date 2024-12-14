@@ -20,7 +20,7 @@ import { removeUpload } from "../../actions/removeUpload";
 export const metadata = {
 	title: "WaitLists",
 	description:
-		"View and manage all your wait lists, track signups, and analyze performance metrics. Create new wait lists or edit existing ones to optimize your audience engagement.",
+		"View and manage all your waitlists, track signups, and analyze performance metrics. Create new waitlists or edit existing ones to optimize your audience engagement.",
 };
 
 export default async function WaitListsPage() {
@@ -100,7 +100,7 @@ export default async function WaitListsPage() {
 	};
 
 	return (
-		<ContentLayout title="All Wait Lists">
+		<ContentLayout title="All WaitLists">
 			<Breadcrumb>
 				<BreadcrumbList>
 					<BreadcrumbItem>
@@ -110,7 +110,7 @@ export default async function WaitListsPage() {
 					</BreadcrumbItem>
 					<BreadcrumbSeparator />
 					<BreadcrumbItem>
-						<BreadcrumbPage>All Wait Lists</BreadcrumbPage>
+						<BreadcrumbPage>All WaitLists</BreadcrumbPage>
 					</BreadcrumbItem>
 				</BreadcrumbList>
 			</Breadcrumb>

@@ -122,13 +122,14 @@ export default function Features() {
 									</p>
 									<motion.div variants={childVariants}>
 										<Link href="/dashboard">
-											<Button
+											<motion.div
 												whileHover={{ scale: 1.05 }}
 												whileTap={{ scale: 0.95 }}
-												className="px-6 py-2 group"
 											>
-												Create Waitlist Now
-											</Button>
+												<Button className="px-6 py-2 group">
+													Create Waitlist Now
+												</Button>
+											</motion.div>
 										</Link>
 									</motion.div>
 								</div>

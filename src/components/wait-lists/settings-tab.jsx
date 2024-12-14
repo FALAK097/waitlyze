@@ -29,7 +29,7 @@ export function SettingsTab({ formSettings, updateSetting, applyPreset }) {
 					<TabsTrigger value="social">Social</TabsTrigger>
 				</TabsList>
 				<TabsContent value="general" className="py-4 space-y-4">
-					<div className="flex items-center justify-between">
+					<div className="flex justify-between items-center">
 						<Label htmlFor="buttonColor">Button Color</Label>
 						<ColorPicker
 							id="buttonColor"
@@ -37,7 +37,7 @@ export function SettingsTab({ formSettings, updateSetting, applyPreset }) {
 							onChange={(color) => updateSetting("buttonColor", color)}
 						/>
 					</div>
-					<div className="flex items-center justify-between">
+					<div className="flex justify-between items-center">
 						<Label htmlFor="buttonBorder">Button Border</Label>
 						<ColorPicker
 							id="buttonBorder"
@@ -45,7 +45,7 @@ export function SettingsTab({ formSettings, updateSetting, applyPreset }) {
 							onChange={(color) => updateSetting("buttonBorder", color)}
 						/>
 					</div>
-					<div className="flex items-center justify-between">
+					<div className="flex justify-between items-center">
 						<Label htmlFor="buttonTextColor">Button Text Color</Label>
 						<ColorPicker
 							id="buttonTextColor"
@@ -54,7 +54,7 @@ export function SettingsTab({ formSettings, updateSetting, applyPreset }) {
 						/>
 					</div>
 					<div className="space-y-4">
-						<div className="flex items-center justify-between">
+						<div className="flex justify-between items-center">
 							<Label htmlFor="enableMainBgColor">Enable Background Color</Label>
 							<Switch
 								id="enableMainBgColor"
@@ -66,7 +66,7 @@ export function SettingsTab({ formSettings, updateSetting, applyPreset }) {
 						</div>
 
 						{formSettings.enableMainBgColor && (
-							<div className="flex items-center justify-between">
+							<div className="flex justify-between items-center">
 								<Label htmlFor="mainBgColor">Background Color</Label>
 								<ColorPicker
 									id="mainBgColor"
@@ -77,7 +77,7 @@ export function SettingsTab({ formSettings, updateSetting, applyPreset }) {
 						)}
 					</div>
 					<div className="space-y-4">
-						<div className="flex items-center justify-between">
+						<div className="flex justify-between items-center">
 							<Label htmlFor="enableBgColor">Enable Widget BG Color</Label>
 							<Switch
 								id="enableBgColor"
@@ -89,7 +89,7 @@ export function SettingsTab({ formSettings, updateSetting, applyPreset }) {
 						</div>
 
 						{formSettings.enableBgColor && (
-							<div className="flex items-center justify-between">
+							<div className="flex justify-between items-center">
 								<Label htmlFor="bgColor">Widget BG Color</Label>
 								<ColorPicker
 									id="bgColor"
@@ -171,7 +171,7 @@ export function SettingsTab({ formSettings, updateSetting, applyPreset }) {
 									onChange={(e) => updateSetting("badgeText", e.target.value)}
 								/>
 							</div>
-							<div className="flex items-center justify-between">
+							<div className="flex justify-between items-center">
 								<Label htmlFor="badgeColor">Badge Color</Label>
 								<ColorPicker
 									id="badgeColor"
@@ -179,7 +179,7 @@ export function SettingsTab({ formSettings, updateSetting, applyPreset }) {
 									onChange={(color) => updateSetting("badgeColor", color)}
 								/>
 							</div>
-							<div className="flex items-center justify-between">
+							<div className="flex justify-between items-center">
 								<Label htmlFor="badgeTextColor">Badge Text Color</Label>
 								<ColorPicker
 									id="badgeTextColor"
@@ -242,7 +242,7 @@ export function SettingsTab({ formSettings, updateSetting, applyPreset }) {
 						<Label htmlFor="enableReferrals">Enable Referrals</Label>
 					</div>
 					<div className="space-y-4">
-						<div className="flex items-center justify-between">
+						<div className="flex justify-between items-center">
 							<div className="flex items-center space-x-2">
 								<Checkbox
 									id="removeBranding"
@@ -265,7 +265,7 @@ export function SettingsTab({ formSettings, updateSetting, applyPreset }) {
 				</TabsContent>
 
 				<TabsContent value="input" className="py-4 space-y-4">
-					<div className="flex items-center justify-between">
+					<div className="flex justify-between items-center">
 						<Label htmlFor="inputColor">Input Color</Label>
 						<ColorPicker
 							id="inputColor"
@@ -273,7 +273,7 @@ export function SettingsTab({ formSettings, updateSetting, applyPreset }) {
 							onChange={(color) => updateSetting("inputColor", color)}
 						/>
 					</div>
-					<div className="flex items-center justify-between">
+					<div className="flex justify-between items-center">
 						<Label htmlFor="inputBorder">Input Border</Label>
 						<ColorPicker
 							id="inputBorder"
@@ -281,7 +281,7 @@ export function SettingsTab({ formSettings, updateSetting, applyPreset }) {
 							onChange={(color) => updateSetting("inputBorder", color)}
 						/>
 					</div>
-					<div className="flex items-center justify-between">
+					<div className="flex justify-between items-center">
 						<Label htmlFor="inputTextColor">Input Text Color</Label>
 						<ColorPicker
 							id="inputTextColor"
@@ -336,6 +336,11 @@ export function SettingsTab({ formSettings, updateSetting, applyPreset }) {
 				<TabsContent value="social" className="py-4 space-y-4">
 					<div className="space-y-6">
 						<div className="space-y-4">
+							<h3 className="font-medium">Open Graph Settings</h3>
+							<p className="text-sm text-muted-foreground">
+								These settings control how your waitlist appears when shared on
+								social media.
+							</p>
 							<div className="space-y-2">
 								<Label htmlFor="title">OG Title</Label>
 								<p className="text-sm text-muted-foreground">
@@ -345,8 +350,8 @@ export function SettingsTab({ formSettings, updateSetting, applyPreset }) {
 								<Input
 									id="title"
 									placeholder="Join the waitlist"
-									value={formSettings.socialTitle}
-									onChange={(e) => updateSetting("socialTitle", e.target.value)}
+									value={formSettings.ogTitle}
+									onChange={(e) => updateSetting("ogTitle", e.target.value)}
 								/>
 							</div>
 
@@ -359,9 +364,9 @@ export function SettingsTab({ formSettings, updateSetting, applyPreset }) {
 								<Input
 									id="description"
 									placeholder="Join the waitlist to get early access"
-									value={formSettings.socialDescription}
+									value={formSettings.ogDescription}
 									onChange={(e) =>
-										updateSetting("socialDescription", e.target.value)
+										updateSetting("ogDescription", e.target.value)
 									}
 								/>
 							</div>
@@ -373,21 +378,21 @@ export function SettingsTab({ formSettings, updateSetting, applyPreset }) {
 									users share your waitlist.
 								</p>
 								<div className="grid w-full max-w-sm items-start gap-1.5">
-									{formSettings.socialImage && (
+									{formSettings.ogImage && (
 										<div className="space-y-2">
 											<div className="flex justify-end">
 												<Button
 													variant="destructive"
 													size="icon"
 													className="w-6 h-6"
-													onClick={() => updateSetting("socialImage", "")}
+													onClick={() => updateSetting("ogImage", "")}
 												>
 													<X className="w-4 h-4" />
 												</Button>
 											</div>
-											<div className="relative w-full overflow-hidden rounded-lg aspect-video">
+											<div className="overflow-hidden relative w-full rounded-lg aspect-video">
 												<Image
-													src={formSettings.socialImage}
+													src={formSettings.ogImage}
 													alt="OG Preview"
 													className="object-cover"
 													fill
@@ -406,7 +411,7 @@ export function SettingsTab({ formSettings, updateSetting, applyPreset }) {
 											endpoint="imageUploader"
 											onClientUploadComplete={(res) => {
 												if (res?.[0]?.url) {
-													updateSetting("socialImage", res[0].url);
+													updateSetting("ogImage", res[0].url);
 													toast.success("Image uploaded successfully");
 												}
 											}}
@@ -505,7 +510,7 @@ export function SettingsTab({ formSettings, updateSetting, applyPreset }) {
 							</div>
 						</div>
 
-						<div className="space-y-4">
+						{/* <div className="space-y-4">
 							<h3 className="font-medium">Social Links</h3>
 							<p className="text-sm text-muted-foreground">
 								Add links to your social pages
@@ -522,7 +527,7 @@ export function SettingsTab({ formSettings, updateSetting, applyPreset }) {
 										className="peer ps-[105px]"
 										type="text"
 									/>
-									<span className="absolute inset-y-0 flex items-center justify-center text-sm pointer-events-none start-0 ps-3 text-muted-foreground peer-disabled:opacity-50">
+									<span className="flex absolute inset-y-0 justify-center items-center text-sm pointer-events-none start-0 ps-3 text-muted-foreground peer-disabled:opacity-50">
 										https://x.com/
 									</span>
 								</div>
@@ -540,7 +545,7 @@ export function SettingsTab({ formSettings, updateSetting, applyPreset }) {
 										className="peer ps-[160px]"
 										type="text"
 									/>
-									<span className="absolute inset-y-0 flex items-center justify-center text-sm pointer-events-none start-0 ps-3 text-muted-foreground peer-disabled:opacity-50">
+									<span className="flex absolute inset-y-0 justify-center items-center text-sm pointer-events-none start-0 ps-3 text-muted-foreground peer-disabled:opacity-50">
 										https://facebook.com/
 									</span>
 								</div>
@@ -558,7 +563,7 @@ export function SettingsTab({ formSettings, updateSetting, applyPreset }) {
 										className="peer ps-[163px]"
 										type="text"
 									/>
-									<span className="absolute inset-y-0 flex items-center justify-center text-sm pointer-events-none start-0 ps-3 text-muted-foreground peer-disabled:opacity-50">
+									<span className="flex absolute inset-y-0 justify-center items-center text-sm pointer-events-none start-0 ps-3 text-muted-foreground peer-disabled:opacity-50">
 										https://instagram.com/
 									</span>
 								</div>
@@ -576,7 +581,7 @@ export function SettingsTab({ formSettings, updateSetting, applyPreset }) {
 										className="peer ps-[150px]"
 										type="text"
 									/>
-									<span className="absolute inset-y-0 flex items-center justify-center text-sm pointer-events-none start-0 ps-3 text-muted-foreground peer-disabled:opacity-50">
+									<span className="flex absolute inset-y-0 justify-center items-center text-sm pointer-events-none start-0 ps-3 text-muted-foreground peer-disabled:opacity-50">
 										https://linkedin.com/
 									</span>
 								</div>
@@ -594,12 +599,12 @@ export function SettingsTab({ formSettings, updateSetting, applyPreset }) {
 										className="peer ps-[137px]"
 										type="text"
 									/>
-									<span className="absolute inset-y-0 flex items-center justify-center text-sm pointer-events-none start-0 ps-3 text-muted-foreground peer-disabled:opacity-50">
+									<span className="flex absolute inset-y-0 justify-center items-center text-sm pointer-events-none start-0 ps-3 text-muted-foreground peer-disabled:opacity-50">
 										https://reddit.com/
 									</span>
 								</div>
 							</div>
-						</div>
+						</div> */}
 					</div>
 				</TabsContent>
 			</Tabs>

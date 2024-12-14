@@ -185,21 +185,21 @@ export default function Hero() {
 					</motion.div>
 
 					<div className="w-full">
-						<div className="flex flex-wrap justify-center gap-2 pb-4 mb-8">
+						<div className="flex flex-wrap justify-center gap-4 pb-4 mb-8">
 							{features.map((feature) => (
-								<button
+								<motion.button
 									key={feature.id}
-									onClick={() => setSelectedFeature(feature)}
-									className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors
-                    ${
-											selectedFeature.id === feature.id
-												? "bg-primary text-primary-foreground"
-												: "bg-muted/50 hover:bg-muted text-muted-foreground hover:text-foreground"
-										}`}
 									type="button"
+									onClick={() => setSelectedFeature(feature)}
+									whileHover={{ scale: 1.05 }}
+									className={`px-4 py-2 text-sm font-medium transition-colors rounded-full ${
+										selectedFeature.id === feature.id
+											? "bg-primary text-primary-foreground"
+											: "text-muted-foreground hover:text-foreground"
+									}`}
 								>
 									{feature.title}
-								</button>
+								</motion.button>
 							))}
 						</div>
 

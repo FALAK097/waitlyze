@@ -14,6 +14,7 @@ model User {
   lastName    String?
   imageUrl    String?
   clerkUserId String   @unique
+  isOnboarded Boolean  @default(false)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -41,7 +42,7 @@ model WaitList {
   fontWeight              String?      @default("normal")
   logoSize                String?      @default("1X")
   buttonText              String?      @default("Join the waitlist")
-  successMessage          String?      @default("Success! You're on the waitlist 🎉")
+  successMessage          String?      @default("Success! You're on the waitlist")
   showLogo                Boolean      @default(true)
   showSocialProof         Boolean      @default(true)
   showBadge               Boolean      @default(true)
@@ -59,6 +60,16 @@ model WaitList {
   linkedInLink            String?
   showSocialLinks         Boolean      @default(true)
   sendEmailsToSubscribers Boolean      @default(false)
+  ogTitle                 String?
+  ogDescription           String?
+  ogImage                 String?
+  shareOnTwitter          Boolean      @default(true)
+  shareOnWhatsapp         Boolean      @default(true)
+  shareOnLinkedin         Boolean      @default(true)
+  shareOnInstagram        Boolean      @default(false)
+  shareOnFacebook         Boolean      @default(false)
+  shareOnEmail            Boolean      @default(false)
+  shareOnReddit           Boolean      @default(false)
   userId                  String
   user                    User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   signUps                 SignUp[]
