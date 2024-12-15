@@ -23,6 +23,15 @@ const nextConfig = {
 	},
 	experimental: {
 		serverComponentsExternalPackages: ["geoip-lite"],
+		outputFileTracingIncludes: [
+			"data/geoip-country.dat",
+			"data/geoip-country6.dat",
+			"data/geoip-city.dat",
+			"data/geoip-city6.dat",
+			"data/geoip-city-names.dat",
+			"data/city.checksum",
+			"data/country.checksum",
+		],
 	},
 	webpack: (config, { isServer }) => {
 		if (isServer) {
