@@ -1,9 +1,9 @@
 {
 	"functions": {
-		"api/v1/impressions/route.js": {
+		"app/api/v1/impressions/*.js": {
 			"includeFiles": "node_modules/geoip-lite/data/**"
 		},
-		"api/v1/sign_up/route.js": {
+		"app/api/v1/sign_up/*.js": {
 			"includeFiles": "node_modules/geoip-lite/data/**"
 		}
 	}
