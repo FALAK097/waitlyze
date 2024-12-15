@@ -26,6 +26,7 @@ const createSignUp = async ({ email, waitList, referralId }) => {
 			localStorage.getItem("waitlist_sign_ups") || "[]",
 		);
 		existingSignUps.push({
+			...data.signUp,
 			waitListId: waitList.id,
 			hypeSession: uniqueUserId,
 		});
@@ -49,15 +50,18 @@ const createSignUp = async ({ email, waitList, referralId }) => {
 	return createSignUpResponse;
 };
 
-const fetchSignUp = async () => {
-	const signUp = localStorage.getItem("signUp");
-	if (!signUp) {
+const fetchSignUp = async ({ waitListId }) => {
+	const existingSignUps = JSON.parse(
+		localStorage.getItem("waitlist_sign_ups") || "[]",
+	);
+	const signUp = existingSignUps.find(
+		(signUp) => signUp.waitListId === waitListId,
+	);
+	if (!signUp.id) {
 		return null;
 	}
 
-	const signUpJson = JSON.parse(signUp);
-
-	const signUpId = signUpJson.id;
+	const signUpId = signUp.id;
 
 	try {
 		const response = await fetch(`/api/v1/sign_up?signUpId=${signUpId}`);
@@ -69,11 +73,17 @@ const fetchSignUp = async () => {
 
 		const signUp = data.signUp;
 		// write to local storage
-		localStorage.setItem("signUp", JSON.stringify(signUp));
+		let existingSignUps = JSON.parse(
+			localStorage.getItem("waitlist_sign_ups") || "[]",
+		);
+		// update the sign up in local storage
+		existingSignUps = existingSignUps.map((existingSignUp) =>
+			signUp.id === signUpId ? { ...existingSignUp, ...signUp } : signUp,
+		);
+		localStorage.setItem("waitlist_sign_ups", JSON.stringify(existingSignUps));
 		return signUp;
 	} catch (error) {
 		console.error("Error fetching sign up", error);
-		localStorage.removeItem("signUp");
 		return null;
 	}
 };
