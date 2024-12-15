@@ -46,7 +46,7 @@ export const FormPreview = ({
 		refetch: fetchSignUpRefetch,
 	} = useQuery({
 		enabled: false,
-		queryFn: async () => await fetchSignUp(),
+		queryFn: async () => await fetchSignUp({ waitListId: waitList.id }),
 		queryKey: ["fetchSignUp"],
 		retry: 0,
 	});
@@ -77,8 +77,13 @@ export const FormPreview = ({
 		if (isLoading) return;
 		await refetch();
 		setTimeout(() => {
-			const signUp = localStorage.getItem("signUp");
-			if (signUp) setSignUp(JSON.parse(signUp));
+			const existingSignUps = JSON.parse(
+				localStorage.getItem("waitlist_sign_ups") || "[]",
+			);
+			const signUp = existingSignUps.find(
+				(signUp) => signUp.waitListId === waitList.id,
+			);
+			if (signUp) setSignUp(signUp);
 			else setSignUp(null);
 		}, 1000);
 	};
@@ -124,13 +129,17 @@ export const FormPreview = ({
 
 	useEffect(() => {
 		if (!mounted) return;
-		const fetchSignUpInterval = setInterval(() => {
-			fetchSignUpRefetch();
+		const fetchSignUpInterval = setInterval(async () => {
+			await fetchSignUpRefetch();
 			// check if sign up is success
 			if (fetchSignUpSuccess) {
-				// set sign up to state from local storage
-				const signUp = localStorage.getItem("signUp");
-				if (signUp) setSignUp(JSON.parse(signUp));
+				const existingSignUps = JSON.parse(
+					localStorage.getItem("waitlist_sign_ups") || "[]",
+				);
+				const signUp = existingSignUps.find(
+					(signUp) => signUp.waitListId === waitList.id,
+				);
+				if (signUp) setSignUp(signUp);
 				else setSignUp(null);
 			}
 		}, 10000);
