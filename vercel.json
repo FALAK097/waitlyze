@@ -1,0 +1,16 @@
+{
+	"builds": [
+		{
+			"src": "api/**",
+			"use": "@vercel/node"
+		}
+	],
+	"functions": {
+		"api/v1/impressions/route.js": {
+			"includeFiles": "node_modules/geoip-lite/data/**"
+		},
+		"api/v1/sign_up/route.js": {
+			"includeFiles": "node_modules/geoip-lite/data/**"
+		}
+	}
+}
