@@ -146,7 +146,7 @@ export const FormPreview = ({
 		return () => clearInterval(fetchSignUpInterval);
 	}, [fetchSignUpRefetch, fetchSignUpSuccess, mounted]);
 
-	if (signUp) {
+	if (mounted && signUp) {
 		return (
 			<ReferralPreview
 				signUp={signUp}
