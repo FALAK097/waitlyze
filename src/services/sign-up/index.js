@@ -20,11 +20,13 @@ export const createSignUp = async (signupData, referralId) => {
 
 	// create referral
 	if (referralId) {
-		const referredBy = await prisma.signUp.findUnique({
+		const referredBy = await prisma.signUp.findFirst({
 			where: {
 				uniqueUserId: referralId,
+				waitListId: signupData.waitListId,
 			},
 		});
+		console.log("referredBy", referredBy);
 		if (referredBy)
 			await prisma.referral.create({
 				data: {
