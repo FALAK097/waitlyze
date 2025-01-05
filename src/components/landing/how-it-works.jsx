@@ -99,7 +99,7 @@ export default function HowItWorks() {
 					viewport={{ once: true }}
 					transition={{ duration: 0.6, delay: 0.6 }}
 				>
-					<Link href="/get-started">
+					<Link href="/dashboard">
 						<Button size="lg" className="px-8 py-3 text-lg">
 							Get Started Now
 						</Button>
