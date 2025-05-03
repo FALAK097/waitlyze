@@ -40,7 +40,8 @@ const getUser = cache(async (clerkUserId) => {
 	});
 });
 
-export async function generateMetadata({ params }) {
+export async function generateMetadata(props) {
+	const params = await props.params;
 	const { id } = params;
 	const waitList = await getWaitList(id);
 
@@ -58,7 +59,8 @@ export async function generateMetadata({ params }) {
 	};
 }
 
-export default async function WaitListsEditPage({ params }) {
+export default async function WaitListsEditPage(props) {
+	const params = await props.params;
 	const { id } = params;
 	const clerkUser = await currentUser();
 

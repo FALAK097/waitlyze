@@ -599,38 +599,42 @@ export const UserSegmentation = ({ waitlistId }) => {
 											onClick={requestSort}
 											className="hover:bg-transparent"
 										>
-											Priority {getSortIcon()}
-											<TooltipProvider>
-												<Tooltip>
-													<TooltipTrigger>
-														<HelpCircle className="w-4 h-4 transition-colors text-muted-foreground hover:text-primary" />
-													</TooltipTrigger>
-													<TooltipContent
-														className="max-w-[280px] bg-popover text-popover-foreground shadow-lg rounded-lg border border-border p-4 dark:bg-zinc-900"
-														sideOffset={5}
-													>
-														<div className="space-y-2">
-															<p className="font-medium">
-																Priority is based on the number of referrals:
-															</p>
-															<ul className="space-y-1 list-none">
-																<li className="flex items-center gap-2">
-																	<span className="w-2 h-2 rounded-full bg-amber-500" />
-																	<span>High: More than 5 referrals</span>
-																</li>
-																<li className="flex items-center gap-2">
-																	<span className="w-2 h-2 bg-purple-500 rounded-full" />
-																	<span>Medium: 1 to 5 referrals</span>
-																</li>
-																<li className="flex items-center gap-2">
-																	<span className="w-2 h-2 bg-orange-500 rounded-full" />
-																	<span>Low: No referrals</span>
-																</li>
-															</ul>
-														</div>
-													</TooltipContent>
-												</Tooltip>
-											</TooltipProvider>
+											<div className="inline-flex items-center justify-center gap-2 whitespace-nowrap">
+												Priority {getSortIcon()}
+												<TooltipProvider>
+													<Tooltip>
+														<TooltipTrigger asChild>
+															<span className="cursor-pointer">
+																<HelpCircle className="w-4 h-4 transition-colors text-muted-foreground hover:text-primary" />
+															</span>
+														</TooltipTrigger>
+														<TooltipContent
+															className="max-w-[280px] bg-popover text-popover-foreground shadow-lg rounded-lg border border-border p-4 dark:bg-zinc-900"
+															sideOffset={5}
+														>
+															<div className="space-y-2">
+																<p className="font-medium">
+																	Priority is based on the number of referrals:
+																</p>
+																<ul className="space-y-1 list-none">
+																	<li className="flex items-center gap-2">
+																		<span className="w-2 h-2 rounded-full bg-amber-500" />
+																		<span>High: More than 5 referrals</span>
+																	</li>
+																	<li className="flex items-center gap-2">
+																		<span className="w-2 h-2 bg-purple-500 rounded-full" />
+																		<span>Medium: 1 to 5 referrals</span>
+																	</li>
+																	<li className="flex items-center gap-2">
+																		<span className="w-2 h-2 bg-orange-500 rounded-full" />
+																		<span>Low: No referrals</span>
+																	</li>
+																</ul>
+															</div>
+														</TooltipContent>
+													</Tooltip>
+												</TooltipProvider>
+											</div>
 										</Button>
 									</TableHead>
 									<TableHead>Action</TableHead>

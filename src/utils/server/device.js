@@ -1,7 +1,7 @@
 import { headers } from "next/headers";
 
-export const getDeviceInfo = () => {
-	const headersList = headers();
+export async function getDeviceInfo() {
+	const headersList = await headers();
 	const userAgent = headersList.get("user-agent") ?? "";
 	// Detecting mobile, tablet, or desktop
 	const isMobile = /mobile/i.test(userAgent);
@@ -31,4 +31,4 @@ export const getDeviceInfo = () => {
 							: "unknown";
 
 	return { device, deviceType };
-};
+}
