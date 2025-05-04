@@ -1,6 +1,6 @@
 import { createImpression } from "@/services/impressions";
 import { getDeviceInfo } from "@/utils/server/device";
-import { getGeoInfo, getIpAddress } from "@/utils/server/geo";
+import { getGeoInfo, getIpAddress, getTimeZone } from "@/utils/server/geo";
 import { validateRequest } from "@/utils/server/validations/impression";
 
 export const POST = async (req, res) => {
@@ -10,11 +10,11 @@ export const POST = async (req, res) => {
 		const body = await req.json();
 		const validator = await validateRequest(body);
 		if (validator) return validator;
-		const ip = getIpAddress(req);
+		const ip = getIpAddress();
 
 		const { device, deviceType } = getDeviceInfo();
 
-		const geo = getGeoInfo(ip);
+		const geo = getGeoInfo();
 
 		if (!body.hypeSession) {
 			return Response.json(
@@ -38,10 +38,8 @@ export const POST = async (req, res) => {
 		};
 
 		if (geo) {
-			const { city, country, ll, timezone } = geo;
-			let [latitude, longitude] = ll;
-			latitude = latitude.toString();
-			longitude = longitude.toString();
+			const { city, country, latitude, longitude } = geo;
+			const timezone = await getTimeZone(geo?.city);
 			data = { ...data, city, country, latitude, longitude, timezone };
 		}
 
