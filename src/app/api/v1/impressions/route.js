@@ -43,17 +43,13 @@ export const POST = async (req, res) => {
 			data = { ...data, city, country, latitude, longitude, timezone };
 		}
 
-		await createImpression(data);
-		return Response.json({ message: "Impression created successfully" });
+		const impression = await createImpression(data);
+		return Response.json(impression);
 	} catch (error) {
-		console.error(error);
+		console.error("Error creating impression:", error);
 		return Response.json(
-			{
-				message: "Failed to create an Impression",
-			},
-			{
-				status: 500,
-			},
+			{ message: error.message || "Failed to create impression" },
+			{ status: 500 },
 		);
 	}
 };

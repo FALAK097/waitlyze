@@ -9,6 +9,19 @@ export const createImpression = async (data) => {
 	if (!waitList) {
 		throw new Error("Invalid WaitList ID");
 	}
+	// Check if impression already exists for this user and waitlist
+	const existingImpression = await prisma.impression.findFirst({
+		where: {
+			AND: [
+				{ uniqueUserId: data.uniqueUserId },
+				{ waitListId: data.waitListId },
+			],
+		},
+	});
+
+	if (existingImpression) {
+		return existingImpression;
+	}
 	// Remove waitListId from data
 	const finalData = Object.fromEntries(
 		Object.entries(data).filter(([key]) => key !== "waitListId"),
