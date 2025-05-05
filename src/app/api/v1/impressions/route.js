@@ -2,22 +2,22 @@ import { createImpression } from "@/services/impressions";
 import { getDeviceInfo } from "@/utils/server/device";
 import { getGeoInfo, getIpAddress, getTimeZone } from "@/utils/server/geo";
 import { validateRequest } from "@/utils/server/validations/impression";
+import { NextResponse } from "next/server";
 
-export const POST = async (req, res) => {
+export async function POST(request) {
 	// TODO: Remove this fake delay after implementing email verification, signup confirmation to User & Signed Up user
 	await new Promise((resolve) => setTimeout(resolve, 1500));
 	try {
-		const body = await req.json();
+		const body = await request.json();
 		const validator = await validateRequest(body);
 		if (validator) return validator;
-		const ip = getIpAddress();
 
-		const { device, deviceType } = getDeviceInfo(req);
-
-		const geo = getGeoInfo();
+		const ip = getIpAddress(request);
+		const { device, deviceType } = getDeviceInfo(request);
+		const geo = getGeoInfo(request);
 
 		if (!body.hypeSession) {
-			return Response.json(
+			return NextResponse.json(
 				{
 					message: "Unique User ID is required",
 				},
@@ -44,12 +44,12 @@ export const POST = async (req, res) => {
 		}
 
 		const impression = await createImpression(data);
-		return Response.json(impression);
+		return NextResponse.json(impression);
 	} catch (error) {
 		console.error("Error creating impression:", error);
-		return Response.json(
+		return NextResponse.json(
 			{ message: error.message || "Failed to create impression" },
 			{ status: 500 },
 		);
 	}
-};
+}

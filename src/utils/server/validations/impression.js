@@ -1,4 +1,5 @@
 import prisma from "@/lib/prisma";
+import { NextResponse } from "next/server";
 
 const checkIfImpressionExists = async (waitListId, hypeSession) => {
 	const signUp = await prisma.impression.findFirst({
@@ -12,7 +13,7 @@ const checkIfImpressionExists = async (waitListId, hypeSession) => {
 
 const checkIfRequestIsValid = async (body) => {
 	if (!body.waitListId) {
-		return Response.json(
+		return NextResponse.json(
 			{
 				message: "WaitList ID is required",
 			},
@@ -25,7 +26,7 @@ const checkIfRequestIsValid = async (body) => {
 		},
 	});
 	if (!isValidWaitList) {
-		return Response.json(
+		return NextResponse.json(
 			{
 				message: "Invalid WaitList ID",
 			},
@@ -36,12 +37,10 @@ const checkIfRequestIsValid = async (body) => {
 
 export const validateRequest = async (body) => {
 	let validator = await checkIfRequestIsValid(body);
-	// If validator is not null, return the validator
 	if (validator) return validator;
 	validator = await checkIfImpressionExists(body.waitListId, body.hypeSession);
-	// If validator is not null, return the validator
 	if (validator) {
-		return Response.json(
+		return NextResponse.json(
 			{
 				message: "You have already signed up!",
 			},
