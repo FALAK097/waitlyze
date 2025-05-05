@@ -1,3 +1,5 @@
+import prisma from "@/lib/prisma";
+
 const checkIfImpressionExists = async (waitListId, hypeSession) => {
 	const signUp = await prisma.impression.findFirst({
 		where: {
