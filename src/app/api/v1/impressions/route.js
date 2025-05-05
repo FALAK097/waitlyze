@@ -12,7 +12,7 @@ export const POST = async (req, res) => {
 		if (validator) return validator;
 		const ip = getIpAddress();
 
-		const { device, deviceType } = getDeviceInfo();
+		const { device, deviceType } = getDeviceInfo(req);
 
 		const geo = getGeoInfo();
 
