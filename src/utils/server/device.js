@@ -5,8 +5,7 @@ export async function getDeviceInfo() {
     const headersList = await headers();
     const userAgent = headersList.get("user-agent") || "";
 
-    // Basic device detection
-    const isMobile = /mobile|iphone|ipad|android/i.test(userAgent);
+    const isMobile = /mobile|iphone|android/i.test(userAgent);
     const isTablet = /tablet|ipad/i.test(userAgent);
 
     let deviceType = "desktop";
@@ -15,7 +14,7 @@ export async function getDeviceInfo() {
 
     return {
       device: userAgent,
-      deviceType: deviceType,
+      deviceType,
     };
   } catch (error) {
     console.error("Error getting device info:", error);

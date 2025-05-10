@@ -6,6 +6,7 @@ const config = withUt({
   content: [
     "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/app/**/*.{js,ts,jsx,tsx,mdx}",
+    "../node_modules/@uploadthing/react/dist**",
   ],
   theme: {
     container: {
@@ -90,4 +91,4 @@ const config = withUt({
   plugins: [require("tailwindcss-animate")],
 });
 
-module.exports = config;
+export default config;
