@@ -11,7 +11,7 @@ const items = [
 			"Track sign-up performance in real-time. Gain valuable insights into your waitlist's growth and engagement metrics.",
 		badge: "Real-Time Data",
 		header: (
-			<div className="flex items-center justify-center w-full h-full bg-gradient-to-r from-blue-400 to-blue-600 rounded-xl">
+			<div className="flex items-center justify-center w-full h-full bg-linear-to-r from-blue-400 to-blue-600 rounded-xl">
 				<BarChart3 className="w-12 h-12 text-white" />
 			</div>
 		),
@@ -24,7 +24,7 @@ const items = [
 			"Use our subdomain or connect your own domain. Enhance brand consistency and trust with a personalized waitlist URL.",
 		badge: "Branding",
 		header: (
-			<div className="flex items-center justify-center w-full h-full bg-gradient-to-br from-green-400 to-teal-500 rounded-xl">
+			<div className="flex items-center justify-center w-full h-full bg-linear-to-br from-green-400 to-teal-500 rounded-xl">
 				<Globe className="w-12 h-12 text-white" />
 			</div>
 		),
@@ -37,7 +37,7 @@ const items = [
 			"Share waitlists directly on social platforms. Amplify your reach and make it easy for users to spread the word.",
 		badge: "Multi-Platform",
 		header: (
-			<div className="flex items-center justify-center w-full h-full bg-gradient-to-r from-indigo-500 to-purple-600 rounded-xl">
+			<div className="flex items-center justify-center w-full h-full bg-linear-to-r from-indigo-500 to-purple-600 rounded-xl">
 				<Share2 className="w-12 h-12 text-white" />
 			</div>
 		),
@@ -50,7 +50,7 @@ const items = [
 			"Optimize for desktop and mobile. Ensure a seamless experience for users signing up on any device, anywhere.",
 		badge: "Cross-Device",
 		header: (
-			<div className="flex items-center justify-center w-full h-full bg-gradient-to-r from-orange-400 to-red-500 rounded-xl">
+			<div className="flex items-center justify-center w-full h-full bg-linear-to-r from-orange-400 to-red-500 rounded-xl">
 				<Smartphone className="w-12 h-12 text-white" />
 			</div>
 		),
@@ -63,7 +63,7 @@ const items = [
 			"Easily export and import user signups data. Manage your waitlist data efficiently",
 		badge: "Flexibility",
 		header: (
-			<div className="flex items-center justify-center w-full h-full bg-gradient-to-br from-yellow-400 to-orange-500 rounded-xl">
+			<div className="flex items-center justify-center w-full h-full bg-linear-to-br from-yellow-400 to-orange-500 rounded-xl">
 				<Database className="w-12 h-12 text-white" />
 			</div>
 		),
@@ -76,7 +76,7 @@ export default function BentoGridFeatures() {
 	return (
 		<section className="py-20 bg-background">
 			<div className="container px-4 mx-auto sm:px-6 lg:px-8">
-				<h2 className="mb-12 text-4xl font-bold text-center text-transparent bg-clip-text bg-gradient-to-r from-primary to-primary/30">
+				<h2 className="mb-12 text-4xl font-bold text-center text-transparent bg-clip-text bg-linear-to-r from-primary to-primary/30">
 					All-in-One Toolkit for SaaS Validation
 				</h2>
 				<BentoGrid className="max-w-6xl mx-auto grid auto-rows-[15rem] md:auto-rows-[20rem] gap-6">

@@ -1,27 +1,26 @@
 import { headers } from "next/headers";
 
-export const getDeviceInfo = () => {
-	try {
-		const headersList = headers();
-		const userAgent = headersList.get("user-agent") || "";
+export async function getDeviceInfo() {
+  try {
+    const headersList = await headers();
+    const userAgent = headersList.get("user-agent") || "";
 
-		// Basic device detection
-		const isMobile = /mobile|iphone|ipad|android/i.test(userAgent);
-		const isTablet = /tablet|ipad/i.test(userAgent);
+    const isMobile = /mobile|iphone|android/i.test(userAgent);
+    const isTablet = /tablet|ipad/i.test(userAgent);
 
-		let deviceType = "desktop";
-		if (isTablet) deviceType = "tablet";
-		else if (isMobile) deviceType = "mobile";
+    let deviceType = "desktop";
+    if (isTablet) deviceType = "tablet";
+    else if (isMobile) deviceType = "mobile";
 
-		return {
-			device: userAgent,
-			deviceType: deviceType,
-		};
-	} catch (error) {
-		console.error("Error getting device info:", error);
-		return {
-			device: "unknown",
-			deviceType: "unknown",
-		};
-	}
-};
+    return {
+      device: userAgent,
+      deviceType,
+    };
+  } catch (error) {
+    console.error("Error getting device info:", error);
+    return {
+      device: "unknown",
+      deviceType: "unknown",
+    };
+  }
+}

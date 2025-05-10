@@ -5,7 +5,7 @@ import { UserNav } from "./user-nav";
 
 export function Navbar({ title }) {
 	return (
-		<header className="sticky top-0 z-10 w-full bg-background/95 shadow backdrop-blur supports-[backdrop-filter]:bg-background/60 dark:shadow-primary">
+		<header className="sticky top-0 z-10 w-full bg-background/95 shadow backdrop-blur supports-backdrop-filter:bg-background/60 dark:shadow-primary">
 			<div className="flex items-center justify-between mx-4 sm:mx-8 h-14">
 				<div className="flex items-center space-x-4 lg:space-x-0">
 					<SheetMenu />

@@ -32,7 +32,8 @@ const getSignUpsCount = cache(async (waitListId) => {
 	});
 });
 
-export async function generateMetadata({ params }) {
+export async function generateMetadata(props) {
+	const params = await props.params;
 	const { id } = params;
 
 	const waitList = await getWaitListMetadata(id);
@@ -80,7 +81,8 @@ export async function generateMetadata({ params }) {
 	};
 }
 
-export default async function WaitListsPreviewPage({ params }) {
+export default async function WaitListsPreviewPage(props) {
+	const params = await props.params;
 	const { id } = params;
 
 	const waitList = await getWaitList(id);

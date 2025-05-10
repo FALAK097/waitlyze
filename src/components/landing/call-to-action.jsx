@@ -43,7 +43,7 @@ export default function CallToAction() {
 					animate={inView ? "visible" : "hidden"}
 				>
 					<motion.h2
-						className="mb-4 text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-primary to-primary/20 md:text-4xl lg:text-5xl"
+						className="mb-4 text-3xl font-extrabold text-transparent bg-clip-text bg-linear-to-r from-primary to-primary/20 md:text-4xl lg:text-5xl"
 						variants={childVariants}
 					>
 						Ready to Launch Your Waitlist?
@@ -59,7 +59,7 @@ export default function CallToAction() {
 						<Link href="/dashboard">
 							<Button
 								size="lg"
-								className="w-full text-base sm:text-xl group bg-gradient-to-r from-primary to-primary/30 text-primary-foreground sm:w-auto"
+								className="w-full text-base sm:text-xl group bg-linear-to-r from-primary to-primary/30 text-primary-foreground sm:w-auto"
 							>
 								Create Your Waitlist Now
 								<Rocket className="w-4 h-4 ml-2 transition-transform sm:w-5 sm:h-5 group-hover:translate-x-1" />

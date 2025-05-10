@@ -1,3 +1,4 @@
+import { getDashboardData } from "@/actions/dashboard-data";
 import { ContentLayout } from "@/components/dashboard/content-layout";
 import DashboardCard from "@/components/dashboard/dashboard-card";
 import { SelectWaitlist } from "@/components/dashboard/select-waitlist";
@@ -11,7 +12,6 @@ import {
 	BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import prisma from "@/lib/prisma";
-import { currentUser } from "@clerk/nextjs/server";
 import { revalidatePath } from "next/cache";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -23,22 +23,9 @@ export const metadata = {
 };
 
 export default async function DashboardPage() {
-	const clerkUser = await currentUser();
+	const { success, data } = await getDashboardData();
 
-	if (!clerkUser) {
-		redirect("/");
-	}
-
-	const user = await prisma.user.findUnique({
-		where: {
-			clerkUserId: clerkUser.id,
-		},
-		include: {
-			waitLists: true,
-		},
-	});
-
-	if (!user) {
+	if (!success || !data) {
 		redirect("/");
 	}
 
@@ -51,19 +38,11 @@ export default async function DashboardPage() {
 		revalidatePath("/dashboard");
 	};
 
-	const waitLists = await prisma.waitList.findMany({
-		where: {
-			userId: user.id,
-		},
-	});
-
-	const waitListIds = user.waitLists.map((waitList) => waitList.id);
-
 	return (
 		<div className="flex flex-col gap-8">
 			<OnboardingDialog
-				userId={user.id}
-				isOnboarded={user.isOnboarded}
+				userId={data.user.id}
+				isOnboarded={data.user.isOnboarded}
 				onComplete={updateOnboardingStatus}
 			/>
 			<ContentLayout title="Dashboard">
@@ -82,11 +61,11 @@ export default async function DashboardPage() {
 						</BreadcrumbList>
 					</Breadcrumb>
 
-					<SelectWaitlist waitLists={waitLists} />
+					<SelectWaitlist waitLists={data.waitLists} />
 				</div>
 			</ContentLayout>
 
-			<DashboardCard waitListIds={waitListIds} />
+			<DashboardCard waitListIds={data.waitListIds} />
 		</div>
 	);
 }

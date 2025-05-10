@@ -151,7 +151,7 @@ export const ReferralPreview = ({
 			onClick: shareOnInstagram,
 			icon: <InstagramLogoIcon className="w-5 h-5" />,
 			className:
-				"bg-gradient-to-r from-[#833AB4] via-[#FD1D1D] to-[#FCAF45] hover:opacity-90 shadow-lg",
+				"bg-linear-to-r from-[#833AB4] via-[#FD1D1D] to-[#FCAF45] hover:opacity-90 shadow-lg",
 		},
 		{
 			name: "Facebook",
@@ -237,7 +237,7 @@ export const ReferralPreview = ({
 	};
 
 	return (
-		<div className="p-4 min-h-screen bg-gradient-to-b from-primary/5 to-background">
+		<div className="p-4 min-h-screen bg-linear-to-b from-primary/5 to-background">
 			<motion.div
 				className="pt-12 mx-auto space-y-8 max-w-md"
 				variants={container}
