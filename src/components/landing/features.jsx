@@ -63,7 +63,7 @@ export default function Features() {
 					whileInView={{ opacity: 1, y: 0 }}
 					viewport={{ once: true }}
 					transition={{ duration: 0.6 }}
-					className="mb-12 text-4xl font-bold text-center text-transparent bg-clip-text bg-gradient-to-r from-primary to-primary/20"
+					className="mb-12 text-4xl font-bold text-center text-transparent bg-clip-text bg-linear-to-r from-primary to-primary/20"
 				>
 					Powerful Features
 				</motion.h2>

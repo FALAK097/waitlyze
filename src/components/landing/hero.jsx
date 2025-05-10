@@ -61,7 +61,7 @@ export default function Hero() {
 
 	return (
 		<section className="flex items-center justify-center min-h-screen py-40 overflow-hidden bg-background">
-			<div className="absolute inset-0 pointer-events-none bg-gradient-to-b from-primary/5 to-background" />
+			<div className="absolute inset-0 pointer-events-none bg-linear-to-b from-primary/5 to-background" />
 			<div className="container relative px-4 mx-auto sm:px-6 lg:px-8">
 				<div className="flex flex-col items-center justify-center max-w-6xl mx-auto space-y-16">
 					<div className="flex flex-col items-center space-y-8 text-center">
@@ -155,7 +155,7 @@ export default function Hero() {
 										key={feature}
 										className="flex items-center gap-2 text-muted-foreground"
 									>
-										<CircleCheckIcon className="flex-shrink-0 w-5 h-5 text-primary" />
+										<CircleCheckIcon className="shrink-0 w-5 h-5 text-primary" />
 										<span className="text-sm sm:text-base">{feature}</span>
 									</div>
 								),
@@ -204,7 +204,7 @@ export default function Hero() {
 						</div>
 
 						<div className="relative">
-							<div className="absolute inset-0 rounded-3xl bg-gradient-to-tr from-primary/30 to-background blur-3xl" />
+							<div className="absolute inset-0 rounded-3xl bg-linear-to-tr from-primary/30 to-background blur-3xl" />
 							<Card className="relative overflow-hidden border-2 rounded-2xl border-border/50 bg-background/50 backdrop-blur-sm">
 								<AnimatePresence mode="wait">
 									<motion.div
@@ -213,7 +213,7 @@ export default function Hero() {
 										animate={{ opacity: 1, x: 0 }}
 										exit={{ opacity: 0, x: -20 }}
 										transition={{ duration: 0.3 }}
-										className="relative aspect-[16/9]"
+										className="relative aspect-video"
 									>
 										<Image
 											src={selectedFeature.image}
@@ -222,7 +222,7 @@ export default function Hero() {
 											className="object-fill"
 											priority
 										/>
-										<div className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent" />
+										<div className="absolute inset-0 bg-linear-to-t from-background/80 to-transparent" />
 									</motion.div>
 								</AnimatePresence>
 							</Card>
@@ -241,7 +241,7 @@ export default function Hero() {
 							whileInView={{ opacity: 1, y: 0 }}
 							viewport={{ once: true }}
 							transition={{ duration: 0.6 }}
-							className="mb-12 text-4xl font-bold text-center text-transparent bg-clip-text bg-gradient-to-r from-primary to-primary-foreground"
+							className="mb-12 text-4xl font-bold text-center text-transparent bg-clip-text bg-linear-to-r from-primary to-primary-foreground"
 						>
 							Demo Video
 						</motion.h2>

@@ -80,7 +80,7 @@ export default function Pricing({ isModal = false }) {
 					transition={{ duration: 0.6 }}
 					className={`${
 						isModal ? "text-2xl mb-6" : "text-4xl mb-12"
-					} font-bold text-center text-transparent bg-clip-text bg-gradient-to-r from-primary to-primary/20`}
+					} font-bold text-center text-transparent bg-clip-text bg-linear-to-r from-primary to-primary/20`}
 				>
 					Choose Your Plan
 				</motion.h2>
@@ -100,11 +100,11 @@ export default function Pricing({ isModal = false }) {
 								} relative overflow-hidden`}
 							>
 								{plan.highlight && (
-									<div className="absolute top-0 right-0 px-3 py-1 text-sm font-bold text-white bg-gradient-to-r from-primary to-primary/40">
+									<div className="absolute top-0 right-0 px-3 py-1 text-sm font-bold text-white bg-linear-to-r from-primary to-primary/40">
 										Popular
 									</div>
 								)}
-								<div className={`h-2 bg-gradient-to-r ${plan.color}`} />
+								<div className={`h-2 bg-linear-to-r ${plan.color}`} />
 								<CardHeader className="text-center">
 									<CardTitle className="text-2xl font-bold">
 										{plan.name}
@@ -129,7 +129,7 @@ export default function Pricing({ isModal = false }) {
 										</p>
 									)}
 								</CardHeader>
-								<CardContent className="flex-grow">
+								<CardContent className="grow">
 									<ul className="space-y-3">
 										{plan.features.map((feature, featureIndex) => (
 											<motion.li
@@ -162,7 +162,7 @@ export default function Pricing({ isModal = false }) {
 								</CardContent>
 								<CardFooter>
 									<Button
-										className={`w-full text-white bg-gradient-to-r ${plan.color} hover:opacity-90 transition-opacity duration-300`}
+										className={`w-full text-white bg-linear-to-r ${plan.color} hover:opacity-90 transition-opacity duration-300`}
 									>
 										Get Started
 									</Button>

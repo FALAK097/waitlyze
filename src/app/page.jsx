@@ -21,7 +21,7 @@ export default function LandingPage() {
 			<Header />
 
 			<Hero />
-			<main className="flex-grow">
+			<main className="grow">
 				<Features />
 
 				<HowItWorks />

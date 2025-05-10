@@ -51,7 +51,7 @@ export default function DashboardCard({ waitListIds }) {
 										repeatType: "reverse",
 									}}
 								>
-									<div className="w-40 h-40 rounded-full bg-gradient-to-tr from-purple-500/20 to-blue-500/20" />
+									<div className="w-40 h-40 rounded-full bg-linear-to-tr from-purple-500/20 to-blue-500/20" />
 								</motion.div>
 								<motion.div
 									initial={{ opacity: 0, y: 10 }}

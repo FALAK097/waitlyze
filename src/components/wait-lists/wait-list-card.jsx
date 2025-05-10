@@ -72,12 +72,12 @@ export const WaitListCard = ({
 						</div>
 						<div className="flex-1 truncate">{name}</div>
 					</CardTitle>
-					<CardDescription className="line-clamp-2 min-h-[2.5rem]">
+					<CardDescription className="line-clamp-2 min-h-10">
 						{description ?? "No description provided"}
 					</CardDescription>
 				</CardHeader>
 				<CardContent>
-					<div className="w-full h-px bg-gradient-to-r from-transparent to-transparent via-muted" />
+					<div className="w-full h-px bg-linear-to-r from-transparent to-transparent via-muted" />
 				</CardContent>
 				<CardFooter className="grid grid-cols-2 gap-2">
 					<Button

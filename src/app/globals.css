@@ -1,6 +1,5 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+@config "../../tailwind.config.js";
 
 @layer base {
   :root {
@@ -59,28 +58,25 @@
   }
 }
 
-@layer base {
-  * {
-    @apply border-border;
-  }
-
-  body {
-    @apply bg-background text-foreground;
-  }
-}
-
 html {
   scroll-behavior: smooth;
 }
 
 @layer utilities {
-  /* Hide scrollbar for Chrome, Safari and Opera */
   .no-scrollbar::-webkit-scrollbar {
     display: none;
   }
-  /* Hide scrollbar for IE, Edge and Firefox */
   .no-scrollbar {
-    -ms-overflow-style: none; /* IE and Edge */
-    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-[hsl(var(--border))];
+  }
+  body {
+    @apply bg-[hsl(var(--background))] text-[hsl(var(--foreground))];
   }
 }

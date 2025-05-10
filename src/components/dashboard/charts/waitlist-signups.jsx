@@ -30,7 +30,7 @@ export const WaitlistSignups = () => {
 				<CardDescription>Cumulative total signups</CardDescription>
 			</CardHeader>
 			<CardContent>
-				<ChartContainer config={signUpData} className="h-[300px] w-[100%]">
+				<ChartContainer config={signUpData} className="h-[300px] w-full">
 					<ResponsiveContainer width="100%" height="100%">
 						<LineChart
 							data={signUpData}
