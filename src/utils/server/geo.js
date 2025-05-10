@@ -10,8 +10,8 @@ export const getIpAddress = () => {
   return ip;
 };
 
-export const getGeoInfo = async () => {
-  return await geolocation();
+export const getGeoInfo = () => {
+  return geolocation();
 };
 
 export const getTimeZone = async (city) => {
