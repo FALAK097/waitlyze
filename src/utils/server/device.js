@@ -1,34 +1,27 @@
 import { headers } from "next/headers";
 
 export async function getDeviceInfo() {
-	const headersList = await headers();
-	const userAgent = headersList.get("user-agent") ?? "";
-	// Detecting mobile, tablet, or desktop
-	const isMobile = /mobile/i.test(userAgent);
-	const isTablet = /tablet/i.test(userAgent);
-	const device = isMobile ? "mobile" : isTablet ? "tablet" : "desktop";
+  try {
+    const headersList = await headers();
+    const userAgent = headersList.get("user-agent") || "";
 
-	// Detecting device type like android, ios, windows, mac, linux, other
-	const isAndroid = /android/i.test(userAgent);
-	const isIos = /iPhone|iPad|iPod/i.test(userAgent);
-	const isWindows = /windows/i.test(userAgent);
-	const isMac = /macintosh/i.test(userAgent);
-	const isLinux = /linux/i.test(userAgent) && !isAndroid;
-	const isOther = !isAndroid && !isIos && !isWindows && !isMac && !isLinux;
+    // Basic device detection
+    const isMobile = /mobile|iphone|ipad|android/i.test(userAgent);
+    const isTablet = /tablet|ipad/i.test(userAgent);
 
-	const deviceType = isAndroid
-		? "android"
-		: isIos
-			? "ios"
-			: isWindows
-				? "windows"
-				: isMac
-					? "mac"
-					: isLinux
-						? "linux"
-						: isOther
-							? "other"
-							: "unknown";
+    let deviceType = "desktop";
+    if (isTablet) deviceType = "tablet";
+    else if (isMobile) deviceType = "mobile";
 
-	return { device, deviceType };
+    return {
+      device: userAgent,
+      deviceType: deviceType,
+    };
+  } catch (error) {
+    console.error("Error getting device info:", error);
+    return {
+      device: "unknown",
+      deviceType: "unknown",
+    };
+  }
 }

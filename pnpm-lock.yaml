@@ -92,6 +92,9 @@ importers:
       '@uploadthing/react':
         specifier: ^7.3.1
         version: 7.3.1(next@15.3.2(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(react@19.1.0)(uploadthing@7.7.2(next@15.3.2(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(tailwindcss@4.1.6))
+      '@vercel/functions':
+        specifier: ^2.0.3
+        version: 2.0.3
       axios:
         specifier: ^1.9.0
         version: 1.9.0
@@ -104,6 +107,9 @@ importers:
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
+      countries-and-timezones:
+        specifier: ^3.8.0
+        version: 3.8.0
       date-fns:
         specifier: ^4.1.0
         version: 4.1.0
@@ -1407,6 +1413,15 @@ packages:
   '@uploadthing/shared@7.1.8':
     resolution: {integrity: sha512-OA9ZrTfILOCt1G93wOD7dZmS653z99Nr3isZpIxzBO3y4B2geKFmPjJUZClig2RrAWLKr2VUYToXKfd9D/wP9w==}
 
+  '@vercel/functions@2.0.3':
+    resolution: {integrity: sha512-F4PX2D/0WDmoFz3fc5FcdINnSPrM+gU2z18KG7gej7xsvc6PbQ/rEUvP+RcOF6JGzTrHoZfSa1mpcrScuD6AEw==}
+    engines: {node: '>= 18'}
+    peerDependencies:
+      '@aws-sdk/credential-provider-web-identity': '*'
+    peerDependenciesMeta:
+      '@aws-sdk/credential-provider-web-identity':
+        optional: true
+
   ansi-styles@4.3.0:
     resolution: {integrity: sha512-zbB9rCJAT1rbjiVDb2hqKFHNYLxgtk8NURxZ3IZwD3F6NtxbXZQCnnSi1Lkx+IDohdPlFp222wVALIheZJQSEg==}
     engines: {node: '>=8'}
@@ -1518,6 +1533,10 @@ packages:
 
   core-js@3.42.0:
     resolution: {integrity: sha512-Sz4PP4ZA+Rq4II21qkNqOEDTDrCvcANId3xpIgB34NDkWc3UduWj2dqEtN9yZIq8Dk3HyPI33x9sqqU5C8sr0g==}
+
+  countries-and-timezones@3.8.0:
+    resolution: {integrity: sha512-+Ze9h5f4dQpUwbzTm0DEkiPiZyim9VHV4/mSnT4zNYJnrnfwsKjAZPtnp7J5VzejCDgySs+2SSc6MDdCnD43GA==}
+    engines: {node: '>=8.x', npm: '>=5.x'}
 
   css-line-break@2.1.0:
     resolution: {integrity: sha512-FHcKFCZcAha3LwfVBhCQbW2nCNbkZXn7KVUJcsT5/P8YmfsVja0FMPJr0B903j/E69HUphKiV9iQArX8SDYA4w==}
@@ -3404,6 +3423,8 @@ snapshots:
       effect: 3.14.21
       sqids: 0.3.0
 
+  '@vercel/functions@2.0.3': {}
+
   ansi-styles@4.3.0:
     dependencies:
       color-convert: 2.0.1
@@ -3514,6 +3535,8 @@ snapshots:
   cookie@1.0.2: {}
 
   core-js@3.42.0: {}
+
+  countries-and-timezones@3.8.0: {}
 
   css-line-break@2.1.0:
     dependencies:

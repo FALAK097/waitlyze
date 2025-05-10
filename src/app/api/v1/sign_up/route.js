@@ -1,6 +1,6 @@
 import { createSignUp } from "@/services/sign-up";
 import { getDeviceInfo } from "@/utils/server/device";
-import { getGeoInfo, getIpAddress } from "@/utils/server/geo";
+import { getGeoInfo, getIpAddress, getTimeZone } from "@/utils/server/geo";
 import { validateRequest } from "@/utils/server/validations/sign-up";
 
 export const GET = async (req, _) => {
@@ -40,11 +40,11 @@ export const POST = async (req, _) => {
 		const body = await req.json();
 		const validator = await validateRequest(body);
 		if (validator) return validator;
-		const ip = getIpAddress(req);
+		const ip = getIpAddress();
 
-		const { device, deviceType } = getDeviceInfo();
+		const { device, deviceType } = getDeviceInfo(req);
 
-		const geo = getGeoInfo(ip);
+		const geo = getGeoInfo();
 
 		const hypeSession = body.hypeSession;
 
@@ -83,10 +83,8 @@ export const POST = async (req, _) => {
 		};
 
 		if (geo) {
-			const { city, country, ll, timezone } = geo;
-			let [latitude, longitude] = ll;
-			latitude = latitude.toString();
-			longitude = longitude.toString();
+			const { city, country, latitude, longitude } = geo;
+			const timezone = await getTimeZone(geo?.city);
 			data = { ...data, city, country, latitude, longitude, timezone };
 		}
 

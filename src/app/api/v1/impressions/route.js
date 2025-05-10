@@ -1,23 +1,23 @@
 import { createImpression } from "@/services/impressions";
 import { getDeviceInfo } from "@/utils/server/device";
-import { getGeoInfo, getIpAddress } from "@/utils/server/geo";
+import { getGeoInfo, getIpAddress, getTimeZone } from "@/utils/server/geo";
 import { validateRequest } from "@/utils/server/validations/impression";
+import { NextResponse } from "next/server";
 
-export const POST = async (req, res) => {
+export async function POST(request) {
 	// TODO: Remove this fake delay after implementing email verification, signup confirmation to User & Signed Up user
 	await new Promise((resolve) => setTimeout(resolve, 1500));
 	try {
-		const body = await req.json();
+		const body = await request.json();
 		const validator = await validateRequest(body);
 		if (validator) return validator;
-		const ip = getIpAddress(req);
 
-		const { device, deviceType } = getDeviceInfo();
-
-		const geo = getGeoInfo(ip);
+		const ip = getIpAddress(request);
+		const { device, deviceType } = getDeviceInfo(request);
+		const geo = getGeoInfo(request);
 
 		if (!body.hypeSession) {
-			return Response.json(
+			return NextResponse.json(
 				{
 					message: "Unique User ID is required",
 				},
@@ -38,24 +38,18 @@ export const POST = async (req, res) => {
 		};
 
 		if (geo) {
-			const { city, country, ll, timezone } = geo;
-			let [latitude, longitude] = ll;
-			latitude = latitude.toString();
-			longitude = longitude.toString();
+			const { city, country, latitude, longitude } = geo;
+			const timezone = await getTimeZone(geo?.city);
 			data = { ...data, city, country, latitude, longitude, timezone };
 		}
 
-		await createImpression(data);
-		return Response.json({ message: "Impression created successfully" });
+		const impression = await createImpression(data);
+		return NextResponse.json(impression);
 	} catch (error) {
-		console.error(error);
-		return Response.json(
-			{
-				message: "Failed to create an Impression",
-			},
-			{
-				status: 500,
-			},
+		console.error("Error creating impression:", error);
+		return NextResponse.json(
+			{ message: error.message || "Failed to create impression" },
+			{ status: 500 },
 		);
 	}
-};
+}
