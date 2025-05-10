@@ -11,7 +11,7 @@ To set up the project locally, follow these steps:
 Make sure you have the following installed on your machine:
 
 - [Node.js](https://nodejs.org/) (version 18 or higher)
-- [Yarn](https://yarnpkg.com/)
+- [pnpm](https://pnpm.io/)
 
 ### Clone the Repository
 
@@ -27,7 +27,7 @@ cd HypeItUp
 Next, install the project dependencies:
 
 ```bash
-yarn install
+pnpm install
 ```
 
 ### Set Up Environment Variables
@@ -65,7 +65,7 @@ This command will create a new PostgreSQL container named "waitlist-db" with the
 Run the following command to set up the database schema:
 
 ``` bash
-yarn prisma migrate dev
+pnpm prisma migrate dev
 ```
 
 ### Start the Development Server
@@ -73,7 +73,7 @@ yarn prisma migrate dev
 Now, you can start the development server:
 
 ```bash
-yarn dev
+pnpm dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
