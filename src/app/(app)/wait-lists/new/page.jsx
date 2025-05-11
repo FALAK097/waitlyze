@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Suspense } from "react";
 
 import { ContentLayout } from "@/components/dashboard/content-layout";
 import {
@@ -76,7 +77,9 @@ export default async function WaitListsPage() {
 					</BreadcrumbItem>
 				</BreadcrumbList>
 			</Breadcrumb>
-			<NewWaitListForm createNewWaitList={createNewWaitList} />
+			<Suspense fallback={<div>Loading form...</div>}>
+				<NewWaitListForm createNewWaitList={createNewWaitList} />
+			</Suspense>
 		</ContentLayout>
 	);
 }
