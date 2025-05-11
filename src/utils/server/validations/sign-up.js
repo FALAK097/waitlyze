@@ -1,4 +1,4 @@
-import { prisma } from "@/lib/prisma";
+import prisma from "@/lib/prisma";
 
 const checkIfEmailExists = async (email, waitListId) => {
   const signUp = await prisma.signUp.findFirst({
