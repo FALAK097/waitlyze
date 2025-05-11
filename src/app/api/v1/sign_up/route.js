@@ -1,12 +1,14 @@
+import prisma from "@/lib/prisma";
 import { createSignUp } from "@/services/sign-up";
 import { getDeviceInfo } from "@/utils/server/device";
 import { getGeoInfo, getIpAddress, getTimeZone } from "@/utils/server/geo";
 import { validateRequest } from "@/utils/server/validations/sign-up";
+import { NextResponse } from "next/server";
 
 export const GET = async (req) => {
   const signUpId = req.nextUrl.searchParams.get("signUpId");
   if (!signUpId) {
-    return Response.json(
+    return NextResponse.json(
       { message: "Sign up ID is required" },
       { status: 400 }
     );
@@ -15,10 +17,10 @@ export const GET = async (req) => {
   const signUp = await prisma.signUp.findUnique({ where: { id: signUpId } });
 
   if (!signUp) {
-    return Response.json({ message: "Sign up not found" }, { status: 404 });
+    return NextResponse.json({ message: "Sign up not found" }, { status: 404 });
   }
 
-  return Response.json({ signUp });
+  return NextResponse.json({ signUp });
 };
 
 export const POST = async (req) => {
@@ -36,7 +38,7 @@ export const POST = async (req) => {
     const hypeSession = body.hypeSession;
 
     if (!hypeSession) {
-      return Response.json(
+      return NextResponse.json(
         { message: "Unique User ID is required" },
         { status: 400 }
       );
@@ -66,9 +68,9 @@ export const POST = async (req) => {
     }
 
     const signUp = await createSignUp(data, body?.referralId);
-    return Response.json({ message: "Signed up successfully", signUp });
+    return NextResponse.json({ message: "Signed up successfully", signUp });
   } catch (error) {
     console.error("Error in sign up route", error);
-    return Response.json({ message: "Failed to sign up" }, { status: 500 });
+    return NextResponse.json({ message: "Failed to sign up" }, { status: 500 });
   }
 };
