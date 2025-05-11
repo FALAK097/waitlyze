@@ -8,50 +8,59 @@ import { usePathname, useSearchParams } from "next/navigation";
 import { usePostHog } from "posthog-js/react";
 import { useEffect } from "react";
 import { Sidebar } from "./sidebar";
+import { Suspense } from "react";
+
+function DashboardAnalytics() {
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const posthog = usePostHog();
+
+  useEffect(() => {
+    if (pathname && posthog) {
+      let url = window.origin + pathname;
+      if (searchParams.toString()) {
+        url = `${url}?${searchParams.toString()}`;
+      }
+      posthog.capture("$pageview", {
+        $current_url: url,
+      });
+    }
+  }, [pathname, searchParams, posthog]);
+
+  return null;
+}
 
 export default function DashboardLayout({ children }) {
-	const sidebar = useStore(useSidebarToggle, (state) => state);
-	const pathname = usePathname();
-	const searchParams = useSearchParams();
-	const posthog = usePostHog();
+  const sidebar = useStore(useSidebarToggle, (state) => state);
+  const { isSignedIn, userId } = useAuth();
+  const { user } = useUser();
+  const posthog = usePostHog();
 
-	const { isSignedIn, userId } = useAuth();
-	const { user } = useUser();
+  useEffect(() => {
+    if (isSignedIn && userId && user && !posthog._isIdentified()) {
+      posthog.identify(userId, {
+        email: user.primaryEmailAddress?.emailAddress,
+        username: user.username,
+      });
+    }
+  }, [posthog, user]);
 
-	useEffect(() => {
-		if (pathname && posthog) {
-			let url = window.origin + pathname;
-			if (searchParams.toString()) {
-				url = `${url}?${searchParams.toString()}`;
-			}
-			posthog.capture("$pageview", {
-				$current_url: url,
-			});
-		}
-	}, [pathname, searchParams, posthog]);
+  if (!sidebar) return null;
 
-	useEffect(() => {
-		if (isSignedIn && userId && user && !posthog._isIdentified()) {
-			posthog.identify(userId, {
-				email: user.primaryEmailAddress?.emailAddress,
-				username: user.username,
-			});
-		}
-	}, [posthog, user]);
-
-	if (!sidebar) return null;
-
-	return (
-		<>
-			<Sidebar />
-			<main
-				className={cn(
-					"min-h-[calc(100vh-56px)] bg-zinc-50 dark:bg-zinc-900 transition-[margin-left] ease-in-out duration-300",
-					sidebar?.isOpen === false ? "lg:ml-[90px]" : "lg:ml-72",
-				)}
-			>
-				{children}
-			</main>
-		</>
-	);
+  return (
+    <>
+      <Sidebar />
+      <main
+        className={cn(
+          "min-h-[calc(100vh-56px)] bg-zinc-50 dark:bg-zinc-900 transition-[margin-left] ease-in-out duration-300",
+          sidebar?.isOpen === false ? "lg:ml-[90px]" : "lg:ml-72"
+        )}
+      >
+        <Suspense fallback={null}>
+          <DashboardAnalytics />
+        </Suspense>
+        {children}
+      </main>
+    </>
+  );
 }
