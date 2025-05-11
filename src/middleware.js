@@ -11,19 +11,13 @@ export default clerkMiddleware(async (auth, req) => {
   const res = NextResponse.next();
 
   if (req.nextUrl.pathname.startsWith("/forms")) return NextResponse.next();
-  const geo = req.geo || {};
+
   const ip =
     req.headers.get("x-forwarded-for") ||
     req.ip ||
     req.headers.get("x-real-ip") ||
     "::1";
-
-  res.headers.set("x-country", geo.country || "");
-  res.headers.set("x-city", geo.city || "");
-  res.headers.set("x-region", geo.region || "");
-  res.headers.set("x-latitude", geo.latitude?.toString() || "");
-  res.headers.set("x-longitude", geo.longitude?.toString() || "");
-  res.headers.set("x-ip", ip);
+  res.headers.set("x-forwarded-for", ip);
 
   return res;
 });

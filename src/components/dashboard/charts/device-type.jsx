@@ -6,69 +6,107 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import {
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-} from "@/components/ui/chart";
-import { chartConfig, chartData } from "@/utils/chart";
-import { useMemo, useState } from "react";
-import { Bar, BarChart, CartesianGrid, XAxis } from "recharts";
+  ResponsiveContainer,
+  Tooltip,
+} from "recharts";
+import { getWaitlistImpressions } from "@/actions/waitlist-impressions";
+import { useEffect, useMemo, useState } from "react";
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
 
-export const DeviceType = () => {
-  const [activeChart, setActiveChart] = useState("desktop");
-  const total = useMemo(
-    () => ({
-      desktop: chartData.reduce((acc, curr) => acc + curr.desktop, 0),
-      mobile: chartData.reduce((acc, curr) => acc + curr.mobile, 0),
-    }),
-    []
-  );
+const chartConfig = [
+  {
+    dataKey: "desktop",
+    label: "Desktop",
+    fill: "hsl(var(--chart-1))",
+  },
+  {
+    dataKey: "mobile",
+    label: "Mobile",
+    fill: "hsl(var(--chart-2))",
+  },
+  {
+    dataKey: "tablet",
+    label: "Tablet",
+    fill: "hsl(var(--chart-3))",
+  },
+];
+
+export const DeviceType = ({ waitListId }) => {
+  const [impressions, setImpressions] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        const result = await getWaitlistImpressions(waitListId);
+        if (result.success) {
+          setImpressions(result.data);
+        }
+      } catch (error) {
+        console.error("Error fetching impressions:", error);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchData();
+  }, [waitListId]);
+
+  const deviceData = useMemo(() => {
+    const grouped = impressions.reduce((acc, imp) => {
+      const date = new Date(imp.createdAt).toISOString().split("T")[0];
+      if (!acc[date]) {
+        acc[date] = {
+          date,
+          desktop: 0,
+          mobile: 0,
+          tablet: 0,
+          total: 0,
+        };
+      }
+      const deviceType = (imp.deviceType || "desktop").toLowerCase();
+      acc[date][deviceType]++;
+      acc[date].total++;
+      return acc;
+    }, {});
+
+    return Object.values(grouped).sort((a, b) => a.date.localeCompare(b.date));
+  }, [impressions]);
+
+  if (loading) return <div>Loading device data...</div>;
 
   return (
-    <>
-      <Card>
-        <CardHeader className="flex flex-col items-stretch p-0 space-y-0 border-b sm:flex-row">
-          <div className="flex flex-col justify-center flex-1 gap-1 px-6 py-5 sm:py-6">
-            <CardTitle>Total Visitors by Device</CardTitle>
-            <CardDescription>
-              Chart showing total visitors by device type
-            </CardDescription>
-          </div>
-          <div className="flex">
-            {["desktop", "mobile"].map((key) => {
-              const chart = key;
-              return (
-                <button
-                  key={chart}
-                  data-active={activeChart === chart}
-                  className="relative z-30 flex flex-1 flex-col justify-center gap-1 border-t px-6 py-4 text-left even:border-l data-[active=true]:bg-muted/50 sm:border-l sm:border-t-0 sm:px-8 sm:py-6"
-                  onClick={() => setActiveChart(chart)}
-                >
-                  <span className="text-xs text-muted-foreground">
-                    {chartConfig[chart].label}
-                  </span>
-                  <span className="text-lg font-bold leading-none sm:text-3xl">
-                    {total[key].toLocaleString()}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-        </CardHeader>
-        <CardContent className="px-2 sm:p-6">
-          <ChartContainer
-            config={chartConfig}
-            className="aspect-auto h-[250px] w-full"
-          >
-            <BarChart
-              accessibilityLayer
-              data={chartData}
-              margin={{
-                left: 12,
-                right: 12,
-              }}
+    <Card>
+      <CardHeader>
+        <CardTitle>Total Visitors by Device</CardTitle>
+        <CardDescription>Chart showing total visitors by device type</CardDescription>
+        <div className="flex gap-4 mt-2">
+          {chartConfig.map((config) => (
+            <div key={config.dataKey} className="flex items-center gap-2">
+              <div
+                className="w-3 h-3 rounded"
+                style={{ backgroundColor: config.fill }}
+              />
+              <span className="text-sm capitalize">
+                {config.label}: {impressions.filter(imp => 
+                  (imp.deviceType || 'desktop').toLowerCase() === config.dataKey
+                ).length}
+              </span>
+            </div>
+          ))}
+        </div>
+      </CardHeader>
+      <CardContent className="px-2 sm:p-6">
+        <div className="aspect-auto h-[250px] w-full">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart 
+              data={deviceData} 
+              margin={{ left: 12, right: 12 }} 
+              barGap={8}
             >
-              <CartesianGrid vertical={false} />
+              <CartesianGrid 
+                strokeDasharray="3 3" 
+                vertical={false}
+              />
               <XAxis
                 dataKey="date"
                 tickLine={false}
@@ -83,26 +121,50 @@ export const DeviceType = () => {
                   });
                 }}
               />
-              <ChartTooltip
-                content={
-                  <ChartTooltipContent
-                    className="w-[150px]"
-                    nameKey="views"
-                    labelFormatter={(value) => {
-                      return new Date(value).toLocaleDateString("en-US", {
-                        month: "short",
-                        day: "numeric",
-                        year: "numeric",
-                      });
-                    }}
-                  />
-                }
+              <YAxis tickLine={false} axisLine={false} />
+              <Tooltip
+                cursor={{ fill: 'transparent' }}
+                content={({ active, payload, label }) => {
+                  if (!active || !payload?.length) return null;
+                  return (
+                    <div className="rounded-lg border bg-background p-2 shadow-sm">
+                      <div className="font-medium">
+                        {new Date(label).toLocaleDateString("en-US", {
+                          month: "short",
+                          day: "numeric",
+                          year: "numeric",
+                        })}
+                      </div>
+                      {payload.map((entry, index) => (
+                        <div
+                          key={`${entry.name}-${index}`}
+                          className="flex items-center gap-2 text-sm"
+                        >
+                          <div
+                            className="h-2 w-2 rounded"
+                            style={{ backgroundColor: entry.fill }}
+                          />
+                          <span className="capitalize">{entry.name}:</span>
+                          <span className="font-medium">{entry.value}</span>
+                        </div>
+                      ))}
+                    </div>
+                  );
+                }}
               />
-              <Bar dataKey={activeChart} fill={`var(--color-${activeChart})`} />
+              {chartConfig.map((config) => (
+                <Bar
+                  key={config.dataKey}
+                  dataKey={config.dataKey}
+                  name={config.label}
+                  fill={config.fill}
+                  radius={[4, 4, 0, 0]}
+                />
+              ))}
             </BarChart>
-          </ChartContainer>
-        </CardContent>
-      </Card>
-    </>
+          </ResponsiveContainer>
+        </div>
+      </CardContent>
+    </Card>
   );
 };
