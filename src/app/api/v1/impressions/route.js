@@ -37,7 +37,14 @@ export async function POST(request) {
     if (geo) {
       const { city, country, latitude, longitude } = geo;
       const timezone = await getTimeZone(city);
-      data = { ...data, city, country, latitude, longitude, timezone };
+      data = {
+        ...data,
+        city,
+        country,
+        latitude: latitude?.toString(),
+        longitude: longitude?.toString(),
+        timezone,
+      };
     }
 
     const impression = await createImpression(data);

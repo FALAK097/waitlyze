@@ -1,21 +1,57 @@
 import ct from "countries-and-timezones";
+import { geolocation } from "@vercel/functions";
 
 export const getIpAddress = (request) => {
-  return request.headers.get("x-ip") || "::1";
+  const vercelHeaders = request.headers;
+  return vercelHeaders.get("x-forwarded-for") || "::1";
 };
 
 export const getGeoInfo = (request) => {
   try {
-    const headers = request?.headers;
-    if (!headers) return {};
+    if (process.env.NODE_ENV === "development") {
+      return {
+        country: "US",
+        city: "New York",
+        region: "NY",
+        latitude: "40.7128",
+        longitude: "-74.0060",
+      };
+    }
 
-    return {
-      country: headers.get("x-country") || undefined,
-      city: headers.get("x-city") || undefined,
-      region: headers.get("x-region") || undefined,
-      latitude: parseFloat(headers.get("x-latitude")) || undefined,
-      longitude: parseFloat(headers.get("x-longitude")) || undefined,
+    const geo = geolocation(request);
+
+    if (!geo) {
+      console.warn("No geolocation data available from Vercel");
+      return {};
+    }
+
+    const formattedGeo = {
+      country: geo.country || undefined,
+      city: geo.city || undefined,
+      region: geo.region || undefined,
+      latitude:
+        typeof geo.latitude === "number"
+          ? geo.latitude.toString()
+          : typeof geo.latitude === "string"
+          ? geo.latitude
+          : undefined,
+      longitude:
+        typeof geo.longitude === "number"
+          ? geo.longitude.toString()
+          : typeof geo.longitude === "string"
+          ? geo.longitude
+          : undefined,
     };
+
+    if (process.env.NODE_ENV === "production") {
+      console.info("Geolocation data retrieved successfully:", {
+        hasCountry: !!formattedGeo.country,
+        hasCity: !!formattedGeo.city,
+        hasCoordinates: !!(formattedGeo.latitude && formattedGeo.longitude),
+      });
+    }
+
+    return formattedGeo;
   } catch (error) {
     console.error("Error in getGeoInfo:", error);
     return {};

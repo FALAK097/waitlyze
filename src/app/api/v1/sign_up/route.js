@@ -64,7 +64,14 @@ export const POST = async (req) => {
     if (geo) {
       const { city, country, latitude, longitude } = geo;
       const timezone = await getTimeZone(city);
-      data = { ...data, city, country, latitude, longitude, timezone };
+      data = {
+        ...data,
+        city,
+        country,
+        latitude: latitude?.toString(),
+        longitude: longitude?.toString(),
+        timezone,
+      };
     }
 
     const signUp = await createSignUp(data, body?.referralId);
