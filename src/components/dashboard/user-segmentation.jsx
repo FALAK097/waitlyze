@@ -693,9 +693,9 @@ export const UserSegmentation = ({ waitlistId }) => {
                         {referralCounts[user.id] || 0}
                       </TableCell>
                       <TableCell>
-                        {user.device
-                          ? user.device.charAt(0).toUpperCase() +
-                            user.device.slice(1)
+                        {user.deviceType
+                          ? user.deviceType.charAt(0).toUpperCase() +
+                            user.deviceType.slice(1)
                           : "Unknown"}
                       </TableCell>
                       <TableCell>
