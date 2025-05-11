@@ -10,11 +10,10 @@ export const getGeoInfo = (request) => {
   try {
     if (process.env.NODE_ENV === "development") {
       return {
-        country: "US",
-        city: "New York",
-        region: "NY",
-        latitude: "40.7128",
-        longitude: "-74.0060",
+        country: "IN",
+        city: "Thane",
+        latitude: "19.2183",
+        longitude: "72.9781",
       };
     }
 
@@ -28,7 +27,6 @@ export const getGeoInfo = (request) => {
     const formattedGeo = {
       country: geo.country || undefined,
       city: geo.city || undefined,
-      region: geo.region || undefined,
       latitude:
         typeof geo.latitude === "number"
           ? geo.latitude.toString()
@@ -43,14 +41,6 @@ export const getGeoInfo = (request) => {
           : undefined,
     };
 
-    if (process.env.NODE_ENV === "production") {
-      console.info("Geolocation data retrieved successfully:", {
-        hasCountry: !!formattedGeo.country,
-        hasCity: !!formattedGeo.city,
-        hasCoordinates: !!(formattedGeo.latitude && formattedGeo.longitude),
-      });
-    }
-
     return formattedGeo;
   } catch (error) {
     console.error("Error in getGeoInfo:", error);
@@ -60,28 +50,49 @@ export const getGeoInfo = (request) => {
 
 export const getTimeZone = async (city, request) => {
   try {
+    console.log("[TimeZone Debug] Input city:", city);
+
     if (city) {
       const timezones = ct.getAllTimezones();
+      console.log("[TimeZone Debug] Searching for city:", city);
       const matchingTimezone = Object.values(timezones).find((tz) =>
         tz.name.toLowerCase().includes(city.toLowerCase())
       );
 
       if (matchingTimezone) {
+        console.log(
+          "[TimeZone Debug] Found timezone by city:",
+          matchingTimezone.name
+        );
         return matchingTimezone.name;
       }
     }
 
     const geo = getGeoInfo(request);
+    console.log("[TimeZone Debug] Geo info:", geo);
+
     if (geo?.country) {
-      const countryTimezones = ct.getTimezonesForCountry(geo.country);
-      if (countryTimezones.length > 0) {
+      console.log(
+        "[TimeZone Debug] Looking up timezone for country:",
+        geo.country
+      );
+      const countryCode = geo.country.toUpperCase();
+      const countryTimezones = ct.getTimezonesForCountry(countryCode);
+      console.log("[TimeZone Debug] Found timezones:", countryTimezones);
+
+      if (countryTimezones && countryTimezones.length > 0) {
+        console.log(
+          "[TimeZone Debug] Selected timezone:",
+          countryTimezones[0].name
+        );
         return countryTimezones[0].name;
       }
     }
 
+    console.log("[TimeZone Debug] No timezone found");
     return null;
   } catch (error) {
-    console.error("Error getting timezone:", error);
+    console.error("[TimeZone Debug] Error:", error);
     return null;
   }
 };
