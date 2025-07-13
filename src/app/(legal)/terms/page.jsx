@@ -4,7 +4,7 @@ import Link from "next/link";
 export const metadata = {
 	title: "Terms of Service",
 	description:
-		"Learn about our terms of service, including user responsibilities, acceptable use, and legal requirements for using HypeItUp's waitlist platform.",
+		"Learn about our terms of service, including user responsibilities, acceptable use, and legal requirements for using Waitlyze's waitlist platform.",
 };
 
 export default function TermsOfService() {
@@ -24,10 +24,10 @@ export default function TermsOfService() {
 					</h1>
 
 					<p className="mb-4 text-muted-foreground">
-						Welcome to HypeItUp ("Platform," "Service," "we," "us," "our"). By
+						Welcome to Waitlyze ("Platform," "Service," "we," "us," "our"). By
 						accessing or using{" "}
-						<Link href="https://hypeitup.me" className="text-primary">
-							www.hypeitup.me
+						<Link href="https://waitlyze.falakgala.dev" className="text-primary">
+							www.waitlyze.falakgala.dev
 						</Link>
 						("Website"), you agree to comply with and be bound by these Terms of
 						Service ("Terms"). If you do not agree to these Terms, you may not
@@ -54,7 +54,7 @@ export default function TermsOfService() {
 						2. Description of Service
 					</h2>
 					<p className="mb-4 text-muted-foreground">
-						HypeItUp provides a platform for creating and managing waitlists
+						Waitlyze provides a platform for creating and managing waitlists
 						that help convert visitors into eager customers. The platform may
 						collect analytics to enhance user experience, which is detailed in
 						our{" "}
@@ -118,7 +118,7 @@ export default function TermsOfService() {
 					</h2>
 					<p className="mb-4 text-muted-foreground">
 						All content provided on the Platform, including logos, graphics, and
-						text, is owned by HypeItUp or our partners. Users are not granted
+						text, is owned by Waitlyze or our partners. Users are not granted
 						any license to use this content without permission.
 					</p>
 
@@ -134,7 +134,7 @@ export default function TermsOfService() {
 						9. Limitation of Liability
 					</h2>
 					<p className="mb-4 text-muted-foreground">
-						To the fullest extent permitted by law, HypeItUp shall not be liable
+						To the fullest extent permitted by law, Waitlyze shall not be liable
 						for any damages resulting from the use or inability to use our
 						services.
 					</p>
@@ -154,16 +154,16 @@ export default function TermsOfService() {
 					<p className="mb-4 text-muted-foreground">
 						For questions about these Terms, please contact us at{" "}
 						<Link
-							href="mailto:info@hypeitup.me"
+							href="mailto:falakgala09@gmail.com"
 							className="text-purple-600 hover:text-purple-800"
 						>
-							info@hypeitup.me
+							falakgala09@gmail.com
 						</Link>
 						.
 					</p>
 
 					<p className="mt-8 text-sm text-gray-500">
-						Last updated: November 10, 2024
+						Last updated: July 13, 2025
 					</p>
 				</div>
 			</div>

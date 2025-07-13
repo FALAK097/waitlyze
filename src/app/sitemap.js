@@ -1,39 +1,39 @@
 export default function sitemap() {
-	return [
-		{
-			url: "https://hypeitup.me",
-			priority: 1,
-			changeFrequency: "daily",
-		},
-		{
-			url: "https://hypeitup.me/dashboard",
-			priority: 0.9,
-			changeFrequency: "daily",
-		},
-		{
-			url: "https://hypeitup.me/wait-lists",
-			priority: 0.8,
-			changeFrequency: "daily",
-		},
-		{
-			url: "https://hypeitup.me/wait-lists/new",
-			priority: 0.8,
-			changeFrequency: "daily",
-		},
-		{
-			url: "https://hypeitup.me/privacy",
-			priority: 0.5,
-			lastModified: "November 10, 2024",
-		},
-		{
-			url: "https://hypeitup.me/refund",
-			priority: 0.5,
-			lastModified: "November 10, 2024",
-		},
-		{
-			url: "https://hypeitup.me/terms",
-			priority: 0.5,
-			lastModified: "November 10, 2024",
-		},
-	];
+  return [
+    {
+      url: "https://waitlyze.falakgala.dev",
+      priority: 1,
+      changeFrequency: "daily",
+    },
+    {
+      url: "https://waitlyze.falakgala.dev/dashboard",
+      priority: 0.9,
+      changeFrequency: "daily",
+    },
+    {
+      url: "https://waitlyze.falakgala.dev/wait-lists",
+      priority: 0.8,
+      changeFrequency: "daily",
+    },
+    {
+      url: "https://waitlyze.falakgala.dev/wait-lists/new",
+      priority: 0.8,
+      changeFrequency: "daily",
+    },
+    {
+      url: "https://waitlyze.falakgala.dev/privacy",
+      priority: 0.5,
+      lastModified: "November 10, 2024",
+    },
+    {
+      url: "https://waitlyze.falakgala.dev/refund",
+      priority: 0.5,
+      lastModified: "November 10, 2024",
+    },
+    {
+      url: "https://waitlyze.falakgala.dev/terms",
+      priority: 0.5,
+      lastModified: "November 10, 2024",
+    },
+  ];
 }

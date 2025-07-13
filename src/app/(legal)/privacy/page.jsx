@@ -4,7 +4,7 @@ import Link from "next/link";
 export const metadata = {
 	title: "Privacy Policy",
 	description:
-		"Learn how HypeItUp protects and handles your data, including what information we collect, how we use it, and your privacy rights.",
+		"Learn how Waitlyze protects and handles your data, including what information we collect, how we use it, and your privacy rights.",
 };
 
 export default function PrivacyPolicy() {
@@ -22,9 +22,9 @@ export default function PrivacyPolicy() {
 					<h1 className="mb-6 text-3xl font-bold text-bold">Privacy Policy</h1>
 
 					<p className="mb-4 text-muted-foreground">
-						At HypeItUp ("we," "us," "our"), accessible from{" "}
-						<Link href="https://hypeitup.me" className="text-primary">
-							www.hypeitup.me
+						At Waitlyze ("we," "us," "our"), accessible from{" "}
+						<Link href="https://waitlyze.falakgala.dev" className="text-primary">
+							www.waitlyze.falakgala.dev
 						</Link>
 						, we are committed to protecting your privacy. This Privacy Policy
 						outlines our practices regarding data collection, usage, and sharing
@@ -163,16 +163,16 @@ export default function PrivacyPolicy() {
 						If you have questions or concerns about this Privacy Policy or our
 						data practices, please contact us at{" "}
 						<Link
-							href="mailto:info@hypeitup.me"
+							href="mailto:falakgala09@gmail.com"
 							className="text-purple-600 hover:text-purple-800"
 						>
-							info@hypeitup.me
+							falakgala09@gmail.com
 						</Link>
 						.
 					</p>
 
 					<p className="mt-8 text-sm text-gray-500">
-						Last updated: November 10, 2024
+						Last updated: July 13, 2025
 					</p>
 				</div>
 			</div>

@@ -12,7 +12,7 @@ const features = [
 		title: "Design Your Form",
 		description:
 			"Create waitlist forms that match your brand with our intuitive no-code designer.",
-		iframe: "/images/HypeItUp_Landing_Page-Demo.mp4",
+		iframe: "/images/waitlyze_Landing_Page-Demo.mp4",
 		badge: "No-Code Designer",
 	},
 	{
@@ -20,7 +20,7 @@ const features = [
 		title: "Launch Your Waitlist",
 		description:
 			"Embed our waitlist widget into your site or use our hosted page if you don't have a website.",
-		iframe: "/images/HypeItUp_Landing_Page-Demo.mp4",
+		iframe: "/images/waitlyze_Landing_Page-Demo.mp4",
 		badge: "Easy Integration",
 	},
 	{
@@ -28,7 +28,7 @@ const features = [
 		title: "Live Demo View",
 		description:
 			"See changes in real-time with our live demo view while editing your waitlist form.",
-		iframe: "/images/HypeItUp_Landing_Page-Demo.mp4",
+		iframe: "/images/waitlyze_Landing_Page-Demo.mp4",
 		badge: "Instant Preview",
 	},
 ];
@@ -75,9 +75,8 @@ export default function Features() {
 							whileInView="visible"
 							viewport={{ once: true, amount: 0.3 }}
 							transition={{ duration: 0.6, staggerChildren: 0.2 }}
-							className={`flex flex-col md:flex-row ${
-								index % 2 === 0 ? "md:flex-row-reverse" : ""
-							} items-center gap-8`}
+							className={`flex flex-col md:flex-row ${index % 2 === 0 ? "md:flex-row-reverse" : ""
+								} items-center gap-8`}
 						>
 							<motion.div
 								className="flex justify-center w-full md:w-1/2"

@@ -52,10 +52,10 @@ export default function RefundPolicy() {
 					<p className="mb-4 text-muted-foreground">
 						To request a refund, please contact us at{" "}
 						<Link
-							href="mailto:info@hypeitup.me"
+							href="mailto:falakgala09@gmail.com"
 							className="text-purple-600 hover:text-purple-800"
 						>
-							info@hypeitup.me
+							falakgala09@gmail.com
 						</Link>{" "}
 						with the following information:
 					</p>
@@ -86,16 +86,16 @@ export default function RefundPolicy() {
 					<p className="mb-4 text-muted-foreground">
 						For any questions about this Refund Policy, please contact us at{" "}
 						<Link
-							href="mailto:info@hypeitup.me"
+							href="mailto:falakgala09@gmail.com"
 							className="text-purple-600 hover:text-purple-800"
 						>
-							info@hypeitup.me
+							falakgala09@gmail.com
 						</Link>
 						.
 					</p>
 
 					<p className="mt-8 text-sm text-gray-500">
-						Last updated: November 10, 2024
+						Last updated: July 13, 2025
 					</p>
 				</div>
 			</div>

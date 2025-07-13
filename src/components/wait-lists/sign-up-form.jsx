@@ -43,9 +43,8 @@ export const SignUpForm = ({
 }) => {
 	return (
 		<div
-			className={`w-full max-w-md p-6 rounded-lg ${
-				waitList.enableBgColor ? "shadow-md" : ""
-			}`}
+			className={`w-full max-w-md p-6 rounded-lg ${waitList.enableBgColor ? "shadow-md" : ""
+				}`}
 			style={{
 				backgroundColor: waitList.enableBgColor
 					? waitList.bgColor
@@ -159,12 +158,12 @@ export const SignUpForm = ({
 							<span className="flex items-center justify-center text-center text-gray-500">
 								Widget by&nbsp;
 								<a
-									href="https://hypeitup.me"
+									href="https://waitlyze.falakgala.dev"
 									className="font-medium text-purple-500"
 									target="_blank"
 									rel="noopener noreferrer"
 								>
-									hypeitup.me
+									Waitlyze
 								</a>
 							</span>
 						</>

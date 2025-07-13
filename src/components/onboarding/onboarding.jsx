@@ -51,7 +51,7 @@ export default function OnboardingDialog({ userId, isOnboarded, onComplete }) {
 	const stepContent = [
 		{
 			id: "welcome",
-			title: "Welcome to HypeItUp! ",
+			title: "Welcome to Waitlyze! ",
 			description:
 				"Create stunning waitlist pages that perfectly match your brand and build anticipation for your product launch.",
 			image: "/images/onboarding/welcome.png",

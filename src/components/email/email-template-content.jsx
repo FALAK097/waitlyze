@@ -159,7 +159,7 @@ export const EmailTemplateContent = ({ waitList, updateEmailTemplate }) => {
     {
       key: "referral_link",
       value:
-        "https://hypeitup.me/forms/cm4e8vmhr0000ye5h1jnnx8ju?r=wzH3ZcFx7dBUXahiHQGFb",
+        "https://waitlyze.falakgala.dev/forms/cm4e8vmhr0000ye5h1jnnx8ju?r=wzH3ZcFx7dBUXahiHQGFb",
     },
     {
       key: "waitlist",
@@ -167,7 +167,7 @@ export const EmailTemplateContent = ({ waitList, updateEmailTemplate }) => {
     },
     {
       key: "waitlist_url",
-      value: "http://hypeitup.me/forms/cm4e8vmhr0000ye5h1jnnx8ju",
+      value: "http://waitlyze.falakgala.dev/forms/cm4e8vmhr0000ye5h1jnnx8ju",
     },
   ];
 
@@ -245,7 +245,7 @@ export const EmailTemplateContent = ({ waitList, updateEmailTemplate }) => {
       <div className="pl-4">
         <div className="max-w-2xl p-4 mx-auto rounded-md bg-muted">
           <div className="flex justify-center mb-8">
-            <div className="text-2xl font-bold text-primary">HypeItUp</div>
+            <div className="text-2xl font-bold text-primary">Waitlyze</div>
           </div>
           <div className="text-base">{preview.subject}</div>
           <div className="prose-sm prose">
@@ -263,9 +263,9 @@ export const EmailTemplateContent = ({ waitList, updateEmailTemplate }) => {
               Need help? Contact us at{" "}
               <a
                 className="underline text-primary"
-                href="mailto:info@hypeitup.me"
+                href="mailto:falakgala09@gmail.com"
               >
-                info@hypeitup.me
+                falakgala09@gmail.com
               </a>
             </p>
             <p className="mt-2">Mumbai, India</p>
@@ -281,7 +281,7 @@ export const EmailTemplateContent = ({ waitList, updateEmailTemplate }) => {
             <Input
               id="testEmail"
               type="email"
-              placeholder="info@hypeitup.me"
+              placeholder="falakgala09@gmail.com"
               value={testEmail}
               onChange={(e) => setTestEmail(e.target.value)}
             />

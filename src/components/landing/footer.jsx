@@ -75,9 +75,8 @@ export default function Footer() {
 									>
 										<social.icon
 											size={24}
-											className={`transition-transform duration-200 ${
-												hoverStates[social.href] ? "scale-110" : "scale-100"
-											}`}
+											className={`transition-transform duration-200 ${hoverStates[social.href] ? "scale-110" : "scale-100"
+												}`}
 										/>
 										<span className="sr-only">{social.icon.name}</span>
 									</Link>
@@ -100,11 +99,10 @@ export default function Footer() {
 													onMouseLeave={() => handleMouseLeave(link.name)}
 												>
 													<span
-														className={`transition-all duration-200 ${
-															hoverStates[link.name]
+														className={`transition-all duration-200 ${hoverStates[link.name]
 																? "border-b border-primary"
 																: ""
-														}`}
+															}`}
 													>
 														{link.name}
 													</span>
@@ -118,7 +116,7 @@ export default function Footer() {
 					</div>
 					<div className="pt-8 mt-8 text-center border-t border-border">
 						<p className="text-sm text-muted-foreground">
-							&copy; {new Date().getFullYear()} HypeItUp. All rights reserved.
+							&copy; {new Date().getFullYear()} Waitlyze. All rights reserved.
 						</p>
 					</div>
 				</div>

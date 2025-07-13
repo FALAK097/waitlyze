@@ -15,25 +15,25 @@ const features = [
 	{
 		id: "signup",
 		title: "Sign Up",
-		image: "/images/hypeitup_dashboard.png",
-		alt: "HypeItUp Sign Up Dashboard",
+		image: "/images/waitlyze_dashboard.png",
+		alt: "Waitlyze Sign Up Dashboard",
 	},
 	{
 		id: "analytics",
 		title: "Analytics",
-		image: "/images/hypeitup_analytics.png",
-		alt: "HypeItUp Analytics Dashboard",
+		image: "/images/waitlyze_analytics.png",
+		alt: "Waitlyze Analytics Dashboard",
 	},
 	{
 		id: "waitlist builder",
 		title: "Waitlist Builder",
-		image: "/images/hypeitup_waitlist_builder.png",
-		alt: "HypeItUp Customizable Waitlist Builder",
+		image: "/images/waitlyze_waitlist_builder.png",
+		alt: "Waitlyze Customizable Waitlist Builder",
 	},
 	{
 		id: "advanced analytics",
 		title: "Advanced Analytics",
-		image: "/images/hypeitup_advanced_analytics.png",
+		image: "/images/waitlyze_advanced_analytics.png",
 		alt: "HyperItUp Advanced Analytics Dashboard",
 	},
 ];
@@ -76,7 +76,7 @@ export default function Hero() {
 								className="flex items-center px-3 py-1.5 text-sm font-medium bg-background text-primary"
 							>
 								<SparklesIcon className="w-4 h-4 mr-2" />
-								Analytics Powered by HypeItUp
+								Analytics Powered by Waitlyze
 							</HoverBorderGradient>
 						</motion.div>
 
@@ -192,11 +192,10 @@ export default function Hero() {
 									type="button"
 									onClick={() => setSelectedFeature(feature)}
 									whileHover={{ scale: 1.05 }}
-									className={`px-4 py-2 text-sm font-medium transition-colors rounded-full ${
-										selectedFeature.id === feature.id
-											? "bg-primary text-primary-foreground"
-											: "text-muted-foreground hover:text-foreground"
-									}`}
+									className={`px-4 py-2 text-sm font-medium transition-colors rounded-full ${selectedFeature.id === feature.id
+										? "bg-primary text-primary-foreground"
+										: "text-muted-foreground hover:text-foreground"
+										}`}
 								>
 									{feature.title}
 								</motion.button>
@@ -251,7 +250,7 @@ export default function Hero() {
 								width="320"
 								height="240"
 								preload="none"
-								poster="/images/hypeitup_dashboard.png"
+								poster="/images/waitlyze_dashboard.png"
 								className="object-cover w-full h-full"
 								onClick={handlePlayVideo}
 								onEnded={() => setIsPlaying(false)}
@@ -259,13 +258,13 @@ export default function Hero() {
 								onKeyDown={handlePlayVideo}
 							>
 								<source
-									src="/images/HypeItUp_Landing_Page-Demo.mp4"
+									src="/images/waitlyze_Landing_Page-Demo.mp4"
 									type="video/mp4"
 								/>
 								<track
 									srcLang="en"
 									kind="captions"
-									src="/images/HypeItUp_Landing_Page-Demo.vtt"
+									src="/images/waitlyze_Landing_Page-Demo.vtt"
 								/>
 							</video>
 							<motion.div

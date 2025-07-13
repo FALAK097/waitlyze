@@ -10,9 +10,9 @@ import Pricing from "@/components/landing/pricing";
 import Testimonials from "@/components/landing/testimonials";
 
 export const metadata = {
-	title: "HypeItUp | Create stunning waitlists to hype up your audience",
+	title: "Waitlyze | Create stunning waitlists to hype up your audience",
 	description:
-		"Create beautiful waitlist pages, collect signups, and get insights on your audience with HypeItUp's powerful waitlist platform.",
+		"Create beautiful waitlist pages, collect signups, and get insights on your audience with Waitlyze's powerful waitlist platform.",
 };
 
 export default function LandingPage() {

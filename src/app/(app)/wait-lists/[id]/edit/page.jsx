@@ -47,7 +47,7 @@ export async function generateMetadata(props) {
 
 	if (!waitList) {
 		return {
-			title: "Not Found | HypeItUp",
+			title: "Not Found | Waitlyze",
 			description: "The requested waitlist could not be found.",
 		};
 	}

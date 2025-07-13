@@ -75,7 +75,7 @@ export const NewWaitListForm = ({ createNewWaitList }) => {
 									id="projectName"
 									value={projectName}
 									onChange={(e) => setProjectName(e.target.value)}
-									placeholder="HypeItUp"
+									placeholder="Waitlyze"
 									required
 									disabled={loading || isCreated}
 								/>
@@ -107,7 +107,7 @@ export const NewWaitListForm = ({ createNewWaitList }) => {
 										id="websiteUrl"
 										value={websiteUrl}
 										onChange={(e) => setWebsiteUrl(e.target.value)}
-										placeholder="hypeitup.me"
+										placeholder="waitlyze.falakgala.dev"
 										disabled={loading || isCreated}
 										className="peer ps-16"
 										type="text"

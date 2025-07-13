@@ -9,42 +9,42 @@ const testimonials = [
 		name: "Alex Johnson",
 		role: "Startup Founder",
 		content:
-			"HypeItUp helped us launch our waitlist at the perfect time, resulting in 3x more signups!",
+			"Waitlyze helped us launch our waitlist at the perfect time, resulting in 3x more signups!",
 		avatar: "/placeholder.svg?height=40&width=40",
 	},
 	{
 		name: "Sarah Lee",
 		role: "Marketing Director",
 		content:
-			"The customizable forms and analytics from HypeItUp have revolutionized our product launch strategy. Highly recommended!",
+			"The customizable forms and analytics from Waitlyze have revolutionized our product launch strategy. Highly recommended!",
 		avatar: "/placeholder.svg?height=40&width=40",
 	},
 	{
 		name: "Michael Chen",
 		role: "Product Manager",
 		content:
-			"We've seen a 40% increase in user engagement since using HypeItUp for our waitlist management.",
+			"We've seen a 40% increase in user engagement since using Waitlyze for our waitlist management.",
 		avatar: "/placeholder.svg?height=40&width=40",
 	},
 	{
 		name: "Emily Rodriguez",
 		role: "E-commerce Entrepreneur",
 		content:
-			"The ease of setting up and managing our waitlist with HypeItUp has significantly boosted our pre-launch excitement. It's a game-changer!",
+			"The ease of setting up and managing our waitlist with Waitlyze has significantly boosted our pre-launch excitement. It's a game-changer!",
 		avatar: "/placeholder.svg?height=40&width=40",
 	},
 	{
 		name: "David Kim",
 		role: "Tech Startup CEO",
 		content:
-			"HypeItUp's data-driven approach gave us the confidence to manage our waitlist effectively. Invaluable for our launch!",
+			"Waitlyze's data-driven approach gave us the confidence to manage our waitlist effectively. Invaluable for our launch!",
 		avatar: "/placeholder.svg?height=40&width=40",
 	},
 	{
 		name: "Lisa Patel",
 		role: "Growth Hacker",
 		content:
-			"The integration with our existing tools made the whole process seamless. Our waitlist launch with HypeItUp was a huge success!",
+			"The integration with our existing tools made the whole process seamless. Our waitlist launch with Waitlyze was a huge success!",
 		avatar: "/placeholder.svg?height=40&width=40",
 	},
 ];

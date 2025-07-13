@@ -23,9 +23,8 @@ export const ReferralPreview = ({
 }) => {
 	const referralLink = `${window.location.origin}/forms/${waitList.id}?r=${signUp.uniqueUserId}`;
 	const [totalSignUps, setTotalSignUps] = useState(initialSignUpsCount || 0);
-	const shareText = `I'm on the waitlist for ${
-		waitList.name.charAt(0).toUpperCase() + waitList.name.slice(1)
-	}! Join me and move up in line: ${referralLink}`;
+	const shareText = `I'm on the waitlist for ${waitList.name.charAt(0).toUpperCase() + waitList.name.slice(1)
+		}! Join me and move up in line: ${referralLink}`;
 
 	const shareOnFacebook = () => {
 		const facebookUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(
@@ -57,25 +56,22 @@ export const ReferralPreview = ({
 	};
 
 	const shareOnTwitter = () => {
-		const text = `I'm on the waitlist for ${
-			waitList.name.charAt(0).toUpperCase() + waitList.name.slice(1)
-		}! Join me and move up in line: ${referralLink}`;
+		const text = `I'm on the waitlist for ${waitList.name.charAt(0).toUpperCase() + waitList.name.slice(1)
+			}! Join me and move up in line: ${referralLink}`;
 		const xUrl = `https://x.com/intent/post?text=${text}`;
 		window.open(xUrl, "_blank");
 	};
 
 	const shareOnWhatsApp = () => {
-		const text = `I'm on the waitlist for ${
-			waitList.name.charAt(0).toUpperCase() + waitList.name.slice(1)
-		}! Join me and move up in line: ${referralLink}`;
+		const text = `I'm on the waitlist for ${waitList.name.charAt(0).toUpperCase() + waitList.name.slice(1)
+			}! Join me and move up in line: ${referralLink}`;
 		const whatsAppUrl = `https://wa.me/?text=${text}`;
 		window.open(whatsAppUrl, "_blank");
 	};
 
 	const shareOnInstagram = () => {
-		const text = `I'm on the waitlist for ${
-			waitList.name.charAt(0).toUpperCase() + waitList.name.slice(1)
-		}! Join me and move up in line: ${referralLink}`;
+		const text = `I'm on the waitlist for ${waitList.name.charAt(0).toUpperCase() + waitList.name.slice(1)
+			}! Join me and move up in line: ${referralLink}`;
 		// Since Instagram doesn't have a direct sharing API, we'll copy the text to clipboard
 		navigator.clipboard.writeText(text);
 		toast.success("Text copied! Share it on your Instagram story or post");
@@ -237,9 +233,9 @@ export const ReferralPreview = ({
 	};
 
 	return (
-		<div className="p-4 min-h-screen bg-linear-to-b from-primary/5 to-background">
+		<div className="min-h-screen p-4 bg-linear-to-b from-primary/5 to-background">
 			<motion.div
-				className="pt-12 mx-auto space-y-8 max-w-md"
+				className="max-w-md pt-12 mx-auto space-y-8"
 				variants={container}
 				initial="hidden"
 				animate="show"
@@ -267,7 +263,7 @@ export const ReferralPreview = ({
 									<Input
 										value={referralLink}
 										readOnly
-										className="rounded-r-none border-r-0 bg-muted"
+										className="border-r-0 rounded-r-none bg-muted"
 									/>
 									<Button
 										className="px-8 rounded-l-none"
@@ -316,7 +312,7 @@ export const ReferralPreview = ({
 								{totalSignUps > 0 ? (
 									totalSignUps
 								) : (
-									<span className="flex justify-center items-center">
+									<span className="flex items-center justify-center">
 										<Loader2 className="w-8 h-8 animate-spin" />
 									</span>
 								)}
@@ -329,7 +325,7 @@ export const ReferralPreview = ({
 					{shareButtons.some((button) => button.show) && (
 						<div className="space-y-2 text-center">
 							<p className="text-sm font-medium">Share with Friends</p>
-							<div className="flex flex-wrap gap-4 justify-center">
+							<div className="flex flex-wrap justify-center gap-4">
 								{shareButtons.map(
 									(button) =>
 										button.show && (
@@ -355,8 +351,8 @@ export const ReferralPreview = ({
 
 					<p className="text-xs text-center text-muted-foreground">
 						Widget by{" "}
-						<Link href="https://hypeitup.me" className="hover:underline">
-							hypeitup.me
+						<Link href="https://waitlyze.falakgala.dev" className="hover:underline">
+							Waitlyze
 						</Link>
 					</p>
 				</motion.div>

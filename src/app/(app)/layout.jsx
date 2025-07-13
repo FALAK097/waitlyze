@@ -5,9 +5,9 @@ import { ourFileRouter } from "../api/uploadthing/core";
 
 export const metadata = {
 	title: {
-		template: "%s | HypeItUp",
+		template: "%s | Waitlyze",
 		default:
-			"HypeItUp | Create stunning waitlists to hype up your audience & get analytics on your audience",
+			"Waitlyze | Create stunning waitlists to hype up your audience & get analytics on your audience",
 	},
 };
 

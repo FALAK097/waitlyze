@@ -20,7 +20,7 @@ import { Suspense } from "react";
 export const metadata = {
   title: "Dashboard",
   description:
-    "Get detailed analytics and insights about your waitlists, track signups, and understand your audience better with HypeItUp's powerful dashboard.",
+    "Get detailed analytics and insights about your waitlists, track signups, and understand your audience better with Waitlyze's powerful dashboard.",
 };
 
 export const dynamic = "force-dynamic";

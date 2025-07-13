@@ -53,7 +53,7 @@ export default function CallToAction() {
 						variants={childVariants}
 					>
 						Join thousands of creators and start building anticipation for your
-						next big thing with HypeItUp.
+						next big thing with Waitlyze.
 					</motion.p>
 					<motion.div variants={childVariants}>
 						<Link href="/dashboard">

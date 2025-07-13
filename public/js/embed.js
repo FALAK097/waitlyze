@@ -1,6 +1,6 @@
 (() => {
   // Configuration
-  const BASE_URL = "https://www.hypeitup.me/forms";
+  const BASE_URL = "https://waitlyze.falakgala.dev/forms";
   const DEFAULT_HEIGHT = "380px";
 
   function createIframe() {
@@ -30,7 +30,7 @@
     const iframe = createIframe();
     const queryParams = getQueryParameters();
 
-    document.querySelectorAll(".hypeitup-widget").forEach((container) => {
+    document.querySelectorAll(".waitlyze-widget").forEach((container) => {
       const keyId = container.getAttribute("data-key-id");
       const height = container.getAttribute("data-height");
 

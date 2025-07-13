@@ -56,7 +56,7 @@ const EmbedModal = ({ waitList }) => {
             </p>
             <CodeBlock
               language="html"
-              code={`<!-- HypeItUp Widget JS -->\n<script src="${window.location.origin}/js/embed.js" defer></script>`}
+              code={`<!-- Waitlyze Widget JS -->\n<script src="${window.location.origin}/js/embed.js" defer></script>`}
             />
           </div>
           <div>
@@ -66,13 +66,13 @@ const EmbedModal = ({ waitList }) => {
             </p>
             <CodeBlock
               language="html"
-              code={`<!-- HypeItUp Widget UI -->\n<div class="hypeitup-widget" data-key-id="${waitList.id}" data-height="380px"></div>`}
+              code={`<!-- Waitlyze Widget UI -->\n<div class="waitlyze-widget" data-key-id="${waitList.id}" data-height="380px"></div>`}
             />
           </div>
         </div>
         <DialogFooter>
           <DialogClose asChild>
-            <Button onClick={() => {}}>Done</Button>
+            <Button onClick={() => { }}>Done</Button>
           </DialogClose>
         </DialogFooter>
       </DialogContent>

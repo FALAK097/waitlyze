@@ -7,15 +7,15 @@ const inter = Inter({ subsets: ["latin"] });
 
 export const metadata = {
 	title: {
-		default: "HypeItUp | Create Engaging Waitlists for Your Product",
-		template: "%s | HypeItUp",
+		default: "Waitlyze | Create Engaging Waitlists for Your Product",
+		template: "%s | Waitlyze",
 	},
 	description:
 		"Create beautiful, customizable waitlist pages to build anticipation and convert visitors into eager customers. Get powerful analytics to understand your audience better.",
 	keywords:
-		"HypeItUp, HypeItUp waitlist, Pre-launch waitlist, Hype Up your pre-launch, stunning waitlist, waitlist platform, waitlist software, waitlist builder, waitlist creator, waitlist tool, waitlist app, waitlist service, waitlist builder tool, waitlist creator tool, waitlist tool for creators, waitlist tool for entrepreneurs, waitlist tool for marketers, waitlist tool for sales, waitlist tool for startups, waitlist tool for small businesses, waitlist tool for influencers, waitlist tool for YouTubers, waitlist tool for podcasters, waitlist tool for bloggers, waitlist tool for content creators, waitlist tool for online course creators, waitlist tool for event planners, waitlist tool for webinar hosts, waitlist tool for conference organizers, waitlist tool for meetup organizers, fastwaitlist, getwaitlist, waitforit,get more signups, get more email subscribers, get more leads, get more customers, get more signups for your pre-launch, get more email subscribers for your pre-launch, get more leads for your pre-launch, get more customers for your pre-launch",
+		"Waitlyze, Waitlyze waitlist, Pre-launch waitlist, Hype Up your pre-launch, stunning waitlist, waitlist platform, waitlist software, waitlist builder, waitlist creator, waitlist tool, waitlist app, waitlist service, waitlist builder tool, waitlist creator tool, waitlist tool for creators, waitlist tool for entrepreneurs, waitlist tool for marketers, waitlist tool for sales, waitlist tool for startups, waitlist tool for small businesses, waitlist tool for influencers, waitlist tool for YouTubers, waitlist tool for podcasters, waitlist tool for bloggers, waitlist tool for content creators, waitlist tool for online course creators, waitlist tool for event planners, waitlist tool for webinar hosts, waitlist tool for conference organizers, waitlist tool for meetup organizers, fastwaitlist, getwaitlist, waitforit,get more signups, get more email subscribers, get more leads, get more customers, get more signups for your pre-launch, get more email subscribers for your pre-launch, get more leads for your pre-launch, get more customers for your pre-launch",
 	openGraph: {
-		title: "HypeItUp | Create Engaging Waitlists for Your Product",
+		title: "Waitlyze | Create Engaging Waitlists for Your Product",
 		description:
 			"Create beautiful, customizable waitlist pages to build anticipation and convert visitors into eager customers. Get powerful analytics to understand your audience better.",
 		images: [
@@ -23,18 +23,18 @@ export const metadata = {
 				url: "/opengraph-image.png",
 				width: 1200,
 				height: 630,
-				alt: "HypeItUp Preview",
+				alt: "Waitlyze Preview",
 			},
 		],
 	},
 	twitter: {
 		card: "summary_large_image",
-		title: "HypeItUp | Create Engaging Waitlists for Your Product",
+		title: "Waitlyze | Create Engaging Waitlists for Your Product",
 		description:
 			"Create beautiful, customizable waitlist pages to build anticipation and convert visitors into eager customers. Get powerful analytics to understand your audience better.",
 		images: ["/opengraph-image.png"],
 	},
-	metadataBase: new URL("https://hypeitup.me"),
+	metadataBase: new URL("https://waitlyze.falakgala.dev"),
 };
 
 export default function RootLayout({ children }) {

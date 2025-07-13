@@ -256,7 +256,7 @@ export function SettingsTab({ formSettings, updateSetting, applyPreset }) {
 									htmlFor="removeBranding"
 									className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
 								>
-									Remove HypeItUp branding
+									Remove Waitlyze branding
 								</Label>
 							</div>
 							{!formSettings.isPremium && <UpgradeButton />}
