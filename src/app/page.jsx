@@ -28,9 +28,9 @@ export default function LandingPage() {
 
 				<BentoGridFeatures />
 
-				<Testimonials />
+				{/* <Testimonials /> */}
 
-				<Pricing />
+				{/* <Pricing /> */}
 
 				<FAQ />
 

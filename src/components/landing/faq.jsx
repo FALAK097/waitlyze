@@ -10,6 +10,11 @@ import { motion } from "framer-motion";
 
 const faqs = [
 	{
+		question: "Is Waitlyze actually free to use?",
+		answer:
+			"Yes, Waitlyze is completely free to use. You can create and manage waitlists without any hidden costs.",
+	},
+	{
 		question: "Do I need coding skills to use this tool?",
 		answer:
 			"Not at all! Our intuitive no-code designer allows you to create beautiful waitlist forms without any coding knowledge.",
@@ -27,7 +32,7 @@ const faqs = [
 	{
 		question: "How many subscribers can I collect?",
 		answer:
-			"Our plans offer different subscriber limits. Check our pricing page for more details on each plan's capacity.",
+			"There is no limit to the number of subscribers you can collect.",
 	},
 	{
 		question: "Can I export my waitlist data?",
@@ -38,7 +43,7 @@ const faqs = [
 
 export default function FAQ() {
 	return (
-		<section className="py-20 bg-background">
+		<section id="faq" className="py-20 bg-background">
 			<div className="container px-4 mx-auto sm:px-6 lg:px-8">
 				<motion.h2
 					initial={{ opacity: 0, y: 20 }}
@@ -52,9 +57,9 @@ export default function FAQ() {
 					initial={{ opacity: 0, y: 20 }}
 					whileInView={{ opacity: 1, y: 0 }}
 					transition={{ duration: 0.6, delay: 0.2 }}
-					className="w-full max-w-2xl mx-auto"
+					className="mx-auto w-full max-w-2xl"
 				>
-					<Accordion type="single" collapsible className="w-full space-y-4">
+					<Accordion type="single" collapsible className="space-y-4 w-full">
 						{faqs.map((faq, index) => (
 							<AccordionItem
 								key={`accordion-item-${faq.question}-${index}`
@@ -62,7 +67,7 @@ export default function FAQ() {
 									.toLowerCase()}
 								value={`item-${index}`}
 							>
-								<AccordionTrigger className="px-4 py-4 text-lg font-medium transition-colors duration-200 rounded-t-lg hover:bg-muted/50">
+								<AccordionTrigger className="px-4 py-4 text-lg font-medium rounded-t-lg transition-colors duration-200 hover:bg-muted/50">
 									{faq.question}
 								</AccordionTrigger>
 								<AccordionContent className="px-4 py-3 text-base text-muted-foreground">

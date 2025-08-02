@@ -35,7 +35,7 @@ pnpm install
 Create a `.env` file in the root of the project and add the following environment variables:
 
 ```env
-POSTGRES_URL=postgresql://user:pass@localhost:5432/dbname
+DATABASE_URL=postgresql://user:pass@localhost:5432/dbname
 NODE_ENV=development
 NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_
 CLERK_SECRET_KEY=sk_test_

@@ -60,10 +60,10 @@ export default function Hero() {
 	};
 
 	return (
-		<section className="flex items-center justify-center min-h-screen py-40 overflow-hidden bg-background">
+		<section className="flex overflow-hidden justify-center items-center py-40 min-h-screen bg-background">
 			<div className="absolute inset-0 pointer-events-none bg-linear-to-b from-primary/5 to-background" />
 			<div className="container relative px-4 mx-auto sm:px-6 lg:px-8">
-				<div className="flex flex-col items-center justify-center max-w-6xl mx-auto space-y-16">
+				<div className="flex flex-col justify-center items-center mx-auto space-y-16 max-w-6xl">
 					<div className="flex flex-col items-center space-y-8 text-center">
 						<motion.div
 							initial={{ opacity: 0, x: -20 }}
@@ -75,8 +75,8 @@ export default function Hero() {
 								as="button"
 								className="flex items-center px-3 py-1.5 text-sm font-medium bg-background text-primary"
 							>
-								<SparklesIcon className="w-4 h-4 mr-2" />
-								Analytics Powered by Waitlyze
+								<SparklesIcon className="mr-2 w-4 h-4" />
+								Completely Free to use
 							</HoverBorderGradient>
 						</motion.div>
 
@@ -87,11 +87,11 @@ export default function Hero() {
 							className="text-3xl font-semibold tracking-tight sm:text-4xl md:text-5xl text-foreground lg:leading-tight"
 						>
 							Create Stunning Waitlists in{" "}
-							<span className="relative inline-block">
+							<span className="inline-block relative">
 								<span className="relative z-10 text-primary">
 									Seconds
 									<svg
-										className="absolute left-0 w-full -bottom-1 sm:-bottom-2"
+										className="absolute left-0 -bottom-1 w-full sm:-bottom-2"
 										viewBox="0 0 100 20"
 										preserveAspectRatio="none"
 										height="20"
@@ -127,7 +127,7 @@ export default function Hero() {
 							initial={{ opacity: 0, y: 20 }}
 							animate={{ opacity: 1, y: 0 }}
 							transition={{ delay: 0.4, duration: 0.5 }}
-							className="flex flex-col w-full max-w-md gap-4 mx-auto sm:flex-row"
+							className="flex flex-col gap-4 mx-auto w-full max-w-md sm:flex-row"
 						>
 							<Link href="/dashboard" className="w-full sm:w-auto">
 								<SparkleButton className="w-full text-base sm:text-lg group" />
@@ -138,7 +138,7 @@ export default function Hero() {
 								className="w-full text-lg sm:w-auto hover:bg-transparent hover:text-primary"
 								onClick={handleWatchDemo}
 							>
-								<PlayIcon className="w-5 h-5 mr-2" />
+								<PlayIcon className="mr-2 w-5 h-5" />
 								Watch Demo
 							</Button>
 						</motion.div>
@@ -149,13 +149,13 @@ export default function Hero() {
 							transition={{ delay: 0.6, duration: 0.5 }}
 							className="flex flex-col items-center space-y-3"
 						>
-							{["No credit card required", "No coding required"].map(
+							{["No cost to use", "No coding required"].map(
 								(feature) => (
 									<div
 										key={feature}
-										className="flex items-center gap-2 text-muted-foreground"
+										className="flex gap-2 items-center text-muted-foreground"
 									>
-										<CircleCheckIcon className="shrink-0 w-5 h-5 text-primary" />
+										<CircleCheckIcon className="w-5 h-5 shrink-0 text-primary" />
 										<span className="text-sm sm:text-base">{feature}</span>
 									</div>
 								),
@@ -174,25 +174,25 @@ export default function Hero() {
 								<Avatar
 									key={`avatar-${i + 1}`}
 									alt={`Avatar ${i + 1}`}
-									className="w-8 h-8 border-2 sm:w-10 sm:h-10 border-background bg-primary/20 backdrop-blur-sm"
+									className="w-8 h-8 border-2 backdrop-blur-sm sm:w-10 sm:h-10 border-background bg-primary/20"
 								/>
 							))}
 						</div>
-						<p className="text-lg font-semibold">Join 1,000+ creators</p>
+						<p className="text-lg font-semibold">Join 100+ creators</p>
 						<p className="text-sm text-muted-foreground">
 							Building their audience
 						</p>
 					</motion.div>
 
 					<div className="w-full">
-						<div className="flex flex-wrap justify-center gap-4 pb-4 mb-8">
+						<div className="flex flex-wrap gap-4 justify-center pb-4 mb-8">
 							{features.map((feature) => (
 								<motion.button
 									key={feature.id}
 									type="button"
 									onClick={() => setSelectedFeature(feature)}
 									whileHover={{ scale: 1.05 }}
-									className={`px-4 py-2 text-sm font-medium transition-colors rounded-full ${selectedFeature.id === feature.id
+									className={`px-4 py-2 text-sm font-medium transition-colors cursor-pointer rounded-full ${selectedFeature.id === feature.id
 										? "bg-primary text-primary-foreground"
 										: "text-muted-foreground hover:text-foreground"
 										}`}
@@ -203,8 +203,8 @@ export default function Hero() {
 						</div>
 
 						<div className="relative">
-							<div className="absolute inset-0 rounded-3xl bg-linear-to-tr from-primary/30 to-background blur-3xl" />
-							<Card className="relative overflow-hidden border-2 rounded-2xl border-border/50 bg-background/50 backdrop-blur-sm">
+							<div className="absolute inset-0 rounded-3xl blur-3xl bg-linear-to-tr from-primary/30 to-background" />
+							<Card className="overflow-hidden relative rounded-2xl border-2 backdrop-blur-sm border-border/50 bg-background/50">
 								<AnimatePresence mode="wait">
 									<motion.div
 										key={selectedFeature.id}
@@ -221,7 +221,7 @@ export default function Hero() {
 											className="object-fill"
 											priority
 										/>
-										<div className="absolute inset-0 bg-linear-to-t from-background/80 to-transparent" />
+										<div className="absolute inset-0 to-transparent bg-linear-to-t from-background/80" />
 									</motion.div>
 								</AnimatePresence>
 							</Card>
@@ -229,11 +229,12 @@ export default function Hero() {
 					</div>
 
 					<motion.div
+						id="demo"
 						ref={demoSectionRef}
 						initial={{ opacity: 0, y: 20 }}
 						animate={{ opacity: 1, y: 0 }}
 						transition={{ delay: 0.8, duration: 0.5 }}
-						className="w-full max-w-4xl pt-40 mx-auto"
+						className="pt-40 mx-auto w-full max-w-4xl"
 					>
 						<motion.h2
 							initial={{ opacity: 0, y: 20 }}
@@ -244,7 +245,7 @@ export default function Hero() {
 						>
 							Demo Video
 						</motion.h2>
-						<div className="relative overflow-hidden aspect-video rounded-2xl">
+						<div className="overflow-hidden relative rounded-2xl aspect-video">
 							<video
 								ref={videoRef}
 								width="320"
@@ -268,7 +269,7 @@ export default function Hero() {
 								/>
 							</video>
 							<motion.div
-								className="absolute inset-0 flex items-center justify-center cursor-pointer bg-primary/20 backdrop-blur-sm"
+								className="flex absolute inset-0 justify-center items-center backdrop-blur-sm cursor-pointer bg-primary/20"
 								initial={{ opacity: 1 }}
 								animate={{ opacity: isPlaying ? 0 : 1 }}
 								transition={{ duration: 0.3 }}
