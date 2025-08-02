@@ -17,7 +17,7 @@ if (typeof window !== "undefined") {
 export function Providers({ children }) {
 	return (
 		<PostHogProvider client={posthog}>
-			<NextThemesProvider attribute="class" defaultTheme="system" enableSystem>
+			<NextThemesProvider attribute="class" defaultTheme="light">
 				<ProgressBar
 					height="4px"
 					color="#7c3aed"

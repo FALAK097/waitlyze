@@ -11,8 +11,8 @@ const footerSections = [
 		title: "Product",
 		links: [
 			{ name: "Demo", href: "#demo" },
-			{ name: "Features", href: "#features" },
 			{ name: "How It Works", href: "#how-it-works" },
+			{ name: "Features", href: "#features" },
 			{ name: "FAQ", href: "#faq" },
 			// { name: "Testimonials", href: "#testimonials" },
 			// { name: "Pricing", href: "#pricing" },
@@ -45,7 +45,7 @@ export default function Footer() {
 	};
 
 	return (
-		<footer className="py-8 mt-12">
+		<footer className="py-8 bg-background">
 			<div className="container px-4 mx-auto sm:px-6 lg:px-8">
 				<div className="p-8 rounded-3xl border shadow-lg backdrop-blur-md bg-background/80 border-border">
 					<div className="grid grid-cols-1 gap-8 md:grid-cols-3">

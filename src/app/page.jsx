@@ -22,7 +22,7 @@ export default function LandingPage() {
 
 			<Hero />
 			<main className="grow">
-				<Features />
+				{/* <Features /> */}
 
 				<HowItWorks />
 

@@ -7,9 +7,10 @@
 
 [] - Add avatar for Joining 100+ creators
 [] - Record and add a demo video
-[] - Update the features section with actual video
+[] - Update the features section with actual video or have cards with content
 [] - Update the screenshots with the new UI design
 [] - Update the dark theme color combinations
+[] - Change logo color to match the theme
 
 ## Dashboard
 

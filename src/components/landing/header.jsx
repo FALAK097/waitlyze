@@ -12,7 +12,7 @@ import { ModeToggle } from "../mode-toggle";
 export default function Header() {
 	const [isNavOpen, setIsNavOpen] = useState(false);
 
-	const navItems = ["Demo", "Features", "How It Works", "FAQ"];
+	const navItems = ["Demo", "How It Works", "Features", "FAQ"];
 
 	return (
 		<header className="fixed top-4 left-1/2 z-50 w-11/12 max-w-7xl -translate-x-1/2">

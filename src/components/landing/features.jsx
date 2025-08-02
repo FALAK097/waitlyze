@@ -56,14 +56,14 @@ const childVariants = {
 
 export default function Features() {
 	return (
-		<section id="features" className="py-20 bg-background">
+		<section className="py-20 bg-background">
 			<div className="container px-4 mx-auto sm:px-6 lg:px-8">
 				<motion.h2
 					initial={{ opacity: 0, y: 20 }}
 					whileInView={{ opacity: 1, y: 0 }}
 					viewport={{ once: true }}
 					transition={{ duration: 0.6 }}
-					className="mb-12 text-4xl font-bold text-center text-transparent bg-clip-text bg-linear-to-r from-primary to-primary/20"
+					className="mb-12 text-3xl font-medium text-center text-transparent bg-clip-text bg-linear-to-r from-primary to-primary/20"
 				>
 					Powerful Features
 				</motion.h2>
@@ -107,16 +107,16 @@ export default function Features() {
 									>
 										<feature.icon className="w-8 h-8 text-primary" />
 									</motion.div>
-									<h3 className="mb-2 text-xl font-semibold">
+									<h3 className="mb-2 text-xl font-light">
 										{feature.title}
 									</h3>
 									<Badge
-										className="px-3 py-1 mb-4 text-xs font-medium text-purple-700 bg-purple-100 rounded-full"
+										className="px-3 py-1 mb-4 text-xs font-medium rounded-full text-primary bg-primary/10"
 										variant="outline"
 									>
 										{feature.badge}
 									</Badge>
-									<p className="mb-4 text-muted-foreground">
+									<p className="mb-4 font-light text-muted-foreground">
 										{feature.description}
 									</p>
 									<motion.div variants={childVariants}>

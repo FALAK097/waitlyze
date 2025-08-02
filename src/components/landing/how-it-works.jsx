@@ -42,18 +42,31 @@ const iconVariant = {
 
 export default function HowItWorks() {
 	return (
-		<section id="how-it-works" className="py-20 bg-background">
-			<div className="container px-4 mx-auto sm:px-6 lg:px-8">
-				<motion.h2
-					initial={{ opacity: 0, y: 20 }}
-					whileInView={{ opacity: 1, y: 0 }}
-					viewport={{ once: true }}
-					transition={{ duration: 0.6 }}
-					className="mb-12 text-4xl font-bold text-center text-transparent bg-clip-text bg-linear-to-r from-primary to-primary/20"
-				>
-					How It Works
-				</motion.h2>
-				<div className="grid gap-12 md:grid-cols-3">
+		<section id="how-it-works" className="py-24 bg-background">
+			<div className="container px-4 mx-auto max-w-7xl sm:px-6 lg:px-8">
+				<div className="mx-auto mb-16 max-w-3xl text-center">
+					<div className="inline-flex items-center gap-2 mb-6 px-4 py-2 rounded-full bg-[#ff7e5f]/10">
+						<Zap className="w-4 h-4 text-[#ff7e5f]" />
+						<span className="text-xs font-light tracking-wider text-[#ff7e5f]">HOW IT WORKS</span>
+					</div>
+					<motion.h2
+						initial={{ opacity: 0, y: 20 }}
+						whileInView={{ opacity: 1, y: 0 }}
+						viewport={{ once: true }}
+						className="mb-6 text-3xl font-medium text-center text-transparent bg-clip-text bg-gradient-to-r from-primary to-primary/20 sm:text-4xl"
+					>
+						Simple Three-Step Process
+					</motion.h2>
+					<motion.p
+						initial={{ opacity: 0, y: 20 }}
+						whileInView={{ opacity: 1, y: 0 }}
+						viewport={{ once: true }}
+						className="mx-auto mb-12 text-lg font-light leading-relaxed text-gray-600 dark:text-gray-300"
+					>
+						Get started in seconds with our simple three-step process to launch and grow your waitlist campaign.
+					</motion.p>
+				</div>
+				<div className="grid gap-16 md:gap-12 lg:gap-16 md:grid-cols-3">
 					{steps.map((step, index) => (
 						<motion.div
 							key={`${step.title}-${index}`}
@@ -70,7 +83,7 @@ export default function HowItWorks() {
 								<step.icon className="w-8 h-8 text-primary" />
 							</motion.div>
 							<motion.h3
-								className="mb-2 text-xl font-semibold"
+								className="mb-2 text-xl font-light"
 								variants={textVariant}
 							>
 								{step.title}
@@ -84,7 +97,7 @@ export default function HowItWorks() {
 								</Badge>
 							</motion.div>
 							<motion.p
-								className="mb-4 text-muted-foreground"
+								className="mb-4 font-light text-muted-foreground"
 								variants={textVariant}
 							>
 								{step.description}

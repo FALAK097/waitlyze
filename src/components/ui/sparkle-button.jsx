@@ -54,12 +54,8 @@ export default function SparkleButton({
 	return (
 		<Button
 			className={cn(
-				"min-w-40 relative touch-none",
-				"bg-violet-100 dark:bg-violet-900",
-				"hover:bg-violet-200 dark:hover:bg-violet-800",
-				"text-violet-600 dark:text-violet-300",
-				"border border-violet-300 dark:border-violet-700",
-				"transition-all duration-300",
+				"relative min-w-40 touch-none",
+				"font-light transition-all duration-300",
 				className,
 			)}
 			onMouseEnter={handleInteractionStart}
@@ -76,13 +72,13 @@ export default function SparkleButton({
 					animate={particlesControl}
 					className={cn(
 						"absolute w-1.5 h-1.5 rounded-full",
-						"bg-violet-400 dark:bg-violet-300",
+						"bg-primary",
 						"transition-opacity duration-300",
 						isAttracting ? "opacity-100" : "opacity-40",
 					)}
 				/>
 			))}
-			<span className="relative flex items-center justify-center w-full gap-2">
+			<span className="flex relative gap-2 justify-center items-center w-full">
 				<GripIcon
 					className={cn(
 						"w-4 h-4 transition-transform duration-300",

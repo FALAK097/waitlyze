@@ -84,7 +84,7 @@ export default function Hero() {
 							initial={{ opacity: 0, y: 20 }}
 							animate={{ opacity: 1, y: 0 }}
 							transition={{ delay: 0.2, duration: 0.5 }}
-							className="text-3xl font-semibold tracking-tight sm:text-4xl md:text-5xl text-foreground lg:leading-tight"
+							className="text-3xl font-thin tracking-tight sm:text-4xl md:text-5xl text-foreground lg:leading-tight"
 						>
 							Create Stunning Waitlists in{" "}
 							<span className="inline-block relative">
@@ -116,7 +116,7 @@ export default function Hero() {
 							initial={{ opacity: 0, y: 20 }}
 							animate={{ opacity: 1, y: 0 }}
 							transition={{ delay: 0.3, duration: 0.5 }}
-							className="max-w-2xl text-base sm:text-lg md:text-xl text-muted-foreground"
+							className="max-w-2xl text-base font-light sm:text-lg md:text-xl text-muted-foreground"
 						>
 							Design, launch, and manage waitlists that convert visitors into
 							eager customers. Boost your pre-launch success with our powerful
@@ -135,7 +135,7 @@ export default function Hero() {
 							<Button
 								size="lg"
 								variant="ghost"
-								className="w-full text-lg sm:w-auto hover:bg-transparent hover:text-primary"
+								className="w-full text-md text-muted-foreground sm:w-auto hover:bg-transparent hover:text-primary"
 								onClick={handleWatchDemo}
 							>
 								<PlayIcon className="mr-2 w-5 h-5" />
@@ -153,9 +153,9 @@ export default function Hero() {
 								(feature) => (
 									<div
 										key={feature}
-										className="flex gap-2 items-center text-muted-foreground"
+										className="flex gap-2 items-center font-light text-muted-foreground"
 									>
-										<CircleCheckIcon className="w-5 h-5 shrink-0 text-primary" />
+										<CircleCheckIcon className="w-5 h-5 font-light shrink-0 text-primary" />
 										<span className="text-sm sm:text-base">{feature}</span>
 									</div>
 								),
@@ -241,9 +241,9 @@ export default function Hero() {
 							whileInView={{ opacity: 1, y: 0 }}
 							viewport={{ once: true }}
 							transition={{ duration: 0.6 }}
-							className="mb-12 text-4xl font-bold text-center text-transparent bg-clip-text bg-linear-to-r from-primary to-primary-foreground"
+							className="mb-12 text-3xl font-medium text-center text-transparent bg-clip-text bg-linear-to-r from-primary to-primary-foreground"
 						>
-							Demo Video
+							See Waitlyze in Action
 						</motion.h2>
 						<div className="overflow-hidden relative rounded-2xl aspect-video">
 							<video
