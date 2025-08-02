@@ -28,8 +28,8 @@ export const dynamic = "force-dynamic";
 export default async function DashboardPage() {
   const { success, data } = await getDashboardData();
 
-  if (!success || !data) {
-    redirect("/");
+  if (!success || !data?.user) {
+    redirect("/sign-in");
   }
 
   const updateOnboardingStatus = async (userId) => {
@@ -49,7 +49,7 @@ export default async function DashboardPage() {
         onComplete={updateOnboardingStatus}
       />
       <ContentLayout title="Dashboard">
-        <div className="flex items-center justify-between">
+        <div className="flex justify-between items-center">
           <Breadcrumb>
             <BreadcrumbList>
               <BreadcrumbItem>

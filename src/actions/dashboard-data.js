@@ -6,7 +6,14 @@ import { cache } from "react";
 
 export const getDashboardData = cache(async () => {
   try {
-    const { userId, redirectToSignIn } = await auth();
+    const { userId } = await auth();
+
+    if (!userId) {
+      return {
+        success: false,
+        error: "Not authenticated",
+      };
+    }
 
     const user = await prisma.user.findUnique({
       where: {
@@ -17,7 +24,12 @@ export const getDashboardData = cache(async () => {
       },
     });
 
-    if (!user) redirectToSignIn();
+    if (!user) {
+      return {
+        success: false,
+        error: "User not found",
+      };
+    }
 
     const waitLists = await prisma.waitList.findMany({
       where: {
