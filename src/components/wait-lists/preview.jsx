@@ -147,7 +147,7 @@ function PreviewContent({
     return () => clearInterval(fetchSignUpInterval);
   }, [fetchSignUpRefetch, fetchSignUpSuccess, mounted]);
 
-  if (mounted && signUp) {
+  if (mounted && signUp && waitList.showReferrals) {
     return (
       <ReferralPreview
         signUp={signUp}
@@ -170,7 +170,7 @@ function PreviewContent({
       style={{
         backgroundColor: waitList.mainBgColor,
       }}
-      className="flex flex-col items-center justify-center h-screen"
+      className="flex flex-col justify-center items-center h-screen"
     >
       <SignUpForm
         email={email}

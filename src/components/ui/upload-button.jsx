@@ -43,15 +43,15 @@ export function UploadButton({ onSuccess, disabled }) {
 	);
 
 	return (
-		<div className="flex items-center gap-4 absolute top-0 right-0 w-full h-full">
+		<div className="flex absolute top-0 right-0 gap-4 items-center w-full h-full">
 			<Button
-				className="opacity-35 hover:opacity-55 w-full h-full p-0 bg-white border-black hover:border-2 border-dotted transition-all duration-300 ease-in-out"
+				className="p-0 w-full h-full bg-white border-black border-dotted transition-all duration-300 ease-in-out opacity-35 hover:opacity-55 hover:border-2"
 				variant="ghost"
 				disabled={isUploading || disabled}
 				onClick={() => document.getElementById("file-input").click()}
 			>
 				{isUploading ? (
-					<Loader className="animate-spin w-12 h-12" />
+					<Loader className="w-12 h-12 animate-spin bg-primary" />
 				) : (
 					<ImageIcon className="w-12 h-12" />
 				)}

@@ -233,9 +233,9 @@ export const ReferralPreview = ({
 	};
 
 	return (
-		<div className="min-h-screen p-4 bg-linear-to-b from-primary/5 to-background">
+		<div className="p-4 min-h-screen bg-linear-to-b from-primary/5 to-background">
 			<motion.div
-				className="max-w-md pt-12 mx-auto space-y-8"
+				className="pt-12 mx-auto space-y-8 max-w-md"
 				variants={container}
 				initial="hidden"
 				animate="show"
@@ -263,7 +263,7 @@ export const ReferralPreview = ({
 									<Input
 										value={referralLink}
 										readOnly
-										className="border-r-0 rounded-r-none bg-muted"
+										className="rounded-r-none border-r-0 bg-muted"
 									/>
 									<Button
 										className="px-8 rounded-l-none"
@@ -312,7 +312,7 @@ export const ReferralPreview = ({
 								{totalSignUps > 0 ? (
 									totalSignUps
 								) : (
-									<span className="flex items-center justify-center">
+									<span className="flex justify-center items-center">
 										<Loader2 className="w-8 h-8 animate-spin" />
 									</span>
 								)}
@@ -325,7 +325,7 @@ export const ReferralPreview = ({
 					{shareButtons.some((button) => button.show) && (
 						<div className="space-y-2 text-center">
 							<p className="text-sm font-medium">Share with Friends</p>
-							<div className="flex flex-wrap justify-center gap-4">
+							<div className="flex flex-wrap gap-4 justify-center">
 								{shareButtons.map(
 									(button) =>
 										button.show && (
@@ -349,12 +349,14 @@ export const ReferralPreview = ({
 						</div>
 					)}
 
-					<p className="text-xs text-center text-muted-foreground">
-						Widget by{" "}
-						<Link href="https://waitlyze.falakgala.dev" className="hover:underline">
-							Waitlyze
-						</Link>
-					</p>
+					{waitList.showBranding && (
+						<p className="text-xs text-center text-muted-foreground">
+							Widget by{" "}
+							<Link href="https://waitlyze.falakgala.dev" className="hover:underline">
+								Waitlyze
+							</Link>
+						</p>
+					)}
 				</motion.div>
 			</motion.div>
 		</div>

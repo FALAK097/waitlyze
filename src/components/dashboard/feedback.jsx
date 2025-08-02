@@ -234,11 +234,11 @@ export const Feedback = () => {
 						<Button type="submit" className="w-full" disabled={isLoading}>
 							{isLoading ? (
 								<>
-									<Loader className="w-4 h-4 mr-2 animate-spin" />
+									<Loader className="mr-2 w-4 h-4 animate-spin" />
 									Submitting...
 								</>
 							) : (
-								"Appreciate it 🙏"
+								"Thanks for your feedback!"
 							)}
 						</Button>
 					</form>

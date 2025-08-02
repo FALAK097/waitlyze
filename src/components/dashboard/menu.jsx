@@ -25,7 +25,7 @@ export function Menu({ isOpen }) {
 
 	return (
 		<ScrollArea className="[&>div>div[style]]:block!">
-			<nav className="w-full h-full mt-8">
+			<nav className="mt-8 w-full h-full">
 				<ul className="flex flex-col min-h-[calc(100vh-48px-36px-16px-32px)] lg:min-h-[calc(100vh-32px-40px-32px)] items-start space-y-1 px-2">
 					{menuList.map(({ groupLabel, menus }, i) => (
 						<li
@@ -42,7 +42,7 @@ export function Menu({ isOpen }) {
 								<TooltipProvider>
 									<Tooltip delayDuration={100}>
 										<TooltipTrigger className="w-full">
-											<div className="flex items-center justify-center w-full">
+											<div className="flex justify-center items-center w-full">
 												<Ellipsis className="w-5 h-5" />
 											</div>
 										</TooltipTrigger>
@@ -67,7 +67,7 @@ export function Menu({ isOpen }) {
 												<TooltipTrigger asChild>
 													<Button
 														variant={active ? "secondary" : "ghost"}
-														className="justify-start w-full h-10 mb-1"
+														className="justify-start mb-1 w-full h-10"
 														asChild
 													>
 														<Link href={href}>
@@ -114,7 +114,7 @@ export function Menu({ isOpen }) {
 							)}
 						</li>
 					))}
-					<li className="flex items-end w-full grow">
+					{/* <li className="flex items-end w-full grow">
 						<TooltipProvider disableHoverableContent>
 							<Tooltip delayDuration={100}>
 								<TooltipTrigger asChild>
@@ -123,7 +123,7 @@ export function Menu({ isOpen }) {
 											signOut();
 										}}
 										variant="outline"
-										className="justify-center w-full h-10 mt-5"
+										className="justify-center mt-5 w-full h-10"
 									>
 										<span className={cn(isOpen === false ? "" : "mr-4")}>
 											<LogoutIcon />
@@ -143,7 +143,7 @@ export function Menu({ isOpen }) {
 								)}
 							</Tooltip>
 						</TooltipProvider>
-					</li>
+					</li> */}
 				</ul>
 			</nav>
 		</ScrollArea>

@@ -233,34 +233,23 @@ export function SettingsTab({ formSettings, updateSetting, applyPreset }) {
 					</div>
 					<div className="flex items-center space-x-2">
 						<Switch
-							id="enableReferrals"
-							checked={formSettings.enableReferrals}
+							id="showReferrals"
+							checked={formSettings.showReferrals}
 							onCheckedChange={(checked) =>
-								updateSetting("enableReferrals", checked)
+								updateSetting("showReferrals", checked)
 							}
 						/>
-						<Label htmlFor="enableReferrals">Enable Referrals</Label>
+						<Label htmlFor="showReferrals">Show Referral System</Label>
 					</div>
-					<div className="space-y-4">
-						<div className="flex justify-between items-center">
-							<div className="flex items-center space-x-2">
-								<Checkbox
-									id="removeBranding"
-									checked={!formSettings.removeBranding}
-									onCheckedChange={(checked) =>
-										updateSetting("removeBranding", !checked)
-									}
-									disabled={!formSettings.isPremium}
-								/>
-								<Label
-									htmlFor="removeBranding"
-									className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-								>
-									Remove Waitlyze branding
-								</Label>
-							</div>
-							{!formSettings.isPremium && <UpgradeButton />}
-						</div>
+					<div className="flex items-center space-x-2">
+						<Switch
+							id="showBranding"
+							checked={formSettings.showBranding}
+							onCheckedChange={(checked) =>
+								updateSetting("showBranding", checked)
+							}
+						/>
+						<Label htmlFor="showBranding">Show Waitlyze branding</Label>
 					</div>
 				</TabsContent>
 

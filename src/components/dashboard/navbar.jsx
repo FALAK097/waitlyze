@@ -5,15 +5,15 @@ import { UserNav } from "./user-nav";
 
 export function Navbar({ title }) {
 	return (
-		<header className="sticky top-0 z-10 w-full bg-background/95 shadow backdrop-blur supports-backdrop-filter:bg-background/60 dark:shadow-primary">
-			<div className="flex items-center justify-between mx-4 sm:mx-8 h-14">
+		<header className="sticky top-0 z-10 w-full shadow backdrop-blur bg-background/95 supports-backdrop-filter:bg-background/60 dark:shadow-primary">
+			<div className="flex justify-between items-center mx-4 h-14 sm:mx-8">
 				<div className="flex items-center space-x-4 lg:space-x-0">
 					<SheetMenu />
 					<h1 className="font-bold">{title}</h1>
 				</div>
 				<div className="flex items-center space-x-4">
 					<Feedback />
-					<ModeToggle />
+					{/* <ModeToggle /> */}
 					<UserNav />
 				</div>
 			</div>

@@ -108,7 +108,8 @@ export default async function WaitListsEditPage(props) {
 			badgeColor: waitList.badgeColor,
 			badgeText: waitList.badgeText,
 			badgeTextColor: waitList.badgeTextColor,
-			enableReferrals: waitList.enableReferrals,
+			showReferrals: waitList.showReferrals,
+			showBranding: waitList.showBranding,
 			inputColor: waitList.inputColor,
 			inputBorder: waitList.inputBorder,
 			inputTextColor: waitList.inputTextColor,
@@ -169,7 +170,7 @@ export default async function WaitListsEditPage(props) {
 
 			<ClientOnly>
 				<div className="mt-4 mb-4 md:hidden">
-					<Alert className="border-yellow-200 bg-yellow-50">
+					<Alert className="bg-yellow-50 border-yellow-200">
 						<Laptop className="w-4 h-4 text-yellow-600" />
 						<AlertDescription className="ml-2 text-yellow-800">
 							For the best experience customizing your waitlist, we recommend

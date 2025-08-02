@@ -104,11 +104,12 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
       showLogo: initialWaitList.showLogo || true,
       showSocialProof: initialWaitList.showSocialProof || true,
       showBadge: initialWaitList.showBadge || true,
+      showBranding: initialWaitList.showBranding || true,
+      showReferrals: initialWaitList.showReferrals || true,
       badgeText:
         initialWaitList.badgeText || "Sign Up and get 50% off on launch",
       badgeColor: initialWaitList.badgeColor || "#8B5CF6",
       badgeTextColor: initialWaitList.badgeTextColor || "#FFFFFF",
-      enableReferrals: initialWaitList.enableReferrals || false,
       inputColor: initialWaitList.inputColor || "#FFFFFF",
       inputBorder: initialWaitList.inputBorder || "#E5E7EB",
       inputTextColor: initialWaitList.inputTextColor || "#000000",
@@ -308,10 +309,10 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
   };
 
   return (
-    <div className="flex-1 overflow-auto">
+    <div className="overflow-auto flex-1">
       <div className="p-8">
         <Tabs defaultValue="builder">
-          <TabsList className="grid w-full grid-cols-3 mb-8 bg-transparent">
+          <TabsList className="grid grid-cols-3 mb-8 w-full bg-transparent">
             <TabsTrigger
               value="builder"
               className="data-[state=active]:bg-transparent hover:underline hover:underline-offset-4 hover:text-inherit hover:decoration-primary"
@@ -333,7 +334,7 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
           </TabsList>
 
           <TabsContent value="builder">
-            <div className="flex items-center justify-end mb-6">
+            <div className="flex justify-end items-center mb-6">
               <TooltipProvider>
                 <div className="flex space-x-2">
                   <Tooltip delayDuration={100}>
@@ -417,7 +418,7 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
                     ? formSettings.mainBgColor
                     : "transparent",
                 }}
-                className="flex items-center justify-center flex-1"
+                className="flex flex-1 justify-center items-center"
               >
                 <SignUpForm
                   email={testEmail}

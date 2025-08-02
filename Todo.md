@@ -21,3 +21,4 @@
 
 [] - Add Email functionality
 [] - Add city & timezone data for signups & impressions
+[] - Make use of nuqs or store everything in url as after editing the waitlist and going to other tab and coming back to waitlist, the data is not getting updated.

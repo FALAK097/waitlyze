@@ -39,9 +39,9 @@ export default function Header() {
 									{item}
 								</Link>
 							))}
-							<div className="px-1">
+							{/* <div className="px-1">
 								<ModeToggle />
-							</div>
+							</div> */}
 							<SignedIn>
 								<Link href="/dashboard">
 									<Button className="rounded-full">Dashboard</Button>
@@ -54,7 +54,7 @@ export default function Header() {
 							</SignedOut>
 						</nav>
 						<div className="flex items-center md:hidden">
-							<ModeToggle />
+							{/* <ModeToggle /> */}
 							<Button
 								variant="ghost"
 								size="icon"
