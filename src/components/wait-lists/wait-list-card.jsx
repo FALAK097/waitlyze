@@ -77,7 +77,7 @@ export const WaitListCard = ({
 					</CardDescription>
 				</CardHeader>
 				<CardContent>
-					<div className="w-full h-px bg-linear-to-r from-transparent to-transparent via-muted" />
+					<div className="w-full h-px from-transparent to-transparent bg-linear-to-r via-muted" />
 				</CardContent>
 				<CardFooter className="grid grid-cols-2 gap-2">
 					<Button

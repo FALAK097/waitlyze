@@ -2,6 +2,7 @@ import "./globals.css";
 import { ClerkProvider } from "@clerk/nextjs";
 import { Inter } from "next/font/google";
 import { Providers } from "./_providers";
+import { NuqsAdapter } from "nuqs/adapters/next/app"
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -42,7 +43,11 @@ export default function RootLayout({ children }) {
 		<html lang="en" suppressHydrationWarning>
 			<body className={inter.className} suppressHydrationWarning>
 				<ClerkProvider telemetry={false}>
-					<Providers>{children}</Providers>
+					<NuqsAdapter>
+						<Providers>
+							{children}
+						</Providers>
+					</NuqsAdapter>
 				</ClerkProvider>
 			</body>
 		</html>

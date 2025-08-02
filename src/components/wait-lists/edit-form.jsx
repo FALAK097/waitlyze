@@ -1,4 +1,6 @@
 "use client";
+
+import { useQueryState } from "nuqs";
 import { removeImage } from "@/app/actions/waitLists";
 import { Button } from "@/components/ui/button";
 import {
@@ -85,87 +87,207 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
   const [isTestEmailLoading, setIsTestEmailLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
-  const [formSettings, setFormSettings] = useState(() => {
-    return {
-      buttonColor: initialWaitList.buttonColor || "#8B5CF6",
-      buttonBorder: initialWaitList.buttonBorder || "#7C3AED",
-      buttonTextColor: initialWaitList.buttonTextColor || "#FFFFFF",
-      mainBgColor: initialWaitList.mainBgColor || "#FFFFFF",
-      enableMainBgColor: initialWaitList.enableMainBgColor || false,
-      bgColor: initialWaitList.bgColor || "#FFFFFF",
-      enableBgColor: initialWaitList.enableBgColor || false,
-      borderWidth: initialWaitList.borderWidth || "0px",
-      borderRadius: initialWaitList.borderRadius || "large",
-      fontWeight: initialWaitList.fontWeight || "normal",
-      logoSize: initialWaitList.logoSize || "1X",
-      buttonText: initialWaitList.buttonText || "Join waitlist",
-      successMessage:
-        initialWaitList.successMessage || "Success! You're on the waitlist",
-      showLogo: initialWaitList.showLogo || true,
-      showSocialProof: initialWaitList.showSocialProof || true,
-      showBadge: initialWaitList.showBadge || true,
-      showBranding: initialWaitList.showBranding || true,
-      showReferrals: initialWaitList.showReferrals || true,
-      badgeText:
-        initialWaitList.badgeText || "Sign Up and get 50% off on launch",
-      badgeColor: initialWaitList.badgeColor || "#8B5CF6",
-      badgeTextColor: initialWaitList.badgeTextColor || "#FFFFFF",
-      inputColor: initialWaitList.inputColor || "#FFFFFF",
-      inputBorder: initialWaitList.inputBorder || "#E5E7EB",
-      inputTextColor: initialWaitList.inputTextColor || "#000000",
-      placeholderText: initialWaitList.placeholderText || "Enter your email",
-      logoUrl: initialWaitList.logoUrl || "/images/logo.png",
-      logoKey: initialWaitList.logoKey || "",
-      shareOnTwitter: initialWaitList.shareOnTwitter || false,
-      shareOnWhatsapp: initialWaitList.shareOnWhatsapp || false,
-      shareOnInstagram: initialWaitList.shareOnInstagram || false,
-      shareOnFacebook: initialWaitList.shareOnFacebook || false,
-      shareOnLinkedin: initialWaitList.shareOnLinkedin || false,
-      shareOnEmail: initialWaitList.shareOnEmail || false,
-      shareOnReddit: initialWaitList.shareOnReddit || false,
-      ogTitle: initialWaitList.ogTitle || "",
-      ogDescription: initialWaitList.ogDescription || "",
-      ogImage: initialWaitList.ogImage || "",
-      emailTemplates: initialWaitList.emailTemplates || {
-        signup: {
-          subject: "Welcome to {{waitlist}}!",
-          previewText: "Join our exclusive waitlist",
-          header: "Welcome Aboard!",
-          subHeader: "We're excited to have you",
-          mainBody:
-            "Thanks for joining {{waitlist}}.\nPlease verify your email to secure your spot.",
-          subBody: "You're currently #{{position}} in line",
-        },
-        referral: {
-          subject: "Share {{waitlist}} with friends",
-          previewText: "Invite friends and move up the list",
-          header: "Share & Earn",
-          subHeader: "Invite your friends",
-          mainBody: "Share your unique referral link to move up the waitlist.",
-          subBody: "You've invited {{referral_count}} friends so far",
-        },
-        verification: {
-          subject: "Verify your email for {{waitlist}}",
-          previewText: "Quick verification needed",
-          header: "One Last Step",
-          subHeader: "Verify your email",
-          mainBody: "Click the link below to verify your email address",
-          subBody: "This link expires in {{expiry_time}}",
-        },
-        offboarding: {
-          subject: "Sorry to see you go - {{waitlist}}",
-          previewText: "Unsubscribe confirmation",
-          header: "Farewell",
-          subHeader: "You've been unsubscribed",
-          mainBody: "You've been successfully removed from our waitlist",
-          subBody: "We'd love to hear your feedback",
-        },
-      },
-    };
+  const [buttonColor, setButtonColor] = useQueryState('buttonColor', {
+    defaultValue: initialWaitList.buttonColor || "#8B5CF6"
+  });
+  const [buttonBorder, setButtonBorder] = useQueryState('buttonBorder', {
+    defaultValue: initialWaitList.buttonBorder || "#7C3AED"
+  });
+  const [buttonTextColor, setButtonTextColor] = useQueryState('buttonTextColor', {
+    defaultValue: initialWaitList.buttonTextColor || "#FFFFFF"
+  });
+  const [mainBgColor, setMainBgColor] = useQueryState('mainBgColor', {
+    defaultValue: initialWaitList.mainBgColor || "#FFFFFF"
+  });
+  const [enableMainBgColor, setEnableMainBgColor] = useQueryState('enableMainBgColor', {
+    defaultValue: initialWaitList.enableMainBgColor || false,
+    parse: (v) => v === 'true',
+    serialize: (v) => String(v)
+  });
+  const [bgColor, setBgColor] = useQueryState('bgColor', {
+    defaultValue: initialWaitList.bgColor || "#FFFFFF"
+  });
+  const [enableBgColor, setEnableBgColor] = useQueryState('enableBgColor', {
+    defaultValue: initialWaitList.enableBgColor || false,
+    parse: (v) => v === 'true',
+    serialize: (v) => String(v)
+  });
+  const [borderWidth, setBorderWidth] = useQueryState('borderWidth', {
+    defaultValue: initialWaitList.borderWidth || "0px"
+  });
+  const [borderRadius, setBorderRadius] = useQueryState('borderRadius', {
+    defaultValue: initialWaitList.borderRadius || "large"
+  });
+  const [fontWeight, setFontWeight] = useQueryState('fontWeight', {
+    defaultValue: initialWaitList.fontWeight || "normal"
+  });
+  const [logoSize, setLogoSize] = useQueryState('logoSize', {
+    defaultValue: initialWaitList.logoSize || "1X"
+  });
+  const [buttonText, setButtonText] = useQueryState('buttonText', {
+    defaultValue: initialWaitList.buttonText || "Join waitlist"
+  });
+  const [successMessage, setSuccessMessage] = useQueryState('successMessage', {
+    defaultValue: initialWaitList.successMessage || "Success! You're on the waitlist"
+  });
+  const [showLogo, setShowLogo] = useQueryState('showLogo', {
+    defaultValue: initialWaitList.showLogo !== false,
+    parse: (v) => v === 'true',
+    serialize: (v) => String(v)
+  });
+  const [showSocialProof, setShowSocialProof] = useQueryState('showSocialProof', {
+    defaultValue: initialWaitList.showSocialProof !== false,
+    parse: (v) => v === 'true',
+    serialize: (v) => String(v)
+  });
+  const [showBadge, setShowBadge] = useQueryState('showBadge', {
+    defaultValue: initialWaitList.showBadge !== false,
+    parse: (v) => v === 'true',
+    serialize: (v) => String(v)
+  });
+  const [showBranding, setShowBranding] = useQueryState('showBranding', {
+    defaultValue: initialWaitList.showBranding !== false,
+    parse: (v) => v === 'true',
+    serialize: (v) => String(v)
+  });
+  const [showReferrals, setShowReferrals] = useQueryState('showReferrals', {
+    defaultValue: initialWaitList.showReferrals !== false,
+    parse: (v) => v === 'true',
+    serialize: (v) => String(v)
+  });
+  const [badgeText, setBadgeText] = useQueryState('badgeText', {
+    defaultValue: initialWaitList.badgeText || "Sign Up and get 50% off on launch"
+  });
+  const [badgeColor, setBadgeColor] = useQueryState('badgeColor', {
+    defaultValue: initialWaitList.badgeColor || "#8B5CF6"
+  });
+  const [badgeTextColor, setBadgeTextColor] = useQueryState('badgeTextColor', {
+    defaultValue: initialWaitList.badgeTextColor || "#FFFFFF"
+  });
+  const [inputColor, setInputColor] = useQueryState('inputColor', {
+    defaultValue: initialWaitList.inputColor || "#FFFFFF"
+  });
+  const [inputBorder, setInputBorder] = useQueryState('inputBorder', {
+    defaultValue: initialWaitList.inputBorder || "#E5E7EB"
+  });
+  const [inputTextColor, setInputTextColor] = useQueryState('inputTextColor', {
+    defaultValue: initialWaitList.inputTextColor || "#000000"
+  });
+  const [placeholderText, setPlaceholderText] = useQueryState('placeholderText', {
+    defaultValue: initialWaitList.placeholderText || "Enter your email"
   });
 
-  const updateSetting = (key, value) => {
-    setFormSettings((prev) => ({ ...prev, [key]: value }));
+  const formSettings = {
+    // URL-synced settings
+    buttonColor,
+    buttonBorder,
+    buttonTextColor,
+    mainBgColor,
+    enableMainBgColor,
+    bgColor,
+    enableBgColor,
+    borderWidth,
+    borderRadius,
+    fontWeight,
+    logoSize,
+    buttonText,
+    successMessage,
+    showLogo,
+    showSocialProof,
+    showBadge,
+    showBranding,
+    showReferrals,
+    badgeText,
+    badgeColor,
+    badgeTextColor,
+    inputColor,
+    inputBorder,
+    inputTextColor,
+    placeholderText,
+
+    // Non-URL-synced settings
+    logoUrl: initialWaitList.logoUrl || "/images/logo.png",
+    logoKey: initialWaitList.logoKey || "",
+    shareOnTwitter: initialWaitList.shareOnTwitter || false,
+    shareOnWhatsapp: initialWaitList.shareOnWhatsapp || false,
+    shareOnInstagram: initialWaitList.shareOnInstagram || false,
+    shareOnFacebook: initialWaitList.shareOnFacebook || false,
+    shareOnLinkedin: initialWaitList.shareOnLinkedin || false,
+    shareOnEmail: initialWaitList.shareOnEmail || false,
+    shareOnReddit: initialWaitList.shareOnReddit || false,
+    ogTitle: initialWaitList.ogTitle || "",
+    ogDescription: initialWaitList.ogDescription || "",
+    ogImage: initialWaitList.ogImage || "",
+    emailTemplates: initialWaitList.emailTemplates || {
+      signup: {
+        subject: "Welcome to {{waitlist}}!",
+        previewText: "Join our exclusive waitlist",
+        header: "Welcome Aboard!",
+        subHeader: "We're excited to have you",
+        mainBody: "Thanks for joining {{waitlist}}.\nPlease verify your email to secure your spot.",
+        subBody: "You're currently #{{position}} in line",
+      },
+      referral: {
+        subject: "Share {{waitlist}} with friends",
+        previewText: "Invite friends and move up the list",
+        header: "Share & Earn",
+        subHeader: "Invite your friends",
+        mainBody: "Share your unique referral link to move up the waitlist.",
+        subBody: "You've invited {{referral_count}} friends so far",
+      },
+      verification: {
+        subject: "Verify your email for {{waitlist}}",
+        previewText: "Quick verification needed",
+        header: "One Last Step",
+        subHeader: "Verify your email",
+        mainBody: "Click the link below to verify your email address",
+        subBody: "This link expires in {{expiry_time}}",
+      },
+      offboarding: {
+        subject: "Sorry to see you go - {{waitlist}}",
+        previewText: "Unsubscribe confirmation",
+        header: "Farewell",
+        subHeader: "You've been unsubscribed",
+        mainBody: "You've been successfully removed from our waitlist",
+        subBody: "We'd love to hear your feedback",
+      },
+    },
+  };
+
+  const updateSetting = async (key, value) => {
+    const setters = {
+      buttonColor: setButtonColor,
+      buttonBorder: setButtonBorder,
+      buttonTextColor: setButtonTextColor,
+      mainBgColor: setMainBgColor,
+      enableMainBgColor: setEnableMainBgColor,
+      bgColor: setBgColor,
+      enableBgColor: setEnableBgColor,
+      borderWidth: setBorderWidth,
+      borderRadius: setBorderRadius,
+      fontWeight: setFontWeight,
+      logoSize: setLogoSize,
+      buttonText: setButtonText,
+      successMessage: setSuccessMessage,
+      showLogo: setShowLogo,
+      showSocialProof: setShowSocialProof,
+      showBadge: setShowBadge,
+      showBranding: setShowBranding,
+      showReferrals: setShowReferrals,
+      badgeText: setBadgeText,
+      badgeColor: setBadgeColor,
+      badgeTextColor: setBadgeTextColor,
+      inputColor: setInputColor,
+      inputBorder: setInputBorder,
+      inputTextColor: setInputTextColor,
+      placeholderText: setPlaceholderText,
+    };
+
+    if (setters[key]) {
+      await setters[key](value);
+    } else {
+      console.warn(`State '${key}' is not synced to URL`);
+    }
   };
 
   const presets = {
