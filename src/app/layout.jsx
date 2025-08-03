@@ -41,6 +41,9 @@ export const metadata = {
 export default function RootLayout({ children }) {
 	return (
 		<html lang="en" suppressHydrationWarning>
+			<head>
+				<meta name="apple-mobile-web-app-title" content="Waitlyze" />
+			</head>
 			<body className={inter.className} suppressHydrationWarning>
 				<ClerkProvider telemetry={false}>
 					<NuqsAdapter>

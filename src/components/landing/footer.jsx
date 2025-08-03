@@ -54,8 +54,8 @@ export default function Footer() {
 								<Image
 									src="/images/logo.png"
 									alt="Logo"
-									width={40}
-									height={40}
+									width={48}
+									height={48}
 									className="mr-2"
 								/>
 								<Logo />
