@@ -25,3 +25,5 @@
 
 [] - Add Email functionality
 [] - Add city & timezone data for signups & impressions
+[] - Sharing waitlist instead of /forms/{id} it should be a unique name
+[] - Email validation while joining

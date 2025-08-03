@@ -1,4 +1,4 @@
-import { GripIcon, LayersIcon, SquarePenIcon } from "@/components/shared/icons";
+import { GripIcon, LayersIcon } from "@/components/shared/icons";
 
 export function getMenuList(pathname) {
 	return [
@@ -25,18 +25,6 @@ export function getMenuList(pathname) {
 						(pathname.startsWith("/wait-lists") &&
 							pathname !== "/wait-lists/new"),
 					icon: LayersIcon,
-					submenus: [],
-				},
-			],
-		},
-		{
-			groupLabel: "",
-			menus: [
-				{
-					href: "/wait-lists/new",
-					label: "Create WaitList",
-					active: pathname === "/wait-lists/new",
-					icon: SquarePenIcon,
 					submenus: [],
 				},
 			],

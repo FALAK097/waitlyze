@@ -67,7 +67,7 @@ export function Menu({ isOpen }) {
 												<TooltipTrigger asChild>
 													<Button
 														variant={active ? "secondary" : "ghost"}
-														className="justify-start mb-1 w-full h-10"
+														className="justify-start mb-1 w-full h-10 text-secondary-foreground hover:bg-primary/10 hover:text-primary"
 														asChild
 													>
 														<Link href={href}>

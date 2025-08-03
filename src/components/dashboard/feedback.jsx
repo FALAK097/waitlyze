@@ -108,10 +108,10 @@ export const Feedback = () => {
 	return (
 		<TooltipProvider>
 			<Sheet open={open} onOpenChange={setOpen}>
-				<Tooltip>
+				<Tooltip delayDuration={0}>
 					<TooltipTrigger asChild>
 						<SheetTrigger asChild>
-							<button type="button" onClick={() => setOpen(true)}>
+							<button type="button" className="text-secondary-foreground" onClick={() => setOpen(true)}>
 								<MessageCircleMoreIcon />
 							</button>
 						</SheetTrigger>

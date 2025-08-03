@@ -17,12 +17,28 @@ import { useEffect, useState } from "react";
 import { Cell, Pie, PieChart, ResponsiveContainer, Sector } from "recharts";
 
 const COLORS = [
-  "hsl(var(--chart-1))",
-  "hsl(var(--chart-2))",
-  "hsl(var(--chart-3))",
-  "hsl(var(--chart-4))",
-  "hsl(var(--chart-5))",
+  "#FF6B4A",
+  "#FF9D7A",
+  "#FFC9B8",
+  "#FF6B4A",
+  "#FF9D7A",
 ];
+
+// const COLORS = [
+//   "#FF6B4A",
+//   "#FF9D7A",
+//   "#FFC9B8",
+//   "#FFD16F",
+//   "#404040",
+// ];
+
+// const COLORS = [
+//   "#FF6B4A",
+//   "#FF9D7A",
+//   "#FFC9B8",
+//   "#FFD166",
+//   "#6A4C93",
+// ];
 
 const renderActiveShape = (props) => {
   const { cx, cy, innerRadius, outerRadius, startAngle, endAngle, fill } =
@@ -79,7 +95,7 @@ export const GeographicDistribution = ({ waitListId }) => {
         <CardTitle>User Geographic Distribution</CardTitle>
         <CardDescription>Distribution of users by country</CardDescription>
       </CardHeader>
-      <CardContent className="relative flex flex-col items-center justify-center md:flex-row">
+      <CardContent className="flex relative flex-col justify-center items-center md:flex-row">
         <ChartContainer config={geoData} className="h-[300px] w-full md:w-2/3">
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
@@ -111,12 +127,12 @@ export const GeographicDistribution = ({ waitListId }) => {
             </PieChart>
           </ResponsiveContainer>
         </ChartContainer>
-        <div className="w-full mt-4 space-y-2 md:mt-0 md:ml-8 md:w-1/3">
+        <div className="mt-4 space-y-2 w-full md:mt-0 md:ml-8 md:w-1/3">
           <AnimatePresence>
             {geoData.map((entry, index) => (
               <motion.div
                 key={entry.name}
-                className="flex items-center justify-between"
+                className="flex justify-between items-center"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
@@ -124,7 +140,7 @@ export const GeographicDistribution = ({ waitListId }) => {
               >
                 <span className="text-sm">{entry.name}</span>
                 <div
-                  className="w-4 h-4 ml-2 rounded-full"
+                  className="ml-2 w-4 h-4 rounded-full"
                   style={{
                     backgroundColor: COLORS[index % COLORS.length],
                   }}

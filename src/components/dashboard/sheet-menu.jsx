@@ -25,18 +25,18 @@ export function SheetMenu() {
 				</Button>
 			</SheetTrigger>
 			<SheetContent
-				className="flex flex-col h-full px-3 sm:w-72 dark:bg-black"
+				className="flex flex-col px-3 h-full sm:w-72 dark:bg-black"
 				side="left"
 			>
 				<SheetHeader>
 					<Button
-						className="flex items-center justify-center pt-1 pb-2"
+						className="flex justify-center items-center pt-1 pb-2"
 						variant="link"
 						asChild
 					>
 						<Link href="/dashboard" className="gap-2">
-							<Image src="/images/logo.png" alt="Logo" width={60} height={60} />
-							<SheetTitle className="text-lg font-bold">Waitlyze</SheetTitle>
+							<Image src="/images/logo.png" alt="Logo" width={48} height={48} />
+							<SheetTitle className="mr-20 text-xl font-bold">Waitlyze</SheetTitle>
 						</Link>
 					</Button>
 				</SheetHeader>

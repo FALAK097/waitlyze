@@ -42,7 +42,7 @@ export default async function DashboardPage() {
   };
 
   return (
-    <div className="flex flex-col gap-8">
+    <div className="flex flex-col">
       <OnboardingDialog
         userId={data.user.id}
         isOnboarded={data.user.isOnboarded}

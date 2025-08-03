@@ -114,6 +114,16 @@ export default async function WaitListsPage() {
 					</BreadcrumbItem>
 				</BreadcrumbList>
 			</Breadcrumb>
+			{waitLists.length > 0 && (
+				<div className="flex justify-end mb-6">
+					<Link
+						href="/wait-lists/new"
+						className="inline-flex justify-center items-center px-4 py-2 text-sm font-medium rounded-md shadow-sm transition-colors bg-primary text-primary-foreground hover:bg-primary/90"
+					>
+						Create Waitlist
+					</Link>
+				</div>
+			)}
 			{waitLists.length === 0 ? (
 				<EmptyWaitlistState />
 			) : (

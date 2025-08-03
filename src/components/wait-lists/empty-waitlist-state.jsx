@@ -20,7 +20,7 @@ export default function EmptyWaitlistState() {
 				transition={{ duration: 0.5 }}
 			>
 				<svg
-					className="w-40 h-40 mx-auto text-muted-foreground"
+					className="mx-auto w-40 h-40 text-muted-foreground"
 					fill="none"
 					viewBox="0 0 24 24"
 					stroke="currentColor"
@@ -47,10 +47,10 @@ export default function EmptyWaitlistState() {
 				initial={{ opacity: 0 }}
 				animate={{ opacity: 1 }}
 				transition={{ delay: 0.3, duration: 0.5 }}
-				className="max-w-md mb-8 text-muted-foreground"
+				className="mb-8 max-w-md text-muted-foreground"
 			>
 				Get started by creating your first waitlist. It's easy and only takes a
-				few minutes.
+				few seconds.
 			</motion.p>
 			<motion.div
 				initial={{ opacity: 0, y: 20 }}

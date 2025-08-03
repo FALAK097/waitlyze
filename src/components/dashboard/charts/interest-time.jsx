@@ -20,11 +20,11 @@ export const InterestTime = () => {
   const CustomLegend = () => (
     <div className="flex justify-end mb-2 space-x-4">
       <div className="flex items-center">
-        <div className="w-3 h-3 mr-2 bg-orange-400 rounded-xl" />
+        <div className="mr-2 w-3 h-3 bg-orange-400 rounded-xl" />
         <span className="text-sm">{view === "daily" ? "Hours" : "Date"}</span>
       </div>
       <div className="flex items-center">
-        <div className="w-3 h-3 mr-2 bg-primary rounded-xl" />
+        <div className="mr-2 w-3 h-3 rounded-xl bg-primary" />
         <span className="text-sm">Users</span>
       </div>
     </div>
@@ -38,14 +38,14 @@ export const InterestTime = () => {
           <CardDescription>Chart showing user activity trends</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex justify-between items-center mb-4">
             <CustomLegend />
           </div>
           <ChartContainer
             config={{
               users: {
                 label: "Users",
-                color: "hsl(var(--primary))",
+                color: "#FF6B4A",
               },
             }}
             className="h-[300px] w-full"
@@ -67,7 +67,7 @@ export const InterestTime = () => {
               />
               <Bar
                 dataKey="users"
-                fill="hsl(var(--primary))"
+                fill="#FF6B4A"
                 radius={[4, 4, 0, 0]}
               />
               <ChartTooltip cursor={false} content={<ChartTooltipContent />} />

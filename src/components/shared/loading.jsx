@@ -6,8 +6,8 @@ import Box from "../box";
 
 const Loading = () => {
 	return (
-		<Box className="flex items-center justify-center h-full bg-transparent">
-			<BounceLoader color="#ffcc00" size={40} />
+		<Box className="flex justify-center items-center h-full bg-transparent">
+			<BounceLoader color="#FF6B4A" size={40} />
 		</Box>
 	);
 };

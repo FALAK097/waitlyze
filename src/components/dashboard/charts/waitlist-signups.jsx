@@ -49,7 +49,7 @@ export const WaitlistSignups = () => {
 							<Line
 								type="monotone"
 								dataKey="totalSignups"
-								stroke="hsl(var(--chart-3))"
+								stroke="#FF6B4A"
 								strokeWidth={2}
 								dot={{ r: 4 }}
 								activeDot={{ r: 6 }}

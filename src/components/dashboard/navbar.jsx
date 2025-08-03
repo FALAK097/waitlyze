@@ -9,7 +9,7 @@ export function Navbar({ title }) {
 			<div className="flex justify-between items-center mx-4 h-14 sm:mx-8">
 				<div className="flex items-center space-x-4 lg:space-x-0">
 					<SheetMenu />
-					<h1 className="font-bold">{title}</h1>
+					<h1 className="font-medium text-secondary-foreground">{title}</h1>
 				</div>
 				<div className="flex items-center space-x-4">
 					<Feedback />
