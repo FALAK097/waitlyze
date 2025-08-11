@@ -1,80 +1,130 @@
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-} from "@/components/ui/chart";
-import { peakInterestData } from "@/utils/chart";
-import { useState } from "react";
-import { Bar, BarChart, XAxis, YAxis } from "recharts";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { ChartContainer, ChartTooltipContent } from "@/components/ui/chart";
+import { useEffect, useState } from "react";
+import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
-export const InterestTime = () => {
-  const [view, setView] = useState("daily");
+const CHART_COLORS = {
+  primary: '#FF9D7A',
+  primaryLight: '#FFC9B8',
+  grid: '#E5E7EB',
+  text: '#374151',
+};
 
-  const CustomLegend = () => (
-    <div className="flex justify-end mb-2 space-x-4">
-      <div className="flex items-center">
-        <div className="mr-2 w-3 h-3 bg-orange-400 rounded-xl" />
-        <span className="text-sm">{view === "daily" ? "Hours" : "Date"}</span>
-      </div>
-      <div className="flex items-center">
-        <div className="mr-2 w-3 h-3 rounded-xl bg-primary" />
-        <span className="text-sm">Users</span>
-      </div>
-    </div>
-  );
+const groupByHour = (signups) => {
+  const hours = Array(24).fill(0).map((_, i) => ({
+    hour: i,
+    hour12: i === 0 ? '12 AM' : i < 12 ? `${i} AM` : i === 12 ? '12 PM' : `${i - 12} PM`,
+    count: 0
+  }));
 
-  return (
-    <>
+  signups.forEach(signup => {
+    const date = new Date(signup.createdAt);
+    const hour = date.getHours();
+    if (hours[hour]) {
+      hours[hour].count++;
+    }
+  });
+
+  return hours;
+};
+
+export const InterestTime = ({ waitListId }) => {
+  const [chartData, setChartData] = useState([]);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchSignups = async () => {
+      if (!waitListId) return;
+      
+      try {
+        const response = await fetch(`/api/signups?waitListId=${waitListId}`);
+        if (!response.ok) throw new Error('Failed to fetch signups');
+        
+        const { data: signups } = await response.json();
+        const hourlyData = groupByHour(signups);
+        setChartData(hourlyData);
+      } catch (err) {
+        console.error('Error fetching signups:', err);
+        setError('Failed to load signup data');
+      }
+    };
+
+    fetchSignups();
+  }, [waitListId]);
+
+  if (error) {
+    return (
       <Card>
         <CardHeader>
-          <CardTitle>Peak Interest Times for Waitlist</CardTitle>
-          <CardDescription>Chart showing user activity trends</CardDescription>
+          <CardTitle>Peak Interest Times</CardTitle>
+          <CardDescription className="text-destructive">{error}</CardDescription>
         </CardHeader>
-        <CardContent>
-          <div className="flex justify-between items-center mb-4">
-            <CustomLegend />
-          </div>
-          <ChartContainer
-            config={{
-              users: {
-                label: "Users",
-                color: "#FF6B4A",
-              },
-            }}
-            className="h-[300px] w-full"
-          >
-            <BarChart data={peakInterestData[view]}>
+      </Card>
+    );
+  }
+
+  if (!chartData?.length) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Peak Interest Times</CardTitle>
+          <CardDescription>No signup data available yet</CardDescription>
+        </CardHeader>
+      </Card>
+    );
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Peak Interest Times</CardTitle>
+        <CardDescription>When users are most active on your waitlist</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <ChartContainer 
+          config={{
+            users: {
+              label: 'Active Users',
+              color: CHART_COLORS.primary,
+            },
+          }}
+          className="h-[300px] w-full"
+        >
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={chartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke={CHART_COLORS.grid} />
               <XAxis
-                dataKey={view === "daily" ? "hour" : "date"}
+                dataKey="hour12"
                 tickLine={false}
                 axisLine={false}
-                fontSize={12}
-                textAnchor="middle"
-                height={50}
+                tick={{ fill: CHART_COLORS.text, fontSize: 12 }}
+                height={40}
+                interval={2}
               />
-              <YAxis
-                tickLine={false}
+              <YAxis 
+                tickLine={false} 
                 axisLine={false}
-                tickFormatter={(value) => `${value}`}
-                fontSize={12}
+                tick={{ fill: CHART_COLORS.text, fontSize: 12 }}
+                allowDecimals={false}
+              />
+              <Tooltip 
+                content={
+                  <ChartTooltipContent 
+                    formatter={(value) => [`${value}`, 'Signups']}
+                    labelFormatter={(hour) => `Hour: ${hour}`}
+                  />
+                }
               />
               <Bar
-                dataKey="users"
-                fill="#FF6B4A"
+                dataKey="count"
+                name="Signups"
+                fill={CHART_COLORS.primary}
                 radius={[4, 4, 0, 0]}
               />
-              <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
             </BarChart>
-          </ChartContainer>
-        </CardContent>
-      </Card>
-    </>
+          </ResponsiveContainer>
+        </ChartContainer>
+      </CardContent>
+    </Card>
   );
 };
