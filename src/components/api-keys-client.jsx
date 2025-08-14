@@ -14,6 +14,14 @@ import {
     DialogClose,
 } from '@/components/ui/dialog';
 import {
+    Sheet,
+    SheetContent,
+    SheetDescription,
+    SheetHeader,
+    SheetTitle,
+    SheetTrigger,
+} from '@/components/ui/sheet';
+import {
     AlertDialog,
     AlertDialogAction,
     AlertDialogCancel,
@@ -24,7 +32,7 @@ import {
     AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
-import { Plus, Trash2, ClipboardCheck, ClipboardCopy } from 'lucide-react';
+import { Plus, Trash2, ClipboardCheck, ClipboardCopy, BookOpen } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export const ApiKeysClient = () => {
@@ -117,6 +125,34 @@ export const ApiKeysClient = () => {
         }
     };
 
+    const codeExample = `await fetch("https://waitlyze.falakgala.dev/api/waitlist", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+  },
+  body: JSON.stringify({
+    apiKey: "your_api_key_here",
+    waitlistId: "your_waitlist_id_here", // copy from the created waitlist
+    email: "user@example.com",
+  }),
+});`;
+
+    const curlExample = `curl -X POST "https://waitlyze.falakgala.dev/api/waitlist" \\
+    -H "Content-Type: application/json" \\
+  -d '{
+    "apiKey": "your_api_key_here",
+    "waitlistId": "your_waitlist_id_here", // copy from the created waitlist 
+    "email": "user@example.com",
+  }'`;
+
+    const responseExample = `{
+  "success": true,
+  "message": "Successfully joined the waitlist!",
+  "data": {
+    "rank": 9,
+  }
+}`;
+
     return (
         <div className="space-y-4">
             <AlertDialog open={!!keyToDelete} onOpenChange={(open) => !open && setKeyToDelete(null)}>
@@ -140,67 +176,138 @@ export const ApiKeysClient = () => {
                 </AlertDialogContent>
             </AlertDialog>
 
-            <Dialog open={createDialogOpen} onOpenChange={(open) => {
-                setCreateDialogOpen(open);
-                if (!open) {
-                    setNewKey(null);
-                    setNewKeyName('');
-                }
-            }}>
-                <DialogTrigger asChild>
-                    <div className="flex justify-end">
-                        <Button>
-                            <Plus className="mr-2 w-4 h-4" />
-                            Create API Key
+            <Sheet>
+                <div className="flex justify-end gap-2">
+                    <SheetTrigger asChild>
+                        <Button variant="outline">
+                            <BookOpen className="w-4 h-4 mr-2" />
+                            Integration Guide
                         </Button>
-                    </div>
-                </DialogTrigger>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>Create API Key</DialogTitle>
-                        <DialogDescription>
-                            Enter a name for your API key. You will only see this key once.
-                        </DialogDescription>
-                    </DialogHeader>
+                    </SheetTrigger>
+                    <Dialog open={createDialogOpen} onOpenChange={(open) => {
+                        setCreateDialogOpen(open);
+                        if (!open) {
+                            setNewKey(null);
+                            setNewKeyName('');
+                        }
+                    }}>
+                        <DialogTrigger asChild>
+                            <Button>
+                                <Plus className="w-4 h-4 mr-2" />
+                                Create API Key
+                            </Button>
+                        </DialogTrigger>
+                        <DialogContent>
+                            <DialogHeader>
+                                <DialogTitle>Create API Key</DialogTitle>
+                                <DialogDescription>
+                                    Enter a name for your API key. You will only see this key once.
+                                </DialogDescription>
+                            </DialogHeader>
 
-                    {newKey ? (
-                        <div className="space-y-2">
-                            <div className="text-sm font-medium">API Key:</div>
-                            <div className="flex justify-between items-center px-3 py-2 font-mono text-sm rounded bg-muted">
-                                <span className='truncate'>{newKey.apiKey}</span>
+                            {newKey ? (
+                                <div className="space-y-2">
+                                    <div className="text-sm font-medium">API Key:</div>
+                                    <div className="flex items-center justify-between px-3 py-2 font-mono text-sm rounded bg-muted">
+                                        <span className='truncate'>{newKey.apiKey}</span>
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            onClick={() => copyToClipboard(newKey.apiKey)}
+                                            className="ml-2"
+                                        >
+                                            {copied ? <ClipboardCheck className="w-4 h-4 text-green-600" /> : <ClipboardCopy className="w-4 h-4" />}
+                                        </Button>
+                                    </div>
+                                    <p className="text-xs text-muted-foreground">Copy this key now. You won’t be able to see it again.</p>
+                                    <DialogClose asChild>
+                                        <Button className="w-full mt-4">Done</Button>
+                                    </DialogClose>
+                                </div>
+                            ) : (
+                                <>
+                                    <Input
+                                        placeholder="Enter name"
+                                        value={newKeyName}
+                                        onChange={(e) => setNewKeyName(e.target.value)}
+                                    />
+                                    <DialogFooter>
+                                        <Button
+                                            onClick={handleCreateKey}
+                                            disabled={isCreating || newKeyName.length < 3}
+                                        >
+                                            {isCreating ? 'Creating...' : 'Create'}
+                                        </Button>
+                                    </DialogFooter>
+                                </>
+                            )}
+                        </DialogContent>
+                    </Dialog>
+                </div>
+
+                <SheetContent className="w-[600px] sm:w-[700px] overflow-y-auto">
+                    <SheetHeader>
+                        <SheetTitle>Waitlist API Integration Guide</SheetTitle>
+                        <SheetDescription>
+                            You can use the following example to integrate waitlist functionality into your application using our API.
+                        </SheetDescription>
+                    </SheetHeader>
+
+                    <div className="mt-6 space-y-6">
+                        <div>
+                            <h3 className="mb-3 text-lg font-semibold">Example</h3>
+                            <div className="relative">
+                                <pre className="p-3 overflow-x-auto text-xs rounded-lg bg-slate-900 text-slate-100">
+                                    <code>{codeExample}</code>
+                                </pre>
                                 <Button
                                     variant="ghost"
-                                    size="icon"
-                                    onClick={() => copyToClipboard(newKey.apiKey)}
-                                    className="ml-2"
+                                    size="sm"
+                                    className="absolute w-8 h-8 p-0 top-2 right-2 text-slate-400 hover:text-slate-200 hover:bg-slate-700"
+                                    onClick={() => copyToClipboard(codeExample)}
                                 >
-                                    {copied ? <ClipboardCheck className="w-4 h-4 text-green-600" /> : <ClipboardCopy className="w-4 h-4" />}
+                                    {copied ? <ClipboardCheck className="w-3 h-3" /> : <ClipboardCopy className="w-3 h-3" />}
                                 </Button>
                             </div>
-                            <p className="text-xs text-muted-foreground">Copy this key now. You won’t be able to see it again.</p>
-                            <DialogClose asChild>
-                                <Button className="mt-4 w-full">Done</Button>
-                            </DialogClose>
                         </div>
-                    ) : (
-                        <>
-                            <Input
-                                placeholder="Enter name"
-                                value={newKeyName}
-                                onChange={(e) => setNewKeyName(e.target.value)}
-                            />
-                            <DialogFooter>
+
+                        <div>
+                            <h3 className="mb-3 text-lg font-semibold">Response Example</h3>
+                            <div className="relative">
+                                <pre className="p-3 overflow-x-auto text-xs rounded-lg bg-slate-900 text-slate-100">
+                                    <code>{responseExample}</code>
+                                </pre>
                                 <Button
-                                    onClick={handleCreateKey}
-                                    disabled={isCreating || newKeyName.length < 3}
+                                    variant="ghost"
+                                    size="sm"
+                                    className="absolute w-8 h-8 p-0 top-2 right-2 text-slate-400 hover:text-slate-200 hover:bg-slate-700"
+                                    onClick={() => copyToClipboard(responseExample)}
                                 >
-                                    {isCreating ? 'Creating...' : 'Create'}
+                                    {copied ? <ClipboardCheck className="w-3 h-3" /> : <ClipboardCopy className="w-3 h-3" />}
                                 </Button>
-                            </DialogFooter>
-                        </>
-                    )}
-                </DialogContent>
-            </Dialog>
+                            </div>
+                        </div>
+
+                        <div>
+                            <h3 className="mb-3 text-lg font-semibold">Error Responses</h3>
+                            <div className="space-y-2 text-sm">
+                                <div className="p-2 border border-red-200 rounded bg-red-50">
+                                    <span className="font-medium">400:</span> Missing required parameters
+                                </div>
+                                <div className="p-2 border border-red-200 rounded bg-red-50">
+                                    <span className="font-medium">401:</span> Invalid API key or waitlist ID
+                                </div>
+                                <div className="p-2 border border-yellow-200 rounded bg-yellow-50">
+                                    <span className="font-medium">409:</span> Email already registered
+                                </div>
+                                <div className="p-2 border border-red-200 rounded bg-red-50">
+                                    <span className="font-medium">500:</span> Internal server error
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </SheetContent>
+            </Sheet>
 
             <Table>
                 <TableHeader>

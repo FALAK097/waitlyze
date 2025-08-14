@@ -11,7 +11,7 @@ export const metadata = {
 export default async function ApiKeysPage() {
     return (
         <ContentLayout title="API Keys">
-            <div className="flex justify-between items-center">
+            <div className="flex items-center justify-between">
                 <Breadcrumb>
                     <BreadcrumbList>
                         <BreadcrumbItem>

@@ -4,7 +4,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "react-hot-toast";
-import { Delete2Icon, SquarePenIcon } from "../shared/icons";
+import { Delete2Icon, SquarePenIcon, CopyIcon } from "../shared/icons";
 import { Button } from "../ui/button";
 import {
 	Card,
@@ -56,12 +56,28 @@ export const WaitListCard = ({
 		}
 	};
 
+	const handleCopyId = async () => {
+		try {
+			await navigator.clipboard.writeText(id);
+			toast.success("ID copied to clipboard");
+		} catch (error) {
+			toast.error("Failed to copy ID");
+		}
+	};
+
 	return (
 		<>
 			<Card className="relative w-full transition-all group hover:shadow-lg">
+				<button
+					onClick={handleCopyId}
+					className="absolute z-10 p-1 transition-colors duration-200 rounded-sm top-3 right-3 hover:bg-muted"
+					title="Copy ID"
+				>
+					<CopyIcon />
+				</button>
 				<CardHeader>
-					<CardTitle className="flex gap-4 items-center">
-						<div className="overflow-hidden relative rounded-lg size-16 bg-muted">
+					<CardTitle className="flex items-center gap-4">
+						<div className="relative overflow-hidden rounded-lg size-16 bg-muted">
 							<Image
 								src={logoUrl}
 								alt={`${name} logo`}
@@ -83,7 +99,7 @@ export const WaitListCard = ({
 					<Button
 						onClick={handleRedirect}
 						variant="secondary"
-						className="gap-2 w-full"
+						className="w-full gap-2"
 					>
 						<SquarePenIcon className="size-4" />
 						Edit
@@ -92,7 +108,7 @@ export const WaitListCard = ({
 						disabled={isDeleting}
 						onClick={() => setIsDeleteDialogOpen(true)}
 						variant="destructive"
-						className="gap-2 w-full"
+						className="w-full gap-2"
 					>
 						<Delete2Icon className="size-4" />
 						{isDeleting ? "Deleting..." : "Delete"}

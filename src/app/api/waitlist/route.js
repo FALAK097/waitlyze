@@ -98,23 +98,23 @@ export async function POST(request) {
       data: signupData,
     });
 
-    if (referralCode) {
-      const referredBy = await prisma.signUp.findFirst({
-        where: {
-          uniqueUserId: referralCode,
-          waitListId: waitlistId,
-        },
-      });
+    // if (referralCode) {
+    //   const referredBy = await prisma.signUp.findFirst({
+    //     where: {
+    //       uniqueUserId: referralCode,
+    //       waitListId: waitlistId,
+    //     },
+    //   });
 
-      if (referredBy) {
-        await prisma.referral.create({
-          data: {
-            signUpId: signUp.id,
-            referredById: referredBy.id,
-          },
-        });
-      }
-    }
+    //   if (referredBy) {
+    //     await prisma.referral.create({
+    //       data: {
+    //         signUpId: signUp.id,
+    //         referredById: referredBy.id,
+    //       },
+    //     });
+    //   }
+    // }
 
     await prisma.impression.create({
       data: {
@@ -136,10 +136,9 @@ export async function POST(request) {
       message: "Successfully joined the waitlist!",
       data: {
         rank: signUp.rank,
-        referralLink: `${
-          request.headers.get("origin") || process.env.NEXT_PUBLIC_APP_URL
-        }/forms/${waitlistId}?r=${signUp.uniqueUserId}`,
-        waitlistName: auth.waitlist.name,
+        // referralLink: `${
+        //   request.headers.get("origin") || process.env.NEXT_PUBLIC_APP_URL
+        // }/forms/${waitlistId}?r=${signUp.uniqueUserId}`,
       },
     });
   } catch (error) {

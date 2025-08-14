@@ -396,14 +396,14 @@ const CopyIcon = () => {
 
   return (
     <div
-      className="flex items-center justify-center p-2 transition-colors duration-200 rounded-md cursor-pointer select-none"
+      className="flex items-center justify-center transition-colors duration-200 rounded-md cursor-pointer select-none"
       onMouseEnter={() => controls.start("animate")}
       onMouseLeave={() => controls.start("normal")}
     >
       <svg
         xmlns="http://www.w3.org/2000/svg"
-        width="28"
-        height="28"
+        width="16"
+        height="16"
         viewBox="0 0 24 24"
         fill="none"
         stroke="currentColor"

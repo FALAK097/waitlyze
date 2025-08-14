@@ -35,3 +35,11 @@
 [] - Add separate page for email builder with template
 [] - Provide a BYOK option
 [] - Provide markdown editor with preview for email
+
+## Public APIs
+
+[X] - API Key Management
+[X] - Public API Endpoint
+[X] - Copy option next to created waitlist
+[X] - Integration Guide
+[] - Handle Referral System
