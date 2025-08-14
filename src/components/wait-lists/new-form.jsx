@@ -28,14 +28,13 @@ export const NewWaitListForm = ({ createNewWaitList }) => {
 	const handleSubmit = async (e) => {
 		e.preventDefault();
 		if (!projectName) return toast.error("Please enter a project name");
-		if (!logoUrl) return toast.error("Please upload a logo");
 		setLoading(true);
 		const response = await createNewWaitList({
 			name: projectName,
 			websiteUrl,
 			description,
-			logoUrl,
-			logoKey,
+			logoUrl: logoUrl || "",
+			logoKey: logoUrl ? logoKey : "",
 		});
 
 		if (response.success) {
@@ -118,28 +117,21 @@ export const NewWaitListForm = ({ createNewWaitList }) => {
 								</div>
 							</div>
 							<div>
-								<Label htmlFor="logoUrl" className="text-lg font-semibold">
-									Upload Logo
+								<Label htmlFor="logo" className="text-lg font-semibold">
+									Logo <span className="text-sm text-muted-foreground">(Optional)</span>
 								</Label>
-
-								<div className="flex flex-col-reverse">
-									<UploadImage
-										onSuccess={(files) => {
-											setLogoUrl(files[0].url);
-											setLogoKey(files[0].key);
-											toast.success("Logo uploaded successfully");
-										}}
-									/>
-									{logoUrl && (
-										<div className="relative aspect-square">
-											<img
-												src={logoUrl}
-												alt="Uploaded Logo"
-												className="absolute inset-0 object-cover w-full h-full rounded-md"
-											/>
-										</div>
-									)}
-								</div>
+								<UploadImage
+									value={logoUrl}
+									onSuccess={(files) => {
+										setLogoUrl(files[0].url);
+										setLogoKey(files[0].key);
+									}}
+									onClear={() => {
+										setLogoUrl("");
+										setLogoKey("");
+									}}
+									disabled={loading || isCreated}
+								/>
 							</div>
 							<Button
 								type="submit"

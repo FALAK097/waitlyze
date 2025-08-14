@@ -1,7 +1,6 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { ListPlus } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Button } from "../ui/button";
@@ -9,9 +8,15 @@ import { Card } from "../ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 import { DashboardCharts } from "./dashboard-charts";
 import { UserSegmentation } from "./user-segmentation";
+import { useQueryState } from 'nuqs';
+
+const TAB_QUERY_PARAM = 'tab';
 
 export default function DashboardCard({ waitListIds }) {
-  const [activeTab, setActiveTab] = useState("signups");
+  const [activeTab, setActiveTab] = useQueryState(TAB_QUERY_PARAM, {
+    defaultValue: 'signups',
+    clearOnDefault: true
+  });
   const [selectedWaitlistId, setSelectedWaitlistId] = useState("");
   const router = useRouter();
 
@@ -22,13 +27,21 @@ export default function DashboardCard({ waitListIds }) {
     }
   }, []);
 
+  const handleTabChange = async (value) => {
+    if (value === 'signups') {
+      await setActiveTab(null);
+    } else {
+      await setActiveTab(value);
+    }
+  };
+
   const isUserWaitlist = (waitlistId) => {
     return waitListIds.includes(waitlistId);
   };
 
   return (
     <div className="lg:px-8">
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
+      <Tabs value={activeTab || 'signups'} onValueChange={handleTabChange}>
         <TabsList className="grid grid-cols-2">
           <TabsTrigger value="signups">Sign-ups</TabsTrigger>
           <TabsTrigger value="analytics">Analytics</TabsTrigger>

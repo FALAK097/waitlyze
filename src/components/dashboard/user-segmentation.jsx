@@ -213,15 +213,44 @@ export const UserSegmentation = ({ waitlistId }) => {
     }
   };
 
-  const confirmDelete = () => {
-    if (deleteTarget === null) {
-      setUsers(users.filter((user) => !selectedUsers.includes(user.id)));
-      setSelectedUsers([]);
-    } else {
-      setUsers(users.filter((user) => user.id !== deleteTarget));
-      setSelectedUsers(selectedUsers.filter((id) => id !== deleteTarget));
+  const confirmDelete = async () => {
+    try {
+      if (deleteTarget === null) {
+        const deletePromises = selectedUsers.map(userId =>
+          fetch(`/api/signups/${userId}`, { method: 'DELETE' })
+        );
+
+        const results = await Promise.allSettled(deletePromises);
+        const failedDeletes = results.filter(result => result.status === 'rejected');
+
+        if (failedDeletes.length > 0) {
+          throw new Error(`Failed to delete ${failedDeletes.length} users`);
+        }
+
+        setUsers(users.filter((user) => !selectedUsers.includes(user.id)));
+        setSelectedUsers([]);
+        toast.success('Selected users deleted successfully');
+      } else {
+        const response = await fetch(`/api/signups/${deleteTarget}`, {
+          method: 'DELETE',
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.error || 'Failed to delete user');
+        }
+
+        setUsers(users.filter((user) => user.id !== deleteTarget));
+        setSelectedUsers(selectedUsers.filter((id) => id !== deleteTarget));
+        toast.success('User deleted successfully');
+      }
+    } catch (error) {
+      console.error('Error deleting user(s):', error);
+      toast.error(error.message || 'Failed to delete user(s)');
+    } finally {
+      setDeleteModalOpen(false);
+      setDeleteTarget(null);
     }
-    setDeleteModalOpen(false);
   };
 
   const handleCSVExport = () => {
@@ -695,14 +724,13 @@ export const UserSegmentation = ({ waitlistId }) => {
                       <TableCell>
                         {user.deviceType
                           ? user.deviceType.charAt(0).toUpperCase() +
-                            user.deviceType.slice(1)
+                          user.deviceType.slice(1)
                           : "Unknown"}
                       </TableCell>
                       <TableCell>
                         <span
-                          className={`font-medium ml-5 ${
-                            priorityColors[user.priority]
-                          }`}
+                          className={`font-medium ml-5 ${priorityColors[user.priority]
+                            }`}
                         >
                           {user.priority}
                         </span>
