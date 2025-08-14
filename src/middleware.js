@@ -10,7 +10,12 @@ export default clerkMiddleware(async (auth, req) => {
   if (isProtectedRoute(req)) await auth.protect();
   const res = NextResponse.next();
 
-  if (req.nextUrl.pathname.startsWith("/forms")) return NextResponse.next();
+  if (
+    req.nextUrl.pathname.startsWith("/forms") ||
+    req.nextUrl.pathname.startsWith("/api/waitlist")
+  ) {
+    return NextResponse.next();
+  }
 
   const ip =
     req.headers.get("x-forwarded-for") ||
