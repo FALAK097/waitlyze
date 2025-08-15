@@ -78,13 +78,21 @@ export const WaitListCard = ({
 				<CardHeader>
 					<CardTitle className="flex items-center gap-4">
 						<div className="relative overflow-hidden rounded-lg size-16 bg-muted">
-							<Image
-								src={logoUrl}
-								alt={`${name} logo`}
-								fill
-								className="object-cover"
-								onError={() => setImageError(true)}
-							/>
+							{logoUrl && !imageError ? (
+								<Image
+									src={logoUrl}
+									alt={`${name} logo`}
+									fill
+									className="object-cover"
+									onError={() => setImageError(true)}
+								/>
+							) : (
+								<div className="flex items-center justify-center w-full h-full text-muted-foreground">
+									<span className="text-2xl font-bold">
+										{name?.charAt(0)?.toUpperCase() || "W"}
+									</span>
+								</div>
+							)}
 						</div>
 						<div className="flex-1 truncate">{name}</div>
 					</CardTitle>

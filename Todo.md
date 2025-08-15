@@ -5,6 +5,13 @@
 [X] - Update the features section with actual video or have cards with content
 [X] - Update the dark theme color combinations
 [X] - Change logo color to match the theme
+[X] - API Key Management
+[X] - Public API Endpoint
+[X] - Copy option next to created waitlist
+[X] - Integration Guide
+[X] - After API key is created and I do not link waitlist and refresh API key is still created
+[X] - API key is getting linked with Waitlist but after refresh it is not visible
+[X] - Each Waitlist should be linked to only 1 api key
 
 ## Landing Page
 
@@ -38,8 +45,4 @@
 
 ## Public APIs
 
-[X] - API Key Management
-[X] - Public API Endpoint
-[X] - Copy option next to created waitlist
-[X] - Integration Guide
 [] - Handle Referral System

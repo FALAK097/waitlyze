@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { listUserApiKeys } from "@/services/api-key";
 import { currentUser } from "@clerk/nextjs/server";
 import prisma from "@/lib/prisma";
 
@@ -24,16 +23,19 @@ export async function GET() {
       );
     }
 
-    const apiKeys = await listUserApiKeys(user.id);
+    const waitlists = await prisma.waitList.findMany({
+      where: { userId: user.id },
+      select: {
+        id: true,
+        name: true,
+        description: true,
+      },
+      orderBy: { id: "desc" },
+    });
 
-    const apiKeysWithMaskedKeys = apiKeys.map((key) => ({
-      ...key,
-      key: "••••••••••••••••",
-    }));
-
-    return NextResponse.json({ data: apiKeysWithMaskedKeys });
+    return NextResponse.json({ data: waitlists });
   } catch (error) {
-    console.error("Error fetching API keys:", error);
+    console.error("Error fetching waitlists:", error);
     return NextResponse.json(
       { error: { message: "Internal server error" } },
       { status: 500 }
