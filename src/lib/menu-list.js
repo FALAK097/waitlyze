@@ -1,4 +1,5 @@
 import { GripIcon, LayersIcon } from "@/components/shared/icons";
+import { KeyIcon } from "lucide-react";
 
 export function getMenuList(pathname) {
 	return [
@@ -25,6 +26,18 @@ export function getMenuList(pathname) {
 						(pathname.startsWith("/wait-lists") &&
 							pathname !== "/wait-lists/new"),
 					icon: LayersIcon,
+					submenus: [],
+				},
+			],
+		},
+		{
+			groupLabel: "Developer",
+			menus: [
+				{
+					href: "/api-keys",
+					label: "API Keys",
+					active: pathname === "/api-keys",
+					icon: KeyIcon,
 					submenus: [],
 				},
 			],

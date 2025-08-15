@@ -1,4 +1,5 @@
 import { getDashboardData } from "@/actions/dashboard-data";
+import { updateOnboardingStatus } from "@/actions/update-onboarding";
 import { ContentLayout } from "@/components/dashboard/content-layout";
 import DashboardCard from "@/components/dashboard/dashboard-card";
 import { SelectWaitlist } from "@/components/dashboard/select-waitlist";
@@ -11,8 +12,6 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
-import prisma from "@/lib/prisma";
-import { revalidatePath } from "next/cache";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
@@ -32,15 +31,6 @@ export default async function DashboardPage() {
     redirect("/sign-in");
   }
 
-  const updateOnboardingStatus = async (userId) => {
-    "use server";
-    await prisma.user.update({
-      where: { id: userId },
-      data: { isOnboarded: true },
-    });
-    revalidatePath("/dashboard");
-  };
-
   return (
     <div className="flex flex-col">
       <OnboardingDialog
@@ -49,7 +39,7 @@ export default async function DashboardPage() {
         onComplete={updateOnboardingStatus}
       />
       <ContentLayout title="Dashboard">
-        <div className="flex justify-between items-center">
+        <div className="flex items-center justify-between">
           <Breadcrumb>
             <BreadcrumbList>
               <BreadcrumbItem>
