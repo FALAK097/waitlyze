@@ -270,7 +270,7 @@ export async function sendSignupEmail({ waitListId, to }) {
 
   const signUp = await prisma.signUp.findFirst({
     where: { waitListId, email: to },
-    select: { rank: true, id: true },
+    select: { rank: true, id: true, signUpEmailSent: true },
   });
 
   const totalSignUps = await prisma.signUp.count({ where: { waitListId } });
@@ -289,6 +289,10 @@ export async function sendSignupEmail({ waitListId, to }) {
   if (!waitList.sendEmailsToSubscribers)
     return { success: true, message: "Email sending disabled" };
 
+  if (signUp?.signUpEmailSent) {
+    return { success: true, message: "Email already sent" };
+  }
+
   try {
     const resp = await fetch("https://api.useplunk.com/v1/send", {
       method: "POST",
@@ -303,6 +307,13 @@ export async function sendSignupEmail({ waitListId, to }) {
       const text = await resp.text();
       console.error("Plunk send error:", text);
       return { success: true, message: "Signup stored (email send failed)" };
+    }
+
+    if (signUp?.id) {
+      await prisma.signUp.update({
+        where: { id: signUp.id },
+        data: { signUpEmailSent: true },
+      });
     }
 
     return { success: true, message: "Email sent" };

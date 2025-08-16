@@ -85,26 +85,27 @@ model WaitList {
 }
 
 model SignUp {
-  id           String      @id @default(cuid())
-  uniqueUserId String
-  email        String
-  device       String?
-  deviceType   String?
-  city         String?
-  country      String?
-  timezone     String?
-  ipAddress    String?
-  latitude     String?
-  longitude    String?
-  waitListId   String
-  impressionId String?
-  rank         Int?
-  createdAt    DateTime    @default(now())
-  updatedAt    DateTime    @updatedAt
-  waitList     WaitList    @relation(fields: [waitListId], references: [id], onDelete: Cascade)
-  impression   Impression? @relation(fields: [impressionId], references: [id], onDelete: SetNull)
-  referrals    Referral[]  @relation("referredByReferral")
-  referredBy   Referral[]  @relation("signUpReferral")
+  id              String      @id @default(cuid())
+  uniqueUserId    String
+  email           String
+  device          String?
+  deviceType      String?
+  city            String?
+  country         String?
+  timezone        String?
+  ipAddress       String?
+  latitude        String?
+  longitude       String?
+  waitListId      String
+  impressionId    String?
+  rank            Int?
+  signUpEmailSent Boolean     @default(false)
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  waitList        WaitList    @relation(fields: [waitListId], references: [id], onDelete: Cascade)
+  impression      Impression? @relation(fields: [impressionId], references: [id], onDelete: SetNull)
+  referrals       Referral[]  @relation("referredByReferral")
+  referredBy      Referral[]  @relation("signUpReferral")
 
   @@map("sign_ups")
 }

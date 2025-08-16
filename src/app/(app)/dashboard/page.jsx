@@ -61,7 +61,7 @@ export default async function DashboardPage() {
       </ContentLayout>
 
       <Suspense fallback={<div>Loading dashboard...</div>}>
-        <DashboardCard waitListIds={data.waitListIds} />
+        <DashboardCard waitLists={data.waitLists} />
       </Suspense>
     </div>
   );

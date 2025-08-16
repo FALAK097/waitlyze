@@ -16,6 +16,8 @@
 [X] - Add separate page for email builder with template
 [X] - Automate and send email to subscribers if sendEmailToSubscribers is enabled
 [X] - Provide an option to enable/disable sendEmailToSubscribers
+[X] - Display in frontend the users who have been sent Email
+[X] - Show Referral System Fields in Dashboard only if Enabled
 
 ## Landing Page
 
@@ -42,7 +44,6 @@
 
 ## Email Builder
 
-[] - Display in frontend the users who have been sent Email
 [] - Provide an option to bulk send offBoarding Email once the Creator decides to offboard users from waitlist
 [] - Provide a BYOK option
 [] - Provide markdown editor with preview for email

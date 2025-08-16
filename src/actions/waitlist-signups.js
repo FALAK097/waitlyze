@@ -64,6 +64,7 @@ export async function getWaitlistSignups(waitlistId) {
 				device: signup.device,
 				deviceType: signup.deviceType,
 				waitlistName: signup.waitList.name,
+				signUpEmailSent: signup.signUpEmailSent,
 			};
 		});
 
