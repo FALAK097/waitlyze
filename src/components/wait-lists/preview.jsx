@@ -5,17 +5,17 @@ import { fetchSignUp } from "@/utils/fetch/client/sign-ups";
 import { useQuery } from "@tanstack/react-query";
 import { useTheme } from "next-themes";
 import { useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, Suspense } from "react";
 import toast from "react-hot-toast";
 import { ReferralPreview } from "./referral-preview";
 import { SignUpForm } from "./sign-up-form";
-import { Suspense } from "react";
 
 function PreviewContent({
   uniqueUserId,
   waitList,
   getTotalSignUpsOnWaitList,
   initialSignUpsCount,
+  sendSignUpEmailAction,
 }) {
   const theme = useTheme();
   const [mounted, setMounted] = useState(false);
@@ -73,6 +73,8 @@ function PreviewContent({
     retry: false,
   });
 
+  const emailSentRef = useRef(new Set());
+
   const handleSignUp = async (e) => {
     e.preventDefault();
     if (isLoading) return;
@@ -97,6 +99,18 @@ function PreviewContent({
   useEffect(() => {
     if (isSuccess && mounted) toast.success(waitList.successMessage);
   }, [mounted, isSuccess, waitList.successMessage]);
+
+  useEffect(() => {
+    if (!mounted) return;
+    if (!isSuccess) return;
+    if (!email) return;
+    if (!sendSignUpEmailAction) return;
+    if (emailSentRef.current.has(email)) return;
+    emailSentRef.current.add(email);
+    sendSignUpEmailAction({ email }).catch((err) =>
+      console.error("sendSignUpEmailAction error", err)
+    );
+  }, [mounted, isSuccess, email, sendSignUpEmailAction]);
 
   useEffect(() => {
     if (isError && mounted) {
@@ -170,7 +184,7 @@ function PreviewContent({
       style={{
         backgroundColor: waitList.mainBgColor,
       }}
-      className="flex flex-col justify-center items-center h-screen"
+      className="flex flex-col items-center justify-center h-screen"
     >
       <SignUpForm
         email={email}

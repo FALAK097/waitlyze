@@ -200,3 +200,114 @@ export async function sendTestEmail({ waitListId, templateType, to }) {
     return { success: false, message: "Failed to send email" };
   }
 }
+
+async function renderTemplate({ waitListId, enumType, varsOverride = {} }) {
+  const waitList = await prisma.waitList.findUnique({
+    where: { id: waitListId },
+    select: { id: true, name: true, sendEmailsToSubscribers: true },
+  });
+  if (!waitList) return { error: "Waitlist not found" };
+
+  const tpl = await prisma.emailTemplate.findUnique({
+    where: {
+      waitListId_type: {
+        waitListId,
+        type: enumType,
+      },
+    },
+  });
+  if (!tpl) return { error: "Template not found" };
+
+  const baseVars = {
+    waitlist: waitList.name || "Your Project",
+    waitlist_url: `https://waitlyze.falakgala.dev/forms/${waitListId}`,
+    position: "",
+    referral_link: "",
+    referral_count: "",
+    rewards: "",
+    expiry_time: "",
+    reason: "",
+    feedback_link: "",
+    total_signups: "",
+  };
+  const vars = { ...baseVars, ...varsOverride };
+
+  const replaceVars = (text) =>
+    text.replace(/\{\{([^}]+)\}\}/g, (_, k) => vars[k.trim()] ?? `{{${k}}}`);
+
+  const subject = replaceVars(tpl.subject);
+  const previewText = replaceVars(tpl.previewText);
+  const header = replaceVars(tpl.header);
+  const subHeader = replaceVars(tpl.subHeader);
+  const mainBody = replaceVars(tpl.mainBody);
+  const subBody = replaceVars(tpl.subBody);
+
+  const htmlBody = `<!DOCTYPE html><html><head><meta charSet="utf-8"/><title>${subject}</title></head>
+<body style="font-family:Arial,Helvetica,sans-serif;background:#f7f7f7;padding:24px;">
+<table width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;margin:0 auto;background:#ffffff;border-radius:8px;padding:32px;">
+<tr><td style="text-align:center;font-size:24px;font-weight:700;color:#6d28d9;">Waitlyze</td></tr>
+<tr><td style="height:16px;"></td></tr>
+<tr><td style="font-size:14px;color:#6b7280;">${previewText}</td></tr>
+<tr><td style="height:24px;"></td></tr>
+<tr><td><h1 style="margin:0;font-size:22px;">${header}</h1></td></tr>
+<tr><td><h2 style="margin:8px 0 0;font-size:16px;font-weight:500;color:#6b7280;">${subHeader}</h2></td></tr>
+<tr><td style="height:16px;"></td></tr>
+<tr><td style="white-space:pre-wrap;font-size:14px;line-height:1.5;">${mainBody}</td></tr>
+<tr><td style="height:16px;"></td></tr>
+<tr><td style="font-size:12px;color:#6b7280;">${subBody}</td></tr>
+<tr><td style="height:32px;"></td></tr>
+<tr><td style="font-size:12px;color:#9ca3af;text-align:center;">Need help? Reply to this email • © ${new Date().getFullYear()} Waitlyze</td></tr>
+</table>
+</body></html>`;
+
+  return { waitList, subject, htmlBody };
+}
+
+export async function sendSignupEmail({ waitListId, to }) {
+  if (!process.env.PLUNK_SECRET_KEY) {
+    return { success: false, message: "PLUNK_SECRET_KEY not configured" };
+  }
+
+  const signUp = await prisma.signUp.findFirst({
+    where: { waitListId, email: to },
+    select: { rank: true, id: true },
+  });
+
+  const totalSignUps = await prisma.signUp.count({ where: { waitListId } });
+
+  const { waitList, subject, htmlBody, error } = await renderTemplate({
+    waitListId,
+    enumType: "SIGNUP",
+    varsOverride: {
+      position: signUp?.rank != null ? String(signUp.rank) : String(totalSignUps),
+      total_signups: String(totalSignUps),
+    },
+  });
+
+  if (error === "Waitlist not found") return { success: false, message: error };
+  if (error === "Template not found") return { success: true, message: "No signup template" };
+  if (!waitList.sendEmailsToSubscribers)
+    return { success: true, message: "Email sending disabled" };
+
+  try {
+    const resp = await fetch("https://api.useplunk.com/v1/send", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${process.env.PLUNK_SECRET_KEY}`,
+      },
+      body: JSON.stringify({ to, subject, body: htmlBody, subscribed: true }),
+      cache: "no-store",
+    });
+    if (!resp.ok) {
+      const text = await resp.text();
+      console.error("Plunk send error:", text);
+      return { success: true, message: "Signup stored (email send failed)" };
+    }
+
+    return { success: true, message: "Email sent" };
+  } catch (e) {
+    console.error(e);
+    return { success: true, message: "Signup stored (email send exception)" };
+  }
+}

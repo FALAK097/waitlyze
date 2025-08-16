@@ -129,6 +129,11 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
   const [successMessage, setSuccessMessage] = useQueryState('successMessage', {
     defaultValue: initialWaitList.successMessage || "Success! You're on the waitlist"
   });
+  const [sendEmailsToSubscribers, setSendEmailsToSubscribers] = useQueryState('sendEmailsToSubscribers', {
+    defaultValue: initialWaitList.sendEmailsToSubscribers !== false,
+    parse: (v) => v === 'false',
+    serialize: (v) => String(v)
+  });
   const [showLogo, setShowLogo] = useQueryState('showLogo', {
     defaultValue: initialWaitList.showLogo !== false,
     parse: (v) => v === 'true',
@@ -191,6 +196,7 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
     logoSize,
     buttonText,
     successMessage,
+    sendEmailsToSubscribers,
     showLogo,
     showSocialProof,
     showBadge,
@@ -234,6 +240,7 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
       logoSize: setLogoSize,
       buttonText: setButtonText,
       successMessage: setSuccessMessage,
+      sendEmailsToSubscribers: setSendEmailsToSubscribers,
       showLogo: setShowLogo,
       showSocialProof: setShowSocialProof,
       showBadge: setShowBadge,
@@ -379,18 +386,6 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
             <div className="flex space-x-2">
               <Tooltip delayDuration={100}>
                 <TooltipTrigger asChild>
-                  <Link href={`/wait-lists/${initialWaitList.id}/emails`} target="_blank">
-                    <Button size="icon">
-                      <Mail className="w-4 h-4" />
-                    </Button>
-                  </Link>
-                </TooltipTrigger>
-                <TooltipContent side="bottom">
-                  Email Templates
-                </TooltipContent>
-              </Tooltip>
-              <Tooltip delayDuration={100}>
-                <TooltipTrigger asChild>
                   {isSaving ? (
                     <Button size="icon" disabled>
                       <Save className="w-4 h-4 animate-spin" />
@@ -403,6 +398,19 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
                 </TooltipTrigger>
                 <TooltipContent side="bottom">
                   Save Wait List
+                </TooltipContent>
+              </Tooltip>
+
+              <Tooltip delayDuration={100}>
+                <TooltipTrigger asChild>
+                  <Link href={`/wait-lists/${initialWaitList.id}/emails`} target="_blank">
+                    <Button size="icon">
+                      <Mail className="w-4 h-4" />
+                    </Button>
+                  </Link>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">
+                  Email Templates
                 </TooltipContent>
               </Tooltip>
 

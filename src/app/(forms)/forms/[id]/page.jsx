@@ -4,6 +4,7 @@ import { ReactQueryProvider } from "@/providers/query";
 import { nanoid } from "nanoid";
 import { notFound } from "next/navigation";
 import { cache } from "react";
+import { sendSignupEmail } from "@/app/actions/emails";
 
 const getWaitList = cache(async (id) => {
 	return await prisma.waitList.findUnique({
@@ -99,6 +100,13 @@ export default async function WaitListsPreviewPage(props) {
 		return getSignUpsCount(waitListId);
 	};
 
+	const sendSignUpEmailAction = async ({ email }) => {
+		"use server";
+		if (!email) return { success: false, message: "Missing email" };
+		return await sendSignupEmail({ waitListId: id, to: email });
+	};
+
+
 	return (
 		<div>
 			<ReactQueryProvider>
@@ -107,6 +115,7 @@ export default async function WaitListsPreviewPage(props) {
 					waitList={waitList}
 					initialSignUpsCount={initialSignUpsCount}
 					getTotalSignUpsOnWaitList={getTotalSignUpsOnWaitList.bind(null, id)}
+					sendSignUpEmailAction={sendSignUpEmailAction}
 				/>
 			</ReactQueryProvider>
 		</div>
