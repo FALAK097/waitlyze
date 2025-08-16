@@ -15,11 +15,9 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { CodeIcon, Save, ShareIcon } from "lucide-react";
+import { CodeIcon, Save, ShareIcon, Mail } from "lucide-react";
 import { useState } from "react";
 import toast from "react-hot-toast";
-import { EmailTemplateContent } from "../email/email-template-content";
 import { CopyIcon } from "../shared/icons";
 import { CodeBlock } from "../ui/code-block";
 import {
@@ -30,6 +28,7 @@ import {
 } from "../ui/tooltip";
 import { SettingsTab } from "./settings-tab";
 import { SignUpForm } from "./sign-up-form";
+import Link from "next/link";
 
 const EmbedModal = ({ waitList }) => {
   return (
@@ -218,40 +217,6 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
     ogTitle: initialWaitList.ogTitle || "",
     ogDescription: initialWaitList.ogDescription || "",
     ogImage: initialWaitList.ogImage || "",
-    emailTemplates: initialWaitList.emailTemplates || {
-      signup: {
-        subject: "Welcome to {{waitlist}}!",
-        previewText: "Join our exclusive waitlist",
-        header: "Welcome Aboard!",
-        subHeader: "We're excited to have you",
-        mainBody: "Thanks for joining {{waitlist}}.\nPlease verify your email to secure your spot.",
-        subBody: "You're currently #{{position}} in line",
-      },
-      referral: {
-        subject: "Share {{waitlist}} with friends",
-        previewText: "Invite friends and move up the list",
-        header: "Share & Earn",
-        subHeader: "Invite your friends",
-        mainBody: "Share your unique referral link to move up the waitlist.",
-        subBody: "You've invited {{referral_count}} friends so far",
-      },
-      verification: {
-        subject: "Verify your email for {{waitlist}}",
-        previewText: "Quick verification needed",
-        header: "One Last Step",
-        subHeader: "Verify your email",
-        mainBody: "Click the link below to verify your email address",
-        subBody: "This link expires in {{expiry_time}}",
-      },
-      offboarding: {
-        subject: "Sorry to see you go - {{waitlist}}",
-        previewText: "Unsubscribe confirmation",
-        header: "Farewell",
-        subHeader: "You've been unsubscribed",
-        mainBody: "You've been successfully removed from our waitlist",
-        subBody: "We'd love to hear your feedback",
-      },
-    },
   };
 
   const updateSetting = async (key, value) => {
@@ -406,187 +371,140 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
     updateSetting("logoKey", files[0].key);
   };
 
-  const updateEmailTemplate = async (emailSettings) => {
-    try {
-      const updatedSettings = {
-        ...formSettings,
-        emailTemplates: {
-          ...formSettings.emailTemplates,
-          [emailSettings.type]: {
-            subject: emailSettings.subject,
-            previewText: emailSettings.previewText,
-            header: emailSettings.header,
-            subHeader: emailSettings.subHeader,
-            mainBody: emailSettings.mainBody,
-            subBody: emailSettings.subBody,
-          },
-        },
-      };
-      setFormSettings(updatedSettings);
-      await handleSave(updatedSettings);
-    } catch (error) {
-      console.error("Error updating email template:", error);
-      toast.error("Failed to update email template");
-    }
-  };
-
   return (
-    <div className="overflow-auto flex-1">
+    <div className="flex-1 overflow-auto">
       <div className="p-8">
-        <Tabs defaultValue="builder">
-          <TabsList className="grid grid-cols-3 mb-8 w-full bg-transparent">
-            <TabsTrigger
-              value="builder"
-              className="data-[state=active]:bg-transparent hover:underline hover:underline-offset-4 hover:text-inherit hover:decoration-primary"
-            >
-              Waitlist Builder
-            </TabsTrigger>
-            <TabsTrigger
-              value="email"
-              className="data-[state=active]:bg-transparent hover:underline hover:underline-offset-4 hover:text-inherit hover:decoration-primary"
-            >
-              Email
-            </TabsTrigger>
-            <TabsTrigger
-              value="settings"
-              className="data-[state=active]:bg-transparent hover:underline hover:underline-offset-4 hover:text-inherit hover:decoration-primary"
-            >
-              Settings
-            </TabsTrigger>
-          </TabsList>
+        <div className="flex items-center justify-end mb-6">
+          <TooltipProvider>
+            <div className="flex space-x-2">
+              <Tooltip delayDuration={100}>
+                <TooltipTrigger asChild>
+                  <Link href={`/wait-lists/${initialWaitList.id}/emails`} target="_blank">
+                    <Button size="icon">
+                      <Mail className="w-4 h-4" />
+                    </Button>
+                  </Link>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">
+                  Email Templates
+                </TooltipContent>
+              </Tooltip>
+              <Tooltip delayDuration={100}>
+                <TooltipTrigger asChild>
+                  {isSaving ? (
+                    <Button size="icon" disabled>
+                      <Save className="w-4 h-4 animate-spin" />
+                    </Button>
+                  ) : (
+                    <Button size="icon" onClick={handleSave}>
+                      <Save className="w-4 h-4" />
+                    </Button>
+                  )}
+                </TooltipTrigger>
+                <TooltipContent side="bottom">
+                  Save Wait List
+                </TooltipContent>
+              </Tooltip>
 
-          <TabsContent value="builder">
-            <div className="flex justify-end items-center mb-6">
-              <TooltipProvider>
-                <div className="flex space-x-2">
-                  <Tooltip delayDuration={100}>
-                    <TooltipTrigger asChild>
-                      {isSaving ? (
-                        <Button size="icon" disabled>
-                          <Save className="w-4 h-4 animate-spin" />
-                        </Button>
-                      ) : (
-                        <Button size="icon" onClick={handleSave}>
-                          <Save className="w-4 h-4" />
-                        </Button>
-                      )}
-                    </TooltipTrigger>
-                    <TooltipContent side="bottom">
-                      Save Wait List
-                    </TooltipContent>
-                  </Tooltip>
+              <EmbedModal waitList={initialWaitList} />
 
-                  <EmbedModal waitList={initialWaitList} />
+              <Dialog>
+                <Tooltip delayDuration={100}>
+                  <TooltipTrigger asChild>
+                    <DialogTrigger asChild>
+                      <Button size="icon">
+                        <ShareIcon className="w-4 h-4" />
+                      </Button>
+                    </DialogTrigger>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom">
+                    Share Wait List
+                  </TooltipContent>
+                </Tooltip>
 
-                  <Dialog>
-                    <Tooltip delayDuration={100}>
-                      <TooltipTrigger asChild>
-                        <DialogTrigger asChild>
-                          <Button size="icon">
-                            <ShareIcon className="w-4 h-4" />
-                          </Button>
-                        </DialogTrigger>
-                      </TooltipTrigger>
-                      <TooltipContent side="bottom">
-                        Share Wait List
-                      </TooltipContent>
-                    </Tooltip>
-
-                    <DialogContent className="sm:max-w-md">
-                      <DialogHeader>
-                        <DialogTitle>Share link</DialogTitle>
-                        <DialogDescription>
-                          Copy the link below to share your waitlist form.
-                        </DialogDescription>
-                      </DialogHeader>
-                      <div className="flex items-center space-x-2">
-                        <div className="grid flex-1 gap-2">
-                          <Label htmlFor="link" className="sr-only">
-                            Link
-                          </Label>
-                          <Input
-                            id="link"
-                            defaultValue={`${window.location.origin}/forms/${initialWaitList.id}`}
-                            readOnly
-                          />
-                        </div>
-                        <Button
-                          onClick={copyShareUrlToClipboard}
-                          type="submit"
-                          size="sm"
-                          className="px-3"
-                        >
-                          <span className="sr-only">Copy</span>
-                          <CopyIcon />
-                        </Button>
-                      </div>
-                      <DialogFooter className="sm:justify-start">
-                        <DialogClose asChild>
-                          <Button type="button" variant="secondary">
-                            Close
-                          </Button>
-                        </DialogClose>
-                      </DialogFooter>
-                    </DialogContent>
-                  </Dialog>
-                </div>
-              </TooltipProvider>
+                <DialogContent className="sm:max-w-md">
+                  <DialogHeader>
+                    <DialogTitle>Share link</DialogTitle>
+                    <DialogDescription>
+                      Copy the link below to share your waitlist form.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="flex items-center space-x-2">
+                    <div className="grid flex-1 gap-2">
+                      <Label htmlFor="link" className="sr-only">
+                        Link
+                      </Label>
+                      <Input
+                        id="link"
+                        defaultValue={`${window.location.origin}/forms/${initialWaitList.id}`}
+                        readOnly
+                      />
+                    </div>
+                    <Button
+                      onClick={copyShareUrlToClipboard}
+                      type="submit"
+                      size="sm"
+                      className="px-3"
+                    >
+                      <span className="sr-only">Copy</span>
+                      <CopyIcon />
+                    </Button>
+                  </div>
+                  <DialogFooter className="sm:justify-start">
+                    <DialogClose asChild>
+                      <Button type="button" variant="secondary">
+                        Close
+                      </Button>
+                    </DialogClose>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
             </div>
+          </TooltipProvider>
+        </div>
 
-            <div className="flex flex-col gap-4 md:flex-row md:gap-0">
-              <div
-                style={{
-                  backgroundColor: formSettings.enableMainBgColor
-                    ? formSettings.mainBgColor
-                    : "transparent",
-                }}
-                className="flex flex-1 justify-center items-center"
-              >
-                <SignUpForm
-                  email={testEmail}
-                  isLoading={isTestEmailLoading}
-                  setEmail={setTestEmail}
-                  waitList={{
-                    ...formSettings,
-                    mainBgColor: formSettings.enableMainBgColor
-                      ? formSettings.mainBgColor
-                      : null,
-                    bgColor: formSettings.enableBgColor
-                      ? formSettings.bgColor
-                      : null,
-                  }}
-                  onDeleteLogo={handleDeleteLogo}
-                  onSubmit={async (e) => {
-                    e.preventDefault();
-                    setIsTestEmailLoading(true);
-                    await new Promise((resolve) => setTimeout(resolve, 1500));
-                    toast.success(formSettings.successMessage, {
-                      position: "top-center",
-                    });
-                    setIsTestEmailLoading(false);
-                  }}
-                  onImageUploadSuccess={onImageUploadSuccess}
-                />
-              </div>
-
-              <SettingsTab
-                formSettings={formSettings}
-                updateSetting={updateSetting}
-                applyPreset={applyPreset}
-              />
-            </div>
-          </TabsContent>
-
-          <TabsContent value="email">
-            <EmailTemplateContent
+        <div className="flex flex-col gap-4 md:flex-row md:gap-0">
+          <div
+            style={{
+              backgroundColor: formSettings.enableMainBgColor
+                ? formSettings.mainBgColor
+                : "transparent",
+            }}
+            className="flex items-center justify-center flex-1"
+          >
+            <SignUpForm
+              email={testEmail}
+              isLoading={isTestEmailLoading}
+              setEmail={setTestEmail}
               waitList={{
-                ...initialWaitList,
-                emailTemplates: formSettings.emailTemplates || {},
+                ...formSettings,
+                mainBgColor: formSettings.enableMainBgColor
+                  ? formSettings.mainBgColor
+                  : null,
+                bgColor: formSettings.enableBgColor
+                  ? formSettings.bgColor
+                  : null,
               }}
-              updateEmailTemplate={updateEmailTemplate}
+              onDeleteLogo={handleDeleteLogo}
+              onSubmit={async (e) => {
+                e.preventDefault();
+                setIsTestEmailLoading(true);
+                await new Promise((resolve) => setTimeout(resolve, 1500));
+                toast.success(formSettings.successMessage, {
+                  position: "top-center",
+                });
+                setIsTestEmailLoading(false);
+              }}
+              onImageUploadSuccess={onImageUploadSuccess}
             />
-          </TabsContent>
-        </Tabs>
+          </div>
+
+          <SettingsTab
+            formSettings={formSettings}
+            updateSetting={updateSetting}
+            applyPreset={applyPreset}
+          />
+        </div>
       </div>
     </div>
   );
