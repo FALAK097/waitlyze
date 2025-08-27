@@ -12,6 +12,12 @@
 [X] - After API key is created and I do not link waitlist and refresh API key is still created
 [X] - API key is getting linked with Waitlist but after refresh it is not visible
 [X] - Each Waitlist should be linked to only 1 api key
+[X] - Add Email functionality
+[X] - Add separate page for email builder with template
+[X] - Automate and send email to subscribers if sendEmailToSubscribers is enabled
+[X] - Provide an option to enable/disable sendEmailToSubscribers
+[X] - Display in frontend the users who have been sent Email
+[X] - Show Referral System Fields in Dashboard only if Enabled
 
 ## Landing Page
 
@@ -32,14 +38,13 @@
 
 ## Waitlist Builder
 
-[] - Add Email functionality
 [] - Add city & timezone data for signups & impressions
 [] - Sharing waitlist instead of /forms/{id} it should be a unique name
 [] - Email validation while joining
 
 ## Email Builder
 
-[] - Add separate page for email builder with template
+[] - Provide an option to bulk send offBoarding Email once the Creator decides to offboard users from waitlist
 [] - Provide a BYOK option
 [] - Provide markdown editor with preview for email
 

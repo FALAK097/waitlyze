@@ -21,6 +21,8 @@ import {
   FileText,
   HelpCircle,
   MoreVertical,
+  MailCheck,
+  Mail,
 } from "lucide-react";
 import Papa from "papaparse";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -76,7 +78,10 @@ import {
   TooltipTrigger,
 } from "../ui/tooltip";
 
-export const UserSegmentation = ({ waitlistId }) => {
+export const UserSegmentation = ({ waitlist }) => {
+  const waitlistId = waitlist?.id;
+  const showReferrals = waitlist?.showReferrals ?? true;
+
   const [users, setUsers] = useState([]);
   const [lastMonthUsers, setLastMonthUsers] = useState([]);
   const [referralCounts, setReferralCounts] = useState({});
@@ -216,12 +221,12 @@ export const UserSegmentation = ({ waitlistId }) => {
   const confirmDelete = async () => {
     try {
       if (deleteTarget === null) {
-        const deletePromises = selectedUsers.map(userId =>
-          fetch(`/api/signups/${userId}`, { method: 'DELETE' })
+        const deletePromises = selectedUsers.map((userId) =>
+          fetch(`/api/signups/${userId}`, { method: "DELETE" })
         );
 
         const results = await Promise.allSettled(deletePromises);
-        const failedDeletes = results.filter(result => result.status === 'rejected');
+        const failedDeletes = results.filter((result) => result.status === "rejected");
 
         if (failedDeletes.length > 0) {
           throw new Error(`Failed to delete ${failedDeletes.length} users`);
@@ -229,24 +234,24 @@ export const UserSegmentation = ({ waitlistId }) => {
 
         setUsers(users.filter((user) => !selectedUsers.includes(user.id)));
         setSelectedUsers([]);
-        toast.success('Selected users deleted successfully');
+        toast.success("Selected users deleted successfully");
       } else {
         const response = await fetch(`/api/signups/${deleteTarget}`, {
-          method: 'DELETE',
+          method: "DELETE",
         });
 
         if (!response.ok) {
           const error = await response.json();
-          throw new Error(error.error || 'Failed to delete user');
+          throw new Error(error.error || "Failed to delete user");
         }
 
         setUsers(users.filter((user) => user.id !== deleteTarget));
         setSelectedUsers(selectedUsers.filter((id) => id !== deleteTarget));
-        toast.success('User deleted successfully');
+        toast.success("User deleted successfully");
       }
     } catch (error) {
-      console.error('Error deleting user(s):', error);
-      toast.error(error.message || 'Failed to delete user(s)');
+      console.error("Error deleting user(s):", error);
+      toast.error(error.message || "Failed to delete user(s)");
     } finally {
       setDeleteModalOpen(false);
       setDeleteTarget(null);
@@ -278,9 +283,8 @@ export const UserSegmentation = ({ waitlistId }) => {
     doc.text("Email", margin, yPosition);
     doc.text("Device", margin + 70, yPosition);
     doc.text("Priority", margin + 100, yPosition);
-    doc.text("Referrals", margin + 130, yPosition);
+    if (showReferrals) doc.text("Referrals", margin + 130, yPosition);
     yPosition += lineHeight;
-
     doc.setFont(undefined, "normal");
 
     for (const user of sortedAndFilteredUsers) {
@@ -288,18 +292,15 @@ export const UserSegmentation = ({ waitlistId }) => {
         doc.addPage();
         yPosition = 20;
       }
-
       try {
         const email = (user.name || "N/A").substring(0, 35);
         const device = (user.device || "N/A").substring(0, 15);
         const priority = user.priority || "N/A";
         const referralCount = referralCounts[user.id] || 0;
-
         doc.text(email, margin, yPosition);
         doc.text(device, margin + 70, yPosition);
-        doc.text(priority, margin + 100, yPosition);
-        doc.text(String(referralCount), margin + 130, yPosition);
-
+        if (showReferrals) doc.text(priority, margin + 100, yPosition);
+        if (showReferrals) doc.text(String(referralCount), margin + 130, yPosition);
         yPosition += lineHeight;
       } catch (error) {
         console.error("Error adding user to PDF:", error);
@@ -352,7 +353,6 @@ export const UserSegmentation = ({ waitlistId }) => {
             const signupDate = new Date(user.createdAt);
             return signupDate <= lastMonth;
           });
-
           setUsers(currentUsers);
           setLastMonthUsers(lastMonthSignups);
         } else {
@@ -479,9 +479,15 @@ export const UserSegmentation = ({ waitlistId }) => {
     );
   }
 
+  const totalColumns = showReferrals ? 7 : 5;
+
+  const metricsGridClass = showReferrals
+    ? "grid gap-4 my-4 md:grid-cols-2 lg:grid-cols-4"
+    : "grid gap-4 my-4 md:grid-cols-2 lg:grid-cols-3";
+
   return (
     <>
-      <div className="grid gap-4 my-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className={metricsGridClass}>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
             <CardTitle className="text-sm font-medium">
@@ -527,22 +533,24 @@ export const UserSegmentation = ({ waitlistId }) => {
             </p>
           </CardContent>
         </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-            <CardTitle className="text-sm font-medium">
-              Referral Conversion Rate
-            </CardTitle>
-            <ActivityIcon />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {getReferralConversionRate()}%
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Conversion rate from referrals
-            </p>
-          </CardContent>
-        </Card>
+        {showReferrals && (
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+              <CardTitle className="text-sm font-medium">
+                Referral Conversion Rate
+              </CardTitle>
+              <ActivityIcon />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {getReferralConversionRate()}%
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Conversion rate from referrals
+              </p>
+            </CardContent>
+          </Card>
+        )}
       </div>
       <Card className="w-full">
         <CardHeader>
@@ -620,52 +628,56 @@ export const UserSegmentation = ({ waitlistId }) => {
                     />
                   </TableHead>
                   <TableHead className="w-[250px]">User Email</TableHead>
-                  <TableHead className="text-center">Referral Count</TableHead>
+                  {showReferrals && (
+                    <TableHead className="text-center">Referral Count</TableHead>
+                  )}
                   <TableHead>Device</TableHead>
-                  <TableHead>
-                    <Button
-                      variant="ghost"
-                      onClick={requestSort}
-                      className="hover:bg-transparent"
-                    >
-                      <div className="inline-flex items-center justify-center gap-2 whitespace-nowrap">
-                        Priority {getSortIcon()}
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <span className="cursor-pointer">
-                                <HelpCircle className="w-4 h-4 transition-colors text-muted-foreground hover:text-primary" />
-                              </span>
-                            </TooltipTrigger>
-                            <TooltipContent
-                              className="max-w-[280px] bg-popover text-popover-foreground shadow-lg rounded-lg border border-border p-4 dark:bg-zinc-900"
-                              sideOffset={5}
-                            >
-                              <div className="space-y-2">
-                                <p className="font-medium">
-                                  Priority is based on the number of referrals:
-                                </p>
-                                <ul className="space-y-1 list-none">
-                                  <li className="flex items-center gap-2">
-                                    <span className="w-2 h-2 rounded-full bg-amber-500" />
-                                    <span>High: More than 5 referrals</span>
-                                  </li>
-                                  <li className="flex items-center gap-2">
-                                    <span className="w-2 h-2 bg-purple-500 rounded-full" />
-                                    <span>Medium: 1 to 5 referrals</span>
-                                  </li>
-                                  <li className="flex items-center gap-2">
-                                    <span className="w-2 h-2 bg-orange-500 rounded-full" />
-                                    <span>Low: No referrals</span>
-                                  </li>
-                                </ul>
-                              </div>
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-                      </div>
-                    </Button>
-                  </TableHead>
+                  {showReferrals && (
+                    <TableHead>
+                      <Button
+                        variant="ghost"
+                        onClick={requestSort}
+                        className="hover:bg-transparent"
+                      >
+                        <div className="inline-flex items-center justify-center gap-2 whitespace-nowrap">
+                          Priority {getSortIcon()}
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <span className="cursor-pointer">
+                                  <HelpCircle className="w-4 h-4 transition-colors text-muted-foreground hover:text-primary" />
+                                </span>
+                              </TooltipTrigger>
+                              <TooltipContent
+                                className="max-w-[280px] bg-popover text-popover-foreground shadow-lg rounded-lg border border-border p-4 dark:bg-zinc-900"
+                                sideOffset={5}
+                              >
+                                <div className="space-y-2">
+                                  <p className="font-medium">
+                                    Priority is based on the number of referrals:
+                                  </p>
+                                  <ul className="space-y-1 list-none">
+                                    <li className="flex items-center gap-2">
+                                      <span className="w-2 h-2 rounded-full bg-amber-500" />
+                                      <span>High: More than 5 referrals</span>
+                                    </li>
+                                    <li className="flex items-center gap-2">
+                                      <span className="w-2 h-2 bg-purple-500 rounded-full" />
+                                      <span>Medium: 1 to 5 referrals</span>
+                                    </li>
+                                    <li className="flex items-center gap-2">
+                                      <span className="w-2 h-2 bg-orange-500 rounded-full" />
+                                      <span>Low: No referrals</span>
+                                    </li>
+                                  </ul>
+                                </div>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        </div>
+                      </Button>
+                    </TableHead>
+                  )}
                   <TableHead>Action</TableHead>
                   <TableHead>
                     <DropdownMenu>
@@ -714,27 +726,50 @@ export const UserSegmentation = ({ waitlistId }) => {
                         />
                       </TableCell>
                       <TableCell className="font-medium">
-                        <div className="flex items-center">
+                        <div className="flex items-center gap-2">
                           <span className="hidden sm:inline">{user.name}</span>
+                          {Boolean(user.signUpEmailSent) ? (
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <MailCheck className="w-4 h-4 text-green-600" />
+                                </TooltipTrigger>
+                                <TooltipContent>Email sent</TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          ) : (
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Mail className="w-4 h-4 text-muted-foreground" />
+                                </TooltipTrigger>
+                                <TooltipContent>Not sent</TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          )}
                         </div>
                       </TableCell>
-                      <TableCell className="text-center">
-                        {referralCounts[user.id] || 0}
-                      </TableCell>
+                      {showReferrals && (
+                        <TableCell className="text-center">
+                          {referralCounts[user.id] || 0}
+                        </TableCell>
+                      )}
                       <TableCell>
                         {user.deviceType
                           ? user.deviceType.charAt(0).toUpperCase() +
                           user.deviceType.slice(1)
                           : "Unknown"}
                       </TableCell>
-                      <TableCell>
-                        <span
-                          className={`font-medium ml-5 ${priorityColors[user.priority]
-                            }`}
-                        >
-                          {user.priority}
-                        </span>
-                      </TableCell>
+                      {showReferrals && (
+                        <TableCell>
+                          <span
+                            className={`font-medium ml-5 ${priorityColors[user.priority]
+                              }`}
+                          >
+                            {user.priority}
+                          </span>
+                        </TableCell>
+                      )}
                       <TableCell>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
@@ -757,7 +792,7 @@ export const UserSegmentation = ({ waitlistId }) => {
                   ))
                 ) : (
                   <TableRow className="hover:bg-transparent">
-                    <TableCell colSpan={6} className="h-[400px] p-0">
+                    <TableCell colSpan={totalColumns} className="h-[400px] p-0">
                       <div className="flex flex-col items-center justify-center h-full p-8 space-y-8">
                         <div className="p-4 rounded-full bg-primary/10">
                           <UsersIcon className="w-8 h-8 text-primary" />

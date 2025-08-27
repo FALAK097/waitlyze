@@ -26,83 +26,86 @@ model User {
 }
 
 model WaitList {
-  id                      String       @id @unique @default(cuid())
+  id                      String  @id @unique @default(cuid())
   name                    String?
   description             String?
   websiteUrl              String?
-  logoUrl                 String?      @default("/images/logo.png")
+  logoUrl                 String? @default("/images/logo.png")
   logoKey                 String?
-  buttonColor             String?      @default("#8B5CF6")
-  buttonBorder            String?      @default("#7C3AED")
-  buttonTextColor         String?      @default("#FFFFFF")
-  mainBgColor             String?      @default("#FFFFFF")
-  enableMainBgColor       Boolean      @default(false)
-  bgColor                 String?      @default("#FFFFFF")
-  enableBgColor           Boolean      @default(false)
-  borderWidth             String?      @default("0px")
-  borderRadius            String?      @default("large")
-  fontWeight              String?      @default("normal")
-  logoSize                String?      @default("1X")
-  buttonText              String?      @default("Join the waitlist")
-  successMessage          String?      @default("Success! You're on the waitlist")
-  showLogo                Boolean      @default(true)
-  showSocialProof         Boolean      @default(true)
-  showBadge               Boolean      @default(true)
-  showBranding            Boolean      @default(true)
-  showReferrals           Boolean      @default(true)
-  badgeColor              String?      @default("#8B5CF6")
-  badgeText               String?      @default("Sign Up to get early access")
-  badgeTextColor          String?      @default("#FFFFFF")
-  inputColor              String?      @default("#FFFFF")
-  inputBorder             String?      @default("#E5E7EB")
-  inputTextColor          String?      @default("#000000")
-  placeholderText         String?      @default("Enter your email")
+  buttonColor             String? @default("#8B5CF6")
+  buttonBorder            String? @default("#7C3AED")
+  buttonTextColor         String? @default("#FFFFFF")
+  mainBgColor             String? @default("#FFFFFF")
+  enableMainBgColor       Boolean @default(false)
+  bgColor                 String? @default("#FFFFFF")
+  enableBgColor           Boolean @default(false)
+  borderWidth             String? @default("0px")
+  borderRadius            String? @default("large")
+  fontWeight              String? @default("normal")
+  logoSize                String? @default("1X")
+  buttonText              String? @default("Join the waitlist")
+  successMessage          String? @default("Success! You're on the waitlist")
+  showLogo                Boolean @default(true)
+  showSocialProof         Boolean @default(true)
+  showBadge               Boolean @default(true)
+  showBranding            Boolean @default(true)
+  showReferrals           Boolean @default(true)
+  badgeColor              String? @default("#8B5CF6")
+  badgeText               String? @default("Sign Up to get early access")
+  badgeTextColor          String? @default("#FFFFFF")
+  inputColor              String? @default("#FFFFF")
+  inputBorder             String? @default("#E5E7EB")
+  inputTextColor          String? @default("#000000")
+  placeholderText         String? @default("Enter your email")
   twitterLink             String?
   facebookLink            String?
   instagramLink           String?
   linkedInLink            String?
-  showSocialLinks         Boolean      @default(true)
-  sendEmailsToSubscribers Boolean      @default(false)
+  showSocialLinks         Boolean @default(true)
+  sendEmailsToSubscribers Boolean @default(false)
   ogTitle                 String?
   ogDescription           String?
   ogImage                 String?
-  shareOnTwitter          Boolean      @default(true)
-  shareOnWhatsapp         Boolean      @default(true)
-  shareOnLinkedin         Boolean      @default(true)
-  shareOnInstagram        Boolean      @default(false)
-  shareOnFacebook         Boolean      @default(false)
-  shareOnEmail            Boolean      @default(false)
-  shareOnReddit           Boolean      @default(false)
-  userId                  String
-  user                    User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  signUps                 SignUp[]
-  impressions             Impression[]
-  apiKeys                 ApiKey[]
+  shareOnTwitter          Boolean @default(true)
+  shareOnWhatsapp         Boolean @default(true)
+  shareOnLinkedin         Boolean @default(true)
+  shareOnInstagram        Boolean @default(false)
+  shareOnFacebook         Boolean @default(false)
+  shareOnEmail            Boolean @default(false)
+  shareOnReddit           Boolean @default(false)
+
+  userId               String
+  user                 User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  signUps              SignUp[]
+  impressions          Impression[]
+  apiKeys              ApiKey[]
+  emailTemplateRecords EmailTemplate[]
 
   @@map("wait_lists")
 }
 
 model SignUp {
-  id           String      @id @default(cuid())
-  uniqueUserId String
-  email        String
-  device       String?
-  deviceType   String?
-  city         String?
-  country      String?
-  timezone     String?
-  ipAddress    String?
-  latitude     String?
-  longitude    String?
-  waitListId   String
-  impressionId String?
-  rank         Int?
-  createdAt    DateTime    @default(now())
-  updatedAt    DateTime    @updatedAt
-  waitList     WaitList    @relation(fields: [waitListId], references: [id], onDelete: Cascade)
-  impression   Impression? @relation(fields: [impressionId], references: [id], onDelete: SetNull)
-  referrals    Referral[]  @relation("referredByReferral")
-  referredBy   Referral[]  @relation("signUpReferral")
+  id              String      @id @default(cuid())
+  uniqueUserId    String
+  email           String
+  device          String?
+  deviceType      String?
+  city            String?
+  country         String?
+  timezone        String?
+  ipAddress       String?
+  latitude        String?
+  longitude       String?
+  waitListId      String
+  impressionId    String?
+  rank            Int?
+  signUpEmailSent Boolean     @default(false)
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  waitList        WaitList    @relation(fields: [waitListId], references: [id], onDelete: Cascade)
+  impression      Impression? @relation(fields: [impressionId], references: [id], onDelete: SetNull)
+  referrals       Referral[]  @relation("referredByReferral")
+  referredBy      Referral[]  @relation("signUpReferral")
 
   @@map("sign_ups")
 }
@@ -152,4 +155,27 @@ model ApiKey {
   waitlist WaitList? @relation(fields: [waitlistId], references: [id], onDelete: SetNull)
 
   @@map("api_keys")
+}
+
+model EmailTemplate {
+  id          String            @id @default(cuid())
+  waitListId  String
+  waitList    WaitList          @relation(fields: [waitListId], references: [id], onDelete: Cascade)
+  type        EmailTemplateType
+  subject     String
+  previewText String
+  header      String
+  subHeader   String
+  mainBody    String
+  subBody     String
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  @@unique([waitListId, type])
+  @@map("email_templates")
+}
+
+enum EmailTemplateType {
+  SIGNUP
+  OFFBOARDING
 }

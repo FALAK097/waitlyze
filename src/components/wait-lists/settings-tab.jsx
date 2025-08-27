@@ -29,7 +29,7 @@ export function SettingsTab({ formSettings, updateSetting, applyPreset }) {
 					<TabsTrigger value="social">Social</TabsTrigger>
 				</TabsList>
 				<TabsContent value="general" className="py-4 space-y-4">
-					<div className="flex justify-between items-center">
+					<div className="flex items-center justify-between">
 						<Label htmlFor="buttonColor">Button Color</Label>
 						<ColorPicker
 							id="buttonColor"
@@ -37,7 +37,7 @@ export function SettingsTab({ formSettings, updateSetting, applyPreset }) {
 							onChange={(color) => updateSetting("buttonColor", color)}
 						/>
 					</div>
-					<div className="flex justify-between items-center">
+					<div className="flex items-center justify-between">
 						<Label htmlFor="buttonBorder">Button Border</Label>
 						<ColorPicker
 							id="buttonBorder"
@@ -45,7 +45,7 @@ export function SettingsTab({ formSettings, updateSetting, applyPreset }) {
 							onChange={(color) => updateSetting("buttonBorder", color)}
 						/>
 					</div>
-					<div className="flex justify-between items-center">
+					<div className="flex items-center justify-between">
 						<Label htmlFor="buttonTextColor">Button Text Color</Label>
 						<ColorPicker
 							id="buttonTextColor"
@@ -54,7 +54,7 @@ export function SettingsTab({ formSettings, updateSetting, applyPreset }) {
 						/>
 					</div>
 					<div className="space-y-4">
-						<div className="flex justify-between items-center">
+						<div className="flex items-center justify-between">
 							<Label htmlFor="enableMainBgColor">Enable Background Color</Label>
 							<Switch
 								id="enableMainBgColor"
@@ -66,7 +66,7 @@ export function SettingsTab({ formSettings, updateSetting, applyPreset }) {
 						</div>
 
 						{formSettings.enableMainBgColor && (
-							<div className="flex justify-between items-center">
+							<div className="flex items-center justify-between">
 								<Label htmlFor="mainBgColor">Background Color</Label>
 								<ColorPicker
 									id="mainBgColor"
@@ -77,7 +77,7 @@ export function SettingsTab({ formSettings, updateSetting, applyPreset }) {
 						)}
 					</div>
 					<div className="space-y-4">
-						<div className="flex justify-between items-center">
+						<div className="flex items-center justify-between">
 							<Label htmlFor="enableBgColor">Enable Widget BG Color</Label>
 							<Switch
 								id="enableBgColor"
@@ -89,7 +89,7 @@ export function SettingsTab({ formSettings, updateSetting, applyPreset }) {
 						</div>
 
 						{formSettings.enableBgColor && (
-							<div className="flex justify-between items-center">
+							<div className="flex items-center justify-between">
 								<Label htmlFor="bgColor">Widget BG Color</Label>
 								<ColorPicker
 									id="bgColor"
@@ -171,7 +171,7 @@ export function SettingsTab({ formSettings, updateSetting, applyPreset }) {
 									onChange={(e) => updateSetting("badgeText", e.target.value)}
 								/>
 							</div>
-							<div className="flex justify-between items-center">
+							<div className="flex items-center justify-between">
 								<Label htmlFor="badgeColor">Badge Color</Label>
 								<ColorPicker
 									id="badgeColor"
@@ -179,7 +179,7 @@ export function SettingsTab({ formSettings, updateSetting, applyPreset }) {
 									onChange={(color) => updateSetting("badgeColor", color)}
 								/>
 							</div>
-							<div className="flex justify-between items-center">
+							<div className="flex items-center justify-between">
 								<Label htmlFor="badgeTextColor">Badge Text Color</Label>
 								<ColorPicker
 									id="badgeTextColor"
@@ -204,6 +204,14 @@ export function SettingsTab({ formSettings, updateSetting, applyPreset }) {
 							value={formSettings.successMessage}
 							onChange={(e) => updateSetting("successMessage", e.target.value)}
 						/>
+					</div>
+					<div className="flex items-center space-x-2">
+						<Switch
+							id="sendEmailsToSubscribers"
+							checked={formSettings.sendEmailsToSubscribers}
+							onCheckedChange={(checked) => updateSetting("sendEmailsToSubscribers", checked)}
+						/>
+						<Label htmlFor="sendEmailsToSubscribers">Send Email to Subscribers</Label>
 					</div>
 					<div className="flex items-center space-x-2">
 						<Switch
@@ -254,7 +262,7 @@ export function SettingsTab({ formSettings, updateSetting, applyPreset }) {
 				</TabsContent>
 
 				<TabsContent value="input" className="py-4 space-y-4">
-					<div className="flex justify-between items-center">
+					<div className="flex items-center justify-between">
 						<Label htmlFor="inputColor">Input Color</Label>
 						<ColorPicker
 							id="inputColor"
@@ -262,7 +270,7 @@ export function SettingsTab({ formSettings, updateSetting, applyPreset }) {
 							onChange={(color) => updateSetting("inputColor", color)}
 						/>
 					</div>
-					<div className="flex justify-between items-center">
+					<div className="flex items-center justify-between">
 						<Label htmlFor="inputBorder">Input Border</Label>
 						<ColorPicker
 							id="inputBorder"
@@ -270,7 +278,7 @@ export function SettingsTab({ formSettings, updateSetting, applyPreset }) {
 							onChange={(color) => updateSetting("inputBorder", color)}
 						/>
 					</div>
-					<div className="flex justify-between items-center">
+					<div className="flex items-center justify-between">
 						<Label htmlFor="inputTextColor">Input Text Color</Label>
 						<ColorPicker
 							id="inputTextColor"
@@ -379,7 +387,7 @@ export function SettingsTab({ formSettings, updateSetting, applyPreset }) {
 													<X className="w-4 h-4" />
 												</Button>
 											</div>
-											<div className="overflow-hidden relative w-full rounded-lg aspect-video">
+											<div className="relative w-full overflow-hidden rounded-lg aspect-video">
 												<Image
 													src={formSettings.ogImage}
 													alt="OG Preview"
@@ -516,7 +524,7 @@ export function SettingsTab({ formSettings, updateSetting, applyPreset }) {
 										className="peer ps-[105px]"
 										type="text"
 									/>
-									<span className="flex absolute inset-y-0 justify-center items-center text-sm pointer-events-none start-0 ps-3 text-muted-foreground peer-disabled:opacity-50">
+									<span className="absolute inset-y-0 flex items-center justify-center text-sm pointer-events-none start-0 ps-3 text-muted-foreground peer-disabled:opacity-50">
 										https://x.com/
 									</span>
 								</div>
@@ -534,7 +542,7 @@ export function SettingsTab({ formSettings, updateSetting, applyPreset }) {
 										className="peer ps-[160px]"
 										type="text"
 									/>
-									<span className="flex absolute inset-y-0 justify-center items-center text-sm pointer-events-none start-0 ps-3 text-muted-foreground peer-disabled:opacity-50">
+									<span className="absolute inset-y-0 flex items-center justify-center text-sm pointer-events-none start-0 ps-3 text-muted-foreground peer-disabled:opacity-50">
 										https://facebook.com/
 									</span>
 								</div>
@@ -552,7 +560,7 @@ export function SettingsTab({ formSettings, updateSetting, applyPreset }) {
 										className="peer ps-[163px]"
 										type="text"
 									/>
-									<span className="flex absolute inset-y-0 justify-center items-center text-sm pointer-events-none start-0 ps-3 text-muted-foreground peer-disabled:opacity-50">
+									<span className="absolute inset-y-0 flex items-center justify-center text-sm pointer-events-none start-0 ps-3 text-muted-foreground peer-disabled:opacity-50">
 										https://instagram.com/
 									</span>
 								</div>
@@ -570,7 +578,7 @@ export function SettingsTab({ formSettings, updateSetting, applyPreset }) {
 										className="peer ps-[150px]"
 										type="text"
 									/>
-									<span className="flex absolute inset-y-0 justify-center items-center text-sm pointer-events-none start-0 ps-3 text-muted-foreground peer-disabled:opacity-50">
+									<span className="absolute inset-y-0 flex items-center justify-center text-sm pointer-events-none start-0 ps-3 text-muted-foreground peer-disabled:opacity-50">
 										https://linkedin.com/
 									</span>
 								</div>
@@ -588,7 +596,7 @@ export function SettingsTab({ formSettings, updateSetting, applyPreset }) {
 										className="peer ps-[137px]"
 										type="text"
 									/>
-									<span className="flex absolute inset-y-0 justify-center items-center text-sm pointer-events-none start-0 ps-3 text-muted-foreground peer-disabled:opacity-50">
+									<span className="absolute inset-y-0 flex items-center justify-center text-sm pointer-events-none start-0 ps-3 text-muted-foreground peer-disabled:opacity-50">
 										https://reddit.com/
 									</span>
 								</div>

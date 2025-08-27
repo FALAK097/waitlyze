@@ -10,10 +10,9 @@ import { DashboardCharts } from "./dashboard-charts";
 import { UserSegmentation } from "./user-segmentation";
 import { useQueryState } from 'nuqs';
 
-const TAB_QUERY_PARAM = 'tab';
-
-export default function DashboardCard({ waitListIds }) {
-  const [activeTab, setActiveTab] = useQueryState(TAB_QUERY_PARAM, {
+export default function DashboardCard({ waitLists = [] }) {
+  const waitListIds = waitLists.map(w => w.id);
+  const [activeTab, setActiveTab] = useQueryState('tab', {
     defaultValue: 'signups',
     clearOnDefault: true
   });
@@ -35,9 +34,9 @@ export default function DashboardCard({ waitListIds }) {
     }
   };
 
-  const isUserWaitlist = (waitlistId) => {
-    return waitListIds.includes(waitlistId);
-  };
+  const isUserWaitlist = (waitlistId) => waitListIds.includes(waitlistId);
+
+  const selectedWaitlist = waitLists.find(w => w.id === selectedWaitlistId);
 
   return (
     <div className="lg:px-8">
@@ -49,7 +48,9 @@ export default function DashboardCard({ waitListIds }) {
 
         <TabsContent value="signups">
           {selectedWaitlistId && isUserWaitlist(selectedWaitlistId) ? (
-            <UserSegmentation waitlistId={selectedWaitlistId} />
+            <UserSegmentation
+              waitlist={selectedWaitlist}
+            />
           ) : (
             <Card className="flex min-h-[400px] flex-col items-center justify-center text-center">
               <motion.div

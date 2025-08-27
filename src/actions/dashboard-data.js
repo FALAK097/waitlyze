@@ -32,8 +32,16 @@ export const getDashboardData = cache(async () => {
     }
 
     const waitLists = await prisma.waitList.findMany({
-      where: {
-        userId: user.id,
+      where: { userId: user.id },
+      select: {
+        id: true,
+        name: true,
+        showReferrals: true,
+        signUps: {
+          select: {
+            signUpEmailSent: true,
+          },
+        },
       },
     });
 
@@ -42,7 +50,6 @@ export const getDashboardData = cache(async () => {
       data: {
         user,
         waitLists,
-        waitListIds: user.waitLists.map((waitList) => waitList.id),
       },
     };
   } catch (error) {
