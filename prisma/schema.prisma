@@ -32,8 +32,8 @@ model WaitList {
   websiteUrl              String?
   logoUrl                 String? @default("/images/logo.png")
   logoKey                 String?
-  buttonColor             String? @default("#8B5CF6")
-  buttonBorder            String? @default("#7C3AED")
+  buttonColor             String? @default("#FF6B4A")
+  buttonBorder            String? @default("#FF9D7A")
   buttonTextColor         String? @default("#FFFFFF")
   mainBgColor             String? @default("#FFFFFF")
   enableMainBgColor       Boolean @default(false)
@@ -50,7 +50,7 @@ model WaitList {
   showBadge               Boolean @default(true)
   showBranding            Boolean @default(true)
   showReferrals           Boolean @default(true)
-  badgeColor              String? @default("#8B5CF6")
+  badgeColor              String? @default("#FF9D7A")
   badgeText               String? @default("Sign Up to get early access")
   badgeTextColor          String? @default("#FFFFFF")
   inputColor              String? @default("#FFFFF")

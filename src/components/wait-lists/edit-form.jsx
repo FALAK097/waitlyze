@@ -87,10 +87,10 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
   const [isSaving, setIsSaving] = useState(false);
 
   const [buttonColor, setButtonColor] = useQueryState('buttonColor', {
-    defaultValue: initialWaitList.buttonColor || "#8B5CF6"
+    defaultValue: initialWaitList.buttonColor || "#FF6B4A"
   });
   const [buttonBorder, setButtonBorder] = useQueryState('buttonBorder', {
-    defaultValue: initialWaitList.buttonBorder || "#7C3AED"
+    defaultValue: initialWaitList.buttonBorder || "#FF9D7A"
   });
   const [buttonTextColor, setButtonTextColor] = useQueryState('buttonTextColor', {
     defaultValue: initialWaitList.buttonTextColor || "#FFFFFF"
@@ -163,7 +163,7 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
     defaultValue: initialWaitList.badgeText || "Sign Up and get 50% off on launch"
   });
   const [badgeColor, setBadgeColor] = useQueryState('badgeColor', {
-    defaultValue: initialWaitList.badgeColor || "#8B5CF6"
+    defaultValue: initialWaitList.badgeColor || "#FF9D7A"
   });
   const [badgeTextColor, setBadgeTextColor] = useQueryState('badgeTextColor', {
     defaultValue: initialWaitList.badgeTextColor || "#FFFFFF"
