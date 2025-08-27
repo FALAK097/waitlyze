@@ -353,7 +353,6 @@ export const UserSegmentation = ({ waitlist }) => {
             const signupDate = new Date(user.createdAt);
             return signupDate <= lastMonth;
           });
-          console.log("Current Users:", currentUsers);
           setUsers(currentUsers);
           setLastMonthUsers(lastMonthSignups);
         } else {
