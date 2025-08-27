@@ -137,7 +137,7 @@ export async function POST(request) {
       data: {
         rank: signUp.rank,
         // referralLink: `${
-        //   request.headers.get("origin") || process.env.NEXT_PUBLIC_APP_URL
+        //   request.headers.get("origin") || env.NEXT_PUBLIC_APP_URL
         // }/forms/${waitlistId}?r=${signUp.uniqueUserId}`,
       },
     });

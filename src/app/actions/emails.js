@@ -1,5 +1,6 @@
 "use server";
 
+import { env } from "@/lib/env.mjs";
 import prisma from "@/lib/prisma";
 
 const TYPE_MAP = {
@@ -114,7 +115,7 @@ export async function upsertEmailTemplate({ waitListId, templateType, data }) {
 }
 
 export async function sendTestEmail({ waitListId, templateType, to }) {
-  if (!process.env.PLUNK_SECRET_KEY) {
+  if (!env.PLUNK_SECRET_KEY) {
     return { success: false, message: "PLUNK_SECRET_KEY not configured" };
   }
 
@@ -264,7 +265,7 @@ async function renderTemplate({ waitListId, enumType, varsOverride = {} }) {
 }
 
 export async function sendSignupEmail({ waitListId, to }) {
-  if (!process.env.PLUNK_SECRET_KEY) {
+  if (!env.PLUNK_SECRET_KEY) {
     return { success: false, message: "PLUNK_SECRET_KEY not configured" };
   }
 
