@@ -1,0 +1,4 @@
+-- AlterTable
+ALTER TABLE "wait_lists" ALTER COLUMN "buttonBorder" SET DEFAULT '#FF9D7A',
+ALTER COLUMN "buttonColor" SET DEFAULT '#FF6B4A',
+ALTER COLUMN "badgeColor" SET DEFAULT '#FF9D7A';
