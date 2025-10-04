@@ -55,7 +55,7 @@ export const SignUpForm = ({
 				{waitList.showBadge && (
 					<div className="flex justify-center">
 						<Badge
-							className="px-4 py-1 mx-auto w-max text-center rounded-full"
+							className="px-4 py-1 mx-auto text-center rounded-full w-max"
 							style={{
 								backgroundColor: waitList.badgeColor,
 								color: waitList.badgeTextColor,
@@ -129,7 +129,7 @@ export const SignUpForm = ({
 					>
 						{isLoading ? (
 							<>
-								<Spinner className="mr-2 w-4 h-4" />
+								<Spinner className="w-4 h-4 mr-2" />
 								Please wait...
 							</>
 						) : (
@@ -140,12 +140,12 @@ export const SignUpForm = ({
 						<>
 							<div className="flex items-center space-x-2 text-sm text-gray-500">
 								<Zap className="w-4 h-4 text-purple-500" />
-								<div className="flex overflow-hidden -space-x-1">
+								<div className="flex -space-x-1 overflow-hidden">
 									{dummyUsers.map((_, i) => {
 										return (
 											<Avatar
 												key={`user-${i}-${_.id}-${_.image}`}
-												className="inline-block rounded-full border-2 border-white"
+												className="inline-block border-2 border-white rounded-full"
 											>
 												<AvatarImage src={_.image} />
 												<AvatarFallback>U{i + 1}</AvatarFallback>
@@ -158,11 +158,11 @@ export const SignUpForm = ({
 						</>
 					)}
 					{waitList.showBranding && (
-						<span className="flex justify-center items-center text-center text-gray-500">
+						<span className="flex items-center justify-center text-center text-gray-500">
 							Widget by&nbsp;
 							<a
 								href="https://waitlyze.falakgala.dev"
-								className="font-medium text-purple-500"
+								className="font-medium text-[#FF6B4A]"
 								target="_blank"
 								rel="noopener noreferrer"
 							>

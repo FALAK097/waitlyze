@@ -2,6 +2,7 @@
 
 import { env } from "@/lib/env.mjs";
 import prisma from "@/lib/prisma";
+import { marked } from 'marked';
 
 const TYPE_MAP = {
   signup: "SIGNUP",
@@ -14,7 +15,7 @@ const DEFAULTS = {
     previewText: "Join our exclusive waitlist",
     header: "Welcome Aboard!",
     subHeader: "We're excited to have you",
-    mainBody: "Thanks for joining {{waitlist}}.\nPlease verify your email to secure your spot.",
+    mainBody: "Thanks for joining {{waitlist}}.\n\nPlease verify your email to secure your spot.",
     subBody: "You're currently #{{position}} in line",
   },
   offboarding: {
@@ -157,28 +158,125 @@ export async function sendTestEmail({ waitListId, templateType, to }) {
 
     const subject = replaceVars(tpl.subject);
     const previewText = replaceVars(tpl.previewText);
-    const header = replaceVars(tpl.header);
-    const subHeader = replaceVars(tpl.subHeader);
-    const mainBody = replaceVars(tpl.mainBody);
-    const subBody = replaceVars(tpl.subBody);
+    const header = markdownToHtml(replaceVars(tpl.header));
+    const subHeader = markdownToHtml(replaceVars(tpl.subHeader));
+    const mainBody = markdownToHtml(replaceVars(tpl.mainBody));
+    const subBody = markdownToHtml(replaceVars(tpl.subBody));
 
-    const htmlBody = `<!DOCTYPE html><html><head><meta charSet="utf-8"/><title>${subject}</title></head>
-<body style="font-family:Arial,Helvetica,sans-serif;background:#f7f7f7;padding:24px;">
-<table width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;margin:0 auto;background:#ffffff;border-radius:8px;padding:32px;">
-<tr><td style="text-align:center;font-size:24px;font-weight:700;color:#6d28d9;">Waitlyze</td></tr>
-<tr><td style="height:16px;"></td></tr>
-<tr><td style="font-size:14px;color:#6b7280;">${previewText}</td></tr>
-<tr><td style="height:24px;"></td></tr>
-<tr><td><h1 style="margin:0;font-size:22px;">${header}</h1></td></tr>
-<tr><td><h2 style="margin:8px 0 0;font-size:16px;font-weight:500;color:#6b7280;">${subHeader}</h2></td></tr>
-<tr><td style="height:16px;"></td></tr>
-<tr><td style="white-space:pre-wrap;font-size:14px;line-height:1.5;">${mainBody}</td></tr>
-<tr><td style="height:16px;"></td></tr>
-<tr><td style="font-size:12px;color:#6b7280;">${subBody}</td></tr>
-<tr><td style="height:32px;"></td></tr>
-<tr><td style="font-size:12px;color:#9ca3af;text-align:center;">Need help? Reply to this email • © ${new Date().getFullYear()} Waitlyze</td></tr>
-</table>
-</body></html>`;
+    const htmlBody = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>${subject}</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      line-height: 1.6;
+      color: #333;
+      padding: 0;
+      margin: 0;
+      background-color: #f7f7f7;
+    }
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 30px 20px;
+    }
+    .email-body {
+      background-color: #ffffff;
+      border-radius: 8px;
+      padding: 30px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    .header {
+      font-size: 20px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: #111827;
+    }
+    .subheader {
+      font-size: 16px;
+      color: #6b7280;
+      margin-bottom: 24px;
+    }
+    .content {
+      font-size: 14px;
+      margin-bottom: 24px;
+    }
+    .footer {
+      font-size: 12px;
+      color: #6b7280;
+      margin-bottom: 24px;
+    }
+    .divider {
+      border-top: 1px solid #e5e7eb;
+      margin: 24px 0;
+    }
+    .email-footer {
+      font-size: 12px;
+      color: #9ca3af;
+      text-align: center;
+      margin-top: 24px;
+    }
+    /* Markdown styles */
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 0;
+      color: #111827;
+    }
+    h1 { font-size: 22px; }
+    h2 { font-size: 20px; }
+    h3 { font-size: 18px; }
+    h4 { font-size: 16px; }
+    a {
+      color: #2563eb;
+      text-decoration: underline;
+    }
+    p {
+      margin-top: 0;
+    }
+    code {
+      font-family: monospace;
+      background-color: #f3f4f6;
+      padding: 2px 4px;
+      border-radius: 3px;
+    }
+    pre {
+      background-color: #f3f4f6;
+      padding: 12px;
+      border-radius: 6px;
+      overflow-x: auto;
+    }
+    blockquote {
+      border-left: 4px solid #e5e7eb;
+      margin-left: 0;
+      padding-left: 12px;
+      color: #6b7280;
+    }
+    ul, ol {
+      padding-left: 24px;
+    }
+    img {
+      max-width: 100%;
+      height: auto;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="email-body">
+      <div class="header">${header}</div>
+      <div class="subheader">${subHeader}</div>
+      <div class="content">${mainBody}</div>
+      <div class="footer">${subBody}</div>
+      <div class="divider"></div>
+      <div class="email-footer">
+        Need help? Reply to this email • © ${new Date().getFullYear()} Waitlyze
+      </div>
+    </div>
+  </div>
+</body>
+</html>`;
 
     const resp = await fetch("https://api.useplunk.com/v1/send", {
       method: "POST",
@@ -200,6 +298,11 @@ export async function sendTestEmail({ waitListId, templateType, to }) {
     console.error(e);
     return { success: false, message: "Failed to send email" };
   }
+}
+
+function markdownToHtml(markdown) {
+  if (!markdown) return '';
+  return marked(markdown);
 }
 
 async function renderTemplate({ waitListId, enumType, varsOverride = {} }) {
@@ -238,28 +341,125 @@ async function renderTemplate({ waitListId, enumType, varsOverride = {} }) {
 
   const subject = replaceVars(tpl.subject);
   const previewText = replaceVars(tpl.previewText);
-  const header = replaceVars(tpl.header);
-  const subHeader = replaceVars(tpl.subHeader);
-  const mainBody = replaceVars(tpl.mainBody);
-  const subBody = replaceVars(tpl.subBody);
+  const header = markdownToHtml(replaceVars(tpl.header));
+  const subHeader = markdownToHtml(replaceVars(tpl.subHeader));
+  const mainBody = markdownToHtml(replaceVars(tpl.mainBody));
+  const subBody = markdownToHtml(replaceVars(tpl.subBody));
 
-  const htmlBody = `<!DOCTYPE html><html><head><meta charSet="utf-8"/><title>${subject}</title></head>
-<body style="font-family:Arial,Helvetica,sans-serif;background:#f7f7f7;padding:24px;">
-<table width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;margin:0 auto;background:#ffffff;border-radius:8px;padding:32px;">
-<tr><td style="text-align:center;font-size:24px;font-weight:700;color:#6d28d9;">Waitlyze</td></tr>
-<tr><td style="height:16px;"></td></tr>
-<tr><td style="font-size:14px;color:#6b7280;">${previewText}</td></tr>
-<tr><td style="height:24px;"></td></tr>
-<tr><td><h1 style="margin:0;font-size:22px;">${header}</h1></td></tr>
-<tr><td><h2 style="margin:8px 0 0;font-size:16px;font-weight:500;color:#6b7280;">${subHeader}</h2></td></tr>
-<tr><td style="height:16px;"></td></tr>
-<tr><td style="white-space:pre-wrap;font-size:14px;line-height:1.5;">${mainBody}</td></tr>
-<tr><td style="height:16px;"></td></tr>
-<tr><td style="font-size:12px;color:#6b7280;">${subBody}</td></tr>
-<tr><td style="height:32px;"></td></tr>
-<tr><td style="font-size:12px;color:#9ca3af;text-align:center;">Need help? Reply to this email • © ${new Date().getFullYear()} Waitlyze</td></tr>
-</table>
-</body></html>`;
+  const htmlBody = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>${subject}</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      line-height: 1.6;
+      color: #333;
+      padding: 0;
+      margin: 0;
+      background-color: #f7f7f7;
+    }
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 30px 20px;
+    }
+    .email-body {
+      background-color: #ffffff;
+      border-radius: 8px;
+      padding: 30px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    .header {
+      font-size: 20px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: #111827;
+    }
+    .subheader {
+      font-size: 16px;
+      color: #6b7280;
+      margin-bottom: 24px;
+    }
+    .content {
+      font-size: 14px;
+      margin-bottom: 24px;
+    }
+    .footer {
+      font-size: 12px;
+      color: #6b7280;
+      margin-bottom: 24px;
+    }
+    .divider {
+      border-top: 1px solid #e5e7eb;
+      margin: 24px 0;
+    }
+    .email-footer {
+      font-size: 12px;
+      color: #9ca3af;
+      text-align: center;
+      margin-top: 24px;
+    }
+    /* Markdown styles */
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 0;
+      color: #111827;
+    }
+    h1 { font-size: 22px; }
+    h2 { font-size: 20px; }
+    h3 { font-size: 18px; }
+    h4 { font-size: 16px; }
+    a {
+      color: #2563eb;
+      text-decoration: underline;
+    }
+    p {
+      margin-top: 0;
+    }
+    code {
+      font-family: monospace;
+      background-color: #f3f4f6;
+      padding: 2px 4px;
+      border-radius: 3px;
+    }
+    pre {
+      background-color: #f3f4f6;
+      padding: 12px;
+      border-radius: 6px;
+      overflow-x: auto;
+    }
+    blockquote {
+      border-left: 4px solid #e5e7eb;
+      margin-left: 0;
+      padding-left: 12px;
+      color: #6b7280;
+    }
+    ul, ol {
+      padding-left: 24px;
+    }
+    img {
+      max-width: 100%;
+      height: auto;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="email-body">
+      <div class="header">${header}</div>
+      <div class="subheader">${subHeader}</div>
+      <div class="content">${mainBody}</div>
+      <div class="footer">${subBody}</div>
+      <div class="divider"></div>
+      <div class="email-footer">
+        Need help? Reply to this email • © ${new Date().getFullYear()} Waitlyze
+      </div>
+    </div>
+  </div>
+</body>
+</html>`;
 
   return { waitList, subject, htmlBody };
 }
