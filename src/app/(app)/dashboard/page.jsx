@@ -15,6 +15,8 @@ import {
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
+import { auth } from "@/lib/auth";
+import { headers } from "next/headers";
 
 export const metadata = {
   title: "Dashboard",
@@ -25,11 +27,15 @@ export const metadata = {
 export const dynamic = "force-dynamic";
 
 export default async function DashboardPage() {
-  const { success, data } = await getDashboardData();
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
 
-  if (!success || !data?.user) {
+  if (!session) {
     redirect("/sign-in");
   }
+
+  const { success, data } = await getDashboardData(session.user.id);
 
   return (
     <div className="flex flex-col">
