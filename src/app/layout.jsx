@@ -1,5 +1,4 @@
 import "./globals.css";
-import { ClerkProvider } from "@clerk/nextjs";
 import { Inter } from "next/font/google";
 import { Providers } from "./_providers";
 import { NuqsAdapter } from "nuqs/adapters/next/app"
@@ -45,13 +44,11 @@ export default function RootLayout({ children }) {
 				<meta name="apple-mobile-web-app-title" content="Waitlyze" />
 			</head>
 			<body className={inter.className} suppressHydrationWarning>
-				<ClerkProvider telemetry={false}>
-					<NuqsAdapter>
-						<Providers>
-							{children}
-						</Providers>
-					</NuqsAdapter>
-				</ClerkProvider>
+				<NuqsAdapter>
+					<Providers>
+						{children}
+					</Providers>
+				</NuqsAdapter>
 			</body>
 		</html>
 	);

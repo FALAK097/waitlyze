@@ -26,7 +26,7 @@ import {
 	TooltipProvider,
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useUser } from "@clerk/nextjs";
+import { useSession } from "@/lib/auth-client";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -56,7 +56,8 @@ const feedbackSchema = z.object({
 export const Feedback = () => {
 	const [open, setOpen] = useState(false);
 	const [isLoading, setIsLoading] = useState(false);
-	const { user } = useUser();
+	const { data: session } = useSession();
+	const user = session?.user;
 	const {
 		control,
 		handleSubmit,
@@ -75,11 +76,13 @@ export const Feedback = () => {
 	});
 
 	useEffect(() => {
-		if (user?.primaryEmailAddress?.emailAddress) {
-			setValue("email", user.primaryEmailAddress.emailAddress);
+		if (user?.email) {
+			setValue("email", user.email);
 		}
-		if (user?.firstName) {
-			setValue("name", `${user.firstName} ${user.lastName || ""}`);
+		if (user?.name) {
+			setValue("name", user.name);
+		} else if (user?.firstName) {
+			setValue("name", `${user.firstName} ${user.lastName || ""}`.trim());
 		}
 	}, [user, setValue]);
 
@@ -138,7 +141,7 @@ export const Feedback = () => {
 										{...field}
 										placeholder="Your name"
 										className="rounded-xl"
-										disabled={!!user?.firstName}
+										disabled={!!(user?.name || user?.firstName)}
 									/>
 								)}
 							/>
@@ -157,7 +160,7 @@ export const Feedback = () => {
 										type="email"
 										placeholder="your.email@example.com"
 										className="rounded-xl"
-										disabled={!!user?.primaryEmailAddress?.emailAddress}
+										disabled={!!user?.email}
 									/>
 								)}
 							/>

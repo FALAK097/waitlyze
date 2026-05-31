@@ -14,13 +14,13 @@ import {
 } from "@/components/ui/tooltip";
 import { getMenuList } from "@/lib/menu-list";
 import { cn } from "@/lib/utils";
-import { useAuth } from "@clerk/nextjs";
+import { signOut } from "@/lib/auth-client";
 import { LogoutIcon } from "../shared/icons";
 import { CollapseMenuButton } from "./collapse-menu-button";
 
 export function Menu({ isOpen }) {
 	const pathname = usePathname();
-	const { signOut } = useAuth();
+	const handleSignOut = () => signOut({ callbackURL: "/" });
 	const menuList = getMenuList(pathname);
 
 	return (

@@ -13,8 +13,9 @@ import {
 import { NewWaitListForm } from "@/components/wait-lists/new-form";
 import prisma from "@/lib/prisma";
 import { waitFor } from "@/lib/utils";
-import { currentUser } from "@clerk/nextjs/server";
-import { notFound } from "next/navigation";
+import { auth } from "@/lib/auth";
+import { headers } from "next/headers";
+import { notFound, redirect } from "next/navigation";
 
 export const metadata = {
 	title: "Create New WaitList",
@@ -23,10 +24,15 @@ export const metadata = {
 };
 
 export default async function WaitListsPage() {
-	const clerkUser = await currentUser();
+	const session = await auth.api.getSession({
+		headers: await headers(),
+	});
+	if (!session) {
+		redirect("/");
+	}
 	const user = await prisma.user.findUnique({
 		where: {
-			clerkUserId: clerkUser.id,
+			id: session.user.id,
 		},
 	});
 

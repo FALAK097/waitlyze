@@ -14,9 +14,10 @@ import {
 } from "@/components/ui/breadcrumb";
 import { WaitlistGenerator } from "@/components/wait-lists/edit-form";
 import prisma from "@/lib/prisma";
-import { currentUser } from "@clerk/nextjs/server";
+import { auth } from "@/lib/auth";
+import { headers } from "next/headers";
 import { Laptop } from "lucide-react";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 
 const getWaitList = cache(async (id) => {
 	return await prisma.waitList.findUnique({
@@ -34,9 +35,9 @@ const getFullWaitList = cache(async (id, userId) => {
 	});
 });
 
-const getUser = cache(async (clerkUserId) => {
+const getUser = cache(async (id) => {
 	return await prisma.user.findUnique({
-		where: { clerkUserId },
+		where: { id },
 	});
 });
 
@@ -62,13 +63,15 @@ export async function generateMetadata(props) {
 export default async function WaitListsEditPage(props) {
 	const params = await props.params;
 	const { id } = params;
-	const clerkUser = await currentUser();
+	const session = await auth.api.getSession({
+		headers: await headers(),
+	});
 
-	if (!id || !clerkUser) {
-		return notFound();
+	if (!id || !session) {
+		redirect("/");
 	}
 
-	const user = await getUser(clerkUser.id);
+	const user = await getUser(session.user.id);
 
 	if (!user) {
 		return notFound();

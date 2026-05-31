@@ -36,3 +36,6 @@ next-env.d.ts
 
 # OSX files
 .DS_Store
+
+# prisma generated client
+/src/generated/

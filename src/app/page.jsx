@@ -3,7 +3,7 @@ import CallToAction from "@/components/landing/call-to-action";
 import FAQ from "@/components/landing/faq";
 import Features from "@/components/landing/features";
 import Footer from "@/components/landing/footer";
-import Header from "@/components/landing/header";
+import HeaderWrapper from "@/components/landing/header-wrapper";
 import Hero from "@/components/landing/hero";
 import HowItWorks from "@/components/landing/how-it-works";
 import Pricing from "@/components/landing/pricing";
@@ -18,7 +18,7 @@ export const metadata = {
 export default function LandingPage() {
 	return (
 		<div className="flex flex-col min-h-screen">
-			<Header />
+			<HeaderWrapper />
 
 			<Hero />
 			<main className="grow">

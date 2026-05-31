@@ -1,12 +1,15 @@
 import { NextResponse } from 'next/server';
-import { currentUser } from '@clerk/nextjs/server';
+import { auth } from "@/lib/auth";
+import { headers } from "next/headers";
 import prisma from '@/lib/prisma';
 import { createApiKey } from '@/services/api-key';
 
 export async function POST(request) {
   try {
-    const clerkUser = await currentUser();
-    if (!clerkUser) {
+    const session = await auth.api.getSession({
+      headers: await headers(),
+    });
+    if (!session) {
       return NextResponse.json(
         { error: { message: 'Unauthorized' } },
         { status: 401 }
@@ -14,7 +17,7 @@ export async function POST(request) {
     }
 
     const user = await prisma.user.findUnique({
-      where: { clerkUserId: clerkUser.id },
+      where: { id: session.user.id },
     });
 
     if (!user) {
