@@ -13,8 +13,6 @@ model User {
   name          String?
   emailVerified Boolean   @default(false)
   image         String?
-  firstName     String?
-  lastName      String?
   imageUrl      String?
   isOnboarded   Boolean   @default(false)
   createdAt     DateTime  @default(now())
