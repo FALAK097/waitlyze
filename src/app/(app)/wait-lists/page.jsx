@@ -71,9 +71,9 @@ export default async function WaitListsPage() {
 				return response;
 			}
 
-			// Attempt to delete the logo from Uploadthing
+			// Attempt to delete the logo from R2
 			const removeUploadResponse = await removeUpload(waitList.logoKey);
-			console.log("Uploadthing response:", removeUploadResponse); // Log the response for debugging
+			console.log("R2 delete response:", removeUploadResponse); // Log the response for debugging
 
 			if (removeUploadResponse.success) {
 				// Proceed to delete the waitlist entry from the database
@@ -86,7 +86,7 @@ export default async function WaitListsPage() {
 				response.success = true;
 				response.message = "Wait list deleted successfully";
 			} else {
-				response.message = "Failed to delete logo from Uploadthing.";
+				response.message = "Failed to delete logo from storage.";
 			}
 		} catch (error) {
 			console.error("Error deleting wait list:", error);

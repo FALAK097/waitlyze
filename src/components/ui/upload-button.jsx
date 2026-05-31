@@ -1,6 +1,6 @@
 "use client";
 
-import { useUploadThing } from "@/utils/uploadthing";
+import { useR2Upload } from "@/utils/r2-upload";
 import { ImageIcon, Loader } from "lucide-react";
 import { useCallback, useState } from "react";
 import toast from "react-hot-toast";
@@ -9,7 +9,7 @@ import { Button } from "./button";
 export function UploadButton({ onSuccess, disabled }) {
 	const [isUploading, setIsUploading] = useState(false);
 
-	const { startUpload, permittedFileTypes } = useUploadThing("imageUploader", {
+	const { startUpload } = useR2Upload("imageUploader", {
 		onClientUploadComplete: (res) => {
 			setIsUploading(false);
 			if (onSuccess) {
@@ -19,7 +19,6 @@ export function UploadButton({ onSuccess, disabled }) {
 		onUploadError: (error) => {
 			setIsUploading(false);
 			console.error("Upload error:", error);
-			// You might want to add toast notification here
 			toast.error("Upload failed");
 		},
 		onUploadBegin: () => {

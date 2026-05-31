@@ -85,6 +85,18 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
   const [testEmail, setTestEmail] = useState("");
   const [isTestEmailLoading, setIsTestEmailLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [logoUrl, setLogoUrl] = useState(initialWaitList.logoUrl || "/images/logo.png");
+  const [logoKey, setLogoKey] = useState(initialWaitList.logoKey || "");
+  const [shareOnTwitter, setShareOnTwitter] = useState(initialWaitList.shareOnTwitter || false);
+  const [shareOnWhatsapp, setShareOnWhatsapp] = useState(initialWaitList.shareOnWhatsapp || false);
+  const [shareOnInstagram, setShareOnInstagram] = useState(initialWaitList.shareOnInstagram || false);
+  const [shareOnFacebook, setShareOnFacebook] = useState(initialWaitList.shareOnFacebook || false);
+  const [shareOnLinkedin, setShareOnLinkedin] = useState(initialWaitList.shareOnLinkedin || false);
+  const [shareOnEmail, setShareOnEmail] = useState(initialWaitList.shareOnEmail || false);
+  const [shareOnReddit, setShareOnReddit] = useState(initialWaitList.shareOnReddit || false);
+  const [ogTitle, setOgTitle] = useState(initialWaitList.ogTitle || "");
+  const [ogDescription, setOgDescription] = useState(initialWaitList.ogDescription || "");
+  const [ogImage, setOgImage] = useState(initialWaitList.ogImage || "");
 
   const [buttonColor, setButtonColor] = useQueryState('buttonColor', {
     defaultValue: initialWaitList.buttonColor || "#FF6B4A"
@@ -211,18 +223,18 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
     placeholderText,
 
     // Non-URL-synced settings
-    logoUrl: initialWaitList.logoUrl || "/images/logo.png",
-    logoKey: initialWaitList.logoKey || "",
-    shareOnTwitter: initialWaitList.shareOnTwitter || false,
-    shareOnWhatsapp: initialWaitList.shareOnWhatsapp || false,
-    shareOnInstagram: initialWaitList.shareOnInstagram || false,
-    shareOnFacebook: initialWaitList.shareOnFacebook || false,
-    shareOnLinkedin: initialWaitList.shareOnLinkedin || false,
-    shareOnEmail: initialWaitList.shareOnEmail || false,
-    shareOnReddit: initialWaitList.shareOnReddit || false,
-    ogTitle: initialWaitList.ogTitle || "",
-    ogDescription: initialWaitList.ogDescription || "",
-    ogImage: initialWaitList.ogImage || "",
+    logoUrl,
+    logoKey,
+    shareOnTwitter,
+    shareOnWhatsapp,
+    shareOnInstagram,
+    shareOnFacebook,
+    shareOnLinkedin,
+    shareOnEmail,
+    shareOnReddit,
+    ogTitle,
+    ogDescription,
+    ogImage,
   };
 
   const updateSetting = async (key, value) => {
@@ -258,7 +270,21 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
     if (setters[key]) {
       await setters[key](value);
     } else {
-      console.warn(`State '${key}' is not synced to URL`);
+      const localSetters = {
+        logoUrl: setLogoUrl,
+        logoKey: setLogoKey,
+        shareOnTwitter: setShareOnTwitter,
+        shareOnWhatsapp: setShareOnWhatsapp,
+        shareOnInstagram: setShareOnInstagram,
+        shareOnFacebook: setShareOnFacebook,
+        shareOnLinkedin: setShareOnLinkedin,
+        shareOnEmail: setShareOnEmail,
+        shareOnReddit: setShareOnReddit,
+        ogTitle: setOgTitle,
+        ogDescription: setOgDescription,
+        ogImage: setOgImage,
+      };
+      localSetters[key]?.(value);
     }
   };
 

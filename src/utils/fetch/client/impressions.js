@@ -13,36 +13,35 @@ const createImpression = async ({ waitList }) => {
 		(impression) => impression.waitListId === waitList.id,
 	);
 
-	if (!hasCreatedImpression) {
-		try {
-			const response = await fetch("/api/v1/impressions", {
-				method: "POST",
-				body: JSON.stringify({
-					waitListId: waitList.id,
-					hypeSession: uniqueUserId,
-				}),
-				headers: {
-					"Content-Type": "application/json",
-				},
-			});
+	if (hasCreatedImpression) {
+		return { created: false, alreadyExists: true };
+	}
 
-			const data = await response.json();
+	const response = await fetch("/api/v1/impressions", {
+		method: "POST",
+		body: JSON.stringify({
+			waitListId: waitList.id,
+			hypeSession: uniqueUserId,
+		}),
+		headers: {
+			"Content-Type": "application/json",
+		},
+	});
 
-			if (response.status === 200) {
-				existingImpressions.push({
-					waitListId: waitList.id,
-					hypeSession: uniqueUserId,
-				});
-				localStorage.setItem(
-					"waitlist_impressions",
-					JSON.stringify(existingImpressions),
-				);
-			} else {
-				throw new Error(data.message);
-			}
-		} catch (error) {
-			console.error("Failed to create an Impression", error);
-		}
+	const data = await response.json();
+
+	if (response.status === 200) {
+		existingImpressions.push({
+			waitListId: waitList.id,
+			hypeSession: uniqueUserId,
+		});
+		localStorage.setItem(
+			"waitlist_impressions",
+			JSON.stringify(existingImpressions),
+		);
+		return data;
+	} else {
+		throw new Error(data.message);
 	}
 };
 

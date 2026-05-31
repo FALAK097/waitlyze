@@ -1,6 +1,5 @@
 @import "tailwindcss";
 @config "../../tailwind.config.js";
-@source "../node_modules/@uploadthing/react/dist";
 
 @layer base {
   :root {
@@ -166,6 +165,9 @@
 html {
   scroll-behavior: smooth;
 }
+
+/* @next/scroll-behavior */
+
 
 @layer utilities {
   .no-scrollbar::-webkit-scrollbar {
