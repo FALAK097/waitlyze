@@ -1,12 +1,9 @@
-import { withUt } from "uploadthing/tw";
-
 /** @type {import('tailwindcss').Config} */
-const config = withUt({
+const config = {
   darkMode: ["class"],
   content: [
     "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/app/**/*.{js,ts,jsx,tsx,mdx}",
-    "../node_modules/@uploadthing/react/dist**",
   ],
   theme: {
     container: {
@@ -89,6 +86,6 @@ const config = withUt({
     },
   },
   plugins: [require("tailwindcss-animate")],
-});
+};
 
 export default config;

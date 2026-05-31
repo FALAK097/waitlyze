@@ -1,3 +1,5 @@
+"use client";
+
 import { UpgradeButton } from "@/components/shared/upgrade-button";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -13,12 +15,37 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { UploadButton } from "@/utils/uploadthing";
+import { useR2Upload } from "@/utils/r2-upload";
 import { X } from "lucide-react";
 import Image from "next/image";
+import { useRef } from "react";
 import { toast } from "react-hot-toast";
 
 export function SettingsTab({ formSettings, updateSetting, applyPreset }) {
+	const fileInputRef = useRef(null);
+	const { startUpload, isUploading } = useR2Upload("imageUploader", {
+		onClientUploadComplete: (res) => {
+			if (res?.[0]?.url) {
+				updateSetting("ogImage", res[0].url);
+				toast.success("Image uploaded successfully");
+			}
+		},
+		onUploadError: (error) => {
+			toast.error(`ERROR! ${error.message}`);
+		},
+	});
+
+	const handleFileChange = async (e) => {
+		const files = e.target.files;
+		if (files && files.length > 0) {
+			try {
+				await startUpload([files[0]]);
+			} catch (err) {
+				console.error(err);
+			}
+		}
+	};
+
 	return (
 		<div className="w-full md:w-80 ml-0 px-4 md:ml-8 h-[calc(100vh-200px)] overflow-y-auto">
 			<Tabs defaultValue="general" className="w-full">
@@ -400,22 +427,22 @@ export function SettingsTab({ formSettings, updateSetting, applyPreset }) {
 										</div>
 									)}
 									<div className="flex justify-start">
-										<UploadButton
-											appearance={{
-												button:
-													"ut-ready:bg-primary ut-button:ut-readying:bg-primary ut-uploading:cursor-not-allowed rounded-md px-6 py-2 text-primary-foreground transition-colors hover:bg-primary/90 shadow-sm",
-											}}
-											endpoint="imageUploader"
-											onClientUploadComplete={(res) => {
-												if (res?.[0]?.url) {
-													updateSetting("ogImage", res[0].url);
-													toast.success("Image uploaded successfully");
-												}
-											}}
-											onUploadError={(error) => {
-												toast.error(`ERROR! ${error.message}`);
-											}}
+										<input
+											type="file"
+											ref={fileInputRef}
+											onChange={handleFileChange}
+											accept="image/*"
+											className="hidden"
+											disabled={isUploading}
 										/>
+										<Button
+											type="button"
+											onClick={() => fileInputRef.current?.click()}
+											disabled={isUploading}
+											className="rounded-md px-6 py-2 shadow-sm text-sm"
+										>
+											{isUploading ? "Uploading..." : "Upload Image"}
+										</Button>
 									</div>
 								</div>
 							</div>

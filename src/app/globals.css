@@ -1,6 +1,5 @@
 @import "tailwindcss";
 @config "../../tailwind.config.js";
-@source "../node_modules/@uploadthing/react/dist";
 
 @layer base {
   :root {

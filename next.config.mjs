@@ -9,7 +9,7 @@ const nextConfig = {
       },
       {
         protocol: "https",
-        hostname: "utfs.io",
+        hostname: "*.r2.dev",
         port: "",
       },
       {
