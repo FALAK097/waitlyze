@@ -1,7 +1,10 @@
 import { NextResponse } from "next/server";
+import { getSessionCookie } from "better-auth/cookies";
 
 export function proxy(req) {
-  const sessionToken = req.cookies.get("better-auth.session_token");
+  const sessionCookie = getSessionCookie(req, {
+    cookiePrefix: "ba",
+  });
   const { pathname } = req.nextUrl;
 
   // Protect routes starting with /dashboard and /wait-lists
@@ -14,19 +17,19 @@ export function proxy(req) {
     pathname.startsWith("/sign-in") ||
     pathname.startsWith("/sign-up");
 
-  if (isProtectedRoute && !sessionToken) {
-    return NextResponse.redirect(new URL("/sign-in", req.url));
-  }
-
-  if (isAuthRoute && sessionToken) {
-    return NextResponse.redirect(new URL("/dashboard", req.url));
-  }
-
   if (
     pathname.startsWith("/forms") ||
     pathname.startsWith("/api/waitlist")
   ) {
     return NextResponse.next();
+  }
+
+  if (isProtectedRoute && !sessionCookie) {
+    return NextResponse.redirect(new URL("/sign-in", req.url));
+  }
+
+  if (isAuthRoute && sessionCookie) {
+    return NextResponse.redirect(new URL("/dashboard", req.url));
   }
 
   const res = NextResponse.next();
