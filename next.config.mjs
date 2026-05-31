@@ -9,12 +9,7 @@ const nextConfig = {
       },
       {
         protocol: "https",
-        hostname: "*.r2.dev",
-        port: "",
-      },
-      {
-        protocol: "https",
-        hostname: "picsum.photos",
+        hostname: "r2.waitlyze.falakgala.dev",
         port: "",
       },
     ],

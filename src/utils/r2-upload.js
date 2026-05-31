@@ -3,6 +3,7 @@ import toast from "react-hot-toast";
 
 export function useR2Upload(endpoint, options = {}) {
   const [isUploading, setIsUploading] = useState(false);
+  const [progress, setProgress] = useState(0);
 
   const startUpload = useCallback(async (files) => {
     if (!files || files.length === 0) return;
@@ -11,6 +12,7 @@ export function useR2Upload(endpoint, options = {}) {
       options.onUploadBegin();
     }
     setIsUploading(true);
+    setProgress(0);
 
     try {
       const results = [];
@@ -26,27 +28,55 @@ export function useR2Upload(endpoint, options = {}) {
         const formData = new FormData();
         formData.append("file", file);
 
-        const response = await fetch("/api/upload", {
-          method: "POST",
-          body: formData,
+        // Upload using XMLHttpRequest to get real progress updates
+        const result = await new Promise((resolve, reject) => {
+          const xhr = new XMLHttpRequest();
+
+          xhr.upload.addEventListener("progress", (event) => {
+            if (event.lengthComputable) {
+              const percentComplete = Math.round((event.loaded / event.total) * 100);
+              setProgress(percentComplete);
+            }
+          });
+
+          xhr.addEventListener("load", () => {
+            if (xhr.status >= 200 && xhr.status < 300) {
+              try {
+                const response = JSON.parse(xhr.responseText);
+                resolve(response);
+              } catch (e) {
+                reject(new Error("Failed to parse server response"));
+              }
+            } else {
+              try {
+                const response = JSON.parse(xhr.responseText);
+                reject(new Error(response.error || `Upload failed with status ${xhr.status}`));
+              } catch (e) {
+                reject(new Error(`Upload failed with status ${xhr.status}`));
+              }
+            }
+          });
+
+          xhr.addEventListener("error", () => {
+            reject(new Error("Network upload error"));
+          });
+
+          xhr.open("POST", "/api/upload");
+          xhr.send(formData);
         });
 
-        if (!response.ok) {
-          const errData = await response.json();
-          throw new Error(errData.error || `Upload failed with status ${response.status}`);
-        }
-
-        const result = await response.json();
         results.push(result);
       }
 
       setIsUploading(false);
+      setProgress(100);
       if (options.onClientUploadComplete) {
         options.onClientUploadComplete(results);
       }
       return results;
     } catch (error) {
       setIsUploading(false);
+      setProgress(0);
       console.error("Upload error in hook:", error);
       if (options.onUploadError) {
         options.onUploadError(error);
@@ -60,6 +90,7 @@ export function useR2Upload(endpoint, options = {}) {
   return {
     startUpload,
     isUploading,
+    progress,
     permittedFileTypes: ["image/*"],
   };
 }
