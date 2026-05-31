@@ -10,8 +10,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 import Image from "next/image";
@@ -19,45 +17,7 @@ import { Loader2 } from "lucide-react";
 import toast from "react-hot-toast";
 
 export function SignUpForm({ className, ...props }) {
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
-
-  const handleSignUp = async (e) => {
-    e.preventDefault();
-    if (!name || !email || !password) {
-      toast.error("Please fill in all fields");
-      return;
-    }
-    if (password.length < 8) {
-      toast.error("Password must be at least 8 characters long");
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const { error } = await authClient.signUp.email({
-        email,
-        password,
-        name,
-        callbackURL: "/dashboard",
-      });
-
-      if (error) {
-        toast.error(error.message || "Registration failed. Please try again.");
-      } else {
-        toast.success("Account created successfully!");
-        window.location.href = "/dashboard";
-      }
-    } catch (err) {
-      console.error("Sign-up error:", err);
-      toast.error("An unexpected error occurred. Please try again.");
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleGoogleSignIn = async () => {
     setGoogleLoading(true);
@@ -79,104 +39,38 @@ export function SignUpForm({ className, ...props }) {
         <CardHeader className="text-center">
           <CardTitle className="text-xl">Create an account</CardTitle>
           <CardDescription>
-            Sign up with your Google account or email
+            Sign up with your Google account
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSignUp}>
-            <div className="grid gap-6">
-              {/* Google OAuth */}
-              <div className="flex flex-col gap-4">
-                <Button
-                  variant="outline"
-                  type="button"
-                  className="w-full"
-                  onClick={handleGoogleSignIn}
-                  disabled={loading || googleLoading}
-                >
-                  {googleLoading ? (
-                    <Loader2 className="size-4 animate-spin" />
-                  ) : (
-                    <Image src="/images/google.svg" alt="Google" width={16} height={16} />
-                  )}
-                  Continue with Google
-                </Button>
-              </div>
-
-              {/* Divider */}
-              <div className="relative text-sm text-center after:absolute after:inset-0 after:top-1/2 after:z-0 after:flex after:items-center after:border-t after:border-border">
-                <span className="relative z-10 px-2 bg-card text-muted-foreground">
-                  Or continue with
-                </span>
-              </div>
-
-              {/* Name + Email + Password */}
-              <div className="grid gap-6">
-                <div className="grid gap-2">
-                  <Label htmlFor="name">Full Name</Label>
-                  <Input
-                    id="name"
-                    type="text"
-                    placeholder="John Doe"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    required
-                    disabled={loading || googleLoading}
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="m@example.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                    disabled={loading || googleLoading}
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="password">Password</Label>
-                  <Input
-                    id="password"
-                    type="password"
-                    placeholder="••••••••"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                    disabled={loading || googleLoading}
-                  />
-                </div>
-                <Button
-                  type="submit"
-                  className="w-full"
-                  disabled={loading || googleLoading}
-                >
-                  {loading ? (
-                    <>
-                      <Loader2 className="mr-2 size-4 animate-spin" />
-                      Creating account...
-                    </>
-                  ) : (
-                    "Create account"
-                  )}
-                </Button>
-              </div>
-
-              {/* Sign in link */}
-              <div className="text-sm text-center">
-                Already have an account?{" "}
-                <Link href="/sign-in" className="underline underline-offset-4">
-                  Sign in
-                </Link>
-              </div>
+          <div className="grid gap-6">
+            <div className="flex flex-col gap-4">
+              <Button
+                variant="outline"
+                type="button"
+                className="w-full gap-3 h-12 text-base"
+                onClick={handleGoogleSignIn}
+                disabled={googleLoading}
+              >
+                {googleLoading ? (
+                  <Loader2 className="size-5 animate-spin" />
+                ) : (
+                  <Image src="/images/google.svg" alt="Google" width={20} height={20} />
+                )}
+                Continue with Google
+              </Button>
             </div>
-          </form>
+            <div className="text-center text-sm">
+              Already have an account?{" "}
+              <Link href="/sign-in" className="underline underline-offset-4">
+                Sign in
+              </Link>
+            </div>
+          </div>
         </CardContent>
       </Card>
       <div className="text-balance text-center text-xs text-muted-foreground [&_a]:underline [&_a]:underline-offset-4 [&_a]:hover:text-primary">
-        By clicking Create Account, you agree to our{" "}
+        By signing up, you agree to our{" "}
         <Link href="/terms">Terms of Service</Link> and <Link href="/privacy">Privacy Policy</Link>.
       </div>
     </div>
