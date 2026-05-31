@@ -18,6 +18,18 @@ export const auth = betterAuth({
     enabled: true,
   },
   socialProviders,
+  baseURL: process.env.BETTER_AUTH_URL,
+  trustedOrigins: [
+    process.env.BETTER_AUTH_URL,
+    "https://waitlyze.falakgala.dev",
+    "http://localhost:3000",
+  ].filter(Boolean),
+  advanced: {
+    defaultCookieAttributes: {
+      secure: process.env.NODE_ENV === "production",
+      sameSite: process.env.NODE_ENV === "production" ? "lax" : "lax",
+    },
+  },
   user: {
     additionalFields: {
       firstName: {
