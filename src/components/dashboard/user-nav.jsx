@@ -63,7 +63,7 @@ export function UserNav() {
         <DropdownMenuLabel className="p-2 font-normal">
           <div className="flex flex-col space-y-1">
             <p className="text-sm font-semibold leading-none text-foreground">
-              {user.name || `${user.firstName || ""} ${user.lastName || ""}`.trim() || "User"}
+              {user.name || "User"}
             </p>
             <p className="text-xs leading-none truncate text-muted-foreground">
               {user.email}
