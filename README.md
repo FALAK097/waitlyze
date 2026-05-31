@@ -38,7 +38,7 @@ Create a `.env` file in the root of the project and add the following environmen
 cp .env.example .env
 ```
 
-Make sure to replace the `dummy` credentials.
+Fill in the values of the environment variables.
 
 ### Run PostgreSQL Locally with Docker
 
