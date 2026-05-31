@@ -24,14 +24,12 @@ export const GET = async (req) => {
 };
 
 export const POST = async (req) => {
-  await new Promise((resolve) => setTimeout(resolve, 1500));
-
   try {
     const body = await req.json();
     const validator = await validateRequest(body);
     if (validator) return validator;
 
-    const { device, deviceType } = await getDeviceInfo(req);
+    const { device, deviceType } = await getDeviceInfo();
     const ip = getIpAddress(req);
     const geo = getGeoInfo(req);
 
@@ -61,15 +59,18 @@ export const POST = async (req) => {
       impressionId: impression?.id,
     };
 
-    if (geo) {
-      const { city, country, latitude, longitude } = geo;
-      const timezone = await getTimeZone(city);
+    if (geo && (geo.city || geo.country || geo.timezone)) {
+      const timezone = getTimeZone(
+        geo.city,
+        geo.country,
+        geo.timezone
+      );
       data = {
         ...data,
-        city,
-        country,
-        latitude: latitude?.toString(),
-        longitude: longitude?.toString(),
+        city: geo.city,
+        country: geo.country,
+        latitude: geo.latitude?.toString(),
+        longitude: geo.longitude?.toString(),
         timezone,
       };
     }

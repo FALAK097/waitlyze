@@ -1,9 +1,11 @@
 import ct from "countries-and-timezones";
-import { geolocation } from "@vercel/functions";
 
 export const getIpAddress = (request) => {
-  const vercelHeaders = request.headers;
-  return vercelHeaders.get("x-forwarded-for") || "::1";
+  const forwarded = request.headers.get("x-forwarded-for");
+  if (forwarded) {
+    return forwarded.split(",")[0].trim();
+  }
+  return "::1";
 };
 
 export const getGeoInfo = (request) => {
@@ -14,85 +16,63 @@ export const getGeoInfo = (request) => {
         city: "Thane",
         latitude: "19.2183",
         longitude: "72.9781",
+        timezone: "Asia/Kolkata",
       };
     }
 
-    const geo = geolocation(request);
+    const headers = request.headers;
+    const country = headers.get("x-vercel-ip-country");
+    const city = headers.get("x-vercel-ip-city");
+    const latitude = headers.get("x-vercel-ip-latitude");
+    const longitude = headers.get("x-vercel-ip-longitude");
+    const timezone = headers.get("x-vercel-ip-timezone");
 
-    if (!geo) {
-      console.warn("No geolocation data available from Vercel");
-      return {};
+    if (country || city || timezone) {
+      return {
+        country: country || undefined,
+        city: city || undefined,
+        latitude: latitude || undefined,
+        longitude: longitude || undefined,
+        timezone: timezone || undefined,
+      };
     }
 
-    const formattedGeo = {
-      country: geo.country || undefined,
-      city: geo.city || undefined,
-      latitude:
-        typeof geo.latitude === "number"
-          ? geo.latitude.toString()
-          : typeof geo.latitude === "string"
-          ? geo.latitude
-          : undefined,
-      longitude:
-        typeof geo.longitude === "number"
-          ? geo.longitude.toString()
-          : typeof geo.longitude === "string"
-          ? geo.longitude
-          : undefined,
-    };
-
-    return formattedGeo;
+    console.warn("No geolocation data available from Vercel headers");
+    return {};
   } catch (error) {
     console.error("Error in getGeoInfo:", error);
     return {};
   }
 };
 
-export const getTimeZone = async (city, request) => {
+export const getTimeZone = (city, countryCode, fallbackTimezone) => {
   try {
-    console.log("[TimeZone Debug] Input city:", city);
+    if (fallbackTimezone) {
+      return fallbackTimezone;
+    }
 
     if (city) {
       const timezones = ct.getAllTimezones();
-      console.log("[TimeZone Debug] Searching for city:", city);
       const matchingTimezone = Object.values(timezones).find((tz) =>
         tz.name.toLowerCase().includes(city.toLowerCase())
       );
-
       if (matchingTimezone) {
-        console.log(
-          "[TimeZone Debug] Found timezone by city:",
-          matchingTimezone.name
-        );
         return matchingTimezone.name;
       }
     }
 
-    const geo = getGeoInfo(request);
-    console.log("[TimeZone Debug] Geo info:", geo);
-
-    if (geo?.country) {
-      console.log(
-        "[TimeZone Debug] Looking up timezone for country:",
-        geo.country
+    if (countryCode) {
+      const countryTimezones = ct.getTimezonesForCountry(
+        countryCode.toUpperCase()
       );
-      const countryCode = geo.country.toUpperCase();
-      const countryTimezones = ct.getTimezonesForCountry(countryCode);
-      console.log("[TimeZone Debug] Found timezones:", countryTimezones);
-
       if (countryTimezones && countryTimezones.length > 0) {
-        console.log(
-          "[TimeZone Debug] Selected timezone:",
-          countryTimezones[0].name
-        );
         return countryTimezones[0].name;
       }
     }
 
-    console.log("[TimeZone Debug] No timezone found");
     return null;
   } catch (error) {
-    console.error("[TimeZone Debug] Error:", error);
+    console.error("[TimeZone] Error:", error);
     return null;
   }
 };

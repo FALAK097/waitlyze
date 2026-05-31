@@ -62,7 +62,7 @@ export async function POST(request) {
       );
     }
 
-    const { device, deviceType } = await getDeviceInfo(request);
+    const { device, deviceType } = await getDeviceInfo();
     const ip = getIpAddress(request);
     const geo = getGeoInfo(request);
 
@@ -75,15 +75,18 @@ export async function POST(request) {
       ipAddress: ip,
     };
 
-    if (geo) {
-      const { city, country, latitude, longitude } = geo;
-      const timezone = await getTimeZone(city);
+    if (geo && (geo.city || geo.country || geo.timezone)) {
+      const timezone = getTimeZone(
+        geo.city,
+        geo.country,
+        geo.timezone
+      );
       signupData = {
         ...signupData,
-        city,
-        country,
-        latitude: latitude?.toString(),
-        longitude: longitude?.toString(),
+        city: geo.city,
+        country: geo.country,
+        latitude: geo.latitude?.toString(),
+        longitude: geo.longitude?.toString(),
         timezone,
       };
     }
@@ -97,24 +100,6 @@ export async function POST(request) {
     const signUp = await prisma.signUp.create({
       data: signupData,
     });
-
-    // if (referralCode) {
-    //   const referredBy = await prisma.signUp.findFirst({
-    //     where: {
-    //       uniqueUserId: referralCode,
-    //       waitListId: waitlistId,
-    //     },
-    //   });
-
-    //   if (referredBy) {
-    //     await prisma.referral.create({
-    //       data: {
-    //         signUpId: signUp.id,
-    //         referredById: referredBy.id,
-    //       },
-    //     });
-    //   }
-    // }
 
     await prisma.impression.create({
       data: {
@@ -136,9 +121,6 @@ export async function POST(request) {
       message: "Successfully joined the waitlist!",
       data: {
         rank: signUp.rank,
-        // referralLink: `${
-        //   request.headers.get("origin") || env.NEXT_PUBLIC_APP_URL
-        // }/forms/${waitlistId}?r=${signUp.uniqueUserId}`,
       },
     });
   } catch (error) {

@@ -5,15 +5,12 @@ import { validateRequest } from "@/utils/server/validations/impression";
 import { NextResponse } from "next/server";
 
 export async function POST(request) {
-  // TODO: Remove this fake delay after implementing email verification, signup confirmation to User & Signed Up user
-  await new Promise((resolve) => setTimeout(resolve, 1500));
-
   try {
     const body = await request.json();
     const validator = await validateRequest(body);
     if (validator) return validator;
 
-    const { device, deviceType } = await getDeviceInfo(request);
+    const { device, deviceType } = await getDeviceInfo();
     const ip = getIpAddress(request);
     const geo = getGeoInfo(request);
 
@@ -34,15 +31,18 @@ export async function POST(request) {
       ipAddress: ip,
     };
 
-    if (geo) {
-      const { city, country, latitude, longitude } = geo;
-      const timezone = await getTimeZone(city);
+    if (geo && (geo.city || geo.country || geo.timezone)) {
+      const timezone = getTimeZone(
+        geo.city,
+        geo.country,
+        geo.timezone
+      );
       data = {
         ...data,
-        city,
-        country,
-        latitude: latitude?.toString(),
-        longitude: longitude?.toString(),
+        city: geo.city,
+        country: geo.country,
+        latitude: geo.latitude?.toString(),
+        longitude: geo.longitude?.toString(),
         timezone,
       };
     }
