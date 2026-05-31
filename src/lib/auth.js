@@ -25,9 +25,12 @@ export const auth = betterAuth({
     "http://localhost:3000",
   ].filter(Boolean),
   advanced: {
+    useSecureCookies: false,
+    cookiePrefix: "ba",
     defaultCookieAttributes: {
-      secure: process.env.NODE_ENV === "production",
-      sameSite: process.env.NODE_ENV === "production" ? "lax" : "lax",
+      secure: true,
+      sameSite: "lax",
+      httpOnly: true,
     },
   },
   user: {
