@@ -10,7 +10,6 @@ export const env = createEnv({
     GOOGLE_CLIENT_ID: z.string().optional(),
     GOOGLE_CLIENT_SECRET: z.string().optional(),
     UPLOADTHING_TOKEN: z.string().min(1),
-    PROJECT_PLANNER_AI_ID: z.string().min(1),
     PLUNK_SECRET_KEY: z.string().min(1),
   },
   client: {
@@ -27,7 +26,6 @@ export const env = createEnv({
     NEXT_PUBLIC_POSTHOG_KEY: process.env.NEXT_PUBLIC_POSTHOG_KEY,
     NEXT_PUBLIC_POSTHOG_HOST: process.env.NEXT_PUBLIC_POSTHOG_HOST,
     UPLOADTHING_TOKEN: process.env.UPLOADTHING_TOKEN,
-    PROJECT_PLANNER_AI_ID: process.env.PROJECT_PLANNER_AI_ID,
     PLUNK_SECRET_KEY: process.env.PLUNK_SECRET_KEY,
   },
 });
