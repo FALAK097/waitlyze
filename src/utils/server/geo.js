@@ -1,9 +1,14 @@
 import ct from "countries-and-timezones";
+import geoip from "geoip-lite";
 
 export const getIpAddress = (request) => {
   const forwarded = request.headers.get("x-forwarded-for");
   if (forwarded) {
     return forwarded.split(",")[0].trim();
+  }
+  const realIp = request.headers.get("x-real-ip");
+  if (realIp) {
+    return realIp;
   }
   return "::1";
 };
@@ -37,7 +42,20 @@ export const getGeoInfo = (request) => {
       };
     }
 
-    console.warn("No geolocation data available from Vercel headers");
+    const ip = getIpAddress(request);
+    if (ip && ip !== "::1" && ip !== "127.0.0.1") {
+      const geo = geoip.lookup(ip);
+      if (geo) {
+        return {
+          country: geo.country,
+          city: geo.city,
+          latitude: geo.ll?.[0]?.toString(),
+          longitude: geo.ll?.[1]?.toString(),
+          timezone: undefined,
+        };
+      }
+    }
+
     return {};
   } catch (error) {
     console.error("Error in getGeoInfo:", error);
