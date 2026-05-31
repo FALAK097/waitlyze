@@ -34,21 +34,11 @@ pnpm install
 
 Create a `.env` file in the root of the project and add the following environment variables:
 
-```env
-DATABASE_URL=postgresql://user:pass@localhost:5432/dbname
-NODE_ENV=development
-NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_
-CLERK_SECRET_KEY=sk_test_
-CLERK_WEBHOOK_SECRET=whsec
-NEXT_PUBLIC_CLERK_SIGN_IN_FALLBACK_REDIRECT_URL=/dashboard
-NEXT_PUBLIC_CLERK_SIGN_UP_FALLBACK_REDIRECT_URL=/dashboard
-NEXT_PUBLIC_POSTHOG_KEY=your_posthog_key
-NEXT_PUBLIC_POSTHOG_HOST=https://us.i.posthog.com
-UPLOADTHING_TOKEN=uploadthing_token
-PROJECT_PLANNER_AI_ID=your_project_planner_id
+```bash
+cp .env.example .env
 ```
 
-Make sure to replace the `dummy` credentials.
+Fill in the values of the environment variables.
 
 ### Run PostgreSQL Locally with Docker
 

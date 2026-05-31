@@ -330,7 +330,10 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
   };
 
   const applyPreset = (preset) => {
-    setFormSettings((prev) => ({ ...prev, ...presets[preset] }));
+    const settings = presets[preset];
+    Object.entries(settings).forEach(([key, value]) => {
+      updateSetting(key, value);
+    });
   };
 
   const handleSave = async () => {
@@ -363,7 +366,8 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
       console.log("response", response);
       if (response.success) {
         toast.success("Logo deleted successfully.");
-        setFormSettings((prev) => ({ ...prev, logoUrl: "", logoKey: "" }));
+        updateSetting("logoUrl", "");
+        updateSetting("logoKey", "");
       } else {
         toast.error(response.message);
       }

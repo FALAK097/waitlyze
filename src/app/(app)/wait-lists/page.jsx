@@ -13,7 +13,8 @@ import EmptyWaitlistState from "@/components/wait-lists/empty-waitlist-state";
 import { WaitListCard } from "@/components/wait-lists/wait-list-card";
 import prisma from "@/lib/prisma";
 import { waitFor } from "@/lib/utils";
-import { currentUser } from "@clerk/nextjs/server";
+import { auth } from "@/lib/auth";
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { removeUpload } from "../../actions/removeUpload";
 
@@ -24,19 +25,16 @@ export const metadata = {
 };
 
 export default async function WaitListsPage() {
-	const clerkUser = await currentUser();
-	if (!clerkUser) {
-		return {
-			redirect: {
-				destination: "/",
-				permanent: false,
-			},
-		};
+	const session = await auth.api.getSession({
+		headers: await headers(),
+	});
+	if (!session) {
+		redirect("/");
 	}
 
 	const user = await prisma.user.findUnique({
 		where: {
-			clerkUserId: clerkUser.id,
+			id: session.user.id,
 		},
 	});
 

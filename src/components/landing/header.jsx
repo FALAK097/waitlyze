@@ -2,7 +2,7 @@
 
 import Logo from "@/components/shared/logo";
 import { Button } from "@/components/ui/button";
-import { SignInButton, SignedIn, SignedOut } from "@clerk/nextjs";
+import { useSession } from "@/lib/auth-client";
 import { Menu, X } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -10,6 +10,7 @@ import { useState } from "react";
 import { ModeToggle } from "../mode-toggle";
 
 export default function Header() {
+	const { data: session, isPending } = useSession();
 	const [isNavOpen, setIsNavOpen] = useState(false);
 
 	const navItems = ["Demo", "How It Works", "Features", "FAQ"];
@@ -42,16 +43,16 @@ export default function Header() {
 							{/* <div className="px-1">
 								<ModeToggle />
 							</div> */}
-							<SignedIn>
+							{!isPending && session && (
 								<Link href="/dashboard">
 									<Button className="rounded-full">Dashboard</Button>
 								</Link>
-							</SignedIn>
-							<SignedOut>
-								<SignInButton mode="modal">
+							)}
+							{!isPending && !session && (
+								<Link href="/sign-in">
 									<Button className="rounded-full">Sign in</Button>
-								</SignInButton>
-							</SignedOut>
+								</Link>
+							)}
 						</nav>
 						<div className="flex items-center md:hidden">
 							{/* <ModeToggle /> */}
@@ -85,17 +86,17 @@ export default function Header() {
 								{item}
 							</Link>
 						))}
-						<div className="flex justify-center mt-4">
-							<SignedIn>
-								<Link href="/dashboard">
+						<div className="flex justify-center mt-4 w-full">
+							{!isPending && session && (
+								<Link href="/dashboard" className="w-full" onClick={() => setIsNavOpen(false)}>
 									<Button className="w-full rounded-full">Dashboard</Button>
 								</Link>
-							</SignedIn>
-							<SignedOut>
-								<SignInButton mode="modal">
+							)}
+							{!isPending && !session && (
+								<Link href="/sign-in" className="w-full" onClick={() => setIsNavOpen(false)}>
 									<Button className="w-full rounded-full">Sign in</Button>
-								</SignInButton>
-							</SignedOut>
+								</Link>
+							)}
 						</div>
 					</nav>
 				</div>

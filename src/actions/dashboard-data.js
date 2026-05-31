@@ -1,14 +1,17 @@
 "use server";
 
 import prisma from "@/lib/prisma";
-import { auth } from "@clerk/nextjs/server";
+import { auth } from "@/lib/auth";
+import { headers } from "next/headers";
 import { cache } from "react";
 
 export const getDashboardData = cache(async () => {
   try {
-    const { userId } = await auth();
+    const session = await auth.api.getSession({
+      headers: await headers(),
+    });
 
-    if (!userId) {
+    if (!session) {
       return {
         success: false,
         error: "Not authenticated",
@@ -17,7 +20,7 @@ export const getDashboardData = cache(async () => {
 
     const user = await prisma.user.findUnique({
       where: {
-        clerkUserId: userId,
+        id: session.user.id,
       },
       include: {
         waitLists: true,

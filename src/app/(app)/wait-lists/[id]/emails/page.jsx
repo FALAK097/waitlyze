@@ -1,6 +1,7 @@
 import { cache } from "react";
-import { notFound } from "next/navigation";
-import { currentUser } from "@clerk/nextjs/server";
+import { notFound, redirect } from "next/navigation";
+import { auth } from "@/lib/auth";
+import { headers } from "next/headers";
 import prisma from "@/lib/prisma";
 import { ContentLayout } from "@/components/dashboard/content-layout";
 import { EmailTemplatesManager } from "@/components/email/email-templates-manager";
@@ -15,8 +16,8 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 
-const getUser = cache(async (clerkUserId) =>
-  prisma.user.findUnique({ where: { clerkUserId } })
+const getUser = cache(async (id) =>
+  prisma.user.findUnique({ where: { id } })
 );
 
 const getWaitList = cache(async (id, userId) =>
@@ -32,10 +33,12 @@ export default async function EmailsPage(props) {
   const params = await props.params;
   const { id } = params;
 
-  const clerk = await currentUser();
-  if (!clerk) return notFound();
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
+  if (!session) redirect("/");
 
-  const user = await getUser(clerk.id);
+  const user = await getUser(session.user.id);
   if (!user) return notFound();
 
   const waitList = await getWaitList(id, user.id);

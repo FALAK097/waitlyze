@@ -19,7 +19,7 @@ const nextConfig = {
       },
     ],
   },
-  serverExternalPackages: ["geoip-lite"],
+  serverExternalPackages: ["geoip-lite", "better-auth"],
 };
 
 export default nextConfig;

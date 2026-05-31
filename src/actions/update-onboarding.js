@@ -1,21 +1,23 @@
 "use server";
 
 import prisma from "@/lib/prisma";
-import { currentUser } from "@clerk/nextjs/server";
+import { auth } from "@/lib/auth";
+import { headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 
 export async function updateOnboardingStatus(userId) {
   try {
-    const clerkUser = await currentUser();
+    const session = await auth.api.getSession({
+      headers: await headers(),
+    });
 
-    if (!clerkUser) {
+    if (!session) {
       return { success: false, error: "Authentication required" };
     }
 
     const user = await prisma.user.findUnique({
       where: {
         id: userId,
-        clerkUserId: clerkUser.id,
       },
     });
 

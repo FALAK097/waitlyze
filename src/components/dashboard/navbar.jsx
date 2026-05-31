@@ -1,5 +1,3 @@
-import { ModeToggle } from "@/components/mode-toggle";
-import { Feedback } from "./feedback";
 import { SheetMenu } from "./sheet-menu";
 import { UserNav } from "./user-nav";
 
@@ -12,7 +10,6 @@ export function Navbar({ title }) {
 					<h1 className="font-medium text-secondary-foreground">{title}</h1>
 				</div>
 				<div className="flex items-center space-x-4">
-					<Feedback />
 					{/* <ModeToggle /> */}
 					<UserNav />
 				</div>

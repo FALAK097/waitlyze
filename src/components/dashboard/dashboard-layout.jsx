@@ -3,7 +3,7 @@
 import { useSidebarToggle } from "@/hooks/use-sidebar-toggle";
 import { useStore } from "@/hooks/use-store";
 import { cn } from "@/lib/utils";
-import { useAuth, useUser } from "@clerk/nextjs";
+import { useSession } from "@/lib/auth-client";
 import { usePathname, useSearchParams } from "next/navigation";
 import { usePostHog } from "posthog-js/react";
 import { useEffect } from "react";
@@ -32,18 +32,20 @@ function DashboardAnalytics() {
 
 export default function DashboardLayout({ children }) {
   const sidebar = useStore(useSidebarToggle, (state) => state);
-  const { isSignedIn, userId } = useAuth();
-  const { user } = useUser();
+  const { data: session } = useSession();
+  const user = session?.user;
+  const isSignedIn = !!session;
+  const userId = user?.id;
   const posthog = usePostHog();
 
   useEffect(() => {
     if (isSignedIn && userId && user && !posthog._isIdentified()) {
       posthog.identify(userId, {
-        email: user.primaryEmailAddress?.emailAddress,
-        username: user.username,
+        email: user.email,
+        name: user.name,
       });
     }
-  }, [posthog, user]);
+  }, [posthog, user, isSignedIn, userId]);
 
   if (!sidebar) return null;
 

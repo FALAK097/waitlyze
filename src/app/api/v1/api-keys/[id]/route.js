@@ -1,5 +1,6 @@
 import { revokeApiKey } from '@/services/api-key';
-import { currentUser } from '@clerk/nextjs/server';
+import { auth } from "@/lib/auth";
+import { headers } from "next/headers";
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 
@@ -7,15 +8,17 @@ export async function DELETE(_req, { params }) {
     const { id } = await params;
 
     try {
-        const clerkUser = await currentUser();
+        const session = await auth.api.getSession({
+            headers: await headers(),
+        });
         
-        if (!clerkUser) {
+        if (!session) {
             return NextResponse.json({ error: { code: 'unauthorized', message: 'Authentication required' } }, { status: 401 });
         }
 
         const user = await prisma.user.findUnique({
             where: {
-                clerkUserId: clerkUser.id,
+                id: session.user.id,
             },
             select: {
                 id: true,
