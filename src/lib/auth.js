@@ -37,10 +37,6 @@ export const auth = betterAuth({
         required: false,
         defaultValue: false,
       },
-      clerkUserId: {
-        type: "string",
-        required: false,
-      },
     },
   },
 });
