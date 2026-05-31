@@ -104,8 +104,8 @@ export function SignUpForm({ className, ...props }) {
               </div>
 
               {/* Divider */}
-              <div className="relative text-center text-sm after:absolute after:inset-0 after:top-1/2 after:z-0 after:flex after:items-center after:border-t after:border-border">
-                <span className="relative z-10 bg-card px-2 text-muted-foreground">
+              <div className="relative text-sm text-center after:absolute after:inset-0 after:top-1/2 after:z-0 after:flex after:items-center after:border-t after:border-border">
+                <span className="relative z-10 px-2 bg-card text-muted-foreground">
                   Or continue with
                 </span>
               </div>
@@ -155,7 +155,7 @@ export function SignUpForm({ className, ...props }) {
                 >
                   {loading ? (
                     <>
-                      <Loader2 className="size-4 mr-2 animate-spin" />
+                      <Loader2 className="mr-2 size-4 animate-spin" />
                       Creating account...
                     </>
                   ) : (
@@ -165,7 +165,7 @@ export function SignUpForm({ className, ...props }) {
               </div>
 
               {/* Sign in link */}
-              <div className="text-center text-sm">
+              <div className="text-sm text-center">
                 Already have an account?{" "}
                 <Link href="/sign-in" className="underline underline-offset-4">
                   Sign in
@@ -176,7 +176,7 @@ export function SignUpForm({ className, ...props }) {
         </CardContent>
       </Card>
       <div className="text-balance text-center text-xs text-muted-foreground [&_a]:underline [&_a]:underline-offset-4 [&_a]:hover:text-primary">
-        By clicking Sign up, you agree to our{" "}
+        By clicking Create Account, you agree to our{" "}
         <Link href="/terms">Terms of Service</Link> and <Link href="/privacy">Privacy Policy</Link>.
       </div>
     </div>

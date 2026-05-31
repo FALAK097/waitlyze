@@ -50,41 +50,32 @@ export function UserNav() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="relative h-10 w-10 rounded-full border border-border shadow-sm bg-background/50 hover:bg-muted/50 p-0">
+        <Button variant="ghost" className="relative w-10 h-10 p-0 border rounded-full shadow-sm border-border bg-background/50 hover:bg-muted/50">
           <Avatar className="h-9 w-9">
             <AvatarImage src={user.image || user.imageUrl} alt={user.name || "User"} />
-            <AvatarFallback className="bg-primary/10 text-primary font-bold text-sm">
+            <AvatarFallback className="text-sm font-bold bg-primary/10 text-primary">
               {initials}
             </AvatarFallback>
           </Avatar>
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-56 rounded-2xl border border-border p-2 backdrop-blur-md bg-background/95" align="end" forceMount>
-        <DropdownMenuLabel className="font-normal p-2">
+      <DropdownMenuContent className="w-56 p-2 border rounded-2xl border-border backdrop-blur-md bg-background/95" align="end" forceMount>
+        <DropdownMenuLabel className="p-2 font-normal">
           <div className="flex flex-col space-y-1">
             <p className="text-sm font-semibold leading-none text-foreground">
               {user.name || `${user.firstName || ""} ${user.lastName || ""}`.trim() || "User"}
             </p>
-            <p className="text-xs leading-none text-muted-foreground truncate">
+            <p className="text-xs leading-none truncate text-muted-foreground">
               {user.email}
             </p>
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator className="bg-border" />
-        <DropdownMenuGroup className="p-1">
-          <Link href="/dashboard" className="w-full">
-            <DropdownMenuItem className="rounded-xl cursor-pointer flex items-center gap-2 p-2 hover:bg-primary/10 hover:text-primary">
-              <LayoutDashboard className="h-4 w-4" />
-              <span>Dashboard</span>
-            </DropdownMenuItem>
-          </Link>
-        </DropdownMenuGroup>
-        <DropdownMenuSeparator className="bg-border" />
         <DropdownMenuItem
           onClick={handleSignOut}
-          className="rounded-xl cursor-pointer flex items-center gap-2 p-2 text-red-600 focus:text-red-600 focus:bg-red-50 dark:focus:bg-red-950/20"
+          className="flex items-center gap-2 p-2 text-red-600 cursor-pointer rounded-xl focus:text-red-600 focus:bg-red-50 dark:focus:bg-red-950/20"
         >
-          <LogOut className="h-4 w-4" />
+          <LogOut className="w-4 h-4" />
           <span>Sign Out</span>
         </DropdownMenuItem>
       </DropdownMenuContent>
