@@ -166,6 +166,9 @@ html {
   scroll-behavior: smooth;
 }
 
+/* @next/scroll-behavior */
+
+
 @layer utilities {
   .no-scrollbar::-webkit-scrollbar {
     display: none;

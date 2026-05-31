@@ -77,6 +77,7 @@ export default function UploadImage({ value, onSuccess, onClear, disabled }) {
             src={preview}
             alt="Uploaded preview"
             fill
+            sizes="(max-width: 768px) 100vw, 400px"
             className="object-contain p-2 transition-transform duration-500 group-hover:scale-105"
           />
           {!disabled && (
