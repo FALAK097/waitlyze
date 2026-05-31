@@ -2,15 +2,16 @@
 
 import Logo from "@/components/shared/logo";
 import { Button } from "@/components/ui/button";
+import { useAuthModal } from "@/components/auth/auth-modal-provider";
 import { useSession } from "@/lib/auth-client";
 import { Menu, X } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
-import { ModeToggle } from "../mode-toggle";
 
 export default function Header() {
 	const { data: session, isPending } = useSession();
+	const { openAuthModal } = useAuthModal();
 	const [isNavOpen, setIsNavOpen] = useState(false);
 
 	const navItems = ["Demo", "How It Works", "Features", "FAQ"];
@@ -40,22 +41,16 @@ export default function Header() {
 									{item}
 								</Link>
 							))}
-							{/* <div className="px-1">
-								<ModeToggle />
-							</div> */}
 							{!isPending && session && (
 								<Link href="/dashboard">
 									<Button className="rounded-full">Dashboard</Button>
 								</Link>
 							)}
 							{!isPending && !session && (
-								<Link href="/sign-in">
-									<Button className="rounded-full">Sign in</Button>
-								</Link>
+								<Button className="rounded-full" onClick={openAuthModal}>Sign in</Button>
 							)}
 						</nav>
 						<div className="flex items-center md:hidden">
-							{/* <ModeToggle /> */}
 							<Button
 								variant="ghost"
 								size="icon"
@@ -72,7 +67,6 @@ export default function Header() {
 					</div>
 				</div>
 			</div>
-			{/* Mobile menu */}
 			{isNavOpen && (
 				<div className="mt-2 rounded-3xl border shadow-lg backdrop-blur-md md:hidden bg-background/80 border-border">
 					<nav className="px-4 pt-2 pb-4 space-y-1">
@@ -93,9 +87,7 @@ export default function Header() {
 								</Link>
 							)}
 							{!isPending && !session && (
-								<Link href="/sign-in" className="w-full" onClick={() => setIsNavOpen(false)}>
-									<Button className="w-full rounded-full">Sign in</Button>
-								</Link>
+								<Button className="w-full rounded-full" onClick={() => { openAuthModal(); setIsNavOpen(false); }}>Sign in</Button>
 							)}
 						</div>
 					</nav>
