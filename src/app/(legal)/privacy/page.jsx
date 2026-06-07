@@ -73,27 +73,7 @@ export default function PrivacyPolicy() {
 					</ul>
 
 					<h2 className="mt-6 mb-3 text-xl font-semibold text-bold">
-						3. Analytics with{" "}
-						<Link href="https://posthog.com" className="text-primary">
-							PostHog
-						</Link>
-					</h2>
-					<p className="mb-4 text-muted-foreground">
-						We use PostHog for analytics on user behavior to enhance the
-						platform experience. PostHog tracks user interactions to help us
-						understand usage patterns, optimize features, and troubleshoot
-						issues. PostHog may collect and process data such as:
-					</p>
-					<ul className="pl-5 mb-4 list-disc text-muted-foreground">
-						<li>User interactions with various features</li>
-						<li>Aggregated usage statistics</li>
-						<li>
-							Information about your device, browser, and operating system
-						</li>
-					</ul>
-
-					<h2 className="mt-6 mb-3 text-xl font-semibold text-bold">
-						4. Sharing of Information
+						3. Sharing of Information
 					</h2>
 					<p className="mb-4 text-muted-foreground">
 						We do not sell or rent your personal information. However, we may
@@ -103,8 +83,7 @@ export default function PrivacyPolicy() {
 						<li>
 							<span className="font-medium">Service Providers:</span> We may
 							share information with trusted third-party service providers who
-							perform services on our behalf, including analytics services like
-							PostHog.
+							perform services on our behalf.
 						</li>
 						<li>
 							<span className="font-medium">Legal Requirements:</span> We may
@@ -114,7 +93,7 @@ export default function PrivacyPolicy() {
 					</ul>
 
 					<h2 className="mt-6 mb-3 text-xl font-semibold text-bold">
-						5. Data Retention
+						4. Data Retention
 					</h2>
 					<p className="mb-4 text-muted-foreground">
 						We retain your personal data only for as long as necessary to
@@ -123,7 +102,7 @@ export default function PrivacyPolicy() {
 					</p>
 
 					<h2 className="mt-6 mb-3 text-xl font-semibold text-bold">
-						6. Security
+						5. Security
 					</h2>
 					<p className="mb-4 text-muted-foreground">
 						We take data security seriously and implement reasonable measures to
@@ -132,7 +111,7 @@ export default function PrivacyPolicy() {
 					</p>
 
 					<h2 className="mt-6 mb-3 text-xl font-semibold text-bold">
-						7. Your Rights
+						6. Your Rights
 					</h2>
 					<p className="mb-4 text-muted-foreground">
 						Depending on your location, you may have rights regarding your
@@ -147,7 +126,7 @@ export default function PrivacyPolicy() {
 					</ul>
 
 					<h2 className="mt-6 mb-3 text-xl font-semibold text-bold">
-						8. Changes to This Privacy Policy
+						7. Changes to This Privacy Policy
 					</h2>
 					<p className="mb-4 text-muted-foreground">
 						We may update this Privacy Policy from time to time. We will notify
@@ -157,7 +136,7 @@ export default function PrivacyPolicy() {
 					</p>
 
 					<h2 className="mt-6 mb-3 text-xl font-semibold text-bold">
-						9. Contact Us
+						8. Contact Us
 					</h2>
 					<p className="mb-4 text-muted-foreground">
 						If you have questions or concerns about this Privacy Policy or our

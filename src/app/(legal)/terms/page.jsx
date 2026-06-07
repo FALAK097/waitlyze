@@ -98,23 +98,7 @@ export default function TermsOfService() {
 					</ul>
 
 					<h2 className="mt-6 mb-3 text-xl font-semibold text-bold">
-						6. Data Collection and Analytics
-					</h2>
-					<p className="mb-4 text-muted-foreground">
-						To improve our service, we use analytics provided by{" "}
-						<Link href="https://posthog.com" className="text-primary">
-							PostHog
-						</Link>{" "}
-						to collect data about user behavior on the Platform. We use this
-						information to monitor usage and improve features. For details on
-						data handling, see our{" "}
-						<Link href="/privacy" className="text-primary">
-							Privacy Policy.
-						</Link>
-					</p>
-
-					<h2 className="mt-6 mb-3 text-xl font-semibold text-bold">
-						7. Intellectual Property
+						6. Intellectual Property
 					</h2>
 					<p className="mb-4 text-muted-foreground">
 						All content provided on the Platform, including logos, graphics, and
