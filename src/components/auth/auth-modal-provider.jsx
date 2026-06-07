@@ -3,7 +3,7 @@
 import dynamic from "next/dynamic";
 import { createContext, useContext, useState, useCallback } from "react";
 
-const AuthModal = dynamic(() => import("./auth-modal"), { ssr: false });
+const AuthModal = dynamic(() => import("./auth-modal").then((m) => m.AuthModal), { ssr: false });
 
 const AuthModalContext = createContext(null);
 
