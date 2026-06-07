@@ -32,7 +32,7 @@ export default async function DashboardPage() {
   });
 
   if (!session) {
-    redirect("/sign-in");
+    redirect("/");
   }
 
   const { success, data } = await getDashboardData(session.user.id);

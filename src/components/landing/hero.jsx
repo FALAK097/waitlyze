@@ -2,14 +2,18 @@
 
 import { Avatar } from "@/components/ui/avatar";
 import { Card } from "@/components/ui/card";
+import dynamic from "next/dynamic";
 import { AnimatePresence, motion } from "framer-motion";
 import Image from "next/image";
-import Link from "next/link";
 import { useRef, useState } from "react";
 import { CircleCheckIcon, PlayIcon, SparklesIcon } from "../shared/icons";
 import { Button } from "../ui/button";
 import { HoverBorderGradient } from "../ui/hover-border-gradient";
-import SparkleButton from "../ui/sparkle-button";
+
+const AuthSparkleButton = dynamic(
+  () => import("@/components/auth/auth-sparkle-button").then((m) => m.AuthSparkleButton),
+  { ssr: false },
+);
 
 const features = [
 	{
@@ -129,9 +133,7 @@ export default function Hero() {
 							transition={{ delay: 0.4, duration: 0.5 }}
 							className="flex flex-col gap-4 mx-auto w-full max-w-md sm:flex-row"
 						>
-							<Link href="/dashboard" className="w-full sm:w-auto">
-								<SparkleButton className="w-full text-base sm:text-lg group" />
-							</Link>
+							<AuthSparkleButton className="w-full sm:w-auto" />
 							<Button
 								size="lg"
 								variant="ghost"

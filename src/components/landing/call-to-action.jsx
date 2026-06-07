@@ -1,10 +1,13 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
+import dynamic from "next/dynamic";
 import { motion, useInView } from "framer-motion";
-import { Rocket } from "lucide-react";
-import Link from "next/link";
 import { useRef } from "react";
+
+const AuthCtaButton = dynamic(
+  () => import("@/components/auth/auth-cta-button").then((m) => m.AuthCtaButton),
+  { ssr: false },
+);
 
 export default function CallToAction() {
 	const ref = useRef(null);
@@ -56,15 +59,7 @@ export default function CallToAction() {
 						next big thing with Waitlyze.
 					</motion.p>
 					<motion.div variants={childVariants}>
-						<Link href="/dashboard">
-							<Button
-								size="lg"
-								className="w-full text-base sm:text-xl group bg-linear-to-r from-primary to-primary/20 text-primary-foreground sm:w-auto"
-							>
-								Create Your Waitlist Now
-								<Rocket className="ml-2 w-4 h-4 transition-transform sm:w-5 sm:h-5 group-hover:translate-x-1" />
-							</Button>
-						</Link>
+						<AuthCtaButton />
 					</motion.div>
 				</motion.div>
 			</div>

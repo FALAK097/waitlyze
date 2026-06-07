@@ -12,11 +12,6 @@ export function proxy(req) {
     pathname.startsWith("/dashboard") ||
     pathname.startsWith("/wait-lists");
 
-  // Prevent logged-in users from visiting auth pages
-  const isAuthRoute =
-    pathname.startsWith("/sign-in") ||
-    pathname.startsWith("/sign-up");
-
   if (
     pathname.startsWith("/forms") ||
     pathname.startsWith("/api/waitlist")
@@ -25,11 +20,7 @@ export function proxy(req) {
   }
 
   if (isProtectedRoute && !sessionCookie) {
-    return NextResponse.redirect(new URL("/sign-in", req.url));
-  }
-
-  if (isAuthRoute && sessionCookie) {
-    return NextResponse.redirect(new URL("/dashboard", req.url));
+    return NextResponse.redirect(new URL("/", req.url));
   }
 
   const res = NextResponse.next();
