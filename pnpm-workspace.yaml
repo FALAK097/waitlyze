@@ -1,6 +1,9 @@
-allowBuilds:
-  '@prisma/engines': set this to true or false
-  '@tailwindcss/oxide': set this to true or false
-  core-js: set this to true or false
-  prisma: set this to true or false
-  sharp: set this to true or false
+overrides:
+  kysely: 0.28.2
+
+onlyBuiltDependencies:
+  - '@prisma/engines'
+  - '@tailwindcss/oxide'
+  - core-js
+  - prisma
+  - sharp
