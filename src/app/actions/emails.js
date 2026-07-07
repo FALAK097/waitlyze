@@ -3,6 +3,9 @@
 import { env } from "@/lib/env.mjs";
 import prisma from "@/lib/prisma";
 import { marked } from 'marked';
+import { Resend } from 'resend';
+
+const resend = new Resend(env.RESEND_API_KEY);
 
 const TYPE_MAP = {
   signup: "SIGNUP",
@@ -116,8 +119,8 @@ export async function upsertEmailTemplate({ waitListId, templateType, data }) {
 }
 
 export async function sendTestEmail({ waitListId, templateType, to }) {
-  if (!env.PLUNK_SECRET_KEY) {
-    return { success: false, message: "PLUNK_SECRET_KEY not configured" };
+  if (!env.RESEND_API_KEY) {
+    return { success: false, message: "RESEND_API_KEY not configured" };
   }
 
   const enumType = TYPE_MAP[templateType];
@@ -278,19 +281,15 @@ export async function sendTestEmail({ waitListId, templateType, to }) {
 </body>
 </html>`;
 
-    const resp = await fetch("https://api.useplunk.com/v1/send", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${process.env.PLUNK_SECRET_KEY}`,
-      },
-      body: JSON.stringify({ to, subject, body: htmlBody }),
-      cache: "no-store",
+    const { error } = await resend.emails.send({
+      from: env.RESEND_FROM_EMAIL,
+      to,
+      subject,
+      html: htmlBody,
     });
 
-    if (!resp.ok) {
-      const text = await resp.text();
-      return { success: false, message: `Plunk error: ${resp.status} ${text}` };
+    if (error) {
+      return { success: false, message: `Resend error: ${error.name} ${error.message}` };
     }
 
     return { success: true, message: "Test email sent" };
@@ -465,8 +464,8 @@ async function renderTemplate({ waitListId, enumType, varsOverride = {} }) {
 }
 
 export async function sendSignupEmail({ waitListId, to }) {
-  if (!env.PLUNK_SECRET_KEY) {
-    return { success: false, message: "PLUNK_SECRET_KEY not configured" };
+  if (!env.RESEND_API_KEY) {
+    return { success: false, message: "RESEND_API_KEY not configured" };
   }
 
   const signUp = await prisma.signUp.findFirst({
@@ -495,18 +494,14 @@ export async function sendSignupEmail({ waitListId, to }) {
   }
 
   try {
-    const resp = await fetch("https://api.useplunk.com/v1/send", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${process.env.PLUNK_SECRET_KEY}`,
-      },
-      body: JSON.stringify({ to, subject, body: htmlBody, subscribed: true }),
-      cache: "no-store",
+    const { error } = await resend.emails.send({
+      from: env.RESEND_FROM_EMAIL,
+      to,
+      subject,
+      html: htmlBody,
     });
-    if (!resp.ok) {
-      const text = await resp.text();
-      console.error("Plunk send error:", text);
+    if (error) {
+      console.error("Resend send error:", error);
       return { success: true, message: "Signup stored (email send failed)" };
     }
 
