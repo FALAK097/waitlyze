@@ -1,9 +1,7 @@
 "use client";
 
-import { BarChart3, Database, Globe, Share2, Smartphone, Zap, Mail, Settings, LayoutTemplate } from "lucide-react";
-import Link from "next/link";
+import { BarChart3, Database, Globe, Share2, Zap, Mail, LayoutTemplate } from "lucide-react";
 import { BentoGrid } from "../ui/bento-grid";
-import { Button } from "../ui/button";
 
 const items = [
 	{

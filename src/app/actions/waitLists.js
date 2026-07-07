@@ -9,7 +9,7 @@ export const removeImage = async (logoKey, waitListId) => {
 	};
 	try {
 		const response = await removeUpload(logoKey);
-		const waitList = await prisma.waitList.update({
+		await prisma.waitList.update({
 			where: {
 				id: waitListId,
 			},

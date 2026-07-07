@@ -23,7 +23,7 @@ export async function generateApiKey() {
     return { apiKey, hashedKey };
   } catch (error) {
     console.error("Error generating API key:", error);
-    throw new Error("Failed to generate API key");
+    throw new Error("Failed to generate API key", { cause: error });
   }
 }
 
@@ -50,7 +50,7 @@ export async function createApiKey({ name, userId }) {
     };
   } catch (error) {
     console.error("Error creating API key:", error);
-    throw new Error("Failed to create API key");
+    throw new Error("Failed to create API key", { cause: error });
   }
 }
 
@@ -89,6 +89,6 @@ export async function listUserApiKeys(userId) {
     });
   } catch (error) {
     console.error("Error listing API keys:", error);
-    throw new Error("Failed to list API keys");
+    throw new Error("Failed to list API keys", { cause: error });
   }
 }

@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
@@ -16,14 +16,14 @@ export function HoverBorderGradient({
   const [hovered, setHovered] = useState(false);
   const [direction, setDirection] = useState("TOP");
 
-  const rotateDirection = (currentDirection) => {
+  const rotateDirection = useCallback((currentDirection) => {
     const directions = ["TOP", "LEFT", "BOTTOM", "RIGHT"];
     const currentIndex = directions.indexOf(currentDirection);
     const nextIndex = clockwise
       ? (currentIndex - 1 + directions.length) % directions.length
       : (currentIndex + 1) % directions.length;
     return directions[nextIndex];
-  };
+  }, [clockwise]);
 
   const movingMap = {
     TOP: "radial-gradient(20.7% 50% at 50% 0%, #ff7e5f 0%, rgba(255, 126, 95, 0.3) 50%, rgba(255, 126, 95, 0) 100%)",
@@ -41,10 +41,10 @@ export function HoverBorderGradient({
       }, duration * 1000);
       return () => clearInterval(interval);
     }
-  }, [hovered]);
+  }, [hovered, duration, rotateDirection]);
   return (
     <Tag
-      onMouseEnter={(event) => {
+      onMouseEnter={() => {
         setHovered(true);
       }}
       onMouseLeave={() => setHovered(false)}

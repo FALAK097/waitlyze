@@ -38,7 +38,6 @@ export const SignUpForm = ({
 	waitList,
 	onSubmit,
 	setEmail,
-	onDeleteLogo,
 	onImageUploadSuccess,
 }) => {
 	return (

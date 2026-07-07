@@ -41,9 +41,6 @@ function PreviewContent({
   // fetch sign up
   const {
     isSuccess: fetchSignUpSuccess,
-    isLoading: fetchSignUpLoading,
-    isError: fetchSignUpError,
-    error: fetchSignUpErrorData,
     refetch: fetchSignUpRefetch,
   } = useQuery({
     enabled: false,
@@ -61,10 +58,7 @@ function PreviewContent({
   });
   // Impression mutation
   const {
-    isSuccess: impressionSuccess,
     isLoading: impressionLoading,
-    isError: impressionError,
-    error: impressionErrorData,
     refetch: impressionRefetch,
   } = useQuery({
     enabled: false,
@@ -132,9 +126,8 @@ function PreviewContent({
     if (!mounted) return;
     // check if uniqueUserId is available & hypeSession is not set in storage
     if (!uniqueUserId) return;
-    let hypeSession = localStorage.getItem("hypeSession");
+    const hypeSession = localStorage.getItem("hypeSession");
     if (!hypeSession) {
-      hypeSession = uniqueUserId;
       localStorage.setItem("hypeSession", uniqueUserId);
     }
     if (!isImpressionCreated) {
@@ -159,7 +152,7 @@ function PreviewContent({
       }
     }, 10000);
     return () => clearInterval(fetchSignUpInterval);
-  }, [fetchSignUpRefetch, fetchSignUpSuccess, mounted]);
+  }, [fetchSignUpRefetch, fetchSignUpSuccess, mounted, waitList.id]);
 
   if (mounted && signUp && waitList.showReferrals) {
     return (

@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-export function MarkdownEditor({ value, onChange, placeholder, className }) {
+export function MarkdownEditor({ value, onChange, placeholder }) {
   const [content, setContent] = useState(value || "");
   const [history, setHistory] = useState([value || ""]);
   const [historyIndex, setHistoryIndex] = useState(0);

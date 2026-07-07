@@ -1,13 +1,10 @@
 import BentoGridFeatures from "@/components/landing/bento-grid-features";
 import CallToAction from "@/components/landing/call-to-action";
 import FAQ from "@/components/landing/faq";
-import Features from "@/components/landing/features";
 import Footer from "@/components/landing/footer";
 import HeaderWrapper from "@/components/landing/header-wrapper";
 import Hero from "@/components/landing/hero";
 import HowItWorks from "@/components/landing/how-it-works";
-import Pricing from "@/components/landing/pricing";
-import Testimonials from "@/components/landing/testimonials";
 
 export const metadata = {
 	title: "Waitlyze | Create stunning waitlists to hype up your audience",

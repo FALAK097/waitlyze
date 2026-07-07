@@ -5,7 +5,7 @@ import toast from "react-hot-toast";
 import { CopyIcon } from "../shared/icons";
 import { Button } from "./button";
 
-const CodeBlock = React.forwardRef(({ className, ...props }, ref) => {
+const CodeBlock = React.forwardRef(({ className, ...props }) => {
 	const { theme } = useTheme();
 	return (
 		<div

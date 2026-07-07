@@ -7,7 +7,7 @@ import prisma from "@/lib/prisma";
 export async function POST(request) {
   try {
     const body = await request.json();
-    const { apiKey, waitlistId, email, referralCode } = body;
+    const { apiKey, waitlistId, email } = body;
 
     if (!apiKey || !waitlistId || !email) {
       return NextResponse.json(
@@ -135,7 +135,7 @@ export async function POST(request) {
   }
 }
 
-export async function OPTIONS(request) {
+export async function OPTIONS() {
   return new NextResponse(null, {
     status: 200,
     headers: {

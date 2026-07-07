@@ -9,15 +9,13 @@ import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useSession, signOut } from "@/lib/auth-client";
-import { LogOut, LayoutDashboard } from "lucide-react";
-import Link from "next/link";
+import { LogOut } from "lucide-react";
 import toast from "react-hot-toast";
 
 export function UserNav() {

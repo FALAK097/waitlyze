@@ -160,7 +160,6 @@ export async function sendTestEmail({ waitListId, templateType, to }) {
       text.replace(/\{\{([^}]+)\}\}/g, (_, k) => vars[k.trim()] ?? `{{${k}}}`);
 
     const subject = replaceVars(tpl.subject);
-    const previewText = replaceVars(tpl.previewText);
     const header = markdownToHtml(replaceVars(tpl.header));
     const subHeader = markdownToHtml(replaceVars(tpl.subHeader));
     const mainBody = markdownToHtml(replaceVars(tpl.mainBody));
@@ -339,7 +338,6 @@ async function renderTemplate({ waitListId, enumType, varsOverride = {} }) {
     text.replace(/\{\{([^}]+)\}\}/g, (_, k) => vars[k.trim()] ?? `{{${k}}}`);
 
   const subject = replaceVars(tpl.subject);
-  const previewText = replaceVars(tpl.previewText);
   const header = markdownToHtml(replaceVars(tpl.header));
   const subHeader = markdownToHtml(replaceVars(tpl.subHeader));
   const mainBody = markdownToHtml(replaceVars(tpl.mainBody));

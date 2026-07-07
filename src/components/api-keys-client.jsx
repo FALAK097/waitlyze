@@ -52,7 +52,6 @@ export const ApiKeysClient = () => {
     const [newKeyName, setNewKeyName] = useState('');
     const [newKey, setNewKey] = useState(null);
     const [selectedWaitlistId, setSelectedWaitlistId] = useState('');
-    const [isLinkingWaitlist, setIsLinkingWaitlist] = useState(false);
     const [copied, setCopied] = useState(false);
 
     useEffect(() => {

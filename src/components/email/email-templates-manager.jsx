@@ -33,7 +33,7 @@ export function EmailTemplatesManager({ waitListId, waitListName, initialTemplat
   });
 
   // Keep preview reactive
-  const watchAll = form.watch();
+  form.watch();
 
   const tpl = form.getValues(current);
 

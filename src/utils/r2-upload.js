@@ -44,14 +44,14 @@ export function useR2Upload(endpoint, options = {}) {
               try {
                 const response = JSON.parse(xhr.responseText);
                 resolve(response);
-              } catch (e) {
+              } catch {
                 reject(new Error("Failed to parse server response"));
               }
             } else {
               try {
                 const response = JSON.parse(xhr.responseText);
                 reject(new Error(response.error || `Upload failed with status ${xhr.status}`));
-              } catch (e) {
+              } catch {
                 reject(new Error(`Upload failed with status ${xhr.status}`));
               }
             }

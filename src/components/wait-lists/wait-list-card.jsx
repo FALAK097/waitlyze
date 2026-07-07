@@ -58,11 +58,11 @@ export const WaitListCard = ({
 
 	const handleCopyId = async () => {
 		try {
-			await navigator.clipboard.writeText(id);
-			toast.success("ID copied to clipboard");
-		} catch (error) {
-			toast.error("Failed to copy ID");
-		}
+		await navigator.clipboard.writeText(id);
+		toast.success("ID copied to clipboard");
+	} catch {
+		toast.error("Failed to copy ID");
+	}
 	};
 
 	return (

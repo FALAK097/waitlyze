@@ -9,7 +9,6 @@ import { GripIcon } from "../shared/icons";
 export default function SparkleButton({
 	className,
 	particleCount = 12,
-	attractRadius = 50,
 	...props
 }) {
 	const [isAttracting, setIsAttracting] = useState(false);

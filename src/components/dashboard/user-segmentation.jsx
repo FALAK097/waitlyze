@@ -728,7 +728,7 @@ export const UserSegmentation = ({ waitlist }) => {
                       <TableCell className="font-medium">
                         <div className="flex items-center gap-2">
                           <span className="hidden sm:inline">{user.name}</span>
-                          {Boolean(user.signUpEmailSent) ? (
+                          {user.signUpEmailSent ? (
                             <TooltipProvider>
                               <Tooltip>
                                 <TooltipTrigger asChild>

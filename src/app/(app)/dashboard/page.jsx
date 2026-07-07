@@ -35,7 +35,7 @@ export default async function DashboardPage() {
     redirect("/");
   }
 
-  const { success, data } = await getDashboardData(session.user.id);
+  const { data } = await getDashboardData(session.user.id);
 
   return (
     <div className="flex flex-col">

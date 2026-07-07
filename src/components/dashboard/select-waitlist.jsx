@@ -1,6 +1,5 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
 import {
 	Select,
 	SelectContent,
@@ -8,8 +7,6 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import { PlusCircle } from "lucide-react";
-import Link from "next/link";
 import { useEffect, useState } from "react";
 
 export const SelectWaitlist = ({ waitLists }) => {
