@@ -13,7 +13,8 @@ export const env = createEnv({
     R2_ACCESS_KEY_ID: z.string().min(1),
     R2_SECRET_ACCESS_KEY: z.string().min(1),
     R2_BUCKET_NAME: z.string().min(1),
-    PLUNK_SECRET_KEY: z.string().min(1),
+    RESEND_API_KEY: z.string().min(1),
+    RESEND_FROM_EMAIL: z.string().min(1),
   },
   client: {
     NEXT_PUBLIC_R2_PUBLIC_URL: z.string().min(1),
@@ -30,6 +31,7 @@ export const env = createEnv({
     R2_SECRET_ACCESS_KEY: process.env.R2_SECRET_ACCESS_KEY,
     R2_BUCKET_NAME: process.env.R2_BUCKET_NAME,
     NEXT_PUBLIC_R2_PUBLIC_URL: process.env.NEXT_PUBLIC_R2_PUBLIC_URL,
-    PLUNK_SECRET_KEY: process.env.PLUNK_SECRET_KEY,
+    RESEND_API_KEY: process.env.RESEND_API_KEY,
+    RESEND_FROM_EMAIL: process.env.RESEND_FROM_EMAIL,
   },
 });
