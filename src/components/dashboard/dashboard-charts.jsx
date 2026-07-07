@@ -8,10 +8,6 @@ import { WaitlistSignups } from "./charts/waitlist-signups";
 export const DashboardCharts = ({ waitListId }) => {
   return (
     <>
-      {/* <div className="grid grid-cols-1 gap-2 lg:grid-cols-2">
-				<UserEngagementMetrics />
-				<TrafficSource />
-			</div> */}
       <InterestTime waitListId={waitListId} />
       <WaitlistSignups waitListId={waitListId} />
       <div className="grid grid-cols-1 gap-2 lg:grid-cols-2">

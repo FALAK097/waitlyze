@@ -19,15 +19,9 @@ export default function LandingPage() {
 
 			<Hero />
 			<main className="grow">
-				{/* <Features /> */}
-
 				<HowItWorks />
 
 				<BentoGridFeatures />
-
-				{/* <Testimonials /> */}
-
-				{/* <Pricing /> */}
 
 				<FAQ />
 

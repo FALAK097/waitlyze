@@ -10,7 +10,6 @@ export function Navbar({ title }) {
 					<h1 className="font-medium text-secondary-foreground">{title}</h1>
 				</div>
 				<div className="flex items-center space-x-4">
-					{/* <ModeToggle /> */}
 					<UserNav />
 				</div>
 			</div>
