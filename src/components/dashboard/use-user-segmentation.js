@@ -132,7 +132,7 @@ export function useUserSegmentation(waitlistId, showReferrals) {
 				break;
 			}
 			default:
-				console.log(`Bulk ${action} for users:`, selectedUsers);
+				break;
 		}
 	};
 

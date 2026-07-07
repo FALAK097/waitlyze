@@ -68,7 +68,6 @@ export const WaitlistEditorLayout = ({
 
     try {
       const response = await removeImage(logoKey, initialWaitList.id);
-      console.log("response", response);
       if (response.success) {
         toast.success("Logo deleted successfully.");
         updateSetting("logoUrl", "");
