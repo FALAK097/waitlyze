@@ -33,6 +33,17 @@ const getSignUpsCount = cache(async (waitListId) => {
 	});
 });
 
+const getTotalSignUpsOnWaitList = async (waitListId) => {
+	"use server";
+	return getSignUpsCount(waitListId);
+};
+
+const sendSignUpEmailAction = async ({ email, waitListId }) => {
+	"use server";
+	if (!email) return { success: false, message: "Missing email" };
+	return await sendSignupEmail({ waitListId, to: email });
+};
+
 export async function generateMetadata(props) {
 	const params = await props.params;
 	const { id } = params;
@@ -94,18 +105,6 @@ export default async function WaitListsPreviewPage(props) {
 
 	const uniqueUserId = nanoid();
 	const initialSignUpsCount = await getSignUpsCount(id);
-
-	const getTotalSignUpsOnWaitList = async (waitListId) => {
-		"use server";
-		return getSignUpsCount(waitListId);
-	};
-
-	const sendSignUpEmailAction = async ({ email }) => {
-		"use server";
-		if (!email) return { success: false, message: "Missing email" };
-		return await sendSignupEmail({ waitListId: id, to: email });
-	};
-
 
 	return (
 		<div>

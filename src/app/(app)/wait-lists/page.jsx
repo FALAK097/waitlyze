@@ -73,7 +73,6 @@ export default async function WaitListsPage() {
 
 			// Attempt to delete the logo from R2
 			const removeUploadResponse = await removeUpload(waitList.logoKey);
-			console.log("R2 delete response:", removeUploadResponse); // Log the response for debugging
 
 			if (removeUploadResponse.success) {
 				// Proceed to delete the waitlist entry from the database

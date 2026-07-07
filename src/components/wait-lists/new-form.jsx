@@ -2,7 +2,7 @@
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import toast from "react-hot-toast";
 import { Button } from "../ui/button";
 import {
@@ -20,7 +20,7 @@ export const NewWaitListForm = ({ createNewWaitList }) => {
 	const [websiteUrl, setWebsiteUrl] = useState("");
 	const [description, setDescription] = useState("");
 	const [logoUrl, setLogoUrl] = useState("");
-	const [logoKey, setLogoKey] = useState("");
+	const logoKeyRef = useRef("");
 	const [loading, setLoading] = useState(false);
 	const [isCreated, setIsCreated] = useState(false);
 	const { push } = useRouter();
@@ -34,7 +34,7 @@ export const NewWaitListForm = ({ createNewWaitList }) => {
 			websiteUrl,
 			description,
 			logoUrl: logoUrl || "",
-			logoKey: logoUrl ? logoKey : "",
+			logoKey: logoUrl ? logoKeyRef.current : "",
 		});
 
 		if (response.success) {
@@ -124,11 +124,11 @@ export const NewWaitListForm = ({ createNewWaitList }) => {
 									value={logoUrl}
 									onSuccess={(files) => {
 										setLogoUrl(files[0].url);
-										setLogoKey(files[0].key);
+										logoKeyRef.current = files[0].key;
 									}}
 									onClear={() => {
 										setLogoUrl("");
-										setLogoKey("");
+										logoKeyRef.current = "";
 									}}
 									disabled={loading || isCreated}
 								/>

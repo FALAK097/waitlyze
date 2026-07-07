@@ -1,8 +1,8 @@
 "use client";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { cn } from "@/lib/utils";
-import { motion } from "framer-motion";
+import { m } from "framer-motion";
 
 export function HoverBorderGradient({
   children,
@@ -25,12 +25,12 @@ export function HoverBorderGradient({
     return directions[nextIndex];
   }, [clockwise]);
 
-  const movingMap = {
+  const movingMap = useMemo(() => ({
     TOP: "radial-gradient(20.7% 50% at 50% 0%, #ff7e5f 0%, rgba(255, 126, 95, 0.3) 50%, rgba(255, 126, 95, 0) 100%)",
     LEFT: "radial-gradient(16.6% 43.1% at 0% 50%, #ff7e5f 0%, rgba(255, 126, 95, 0.3) 50%, rgba(255, 126, 95, 0) 100%)",
     BOTTOM: "radial-gradient(20.7% 50% at 50% 100%, #ff7e5f 0%, rgba(255, 126, 95, 0.3) 50%, rgba(255, 126, 95, 0) 100%)",
     RIGHT: "radial-gradient(16.2% 41.2% at 100% 50%, #ff7e5f 0%, rgba(255, 126, 95, 0.3) 50%, rgba(255, 126, 95, 0) 100%)",
-  };
+  }), []);
 
   const highlight = "radial-gradient(75% 181.16% at 50% 50%, #ff7e5f 0%, rgba(255, 126, 95, 0.6) 60%, rgba(255, 126, 95, 0) 100%)";
 
@@ -62,7 +62,7 @@ export function HoverBorderGradient({
       >
         {children}
       </div>
-      <motion.div
+      <m.div
         className={cn(
           "overflow-hidden absolute inset-0 z-0 flex-none rounded-[inherit]"
         )}

@@ -1,6 +1,6 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { m } from "framer-motion";
 import { LineChartIcon, Wand2, Zap } from "lucide-react";
 import Link from "next/link";
 import { Badge } from "../ui/badge";
@@ -49,26 +49,26 @@ export default function HowItWorks() {
 						<Zap className="w-4 h-4 text-[#ff7e5f]" />
 						<span className="text-xs font-light tracking-wider text-[#ff7e5f]">HOW IT WORKS</span>
 					</div>
-					<motion.h2
+					<m.h2
 						initial={{ opacity: 0, y: 20 }}
 						whileInView={{ opacity: 1, y: 0 }}
 						viewport={{ once: true }}
 						className="mb-6 text-3xl font-medium text-center text-transparent bg-clip-text bg-gradient-to-r from-primary to-primary/20 sm:text-4xl"
 					>
 						Simple Three-Step Process
-					</motion.h2>
-					<motion.p
+					</m.h2>
+					<m.p
 						initial={{ opacity: 0, y: 20 }}
 						whileInView={{ opacity: 1, y: 0 }}
 						viewport={{ once: true }}
 						className="mx-auto mb-12 text-lg font-light leading-relaxed text-gray-600 dark:text-gray-300"
 					>
 						Get started in seconds with our simple three-step process to launch and grow your waitlist campaign.
-					</motion.p>
+					</m.p>
 				</div>
 				<div className="grid gap-16 md:gap-12 lg:gap-16 md:grid-cols-3">
 					{steps.map((step, index) => (
-						<motion.div
+						<m.div
 							key={`${step.title}-${index}`}
 							initial="hidden"
 							whileInView="visible"
@@ -76,36 +76,36 @@ export default function HowItWorks() {
 							transition={{ duration: 0.6, delay: index * 0.2 }}
 							className="flex flex-col items-center text-center"
 						>
-							<motion.div
+							<m.div
 								className="p-3 mb-4 rounded-full bg-primary/10"
 								variants={iconVariant}
 							>
 								<step.icon className="w-8 h-8 text-primary" />
-							</motion.div>
-							<motion.h3
+							</m.div>
+							<m.h3
 								className="mb-2 text-xl font-light"
 								variants={textVariant}
 							>
 								{step.title}
-							</motion.h3>
-							<motion.div variants={textVariant}>
+							</m.h3>
+							<m.div variants={textVariant}>
 								<Badge
 									className="px-3 py-1 mb-4 text-xs font-medium rounded-full text-primary bg-primary/10"
 									variant="outline"
 								>
 									{step.badge}
 								</Badge>
-							</motion.div>
-							<motion.p
+							</m.div>
+							<m.p
 								className="mb-4 font-light text-muted-foreground"
 								variants={textVariant}
 							>
 								{step.description}
-							</motion.p>
-						</motion.div>
+							</m.p>
+						</m.div>
 					))}
 				</div>
-				<motion.div
+				<m.div
 					className="mt-12 text-center"
 					initial={{ opacity: 0, y: 20 }}
 					whileInView={{ opacity: 1, y: 0 }}
@@ -117,7 +117,7 @@ export default function HowItWorks() {
 							Get Started Now
 						</Button>
 					</Link>
-				</motion.div>
+				</m.div>
 			</div>
 		</section>
 	);

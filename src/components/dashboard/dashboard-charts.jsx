@@ -1,9 +1,11 @@
 "use client";
 
-import { DeviceType } from "./charts/device-type";
-import { GeographicDistribution } from "./charts/geographic-distribution";
-import { InterestTime } from "./charts/interest-time";
-import { WaitlistSignups } from "./charts/waitlist-signups";
+import dynamic from "next/dynamic";
+
+const InterestTime = dynamic(() => import("./charts/interest-time"), { ssr: false });
+const WaitlistSignups = dynamic(() => import("./charts/waitlist-signups"), { ssr: false });
+const DeviceType = dynamic(() => import("./charts/device-type"), { ssr: false });
+const GeographicDistribution = dynamic(() => import("./charts/geographic-distribution"), { ssr: false });
 
 export const DashboardCharts = ({ waitListId }) => {
   return (

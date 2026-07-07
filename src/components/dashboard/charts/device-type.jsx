@@ -10,7 +10,8 @@ import {
   Tooltip,
 } from "recharts";
 import { getWaitlistImpressions } from "@/actions/waitlist-impressions";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
 
 const chartConfig = [
@@ -31,27 +32,25 @@ const chartConfig = [
   },
 ];
 
-export const DeviceType = ({ waitListId }) => {
-  const [impressions, setImpressions] = useState([]);
-  const [loading, setLoading] = useState(true);
+const fetchImpressions = async (waitListId) => {
+  try {
+    const result = await getWaitlistImpressions(waitListId);
+    return result;
+  } catch (error) {
+    console.error("Error fetching impressions:", error);
+    throw error;
+  }
+};
 
-  useEffect(() => {
-    async function fetchData() {
-      try {
-        const result = await getWaitlistImpressions(waitListId);
-        if (result.success) {
-          setImpressions(result.data);
-        }
-      } catch (error) {
-        console.error("Error fetching impressions:", error);
-      } finally {
-        setLoading(false);
-      }
-    }
-    fetchData();
-  }, [waitListId]);
+export const DeviceType = ({ waitListId }) => {
+  const { data, isLoading } = useQuery({
+    queryKey: ["device-type", waitListId],
+    queryFn: () => fetchImpressions(waitListId),
+    enabled: !!waitListId,
+  });
 
   const deviceData = useMemo(() => {
+    const impressions = data?.success ? data.data : [];
     const grouped = impressions.reduce((acc, imp) => {
       const date = new Date(imp.createdAt).toISOString().split("T")[0];
       if (!acc[date]) {
@@ -70,9 +69,9 @@ export const DeviceType = ({ waitListId }) => {
     }, {});
 
     return Object.values(grouped).sort((a, b) => a.date.localeCompare(b.date));
-  }, [impressions]);
+  }, [data]);
 
-  if (loading) return <div>Loading device data...</div>;
+  if (isLoading) return <div>Loading device data...</div>;
 
   return (
     <Card>

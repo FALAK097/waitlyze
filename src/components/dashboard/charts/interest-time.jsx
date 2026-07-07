@@ -1,6 +1,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChartContainer, ChartTooltipContent } from "@/components/ui/chart";
-import { useEffect, useState } from "react";
+import { useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
 const CHART_COLORS = {
@@ -28,47 +29,39 @@ const groupByHour = (signups) => {
   return hours;
 };
 
+const fetchSignups = async (waitListId) => {
+  const response = await fetch(`/api/signups?waitListId=${waitListId}`);
+  if (!response.ok) throw new Error('Failed to fetch signups');
+  const { data: signups } = await response.json();
+  return signups;
+};
+
 export const InterestTime = ({ waitListId }) => {
-  const [chartData, setChartData] = useState([]);
-  const [error, setError] = useState(null);
+  const { data, error, isLoading } = useQuery({
+    queryKey: ["interest-time", waitListId],
+    queryFn: () => fetchSignups(waitListId),
+    enabled: !!waitListId,
+  });
 
-  useEffect(() => {
-    const fetchSignups = async () => {
-      if (!waitListId) return;
-      
-      try {
-        const response = await fetch(`/api/signups?waitListId=${waitListId}`);
-        if (!response.ok) throw new Error('Failed to fetch signups');
-        
-        const { data: signups } = await response.json();
-        const hourlyData = groupByHour(signups);
-        setChartData(hourlyData);
-      } catch (err) {
-        console.error('Error fetching signups:', err);
-        setError('Failed to load signup data');
-      }
-    };
-
-    fetchSignups();
-  }, [waitListId]);
+  const chartData = useMemo(() => data ? groupByHour(data) : [], [data]);
 
   if (error) {
     return (
       <Card>
         <CardHeader>
           <CardTitle>Peak Interest Times</CardTitle>
-          <CardDescription className="text-destructive">{error}</CardDescription>
+          <CardDescription className="text-destructive">Failed to load signup data</CardDescription>
         </CardHeader>
       </Card>
     );
   }
 
-  if (!chartData?.length) {
+  if (isLoading || !chartData?.length) {
     return (
       <Card>
         <CardHeader>
           <CardTitle>Peak Interest Times</CardTitle>
-          <CardDescription>No signup data available yet</CardDescription>
+          <CardDescription>{isLoading ? "Loading..." : "No signup data available yet"}</CardDescription>
         </CardHeader>
       </Card>
     );

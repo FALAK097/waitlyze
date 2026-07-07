@@ -1,9 +1,32 @@
 "use server";
 
 import prisma from "@/lib/prisma";
+import { requireAuth, verifyWaitlistOwnership } from "@/lib/auth-utils";
+
+async function authorizeWaitlistAccess(waitListId) {
+  const user = await requireAuth();
+  if (!user) return null;
+
+  if (Array.isArray(waitListId)) {
+    const owned = await prisma.waitList.count({
+      where: { id: { in: waitListId }, userId: user.id },
+    });
+    if (owned !== waitListId.length) return null;
+  } else {
+    const owned = await verifyWaitlistOwnership(waitListId, user.id);
+    if (!owned) return null;
+  }
+
+  return user;
+}
 
 export async function getWaitlistImpressions(waitListId) {
   try {
+    const user = await authorizeWaitlistAccess(waitListId);
+    if (!user) {
+      return { success: false, error: "Unauthorized" };
+    }
+
     const where = Array.isArray(waitListId)
       ? { waitListId: { in: waitListId } }
       : { waitListId };
@@ -30,6 +53,11 @@ export async function getWaitlistImpressions(waitListId) {
 
 export async function getGeographicDistribution(waitListId) {
   try {
+    const user = await authorizeWaitlistAccess(waitListId);
+    if (!user) {
+      return { success: false, error: "Unauthorized" };
+    }
+
     const where = Array.isArray(waitListId)
       ? { waitListId: { in: waitListId } }
       : { waitListId };
@@ -42,13 +70,16 @@ export async function getGeographicDistribution(waitListId) {
       },
     });
 
-    const formattedData = impressions
-      .filter((imp) => imp.country)
-      .map((imp) => ({
-        name: imp.country,
-        value: imp._count.country,
-      }))
-      .sort((a, b) => b.value - a.value);
+    const formattedData = [];
+    for (const imp of impressions) {
+      if (imp.country) {
+        formattedData.push({
+          name: imp.country,
+          value: imp._count.country,
+        });
+      }
+    }
+    formattedData.sort((a, b) => b.value - a.value);
 
     return {
       success: true,

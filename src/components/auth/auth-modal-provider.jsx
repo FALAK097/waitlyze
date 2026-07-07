@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { createContext, useContext, useState, useCallback } from "react";
+import { createContext, use, useCallback, useMemo, useState } from "react";
 
 const AuthModal = dynamic(() => import("./auth-modal").then((m) => m.AuthModal), { ssr: false });
 
@@ -13,8 +13,10 @@ export function AuthModalProvider({ children }) {
   const openAuthModal = useCallback(() => setOpen(true), []);
   const closeAuthModal = useCallback(() => setOpen(false), []);
 
+  const ctxValue = useMemo(() => ({ openAuthModal, closeAuthModal, isAuthModalOpen: open }), [openAuthModal, closeAuthModal, open]);
+
   return (
-    <AuthModalContext.Provider value={{ openAuthModal, closeAuthModal, isAuthModalOpen: open }}>
+    <AuthModalContext.Provider value={ctxValue}>
       {children}
       <AuthModal open={open} onOpenChange={setOpen} />
     </AuthModalContext.Provider>
@@ -22,7 +24,7 @@ export function AuthModalProvider({ children }) {
 }
 
 export function useAuthModal() {
-  const ctx = useContext(AuthModalContext);
+  const ctx = use(AuthModalContext);
   if (!ctx) {
     throw new Error("useAuthModal must be used within AuthModalProvider");
   }

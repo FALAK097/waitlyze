@@ -5,7 +5,7 @@ import { fetchSignUp } from "@/utils/fetch/client/sign-ups";
 import { useQuery } from "@tanstack/react-query";
 import { useTheme } from "next-themes";
 import { useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useMemo, useRef, useState, Suspense } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, Suspense } from "react";
 import toast from "react-hot-toast";
 import { ReferralPreview } from "./referral-preview";
 import { SignUpForm } from "./sign-up-form";
@@ -18,13 +18,13 @@ function PreviewContent({
   sendSignUpEmailAction,
 }) {
   const theme = useTheme();
-  const [mounted, setMounted] = useState(false);
+  const mounted = useSyncExternalStore(() => () => {}, () => true, () => false);
   const searchParams = useSearchParams();
   const referralId = searchParams.get("r");
   const isImpressionCreated = useMemo(() => {
     if (typeof window === "undefined") return;
     const existingImpressions = JSON.parse(
-      localStorage.getItem("waitlist_impressions") || "[]"
+      localStorage.getItem("wlz_v1:waitlist_impressions") || "[]"
     );
     return existingImpressions.some(
       (impression) => impression.waitListId === waitList.id
@@ -32,7 +32,7 @@ function PreviewContent({
   }, [waitList.id]);
   const [email, setEmail] = useState("");
   // Sign up mutation
-  const { isSuccess, isLoading, isError, error, refetch } = useQuery({
+  const { isLoading, refetch } = useQuery({
     enabled: false,
     queryFn: async () => await createSignUp({ email, waitList, referralId }),
     queryKey: ["createSignUp", email, waitList.id, uniqueUserId ?? ""],
@@ -52,7 +52,7 @@ function PreviewContent({
     if (typeof window === "undefined") return;
     // fetch sign up from local storage
     const existingSignups = JSON.parse(
-      localStorage.getItem("waitlist_sign_ups") || "[]"
+      localStorage.getItem("wlz_v1:waitlist_sign_ups") || "[]"
     );
     return existingSignups.find((signUp) => signUp.waitListId === waitList.id);
   });
@@ -67,15 +67,28 @@ function PreviewContent({
     retry: false,
   });
 
-  const emailSentRef = useRef(new Set());
+  const emailSentRef = useRef(null);
+  if (!emailSentRef.current) emailSentRef.current = new Set();
 
   const handleSignUp = async (e) => {
     e.preventDefault();
     if (isLoading) return;
-    await refetch();
+    const { isError: refetchError, error: refetchErrorObj } = await refetch();
+    if (refetchError) {
+      if (refetchErrorObj) toast.error(refetchErrorObj.message);
+      else toast.error("Failed to sign up, Please try again later");
+    } else {
+      toast.success(waitList.successMessage);
+      if (sendSignUpEmailAction && email && !emailSentRef.current.has(email)) {
+        emailSentRef.current.add(email);
+        sendSignUpEmailAction({ email, waitListId: waitList.id }).catch((err) =>
+          console.error("sendSignUpEmailAction error", err)
+        );
+      }
+    }
     setTimeout(() => {
       const existingSignUps = JSON.parse(
-        localStorage.getItem("waitlist_sign_ups") || "[]"
+        localStorage.getItem("wlz_v1:waitlist_sign_ups") || "[]"
       );
       const signUp = existingSignUps.find(
         (signUp) => signUp.waitListId === waitList.id
@@ -91,58 +104,27 @@ function PreviewContent({
   }, [impressionLoading, impressionRefetch]);
 
   useEffect(() => {
-    if (isSuccess && mounted) toast.success(waitList.successMessage);
-  }, [mounted, isSuccess, waitList.successMessage]);
-
-  useEffect(() => {
-    if (!mounted) return;
-    if (!isSuccess) return;
-    if (!email) return;
-    if (!sendSignUpEmailAction) return;
-    if (emailSentRef.current.has(email)) return;
-    emailSentRef.current.add(email);
-    sendSignUpEmailAction({ email }).catch((err) =>
-      console.error("sendSignUpEmailAction error", err)
-    );
-  }, [mounted, isSuccess, email, sendSignUpEmailAction]);
-
-  useEffect(() => {
-    if (isError && mounted) {
-      if (error) toast.error(error.message);
-      else toast.error("Failed to sign up, Please try again later");
-    }
-  }, [mounted, isError, error]);
-
-  useEffect(() => {
-    setMounted(true);
-    return () => setMounted(false);
-  }, []);
-
-  useEffect(() => {
     theme.setTheme("light");
   }, [theme]);
 
   useEffect(() => {
-    if (!mounted) return;
-    // check if uniqueUserId is available & hypeSession is not set in storage
     if (!uniqueUserId) return;
-    const hypeSession = localStorage.getItem("hypeSession");
+    const hypeSession = localStorage.getItem("wlz_v1:hypeSession");
     if (!hypeSession) {
-      localStorage.setItem("hypeSession", uniqueUserId);
+      localStorage.setItem("wlz_v1:hypeSession", uniqueUserId);
     }
     if (!isImpressionCreated) {
       handleCreateImpression();
     }
-  }, [uniqueUserId, handleCreateImpression, isImpressionCreated, mounted]);
+  }, [uniqueUserId, handleCreateImpression, isImpressionCreated]);
 
   useEffect(() => {
-    if (!mounted) return;
     const fetchSignUpInterval = setInterval(async () => {
       await fetchSignUpRefetch();
       // check if sign up is success
       if (fetchSignUpSuccess) {
         const existingSignUps = JSON.parse(
-          localStorage.getItem("waitlist_sign_ups") || "[]"
+          localStorage.getItem("wlz_v1:waitlist_sign_ups") || "[]"
         );
         const signUp = existingSignUps.find(
           (signUp) => signUp.waitListId === waitList.id
@@ -152,7 +134,7 @@ function PreviewContent({
       }
     }, 10000);
     return () => clearInterval(fetchSignUpInterval);
-  }, [fetchSignUpRefetch, fetchSignUpSuccess, mounted, waitList.id]);
+  }, [fetchSignUpRefetch, fetchSignUpSuccess, waitList.id]);
 
   if (mounted && signUp && waitList.showReferrals) {
     return (

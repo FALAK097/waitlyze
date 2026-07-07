@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useMemo } from "react";
 
 /**
  * Custom hook to manage state from a store.
@@ -10,12 +10,5 @@ import { useEffect, useState } from "react";
  * @returns {F | undefined} The current state from the store.
  */
 export const useStore = (store, callback) => {
-	const result = store(callback);
-	const [data, setData] = useState();
-
-	useEffect(() => {
-		setData(result);
-	}, [result]);
-
-	return data;
+	return useMemo(() => store(callback), [store, callback]);
 };

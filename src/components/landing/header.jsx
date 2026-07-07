@@ -9,12 +9,12 @@ import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 
+const navItems = ["Demo", "How It Works", "Features", "FAQ"];
+
 export default function Header() {
 	const { data: session, isPending } = useSession();
 	const { openAuthModal } = useAuthModal();
 	const [isNavOpen, setIsNavOpen] = useState(false);
-
-	const navItems = ["Demo", "How It Works", "Features", "FAQ"];
 
 	return (
 		<header className="fixed top-4 left-1/2 z-50 w-11/12 max-w-7xl -translate-x-1/2">

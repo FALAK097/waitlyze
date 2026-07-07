@@ -41,6 +41,73 @@ const getUser = cache(async (id) => {
 	});
 });
 
+const saveWaitList = async (waitListId, waitList) => {
+	"use server";
+	let response = {
+		success: false,
+		waitList: null,
+		message: "Failed to save wait list",
+	};
+
+	const data = {
+		buttonColor: waitList.buttonColor,
+		buttonBorder: waitList.buttonBorder,
+		buttonTextColor: waitList.buttonTextColor,
+		mainBgColor: waitList.enableMainBgColor ? waitList.mainBgColor : null,
+		enableMainBgColor: waitList.enableMainBgColor,
+		bgColor: waitList.bgColor,
+		enableBgColor: waitList.enableBgColor,
+		borderWidth: waitList.borderWidth,
+		borderRadius: waitList.borderRadius,
+		fontWeight: waitList.fontWeight,
+		logoSize: waitList.logoSize,
+		buttonText: waitList.buttonText,
+		successMessage: waitList.successMessage,
+		sendEmailsToSubscribers: waitList.sendEmailsToSubscribers,
+		showLogo: waitList.showLogo,
+		showSocialProof: waitList.showSocialProof,
+		showBadge: waitList.showBadge,
+		badgeColor: waitList.badgeColor,
+		badgeText: waitList.badgeText,
+		badgeTextColor: waitList.badgeTextColor,
+		showReferrals: waitList.showReferrals,
+		showBranding: waitList.showBranding,
+		inputColor: waitList.inputColor,
+		inputBorder: waitList.inputBorder,
+		inputTextColor: waitList.inputTextColor,
+		placeholderText: waitList.placeholderText,
+		logoUrl: waitList.logoUrl,
+		logoKey: waitList.logoKey,
+		shareOnTwitter: waitList.shareOnTwitter,
+		shareOnWhatsapp: waitList.shareOnWhatsapp,
+		shareOnInstagram: waitList.shareOnInstagram,
+		shareOnFacebook: waitList.shareOnFacebook,
+		shareOnLinkedin: waitList.shareOnLinkedin,
+		shareOnEmail: waitList.shareOnEmail,
+		shareOnReddit: waitList.shareOnReddit,
+		ogTitle: waitList.ogTitle,
+		ogDescription: waitList.ogDescription,
+		ogImage: waitList.ogImage,
+	};
+
+	try {
+		const updatedWaitList = await prisma.waitList.update({
+			where: { id: waitListId },
+			data,
+		});
+
+		response = {
+			success: true,
+			waitList: updatedWaitList,
+			message: "Wait list saved successfully",
+		};
+	} catch (error) {
+		console.error(error);
+	}
+
+	return response;
+};
+
 export async function generateMetadata(props) {
 	const params = await props.params;
 	const { id } = params;
@@ -82,73 +149,6 @@ export default async function WaitListsEditPage(props) {
 	if (!waitList) {
 		return notFound();
 	}
-
-	const saveWaitList = async (waitListId, waitList) => {
-		"use server";
-		let response = {
-			success: false,
-			waitList: null,
-			message: "Failed to save wait list",
-		};
-
-		const data = {
-			buttonColor: waitList.buttonColor,
-			buttonBorder: waitList.buttonBorder,
-			buttonTextColor: waitList.buttonTextColor,
-			mainBgColor: waitList.enableMainBgColor ? waitList.mainBgColor : null,
-			enableMainBgColor: waitList.enableMainBgColor,
-			bgColor: waitList.bgColor,
-			enableBgColor: waitList.enableBgColor,
-			borderWidth: waitList.borderWidth,
-			borderRadius: waitList.borderRadius,
-			fontWeight: waitList.fontWeight,
-			logoSize: waitList.logoSize,
-			buttonText: waitList.buttonText,
-			successMessage: waitList.successMessage,
-			sendEmailsToSubscribers: waitList.sendEmailsToSubscribers,
-			showLogo: waitList.showLogo,
-			showSocialProof: waitList.showSocialProof,
-			showBadge: waitList.showBadge,
-			badgeColor: waitList.badgeColor,
-			badgeText: waitList.badgeText,
-			badgeTextColor: waitList.badgeTextColor,
-			showReferrals: waitList.showReferrals,
-			showBranding: waitList.showBranding,
-			inputColor: waitList.inputColor,
-			inputBorder: waitList.inputBorder,
-			inputTextColor: waitList.inputTextColor,
-			placeholderText: waitList.placeholderText,
-			logoUrl: waitList.logoUrl,
-			logoKey: waitList.logoKey,
-			shareOnTwitter: waitList.shareOnTwitter,
-			shareOnWhatsapp: waitList.shareOnWhatsapp,
-			shareOnInstagram: waitList.shareOnInstagram,
-			shareOnFacebook: waitList.shareOnFacebook,
-			shareOnLinkedin: waitList.shareOnLinkedin,
-			shareOnEmail: waitList.shareOnEmail,
-			shareOnReddit: waitList.shareOnReddit,
-			ogTitle: waitList.ogTitle,
-			ogDescription: waitList.ogDescription,
-			ogImage: waitList.ogImage,
-		};
-
-		try {
-			const updatedWaitList = await prisma.waitList.update({
-				where: { id: waitListId },
-				data,
-			});
-
-			response = {
-				success: true,
-				waitList: updatedWaitList,
-				message: "Wait list saved successfully",
-			};
-		} catch (error) {
-			console.error(error);
-		}
-
-		return response;
-	};
 
 	return (
 		<ContentLayout title="WaitLists">

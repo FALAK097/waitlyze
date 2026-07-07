@@ -1,14 +1,25 @@
 "use server";
 import prisma from "@/lib/prisma";
 import { removeUpload } from "./removeUpload";
+import { requireAuth, verifyWaitlistOwnership } from "@/lib/auth-utils";
 
 export const removeImage = async (logoKey, waitListId) => {
+	const user = await requireAuth();
+	if (!user) {
+		return { success: false, message: "Unauthorized" };
+	}
+
+	const owned = await verifyWaitlistOwnership(waitListId, user.id);
+	if (!owned) {
+		return { success: false, message: "Unauthorized" };
+	}
+
 	const response = {
 		success: false,
 		message: "Failed to remove image",
 	};
 	try {
-		const response = await removeUpload(logoKey);
+		await removeUpload(logoKey);
 		await prisma.waitList.update({
 			where: {
 				id: waitListId,

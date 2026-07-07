@@ -15,8 +15,7 @@ export function useR2Upload(endpoint, options = {}) {
     setProgress(0);
 
     try {
-      const results = [];
-      for (const file of files) {
+      const uploads = Array.from(files).map((file) => {
         // Validate client side before hitting API
         if (file.size > 4 * 1024 * 1024) {
           throw new Error("File size exceeds the 4MB limit");
@@ -28,8 +27,7 @@ export function useR2Upload(endpoint, options = {}) {
         const formData = new FormData();
         formData.append("file", file);
 
-        // Upload using XMLHttpRequest to get real progress updates
-        const result = await new Promise((resolve, reject) => {
+        return new Promise((resolve, reject) => {
           const xhr = new XMLHttpRequest();
 
           xhr.upload.addEventListener("progress", (event) => {
@@ -58,15 +56,20 @@ export function useR2Upload(endpoint, options = {}) {
           });
 
           xhr.addEventListener("error", () => {
-            reject(new Error("Network upload error"));
+            reject(new Error("Network error occurred during upload"));
           });
 
-          xhr.open("POST", "/api/upload");
+          xhr.addEventListener("abort", () => {
+            reject(new Error("Upload was aborted"));
+          });
+
+          const url = new URL(endpoint, window.location.origin);
+          xhr.open("POST", url.toString());
           xhr.send(formData);
         });
+      });
 
-        results.push(result);
-      }
+      const results = await Promise.all(uploads);
 
       setIsUploading(false);
       setProgress(100);
@@ -85,7 +88,7 @@ export function useR2Upload(endpoint, options = {}) {
       }
       throw error;
     }
-  }, [options]);
+  }, [endpoint, options]);
 
   return {
     startUpload,

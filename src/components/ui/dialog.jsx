@@ -2,7 +2,6 @@
 
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { Cross2Icon } from "@radix-ui/react-icons";
-import * as React from "react";
 
 import { cn } from "@/lib/utils";
 
@@ -14,7 +13,7 @@ const DialogPortal = DialogPrimitive.Portal;
 
 const DialogClose = DialogPrimitive.Close;
 
-const DialogOverlay = React.forwardRef(({ className, ...props }, ref) => (
+const DialogOverlay = ({ ref, className, ...props }) => (
 	<DialogPrimitive.Overlay
 		ref={ref}
 		className={cn(
@@ -23,11 +22,10 @@ const DialogOverlay = React.forwardRef(({ className, ...props }, ref) => (
 		)}
 		{...props}
 	/>
-));
+);
 DialogOverlay.displayName = DialogPrimitive.Overlay.displayName;
 
-const DialogContent = React.forwardRef(
-	({ className, children, ...props }, ref) => (
+const DialogContent = ({ ref, className, children, ...props }) => (
 		<DialogPortal>
 			<DialogOverlay />
 			<DialogPrimitive.Content
@@ -45,8 +43,7 @@ const DialogContent = React.forwardRef(
 				</DialogPrimitive.Close>
 			</DialogPrimitive.Content>
 		</DialogPortal>
-	),
-);
+	);
 DialogContent.displayName = DialogPrimitive.Content.displayName;
 
 const DialogHeader = ({ className, ...props }) => (
@@ -71,7 +68,7 @@ const DialogFooter = ({ className, ...props }) => (
 );
 DialogFooter.displayName = "DialogFooter";
 
-const DialogTitle = React.forwardRef(({ className, ...props }, ref) => (
+const DialogTitle = ({ ref, className, ...props }) => (
 	<DialogPrimitive.Title
 		ref={ref}
 		className={cn(
@@ -80,16 +77,16 @@ const DialogTitle = React.forwardRef(({ className, ...props }, ref) => (
 		)}
 		{...props}
 	/>
-));
+);
 DialogTitle.displayName = DialogPrimitive.Title.displayName;
 
-const DialogDescription = React.forwardRef(({ className, ...props }, ref) => (
+const DialogDescription = ({ ref, className, ...props }) => (
 	<DialogPrimitive.Description
 		ref={ref}
 		className={cn("text-sm text-muted-foreground", className)}
 		{...props}
 	/>
-));
+);
 DialogDescription.displayName = DialogPrimitive.Description.displayName;
 
 export {

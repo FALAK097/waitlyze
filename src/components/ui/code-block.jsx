@@ -1,11 +1,10 @@
 import { cn } from "@/lib/utils";
 import { useTheme } from "next-themes";
-import React from "react";
 import toast from "react-hot-toast";
 import { CopyIcon } from "../shared/icons";
 import { Button } from "./button";
 
-const CodeBlock = React.forwardRef(({ className, ...props }) => {
+const CodeBlock = ({ className, ...props }) => {
 	const { theme } = useTheme();
 	return (
 		<div
@@ -31,7 +30,7 @@ const CodeBlock = React.forwardRef(({ className, ...props }) => {
 			</Button>
 		</div>
 	);
-});
+};
 
 CodeBlock.displayName = "CodeBlock";
 

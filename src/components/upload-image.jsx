@@ -98,7 +98,16 @@ export default function UploadImage({ value, onSuccess, onClear, disabled }) {
 
   return (
     <div className="space-y-4">
+      {/* react-doctor-disable-next-line react-doctor/prefer-tag-over-role */}
       <div
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            if (!disabled && !isUploading) fileInputRef.current?.click();
+          }
+        }}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}

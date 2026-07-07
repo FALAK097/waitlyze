@@ -2,8 +2,8 @@
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { motion, useAnimation } from "framer-motion";
-import { useCallback, useEffect, useState } from "react";
+import { m, useAnimation } from "framer-motion";
+import { useCallback, useMemo, useState } from "react";
 import { GripIcon } from "../shared/icons";
 
 export default function SparkleButton({
@@ -12,17 +12,15 @@ export default function SparkleButton({
 	...props
 }) {
 	const [isAttracting, setIsAttracting] = useState(false);
-	const [particles, setParticles] = useState([]);
 	const particlesControl = useAnimation();
 
-	useEffect(() => {
-		const newParticles = Array.from({ length: particleCount }, (_, i) => ({
+	const particles = useMemo(() =>
+		Array.from({ length: particleCount }, (_, i) => ({
 			id: i,
 			x: Math.random() * 360 - 180,
 			y: Math.random() * 360 - 180,
-		}));
-		setParticles(newParticles);
-	}, [particleCount]);
+		})),
+	[particleCount]);
 
 	const handleInteractionStart = useCallback(async () => {
 		setIsAttracting(true);
@@ -64,7 +62,7 @@ export default function SparkleButton({
 			{...props}
 		>
 			{particles.map((particle, index) => (
-				<motion.div
+				<m.div
 					key={particle.id}
 					custom={index}
 					initial={{ x: particle.x, y: particle.y }}

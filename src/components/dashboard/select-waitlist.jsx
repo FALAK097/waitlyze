@@ -7,15 +7,13 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 export const SelectWaitlist = ({ waitLists }) => {
-	const [selectedWaitlist, setSelectedWaitlist] = useState("");
-
-	useEffect(() => {
-		const savedWaitlist = localStorage.getItem("selectedWaitlist");
-		if (savedWaitlist) setSelectedWaitlist(savedWaitlist);
-	}, []);
+	const [selectedWaitlist, setSelectedWaitlist] = useState(() => {
+		if (typeof window === "undefined") return "";
+		return localStorage.getItem("selectedWaitlist") || "";
+	});
 
 	const handleSelectChange = (value) => {
 		setSelectedWaitlist(value);

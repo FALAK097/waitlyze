@@ -61,6 +61,7 @@ export function UploadButton({ onSuccess, disabled }) {
 				accept="image/*"
 				onChange={handleFileChange}
 				className="hidden"
+				aria-label="Upload image"
 			/>
 		</div>
 	);

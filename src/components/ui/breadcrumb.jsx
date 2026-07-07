@@ -1,15 +1,14 @@
 import { ChevronRightIcon, DotsHorizontalIcon } from "@radix-ui/react-icons";
 import { Slot } from "@radix-ui/react-slot";
-import * as React from "react";
 
 import { cn } from "@/lib/utils";
 
-const Breadcrumb = React.forwardRef(({ ...props }, ref) => (
+const Breadcrumb = ({ ref, ...props }) => (
   <nav ref={ref} aria-label="breadcrumb" {...props} />
-));
+);
 Breadcrumb.displayName = "Breadcrumb";
 
-const BreadcrumbList = React.forwardRef(({ className, ...props }, ref) => (
+const BreadcrumbList = ({ ref, className, ...props }) => (
   <ol
     ref={ref}
     className={cn(
@@ -18,20 +17,19 @@ const BreadcrumbList = React.forwardRef(({ className, ...props }, ref) => (
     )}
     {...props}
   />
-));
+);
 BreadcrumbList.displayName = "BreadcrumbList";
 
-const BreadcrumbItem = React.forwardRef(({ className, ...props }, ref) => (
+const BreadcrumbItem = ({ ref, className, ...props }) => (
   <li
     ref={ref}
     className={cn("inline-flex items-center gap-1.5", className)}
     {...props}
   />
-));
+);
 BreadcrumbItem.displayName = "BreadcrumbItem";
 
-const BreadcrumbLink = React.forwardRef(
-  ({ asChild, className, ...props }, ref) => {
+const BreadcrumbLink = ({ ref, asChild, className, ...props }) => {
     const Comp = asChild ? Slot : "a";
 
     return (
@@ -41,20 +39,18 @@ const BreadcrumbLink = React.forwardRef(
         {...props}
       />
     );
-  }
-);
+  };
 BreadcrumbLink.displayName = "BreadcrumbLink";
 
-const BreadcrumbPage = React.forwardRef(({ className, ...props }, ref) => (
-  <span
+const BreadcrumbPage = ({ ref, className, ...props }) => (
+  <a
     ref={ref}
-    role="link"
     aria-disabled="true"
     aria-current="page"
-    className={cn("font-normal text-primary", className)}
+    className={cn("font-normal text-primary pointer-events-none", className)}
     {...props}
   />
-));
+);
 BreadcrumbPage.displayName = "BreadcrumbPage";
 
 const BreadcrumbSeparator = ({ children, className, ...props }) => (

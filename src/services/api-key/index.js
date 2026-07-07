@@ -7,7 +7,7 @@ const SALT_ROUNDS = 10;
 const API_KEY_PREFIX = "wl_";
 const API_KEY_BYTES = 32;
 
-export async function generateApiKey() {
+async function generateApiKey() {
   try {
     const randomBytesAsync = promisify(randomBytes);
     const buffer = await randomBytesAsync(API_KEY_BYTES);

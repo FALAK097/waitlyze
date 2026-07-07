@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useRef } from "react";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Bold,
@@ -20,13 +20,15 @@ import { Button } from "@/components/ui/button";
 
 export function MarkdownEditor({ value, onChange, placeholder }) {
   const [content, setContent] = useState(value || "");
-  const [history, setHistory] = useState([value || ""]);
+  const [history, setHistory] = useState(() => [value || ""]);
   const [historyIndex, setHistoryIndex] = useState(0);
   const textareaRef = useRef(null);
+  const prevValueRef = useRef(value);
 
-  useEffect(() => {
+  if (value !== prevValueRef.current) {
+    prevValueRef.current = value;
     setContent(value || "");
-  }, [value]);
+  }
 
   const handleChange = (e) => {
     const newValue = e.target.value;

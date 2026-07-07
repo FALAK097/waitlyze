@@ -13,27 +13,21 @@ import { cn } from "@/lib/utils";
 import { ArrowRight } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 export default function OnboardingDialog({ userId, isOnboarded, onComplete }) {
 	const [step, setStep] = useState(1);
-	const [isOpen, setIsOpen] = useState(false);
+	const [isOpen, setIsOpen] = useState(!isOnboarded);
 	const router = useRouter();
-
-	useEffect(() => {
-		if (!isOnboarded) {
-			setIsOpen(true);
-		}
-	}, [isOnboarded]);
 
 	const handleContinue = useCallback(() => {
 		if (step < totalSteps) {
-			setStep(step + 1);
+			setStep((prev) => prev + 1);
 		} else {
 			handleComplete();
 			router.push("/wait-lists/new");
 		}
-	}, [step]);
+	}, [step, handleComplete, router, totalSteps]);
 
 	useEffect(() => {
 		const handleKeyDown = (e) => {
@@ -48,7 +42,7 @@ export default function OnboardingDialog({ userId, isOnboarded, onComplete }) {
 		return () => window.removeEventListener("keydown", handleKeyDown);
 	}, [handleContinue]);
 
-	const stepContent = [
+	const stepContent = useMemo(() => [
 		{
 			id: "welcome",
 			title: "Welcome to Waitlyze! ",
@@ -77,14 +71,15 @@ export default function OnboardingDialog({ userId, isOnboarded, onComplete }) {
 				"Monitor signups, track visitor analytics, and understand your audience with detailed insights about your waitlist's performance.",
 			image: "/images/onboarding/analytics.png",
 		},
-	];
+	],
+	[]);
 
 	const totalSteps = stepContent.length;
 
-	const handleComplete = async () => {
+	const handleComplete = useCallback(async () => {
 		await onComplete(userId);
 		setIsOpen(false);
-	};
+	}, [onComplete, userId]);
 
 	return (
 		<Dialog
@@ -121,6 +116,7 @@ export default function OnboardingDialog({ userId, isOnboarded, onComplete }) {
 								<button
 									key={content.id}
 									type="button"
+									aria-label={`Go to step ${stepContent.indexOf(content) + 1}: ${content.title}`}
 									onClick={() => setStep(stepContent.indexOf(content) + 1)}
 									className={cn(
 										"h-2 rounded-full transition-all duration-300 cursor-pointer focus:outline-none",

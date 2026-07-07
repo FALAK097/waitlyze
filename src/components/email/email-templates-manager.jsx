@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+
+const currentYear = new Date().getFullYear();
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
@@ -82,6 +84,11 @@ export function EmailTemplatesManager({ waitListId, waitListName, initialTemplat
     );
   };
 
+  const renderedHeader = renderMarkdown(tpl.header);
+  const renderedSubHeader = renderMarkdown(tpl.subHeader);
+  const renderedMainBody = renderMarkdown(tpl.mainBody);
+  const renderedSubBody = renderMarkdown(tpl.subBody);
+
   return (
     <div className="space-y-8">
       <Tabs value={current} onValueChange={setCurrent} className="w-full">
@@ -132,21 +139,21 @@ export function EmailTemplatesManager({ waitListId, waitListName, initialTemplat
             <CardContent className="p-0">
               <div className="bg-white rounded-md">
                 <div className="p-6 prose-sm prose max-w-none">
-                  <div className="text-lg font-semibold">{renderMarkdown(tpl.header)}</div>
+                  <div className="text-lg font-semibold">{renderedHeader}</div>
                   <div className="text-muted-foreground">
-                    {renderMarkdown(tpl.subHeader)}
+                    {renderedSubHeader}
                   </div>
                   <div className="my-4">
-                    {renderMarkdown(tpl.mainBody)}
+                    {renderedMainBody}
                   </div>
                   <div className="text-sm text-muted-foreground">
-                    {renderMarkdown(tpl.subBody)}
+                    {renderedSubBody}
                   </div>
 
                   <footer className="mt-8 text-sm text-center text-muted-foreground">
                     <Separator className="mb-4" />
                     <p>
-                      Need help? Reply to this email • {new Date().getFullYear()} Waitlyze
+                      Need help? Reply to this email • {currentYear} Waitlyze
                     </p>
                   </footer>
                 </div>

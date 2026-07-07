@@ -68,7 +68,7 @@ export const WaitListCard = ({
 	return (
 		<>
 			<Card className="relative w-full transition-all group hover:shadow-lg">
-				<button
+				<button type="button"
 					onClick={handleCopyId}
 					className="absolute z-10 p-1 transition-colors duration-200 rounded-sm top-3 right-3 hover:bg-muted"
 					title="Copy ID"

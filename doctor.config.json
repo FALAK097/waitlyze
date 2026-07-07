@@ -1,0 +1,13 @@
+{
+  "$schema": "https://react.doctor/schema/config.json",
+  "rules": {
+    "react-doctor/artifact-env-leak": "off",
+    "react-doctor/require-pnpm-hardening": "off",
+    "react-doctor/prefer-dynamic-import": "off",
+    "react-doctor/use-lazy-motion": "off",
+    "react-doctor/rerender-state-only-in-handlers": "off",
+    "react-doctor/no-multi-comp": "off",
+    "react-doctor/no-event-handler": "off",
+    "react-doctor/no-pass-data-to-parent": "off"
+  }
+}

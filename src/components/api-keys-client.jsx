@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -21,14 +21,6 @@ import {
     DialogClose,
 } from '@/components/ui/dialog';
 import {
-    Sheet,
-    SheetContent,
-    SheetDescription,
-    SheetHeader,
-    SheetTitle,
-    SheetTrigger,
-} from '@/components/ui/sheet';
-import {
     AlertDialog,
     AlertDialogAction,
     AlertDialogCancel,
@@ -39,7 +31,8 @@ import {
     AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
-import { Plus, Trash2, ClipboardCheck, ClipboardCopy, BookOpen } from 'lucide-react';
+import { Plus, Trash2, ClipboardCheck, ClipboardCopy } from 'lucide-react';
+import { ApiKeysIntegrationGuide } from '@/components/api-keys-integration-guide';
 import toast from 'react-hot-toast';
 
 export const ApiKeysClient = () => {
@@ -53,6 +46,9 @@ export const ApiKeysClient = () => {
     const [newKey, setNewKey] = useState(null);
     const [selectedWaitlistId, setSelectedWaitlistId] = useState('');
     const [copied, setCopied] = useState(false);
+    const unlinkedWaitlists = useMemo(() =>
+      waitlists.filter(waitlist => !apiKeys.some(key => key.waitlist?.id === waitlist.id)),
+    [waitlists, apiKeys]);
 
     useEffect(() => {
         fetchApiKeys();
@@ -151,25 +147,7 @@ export const ApiKeysClient = () => {
         }
     };
 
-    const codeExample = `await fetch("https://waitlyze.falakgala.dev/api/waitlist", {
-  method: "POST",
-  headers: {
-    "Content-Type": "application/json",
-  },
-  body: JSON.stringify({
-    apiKey: "your_api_key_here",
-    waitlistId: "your_waitlist_id_here", // copy from the created waitlist
-    email: "user@example.com",
-  }),
-});`;
 
-    const responseExample = `{
-  "success": true,
-  "message": "Successfully joined the waitlist!",
-  "data": {
-    "rank": 9,
-  }
-}`;
 
     return (
         <div className="space-y-4">
@@ -194,14 +172,11 @@ export const ApiKeysClient = () => {
                 </AlertDialogContent>
             </AlertDialog>
 
-            <Sheet>
-                <div className="flex justify-end gap-2">
-                    <SheetTrigger asChild>
-                        <Button variant="outline">
-                            <BookOpen className="w-4 h-4 mr-2" />
-                            Integration Guide
-                        </Button>
-                    </SheetTrigger>
+            <div className="flex justify-end gap-2">
+                    <ApiKeysIntegrationGuide
+                        copied={copied}
+                        onCopy={copyToClipboard}
+                    />
                     <Dialog open={createDialogOpen} onOpenChange={(open) => {
                         setCreateDialogOpen(open);
                         if (!open) {
@@ -260,8 +235,9 @@ export const ApiKeysClient = () => {
                                 <>
                                     <div className="space-y-4">
                                         <div className="space-y-2">
-                                            <label className="text-sm font-medium">API Key Name</label>
+                                            <label htmlFor="api-key-name" className="text-sm font-medium">API Key Name</label>
                                             <Input
+                                                id="api-key-name"
                                                 placeholder="Enter name"
                                                 value={newKeyName}
                                                 onChange={(e) => setNewKeyName(e.target.value)}
@@ -269,14 +245,13 @@ export const ApiKeysClient = () => {
                                         </div>
 
                                         <div className="space-y-2">
-                                            <label className="text-sm font-medium">Link to Waitlist</label>
+                                            <label htmlFor="link-to-waitlist" className="text-sm font-medium">Link to Waitlist</label>
                                             <Select value={selectedWaitlistId} onValueChange={setSelectedWaitlistId}>
-                                                <SelectTrigger>
+                                                <SelectTrigger id="link-to-waitlist">
                                                     <SelectValue placeholder="Select a waitlist" />
                                                 </SelectTrigger>
                                                 <SelectContent>
-                                                    {waitlists
-                                                        .filter(waitlist => !apiKeys.some(key => key.waitlist?.id === waitlist.id))
+                                                    {unlinkedWaitlists
                                                         .map((waitlist) => (
                                                             <SelectItem key={waitlist.id} value={waitlist.id}>
                                                                 {waitlist.name}
@@ -285,7 +260,7 @@ export const ApiKeysClient = () => {
                                                     }
                                                 </SelectContent>
                                             </Select>
-                                            {waitlists.filter(waitlist => !apiKeys.some(key => key.waitlist?.id === waitlist.id)).length === 0 && (
+                                            {unlinkedWaitlists.length === 0 && (
                                                 <p className="text-xs text-muted-foreground">
                                                     All waitlists are already linked to API keys.
                                                 </p>
@@ -295,7 +270,7 @@ export const ApiKeysClient = () => {
                                     <DialogFooter>
                                         <Button
                                             onClick={handleCreateAndLinkKey}
-                                            disabled={isCreating || newKeyName.length < 3 || !selectedWaitlistId || apiKeys.length >= 3 || waitlists.filter(waitlist => !apiKeys.some(key => key.waitlist?.id === waitlist.id)).length === 0}
+                                            disabled={isCreating || newKeyName.length < 3 || !selectedWaitlistId || apiKeys.length >= 3 || unlinkedWaitlists.length === 0}
                                         >
                                             {isCreating ? 'Creating...' : 'Create & Link API Key'}
                                         </Button>
@@ -305,70 +280,6 @@ export const ApiKeysClient = () => {
                         </DialogContent>
                     </Dialog>
                 </div>
-
-                <SheetContent className="w-[600px] sm:w-[700px] overflow-y-auto">
-                    <SheetHeader>
-                        <SheetTitle>Waitlist API Integration Guide</SheetTitle>
-                        <SheetDescription>
-                            You can use the following example to integrate waitlist functionality into your application using our API.
-                        </SheetDescription>
-                    </SheetHeader>
-
-                    <div className="mt-6 space-y-6">
-                        <div>
-                            <h3 className="mb-3 text-lg font-semibold">Example</h3>
-                            <div className="relative">
-                                <pre className="p-3 overflow-x-auto text-xs rounded-lg bg-slate-900 text-slate-100">
-                                    <code>{codeExample}</code>
-                                </pre>
-                                <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="absolute w-8 h-8 p-0 top-2 right-2 text-slate-400 hover:text-slate-200 hover:bg-slate-700"
-                                    onClick={() => copyToClipboard(codeExample)}
-                                >
-                                    {copied ? <ClipboardCheck className="w-3 h-3" /> : <ClipboardCopy className="w-3 h-3" />}
-                                </Button>
-                            </div>
-                        </div>
-
-                        <div>
-                            <h3 className="mb-3 text-lg font-semibold">Response Example</h3>
-                            <div className="relative">
-                                <pre className="p-3 overflow-x-auto text-xs rounded-lg bg-slate-900 text-slate-100">
-                                    <code>{responseExample}</code>
-                                </pre>
-                                <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="absolute w-8 h-8 p-0 top-2 right-2 text-slate-400 hover:text-slate-200 hover:bg-slate-700"
-                                    onClick={() => copyToClipboard(responseExample)}
-                                >
-                                    {copied ? <ClipboardCheck className="w-3 h-3" /> : <ClipboardCopy className="w-3 h-3" />}
-                                </Button>
-                            </div>
-                        </div>
-
-                        <div>
-                            <h3 className="mb-3 text-lg font-semibold">Error Responses</h3>
-                            <div className="space-y-2 text-sm">
-                                <div className="p-2 border border-red-200 rounded bg-red-50">
-                                    <span className="font-medium">400:</span> Missing required parameters
-                                </div>
-                                <div className="p-2 border border-red-200 rounded bg-red-50">
-                                    <span className="font-medium">401:</span> Invalid API key or waitlist ID
-                                </div>
-                                <div className="p-2 border border-yellow-200 rounded bg-yellow-50">
-                                    <span className="font-medium">409:</span> Email already registered
-                                </div>
-                                <div className="p-2 border border-red-200 rounded bg-red-50">
-                                    <span className="font-medium">500:</span> Internal server error
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </SheetContent>
-            </Sheet>
 
             <Table>
                 <TableHeader>

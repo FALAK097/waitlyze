@@ -1,8 +1,7 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { m } from "framer-motion";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
 import { Button } from "../ui/button";
 import { Card } from "../ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
@@ -10,21 +9,16 @@ import { DashboardCharts } from "./dashboard-charts";
 import { UserSegmentation } from "./user-segmentation";
 import { useQueryState } from 'nuqs';
 
-export default function DashboardCard({ waitLists = [] }) {
+const EMPTY_WAITLISTS = [];
+
+export default function DashboardCard({ waitLists = EMPTY_WAITLISTS }) {
   const waitListIds = waitLists.map(w => w.id);
   const [activeTab, setActiveTab] = useQueryState('tab', {
     defaultValue: 'signups',
     clearOnDefault: true
   });
-  const [selectedWaitlistId, setSelectedWaitlistId] = useState("");
-  const router = useRouter();
-
-  useEffect(() => {
-    const savedWaitlistId = localStorage.getItem("selectedWaitlist");
-    if (savedWaitlistId) {
-      setSelectedWaitlistId(savedWaitlistId);
-    }
-  }, []);
+  const selectedWaitlistId = typeof window !== "undefined" ? localStorage.getItem("selectedWaitlist") || "" : "";
+	const router = useRouter();
 
   const handleTabChange = async (value) => {
     if (value === 'signups') {
@@ -53,7 +47,7 @@ export default function DashboardCard({ waitLists = [] }) {
             />
           ) : (
             <Card className="flex min-h-[400px] flex-col items-center justify-center text-center">
-              <motion.div
+              <m.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.3 }}
@@ -75,7 +69,7 @@ export default function DashboardCard({ waitLists = [] }) {
                 >
                   Create New Waitlist
                 </Button>
-              </motion.div>
+              </m.div>
             </Card>
           )}
         </TabsContent>

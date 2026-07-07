@@ -3,6 +3,8 @@
 import Logo from "@/components/shared/logo";
 import { Github, Twitter } from "lucide-react";
 import Image from "next/image";
+
+const currentYear = new Date().getFullYear();
 import Link from "next/link";
 import { useState } from "react";
 
@@ -118,7 +120,7 @@ export default function Footer() {
 					</div>
 					<div className="pt-8 mt-8 text-center border-t border-border">
 						<p className="text-sm text-muted-foreground">
-							&copy; {new Date().getFullYear()} Waitlyze. All rights reserved.
+							&copy; {currentYear} Waitlyze. All rights reserved.
 						</p>
 					</div>
 				</div>

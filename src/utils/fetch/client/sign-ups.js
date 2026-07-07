@@ -1,5 +1,7 @@
+const LS_PREFIX = "wlz_v1:";
+
 const createSignUp = async ({ email, waitList, referralId }) => {
-	const uniqueUserId = localStorage.getItem("hypeSession");
+	const uniqueUserId = localStorage.getItem(`${LS_PREFIX}hypeSession`);
 	let createSignUpResponse = {
 		success: false,
 		message: "Failed to sign up, Please try again later",
@@ -23,14 +25,14 @@ const createSignUp = async ({ email, waitList, referralId }) => {
 		}
 		// set signUp in local storage
 		const existingSignUps = JSON.parse(
-			localStorage.getItem("waitlist_sign_ups") || "[]",
+			localStorage.getItem(`${LS_PREFIX}waitlist_sign_ups`) || "[]",
 		);
 		existingSignUps.push({
 			...data.signUp,
 			waitListId: waitList.id,
 			hypeSession: uniqueUserId,
 		});
-		localStorage.setItem("waitlist_sign_ups", JSON.stringify(existingSignUps));
+		localStorage.setItem(`${LS_PREFIX}waitlist_sign_ups`, JSON.stringify(existingSignUps));
 		createSignUpResponse = {
 			success: true,
 			message: waitList.successMessage,
@@ -52,7 +54,7 @@ const createSignUp = async ({ email, waitList, referralId }) => {
 
 const fetchSignUp = async ({ waitListId }) => {
 	const existingSignUps = JSON.parse(
-		localStorage.getItem("waitlist_sign_ups") || "[]",
+		localStorage.getItem(`${LS_PREFIX}waitlist_sign_ups`) || "[]",
 	);
 	const signUp = existingSignUps.find(
 		(signUp) => signUp.waitListId === waitListId,
@@ -74,13 +76,13 @@ const fetchSignUp = async ({ waitListId }) => {
 		const signUp = data.signUp;
 		// write to local storage
 		let existingSignUps = JSON.parse(
-			localStorage.getItem("waitlist_sign_ups") || "[]",
+			localStorage.getItem(`${LS_PREFIX}waitlist_sign_ups`) || "[]",
 		);
 		// update the sign up in local storage
 		existingSignUps = existingSignUps.map((existingSignUp) =>
 			signUp.id === signUpId ? { ...existingSignUp, ...signUp } : signUp,
 		);
-		localStorage.setItem("waitlist_sign_ups", JSON.stringify(existingSignUps));
+		localStorage.setItem(`${LS_PREFIX}waitlist_sign_ups`, JSON.stringify(existingSignUps));
 		return signUp;
 	} catch (error) {
 		console.error("Error fetching sign up", error);

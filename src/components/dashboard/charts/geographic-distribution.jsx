@@ -12,8 +12,9 @@ import {
   ChartTooltipContent,
 } from "@/components/ui/chart";
 import { getGeographicDistribution } from "@/actions/waitlist-impressions";
-import { AnimatePresence, motion } from "framer-motion";
-import { useEffect, useState } from "react";
+import { m, AnimatePresence } from "framer-motion";
+import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
 import { Cell, Pie, PieChart, ResponsiveContainer, Sector } from "recharts";
 
 const COLORS = [
@@ -23,22 +24,6 @@ const COLORS = [
   "#FF6B4A",
   "#FF9D7A",
 ];
-
-// const COLORS = [
-//   "#FF6B4A",
-//   "#FF9D7A",
-//   "#FFC9B8",
-//   "#FFD16F",
-//   "#404040",
-// ];
-
-// const COLORS = [
-//   "#FF6B4A",
-//   "#FF9D7A",
-//   "#FFC9B8",
-//   "#FFD166",
-//   "#6A4C93",
-// ];
 
 const renderActiveShape = (props) => {
   const { cx, cy, innerRadius, outerRadius, startAngle, endAngle, fill } =
@@ -58,26 +43,25 @@ const renderActiveShape = (props) => {
   );
 };
 
+const fetchGeoData = async (waitListId) => {
+  try {
+    const result = await getGeographicDistribution(waitListId);
+    return result;
+  } catch (error) {
+    console.error("Error fetching geographic data:", error);
+    throw error;
+  }
+};
+
 export const GeographicDistribution = ({ waitListId }) => {
   const [activeIndex, setActiveIndex] = useState(undefined);
-  const [geoData, setGeoData] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const { data, isLoading } = useQuery({
+    queryKey: ["geographic-distribution", waitListId],
+    queryFn: () => fetchGeoData(waitListId),
+    enabled: !!waitListId,
+  });
 
-  useEffect(() => {
-    async function fetchData() {
-      try {
-        const result = await getGeographicDistribution(waitListId);
-        if (result.success) {
-          setGeoData(result.data);
-        }
-      } catch (error) {
-        console.error("Error fetching geographic data:", error);
-      } finally {
-        setLoading(false);
-      }
-    }
-    fetchData();
-  }, [waitListId]);
+  const geoData = data?.success ? data.data : [];
 
   const onPieEnter = (_, index) => {
     setActiveIndex(index);
@@ -87,7 +71,7 @@ export const GeographicDistribution = ({ waitListId }) => {
     setActiveIndex(undefined);
   };
 
-  if (loading) return <div>Loading geographic data...</div>;
+  if (isLoading) return <div>Loading geographic data...</div>;
 
   return (
     <Card>
@@ -130,7 +114,7 @@ export const GeographicDistribution = ({ waitListId }) => {
         <div className="mt-4 space-y-2 w-full md:mt-0 md:ml-8 md:w-1/3">
           <AnimatePresence>
             {geoData.map((entry, index) => (
-              <motion.div
+              <m.div
                 key={entry.name}
                 className="flex justify-between items-center"
                 initial={{ opacity: 0, y: 20 }}
@@ -145,7 +129,7 @@ export const GeographicDistribution = ({ waitListId }) => {
                     backgroundColor: COLORS[index % COLORS.length],
                   }}
                 />
-              </motion.div>
+              </m.div>
             ))}
           </AnimatePresence>
         </div>
@@ -153,5 +137,3 @@ export const GeographicDistribution = ({ waitListId }) => {
     </Card>
   );
 };
-
-export default GeographicDistribution;

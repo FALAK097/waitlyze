@@ -1,13 +1,15 @@
+const LS_PREFIX = "wlz_v1:";
+
 const createImpression = async ({ waitList }) => {
-	let uniqueUserId = localStorage.getItem("hypeSession");
+	let uniqueUserId = localStorage.getItem(`${LS_PREFIX}hypeSession`);
 
 	if (!uniqueUserId) {
 		uniqueUserId = crypto.randomUUID();
-		localStorage.setItem("hypeSession", uniqueUserId);
+		localStorage.setItem(`${LS_PREFIX}hypeSession`, uniqueUserId);
 	}
 
 	const existingImpressions = JSON.parse(
-		localStorage.getItem("waitlist_impressions") || "[]",
+		localStorage.getItem(`${LS_PREFIX}waitlist_impressions`) || "[]",
 	);
 	const hasCreatedImpression = existingImpressions.some(
 		(impression) => impression.waitListId === waitList.id,
@@ -36,7 +38,7 @@ const createImpression = async ({ waitList }) => {
 			hypeSession: uniqueUserId,
 		});
 		localStorage.setItem(
-			"waitlist_impressions",
+			`${LS_PREFIX}waitlist_impressions`,
 			JSON.stringify(existingImpressions),
 		);
 		return data;

@@ -6,7 +6,7 @@ import {
 	AccordionItem,
 	AccordionTrigger,
 } from "@/components/ui/accordion";
-import { motion } from "framer-motion";
+import { m } from "framer-motion";
 import { Zap } from "lucide-react";
 
 const faqs = [
@@ -51,24 +51,24 @@ export default function FAQ() {
 						<Zap className="w-4 h-4 text-[#ff7e5f]" />
 						<span className="text-xs font-light tracking-wider text-[#ff7e5f]">FREQUENTLY ASKED QUESTIONS</span>
 					</div>
-					<motion.h2
+					<m.h2
 						initial={{ opacity: 0, y: 20 }}
 						whileInView={{ opacity: 1, y: 0 }}
 						viewport={{ once: true }}
 						className="mb-6 text-3xl font-medium text-center text-transparent bg-clip-text bg-gradient-to-r from-primary to-primary/20 sm:text-4xl"
 					>
 						Frequently Asked Questions
-					</motion.h2>
-					<motion.p
+					</m.h2>
+					<m.p
 						initial={{ opacity: 0, y: 20 }}
 						whileInView={{ opacity: 1, y: 0 }}
 						viewport={{ once: true }}
 						className="mx-auto mb-12 text-lg font-light leading-relaxed text-gray-600 dark:text-gray-300"
 					>
 						Find answers to common questions about Waitlyze and how it can help you build and manage your waitlist.
-					</motion.p>
+					</m.p>
 				</div>
-				<motion.div
+				<m.div
 					initial={{ opacity: 0, y: 20 }}
 					whileInView={{ opacity: 1, y: 0 }}
 					transition={{ duration: 0.6, delay: 0.2 }}
@@ -91,7 +91,7 @@ export default function FAQ() {
 							</AccordionItem>
 						))}
 					</Accordion>
-				</motion.div>
+				</m.div>
 			</div>
 		</section>
 	);

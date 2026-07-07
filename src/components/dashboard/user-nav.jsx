@@ -16,23 +16,14 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useSession, signOut } from "@/lib/auth-client";
 import { LogOut } from "lucide-react";
+import { useCallback } from "react";
 import toast from "react-hot-toast";
 
 export function UserNav() {
   const { data: session } = useSession();
   const user = session?.user;
 
-  if (!user) return null;
-
-  // Extract initials for fallback avatar
-  const initials = (user.name || user.email || "U")
-    .split(" ")
-    .map((n) => n[0])
-    .join("")
-    .substring(0, 2)
-    .toUpperCase();
-
-  const handleSignOut = async () => {
+  const handleSignOut = useCallback(async () => {
     try {
       await signOut({
         callbackURL: "/",
@@ -43,7 +34,16 @@ export function UserNav() {
       console.error("Sign out error:", error);
       toast.error("Failed to sign out");
     }
-  };
+  }, []);
+
+  if (!user) return null;
+
+  const initials = (user.name || user.email || "U")
+    .split(" ")
+    .map((n) => n[0])
+    .join("")
+    .substring(0, 2)
+    .toUpperCase();
 
   return (
     <DropdownMenu>

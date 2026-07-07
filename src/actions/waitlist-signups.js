@@ -1,8 +1,14 @@
 "use server";
 import prisma from "@/lib/prisma";
+import { requireAuth } from "@/lib/auth-utils";
 
 export async function getWaitlistSignups(waitlistId) {
 	try {
+		const user = await requireAuth();
+		if (!user) {
+			return { success: false, error: "Unauthorized" };
+		}
+
 		if (!waitlistId) {
 			return {
 				success: false,
@@ -14,9 +20,15 @@ export async function getWaitlistSignups(waitlistId) {
 			where: {
 				id: waitlistId,
 			},
+			select: {
+				id: true,
+				userId: true,
+				name: true,
+				description: true,
+			},
 		});
 
-		if (!waitlist) {
+		if (!waitlist || waitlist.userId !== user.id) {
 			return {
 				success: false,
 				error: "Waitlist not found",

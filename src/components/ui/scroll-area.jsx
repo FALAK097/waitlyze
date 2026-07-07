@@ -1,12 +1,10 @@
 "use client";
 
 import * as ScrollAreaPrimitive from "@radix-ui/react-scroll-area";
-import * as React from "react";
 
 import { cn } from "@/lib/utils";
 
-const ScrollArea = React.forwardRef(
-	({ className, children, ...props }, ref) => (
+const ScrollArea = ({ ref, className, children, ...props }) => (
 		<ScrollAreaPrimitive.Root
 			ref={ref}
 			className={cn("relative overflow-hidden", className)}
@@ -18,12 +16,10 @@ const ScrollArea = React.forwardRef(
 			<ScrollBar />
 			<ScrollAreaPrimitive.Corner />
 		</ScrollAreaPrimitive.Root>
-	),
-);
+	);
 ScrollArea.displayName = ScrollAreaPrimitive.Root.displayName;
 
-const ScrollBar = React.forwardRef(
-	({ className, orientation = "vertical", ...props }, ref) => (
+const ScrollBar = ({ ref, className, orientation = "vertical", ...props }) => (
 		<ScrollAreaPrimitive.ScrollAreaScrollbar
 			ref={ref}
 			orientation={orientation}
@@ -39,8 +35,7 @@ const ScrollBar = React.forwardRef(
 		>
 			<ScrollAreaPrimitive.ScrollAreaThumb className="relative flex-1 rounded-full bg-border" />
 		</ScrollAreaPrimitive.ScrollAreaScrollbar>
-	),
-);
+	);
 ScrollBar.displayName = ScrollAreaPrimitive.ScrollAreaScrollbar.displayName;
 
 export { ScrollArea, ScrollBar };

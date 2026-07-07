@@ -4,6 +4,7 @@ import { env } from "@/lib/env.mjs";
 import prisma from "@/lib/prisma";
 import { marked } from 'marked';
 import { Resend } from 'resend';
+import { requireAuth, verifyWaitlistOwnership } from "@/lib/auth-utils";
 
 const resend = new Resend(env.RESEND_API_KEY);
 
@@ -33,6 +34,16 @@ const DEFAULTS = {
 };
 
 export async function getOrCreateTemplates(waitListId) {
+  const user = await requireAuth();
+  if (!user) {
+    return { success: false, message: "Unauthorized" };
+  }
+
+  const owned = await verifyWaitlistOwnership(waitListId, user.id);
+  if (!owned) {
+    return { success: false, message: "Unauthorized" };
+  }
+
   const records = await prisma.emailTemplate.findMany({
     where: { waitListId },
   });
@@ -44,7 +55,7 @@ export async function getOrCreateTemplates(waitListId) {
 
   const result = {};
 
-  for (const key of Object.keys(TYPE_MAP)) {
+  await Promise.all(Object.keys(TYPE_MAP).map(async (key) => {
     const enumType = TYPE_MAP[key];
     if (!byType[enumType]) {
       const created = await prisma.emailTemplate.create({
@@ -58,7 +69,7 @@ export async function getOrCreateTemplates(waitListId) {
     } else {
       result[key] = byType[enumType];
     }
-  }
+  }))
 
   return {
     signup: normalize(result.signup),
@@ -80,6 +91,16 @@ function normalize(record) {
 }
 
 export async function upsertEmailTemplate({ waitListId, templateType, data }) {
+  const user = await requireAuth();
+  if (!user) {
+    return { success: false, message: "Unauthorized" };
+  }
+
+  const owned = await verifyWaitlistOwnership(waitListId, user.id);
+  if (!owned) {
+    return { success: false, message: "Unauthorized" };
+  }
+
   const enumType = TYPE_MAP[templateType];
   if (!enumType) return { success: false, message: "Invalid template type" };
 
@@ -119,6 +140,16 @@ export async function upsertEmailTemplate({ waitListId, templateType, data }) {
 }
 
 export async function sendTestEmail({ waitListId, templateType, to }) {
+  const user = await requireAuth();
+  if (!user) {
+    return { success: false, message: "Unauthorized" };
+  }
+
+  const owned = await verifyWaitlistOwnership(waitListId, user.id);
+  if (!owned) {
+    return { success: false, message: "Unauthorized" };
+  }
+
   if (!env.RESEND_API_KEY) {
     return { success: false, message: "RESEND_API_KEY not configured" };
   }
@@ -462,6 +493,16 @@ async function renderTemplate({ waitListId, enumType, varsOverride = {} }) {
 }
 
 export async function sendSignupEmail({ waitListId, to }) {
+  const user = await requireAuth();
+  if (!user) {
+    return { success: false, message: "Unauthorized" };
+  }
+
+  const owned = await verifyWaitlistOwnership(waitListId, user.id);
+  if (!owned) {
+    return { success: false, message: "Unauthorized" };
+  }
+
   if (!env.RESEND_API_KEY) {
     return { success: false, message: "RESEND_API_KEY not configured" };
   }

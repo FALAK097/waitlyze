@@ -13,7 +13,7 @@ const THEMES = {
 const ChartContext = React.createContext(null);
 
 function useChart() {
-  const context = React.useContext(ChartContext);
+  const context = React.use(ChartContext);
 
   if (!context) {
     throw new Error("useChart must be used within a <ChartContainer />");
@@ -22,13 +22,13 @@ function useChart() {
   return context;
 }
 
-const ChartContainer = React.forwardRef(
-  ({ id, className, children, config, ...props }, ref) => {
+const ChartContainer = ({ ref, id, className, children, config, ...props }) => {
     const uniqueId = React.useId();
     const chartId = `chart-${id || uniqueId.replace(/:/g, "")}`;
+    const ctxValue = React.useMemo(() => ({ config }), [config]);
 
     return (
-      <ChartContext.Provider value={{ config }}>
+      <ChartContext.Provider value={ctxValue}>
         <div
           data-chart={chartId}
           ref={ref}
@@ -45,8 +45,7 @@ const ChartContainer = React.forwardRef(
         </div>
       </ChartContext.Provider>
     );
-  }
-);
+  };
 ChartContainer.displayName = "Chart";
 
 const ChartStyle = ({ id, config }) => {
@@ -82,10 +81,7 @@ ${colorConfig
 
 const ChartTooltip = RechartsPrimitive.Tooltip;
 
-const ChartTooltipContent = React.forwardRef(
-  (
-    {
-      active,
+const ChartTooltipContent = ({ ref, active,
       payload,
       className,
       indicator = "dot",
@@ -97,14 +93,15 @@ const ChartTooltipContent = React.forwardRef(
       formatter,
       color,
       nameKey,
-      labelKey,
-    },
-    ref
-  ) => {
+      labelKey, }) => {
     const { config } = useChart();
 
-    const tooltipLabel = React.useMemo(() => {
-      if (hideLabel || !payload?.length) {
+    if (!active || !payload?.length) {
+      return null;
+    }
+
+    const tooltipLabel = (() => {
+      if (hideLabel) {
         return null;
       }
 
@@ -129,19 +126,7 @@ const ChartTooltipContent = React.forwardRef(
       }
 
       return <div className={cn("font-medium", labelClassName)}>{value}</div>;
-    }, [
-      label,
-      labelFormatter,
-      payload,
-      hideLabel,
-      labelClassName,
-      config,
-      labelKey,
-    ]);
-
-    if (!active || !payload?.length) {
-      return null;
-    }
+    })();
 
     const nestLabel = payload.length === 1 && indicator !== "dot";
 
@@ -220,17 +205,12 @@ const ChartTooltipContent = React.forwardRef(
         </div>
       </div>
     );
-  }
-);
+  };
 ChartTooltipContent.displayName = "ChartTooltip";
 
 const ChartLegend = RechartsPrimitive.Legend;
 
-const ChartLegendContent = React.forwardRef(
-  (
-    { className, hideIcon = false, payload, verticalAlign = "bottom", nameKey },
-    ref
-  ) => {
+const ChartLegendContent = ({ ref, className, hideIcon = false, payload, verticalAlign = "bottom", nameKey }) => {
     const { config } = useChart();
 
     if (!payload?.length) {
@@ -273,8 +253,7 @@ const ChartLegendContent = React.forwardRef(
         })}
       </div>
     );
-  }
-);
+  };
 ChartLegendContent.displayName = "ChartLegend";
 
 // Helper to extract item config from a payload.

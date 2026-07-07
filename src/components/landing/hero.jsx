@@ -3,7 +3,7 @@
 import { Avatar } from "@/components/ui/avatar";
 import { Card } from "@/components/ui/card";
 import dynamic from "next/dynamic";
-import { AnimatePresence, motion } from "framer-motion";
+import { m, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 import { useRef, useState } from "react";
 import { CircleCheckIcon, PlayIcon, SparklesIcon } from "../shared/icons";
@@ -69,7 +69,7 @@ export default function Hero() {
 			<div className="container relative px-4 mx-auto sm:px-6 lg:px-8">
 				<div className="flex flex-col justify-center items-center mx-auto space-y-16 max-w-6xl">
 					<div className="flex flex-col items-center space-y-8 text-center">
-						<motion.div
+						<m.div
 							initial={{ opacity: 0, x: -20 }}
 							animate={{ opacity: 1, x: 0 }}
 							transition={{ duration: 0.5 }}
@@ -82,9 +82,9 @@ export default function Hero() {
 								<SparklesIcon className="mr-2 w-4 h-4" />
 								Completely Free to use
 							</HoverBorderGradient>
-						</motion.div>
+						</m.div>
 
-						<motion.h1
+						<m.h1
 							initial={{ opacity: 0, y: 20 }}
 							animate={{ opacity: 1, y: 0 }}
 							transition={{ delay: 0.2, duration: 0.5 }}
@@ -101,7 +101,7 @@ export default function Hero() {
 										height="20"
 										aria-hidden="true"
 									>
-										<motion.path
+										<m.path
 											initial={{ pathLength: 0 }}
 											animate={{ pathLength: 1 }}
 											transition={{ delay: 0.5, duration: 1 }}
@@ -114,9 +114,9 @@ export default function Hero() {
 									</svg>
 								</span>
 							</span>
-						</motion.h1>
+						</m.h1>
 
-						<motion.p
+						<m.p
 							initial={{ opacity: 0, y: 20 }}
 							animate={{ opacity: 1, y: 0 }}
 							transition={{ delay: 0.3, duration: 0.5 }}
@@ -125,9 +125,9 @@ export default function Hero() {
 							Design, launch, and manage waitlists that convert visitors into
 							eager customers. Boost your pre-launch success with our powerful
 							platform.
-						</motion.p>
+						</m.p>
 
-						<motion.div
+						<m.div
 							initial={{ opacity: 0, y: 20 }}
 							animate={{ opacity: 1, y: 0 }}
 							transition={{ delay: 0.4, duration: 0.5 }}
@@ -143,9 +143,9 @@ export default function Hero() {
 								<PlayIcon className="mr-2 w-5 h-5" />
 								Watch Demo
 							</Button>
-						</motion.div>
+						</m.div>
 
-						<motion.div
+						<m.div
 							initial={{ opacity: 0 }}
 							animate={{ opacity: 1 }}
 							transition={{ delay: 0.6, duration: 0.5 }}
@@ -162,10 +162,10 @@ export default function Hero() {
 									</div>
 								),
 							)}
-						</motion.div>
+						</m.div>
 					</div>
 
-					<motion.div
+					<m.div
 						initial={{ opacity: 0, y: 20 }}
 						animate={{ opacity: 1, y: 0 }}
 						transition={{ delay: 0.7, duration: 0.5 }}
@@ -184,12 +184,12 @@ export default function Hero() {
 						<p className="text-sm text-muted-foreground">
 							Building their audience
 						</p>
-					</motion.div>
+					</m.div>
 
 					<div className="w-full">
 						<div className="flex flex-wrap gap-4 justify-center pb-4 mb-8">
 							{features.map((feature) => (
-								<motion.button
+								<m.button
 									key={feature.id}
 									type="button"
 									onClick={() => setSelectedFeature(feature)}
@@ -200,7 +200,7 @@ export default function Hero() {
 										}`}
 								>
 									{feature.title}
-								</motion.button>
+								</m.button>
 							))}
 						</div>
 
@@ -208,7 +208,7 @@ export default function Hero() {
 							<div className="absolute inset-0 rounded-3xl blur-3xl bg-linear-to-tr from-primary/30 to-background" />
 							<Card className="overflow-hidden relative rounded-2xl border-2 backdrop-blur-sm border-border/50 bg-background/50">
 								<AnimatePresence mode="wait">
-									<motion.div
+									<m.div
 										key={selectedFeature.id}
 										initial={{ opacity: 0, x: 20 }}
 										animate={{ opacity: 1, x: 0 }}
@@ -220,17 +220,18 @@ export default function Hero() {
 											src={selectedFeature.image}
 											alt={selectedFeature.alt}
 											fill
+											sizes="(max-width: 768px) 100vw, 50vw"
 											className="object-fill"
 											priority
 										/>
 										<div className="absolute inset-0 to-transparent bg-linear-to-t from-background/80" />
-									</motion.div>
+									</m.div>
 								</AnimatePresence>
 							</Card>
 						</div>
 					</div>
 
-					<motion.div
+					<m.div
 						id="demo"
 						ref={demoSectionRef}
 						initial={{ opacity: 0, y: 20 }}
@@ -238,7 +239,7 @@ export default function Hero() {
 						transition={{ delay: 0.8, duration: 0.5 }}
 						className="pt-40 mx-auto w-full max-w-4xl"
 					>
-						<motion.h2
+						<m.h2
 							initial={{ opacity: 0, y: 20 }}
 							whileInView={{ opacity: 1, y: 0 }}
 							viewport={{ once: true }}
@@ -246,7 +247,7 @@ export default function Hero() {
 							className="mb-12 text-3xl font-medium text-center text-transparent bg-clip-text bg-linear-to-r from-primary to-primary-foreground"
 						>
 							See Waitlyze in Action
-						</motion.h2>
+						</m.h2>
 						<div className="overflow-hidden relative rounded-2xl aspect-video">
 							<video
 								ref={videoRef}
@@ -254,6 +255,7 @@ export default function Hero() {
 								height="240"
 								preload="none"
 								poster="/images/waitlyze_dashboard.png"
+								aria-label="Waitlyze demo video"
 								className="object-cover w-full h-full"
 								onClick={handlePlayVideo}
 								onEnded={() => setIsPlaying(false)}
@@ -270,23 +272,23 @@ export default function Hero() {
 									src="/images/waitlyze_Landing_Page-Demo.vtt"
 								/>
 							</video>
-							<motion.div
+							<m.div
 								className="flex absolute inset-0 justify-center items-center backdrop-blur-sm cursor-pointer bg-primary/20"
 								initial={{ opacity: 1 }}
 								animate={{ opacity: isPlaying ? 0 : 1 }}
 								transition={{ duration: 0.3 }}
 								onClick={handlePlayVideo}
 							>
-								<motion.div
+								<m.div
 									className="p-4 rounded-full bg-primary text-primary-foreground"
 									whileHover={{ scale: 1.1 }}
 									whileTap={{ scale: 0.9 }}
 								>
 									<PlayIcon className="w-12 h-12" />
-								</motion.div>
-							</motion.div>
+								</m.div>
+							</m.div>
 						</div>
-					</motion.div>
+					</m.div>
 				</div>
 			</div>
 		</section>

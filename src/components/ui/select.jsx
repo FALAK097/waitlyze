@@ -7,7 +7,6 @@ import {
 	ChevronUpIcon,
 } from "@radix-ui/react-icons";
 import * as SelectPrimitive from "@radix-ui/react-select";
-import * as React from "react";
 
 import { cn } from "@/lib/utils";
 
@@ -17,8 +16,7 @@ const SelectGroup = SelectPrimitive.Group;
 
 const SelectValue = SelectPrimitive.Value;
 
-const SelectTrigger = React.forwardRef(
-	({ className, children, ...props }, ref) => (
+const SelectTrigger = ({ ref, className, children, ...props }) => (
 		<SelectPrimitive.Trigger
 			ref={ref}
 			className={cn(
@@ -32,12 +30,10 @@ const SelectTrigger = React.forwardRef(
 				<CaretSortIcon className="w-4 h-4 opacity-50" />
 			</SelectPrimitive.Icon>
 		</SelectPrimitive.Trigger>
-	),
-);
+	);
 SelectTrigger.displayName = SelectPrimitive.Trigger.displayName;
 
-const SelectScrollUpButton = React.forwardRef(
-	({ className, ...props }, ref) => (
+const SelectScrollUpButton = ({ ref, className, ...props }) => (
 		<SelectPrimitive.ScrollUpButton
 			ref={ref}
 			className={cn(
@@ -48,12 +44,10 @@ const SelectScrollUpButton = React.forwardRef(
 		>
 			<ChevronUpIcon />
 		</SelectPrimitive.ScrollUpButton>
-	),
-);
+	);
 SelectScrollUpButton.displayName = SelectPrimitive.ScrollUpButton.displayName;
 
-const SelectScrollDownButton = React.forwardRef(
-	({ className, ...props }, ref) => (
+const SelectScrollDownButton = ({ ref, className, ...props }) => (
 		<SelectPrimitive.ScrollDownButton
 			ref={ref}
 			className={cn(
@@ -64,13 +58,11 @@ const SelectScrollDownButton = React.forwardRef(
 		>
 			<ChevronDownIcon />
 		</SelectPrimitive.ScrollDownButton>
-	),
-);
+	);
 SelectScrollDownButton.displayName =
 	SelectPrimitive.ScrollDownButton.displayName;
 
-const SelectContent = React.forwardRef(
-	({ className, children, position = "popper", ...props }, ref) => (
+const SelectContent = ({ ref, className, children, position = "popper", ...props }) => (
 		<SelectPrimitive.Portal>
 			<SelectPrimitive.Content
 				ref={ref}
@@ -96,21 +88,19 @@ const SelectContent = React.forwardRef(
 				<SelectScrollDownButton />
 			</SelectPrimitive.Content>
 		</SelectPrimitive.Portal>
-	),
-);
+	);
 SelectContent.displayName = SelectPrimitive.Content.displayName;
 
-const SelectLabel = React.forwardRef(({ className, ...props }, ref) => (
+const SelectLabel = ({ ref, className, ...props }) => (
 	<SelectPrimitive.Label
 		ref={ref}
 		className={cn("px-2 py-1.5 text-sm font-semibold", className)}
 		{...props}
 	/>
-));
+);
 SelectLabel.displayName = SelectPrimitive.Label.displayName;
 
-const SelectItem = React.forwardRef(
-	({ className, children, ...props }, ref) => (
+const SelectItem = ({ ref, className, children, ...props }) => (
 		<SelectPrimitive.Item
 			ref={ref}
 			className={cn(
@@ -126,17 +116,16 @@ const SelectItem = React.forwardRef(
 			</span>
 			<SelectPrimitive.ItemText>{children}</SelectPrimitive.ItemText>
 		</SelectPrimitive.Item>
-	),
-);
+	);
 SelectItem.displayName = SelectPrimitive.Item.displayName;
 
-const SelectSeparator = React.forwardRef(({ className, ...props }, ref) => (
+const SelectSeparator = ({ ref, className, ...props }) => (
 	<SelectPrimitive.Separator
 		ref={ref}
 		className={cn("-mx-1 my-1 h-px bg-muted", className)}
 		{...props}
 	/>
-));
+);
 SelectSeparator.displayName = SelectPrimitive.Separator.displayName;
 
 export {
