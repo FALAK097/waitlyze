@@ -8,6 +8,12 @@ onlyBuiltDependencies:
   - prisma
   - sharp
 
+allowBuilds:
+  '@prisma/engines': set this to true or false
+  core-js: set this to true or false
+  prisma: set this to true or false
+  sharp: set this to true or false
+
 # Security hardening
 minimumReleaseAge: 10080
 trustPolicy:
