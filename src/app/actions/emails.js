@@ -285,6 +285,7 @@ export async function sendTestEmail({ waitListId, templateType, to }) {
       from: env.RESEND_FROM_EMAIL,
       to,
       subject,
+      replyTo: env.RESEND_REPLY_TO,
       html: htmlBody,
     });
 
@@ -498,6 +499,7 @@ export async function sendSignupEmail({ waitListId, to }) {
       from: env.RESEND_FROM_EMAIL,
       to,
       subject,
+      replyTo: env.RESEND_REPLY_TO,
       html: htmlBody,
     });
     if (error) {
