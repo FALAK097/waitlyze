@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { authClient } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,58 +12,86 @@ import {
 } from "@/components/ui/dialog";
 import Image from "next/image";
 import { Loader2 } from "lucide-react";
-import toast from "react-hot-toast";
 import Link from "next/link";
+import { publicFontClasses } from "@/lib/public-fonts";
+import Wordmark from "@/components/landing/wordmark";
+import "@/components/landing/public.css";
 
-export function AuthModal({ open, onOpenChange }) {
+export function AuthModal({ open, onOpenChange, onCloseAutoFocus }) {
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const attemptRef = useRef(0);
+
+  const changeOpen = (nextOpen) => {
+    if (!nextOpen) {
+      attemptRef.current += 1;
+      setLoading(false);
+      setError("");
+    }
+    onOpenChange(nextOpen);
+  };
 
   const handleGoogleSignIn = async () => {
+    if (loading) return;
+    const attempt = ++attemptRef.current;
     setLoading(true);
+    setError("");
     try {
-      await authClient.signIn.social({
+      const result = await authClient.signIn.social({
         provider: "google",
         callbackURL: "/dashboard",
       });
-    } catch (err) {
-      console.error("Google sign-in error:", err);
-      toast.error("Google authentication failed. Please try again.");
-      setLoading(false);
+      if (result.error) throw new Error("Sign-in failed");
+    } catch {
+      if (attempt === attemptRef.current)
+        setError("We couldn’t connect to Google. Please try again.");
+    } finally {
+      if (attempt === attemptRef.current) setLoading(false);
     }
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader className="text-center sm:text-center">
-          <DialogTitle className="text-xl">Get started with Waitlyze</DialogTitle>
-          <DialogDescription>
-            Continue with Google to create your account or sign in
+    <Dialog open={open} onOpenChange={changeOpen}>
+      <DialogContent
+        className={`wl wl-auth ${publicFontClasses}`}
+        onCloseAutoFocus={onCloseAutoFocus}
+      >
+        <Wordmark />
+        <DialogHeader>
+          <DialogTitle className="wl-auth-title">
+            Your next launch starts here.
+          </DialogTitle>
+          <DialogDescription className="wl-auth-description">
+            Create your account or sign in with Google. Your first waitlist is
+            just a few steps away.
           </DialogDescription>
         </DialogHeader>
-        <div className="flex flex-col gap-4 py-4">
+        <div>
           <Button
             variant="outline"
-            className="w-full gap-3 h-12 text-base"
+            className="wl-auth-google"
             onClick={handleGoogleSignIn}
             disabled={loading}
+            aria-busy={loading}
           >
             {loading ? (
               <Loader2 className="size-5 animate-spin" />
             ) : (
-              <Image
-                src="/images/google.svg"
-                alt="Google"
-                width={20}
-                height={20}
-              />
+              <Image src="/images/google.svg" alt="" width={20} height={20} />
             )}
-            Continue with Google
+            {loading ? "Connecting to Google…" : "Continue with Google"}
           </Button>
-          <p className="text-balance text-center text-xs text-muted-foreground">
+          {error ? (
+            <p role="alert" className="wl-auth-error">
+              {error}
+            </p>
+          ) : null}
+          <p className="wl-auth-note">Free to use. No credit card needed.</p>
+          <p className="wl-auth-legal">
             By continuing, you agree to our{" "}
             <Link
               href="/terms"
+              onClick={() => changeOpen(false)}
               className="underline underline-offset-4 hover:text-primary"
             >
               Terms of Service
@@ -71,6 +99,7 @@ export function AuthModal({ open, onOpenChange }) {
             and{" "}
             <Link
               href="/privacy"
+              onClick={() => changeOpen(false)}
               className="underline underline-offset-4 hover:text-primary"
             >
               Privacy Policy
