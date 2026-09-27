@@ -224,8 +224,8 @@ GetWaitlist homepage yielded no readable content in this pass; its blueprint cla
 | Repository recon | Complete for stated scope | Clean main, schema/routes/tooling/service inspection |
 | Roadmap | Written | This file; no app behavior changed |
 | Phase 1 tooling | Validated; draft PR #37 | Frozen install, lint, isolated build and 5 public smoke tests pass locally. GitHub Quality run 36313289722 passed on 4c08aba. Sign-in focus restoration repaired. |
-| Phase 1 foundation | Implemented; local validation | Scoped tokens/Geist, shadcn Base UI controls, server DiceBear avatar and gated preview. Build/lint/frozen install and 17 browser tests pass; see REVAMP_FOUNDATION.md for limits. |
-| GitHub PR publication | Draft stack opened | #36 roadmap → main; #37 tooling → roadmap. User confirmed repository/content on 2026-09-27; GitHub connector works despite invalid local gh token. Foundation child PR follows. |
+| Phase 1 foundation | Draft PR #38; locally validated | Scoped tokens/Geist, shadcn Base UI controls, server DiceBear avatar and gated preview. Build/lint/frozen install and 17 browser tests pass; see REVAMP_FOUNDATION.md for limits. |
+| GitHub PR publication | Draft stack opened | #36 roadmap → main; #37 tooling → roadmap. User confirmed repository/content on 2026-09-27; GitHub connector works despite invalid local gh token. #38 foundation → tooling; foundation Quality run 36314049497 started on e865135, result pending. |
 | Runtime visual/a11y baseline | Pending | Capture authenticated flows with disposable workspace fixtures |
 | Production migrations/deployment | Pending | No production state changed |
 
