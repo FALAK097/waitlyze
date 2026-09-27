@@ -8,7 +8,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
-    "vercel-build": "prisma generate && prisma migrate deploy && next build"
+    "vercel-build": "prisma generate && prisma migrate deploy && next build",
+    "build:test": "node scripts/with-test-env.mjs node node_modules/prisma/build/index.js generate && node scripts/with-test-env.mjs node node_modules/next/dist/bin/next build",
+    "test:browser": "playwright test"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1057.0",
@@ -83,6 +85,7 @@
     "zustand": "^5.0.4"
   },
   "devDependencies": {
+    "@playwright/test": "^1.63.0",
     "@shadcn/lint": "^0.2.0",
     "@typescript-eslint/parser": "^8.70.1",
     "eslint": "^10.11.0",

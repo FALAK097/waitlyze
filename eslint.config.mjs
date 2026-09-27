@@ -4,7 +4,7 @@ import { defineConfig } from "eslint/config";
 
 export default defineConfig([
   {
-    ignores: [".next/**", "node_modules/**", "src/generated/**", "coverage/**"],
+    ignores: [".next/**", "node_modules/**", "src/generated/**", "coverage/**", "playwright-report/**", "test-results/**"],
   },
   {
     files: ["**/*.{js,jsx,mjs,ts,tsx}"],

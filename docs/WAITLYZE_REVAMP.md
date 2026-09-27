@@ -223,9 +223,9 @@ GetWaitlist homepage yielded no readable content in this pass; its blueprint cla
 | Source blueprint | Read | All 53 sections considered |
 | Repository recon | Complete for stated scope | Clean main, schema/routes/tooling/service inspection |
 | Roadmap | Written | This file; no app behavior changed |
-| Phase 1 implementation | Tooling started | ESLint and shadcn plugin registered; lint and frozen install pass locally; CI workflow added but not remotely verified. Design foundation and test/build harness pending. |
-| GitHub PR publication | Pending | Local gh authentication reports invalid token; no PR created |
+| Phase 1 implementation | Tooling locally validated | Frozen install, lint, isolated production build (23 generated pages), and all five Chromium smoke tests pass. Sign-in focus restoration repaired. CI build/smoke job added; remote execution unverified. Design foundation remains next. |
+| GitHub PR publication | Pending | Specific repository/content confirmation requested by prior automatic review remains outstanding; local gh token is also invalid. No PR created |
 | Runtime visual/a11y baseline | Pending | Capture authenticated flows with disposable workspace fixtures |
 | Production migrations/deployment | Pending | No production state changed |
 
-Next implementable slice: complete the build/test fixture baseline, then implement and visually validate the design foundation in its child PR. Local `pnpm install --frozen-lockfile`, `pnpm lint`, and `git diff --check` pass. Existing Next Auth/Tailwind animation peer warnings remain; no production build or runtime audit is claimed. Do not skip ahead to a decorative dashboard with mocked metrics while campaign tenancy and ingestion remain unresolved.
+Next implementable slice: implement and visually validate the design foundation in its child PR. Authenticated workspace fixtures arrive with tenancy in PR 03. Local frozen install, lint, isolated production build, and five Chromium smoke tests pass; remote CI and production deployment remain unverified. Existing peer warnings and Node 26 deprecation/localStorage warnings remain. Do not skip ahead to a decorative dashboard with mocked metrics while campaign tenancy and ingestion remain unresolved.
