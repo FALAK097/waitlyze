@@ -16,7 +16,7 @@ test("sign-in dialog supports keyboard dismissal and restores focus", async ({ p
   const trigger = page.getByRole("button", { name: "Sign in", exact: true });
   await trigger.focus();
   await page.keyboard.press("Enter");
-  const dialog = page.getByRole("dialog", { name: "Get started with Waitlyze" });
+  const dialog = page.getByRole("dialog", { name: "Your next launch starts here." });
   await expect(dialog).toBeVisible();
   await expect(dialog.getByRole("button", { name: /Continue with Google/ })).toBeVisible();
   await page.keyboard.press("Escape");

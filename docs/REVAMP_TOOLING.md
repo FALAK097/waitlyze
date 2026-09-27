@@ -39,3 +39,5 @@ The keyboard regression test caught a shared-modal focus bug and now protects it
 This verifies only the stated public flows. Full interface review, VoiceOver, touch, 320px reflow, zoom, reduced motion, forced colors, and both-theme rendered contrast are not verified by this slice.
 
 React Doctor's changed-file scan returned 49/100 with two Socket vulnerability-score diagnostics for existing `axios@1.9.0` and `jspdf@3.0.1` lockfile resolutions. No React code diagnostics were reported. These dependency advisories need a dedicated upgrade/compatibility check; they were not suppressed or treated as a verified exploit. The scan is not a passing quality gate.
+
+The stack was refreshed onto main after the public-site PR landed. Its auth modal now supplies the shared focus restoration; the smoke test follows the current accessible dialog title. No duplicate auth-modal replacement is retained in tooling.
