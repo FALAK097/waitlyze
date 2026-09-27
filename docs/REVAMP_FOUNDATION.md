@@ -4,6 +4,8 @@ This is PR slice 02, stacked on tooling #37 and roadmap #36. It supplies reusabl
 
 ## Scope and adoption
 
+The latest owner direction uses [Dodo Payments](https://dodopayments.com/) as a visual reference. Its public page and extracted styles informed cool neutral surfaces, ink text and a restrained lime primary action. Geist, Waitlyze content and platform behavior remain our own. A contrasting action border keeps the light-theme control boundary visible. Marketing can use quiet atmospheric backgrounds; operational views keep opaque neutral surfaces. Adoption across existing marketing and dashboard routes remains pending.
+
 New components live under `src/components/product`. Scoped `.product-ui` tokens protect existing product/public screens from a blanket palette or Radix rewrite. Add the scope and Geist font variables at the future campaign shell boundary. Components consume semantic tokens; primitives stay in the token stylesheet. Light and dark use the existing next-themes class mechanism. Theme changes now suppress transitions. Appearance controls expose the selected preference with aria-pressed and a static background cue.
 
 Geist Sans and Geist Mono are loaded through Next font tooling in the preview route. UI sizes use rem roles; fields stay at 16px, controls have 40px desktop and 44px narrow-view targets, headings balance, descriptions wrap, and numbers use tabular figures. No chart theme is invented before the analytics slice.
@@ -45,16 +47,17 @@ Measured pairs below come from Chromium resolving the actual scoped CSS token co
 
 | Pair | Light | Dark | Minimum |
 | --- | ---: | ---: | ---: |
-| Primary text / surface | 17.928 | 15.391 | 4.5 |
-| Secondary text / surface | 7.742 | 10.572 | 4.5 |
-| Action label / solid | 5.688 | 10.245 | 4.5 |
-| Action label / hover | 7.200 | 11.780 | 4.5 |
-| Success text / surface | 6.963 | 10.015 | 4.5 |
-| Danger text / surface | 8.227 | 8.201 | 4.5 |
-| Control border / surface | 4.696 | 5.348 | 3 |
-| Focus outline / surface | 17.928 | 15.391 | 3 |
+| Primary text / surface | 18.740 | 15.452 | 4.5 |
+| Secondary text / surface | 7.889 | 10.532 | 4.5 |
+| Action label / solid | 15.703 | 15.703 | 4.5 |
+| Action label / hover | 11.585 | 15.115 | 4.5 |
+| Success text / surface | 6.963 | 10.049 | 4.5 |
+| Danger text / surface | 8.227 | 8.228 | 4.5 |
+| Control border / surface | 4.793 | 5.280 | 3 |
+| Action border / surface | 4.793 | 13.514 | 3 |
+| Focus outline / surface | 17.928 | 15.452 | 3 |
 
-All 20 tested pair combinations pass in each theme. Opaque panel/control surfaces avoid uncertain compositing behind text. Outline spacing keeps its indicator against the surrounding surface; no translucency is used there.
+All 23 tested pair combinations pass in each theme. Opaque panel/control surfaces avoid uncertain compositing behind text. Outline spacing keeps its indicator against the surrounding surface; no translucency is used there.
 
 ## Changes and remaining coverage
 

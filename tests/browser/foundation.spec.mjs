@@ -47,7 +47,7 @@ for (const theme of ["Light", "Dark"]) {
         for (const bg of ["--product-bg-page", "--product-bg-surface", "--product-bg-inset"]) result.push({ fg, bg, ratio: contrast(fg, bg), floor: 4.5 });
       }
       for (const bg of ["--product-accent-solid", "--product-accent-hover"]) result.push({ fg: "--product-accent-label", bg, ratio: contrast("--product-accent-label", bg), floor: 4.5 });
-      for (const fg of ["--product-border-control", "--product-focus"]) {
+      for (const fg of ["--product-border-control", "--product-accent-border", "--product-focus"]) {
         for (const bg of ["--product-bg-page", "--product-bg-surface", "--product-bg-inset"]) result.push({ fg, bg, ratio: contrast(fg, bg), floor: 3 });
       }
       return result;

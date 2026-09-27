@@ -63,7 +63,7 @@ Campaign Overview answers “What should I do next?” Put readiness ahead of an
 
 ## 5. Visual and interaction specification
 
-Direction: warm paper surfaces, precise typography, restrained orange, compact but comfortable controls. Stripe contributes clear operational detail; Linear contributes efficient hierarchy; Raycast contributes fast keyboard access; Notion contributes direct editing; Plivo contributes explicit delivery/status inspection. These are design intentions, not claims that their authenticated products were audited.
+Direction: cool neutral surfaces, ink typography, restrained lime actions, compact but comfortable controls. The owner selected [Dodo Payments](https://dodopayments.com/) as the visual reference: adopt its clear hierarchy, generous whitespace and lime/ink relationship across public and authenticated views while retaining Waitlyze copy and behavior. Atmospheric backgrounds belong only in marketing; operational screens stay quiet. This supersedes the initial warm/orange candidate. Stripe contributes clear operational detail; Linear contributes efficient hierarchy; Raycast contributes fast keyboard access; Notion contributes direct editing; Plivo contributes explicit delivery/status inspection. These are design intentions, not claims that their authenticated products were audited.
 
 ### Typography, layout, and surfaces
 
@@ -83,7 +83,7 @@ Translate sizes to rem tokens. Sidebar target 240 px expanded / 64 px collapsed,
 
 ### Color contract
 
-Keep existing HSL notation during migration; introduce hue primitives and semantic roles rather than scattering a second color format. Map shadcn compatibility tokens to the new roles. Candidate light palette: warm page `#FAFAF9`, surface `#FFFFFF`, primary text `#171717`, secondary text `#57534E`, interactive orange `#AE452F`. Dark candidates: page `#171717`, surface `#222120`, primary text `#FAFAF9`, secondary text `#D6D3D1`, action orange `#FFB098` with dark label `#171717`.
+Keep existing HSL notation during migration; introduce hue primitives and semantic roles rather than scattering a second color format. Map shadcn compatibility tokens to the new roles. Candidate palette: cool near-white page, white surfaces, ink `#00160D`, readable slate secondary text, lime action `#C6FE1E` with ink label. Dark mode uses neutral charcoal surfaces, near-white content, and lime actions. A contrasting border defines the pale action against light surfaces; status green remains a distinct hue with labels/icons. Geist remains the shared UI font rather than importing Dodo proprietary assets.
 
 These are starting design values, not verified rendered pairs. Generate consumed ramp steps with a color library; compute every text/control/focus/status pair and record exact results in the foundation PR. Normal text ≥4.5:1, qualifying large text ≥3:1, meaningful component boundaries/focus indicators ≥3:1 where required. Test composited backgrounds and both themes. Do not use a low-contrast muted token for readable content. Success, caution, and destructive need distinct roles; all carry icons or labels. Theme mechanism: next-themes class only, Light/Dark/System, transitions suppressed during switching.
 

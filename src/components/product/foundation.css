@@ -1,21 +1,21 @@
 /* Product-only tokens: legacy screens keep their existing theme until migrated. */
 .product-ui {
-  --product-neutral-50: hsl(60 9% 98%);
-  --product-neutral-100: hsl(30 6% 95%);
-  --product-neutral-200: hsl(30 6% 90%);
-  --product-neutral-300: hsl(30 6% 82%);
-  --product-neutral-400: hsl(30 5% 58%);
-  --product-neutral-500: hsl(30 5% 45%);
-  --product-neutral-600: hsl(30 5% 32%);
-  --product-neutral-700: hsl(30 3% 28%);
-  --product-neutral-750: hsl(30 3% 18%);
-  --product-neutral-800: hsl(30 3% 13%);
+  --product-neutral-50: hsl(210 5% 98%);
+  --product-neutral-100: hsl(210 4% 95%);
+  --product-neutral-200: hsl(210 4% 90%);
+  --product-neutral-300: hsl(210 4% 82%);
+  --product-neutral-400: hsl(210 4% 58%);
+  --product-neutral-500: hsl(210 4% 45%);
+  --product-neutral-600: hsl(210 4% 32%);
+  --product-neutral-700: hsl(210 4% 28%);
+  --product-neutral-750: hsl(210 4% 18%);
+  --product-neutral-800: hsl(210 4% 13%);
   --product-neutral-900: hsl(0 0% 9%);
   --product-white: hsl(0 0% 100%);
-  --product-orange-700: hsl(10.3944 57.0149% 43.3333%);
-  --product-orange-800: hsl(10.3944 57.0149% 37%);
-  --product-orange-200: hsl(14 100% 80%);
-  --product-orange-100: hsl(14 100% 85%);
+  --product-ink: hsl(155.4545 100% 4.3137%);
+  --product-lime-400: hsl(75 99.115% 55.6863%);
+  --product-lime-500: hsl(75 80% 48%);
+  --product-lime-300: hsl(75 90% 65%);
   --product-green-700: hsl(150 60% 25%);
   --product-green-300: hsl(150 50% 72%);
   --product-red-700: hsl(350 72% 35%);
@@ -23,13 +23,14 @@
   --product-bg-page: var(--product-neutral-50);
   --product-bg-surface: var(--product-white);
   --product-bg-inset: var(--product-neutral-100);
-  --product-text-primary: var(--product-neutral-900);
+  --product-text-primary: var(--product-ink);
   --product-text-secondary: var(--product-neutral-600);
   --product-border-subtle: var(--product-neutral-200);
   --product-border-control: var(--product-neutral-500);
-  --product-accent-solid: var(--product-orange-700);
-  --product-accent-hover: var(--product-orange-800);
-  --product-accent-label: var(--product-white);
+  --product-accent-solid: var(--product-lime-400);
+  --product-accent-hover: var(--product-lime-500);
+  --product-accent-label: var(--product-ink);
+  --product-accent-border: var(--product-neutral-500);
   --product-focus: var(--product-neutral-900);
   --product-success-text: var(--product-green-700);
   --product-danger-text: var(--product-red-700);
@@ -75,9 +76,10 @@
   --product-text-secondary: var(--product-neutral-300);
   --product-border-subtle: var(--product-neutral-700);
   --product-border-control: var(--product-neutral-400);
-  --product-accent-solid: var(--product-orange-200);
-  --product-accent-hover: var(--product-orange-100);
-  --product-accent-label: var(--product-neutral-900);
+  --product-accent-solid: var(--product-lime-400);
+  --product-accent-hover: var(--product-lime-300);
+  --product-accent-label: var(--product-ink);
+  --product-accent-border: var(--product-lime-400);
   --product-focus: var(--product-neutral-50);
   --product-success-text: var(--product-green-300);
   --product-danger-text: var(--product-red-300);
@@ -136,7 +138,7 @@
   text-align: center; white-space: normal; overflow-wrap: anywhere; text-decoration: none; cursor: pointer;
 }
 .product-button svg { stroke-width: 2px; }
-.product-button-primary { color: var(--product-accent-label); background: var(--product-accent-solid); }
+.product-button-primary { color: var(--product-accent-label); background: var(--product-accent-solid); border-color: var(--product-accent-border); }
 .product-button-outline { color: var(--product-text-primary); background: var(--product-bg-surface); border-color: var(--product-border-control); }
 .product-button-ghost { color: var(--product-text-primary); background: transparent; }
 .product-button-ghost[aria-pressed="true"] { background: var(--product-bg-inset); }
