@@ -8,7 +8,7 @@ The latest owner direction uses [Dodo Payments](https://dodopayments.com/) as a 
 
 New components live under `src/components/product`. Scoped `.product-ui` tokens protect existing product/public screens from a blanket palette or Radix rewrite. Add the scope and Geist font variables at the future campaign shell boundary. Components consume semantic tokens; primitives stay in the token stylesheet. Light and dark use the existing next-themes class mechanism. Theme changes now suppress transitions. Appearance controls expose the selected preference with aria-pressed and a static background cue.
 
-Geist Sans and Geist Mono are loaded through Next font tooling in the preview route. UI sizes use rem roles; fields stay at 16px, controls have 40px desktop and 44px narrow-view targets, headings balance, descriptions wrap, and numbers use tabular figures. No chart theme is invented before the analytics slice.
+Geist Sans and Geist Mono are loaded through Next font tooling in the test fixture. UI sizes use rem roles; fields stay at 16px, controls have 40px desktop and 44px narrow-view targets, headings balance, descriptions wrap, and numbers use tabular figures. No chart theme is invented before the analytics slice.
 
 The button and dialog composition adapt official [shadcn Base Nova button](https://ui.shadcn.com/r/styles/base-nova/button.json) and [dialog](https://ui.shadcn.com/r/styles/base-nova/dialog.json) source. Base UI supplies focus management and dialog state. Buttons use variants; links remain native anchors styled with `buttonVariants`, preserving Cmd/Ctrl-click and link semantics. Input is native and receives its label from the form.
 
@@ -18,15 +18,9 @@ DiceBear generation stays in a server component using core 10's `Style`/`Avatar`
 
 ## Preview and states
 
-`/design-system` returns 404 unless `WAITLYZE_DESIGN_PREVIEW=1`. The route is dynamic and requests no search indexing. The test wrapper enables it; set `WAITLYZE_DESIGN_PREVIEW=0` to test the disabled gate. Do not enable it in the production deployment environment. A local runtime request with the flag disabled returned HTTP 404.
+There is no design-system page in product source. The owner requested removal of the component demo; its synthetic hero/cards and runtime preview flag have been removed. A small fixture under `tests/fixtures/foundation` exercises only theme controls, dialog, input, avatar and completion status. `pnpm build:test` temporarily materializes its route for an isolated build, then removes the source route in a finally block, including when compilation fails. Normal application builds do not contain `/design-system`, regardless of environment flags. Normal build and Vercel build commands refuse any leftover fixture source after a forced kill or host crash. A separate normal build contained no design-system manifest entry and returned HTTP 404 for the URL even with the fixture flag set. Test artifacts must never be deployed.
 
-Run `pnpm build:test`, then `pnpm test:browser`. To inspect manually, run:
-
-```sh
-node scripts/with-test-env.mjs node node_modules/next/dist/bin/next start --hostname 127.0.0.1 --port 3100
-```
-
-The preview labels its synthetic identity and illustrative checklist. Completing its dialog announces “No campaign was created”; no mutation, sending, OAuth, or database operation occurs. An empty name validates on submit, focuses the field, exposes an inline described error, and keeps submit available. A stable polite region carries completion. Saved, error, first-use, and unavailable states are represented; real pending save/server failure states belong to the features that implement them.
+Run `pnpm build:test`, then `pnpm test:browser`. The fixture makes no mutation, sending, OAuth or database operation. An empty name validates on submit, focuses the field, exposes an inline described error, and keeps submit available. A stable polite region carries completion. Real pending, save, empty and failure states belong to the features that implement them.
 
 ## Active design contracts
 
@@ -34,14 +28,14 @@ ESLint applies `shadcn/no-restyle`, `shadcn/no-arbitrary-values`, and `shadcn/no
 
 ## Local evidence
 
-Frozen install, lint, isolated production build (23 generated static pages plus the dynamic preview), and 17 Chromium tests pass. The suite covers the five public regressions plus foundation checks:
+Frozen install, lint, isolated production build (23 generated static pages plus a test-only fixture), and 17 Chromium tests pass. The suite covers the five public regressions plus foundation checks:
 
 - Light/dark axe scans on the preview and open dialog: no violations.
 - Base UI trigger composition, focus trap, first-error focus, accessible error description, Escape, successful preview, focus return, and stable completion status.
 - 320, 375, 768, 1280 and 1440px reflow, including usable modal actions.
 - Visible keyboard focus, reduced-motion transition removal, local decorative avatar.
 - RTL with 200% root text enlargement at 640px. This is a text-enlargement/reflow check, not a complete browser-zoom audit.
-- Light page and dark dialog screenshots visually inspected for grouping, alignment, wrapping, labels and elevation.
+- Earlier light foundation and dark dialog screenshots visually inspected for grouping, alignment, wrapping, labels and elevation. The reduced control fixture is verified by the same automated suite.
 
 Measured pairs below come from Chromium resolving the actual scoped CSS token colors. Text pairs are tested against page, surface and inset backgrounds; meaningful control and focus pairs use a 3:1 floor. Values rounded to three decimals for display; assertions use unrounded values.
 
@@ -67,7 +61,7 @@ All 23 tested pair combinations pass in each theme. Opaque panel/control surface
 | Typography | No revamp font/type source | Scoped Next-loaded Geist and role sizes | Consistent readable hierarchy without changing legacy routes |
 | Controls | Only legacy Radix wrappers | New Base UI button/dialog and native input | Preserve composition and platform behavior in new flows |
 | Identity | No local revamp avatar wrapper | Server-generated DiceBear Shapes fallback | Deterministic identity without transmitting email to an avatar service |
-| Layout | No testable foundation surface | Responsive, labeled component preview; RTL centering fixed after failed test | Validate interaction and reflow before campaign adoption |
+| Layout | No testable foundation surface | Test-only control fixture; RTL centering fixed after failed test | Validate interaction and reflow before campaign adoption |
 | Motion/focus | Theme transitions could smear; new rules absent | Theme swap suppression, instant overlays, pointer-only press, visible focus and reduced-motion guard | Preserve speed and keyboard orientation |
 | Enforcement | shadcn plugin registration only | Three scoped shadcn design rules | Turn foundation conventions into executable constraints |
 

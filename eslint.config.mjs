@@ -26,7 +26,7 @@ export default defineConfig([
     },
   },
   {
-    files: ["src/components/product/**/*.{js,jsx}", "src/app/design-system/**/*.jsx"],
+    files: ["src/components/product/**/*.{js,jsx}", "tests/fixtures/foundation/**/*.jsx"],
     settings: { shadcn: { ui: "@/components/product", componentImports: ["^\\./(button|input|dialog)$"], note: "See docs/REVAMP_FOUNDATION.md." } },
     rules: {
       "shadcn/no-arbitrary-values": "error",

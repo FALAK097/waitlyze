@@ -42,3 +42,6 @@ next-env.d.ts
 
 # prisma generated client
 /src/generated/
+
+# Temporary route materialized only during isolated browser builds
+/src/app/design-system/
