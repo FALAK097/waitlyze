@@ -66,9 +66,19 @@ test("authenticated two-destination shell uses real workspace data", async (t) =
     await page.goto(`${base}/wait-lists/${waitlist.id}`);
     assert.equal(await page.getByRole("heading", { name: "First launch" }).count(), 1);
     assert.deepEqual(await page.getByRole("navigation", { name: "Waitlist sections" }).getByRole("link").allTextContents(), ["Overview", "Page", "Subscribers", "Emails", "Settings"]);
-    await page.setViewportSize({ width: 375, height: 812 });
+    for (const width of [320, 375]) {
+      await page.setViewportSize({ width, height: 812 });
+      await page.goto(`${base}/settings`);
+      assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
+      await page.getByRole("link", { name: "Skip to content", exact: true }).focus();
+      await page.keyboard.press("Enter");
+      assert.equal(await page.evaluate(() => document.activeElement.id), "product-content");
+      const waitlistsLink = page.getByRole("navigation", { name: "Main navigation" }).getByRole("link", { name: "Waitlists", exact: true });
+      await waitlistsLink.focus(); await page.keyboard.press("Enter");
+      await page.waitForURL(`${base}/wait-lists`);
+      assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
+    }
     await page.goto(`${base}/settings`);
-    assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
     await page.screenshot({ path: "/tmp/waitlyze-shell-settings-mobile.png", fullPage: true });
     await page.setViewportSize({ width: 1280, height: 900 });
     await page.goto(`${base}/wait-lists`);

@@ -34,4 +34,3 @@ export function signedCookie(token) {
   const signature = createHmac("sha256", FIXTURE_AUTH_SECRET).update(token).digest("base64");
   return `ba.session_token=${encodeURIComponent(`${token}.${signature}`)}`;
 }
-
