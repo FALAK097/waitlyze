@@ -1,6 +1,6 @@
 # Waitlyze revamp: product, design, architecture, and delivery
 
-Date: 2026-09-27. Status: execution roadmap; Phase 0 documented, Phase 1 tooling started.
+Date: 2026-09-27. Status: execution roadmap; roadmap/tooling draft PRs opened, Phase 1 design foundation implemented and locally validated.
 Source: `waitlyze_product_blueprint.md` supplied from Downloads, read in full. This document resolves its conflicting scope statements and grounds delivery in the current repository. It is the working plan; update the ledger as each PR ships.
 
 ## 1. Product decision
@@ -63,7 +63,7 @@ Campaign Overview answers “What should I do next?” Put readiness ahead of an
 
 ## 5. Visual and interaction specification
 
-Direction: warm paper surfaces, precise typography, restrained orange, compact but comfortable controls. Stripe contributes clear operational detail; Linear contributes efficient hierarchy; Raycast contributes fast keyboard access; Notion contributes direct editing; Plivo contributes explicit delivery/status inspection. These are design intentions, not claims that their authenticated products were audited.
+Direction: cool neutral surfaces, ink typography, restrained lime actions, compact but comfortable controls. The owner selected [Dodo Payments](https://dodopayments.com/) as the visual reference: adopt its clear hierarchy, generous whitespace and lime/ink relationship across public and authenticated views while retaining Waitlyze copy and behavior. Atmospheric backgrounds belong only in marketing; operational screens stay quiet. This supersedes the initial warm/orange candidate. Stripe contributes clear operational detail; Linear contributes efficient hierarchy; Raycast contributes fast keyboard access; Notion contributes direct editing; Plivo contributes explicit delivery/status inspection. These are design intentions, not claims that their authenticated products were audited.
 
 ### Typography, layout, and surfaces
 
@@ -83,7 +83,7 @@ Translate sizes to rem tokens. Sidebar target 240 px expanded / 64 px collapsed,
 
 ### Color contract
 
-Keep existing HSL notation during migration; introduce hue primitives and semantic roles rather than scattering a second color format. Map shadcn compatibility tokens to the new roles. Candidate light palette: warm page `#FAFAF9`, surface `#FFFFFF`, primary text `#171717`, secondary text `#57534E`, interactive orange `#AE452F`. Dark candidates: page `#171717`, surface `#222120`, primary text `#FAFAF9`, secondary text `#D6D3D1`, action orange `#FFB098` with dark label `#171717`.
+Keep existing HSL notation during migration; introduce hue primitives and semantic roles rather than scattering a second color format. Map shadcn compatibility tokens to the new roles. Candidate palette: cool near-white page, white surfaces, ink `#00160D`, readable slate secondary text, lime action `#C6FE1E` with ink label. Dark mode uses neutral charcoal surfaces, near-white content, and lime actions. A contrasting border defines the pale action against light surfaces; status green remains a distinct hue with labels/icons. Geist remains the shared UI font rather than importing Dodo proprietary assets.
 
 These are starting design values, not verified rendered pairs. Generate consumed ramp steps with a color library; compute every text/control/focus/status pair and record exact results in the foundation PR. Normal text ≥4.5:1, qualifying large text ≥3:1, meaningful component boundaries/focus indicators ≥3:1 where required. Test composited backgrounds and both themes. Do not use a low-contrast muted token for readable content. Success, caution, and destructive need distinct roles; all carry icons or labels. Theme mechanism: next-themes class only, Light/Dark/System, transitions suppressed during switching.
 
@@ -223,9 +223,10 @@ GetWaitlist homepage yielded no readable content in this pass; its blueprint cla
 | Source blueprint | Read | All 53 sections considered |
 | Repository recon | Complete for stated scope | Clean main, schema/routes/tooling/service inspection |
 | Roadmap | Written | This file; no app behavior changed |
-| Phase 1 implementation | Tooling locally validated | Frozen install, lint, isolated production build (23 generated pages), and all five Chromium smoke tests pass. Sign-in focus restoration repaired. CI build/smoke job added; remote execution unverified. Design foundation remains next. |
-| GitHub PR publication | Pending | Specific repository/content confirmation requested by prior automatic review remains outstanding; local gh token is also invalid. No PR created |
+| Phase 1 tooling | Ready PR #37; validated | Frozen install, lint, isolated build and 5 public smoke tests pass locally. GitHub Quality run 36313289722 passed on 4c08aba. Sign-in focus restoration repaired. |
+| Phase 1 foundation | Ready PR #38; locally validated | Scoped tokens/Geist, shadcn Base UI controls, server DiceBear avatar and test-only control fixture. No design-system page ships in product source. Build/lint/frozen install and 17 browser tests pass; see REVAMP_FOUNDATION.md for limits. |
+| GitHub PR publication | Ready stack opened | #36 roadmap → main; #37 tooling → roadmap. User confirmed repository/content on 2026-09-27; GitHub connector works despite invalid local gh token. #38 foundation → tooling; foundation Quality run 36315038713 passed on 1d97b7c before test-only fixture cleanup; latest cleanup CI will be recorded in the PR. |
 | Runtime visual/a11y baseline | Pending | Capture authenticated flows with disposable workspace fixtures |
 | Production migrations/deployment | Pending | No production state changed |
 
-Next implementable slice: implement and visually validate the design foundation in its child PR. Authenticated workspace fixtures arrive with tenancy in PR 03. Local frozen install, lint, isolated production build, and five Chromium smoke tests pass; remote CI and production deployment remain unverified. Existing peer warnings and Node 26 deprecation/localStorage warnings remain. Do not skip ahead to a decorative dashboard with mocked metrics while campaign tenancy and ingestion remain unresolved.
+Next implementable slice: workspace tenancy, idempotent backfill and authorization (03), followed by the responsive campaign shell (04). Keep the first three PRs reviewable and merge bottom-up before expanding the open stack. Authenticated workspace fixtures arrive with tenancy in PR 03. Local frozen install, lint, isolated production build, and five Chromium smoke tests pass; GitHub tooling/foundation Quality passed on their previous tested heads; latest-head CI is recorded in each PR. Production deployment remains unverified. Existing peer warnings and Node 26 deprecation/localStorage warnings remain. Do not skip ahead to a decorative dashboard with mocked metrics while campaign tenancy and ingestion remain unresolved.
