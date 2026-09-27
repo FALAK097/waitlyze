@@ -14,6 +14,8 @@ test("public entry renders without uncaught client errors", async ({ page }) => 
 test("sign-in dialog supports keyboard dismissal and restores focus", async ({ page }) => {
   await page.goto("/");
   const trigger = page.getByRole("button", { name: "Sign in", exact: true });
+  // The current public auth island disables activation while session lookup is pending.
+  await expect(trigger).toBeEnabled();
   await trigger.focus();
   await page.keyboard.press("Enter");
   const dialog = page.getByRole("dialog", { name: "Your next launch starts here." });
