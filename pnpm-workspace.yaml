@@ -1,9 +1,9 @@
 overrides:
   kysely: 0.28.2
 
-onlyBuiltDependencies:
-  - '@prisma/engines'
-  - '@tailwindcss/oxide'
-  - core-js
-  - prisma
-  - sharp
+allowBuilds:
+  '@prisma/engines': true
+  '@tailwindcss/oxide': true
+  core-js: true
+  prisma: true
+  sharp: true
