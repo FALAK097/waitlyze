@@ -38,6 +38,7 @@ export const SignUpForm = ({
 	waitList,
 	onSubmit,
 	setEmail,
+	inputRef,
 	onDeleteLogo,
 	onImageUploadSuccess,
 }) => {
@@ -85,6 +86,8 @@ export const SignUpForm = ({
 
 				<form onSubmit={onSubmit} className="space-y-4">
 					<Input
+						ref={inputRef}
+						aria-label="Email address"
 						value={email}
 						required
 						type="email"

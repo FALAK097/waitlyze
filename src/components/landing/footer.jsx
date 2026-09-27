@@ -23,7 +23,6 @@ const footerSections = [
 		links: [
 			{ name: "Terms of Service", href: "/terms" },
 			{ name: "Privacy Policy", href: "/privacy" },
-			{ name: "Refund Policy", href: "/refund" },
 		],
 	},
 ];

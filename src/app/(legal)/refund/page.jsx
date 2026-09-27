@@ -1,5 +1,6 @@
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
+import { notFound } from "next/navigation";
 
 export const metadata = {
 	title: "Refund Policy",
@@ -8,6 +9,11 @@ export const metadata = {
 };
 
 export default function RefundPolicy() {
+  // Pricing is not available yet. Keep the policy draft below for its launch.
+  notFound();
+}
+
+function RefundPolicyDraft() {
 	return (
 		<div className="min-h-screen px-4 py-12 sm:px-6 lg:px-8">
 			<div className="max-w-3xl mx-auto">
@@ -52,10 +58,10 @@ export default function RefundPolicy() {
 					<p className="mb-4 text-muted-foreground">
 						To request a refund, please contact us at{" "}
 						<Link
-							href="mailto:falakgala09@gmail.com"
+							href="mailto:hi@falakgala.dev"
 							className="text-purple-600 hover:text-purple-800"
 						>
-							falakgala09@gmail.com
+							hi@falakgala.dev
 						</Link>{" "}
 						with the following information:
 					</p>
@@ -86,10 +92,10 @@ export default function RefundPolicy() {
 					<p className="mb-4 text-muted-foreground">
 						For any questions about this Refund Policy, please contact us at{" "}
 						<Link
-							href="mailto:falakgala09@gmail.com"
+							href="mailto:hi@falakgala.dev"
 							className="text-purple-600 hover:text-purple-800"
 						>
-							falakgala09@gmail.com
+							hi@falakgala.dev
 						</Link>
 						.
 					</p>

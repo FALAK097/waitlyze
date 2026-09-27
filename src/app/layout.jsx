@@ -1,9 +1,7 @@
 import "./globals.css";
-import { Inter } from "next/font/google";
 import { Providers } from "./_providers";
 import { NuqsAdapter } from "nuqs/adapters/next/app"
-
-const inter = Inter({ subsets: ["latin"] });
+import { publicFontClasses } from "@/lib/public-fonts";
 
 export const metadata = {
 	title: {
@@ -39,11 +37,11 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
 	return (
-		<html lang="en" suppressHydrationWarning data-scroll-behavior="smooth">
+		<html lang="en" className={publicFontClasses} suppressHydrationWarning data-scroll-behavior="smooth">
 			<head>
 				<meta name="apple-mobile-web-app-title" content="Waitlyze" />
 			</head>
-			<body className={inter.className} suppressHydrationWarning>
+			<body className={publicFontClasses} suppressHydrationWarning>
 				<NuqsAdapter>
 					<Providers>
 						{children}
