@@ -10,7 +10,8 @@
     "lint": "eslint .",
     "vercel-build": "node scripts/assert-no-browser-fixture.mjs && prisma generate && prisma migrate deploy && next build",
     "build:test": "node scripts/with-test-env.mjs node node_modules/prisma/build/index.js generate && node scripts/with-test-env.mjs node scripts/build-browser-fixture.mjs",
-    "test:browser": "playwright test"
+    "test:browser": "playwright test",
+    "test:database": "node --experimental-strip-types --test --test-concurrency=1 tests/database/*.test.mjs"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1057.0",
