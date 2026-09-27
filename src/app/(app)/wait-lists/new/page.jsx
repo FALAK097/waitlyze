@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { currentWorkspace } from "@/lib/workspaces/current";
+import { createWorkspaceService } from "@/lib/workspaces/service.mjs";
 import { Suspense } from "react";
 
 import { ContentLayout } from "@/components/dashboard/content-layout";
@@ -49,10 +51,14 @@ export default async function WaitListsPage() {
 		};
 
 		try {
-			const waitList = await prisma.waitList.create({
+			const { user: actor, workspace } = await currentWorkspace();
+            await createWorkspaceService(prisma).requireAccess(actor.id, workspace.id, "editCampaign");
+            if (typeof values.name !== "string" || !values.name.trim() || values.name.length > 120) throw new Error("Invalid name");
+            if (values.logoKey && !values.logoKey.startsWith(`${actor.id}-`)) throw new Error("Invalid image key");
+            const waitList = await prisma.waitList.create({
 				data: {
-					...values,
-					userId: user.id,
+					name: values.name.trim(), description: values.description, websiteUrl: values.websiteUrl, logoUrl: values.logoUrl, logoKey: values.logoKey,
+                    workspaceId: workspace.id, userId: actor.id,
 				},
 			});
 			response.success = true;
@@ -64,7 +70,6 @@ export default async function WaitListsPage() {
 			console.error("Error creating wait list:", error);
 			response.message = "Error creating wait list";
 		}
-		await waitFor(1000);
 		return response;
 	};
 

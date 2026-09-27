@@ -41,10 +41,7 @@ export const NewWaitListForm = ({ createNewWaitList }) => {
 			setIsCreated(true);
 			setLoading(false);
 			toast.success(response.message);
-			console.log(response);
-			setTimeout(() => {
-				push(`/wait-lists/${response.waitList.id}/edit`);
-			}, 1000);
+			push(`/wait-lists/${response.waitList.id}/edit`);
 		} else {
 			setLoading(false);
 			toast.error("There was an error creating the wait list");

@@ -1,0 +1,25 @@
+"use client";
+import { useActionState, useState } from "react";
+import { useFormStatus } from "react-dom";
+import { Button } from "./button";
+import { Input } from "./input";
+import { saveProfile, selectWorkspace } from "@/app/actions/settings";
+
+function SubmitButton({ children, pendingLabel }) {
+  const { pending } = useFormStatus();
+  return <Button type="submit" disabled={pending}>{pending ? pendingLabel : children}</Button>;
+}
+export function ProfileForm({ name }) {
+  const [state, action] = useActionState(saveProfile, {});
+  const [value, setValue] = useState(name || "");
+  return <form action={action} className="product-settings-form">
+    <label htmlFor="profile-name">Display name</label><Input id="profile-name" name="name" value={value} onChange={(event) => setValue(event.target.value)} aria-invalid={!!state.error} required maxLength={80} autoComplete="name" aria-describedby="profile-name-help" />
+    <p id="profile-name-help" className="product-help">Used to identify you in your workspace.</p>
+    <SubmitButton pendingLabel="Saving…">Save profile</SubmitButton>
+    <p role={state.error ? "alert" : "status"}>{state.error || state.success}</p>
+  </form>;
+}
+export function WorkspacePicker({ workspaces, selected }) {
+  if (workspaces.length < 2) return null;
+  return <form action={selectWorkspace} className="product-workspace-picker"><label htmlFor="workspace-id">Workspace</label><select id="workspace-id" name="workspaceId" defaultValue={selected}>{workspaces.map((workspace) => <option key={workspace.id} value={workspace.id}>{workspace.name}</option>)}</select><SubmitButton pendingLabel="Switching…">Switch</SubmitButton></form>;
+}

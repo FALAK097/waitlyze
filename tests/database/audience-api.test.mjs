@@ -1,51 +1,18 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { createHmac, randomUUID } from "node:crypto";
-import { spawn } from "node:child_process";
-import { createServer } from "node:net";
+import { randomUUID } from "node:crypto";
 import { once } from "node:events";
 import { PrismaClient } from "../../src/generated/prisma/client.ts";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { createWorkspaceService } from "../../src/lib/workspaces/service.mjs";
 import { workspaceTestTarget } from "../../scripts/workspace-test-target.mjs";
-import { FIXTURE_AUTH_SECRET } from "../../scripts/test-environment.mjs";
+import { startFixtureServer, signedCookie } from "../support/http-fixture.mjs";
 
 const target = workspaceTestTarget(process.env.WORKSPACE_TEST_DATABASE_URL);
 const db = new PrismaClient({ adapter: new PrismaPg({ connectionString: target }) });
 const service = createWorkspaceService(db);
 const base = "http://127.0.0.1:3100";
 
-async function startFixtureServer() {
-  const probe = createServer();
-  await new Promise((resolve, reject) => {
-    probe.once("error", reject);
-    probe.listen(3100, "127.0.0.1", resolve);
-  });
-  await new Promise((resolve) => probe.close(resolve));
-  const child = spawn(process.execPath, ["scripts/with-test-env.mjs", process.execPath, "node_modules/next/dist/bin/next", "start", "--hostname", "127.0.0.1", "--port", "3100"], { stdio: ["ignore", "pipe", "pipe"], env: process.env });
-  try {
-    await new Promise((resolve, reject) => {
-      let output = "";
-      const timer = setTimeout(() => reject(new Error("Fixture server did not become ready.")), 15000);
-      child.on("error", (error) => { clearTimeout(timer); reject(error); });
-      child.on("exit", () => { clearTimeout(timer); reject(new Error(`Fixture server exited before readiness: ${output.slice(-1000)}`)); });
-      child.stdout.on("data", (data) => {
-        output += data.toString();
-        if (output.includes("Ready in")) { clearTimeout(timer); resolve(); }
-      });
-      child.stderr.on("data", (data) => { output += data.toString(); });
-    });
-    return child;
-  } catch (error) {
-    child.kill("SIGTERM");
-    throw error;
-  }
-}
-
-function signedCookie(token) {
-  const signature = createHmac("sha256", FIXTURE_AUTH_SECRET).update(token).digest("base64");
-  return `ba.session_token=${encodeURIComponent(`${token}.${signature}`)}`;
-}
 
 test("real audience HTTP routes authenticate and enforce workspace permissions", async (t) => {
   const ids = Array.from({ length: 4 }, () => `fixture-${randomUUID()}`);
