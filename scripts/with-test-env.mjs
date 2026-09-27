@@ -18,6 +18,7 @@ const fixtureEnv = {
   RESEND_FROM_EMAIL: "test@example.invalid",
   RESEND_REPLY_TO: "test@example.invalid",
   NEXT_TELEMETRY_DISABLED: "1",
+  WAITLYZE_DESIGN_PREVIEW: process.env.WAITLYZE_DESIGN_PREVIEW === "0" ? "0" : "1",
 };
 
 const [command, ...args] = process.argv.slice(2);

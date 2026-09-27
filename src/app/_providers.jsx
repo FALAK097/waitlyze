@@ -7,7 +7,7 @@ import { Toaster } from "react-hot-toast";
 
 export function Providers({ children }) {
 	return (
-		<NextThemesProvider attribute="class" forcedTheme="light" enableSystem={false}>
+		<NextThemesProvider attribute="class" defaultTheme="light" disableTransitionOnChange>
 			<AuthModalProvider>
 				<ProgressBar
 					height="4px"

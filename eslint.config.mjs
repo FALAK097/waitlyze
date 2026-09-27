@@ -25,4 +25,13 @@ export default defineConfig([
       "no-unsafe-finally": "error",
     },
   },
+  {
+    files: ["src/components/product/**/*.{js,jsx}", "src/app/design-system/**/*.jsx"],
+    settings: { shadcn: { ui: "@/components/product", componentImports: ["^\\./(button|input|dialog)$"], note: "See docs/REVAMP_FOUNDATION.md." } },
+    rules: {
+      "shadcn/no-arbitrary-values": "error",
+      "shadcn/no-inline-styles": "error",
+      "shadcn/no-restyle": ["error", { allow: ["layout"] }],
+    },
+  },
 ]);

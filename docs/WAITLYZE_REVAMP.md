@@ -1,6 +1,6 @@
 # Waitlyze revamp: product, design, architecture, and delivery
 
-Date: 2026-09-27. Status: execution roadmap; Phase 0 documented, Phase 1 tooling started.
+Date: 2026-09-27. Status: execution roadmap; roadmap/tooling draft PRs opened, Phase 1 design foundation implemented and locally validated.
 Source: `waitlyze_product_blueprint.md` supplied from Downloads, read in full. This document resolves its conflicting scope statements and grounds delivery in the current repository. It is the working plan; update the ledger as each PR ships.
 
 ## 1. Product decision
@@ -223,9 +223,10 @@ GetWaitlist homepage yielded no readable content in this pass; its blueprint cla
 | Source blueprint | Read | All 53 sections considered |
 | Repository recon | Complete for stated scope | Clean main, schema/routes/tooling/service inspection |
 | Roadmap | Written | This file; no app behavior changed |
-| Phase 1 implementation | Tooling locally validated | Frozen install, lint, isolated production build (23 generated pages), and all five Chromium smoke tests pass. Sign-in focus restoration repaired. CI build/smoke job added; remote execution unverified. Design foundation remains next. |
-| GitHub PR publication | Pending | Specific repository/content confirmation requested by prior automatic review remains outstanding; local gh token is also invalid. No PR created |
+| Phase 1 tooling | Validated; draft PR #37 | Frozen install, lint, isolated build and 5 public smoke tests pass locally. GitHub Quality run 36313289722 passed on 4c08aba. Sign-in focus restoration repaired. |
+| Phase 1 foundation | Implemented; local validation | Scoped tokens/Geist, shadcn Base UI controls, server DiceBear avatar and gated preview. Build/lint/frozen install and 17 browser tests pass; see REVAMP_FOUNDATION.md for limits. |
+| GitHub PR publication | Draft stack opened | #36 roadmap → main; #37 tooling → roadmap. User confirmed repository/content on 2026-09-27; GitHub connector works despite invalid local gh token. Foundation child PR follows. |
 | Runtime visual/a11y baseline | Pending | Capture authenticated flows with disposable workspace fixtures |
 | Production migrations/deployment | Pending | No production state changed |
 
-Next implementable slice: implement and visually validate the design foundation in its child PR. Authenticated workspace fixtures arrive with tenancy in PR 03. Local frozen install, lint, isolated production build, and five Chromium smoke tests pass; remote CI and production deployment remain unverified. Existing peer warnings and Node 26 deprecation/localStorage warnings remain. Do not skip ahead to a decorative dashboard with mocked metrics while campaign tenancy and ingestion remain unresolved.
+Next implementable slice: workspace tenancy, idempotent backfill and authorization (03), followed by the responsive campaign shell (04). Keep the first three PRs reviewable and merge bottom-up before expanding the open stack. Authenticated workspace fixtures arrive with tenancy in PR 03. Local frozen install, lint, isolated production build, and five Chromium smoke tests pass; remote CI and production deployment remain unverified. Existing peer warnings and Node 26 deprecation/localStorage warnings remain. Do not skip ahead to a decorative dashboard with mocked metrics while campaign tenancy and ingestion remain unresolved.
