@@ -4,7 +4,7 @@ import AxeBuilder from "@axe-core/playwright";
 async function appearance(page, theme) {
   await page.getByRole("button", { name: theme, exact: true }).click();
   await expect(page.getByRole("button", { name: theme, exact: true })).toHaveAttribute("aria-pressed", "true");
-  await expect(page.locator("html")).toHaveClass(new RegExp(theme.toLowerCase()));
+  await expect(page.locator(".fixture-theme")).toHaveClass(new RegExp(theme.toLowerCase()));
 }
 
 for (const theme of ["Light", "Dark"]) {

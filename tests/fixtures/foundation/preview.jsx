@@ -1,7 +1,6 @@
 "use client";
 
 import { useRef, useState, useSyncExternalStore } from "react";
-import { useTheme } from "next-themes";
 import Link from "next/link";
 import { ArrowRight, Layers, Plus } from "lucide-react";
 import { Button } from "@/components/product/button";
@@ -9,13 +8,18 @@ import { buttonVariants } from "@/components/product/button-variants";
 import { Input } from "@/components/product/input";
 import { Dialog, DialogTrigger, DialogContent, DialogTitle, DialogDescription, DialogClose } from "@/components/product/dialog";
 
-const subscribe = () => () => {};
-const clientSnapshot = () => true;
+const subscribe = (notify) => {
+  const media = window.matchMedia("(prefers-color-scheme: dark)");
+  media.addEventListener("change", notify);
+  return () => media.removeEventListener("change", notify);
+};
+const clientSnapshot = () => window.matchMedia("(prefers-color-scheme: dark)").matches;
 const serverSnapshot = () => false;
 
 export function FoundationPreview({ avatar }) {
-  const { theme, setTheme } = useTheme();
-  const themeReady = useSyncExternalStore(subscribe, clientSnapshot, serverSnapshot);
+  const [theme, setTheme] = useState("light");
+  const systemDark = useSyncExternalStore(subscribe, clientSnapshot, serverSnapshot);
+  const resolvedTheme = theme === "system" ? (systemDark ? "dark" : "light") : theme;
   const containerRef = useRef(null);
   const inputRef = useRef(null);
   const [name, setName] = useState("");
@@ -36,14 +40,14 @@ export function FoundationPreview({ avatar }) {
   }
 
   return (
-    <div className="product-ui product-stage" ref={containerRef}>
+    <div className={`fixture-theme ${resolvedTheme}`}><div className="product-ui product-stage" ref={containerRef}>
       <a className="product-skip" href="#foundation-content">Skip to content</a>
       <header className="product-preview-header">
         <Link className="product-wordmark" href="/"><Layers aria-hidden="true" />Waitlyze<span className="product-badge">Design preview</span></Link>
         <div className="product-theme-controls" role="group" aria-label="Appearance">
-          <Button variant="ghost" static aria-pressed={themeReady && theme === "light"} onClick={() => setTheme("light")}>Light</Button>
-          <Button variant="ghost" static aria-pressed={themeReady && theme === "dark"} onClick={() => setTheme("dark")}>Dark</Button>
-          <Button variant="ghost" static aria-pressed={themeReady && theme === "system"} onClick={() => setTheme("system")}>System</Button>
+          <Button variant="ghost" static aria-pressed={theme === "light"} onClick={() => setTheme("light")}>Light</Button>
+          <Button variant="ghost" static aria-pressed={theme === "dark"} onClick={() => setTheme("dark")}>Dark</Button>
+          <Button variant="ghost" static aria-pressed={theme === "system"} onClick={() => setTheme("system")}>System</Button>
         </div>
       </header>
       <main id="foundation-content" className="product-preview-main" tabIndex={-1}>
@@ -74,6 +78,6 @@ export function FoundationPreview({ avatar }) {
         <p className="product-announcement" role="status">{announcement}</p>
         
       </main>
-    </div>
+    </div></div>
   );
 }
