@@ -96,13 +96,16 @@ test("authenticated two-destination shell uses real workspace data", async (t) =
     await page.getByRole("heading", { name: "Subscribers", exact: true }).waitFor();
     await page.getByText(/of 2$/).waitFor();
     await page.getByRole("button", { name: "Verified", exact: true }).click();
+    await page.getByText(/of 1$/).waitFor();
     await page.getByRole("button", { name: "verified-subscriber@example.invalid" }).waitFor();
     assert.equal(await page.locator("tbody tr").count(), 1);
     await page.getByRole("button", { name: "Needs confirmation", exact: true }).click();
+    await page.getByText(/of 1$/).waitFor();
     await page.getByRole("button", { name: "pending-subscriber@example.invalid" }).waitFor();
     assert.equal(await page.locator("tbody tr").count(), 1);
     await page.getByRole("button", { name: "All subscribers", exact: true }).click();
     await page.getByLabel("Search subscribers by email").fill("verified-subscriber");
+    await page.getByText(/of 1$/).waitFor();
     await page.getByRole("button", { name: "verified-subscriber@example.invalid" }).waitFor();
     assert.equal(await page.locator("tbody tr").count(), 1);
     const profileTrigger = page.getByRole("button", { name: "verified-subscriber@example.invalid" });
