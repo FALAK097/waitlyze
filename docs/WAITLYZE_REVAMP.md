@@ -231,8 +231,8 @@ GetWaitlist homepage yielded no readable content in this pass; its blueprint cla
 | Phase 1 foundation | Ready PR #38; CI passed | Quality run 36329187786 on bef3c407; 17 browser tests and scoped theme verified |
 | Workspace expansion (03) | Ready PR #40; CI passed | Quality run 36330542670 on 2eccf2e; 19 real database/HTTP tests; no production backfill |
 | Two-destination shell (04) | Ready PR #41; quality CI passed | Real Waitlists/Settings, contextual tabs, profile/workspace selection, adopted private permissions; 26 database/authenticated-browser and 17 public/foundation tests pass. See REVAMP_SHELL.md |
-| Templates and draft creation (05) | Implemented locally; review and PR pending | Seven versioned starter snapshots, recoverable 3-step creation, idempotent workspace authorization, legacy-row migration preservation and public draft rejection. See REVAMP_TEMPLATES.md |
-| GitHub PR publication | Ready stack through 04 | #36 → #37 → #38 → #40 → #41; phase 05 is being built on the shell branch. All ancestors were refreshed against main ef2f54a. No merges performed. |
+| Templates and draft creation (05) | Ready PR #42; quality CI passed | Quality run 36383385552 on fc38cef; lint, unit, migration, build, browser and database jobs passed. Seven versioned starters, recoverable creation, workspace authorization and private-draft rejection. See REVAMP_TEMPLATES.md |
+| GitHub PR publication | Ready stack through 05 | #36 → #37 → #38 → #40 → #41 → #42. Phase 05 is based on #41; all ancestors include main ef2f54a. No merges performed. |
 | Runtime visual/a11y baseline | Verified for shell scope | Desktop waitlist table and mobile Settings inspected; Settings axe passes. Legacy builder/chart/audience full audits remain pending. |
 | Production migrations/deployment | Pending | No production backfill; Neon preview branch limit left untouched at owner request |
 
