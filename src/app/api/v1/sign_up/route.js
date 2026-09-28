@@ -14,7 +14,7 @@ export const GET = async (req) => {
     );
   }
 
-  const signUp = await prisma.signUp.findUnique({ where: { id: signUpId } });
+  const signUp = await prisma.signUp.findUnique({ where: { id: signUpId, waitList: { status: "PUBLISHED" } } });
 
   if (!signUp) {
     return NextResponse.json({ message: "Sign up not found" }, { status: 404 });

@@ -8,13 +8,13 @@ import { sendSignupEmail } from "@/app/actions/emails";
 
 const getWaitList = cache(async (id) => {
 	return await prisma.waitList.findUnique({
-		where: { id },
+		where: { id, status: "PUBLISHED" },
 	});
 });
 
 const getWaitListMetadata = cache(async (id) => {
 	return await prisma.waitList.findUnique({
-		where: { id },
+		where: { id, status: "PUBLISHED" },
 		select: {
 			name: true,
 			description: true,
@@ -29,6 +29,7 @@ const getSignUpsCount = cache(async (waitListId) => {
 	return await prisma.signUp.count({
 		where: {
 			waitListId,
+			waitList: { status: "PUBLISHED" },
 		},
 	});
 });
