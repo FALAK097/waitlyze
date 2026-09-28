@@ -15,9 +15,10 @@ const canonical = (value) => Array.isArray(value)
     : value;
 const sameSnapshot = (left, right) => JSON.stringify(canonical(left)) === JSON.stringify(canonical(right));
 
-const scopedDraft = (actorId, waitListId, workspaceId) => ({
+const scopedPage = (actorId, waitListId, workspaceId) => ({
   id: waitListId,
-  status: "DRAFT",
+  status: { in: ["DRAFT", "PUBLISHED", "PAUSED"] },
+  templateSnapshot: { not: null },
   ...campaignScope(actorId, "editCampaign", workspaceId),
 });
 
@@ -25,7 +26,7 @@ export async function saveDraftSnapshot(db, actorId, workspaceId, waitListId, ex
   if (!Number.isSafeInteger(expectedRevision) || expectedRevision < 1) throw new Error("Invalid page version.");
   const snapshot = templateSnapshotSchema.parse(rawSnapshot);
   return db.$transaction(async (tx) => {
-    const where = scopedDraft(actorId, waitListId, workspaceId);
+    const where = scopedPage(actorId, waitListId, workspaceId);
     const current = await tx.waitList.findFirst({ where, select: { id: true, templateRevision: true, templateSnapshot: true } });
     if (!current) throw new AccessError();
     if (current.templateRevision !== expectedRevision) throw new DraftRevisionConflict(current);
