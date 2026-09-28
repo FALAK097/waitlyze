@@ -7,6 +7,7 @@ import { PrismaPg } from "@prisma/adapter-pg";
 import { workspaceTestTarget } from "../../scripts/workspace-test-target.mjs";
 import { createWorkspaceService } from "../../src/lib/workspaces/service.mjs";
 import { createDraft } from "../../src/lib/campaigns/create-draft.mjs";
+import { DraftRevisionConflict, saveDraftSnapshot } from "../../src/lib/campaigns/save-draft-snapshot.mjs";
 import bcrypt from "bcryptjs";
 import { validatePublishedApiKey } from "../../src/lib/campaigns/api-key.mjs";
 
@@ -57,6 +58,31 @@ test("real database draft creation owns authority, retries and slug conflicts", 
     assert.equal(draft.showReferrals, false);
     assert.equal(draft.showSocialProof, false);
     assert.equal(await db.waitList.count({ where: { workspaceId: workspace.id } }), 1);
+  });
+  await t.test("autosave versions snapshots and recovers concurrent edits without lost updates", async () => {
+    const initial = draft.templateSnapshot;
+    const first = structuredClone(initial);
+    first.sections[0].heading = "Saved first";
+    const saved = await saveDraftSnapshot(db, actor, workspace.id, draft.id, 1, first);
+    assert.equal(saved.revision, 2);
+    assert.equal((await db.waitListRevision.findUnique({ where: { waitListId_revision: { waitListId: draft.id, revision: 1 } } })).snapshot.sections[0].heading, initial.sections[0].heading);
+    const stale = structuredClone(initial);
+    stale.sections[0].heading = "Stale edit";
+    await assert.rejects(saveDraftSnapshot(db, actor, workspace.id, draft.id, 1, stale), DraftRevisionConflict);
+    const left = structuredClone(first); left.sections[0].heading = "Concurrent left";
+    const right = structuredClone(first); right.sections[0].heading = "Concurrent right";
+    const results = await Promise.allSettled([
+      saveDraftSnapshot(db, actor, workspace.id, draft.id, 2, left),
+      saveDraftSnapshot(db, actor, workspace.id, draft.id, 2, right),
+    ]);
+    assert.equal(results.filter((item) => item.status === "fulfilled").length, 1);
+    assert.equal(results.filter((item) => item.status === "rejected" && item.reason instanceof DraftRevisionConflict).length, 1);
+    const latest = await db.waitList.findUnique({ where: { id: draft.id } });
+    assert.equal(latest.templateRevision, 3);
+    assert.ok(["Concurrent left", "Concurrent right"].includes(latest.templateSnapshot.sections[0].heading));
+    const unchanged = await saveDraftSnapshot(db, actor, workspace.id, draft.id, 3, latest.templateSnapshot);
+    assert.equal(unchanged.unchanged, true);
+    await assert.rejects(saveDraftSnapshot(db, outsider, workspace.id, draft.id, 3, latest.templateSnapshot), { status: 404 });
   });
   await t.test("API-key ingestion rejects drafts and still accepts published legacy rows", async () => {
     const apiKey = `wl_${randomUUID()}`;

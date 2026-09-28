@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-const text = (max) => z.string().trim().min(1).max(max);
+const text = (max) => z.string().min(1).max(max).refine((value) => value.trim().length > 0, "Enter some text.");
 const hero = z.object({ type: z.literal("hero"), heading: text(120), body: text(600) }).strict();
 const features = z.object({ type: z.literal("features"), items: z.array(z.object({ title: text(80), body: text(240) }).strict()).min(1).max(6) }).strict();
 const faq = z.object({ type: z.literal("faq"), items: z.array(z.object({ question: text(120), answer: text(400) }).strict()).min(1).max(6) }).strict();
