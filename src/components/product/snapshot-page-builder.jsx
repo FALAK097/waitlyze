@@ -1,6 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { ArrowDown, ArrowUp, Redo2, Undo2 } from "lucide-react";
 import { Button } from "./button";
 import { Input } from "./input";
@@ -31,12 +33,13 @@ function Preview({ snapshot, name }) {
         {section.type === "form" && <div className="product-preview-signup" aria-label="Signup form preview"><span>{section.label}</span><span className="product-preview-email">you@example.com</span><span className="product-preview-submit">{section.buttonText}</span></div>}
         {section.type === "footer" && <p className="product-preview-footer">{section.note}</p>}
       </div>)}
-      <p className="product-preview-footnote">Preview only · visitors cannot sign up while this is a draft.</p>
+      <p className="product-preview-footnote">Preview only · saved edits stay private until you publish them.</p>
     </div>
   </section>;
 }
 
-export function SnapshotPageBuilder({ waitList, saveDraftPage }) {
+export function SnapshotPageBuilder({ waitList, saveDraftPage, publishPage, pausePage, rollbackPage, canPublish }) {
+  const router = useRouter();
   const [snapshot, setSnapshot] = useState(waitList.templateSnapshot);
   const [version, setVersion] = useState(waitList.templateRevision);
   const [dirty, setDirty] = useState(false);
@@ -49,6 +52,7 @@ export function SnapshotPageBuilder({ waitList, saveDraftPage }) {
   const [redoCount, setRedoCount] = useState(0);
   const [addType, setAddType] = useState("features");
   const [showAddSection, setShowAddSection] = useState(false);
+  const [publishing, setPublishing] = useState(false);
   const undoStack = useRef([]);
   const redoStack = useRef([]);
   const snapshotRef = useRef(snapshot);
@@ -220,10 +224,38 @@ export function SnapshotPageBuilder({ waitList, saveDraftPage }) {
     } else if (event.key.toLowerCase() === "y") { event.preventDefault(); redo(); }
   };
 
+  const publish = async () => {
+    if (dirty || saving || conflict || publishing) return;
+    setPublishing(true); setError("");
+    const result = await publishPage(waitList.id, version);
+    setPublishing(false);
+    if (!result?.ok) { setError(result?.message || "Couldn't publish this page."); return; }
+    setMessage(result.unchanged ? "Already live" : `Published · version ${result.revision}`);
+    router.refresh();
+  };
+  const lifecycle = async (action) => {
+    if (dirty || saving || conflict || publishing) return;
+    setPublishing(true); setError("");
+    const result = await action(waitList.id);
+    setPublishing(false);
+    if (!result?.ok) { setError(result?.message || "Couldn't update publication."); return; }
+    if (Number.isSafeInteger(result.templateRevision) && result.snapshot) {
+      const restored = clone(result.snapshot);
+      versionRef.current = result.templateRevision; setVersion(result.templateRevision);
+      snapshotRef.current = restored; setSnapshot(restored);
+      dirtyRef.current = false; setDirty(false); setConflict(null); conflictRef.current = null;
+      undoStack.current = []; redoStack.current = []; setUndoCount(0); setRedoCount(0);
+      setMessage("Restored previous published version");
+      try { sessionStorage.setItem(key, JSON.stringify({ revision: result.templateRevision, snapshot: restored })); } catch { /* A future reload still uses the saved server version. */ }
+    }
+    router.refresh();
+  };
+  const hasUpdates = waitList.status !== "PUBLISHED" || waitList.publishedTemplateRevision !== version;
+
   return <section className="product-builder" onKeyDown={onKeyDown}>
     <header className="product-builder-header">
-      <div><p className="product-builder-kicker">Private draft · {waitList.name}</p><h1 className="product-page-title">Page</h1><p className="product-help">Edit your starter, then publish it when you’re ready.</p></div>
-      <div className="product-builder-tools"><span role="status" aria-live="polite">{saving ? "Saving…" : message}</span><Button variant="outline" type="button" aria-label="Undo last change" onClick={undo} disabled={!undoCount}><Undo2 aria-hidden="true" /><span>Undo</span></Button><Button variant="outline" type="button" aria-label="Redo last change" onClick={redo} disabled={!redoCount}><Redo2 aria-hidden="true" /><span>Redo</span></Button><Button type="button" onClick={() => { void flush(); }} disabled={!dirty || saving || !!conflict}>{saving ? "Saving…" : "Save now"}</Button></div>
+      <div><p className="product-builder-kicker">{waitList.status === "PUBLISHED" ? "Published page" : waitList.status === "PAUSED" ? "Paused page" : "Private draft"} · {waitList.name}</p><h1 className="product-page-title">Page</h1><p className="product-help">Edit your page, then publish the saved version when it’s ready.</p></div>
+      <div className="product-builder-tools"><span role="status" aria-live="polite">{saving ? "Saving…" : message}</span><Button variant="outline" type="button" aria-label="Undo last change" onClick={undo} disabled={!undoCount}><Undo2 aria-hidden="true" /><span>Undo</span></Button><Button variant="outline" type="button" aria-label="Redo last change" onClick={redo} disabled={!redoCount}><Redo2 aria-hidden="true" /><span>Redo</span></Button><Button type="button" onClick={() => { void flush(); }} disabled={!dirty || saving || !!conflict}>{saving ? "Saving…" : "Save now"}</Button>{canPublish && hasUpdates && <Button type="button" onClick={() => { void publish(); }} disabled={dirty || saving || !!conflict || publishing}>{publishing ? "Publishing…" : waitList.status === "PAUSED" ? "Publish and resume" : waitList.status === "PUBLISHED" ? "Publish updates" : "Publish waitlist"}</Button>}{canPublish && waitList.status === "PUBLISHED" && <Button variant="outline" type="button" onClick={() => { void lifecycle(pausePage); }} disabled={dirty || saving || !!conflict || publishing}>Pause waitlist</Button>}{waitList.status !== "DRAFT" && waitList.publicSlug && <Link className="product-builder-live-link" href={`/w/${waitList.publicSlug}`} target="_blank" rel="noreferrer">View live page</Link>}{canPublish && waitList.publishedRevision > 1 && <Button variant="outline" type="button" onClick={() => { void lifecycle(rollbackPage); }} disabled={dirty || saving || !!conflict || publishing}>Restore previous version</Button>}</div>
     </header>
     {error && <div className="product-builder-alert" role="alert"><p>{error}</p>{conflict && <div className="product-builder-conflict-actions"><Button variant="outline" type="button" onClick={() => resolveConflict("saved")}>Use saved version</Button><Button type="button" onClick={() => resolveConflict("mine")}>Replace saved version with mine</Button></div>}{!conflict && dirty && <Button variant="outline" type="button" onClick={() => { setError(""); void flush(); }}>Retry save</Button>}</div>}
     <div className="product-builder-grid">

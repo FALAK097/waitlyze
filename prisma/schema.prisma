@@ -41,6 +41,9 @@ model WaitList {
   templateSnapshot        Json?
   templateRevision        Int @default(1)
   templateRevisions       WaitListRevision[]
+  publicationRevisions    WaitListPublicationRevision[]
+  publishedRevision       Int?
+  publishedTemplateRevision Int?
   creationKey             String?
 
   id                      String  @id @unique @default(cuid())
@@ -119,6 +122,20 @@ model WaitListRevision {
   @@unique([waitListId, revision])
   @@index([waitListId, createdAt])
   @@map("wait_list_revisions")
+}
+
+model WaitListPublicationRevision {
+  id             String   @id @default(cuid())
+  waitListId     String
+  revision       Int
+  templateRevision Int
+  snapshot       Json
+  createdAt      DateTime @default(now())
+  waitList       WaitList @relation(fields: [waitListId], references: [id], onDelete: Cascade)
+
+  @@unique([waitListId, revision])
+  @@index([waitListId, createdAt])
+  @@map("wait_list_publication_revisions")
 }
 
 model SignUp {

@@ -1,6 +1,7 @@
 const permissions = Object.freeze({
   viewCampaign: ["OWNER", "ADMIN", "MEMBER"],
   editCampaign: ["OWNER", "ADMIN", "MEMBER"],
+  publishCampaign: ["OWNER", "ADMIN"],
   viewAudience: ["OWNER", "ADMIN", "MEMBER"],
   manageAudience: ["OWNER", "ADMIN"],
   sendEmail: ["OWNER", "ADMIN"],

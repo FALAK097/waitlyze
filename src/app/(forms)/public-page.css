@@ -1,0 +1,24 @@
+.public-launch { min-height: 100vh; padding: clamp(48px, 10vw, 120px) 24px; color: #17191c; background: radial-gradient(ellipse at 18% 12%, rgba(202, 255, 132, .22), transparent 42%), radial-gradient(ellipse at 84% 22%, rgba(220, 208, 255, .25), transparent 38%), #fff; font-family: var(--font-sans), sans-serif; }
+.public-launch-content { width: min(100%, 880px); margin-inline: auto; }
+.public-launch-eyebrow { margin: 0 0 36px; color: #454a50; font-size: .875rem; font-weight: 600; }
+.public-launch-section { margin-block: 40px; }
+.public-launch-hero { max-width: 760px; margin-block: 0 56px; }
+.public-launch-hero h1, .public-launch-paused h1 { margin: 0 0 20px; font-size: clamp(2.75rem, 7vw, 5.5rem); line-height: .99; letter-spacing: -.065em; font-weight: 650; text-wrap: balance; }
+.public-launch-hero > p, .public-launch-paused section > p { max-width: 620px; color: #4b5055; font-size: clamp(1.125rem, 2vw, 1.35rem); line-height: 1.55; }
+.public-launch-features { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); gap: 28px; }
+.public-launch h2 { margin: 0 0 8px; font-size: 1.125rem; letter-spacing: -.02em; }
+.public-launch-features p, .public-launch-faq p { margin: 0; color: #4b5055; line-height: 1.6; }
+.public-launch-faq { display: grid; gap: 20px; }
+.public-launch-form { margin-top: 48px; }
+.published-signup { max-width: 540px; padding: 24px; border: 1px solid #e5e7e5; border-radius: 16px; background: rgba(255, 255, 255, .86); }
+.published-signup label { display: block; margin-bottom: 8px; font-weight: 600; font-size: .875rem; }
+.published-signup-row { display: flex; gap: 8px; }
+.published-signup input { min-width: 0; flex: 1; height: 48px; padding: 0 14px; border: 1px solid #c7ccc8; border-radius: 8px; background: #fff; color: #17191c; font: inherit; }
+.published-signup button { min-height: 48px; padding: 0 18px; border: 0; border-radius: 8px; background: #b9f36b; color: #14200c; font: inherit; font-weight: 650; cursor: pointer; }
+.published-signup button:disabled { cursor: wait; opacity: .7; }
+.published-signup-status { min-height: 1.5em; margin: 8px 0 0; color: #303830; font-size: .875rem; }
+.public-launch-paused { display: grid; place-items: center; text-align: center; }
+.public-launch-paused section { width: min(100%, 640px); }
+.public-launch-paused section > p { margin-inline: auto; }
+.published-signup :focus-visible { outline: 3px solid #397813; outline-offset: 3px; }
+@media (max-width: 480px) { .published-signup { padding: 18px; } .published-signup-row { flex-direction: column; } .published-signup button { width: 100%; } }
