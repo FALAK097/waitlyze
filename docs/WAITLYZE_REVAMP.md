@@ -45,21 +45,25 @@ Scope of inspection: blueprint, package/tooling declarations, schema, route inve
 | Create versus publish conflated | Create saves a draft; Publish is a separate explicit action with checks and a public URL. | No accidental launch or email sending. |
 | Beta type offered in V1, release flow deferred to V2 | Hide beta mode until basic invitation behavior works end to end. | Do not promise functionality through a selector. |
 | Custom domains listed in both V1 and V1.5 | Hosted path first; subdomain only once wildcard DNS/TLS is configured. Custom domains follow the core loop. | A fabricated domain cannot be a launch destination. |
-| Orange used for interaction, charts, and status | Orange means action/selection; statuses use dedicated semantics plus text/icons. Charts use separate chart roles. | Avoid implying static status text is clickable. |
+| Orange used for interaction, charts, and status | The current lime/ink direction assigns lime to primary action; statuses use dedicated semantics plus text/icons. Charts use separate chart roles. | Avoid implying static status text is clickable. |
 | Applied → Verified → Invited → Active | Verification, audience membership, consent, and access are independent state dimensions. | An invited subscriber can later unsubscribe; these states cannot form one universal linear enum. |
 | Workspace domains versus campaign domains | Domain ownership/verification belongs to the workspace; each hostname binding belongs to a campaign. | Avoid ambiguous routing and competing ownership. |
 
 ## 4. Information architecture
 
-Global: **Dashboard · Campaigns · Audience · Settings**. Workspace switcher at the top; account/preferences in profile menu. Do not add empty top-level integrations or automation destinations.
+The owner selected a simpler two-destination product on 2026-09-27: **Waitlists · Settings**. This supersedes the earlier Dashboard/Campaigns/Audience navigation. Keep “waitlist” as the user-facing noun; the campaign domain adapter remains an internal implementation detail. Do not create a second dashboard, global audience page, template library, integration hub or automation hub merely to fill navigation.
 
-Campaign: **Overview · Page · Audience · Referrals · Emails · Settings**. Automations live within Emails; invitation management becomes a campaign destination when release features ship. Workspace connection credentials live in Settings; campaign subscriptions select which connection receives events.
+**Waitlists** is the default authenticated entry. A concise table shows real waitlists with name, state and subscriber count, search when useful, and one “New waitlist” action. Starter selection belongs to creation. Any portfolio summary must earn its space with real data; an empty account has one clear creation path. Show a workspace selector only when the user belongs to multiple workspaces; a first-time founder receives a personal workspace automatically.
 
-Canonical routes: `/dashboard`, `/campaigns`, `/campaigns/new`, `/campaigns/[id]`, campaign subroutes, `/audience`, `/settings`. Resolve the workspace explicitly in server authorization, not only a client selector. Use campaign IDs for authenticated routes and slugs for public routes. Preserve `/wait-lists/*`, `/forms/[id]`, and existing API consumers with adapters/redirects appropriate to method and payload. Do not redirect POST requests to new contracts without compatibility tests.
+Opening a waitlist reveals contextual route tabs: **Overview · Page · Subscribers · Emails · Settings**. Show only implemented tabs. Overview changes with lifecycle: readiness for drafts; actual performance and failures for published waitlists. Analytics and referral performance live here, with time controls and readable data equivalents. Page owns the builder and publication. Subscribers owns search, filtering, profiles, exports and later invitation batches. Emails owns transactional messages, broadcasts and automation recipes through progressive secondary navigation; it does not open more global destinations. Waitlist Settings owns its form/referral options and publishing/domain configuration. The visible waitlist name and a “Back to waitlists” link keep context clear.
 
-Dashboard answers “How are my launches performing?” Use four truthful metrics, one growth chart, horizontal acquisition bars, a compact campaign table, and contextual activity. No duplicated recent-signups table, filler cards, or invented comparisons.
+**Settings** owns account/workspace configuration, with a quiet sticky table of contents on desktop and a collapsible section index on narrow screens. Sections are Profile, Workspace, Team, Integrations and Developers as those capabilities ship. Connection credentials and API keys live here; a waitlist selects which connection receives its events. Keep unrelated forms independently saveable and labeled, retain entered values on failure, and deep-link sections. Hide unsupported sections instead of displaying coming-soon controls. Billing receives no destination before actual paid functionality exists.
 
-Campaign Overview answers “What should I do next?” Put readiness ahead of analytics for drafts; performance and operational failures ahead of readiness for live campaigns. Audience profile opens in a focus-managed side panel with a shareable URL state and a full-screen mobile presentation.
+Canonical authenticated routes remain `/wait-lists`, `/wait-lists/new`, `/wait-lists/[id]` and contextual subroutes, plus `/settings` and its section anchors. Existing `/dashboard` becomes a compatibility entry to Waitlists when the shell ships. Preserve `/wait-lists/[id]/edit`, `/wait-lists/[id]/emails`, `/forms/[id]`, IDs and API payloads with adapters or safe GET redirects. Do not redirect POST requests without compatibility tests. Resolve workspace permissions on the server; a selected tab/workspace is not authorization.
+
+Use native links for destinations, current-page semantics and stable URLs so reload, Back, Cmd/Ctrl-click and shared links work. Reserve actual ARIA tabs for local panels with their expected arrow-key behavior. At 320px, use a compact navigation strip and horizontally scrollable labeled waitlist destinations; keep the selected destination visible, avoid nested drawers, and leave the primary action reachable. Subscriber profiles use a focus-managed panel and full-screen mobile presentation.
+
+Reference evidence: the supplied authenticated [GetWaitlist dashboard](https://getwaitlist.com/dashboard) showed a compact waitlist table and a New Waitlist action. Its sidebar/row controls did not respond in the shared browser session, and the observed creation link did not expose its form; inner-tab and Settings behavior were not verified. The two-destination architecture is the owner's product decision, not a claim that the competitor implements every proposed detail.
 
 ## 5. Visual and interaction specification
 
@@ -79,7 +83,7 @@ Use Geist Sans for app chrome and content; Geist Mono for code, tokens, and tech
 | Metadata | 12 / 18 px | Nonessential timestamps; never sole instructions |
 | Mobile input / public body | 16 / 24 px | Avoid iOS input zoom; comfortable visitor forms |
 
-Translate sizes to rem tokens. Sidebar target 240 px expanded / 64 px collapsed, main readable width 1280 px; builder can fill available space. Spacing scale 4/8/12/16/24/32/48. At least twice as much space between groups as within them. Break at content failure, not arbitrary device labels. Desktop targets aim for 40 px, touch 44 px. Radius roles: controls 8 px; ordinary panels 12 px; nested radii derived from padding. Borders communicate structure; layered shadows communicate elevation. One Lucide icon set, currentColor, optical alignment.
+Translate sizes to rem tokens. Use a compact top bar for the two primary destinations; avoid a permanent full-height navigation rail for two links. Settings can use a local 200 px section index on desktop. Main readable width is 1280 px; the builder can fill available space. Spacing scale 4/8/12/16/24/32/48. At least twice as much space between groups as within them. Break at content failure, not arbitrary device labels. Desktop targets aim for 40 px, touch 44 px. Radius roles: controls 8 px; ordinary panels 12 px; nested radii derived from padding. Borders communicate structure; layered shadows communicate elevation. One Lucide icon set, currentColor, optical alignment.
 
 ### Color contract
 
@@ -166,7 +170,7 @@ Branch naming: `codex/revamp-NN-short-name`. Each child PR targets its preceding
 | 1 / 01 | Working lint/build CI, shadcn lint registration, test harness | 00 | Reproducible clean install; lint config loads; baseline failures explicit |
 | 1 / 02 | Tokens, Geist, Base UI primitives, DiceBear wrapper, component states | 01 | Both themes, measured pairs, focus/keyboard/modal/composition checks |
 | 1 / 03 | Workspace schema, backfill, authorization service | 02 | Two-workspace isolation, role matrix, idempotent rehearsal, old routes work |
-| 1 / 04 | Responsive shell, workspace switcher, contextual navigation | 03 | Real destinations; selection survives reload; 320 px and keyboard path |
+| 1 / 04 | Two-destination shell, conditional workspace switcher, waitlist tabs and Settings TOC | 03 | Real destinations; selection survives reload; 320 px and keyboard path |
 | 2 / 05 | Template manifest and campaign draft creation | 04 | Three-panel flow, recoverable drafts, slug conflicts, limits, back navigation |
 | 2 / 06 | Page/form builder, revision autosave, preview | 05 | Undo/redo, keyboard reorder, upload safety, conflict recovery |
 | 2 / 07 | Hosted rendering, publish/unpublish, legacy URL adapter | 06 | Draft never leaks; public snapshot stable; pause and rollback work |
@@ -175,7 +179,7 @@ Branch naming: `codex/revamp-NN-short-name`. Each child PR targets its preceding
 | 4 / 10 | Verified referrals and position service | 09 | Eligibility, tie/concurrency rules, no whole-audience write fanout |
 | 4 / 11 | Referrals UI and isolated launch rehearsal | 10 | Accurate public position, test/live separation, anti-abuse review path |
 | 5 / 12 | Events, metric definitions, aggregates | 11 | Dedupe, timezone/denominator cases, historical-data caveats |
-| 5 / 13 | Dashboard/campaign analytics with Evil Charts | 12 | Real values, tabular alternative, nonanimated keyboard use, both themes |
+| 5 / 13 | Waitlist Overview analytics with Evil Charts | 12 | Real values, tabular alternative, nonanimated keyboard use, both themes |
 | 6 / 14 | Transactional delivery and sending diagnostics | 13 | Signed callbacks, retries, suppression, failure visibility |
 | 6 / 15 | Broadcast drafts/templates/recipient preview | 14 | Explicit send, consent checks, retry/cancel, no duplicate delivery |
 | 6 / 16 | Three automation recipes and run history | 15 | Versioned runs, pause/cancel, delayed suppression and idempotency tests |

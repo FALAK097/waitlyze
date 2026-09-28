@@ -8,15 +8,18 @@ datasource db {
 }
 
 model User {
-  id            String    @id @unique @default(cuid())
-  email         String    @unique
+  id            String   @id @unique @default(cuid())
+  email         String   @unique
   name          String?
-  emailVerified Boolean   @default(false)
+  emailVerified Boolean  @default(false)
   image         String?
   imageUrl      String?
-  isOnboarded   Boolean   @default(false)
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  isOnboarded   Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  personalWorkspace    Workspace?        @relation("PersonalWorkspace")
+  workspaceMemberships WorkspaceMember[]
 
   waitLists WaitList[]
   apiKeys   ApiKey[]
@@ -75,6 +78,9 @@ model WaitList {
   shareOnEmail            Boolean @default(false)
   shareOnReddit           Boolean @default(false)
 
+  workspaceId String?
+  workspace   Workspace? @relation(fields: [workspaceId], references: [id], onDelete: Restrict)
+
   userId               String
   user                 User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   signUps              SignUp[]
@@ -82,6 +88,8 @@ model WaitList {
   apiKeys              ApiKey[]
   emailTemplateRecords EmailTemplate[]
 
+  @@index([workspaceId, id])
+  @@index([userId, workspaceId])
   @@map("wait_lists")
 }
 
@@ -223,4 +231,37 @@ model Verification {
   updatedAt  DateTime? @updatedAt
 
   @@map("verifications")
+}
+
+// Additive tenancy: personalOwnerId provides an idempotent legacy mapping.
+model Workspace {
+  id              String            @id @default(cuid())
+  name            String
+  personalOwnerId String?           @unique
+  personalOwner   User?             @relation("PersonalWorkspace", fields: [personalOwnerId], references: [id], onDelete: Restrict)
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  members         WorkspaceMember[]
+  waitLists       WaitList[]
+
+  @@map("workspaces")
+}
+
+model WorkspaceMember {
+  workspaceId String
+  userId      String
+  role        WorkspaceRole @default(MEMBER)
+  createdAt   DateTime      @default(now())
+  workspace   Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([workspaceId, userId])
+  @@index([userId, workspaceId])
+  @@map("workspace_members")
+}
+
+enum WorkspaceRole {
+  OWNER
+  ADMIN
+  MEMBER
 }
