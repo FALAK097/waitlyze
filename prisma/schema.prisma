@@ -142,6 +142,7 @@ model SignUp {
   id              String      @id @default(cuid())
   uniqueUserId    String
   email           String
+  emailNormalized String?
   device          String?
   deviceType      String?
   city            String?
@@ -154,14 +155,52 @@ model SignUp {
   impressionId    String?
   rank            Int?
   signUpEmailSent Boolean     @default(false)
+  verifiedAt      DateTime?
   createdAt       DateTime    @default(now())
   updatedAt       DateTime    @updatedAt
   waitList        WaitList    @relation(fields: [waitListId], references: [id], onDelete: Cascade)
   impression      Impression? @relation(fields: [impressionId], references: [id], onDelete: SetNull)
   referrals       Referral[]  @relation("referredByReferral")
   referredBy      Referral[]  @relation("signUpReferral")
+  verification    SignUpVerification?
 
+  @@unique([waitListId, emailNormalized])
   @@map("sign_ups")
+}
+
+model SignUpVerification {
+  id        String   @id @default(cuid())
+  signUpId  String   @unique
+  tokenHash String   @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime @default(now())
+  signUp    SignUp   @relation(fields: [signUpId], references: [id], onDelete: Cascade)
+
+  @@index([expiresAt])
+  @@map("sign_up_verifications")
+}
+
+enum OutboxStatus {
+  PENDING
+  PROCESSING
+  DELIVERED
+  FAILED
+}
+
+model OutboxEvent {
+  id          String       @id @default(cuid())
+  eventKey    String       @unique
+  type        String
+  payload     Json
+  status      OutboxStatus @default(PENDING)
+  attempts    Int          @default(0)
+  availableAt DateTime     @default(now())
+  createdAt   DateTime     @default(now())
+  processedAt DateTime?
+
+  @@index([status, availableAt])
+  @@map("outbox_events")
 }
 
 model Impression {
