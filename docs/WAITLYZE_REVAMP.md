@@ -218,7 +218,7 @@ Official sources consulted on 2026-09-27; recommendations above are our synthesi
 - [DiceBear JavaScript integration](https://www.dicebear.com/integrations/javascript/): local generation is the planned privacy-conscious integration.
 - [Linear Method](https://linear.app/method), [Raycast](https://www.raycast.com/), [Stripe docs](https://docs.stripe.com/): workflow/information references, not a comparative dashboard audit.
 
-GetWaitlist homepage yielded no readable content in this pass; its blueprint claims were not independently verified. No competitor pricing, authenticated dashboard, or usability benchmark was verified. Notion and Plivo are user-supplied aesthetic/workflow references, not independently inspected here. Avoid presenting inspiration as a measured competitive advantage.
+GetWaitlist homepage yielded no readable content in this pass; its blueprint claims were not independently verified. No competitor pricing or usability benchmark was verified. The later supplied authenticated GetWaitlist table was inspected within the limits recorded in section 4. Notion and Plivo are user-supplied aesthetic/workflow references, not independently inspected here. Avoid presenting inspiration as a measured competitive advantage.
 
 ## 14. Execution ledger
 
@@ -227,10 +227,12 @@ GetWaitlist homepage yielded no readable content in this pass; its blueprint cla
 | Source blueprint | Read | All 53 sections considered |
 | Repository recon | Complete for stated scope | Clean main, schema/routes/tooling/service inspection |
 | Roadmap | Written | This file; no app behavior changed |
-| Phase 1 tooling | Ready PR #37; validated | Frozen install, lint, isolated build and 5 public smoke tests pass locally. GitHub Quality run 36313289722 passed on 4c08aba. Sign-in focus restoration repaired. |
-| Phase 1 foundation | Ready PR #38; locally validated | Scoped tokens/Geist, shadcn Base UI controls, server DiceBear avatar and test-only control fixture. No design-system page ships in product source. Build/lint/frozen install and 17 browser tests pass; see REVAMP_FOUNDATION.md for limits. |
-| GitHub PR publication | Ready stack opened | #36 roadmap → main; #37 tooling → roadmap. User confirmed repository/content on 2026-09-27; GitHub connector works despite invalid local gh token. #38 foundation → tooling; foundation Quality run 36315038713 passed on 1d97b7c before test-only fixture cleanup; latest cleanup CI will be recorded in the PR. |
-| Runtime visual/a11y baseline | Pending | Capture authenticated flows with disposable workspace fixtures |
-| Production migrations/deployment | Pending | No production state changed |
+| Phase 1 tooling | Ready PR #37; CI passed | Quality run 36329189223 on 367d9bb, rebased on main ef2f54a |
+| Phase 1 foundation | Ready PR #38; CI passed | Quality run 36329187786 on bef3c407; 17 browser tests and scoped theme verified |
+| Workspace expansion (03) | Ready PR #40; CI passed | Quality run 36330542670 on 2eccf2e; 19 real database/HTTP tests; no production backfill |
+| Two-destination shell (04) | Locally implemented, final review pending | Real Waitlists/Settings, contextual tabs, profile/workspace selection, adopted private permissions; 26 database/authenticated-browser and 17 public/foundation tests pass. See REVAMP_SHELL.md |
+| GitHub PR publication | Ready stack | #36 → #37 → #38 → #40; child shell branch is based on #40. All ancestors include latest main ef2f54a. No merges performed. |
+| Runtime visual/a11y baseline | Verified for shell scope | Desktop waitlist table and mobile Settings inspected; Settings axe passes. Legacy builder/chart/audience full audits remain pending. |
+| Production migrations/deployment | Pending | No production backfill; Neon preview branch limit left untouched at owner request |
 
-Next implementable slice: workspace tenancy, idempotent backfill and authorization (03), followed by the responsive campaign shell (04). Keep the first three PRs reviewable and merge bottom-up before expanding the open stack. Authenticated workspace fixtures arrive with tenancy in PR 03. Local frozen install, lint, isolated production build, and five Chromium smoke tests pass; GitHub tooling/foundation Quality passed on their previous tested heads; latest-head CI is recorded in each PR. Production deployment remains unverified. Existing peer warnings and Node 26 deprecation/localStorage warnings remain. Do not skip ahead to a decorative dashboard with mocked metrics while campaign tenancy and ingestion remain unresolved.
+Next: finalize the shell PR and continue creation/templates (05) and publishing/builder slices. Keep PR diffs focused and dependencies explicit; merge bottom-up and retarget/rebase children when parents land. The owner requested continued ready stacked PRs, so new reviewed slices can be opened while parents await human merge. This does not authorize automatic merges. Latest-head CI belongs in each PR. Do not replace real data with decorative dashboard metrics. The overall revamp, public visual adoption, templates, automations, integrations and analytics redesign remain unfinished.

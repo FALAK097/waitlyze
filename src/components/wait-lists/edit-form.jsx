@@ -143,7 +143,7 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
   });
   const [sendEmailsToSubscribers, setSendEmailsToSubscribers] = useQueryState('sendEmailsToSubscribers', {
     defaultValue: initialWaitList.sendEmailsToSubscribers !== false,
-    parse: (v) => v === 'false',
+    parse: (v) => v === 'true',
     serialize: (v) => String(v)
   });
   const [showLogo, setShowLogo] = useQueryState('showLogo', {
@@ -364,14 +364,12 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
 
   const handleSave = async () => {
     setIsSaving(true);
-    const settingsToSave = {
-      ...formSettings,
-    };
-    const response = await saveWaitList(initialWaitList.id, settingsToSave);
-    setIsSaving(false);
-    if (response.success) {
-      toast.success(response.message);
-    }
+    try {
+      const response = await saveWaitList(initialWaitList.id, { ...formSettings });
+      if (response.success) toast.success(response.message);
+      else toast.error(response.message || "Could not save your page. Try again.");
+    } catch { toast.error("Could not save your page. Try again."); }
+    finally { setIsSaving(false); }
   };
 
   const copyShareUrlToClipboard = () => {
@@ -417,11 +415,11 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
               <Tooltip delayDuration={100}>
                 <TooltipTrigger asChild>
                   {isSaving ? (
-                    <Button size="icon" disabled>
+                    <Button size="icon" disabled aria-label="Saving page">
                       <Save className="w-4 h-4 animate-spin" />
                     </Button>
                   ) : (
-                    <Button size="icon" onClick={handleSave}>
+                    <Button size="icon" onClick={handleSave} aria-label="Save page">
                       <Save className="w-4 h-4" />
                     </Button>
                   )}

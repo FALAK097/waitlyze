@@ -1,17 +1,10 @@
-import Link from "next/link";
+import { requireCampaign, requireCampaignPage } from "@/lib/workspaces/authorize";
 import { cache } from "react";
 
 import { ClientOnly } from "@/components/client-only";
 import { ContentLayout } from "@/components/dashboard/content-layout";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import {
-	Breadcrumb,
-	BreadcrumbItem,
-	BreadcrumbLink,
-	BreadcrumbList,
-	BreadcrumbPage,
-	BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb";
+
 import { WaitlistGenerator } from "@/components/wait-lists/edit-form";
 import prisma from "@/lib/prisma";
 import { auth } from "@/lib/auth";
@@ -19,46 +12,13 @@ import { headers } from "next/headers";
 import { Laptop } from "lucide-react";
 import { notFound, redirect } from "next/navigation";
 
-const getWaitList = cache(async (id) => {
-	return await prisma.waitList.findUnique({
-		where: { id },
-		select: { name: true },
-	});
-});
-
-const getFullWaitList = cache(async (id, userId) => {
-	return await prisma.waitList.findUnique({
-		where: {
-			id,
-			userId,
-		},
-	});
-});
-
 const getUser = cache(async (id) => {
 	return await prisma.user.findUnique({
 		where: { id },
 	});
 });
 
-export async function generateMetadata(props) {
-	const params = await props.params;
-	const { id } = params;
-	const waitList = await getWaitList(id);
-
-	if (!waitList) {
-		return {
-			title: "Not Found | Waitlyze",
-			description: "The requested waitlist could not be found.",
-		};
-	}
-
-	return {
-		title: `Edit ${waitList.name}`,
-		description:
-			"Customize your waitlist's appearance, configure settings like colors and text, and preview changes in real-time to create the perfect signup form",
-	};
-}
+export const metadata = { title: "Page" };
 
 export default async function WaitListsEditPage(props) {
 	const params = await props.params;
@@ -77,7 +37,7 @@ export default async function WaitListsEditPage(props) {
 		return notFound();
 	}
 
-	const waitList = await getFullWaitList(id, user.id);
+	const { campaign: waitList } = await requireCampaignPage(id, "editCampaign");
 
 	if (!waitList) {
 		return notFound();
@@ -133,8 +93,17 @@ export default async function WaitListsEditPage(props) {
 		};
 
 		try {
-			const updatedWaitList = await prisma.waitList.update({
-				where: { id: waitListId },
+			const { user: actor, campaign, scope } = await requireCampaign(waitListId, "editCampaign");
+            if (data.logoKey && data.logoKey !== campaign.logoKey && !data.logoKey.startsWith(`${actor.id}-`)) throw new Error("Invalid image key");
+            let mutationScope = scope;
+            if (data.sendEmailsToSubscribers !== campaign.sendEmailsToSubscribers) {
+              mutationScope = (await requireCampaign(waitListId, "sendEmail")).scope;
+            } else {
+              // Do not overwrite a concurrent privileged change with an unchanged form value.
+              delete data.sendEmailsToSubscribers;
+            }
+            const updatedWaitList = await prisma.waitList.update({
+				where: { id: waitListId, ...mutationScope },
 				data,
 			});
 
@@ -152,25 +121,7 @@ export default async function WaitListsEditPage(props) {
 
 	return (
 		<ContentLayout title="WaitLists">
-			<Breadcrumb>
-				<BreadcrumbList>
-					<BreadcrumbItem>
-						<BreadcrumbLink asChild>
-							<Link href="/dashboard">Home</Link>
-						</BreadcrumbLink>
-					</BreadcrumbItem>
-					<BreadcrumbSeparator />
-					<BreadcrumbItem>
-						<BreadcrumbLink asChild>
-							<Link href="/wait-lists">WaitLists</Link>
-						</BreadcrumbLink>
-					</BreadcrumbItem>
-					<BreadcrumbSeparator />
-					<BreadcrumbPage>
-						{waitList.name.charAt(0).toUpperCase() + waitList.name.slice(1)}
-					</BreadcrumbPage>
-				</BreadcrumbList>
-			</Breadcrumb>
+
 
 			<ClientOnly>
 				<div className="mt-4 mb-4 md:hidden">

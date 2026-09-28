@@ -10,7 +10,7 @@ export function proxy(req) {
   // Protect routes starting with /dashboard and /wait-lists
   const isProtectedRoute =
     pathname.startsWith("/dashboard") ||
-    pathname.startsWith("/wait-lists");
+    pathname.startsWith("/wait-lists") || pathname.startsWith("/settings");
 
   if (
     pathname.startsWith("/forms") ||

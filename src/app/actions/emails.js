@@ -2,6 +2,7 @@
 
 import { env } from "@/lib/env.mjs";
 import prisma from "@/lib/prisma";
+import { requireCampaign } from "@/lib/workspaces/authorize";
 import { marked } from 'marked';
 import { Resend } from 'resend';
 
@@ -33,8 +34,9 @@ const DEFAULTS = {
 };
 
 export async function getOrCreateTemplates(waitListId) {
+  const { scope } = await requireCampaign(waitListId, "sendEmail");
   const records = await prisma.emailTemplate.findMany({
-    where: { waitListId },
+    where: { waitListId, waitList: scope },
   });
 
   const byType = {};
@@ -49,7 +51,7 @@ export async function getOrCreateTemplates(waitListId) {
     if (!byType[enumType]) {
       const created = await prisma.emailTemplate.create({
         data: {
-          waitListId,
+          waitList: { connect: { id: waitListId, ...scope } },
           type: enumType,
           ...DEFAULTS[key],
         },
@@ -84,12 +86,14 @@ export async function upsertEmailTemplate({ waitListId, templateType, data }) {
   if (!enumType) return { success: false, message: "Invalid template type" };
 
   try {
+    const { scope } = await requireCampaign(waitListId, "sendEmail");
     const updated = await prisma.emailTemplate.upsert({
       where: {
         waitListId_type: {
           waitListId,
           type: enumType,
         },
+        waitList: scope,
       },
       update: {
         subject: data.subject,
@@ -100,7 +104,7 @@ export async function upsertEmailTemplate({ waitListId, templateType, data }) {
         subBody: data.subBody,
       },
       create: {
-        waitListId,
+        waitList: { connect: { id: waitListId, ...scope } },
         type: enumType,
         subject: data.subject,
         previewText: data.previewText,
@@ -127,8 +131,9 @@ export async function sendTestEmail({ waitListId, templateType, to }) {
   if (!enumType) return { success: false, message: "Invalid template type" };
 
   try {
-    const waitList = await prisma.waitList.findUnique({
-      where: { id: waitListId },
+    const { scope } = await requireCampaign(waitListId, "sendEmail");
+    const waitList = await prisma.waitList.findFirst({
+      where: { id: waitListId, ...scope },
       select: { name: true },
     });
     if (!waitList) return { success: false, message: "Waitlist not found" };
@@ -139,6 +144,7 @@ export async function sendTestEmail({ waitListId, templateType, to }) {
           waitListId,
           type: enumType,
         },
+        waitList: scope,
       },
     });
     if (!tpl) return { success: false, message: "Template not found" };
