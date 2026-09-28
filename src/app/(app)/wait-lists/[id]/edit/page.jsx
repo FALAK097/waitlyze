@@ -6,6 +6,8 @@ import { ContentLayout } from "@/components/dashboard/content-layout";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
 import { WaitlistGenerator } from "@/components/wait-lists/edit-form";
+import { SnapshotPageBuilder } from "@/components/product/snapshot-page-builder";
+import { saveDraftPage } from "@/app/actions/draft-snapshot";
 import prisma from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
@@ -118,6 +120,10 @@ export default async function WaitListsEditPage(props) {
 
 		return response;
 	};
+
+	if (waitList.status === "DRAFT" && waitList.templateSnapshot) {
+		return <ContentLayout title="Page"><SnapshotPageBuilder waitList={{ id: waitList.id, name: waitList.name, publicSlug: waitList.publicSlug, templateRevision: waitList.templateRevision, templateSnapshot: waitList.templateSnapshot }} saveDraftPage={saveDraftPage} /></ContentLayout>;
+	}
 
 	return (
 		<ContentLayout title="WaitLists">

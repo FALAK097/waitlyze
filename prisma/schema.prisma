@@ -39,6 +39,8 @@ model WaitList {
   status                  CampaignStatus @default(DRAFT)
   publicSlug              String? @unique
   templateSnapshot        Json?
+  templateRevision        Int @default(1)
+  templateRevisions       WaitListRevision[]
   creationKey             String?
 
   id                      String  @id @unique @default(cuid())
@@ -104,6 +106,19 @@ model WaitList {
   @@index([workspaceId, id])
   @@index([userId, workspaceId])
   @@map("wait_lists")
+}
+
+model WaitListRevision {
+  id           String   @id @default(cuid())
+  waitListId   String
+  revision     Int
+  snapshot     Json
+  createdAt    DateTime @default(now())
+  waitList     WaitList @relation(fields: [waitListId], references: [id], onDelete: Cascade)
+
+  @@unique([waitListId, revision])
+  @@index([waitListId, createdAt])
+  @@map("wait_list_revisions")
 }
 
 model SignUp {
