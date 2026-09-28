@@ -6,6 +6,13 @@ import { validateRequest } from "@/utils/server/validations/sign-up";
 import { DuplicateSignupError, InvalidCampaignError } from "@/lib/campaigns/signups.mjs";
 import { NextResponse } from "next/server";
 
+const legacySignupResponse = (signUp) => {
+  const legacy = { ...signUp };
+  delete legacy.emailNormalized;
+  delete legacy.verifiedAt;
+  return legacy;
+};
+
 export const GET = async (req) => {
   const signUpId = req.nextUrl.searchParams.get("signUpId");
   if (!signUpId) {
@@ -21,7 +28,7 @@ export const GET = async (req) => {
     return NextResponse.json({ message: "Sign up not found" }, { status: 404 });
   }
 
-  return NextResponse.json({ signUp });
+  return NextResponse.json({ signUp: legacySignupResponse(signUp) });
 };
 
 export const POST = async (req) => {
@@ -77,7 +84,7 @@ export const POST = async (req) => {
     }
 
     const signUp = await createSignUp(data, body?.referralId);
-    return NextResponse.json({ message: "Signed up successfully", signUp });
+    return NextResponse.json({ message: "Signed up successfully", signUp: legacySignupResponse(signUp) });
   } catch (error) {
     if (error instanceof DuplicateSignupError) {
       return NextResponse.json({ message: error.message }, { status: 403 });
