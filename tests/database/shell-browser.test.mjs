@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import { once } from "node:events";
+import { readFile } from "node:fs/promises";
 import { chromium } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 import { PrismaClient } from "../../src/generated/prisma/client.ts";
@@ -84,6 +85,51 @@ test("authenticated two-destination shell uses real workspace data", async (t) =
     await page.setViewportSize({ width: 1280, height: 900 });
     await page.goto(`${base}/wait-lists`);
     await page.screenshot({ path: "/tmp/waitlyze-shell-waitlists.png", fullPage: true });
+  });
+  await t.test("subscribers filters, profiles, exports, and keyboard flow work across widths", async () => {
+    const joinedAt = new Date("2026-09-28T08:00:00.000Z");
+    await db.signUp.createMany({ data: [
+      { waitListId: waitlist.id, uniqueUserId: randomUUID(), email: "verified-subscriber@example.invalid", createdAt: joinedAt, verifiedAt: joinedAt, city: "Pune", country: "IN", device: "Desktop", ipAddress: "192.0.2.8" },
+      { waitListId: waitlist.id, uniqueUserId: randomUUID(), email: "pending-subscriber@example.invalid", createdAt: new Date(joinedAt.getTime() + 1000), city: "Mumbai", country: "IN", device: "Mobile", ipAddress: "192.0.2.9" },
+    ] });
+    await page.goto(`${base}/wait-lists/${waitlist.id}/subscribers`);
+    await page.getByRole("heading", { name: "Subscribers", exact: true }).waitFor();
+    await page.getByText(/of 2$/).waitFor();
+    await page.getByRole("button", { name: "Verified", exact: true }).click();
+    await page.getByRole("button", { name: "verified-subscriber@example.invalid" }).waitFor();
+    assert.equal(await page.locator("tbody tr").count(), 1);
+    await page.getByRole("button", { name: "Needs confirmation", exact: true }).click();
+    await page.getByRole("button", { name: "pending-subscriber@example.invalid" }).waitFor();
+    assert.equal(await page.locator("tbody tr").count(), 1);
+    await page.getByRole("button", { name: "All subscribers", exact: true }).click();
+    await page.getByLabel("Search subscribers by email").fill("verified-subscriber");
+    await page.getByRole("button", { name: "verified-subscriber@example.invalid" }).waitFor();
+    assert.equal(await page.locator("tbody tr").count(), 1);
+    const profileTrigger = page.getByRole("button", { name: "verified-subscriber@example.invalid" });
+    await profileTrigger.focus();
+    await page.keyboard.press("Enter");
+    const profile = page.getByRole("dialog", { name: "Subscriber profile" });
+    await profile.waitFor();
+    await profile.getByText("Pune, IN", { exact: true }).waitFor();
+    await page.keyboard.press("Escape");
+    await profile.waitFor({ state: "hidden" });
+    assert.equal(await profileTrigger.evaluate((element) => element === document.activeElement), true);
+    await page.getByLabel("Search subscribers by email").fill("");
+    await page.getByText(/of 2$/).waitFor();
+    const downloadPromise = page.waitForEvent("download");
+    await page.getByRole("button", { name: "Export CSV" }).click();
+    const download = await downloadPromise;
+    assert.equal(download.suggestedFilename(), "First launch-subscribers.csv");
+    const csv = await readFile(await download.path(), "utf8");
+    assert.match(csv, /verified-subscriber@example\.invalid/);
+    assert.match(csv, /pending-subscriber@example\.invalid/);
+    assert.doesNotMatch(csv, /ipAddress|uniqueUserId/);
+    await page.setViewportSize({ width: 320, height: 812 });
+    assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
+    assert.deepEqual((await new AxeBuilder({ page }).include(".product-shell").analyze()).violations, []);
+    await page.screenshot({ path: "/tmp/waitlyze-subscribers-mobile.png", fullPage: true });
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await page.screenshot({ path: "/tmp/waitlyze-subscribers-desktop.png", fullPage: true });
   });
   await t.test("workspace selection persists and rejects inaccessible context", async () => {
     const other = await db.workspace.create({ data: { name: "Second workspace", members: { create: { userId, role: "ADMIN" } } } });
