@@ -313,7 +313,7 @@ function markdownToHtml(markdown) {
 
 async function renderTemplate({ waitListId, enumType, varsOverride = {} }) {
   const waitList = await prisma.waitList.findUnique({
-    where: { id: waitListId },
+    where: { id: waitListId, status: "PUBLISHED" },
     select: { id: true, name: true, sendEmailsToSubscribers: true },
   });
   if (!waitList) return { error: "Waitlist not found" };
@@ -476,11 +476,13 @@ export async function sendSignupEmail({ waitListId, to }) {
   }
 
   const signUp = await prisma.signUp.findFirst({
-    where: { waitListId, email: to },
+    where: { waitListId, email: to, waitList: { status: "PUBLISHED" } },
     select: { rank: true, id: true, signUpEmailSent: true },
   });
 
-  const totalSignUps = await prisma.signUp.count({ where: { waitListId } });
+  if (!signUp) return { success: false, message: "Signup not found" };
+
+  const totalSignUps = await prisma.signUp.count({ where: { waitListId, waitList: { status: "PUBLISHED" } } });
 
   const { waitList, subject, htmlBody, error } = await renderTemplate({
     waitListId,

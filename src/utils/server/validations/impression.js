@@ -23,6 +23,7 @@ const checkIfRequestIsValid = async (body) => {
 	const isValidWaitList = await prisma.waitList.findUnique({
 		where: {
 			id: body.waitListId,
+			status: "PUBLISHED",
 		},
 	});
 	if (!isValidWaitList) {

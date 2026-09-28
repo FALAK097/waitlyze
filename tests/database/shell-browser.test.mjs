@@ -76,7 +76,8 @@ test("authenticated two-destination shell uses real workspace data", async (t) =
       const waitlistsLink = page.getByRole("navigation", { name: "Main navigation" }).getByRole("link", { name: "Waitlists", exact: true });
       await waitlistsLink.focus(); await page.keyboard.press("Enter");
       await page.waitForURL(`${base}/wait-lists`);
-      assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
+      await page.getByRole("heading", { name: "Waitlists", exact: true }).waitFor();
+      assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), JSON.stringify(await page.evaluate(() => [...document.querySelectorAll("body *")].filter((el) => el.getBoundingClientRect().right > innerWidth).slice(0, 8).map((el) => ({ tag: el.tagName, cls: el.className, width: el.getBoundingClientRect().width })))));
     }
     await page.goto(`${base}/settings`);
     await page.screenshot({ path: "/tmp/waitlyze-shell-settings-mobile.png", fullPage: true });
@@ -123,18 +124,46 @@ test("authenticated two-destination shell uses real workspace data", async (t) =
   await t.test("creation assigns the selected personal workspace and navigates immediately", async () => {
     await context.addCookies([{ name: "waitlyze-workspace", value: personal.id, domain: "127.0.0.1", path: "/", httpOnly: true, sameSite: "Lax" }]);
     await page.goto(`${base}/wait-lists/new`);
-    await page.getByLabel("Waitlist Name", { exact: true }).fill("Created fixture");
-    await page.getByRole("button", { name: /Create.*Waitlist/i }).click();
+    await page.getByRole("radio", { name: /Mobile app/ }).check();
+    await page.setViewportSize({ width: 320, height: 812 });
+    assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
+    assert.deepEqual((await new AxeBuilder({ page }).include(".product-shell").analyze()).violations, []);
+    await page.screenshot({ path: "/tmp/waitlyze-template-mobile.png", fullPage: true });
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await page.screenshot({ path: "/tmp/waitlyze-template-desktop.png", fullPage: true });
+    await page.getByRole("button", { name: "Continue with Mobile app" }).click();
+    await page.getByLabel("Waitlist name", { exact: true }).fill("Created fixture");
+    await page.getByLabel("Page address", { exact: true }).fill(`fixture-${randomUUID()}`);
+    await page.reload();
+    await page.getByRole("button", { name: "Continue with Mobile app" }).click();
+    assert.equal(await page.getByLabel("Waitlist name", { exact: true }).inputValue(), "Created fixture");
+    await page.getByRole("button", { name: "Review draft" }).click();
+    await page.getByRole("button", { name: "Back", exact: true }).click();
+    assert.equal(await page.getByLabel("Waitlist name", { exact: true }).inputValue(), "Created fixture");
+    await page.getByRole("button", { name: "Review draft" }).click();
+    await page.getByRole("button", { name: "Create draft", exact: true }).click();
     await page.waitForURL(/\/wait-lists\/[^/]+\/edit$/);
     const created = await db.waitList.findFirst({ where: { userId, name: "Created fixture" } });
     assert.ok(created);
     assert.equal(created.workspaceId, personal.id);
+    assert.equal(created.status, "DRAFT");
+    assert.equal(created.templateSnapshot.templateId, "mobile");
+    const publicResponse = await fetch(`${base}/forms/${created.id}`);
+    assert.equal(publicResponse.status, 404);
+    assert.equal((await publicResponse.text()).includes("Created fixture"), false);
+    for (const route of ["sign_up", "impressions"]) {
+      const response = await fetch(`${base}/api/v1/${route}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ waitListId: created.id, email: "visitor@example.invalid", hypeSession: randomUUID() }) });
+      assert.equal(response.status, 400);
+    }
+    assert.equal(await db.signUp.count({ where: { waitListId: created.id } }), 0);
+    assert.equal(await db.impression.count({ where: { waitListId: created.id } }), 0);
   });
   await t.test("deletion needs typed confirmation and returns to the list", async () => {
     await page.goto(`${base}/wait-lists/${waitlist.id}/settings`);
     await page.getByRole("button", { name: "Delete waitlist", exact: true }).click();
     assert.equal(await page.getByRole("button", { name: "Permanently delete" }).isEnabled(), false);
     await page.getByRole("button", { name: "Cancel", exact: true }).click();
+    await page.getByRole("dialog").waitFor({ state: "hidden" });
     assert.ok(await db.waitList.findUnique({ where: { id: waitlist.id } }));
     await page.getByRole("button", { name: "Delete waitlist", exact: true }).click();
     await page.getByLabel('Type “First launch” to confirm').fill("First launch");

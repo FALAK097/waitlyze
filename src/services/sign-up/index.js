@@ -4,6 +4,7 @@ export const createSignUp = async (signupData, referralId) => {
 	const waitList = await prisma.waitList.findUnique({
 		where: {
 			id: signupData.waitListId,
+			status: "PUBLISHED",
 		},
 	});
 	if (!waitList) {

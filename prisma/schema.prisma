@@ -29,7 +29,18 @@ model User {
   @@map("users")
 }
 
+enum CampaignStatus {
+  DRAFT
+  PUBLISHED
+  PAUSED
+}
+
 model WaitList {
+  status                  CampaignStatus @default(DRAFT)
+  publicSlug              String? @unique
+  templateSnapshot        Json?
+  creationKey             String?
+
   id                      String  @id @unique @default(cuid())
   name                    String?
   description             String?
@@ -88,6 +99,8 @@ model WaitList {
   apiKeys              ApiKey[]
   emailTemplateRecords EmailTemplate[]
 
+  @@unique([workspaceId, creationKey])
+  @@index([workspaceId, status])
   @@index([workspaceId, id])
   @@index([userId, workspaceId])
   @@map("wait_lists")

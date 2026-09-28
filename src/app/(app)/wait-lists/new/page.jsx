@@ -1,96 +1,33 @@
-import Link from "next/link";
 import { currentWorkspace } from "@/lib/workspaces/current";
-import { createWorkspaceService } from "@/lib/workspaces/service.mjs";
-import { Suspense } from "react";
-
-import { ContentLayout } from "@/components/dashboard/content-layout";
-import {
-	Breadcrumb,
-	BreadcrumbItem,
-	BreadcrumbLink,
-	BreadcrumbList,
-	BreadcrumbPage,
-	BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb";
-import { NewWaitListForm } from "@/components/wait-lists/new-form";
+import { createWorkspaceService, AccessError } from "@/lib/workspaces/service.mjs";
+import { createDraft, DraftCreationError } from "@/lib/campaigns/create-draft.mjs";
+import { listTemplates } from "@/lib/templates/catalog.mjs";
+import { CreationWizard } from "@/components/product/creation-wizard";
 import prisma from "@/lib/prisma";
-import { waitFor } from "@/lib/utils";
-import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
-import { notFound, redirect } from "next/navigation";
+import { ZodError } from "zod";
 
-export const metadata = {
-	title: "Create New WaitList",
-	description:
-		"Create a beautiful, customizable waitlist page to collect signups and build anticipation for your product launch. Configure colors, text, and settings to match your brand.",
-};
+export const metadata = { title: "New waitlist" };
 
-export default async function WaitListsPage() {
-	const session = await auth.api.getSession({
-		headers: await headers(),
-	});
-	if (!session) {
-		redirect("/");
-	}
-	const user = await prisma.user.findUnique({
-		where: {
-			id: session.user.id,
-		},
-	});
-
-	if (!user) {
-		return notFound();
-	}
-
-	const createNewWaitList = async (values) => {
-		"use server";
-		const response = {
-			success: false,
-			message: "",
-			waitList: null,
-		};
-
-		try {
-			const { user: actor, workspace } = await currentWorkspace();
-            await createWorkspaceService(prisma).requireAccess(actor.id, workspace.id, "editCampaign");
-            if (typeof values.name !== "string" || !values.name.trim() || values.name.length > 120) throw new Error("Invalid name");
-            if (values.logoKey && !values.logoKey.startsWith(`${actor.id}-`)) throw new Error("Invalid image key");
-            const waitList = await prisma.waitList.create({
-				data: {
-					name: values.name.trim(), description: values.description, websiteUrl: values.websiteUrl, logoUrl: values.logoUrl, logoKey: values.logoKey,
-                    workspaceId: workspace.id, userId: actor.id,
-				},
-			});
-			response.success = true;
-			response.message = "Wait list created successfully";
-			response.waitList = {
-				id: waitList.id,
-			};
-		} catch (error) {
-			console.error("Error creating wait list:", error);
-			response.message = "Error creating wait list";
-		}
-		return response;
-	};
-
-	return (
-		<ContentLayout title="New WaitList">
-			<Breadcrumb>
-				<BreadcrumbList>
-					<BreadcrumbItem>
-						<BreadcrumbLink asChild>
-							<Link href="/dashboard">Home</Link>
-						</BreadcrumbLink>
-					</BreadcrumbItem>
-					<BreadcrumbSeparator />
-					<BreadcrumbItem>
-						<BreadcrumbPage>New WaitList</BreadcrumbPage>
-					</BreadcrumbItem>
-				</BreadcrumbList>
-			</Breadcrumb>
-			<Suspense fallback={<div>Loading form...</div>}>
-				<NewWaitListForm createNewWaitList={createNewWaitList} />
-			</Suspense>
-		</ContentLayout>
-	);
+export default async function NewWaitlistPage() {
+  const { user, workspace } = await currentWorkspace();
+  await createWorkspaceService(prisma).requireAccess(user.id, workspace.id, "editCampaign");
+  const workspaceId = workspace.id;
+  async function submitDraft(_previous, formData) {
+    "use server";
+    try {
+      const { user: actor } = await currentWorkspace();
+      const draft = await createDraft(prisma, actor.id, workspaceId, {
+        name: formData.get("name"), description: formData.get("description"),
+        publicSlug: formData.get("publicSlug"), templateId: formData.get("templateId"), creationKey: formData.get("creationKey"),
+      });
+      return { id: draft.id };
+    } catch (error) {
+      if (error instanceof ZodError) return { message: "Check your waitlist details.", fields: error.flatten().fieldErrors };
+      if (error instanceof DraftCreationError) return { message: error.message, fields: error.field ? { [error.field]: [error.message] } : {} };
+      if (error instanceof AccessError) return { message: "You no longer have access to this workspace." };
+      console.error("Draft creation failed", error.code || error.name);
+      return { message: "Couldn't create your waitlist. Your details are still here. Try again." };
+    }
+  }
+  return <CreationWizard templates={listTemplates()} workspaceId={workspaceId} workspaceName={workspace.name} submitDraft={submitDraft} />;
 }
