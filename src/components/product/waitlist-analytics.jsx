@@ -93,16 +93,16 @@ export function WaitlistAnalytics({ waitListId }) {
           </div>
         </header>
         {noActivity ? <div className="waitlist-analytics-empty"><p>No activity in this period yet.</p><span>Once visitors arrive, their activity will appear here.</span></div> : mode === "chart" ? <>
-          <ChartContainer config={chartConfig} className="waitlist-analytics-chart">
-            <AreaChart data={series} margin={{ top: 8, right: 12, left: -18, bottom: 0 }} accessibilityLayer>
-              <CartesianGrid vertical={false} stroke="var(--product-border-subtle)" />
-              <XAxis dataKey="date" tickLine={false} axisLine={false} minTickGap={28} tickFormatter={(value) => formatDate(value)} />
-              <YAxis allowDecimals={false} tickLine={false} axisLine={false} width={42} />
-              <Tooltip labelFormatter={(value) => formatDate(value, { month: "long", day: "numeric", year: "numeric" })} formatter={(value, name) => [number.format(value), chartConfig[name]?.label ?? name]} />
-              <Area dataKey="visitors" name="visitors" type="monotone" stroke="var(--product-text-secondary)" fill="var(--product-bg-inset)" fillOpacity={0.8} strokeWidth={1.5} isAnimationActive={false} />
-              <Area dataKey="signups" name="signups" type="monotone" stroke="var(--product-success-text)" fill="var(--product-lime-400)" fillOpacity={0.28} strokeWidth={2} isAnimationActive={false} />
-            </AreaChart>
-          </ChartContainer>
+          <div className="waitlist-analytics-chart"><ChartContainer config={chartConfig}>
+              <AreaChart data={series} margin={{ top: 8, right: 12, left: -18, bottom: 0 }} accessibilityLayer>
+                <CartesianGrid vertical={false} stroke="var(--product-border-subtle)" />
+                <XAxis dataKey="date" tickLine={false} axisLine={false} minTickGap={28} tickFormatter={(value) => formatDate(value)} />
+                <YAxis allowDecimals={false} tickLine={false} axisLine={false} width={42} />
+                <Tooltip labelFormatter={(value) => formatDate(value, { month: "long", day: "numeric", year: "numeric" })} formatter={(value, name) => [number.format(value), chartConfig[name]?.label ?? name]} />
+                <Area dataKey="visitors" name="visitors" type="monotone" stroke="var(--product-text-secondary)" fill="var(--product-bg-inset)" fillOpacity={0.8} strokeWidth={1.5} isAnimationActive={false} />
+                <Area dataKey="signups" name="signups" type="monotone" stroke="var(--product-success-text)" fill="var(--product-lime-400)" fillOpacity={0.28} strokeWidth={2} isAnimationActive={false} />
+              </AreaChart>
+            </ChartContainer></div>
           <div className="waitlist-analytics-legend"><span><i className="waitlist-analytics-legend-visitors" />Visitors</span><span><i className="waitlist-analytics-legend-signups" />Signups</span></div>
         </> : <div className="product-table-wrap waitlist-analytics-table-wrap"><table className="product-waitlist-table"><caption className="sr-only">Daily visitors and signups from {formatDate(analytics.range.startDate)} to {formatDate(analytics.range.endDate, { month: "short", day: "numeric", year: "numeric" })}</caption><thead><tr><th scope="col">Date</th><th scope="col">Visitors</th><th scope="col">Signups</th><th scope="col">Verified</th></tr></thead><tbody>{[...series].reverse().map((day) => <tr key={day.date}><th scope="row">{formatDate(day.date, { month: "short", day: "numeric", year: "numeric" })}</th><td>{number.format(day.visitors)}</td><td>{number.format(day.signups)}</td><td>{number.format(day.verifiedSignups)}</td></tr>)}</tbody></table></div>}
       </section>
