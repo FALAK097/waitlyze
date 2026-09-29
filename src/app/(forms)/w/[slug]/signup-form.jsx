@@ -37,9 +37,9 @@ export function SignupForm({ waitListId, publicSlug, showReferrals, label, butto
       const data = await response.json();
       if (!response.ok) throw new Error(data.message || "Couldn't join the waitlist. Try again.");
 
-      const referralCode = data.signUp?.referralCode;
-      const referralUrl = showReferrals && referralCode
-        ? `${window.location.origin}/w/${encodeURIComponent(publicSlug)}?r=${encodeURIComponent(referralCode)}`
+      const signupReferralCode = data.signUp?.referralCode;
+      const referralUrl = showReferrals && signupReferralCode
+        ? `${window.location.origin}/w/${encodeURIComponent(publicSlug)}?r=${encodeURIComponent(signupReferralCode)}`
         : null;
       setResult({ position: data.signUp?.rank ?? null, referralUrl, heading: thankYou.heading, body: thankYou.body });
       setMessage("Signup received.");
