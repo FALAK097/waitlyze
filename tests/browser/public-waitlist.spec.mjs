@@ -39,6 +39,7 @@ test("draft privacy, hosted signup, legacy redirect and paused state work in bro
     await page.goto(target);
     await page.getByLabel("Email address").fill(email);
     await page.getByRole("button", { name: "Join the waitlist" }).click();
+    await expect(page.getByRole("status")).toHaveText("Signup received.");
     await expect(page.getByRole("heading", { name: /You.re on the list/ })).toBeVisible();
     return {
       position: await page.locator(".published-signup-position").innerText(),
