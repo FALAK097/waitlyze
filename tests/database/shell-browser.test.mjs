@@ -76,6 +76,32 @@ test("authenticated two-destination shell uses real workspace data", async (t) =
     assert.equal((await db.waitList.findUnique({ where: { id: waitlist.id } })).showReferrals, true);
     assert.deepEqual((await new AxeBuilder({ page }).include(".product-settings-panel").analyze()).violations, []);
   });
+  await t.test("analytics endpoint is authorized and returns aggregate-only data", async () => {
+    const response = await page.request.get(`${base}/api/wait-lists/${waitlist.id}/analytics?days=7&timeZone=America%2FLos_Angeles`);
+    assert.equal(response.status(), 200);
+    const analytics = await response.json();
+    assert.equal(analytics.range.days, 7);
+    assert.equal(analytics.range.timeZone, "America/Los_Angeles");
+    assert.match(analytics.range.startDate, /^\d{4}-\d{2}-\d{2}$/);
+    assert.match(analytics.range.endDate, /^\d{4}-\d{2}-\d{2}$/);
+    assert.equal(analytics.series.length, 7);
+    assert.equal(analytics.summary.signups, 0);
+    assert.equal(analytics.summary.visitors, 0);
+    assert.equal(response.headers()["cache-control"], "private, no-store");
+    assert.equal(Object.hasOwn(analytics, "signups"), false);
+    assert.equal(JSON.stringify(analytics).includes("email"), false);
+    const invalid = await page.request.get(`${base}/api/wait-lists/${waitlist.id}/analytics?days=8`);
+    assert.equal(invalid.status(), 400);
+    const inaccessible = await page.request.get(`${base}/api/wait-lists/not-a-waitlist/analytics?days=7`);
+    assert.equal(inaccessible.status(), 404);
+    const anonymous = await page.context().request.newContext();
+    try {
+      const unauthenticated = await anonymous.get(`${base}/api/wait-lists/${waitlist.id}/analytics?days=7`);
+      assert.equal(unauthenticated.status(), 401);
+    } finally {
+      await anonymous.dispose();
+    }
+  });
   await t.test("subscriber tabs resolve flagged referrals with an auditable note", async () => {
     const referrer = await db.signUp.create({ data: { uniqueUserId: randomUUID(), email: "referrer@example.invalid", emailNormalized: "referrer@example.invalid", waitListId: waitlist.id } });
     const invitee = await db.signUp.create({ data: { uniqueUserId: referrer.uniqueUserId, email: "invitee@example.invalid", emailNormalized: "invitee@example.invalid", waitListId: waitlist.id } });
