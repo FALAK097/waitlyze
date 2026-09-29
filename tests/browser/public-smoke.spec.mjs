@@ -40,7 +40,7 @@ test("sign-in dialog supports keyboard dismissal and restores focus", async ({ p
 
 test("public landing uses the ink/lime system with centered, responsive signup preview", async ({ page }) => {
   await page.goto("/");
-  const primaryAction = page.getByRole("button", { name: "Create your waitlist", exact: true });
+  const primaryAction = page.locator(".wl-hero-actions").getByRole("button", { name: "Create your waitlist", exact: true });
   await expect(primaryAction).toBeVisible();
   const actionTokens = await primaryAction.evaluate((element) => {
     const style = getComputedStyle(element);
