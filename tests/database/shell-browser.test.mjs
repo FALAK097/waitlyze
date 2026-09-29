@@ -105,6 +105,52 @@ test("authenticated two-destination shell uses real workspace data", async (t) =
       await anonymousContext.close();
     }
   });
+  await t.test("waitlist overview renders real analytics and an accessible table across themes and widths", async () => {
+    await db.waitList.update({ where: { id: waitlist.id }, data: { status: "PUBLISHED" } });
+    const joinedAt = new Date(Date.now() - 60_000);
+    const firstVisitor = randomUUID();
+    const secondVisitor = randomUUID();
+    const firstImpression = await db.impression.create({ data: { waitListId: waitlist.id, uniqueUserId: firstVisitor, createdAt: new Date(joinedAt.getTime() - 1_000) } });
+    const secondImpression = await db.impression.create({ data: { waitListId: waitlist.id, uniqueUserId: secondVisitor, createdAt: new Date(joinedAt.getTime() - 1_000) } });
+    await db.signUp.createMany({ data: [
+      { waitListId: waitlist.id, impressionId: firstImpression.id, uniqueUserId: firstVisitor, email: "verified-analytics@example.invalid", emailNormalized: "verified-analytics@example.invalid", createdAt: joinedAt, verifiedAt: joinedAt },
+      { waitListId: waitlist.id, impressionId: secondImpression.id, uniqueUserId: secondVisitor, email: "pending-analytics@example.invalid", emailNormalized: "pending-analytics@example.invalid", createdAt: joinedAt },
+    ] });
+    let wasDark = false;
+    try {
+      await page.goto(`${base}/wait-lists/${waitlist.id}`);
+      await page.getByRole("heading", { name: "Waitlist analytics" }).waitFor();
+      await page.locator(".waitlist-analytics-metric").first().waitFor();
+      const metrics = await page.locator(".waitlist-analytics-metric").allInnerTexts();
+      assert.match(metrics[0], /Visitors\s+2\s+Distinct browsers/);
+      assert.match(metrics[1], /Signups\s+2\s+1 verified/);
+      assert.match(metrics[2], /Conversion\s+100%/);
+      assert.match(metrics[3], /Verification\s+50%\s+1 awaiting verification/);
+      assert.deepEqual((await new AxeBuilder({ page }).include(".waitlist-analytics").analyze()).violations, []);
+      const rangeResponse = page.waitForResponse((response) => response.url().includes("/analytics?days=7") && response.status() === 200);
+      await page.getByRole("button", { name: "7 days" }).click();
+      await rangeResponse;
+      const tableButton = page.getByRole("button", { name: "Table", exact: true });
+      await tableButton.focus();
+      await page.keyboard.press("Enter");
+      assert.equal(await tableButton.getAttribute("aria-pressed"), "true");
+      assert.equal(await page.getByRole("table", { name: /Daily visitors and signups/ }).count(), 1);
+      assert.equal(await page.locator(".waitlist-analytics-table-wrap tbody tr").count(), 7);
+      assert.deepEqual((await new AxeBuilder({ page }).include(".waitlist-analytics").analyze()).violations, []);
+      wasDark = await page.evaluate(() => document.documentElement.classList.contains("dark"));
+      await page.evaluate(() => document.documentElement.classList.add("dark"));
+      assert.deepEqual((await new AxeBuilder({ page }).include(".waitlist-analytics").analyze()).violations, []);
+      await page.setViewportSize({ width: 320, height: 812 });
+      assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
+      await page.screenshot({ path: "/tmp/waitlyze-analytics-mobile.png", fullPage: true });
+    } finally {
+      await db.signUp.deleteMany({ where: { uniqueUserId: { in: [firstVisitor, secondVisitor] } } });
+      await db.impression.deleteMany({ where: { uniqueUserId: { in: [firstVisitor, secondVisitor] } } });
+      await db.waitList.update({ where: { id: waitlist.id }, data: { status: "DRAFT" } });
+      await page.evaluate((dark) => document.documentElement.classList.toggle("dark", dark), wasDark);
+      await page.setViewportSize({ width: 1280, height: 900 });
+    }
+  });
   await t.test("subscriber tabs resolve flagged referrals with an auditable note", async () => {
     const referrer = await db.signUp.create({ data: { uniqueUserId: randomUUID(), email: "referrer@example.invalid", emailNormalized: "referrer@example.invalid", waitListId: waitlist.id } });
     const invitee = await db.signUp.create({ data: { uniqueUserId: referrer.uniqueUserId, email: "invitee@example.invalid", emailNormalized: "invitee@example.invalid", waitListId: waitlist.id } });
