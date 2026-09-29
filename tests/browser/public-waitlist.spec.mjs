@@ -62,6 +62,7 @@ test("draft privacy, hosted signup, legacy redirect and paused state work in bro
   await page.getByRole("button", { name: "Copy link" }).click();
   await expect(page.getByRole("status")).toContainText(/Referral link copied|Copy isn’t available/);
 
+  await page.evaluate(() => localStorage.removeItem("hypeSession"));
   const referredEmail = `${randomUUID()}@example.invalid`;
   const referred = await join(referrer.referralLink, referredEmail);
   expect(referred.position).toContain("#3");
