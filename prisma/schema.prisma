@@ -141,6 +141,7 @@ model WaitListPublicationRevision {
 model SignUp {
   id              String      @id @default(cuid())
   uniqueUserId    String
+  referralCode    String      @unique @default(dbgenerated("gen_random_uuid()::text"))
   email           String
   emailNormalized String?
   device          String?
@@ -165,6 +166,7 @@ model SignUp {
   verification    SignUpVerification?
 
   @@unique([waitListId, emailNormalized])
+  @@index([waitListId, uniqueUserId])
   @@index([waitListId, createdAt, id])
   @@map("sign_ups")
 }

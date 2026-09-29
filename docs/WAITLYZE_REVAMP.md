@@ -63,7 +63,7 @@ Canonical authenticated routes remain `/wait-lists`, `/wait-lists/new`, `/wait-l
 
 Use native links for destinations, current-page semantics and stable URLs so reload, Back, Cmd/Ctrl-click and shared links work. Reserve actual ARIA tabs for local panels with their expected arrow-key behavior. At 320px, use a compact navigation strip and horizontally scrollable labeled waitlist destinations; keep the selected destination visible, avoid nested drawers, and leave the primary action reachable. Subscriber profiles use a focus-managed panel and full-screen mobile presentation.
 
-Reference evidence: the supplied authenticated [GetWaitlist dashboard](https://getwaitlist.com/dashboard) showed a compact waitlist table and a New Waitlist action. Its waitlist detail exposes a local section menu (Signups, Widget Builder, Settings, Analytics, Email, Segments, Blast History, Automations); Signups then uses tabs for All Signups, Offboarded Signups, and Import/Export. This supports keeping work inside each waitlist and using tabs only for peer views. Waitlyze intentionally starts with fewer contextual sections and grows them only as capabilities ship. The two-destination architecture is the owner's product decision, not a claim that the competitor implements every proposed detail. Settings contents were not inspected.
+Reference evidence: the supplied authenticated [GetWaitlist dashboard](https://getwaitlist.com/dashboard) showed a compact waitlist table and a New Waitlist action. Its waitlist detail exposes a local section menu (Signups, Widget Builder, Settings, Analytics, Email, Segments, Blast History, Automations); Signups then uses tabs for All Signups, Offboarded Signups, and Import/Export. Settings groups its long form into General, Collect Info, Redirection, Email Verification, Send Email, Leaderboard, and Delete. This supports keeping work inside each waitlist and using tabs only for peer views while giving settings a section index. Waitlyze intentionally starts with fewer contextual sections and grows them only as capabilities ship. The two-destination architecture is the owner's product decision, not a claim that the competitor implements every proposed detail.
 
 ## 5. Visual and interaction specification
 
@@ -177,21 +177,22 @@ Branch naming: `codex/revamp-NN-short-name`. Each child PR targets its preceding
 | 3 / 08 | Unified signup service, uniqueness, verification and outbox | 07 | Duplicate/concurrent/replay tests, verified token lifecycle, legacy API contracts |
 | 3 / 09 | Audience table/profile/filter/export | 08 | Server pagination, campaign/workspace boundaries, CSV injection prevention |
 | 4 / 10 | Verified referrals and position service | 09 | Eligibility, tie/concurrency rules, no whole-audience write fanout |
-| 4 / 11 | Referrals UI and isolated launch rehearsal | 10 | Accurate public position, test/live separation, anti-abuse review path |
-| 5 / 12 | Events, metric definitions, aggregates | 11 | Dedupe, timezone/denominator cases, historical-data caveats |
-| 5 / 13 | Waitlist Overview analytics with Evil Charts | 12 | Real values, tabular alternative, nonanimated keyboard use, both themes |
-| 6 / 14 | Transactional delivery and sending diagnostics | 13 | Signed callbacks, retries, suppression, failure visibility |
-| 6 / 15 | Broadcast drafts/templates/recipient preview | 14 | Explicit send, consent checks, retry/cancel, no duplicate delivery |
-| 6 / 16 | Three automation recipes and run history | 15 | Versioned runs, pause/cancel, delayed suppression and idempotency tests |
-| 7 / 17 | Scoped API/webhooks, connection/delivery settings | 16 | Secret rotation, signatures, SSRF, retry/replay and tenant tests |
-| 7 / 18 | Resend/Slack adapters; optional analytics setup | 17 | Actual connect/test/revoke flows; errors preserve config |
-| 7 / 19 | Custom domains, ownership/DNS/TLS state | 18 | Verified binding, takeover prevention, failed DNS fallback, cert lifecycle |
-| 8 / 20 | Invitations, recipient snapshots, release waves | 19 | Expiring tokens, idempotent acceptance, stop wave, audit trail |
-| 8 / 21 | Account/team/billing/privacy completeness and release hardening | 20 | Entitlements, deletion/export, production observability, restore rehearsal |
+| 4 / 11 | Referral codes, settings, and public sharing | 10 | Unique links; accurate live position; verified-only credit; legacy codes remain supported |
+| 4 / 12 | Isolated launch rehearsal and referral review | 11 | Test activity never reaches real signups, outbox, or reports; review has reason and resolution |
+| 5 / 13 | Events, metric definitions, aggregates | 12 | Dedupe, timezone/denominator cases, historical-data caveats |
+| 5 / 14 | Waitlist Overview analytics with Evil Charts | 13 | Real values, tabular alternative, nonanimated keyboard use, both themes |
+| 6 / 15 | Transactional delivery and sending diagnostics | 14 | Signed callbacks, retries, suppression, failure visibility |
+| 6 / 16 | Broadcast drafts/templates/recipient preview | 15 | Explicit send, consent checks, retry/cancel, no duplicate delivery |
+| 6 / 17 | Three automation recipes and run history | 16 | Versioned runs, pause/cancel, delayed suppression and idempotency tests |
+| 7 / 18 | Scoped API/webhooks, connection/delivery settings | 17 | Secret rotation, signatures, SSRF, retry/replay and tenant tests |
+| 7 / 19 | Resend/Slack adapters; optional analytics setup | 18 | Actual connect/test/revoke flows; errors preserve config |
+| 7 / 20 | Custom domains, ownership/DNS/TLS state | 19 | Verified binding, takeover prevention, failed DNS fallback, cert lifecycle |
+| 8 / 21 | Invitations, recipient snapshots, release waves | 20 | Expiring tokens, idempotent acceptance, stop wave, audit trail |
+| 8 / 22 | Account/team/billing/privacy completeness and release hardening | 21 | Entitlements, deletion/export, production observability, restore rehearsal |
 
-Basic account preferences, team access, and privacy handling ship in the phases where they become necessary; PR 21 closes remaining coverage. Billing limits are enforced server-side from campaign creation onward. Do not display invented pricing or a working upgrade path before the billing integration exists.
+Basic account preferences, team access, and privacy handling ship in the phases where they become necessary; PR 22 closes remaining coverage. Billing limits are enforced server-side from campaign creation onward. Do not display invented pricing or a working upgrade path before the billing integration exists.
 
-V1 beta release gate is PR 15 plus essential workspace/account/privacy/entitlement coverage. V1.5 adds recipes, connections and domains; V2 adds release waves. Postpone points/rewards, arbitrary branching, cohorts, AI drafting and extensive template catalogs until the core gates pass and users ask for them.
+The referral sharing UI and isolated rehearsal are separate vertical slices: rehearsal gets dedicated storage and explicit test/live boundaries instead of tagging production signup rows. V1 beta release gate is PR 16 plus essential workspace/account/privacy/entitlement coverage. V1.5 adds recipes, connections and domains; V2 adds release waves. Postpone points/rewards, arbitrary branching, cohorts, AI drafting and extensive template catalogs until the core gates pass and users ask for them.
 
 ## 12. Validation and rollout gates
 
@@ -226,7 +227,7 @@ GetWaitlist homepage yielded no readable content in this pass; its blueprint cla
 | --- | --- | --- |
 | Source blueprint | Read | All 53 sections considered |
 | Repository recon | Complete for stated scope | Clean main, schema/routes/tooling/service inspection |
-| Roadmap | Written | This file; no app behavior changed |
+| Roadmap | Maintained | This file; phase 11 is split so test activity gets explicit storage and isolation |
 | Phase 1 tooling | Ready PR #37; CI passed | Quality run 36329189223 on 367d9bb, rebased on main ef2f54a |
 | Phase 1 foundation | Ready PR #38; CI passed | Quality run 36329187786 on bef3c407; 17 browser tests and scoped theme verified |
 | Workspace expansion (03) | Ready PR #40; CI passed | Quality run 36330542670 on 2eccf2e; 19 real database/HTTP tests; no production backfill |
@@ -236,8 +237,11 @@ GetWaitlist homepage yielded no readable content in this pass; its blueprint cla
 | Hosted rendering and immutable publishing (07) | Ready PR #44; Quality passed | #44 is based on #43. Hosted pages use frozen publication snapshots; pause and rollback preserve prior versions. Vercel preview failed during integration provisioning; no deployment was produced. The current failure detail is generic, so Neon capacity is not confirmed for this deployment. |
 | Unified signup, verification and outbox (08) | Ready PR #45; Quality run 36412846351 passed | `docs/REVAMP_SIGNUPS.md`. Fresh disposable PostgreSQL: all seven migrations applied; three integration tests pass, including concurrent case variants, token replay/expiry, public response compatibility and verification endpoint behavior. GitHub passed lint, unit, build, browser and database suites. Local production fixture build stalled without emitting a result. Vercel preview failed during deployment provisioning; cause not confirmed. Production email dispatch remains Phase 14. |
 | Audience table/profile/filter/export (09) | Ready PR #46; Quality run 36418446355 passed | `docs/REVAMP_AUDIENCE.md`. Server-paginated 25-row cursor API scoped to the active workspace and waitlist; email/status filters, profile, referral counts, bounded CSV streaming and formula neutralization. GitHub passed lint, production build, browser, and database HTTP suites; authenticated browser coverage checks filters, profile keyboard flow, CSV download, 320 px layout, and axe. Local visual rendering remains unavailable because Turbopack rejects this worktree's external dependency symlink. Vercel preview failed during provisioning; cause is unconfirmed. |
-| GitHub PR publication | Ready stack through 09 | #36 → #37 → #38 → #40 → #41 → #42 → #43 → #44 → #45 → #46. Phase 09 is based on #45; all ancestors include main ef2f54a. No merges performed. |
+| Public Dodo brand (parallel) | Ready PR #47; Quality run 36527199955 passed | Marketing page uses the cool ink/lime direction. Playwright covers conversion controls, responsive layouts and normal-text contrast. Branch is based on #37; Vercel resource checks are separate. |
+| Verified referrals and position service (10) | Ready PR #48; Quality run 36529824549 passed | Verified-only referral scoring, deterministic public positions, eligible profile counts, additive indexes, and no per-signup rank rewrites. Database tests passed on disposable PostgreSQL. Vercel preview could not provision a Neon branch because the plan's branch limit was reached; owner asked to leave that resource limit alone. No deployment was produced. |
+| Referral codes and public sharing (11) | Ready PR #49; Quality run 36534462473 passed | Stable per-signup referral codes, waitlist-scoped opt-in, post-signup share link and current position. Existing API GET response and legacy referral identifiers remain compatible. Browser and database coverage passed in GitHub CI. |
+| GitHub PR publication | Ready stack through 11 | #36 → #37 → #38 → #40 → #41 → #42 → #43 → #44 → #45 → #46 → #48 → #49. Parallel public brand #47 is based on #37. Product stack ancestors include latest main ef2f54a. No merges performed. |
 | Runtime visual/a11y baseline | Verified for shell scope | Desktop waitlist table and mobile Settings inspected; Settings axe passes. Legacy builder/chart/audience full audits remain pending. |
 | Production migrations/deployment | Pending | No production backfill; Neon preview branch limit left untouched at owner request |
 
-Next: complete an independent visual review of Phase 09, then continue the stack in order after ancestors merge. Keep PR diffs focused and dependencies explicit; merge bottom-up and retarget/rebase children when parents land. Do not replace real data with decorative dashboard metrics. The overall revamp, public visual adoption, email delivery, automations, integrations and analytics redesign remain unfinished.
+Next: build the isolated launch rehearsal and referral review path as Phase 12 on PR #49. The stack still awaits human bottom-up merges; keep bases current with main and rebase/retarget children when parents land. Do not replace real data with decorative dashboard metrics. The overall revamp, production delivery, automations, integrations and analytics redesign remain unfinished.

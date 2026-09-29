@@ -73,6 +73,9 @@ export async function createCampaignSignup(db, input, referralId, { now = new Da
 
       if (published[0].showReferrals && referralId && referralId !== input.uniqueUserId) {
         const referredBy = await tx.signUp.findFirst({
+          where: { referralCode: referralId, waitListId: input.waitListId },
+          select: { id: true },
+        }) ?? await tx.signUp.findFirst({
           where: { uniqueUserId: referralId, waitListId: input.waitListId },
           select: { id: true },
         });

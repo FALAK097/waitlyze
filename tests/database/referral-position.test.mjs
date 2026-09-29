@@ -43,7 +43,7 @@ test("only verified referrals affect position, with no stored-rank fanout", asyn
     waitList.id,
     "referred@example.invalid",
     randomUUID(),
-    later.uniqueUserId,
+    later.referralCode,
   );
   assert.ok(await db.referral.findUnique({ where: { signUpId: referred.id } }));
   assert.equal((await getEligibleReferralCounts(db, waitList.id, [later.id])).get(later.id) ?? 0, 0);

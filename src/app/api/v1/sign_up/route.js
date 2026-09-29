@@ -7,10 +7,11 @@ import { DuplicateSignupError, InvalidCampaignError } from "@/lib/campaigns/sign
 import { getCampaignPosition } from "@/lib/campaigns/referral-position.mjs";
 import { NextResponse } from "next/server";
 
-const legacySignupResponse = (signUp) => {
+const legacySignupResponse = (signUp, { includeReferralCode = false } = {}) => {
   const legacy = { ...signUp };
   delete legacy.emailNormalized;
   delete legacy.verifiedAt;
+  if (!includeReferralCode) delete legacy.referralCode;
   return legacy;
 };
 
@@ -86,7 +87,7 @@ export const POST = async (req) => {
     }
 
     const signUp = await createSignUp(data, body?.referralId);
-    return NextResponse.json({ message: "Signed up successfully", signUp: legacySignupResponse(signUp) });
+    return NextResponse.json({ message: "Signed up successfully", signUp: legacySignupResponse(signUp, { includeReferralCode: true }) });
   } catch (error) {
     if (error instanceof DuplicateSignupError) {
       return NextResponse.json({ message: error.message }, { status: 403 });

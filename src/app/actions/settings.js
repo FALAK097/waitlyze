@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 import { createWorkspaceService } from "@/lib/workspaces/service.mjs";
+import { requireCampaign } from "@/lib/workspaces/authorize";
 
 export async function saveProfile(previous, form) {
   const session = await auth.api.getSession({ headers: await headers() });
@@ -16,6 +17,22 @@ export async function saveProfile(previous, form) {
     revalidatePath("/settings");
     return { success: "Profile saved." };
   } catch { return { error: "Could not save your profile. Try again." }; }
+}
+
+export async function setWaitlistReferrals(waitListId, enabled) {
+  if (typeof enabled !== "boolean") return { error: "Choose whether referral sharing is enabled." };
+  try {
+    const { campaign, scope } = await requireCampaign(waitListId, "editCampaign");
+    await prisma.waitList.update({
+      where: { id: waitListId, ...scope },
+      data: { showReferrals: enabled },
+    });
+    revalidatePath(`/wait-lists/${waitListId}/settings`);
+    if (campaign.publicSlug) revalidatePath(`/w/${campaign.publicSlug}`);
+    return { success: true };
+  } catch {
+    return { error: "Could not update referral settings. Try again." };
+  }
 }
 
 export async function selectWorkspace(form) {
