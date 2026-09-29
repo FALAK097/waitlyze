@@ -5,6 +5,7 @@ import { getGeoInfo, getIpAddress, getTimeZone } from "@/utils/server/geo";
 import prisma from "@/lib/prisma";
 import { createSignUp } from "@/services/sign-up";
 import { DuplicateSignupError, InvalidCampaignError } from "@/lib/campaigns/signups.mjs";
+import { getCampaignPosition } from "@/lib/campaigns/referral-position.mjs";
 
 export async function POST(request) {
   let body;
@@ -101,12 +102,15 @@ export async function POST(request) {
     if (error instanceof DuplicateSignupError) {
       const existing = await prisma.signUp.findUnique({
         where: { waitListId_emailNormalized: { waitListId: body.waitlistId, emailNormalized: body.email.trim().toLowerCase() } },
-        select: { rank: true, createdAt: true },
+        select: { id: true, createdAt: true },
       });
+      const rank = existing
+        ? await getCampaignPosition(prisma, body.waitlistId, existing.id)
+        : undefined;
       return NextResponse.json({
         success: false,
         error: "Email already registered for this waitlist",
-        data: { rank: existing?.rank, signupDate: existing?.createdAt },
+        data: { rank, signupDate: existing?.createdAt },
       }, { status: 409 });
     }
     if (error instanceof InvalidCampaignError) {

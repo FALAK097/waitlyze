@@ -11,8 +11,8 @@ Phase 08 moves both public signup routes through one transactional service. It p
 - Verification tokens are 256-bit random values. Only a SHA-256 digest is stored in the verification table; verification expires after 24 hours and atomically consumes the token once.
 - Verification request events are durable and carry the token for the future delivery worker. Do not log or expose outbox payloads. This phase does not send email or claim verification succeeded; delivery and diagnostics ship in Phase 14.
 
-## Deliberate follow-up
+## Referral position follow-up
 
-The current referral-rank algorithm still reads the full campaign and rewrites ranks. It is retained to avoid changing existing rank behavior in the signup transaction. Phase 10 replaces it with a bounded position service and defines verified-referral eligibility. Phase 09 defines how unverified records appear in audience views and exports. Do not treat queued verification as proof that a subscriber received an email.
+Phase 10 replaces the old campaign-wide rank rewrite with a verified-referral position query. The accepted signup and outbox transaction remains unchanged; rank is calculated after commit and when legacy endpoints read it. The exact eligibility, tie-break order, indexes, compatibility behavior, and test coverage are recorded in [`REVAMP_REFERRALS.md`](./REVAMP_REFERRALS.md). Phase 09 keeps unverified records visible with an explicit status. Do not treat queued verification as proof that a subscriber received an email.
 
 Validation covers an additive migration on empty PostgreSQL, normalized uniqueness, concurrent case variants, same-request replay, duplicate rejection, verification expiry/replay, and atomic outbox creation. An HTTP regression test checks the existing public response shape, duplicate status, hidden internal columns, and token consumption. The production Resend workflow is not exercised here.

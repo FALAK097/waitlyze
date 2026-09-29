@@ -4,6 +4,7 @@ import { getDeviceInfo } from "@/utils/server/device";
 import { getGeoInfo, getIpAddress, getTimeZone } from "@/utils/server/geo";
 import { validateRequest } from "@/utils/server/validations/sign-up";
 import { DuplicateSignupError, InvalidCampaignError } from "@/lib/campaigns/signups.mjs";
+import { getCampaignPosition } from "@/lib/campaigns/referral-position.mjs";
 import { NextResponse } from "next/server";
 
 const legacySignupResponse = (signUp) => {
@@ -28,7 +29,8 @@ export const GET = async (req) => {
     return NextResponse.json({ message: "Sign up not found" }, { status: 404 });
   }
 
-  return NextResponse.json({ signUp: legacySignupResponse(signUp) });
+  const rank = await getCampaignPosition(prisma, signUp.waitListId, signUp.id);
+  return NextResponse.json({ signUp: legacySignupResponse({ ...signUp, rank }) });
 };
 
 export const POST = async (req) => {
