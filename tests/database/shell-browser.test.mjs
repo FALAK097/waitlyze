@@ -89,7 +89,9 @@ test("authenticated two-destination shell uses real workspace data", async (t) =
     assert.equal(analytics.summary.visitors, 0);
     assert.equal(response.headers()["cache-control"], "private, no-store");
     assert.equal(Object.hasOwn(analytics, "signups"), false);
-    assert.equal(JSON.stringify(analytics).includes("email"), false);
+    assert.doesNotMatch(JSON.stringify(analytics), /[^\s"@]+@[^\s"@]+\.[^\s"@]+/);
+    assert.equal(Object.hasOwn(analytics.summary, "email"), false);
+    assert.equal(Object.hasOwn(analytics.series[0], "email"), false);
     const invalid = await page.request.get(`${base}/api/wait-lists/${waitlist.id}/analytics?days=8`);
     assert.equal(invalid.status(), 400);
     const inaccessible = await page.request.get(`${base}/api/wait-lists/not-a-waitlist/analytics?days=7`);
