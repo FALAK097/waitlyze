@@ -6,7 +6,7 @@ The Subscribers tab is a waitlist-scoped workspace for finding and exporting sig
 
 - Search email addresses and filter by all, verified, or needs confirmation.
 - Fetch 25 records at a time using a stable `createdAt DESC, id DESC` cursor. The cursor must belong to the same active workspace, waitlist, and filter result.
-- Open a compact profile with email, verification state, signup time, coarse location, device, and referral count. Internal identifiers and IP addresses are never returned.
+- Open a compact profile with email, verification state, signup time, coarse location, device, and eligible referral count. Referrals count only after both signups verify and only when the waitlist's referral system is enabled. Internal identifiers and IP addresses are never returned.
 - Export the full filtered set as a streamed CSV. Every field is quoted, and formula-like input after whitespace/control characters is prefixed with an apostrophe.
 - The existing `/api/signups` endpoint keeps its legacy response contract. New UI reads use `/api/wait-lists/[id]/subscribers`; CSV export uses POST on that route to keep download generation explicit.
 

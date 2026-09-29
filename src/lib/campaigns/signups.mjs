@@ -1,4 +1,5 @@
 import { createHash, randomBytes } from "node:crypto";
+import { getCampaignPosition } from "./referral-position.mjs";
 
 const normalizeEmail = (email) => email.trim().toLowerCase();
 const tokenDigest = (token) => createHash("sha256").update(token).digest("hex");
@@ -30,12 +31,13 @@ export async function createCampaignSignup(db, input, referralId, { now = new Da
     throw new TypeError("A valid email address is required.");
   }
 
+  let signUp;
   try {
-    return await db.$transaction(async (tx) => {
+    signUp = await db.$transaction(async (tx) => {
       // Hold a share lock until the signup commits so a concurrent pause cannot
       // slip between the publication check and the subscriber insert.
       const published = await tx.$queryRaw`
-        SELECT "id" FROM "wait_lists"
+        SELECT "id", "showReferrals" FROM "wait_lists"
         WHERE "id" = ${input.waitListId} AND "status"::text = 'PUBLISHED'
         FOR SHARE
       `;
@@ -69,7 +71,7 @@ export async function createCampaignSignup(db, input, referralId, { now = new Da
         },
       });
 
-      if (referralId && referralId !== input.uniqueUserId) {
+      if (published[0].showReferrals && referralId && referralId !== input.uniqueUserId) {
         const referredBy = await tx.signUp.findFirst({
           where: { uniqueUserId: referralId, waitListId: input.waitListId },
           select: { id: true },
@@ -77,25 +79,6 @@ export async function createCampaignSignup(db, input, referralId, { now = new Da
         if (referredBy) {
           await tx.referral.create({ data: { signUpId: signUp.id, referredById: referredBy.id } });
         }
-      }
-
-      // Keep the established referral rank response stable. A later ranking
-      // slice replaces this legacy full-campaign recalculation with a bounded
-      // position service.
-      const allSignUps = await tx.signUp.findMany({
-        where: { waitListId: input.waitListId },
-        include: { referrals: true, referredBy: true },
-        orderBy: [{ rank: "asc" }],
-      });
-      const sorted = allSignUps.sort((left, right) => {
-        const referrals = (right.referrals.length + right.referredBy.length) - (left.referrals.length + left.referredBy.length);
-        if (referrals) return referrals;
-        const created = left.createdAt.getTime() - right.createdAt.getTime();
-        if (created) return created;
-        return (left.rank ?? Number.POSITIVE_INFINITY) - (right.rank ?? Number.POSITIVE_INFINITY);
-      });
-      for (const [index, row] of sorted.entries()) {
-        await tx.signUp.update({ where: { id: row.id }, data: { rank: index + 1 } });
       }
 
       const token = randomBytes(32).toString("base64url");
@@ -116,16 +99,18 @@ export async function createCampaignSignup(db, input, referralId, { now = new Da
       });
     });
   } catch (error) {
-    if (error?.code === "P2002") {
-      const committed = await db.signUp.findUnique({
-        where: { waitListId_emailNormalized: { waitListId: input.waitListId, emailNormalized } },
-        include: { referrals: true, referredBy: true },
-      });
-      if (committed?.uniqueUserId === input.uniqueUserId) return committed;
-      if (committed) throw new DuplicateSignupError();
-    }
-    throw error;
+    if (error?.code !== "P2002") throw error;
+    const committed = await db.signUp.findUnique({
+      where: { waitListId_emailNormalized: { waitListId: input.waitListId, emailNormalized } },
+      include: { referrals: true, referredBy: true },
+    });
+    if (committed?.uniqueUserId === input.uniqueUserId) signUp = committed;
+    else if (committed) throw new DuplicateSignupError();
+    else throw error;
   }
+
+  const rank = await getCampaignPosition(db, input.waitListId, signUp.id);
+  return { ...signUp, rank };
 }
 
 export async function verifyCampaignSignup(db, token, { now = new Date() } = {}) {

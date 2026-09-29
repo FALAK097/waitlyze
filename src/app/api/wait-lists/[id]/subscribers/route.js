@@ -4,6 +4,7 @@ import { auth } from "@/lib/auth";
 import { currentWorkspace } from "@/lib/workspaces/current";
 import { campaignScope } from "@/lib/workspaces/service.mjs";
 import { AUDIENCE_PAGE_SIZE, audienceWhere, parseAudienceFilters, subscriberCsvRow } from "@/lib/audience-query.mjs";
+import { getEligibleReferralCounts } from "@/lib/campaigns/referral-position.mjs";
 
 async function getAccess(request, id) {
   const session = await auth.api.getSession({ headers: request.headers });
@@ -11,9 +12,9 @@ async function getAccess(request, id) {
   const { workspace } = await currentWorkspace();
   if (!workspace) return { response: NextResponse.json({ error: "Not found" }, { status: 404 }) };
   const scope = campaignScope(session.user.id, "viewAudience", workspace.id);
-  const waitlist = await prisma.waitList.findFirst({ where: { id, ...scope }, select: { id: true } });
+  const waitlist = await prisma.waitList.findFirst({ where: { id, ...scope }, select: { id: true, showReferrals: true } });
   if (!waitlist) return { response: NextResponse.json({ error: "Not found" }, { status: 404 }) };
-  return { scope };
+  return { scope, showReferrals: waitlist.showReferrals };
 }
 
 export async function GET(request, { params }) {
@@ -34,7 +35,7 @@ export async function GET(request, { params }) {
     const [rows, total] = await Promise.all([
       prisma.signUp.findMany({
         where,
-        select: { id: true, email: true, createdAt: true, verifiedAt: true, country: true, city: true, device: true, _count: { select: { referrals: true } } },
+        select: { id: true, email: true, createdAt: true, verifiedAt: true, country: true, city: true, device: true },
         orderBy: [{ createdAt: "desc" }, { id: "desc" }],
         take: AUDIENCE_PAGE_SIZE + 1,
         ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
@@ -42,7 +43,11 @@ export async function GET(request, { params }) {
       prisma.signUp.count({ where }),
     ]);
     const hasMore = rows.length > AUDIENCE_PAGE_SIZE;
-    const page = rows.slice(0, AUDIENCE_PAGE_SIZE).map(({ _count, ...row }) => ({ ...row, referralCount: _count.referrals }));
+    const pageRows = rows.slice(0, AUDIENCE_PAGE_SIZE);
+    const referralCounts = access.showReferrals
+      ? await getEligibleReferralCounts(prisma, id, pageRows.map((row) => row.id))
+      : new Map();
+    const page = pageRows.map((row) => ({ ...row, referralCount: referralCounts.get(row.id) ?? 0 }));
     return NextResponse.json({ data: page, total, nextCursor: hasMore ? page.at(-1)?.id ?? null : null });
   } catch (error) {
     console.error("Error fetching audience:", error);

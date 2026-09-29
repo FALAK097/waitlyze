@@ -3,6 +3,7 @@
 import { env } from "@/lib/env.mjs";
 import prisma from "@/lib/prisma";
 import { requireCampaign } from "@/lib/workspaces/authorize";
+import { getCampaignPosition } from "@/lib/campaigns/referral-position.mjs";
 import { marked } from 'marked';
 import { Resend } from 'resend';
 
@@ -477,18 +478,19 @@ export async function sendSignupEmail({ waitListId, to }) {
 
   const signUp = await prisma.signUp.findFirst({
     where: { waitListId, email: to, waitList: { status: "PUBLISHED" } },
-    select: { rank: true, id: true, signUpEmailSent: true },
+    select: { id: true, signUpEmailSent: true },
   });
 
   if (!signUp) return { success: false, message: "Signup not found" };
 
+  const position = await getCampaignPosition(prisma, waitListId, signUp.id);
   const totalSignUps = await prisma.signUp.count({ where: { waitListId, waitList: { status: "PUBLISHED" } } });
 
   const { waitList, subject, htmlBody, error } = await renderTemplate({
     waitListId,
     enumType: "SIGNUP",
     varsOverride: {
-      position: signUp?.rank != null ? String(signUp.rank) : String(totalSignUps),
+      position: position != null ? String(position) : String(totalSignUps),
       total_signups: String(totalSignUps),
     },
   });
