@@ -63,6 +63,18 @@ test("authenticated two-destination shell uses real workspace data", async (t) =
     await page.getByLabel("Display name").fill("Updated fixture");
     assert.deepEqual((await new AxeBuilder({ page }).include(".product-shell").analyze()).violations, []);
   });
+  await t.test("waitlist referral sharing saves and stays inside its settings", async () => {
+    await page.goto(`${base}/wait-lists/${waitlist.id}/settings`);
+    const referralControl = page.getByRole("checkbox", { name: /Enable referral sharing/ });
+    assert.equal(await referralControl.isChecked(), true);
+    await referralControl.setChecked(false);
+    await page.getByRole("status").filter({ hasText: "Referral sharing is off." }).waitFor();
+    assert.equal((await db.waitList.findUnique({ where: { id: waitlist.id } })).showReferrals, false);
+    await referralControl.setChecked(true);
+    await page.getByRole("status").filter({ hasText: "Referral sharing is on." }).waitFor();
+    assert.equal((await db.waitList.findUnique({ where: { id: waitlist.id } })).showReferrals, true);
+    assert.deepEqual((await new AxeBuilder({ page }).include(".product-settings-panel").analyze()).violations, []);
+  });
   await t.test("contextual tabs use the selected waitlist and fit a narrow viewport", async () => {
     await page.goto(`${base}/wait-lists/${waitlist.id}`);
     assert.equal(await page.getByRole("heading", { name: "First launch" }).count(), 1);

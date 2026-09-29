@@ -87,3 +87,27 @@ test("concurrent differently cased emails create only one subscriber", async (t)
   assert.equal(await db.signUp.count({ where: { waitListId: waitList.id } }), 1);
   assert.equal(await db.outboxEvent.count({ where: { payload: { path: ["waitListId"], equals: waitList.id } } }), 1);
 });
+
+test("generated referral codes disambiguate signups that share a browser identifier", async (t) => {
+  const ownerId = `fixture-${randomUUID()}`;
+  let waitList;
+  t.after(async () => {
+    if (waitList) await db.waitList.delete({ where: { id: waitList.id } });
+    await db.user.deleteMany({ where: { id: ownerId } });
+    await db.$disconnect();
+  });
+  await db.user.create({ data: { id: ownerId, email: `${ownerId}@example.invalid` } });
+  waitList = await db.waitList.create({ data: { userId: ownerId, name: "Referral code fixture", status: "PUBLISHED", showReferrals: true } });
+
+  const sharedBrowserId = randomUUID();
+  const referrer = await createCampaignSignup(db, { waitListId: waitList.id, email: "first@example.invalid", uniqueUserId: sharedBrowserId });
+  const unrelated = await createCampaignSignup(db, { waitListId: waitList.id, email: "second@example.invalid", uniqueUserId: sharedBrowserId });
+  const referred = await createCampaignSignup(db, {
+    waitListId: waitList.id,
+    email: "referred@example.invalid",
+    uniqueUserId: randomUUID(),
+  }, referrer.referralCode);
+
+  assert.notEqual(referrer.referralCode, unrelated.referralCode);
+  assert.equal((await db.referral.findUnique({ where: { signUpId: referred.id } })).referredById, referrer.id);
+});

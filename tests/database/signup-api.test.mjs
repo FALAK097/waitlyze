@@ -38,6 +38,7 @@ test("public signup and verification routes preserve the legacy response contrac
   assert.equal(first.message, "Signed up successfully");
   assert.deepEqual(Object.keys(first).sort(), ["message", "signUp"]);
   assert.equal(first.signUp.email, payload.email);
+  assert.equal(typeof first.signUp.referralCode, "string");
   assert.equal("emailNormalized" in first.signUp, false);
   assert.equal("verifiedAt" in first.signUp, false);
 
@@ -54,6 +55,7 @@ test("public signup and verification routes preserve the legacy response contrac
   const fetched = await getResponse.json();
   assert.equal("emailNormalized" in fetched.signUp, false);
   assert.equal("verifiedAt" in fetched.signUp, false);
+  assert.equal("referralCode" in fetched.signUp, false);
 
   const event = await db.outboxEvent.findFirst({ where: { payload: { path: ["signUpId"], equals: first.signUp.id } } });
   const verify = () => fetch(`${base}/api/v1/sign_up/verify`, {
