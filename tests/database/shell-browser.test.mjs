@@ -116,6 +116,7 @@ test("authenticated two-destination shell uses real workspace data", async (t) =
       { waitListId: waitlist.id, impressionId: firstImpression.id, uniqueUserId: firstVisitor, email: "verified-analytics@example.invalid", emailNormalized: "verified-analytics@example.invalid", createdAt: joinedAt, verifiedAt: joinedAt },
       { waitListId: waitlist.id, impressionId: secondImpression.id, uniqueUserId: secondVisitor, email: "pending-analytics@example.invalid", emailNormalized: "pending-analytics@example.invalid", createdAt: joinedAt },
     ] });
+    let wasDark = false;
     try {
       await page.goto(`${base}/wait-lists/${waitlist.id}`);
       await page.getByRole("heading", { name: "Waitlist analytics" }).waitFor();
@@ -136,6 +137,7 @@ test("authenticated two-destination shell uses real workspace data", async (t) =
       assert.equal(await page.getByRole("table", { name: /Daily visitors and signups/ }).count(), 1);
       assert.equal(await page.locator(".waitlist-analytics-table-wrap tbody tr").count(), 7);
       assert.deepEqual((await new AxeBuilder({ page }).include(".waitlist-analytics").analyze()).violations, []);
+      wasDark = await page.evaluate(() => document.documentElement.classList.contains("dark"));
       await page.evaluate(() => document.documentElement.classList.add("dark"));
       assert.deepEqual((await new AxeBuilder({ page }).include(".waitlist-analytics").analyze()).violations, []);
       await page.setViewportSize({ width: 320, height: 812 });
@@ -145,6 +147,8 @@ test("authenticated two-destination shell uses real workspace data", async (t) =
       await db.signUp.deleteMany({ where: { uniqueUserId: { in: [firstVisitor, secondVisitor] } } });
       await db.impression.deleteMany({ where: { uniqueUserId: { in: [firstVisitor, secondVisitor] } } });
       await db.waitList.update({ where: { id: waitlist.id }, data: { status: "DRAFT" } });
+      await page.evaluate((dark) => document.documentElement.classList.toggle("dark", dark), wasDark);
+      await page.setViewportSize({ width: 1280, height: 900 });
     }
   });
   await t.test("subscriber tabs resolve flagged referrals with an auditable note", async () => {
