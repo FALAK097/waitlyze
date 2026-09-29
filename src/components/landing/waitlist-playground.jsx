@@ -7,17 +7,17 @@ import toast from "react-hot-toast";
 
 const styles = [
   {
-    id: "terracotta",
-    name: "Terracotta",
-    buttonColor: "#AE452F",
-    buttonBorder: "#AE452F",
-    buttonTextColor: "#FFFFFF",
-    badgeColor: "#F9E9E1",
-    badgeTextColor: "#8F3B28",
+    id: "lime",
+    name: "Lime",
+    buttonColor: "#C6FE1E",
+    buttonBorder: "#BFEB3B",
+    buttonTextColor: "#00160D",
+    badgeColor: "#F3FAF6",
+    badgeTextColor: "#176B4A",
   },
   {
-    id: "olive",
-    name: "Olive",
+    id: "forest",
+    name: "Forest",
     buttonColor: "#536B46",
     buttonBorder: "#536B46",
     buttonTextColor: "#FFFFFF",
@@ -36,7 +36,7 @@ const styles = [
 ];
 
 export default function WaitlistPlayground() {
-  const [styleId, setStyleId] = useState("terracotta");
+  const [styleId, setStyleId] = useState("lime");
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const emailRef = useRef(null);
@@ -55,8 +55,8 @@ export default function WaitlistPlayground() {
     showLogo: false,
     placeholderText: "Your email address",
     inputColor: "#FFFFFF",
-    inputBorder: "#D8D3CD",
-    inputTextColor: "#292824",
+    inputBorder: "#E7E7E7",
+    inputTextColor: "#00160D",
     borderWidth: "1px",
     borderRadius: "medium",
     buttonText: "Join the waitlist",
