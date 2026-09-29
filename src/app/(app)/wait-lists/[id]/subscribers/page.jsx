@@ -14,5 +14,14 @@ export default async function SubscribersPage({ params }) {
     select: { id: true, name: true },
   });
   if (!waitlist) notFound();
-  return <div className="product-section"><AudienceTable waitlist={waitlist} /></div>;
+  const [initialReviews, canManage] = await Promise.all([
+    prisma.referral.findMany({
+      where: { signUp: { is: { waitListId: id } }, reviewStatus: { not: "CLEAR" } },
+      select: { id: true, reviewStatus: true, reviewReason: true, resolution: true, reviewedAt: true, signUp: { select: { email: true, createdAt: true } }, referredBy: { select: { email: true } } },
+      orderBy: { createdAt: "desc" },
+      take: 50,
+    }),
+    Promise.resolve(["OWNER", "ADMIN"].includes(workspace.members[0]?.role)),
+  ]);
+  return <div className="product-section"><AudienceTable waitlist={waitlist} initialReviews={initialReviews} canManage={canManage} /></div>;
 }

@@ -9,6 +9,7 @@ import { PrismaClient } from "../../src/generated/prisma/client.ts";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { workspaceTestTarget } from "../../scripts/workspace-test-target.mjs";
 import { createWorkspaceService } from "../../src/lib/workspaces/service.mjs";
+import { snapshotTemplate } from "../../src/lib/templates/catalog.mjs";
 import { startFixtureServer, signedCookie } from "../support/http-fixture.mjs";
 
 const target = workspaceTestTarget(process.env.WORKSPACE_TEST_DATABASE_URL);
@@ -75,6 +76,24 @@ test("authenticated two-destination shell uses real workspace data", async (t) =
     assert.equal((await db.waitList.findUnique({ where: { id: waitlist.id } })).showReferrals, true);
     assert.deepEqual((await new AxeBuilder({ page }).include(".product-settings-panel").analyze()).violations, []);
   });
+  await t.test("subscriber tabs resolve flagged referrals with an auditable note", async () => {
+    const referrer = await db.signUp.create({ data: { uniqueUserId: randomUUID(), email: "referrer@example.invalid", emailNormalized: "referrer@example.invalid", waitListId: waitlist.id } });
+    const invitee = await db.signUp.create({ data: { uniqueUserId: referrer.uniqueUserId, email: "invitee@example.invalid", emailNormalized: "invitee@example.invalid", waitListId: waitlist.id } });
+    const referral = await db.referral.create({ data: { signUpId: invitee.id, referredById: referrer.id, reviewStatus: "NEEDS_REVIEW", reviewReason: "same_browser" } });
+    await page.goto(`${base}/wait-lists/${waitlist.id}/subscribers`);
+    await page.getByRole("button", { name: /Referral review/ }).click();
+    await page.getByText("same browser identifier").waitFor();
+    await page.getByLabel("Decision note").fill("Confirmed this was a separate invitee.");
+    await page.getByRole("button", { name: "Approve credit" }).click();
+    await page.getByText("Approved", { exact: true }).waitFor();
+    const resolved = await db.referral.findUnique({ where: { id: referral.id } });
+    assert.equal(resolved.reviewStatus, "APPROVED");
+    assert.equal(resolved.reviewedById, userId);
+    assert.equal(resolved.resolution, "Confirmed this was a separate invitee.");
+    assert.deepEqual((await new AxeBuilder({ page }).include("[aria-labelledby=referral-review-title]").analyze()).violations, []);
+    await db.referral.delete({ where: { id: referral.id } });
+    await db.signUp.deleteMany({ where: { id: { in: [referrer.id, invitee.id] } } });
+  });
   await t.test("contextual tabs use the selected waitlist and fit a narrow viewport", async () => {
     await page.goto(`${base}/wait-lists/${waitlist.id}`);
     assert.equal(await page.getByRole("heading", { name: "First launch" }).count(), 1);
@@ -97,6 +116,17 @@ test("authenticated two-destination shell uses real workspace data", async (t) =
     await page.setViewportSize({ width: 1280, height: 900 });
     await page.goto(`${base}/wait-lists`);
     await page.screenshot({ path: "/tmp/waitlyze-shell-waitlists.png", fullPage: true });
+  });
+  await t.test("launch rehearsal is visible but cannot create real signup or delivery activity", async () => {
+    await db.waitList.update({ where: { id: waitlist.id }, data: { templateSnapshot: snapshotTemplate("saas") } });
+    const before = { signups: await db.signUp.count({ where: { waitListId: waitlist.id } }), outbox: await db.outboxEvent.count() };
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await page.goto(`${base}/wait-lists/${waitlist.id}`);
+    await page.getByRole("button", { name: "Run check" }).click();
+    await page.getByText("Page checks passed").waitFor();
+    assert.equal(await db.launchRehearsal.count({ where: { waitListId: waitlist.id } }), 1);
+    assert.deepEqual({ signups: await db.signUp.count({ where: { waitListId: waitlist.id } }), outbox: await db.outboxEvent.count() }, before);
+    assert.deepEqual((await new AxeBuilder({ page }).include(".launch-rehearsal").analyze()).violations, []);
   });
   await t.test("subscribers filters, profiles, exports, and keyboard flow work across widths", async () => {
     const joinedAt = new Date("2026-09-28T08:00:00.000Z");

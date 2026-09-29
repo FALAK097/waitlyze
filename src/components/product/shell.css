@@ -108,6 +108,23 @@
 @media (min-width: 701px) { .product-create-actions { justify-content: flex-end; } }
 @media (max-width: 700px) { .product-template-layout { grid-template-columns: minmax(0, 1fr); gap: 24px; } .product-template-preview { padding: 24px; } .product-create-steps { gap: 8px; } .product-create-steps li { align-items: flex-start; flex-direction: column; flex: 1; font-size: .75rem; } }
 
+.launch-rehearsal { padding: 20px; }
+.launch-rehearsal-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; }
+.launch-rehearsal-heading h2 { margin: 0 0 4px; font-size: 1rem; font-weight: 600; }
+.launch-rehearsal-heading .product-help { max-width: 64ch; margin: 0; }
+.launch-rehearsal-result { margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--product-border-subtle); }
+.launch-rehearsal-result > p { margin: 0; }
+.launch-rehearsal-result > p span { color: var(--product-text-secondary); font-size: .8125rem; font-weight: 400; }
+.launch-rehearsal-result ul { display: grid; gap: 12px; margin: 16px 0 0; padding: 0; list-style: none; }
+.launch-rehearsal-result li { display: flex; gap: 10px; align-items: flex-start; font-size: .875rem; }
+.launch-rehearsal-result li > span:first-child { display: grid; place-items: center; width: 20px; height: 20px; flex: 0 0 20px; border: 1px solid var(--product-border-control); border-radius: 50%; font-size: .75rem; }
+.launch-rehearsal-result li strong, .launch-rehearsal-result li small { display: block; }
+.launch-rehearsal-result li small { margin-top: 2px; color: var(--product-text-secondary); font-size: .8125rem; line-height: 1.5; }
+@media (max-width: 600px) { .launch-rehearsal { padding: 16px; } .launch-rehearsal-heading { flex-direction: column; } }
+.product-review-note { width: 100%; min-height: 72px; padding: 10px 12px; border: 1px solid var(--product-border-control); border-radius: 8px; background: var(--product-bg-surface); color: var(--product-text-primary); font: inherit; font-size: .875rem; line-height: 1.5; resize: vertical; }
+.product-review-note:focus-visible { outline: 2px solid var(--product-focus); outline-offset: 3px; }
+.launch-rehearsal button, .referral-review-actions button { min-height: 44px; }
+
 .product-waitlist-status { display: inline-block; margin-inline-start: 12px; color: var(--product-text-secondary); font-size: .75rem; font-weight: 400; }
 
 .product-builder { min-width: 0; }

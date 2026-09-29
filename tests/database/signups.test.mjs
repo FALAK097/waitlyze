@@ -10,6 +10,8 @@ import {
   InvalidCampaignError,
   verifyCampaignSignup,
 } from "../../src/lib/campaigns/signups.mjs";
+import { getCampaignPosition, getEligibleReferralCounts } from "../../src/lib/campaigns/referral-position.mjs";
+import { resolveReferralReview } from "../../src/lib/campaigns/referral-review.mjs";
 
 const target = workspaceTestTarget(process.env.WORKSPACE_TEST_DATABASE_URL);
 const db = new PrismaClient({ adapter: new PrismaPg({ connectionString: target }) });
@@ -110,4 +112,34 @@ test("generated referral codes disambiguate signups that share a browser identif
 
   assert.notEqual(referrer.referralCode, unrelated.referralCode);
   assert.equal((await db.referral.findUnique({ where: { signUpId: referred.id } })).referredById, referrer.id);
+});
+
+test("same-browser referrals wait for a reasoned decision before credit", async (t) => {
+  const ownerId = `fixture-${randomUUID()}`;
+  let waitList;
+  t.after(async () => {
+    if (waitList) await db.waitList.delete({ where: { id: waitList.id } });
+    await db.user.deleteMany({ where: { id: ownerId } });
+    await db.$disconnect();
+  });
+  await db.user.create({ data: { id: ownerId, email: `${ownerId}@example.invalid` } });
+  waitList = await db.waitList.create({ data: { userId: ownerId, name: "Review fixture", status: "PUBLISHED", showReferrals: true } });
+  const browserId = randomUUID();
+  const referrer = await createCampaignSignup(db, { waitListId: waitList.id, email: "referrer@example.invalid", uniqueUserId: browserId });
+  const referred = await createCampaignSignup(db, { waitListId: waitList.id, email: "invitee@example.invalid", uniqueUserId: browserId }, referrer.referralCode);
+  await db.signUp.updateMany({ where: { id: { in: [referrer.id, referred.id] } }, data: { verifiedAt: new Date() } });
+  const review = await db.referral.findUnique({ where: { signUpId: referred.id } });
+  assert.equal(review.reviewStatus, "NEEDS_REVIEW");
+  assert.equal(review.reviewReason, "same_browser");
+  assert.equal((await getEligibleReferralCounts(db, waitList.id, [referrer.id])).get(referrer.id) ?? 0, 0);
+  assert.equal(await getCampaignPosition(db, waitList.id, referrer.id), 1);
+  await assert.rejects(resolveReferralReview(db, { waitListId: waitList.id, referralId: review.id, status: "APPROVED", resolution: "short", reviewedById: ownerId }), /review note/i);
+  await resolveReferralReview(db, { waitListId: waitList.id, referralId: review.id, status: "APPROVED", resolution: "Confirmed separate invitee", reviewedById: ownerId });
+  assert.equal(await getCampaignPosition(db, waitList.id, referrer.id), 1);
+  const resolved = await db.referral.findUnique({ where: { id: review.id } });
+  assert.equal(resolved.reviewStatus, "APPROVED");
+  assert.equal((await getEligibleReferralCounts(db, waitList.id, [referrer.id])).get(referrer.id), 1);
+  assert.equal(resolved.resolution, "Confirmed separate invitee");
+  assert.equal(resolved.reviewedById, ownerId);
+  await assert.rejects(resolveReferralReview(db, { waitListId: waitList.id, referralId: review.id, status: "EXCLUDED", resolution: "A second decision", reviewedById: ownerId }), /already been reviewed/i);
 });

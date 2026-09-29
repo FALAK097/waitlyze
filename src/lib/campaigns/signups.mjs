@@ -74,13 +74,18 @@ export async function createCampaignSignup(db, input, referralId, { now = new Da
       if (published[0].showReferrals && referralId && referralId !== input.uniqueUserId) {
         const referredBy = await tx.signUp.findFirst({
           where: { referralCode: referralId, waitListId: input.waitListId },
-          select: { id: true },
+          select: { id: true, uniqueUserId: true },
         }) ?? await tx.signUp.findFirst({
           where: { uniqueUserId: referralId, waitListId: input.waitListId },
-          select: { id: true },
+          select: { id: true, uniqueUserId: true },
         });
         if (referredBy) {
-          await tx.referral.create({ data: { signUpId: signUp.id, referredById: referredBy.id } });
+          const sameBrowser = referredBy.uniqueUserId === input.uniqueUserId;
+          await tx.referral.create({ data: {
+            signUpId: signUp.id,
+            referredById: referredBy.id,
+            ...(sameBrowser ? { reviewStatus: "NEEDS_REVIEW", reviewReason: "same_browser" } : {}),
+          } });
         }
       }
 

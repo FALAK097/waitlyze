@@ -5,6 +5,7 @@ import { Download, Search, Users } from "lucide-react";
 import { Button } from "@/components/product/button";
 import { Input } from "@/components/product/input";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/product/dialog";
+import { ReferralReview } from "@/components/dashboard/referral-review";
 
 const PAGE_SIZE = 25;
 const statuses = [
@@ -17,7 +18,8 @@ function formatDate(date) {
   return new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(new Date(date));
 }
 
-export function AudienceTable({ waitlist }) {
+export function AudienceTable({ waitlist, initialReviews = [], canManage = false }) {
+  const [view, setView] = useState("subscribers");
   const [query, setQuery] = useState("");
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("all");
@@ -101,7 +103,13 @@ export function AudienceTable({ waitlist }) {
             <Download aria-hidden="true" /> {exporting ? "Preparing export…" : "Export CSV"}
           </Button>
         </div>
+        <div className="mt-4 flex gap-2" role="group" aria-label="Subscriber views">
+          <Button variant={view === "subscribers" ? "outline" : "ghost"} aria-pressed={view === "subscribers"} onClick={() => setView("subscribers")}>Subscribers</Button>
+          <Button variant={view === "referrals" ? "outline" : "ghost"} aria-pressed={view === "referrals"} onClick={() => setView("referrals")}>Referral review{initialReviews.filter((review) => review.reviewStatus === "NEEDS_REVIEW").length > 0 && ` · ${initialReviews.filter((review) => review.reviewStatus === "NEEDS_REVIEW").length}`}</Button>
+        </div>
       </header>
+
+      {view === "referrals" ? <ReferralReview waitListId={waitlist.id} initialReviews={initialReviews} canManage={canManage} /> : <>
 
       <div className="product-panel overflow-hidden">
         <div className="flex flex-col gap-3 border-b border-[var(--product-border-subtle)] p-4 sm:flex-row sm:items-center sm:justify-between">
@@ -161,6 +169,7 @@ export function AudienceTable({ waitlist }) {
           </>}
         </DialogContent>
       </Dialog>
+      </>}
     </section>
   );
 }
