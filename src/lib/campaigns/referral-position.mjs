@@ -24,6 +24,7 @@ export async function getCampaignPosition(db, waitListId, signUpId) {
       WHERE referred."waitListId" = ${waitListId}
         AND referred."verifiedAt" IS NOT NULL
         AND referrer."verifiedAt" IS NOT NULL
+        AND referral."reviewStatus" IN ('CLEAR', 'APPROVED')
         AND referral."referredById" IS NOT NULL
         AND referral."referredById" <> referral."signUpId"
       GROUP BY referral."referredById"
@@ -63,9 +64,10 @@ export async function getEligibleReferralCounts(db, waitListId, signUpIds) {
 
   const groups = await db.referral.groupBy({
     by: ["referredById"],
-    where: {
-      referredById: { in: ids },
-      referredBy: { is: { waitListId, verifiedAt: { not: null } } },
+      where: {
+        referredById: { in: ids },
+        reviewStatus: { in: ["CLEAR", "APPROVED"] },
+        referredBy: { is: { waitListId, verifiedAt: { not: null } } },
       signUp: { is: { waitListId, verifiedAt: { not: null } } },
     },
     _count: { _all: true },

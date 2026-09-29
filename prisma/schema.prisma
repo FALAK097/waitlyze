@@ -35,6 +35,18 @@ enum CampaignStatus {
   PAUSED
 }
 
+enum ReferralReviewStatus {
+  CLEAR
+  NEEDS_REVIEW
+  APPROVED
+  EXCLUDED
+}
+
+enum LaunchRehearsalStatus {
+  PASSED
+  NEEDS_ATTENTION
+}
+
 model WaitList {
   status                  CampaignStatus @default(DRAFT)
   publicSlug              String? @unique
@@ -101,6 +113,7 @@ model WaitList {
   user                 User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   signUps              SignUp[]
   impressions          Impression[]
+  launchRehearsals     LaunchRehearsal[]
   apiKeys              ApiKey[]
   emailTemplateRecords EmailTemplate[]
 
@@ -230,13 +243,34 @@ model Referral {
   id           String   @id @default(cuid())
   signUpId     String   @unique
   referredById String?
+  reviewStatus ReferralReviewStatus @default(CLEAR)
+  reviewReason String?
+  resolution   String?
+  reviewedAt   DateTime?
+  reviewedById String?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
   signUp       SignUp   @relation("signUpReferral", fields: [signUpId], references: [id], onDelete: Cascade)
   referredBy   SignUp?  @relation("referredByReferral", fields: [referredById], references: [id], onDelete: Cascade)
 
-  @@index([referredById])
+  @@index([referredById, reviewStatus])
   @@map("referrals")
+}
+
+// Rehearsal records contain checklist results only. Simulated activity never
+// becomes a SignUp, OutboxEvent, impression, or report input.
+model LaunchRehearsal {
+  id            String                @id @default(cuid())
+  waitListId    String
+  status        LaunchRehearsalStatus
+  checksPassed  Int
+  checksFailed  Int
+  checkResults  Json
+  createdAt     DateTime              @default(now())
+  waitList      WaitList              @relation(fields: [waitListId], references: [id], onDelete: Cascade)
+
+  @@index([waitListId, createdAt])
+  @@map("launch_rehearsal_runs")
 }
 
 model ApiKey {
