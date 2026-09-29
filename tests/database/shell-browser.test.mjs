@@ -96,12 +96,13 @@ test("authenticated two-destination shell uses real workspace data", async (t) =
     assert.equal(invalid.status(), 400);
     const inaccessible = await page.request.get(`${base}/api/wait-lists/not-a-waitlist/analytics?days=7`);
     assert.equal(inaccessible.status(), 404);
-    const anonymous = await page.context().request.newContext();
+    const anonymousContext = await browser.newContext();
     try {
-      const unauthenticated = await anonymous.get(`${base}/api/wait-lists/${waitlist.id}/analytics?days=7`);
+      const anonymousPage = await anonymousContext.newPage();
+      const unauthenticated = await anonymousPage.request.get(`${base}/api/wait-lists/${waitlist.id}/analytics?days=7`);
       assert.equal(unauthenticated.status(), 401);
     } finally {
-      await anonymous.dispose();
+      await anonymousContext.close();
     }
   });
   await t.test("subscriber tabs resolve flagged referrals with an auditable note", async () => {

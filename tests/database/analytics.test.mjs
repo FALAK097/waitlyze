@@ -78,7 +78,7 @@ test("analytics deduplicates visitors, uses timezone calendar days and explicit 
     verificationRate: 66.67,
   });
   assert.ok(result.definitions.convertedVisitors.includes("linked to an impression"));
-  assert.ok(result.caveats.some((caveat) => caveat.includes("daily counts do not sum")));
+  assert.ok(result.definitions.dailyVisitors.includes("daily counts do not sum"));
 });
 
 test("empty ranges return null rates and invalid ranges or time zones fail closed", async (t) => {
