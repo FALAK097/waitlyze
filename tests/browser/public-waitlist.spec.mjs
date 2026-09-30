@@ -5,10 +5,14 @@ import { workspaceTestTarget } from "../../scripts/workspace-test-target.mjs";
 import { createWorkspaceService } from "../../src/lib/workspaces/service.mjs";
 import { createDraft } from "../../src/lib/campaigns/create-draft.mjs";
 import { pauseCampaign, publishCampaign } from "../../src/lib/campaigns/publication.mjs";
+import { createUnsubscribeToken } from "../../src/lib/email/unsubscribe.mjs";
+import { fixtureEnvironment } from "../../scripts/test-environment.mjs";
 import { expect, test } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 
 const db = new PrismaClient({ adapter: new PrismaPg({ connectionString: workspaceTestTarget(process.env.WORKSPACE_TEST_DATABASE_URL) }) });
+process.env.BETTER_AUTH_SECRET = fixtureEnvironment().BETTER_AUTH_SECRET;
+process.env.MARKETING_UNSUBSCRIBE_SECRET = fixtureEnvironment().MARKETING_UNSUBSCRIBE_SECRET;
 const ownerId = `browser-${randomUUID()}`;
 let workspace;
 let draft;
@@ -35,9 +39,11 @@ test("draft privacy, hosted signup, legacy redirect and paused state work in bro
   const publicResponse = await page.goto(url);
   expect(publicResponse.status()).toBe(200);
   await expect(page.getByRole("heading", { level: 1, name: "Your next great workflow starts here." })).toBeVisible();
-  const join = async (target, email) => {
+  expect((await new AxeBuilder({ page }).include(".published-signup").analyze()).violations).toEqual([]);
+  const join = async (target, email, { optIn = false } = {}) => {
     await page.goto(target);
     await page.getByLabel("Email address").fill(email);
+    if (optIn) await page.getByRole("checkbox", { name: /Email me occasional updates/ }).check();
     await page.getByRole("button", { name: "Join the waitlist" }).click();
     await expect(page.getByRole("status")).toHaveText("Signup received. Confirmation email queued.");
     await expect(page.getByRole("heading", { name: "Check your inbox" })).toBeVisible();
@@ -63,8 +69,10 @@ test("draft privacy, hosted signup, legacy redirect and paused state work in bro
   expect(baselineSignup.verifiedAt).toBeNull();
 
   const referrerEmail = `${randomUUID()}@example.invalid`;
-  await join(url, referrerEmail);
+  await join(url, referrerEmail, { optIn: true });
   const { signup: referrerSignup, referralLink } = await verify(referrerEmail);
+  expect(referrerSignup.marketingConsentAt).toBeTruthy();
+  expect(referrerSignup.unsubscribeTokenHash).toBeTruthy();
   const referrerUrl = new URL(referralLink);
   expect(referrerUrl.pathname).toBe(url);
   expect(referrerUrl.searchParams.get("r")).toBeTruthy();
@@ -79,9 +87,17 @@ test("draft privacy, hosted signup, legacy redirect and paused state work in bro
 
   const refreshedPosition = await page.request.get(`/api/v1/sign_up?signUpId=${encodeURIComponent(referrerSignup.id)}`);
   expect((await refreshedPosition.json()).signUp.rank).toBe(1);
+  const unsubscribeToken = createUnsubscribeToken(referrerSignup.id, draft.id);
+  await page.goto(`/unsubscribe/${unsubscribeToken}`);
+  await expect(page.getByRole("button", { name: "Unsubscribe from updates" })).toBeVisible();
+  expect((await db.signUp.findUnique({ where: { id: referrerSignup.id } })).marketingUnsubscribedAt).toBeNull();
+  expect((await new AxeBuilder({ page }).include(".public-preferences-card").analyze()).violations).toEqual([]);
+  await page.getByRole("button", { name: "Unsubscribe from updates" }).click();
+  await expect(page.getByRole("heading", { name: "You’re unsubscribed" })).toBeVisible();
+  expect((await db.signUp.findUnique({ where: { id: referrerSignup.id } })).marketingUnsubscribedAt).toBeTruthy();
   await page.setViewportSize({ width: 320, height: 780 });
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
-  const audit = await new AxeBuilder({ page }).include(".verify-card").analyze();
+  const audit = await new AxeBuilder({ page }).include(".public-preferences-card").analyze();
   expect(audit.violations).toEqual([]);
   expect(await db.signUp.count({ where: { waitListId: draft.id } })).toBe(3);
 

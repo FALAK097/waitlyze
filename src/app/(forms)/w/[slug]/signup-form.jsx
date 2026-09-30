@@ -2,6 +2,7 @@
 
 import { useSearchParams } from "next/navigation";
 import { useState } from "react";
+import { MARKETING_CONSENT_COPY } from "@/lib/campaigns/marketing-consent.mjs";
 
 export function SignupForm({ waitListId, showReferrals, label, buttonText, thankYou }) {
   const searchParams = useSearchParams();
@@ -13,7 +14,9 @@ export function SignupForm({ waitListId, showReferrals, label, buttonText, thank
   async function submit(event) {
     event.preventDefault();
     const form = event.currentTarget;
-    const email = new FormData(form).get("email");
+    const formData = new FormData(form);
+    const email = formData.get("email");
+    const marketingConsent = formData.get("marketingConsent") === "on";
     setBusy(true);
     setMessage("");
     try {
@@ -27,6 +30,7 @@ export function SignupForm({ waitListId, showReferrals, label, buttonText, thank
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           email,
+          marketingConsent,
           waitListId,
           hypeSession,
           ...(showReferrals && referralCode && /^[A-Za-z0-9_-]{8,256}$/.test(referralCode)
@@ -66,6 +70,10 @@ export function SignupForm({ waitListId, showReferrals, label, buttonText, thank
         <input id="waitlist-email" name="email" type="email" autoComplete="email" required maxLength={320} />
         <button type="submit" disabled={busy}>{busy ? "Joining…" : buttonText}</button>
       </div>
+      <label className="published-signup-consent">
+        <input name="marketingConsent" type="checkbox" />
+        <span>{MARKETING_CONSENT_COPY}</span>
+      </label>
       <p className="published-signup-status" aria-live="polite" role="status">{message}</p>
     </form>
   );

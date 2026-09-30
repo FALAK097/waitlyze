@@ -11,6 +11,9 @@ const legacySignupResponse = (signUp, { includeReferralCode = false } = {}) => {
   const legacy = { ...signUp };
   delete legacy.emailNormalized;
   delete legacy.verifiedAt;
+  delete legacy.marketingConsentAt;
+  delete legacy.marketingUnsubscribedAt;
+  delete legacy.unsubscribeTokenHash;
   if (!includeReferralCode) delete legacy.referralCode;
   return legacy;
 };
@@ -39,6 +42,9 @@ export const POST = async (req) => {
     const body = await req.json();
     const validator = await validateRequest(body);
     if (validator) return validator;
+    if (body.marketingConsent !== undefined && typeof body.marketingConsent !== "boolean") {
+      return NextResponse.json({ message: "Marketing consent must be a boolean" }, { status: 400 });
+    }
 
     const { device, deviceType } = await getDeviceInfo();
     const ip = getIpAddress(req);
@@ -63,6 +69,7 @@ export const POST = async (req) => {
     let data = {
       uniqueUserId: hypeSession,
       email: body.email,
+      marketingConsent: body.marketingConsent === true,
       device,
       deviceType,
       waitListId: body.waitListId,

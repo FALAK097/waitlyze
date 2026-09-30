@@ -18,6 +18,7 @@ export const env = createEnv({
     RESEND_REPLY_TO: z.string().min(1),
     RESEND_WEBHOOK_SECRET: z.string().optional(),
     OUTBOX_DISPATCH_SECRET: z.string().optional(),
+    MARKETING_UNSUBSCRIBE_SECRET: z.string().min(32).optional(),
   },
   client: {
     NEXT_PUBLIC_R2_PUBLIC_URL: z.string().min(1),
@@ -39,5 +40,6 @@ export const env = createEnv({
     RESEND_REPLY_TO: process.env.RESEND_REPLY_TO,
     RESEND_WEBHOOK_SECRET: process.env.RESEND_WEBHOOK_SECRET,
     OUTBOX_DISPATCH_SECRET: process.env.OUTBOX_DISPATCH_SECRET,
+    MARKETING_UNSUBSCRIBE_SECRET: process.env.MARKETING_UNSUBSCRIBE_SECRET,
   },
 });

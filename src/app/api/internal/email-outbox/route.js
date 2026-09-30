@@ -18,7 +18,7 @@ export async function POST(request) {
   if (!authorized(request)) return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
   const resend = new Resend(env.RESEND_API_KEY);
   const result = await dispatchPendingOutboxEvents(prisma, {
-    send: ({ to, subject, html, idempotencyKey }) => resend.emails.send({ from: env.RESEND_FROM_EMAIL, to, subject, replyTo: env.RESEND_REPLY_TO, html }, { idempotencyKey }),
+    send: ({ to, subject, html, headers, idempotencyKey }) => resend.emails.send({ from: env.RESEND_FROM_EMAIL, to, subject, replyTo: env.RESEND_REPLY_TO, html, ...(headers ? { headers } : {}) }, { idempotencyKey }),
   });
   return NextResponse.json(result);
 }
