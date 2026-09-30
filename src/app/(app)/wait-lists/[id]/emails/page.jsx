@@ -8,6 +8,7 @@ import { ContentLayout } from "@/components/dashboard/content-layout";
 import { EmailTemplatesManager } from "@/components/email/email-templates-manager";
 import { getOrCreateTemplates } from "@/app/actions/emails";
 import { env } from "@/lib/env.mjs";
+import { EmailToolsNav } from "@/components/email/email-tools-nav";
 
 
 const getUser = cache(async (id) =>
@@ -50,6 +51,7 @@ export default async function EmailsPage(props) {
 
   return (
     <ContentLayout title="Email Templates">
+      <EmailToolsNav waitListId={waitList.id} current="templates" />
       <section className="delivery-health" aria-labelledby="delivery-health-title">
         <div>
           <p className="delivery-health-eyebrow">DELIVERY</p>

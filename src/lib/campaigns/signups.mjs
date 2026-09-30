@@ -1,5 +1,7 @@
 import { createHash, randomBytes } from "node:crypto";
 import { getCampaignPosition } from "./referral-position.mjs";
+import { createUnsubscribeToken, hashUnsubscribeToken } from "../email/unsubscribe.mjs";
+import { MARKETING_CONSENT_COPY } from "./marketing-consent.mjs";
 
 const normalizeEmail = (email) => email.trim().toLowerCase();
 const tokenDigest = (token) => createHash("sha256").update(token).digest("hex");
@@ -26,6 +28,9 @@ export async function createCampaignSignup(db, input, referralId, { now = new Da
   if (typeof input.email !== "string" || input.email.length > 320) {
     throw new TypeError("A valid email address is required.");
   }
+  if (input.marketingConsent !== undefined && typeof input.marketingConsent !== "boolean") {
+    throw new TypeError("Marketing consent must be a boolean.");
+  }
   const emailNormalized = normalizeEmail(input.email);
   if (!emailNormalized || !/^\S+@\S+\.\S+$/.test(emailNormalized)) {
     throw new TypeError("A valid email address is required.");
@@ -48,7 +53,21 @@ export async function createCampaignSignup(db, input, referralId, { now = new Da
         include: { referrals: true, referredBy: true },
       });
       if (existing) {
-        if (existing.uniqueUserId === input.uniqueUserId) return existing;
+        if (existing.uniqueUserId === input.uniqueUserId) {
+          if (input.marketingConsent === true && (!existing.marketingConsentAt || existing.marketingUnsubscribedAt)) {
+            const token = createUnsubscribeToken(existing.id, input.waitListId);
+            await tx.signUp.update({
+              where: { id: existing.id },
+              data: {
+                marketingConsentAt: now,
+                marketingUnsubscribedAt: null,
+                unsubscribeTokenHash: hashUnsubscribeToken(token),
+              },
+            });
+            await tx.marketingConsentEvent.create({ data: { waitListId: input.waitListId, signUpId: existing.id, action: "OPTED_IN", source: "PUBLIC_SIGNUP", consentText: MARKETING_CONSENT_COPY, createdAt: now } });
+          }
+          return existing;
+        }
         throw new DuplicateSignupError();
       }
 
@@ -68,8 +87,15 @@ export async function createCampaignSignup(db, input, referralId, { now = new Da
           latitude: input.latitude || null,
           longitude: input.longitude || null,
           verifiedAt: null,
+          ...(input.marketingConsent === true ? { marketingConsentAt: now } : {}),
         },
       });
+
+      if (input.marketingConsent === true) {
+        const token = createUnsubscribeToken(signUp.id, input.waitListId);
+        await tx.signUp.update({ where: { id: signUp.id }, data: { unsubscribeTokenHash: hashUnsubscribeToken(token) } });
+        await tx.marketingConsentEvent.create({ data: { waitListId: input.waitListId, signUpId: signUp.id, action: "OPTED_IN", source: "PUBLIC_SIGNUP", consentText: MARKETING_CONSENT_COPY, createdAt: now } });
+      }
 
       if (published[0].showReferrals && referralId && referralId !== input.uniqueUserId) {
         const referredBy = await tx.signUp.findFirst({

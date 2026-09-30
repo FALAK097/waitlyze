@@ -9,6 +9,7 @@ export function fixtureEnvironment() {
     NODE_ENV: "production",
     DATABASE_URL: process.env.WORKSPACE_TEST_DATABASE_URL ? workspaceTestTarget(process.env.WORKSPACE_TEST_DATABASE_URL) : "postgresql://waitlyze:waitlyze@127.0.0.1:5432/waitlyze_test",
     BETTER_AUTH_SECRET: FIXTURE_AUTH_SECRET,
+    MARKETING_UNSUBSCRIBE_SECRET: "waitlyze-local-unsubscribe-fixture-key-2026",
     BETTER_AUTH_URL: "http://127.0.0.1:3100",
     GOOGLE_CLIENT_ID: "",
     GOOGLE_CLIENT_SECRET: "",

@@ -116,6 +116,8 @@ model WaitList {
   launchRehearsals     LaunchRehearsal[]
   apiKeys              ApiKey[]
   emailTemplateRecords EmailTemplate[]
+  broadcasts           MarketingBroadcast[]
+  marketingConsentEvents MarketingConsentEvent[]
 
   @@unique([workspaceId, creationKey])
   @@index([workspaceId, status])
@@ -170,6 +172,9 @@ model SignUp {
   rank            Int?
   signUpEmailSent Boolean     @default(false)
   verifiedAt      DateTime?
+  marketingConsentAt DateTime?
+  marketingUnsubscribedAt DateTime?
+  unsubscribeTokenHash String? @unique
   createdAt       DateTime    @default(now())
   updatedAt       DateTime    @updatedAt
   waitList        WaitList    @relation(fields: [waitListId], references: [id], onDelete: Cascade)
@@ -177,6 +182,8 @@ model SignUp {
   referrals       Referral[]  @relation("referredByReferral")
   referredBy      Referral[]  @relation("signUpReferral")
   verification    SignUpVerification?
+  broadcastRecipients BroadcastRecipient[]
+  marketingConsentEvents MarketingConsentEvent[]
 
   @@unique([waitListId, emailNormalized])
   @@index([waitListId, uniqueUserId])
@@ -222,6 +229,87 @@ model OutboxEvent {
   @@index([status, availableAt])
   @@index([status, lockedAt])
   @@map("outbox_events")
+}
+
+enum BroadcastStatus {
+  DRAFT
+  SENDING
+  SENT
+  CANCELED
+  FAILED
+}
+
+enum BroadcastRecipientStatus {
+  PENDING
+  PROCESSING
+  DELIVERED
+  FAILED
+  SKIPPED
+  CANCELED
+}
+
+enum MarketingConsentAction {
+  OPTED_IN
+  OPTED_OUT
+}
+
+enum MarketingConsentSource {
+  PUBLIC_SIGNUP
+  PUBLIC_UNSUBSCRIBE
+}
+
+model MarketingConsentEvent {
+  id        String                 @id @default(cuid())
+  waitListId String
+  signUpId  String
+  action    MarketingConsentAction
+  source    MarketingConsentSource
+  consentText String?
+  createdAt DateTime               @default(now())
+  waitList  WaitList               @relation(fields: [waitListId], references: [id], onDelete: Cascade)
+  signUp    SignUp                 @relation(fields: [signUpId], references: [id], onDelete: Cascade)
+
+  @@index([signUpId, createdAt])
+  @@index([waitListId, createdAt])
+  @@map("marketing_consent_events")
+}
+
+model MarketingBroadcast {
+  id             String          @id @default(cuid())
+  waitListId     String
+  waitList       WaitList        @relation(fields: [waitListId], references: [id], onDelete: Cascade)
+  name           String
+  subject        String
+  previewText    String
+  body           String
+  status         BroadcastStatus @default(DRAFT)
+  recipientCount Int             @default(0)
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  sentAt         DateTime?
+  recipients     BroadcastRecipient[]
+
+  @@index([waitListId, updatedAt])
+  @@map("marketing_broadcasts")
+}
+
+model BroadcastRecipient {
+  id                String                   @id @default(cuid())
+  broadcastId       String
+  broadcast         MarketingBroadcast       @relation(fields: [broadcastId], references: [id], onDelete: Cascade)
+  signUpId          String
+  signUp            SignUp                   @relation(fields: [signUpId], references: [id], onDelete: Cascade)
+  email             String
+  emailNormalized   String
+  status            BroadcastRecipientStatus @default(PENDING)
+  providerMessageId String?
+  lastErrorCode     String?
+  deliveredAt       DateTime?
+  createdAt         DateTime                 @default(now())
+
+  @@unique([broadcastId, signUpId])
+  @@index([broadcastId, status])
+  @@map("broadcast_recipients")
 }
 
 model Impression {
