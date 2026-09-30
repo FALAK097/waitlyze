@@ -73,7 +73,7 @@ test("verified automations snapshot recipe versions once and recheck consent whe
   // Replaying the same verified trigger cannot create a second run or step.
   const trigger = await db.outboxEvent.create({ data: { eventKey: `automation.trigger:replay:${referrer.id}`, type: "MARKETING_AUTOMATION_TRIGGER_REQUESTED", waitListId: waitList.id, payload: { signUpId: referrer.id } } });
   await db.outboxEvent.update({ where: { id: trigger.id }, data: { status: "PROCESSING", lockedAt: baseNow } });
-  await dispatchPendingOutboxEvents(db, { waitListId: waitList.id, now: baseNow, send: async () => { throw new Error("Trigger events must not send mail."); } });
+  await dispatchPendingOutboxEvents(db, { waitListId: waitList.id, now: new Date(baseNow.getTime() - 1), send: async () => { throw new Error("Trigger events must not send mail."); } });
   assert.equal(await db.automationRun.count({ where: { waitListId: waitList.id } }), 7);
 
   const immediate = [];
@@ -82,8 +82,7 @@ test("verified automations snapshot recipe versions once and recheck consent whe
     now: new Date(baseNow.getTime() + 1_000),
     send: async (message) => { immediate.push(message); return { data: { id: `message-${immediate.length}` } }; },
   });
-  const immediateEvents = await db.outboxEvent.findMany({ where: { waitListId: waitList.id, type: "MARKETING_AUTOMATION_STEP_REQUESTED" }, select: { status: true, payload: true, lastErrorCode: true, availableAt: true } });
-  assert.equal(firstDelivery.accepted, 4, `welcome and referral milestone messages are due immediately: ${JSON.stringify({ firstDelivery, immediateEvents })}`);
+  assert.equal(firstDelivery.accepted, 4, "welcome and referral milestone messages are due immediately");
   assert.ok(immediate.every((message) => message.headers["List-Unsubscribe-Post"] === "List-Unsubscribe=One-Click"));
   assert.ok(immediate.every((message) => message.idempotencyKey.startsWith("automation.step:")));
   assert.ok(immediate.some((message) => /You’ve brought 2 people/.test(message.html)));

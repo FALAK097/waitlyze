@@ -276,7 +276,6 @@ export async function dispatchAutomationStep(db, event, payload, send, now, atte
     try { await applyKnownProviderEvents(db, providerMessageId, waitList.workspaceId, signUp.emailNormalized || signUp.email); }
     catch (error) { console.error("Could not apply provider suppression event:", error?.message || "unknown error"); }
   } catch (error) {
-    console.error("Automation delivery diagnostic:", String(error?.message || "unknown error").slice(0, 200));
     const code = String(error?.code || error?.name || "PROVIDER_ERROR").replace(/[^A-Za-z0-9_.-]/g, "").slice(0, 80) || "PROVIDER_ERROR";
     const currentRecipe = await db.automationRecipe.findUnique({ where: { id: recipe.id }, select: { status: true } });
     const retryable = error?.statusCode === 429 || error?.statusCode >= 500 || (error?.statusCode === 409 && error?.code === "concurrent_idempotent_requests") || error?.name === "TypeError";
