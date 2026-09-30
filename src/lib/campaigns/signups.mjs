@@ -160,9 +160,18 @@ export async function verifyCampaignSignup(db, token, { now = new Date() } = {})
     const claimed = await tx.signUpVerification.updateMany({
       where: { id: verification.id, usedAt: null, expiresAt: { gt: now } },
       data: { usedAt: now },
-    });
-    if (claimed.count !== 1) return false;
-    await tx.signUp.updateMany({ where: { id: verification.signUpId, verifiedAt: null }, data: { verifiedAt: now } });
-    return true;
+      });
+      if (claimed.count !== 1) return false;
+      await tx.signUp.updateMany({ where: { id: verification.signUpId, verifiedAt: null }, data: { verifiedAt: now } });
+      const signup = await tx.signUp.findUnique({ where: { id: verification.signUpId }, select: { id: true, waitListId: true } });
+      await tx.outboxEvent.create({
+        data: {
+          eventKey: `automation.trigger:signup-verified:${signup.id}`,
+          type: "MARKETING_AUTOMATION_TRIGGER_REQUESTED",
+          waitListId: signup.waitListId,
+          payload: { signUpId: signup.id },
+        },
+      });
+      return true;
   });
 }
