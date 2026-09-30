@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
+import { cookies, headers } from "next/headers";
+import { campaignScope } from "@/lib/workspaces/service.mjs";
 import prisma from "@/lib/prisma";
 
 export async function GET() {
@@ -26,8 +27,9 @@ export async function GET() {
       );
     }
 
+    const workspaceId = (await cookies()).get("waitlyze-workspace")?.value;
     const waitlists = await prisma.waitList.findMany({
-      where: { userId: user.id },
+      where: campaignScope(user.id, "manageConnections", workspaceId || undefined),
       select: {
         id: true,
         name: true,

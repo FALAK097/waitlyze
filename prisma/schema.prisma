@@ -478,6 +478,11 @@ model ApiKey {
   id         String   @id @default(cuid())
   name       String
   keyHash    String   @unique
+  keyId      String?  @unique
+  scopes     String[] @default(["waitlist:write"])
+  expiresAt  DateTime?
+  lastUsedAt DateTime?
+  revokedAt  DateTime?
   userId     String
   waitlistId String?
   createdAt  DateTime @default(now())
@@ -486,6 +491,7 @@ model ApiKey {
   user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   waitlist WaitList? @relation(fields: [waitlistId], references: [id], onDelete: SetNull)
 
+  @@index([waitlistId, revokedAt])
   @@map("api_keys")
 }
 

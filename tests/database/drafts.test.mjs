@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { randomUUID } from "node:crypto";
+import { createHash, randomBytes, randomUUID } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import { PrismaClient } from "../../src/generated/prisma/client.ts";
 import { PrismaPg } from "@prisma/adapter-pg";
@@ -93,6 +93,31 @@ test("real database draft creation owns authority, retries and slug conflicts", 
     const accepted = await validatePublishedApiKey(apiKey, draft.id, db);
     assert.equal(accepted.success, true);
     assert.equal(accepted.waitlist.id, draft.id);
+  });
+  await t.test("v2 API keys are secret-hashed, scope-limited, waitlist-bound and revocable", async () => {
+    const other = await db.waitList.create({ data: { userId: actor, workspaceId: workspace.id, status: "PUBLISHED", name: "Another launch" } });
+    const keyId = randomBytes(16).toString("hex");
+    const secret = randomBytes(32).toString("base64url");
+    const token = `wl2_${keyId}_${secret}`;
+    const key = await db.apiKey.create({ data: {
+      name: "Launch integration",
+      userId: actor,
+      waitlistId: draft.id,
+      keyId,
+      keyHash: createHash("sha256").update(secret).digest("hex"),
+      scopes: ["waitlist:write"],
+      expiresAt: new Date(Date.now() + 60_000),
+    } });
+    assert.equal(key.keyHash.includes(secret), false);
+    const accepted = await validatePublishedApiKey(token, draft.id, db);
+    assert.equal(accepted.success, true);
+    assert.deepEqual(accepted.scopes, ["waitlist:write"]);
+    assert.equal((await db.apiKey.findUnique({ where: { id: key.id } })).lastUsedAt instanceof Date, true);
+    assert.equal((await validatePublishedApiKey(token, other.id, db)).success, false);
+    assert.equal((await validatePublishedApiKey(`${token}x`, draft.id, db)).success, false);
+    await db.apiKey.update({ where: { id: key.id }, data: { revokedAt: new Date() } });
+    assert.equal((await validatePublishedApiKey(token, draft.id, db)).success, false);
+    await db.waitList.delete({ where: { id: other.id } });
   });
   await t.test("changed retry payload and duplicate address do not overwrite the draft", async () => {
     await assert.rejects(createDraft(db, actor, workspace.id, { ...input, name: "Changed" }), /request has changed/);

@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { once } from "node:events";
 import { readFile } from "node:fs/promises";
 import { chromium } from "@playwright/test";
@@ -63,6 +63,37 @@ test("authenticated two-destination shell uses real workspace data", async (t) =
     assert.equal(await page.getByLabel("Display name").inputValue(), "   ");
     await page.getByLabel("Display name").fill("Updated fixture");
     assert.deepEqual((await new AxeBuilder({ page }).include(".product-shell").analyze()).violations, []);
+  });
+  await t.test("developer settings creates a waitlist-bound key once and lists only safe metadata", async () => {
+    await page.getByRole("link", { name: "Developers", exact: true }).click();
+    await page.getByRole("heading", { name: "Developers", exact: true }).waitFor();
+    await page.getByRole("button", { name: "Create API Key" }).click();
+    const dialog = page.getByRole("dialog");
+    await dialog.getByLabel("API key name").fill("Launch signup form");
+    await dialog.getByRole("combobox").nth(0).click();
+    await page.getByRole("option", { name: "First launch" }).click();
+    await dialog.getByRole("combobox").nth(1).click();
+    await page.getByRole("option", { name: "In 30 days" }).click();
+    const createResponse = page.waitForResponse((response) => response.url().includes("/api/v1/api-keys/create-and-link") && response.request().method() === "POST");
+    await dialog.getByRole("button", { name: "Create & Link API Key" }).click();
+    const response = await createResponse;
+    assert.equal(response.status(), 200);
+    const created = (await response.json()).data.apiKey;
+    assert.match(created.apiKey, /^wl2_[a-f0-9]{32}_[A-Za-z0-9_-]{43}$/);
+    assert.equal(Object.hasOwn(created, "keyHash"), false);
+    const stored = await db.apiKey.findUnique({ where: { id: created.id } });
+    assert.equal(stored.waitlistId, waitlist.id);
+    assert.deepEqual(stored.scopes, ["waitlist:write"]);
+    const [, secret] = created.apiKey.match(/^wl2_[a-f0-9]{32}_([A-Za-z0-9_-]{43})$/);
+    assert.equal(stored.keyHash, createHash("sha256").update(secret).digest("hex"));
+    assert.ok(stored.expiresAt > new Date(Date.now() + 25 * 24 * 60 * 60 * 1000));
+    const listed = await page.request.get(`${base}/api/v1/api-keys`);
+    const listedKey = (await listed.json()).data.find((key) => key.id === created.id);
+    assert.ok(listedKey);
+    assert.equal(Object.hasOwn(listedKey, "keyHash"), false);
+    assert.equal(listedKey.key, "••••••••••••••••");
+    await dialog.getByRole("button", { name: "Done" }).click();
+    assert.deepEqual((await new AxeBuilder({ page }).include(".product-settings-panel").analyze()).violations, []);
   });
   await t.test("waitlist referral sharing saves and stays inside its settings", async () => {
     await page.goto(`${base}/wait-lists/${waitlist.id}/settings`);
