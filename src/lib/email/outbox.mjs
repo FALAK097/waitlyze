@@ -31,11 +31,11 @@ async function applyKnownProviderEvents(db, providerMessageId, workspaceId, reci
   }
 }
 
-export async function dispatchPendingOutboxEvents(db, { send, now = new Date(), batchSize = 20 } = {}) {
+export async function dispatchPendingOutboxEvents(db, { send, now = new Date(), batchSize = 20, waitListId } = {}) {
   if (typeof send !== "function") throw new TypeError("A provider send function is required.");
   const staleBefore = new Date(now.getTime() - STALE_LOCK_MS);
   const events = await db.outboxEvent.findMany({
-    where: { availableAt: { lte: now }, OR: [{ status: "PENDING" }, { status: "PROCESSING", lockedAt: { lt: staleBefore } }] },
+    where: { ...(waitListId ? { waitListId } : {}), availableAt: { lte: now }, OR: [{ status: "PENDING" }, { status: "PROCESSING", lockedAt: { lt: staleBefore } }] },
     orderBy: [{ availableAt: "asc" }, { createdAt: "asc" }], take: batchSize,
   });
   const result = { accepted: 0, retried: 0, failed: 0, skipped: 0 };

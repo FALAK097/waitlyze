@@ -40,6 +40,7 @@ test("verification outbox retries transient errors, uses a stable idempotency ke
   const keys = [];
   const retry = await dispatchPendingOutboxEvents(db, {
     now: firstNow,
+    waitListId: waitList.id,
     send: async (message) => { keys.push(message.idempotencyKey); throw Object.assign(new Error("busy"), { statusCode: 503, code: "service_unavailable" }); },
   });
   assert.deepEqual(retry, { accepted: 0, retried: 1, failed: 0, skipped: 0 });
@@ -51,6 +52,7 @@ test("verification outbox retries transient errors, uses a stable idempotency ke
 
   const accepted = await dispatchPendingOutboxEvents(db, {
     now: saved.availableAt,
+    waitListId: waitList.id,
     send: async (message) => { keys.push(message.idempotencyKey); assert.match(message.html, /Confirm email/); return { data: { id: "resend-message-1" }, error: null }; },
   });
   assert.deepEqual(accepted, { accepted: 1, retried: 0, failed: 0, skipped: 0 });
@@ -76,7 +78,7 @@ test("workspace suppression prevents verification sends", async (t) => {
   const signup = await createCampaignSignup(db, { waitListId: waitList.id, email: "blocked@example.invalid", uniqueUserId: randomUUID() });
   await db.emailSuppression.create({ data: { workspaceId: workspace.id, emailNormalized: "blocked@example.invalid", reason: "BOUNCE" } });
   let called = false;
-  const result = await dispatchPendingOutboxEvents(db, { send: async () => { called = true; } });
+  const result = await dispatchPendingOutboxEvents(db, { waitListId: waitList.id, send: async () => { called = true; } });
   assert.equal(called, false);
   assert.equal(result.skipped, 1);
   const event = await db.outboxEvent.findFirst({ where: { payload: { path: ["signUpId"], equals: signup.id } } });
