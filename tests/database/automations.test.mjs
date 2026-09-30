@@ -56,6 +56,14 @@ test("verified automations snapshot recipe versions once and recheck consent whe
   const baseNow = new Date(Date.now() + 5_000);
   const triggers = await dispatchPendingOutboxEvents(db, { waitListId: waitList.id, now: baseNow, send: async () => { throw new Error("Trigger events must not send mail."); } });
   assert.equal(triggers.failed, 0);
+  assert.equal(triggers.retried, 0, "verified trigger processing should not retry");
+  assert.equal(triggers.skipped, 0, "verified trigger processing should not skip");
+  const processedTriggers = await db.outboxEvent.findMany({ where: { waitListId: waitList.id, type: "MARKETING_AUTOMATION_TRIGGER_REQUESTED" }, select: { status: true, payload: true, lastErrorCode: true } });
+  assert.equal(processedTriggers.length, 3, "one trigger is created for each verified signup");
+  assert.ok(processedTriggers.every((event) => event.status === "DELIVERED"), JSON.stringify(processedTriggers));
+  const verifiedSubscribers = await db.signUp.findMany({ where: { waitListId: waitList.id }, select: { id: true, verifiedAt: true, marketingConsentAt: true, marketingUnsubscribedAt: true } });
+  assert.equal(verifiedSubscribers.length, 3);
+  assert.ok(verifiedSubscribers.every((signup) => signup.verifiedAt && signup.marketingConsentAt && !signup.marketingUnsubscribedAt), JSON.stringify(verifiedSubscribers));
   assert.equal(await db.automationRun.count({ where: { waitListId: waitList.id } }), 7, "three welcomes, three reminders and one threshold milestone are scheduled");
   const milestoneRun = await db.automationRun.findFirst({ where: { recipeId: milestone.id, signUpId: referrer.id }, include: { recipeVersion: true, steps: true } });
   assert.ok(milestoneRun);
