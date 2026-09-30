@@ -71,7 +71,7 @@ export async function ensureAutomationRecipes(db, waitListId) {
 async function createRun(tx, { recipe, version, waitListId, signUpId, triggerKey, config, now }) {
   // Serialize duplicate trigger delivery so a retried event and a concurrent
   // verification cannot enqueue the same recipe for the same subscriber twice.
-  await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtext(${recipe.id}), hashtext(${triggerKey}))`;
+  await tx.$queryRaw`WITH lock AS MATERIALIZED (SELECT pg_advisory_xact_lock(hashtext(${recipe.id}), hashtext(${triggerKey}))) SELECT 1 FROM lock`;
   const existing = await tx.automationRun.findUnique({ where: { recipeId_triggerKey: { recipeId: recipe.id, triggerKey } }, select: { id: true } });
   if (existing) return false;
 
