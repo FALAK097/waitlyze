@@ -118,6 +118,8 @@ model WaitList {
   emailTemplateRecords EmailTemplate[]
   broadcasts           MarketingBroadcast[]
   marketingConsentEvents MarketingConsentEvent[]
+  automationRecipes      AutomationRecipe[]
+  automationRuns         AutomationRun[]
 
   @@unique([workspaceId, creationKey])
   @@index([workspaceId, status])
@@ -184,6 +186,7 @@ model SignUp {
   verification    SignUpVerification?
   broadcastRecipients BroadcastRecipient[]
   marketingConsentEvents MarketingConsentEvent[]
+  automationRuns AutomationRun[]
 
   @@unique([waitListId, emailNormalized])
   @@index([waitListId, uniqueUserId])
@@ -310,6 +313,111 @@ model BroadcastRecipient {
   @@unique([broadcastId, signUpId])
   @@index([broadcastId, status])
   @@map("broadcast_recipients")
+}
+
+enum AutomationRecipeType {
+  WELCOME
+  REFERRAL_REMINDER
+  REFERRAL_MILESTONE
+}
+
+enum AutomationRecipeStatus {
+  DRAFT
+  ENABLED
+  PAUSED
+}
+
+enum AutomationRunStatus {
+  PENDING
+  PROCESSING
+  SENT
+  SKIPPED
+  FAILED
+  CANCELED
+}
+
+enum AutomationStepStatus {
+  PENDING
+  PROCESSING
+  SENT
+  SKIPPED
+  FAILED
+  CANCELED
+}
+
+model AutomationRecipe {
+  id             String                @id @default(cuid())
+  waitListId     String
+  waitList       WaitList              @relation(fields: [waitListId], references: [id], onDelete: Cascade)
+  type           AutomationRecipeType
+  status         AutomationRecipeStatus @default(DRAFT)
+  currentVersion Int                   @default(1)
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @updatedAt
+  versions       AutomationRecipeVersion[]
+  runs           AutomationRun[]
+
+  @@unique([waitListId, type])
+  @@index([waitListId, status])
+  @@map("automation_recipes")
+}
+
+model AutomationRecipeVersion {
+  id        String           @id @default(cuid())
+  recipeId  String
+  recipe    AutomationRecipe @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  version   Int
+  config    Json
+  createdAt DateTime         @default(now())
+  runs      AutomationRun[]
+
+  @@unique([recipeId, version])
+  @@map("automation_recipe_versions")
+}
+
+model AutomationRun {
+  recipeId         String
+  recipe           AutomationRecipe       @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  id               String                 @id @default(cuid())
+  recipeVersionId  String
+  recipeVersion    AutomationRecipeVersion @relation(fields: [recipeVersionId], references: [id], onDelete: Cascade)
+  waitListId       String
+  waitList         WaitList               @relation(fields: [waitListId], references: [id], onDelete: Cascade)
+  signUpId         String
+  signUp           SignUp                 @relation(fields: [signUpId], references: [id], onDelete: Cascade)
+  triggerKey       String
+  status           AutomationRunStatus    @default(PENDING)
+  scheduledAt      DateTime
+  startedAt        DateTime?
+  finishedAt       DateTime?
+  skipReason       String?
+  createdAt        DateTime               @default(now())
+  steps            AutomationRunStep[]
+
+  @@unique([recipeId, triggerKey])
+  @@index([waitListId, createdAt])
+  @@index([status, scheduledAt])
+  @@map("automation_runs")
+}
+
+model AutomationRunStep {
+  id                String               @id @default(cuid())
+  runId             String
+  run               AutomationRun        @relation(fields: [runId], references: [id], onDelete: Cascade)
+  stepKey           String
+  position          Int                  @default(0)
+  status            AutomationStepStatus @default(PENDING)
+  availableAt       DateTime
+  outboxEventKey    String               @unique
+  providerMessageId String?
+  lastErrorCode     String?
+  createdAt         DateTime             @default(now())
+  finishedAt        DateTime?
+
+  @@unique([runId, stepKey])
+  @@index([runId, position])
+  @@index([status, availableAt])
+  @@map("automation_run_steps")
 }
 
 model Impression {

@@ -245,3 +245,61 @@
 .broadcast-cancel .product-help { margin-block-end: 8px; }
 .broadcast-empty { grid-column: 1 / -1; display: grid; gap: 12px; justify-items: start; }
 @media (max-width: 760px) { .broadcast-layout { grid-template-columns: minmax(0, 1fr); } .broadcast-list ul { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); gap: 4px; } .broadcast-list li + li { border-top: 0; } }
+
+.automation-console { display: grid; gap: 16px; }
+.automation-heading { margin-bottom: 0; }
+.automation-setup { display: flex; gap: 12px; align-items: start; padding: 12px 14px; border: 1px solid var(--product-border-subtle); border-radius: 10px; background: var(--product-bg-inset); }
+.automation-setup > span { display: grid; flex: 0 0 20px; width: 20px; height: 20px; place-items: center; border: 1px solid var(--product-border-control); border-radius: 50%; color: var(--product-text-secondary); font-size: 12px; font-weight: 650; }
+.automation-setup p { margin: 0; color: var(--product-text-secondary); font-size: .875rem; }
+.automation-recipe-list { display: grid; gap: 12px; }
+.automation-recipe { min-width: 0; padding: 18px 20px; }
+.automation-recipe-top { display: flex; align-items: start; justify-content: space-between; gap: 16px; }
+.automation-recipe-title { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; }
+.automation-recipe-title h3 { margin: 0; font-size: 1.05rem; }
+.automation-recipe-top .product-help { margin: 5px 0 0; }
+.automation-status { display: inline-flex; align-items: center; min-height: 23px; padding: 2px 8px; border: 1px solid var(--product-border-subtle); border-radius: 999px; color: var(--product-text-secondary); font-size: .75rem; font-weight: 600; white-space: nowrap; }
+.automation-status-enabled, .automation-status-sent { border-color: color-mix(in srgb, var(--product-success-text) 34%, transparent); color: var(--product-success-text); }
+.automation-status-failed { border-color: color-mix(in srgb, var(--product-danger-text) 34%, transparent); color: var(--product-danger-text); }
+.automation-status-canceled, .automation-status-skipped { background: var(--product-bg-inset); }
+.automation-recipe-summary { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 24px; margin: 18px 0; padding: 14px 0; border-block: 1px solid var(--product-border-subtle); }
+.automation-recipe-summary div { min-width: 0; }
+.automation-recipe-summary dt { margin-bottom: 3px; color: var(--product-text-secondary); font-size: .75rem; }
+.automation-recipe-summary dd { margin: 0; color: var(--product-text-primary); font-size: .875rem; line-height: 1.45; }
+.automation-editor summary { width: fit-content; color: var(--product-text-secondary); font-size: .875rem; cursor: pointer; }
+.automation-editor summary:hover { color: var(--product-text-primary); }
+.automation-editor summary:focus-visible, .automation-recipe :focus-visible { outline: 2px solid var(--product-focus); outline-offset: 3px; }
+.automation-editor-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin-top: 16px; }
+.automation-editor-fields .product-field { display: grid; min-width: 0; gap: 6px; }
+.automation-editor-fields .product-field > span { color: var(--product-text-primary); font-size: .875rem; font-weight: 550; }
+.automation-editor-fields input, .automation-editor-fields textarea { width: 100%; min-width: 0; min-height: 42px; padding: 9px 11px; border: 1px solid var(--product-border-control); border-radius: 8px; background: var(--product-bg-surface); color: var(--product-text-primary); font: inherit; font-size: .9375rem; }
+.automation-editor-fields textarea { min-height: 120px; resize: vertical; }
+.automation-editor-fields small { color: var(--product-text-secondary); font-size: .75rem; }
+.automation-body-field { grid-column: 1 / -1; }
+.automation-editor-actions { display: flex; flex-wrap: wrap; grid-column: 1 / -1; align-items: center; gap: 10px 14px; }
+.automation-editor-actions > span { color: var(--product-text-secondary); font-size: .75rem; }
+.automation-feedback { min-height: 1.5em; margin: -8px 0 0; color: var(--product-text-secondary); font-size: .875rem; }
+.automation-history { min-width: 0; padding: 18px 20px; }
+.automation-history-heading { display: flex; align-items: start; justify-content: space-between; gap: 12px; }
+.automation-history-heading h3 { margin: 0; font-size: 1rem; }
+.automation-history-heading .product-help { margin: 4px 0 0; }
+.automation-history-heading > span { color: var(--product-text-secondary); font-size: .75rem; }
+.automation-run-list { list-style: none; padding: 0; margin: 14px 0 0; }
+.automation-run-list li { display: grid; grid-template-columns: minmax(0, 1fr) minmax(130px, auto) auto; align-items: center; gap: 12px; padding: 11px 0; border-top: 1px solid var(--product-border-subtle); }
+.automation-run-list li > div { display: flex; flex-wrap: wrap; align-items: center; gap: 5px 9px; min-width: 0; }
+.automation-run-list strong { color: var(--product-text-primary); font-size: .875rem; font-weight: 550; }
+.automation-run-list li span:not(.automation-status), .automation-run-list time, .automation-run-list small { color: var(--product-text-secondary); font-size: .75rem; }
+.automation-run-list time { white-space: nowrap; }
+.automation-run-list small { text-transform: capitalize; }
+.automation-empty { margin: 14px 0 0; padding: 18px 0 4px; border-top: 1px solid var(--product-border-subtle); color: var(--product-text-secondary); font-size: .875rem; }
+.automation-policy { max-width: 780px; margin: 0; color: var(--product-text-secondary); font-size: .8125rem; line-height: 1.5; }
+@media (max-width: 640px) {
+  .automation-recipe { padding: 16px; }
+  .automation-recipe-top { align-items: stretch; flex-direction: column; }
+  .automation-recipe-top > button { align-self: start; }
+  .automation-recipe-summary { grid-template-columns: minmax(0, 1fr); gap: 10px; }
+  .automation-editor-fields { grid-template-columns: minmax(0, 1fr); }
+  .automation-body-field, .automation-editor-actions { grid-column: auto; }
+  .automation-run-list li { grid-template-columns: minmax(0, 1fr); gap: 6px; }
+  .automation-run-list li > div { justify-content: space-between; }
+  .automation-run-list time { white-space: normal; }
+}

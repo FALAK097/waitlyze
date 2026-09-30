@@ -1,4 +1,6 @@
 import { createUnsubscribeToken } from "./unsubscribe.mjs";
+import { dispatchAutomationStep, processAutomationTrigger } from "./automations.mjs";
+import { applyKnownProviderEvents } from "./suppression.mjs";
 
 const MAX_ATTEMPTS = 6;
 const STALE_LOCK_MS = 5 * 60 * 1000;
@@ -110,20 +112,6 @@ function safePayload(payload) {
   return payload;
 }
 
-async function applyKnownProviderEvents(db, providerMessageId, workspaceId, recipient) {
-  if (!workspaceId) return;
-  const events = await db.emailProviderEvent.findMany({ where: { providerMessageId, OR: [{ type: "email.complained" }, { type: "email.bounced", isPermanent: true }] }, orderBy: { type: "asc" } });
-  for (const event of events) {
-    const normalized = normalizeEmail(recipient);
-    if (!normalized) continue;
-    await db.emailSuppression.upsert({
-      where: { workspaceId_emailNormalized: { workspaceId, emailNormalized: normalized } },
-      create: { workspaceId, emailNormalized: normalized, reason: event.type === "email.complained" ? "COMPLAINT" : "BOUNCE" },
-      update: { reason: event.type === "email.complained" ? "COMPLAINT" : "BOUNCE" },
-    });
-  }
-}
-
 export async function dispatchPendingOutboxEvents(db, { send, now = new Date(), batchSize = 20, waitListId } = {}) {
   if (typeof send !== "function") throw new TypeError("A provider send function is required.");
   const staleBefore = new Date(now.getTime() - STALE_LOCK_MS);
@@ -143,6 +131,22 @@ export async function dispatchPendingOutboxEvents(db, { send, now = new Date(), 
     if (event.type === "BROADCAST_EMAIL_REQUESTED") {
       const broadcastPayload = event.payload && typeof event.payload === "object" ? event.payload : null;
       await dispatchBroadcast(db, event, broadcastPayload, send, now, attempt, result);
+      continue;
+    }
+    if (event.type === "MARKETING_AUTOMATION_TRIGGER_REQUESTED") {
+      try {
+        await processAutomationTrigger(db, event, now);
+      } catch (error) {
+        const code = String(error?.code || error?.name || "AUTOMATION_TRIGGER_ERROR").replace(/[^A-Za-z0-9_.-]/g, "").slice(0, 80) || "AUTOMATION_TRIGGER_ERROR";
+        const canRetry = attempt < MAX_ATTEMPTS;
+        const delay = Math.min(RETRY_BASE_MS * (2 ** Math.min(attempt - 1, 6)), 60 * 60 * 1000);
+        await db.outboxEvent.update({ where: { id: event.id }, data: { status: canRetry ? "PENDING" : "FAILED", availableAt: canRetry ? new Date(now.getTime() + delay) : now, processedAt: canRetry ? null : now, lockedAt: null, payload: { signUpId: event.payload?.signUpId }, lastErrorCode: code } });
+        if (canRetry) result.retried++; else result.failed++;
+      }
+      continue;
+    }
+    if (event.type === "MARKETING_AUTOMATION_STEP_REQUESTED") {
+      await dispatchAutomationStep(db, event, event.payload, send, now, attempt, result);
       continue;
     }
     if (event.type !== "SIGNUP_VERIFICATION_REQUESTED" || !payload) {

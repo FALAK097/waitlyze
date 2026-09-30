@@ -5,5 +5,6 @@ export function EmailToolsNav({ waitListId, current }) {
   return <nav aria-label="Email tools" className="product-context-nav">
     <Link href={root} aria-current={current === "templates" ? "page" : undefined}>Templates</Link>
     <Link href={`${root}/broadcasts`} aria-current={current === "broadcasts" ? "page" : undefined}>Broadcasts</Link>
+    <Link href={`${root}/automations`} aria-current={current === "automations" ? "page" : undefined}>Automations</Link>
   </nav>;
 }
