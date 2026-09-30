@@ -82,7 +82,8 @@ test("verified automations snapshot recipe versions once and recheck consent whe
     now: new Date(baseNow.getTime() + 1_000),
     send: async (message) => { immediate.push(message); return { data: { id: `message-${immediate.length}` } }; },
   });
-  assert.equal(firstDelivery.accepted, 4, "welcome and referral milestone messages are due immediately");
+  const immediateEvents = await db.outboxEvent.findMany({ where: { waitListId: waitList.id, type: "MARKETING_AUTOMATION_STEP_REQUESTED" }, select: { status: true, payload: true, lastErrorCode: true, availableAt: true } });
+  assert.equal(firstDelivery.accepted, 4, `welcome and referral milestone messages are due immediately: ${JSON.stringify({ firstDelivery, immediateEvents })}`);
   assert.ok(immediate.every((message) => message.headers["List-Unsubscribe-Post"] === "List-Unsubscribe=One-Click"));
   assert.ok(immediate.every((message) => message.idempotencyKey.startsWith("automation.step:")));
   assert.ok(immediate.some((message) => /You’ve brought 2 people/.test(message.html)));
