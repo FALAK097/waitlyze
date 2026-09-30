@@ -56,9 +56,9 @@ test("verified automations snapshot recipe versions once and recheck consent whe
   const baseNow = new Date(Date.now() + 5_000);
   const triggers = await dispatchPendingOutboxEvents(db, { waitListId: waitList.id, now: baseNow, send: async () => { throw new Error("Trigger events must not send mail."); } });
   assert.equal(triggers.failed, 0);
-  assert.equal(triggers.retried, 0, "verified trigger processing should not retry");
-  assert.equal(triggers.skipped, 0, "verified trigger processing should not skip");
   const processedTriggers = await db.outboxEvent.findMany({ where: { waitListId: waitList.id, type: "MARKETING_AUTOMATION_TRIGGER_REQUESTED" }, select: { status: true, payload: true, lastErrorCode: true } });
+  assert.equal(triggers.retried, 0, `verified trigger processing should not retry: ${JSON.stringify(processedTriggers)}`);
+  assert.equal(triggers.skipped, 0, "verified trigger processing should not skip");
   assert.equal(processedTriggers.length, 3, "one trigger is created for each verified signup");
   assert.ok(processedTriggers.every((event) => event.status === "DELIVERED"), JSON.stringify(processedTriggers));
   const verifiedSubscribers = await db.signUp.findMany({ where: { waitListId: waitList.id }, select: { id: true, verifiedAt: true, marketingConsentAt: true, marketingUnsubscribedAt: true } });
