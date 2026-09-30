@@ -97,7 +97,7 @@ test("draft privacy, hosted signup, legacy redirect and paused state work in bro
   expect((await db.signUp.findUnique({ where: { id: referrerSignup.id } })).marketingUnsubscribedAt).toBeTruthy();
   await page.setViewportSize({ width: 320, height: 780 });
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
-  const audit = await new AxeBuilder({ page }).include(".verify-card").analyze();
+  const audit = await new AxeBuilder({ page }).include(".public-preferences-card").analyze();
   expect(audit.violations).toEqual([]);
   expect(await db.signUp.count({ where: { waitListId: draft.id } })).toBe(3);
 
