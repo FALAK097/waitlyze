@@ -84,7 +84,7 @@ test("authenticated two-destination shell uses real workspace data", async (t) =
     const stored = await db.apiKey.findUnique({ where: { id: created.id } });
     assert.equal(stored.waitlistId, waitlist.id);
     assert.deepEqual(stored.scopes, ["waitlist:write"]);
-    const secret = created.apiKey.split("_").at(-1);
+    const [, secret] = created.apiKey.match(/^wl2_[a-f0-9]{32}_([A-Za-z0-9_-]{43})$/);
     assert.equal(stored.keyHash, createHash("sha256").update(secret).digest("hex"));
     assert.ok(stored.expiresAt > new Date(Date.now() + 25 * 24 * 60 * 60 * 1000));
     const listed = await page.request.get(`${base}/api/v1/api-keys`);

@@ -117,6 +117,7 @@ test("real database draft creation owns authority, retries and slug conflicts", 
     assert.equal((await validatePublishedApiKey(`${token}x`, draft.id, db)).success, false);
     await db.apiKey.update({ where: { id: key.id }, data: { revokedAt: new Date() } });
     assert.equal((await validatePublishedApiKey(token, draft.id, db)).success, false);
+    await db.waitList.delete({ where: { id: other.id } });
   });
   await t.test("changed retry payload and duplicate address do not overwrite the draft", async () => {
     await assert.rejects(createDraft(db, actor, workspace.id, { ...input, name: "Changed" }), /request has changed/);
