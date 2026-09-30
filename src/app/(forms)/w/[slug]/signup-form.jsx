@@ -3,7 +3,7 @@
 import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 
-export function SignupForm({ waitListId, publicSlug, showReferrals, label, buttonText, thankYou }) {
+export function SignupForm({ waitListId, showReferrals, label, buttonText, thankYou }) {
   const searchParams = useSearchParams();
   const referralCode = searchParams.get("r");
   const [message, setMessage] = useState("");
@@ -37,12 +37,8 @@ export function SignupForm({ waitListId, publicSlug, showReferrals, label, butto
       const data = await response.json();
       if (!response.ok) throw new Error(data.message || "Couldn't join the waitlist. Try again.");
 
-      const signupReferralCode = data.signUp?.referralCode;
-      const referralUrl = showReferrals && signupReferralCode
-        ? `${window.location.origin}/w/${encodeURIComponent(publicSlug)}?r=${encodeURIComponent(signupReferralCode)}`
-        : null;
-      setResult({ position: data.signUp?.rank ?? null, referralUrl, heading: thankYou.heading, body: thankYou.body });
-      setMessage("Signup received.");
+      setResult({ heading: "Check your inbox", body: thankYou?.body || "Your signup is nearly complete.", notice: `We sent a confirmation link to ${email}. Confirm your email to secure your place on the waitlist.` });
+      setMessage("Signup received. Confirmation email queued.");
       form.reset();
     } catch (error) {
       setMessage(error.message || "Couldn't join the waitlist. Try again.");
@@ -51,33 +47,14 @@ export function SignupForm({ waitListId, publicSlug, showReferrals, label, butto
     }
   }
 
-  async function copyReferralLink() {
-    if (!result?.referralUrl) return;
-    try {
-      await navigator.clipboard.writeText(result.referralUrl);
-      setMessage("Referral link copied.");
-    } catch {
-      setMessage("Copy isn’t available here. Select the link and copy it.");
-    }
-  }
 
   if (result) {
     return (
       <section className="published-signup-result" aria-labelledby="signup-result-title">
         <p className="published-signup-status" role="status" aria-live="polite">{message}</p>
         <h2 id="signup-result-title">{result.heading}</h2>
-        <p className="published-signup-thank-you">{result.body}</p>
-        {result.position !== null && <p className="published-signup-position">Your current position <strong>#{result.position}</strong></p>}
-        {result.referralUrl && (
-          <div className="published-referral-share">
-            <p>Share your link. Referral credit appears after both signup email addresses are verified.</p>
-            <label htmlFor="published-referral-link">Your referral link</label>
-            <div className="published-signup-row">
-              <input id="published-referral-link" value={result.referralUrl} readOnly />
-              <button type="button" onClick={copyReferralLink}>Copy link</button>
-            </div>
-          </div>
-        )}
+        <p className="published-signup-thank-you">{result.notice}</p>
+        {result.body ? <p>{result.body}</p> : null}
       </section>
     );
   }

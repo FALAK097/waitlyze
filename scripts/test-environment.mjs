@@ -20,6 +20,8 @@ export function fixtureEnvironment() {
     RESEND_API_KEY: "re_fixture_not_a_real_key",
     RESEND_FROM_EMAIL: "test@example.invalid",
     RESEND_REPLY_TO: "test@example.invalid",
+    RESEND_WEBHOOK_SECRET: `whsec_${Buffer.from("fixture-webhook-secret").toString("base64")}`,
+    OUTBOX_DISPATCH_SECRET: "fixture-outbox-secret",
     NEXT_TELEMETRY_DISABLED: "1",
     WAITLYZE_TEST_FIXTURE: "1",
   };

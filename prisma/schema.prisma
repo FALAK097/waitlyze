@@ -214,8 +214,13 @@ model OutboxEvent {
   availableAt DateTime     @default(now())
   createdAt   DateTime     @default(now())
   processedAt DateTime?
+  lockedAt    DateTime?
+  waitListId  String?
+  providerMessageId String?
+  lastErrorCode String?
 
   @@index([status, availableAt])
+  @@index([status, lockedAt])
   @@map("outbox_events")
 }
 
@@ -365,6 +370,7 @@ model Workspace {
   updatedAt       DateTime          @updatedAt
   members         WorkspaceMember[]
   waitLists       WaitList[]
+  emailSuppressions EmailSuppression[]
 
   @@map("workspaces")
 }
@@ -386,4 +392,29 @@ enum WorkspaceRole {
   OWNER
   ADMIN
   MEMBER
+}
+
+model EmailProviderEvent {
+  id                String   @id @default(cuid())
+  providerEventId   String   @unique
+  providerMessageId String
+  type              String
+  isPermanent       Boolean  @default(false)
+  createdAt         DateTime @default(now())
+
+  @@index([providerMessageId, type])
+  @@map("email_provider_events")
+}
+
+model EmailSuppression {
+  id              String   @id @default(cuid())
+  workspaceId     String
+  emailNormalized String
+  reason          String
+  createdAt       DateTime @default(now())
+  workspace       Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, emailNormalized])
+  @@index([workspaceId, createdAt])
+  @@map("email_suppressions")
 }
