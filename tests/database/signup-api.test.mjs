@@ -23,7 +23,7 @@ test("public signup and verification routes preserve the legacy response contrac
   });
 
   await db.user.create({ data: { id: ownerId, email: `${ownerId}@example.invalid` } });
-  waitList = await db.waitList.create({ data: { userId: ownerId, name: "Public signup fixture", status: "PUBLISHED" } });
+  waitList = await db.waitList.create({ data: { userId: ownerId, name: "Public signup fixture", publicSlug: `public-${randomUUID()}`, showReferrals: true, status: "PUBLISHED" } });
   server = await startFixtureServer();
 
   const payload = { email: "Public@Example.invalid", waitListId: waitList.id, hypeSession: randomUUID() };
@@ -65,6 +65,9 @@ test("public signup and verification routes preserve the legacy response contrac
   });
   const verified = await verify();
   assert.equal(verified.status, 200);
-  assert.equal((await verified.json()).message, "Email verified successfully.");
+  const verifiedBody = await verified.json();
+  assert.equal(verifiedBody.message, "Email verified successfully.");
+  assert.equal(verifiedBody.referral.path, `/w/${waitList.publicSlug}?r=${first.signUp.referralCode}`);
+  assert.equal(verifiedBody.referral.position, 1);
   assert.equal((await verify()).status, 400);
 });

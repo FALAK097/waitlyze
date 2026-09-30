@@ -36,7 +36,7 @@ export default async function PublicWaitlistPage({ params }) {
       {section.type === "hero" && <><h1>{section.heading}</h1><p>{section.body}</p></>}
       {section.type === "features" && <div className="public-launch-features">{section.items.map((item, itemIndex) => <article key={itemIndex}><h2>{item.title}</h2><p>{item.body}</p></article>)}</div>}
       {section.type === "faq" && <div className="public-launch-faq">{section.items.map((item, itemIndex) => <article key={itemIndex}><h2>{item.question}</h2><p>{item.answer}</p></article>)}</div>}
-      {section.type === "form" && <SignupForm waitListId={page.waitList.id} publicSlug={slug} showReferrals={page.waitList.showReferrals} label={section.label} buttonText={section.buttonText} thankYou={page.snapshot.thankYou} />}
+      {section.type === "form" && <SignupForm waitListId={page.waitList.id} showReferrals={page.waitList.showReferrals} label={section.label} buttonText={section.buttonText} thankYou={page.snapshot.thankYou} />}
       {section.type === "footer" && <p>{section.note}</p>}
     </section>)}
   </div></main>;

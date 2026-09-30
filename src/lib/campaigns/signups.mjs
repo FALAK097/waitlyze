@@ -97,6 +97,7 @@ export async function createCampaignSignup(db, input, referralId, { now = new Da
         data: {
           eventKey: `signup.verify:${verification.id}`,
           type: "SIGNUP_VERIFICATION_REQUESTED",
+          waitListId: input.waitListId,
           payload: { signUpId: signUp.id, waitListId: input.waitListId, email: signUp.email, token },
         },
       });
