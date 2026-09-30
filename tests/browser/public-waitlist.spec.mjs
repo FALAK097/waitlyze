@@ -59,8 +59,8 @@ test("draft privacy, hosted signup, legacy redirect and paused state work in bro
 
   const baselineEmail = `${randomUUID()}@example.invalid`;
   await join(url, baselineEmail);
-  const { signup: baselineSignup } = await verify(baselineEmail);
-  expect(baselineSignup).not.toBeNull();
+  const baselineSignup = await db.signUp.findUnique({ where: { waitListId_emailNormalized: { waitListId: draft.id, emailNormalized: baselineEmail.toLowerCase() } } });
+  expect(baselineSignup.verifiedAt).toBeNull();
 
   const referrerEmail = `${randomUUID()}@example.invalid`;
   await join(url, referrerEmail);
