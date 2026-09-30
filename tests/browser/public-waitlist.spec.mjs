@@ -39,50 +39,49 @@ test("draft privacy, hosted signup, legacy redirect and paused state work in bro
     await page.goto(target);
     await page.getByLabel("Email address").fill(email);
     await page.getByRole("button", { name: "Join the waitlist" }).click();
-    await expect(page.getByRole("status")).toHaveText("Signup received.");
-    await expect(page.getByRole("heading", { name: /You.re on the list/ })).toBeVisible();
+    await expect(page.getByRole("status")).toHaveText("Signup received. Confirmation email queued.");
+    await expect(page.getByRole("heading", { name: "Check your inbox" })).toBeVisible();
+    await expect(page.getByLabel("Your referral link")).toHaveCount(0);
+    return { email };
+  };
+  const verify = async (email) => {
+    const signup = await db.signUp.findUnique({ where: { waitListId_emailNormalized: { waitListId: draft.id, emailNormalized: email.toLowerCase() } } });
+    const event = await db.outboxEvent.findFirst({ where: { type: "SIGNUP_VERIFICATION_REQUESTED", payload: { path: ["signUpId"], equals: signup.id } } });
+    await page.goto(`/verify/${event.payload.token}?returnTo=${encodeURIComponent(url)}`);
+    await expect(page.getByRole("button", { name: "Confirm email" })).toBeVisible();
+    await page.getByRole("button", { name: "Confirm email" }).click();
+    await expect(page.getByRole("heading", { name: "You’re confirmed" })).toBeVisible();
     return {
-      position: await page.locator(".published-signup-position").innerText(),
+      signup,
       referralLink: await page.getByLabel("Your referral link").inputValue(),
     };
   };
 
   const baselineEmail = `${randomUUID()}@example.invalid`;
-  const baseline = await join(url, baselineEmail);
-  expect(baseline.position).toContain("#1");
-  const baselineSignup = await db.signUp.findUnique({ where: { waitListId_emailNormalized: { waitListId: draft.id, emailNormalized: baselineEmail.toLowerCase() } } });
+  await join(url, baselineEmail);
+  const { signup: baselineSignup } = await verify(baselineEmail);
   expect(baselineSignup).not.toBeNull();
 
   const referrerEmail = `${randomUUID()}@example.invalid`;
-  const referrer = await join(url, referrerEmail);
-  expect(referrer.position).toContain("#2");
-  const referrerLink = new URL(referrer.referralLink);
-  expect(referrerLink.pathname).toBe(url);
-  expect(referrerLink.searchParams.get("r")).toBeTruthy();
+  await join(url, referrerEmail);
+  const { signup: referrerSignup, referralLink } = await verify(referrerEmail);
+  const referrerUrl = new URL(referralLink);
+  expect(referrerUrl.pathname).toBe(url);
+  expect(referrerUrl.searchParams.get("r")).toBeTruthy();
   await page.getByRole("button", { name: "Copy link" }).click();
-  await expect(page.getByRole("status")).toContainText(/Referral link copied|Copy isn’t available/);
+  await expect(page.locator(".verify-referral [role=status]")).toContainText(/Referral link copied|Select the link and copy it/);
 
   await page.evaluate(() => localStorage.removeItem("hypeSession"));
   const referredEmail = `${randomUUID()}@example.invalid`;
-  const referred = await join(referrer.referralLink, referredEmail);
-  expect(referred.position).toContain("#3");
-  const referrerSignup = await db.signUp.findUnique({ where: { waitListId_emailNormalized: { waitListId: draft.id, emailNormalized: referrerEmail.toLowerCase() } } });
-  const referredSignup = await db.signUp.findUnique({ where: { waitListId_emailNormalized: { waitListId: draft.id, emailNormalized: referredEmail.toLowerCase() } } });
+  await join(referralLink, referredEmail);
+  const { signup: referredSignup } = await verify(referredEmail);
   expect((await db.referral.findUnique({ where: { signUpId: referredSignup.id } })).referredById).toBe(referrerSignup.id);
-
-  for (const email of [referrerEmail, referredEmail]) {
-    const signup = await db.signUp.findUnique({ where: { waitListId_emailNormalized: { waitListId: draft.id, emailNormalized: email.toLowerCase() } } });
-    const event = await db.outboxEvent.findFirst({ where: { type: "SIGNUP_VERIFICATION_REQUESTED", payload: { path: ["signUpId"], equals: signup.id } } });
-    expect(event.status).toBe("PENDING");
-    const response = await page.request.post("/api/v1/sign_up/verify", { data: { token: event.payload.token } });
-    expect(response.status()).toBe(200);
-  }
 
   const refreshedPosition = await page.request.get(`/api/v1/sign_up?signUpId=${encodeURIComponent(referrerSignup.id)}`);
   expect((await refreshedPosition.json()).signUp.rank).toBe(1);
   await page.setViewportSize({ width: 320, height: 780 });
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
-  const audit = await new AxeBuilder({ page }).include(".published-signup-result").analyze();
+  const audit = await new AxeBuilder({ page }).include(".verify-card").analyze();
   expect(audit.violations).toEqual([]);
   expect(await db.signUp.count({ where: { waitListId: draft.id } })).toBe(3);
 
