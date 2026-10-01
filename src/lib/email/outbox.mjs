@@ -82,6 +82,7 @@ async function dispatchBroadcast(db, event, payload, send, now, attempt, result)
       html: broadcastHtml({ campaignName: waitList.name || "Waitlist", previewText: broadcast.previewText, body: broadcast.body, unsubscribeUrl }),
       headers: { "List-Unsubscribe": `<${unsubscribeUrl}>`, "List-Unsubscribe-Post": "List-Unsubscribe=One-Click" },
       idempotencyKey: event.eventKey,
+      workspaceId: waitList.workspaceId,
     });
     if (response?.error) throw response.error;
     const providerMessageId = response?.data?.id || response?.id;
@@ -176,6 +177,7 @@ export async function dispatchPendingOutboxEvents(db, { send, now = new Date(), 
         subject: `Confirm your spot on ${waitList.name || "the waitlist"}`,
         html: verificationHtml({ campaignName: waitList.name || "the waitlist", url: `${String(process.env.BETTER_AUTH_URL || "").replace(/\/$/, "")}/verify/${encodeURIComponent(payload.token)}${waitList.publicSlug ? `?returnTo=${encodeURIComponent(`/w/${waitList.publicSlug}`)}` : ""}` }),
         idempotencyKey: event.eventKey,
+        workspaceId: waitList.workspaceId,
       });
       if (response?.error) throw response.error;
       const providerMessageId = response?.data?.id || response?.id;

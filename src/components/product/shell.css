@@ -48,6 +48,19 @@
 .product-settings-panel dl { margin-block: 24px; }
 .product-settings-panel dt { color: var(--product-text-secondary); font-size: .875rem; margin-top: 16px; }
 .product-settings-panel dd { margin: 4px 0 0; overflow-wrap: anywhere; }
+.product-integration-card { display: grid; gap: 18px; padding: 20px; border: 1px solid var(--product-border-subtle); border-radius: 10px; background: var(--product-bg-surface); }
+.product-integration-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.product-integration-heading h3 { margin: 0 0 4px; font-size: 1rem; }
+.product-integration-heading p, .product-integration-note { margin: 0; color: var(--product-text-secondary); font-size: .875rem; }
+.product-integration-status { display: inline-flex; align-items: center; min-height: 28px; padding: 3px 10px; border-radius: 999px; background: var(--product-bg-inset); color: var(--product-text-secondary); font-size: .75rem; font-weight: 550; white-space: nowrap; }
+.product-integration-status.is-connected { background: color-mix(in srgb, var(--product-success-text) 12%, var(--product-bg-surface)); color: var(--product-success-text); }
+.product-integration-status.is-needs-attention { background: color-mix(in srgb, var(--product-danger-text) 10%, var(--product-bg-surface)); color: var(--product-danger-text); }
+.product-integration-form { display: grid; gap: 16px; max-width: 560px; }
+.product-integration-field { display: grid; gap: 7px; font-size: .875rem; font-weight: 550; }
+.product-integration-field input { min-height: 44px; max-width: 100%; padding: 9px 12px; border: 1px solid var(--product-border-control); border-radius: 8px; background: var(--product-bg-surface); color: var(--product-text-primary); font: inherit; }
+.product-integration-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.product-integration-card .product-announcement { min-height: 1.5em; color: var(--product-success-text); font-size: .8125rem; }
+.product-integration-card :is(button, input):focus-visible { outline: 2px solid var(--product-focus); outline-offset: 3px; }
 .product-webhook-settings form { display: grid; gap: 16px; max-width: 680px; }
 .product-webhook-settings .product-field { display: grid; gap: 7px; color: var(--product-text-primary); font-size: .9rem; font-weight: 550; }
 .product-webhook-settings input[type="text"], .product-webhook-settings input[type="url"], .product-webhook-settings .product-field input { min-height: 42px; padding: 9px 12px; border: 1px solid var(--product-border-control); border-radius: 8px; background: var(--product-bg-surface); color: var(--product-text-primary); }

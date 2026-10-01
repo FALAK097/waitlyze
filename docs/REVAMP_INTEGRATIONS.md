@@ -8,6 +8,20 @@ Existing `wl_` tokens retain their owner-level behavior for compatibility. The S
 
 ## Phase 18B: outbound webhooks
 
-Webhooks remain a separate follow-up slice. Bind each subscription to a workspace and selected waitlist events. Deliver stable event IDs with timestamped signatures, bounded retry/backoff, deduplication, dead-letter visibility, and explicit replay. Validate destination addresses against private, link-local, and metadata ranges on every resolution; reject redirects and protect against DNS rebinding. Keep delivery logs redacted and distinguish test deliveries. Implement durable delivery through an owned worker or managed queue; do not create detached request promises.
+Each subscription is waitlist-bound and selects signup-created or signup-verified events. Stable event IDs, timestamped HMAC signatures, encrypted signing secrets, bounded retries, test deliveries, pause/resume and explicit replay use a durable database queue dispatched by the authenticated internal scheduler. Event payloads omit subscriber email. Destination checks reject private, link-local and reserved IP ranges, resolve all A/AAAA records, pin a public address, and refuse redirects. Delivery logs keep only status, response code and a sanitized error code. See the Phase 18B PR for source, migration and test details.
 
-Acceptance requires tenant-boundary tests, expired/revoked/scope-denial tests, secret-rotation behavior, signature verification, replay/idempotency, SSRF defenses, and keyboard/mobile/a11y coverage of Settings → Developers and delivery controls. A green preview build does not prove that production jobs or provider credentials are configured.
+Before calling production delivery live, configure the shared base64-encoded 32-byte `WEBHOOK_SECRET_ENCRYPTION_KEY` and the existing internal outbox scheduler. It encrypts webhook signing secrets and later workspace provider credentials. A green preview build does not prove that production jobs or provider credentials are configured.
+
+## Phase 19A: workspace Resend connection
+
+The workspace Integrations section accepts a Resend sending-only key and a sender address. Secret material is encrypted with the shared integration key and never returned to the browser. A workspace owner/admin explicitly sends a test email to their own signed-in address; until that succeeds, the deployment sender remains active. A successful test activates the workspace sender for transactional verification, broadcasts, and automation email within that workspace. Disconnecting removes the saved credential and returns delivery to the deployment sender. Errors preserve form input and redact provider details.
+
+Keep the section short and operational: connection state, sender address, save/test/disconnect, and last test result. Resend credentials are workspace-level. Do not expose API keys in Settings APIs or logs. Validate key access by sending a user-requested test email rather than by requiring a full-access domain listing call. See [Resend send email](https://resend.com/docs/api-reference/emails/send-email) and [API-key permissions](https://resend.com/changelog/new-api-key-permissions).
+
+## Phase 19B: Slack notifications
+
+Add the Slack connection only after the shared workspace credential store ships. Use Slack OAuth or the official Incoming Webhook install flow; if storing an incoming-webhook URL, restrict it to the documented Slack host and path, encrypt it, and send only explicitly requested test messages. Event selection belongs to the relevant waitlist, not to a new global destination. Deliver selected events through a durable queue with stable IDs, pause/revoke, redacted status, and tenant/concurrency tests. Do not send subscriber email or other unnecessary personal data to Slack.
+
+## Phase 19C: optional analytics setup
+
+Offer only if tracking consent and the configured providers are implemented end to end. Keep provider IDs and scripts scoped to the workspace/waitlist, avoid silently injecting third-party scripts, and explain that external analytics receives visitor data. Do not show a connect card without a working test and revoke path.
