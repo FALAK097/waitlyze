@@ -32,10 +32,11 @@ test("Resend setup is keyboard usable, encrypted, private, and clear about its t
   await page.route("**/api/settings/integrations/resend/test", (route) => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ data: { status: "CONNECTED", lastTestedAt: new Date().toISOString(), sentTo: `${ownerId}@example.invalid` } }) }));
   await page.goto("/settings#integrations");
   await expect(page.getByRole("heading", { name: "Integrations" })).toBeVisible();
+  const integrationCard = page.locator(".product-integration-card");
   await page.getByLabel("Resend sending API key").fill("re_fixture_workspace_key_123456");
   await page.getByLabel("From email").fill("hello@company.example");
   await page.getByLabel("From email").press("Enter");
-  await expect(page.getByRole("status")).toHaveText("Saved. Send a test email to activate this connection.");
+  await expect(integrationCard.getByRole("status")).toHaveText("Saved. Send a test email to activate this connection.");
 
   const saved = await db.workspaceIntegration.findUnique({ where: { workspaceId_provider: { workspaceId: workspace.id, provider: "RESEND" } } });
   expect(saved.status).toBe("NEEDS_TEST");
@@ -46,12 +47,12 @@ test("Resend setup is keyboard usable, encrypted, private, and clear about its t
 
   await page.getByRole("button", { name: "Send test email" }).focus();
   await page.getByRole("button", { name: "Send test email" }).press("Enter");
-  await expect(page.getByRole("status")).toContainText(`Test email sent to ${ownerId}@example.invalid.`);
+  await expect(integrationCard.getByRole("status")).toContainText(`Test email sent to ${ownerId}@example.invalid.`);
   await expect(page.getByText("Connected")).toBeVisible();
 
   await page.setViewportSize({ width: 320, height: 780 });
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   await page.getByRole("button", { name: "Disconnect" }).click();
-  await expect(page.getByRole("status")).toHaveText("Resend disconnected. Waitlist emails will use the deployment sender.");
+  await expect(integrationCard.getByRole("status")).toHaveText("Resend disconnected. Waitlist emails will use the deployment sender.");
   expect(await db.workspaceIntegration.count({ where: { workspaceId: workspace.id } })).toBe(0);
 });
