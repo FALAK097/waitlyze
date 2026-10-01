@@ -204,6 +204,11 @@ test("authenticated two-destination shell uses real workspace data", async (t) =
     await page.goto(`${base}/wait-lists/${waitlist.id}`);
     assert.equal(await page.getByRole("heading", { name: "First launch" }).count(), 1);
     assert.deepEqual(await page.getByRole("navigation", { name: "Waitlist sections" }).getByRole("link").allTextContents(), ["Overview", "Page", "Subscribers", "Emails", "Settings"]);
+    for (const nestedRoute of ["broadcasts", "automations"]) {
+      await page.goto(`${base}/wait-lists/${waitlist.id}/emails/${nestedRoute}`);
+      assert.equal(await page.getByRole("navigation", { name: "Waitlist sections" }).getByRole("link", { name: "Emails" }).getAttribute("aria-current"), "page");
+    }
+    await page.goto(`${base}/wait-lists/${waitlist.id}`);
     for (const width of [320, 375]) {
       await page.setViewportSize({ width, height: 812 });
       await page.goto(`${base}/settings`);
