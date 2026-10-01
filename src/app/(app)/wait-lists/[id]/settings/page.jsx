@@ -5,6 +5,8 @@ import { campaignScope } from "@/lib/workspaces/service.mjs";
 import { DeleteWaitlist } from "@/components/product/delete-waitlist";
 import { ReferralSettings } from "@/components/product/referral-settings";
 import { WebhookSettings } from "@/components/product/webhook-settings";
+import { CustomDomainSettings } from "@/components/product/custom-domain-settings";
+import { env } from "@/lib/env.mjs";
 export const metadata = { title: "Waitlist settings" };
 export default async function WaitlistSettings({ params }) {
   const { id } = await params;
@@ -27,6 +29,11 @@ export default async function WaitlistSettings({ params }) {
       <h2 id="webhook-settings-title">Webhooks</h2>
       <p className="product-help">Send signed signup events to the tools your team already uses. Webhooks stay attached to this waitlist.</p>
       <WebhookSettings waitListId={waitlist.id} canManage={canDelete} />
+    </section>
+    <section className="product-settings-panel" aria-labelledby="custom-domain-title">
+      <h2 id="custom-domain-title">Custom domain</h2>
+      <p className="product-help">Publish this waitlist on a domain you own. You’ll need access to its DNS settings.</p>
+      <CustomDomainSettings waitListId={waitlist.id} canManage={canDelete} available={Boolean(env.VERCEL_TOKEN && env.VERCEL_PROJECT_ID && env.APP_ROOT_DOMAIN)} />
     </section>
   </div>;
 }

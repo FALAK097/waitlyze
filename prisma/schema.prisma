@@ -121,6 +121,7 @@ model WaitList {
   automationRecipes      AutomationRecipe[]
   automationRuns         AutomationRun[]
   webhookSubscriptions   WebhookSubscription[]
+  customDomain           CustomDomain?
 
   @@unique([workspaceId, creationKey])
   @@index([workspaceId, status])
@@ -632,6 +633,7 @@ model Workspace {
   waitLists       WaitList[]
   emailSuppressions EmailSuppression[]
   integrations      WorkspaceIntegration[]
+  customDomains     CustomDomain[]
 
   @@map("workspaces")
 }
@@ -698,4 +700,30 @@ model WorkspaceIntegration {
   @@unique([workspaceId, provider])
   @@index([workspaceId, status])
   @@map("workspace_integrations")
+}
+
+enum CustomDomainStatus {
+  NEEDS_DNS
+  VERIFYING
+  ACTIVE
+  NEEDS_ATTENTION
+}
+
+model CustomDomain {
+  id             String             @id @default(cuid())
+  hostname       String             @unique
+  workspaceId    String
+  waitListId     String             @unique
+  status         CustomDomainStatus @default(NEEDS_DNS)
+  verification   Json?
+  dnsRecords     Json?
+  lastCheckedAt  DateTime?
+  lastErrorCode  String?
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+  workspace      Workspace          @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  waitList       WaitList           @relation(fields: [waitListId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, status])
+  @@map("custom_domains")
 }
