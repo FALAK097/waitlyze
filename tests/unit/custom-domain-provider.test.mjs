@@ -32,6 +32,8 @@ test("builds fixed Vercel project endpoints and filters provider responses", asy
     assert.match(called.url, /^https:\/\/api\.vercel\.com\/v10\/projects\/prj_test\/domains\?teamId=team_test$/);
     assert.equal(called.options.headers.Authorization, "Bearer test-token");
     assert.equal(called.options.method, "POST");
+    globalThis.fetch = async () => new Response(JSON.stringify({ error: { message: "provider internals" } }), { status: 400 });
+    await assert.rejects(vercelDomain(vercelProjectPath("a.example.com", "verify"), { method: "POST" }), { status: 400, message: /Check the DNS records/ });
   } finally {
     globalThis.fetch = prior.fetch;
     for (const [key, value] of [["VERCEL_TOKEN", prior.token], ["VERCEL_PROJECT_ID", prior.project], ["VERCEL_TEAM_ID", prior.team]]) {

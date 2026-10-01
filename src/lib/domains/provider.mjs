@@ -30,7 +30,11 @@ export async function vercelDomain(path, { method = "GET", body } = {}) {
   try {
     const response = await fetch(url, { method, signal: controller.signal, headers: { Authorization: `Bearer ${token}`, "content-type": "application/json" }, ...(body ? { body: JSON.stringify(body) } : {}) });
     const data = await response.json().catch(() => ({}));
-    if (!response.ok) throw Object.assign(new Error(response.status === 409 ? "This hostname is already assigned to another project." : "Vercel could not update this domain. Check the hostname and try again."), { status: response.status === 409 ? 409 : 502 });
+    if (!response.ok) {
+      const status = response.status === 409 ? 409 : response.status === 400 ? 400 : 502;
+      const message = status === 409 ? "This hostname is already assigned to another project." : status === 400 ? "Vercel rejected this domain request. Check the DNS records and project settings." : "Vercel could not update this domain. Try again.";
+      throw Object.assign(new Error(message), { status });
+    }
     return data;
   } catch (error) {
     if (error.status) throw error;

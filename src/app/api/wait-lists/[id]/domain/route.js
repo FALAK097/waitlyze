@@ -52,7 +52,8 @@ export async function PATCH(request, { params }) {
   const existing = await prisma.customDomain.findUnique({ where: { waitListId: id } });
   if (!existing) return NextResponse.json({ error: "No domain is connected." }, { status: 404 });
   try {
-    await vercelDomain(vercelProjectPath(existing.hostname, "verify"), { method: "POST" });
+    try { await vercelDomain(vercelProjectPath(existing.hostname, "verify"), { method: "POST" }); }
+    catch (error) { if (error.status !== 400) throw error; }
     const current = await vercelDomain(vercelProjectPath(existing.hostname));
     const mapped = mapVercelDomain(current);
     let dnsRecords = existing.dnsRecords;
