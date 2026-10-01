@@ -10,7 +10,7 @@ Slice 04 adopts the product foundation in the authenticated application. Main na
 | No account settings destination | Profile save/sign-out and workspace details with desktop TOC/mobile disclosure | Expose real forms and hide capabilities that have not shipped |
 | Captured identity / unscoped private actions | Fresh sessions and scoped database predicates in adopted editor/analytics/template/media paths | A visible tab or stale UI is not authorization |
 
-The shell uses Geist, scoped cool neutrals, ink text and lime actions. Its legacy Tailwind channel adapter is restricted to .product-shell because older recipes wrap tokens in hsl(). Native links navigate immediately, focus indicators remain visible and the selected route uses aria-current. Server-generated DiceBear avatars use opaque IDs. No demo routes, assets or mocked statistics were added.
+The shell uses Geist, scoped cool neutrals, ink text and lime actions, consistent with the Dodo-inspired public palette. Lime stays limited to clear actions and active states; atmospheric gradients and dot texture stay on the landing page. Its legacy Tailwind channel adapter is restricted to .product-shell because older recipes wrap tokens in hsl(). Native links navigate immediately, focus indicators remain visible and the selected route uses aria-current. Navigation, account, builder and analytics controls use 44px touch targets. Server-generated DiceBear avatars use opaque IDs. No demo routes, assets or mocked statistics were added.
 
 ## Data and permissions
 
