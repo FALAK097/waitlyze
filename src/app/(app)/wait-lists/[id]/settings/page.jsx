@@ -4,6 +4,7 @@ import { currentWorkspace } from "@/lib/workspaces/current";
 import { campaignScope } from "@/lib/workspaces/service.mjs";
 import { DeleteWaitlist } from "@/components/product/delete-waitlist";
 import { ReferralSettings } from "@/components/product/referral-settings";
+import { WebhookSettings } from "@/components/product/webhook-settings";
 export const metadata = { title: "Waitlist settings" };
 export default async function WaitlistSettings({ params }) {
   const { id } = await params;
@@ -21,6 +22,11 @@ export default async function WaitlistSettings({ params }) {
       <h2 id="delete-waitlist-title">Delete waitlist</h2>
       <p className="product-help">Remove this waitlist and its subscriber and analytics records. Export any data you want to keep first.</p>
       {canDelete ? <DeleteWaitlist id={id} name={waitlist.name || "Untitled waitlist"} /> : <p className="product-help">An owner or admin can delete this waitlist.</p>}
+    </section>
+    <section className="product-settings-panel" aria-labelledby="webhook-settings-title">
+      <h2 id="webhook-settings-title">Webhooks</h2>
+      <p className="product-help">Send signed signup events to the tools your team already uses. Webhooks stay attached to this waitlist.</p>
+      <WebhookSettings waitListId={waitlist.id} canManage={canDelete} />
     </section>
   </div>;
 }

@@ -120,6 +120,7 @@ model WaitList {
   marketingConsentEvents MarketingConsentEvent[]
   automationRecipes      AutomationRecipe[]
   automationRuns         AutomationRun[]
+  webhookSubscriptions   WebhookSubscription[]
 
   @@unique([workspaceId, creationKey])
   @@index([workspaceId, status])
@@ -516,6 +517,63 @@ model EmailTemplate {
 enum EmailTemplateType {
   SIGNUP
   OFFBOARDING
+}
+
+enum WebhookDeliveryStatus {
+  PENDING
+  PROCESSING
+  DELIVERED
+  FAILED
+  PAUSED
+}
+
+model WebhookSubscription {
+  id                       String   @id @default(cuid())
+  waitListId               String
+  name                     String
+  url                      String
+  eventTypes               String[] @default(["signup.created"])
+  enabled                  Boolean  @default(true)
+  secretCiphertext         String
+  secretIv                 String
+  secretTag                String
+  previousSecretCiphertext String?
+  previousSecretIv         String?
+  previousSecretTag        String?
+  previousSecretValidUntil DateTime?
+  createdAt                DateTime @default(now())
+  updatedAt                DateTime @updatedAt
+  lastDeliveredAt          DateTime?
+  waitList                 WaitList @relation(fields: [waitListId], references: [id], onDelete: Cascade)
+  deliveries               WebhookDelivery[]
+
+  @@index([waitListId, enabled])
+  @@map("webhook_subscriptions")
+}
+
+model WebhookDelivery {
+  id               String                @id @default(cuid())
+  subscriptionId   String
+  eventId          String
+  eventKey         String                @unique
+  eventType        String
+  payload          Json
+  status           WebhookDeliveryStatus @default(PENDING)
+  attempts         Int                   @default(0)
+  replayCount      Int                   @default(0)
+  availableAt      DateTime              @default(now())
+  createdAt        DateTime              @default(now())
+  lockedAt         DateTime?
+  processedAt      DateTime?
+  deliveredAt      DateTime?
+  responseStatus   Int?
+  lastErrorCode    String?
+  subscription     WebhookSubscription   @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+
+  @@index([status, availableAt])
+  @@index([status, lockedAt])
+  @@index([subscriptionId, createdAt])
+  @@map("webhook_deliveries")
 }
 
 model Session {
