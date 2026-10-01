@@ -4,6 +4,7 @@ import { Resend } from "resend";
 import prisma from "@/lib/prisma";
 import { env } from "@/lib/env.mjs";
 import { dispatchPendingOutboxEvents } from "@/lib/email/outbox.mjs";
+import { dispatchPendingWebhooks } from "@/lib/webhooks/delivery.mjs";
 
 export const runtime = "nodejs";
 
@@ -20,5 +21,6 @@ export async function POST(request) {
   const result = await dispatchPendingOutboxEvents(prisma, {
     send: ({ to, subject, html, headers, idempotencyKey }) => resend.emails.send({ from: env.RESEND_FROM_EMAIL, to, subject, replyTo: env.RESEND_REPLY_TO, html, ...(headers ? { headers } : {}) }, { idempotencyKey }),
   });
-  return NextResponse.json(result);
+  const webhooks = await dispatchPendingWebhooks(prisma);
+  return NextResponse.json({ ...result, webhooks });
 }

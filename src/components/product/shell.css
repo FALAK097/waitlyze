@@ -48,6 +48,25 @@
 .product-settings-panel dl { margin-block: 24px; }
 .product-settings-panel dt { color: var(--product-text-secondary); font-size: .875rem; margin-top: 16px; }
 .product-settings-panel dd { margin: 4px 0 0; overflow-wrap: anywhere; }
+.product-webhook-settings form { display: grid; gap: 16px; max-width: 680px; }
+.product-webhook-settings .product-field { display: grid; gap: 7px; color: var(--product-text-primary); font-size: .9rem; font-weight: 550; }
+.product-webhook-settings input[type="text"], .product-webhook-settings input[type="url"], .product-webhook-settings .product-field input { min-height: 42px; padding: 9px 12px; border: 1px solid var(--product-border-control); border-radius: 8px; background: var(--product-bg-surface); color: var(--product-text-primary); }
+.product-webhook-events { display: flex; flex-wrap: wrap; gap: 12px 20px; border: 0; padding: 0; }
+.product-webhook-events legend { margin-bottom: 8px; font-weight: 550; }
+.product-webhook-events label { display: inline-flex; align-items: center; gap: 8px; }
+.product-webhook-endpoint { margin-top: 24px; padding: 20px; border: 1px solid var(--product-border-subtle); border-radius: 10px; }
+.product-webhook-endpoint header, .product-webhook-actions, .product-webhook-endpoint li { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.product-webhook-endpoint h3, .product-webhook-endpoint h4 { margin: 0; }
+.product-webhook-endpoint header p { margin: 6px 0 0; color: var(--product-text-secondary); overflow-wrap: anywhere; }
+.product-webhook-actions { justify-content: flex-start; flex-wrap: wrap; margin-block: 16px; }
+.product-webhook-actions button, .product-webhook-endpoint li button, .product-webhook-secret button { min-height: 44px; padding: 8px 12px; border: 1px solid var(--product-border-control); border-radius: 7px; background: var(--product-bg-surface); color: var(--product-text-primary); }
+.product-webhook-settings button:focus-visible, .product-webhook-settings input:focus-visible { outline: 2px solid var(--product-focus); outline-offset: 3px; }
+.product-webhook-endpoint ul { display: grid; gap: 8px; margin: 12px 0 0; padding: 0; list-style: none; }
+.product-webhook-endpoint li { justify-content: flex-start; flex-wrap: wrap; padding: 9px 0; border-top: 1px solid var(--product-border-subtle); }
+.product-webhook-endpoint li span:nth-child(2) { color: var(--product-text-secondary); }
+.product-webhook-secret { display: grid; gap: 10px; margin-top: 20px; padding: 16px; border: 1px solid var(--product-accent-border); border-radius: 8px; overflow-wrap: anywhere; }
+.product-webhook-secret h3, .product-webhook-secret p { margin: 0; }
+.product-webhook-secret code { padding: 8px; background: var(--product-bg-inset); }
 .product-settings-form { display: grid; gap: 8px; margin-top: 24px; }
 .product-settings-form .product-button { justify-self: start; }
 .product-settings-form label { font-size: .875rem; font-weight: 550; }

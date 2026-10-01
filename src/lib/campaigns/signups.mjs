@@ -2,6 +2,7 @@ import { createHash, randomBytes } from "node:crypto";
 import { getCampaignPosition } from "./referral-position.mjs";
 import { createUnsubscribeToken, hashUnsubscribeToken } from "../email/unsubscribe.mjs";
 import { MARKETING_CONSENT_COPY } from "./marketing-consent.mjs";
+import { enqueueWebhookEvent } from "../webhooks/delivery.mjs";
 
 const normalizeEmail = (email) => email.trim().toLowerCase();
 const tokenDigest = (token) => createHash("sha256").update(token).digest("hex");
@@ -90,6 +91,7 @@ export async function createCampaignSignup(db, input, referralId, { now = new Da
           ...(input.marketingConsent === true ? { marketingConsentAt: now } : {}),
         },
       });
+      await enqueueWebhookEvent(tx, { waitListId: input.waitListId, eventType: "signup.created", signupId: signUp.id, now });
 
       if (input.marketingConsent === true) {
         const token = createUnsubscribeToken(signUp.id, input.waitListId);
@@ -164,6 +166,7 @@ export async function verifyCampaignSignup(db, token, { now = new Date() } = {})
       if (claimed.count !== 1) return false;
       await tx.signUp.updateMany({ where: { id: verification.signUpId, verifiedAt: null }, data: { verifiedAt: now } });
       const signup = await tx.signUp.findUnique({ where: { id: verification.signUpId }, select: { id: true, waitListId: true } });
+      await enqueueWebhookEvent(tx, { waitListId: signup.waitListId, eventType: "signup.verified", signupId: signup.id, now });
       await tx.outboxEvent.create({
         data: {
           eventKey: `automation.trigger:signup-verified:${signup.id}`,
