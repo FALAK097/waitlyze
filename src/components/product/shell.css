@@ -78,6 +78,20 @@
 .product-webhook-endpoint li { justify-content: flex-start; flex-wrap: wrap; padding: 9px 0; border-top: 1px solid var(--product-border-subtle); }
 .product-webhook-endpoint li span:nth-child(2) { color: var(--product-text-secondary); }
 .product-webhook-secret { display: grid; gap: 10px; margin-top: 20px; padding: 16px; border: 1px solid var(--product-accent-border); border-radius: 8px; overflow-wrap: anywhere; }
+.product-custom-domain { display: grid; gap: 16px; }
+.product-custom-domain form { display: grid; gap: 16px; max-width: 560px; }
+.product-custom-domain .product-field { display: grid; gap: 7px; font-size: .9rem; font-weight: 550; }
+.product-custom-domain input { min-height: 44px; padding: 9px 12px; border: 1px solid var(--product-border-control); border-radius: 8px; background: var(--product-bg-surface); color: var(--product-text-primary); font: inherit; }
+.product-custom-domain header, .product-domain-actions { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.product-custom-domain header h3, .product-custom-domain header p { margin: 0; }
+.product-custom-domain header p { margin-top: 4px; color: var(--product-text-secondary); font-size: .875rem; }
+.product-domain-actions button { min-height: 44px; padding: 8px 12px; border: 1px solid var(--product-border-control); border-radius: 7px; background: var(--product-bg-surface); color: var(--product-text-primary); }
+.product-domain-record { display: grid; gap: 8px; margin: 0; padding: 12px; border: 1px solid var(--product-border-subtle); border-radius: 8px; background: var(--product-bg-inset); }
+.product-domain-record div { display: grid; grid-template-columns: 72px minmax(0, 1fr); gap: 12px; }
+.product-domain-record dt { color: var(--product-text-secondary); font-size: .8rem; }
+.product-domain-record dd { margin: 0; overflow-wrap: anywhere; font-size: .875rem; }
+.product-domain-record code { font-size: .8125rem; }
+.product-custom-domain :is(button, input):focus-visible { outline: 2px solid var(--product-focus); outline-offset: 3px; }
 .product-webhook-secret h3, .product-webhook-secret p { margin: 0; }
 .product-webhook-secret code { padding: 8px; background: var(--product-bg-inset); }
 .product-settings-form { display: grid; gap: 8px; margin-top: 24px; }

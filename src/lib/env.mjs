@@ -20,6 +20,10 @@ export const env = createEnv({
     OUTBOX_DISPATCH_SECRET: z.string().optional(),
     WEBHOOK_SECRET_ENCRYPTION_KEY: z.string().optional(),
     MARKETING_UNSUBSCRIBE_SECRET: z.string().min(32).optional(),
+    VERCEL_TOKEN: z.string().optional(),
+    VERCEL_PROJECT_ID: z.string().optional(),
+    VERCEL_TEAM_ID: z.string().optional(),
+    APP_ROOT_DOMAIN: z.string().optional(),
   },
   client: {
     NEXT_PUBLIC_R2_PUBLIC_URL: z.string().min(1),
@@ -43,5 +47,9 @@ export const env = createEnv({
     OUTBOX_DISPATCH_SECRET: process.env.OUTBOX_DISPATCH_SECRET,
     WEBHOOK_SECRET_ENCRYPTION_KEY: process.env.WEBHOOK_SECRET_ENCRYPTION_KEY,
     MARKETING_UNSUBSCRIBE_SECRET: process.env.MARKETING_UNSUBSCRIBE_SECRET,
+    VERCEL_TOKEN: process.env.VERCEL_TOKEN,
+    VERCEL_PROJECT_ID: process.env.VERCEL_PROJECT_ID,
+    VERCEL_TEAM_ID: process.env.VERCEL_TEAM_ID,
+    APP_ROOT_DOMAIN: process.env.APP_ROOT_DOMAIN,
   },
 });
