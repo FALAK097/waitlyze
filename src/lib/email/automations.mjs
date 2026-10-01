@@ -263,6 +263,7 @@ export async function dispatchAutomationStep(db, event, payload, send, now, atte
       html: automationHtml({ waitListName: waitList.name || "Waitlist", body: fillCopy(config.body, vars), unsubscribeUrl }),
       headers: { "List-Unsubscribe": `<${unsubscribeUrl}>`, "List-Unsubscribe-Post": "List-Unsubscribe=One-Click" },
       idempotencyKey: event.eventKey,
+      workspaceId: waitList.workspaceId,
     });
     if (response?.error) throw response.error;
     const providerMessageId = response?.data?.id || response?.id;

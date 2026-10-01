@@ -631,6 +631,7 @@ model Workspace {
   members         WorkspaceMember[]
   waitLists       WaitList[]
   emailSuppressions EmailSuppression[]
+  integrations      WorkspaceIntegration[]
 
   @@map("workspaces")
 }
@@ -677,4 +678,24 @@ model EmailSuppression {
   @@unique([workspaceId, emailNormalized])
   @@index([workspaceId, createdAt])
   @@map("email_suppressions")
+}
+
+model WorkspaceIntegration {
+  id                 String   @id @default(cuid())
+  workspaceId        String
+  provider           String
+  status             String   @default("NEEDS_TEST")
+  secretCiphertext   String
+  secretIv           String
+  secretTag          String
+  fromEmail          String
+  lastTestedAt       DateTime?
+  lastErrorCode      String?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  workspace          Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, provider])
+  @@index([workspaceId, status])
+  @@map("workspace_integrations")
 }

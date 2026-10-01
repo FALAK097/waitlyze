@@ -5,6 +5,7 @@ import prisma from "@/lib/prisma";
 import { env } from "@/lib/env.mjs";
 import { dispatchPendingOutboxEvents } from "@/lib/email/outbox.mjs";
 import { dispatchPendingWebhooks } from "@/lib/webhooks/delivery.mjs";
+import { createWorkspaceResendSender } from "@/lib/integrations/resend-sender.mjs";
 
 export const runtime = "nodejs";
 
@@ -17,9 +18,9 @@ function authorized(request) {
 
 export async function POST(request) {
   if (!authorized(request)) return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
-  const resend = new Resend(env.RESEND_API_KEY);
+  const sendEmail = createWorkspaceResendSender({ db: prisma, defaults: { apiKey: env.RESEND_API_KEY, fromEmail: env.RESEND_FROM_EMAIL, replyTo: env.RESEND_REPLY_TO }, createClient: (apiKey) => new Resend(apiKey) });
   const result = await dispatchPendingOutboxEvents(prisma, {
-    send: ({ to, subject, html, headers, idempotencyKey }) => resend.emails.send({ from: env.RESEND_FROM_EMAIL, to, subject, replyTo: env.RESEND_REPLY_TO, html, ...(headers ? { headers } : {}) }, { idempotencyKey }),
+    send: sendEmail,
   });
   const webhooks = await dispatchPendingWebhooks(prisma);
   return NextResponse.json({ ...result, webhooks });
