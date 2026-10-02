@@ -7,6 +7,7 @@ const faq = z.object({ type: z.literal("faq"), items: z.array(z.object({ questio
 const form = z.object({ type: z.literal("form"), label: text(80), buttonText: text(40) }).strict();
 const footer = z.object({ type: z.literal("footer"), note: text(160) }).strict();
 export const sectionSchema = z.discriminatedUnion("type", [hero, features, faq, form, footer]);
+export const templateFormSchema = z.object({ fields: z.tuple([z.literal("email")]), referrals: z.literal(false), verification: z.literal(false) }).strict();
 
 export const templateSnapshotSchema = z.object({
   schemaVersion: z.literal(1),
@@ -14,7 +15,7 @@ export const templateSnapshotSchema = z.object({
   templateVersion: z.number().int().positive(),
   sections: z.array(sectionSchema).min(2).max(12),
   theme: z.object({ surface: z.literal("white"), text: z.literal("ink"), action: z.literal("lime"), font: z.literal("geist") }).strict(),
-  form: z.object({ fields: z.tuple([z.literal("email")]), referrals: z.literal(false), verification: z.literal(false) }).strict(),
+  form: templateFormSchema,
   thankYou: z.object({ heading: text(120), body: text(400) }).strict(),
   email: z.object({ enabled: z.literal(false), subject: text(160), body: text(600) }).strict(),
 }).strict().superRefine((value, ctx) => {
