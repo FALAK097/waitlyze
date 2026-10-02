@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 import { priorityColors } from "@/utils/user";
 import { saveAs } from "file-saver";
 import { AnimatePresence, motion } from "framer-motion";
-import jsPDF from "jspdf";
+import { jsPDF } from "jspdf";
 import {
   ArrowDown,
   ArrowUp,
