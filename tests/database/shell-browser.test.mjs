@@ -19,13 +19,16 @@ const base = "http://127.0.0.1:3100";
 
 test("authenticated two-destination shell uses real workspace data", async (t) => {
   const userId = `fixture-${randomUUID()}`;
+  const otherUserId = `fixture-${randomUUID()}`;
   let server, browser;
   t.after(async () => {
     await browser?.close();
     if (server?.exitCode === null) { server.kill("SIGTERM"); await once(server, "exit"); }
     await db.waitList.deleteMany({ where: { userId } });
+    await db.waitList.deleteMany({ where: { userId: otherUserId } });
     await db.workspace.deleteMany({ where: { members: { some: { userId } } } });
-    await db.user.deleteMany({ where: { id: userId } });
+    await db.workspace.deleteMany({ where: { members: { some: { userId: otherUserId } } } });
+    await db.user.deleteMany({ where: { id: { in: [userId, otherUserId] } } });
     await db.$disconnect();
   });
   await db.user.create({ data: { id: userId, email: `${userId}@example.invalid`, name: "Shell fixture" } });
@@ -33,6 +36,9 @@ test("authenticated two-destination shell uses real workspace data", async (t) =
   await db.session.create({ data: { id: randomUUID(), token, userId, expiresAt: new Date(Date.now() + 120000) } });
   const personal = await service.ensurePersonal(userId);
   const waitlist = await db.waitList.create({ data: { userId, workspaceId: personal.id, name: "First launch", description: "Real fixture content" } });
+  await db.user.create({ data: { id: otherUserId, email: `${otherUserId}@example.invalid` } });
+  const otherWorkspace = await service.ensurePersonal(otherUserId);
+  await db.waitList.create({ data: { userId: otherUserId, workspaceId: otherWorkspace.id, name: "First launch external" } });
   server = await startFixtureServer();
   browser = await chromium.launch({ headless: true });
   const context = await browser.newContext({ viewport: { width: 1280, height: 900 } });
@@ -232,6 +238,18 @@ test("authenticated two-destination shell uses real workspace data", async (t) =
       await page.waitForURL(`${base}/wait-lists`);
       await page.getByRole("heading", { name: "Waitlists", exact: true }).waitFor();
       assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), JSON.stringify(await page.evaluate(() => [...document.querySelectorAll("body *")].filter((el) => el.getBoundingClientRect().right > innerWidth).slice(0, 8).map((el) => ({ tag: el.tagName, cls: el.className, width: el.getBoundingClientRect().width })))));
+      const search = page.getByRole("search");
+      await search.getByLabel("Search waitlists").fill("First launch");
+      await search.getByRole("button", { name: "Search" }).click();
+      await page.waitForURL(`${base}/wait-lists?q=First+launch`);
+      assert.equal(await page.getByRole("row", { name: /First launch/ }).count(), 1);
+      assert.equal(await page.getByRole("row", { name: /external/ }).count(), 0);
+      await page.getByRole("search").getByLabel("Search waitlists").fill("no matching launch");
+      await page.getByRole("search").getByRole("button", { name: "Search" }).click();
+      await page.getByRole("heading", { name: "No waitlists found" }).waitFor();
+      await page.getByRole("link", { name: "Clear search" }).click();
+      await page.waitForURL(`${base}/wait-lists`);
+      assert.equal(await page.getByRole("row", { name: /First launch/ }).count(), 1);
     }
     await page.goto(`${base}/settings`);
     await page.screenshot({ path: "/tmp/waitlyze-shell-settings-mobile.png", fullPage: true });
