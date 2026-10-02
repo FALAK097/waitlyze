@@ -312,7 +312,8 @@ test("authenticated two-destination shell uses real workspace data", async (t) =
     assert.equal(await page.getByRole("navigation", { name: "Filter waitlists by status" }).getByRole("link", { name: "All" }).getAttribute("aria-current"), "page");
     assert.equal(await page.getByRole("row", { name: /First launch external/ }).count(), 0);
     await page.setViewportSize({ width: 1280, height: 900 });
-    await t.test("waitlist sorting preserves filters, orders in the database, and stays workspace-scoped", async () => {
+    console.error("[shell-browser] sorting: creating fixtures");
+    {
       const secondWorkspace = await db.workspace.create({ data: { name: "Sorting isolation workspace", members: { create: { userId, role: "ADMIN" } } } });
       const [alpha, beta, zulu, zero, hidden] = await Promise.all([
         db.waitList.create({ data: { userId, workspaceId: personal.id, name: "Sort fixture Alpha", status: "PUBLISHED" } }),
@@ -356,7 +357,8 @@ test("authenticated two-destination shell uses real workspace data", async (t) =
       await page.reload();
       assert.equal(await headers.nth(0).getAttribute("aria-sort"), "ascending");
       await page.setViewportSize({ width: 1280, height: 900 });
-    });
+    }
+    console.error("[shell-browser] sorting: all checks passed");
     await page.goto(`${base}/settings`);
     await page.screenshot({ path: "/tmp/waitlyze-shell-settings-mobile.png", fullPage: true });
     await page.setViewportSize({ width: 1280, height: 900 });
