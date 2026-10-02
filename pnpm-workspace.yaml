@@ -1,5 +1,7 @@
 overrides:
-  kysely: 0.28.2
+  deepmerge-ts: 8.0.2
+  kysely: 0.28.17
+  mysql2: 3.24.5
 
 allowBuilds:
   '@prisma/engines': true

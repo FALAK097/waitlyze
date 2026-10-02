@@ -1,8 +1,8 @@
 "use server";
 
 import { env } from "@/lib/env.mjs";
+import { escapeHtmlText, renderEmailMarkdown } from "@/lib/email-markdown.mjs";
 import prisma from "@/lib/prisma";
-import { marked } from 'marked';
 import { Resend } from 'resend';
 
 const resend = new Resend(env.RESEND_API_KEY);
@@ -171,7 +171,7 @@ export async function sendTestEmail({ waitListId, templateType, to }) {
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>${subject}</title>
+  <title>${escapeHtmlText(subject)}</title>
   <style>
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
@@ -301,8 +301,7 @@ export async function sendTestEmail({ waitListId, templateType, to }) {
 }
 
 function markdownToHtml(markdown) {
-  if (!markdown) return '';
-  return marked(markdown);
+  return renderEmailMarkdown(markdown);
 }
 
 async function renderTemplate({ waitListId, enumType, varsOverride = {} }) {
@@ -351,7 +350,7 @@ async function renderTemplate({ waitListId, enumType, varsOverride = {} }) {
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>${subject}</title>
+  <title>${escapeHtmlText(subject)}</title>
   <style>
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
