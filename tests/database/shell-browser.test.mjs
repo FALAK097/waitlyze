@@ -258,11 +258,18 @@ test("authenticated two-destination shell uses real workspace data", async (t) =
     }
     console.error("[shell-browser] contextual: status filter fixture setup");
     await t.test("status filters preserve search and stay workspace-scoped", async () => {
-      const secondWorkspace = await db.workspace.create({ data: { name: "Another owned workspace", members: { create: { userId, role: "ADMIN" } } } });
-      await db.waitList.create({ data: { userId, workspaceId: personal.id, name: "Published launch", status: "PUBLISHED" } });
-      await db.waitList.create({ data: { userId, workspaceId: secondWorkspace.id, name: "Other workspace launch", status: "PUBLISHED" } });
-      await db.waitList.create({ data: { userId, workspaceId: personal.id, name: "Paused launch", status: "PAUSED" } });
-      await db.waitList.update({ where: { id: (await db.waitList.findFirst({ where: { userId: otherUserId, name: "First launch external" } })).id }, data: { status: "PUBLISHED" } });
+      await db.$transaction(async (tx) => {
+        console.error("[shell-browser] status fixture: creating secondary workspace");
+        const secondWorkspace = await tx.workspace.create({ data: { name: "Another owned workspace", members: { create: { userId, role: "ADMIN" } } } });
+        console.error("[shell-browser] status fixture: creating published waitlists");
+        await tx.waitList.create({ data: { userId, workspaceId: personal.id, name: "Published launch", status: "PUBLISHED" } });
+        await tx.waitList.create({ data: { userId, workspaceId: secondWorkspace.id, name: "Other workspace launch", status: "PUBLISHED" } });
+        console.error("[shell-browser] status fixture: creating paused waitlist");
+        await tx.waitList.create({ data: { userId, workspaceId: personal.id, name: "Paused launch", status: "PAUSED" } });
+        console.error("[shell-browser] status fixture: publishing other-user waitlist");
+        const external = await tx.waitList.findFirst({ where: { userId: otherUserId, name: "First launch external" } });
+        await tx.waitList.update({ where: { id: external.id }, data: { status: "PUBLISHED" } });
+      }, { maxWait: 5_000, timeout: 15_000 });
       console.error("[shell-browser] status: fixture ready, opening published list");
       await context.addCookies([{ name: "waitlyze-workspace", value: personal.id, domain: "127.0.0.1", path: "/", httpOnly: true, sameSite: "Lax" }]);
       await page.setViewportSize({ width: 320, height: 812 });
