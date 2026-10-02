@@ -248,6 +248,7 @@ test("authenticated two-destination shell uses real workspace data", async (t) =
       await page.getByRole("search").getByRole("button", { name: "Search" }).click();
       await page.getByRole("heading", { name: "No waitlists found" }).waitFor();
       await page.getByRole("link", { name: "Clear search" }).click();
+      await page.waitForURL(`${base}/wait-lists`);
       assert.equal(await page.getByRole("row", { name: /First launch/ }).count(), 1);
     }
     await page.goto(`${base}/settings`);
