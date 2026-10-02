@@ -311,6 +311,10 @@ test("authenticated two-destination shell uses real workspace data", async (t) =
     assert.doesNotMatch(csv, /ipAddress|uniqueUserId/);
     await page.setViewportSize({ width: 320, height: 812 });
     assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
+    const mobileWizardAction = page.locator(".product-create-actions");
+    assert.equal(await mobileWizardAction.evaluate((element) => getComputedStyle(element).position), "sticky");
+    const actionBounds = await page.getByRole("button", { name: "Continue with Mobile app" }).boundingBox();
+    assert.ok(actionBounds && actionBounds.y >= 0 && actionBounds.y + actionBounds.height <= 812, "the primary wizard action remains in the mobile viewport");
     assert.deepEqual((await new AxeBuilder({ page }).include(".product-shell").analyze()).violations, []);
     await page.screenshot({ path: "/tmp/waitlyze-subscribers-mobile.png", fullPage: true });
     await page.setViewportSize({ width: 1280, height: 900 });

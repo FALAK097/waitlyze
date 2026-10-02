@@ -157,7 +157,7 @@
 .product-create-review dd { margin: 0; overflow-wrap: anywhere; }
 .product-create-actions { margin-top: 24px; display: flex; gap: 12px; }
 @media (min-width: 701px) { .product-create-actions { justify-content: flex-end; } }
-@media (max-width: 700px) { .product-template-layout { grid-template-columns: minmax(0, 1fr); gap: 24px; } .product-template-preview { padding: 24px; } .product-create-steps { gap: 8px; } .product-create-steps li { align-items: flex-start; flex-direction: column; flex: 1; font-size: .75rem; } }
+@media (max-width: 700px) { .product-template-layout { grid-template-columns: minmax(0, 1fr); gap: 24px; } .product-template-preview { padding: 24px; } .product-create-steps { gap: 8px; } .product-create-steps li { align-items: flex-start; flex-direction: column; flex: 1; font-size: .75rem; } .product-create-actions { position: sticky; inset-block-end: 0; z-index: 5; justify-content: flex-end; margin-inline: -16px; padding: 12px 16px calc(12px + env(safe-area-inset-bottom)); border-top: 1px solid var(--product-border-subtle); background: var(--product-bg-page); } }
 
 .launch-rehearsal { padding: 20px; }
 .launch-readiness { padding: 20px; }
