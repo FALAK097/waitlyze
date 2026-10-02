@@ -42,6 +42,8 @@ test("authenticated two-destination shell uses real workspace data", async (t) =
   server = await startFixtureServer();
   browser = await chromium.launch({ headless: true });
   const context = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+  context.setDefaultTimeout(15_000);
+  context.setDefaultNavigationTimeout(15_000);
   const cookie = signedCookie(token).split("=");
   await context.addCookies([{ name: cookie[0], value: cookie[1], domain: "127.0.0.1", path: "/", httpOnly: true, sameSite: "Lax" }]);
   const page = await context.newPage();
