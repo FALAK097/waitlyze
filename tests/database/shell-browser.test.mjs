@@ -365,11 +365,13 @@ test("authenticated two-destination shell uses real workspace data", async (t) =
     assert.ok(actionBounds && actionBounds.y >= 0 && actionBounds.y + actionBounds.height <= 812, "the primary wizard action remains in the mobile viewport");
     const previewEnd = page.locator(".product-template-preview").locator("*").last();
     await previewEnd.scrollIntoViewIfNeeded();
+    await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
     const [previewBounds, scrolledActionBounds] = await Promise.all([
       previewEnd.boundingBox(),
       continueButton.boundingBox(),
     ]);
     assert.ok(previewBounds && scrolledActionBounds && previewBounds.bottom <= scrolledActionBounds.y, "the sticky action does not cover the end of the template preview");
+    assert.ok(scrolledActionBounds && scrolledActionBounds.y >= 0 && scrolledActionBounds.bottom <= 812, "the primary wizard action remains reachable at the end of the preview");
     assert.deepEqual((await new AxeBuilder({ page }).include(".product-shell").analyze()).violations, []);
     await page.screenshot({ path: "/tmp/waitlyze-template-mobile.png", fullPage: true });
     await page.setViewportSize({ width: 1280, height: 900 });
