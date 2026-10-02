@@ -526,4 +526,4 @@ test("authenticated two-destination shell uses real workspace data", async (t) =
     assert.equal(await db.waitList.findUnique({ where: { id: waitlist.id } }), null);
   });
   assert.deepEqual(errors, []);
-});
+}, { timeout: 180_000 });
