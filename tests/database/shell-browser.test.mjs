@@ -358,14 +358,29 @@ test("authenticated two-destination shell uses real workspace data", async (t) =
     await page.getByRole("radio", { name: /Mobile app/ }).check();
     await page.setViewportSize({ width: 320, height: 812 });
     assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
+    const mobileWizardAction = page.locator(".product-create-actions");
+    assert.equal(await mobileWizardAction.evaluate((element) => getComputedStyle(element).position), "sticky");
+    const continueButton = page.getByRole("button", { name: "Continue with Mobile app" });
+    const actionBounds = await continueButton.boundingBox();
+    assert.ok(actionBounds && actionBounds.y >= 0 && actionBounds.y + actionBounds.height <= 812, "the primary wizard action remains in the mobile viewport");
+    const preview = page.locator(".product-template-preview");
+    await preview.scrollIntoViewIfNeeded();
+    await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+    const [previewBounds, scrolledActionBounds] = await Promise.all([
+      preview.boundingBox(),
+      continueButton.boundingBox(),
+    ]);
+    assert.ok(previewBounds && scrolledActionBounds && previewBounds.y + previewBounds.height <= scrolledActionBounds.y, "the sticky action does not cover the end of the template preview");
+    assert.ok(scrolledActionBounds && scrolledActionBounds.y >= 0 && scrolledActionBounds.y + scrolledActionBounds.height <= 812, "the primary wizard action remains reachable at the end of the preview");
     assert.deepEqual((await new AxeBuilder({ page }).include(".product-shell").analyze()).violations, []);
     await page.screenshot({ path: "/tmp/waitlyze-template-mobile.png", fullPage: true });
+    await page.evaluate(() => window.scrollTo(0, 0));
     await page.setViewportSize({ width: 1280, height: 900 });
     await page.screenshot({ path: "/tmp/waitlyze-template-desktop.png", fullPage: true });
-    const continueButton = page.getByRole("button", { name: "Continue with Mobile app" });
     await continueButton.focus();
     await page.keyboard.press("Enter");
     const detailsHeading = page.getByRole("heading", { name: "Add details", exact: true });
+    await page.waitForFunction(() => document.activeElement?.matches(".product-create-heading") && document.activeElement.textContent === "Add details");
     assert.equal(await detailsHeading.evaluate((element) => document.activeElement === element), true);
     assert.equal(await detailsHeading.evaluate((element) => getComputedStyle(element).outlineWidth), "2px");
     await page.getByLabel("Waitlist name", { exact: true }).fill("Created fixture");
