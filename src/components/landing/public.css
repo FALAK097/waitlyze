@@ -876,6 +876,9 @@
   gap: 5px;
   align-items: center;
 }
+.wl :is(.wl-final-cta, .wl-footer) :is(a, button, input, summary):focus-visible {
+  outline-color: var(--wl-surface);
+}
 .wl-footer-bottom {
   position: relative;
   display: flex;
