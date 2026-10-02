@@ -354,6 +354,28 @@ test("authenticated two-destination shell uses real workspace data", async (t) =
     assert.equal(await page.getByLabel("Headline", { exact: true }).inputValue(), "Something new for your everyday.");
     const initialDraft = await db.waitList.findFirst({ where: { userId, name: "Created fixture" } });
     assert.equal(initialDraft.templateRevision, 1);
+    await page.goto(`${base}/wait-lists/${initialDraft.id}`);
+    const readiness = page.getByRole("region", { name: "Launch readiness" });
+    await readiness.waitFor({ state: "visible" });
+    await readiness.getByText("Your saved page matches the template requirements.").waitFor({ state: "visible" });
+    await readiness.getByText("One valid email signup form is configured.").waitFor({ state: "visible" });
+    await readiness.getByText("Drafts stay private until you publish them.").waitFor({ state: "visible" });
+    const review = readiness.getByRole("link", { name: "Review Publish your waitlist", exact: true });
+    assert.equal(await review.getAttribute("href"), `/wait-lists/${initialDraft.id}/edit`);
+    await page.setViewportSize({ width: 320, height: 812 });
+    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
+    assert.deepEqual((await new AxeBuilder({ page }).include(".launch-readiness").analyze()).violations, []);
+    await page.setViewportSize({ width: 1280, height: 900 });
+    let reachedByKeyboard = false;
+    for (let tab = 0; tab < 24 && !reachedByKeyboard; tab += 1) {
+      await page.keyboard.press("Tab");
+      reachedByKeyboard = await review.evaluate((element) => document.activeElement === element);
+    }
+    assert.equal(reachedByKeyboard, true);
+    assert.equal(await review.evaluate((element) => element.matches(":focus-visible")), true);
+    assert.equal(await review.evaluate((element) => getComputedStyle(element).outlineWidth), "2px");
+    await page.keyboard.press("Enter");
+    await page.waitForURL(new RegExp(`/wait-lists/${initialDraft.id}/edit$`));
     await page.getByLabel("Headline", { exact: true }).fill("  A better way to make it happen.  ");
     await page.getByText("Saved · version 2").waitFor({ state: "visible", timeoutMs: 10000 });
     assert.equal(await page.getByLabel("Headline", { exact: true }).inputValue(), "  A better way to make it happen.  ");
