@@ -217,11 +217,11 @@ test("authenticated two-destination shell uses real workspace data", async (t) =
       await settingsSections.locator("summary").click();
       const settingsLinks = settingsSections.getByRole("navigation", { name: "Settings sections" }).getByRole("link");
       assert.deepEqual(await settingsLinks.allTextContents(), ["Profile", "Workspace", "Integrations", "Developers"]);
-      const sectionLinkBounds = await settingsLinks.evaluateAll((links) => links.map((link) => {
+      const sectionLinkBounds = await settingsLinks.evaluateAll((links) => ({ viewportWidth: innerWidth, links: links.map((link) => {
         const rect = link.getBoundingClientRect();
         return { left: rect.left, right: rect.right, height: rect.height };
-      }));
-      assert.ok(sectionLinkBounds.every(({ left, right, height }) => left >= 0 && right <= innerWidth && height >= 44));
+      }) }));
+      assert.ok(sectionLinkBounds.links.every(({ left, right, height }) => left >= 0 && right <= sectionLinkBounds.viewportWidth && height >= 44));
       await settingsLinks.filter({ hasText: "Integrations" }).click();
       assert.equal(new URL(page.url()).hash, "#integrations");
       await page.getByRole("link", { name: "Skip to content", exact: true }).focus();
