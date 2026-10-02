@@ -39,7 +39,7 @@ function SortableHeading({ column, label, query, status, sort }) {
   const accessibleName = `Sort by ${accessibleColumn}${active ? `, currently ${sortLabel}` : ""}`;
 
   return (
-    <th scope="col" aria-sort={ariaSort}>
+    <th scope="col" aria-sort={active ? ariaSort : undefined}>
       <Link
         className="product-table-sort"
         href={waitlistsHref({ query, status, sort: nextSort })}
