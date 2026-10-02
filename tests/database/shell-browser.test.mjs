@@ -236,7 +236,7 @@ test("authenticated two-destination shell uses real workspace data", async (t) =
       await settingsLinks.filter({ hasText: "Integrations" }).click();
       assert.equal(new URL(page.url()).hash, "#integrations");
       assert.equal(await settingsSections.evaluate((details) => details.open), false);
-      assert.equal(await settingsLinks.filter({ hasText: "Integrations" }).getAttribute("aria-current"), "location");
+      assert.equal(await settingsSections.locator('nav a[href="#integrations"]').getAttribute("aria-current"), "location");
       await page.getByRole("link", { name: "Skip to content", exact: true }).focus();
       await page.keyboard.press("Enter");
       assert.equal(await page.evaluate(() => document.activeElement.id), "product-content");
@@ -266,7 +266,7 @@ test("authenticated two-destination shell uses real workspace data", async (t) =
     await page.goBack();
     await page.waitForURL(`${base}/settings`);
     await page.waitForFunction(() => document.querySelector('.product-settings-desktop a[aria-current="location"]')?.getAttribute("href") === "#profile");
-    await page.locator("#developers").scrollIntoViewIfNeeded();
+    await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
     await page.waitForFunction(() => document.querySelector('.product-settings-desktop a[aria-current="location"]')?.getAttribute("href") === "#developers");
     console.error("[shell-browser] contextual: status filter fixture setup");
     console.error("[shell-browser] status fixture: creating secondary workspace");

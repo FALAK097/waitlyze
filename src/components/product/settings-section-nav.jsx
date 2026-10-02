@@ -19,11 +19,24 @@ export function SettingsSectionNavigation() {
 
   useEffect(() => {
     const syncHash = () => setActiveSection(currentHash());
+    const syncPageEnd = () => {
+      if (window.scrollY + window.innerHeight >= document.documentElement.scrollHeight - 2) {
+        setActiveSection(sections[sections.length - 1].id);
+      }
+    };
     syncHash();
     window.addEventListener("hashchange", syncHash);
+    window.addEventListener("scroll", syncPageEnd, { passive: true });
+    window.addEventListener("resize", syncPageEnd);
 
     const targets = sections.map(({ id }) => document.getElementById(id)).filter(Boolean);
-    if (!("IntersectionObserver" in window)) return () => window.removeEventListener("hashchange", syncHash);
+    if (!("IntersectionObserver" in window)) {
+      return () => {
+        window.removeEventListener("hashchange", syncHash);
+        window.removeEventListener("scroll", syncPageEnd);
+        window.removeEventListener("resize", syncPageEnd);
+      };
+    }
 
     const observer = new IntersectionObserver((entries) => {
       const visible = entries
@@ -35,6 +48,8 @@ export function SettingsSectionNavigation() {
 
     return () => {
       window.removeEventListener("hashchange", syncHash);
+      window.removeEventListener("scroll", syncPageEnd);
+      window.removeEventListener("resize", syncPageEnd);
       observer.disconnect();
     };
   }, []);
