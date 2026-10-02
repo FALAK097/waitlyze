@@ -209,15 +209,18 @@ test("authenticated two-destination shell uses real workspace data", async (t) =
     await db.signUp.deleteMany({ where: { id: { in: [referrer.id, invitee.id] } } });
   });
   await t.test("contextual tabs use the selected waitlist and fit a narrow viewport", async () => {
+    console.error("[shell-browser] contextual: waitlist tabs start");
     await page.goto(`${base}/wait-lists/${waitlist.id}`);
     assert.equal(await page.getByRole("heading", { name: "First launch" }).count(), 1);
     assert.deepEqual(await page.getByRole("navigation", { name: "Waitlist sections" }).getByRole("link").allTextContents(), ["Overview", "Page", "Subscribers", "Emails", "Settings"]);
     for (const nestedRoute of ["broadcasts", "automations"]) {
+      console.error(`[shell-browser] contextual: nested route ${nestedRoute}`);
       await page.goto(`${base}/wait-lists/${waitlist.id}/emails/${nestedRoute}`);
       assert.equal(await page.getByRole("navigation", { name: "Waitlist sections" }).getByRole("link", { name: "Emails" }).getAttribute("aria-current"), "page");
     }
     await page.goto(`${base}/wait-lists/${waitlist.id}`);
     for (const width of [320, 375]) {
+      console.error(`[shell-browser] contextual: settings and search at ${width}px`);
       await page.setViewportSize({ width, height: 812 });
       await page.goto(`${base}/settings`);
       assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
@@ -253,12 +256,14 @@ test("authenticated two-destination shell uses real workspace data", async (t) =
       await page.waitForURL(`${base}/wait-lists`);
       assert.equal(await page.getByRole("row", { name: /First launch/ }).count(), 1);
     }
+    console.error("[shell-browser] contextual: status filter fixture setup");
     await t.test("status filters preserve search and stay workspace-scoped", async () => {
       const secondWorkspace = await db.workspace.create({ data: { name: "Another owned workspace", members: { create: { userId, role: "ADMIN" } } } });
       await db.waitList.create({ data: { userId, workspaceId: personal.id, name: "Published launch", status: "PUBLISHED" } });
       await db.waitList.create({ data: { userId, workspaceId: secondWorkspace.id, name: "Other workspace launch", status: "PUBLISHED" } });
       await db.waitList.create({ data: { userId, workspaceId: personal.id, name: "Paused launch", status: "PAUSED" } });
       await db.waitList.update({ where: { id: (await db.waitList.findFirst({ where: { userId: otherUserId, name: "First launch external" } })).id }, data: { status: "PUBLISHED" } });
+      console.error("[shell-browser] status: fixture ready, opening published list");
       await context.addCookies([{ name: "waitlyze-workspace", value: personal.id, domain: "127.0.0.1", path: "/", httpOnly: true, sameSite: "Lax" }]);
       await page.setViewportSize({ width: 320, height: 812 });
       await page.goto(`${base}/wait-lists?status=PUBLISHED`);
@@ -267,6 +272,7 @@ test("authenticated two-destination shell uses real workspace data", async (t) =
       assert.equal(await page.getByRole("row", { name: /Published launch/ }).count(), 1);
       assert.equal(await page.getByRole("row", { name: /Other workspace launch/ }).count(), 0);
       assert.equal(await page.getByRole("row", { name: /First launch external/ }).count(), 0);
+      console.error("[shell-browser] status: published scope and target checks passed");
       const filterBounds = await statusNavigation.getByRole("link").evaluateAll((links) => ({ viewportWidth: innerWidth, links: links.map((link) => {
         const rect = link.getBoundingClientRect();
         return { left: rect.left, right: rect.right, height: rect.height };
@@ -289,6 +295,7 @@ test("authenticated two-destination shell uses real workspace data", async (t) =
       assert.equal(await page.getByRole("row", { name: /Paused launch/ }).count(), 1);
       assert.deepEqual((await new AxeBuilder({ page }).include(".product-shell").analyze()).violations, []);
       assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
+      console.error("[shell-browser] status: all filters and accessibility checks passed");
       await page.goto(`${base}/wait-lists?status=ADMIN`);
       assert.equal(await page.getByRole("navigation", { name: "Filter waitlists by status" }).getByRole("link", { name: "All" }).getAttribute("aria-current"), "page");
       assert.equal(await page.getByRole("row", { name: /First launch external/ }).count(), 0);
