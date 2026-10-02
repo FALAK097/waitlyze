@@ -115,7 +115,7 @@
 /* Legacy Tailwind recipes wrap these channel values in hsl(); product controls use full semantic colors. */
 .product-shell { --background: 210 5% 98%; --foreground: 155.4545 100% 4.3137%; --card: 0 0% 100%; --card-foreground: 155.4545 100% 4.3137%; --popover: 0 0% 100%; --popover-foreground: 155.4545 100% 4.3137%; --primary: 75 99.115% 55.6863%; --primary-foreground: 155.4545 100% 4.3137%; --secondary: 210 4% 95%; --secondary-foreground: 155.4545 100% 4.3137%; --muted: 210 4% 95%; --muted-foreground: 210 4% 32%; --accent: 210 4% 95%; --accent-foreground: 155.4545 100% 4.3137%; --border: 210 4% 90%; --input: 210 4% 45%; --ring: 0 0% 9%; }
 .product-settings-mobile { display: none; }
-@media (max-width: 720px) { .product-settings-desktop { display: none; } .product-settings-mobile { display: block; margin-bottom: 0; } .product-settings-mobile summary { min-height: 44px; padding-block: 12px; cursor: pointer; font-size: .875rem; } .product-settings-mobile nav { display: flex; gap: 16px; padding: 12px 0; } }
+@media (max-width: 720px) { .product-settings-desktop { display: none; } .product-settings-mobile { display: block; margin-bottom: 0; } .product-settings-mobile summary { min-height: 44px; padding-block: 12px; cursor: pointer; font-size: .875rem; } .product-settings-mobile nav { display: flex; flex-wrap: wrap; gap: 4px 16px; padding: 8px 0; } .product-settings-mobile nav a { min-height: 44px; display: inline-flex; align-items: center; } }
 
 .product-waitlist-table th a, .product-waitlist-table td a { min-height: 44px; display: inline-flex; align-items: center; }
 @media (max-width: 360px) { .product-primary-nav { order: 3; flex-basis: 100%; } }
