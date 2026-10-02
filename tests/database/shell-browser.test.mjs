@@ -380,6 +380,7 @@ test("authenticated two-destination shell uses real workspace data", async (t) =
     await continueButton.focus();
     await page.keyboard.press("Enter");
     const detailsHeading = page.getByRole("heading", { name: "Add details", exact: true });
+    await page.waitForFunction(() => document.activeElement?.matches(".product-create-heading") && document.activeElement.textContent === "Add details");
     assert.equal(await detailsHeading.evaluate((element) => document.activeElement === element), true);
     assert.equal(await detailsHeading.evaluate((element) => getComputedStyle(element).outlineWidth), "2px");
     await page.getByLabel("Waitlist name", { exact: true }).fill("Created fixture");
