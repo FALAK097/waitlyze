@@ -251,6 +251,38 @@ test("authenticated two-destination shell uses real workspace data", async (t) =
       await page.waitForURL(`${base}/wait-lists`);
       assert.equal(await page.getByRole("row", { name: /First launch/ }).count(), 1);
     }
+    await t.test("status filters preserve search and stay workspace-scoped", async () => {
+      await db.waitList.create({ data: { userId, workspaceId: personal.id, name: "Published launch", status: "PUBLISHED" } });
+      await db.waitList.create({ data: { userId, workspaceId: personal.id, name: "Paused launch", status: "PAUSED" } });
+      await db.waitList.update({ where: { id: (await db.waitList.findFirst({ where: { userId: otherUserId, name: "First launch external" } })).id }, data: { status: "PUBLISHED" } });
+      await page.setViewportSize({ width: 320, height: 812 });
+      await page.goto(`${base}/wait-lists?status=PUBLISHED`);
+      const statusNavigation = page.getByRole("navigation", { name: "Filter waitlists by status" });
+      assert.equal(await statusNavigation.getByRole("link", { name: "Published" }).getAttribute("aria-current"), "page");
+      assert.equal(await page.getByRole("row", { name: /Published launch/ }).count(), 1);
+      assert.equal(await page.getByRole("row", { name: /First launch external/ }).count(), 0);
+      const filterBounds = await statusNavigation.getByRole("link").evaluateAll((links) => ({ viewportWidth: innerWidth, links: links.map((link) => {
+        const rect = link.getBoundingClientRect();
+        return { left: rect.left, right: rect.right, height: rect.height };
+      }) }));
+      assert.ok(filterBounds.links.every(({ left, right, height }) => left >= 0 && right <= filterBounds.viewportWidth && height >= 44));
+      await page.getByRole("link", { name: "Paused", exact: true }).click();
+      await page.waitForURL(`${base}/wait-lists?status=PAUSED`);
+      assert.equal(await page.getByRole("row", { name: /Paused launch/ }).count(), 1);
+      await page.getByRole("search").getByLabel("Search waitlists").fill("Paused");
+      await page.getByRole("search").getByRole("button", { name: "Search" }).click();
+      await page.waitForURL(`${base}/wait-lists?q=Paused&status=PAUSED`);
+      assert.equal(await page.getByRole("row", { name: /Paused launch/ }).count(), 1);
+      await page.getByRole("link", { name: "Clear search" }).click();
+      await page.waitForURL(`${base}/wait-lists?status=PAUSED`);
+      assert.equal(await page.getByRole("row", { name: /Paused launch/ }).count(), 1);
+      assert.deepEqual((await new AxeBuilder({ page }).include(".product-shell").analyze()).violations, []);
+      assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
+      await page.goto(`${base}/wait-lists?status=ADMIN`);
+      assert.equal(await page.getByRole("navigation", { name: "Filter waitlists by status" }).getByRole("link", { name: "All" }).getAttribute("aria-current"), "page");
+      assert.equal(await page.getByRole("row", { name: /First launch external/ }).count(), 0);
+      await page.setViewportSize({ width: 1280, height: 900 });
+    });
     await page.goto(`${base}/settings`);
     await page.screenshot({ path: "/tmp/waitlyze-shell-settings-mobile.png", fullPage: true });
     await page.setViewportSize({ width: 1280, height: 900 });

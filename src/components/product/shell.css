@@ -22,6 +22,7 @@
 .product-shell a:focus-visible, .product-shell select:focus-visible, .product-shell summary:focus-visible { outline: 2px solid var(--product-focus); outline-offset: 3px; }
 @media (hover: hover) and (pointer: fine) { .product-primary-nav a:hover, .product-context-nav a:hover { background: var(--product-bg-inset); color: var(--product-text-primary); } .product-back-link:hover { text-decoration: underline; } }
 @media (max-width: 600px) { .product-topbar-inner { padding: 12px 16px; gap: 12px; flex-wrap: wrap; } .product-primary-nav a { padding-inline: 12px; min-height: 44px; } .product-main { padding: 24px 16px 48px; } .product-context-nav a { min-height: 44px; } .product-metrics { gap: 32px; flex-wrap: wrap; } }
+@media (max-width: 480px) { .product-waitlist-filters { width: 100%; } .product-waitlist-filters a { flex: 1 1 calc(50% - 4px); } }
 
 .product-page-heading { display: flex; justify-content: space-between; align-items: center; gap: 24px; margin-bottom: 32px; }
 .product-page-heading h1 { margin: 0 0 8px; }
@@ -33,6 +34,10 @@
 .product-waitlist-search input { min-height: 44px; width: 100%; padding: 9px 12px; border: 1px solid var(--product-border-control); border-radius: 8px; background: var(--product-bg-surface); color: var(--product-text-primary); font: inherit; }
 .product-waitlist-search button, .product-waitlist-search > a { min-height: 44px; display: inline-flex; align-items: center; justify-content: center; padding: 9px 14px; border: 1px solid var(--product-border-control); border-radius: 8px; background: var(--product-bg-surface); color: var(--product-text-primary); font: inherit; font-size: .875rem; text-decoration: none; }
 .product-waitlist-search :focus-visible { outline: 2px solid var(--product-focus); outline-offset: 3px; }
+.product-waitlist-filters { display: flex; flex-wrap: wrap; gap: 4px; width: fit-content; max-width: 100%; margin: 0 0 20px; padding: 4px; border: 1px solid var(--product-border-subtle); border-radius: 10px; background: var(--product-bg-inset); }
+.product-waitlist-filters a { min-height: 44px; display: inline-flex; align-items: center; justify-content: center; padding: 8px 14px; border-radius: 7px; color: var(--product-text-secondary); font-size: .875rem; text-decoration: none; }
+.product-waitlist-filters a[aria-current="page"] { background: var(--product-bg-surface); color: var(--product-text-primary); box-shadow: 0 1px 2px rgb(0 0 0 / .08); }
+.product-waitlist-filters a:focus-visible { outline: 2px solid var(--product-focus); outline-offset: 2px; }
 .product-waitlist-table th, .product-waitlist-table td { text-align: left; padding: 20px 24px; border-bottom: 1px solid var(--product-border-subtle); }
 .product-waitlist-table thead th { font-weight: 500; color: var(--product-text-secondary); padding-block: 14px; }
 .product-waitlist-table tbody th { font-weight: 550; width: 70%; }
