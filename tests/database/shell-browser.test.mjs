@@ -236,7 +236,7 @@ test("authenticated two-destination shell uses real workspace data", async (t) =
       await settingsLinks.filter({ hasText: "Integrations" }).click();
       assert.equal(new URL(page.url()).hash, "#integrations");
       assert.equal(await settingsSections.evaluate((details) => details.open), false);
-      assert.equal(await settingsSections.locator('nav a[href="#integrations"]').getAttribute("aria-current"), "location");
+      await page.waitForFunction(() => document.querySelector('.product-settings-mobile a[href="#integrations"]')?.getAttribute("aria-current") === "location");
       await page.getByRole("link", { name: "Skip to content", exact: true }).focus();
       await page.keyboard.press("Enter");
       assert.equal(await page.evaluate(() => document.activeElement.id), "product-content");
