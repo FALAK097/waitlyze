@@ -374,6 +374,7 @@ test("authenticated two-destination shell uses real workspace data", async (t) =
     assert.ok(scrolledActionBounds && scrolledActionBounds.y >= 0 && scrolledActionBounds.y + scrolledActionBounds.height <= 812, "the primary wizard action remains reachable at the end of the preview");
     assert.deepEqual((await new AxeBuilder({ page }).include(".product-shell").analyze()).violations, []);
     await page.screenshot({ path: "/tmp/waitlyze-template-mobile.png", fullPage: true });
+    await page.evaluate(() => window.scrollTo(0, 0));
     await page.setViewportSize({ width: 1280, height: 900 });
     await page.screenshot({ path: "/tmp/waitlyze-template-desktop.png", fullPage: true });
     await continueButton.focus();
