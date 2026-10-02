@@ -312,6 +312,53 @@ test("authenticated two-destination shell uses real workspace data", async (t) =
     assert.equal(await page.getByRole("navigation", { name: "Filter waitlists by status" }).getByRole("link", { name: "All" }).getAttribute("aria-current"), "page");
     assert.equal(await page.getByRole("row", { name: /First launch external/ }).count(), 0);
     await page.setViewportSize({ width: 1280, height: 900 });
+    console.error("[shell-browser] sorting: creating fixtures");
+    {
+      const secondWorkspace = await db.workspace.create({ data: { name: "Sorting isolation workspace", members: { create: { userId, role: "ADMIN" } } } });
+      const [alpha, beta, zulu, zero, hidden] = await Promise.all([
+        db.waitList.create({ data: { userId, workspaceId: personal.id, name: "Sort fixture Alpha", status: "PUBLISHED" } }),
+        db.waitList.create({ data: { userId, workspaceId: personal.id, name: "Sort fixture Beta", status: "PUBLISHED" } }),
+        db.waitList.create({ data: { userId, workspaceId: personal.id, name: "Sort fixture Zulu", status: "PUBLISHED" } }),
+        db.waitList.create({ data: { userId, workspaceId: personal.id, name: "Sort fixture Zero", status: "PUBLISHED" } }),
+        db.waitList.create({ data: { userId, workspaceId: secondWorkspace.id, name: "Sort fixture Hidden", status: "PUBLISHED" } }),
+      ]);
+      const signupTargets = [beta, beta, beta, alpha, alpha, zulu, zulu, hidden, hidden, hidden, hidden, hidden];
+      for (const [index, target] of signupTargets.entries()) {
+        await db.signUp.create({ data: { waitListId: target.id, uniqueUserId: randomUUID(), email: `sort-fixture-${index}@example.invalid` } });
+      }
+
+      await context.addCookies([{ name: "waitlyze-workspace", value: personal.id, domain: "127.0.0.1", path: "/", httpOnly: true, sameSite: "Lax" }]);
+      await page.setViewportSize({ width: 320, height: 812 });
+      await page.goto(`${base}/wait-lists?q=Sort+fixture&status=PUBLISHED`);
+      const headers = page.locator(".product-waitlist-table thead th");
+      assert.equal(await headers.nth(0).getAttribute("aria-sort"), "ascending");
+      assert.equal(await headers.nth(1).getAttribute("aria-sort"), null);
+      assert.deepEqual(await page.locator(".product-waitlist-table tbody th[scope='row'] > a").allTextContents(), ["Sort fixture Alpha", "Sort fixture Beta", "Sort fixture Zero", "Sort fixture Zulu"]);
+      assert.equal(await page.getByRole("row", { name: /Sort fixture Hidden/ }).count(), 0);
+
+      const subscriberSort = page.getByRole("link", { name: /Sort by subscriber count/ });
+      await subscriberSort.focus();
+      await page.keyboard.press("Enter");
+      await page.waitForURL(`${base}/wait-lists?q=Sort+fixture&status=PUBLISHED&sort=subscribers-desc`);
+      assert.equal(await headers.nth(1).getAttribute("aria-sort"), "descending");
+      assert.deepEqual(await page.locator(".product-waitlist-table tbody th[scope='row'] > a").allTextContents(), ["Sort fixture Beta", "Sort fixture Alpha", "Sort fixture Zulu", "Sort fixture Zero"]);
+      assert.equal(await page.getByRole("row", { name: /Sort fixture Hidden/ }).count(), 0);
+      assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
+      assert.deepEqual((await new AxeBuilder({ page }).include(".product-shell").analyze()).violations, []);
+
+      await page.getByRole("link", { name: /Sort by waitlist name/ }).click();
+      await page.waitForURL(`${base}/wait-lists?q=Sort+fixture&status=PUBLISHED`);
+      assert.equal(await headers.nth(0).getAttribute("aria-sort"), "ascending");
+      await page.getByRole("link", { name: /Sort by waitlist name/ }).click();
+      await page.waitForURL(`${base}/wait-lists?q=Sort+fixture&status=PUBLISHED&sort=name-desc`);
+      assert.equal(await headers.nth(0).getAttribute("aria-sort"), "descending");
+      await page.goBack();
+      await page.waitForURL(`${base}/wait-lists?q=Sort+fixture&status=PUBLISHED`);
+      await page.reload();
+      assert.equal(await headers.nth(0).getAttribute("aria-sort"), "ascending");
+      await page.setViewportSize({ width: 1280, height: 900 });
+    }
+    console.error("[shell-browser] sorting: all checks passed");
     await page.goto(`${base}/settings`);
     await page.screenshot({ path: "/tmp/waitlyze-shell-settings-mobile.png", fullPage: true });
     await page.setViewportSize({ width: 1280, height: 900 });
