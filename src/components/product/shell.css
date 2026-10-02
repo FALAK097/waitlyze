@@ -57,6 +57,7 @@
 .product-settings-layout { display: grid; grid-template-columns: 200px minmax(0, 640px); gap: 48px; }
 .product-settings-index { display: flex; flex-direction: column; gap: 4px; position: sticky; top: 24px; align-self: start; }
 .product-settings-index a { padding: 12px 16px; border-radius: 8px; text-decoration: none; font-size: .875rem; }
+.product-settings-index a[aria-current="location"], .product-settings-mobile nav a[aria-current="location"] { border-inline-start: 2px solid var(--product-accent-solid); padding-inline-start: 14px; background: var(--product-bg-inset); color: var(--product-text-primary); font-weight: 600; }
 .product-settings-sections { display: grid; gap: 32px; }
 .product-settings-panel { scroll-margin-top: 24px; padding: 32px; border: 1px solid var(--product-border-subtle); border-radius: 12px; background: var(--product-bg-surface); min-width: 0; }
 .product-settings-panel h2 { font-size: 1.25rem; font-weight: 550; margin: 0 0 8px; }
@@ -130,7 +131,7 @@
 /* Legacy Tailwind recipes wrap these channel values in hsl(); product controls use full semantic colors. */
 .product-shell { --background: 210 5% 98%; --foreground: 155.4545 100% 4.3137%; --card: 0 0% 100%; --card-foreground: 155.4545 100% 4.3137%; --popover: 0 0% 100%; --popover-foreground: 155.4545 100% 4.3137%; --primary: 75 99.115% 55.6863%; --primary-foreground: 155.4545 100% 4.3137%; --secondary: 210 4% 95%; --secondary-foreground: 155.4545 100% 4.3137%; --muted: 210 4% 95%; --muted-foreground: 210 4% 32%; --accent: 210 4% 95%; --accent-foreground: 155.4545 100% 4.3137%; --border: 210 4% 90%; --input: 210 4% 45%; --ring: 0 0% 9%; }
 .product-settings-mobile { display: none; }
-@media (max-width: 720px) { .product-settings-desktop { display: none; } .product-settings-mobile { display: block; margin-bottom: 0; } .product-settings-mobile summary { min-height: 44px; padding-block: 12px; cursor: pointer; font-size: .875rem; } .product-settings-mobile nav { display: flex; flex-wrap: wrap; gap: 4px 16px; padding: 8px 0; } .product-settings-mobile nav a { min-height: 44px; display: inline-flex; align-items: center; } }
+@media (max-width: 720px) { .product-settings-desktop { display: none; } .product-settings-mobile { display: block; margin-bottom: 0; } .product-settings-mobile summary { min-height: 44px; padding-block: 12px; cursor: pointer; font-size: .875rem; } .product-settings-mobile nav { display: flex; flex-wrap: wrap; gap: 4px 16px; padding: 8px 0; } .product-settings-mobile nav a { min-height: 44px; padding-inline: 8px; display: inline-flex; align-items: center; border-radius: 6px; } }
 
 .product-waitlist-table th a, .product-waitlist-table td a { min-height: 44px; display: inline-flex; align-items: center; }
 @media (max-width: 360px) { .product-primary-nav { order: 3; flex-basis: 100%; } }

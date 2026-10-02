@@ -235,6 +235,8 @@ test("authenticated two-destination shell uses real workspace data", async (t) =
       assert.ok(sectionLinkBounds.links.every(({ left, right, height }) => left >= 0 && right <= sectionLinkBounds.viewportWidth && height >= 44));
       await settingsLinks.filter({ hasText: "Integrations" }).click();
       assert.equal(new URL(page.url()).hash, "#integrations");
+      assert.equal(await settingsSections.evaluate((details) => details.open), false);
+      assert.equal(await settingsLinks.filter({ hasText: "Integrations" }).getAttribute("aria-current"), "location");
       await page.getByRole("link", { name: "Skip to content", exact: true }).focus();
       await page.keyboard.press("Enter");
       assert.equal(await page.evaluate(() => document.activeElement.id), "product-content");
@@ -256,6 +258,16 @@ test("authenticated two-destination shell uses real workspace data", async (t) =
       await page.waitForURL(`${base}/wait-lists`);
       assert.equal(await page.getByRole("row", { name: /First launch/ }).count(), 1);
     }
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await page.goto(`${base}/settings`);
+    await page.locator('.product-settings-desktop a[href="#integrations"]').click();
+    await page.waitForURL(`${base}/settings#integrations`);
+    await page.waitForFunction(() => document.querySelector('.product-settings-desktop a[aria-current="location"]')?.getAttribute("href") === "#integrations");
+    await page.goBack();
+    await page.waitForURL(`${base}/settings`);
+    await page.waitForFunction(() => document.querySelector('.product-settings-desktop a[aria-current="location"]')?.getAttribute("href") === "#profile");
+    await page.locator("#developers").scrollIntoViewIfNeeded();
+    await page.waitForFunction(() => document.querySelector('.product-settings-desktop a[aria-current="location"]')?.getAttribute("href") === "#developers");
     console.error("[shell-browser] contextual: status filter fixture setup");
     console.error("[shell-browser] status fixture: creating secondary workspace");
     const secondWorkspace = await db.workspace.create({ data: { name: "Another owned workspace", members: { create: { userId, role: "ADMIN" } } } });
