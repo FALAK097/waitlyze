@@ -311,10 +311,6 @@ test("authenticated two-destination shell uses real workspace data", async (t) =
     assert.doesNotMatch(csv, /ipAddress|uniqueUserId/);
     await page.setViewportSize({ width: 320, height: 812 });
     assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
-    const mobileWizardAction = page.locator(".product-create-actions");
-    assert.equal(await mobileWizardAction.evaluate((element) => getComputedStyle(element).position), "sticky");
-    const actionBounds = await page.getByRole("button", { name: "Continue with Mobile app" }).boundingBox();
-    assert.ok(actionBounds && actionBounds.y >= 0 && actionBounds.y + actionBounds.height <= 812, "the primary wizard action remains in the mobile viewport");
     assert.deepEqual((await new AxeBuilder({ page }).include(".product-shell").analyze()).violations, []);
     await page.screenshot({ path: "/tmp/waitlyze-subscribers-mobile.png", fullPage: true });
     await page.setViewportSize({ width: 1280, height: 900 });
@@ -362,11 +358,22 @@ test("authenticated two-destination shell uses real workspace data", async (t) =
     await page.getByRole("radio", { name: /Mobile app/ }).check();
     await page.setViewportSize({ width: 320, height: 812 });
     assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
+    const mobileWizardAction = page.locator(".product-create-actions");
+    assert.equal(await mobileWizardAction.evaluate((element) => getComputedStyle(element).position), "sticky");
+    const continueButton = page.getByRole("button", { name: "Continue with Mobile app" });
+    const actionBounds = await continueButton.boundingBox();
+    assert.ok(actionBounds && actionBounds.y >= 0 && actionBounds.y + actionBounds.height <= 812, "the primary wizard action remains in the mobile viewport");
+    const previewEnd = page.locator(".product-template-preview").locator("*").last();
+    await previewEnd.scrollIntoViewIfNeeded();
+    const [previewBounds, scrolledActionBounds] = await Promise.all([
+      previewEnd.boundingBox(),
+      continueButton.boundingBox(),
+    ]);
+    assert.ok(previewBounds && scrolledActionBounds && previewBounds.bottom <= scrolledActionBounds.y, "the sticky action does not cover the end of the template preview");
     assert.deepEqual((await new AxeBuilder({ page }).include(".product-shell").analyze()).violations, []);
     await page.screenshot({ path: "/tmp/waitlyze-template-mobile.png", fullPage: true });
     await page.setViewportSize({ width: 1280, height: 900 });
     await page.screenshot({ path: "/tmp/waitlyze-template-desktop.png", fullPage: true });
-    const continueButton = page.getByRole("button", { name: "Continue with Mobile app" });
     await continueButton.focus();
     await page.keyboard.press("Enter");
     const detailsHeading = page.getByRole("heading", { name: "Add details", exact: true });
