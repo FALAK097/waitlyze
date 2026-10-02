@@ -232,6 +232,7 @@ test("authenticated two-destination shell uses real workspace data", async (t) =
         const rect = link.getBoundingClientRect();
         return { left: rect.left, right: rect.right, height: rect.height };
       }) }));
+      assert.ok(sectionLinkBounds.links.every(({ left, right, height }) => left >= 0 && right <= sectionLinkBounds.viewportWidth && height >= 44));
       await settingsLinks.filter({ hasText: "Integrations" }).click();
       assert.equal(new URL(page.url()).hash, "#integrations");
       await page.getByRole("link", { name: "Skip to content", exact: true }).focus();
