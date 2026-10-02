@@ -257,18 +257,20 @@ test("authenticated two-destination shell uses real workspace data", async (t) =
       assert.equal(await page.getByRole("row", { name: /First launch/ }).count(), 1);
     }
     console.error("[shell-browser] contextual: status filter fixture setup");
+    console.error("[shell-browser] status fixture: creating secondary workspace");
+    const secondWorkspace = await db.workspace.create({ data: { name: "Another owned workspace", members: { create: { userId, role: "ADMIN" } } } });
+    console.error("[shell-browser] status fixture: creating published waitlists");
+    await db.waitList.create({ data: { userId, workspaceId: personal.id, name: "Published launch", status: "PUBLISHED" } });
+    await db.waitList.create({ data: { userId, workspaceId: secondWorkspace.id, name: "Other workspace launch", status: "PUBLISHED" } });
+    console.error("[shell-browser] status fixture: creating paused waitlist");
+    await db.waitList.create({ data: { userId, workspaceId: personal.id, name: "Paused launch", status: "PAUSED" } });
+    console.error("[shell-browser] status fixture: finding external waitlist");
+    const external = await db.waitList.findFirst({ where: { userId: otherUserId, name: "First launch external" } });
+    assert.ok(external, "the external waitlist fixture must exist");
+    console.error("[shell-browser] status fixture: publishing external waitlist");
+    await db.waitList.update({ where: { id: external.id }, data: { status: "PUBLISHED" } });
+    console.error("[shell-browser] status fixture ready");
     await t.test("status filters preserve search and stay workspace-scoped", async () => {
-      console.error("[shell-browser] status fixture: creating secondary workspace");
-      const secondWorkspace = await db.workspace.create({ data: { name: "Another owned workspace", members: { create: { userId, role: "ADMIN" } } } });
-      console.error("[shell-browser] status fixture: creating published waitlists");
-      await db.waitList.create({ data: { userId, workspaceId: personal.id, name: "Published launch", status: "PUBLISHED" } });
-      await db.waitList.create({ data: { userId, workspaceId: secondWorkspace.id, name: "Other workspace launch", status: "PUBLISHED" } });
-      console.error("[shell-browser] status fixture: creating paused waitlist");
-      await db.waitList.create({ data: { userId, workspaceId: personal.id, name: "Paused launch", status: "PAUSED" } });
-      console.error("[shell-browser] status fixture: publishing other-user waitlist");
-      const external = await db.waitList.findFirst({ where: { userId: otherUserId, name: "First launch external" } });
-      assert.ok(external, "the external waitlist fixture must exist");
-      await db.waitList.update({ where: { id: external.id }, data: { status: "PUBLISHED" } });
       console.error("[shell-browser] status: fixture ready, opening published list");
       await context.addCookies([{ name: "waitlyze-workspace", value: personal.id, domain: "127.0.0.1", path: "/", httpOnly: true, sameSite: "Lax" }]);
       await page.setViewportSize({ width: 320, height: 812 });
