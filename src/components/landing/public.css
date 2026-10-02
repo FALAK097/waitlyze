@@ -17,16 +17,17 @@
   }
 }
 .wl {
-  --wl-paper: oklch(98% 0.008 75);
-  --wl-surface: oklch(99.5% 0.003 75);
-  --wl-ink: oklch(25% 0.018 55);
-  --wl-muted: oklch(48% 0.018 55);
-  --wl-line: oklch(88% 0.018 75);
-  --wl-wash: oklch(95.5% 0.015 75);
-  --wl-orange: oklch(53% 0.16 39);
-  --wl-orange-hover: oklch(47% 0.15 39);
-  --wl-on-orange: oklch(99% 0.006 75);
-  --wl-focus: oklch(50% 0.15 39);
+  --wl-paper: hsl(210 5% 98%);
+  --wl-surface: hsl(0 0% 100%);
+  --wl-ink: hsl(155.4545 100% 4.3137%);
+  --wl-muted: hsl(210 4% 32%);
+  --wl-line: hsl(210 4% 90%);
+  --wl-wash: hsl(210 4% 95%);
+  --wl-accent: hsl(75 99.115% 55.6863%);
+  --wl-accent-hover: hsl(75 80% 48%);
+  --wl-accent-ink: hsl(150 60% 25%);
+  --wl-danger: hsl(350 72% 35%);
+  --wl-focus: hsl(0 0% 9%);
   --background: var(--wl-paper);
   --foreground: var(--wl-ink);
   --border: var(--wl-line);
@@ -73,7 +74,7 @@
   outline-offset: 5px;
 }
 .wl ::selection {
-  background: color-mix(in oklch, var(--wl-orange) 22%, transparent);
+  background: color-mix(in hsl, var(--wl-accent) 42%, transparent);
 }
 .wl [id] {
   scroll-margin-top: 108px;
@@ -119,7 +120,7 @@
   line-height: 1;
 }
 .wl-wordmark-dot {
-  color: var(--wl-orange);
+  color: var(--wl-accent-ink);
 }
 .wl-mark {
   display: inline-flex;
@@ -132,7 +133,7 @@
 .wl-mark i {
   display: block;
   width: 5px;
-  background: var(--wl-orange);
+  background: var(--wl-accent);
   border-radius: 2px;
   height: 16px;
 }
@@ -154,7 +155,7 @@
   transition: color 150ms;
 }
 .wl-desktop-nav a:hover {
-  color: var(--wl-orange);
+  color: var(--wl-accent-ink);
 }
 .wl-header-actions {
   gap: 12px;
@@ -215,13 +216,13 @@
   transform: translateY(1px);
 }
 .wl .wl-button-primary {
-  background: var(--wl-orange);
-  border-color: var(--wl-orange);
-  color: var(--wl-on-orange);
+  background: var(--wl-accent);
+  border-color: var(--wl-ink);
+  color: var(--wl-ink);
 }
 .wl .wl-button-primary:hover {
-  background: var(--wl-orange-hover);
-  border-color: var(--wl-orange-hover);
+  background: var(--wl-accent-hover);
+  border-color: var(--wl-ink);
 }
 .wl .wl-button-quiet {
   background: transparent;
@@ -254,14 +255,29 @@
   flex-shrink: 0;
   display: inline-block;
   border-radius: 50%;
-  background: var(--wl-orange);
+  background: var(--wl-accent);
 }
 .wl-hero {
+  position: relative;
+  isolation: isolate;
   display: grid;
   grid-template-columns: 1.05fr 1fr;
   align-items: center;
   gap: 64px;
   padding-block: 68px 72px;
+}
+.wl-hero::before {
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  content: "";
+  background-image:
+    radial-gradient(ellipse 36rem 24rem at 76% 38%, hsl(152 62% 87% / 0.56), transparent 72%),
+    radial-gradient(ellipse 24rem 22rem at 96% 6%, hsl(267 75% 91% / 0.58), transparent 74%),
+    radial-gradient(hsl(155 10% 30% / 0.12) 0.65px, transparent 0.65px);
+  background-size: auto, auto, 14px 14px;
+  mask-image: linear-gradient(90deg, transparent 6%, #000 42%, #000 100%);
+  pointer-events: none;
 }
 .wl-hero h1 {
   margin-top: 26px;
@@ -270,7 +286,7 @@
   letter-spacing: -0.065em;
 }
 .wl-hero h1 span {
-  color: var(--wl-orange);
+  color: var(--wl-ink);
 }
 .wl-lede {
   margin-top: 26px !important;
@@ -425,7 +441,7 @@
   font-size: 9px;
 }
 .wl-preview-powered strong {
-  color: var(--wl-orange);
+  color: var(--wl-accent-ink);
 }
 .wl-preview-success {
   display: grid;
@@ -573,7 +589,7 @@
 .wl-step-number {
   font-size: 12px;
   font-variant-numeric: tabular-nums;
-  color: var(--wl-orange);
+  color: var(--wl-accent-ink);
 }
 .wl-steps h3 {
   font-size: 20px;
@@ -621,7 +637,7 @@
   order: 2;
 }
 .wl-feature-index {
-  color: var(--wl-orange);
+  color: var(--wl-accent-ink);
   font-size: 11px;
 }
 .wl-feature-copy h3 {
@@ -650,7 +666,7 @@
   gap: 8px;
 }
 .wl-feature-copy li svg {
-  color: var(--wl-orange);
+  color: var(--wl-accent-ink);
   flex-shrink: 0;
 }
 .wl-product-figure {
@@ -688,7 +704,7 @@
   border-top: 1px solid var(--wl-line);
 }
 .wl-essentials svg {
-  color: var(--wl-orange);
+  color: var(--wl-accent-ink);
 }
 .wl-essentials h3 {
   font-size: 16px;
@@ -765,16 +781,16 @@
   line-height: 1.8;
 }
 .wl-faq summary:hover {
-  color: var(--wl-orange);
+  color: var(--wl-accent-ink);
 }
 .wl-final-cta {
   padding-block: 88px;
   text-align: center;
-  background: oklch(24% 0.02 55);
-  color: oklch(96% 0.012 75);
+  background: var(--wl-ink);
+  color: var(--wl-surface);
 }
 .wl-final-cta .wl-eyebrow {
-  color: oklch(77% 0.035 65);
+  color: hsl(210 5% 82%);
   justify-content: center;
 }
 .wl-final-cta h2 {
@@ -784,21 +800,21 @@
   margin-top: 25px;
 }
 .wl-final-cta h2 span {
-  color: oklch(76% 0.11 55);
+  color: hsl(75 99.115% 55.6863%);
 }
 .wl-final-cta p:not(.wl-eyebrow) {
-  color: oklch(77% 0.02 65);
+  color: hsl(210 5% 82%);
   margin-top: 24px;
   font-size: 16px;
 }
 .wl-final-cta .wl-button {
   margin-top: 32px;
-  background: oklch(78% 0.13 55);
-  color: oklch(22% 0.03 45);
-  border-color: transparent;
+  background: var(--wl-accent);
+  color: var(--wl-ink);
+  border-color: var(--wl-accent);
 }
 .wl-final-cta .wl-button:hover {
-  background: oklch(85% 0.1 55);
+  background: var(--wl-accent-hover);
 }
 .wl-cta-note {
   display: block;
@@ -853,12 +869,15 @@
   margin-bottom: 7px;
 }
 .wl-footer a:not(:has(.wl-wordmark)):hover {
-  color: #f0a181;
+  color: #ffffff;
 }
 .wl-footer a {
   display: inline-flex;
   gap: 5px;
   align-items: center;
+}
+.wl :is(.wl-final-cta, .wl-footer) :is(a, button, input, summary):focus-visible {
+  outline-color: var(--wl-surface);
 }
 .wl-footer-bottom {
   position: relative;
@@ -918,7 +937,7 @@
   margin-bottom: 8px;
 }
 .wl-legal-grid aside a:hover {
-  color: var(--wl-orange);
+  color: var(--wl-accent-ink);
 }
 .wl-legal-copy {
   color: var(--wl-muted);
@@ -950,7 +969,7 @@
   color: var(--wl-ink);
 }
 .wl-legal-copy a:hover {
-  color: var(--wl-orange);
+  color: var(--wl-accent-ink);
 }
 .wl-legal-related {
   display: flex;
@@ -1029,7 +1048,7 @@
 }
 .wl-auth .wl-auth-error {
   font-size: 13px;
-  color: var(--wl-orange);
+  color: var(--wl-danger);
   margin-top: 16px;
 }
 .wl-auth > button:last-child {

@@ -8,7 +8,7 @@
 .product-primary-nav a, .product-context-nav a { min-height: 44px; padding: 10px 16px; border-radius: 8px; color: var(--product-text-secondary); font-size: .875rem; font-weight: 550; text-decoration: none; }
 .product-primary-nav a[aria-current], .product-context-nav a[aria-current] { background: var(--product-bg-inset); color: var(--product-text-primary); }
 .product-account-link { margin-left: auto; display: flex; align-items: center; justify-content: center; min-width: 44px; min-height: 44px; padding: 4px; border-radius: 50%; }
-.product-main { max-width: 1280px; margin-inline: auto; padding: 40px 32px 64px; }
+.product-main { max-width: 1280px; margin-inline: auto; padding: 40px 32px 64px; background-image: radial-gradient(ellipse 34rem 20rem at 3rem 0, hsl(75 90% 65% / .12), transparent 72%), radial-gradient(ellipse 28rem 18rem at calc(100% - 4rem) 0, hsl(268 75% 85% / .14), transparent 74%); background-repeat: no-repeat; }
 .product-page-title { font-size: 1.75rem; font-weight: 600; letter-spacing: -.04em; margin: 12px 0 24px; overflow-wrap: anywhere; }
 .product-back-link { color: var(--product-text-secondary); font-size: .875rem; text-decoration: none; }
 .product-context-nav { border-bottom: 1px solid var(--product-border-subtle); padding-bottom: 12px; overflow-x: auto; }
@@ -22,6 +22,7 @@
 .product-shell a:focus-visible, .product-shell select:focus-visible, .product-shell summary:focus-visible { outline: 2px solid var(--product-focus); outline-offset: 3px; }
 @media (hover: hover) and (pointer: fine) { .product-primary-nav a:hover, .product-context-nav a:hover { background: var(--product-bg-inset); color: var(--product-text-primary); } .product-back-link:hover { text-decoration: underline; } }
 @media (max-width: 600px) { .product-topbar-inner { padding: 12px 16px; gap: 12px; flex-wrap: wrap; } .product-primary-nav a { padding-inline: 12px; min-height: 44px; } .product-main { padding: 24px 16px 48px; } .product-context-nav a { min-height: 44px; } .product-metrics { gap: 32px; flex-wrap: wrap; } }
+.dark .product-main { background-image: radial-gradient(ellipse 34rem 20rem at 3rem 0, hsl(75 80% 45% / .07), transparent 72%), radial-gradient(ellipse 28rem 18rem at calc(100% - 4rem) 0, hsl(268 55% 40% / .09), transparent 74%); }
 @media (max-width: 480px) { .product-waitlist-filters { width: 100%; } .product-waitlist-filters a { flex: 1 1 calc(50% - 4px); } }
 
 .product-page-heading { display: flex; justify-content: space-between; align-items: center; gap: 24px; margin-bottom: 32px; }

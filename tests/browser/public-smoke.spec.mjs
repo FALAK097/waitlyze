@@ -26,6 +26,28 @@ test("sign-in dialog supports keyboard dismissal and restores focus", async ({ p
   await expect(trigger).toBeFocused();
 });
 
+test("keyboard focus stays visible on dark landing calls to action and footer links", async ({ page }) => {
+  await page.goto("/");
+  const finalAction = page.locator(".wl-final-cta").getByRole("button", { name: "Create your waitlist" });
+  const footerLink = page.locator('.wl-footer a[href="/"]').first();
+  await expect(finalAction).toBeVisible();
+  await page.evaluate(() => document.activeElement?.blur());
+
+  async function tabTo(target) {
+    for (let index = 0; index < 80; index += 1) {
+      await page.keyboard.press("Tab");
+      if (await target.evaluate((element) => element === document.activeElement)) return;
+    }
+    throw new Error("Keyboard navigation did not reach the expected landing control.");
+  }
+
+  await tabTo(finalAction);
+  expect(await finalAction.evaluate((element) => getComputedStyle(element).outlineColor)).toBe("rgb(255, 255, 255)");
+  await page.keyboard.press("Tab");
+  await expect(footerLink).toBeFocused();
+  expect(await footerLink.evaluate((element) => getComputedStyle(element).outlineColor)).toBe("rgb(255, 255, 255)");
+});
+
 test("anonymous dashboard access returns to the public entry", async ({ page }) => {
   await page.goto("/dashboard");
   await expect(page).toHaveURL("http://127.0.0.1:3100/");
