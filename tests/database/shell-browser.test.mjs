@@ -332,7 +332,7 @@ test("authenticated two-destination shell uses real workspace data", async (t) =
       const headers = page.locator(".product-waitlist-table thead th");
       assert.equal(await headers.nth(0).getAttribute("aria-sort"), "ascending");
       assert.equal(await headers.nth(1).getAttribute("aria-sort"), "none");
-      assert.deepEqual(await page.locator(".product-waitlist-table tbody th[scope='row'] > a").allTextContents(), ["Sort fixture Alpha", "Sort fixture Beta", "Sort fixture Zulu", "Sort fixture Zero"]);
+      assert.deepEqual(await page.locator(".product-waitlist-table tbody th[scope='row'] > a").allTextContents(), ["Sort fixture Alpha", "Sort fixture Beta", "Sort fixture Zero", "Sort fixture Zulu"]);
       assert.equal(await page.getByRole("row", { name: /Sort fixture Hidden/ }).count(), 0);
 
       const subscriberSort = page.getByRole("link", { name: /Sort by subscriber count/ });
