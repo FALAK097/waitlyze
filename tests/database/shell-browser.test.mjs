@@ -370,7 +370,7 @@ test("authenticated two-destination shell uses real workspace data", async (t) =
       previewEnd.boundingBox(),
       continueButton.boundingBox(),
     ]);
-    assert.ok(previewBounds && scrolledActionBounds && previewBounds.bottom <= scrolledActionBounds.y, "the sticky action does not cover the end of the template preview");
+    assert.ok(previewBounds && scrolledActionBounds && previewBounds.bottom <= scrolledActionBounds.y, `the sticky action does not cover the end of the template preview: ${JSON.stringify({ previewBounds, scrolledActionBounds, scrollY: await page.evaluate(() => window.scrollY), scrollHeight: await page.evaluate(() => document.documentElement.scrollHeight) })}`);
     assert.ok(scrolledActionBounds && scrolledActionBounds.y >= 0 && scrolledActionBounds.bottom <= 812, "the primary wizard action remains reachable at the end of the preview");
     assert.deepEqual((await new AxeBuilder({ page }).include(".product-shell").analyze()).violations, []);
     await page.screenshot({ path: "/tmp/waitlyze-template-mobile.png", fullPage: true });
