@@ -126,7 +126,7 @@
 .product-create-steps li[aria-current] { color: var(--product-text-primary); font-weight: 600; }
 .product-create-steps li > span { display: grid; place-items: center; width: 28px; height: 28px; flex-shrink: 0; border: 1px solid var(--product-border-subtle); border-radius: 50%; }
 .product-create-heading { font-size: 1.25rem; font-weight: 600; margin-bottom: 8px; }
-.product-create-heading:focus { outline: none; }
+.product-create-heading:focus:not(:focus-visible) { outline: none; }
 .product-template-layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 32px; align-items: start; }
 .product-template-choices { border: 0; padding: 0; margin: 0; display: grid; gap: 8px; min-width: 0; }
 .product-template-choice { display: flex; gap: 12px; padding: 16px; border: 1px solid var(--product-border-subtle); border-radius: 8px; cursor: pointer; background: var(--product-bg-surface); }
