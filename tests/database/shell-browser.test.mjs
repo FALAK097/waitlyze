@@ -72,6 +72,49 @@ test("authenticated two-destination shell uses real workspace data", async (t) =
     await page.getByLabel("Display name").fill("Updated fixture");
     assert.deepEqual((await new AxeBuilder({ page }).include(".product-shell").analyze()).violations, []);
   });
+  await t.test("account export downloads scoped settings without subscribers or credentials", async () => {
+    const subscriberEmail = "must-not-export-subscriber@example.invalid";
+    const apiSecretMarker = "must-not-export-api-secret-hash";
+    const integrationSecretMarker = "must-not-export-integration-secret";
+    await db.signUp.create({ data: { uniqueUserId: randomUUID(), email: subscriberEmail, emailNormalized: subscriberEmail, waitListId: waitlist.id } });
+    await db.apiKey.create({ data: { name: "Export fixture key", keyHash: apiSecretMarker, userId, waitlistId: waitlist.id } });
+    await db.workspaceIntegration.create({ data: { workspaceId: personal.id, provider: "RESEND", status: "TESTED", secretCiphertext: integrationSecretMarker, secretIv: "integration-iv-marker", secretTag: "integration-tag-marker", fromEmail: "sender@example.invalid" } });
+    try {
+      await page.goto(`${base}/settings#privacy`);
+      await page.getByRole("heading", { name: "Privacy & data" }).waitFor();
+      const response = await page.request.get(`${base}/api/settings/export`);
+      const body = await response.text();
+      assert.equal(response.status(), 200, body);
+      assert.match(response.headers()["content-disposition"], /attachment; filename="waitlyze-account-data\.json"/);
+      assert.equal(response.headers()["cache-control"], "private, no-store");
+      assert.equal(response.headers()["x-content-type-options"], "nosniff");
+      const exported = JSON.parse(body);
+      assert.equal(exported.account.email, `${userId}@example.invalid`);
+      assert.equal(exported.workspaces[0].name, "Personal workspace");
+      assert.ok(exported.campaigns.some((campaign) => campaign.name === "First launch"));
+      assert.equal(exported.campaigns.some((campaign) => campaign.name === "First launch external"), false);
+      assert.ok(exported.developerKeys.some((key) => key.name === "Export fixture key"));
+      assert.ok(exported.integrations.some((integration) => integration.fromEmail === "sender@example.invalid"));
+      assert.match(JSON.stringify(exported.dataNotes), /Subscribers page/);
+      for (const marker of [subscriberEmail, apiSecretMarker, integrationSecretMarker, "integration-iv-marker", "integration-tag-marker"]) {
+        assert.equal(body.includes(marker), false, `export leaked ${marker}`);
+      }
+      assert.equal(Object.hasOwn(exported.workspaces[0], "id"), false);
+      assert.equal(Object.hasOwn(exported.campaigns.find((campaign) => campaign.name === "First launch"), "id"), false);
+      const anonymousContext = await browser.newContext();
+      try {
+        const anonymous = await anonymousContext.request.get(`${base}/api/settings/export`);
+        assert.equal(anonymous.status(), 401);
+        assert.equal(anonymous.headers()["cache-control"], "private, no-store");
+      } finally {
+        await anonymousContext.close();
+      }
+    } finally {
+      await db.signUp.deleteMany({ where: { waitListId: waitlist.id, emailNormalized: subscriberEmail } });
+      await db.apiKey.deleteMany({ where: { userId, name: "Export fixture key" } });
+      await db.workspaceIntegration.deleteMany({ where: { workspaceId: personal.id, provider: "RESEND" } });
+    }
+  });
   await t.test("developer settings creates a waitlist-bound key once and lists only safe metadata", async () => {
     await page.getByRole("link", { name: "Developers", exact: true }).click();
     await page.getByRole("heading", { name: "Developers", exact: true }).waitFor();
@@ -227,7 +270,7 @@ test("authenticated two-destination shell uses real workspace data", async (t) =
       const settingsSections = page.locator(".product-settings-mobile");
       await settingsSections.locator("summary").click();
       const settingsLinks = settingsSections.getByRole("navigation", { name: "Settings sections" }).getByRole("link");
-      assert.deepEqual(await settingsLinks.allTextContents(), ["Profile", "Workspace", "Integrations", "Developers"]);
+      assert.deepEqual(await settingsLinks.allTextContents(), ["Profile", "Workspace", "Integrations", "Developers", "Privacy & data"]);
       const sectionLinkBounds = await settingsLinks.evaluateAll((links) => ({ viewportWidth: innerWidth, links: links.map((link) => {
         const rect = link.getBoundingClientRect();
         return { left: rect.left, right: rect.right, height: rect.height };
@@ -267,7 +310,7 @@ test("authenticated two-destination shell uses real workspace data", async (t) =
     await page.waitForURL(`${base}/settings`);
     await page.waitForFunction(() => document.querySelector('.product-settings-desktop a[aria-current="location"]')?.getAttribute("href") === "#profile");
     await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
-    await page.waitForFunction(() => document.querySelector('.product-settings-desktop a[aria-current="location"]')?.getAttribute("href") === "#developers");
+    await page.waitForFunction(() => document.querySelector('.product-settings-desktop a[aria-current="location"]')?.getAttribute("href") === "#privacy");
     console.error("[shell-browser] contextual: status filter fixture setup");
     console.error("[shell-browser] status fixture: creating secondary workspace");
     const secondWorkspace = await db.workspace.create({ data: { name: "Another owned workspace", members: { create: { userId, role: "ADMIN" } } } });
