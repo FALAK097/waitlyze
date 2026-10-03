@@ -99,9 +99,11 @@ export function AudienceTable({ waitlist, initialReviews = [], canManage = false
             <h1 id="audience-title">Subscribers</h1>
             <p className="product-description">People who joined {waitlist.name || "this waitlist"}.</p>
           </div>
-          <Button variant="outline" onClick={exportCsv} disabled={exporting} aria-busy={exporting}>
-            <Download aria-hidden="true" /> {exporting ? "Preparing export…" : "Export CSV"}
-          </Button>
+          {view === "subscribers" && (
+            <Button variant="outline" onClick={exportCsv} disabled={exporting} aria-busy={exporting}>
+              <Download aria-hidden="true" /> {exporting ? "Preparing export…" : "Export CSV"}
+            </Button>
+          )}
         </div>
         <div className="mt-4 flex gap-2" role="group" aria-label="Subscriber views">
           <Button variant={view === "subscribers" ? "outline" : "ghost"} aria-pressed={view === "subscribers"} onClick={() => setView("subscribers")}>Subscribers</Button>

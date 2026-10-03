@@ -478,6 +478,12 @@ test("authenticated two-destination shell uses real workspace data", async (t) =
     ] });
     await page.goto(`${base}/wait-lists/${waitlist.id}/subscribers`);
     await page.getByRole("heading", { name: "Subscribers", exact: true }).waitFor();
+    const exportButton = page.getByRole("button", { name: "Export CSV", exact: true });
+    await exportButton.waitFor();
+    await page.getByRole("button", { name: /Referral review/ }).click();
+    await exportButton.waitFor({ state: "hidden" });
+    await page.getByRole("button", { name: "Subscribers", exact: true }).click();
+    await exportButton.waitFor();
     await page.getByText(/of 2$/).waitFor();
     await page.getByRole("button", { name: "Verified", exact: true }).click();
     await page.getByText(/of 1$/).waitFor();
