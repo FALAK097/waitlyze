@@ -227,28 +227,38 @@ export function SnapshotPageBuilder({ waitList, saveDraftPage, publishPage, paus
   const publish = async () => {
     if (dirty || saving || conflict || publishing) return;
     setPublishing(true); setError("");
-    const result = await publishPage(waitList.id, version);
-    setPublishing(false);
-    if (!result?.ok) { setError(result?.message || "Couldn't publish this page."); return; }
-    setMessage(result.unchanged ? "Already live" : `Published · version ${result.revision}`);
-    router.refresh();
+    try {
+      const result = await publishPage(waitList.id, version);
+      if (!result?.ok) { setError(result?.message || "Couldn't publish this page."); return; }
+      setMessage(result.unchanged ? "Already live" : `Published · version ${result.revision}`);
+      router.refresh();
+    } catch {
+      setError("Couldn't publish this page. Check your connection and try again.");
+    } finally {
+      setPublishing(false);
+    }
   };
   const lifecycle = async (action) => {
     if (dirty || saving || conflict || publishing) return;
     setPublishing(true); setError("");
-    const result = await action(waitList.id);
-    setPublishing(false);
-    if (!result?.ok) { setError(result?.message || "Couldn't update publication."); return; }
-    if (Number.isSafeInteger(result.templateRevision) && result.snapshot) {
-      const restored = clone(result.snapshot);
-      versionRef.current = result.templateRevision; setVersion(result.templateRevision);
-      snapshotRef.current = restored; setSnapshot(restored);
-      dirtyRef.current = false; setDirty(false); setConflict(null); conflictRef.current = null;
-      undoStack.current = []; redoStack.current = []; setUndoCount(0); setRedoCount(0);
-      setMessage("Restored previous published version");
-      try { sessionStorage.setItem(key, JSON.stringify({ revision: result.templateRevision, snapshot: restored })); } catch { /* A future reload still uses the saved server version. */ }
+    try {
+      const result = await action(waitList.id);
+      if (!result?.ok) { setError(result?.message || "Couldn't update publication."); return; }
+      if (Number.isSafeInteger(result.templateRevision) && result.snapshot) {
+        const restored = clone(result.snapshot);
+        versionRef.current = result.templateRevision; setVersion(result.templateRevision);
+        snapshotRef.current = restored; setSnapshot(restored);
+        dirtyRef.current = false; setDirty(false); setConflict(null); conflictRef.current = null;
+        undoStack.current = []; redoStack.current = []; setUndoCount(0); setRedoCount(0);
+        setMessage("Restored previous published version");
+        try { sessionStorage.setItem(key, JSON.stringify({ revision: result.templateRevision, snapshot: restored })); } catch { /* A future reload still uses the saved server version. */ }
+      }
+      router.refresh();
+    } catch {
+      setError("Couldn't update publication. Check your connection and try again.");
+    } finally {
+      setPublishing(false);
     }
-    router.refresh();
   };
   const hasUpdates = waitList.status !== "PUBLISHED" || waitList.publishedTemplateRevision !== version;
 
