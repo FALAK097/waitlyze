@@ -20,6 +20,8 @@ model User {
 
   personalWorkspace    Workspace?        @relation("PersonalWorkspace")
   workspaceMemberships WorkspaceMember[]
+  workspaceInvitationsCreated WorkspaceInvitation[] @relation("WorkspaceInvitationCreator")
+  workspaceInvitationsAccepted WorkspaceInvitation[] @relation("WorkspaceInvitationAccepter")
 
   waitLists WaitList[]
   apiKeys   ApiKey[]
@@ -59,6 +61,8 @@ model WaitList {
   creationKey             String?
 
   id                      String  @id @unique @default(cuid())
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
   name                    String?
   description             String?
   websiteUrl              String?
@@ -630,6 +634,7 @@ model Workspace {
   createdAt       DateTime          @default(now())
   updatedAt       DateTime          @updatedAt
   members         WorkspaceMember[]
+  invitations     WorkspaceInvitation[]
   waitLists       WaitList[]
   emailSuppressions EmailSuppression[]
   integrations      WorkspaceIntegration[]
@@ -655,6 +660,39 @@ enum WorkspaceRole {
   OWNER
   ADMIN
   MEMBER
+}
+
+enum WorkspaceInvitationStatus {
+  PENDING
+  ACCEPTED
+  REVOKED
+  EXPIRED
+  SEND_FAILED
+}
+
+model WorkspaceInvitation {
+  id               String                    @id @default(cuid())
+  workspaceId      String
+  emailNormalized  String
+  role             WorkspaceRole             @default(MEMBER)
+  tokenHash        String                    @unique
+  tokenCiphertext  String
+  tokenIv          String
+  tokenTag         String
+  status           WorkspaceInvitationStatus @default(PENDING)
+  expiresAt        DateTime
+  createdByUserId  String
+  acceptedByUserId String?
+  acceptedAt       DateTime?
+  revokedAt        DateTime?
+  createdAt        DateTime                  @default(now())
+  updatedAt        DateTime                  @updatedAt
+  workspace        Workspace                 @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  createdBy        User                      @relation("WorkspaceInvitationCreator", fields: [createdByUserId], references: [id], onDelete: Cascade)
+  acceptedBy       User?                     @relation("WorkspaceInvitationAccepter", fields: [acceptedByUserId], references: [id], onDelete: SetNull)
+
+  @@index([workspaceId, status, createdAt])
+  @@map("workspace_invitations")
 }
 
 model EmailProviderEvent {
