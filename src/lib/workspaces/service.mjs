@@ -7,6 +7,7 @@ const permissions = Object.freeze({
   sendEmail: ["OWNER", "ADMIN"],
   deleteCampaign: ["OWNER", "ADMIN"],
   manageConnections: ["OWNER", "ADMIN"],
+  manageWorkspace: ["OWNER", "ADMIN"],
   manageOwnership: ["OWNER"],
 });
 
@@ -58,6 +59,22 @@ export function createWorkspaceService(db) {
       });
       if (!workspace) throw new AccessError();
       return workspace;
+    },
+    async renameWorkspace(userId, workspaceId, name) {
+      actor(userId);
+      if (typeof workspaceId !== "string" || !workspaceId) throw new AccessError();
+      if (typeof name !== "string" || !name.trim() || name.trim().length > 80) {
+        throw new TypeError("Workspace name must contain 1 to 80 characters.");
+      }
+      const result = await db.workspace.updateMany({
+        where: {
+          id: workspaceId,
+          members: { some: { userId, role: { in: roles("manageWorkspace") } } },
+        },
+        data: { name: name.trim() },
+      });
+      if (result.count !== 1) throw new AccessError();
+      return { id: workspaceId, name: name.trim() };
     },
     async campaign(userId, id, permission = "viewCampaign", workspaceId) {
       if (typeof id !== "string" || !id) throw new AccessError();
