@@ -31,7 +31,7 @@ export async function saveWorkspaceName(previous, form) {
   try {
     await createWorkspaceService(prisma).renameWorkspace(session.user.id, workspaceId, name);
     revalidatePath("/settings");
-    return { success: "Workspace name saved." };
+    return { success: "Workspace name saved.", savedName: name.trim() };
   } catch (error) {
     if (error instanceof AccessError) return { error: "You don’t have permission to update this workspace." };
     return { error: "Could not save the workspace name. Try again." };

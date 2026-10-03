@@ -5,9 +5,9 @@ import { Button } from "./button";
 import { Input } from "./input";
 import { saveProfile, saveWorkspaceName, selectWorkspace } from "@/app/actions/settings";
 
-function SubmitButton({ children, pendingLabel }) {
+function SubmitButton({ children, pendingLabel, disabled = false }) {
   const { pending } = useFormStatus();
-  return <Button type="submit" disabled={pending}>{pending ? pendingLabel : children}</Button>;
+  return <Button type="submit" disabled={pending || disabled}>{pending ? pendingLabel : children}</Button>;
 }
 export function ProfileForm({ name }) {
   const [state, action] = useActionState(saveProfile, {});
@@ -27,6 +27,8 @@ export function WorkspacePicker({ workspaces, selected }) {
 export function WorkspaceNameForm({ workspaceId, name, canManage }) {
   const [state, action] = useActionState(saveWorkspaceName, {});
   const [value, setValue] = useState(name || "");
+  const savedName = state.savedName ?? name ?? "";
+  const unchanged = value.trim() === savedName.trim();
   if (!canManage) {
     return <>
       <dl><dt>Workspace name</dt><dd>{name}</dd></dl>
@@ -38,7 +40,7 @@ export function WorkspaceNameForm({ workspaceId, name, canManage }) {
     <label htmlFor="workspace-name">Workspace name</label>
     <Input id="workspace-name" name="name" value={value} onChange={(event) => setValue(event.target.value)} aria-invalid={!!state.error} required maxLength={80} autoComplete="organization" aria-describedby="workspace-name-help" />
     <p id="workspace-name-help" className="product-help">Shown in your workspace switcher. Up to 80 characters.</p>
-    <SubmitButton pendingLabel="Saving…">Save workspace</SubmitButton>
+    <SubmitButton disabled={unchanged} pendingLabel="Saving…">Save workspace</SubmitButton>
     <p role={state.error ? "alert" : "status"} aria-live={state.error ? "assertive" : "polite"}>{state.error || state.success}</p>
   </form>;
 }

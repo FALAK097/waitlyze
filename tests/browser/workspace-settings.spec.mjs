@@ -44,9 +44,13 @@ test("workspace settings lets an owner rename the workspace and keeps member acc
   await expect(panel.getByRole("heading", { name: "Workspace" })).toBeVisible();
   const name = panel.getByRole("textbox", { name: "Workspace name" });
   await expect(name).toHaveAccessibleDescription("Shown in your workspace switcher. Up to 80 characters.");
+  const save = panel.getByRole("button", { name: "Save workspace" });
+  await expect(save).toBeDisabled();
   await name.fill("Launch team");
-  await panel.getByRole("button", { name: "Save workspace" }).click();
+  await expect(save).toBeEnabled();
+  await save.click();
   await expect(panel.getByRole("status")).toHaveText("Workspace name saved.");
+  await expect(save).toBeDisabled();
   expect((await db.workspace.findUnique({ where: { id: workspace.id } })).name).toBe("Launch team");
   expect((await new AxeBuilder({ page }).include("#workspace").analyze()).violations).toEqual([]);
 
