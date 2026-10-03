@@ -296,9 +296,10 @@ test("authenticated two-destination shell uses real workspace data", async (t) =
 
     try {
       await page.goto(`${base}/wait-lists/${waitlist.id}`);
-      await page.getByRole("alert").getByText("Analytics temporarily unavailable.").waitFor();
+      const errorAlert = page.locator('.waitlist-analytics-message[role="alert"]');
+      await errorAlert.getByText("Analytics temporarily unavailable.").waitFor();
       await page.getByRole("button", { name: "Try again" }).click();
-      await page.getByRole("alert").waitFor({ state: "hidden" });
+      await errorAlert.waitFor({ state: "hidden" });
       await page.locator(".waitlist-analytics-metric").first().waitFor();
       assert.equal(requestCount, 2);
     } finally {
