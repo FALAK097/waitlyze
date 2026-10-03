@@ -47,6 +47,17 @@ test("workspace migration and authorization with real PostgreSQL", async (t) => 
     await service.requireAccess(owner, workspace.id, "manageOwnership");
     for (const id of [admin, member, outsider]) await assert.rejects(service.requireAccess(id, workspace.id, "manageOwnership"), { status: 404 });
   });
+  await t.test("workspace rename is scoped to owners and admins", async () => {
+    assert.deepEqual(await service.renameWorkspace(admin, workspace.id, "  Launch team  "), { id: workspace.id, name: "Launch team" });
+    assert.equal((await db.workspace.findUnique({ where: { id: workspace.id } })).name, "Launch team");
+    await service.renameWorkspace(owner, workspace.id, "Founders");
+    for (const id of [member, outsider]) {
+      await assert.rejects(service.renameWorkspace(id, workspace.id, "Not yours"), { status: 404 });
+    }
+    await assert.rejects(service.renameWorkspace(owner, workspace.id, "  "), /1 to 80 characters/);
+    await assert.rejects(service.renameWorkspace(owner, workspace.id, "x".repeat(81)), /1 to 80 characters/);
+    assert.equal((await db.workspace.findUnique({ where: { id: workspace.id } })).name, "Founders");
+  });
   await t.test("forged workspace/campaign IDs and anonymous actors fail closed", async () => {
     await assert.rejects(service.campaign(outsider, campaigns[0].id), { status: 404 });
     await assert.rejects(service.campaign(owner, campaigns[0].id, "viewCampaign", otherWorkspace.id), { status: 404 });

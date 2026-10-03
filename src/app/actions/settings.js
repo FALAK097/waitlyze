@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import prisma from "@/lib/prisma";
-import { createWorkspaceService } from "@/lib/workspaces/service.mjs";
+import { AccessError, createWorkspaceService } from "@/lib/workspaces/service.mjs";
 import { requireCampaign } from "@/lib/workspaces/authorize";
 
 export async function saveProfile(previous, form) {
@@ -17,6 +17,25 @@ export async function saveProfile(previous, form) {
     revalidatePath("/settings");
     return { success: "Profile saved." };
   } catch { return { error: "Could not save your profile. Try again." }; }
+}
+
+export async function saveWorkspaceName(previous, form) {
+  const session = await auth.api.getSession({ headers: await headers() });
+  if (!session?.user?.id) return { error: "Sign in again to save workspace settings." };
+  const workspaceId = form.get("workspaceId");
+  const name = form.get("name");
+  if (typeof workspaceId !== "string" || !workspaceId) return { error: "Choose a workspace to update." };
+  if (typeof name !== "string" || !name.trim() || name.trim().length > 80) {
+    return { error: "Enter a workspace name between 1 and 80 characters." };
+  }
+  try {
+    await createWorkspaceService(prisma).renameWorkspace(session.user.id, workspaceId, name);
+    revalidatePath("/settings");
+    return { success: "Workspace name saved." };
+  } catch (error) {
+    if (error instanceof AccessError) return { error: "You don’t have permission to update this workspace." };
+    return { error: "Could not save the workspace name. Try again." };
+  }
 }
 
 export async function setWaitlistReferrals(waitListId, enabled) {
