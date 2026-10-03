@@ -279,7 +279,8 @@ test("authenticated two-destination shell uses real workspace data", async (t) =
   });
   await t.test("analytics retry follows the component abortable request lifecycle", async () => {
     let requestCount = 0;
-    const analyticsRequest = new RegExp(`/api/wait-lists/${waitlist.id}/analytics(?:\\?|$)`);
+    const analyticsRequest = (url) => url.pathname === `/api/wait-lists/${waitlist.id}/analytics`;
+    await db.waitList.update({ where: { id: waitlist.id }, data: { status: "PUBLISHED" } });
     await page.route(analyticsRequest, async (route) => {
       requestCount += 1;
       if (requestCount === 1) {
@@ -302,6 +303,7 @@ test("authenticated two-destination shell uses real workspace data", async (t) =
       assert.equal(requestCount, 2);
     } finally {
       await page.unroute(analyticsRequest);
+      await db.waitList.update({ where: { id: waitlist.id }, data: { status: "DRAFT" } });
     }
   });
   await t.test("subscriber tabs resolve flagged referrals with an auditable note", async () => {
