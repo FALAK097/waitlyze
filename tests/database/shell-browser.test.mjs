@@ -74,11 +74,15 @@ test("authenticated two-destination shell uses real workspace data", async (t) =
   });
   await t.test("account export downloads scoped settings without subscribers or credentials", async () => {
     const subscriberEmail = "must-not-export-subscriber@example.invalid";
+    const broadcastRecipientEmail = "must-not-export-broadcast-recipient@example.invalid";
     const apiSecretMarker = "must-not-export-api-secret-hash";
     const integrationSecretMarker = "must-not-export-integration-secret";
-    await db.signUp.create({ data: { uniqueUserId: randomUUID(), email: subscriberEmail, emailNormalized: subscriberEmail, waitListId: waitlist.id } });
+    const subscriber = await db.signUp.create({ data: { uniqueUserId: randomUUID(), email: subscriberEmail, emailNormalized: subscriberEmail, waitListId: waitlist.id } });
     await db.apiKey.create({ data: { name: "Export fixture key", keyHash: apiSecretMarker, userId, waitlistId: waitlist.id } });
     await db.workspaceIntegration.create({ data: { workspaceId: personal.id, provider: "RESEND", status: "TESTED", secretCiphertext: integrationSecretMarker, secretIv: "integration-iv-marker", secretTag: "integration-tag-marker", fromEmail: "sender@example.invalid" } });
+    await db.emailTemplate.create({ data: { waitListId: waitlist.id, type: "SIGNUP", subject: "Confirm your email", previewText: "One last step", header: "You are on the list", subHeader: "", mainBody: "Confirm to finish joining", subBody: "Thanks for your interest" } });
+    await db.automationRecipe.create({ data: { waitListId: waitlist.id, type: "WELCOME", status: "DRAFT", currentVersion: 1, versions: { create: { version: 1, config: { trigger: "SIGNUP_VERIFIED", delayMinutes: 0, subject: "Welcome to First launch", body: "Thanks for confirming." } } } } });
+    await db.marketingBroadcast.create({ data: { waitListId: waitlist.id, name: "Export fixture broadcast", subject: "A product update", previewText: "See what is new", body: "We have a launch update.", recipients: { create: { signUpId: subscriber.id, email: broadcastRecipientEmail, emailNormalized: broadcastRecipientEmail } } } });
     try {
       await page.goto(`${base}/settings#privacy`);
       await page.getByRole("heading", { name: "Privacy & data" }).waitFor();
@@ -92,11 +96,15 @@ test("authenticated two-destination shell uses real workspace data", async (t) =
       assert.equal(exported.account.email, `${userId}@example.invalid`);
       assert.equal(exported.workspaces[0].name, "Personal workspace");
       assert.ok(exported.campaigns.some((campaign) => campaign.name === "First launch"));
+      const exportedCampaign = exported.campaigns.find((campaign) => campaign.name === "First launch");
+      assert.equal(exportedCampaign.emailTemplates[0].subject, "Confirm your email");
+      assert.equal(exportedCampaign.automations[0].versions[0].config.subject, "Welcome to First launch");
+      assert.equal(exportedCampaign.broadcasts[0].body, "We have a launch update.");
       assert.equal(exported.campaigns.some((campaign) => campaign.name === "First launch external"), false);
       assert.ok(exported.developerKeys.some((key) => key.name === "Export fixture key"));
       assert.ok(exported.integrations.some((integration) => integration.fromEmail === "sender@example.invalid"));
       assert.match(JSON.stringify(exported.dataNotes), /Subscribers page/);
-      for (const marker of [subscriberEmail, apiSecretMarker, integrationSecretMarker, "integration-iv-marker", "integration-tag-marker"]) {
+      for (const marker of [subscriberEmail, broadcastRecipientEmail, apiSecretMarker, integrationSecretMarker, "integration-iv-marker", "integration-tag-marker"]) {
         assert.equal(body.includes(marker), false, `export leaked ${marker}`);
       }
       assert.equal(Object.hasOwn(exported.workspaces[0], "id"), false);
@@ -113,6 +121,9 @@ test("authenticated two-destination shell uses real workspace data", async (t) =
       await db.signUp.deleteMany({ where: { waitListId: waitlist.id, emailNormalized: subscriberEmail } });
       await db.apiKey.deleteMany({ where: { userId, name: "Export fixture key" } });
       await db.workspaceIntegration.deleteMany({ where: { workspaceId: personal.id, provider: "RESEND" } });
+      await db.emailTemplate.deleteMany({ where: { waitListId: waitlist.id, type: "SIGNUP" } });
+      await db.automationRecipe.deleteMany({ where: { waitListId: waitlist.id, type: "WELCOME" } });
+      await db.marketingBroadcast.deleteMany({ where: { waitListId: waitlist.id, name: "Export fixture broadcast" } });
     }
   });
   await t.test("developer settings creates a waitlist-bound key once and lists only safe metadata", async () => {

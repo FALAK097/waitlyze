@@ -49,6 +49,21 @@ export async function GET() {
           workspace: { select: { name: true } },
           customDomain: { select: { hostname: true, status: true, lastCheckedAt: true } },
           webhookSubscriptions: { select: { name: true, eventTypes: true, enabled: true, createdAt: true, updatedAt: true, lastDeliveredAt: true } },
+          emailTemplateRecords: {
+            select: { type: true, subject: true, previewText: true, header: true, subHeader: true, mainBody: true, subBody: true, createdAt: true, updatedAt: true },
+            orderBy: { type: "asc" },
+          },
+          automationRecipes: {
+            select: {
+              type: true, status: true, currentVersion: true, createdAt: true, updatedAt: true,
+              versions: { select: { version: true, config: true, createdAt: true }, orderBy: { version: "asc" } },
+            },
+            orderBy: { type: "asc" },
+          },
+          broadcasts: {
+            select: { name: true, subject: true, previewText: true, body: true, status: true, recipientCount: true, createdAt: true, updatedAt: true, sentAt: true },
+            orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+          },
         },
         orderBy: { id: "asc" },
       }),
