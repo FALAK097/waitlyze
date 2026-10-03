@@ -36,6 +36,7 @@ test("authenticated two-destination shell uses real workspace data", async (t) =
   await db.session.create({ data: { id: randomUUID(), token, userId, expiresAt: new Date(Date.now() + 120000) } });
   const personal = await service.ensurePersonal(userId);
   const waitlist = await db.waitList.create({ data: { userId, workspaceId: personal.id, name: "First launch", description: "Real fixture content" } });
+  const legacyWaitlist = await db.waitList.create({ data: { userId, workspaceId: personal.id, name: "Legacy launch" } });
   await db.user.create({ data: { id: otherUserId, email: `${otherUserId}@example.invalid` } });
   const otherWorkspace = await service.ensurePersonal(otherUserId);
   await db.waitList.create({ data: { userId: otherUserId, workspaceId: otherWorkspace.id, name: "First launch external" } });
@@ -56,6 +57,33 @@ test("authenticated two-destination shell uses real workspace data", async (t) =
     assert.equal(await page.locator("aside").count(), 0);
     assert.equal(await page.getByRole("row", { name: /First launch/ }).count(), 1);
     assert.equal(await page.getByLabel("Workspace", { exact: true }).count(), 0);
+  });
+  await t.test("legacy page editor renders safely and names its icon actions", async () => {
+    await page.goto(`${base}/wait-lists/${legacyWaitlist.id}/edit`);
+    await page.getByRole("button", { name: "Email templates" }).waitFor();
+    await page.getByRole("button", { name: "Embed instructions" }).waitFor();
+    await page.getByRole("button", { name: "Share waitlist" }).waitFor();
+
+    await page.getByRole("button", { name: "Embed instructions" }).click();
+    const embedDialog = page.getByRole("dialog");
+    await embedDialog.getByText("Follow these steps to embed the form on your website.").waitFor();
+    assert.match(await embedDialog.locator("pre").first().innerText(), /http:\/\/127\.0\.0\.1:3100\/js\/embed\.js/);
+    assert.equal(await embedDialog.getByRole("button", { name: "Copy code" }).count(), 2);
+    assert.deepEqual((await new AxeBuilder({ page }).include('[role="dialog"]').analyze()).violations, []);
+    await embedDialog.getByRole("button", { name: "Done" }).click();
+    await embedDialog.waitFor({ state: "hidden" });
+
+    await page.getByRole("button", { name: "Share waitlist" }).click();
+    const shareDialog = page.getByRole("dialog");
+    assert.equal(await shareDialog.getByLabel("Link").inputValue(), `${base}/forms/${legacyWaitlist.id}`);
+    await page.locator('[data-state="open"]').evaluateAll(async (elements) => {
+      await Promise.all(elements.flatMap((element) => element.getAnimations({ subtree: true })).map((animation) => animation.finished.catch(() => {})));
+    });
+    assert.equal(await shareDialog.getByRole("button", { name: "Close" }).count(), 1);
+    assert.deepEqual((await new AxeBuilder({ page }).include('[role="dialog"]').analyze()).violations, []);
+    await page.keyboard.press("Escape");
+    await shareDialog.waitFor({ state: "hidden" });
+    await page.goto(`${base}/wait-lists`);
   });
   await t.test("profile saves on the real account and settings passes axe", async () => {
     await page.getByRole("link", { name: "Settings", exact: true }).click();

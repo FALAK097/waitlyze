@@ -16,7 +16,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { CodeIcon, Save, ShareIcon, Mail } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { CopyIcon } from "../shared/icons";
 import { CodeBlock } from "../ui/code-block";
@@ -30,13 +30,13 @@ import { SettingsTab } from "./settings-tab";
 import { SignUpForm } from "./sign-up-form";
 import Link from "next/link";
 
-const EmbedModal = ({ waitList }) => {
+const EmbedModal = ({ waitList, origin }) => {
   return (
     <Dialog>
       <Tooltip delayDuration={100}>
         <TooltipTrigger asChild>
           <DialogTrigger asChild>
-            <Button size="icon">
+            <Button size="icon" aria-label="Embed instructions">
               <CodeIcon className="w-4 h-4" />
             </Button>
           </DialogTrigger>
@@ -47,7 +47,7 @@ const EmbedModal = ({ waitList }) => {
         <DialogHeader>
           <DialogTitle>Instructions</DialogTitle>
           <DialogDescription>
-            Follow the bellow instructions to embed the form on your website.
+            Follow these steps to embed the form on your website.
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
@@ -57,7 +57,7 @@ const EmbedModal = ({ waitList }) => {
             </p>
             <CodeBlock
               language="html"
-              code={`<!-- Waitlyze Widget JS -->\n<script src="${window.location.origin}/js/embed.js" defer></script>`}
+              code={`<!-- Waitlyze Widget JS -->\n<script src="${origin}/js/embed.js" defer></script>`}
             />
           </div>
           <div>
@@ -73,7 +73,7 @@ const EmbedModal = ({ waitList }) => {
         </div>
         <DialogFooter>
           <DialogClose asChild>
-            <Button onClick={() => { }}>Done</Button>
+            <Button variant="outline">Done</Button>
           </DialogClose>
         </DialogFooter>
       </DialogContent>
@@ -82,6 +82,7 @@ const EmbedModal = ({ waitList }) => {
 };
 
 export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
+  const [origin, setOrigin] = useState("");
   const [testEmail, setTestEmail] = useState("");
   const [isTestEmailLoading, setIsTestEmailLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -97,6 +98,10 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
   const [ogTitle, setOgTitle] = useState(initialWaitList.ogTitle || "");
   const [ogDescription, setOgDescription] = useState(initialWaitList.ogDescription || "");
   const [ogImage, setOgImage] = useState(initialWaitList.ogImage || "");
+
+  useEffect(() => {
+    setOrigin(window.location.origin);
+  }, []);
 
   const [buttonColor, setButtonColor] = useQueryState('buttonColor', {
     defaultValue: initialWaitList.buttonColor || "#FF6B4A"
@@ -432,7 +437,7 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
               <Tooltip delayDuration={100}>
                 <TooltipTrigger asChild>
                   <Link href={`/wait-lists/${initialWaitList.id}/emails`} target="_blank">
-                    <Button size="icon">
+                    <Button size="icon" aria-label="Email templates">
                       <Mail className="w-4 h-4" />
                     </Button>
                   </Link>
@@ -442,13 +447,13 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
                 </TooltipContent>
               </Tooltip>
 
-              <EmbedModal waitList={initialWaitList} />
+              <EmbedModal waitList={initialWaitList} origin={origin} />
 
               <Dialog>
                 <Tooltip delayDuration={100}>
                   <TooltipTrigger asChild>
                     <DialogTrigger asChild>
-                      <Button size="icon">
+                      <Button size="icon" aria-label="Share waitlist">
                         <ShareIcon className="w-4 h-4" />
                       </Button>
                     </DialogTrigger>
@@ -472,7 +477,7 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
                       </Label>
                       <Input
                         id="link"
-                        defaultValue={`${window.location.origin}/forms/${initialWaitList.id}`}
+                        value={origin ? `${origin}/forms/${initialWaitList.id}` : ""}
                         readOnly
                       />
                     </div>
@@ -486,13 +491,6 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
                       <CopyIcon />
                     </Button>
                   </div>
-                  <DialogFooter className="sm:justify-start">
-                    <DialogClose asChild>
-                      <Button type="button" variant="secondary">
-                        Close
-                      </Button>
-                    </DialogClose>
-                  </DialogFooter>
                 </DialogContent>
               </Dialog>
             </div>
