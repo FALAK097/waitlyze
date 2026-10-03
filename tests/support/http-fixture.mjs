@@ -21,7 +21,13 @@ export async function startFixtureServer() {
         output += data.toString();
         if (output.includes("Ready in")) { clearTimeout(timer); resolve(); }
       });
-      child.stderr.on("data", (data) => { output += data.toString(); });
+      child.stderr.on("data", (data) => {
+        const message = data.toString();
+        output += message;
+        if (output.includes("Ready in") && /\b(error|exception|digest)\b|\b500\b/i.test(message)) {
+          process.stderr.write(`[fixture-server] ${message}`);
+        }
+      });
     });
     return child;
   } catch (error) {

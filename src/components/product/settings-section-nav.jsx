@@ -2,81 +2,111 @@
 
 import { useEffect, useState } from "react";
 
-const sections = [
-  { id: "profile", label: "Profile" },
-  { id: "workspace", label: "Workspace" },
-  { id: "integrations", label: "Integrations" },
-  { id: "developers", label: "Developers" },
-  { id: "privacy", label: "Privacy & data" },
+const groups = [
+  {
+    label: "Account",
+    sections: [{ id: "profile", label: "Profile" }],
+  },
+  {
+    label: "Workspace",
+    sections: [
+      { id: "workspace", label: "Workspace" },
+      { id: "team", label: "Team access" },
+    ],
+  },
+  {
+    label: "Connections",
+    sections: [{ id: "integrations", label: "Integrations" }],
+  },
+  {
+    label: "Developer",
+    advanced: true,
+    sections: [{ id: "developers", label: "Developer tools" }],
+  },
+  {
+    label: "Data",
+    advanced: true,
+    sections: [{ id: "privacy", label: "Privacy & data" }],
+  },
 ];
 
-function currentHash() {
+const sections = groups.flatMap((group) => group.sections.map((section) => ({ ...section, group: group.label })));
+
+function sectionFromHash() {
   const id = window.location.hash.slice(1);
   return sections.some((section) => section.id === id) ? id : sections[0].id;
 }
 
+function sectionAtReadingPosition() {
+  const readingLine = window.innerHeight * 0.34;
+  const positioned = sections
+    .map(({ id }) => ({ id, top: document.getElementById(id)?.getBoundingClientRect().top ?? Number.POSITIVE_INFINITY }))
+    .filter(({ top }) => top <= readingLine);
+
+  if (window.scrollY + window.innerHeight >= document.documentElement.scrollHeight - 2) {
+    return sections.at(-1).id;
+  }
+
+  return positioned.at(-1)?.id ?? sections[0].id;
+}
+
 export function SettingsSectionNavigation() {
   const [activeSection, setActiveSection] = useState("profile");
+  const active = sections.find((section) => section.id === activeSection) ?? sections[0];
 
   useEffect(() => {
-    const syncHash = () => setActiveSection(currentHash());
-    const syncPageEnd = () => {
-      if (window.scrollY + window.innerHeight >= document.documentElement.scrollHeight - 2) {
-        setActiveSection(sections[sections.length - 1].id);
-      }
+    let frame = 0;
+    const syncFromScroll = () => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => setActiveSection(sectionAtReadingPosition()));
     };
-    syncHash();
-    window.addEventListener("hashchange", syncHash);
-    window.addEventListener("scroll", syncPageEnd, { passive: true });
-    window.addEventListener("resize", syncPageEnd);
+    const syncFromHash = () => setActiveSection(sectionFromHash());
 
-    const targets = sections.map(({ id }) => document.getElementById(id)).filter(Boolean);
-    if (!("IntersectionObserver" in window)) {
-      return () => {
-        window.removeEventListener("hashchange", syncHash);
-        window.removeEventListener("scroll", syncPageEnd);
-        window.removeEventListener("resize", syncPageEnd);
-      };
-    }
-
-    const observer = new IntersectionObserver((entries) => {
-      const visible = entries
-        .filter((entry) => entry.isIntersecting)
-        .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
-      if (visible[0]) setActiveSection(visible[0].target.id);
-    }, { rootMargin: "-24% 0px -65% 0px", threshold: 0 });
-    targets.forEach((target) => observer.observe(target));
+    syncFromHash();
+    window.addEventListener("hashchange", syncFromHash);
+    window.addEventListener("scroll", syncFromScroll, { passive: true });
+    window.addEventListener("resize", syncFromScroll);
 
     return () => {
-      window.removeEventListener("hashchange", syncHash);
-      window.removeEventListener("scroll", syncPageEnd);
-      window.removeEventListener("resize", syncPageEnd);
-      observer.disconnect();
+      cancelAnimationFrame(frame);
+      window.removeEventListener("hashchange", syncFromHash);
+      window.removeEventListener("scroll", syncFromScroll);
+      window.removeEventListener("resize", syncFromScroll);
     };
   }, []);
 
-  const links = (mobile = false) => sections.map(({ id, label }) => (
-    <a
-      key={id}
-      href={`#${id}`}
-      aria-current={activeSection === id ? "location" : undefined}
-      onClick={(event) => {
-        setActiveSection(id);
-        if (mobile) {
-          const disclosure = event.currentTarget.closest("details");
-          if (disclosure) disclosure.open = false;
-        }
-      }}
-    >
-      {label}
-    </a>
+  const renderLinks = (mobile = false) => groups.map((group) => (
+    <div className="product-settings-nav-group" data-settings-level={group.advanced ? "advanced" : "primary"} key={group.label}>
+      <p className="product-settings-nav-label">{group.label}</p>
+      {group.sections.map(({ id, label }) => (
+        <a
+          key={id}
+          href={`#${id}`}
+          aria-current={activeSection === id ? "location" : undefined}
+          onClick={(event) => {
+            setActiveSection(id);
+            if (mobile) {
+              const disclosure = event.currentTarget.closest("details");
+              if (disclosure) disclosure.open = false;
+            }
+          }}
+        >
+          {label}
+        </a>
+      ))}
+    </div>
   ));
 
   return <>
-    <nav aria-label="Settings sections" className="product-settings-index product-settings-desktop">{links()}</nav>
-    <details className="product-settings-mobile">
-      <summary>Settings sections</summary>
-      <nav aria-label="Settings sections">{links(true)}</nav>
+    <nav aria-label="Settings sections" className="product-settings-index product-settings-desktop">
+      {renderLinks()}
+    </nav>
+    <details className="product-settings-mobile" id="settings-section-disclosure">
+      <summary aria-label={`Settings sections. Current section: ${active.label}`}>
+        <span>Jump to section</span>
+        <strong>{active.label}</strong>
+      </summary>
+      <nav aria-label="Settings sections">{renderLinks(true)}</nav>
     </details>
   </>;
 }

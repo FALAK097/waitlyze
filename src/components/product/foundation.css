@@ -127,8 +127,9 @@
 .product-input { width: 100%; min-width: 0; min-height: 2.75rem; padding: 0.625rem 0.75rem; border-radius: var(--product-radius-control); border: 1px solid var(--product-border-control); background: var(--product-bg-surface); color: var(--product-text-primary); font: inherit; font-size: 1rem; }
 .product-input::placeholder { color: var(--product-text-secondary); opacity: 1; }
 .product-input[aria-invalid="true"] { border-color: var(--product-danger-text); }
-.product-backdrop { position: fixed; inset: 0; z-index: 60; background: hsl(0 0% 0% / 0.5); }
-.product-dialog { position: fixed; top: 50%; left: 50%; translate: -50% -50%; z-index: 61; width: calc(100% - 2rem); max-width: 28rem; max-height: calc(100svh - 2rem); overflow-y: auto; overscroll-behavior: contain; padding: 1.5rem; border-radius: var(--product-radius-dialog); background: var(--product-bg-surface); box-shadow: var(--product-shadow-elevated); }
+.product-dialog-scope { display: contents; }
+[data-slot="product-dialog-backdrop"] { position: fixed; inset: 0; z-index: 60; background: hsl(0 0% 0% / 0.5); }
+[data-slot="product-dialog-popup"] { position: fixed; top: 50%; left: 50%; translate: -50% -50%; z-index: 61; width: calc(100% - 2rem); max-width: 28rem; max-height: calc(100svh - 2rem); overflow-y: auto; overscroll-behavior: contain; padding: 1.5rem; border-radius: var(--product-radius-dialog); background: var(--product-bg-surface); box-shadow: var(--product-shadow-elevated); }
 .product-dialog-heading { display: grid; gap: 0.5rem; padding-inline-end: 2.5rem; margin-block-end: 1.5rem; }
 .product-dialog-heading h2 { font-size: var(--product-type-section); }
 .product-dialog-heading p { color: var(--product-text-secondary); }

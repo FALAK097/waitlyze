@@ -2,7 +2,7 @@ import { currentWorkspace } from "@/lib/workspaces/current";
 import { createWorkspaceService, AccessError } from "@/lib/workspaces/service.mjs";
 import { createDraft, DraftCreationError } from "@/lib/campaigns/create-draft.mjs";
 import { listTemplates } from "@/lib/templates/catalog.mjs";
-import { CreationWizard } from "@/components/product/creation-wizard";
+import { WaitlistCreationFlow } from "@/components/product/waitlist-creation-flow";
 import prisma from "@/lib/prisma";
 import { ZodError } from "zod";
 
@@ -29,5 +29,5 @@ export default async function NewWaitlistPage() {
       return { message: "Couldn't create your waitlist. Your details are still here. Try again." };
     }
   }
-  return <CreationWizard templates={listTemplates()} workspaceId={workspaceId} workspaceName={workspace.name} submitDraft={submitDraft} />;
+  return <WaitlistCreationFlow templates={listTemplates()} workspaceId={workspaceId} workspaceName={workspace.name} submitDraft={submitDraft} />;
 }

@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { createHash, randomUUID } from "node:crypto";
+import { createHash, randomBytes, randomUUID } from "node:crypto";
 import { once } from "node:events";
 import { readFile } from "node:fs/promises";
 import { chromium } from "@playwright/test";
@@ -38,6 +38,8 @@ test("authenticated two-destination shell uses real workspace data", async (t) =
   const waitlist = await db.waitList.create({ data: { userId, workspaceId: personal.id, name: "First launch", description: "Real fixture content" } });
   const legacyWaitlist = await db.waitList.create({ data: { userId, workspaceId: personal.id, name: "Legacy launch" } });
   await db.user.create({ data: { id: otherUserId, email: `${otherUserId}@example.invalid` } });
+  const otherSessionToken = randomUUID();
+  await db.session.create({ data: { id: randomUUID(), token: otherSessionToken, userId: otherUserId, expiresAt: new Date(Date.now() + 120000) } });
   const otherWorkspace = await service.ensurePersonal(otherUserId);
   await db.waitList.create({ data: { userId: otherUserId, workspaceId: otherWorkspace.id, name: "First launch external" } });
   server = await startFixtureServer();
@@ -103,7 +105,51 @@ test("authenticated two-destination shell uses real workspace data", async (t) =
     await page.getByRole("alert").filter({ hasText: "Enter a name" }).waitFor();
     assert.equal(await page.getByLabel("Display name").inputValue(), "   ");
     await page.getByLabel("Display name").fill("Updated fixture");
+    await page.locator('.product-settings-desktop a[href="#team"]').click();
+    await page.getByRole("heading", { name: "Team access", exact: true }).waitFor();
+    await page.getByLabel("Email address").waitFor();
+    await page.getByRole("combobox", { name: "Role" }).selectOption("MEMBER");
+    await page.getByText("You’re the only member in this workspace.").waitFor();
     assert.deepEqual((await new AxeBuilder({ page }).include(".product-shell").analyze()).violations, []);
+  });
+  await t.test("workspace invitation requires the invited verified account and joins explicitly", async () => {
+    await db.user.update({ where: { id: otherUserId }, data: { emailVerified: true } });
+    const inviteToken = randomBytes(32).toString("base64url");
+    const { hashInvitationToken } = await import("../../src/lib/workspaces/invitations.mjs");
+    const invitation = await db.workspaceInvitation.create({ data: {
+      workspaceId: personal.id,
+      emailNormalized: `${otherUserId}@example.invalid`,
+      role: "MEMBER",
+      tokenHash: hashInvitationToken(inviteToken),
+      tokenCiphertext: "fixture-encrypted-token",
+      tokenIv: "fixture-iv",
+      tokenTag: "fixture-tag",
+      expiresAt: new Date(Date.now() + 60_000),
+      createdByUserId: userId,
+    } });
+    const inviteUrl = `${base}/accept-invitation/${inviteToken}`;
+    await page.goto(inviteUrl);
+    await page.getByRole("alert").filter({ hasText: "Switch to the invited account" }).waitFor();
+    await page.getByRole("button", { name: "Switch account" }).waitFor();
+
+    const invitedContext = await browser.newContext({ viewport: { width: 390, height: 844 } });
+    const invitedCookie = signedCookie(otherSessionToken).split("=");
+    await invitedContext.addCookies([{ name: invitedCookie[0], value: invitedCookie[1], domain: "127.0.0.1", path: "/", httpOnly: true, sameSite: "Lax" }]);
+    const invitedPage = await invitedContext.newPage();
+    try {
+      await invitedPage.goto(inviteUrl);
+      assert.deepEqual((await new AxeBuilder({ page: invitedPage }).include(".product-invitation-card").analyze()).violations, []);
+      await invitedPage.getByRole("button", { name: "Accept invitation" }).click();
+      await invitedPage.waitForURL(`${base}/wait-lists`);
+      const membership = await db.workspaceMember.findUnique({ where: { workspaceId_userId: { workspaceId: personal.id, userId: otherUserId } } });
+      assert.equal(membership.role, "MEMBER");
+      const accepted = await db.workspaceInvitation.findUnique({ where: { id: invitation.id } });
+      assert.equal(accepted.status, "ACCEPTED");
+      assert.equal(accepted.tokenCiphertext, "");
+    } finally {
+      await invitedContext.close();
+    }
+    await page.goto(`${base}/wait-lists`);
   });
   await t.test("account export downloads scoped settings without subscribers or credentials", async () => {
     const subscriberEmail = "must-not-export-subscriber@example.invalid";
@@ -111,14 +157,18 @@ test("authenticated two-destination shell uses real workspace data", async (t) =
     const apiSecretMarker = "must-not-export-api-secret-hash";
     const integrationSecretMarker = "must-not-export-integration-secret";
     const subscriber = await db.signUp.create({ data: { uniqueUserId: randomUUID(), email: subscriberEmail, emailNormalized: subscriberEmail, waitListId: waitlist.id } });
-    await db.apiKey.create({ data: { name: "Export fixture key", keyHash: apiSecretMarker, userId, waitlistId: waitlist.id } });
+    await db.apiKey.create({ data: { name: "Export fixture key", keyHash: apiSecretMarker, userId, waitlistId: legacyWaitlist.id } });
     await db.workspaceIntegration.create({ data: { workspaceId: personal.id, provider: "RESEND", status: "TESTED", secretCiphertext: integrationSecretMarker, secretIv: "integration-iv-marker", secretTag: "integration-tag-marker", fromEmail: "sender@example.invalid" } });
     await db.emailTemplate.create({ data: { waitListId: waitlist.id, type: "SIGNUP", subject: "Confirm your email", previewText: "One last step", header: "You are on the list", subHeader: "", mainBody: "Confirm to finish joining", subBody: "Thanks for your interest" } });
     await db.automationRecipe.create({ data: { waitListId: waitlist.id, type: "WELCOME", status: "DRAFT", currentVersion: 1, versions: { create: { version: 1, config: { trigger: "SIGNUP_VERIFIED", delayMinutes: 0, subject: "Welcome to First launch", body: "Thanks for confirming." } } } } });
     await db.marketingBroadcast.create({ data: { waitListId: waitlist.id, name: "Export fixture broadcast", subject: "A product update", previewText: "See what is new", body: "We have a launch update.", recipients: { create: { signUpId: subscriber.id, email: broadcastRecipientEmail, emailNormalized: broadcastRecipientEmail } } } });
     try {
+      const waitlistsResponse = page.waitForResponse((response) => response.url().endsWith("/api/v1/waitlists"));
       await page.goto(`${base}/settings#privacy`);
       await page.getByRole("heading", { name: "Privacy & data" }).waitFor();
+      const waitlists = await waitlistsResponse;
+      assert.equal(waitlists.status(), 200);
+      assert.ok((await waitlists.json()).data.some((item) => item.id === waitlist.id), "the active workspace must expose its waitlist to the API key picker");
       const response = await page.request.get(`${base}/api/settings/export`);
       const body = await response.text();
       assert.equal(response.status(), 200, body);
@@ -160,7 +210,7 @@ test("authenticated two-destination shell uses real workspace data", async (t) =
     }
   });
   await t.test("developer settings creates a waitlist-bound key once and lists only safe metadata", async () => {
-    await page.getByRole("link", { name: "Developers", exact: true }).click();
+    await page.getByRole("link", { name: "Developer tools", exact: true }).click();
     await page.getByRole("heading", { name: "Developers", exact: true }).waitFor();
     await page.getByRole("button", { name: "Create API Key" }).click();
     const dialog = page.getByRole("dialog");
@@ -341,7 +391,7 @@ test("authenticated two-destination shell uses real workspace data", async (t) =
     console.error("[shell-browser] contextual: waitlist tabs start");
     await page.goto(`${base}/wait-lists/${waitlist.id}`);
     assert.equal(await page.getByRole("heading", { name: "First launch" }).count(), 1);
-    assert.deepEqual(await page.getByRole("navigation", { name: "Waitlist sections" }).getByRole("link").allTextContents(), ["Overview", "Page", "Subscribers", "Emails", "Settings"]);
+    assert.deepEqual(await page.getByRole("navigation", { name: "Waitlist sections" }).getByRole("link").allTextContents(), ["Overview", "Page", "Subscribers", "Emails", "Waitlist settings"]);
     for (const nestedRoute of ["broadcasts", "automations"]) {
       console.error(`[shell-browser] contextual: nested route ${nestedRoute}`);
       await page.goto(`${base}/wait-lists/${waitlist.id}/emails/${nestedRoute}`);
@@ -356,7 +406,7 @@ test("authenticated two-destination shell uses real workspace data", async (t) =
       const settingsSections = page.locator(".product-settings-mobile");
       await settingsSections.locator("summary").click();
       const settingsLinks = settingsSections.getByRole("navigation", { name: "Settings sections" }).getByRole("link");
-      assert.deepEqual(await settingsLinks.allTextContents(), ["Profile", "Workspace", "Integrations", "Developers", "Privacy & data"]);
+      assert.deepEqual(await settingsLinks.allTextContents(), ["Profile", "Workspace", "Team access", "Integrations", "Developer tools", "Privacy & data"]);
       const sectionLinkBounds = await settingsLinks.evaluateAll((links) => ({ viewportWidth: innerWidth, links: links.map((link) => {
         const rect = link.getBoundingClientRect();
         return { left: rect.left, right: rect.right, height: rect.height };
@@ -474,7 +524,7 @@ test("authenticated two-destination shell uses real workspace data", async (t) =
       const headers = page.locator(".product-waitlist-table thead th");
       assert.equal(await headers.nth(0).getAttribute("aria-sort"), "ascending");
       assert.equal(await headers.nth(1).getAttribute("aria-sort"), null);
-      assert.deepEqual(await page.locator(".product-waitlist-table tbody th[scope='row'] > a").allTextContents(), ["Sort fixture Alpha", "Sort fixture Beta", "Sort fixture Zero", "Sort fixture Zulu"]);
+      assert.deepEqual(await page.locator(".product-waitlist-table tbody th[scope='row'] > a").allTextContents(), ["Sort fixture Alpha Published", "Sort fixture Beta Published", "Sort fixture Zero Published", "Sort fixture Zulu Published"]);
       assert.equal(await page.getByRole("row", { name: /Sort fixture Hidden/ }).count(), 0);
 
       const subscriberSort = page.getByRole("link", { name: /Sort by subscriber count/ });
@@ -482,7 +532,7 @@ test("authenticated two-destination shell uses real workspace data", async (t) =
       await page.keyboard.press("Enter");
       await page.waitForURL(`${base}/wait-lists?q=Sort+fixture&status=PUBLISHED&sort=subscribers-desc`);
       assert.equal(await headers.nth(1).getAttribute("aria-sort"), "descending");
-      assert.deepEqual(await page.locator(".product-waitlist-table tbody th[scope='row'] > a").allTextContents(), ["Sort fixture Beta", "Sort fixture Alpha", "Sort fixture Zulu", "Sort fixture Zero"]);
+      assert.deepEqual(await page.locator(".product-waitlist-table tbody th[scope='row'] > a").allTextContents(), ["Sort fixture Beta Published", "Sort fixture Alpha Published", "Sort fixture Zulu Published", "Sort fixture Zero Published"]);
       assert.equal(await page.getByRole("row", { name: /Sort fixture Hidden/ }).count(), 0);
       assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
       assert.deepEqual((await new AxeBuilder({ page }).include(".product-shell").analyze()).violations, []);
@@ -511,6 +561,7 @@ test("authenticated two-destination shell uses real workspace data", async (t) =
     const before = { signups: await db.signUp.count({ where: { waitListId: waitlist.id } }), outbox: await db.outboxEvent.count() };
     await page.setViewportSize({ width: 1280, height: 900 });
     await page.goto(`${base}/wait-lists/${waitlist.id}`);
+    await page.locator("details.launch-rehearsal > summary").click();
     await page.getByRole("button", { name: "Run check" }).click();
     await page.getByText("Page checks passed").waitFor();
     assert.equal(await db.launchRehearsal.count({ where: { waitListId: waitlist.id } }), 1);
@@ -620,19 +671,19 @@ test("authenticated two-destination shell uses real workspace data", async (t) =
     const continueButton = page.getByRole("button", { name: "Continue with Mobile app" });
     await continueButton.focus();
     await page.keyboard.press("Enter");
-    const detailsHeading = page.getByRole("heading", { name: "Add details", exact: true });
+    const detailsHeading = page.getByRole("heading", { name: "Name your waitlist", exact: true });
     assert.equal(await detailsHeading.evaluate((element) => document.activeElement === element), true);
     assert.equal(await detailsHeading.evaluate((element) => getComputedStyle(element).outlineWidth), "2px");
-    await page.getByLabel("Waitlist name", { exact: true }).fill("Created fixture");
-    await page.getByLabel("Page address", { exact: true }).fill(`fixture-${randomUUID()}`);
+    await page.getByLabel("What are you launching?", { exact: true }).fill("Created fixture");
+    await page.getByLabel("Your page address", { exact: true }).fill(`fixture-${randomUUID()}`);
     await page.reload();
     await page.getByRole("button", { name: "Continue with Mobile app" }).click();
-    assert.equal(await page.getByLabel("Waitlist name", { exact: true }).inputValue(), "Created fixture");
+    assert.equal(await page.getByLabel("What are you launching?", { exact: true }).inputValue(), "Created fixture");
     await page.getByRole("button", { name: "Review draft" }).click();
     await page.getByRole("button", { name: "Back", exact: true }).click();
-    assert.equal(await page.getByLabel("Waitlist name", { exact: true }).inputValue(), "Created fixture");
+    assert.equal(await page.getByLabel("What are you launching?", { exact: true }).inputValue(), "Created fixture");
     await page.getByRole("button", { name: "Review draft" }).click();
-    await page.getByRole("button", { name: "Create draft", exact: true }).click();
+    await page.getByRole("button", { name: "Create private draft", exact: true }).click();
     await page.waitForURL(/\/wait-lists\/[^/]+\/edit$/);
     await page.getByRole("heading", { name: "Page", exact: true }).waitFor();
     assert.equal(await page.getByLabel("Headline", { exact: true }).inputValue(), "Something new for your everyday.");

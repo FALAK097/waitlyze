@@ -392,3 +392,43 @@
   .automation-run-list li > div { justify-content: space-between; }
   .automation-run-list time { white-space: normal; }
 }
+
+.product-team-settings { display: grid; gap: 24px; }
+.product-team-invite-form { display: grid; gap: 12px; padding: 20px; border: 1px solid var(--product-border-subtle); border-radius: 10px; background: var(--product-bg-surface); }
+.product-team-field { display: grid; gap: 7px; font-size: .875rem; font-weight: 550; }
+.product-team-field select { width: 100%; min-height: 44px; padding: 8px 12px; border: 1px solid var(--product-border-control); border-radius: 8px; background: var(--product-bg-surface); color: var(--product-text-primary); font: inherit; }
+.product-team-invite-form .product-button { justify-self: start; min-height: 44px; }
+.product-team-list { display: grid; gap: 10px; }
+.product-team-list h3 { display: flex; align-items: center; gap: 8px; font-size: .9rem; font-weight: 600; }
+.product-team-list h3 > span { display: inline-flex; align-items: center; min-height: 24px; padding-inline: 8px; border-radius: 999px; background: var(--product-bg-inset); color: var(--product-text-secondary); font-size: .75rem; font-weight: 500; }
+.product-team-list ul { list-style: none; margin: 0; padding: 0; border: 1px solid var(--product-border-subtle); border-radius: 10px; overflow: hidden; }
+.product-team-list li { display: flex; align-items: center; gap: 12px; min-width: 0; padding: 12px; border-bottom: 1px solid var(--product-border-subtle); }
+.product-team-list li:last-child { border-bottom: 0; }
+.product-team-person { display: grid; min-width: 0; flex: 1; gap: 2px; }
+.product-team-person strong, .product-team-person > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.product-team-person strong { font-size: .875rem; font-weight: 550; }
+.product-team-person > span { color: var(--product-text-secondary); font-size: .8125rem; }
+.product-team-role { flex: 0 0 auto; color: var(--product-text-secondary); font-size: .75rem; text-transform: capitalize; }
+.product-team-pending-mark { display: grid; place-items: center; width: 36px; height: 36px; flex: 0 0 auto; border-radius: 50%; background: var(--product-bg-inset); color: var(--product-text-secondary); }
+.product-team-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+.product-team-actions .product-button { min-height: 44px; }
+.product-team-announcement { min-height: 1.5em; color: var(--product-text-secondary); font-size: .8125rem; }
+.product-team-announcement:empty { display: none; }
+.product-team-announcement[role="alert"] { color: var(--product-danger-text); }
+.product-team-settings :is(input, select, button):focus-visible { outline: 2px solid var(--product-focus); outline-offset: 3px; }
+@media (max-width: 720px) {
+  .product-team-invite-form { padding: 16px; }
+  .product-team-list li { flex-wrap: wrap; }
+  .product-team-actions { width: 100%; padding-inline-start: 48px; }
+  .product-team-actions .product-button { min-height: 44px; }
+}
+.product-invitation-page { display: grid; place-items: start center; width: min(100% - 32px, 560px); min-height: 50svh; margin: 56px auto 88px; }
+.product-invitation-card { display: grid; gap: 16px; width: 100%; padding: clamp(24px, 5vw, 40px); border: 1px solid var(--product-border-subtle); border-radius: 16px; background: var(--product-bg-surface); box-shadow: var(--product-shadow-elevated); }
+.product-invitation-card h1 { font-size: clamp(1.5rem, 5vw, 2rem); line-height: 1.2; overflow-wrap: anywhere; }
+.product-invitation-copy { color: var(--product-text-secondary); font-size: .9375rem; overflow-wrap: anywhere; }
+.product-invitation-copy strong { color: var(--product-text-primary); }
+.product-invitation-actions { display: grid; justify-items: start; gap: 12px; }
+.product-invitation-actions .product-button { min-height: 44px; }
+.product-invitation-actions p[role="alert"] { color: var(--product-danger-text); font-size: .875rem; }
+.product-invitation-card :is(a, button):focus-visible { outline: 2px solid var(--product-focus); outline-offset: 3px; }
+.product-team-configuration { padding: 14px 16px; border: 1px solid var(--product-border-subtle); border-radius: 8px; color: var(--product-text-secondary); font-size: .875rem; }
