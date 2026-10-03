@@ -59,6 +59,17 @@ test("authenticated two-destination shell uses real workspace data", async (t) =
     assert.equal(await page.locator("aside").count(), 0);
     assert.equal(await page.getByRole("row", { name: /First launch/ }).count(), 1);
     assert.equal(await page.getByLabel("Workspace", { exact: true }).count(), 0);
+    await page.setViewportSize({ width: 390, height: 844 });
+    const waitlistTable = page.locator(".product-waitlist-table");
+    const tableViewport = page.locator(".product-table-wrap");
+    try {
+      assert.equal(await tableViewport.evaluate((element) => getComputedStyle(element).overflowX), "clip");
+      assert.equal(await waitlistTable.locator("tbody tr:first-child td:nth-child(3)").evaluate((element) => getComputedStyle(element).display), "none");
+      assert.equal(await waitlistTable.locator("tbody tr:first-child td:nth-child(2)").isVisible(), true);
+      assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
+    } finally {
+      await page.setViewportSize({ width: 1280, height: 900 });
+    }
     const appMain = page.locator(".product-main");
     assert.equal(await appMain.evaluate((element) => getComputedStyle(element).backgroundImage), "none");
     await page.locator("html").evaluate((element) => element.classList.add("dark"));

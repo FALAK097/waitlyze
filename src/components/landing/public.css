@@ -341,7 +341,7 @@
   justify-content: space-between;
   align-items: center;
   padding: 15px 20px;
-  font-size: 10px;
+  font-size: 12px;
   color: var(--wl-muted);
   border-bottom: 1px solid var(--wl-line);
 }
@@ -356,19 +356,19 @@
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: #63875a;
-  box-shadow: 0 0 0 3px #63875a1c;
+  background: var(--wl-accent-hover);
+  box-shadow: 0 0 0 3px color-mix(in hsl, var(--wl-accent) 24%, transparent);
 }
 .wl-preview-stage {
   padding: 24px;
-  background: #f1eee8;
-  background-image: radial-gradient(#7e74651c 0.7px, transparent 0.7px);
+  background: color-mix(in hsl, var(--wl-accent) 8%, var(--wl-paper));
+  background-image: radial-gradient(color-mix(in hsl, var(--wl-ink) 10%, transparent) 0.7px, transparent 0.7px);
   background-size: 12px 12px;
 }
 .wl-preview-page {
-  background: #fffefa;
-  color: #302e29;
-  border: 1px solid #e4dfd6;
+  background: var(--wl-surface);
+  color: var(--wl-ink);
+  border: 1px solid var(--wl-line);
   border-radius: 9px;
   padding: 29px 32px 20px;
   text-align: center;
@@ -377,7 +377,7 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  color: #334437;
+  color: var(--wl-ink);
   font-family: var(--wl-display), sans-serif;
   font-size: 15px;
   font-weight: 700;
@@ -389,8 +389,8 @@
   height: 24px;
   place-items: center;
   border-radius: 8px 8px 8px 3px;
-  background: #e9eee3;
-  color: #526b49;
+  background: color-mix(in hsl, var(--wl-accent) 26%, var(--wl-surface));
+  color: var(--wl-accent-ink);
   font-family: Georgia, serif;
   font-size: 14px;
   font-style: italic;
@@ -406,8 +406,8 @@
 .wl-preview-intro {
   max-width: 42ch;
   margin: 11px auto 0 !important;
-  color: #736f68;
-  font-size: 11px;
+  color: var(--wl-muted);
+  font-size: 14px;
   line-height: 1.65;
 }
 .wl-preview-form-space {
@@ -423,12 +423,12 @@
 }
 .wl-preview-form-space > div:first-child form input {
   height: 42px;
-  font-size: 12px;
+  font-size: 14px;
   box-shadow: none;
 }
 .wl-preview-form-space > div:first-child form button {
   min-height: 42px;
-  font-size: 12px;
+  font-size: 14px;
   transition: filter 160ms, transform 160ms;
 }
 .wl-preview-form-space > div:first-child form button:hover {
@@ -437,8 +437,8 @@
 }
 .wl-preview-powered {
   display: inline-block;
-  color: #878178;
-  font-size: 9px;
+  color: var(--wl-muted);
+  font-size: 12px;
 }
 .wl-preview-powered strong {
   color: var(--wl-accent-ink);
@@ -448,12 +448,12 @@
   justify-items: center;
   gap: 5px;
   padding-top: 21px;
-  color: #736f68;
-  font-size: 11px;
+  color: var(--wl-muted);
+  font-size: 14px;
   animation: wl-enter 220ms ease-out;
 }
 .wl-preview-success strong {
-  color: #302e29;
+  color: var(--wl-ink);
   font-family: var(--wl-display), sans-serif;
   font-size: 18px;
 }
@@ -465,13 +465,13 @@
   border: 0;
   margin-top: 4px;
   padding: 6px 8px;
-  border: 1px solid #e4dfd6;
+  border: 1px solid var(--wl-line);
   border-radius: 5px;
-  color: #59554f;
-  font-size: 10px;
+  color: var(--wl-ink);
+  font-size: 12px;
 }
 .wl-preview-success button:hover {
-  background: #f4f0e9;
+  background: var(--wl-wash);
 }
 .wl-success-check {
   display: grid;
@@ -479,8 +479,8 @@
   width: 30px;
   height: 30px;
   border-radius: 50%;
-  background: #e9eee3;
-  color: #536b46;
+  background: color-mix(in hsl, var(--wl-accent) 26%, var(--wl-surface));
+  color: var(--wl-accent-ink);
 }
 .wl-preview-controls {
   padding: 15px 20px 10px;
@@ -490,7 +490,7 @@
   gap: 20px;
 }
 .wl-preview-controls legend {
-  font-size: 10px;
+  font-size: 12px;
   color: var(--wl-muted);
 }
 .wl-preview-controls fieldset {
@@ -501,7 +501,7 @@
 .wl-preview-selected-style {
   align-self: center;
   color: var(--wl-muted);
-  font-size: 11px;
+  font-size: 12px;
 }
 .wl-swatches {
   display: flex;
@@ -535,7 +535,7 @@
   background: #293b50;
 }
 .wl-preview-disclaimer {
-  font-size: 10px;
+  font-size: 12px;
   color: var(--wl-muted);
   padding: 4px 20px 16px;
   text-align: center;
@@ -1307,7 +1307,7 @@
   }
   .wl-preview-toolbar {
     padding-inline: 14px;
-    font-size: 9px;
+    font-size: 12px;
   }
   .wl-preview-stage {
     padding: 14px;
@@ -1331,7 +1331,7 @@
   }
   .wl-preview-disclaimer {
     padding-inline: 14px;
-    font-size: 8px;
+    font-size: 12px;
   }
   .wl-wide-only {
     display: none;

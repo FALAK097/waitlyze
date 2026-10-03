@@ -191,8 +191,14 @@
 }
 
 @media (max-width: 520px) {
-  .table { min-width: 590px; }
-  .table tbody th > a { align-items: flex-start; flex-direction: column; gap: 5px; }
+  :global(.product-table-wrap) { overflow-x: clip; }
+  .table { width: calc(100% - 1px); max-width: 100%; min-width: 0; }
+  .table thead th:nth-child(3), .table thead th:nth-child(4),
+  .table tbody td:nth-child(3), .table tbody td:nth-child(4) { display: none; }
+  .table th:first-child { width: 70%; }
+  .table th:nth-child(2) { width: 30%; }
+  .table :global(th), .table :global(td) { padding: 14px 10px; }
+  .table tbody th > a { width: 100%; align-items: flex-start; flex-direction: column; gap: 5px; }
   .overviewFacts { gap: 16px 24px; }
   .rehearsalSummary { align-items: flex-start; }
 }
