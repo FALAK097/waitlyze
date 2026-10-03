@@ -57,6 +57,11 @@ test("authenticated two-destination shell uses real workspace data", async (t) =
     assert.equal(await page.locator("aside").count(), 0);
     assert.equal(await page.getByRole("row", { name: /First launch/ }).count(), 1);
     assert.equal(await page.getByLabel("Workspace", { exact: true }).count(), 0);
+    const appMain = page.locator(".product-main");
+    assert.equal(await appMain.evaluate((element) => getComputedStyle(element).backgroundImage), "none");
+    await page.locator("html").evaluate((element) => element.classList.add("dark"));
+    assert.equal(await appMain.evaluate((element) => getComputedStyle(element).backgroundImage), "none");
+    await page.locator("html").evaluate((element) => element.classList.remove("dark"));
   });
   await t.test("legacy page editor renders safely and names its icon actions", async () => {
     await page.goto(`${base}/wait-lists/${legacyWaitlist.id}/edit`);
