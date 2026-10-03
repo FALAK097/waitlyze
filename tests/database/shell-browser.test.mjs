@@ -252,6 +252,18 @@ test("authenticated two-destination shell uses real workspace data", async (t) =
       assert.match(metrics[1], /Signups\s+2\s+1 verified/);
       assert.match(metrics[2], /Conversion\s+100%/);
       assert.match(metrics[3], /Verification\s+50%\s+1 awaiting verification/);
+      const chartSeries = page.getByRole("group", { name: "Focus chart series" });
+      const visitorsSeries = chartSeries.getByRole("button", { name: "Emphasize visitors" });
+      const signupsSeries = chartSeries.getByRole("button", { name: "Emphasize signups" });
+      assert.equal(await visitorsSeries.getAttribute("aria-pressed"), "false");
+      await visitorsSeries.focus();
+      await page.keyboard.press("Enter");
+      assert.equal(await visitorsSeries.getAttribute("aria-pressed"), "true");
+      await signupsSeries.click();
+      assert.equal(await visitorsSeries.getAttribute("aria-pressed"), "false");
+      assert.equal(await signupsSeries.getAttribute("aria-pressed"), "true");
+      await signupsSeries.click();
+      assert.equal(await signupsSeries.getAttribute("aria-pressed"), "false");
       assert.deepEqual((await new AxeBuilder({ page }).include(".waitlist-analytics").analyze()).violations, []);
       const rangeResponse = page.waitForResponse((response) => response.url().includes("/analytics?days=7") && response.status() === 200);
       await page.getByRole("button", { name: "7 days" }).click();
