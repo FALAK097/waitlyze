@@ -661,6 +661,39 @@ test("authenticated two-destination shell uses real workspace data", async (t) =
     }
     assert.equal(await db.signUp.count({ where: { waitListId: created.id } }), 0);
     assert.equal(await db.impression.count({ where: { waitListId: created.id } }), 0);
+
+    const publicationPage = await context.newPage();
+    await publicationPage.setViewportSize({ width: 320, height: 812 });
+    await publicationPage.goto(`${base}/wait-lists/${created.id}/edit`);
+    const actionRoute = `**/wait-lists/${created.id}/edit`;
+    const failServerAction = async (route) => {
+      if (route.request().method() === "POST" && route.request().headers()["next-action"]) await route.abort("failed");
+      else await route.continue();
+    };
+    await publicationPage.route(actionRoute, failServerAction);
+    await publicationPage.getByRole("button", { name: "Publish waitlist", exact: true }).click();
+    await publicationPage.getByRole("alert").getByText("Couldn't publish this page. Check your connection and try again.").waitFor();
+    const publishButton = publicationPage.getByRole("button", { name: "Publish waitlist", exact: true });
+    await publishButton.waitFor();
+    assert.equal(await publishButton.isEnabled(), true);
+    assert.ok(await publicationPage.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
+    assert.deepEqual((await new AxeBuilder({ page: publicationPage }).include(".product-builder").analyze()).violations, []);
+    await publicationPage.unroute(actionRoute);
+    await publishButton.click();
+    await publicationPage.getByText(`Published page · ${created.name}`, { exact: true }).waitFor();
+    assert.equal((await db.waitList.findUnique({ where: { id: created.id } })).status, "PUBLISHED");
+
+    await publicationPage.route(actionRoute, failServerAction);
+    await publicationPage.getByRole("button", { name: "Pause waitlist", exact: true }).click();
+    await publicationPage.getByRole("alert").getByText("Couldn't update publication. Check your connection and try again.").waitFor();
+    const pauseButton = publicationPage.getByRole("button", { name: "Pause waitlist", exact: true });
+    await pauseButton.waitFor();
+    assert.equal(await pauseButton.isEnabled(), true);
+    await publicationPage.unroute(actionRoute);
+    await pauseButton.click();
+    await publicationPage.getByText(`Paused page · ${created.name}`, { exact: true }).waitFor();
+    assert.equal((await db.waitList.findUnique({ where: { id: created.id } })).status, "PAUSED");
+    await publicationPage.close();
   });
   await t.test("deletion needs typed confirmation and returns to the list", async () => {
     await page.goto(`${base}/wait-lists/${waitlist.id}/settings`);
