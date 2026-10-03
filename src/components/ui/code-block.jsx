@@ -16,11 +16,12 @@ const CodeBlock = React.forwardRef(({ className, ...props }, ref) => {
 			)}
 			style={{ backgroundColor: theme !== "light" ? "#282a36" : "#ffffff" }}
 		>
-			<pre className="w-full max-w-[380px] md:max-w-[500px] lg:max-w-[480px] overflow-auto break-words whitespace-pre no-scrollbar">
+			<pre tabIndex={0} className="w-full max-w-[380px] md:max-w-[500px] lg:max-w-[480px] overflow-auto break-words whitespace-pre no-scrollbar">
 				{props.code}
 			</pre>
 			<Button
 				variant="icon"
+				aria-label="Copy code"
 				className="absolute text-white duration-300 ease-in-out opacity-25 top-2 right-2 bg-primary hover:opacity-100"
 				onClick={() => {
 					navigator.clipboard.writeText(props.code);
