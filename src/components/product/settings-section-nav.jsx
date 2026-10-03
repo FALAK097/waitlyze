@@ -7,6 +7,7 @@ const sections = [
   { id: "workspace", label: "Workspace" },
   { id: "integrations", label: "Integrations" },
   { id: "developers", label: "Developers" },
+  { id: "privacy", label: "Privacy & data" },
 ];
 
 function currentHash() {
