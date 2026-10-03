@@ -59,7 +59,6 @@ const renderActiveShape = (props) => {
 };
 
 export const GeographicDistribution = ({ waitListId }) => {
-  const [activeIndex, setActiveIndex] = useState(undefined);
   const [geoData, setGeoData] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -79,14 +78,6 @@ export const GeographicDistribution = ({ waitListId }) => {
     fetchData();
   }, [waitListId]);
 
-  const onPieEnter = (_, index) => {
-    setActiveIndex(index);
-  };
-
-  const onPieLeave = () => {
-    setActiveIndex(undefined);
-  };
-
   if (loading) return <div>Loading geographic data...</div>;
 
   return (
@@ -100,7 +91,6 @@ export const GeographicDistribution = ({ waitListId }) => {
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Pie
-                activeIndex={activeIndex}
                 activeShape={renderActiveShape}
                 data={geoData}
                 cx="50%"
@@ -109,8 +99,6 @@ export const GeographicDistribution = ({ waitListId }) => {
                 outerRadius="70%"
                 fill="#8884d8"
                 dataKey="value"
-                onMouseEnter={onPieEnter}
-                onMouseLeave={onPieLeave}
                 animationBegin={0}
                 animationDuration={1000}
               >
