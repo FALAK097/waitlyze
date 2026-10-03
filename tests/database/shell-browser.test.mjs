@@ -277,6 +277,36 @@ test("authenticated two-destination shell uses real workspace data", async (t) =
       await page.setViewportSize({ width: 1280, height: 900 });
     }
   });
+  await t.test("analytics retry follows the component abortable request lifecycle", async () => {
+    let requestCount = 0;
+    const analyticsRequest = (url) => url.pathname === `/api/wait-lists/${waitlist.id}/analytics`;
+    await db.waitList.update({ where: { id: waitlist.id }, data: { status: "PUBLISHED" } });
+    await page.route(analyticsRequest, async (route) => {
+      requestCount += 1;
+      if (requestCount === 1) {
+        await route.fulfill({
+          status: 503,
+          contentType: "application/json",
+          body: JSON.stringify({ error: "Analytics temporarily unavailable." }),
+        });
+        return;
+      }
+      await route.continue();
+    });
+
+    try {
+      await page.goto(`${base}/wait-lists/${waitlist.id}`);
+      const errorAlert = page.locator('.waitlist-analytics-message[role="alert"]');
+      await errorAlert.getByText("Analytics temporarily unavailable.").waitFor();
+      await page.getByRole("button", { name: "Try again" }).click();
+      await errorAlert.waitFor({ state: "hidden" });
+      await page.locator(".waitlist-analytics-metric").first().waitFor();
+      assert.equal(requestCount, 2);
+    } finally {
+      await page.unroute(analyticsRequest);
+      await db.waitList.update({ where: { id: waitlist.id }, data: { status: "DRAFT" } });
+    }
+  });
   await t.test("subscriber tabs resolve flagged referrals with an auditable note", async () => {
     const referrer = await db.signUp.create({ data: { uniqueUserId: randomUUID(), email: "referrer@example.invalid", emailNormalized: "referrer@example.invalid", waitListId: waitlist.id } });
     const invitee = await db.signUp.create({ data: { uniqueUserId: referrer.uniqueUserId, email: "invitee@example.invalid", emailNormalized: "invitee@example.invalid", waitListId: waitlist.id } });

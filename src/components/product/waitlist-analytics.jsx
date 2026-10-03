@@ -28,6 +28,7 @@ function Metric({ label, value, detail }) {
 
 export function WaitlistAnalytics({ waitListId }) {
   const [days, setDays] = useState(30);
+  const [retryCount, setRetryCount] = useState(0);
   const [mode, setMode] = useState("chart");
   const [analytics, setAnalytics] = useState(null);
   const [error, setError] = useState("");
@@ -50,7 +51,7 @@ export function WaitlistAnalytics({ waitListId }) {
     } finally {
       if (!signal.aborted) setLoading(false);
     }
-  }, [days, timeZone, waitListId]);
+  }, [days, retryCount, timeZone, waitListId]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -74,7 +75,7 @@ export function WaitlistAnalytics({ waitListId }) {
       </div>
     </header>
 
-    {error ? <div className="waitlist-analytics-message" role="alert"><p>{error}</p><button type="button" onClick={() => { const controller = new AbortController(); load(controller.signal); }}>Try again</button></div> : null}
+    {error ? <div className="waitlist-analytics-message" role="alert"><p>{error}</p><button type="button" onClick={() => setRetryCount((count) => count + 1)}>Try again</button></div> : null}
     {!error && loading && !analytics ? <p className="waitlist-analytics-message" role="status">Loading analytics…</p> : null}
     {!error && analytics ? <>
       {loading ? <p className="sr-only" role="status">Updating analytics…</p> : null}
