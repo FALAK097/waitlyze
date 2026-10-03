@@ -12,11 +12,13 @@ function SubmitButton({ children, pendingLabel, disabled = false }) {
 export function ProfileForm({ name }) {
   const [state, action] = useActionState(saveProfile, {});
   const [value, setValue] = useState(name || "");
+  const savedName = state.savedName ?? name ?? "";
+  const unchanged = value.trim() === savedName.trim();
   return <form action={action} className="product-settings-form">
     <label htmlFor="profile-name">Display name</label><Input id="profile-name" name="name" value={value} onChange={(event) => setValue(event.target.value)} aria-invalid={!!state.error} required maxLength={80} autoComplete="name" aria-describedby="profile-name-help" />
     <p id="profile-name-help" className="product-help">Used to identify you in your workspace.</p>
-    <SubmitButton pendingLabel="Saving…">Save profile</SubmitButton>
-    <p role={state.error ? "alert" : "status"}>{state.error || state.success}</p>
+    <SubmitButton disabled={unchanged} pendingLabel="Saving…">Save profile</SubmitButton>
+    <p role={state.error ? "alert" : "status"} aria-live={state.error ? "assertive" : "polite"}>{state.error || state.success}</p>
   </form>;
 }
 export function WorkspacePicker({ workspaces, selected }) {

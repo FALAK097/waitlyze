@@ -34,3 +34,28 @@ test("workspace rename fails closed when the scoped update finds no workspace", 
   await assert.rejects(service.renameWorkspace("member", "workspace-1", "Attempt"), AccessError);
   await assert.rejects(service.renameWorkspace("", "workspace-1", "Attempt"), AccessError);
 });
+
+test("personal workspace initialization retries structured PostgreSQL adapter conflicts", async () => {
+  let attempts = 0;
+  const tx = {
+    user: { findUnique: async () => ({ id: "owner" }) },
+    workspace: { upsert: async () => ({ id: "personal", name: "Personal workspace" }) },
+    workspaceMember: { findUnique: async () => ({ role: "OWNER" }) },
+    waitList: { updateMany: async () => ({ count: 0 }) },
+  };
+  const service = createWorkspaceService({
+    $transaction: async (callback) => {
+      attempts += 1;
+      if (attempts === 1) {
+        const error = new Error("TransactionWriteConflict");
+        error.name = "DriverAdapterError";
+        error.cause = { kind: "TransactionWriteConflict", originalCode: "40001" };
+        throw error;
+      }
+      return callback(tx);
+    },
+  });
+
+  assert.deepEqual(await service.ensurePersonal("owner"), { id: "personal", name: "Personal workspace" });
+  assert.equal(attempts, 2);
+});
