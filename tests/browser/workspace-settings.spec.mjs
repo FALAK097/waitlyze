@@ -21,7 +21,7 @@ async function createSession(userId) {
 }
 
 test.beforeAll(async () => {
-  await db.user.create({ data: { id: ownerId, email: `${ownerId}@example.invalid` } });
+  await db.user.create({ data: { id: ownerId, name: "Launch owner", email: `${ownerId}@example.invalid` } });
   await db.user.create({ data: { id: memberId, email: `${memberId}@example.invalid` } });
   workspace = await createWorkspaceService(db).ensurePersonal(ownerId);
   await db.workspaceMember.create({ data: { workspaceId: workspace.id, userId: memberId, role: "MEMBER" } });
@@ -39,6 +39,18 @@ test.afterAll(async () => {
 test("workspace settings lets an owner rename the workspace and keeps member access read-only", async ({ page, browser }) => {
   await page.context().addCookies([{ name: "ba.session_token", value: ownerCookie, url: "http://127.0.0.1:3100", httpOnly: true, sameSite: "Lax" }]);
   await page.setViewportSize({ width: 1280, height: 900 });
+  await page.goto("/settings#profile");
+  const profile = page.locator("#profile");
+  const displayName = profile.getByRole("textbox", { name: "Display name" });
+  const saveProfile = profile.getByRole("button", { name: "Save profile" });
+  await expect(saveProfile).toBeDisabled();
+  await displayName.fill("Launch owner team");
+  await expect(saveProfile).toBeEnabled();
+  await saveProfile.click();
+  await expect(profile.getByRole("status")).toHaveText("Profile saved.");
+  await expect(saveProfile).toBeDisabled();
+  expect((await db.user.findUnique({ where: { id: ownerId } })).name).toBe("Launch owner team");
+
   await page.goto("/settings#workspace");
   const panel = page.locator("#workspace");
   await expect(panel.getByRole("heading", { name: "Workspace" })).toBeVisible();

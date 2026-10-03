@@ -15,7 +15,7 @@ export async function saveProfile(previous, form) {
   try {
     await prisma.user.update({ where: { id: session.user.id }, data: { name: name.trim() } });
     revalidatePath("/settings");
-    return { success: "Profile saved." };
+    return { success: "Profile saved.", savedName: name.trim() };
   } catch { return { error: "Could not save your profile. Try again." }; }
 }
 

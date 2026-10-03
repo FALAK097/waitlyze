@@ -11,6 +11,11 @@ const permissions = Object.freeze({
   manageOwnership: ["OWNER"],
 });
 
+function isWorkspaceInitializationConflict(error) {
+  return ["P2034", "P2002"].includes(error?.code)
+    || ["TransactionWriteConflict", "UniqueConstraintViolation"].includes(error?.cause?.kind);
+}
+
 export class AccessError extends Error {
   constructor(status = 404) {
     super(status === 401 ? "Sign in to continue." : "Resource not found.");
@@ -104,7 +109,8 @@ export function createWorkspaceService(db) {
             return workspace;
           }, { isolationLevel: "Serializable" });
         } catch (error) {
-          if (!["P2034", "P2002"].includes(error.code) || attempt === 3) throw error;
+          if (!isWorkspaceInitializationConflict(error) || attempt === 3) throw error;
+          await new Promise((resolve) => setTimeout(resolve, 10 * (2 ** attempt)));
         }
       }
     },
