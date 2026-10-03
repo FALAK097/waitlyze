@@ -279,11 +279,21 @@
 .waitlist-analytics-chart { width: 100%; height: 280px; aspect-ratio: auto; color: var(--product-text-secondary); font-size: .75rem; }
 .waitlist-analytics-chart > [data-chart] { width: 100%; height: 100%; aspect-ratio: auto; }
 .waitlist-analytics-chart svg.recharts-surface { width: 100%; height: 100%; pointer-events: auto; }
-.waitlist-analytics-legend { display: flex; justify-content: center; gap: 20px; margin-top: 4px; color: var(--product-text-secondary); font-size: .75rem; }
-.waitlist-analytics-legend span { display: inline-flex; align-items: center; gap: 7px; }
+.waitlist-analytics-legend { display: flex; justify-content: center; flex-wrap: wrap; gap: 4px; margin-top: 4px; color: var(--product-text-secondary); font-size: .75rem; }
+.waitlist-analytics-legend button { display: inline-flex; min-height: 44px; align-items: center; gap: 8px; padding: 0 12px; border: 1px solid transparent; border-radius: 8px; background: transparent; color: inherit; font: inherit; cursor: pointer; }
+.waitlist-analytics-legend button[aria-pressed="true"] { border-color: var(--product-border-subtle); background: var(--product-bg-inset); color: var(--product-text-primary); }
+.waitlist-analytics-legend button[aria-pressed="false"] i { opacity: .55; }
+.waitlist-analytics-legend button:focus-visible { outline: 2px solid var(--product-focus); outline-offset: 2px; }
 .waitlist-analytics-legend i { width: 9px; height: 9px; border-radius: 50%; }
 .waitlist-analytics-legend-visitors { background: var(--product-neutral-500); }
 .waitlist-analytics-legend-signups { background: var(--product-success-text); }
+.waitlist-analytics-tooltip { display: grid; min-width: 148px; gap: 7px; padding: 10px 12px; border: 1px solid var(--product-border-subtle); border-radius: 10px; background: var(--product-bg-surface); box-shadow: var(--product-shadow-elevated); color: var(--product-text-primary); font-size: .75rem; }
+.waitlist-analytics-tooltip > p { margin: 0 0 1px; color: var(--product-text-secondary); font-variant-numeric: tabular-nums; }
+.waitlist-analytics-tooltip-value { display: grid; grid-template-columns: 9px minmax(0, 1fr) auto; align-items: center; gap: 8px; }
+.waitlist-analytics-tooltip-value i { width: 8px; height: 8px; border-radius: 50%; }
+.waitlist-analytics-tooltip-value i[data-series="visitors"] { background: var(--product-neutral-500); }
+.waitlist-analytics-tooltip-value i[data-series="signups"] { background: var(--product-success-text); }
+.waitlist-analytics-tooltip-value strong { font-variant-numeric: tabular-nums; }
 .waitlist-analytics-empty, .waitlist-analytics-message { padding: 40px 20px; color: var(--product-text-secondary); text-align: center; }
 .waitlist-analytics-empty p, .waitlist-analytics-message p { margin: 0 0 5px; color: var(--product-text-primary); font-weight: 550; }
 .waitlist-analytics-empty span { font-size: .875rem; }
