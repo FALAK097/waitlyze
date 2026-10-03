@@ -3,7 +3,7 @@
 import { Avatar } from "@/components/ui/avatar";
 import { Card } from "@/components/ui/card";
 import dynamic from "next/dynamic";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion } from "motion/react";
 import Image from "next/image";
 import { useRef, useState } from "react";
 import { CircleCheckIcon, PlayIcon, SparklesIcon } from "../shared/icons";
