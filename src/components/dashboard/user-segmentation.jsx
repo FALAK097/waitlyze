@@ -6,8 +6,8 @@ import { getWaitlistSignups } from "@/actions/waitlist-signups";
 import { cn } from "@/lib/utils";
 import { priorityColors } from "@/utils/user";
 import { saveAs } from "file-saver";
-import { AnimatePresence, motion } from "framer-motion";
-import jsPDF from "jspdf";
+import { AnimatePresence, motion } from "motion/react";
+import { jsPDF } from "jspdf";
 import {
   ArrowDown,
   ArrowUp,

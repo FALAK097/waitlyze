@@ -1,4 +1,6 @@
 @import "tailwindcss";
+@import "../components/product/foundation.css";
+@import "tw-animate-css";
 @config "../../tailwind.config.js";
 
 @layer base {
