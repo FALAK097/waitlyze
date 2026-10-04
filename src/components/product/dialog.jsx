@@ -15,15 +15,17 @@ export const DialogDescription = DialogPrimitive.Description;
 export function DialogContent({ children, className, container, ...props }) {
   return (
     <DialogPrimitive.Portal container={container}>
-      <DialogPrimitive.Backdrop className="product-backdrop" />
-      <DialogPrimitive.Popup className={cn("product-ui product-dialog", className)} {...props}>
-        {children}
-        <div className="product-dialog-close">
-          <DialogClose render={<Button variant="ghost" size="icon" static />} aria-label="Close dialog">
-            <X aria-hidden="true" />
-          </DialogClose>
-        </div>
-      </DialogPrimitive.Popup>
+      <div className="product-dialog-scope product-ui">
+        <DialogPrimitive.Backdrop data-slot="product-dialog-backdrop" />
+        <DialogPrimitive.Popup data-slot="product-dialog-popup" className={cn(className)} {...props}>
+          {children}
+          <div className="product-dialog-close">
+            <DialogClose render={<Button variant="ghost" size="icon" static />} aria-label="Close dialog">
+              <X aria-hidden="true" />
+            </DialogClose>
+          </div>
+        </DialogPrimitive.Popup>
+      </div>
     </DialogPrimitive.Portal>
   );
 }

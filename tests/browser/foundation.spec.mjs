@@ -16,7 +16,7 @@ for (const theme of ["Light", "Dark"]) {
     await page.getByRole("button", { name: "Try campaign dialog" }).click();
     await expect(page.getByRole("dialog", { name: "Rehearse a campaign draft" })).toBeVisible();
     await page.screenshot({ path: testInfo.outputPath(`dialog-${theme.toLowerCase()}.png`) });
-    expect((await new AxeBuilder({ page }).include(".product-dialog").analyze()).violations).toEqual([]);
+    expect((await new AxeBuilder({ page }).include(".product-dialog-scope").analyze()).violations).toEqual([]);
   });
 
   test(`${theme}: rendered text, action, boundary and focus pairs meet contrast floors`, async ({ page }) => {

@@ -3,6 +3,8 @@ import { listUserApiKeys } from "@/services/api-key";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import prisma from "@/lib/prisma";
+import { cookies } from "next/headers";
+import { campaignScope } from "@/lib/workspaces/service.mjs";
 
 export async function GET() {
   try {
@@ -27,11 +29,15 @@ export async function GET() {
       );
     }
 
-    const apiKeys = await listUserApiKeys(user.id);
+    const workspaceId = (await cookies()).get("waitlyze-workspace")?.value;
+    const waitlists = await prisma.waitList.findMany({
+      where: campaignScope(user.id, "manageConnections", workspaceId || undefined),
+      select: { id: true },
+    });
+    const apiKeys = await listUserApiKeys(user.id, waitlists.map(({ id }) => id));
 
-    const apiKeysWithMaskedKeys = apiKeys.map((key) => ({
-      ...key,
-      key: "••••••••••••••••",
+    const apiKeysWithMaskedKeys = apiKeys.map(({ id, name, keyId, scopes, expiresAt, lastUsedAt, createdAt, waitlist }) => ({
+      id, name, keyId, scopes, expiresAt, lastUsedAt, createdAt, waitlist, key: "••••••••••••••••",
     }));
 
     return NextResponse.json({ data: apiKeysWithMaskedKeys });

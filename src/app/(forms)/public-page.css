@@ -1,0 +1,69 @@
+.public-launch { min-height: 100vh; padding: clamp(48px, 10vw, 120px) 24px; color: var(--product-text-primary); background: radial-gradient(ellipse at 18% 12%, hsl(85 100% 74% / .22), transparent 42%), radial-gradient(ellipse at 84% 22%, hsl(255 70% 84% / .25), transparent 38%), var(--product-bg-page); font-family: var(--product-font-sans), sans-serif; }
+.public-launch-content { width: min(100%, 880px); margin-inline: auto; }
+.public-launch-eyebrow { margin: 0 0 36px; color: var(--product-text-secondary); font-size: .875rem; font-weight: 600; }
+.public-launch-section { margin-block: 40px; }
+.public-launch-hero { max-width: 760px; margin-block: 0 56px; }
+.public-launch-hero h1, .public-launch-paused h1 { margin: 0 0 20px; font-size: clamp(2.75rem, 7vw, 5.5rem); line-height: .99; letter-spacing: -.065em; font-weight: 650; text-wrap: balance; }
+.public-launch-hero > p, .public-launch-paused section > p { max-width: 620px; color: var(--product-text-secondary); font-size: clamp(1.125rem, 2vw, 1.35rem); line-height: 1.55; }
+.public-launch-features { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); gap: 28px; }
+.public-launch h2 { margin: 0 0 8px; font-size: 1.125rem; letter-spacing: -.02em; }
+.public-launch-features p, .public-launch-faq p { margin: 0; color: var(--product-text-secondary); line-height: 1.6; }
+.public-launch-faq { display: grid; gap: 20px; }
+.public-launch-form { margin-top: 48px; }
+.published-signup { max-width: 540px; padding: 24px; border: 1px solid var(--product-border-subtle); border-radius: 12px; background: var(--product-bg-surface); }
+.published-signup label { display: block; margin-bottom: 8px; font-weight: 600; font-size: .875rem; }
+.published-signup-row { display: flex; gap: 8px; }
+.published-signup input { min-width: 0; flex: 1; height: 48px; padding: 0 14px; border: 1px solid var(--product-border-control); border-radius: 8px; background: var(--product-bg-surface); color: var(--product-text-primary); font: inherit; }
+.published-signup button { min-height: 48px; padding: 0 18px; border: 1px solid var(--product-accent-border); border-radius: 8px; background: var(--product-accent-solid); color: var(--product-accent-label); font: inherit; font-weight: 650; cursor: pointer; }
+.published-signup button:disabled { cursor: wait; opacity: .7; }
+.published-signup-consent { display: flex !important; align-items: flex-start; gap: 10px; margin: 12px 0 0 !important; color: var(--product-text-secondary); font-size: .875rem; font-weight: 400 !important; line-height: 1.45; }
+.published-signup-consent input { width: 18px; height: 18px; margin: 1px 0 0; padding: 0; border: 1px solid var(--product-border-control); border-radius: 3px; background: var(--product-bg-surface); flex: 0 0 auto; accent-color: var(--product-accent-solid); }
+.published-signup-consent input:focus-visible { outline: 2px solid var(--product-text-primary); outline-offset: 2px; }
+.published-signup-status { min-height: 1.5em; margin: 8px 0 0; color: var(--product-text-secondary); font-size: .875rem; }
+.published-signup-result { width: min(100%, 540px); margin-top: 28px; padding: 24px; border: 1px solid var(--product-border-subtle); border-radius: 12px; background: var(--product-bg-surface); color: var(--product-text-primary); }
+.public-preferences { display: grid; min-height: 100svh; place-items: center; padding: 32px 16px; }
+.public-preferences-card { width: min(100%, 560px); padding: 32px; border: 1px solid var(--product-border-subtle); border-radius: 12px; background: var(--product-bg-surface); }
+.public-preferences-card h1 { margin: 8px 0 12px; font-size: 1.75rem; letter-spacing: -.035em; }
+.public-preferences-card > p:not(.public-launch-eyebrow) { margin-bottom: 24px; color: var(--product-text-secondary); }
+.public-preferences-card button { min-height: 44px; padding: 10px 16px; border: 1px solid var(--product-accent-border); border-radius: 8px; background: var(--product-accent-solid); color: var(--product-accent-label); font: inherit; font-weight: 550; cursor: pointer; }
+.published-signup-result h2 { margin: 8px 0 16px; font-size: 1.375rem; line-height: 1.3; }
+.published-signup-thank-you { margin-bottom: 16px; color: var(--product-text-secondary); line-height: 1.55; }
+.published-signup-result .published-signup-status { margin: 0; color: var(--product-success-text); }
+.published-signup-position { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding-block: 14px; border-block: 1px solid var(--product-border-subtle); color: var(--product-text-secondary); font-size: .9375rem; }
+.published-signup-position strong { color: var(--product-text-primary); font-size: 1.25rem; font-variant-numeric: tabular-nums; }
+.published-referral-share { display: grid; gap: 10px; margin-top: 20px; }
+.published-referral-share > p { color: var(--product-text-secondary); font-size: .875rem; line-height: 1.55; }
+.published-referral-share label { font-size: .875rem; font-weight: 600; }
+.published-referral-share input { min-width: 0; flex: 1; height: 48px; padding: 0 12px; border: 1px solid var(--product-border-control); border-radius: 8px; background: var(--product-bg-surface); color: var(--product-text-primary); font: inherit; font-size: .8125rem; }
+.published-referral-share button { min-height: 48px; padding: 0 16px; border: 1px solid var(--product-accent-border); border-radius: 8px; background: var(--product-accent-solid); color: var(--product-accent-label); font: inherit; font-weight: 600; cursor: pointer; }
+.published-signup-result :is(input, button):focus-visible { outline: 2px solid var(--product-focus); outline-offset: 3px; }
+@media (hover: hover) and (pointer: fine) { .published-signup button:hover:not(:disabled), .published-referral-share button:hover { background: var(--product-accent-hover); } }
+.public-launch-paused { display: grid; place-items: center; text-align: center; }
+.public-launch-paused section { width: min(100%, 640px); }
+.public-launch-paused section > p { margin-inline: auto; }
+.published-signup :focus-visible { outline: 2px solid var(--product-focus); outline-offset: 3px; }
+@media (max-width: 480px) { .published-signup, .published-signup-result { padding: 18px; } .published-signup-row { flex-direction: column; } .published-signup button, .published-referral-share button { width: 100%; } }
+
+.verify-page { min-height: 100svh; display: grid; place-items: center; padding: 24px; background: var(--product-bg-page, #f5f5f1); color: var(--product-text-primary, #191919); }
+.verify-card { width: min(100%, 480px); padding: clamp(24px, 6vw, 40px); border: 1px solid var(--product-border-subtle, #e8e8e2); border-radius: 16px; background: var(--product-bg-surface, #fff); }
+.verify-card h1 { margin: 8px 0 12px; font-size: clamp(1.75rem, 6vw, 2.25rem); line-height: 1.15; }
+.verify-eyebrow { color: var(--product-text-muted, #70706a); font-size: .8rem; font-weight: 700; letter-spacing: .12em; }
+.verify-card button { min-height: 44px; margin-top: 12px; padding: 0 18px; border: 1px solid #c2e94b; border-radius: 8px; background: #d7ff64; color: #191919; font: inherit; font-weight: 650; cursor: pointer; }
+.verify-card button:focus-visible, .verify-card a:focus-visible { outline: 2px solid var(--product-focus, #587a00); outline-offset: 3px; }
+.verify-error { color: #a32620; }
+
+.delivery-health { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; margin-top: 24px; padding: 18px 20px; border: 1px solid var(--product-border-subtle, #e8e8e2); border-radius: 12px; background: var(--product-bg-surface, #fff); color: var(--product-text-primary, #191919); }
+.delivery-health-eyebrow { margin: 0 0 6px; color: var(--product-text-muted, #70706a); font-size: .72rem; font-weight: 700; letter-spacing: .1em; }
+.delivery-health h2 { margin: 0; font-size: 1rem; }
+.delivery-health p:not(.delivery-health-eyebrow) { margin: 5px 0 0; color: var(--product-text-secondary, #555); font-size: .875rem; }
+.delivery-health .delivery-health-error { color: #a32620; }
+.delivery-health-badge { flex: none; border-radius: 999px; background: #eaf6cb; padding: 5px 9px; color: #355500; font-size: .75rem; font-weight: 650; }
+.delivery-health-badge.is-warning { background: #fff0dc; color: #8a4b08; }
+@media (max-width: 520px) { .delivery-health { flex-direction: column; } }
+
+.verify-referral { margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--product-border-subtle, #e8e8e2); }
+.verify-referral label { display: block; margin: 14px 0 6px; font-size: .85rem; font-weight: 650; }
+.verify-referral-row { display: flex; gap: 8px; }
+.verify-referral-row input { min-width: 0; flex: 1; padding: 9px 10px; border: 1px solid var(--product-border-subtle, #e8e8e2); border-radius: 8px; color: inherit; font: inherit; }
+.verify-referral-row button { flex: none; margin-top: 0; }
+@media (max-width: 520px) { .verify-referral-row { flex-direction: column; } }
