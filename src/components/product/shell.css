@@ -54,6 +54,21 @@
 .product-empty { padding: 64px 24px; text-align: center; border: 1px solid var(--product-border-subtle); border-radius: 12px; background: var(--product-bg-surface); }
 .product-empty h2 { font-size: 1.25rem; font-weight: 550; margin-bottom: 8px; }
 .product-empty p { color: var(--product-text-secondary); font-size: .875rem; }
+.product-waitlists-loading { min-width: 0; }
+.product-waitlists-skeleton { overflow: hidden; }
+.product-waitlists-skeleton-header, .product-waitlists-skeleton-row { display: grid; grid-template-columns: minmax(0, 7fr) minmax(96px, 3fr); align-items: center; gap: 24px; padding: 14px 24px; border-bottom: 1px solid var(--product-border-subtle); }
+.product-waitlists-skeleton-header { min-height: 52px; background: var(--product-bg-surface); }
+.product-waitlists-skeleton-row { min-height: 112px; background: var(--product-bg-surface); }
+.product-waitlists-skeleton-row:last-child { border-bottom: 0; }
+.product-waitlists-skeleton-name { display: grid; justify-items: start; gap: 9px; }
+.product-skeleton-block { display: block; border-radius: 999px; background: var(--product-bg-inset); animation: product-skeleton-pulse 1.4s ease-in-out infinite alternate; }
+.product-skeleton-heading { width: 88px; height: 12px; }
+.product-skeleton-name { width: min(42%, 220px); min-width: 128px; height: 15px; }
+.product-skeleton-status { width: 56px; height: 20px; border-radius: 6px; }
+.product-skeleton-description { width: min(68%, 360px); height: 11px; }
+.product-skeleton-count { width: 32px; height: 14px; justify-self: start; }
+@keyframes product-skeleton-pulse { to { opacity: .55; } }
+@media (prefers-reduced-motion: reduce) { .product-skeleton-block { animation: none; } }
 .product-settings-layout { display: grid; grid-template-columns: 200px minmax(0, 640px); gap: 48px; }
 .product-settings-index { display: flex; flex-direction: column; gap: 4px; position: sticky; top: 24px; align-self: start; }
 .product-settings-index a { padding: 12px 16px; border-radius: 8px; text-decoration: none; font-size: .875rem; }
@@ -125,7 +140,7 @@
 .product-workspace-picker select { min-height: 44px; padding: 8px 12px; border: 1px solid var(--product-border-control); border-radius: 8px; background: var(--product-bg-surface); color: var(--product-text-primary); max-width: 100%; }
 .product-visually-hidden { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
 @media (hover: hover) and (pointer: fine) { .product-waitlist-table a:hover { text-decoration: underline; } .product-settings-index a:hover { background: var(--product-bg-inset); } }
-@media (max-width: 720px) { .product-settings-layout { grid-template-columns: minmax(0, 1fr); gap: 24px; } .product-settings-index { position: static; flex-direction: row; flex-wrap: wrap; } .product-settings-panel { padding: 24px; } .product-waitlist-table th, .product-waitlist-table td { padding-inline: 16px; } }
+@media (max-width: 720px) { .product-settings-layout { grid-template-columns: minmax(0, 1fr); gap: 24px; } .product-settings-index { position: static; flex-direction: row; flex-wrap: wrap; } .product-settings-panel { padding: 24px; } .product-waitlist-table th, .product-waitlist-table td { padding-inline: 16px; } .product-waitlists-skeleton-header, .product-waitlists-skeleton-row { padding-inline: 16px; gap: 16px; } }
 @media (max-width: 400px) { .product-page-heading { align-items: flex-start; flex-direction: column; gap: 16px; } .product-waitlist-table tbody th { min-width: 140px; } }
 
 /* Legacy Tailwind recipes wrap these channel values in hsl(); product controls use full semantic colors. */

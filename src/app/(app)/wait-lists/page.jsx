@@ -1,9 +1,11 @@
 import Link from "next/link";
+import { Suspense } from "react";
 import prisma from "@/lib/prisma";
 import { currentWorkspace } from "@/lib/workspaces/current";
 import { campaignScope } from "@/lib/workspaces/service.mjs";
 import { WorkspacePicker } from "@/components/product/settings-forms";
 import { buttonVariants } from "@/components/product/button-variants";
+import { WaitlistsTableSkeleton } from "@/components/product/waitlists-table-skeleton";
 import {
   normalizeWaitlistSearch,
   normalizeWaitlistStatus,
@@ -63,23 +65,19 @@ function WaitlistsTable({ waitlists, query, status, sort }) {
           <tr>
             <SortableHeading column="name" label="Waitlist" query={query} status={status} sort={sort} />
             <SortableHeading column="subscribers" label="Subscribers" query={query} status={status} sort={sort} />
-            <th scope="col"><span className="product-visually-hidden">Open waitlist</span></th>
           </tr>
         </thead>
         <tbody>
           {waitlists.map((waitlist) => (
             <tr key={waitlist.id}>
               <th scope="row">
-                <Link href={`/wait-lists/${waitlist.id}`}>{waitlist.name || "Untitled waitlist"}</Link>
+                <Link href={`/wait-lists/${waitlist.id}`} aria-label={`Open ${waitlist.name || "Untitled waitlist"}`}>
+                  {waitlist.name || "Untitled waitlist"}
+                </Link>
                 <span className="product-waitlist-status">{({ DRAFT: "Draft", PUBLISHED: "Published", PAUSED: "Paused" })[waitlist.status]}</span>
                 {waitlist.description && <p>{waitlist.description}</p>}
               </th>
               <td>{waitlist._count.signUps.toLocaleString()}</td>
-              <td>
-                <Link href={`/wait-lists/${waitlist.id}`} aria-label={`Open ${waitlist.name || "Untitled waitlist"}`}>
-                  Open<span aria-hidden="true"> →</span>
-                </Link>
-              </td>
             </tr>
           ))}
         </tbody>
@@ -102,15 +100,10 @@ function WaitlistsEmptyState({ query, status, hasFilters }) {
   return <div className="product-empty"><h2>{title}</h2><p>{description}</p><Link href="/wait-lists">Clear filters</Link></div>;
 }
 
-export default async function WaitlistsPage({ searchParams }) {
-  const { user, workspace, workspaces } = await currentWorkspace();
-  const params = await searchParams;
-  const query = normalizeWaitlistSearch(params?.q);
-  const status = normalizeWaitlistStatus(params?.status);
-  const sort = normalizeWaitlistSort(params?.sort);
+async function WaitlistsResults({ userId, workspaceId, query, status, sort }) {
   const waitlists = await prisma.waitList.findMany({
     where: {
-      ...campaignScope(user.id, "viewCampaign", workspace.id),
+      ...campaignScope(userId, "viewCampaign", workspaceId),
       ...waitlistSearchWhere(query),
       ...waitlistStatusWhere(status),
     },
@@ -118,7 +111,17 @@ export default async function WaitlistsPage({ searchParams }) {
     orderBy: waitlistSortOrderBy(sort),
   });
   const hasFilters = !!query || !!status;
+  return waitlists.length
+    ? <WaitlistsTable waitlists={waitlists} query={query} status={status} sort={sort} />
+    : <WaitlistsEmptyState query={query} status={status} hasFilters={hasFilters} />;
+}
 
+export default async function WaitlistsPage({ searchParams }) {
+  const { user, workspace, workspaces } = await currentWorkspace();
+  const params = await searchParams;
+  const query = normalizeWaitlistSearch(params?.q);
+  const status = normalizeWaitlistStatus(params?.status);
+  const sort = normalizeWaitlistSort(params?.sort);
   return (
     <section>
       <div className="product-page-heading">
@@ -145,9 +148,9 @@ export default async function WaitlistsPage({ searchParams }) {
           </Link>
         ))}
       </nav>
-      {waitlists.length
-        ? <WaitlistsTable waitlists={waitlists} query={query} status={status} sort={sort} />
-        : <WaitlistsEmptyState query={query} status={status} hasFilters={hasFilters} />}
+      <Suspense fallback={<WaitlistsTableSkeleton />}>
+        <WaitlistsResults userId={user.id} workspaceId={workspace.id} query={query} status={status} sort={sort} />
+      </Suspense>
     </section>
   );
 }

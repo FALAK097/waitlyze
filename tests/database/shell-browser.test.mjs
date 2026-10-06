@@ -56,12 +56,34 @@ test("authenticated two-destination shell uses real workspace data", async (t) =
     assert.deepEqual(await page.getByRole("navigation", { name: "Main navigation" }).getByRole("link").allTextContents(), ["Waitlists", "Settings"]);
     assert.equal(await page.locator("aside").count(), 0);
     assert.equal(await page.getByRole("row", { name: /First launch/ }).count(), 1);
+    assert.equal(await page.getByRole("link", { name: "Open First launch", exact: true }).count(), 1);
+    assert.equal(await page.getByRole("row", { name: /First launch/ }).getByRole("link").count(), 1);
     assert.equal(await page.getByLabel("Workspace", { exact: true }).count(), 0);
     const appMain = page.locator(".product-main");
     assert.equal(await appMain.evaluate((element) => getComputedStyle(element).backgroundImage), "none");
     await page.locator("html").evaluate((element) => element.classList.add("dark"));
     assert.equal(await appMain.evaluate((element) => getComputedStyle(element).backgroundImage), "none");
     await page.locator("html").evaluate((element) => element.classList.remove("dark"));
+  });
+  await t.test("first-use and filtered empty states explain the next step", async () => {
+    const emptyWorkspace = await db.workspace.create({ data: { name: "Empty launch workspace", members: { create: { userId, role: "ADMIN" } } } });
+    await context.addCookies([{ name: "waitlyze-workspace", value: emptyWorkspace.id, domain: "127.0.0.1", path: "/", httpOnly: true, sameSite: "Lax" }]);
+    await page.goto(`${base}/wait-lists`);
+    await page.getByRole("heading", { name: "Your next launch starts here." }).waitFor();
+    assert.equal(await page.getByRole("link", { name: "New waitlist", exact: true }).getAttribute("href"), "/wait-lists/new");
+    assert.deepEqual((await new AxeBuilder({ page }).include(".product-empty").analyze()).violations, []);
+    assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
+
+    await context.addCookies([{ name: "waitlyze-workspace", value: personal.id, domain: "127.0.0.1", path: "/", httpOnly: true, sameSite: "Lax" }]);
+    await page.goto(`${base}/wait-lists?q=No+matching+waitlist`);
+    await page.getByRole("heading", { name: "No waitlists found" }).waitFor();
+    assert.equal(await page.getByRole("link", { name: "Clear filters", exact: true }).getAttribute("href"), "/wait-lists");
+    assert.equal(await page.getByRole("link", { name: "Clear search", exact: true }).count(), 1);
+    assert.deepEqual((await new AxeBuilder({ page }).include(".product-empty").analyze()).violations, []);
+    assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
+    await page.getByRole("link", { name: "Clear filters", exact: true }).click();
+    await page.waitForURL(`${base}/wait-lists`);
+    assert.equal(await page.getByRole("row", { name: /First launch/ }).count(), 1);
   });
   await t.test("legacy page editor renders safely and names its icon actions", async () => {
     await page.goto(`${base}/wait-lists/${legacyWaitlist.id}/edit`);
