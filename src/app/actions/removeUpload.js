@@ -14,7 +14,7 @@ export const removeUpload = async (logoKey) => {
       return { success: false, message: "Unauthorized" };
     }
 
-    if (!logoKey || typeof logoKey !== "string") {
+    if (!logoKey || typeof logoKey !== "string" || !logoKey.startsWith(`${session.user.id}-`)) {
       return { success: false, message: "Invalid file key" };
     }
 

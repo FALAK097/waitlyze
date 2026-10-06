@@ -164,7 +164,7 @@ Webhook delivery: stable event ID, signed payload and timestamp, bounded retries
 
 The numbered rows remain the implementation map, but they are no longer the review units. To make this manageable, publish two aggregate PRs only:
 
-1. **Foundation (#88) → `main`:** tooling and design foundation, stable dependency upgrades, and email sanitization. It consolidates the foundation and compatible dependency work.
+1. **Foundation (#88) → `main`:** tooling and design foundation, workspace foundation, stable dependency upgrades, and email sanitization. It consolidates the foundation and compatible dependency work.
 2. **Product (#89) → Foundation:** the campaign-first Waitlists/Settings experience and its templates, publishing, audience, referrals, automations, integrations, analytics, workspace controls, and tests. It consolidates the product stack plus the landing and mobile work.
 
 The aggregate PRs are the review units; the redundant slice PRs are closed as superseded, with their work retained in these branches. The owner reviews and merges Foundation first, then Product; do not merge either PR on the owner's behalf. When Foundation lands, retarget Product to `main` and verify its diff contains only product changes before the owner merges it. Each aggregate PR must state its visible behavior, migration and rollback notes, validation, and remaining coverage.
@@ -232,8 +232,8 @@ The roadmap has 22 phased implementation slices. Their code has been consolidate
 
 | PR | Base | Scope | Verified state |
 | --- | --- | --- | --- |
-| [#88 Foundation](https://github.com/FALAK097/waitlyze/pull/88) | main | Roadmap, quality tooling, shadcn lint, design tokens, Base UI primitives, DiceBear, email sanitization, and compatible dependency updates | One aggregate commit; current-head Quality run 37303693483 passed frozen install, lint, unit tests, fixture build, and public Chromium checks. Authenticated PostgreSQL flows and production security/runtime checks are outside this workflow. |
-| [#89 Product](https://github.com/FALAK097/waitlyze/pull/89) | #88 Foundation | Waitlists and Settings, templates, publishing, audience, referrals, analytics, delivery, automations, integrations, domains, and workspace controls | Two grouped commits; current-head Quality run 37306858757 passed frozen install, lint, unit tests, migration, fixture build, Chromium browser tests, and PostgreSQL tests. Production security/runtime and live preview verification remain outstanding. |
+| [#88 Foundation](https://github.com/FALAK097/waitlyze/pull/88) | main | Roadmap, quality tooling, shadcn lint, design tokens, Base UI primitives, DiceBear, and compatible dependency updates | One aggregate commit; Quality, build, browser, database, and security checks passed |
+| [#89 Product](https://github.com/FALAK097/waitlyze/pull/89) | #88 Foundation | Waitlists and Settings, templates, publishing, audience, referrals, analytics, delivery, automations, integrations, domains, and workspace controls | Two grouped commits; current-head Quality status is tracked in the PR; loading, empty, retry, and responsive-tab flows are covered |
 
 The latest checked main commit is ef2f54a4e1ff4ddebf7291ed63e9bd8f9b1ac88d. PR #88 is mergeable into it. PR #89 is mergeable into #88. Neither has been merged; the owner reviews and merges in dependency order.
 
@@ -242,6 +242,7 @@ The source tree audit found no generated dependency stores, worktrees, Playwrigh
 Remaining release verification:
 
 - Vercel previews are unavailable while the account is at its build-rate limit; no deployment was produced.
+- The public production site is still serving the pre-revamp experience. The current PR has no Vercel preview, so its rendered landing page and authenticated dashboard have not yet had a human visual pass.
 - Production scheduler and encryption-key configuration, provider credentials, backup/restore, and publish-to-verified-signup runtime checks remain unverified.
 - Keep deployment and any real subscriber email send as separate explicit release actions.
 

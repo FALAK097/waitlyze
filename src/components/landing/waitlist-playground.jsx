@@ -1,23 +1,21 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { Check } from "lucide-react";
-import { SignUpForm } from "@/components/wait-lists/sign-up-form";
-import toast from "react-hot-toast";
 
 const styles = [
   {
-    id: "terracotta",
-    name: "Terracotta",
-    buttonColor: "#AE452F",
-    buttonBorder: "#AE452F",
-    buttonTextColor: "#FFFFFF",
-    badgeColor: "#F9E9E1",
-    badgeTextColor: "#8F3B28",
+    id: "lime",
+    name: "Lime",
+    buttonColor: "#C6FE1E",
+    buttonBorder: "#BFEB3B",
+    buttonTextColor: "#00160D",
+    badgeColor: "#F3FAF6",
+    badgeTextColor: "#176B4A",
   },
   {
-    id: "olive",
-    name: "Olive",
+    id: "forest",
+    name: "Forest",
     buttonColor: "#536B46",
     buttonBorder: "#536B46",
     buttonTextColor: "#FFFFFF",
@@ -36,46 +34,8 @@ const styles = [
 ];
 
 export default function WaitlistPlayground() {
-  const [styleId, setStyleId] = useState("terracotta");
-  const [email, setEmail] = useState("");
-  const [loading, setLoading] = useState(false);
-  const emailRef = useRef(null);
-  const interactionRef = useRef(false);
+  const [styleId, setStyleId] = useState("lime");
   const style = styles.find((item) => item.id === styleId) ?? styles[0];
-
-  useEffect(() => {
-    if (!interactionRef.current) return;
-    if (!loading) emailRef.current?.focus({ preventScroll: true });
-  }, [loading]);
-
-  const waitList = {
-    ...style,
-    showBadge: true,
-    badgeText: "A small note before the big day",
-    showLogo: false,
-    placeholderText: "Your email address",
-    inputColor: "#FFFFFF",
-    inputBorder: "#D8D3CD",
-    inputTextColor: "#292824",
-    borderWidth: "1px",
-    borderRadius: "medium",
-    buttonText: "Join the waitlist",
-    successMessage: "Preview complete. No signup was created.",
-    fontWeight: 600,
-    showSocialProof: false,
-    showBranding: true,
-  };
-
-  async function handleSubmit(event) {
-    event.preventDefault();
-    if (loading || !email) return;
-    interactionRef.current = true;
-    setLoading(true);
-    await new Promise((resolve) => window.setTimeout(resolve, 450));
-    setLoading(false);
-    toast.success(waitList.successMessage, { position: "top-center" });
-    setEmail("");
-  }
 
   return (
     <div className="wl-playground" id="preview">
@@ -96,18 +56,30 @@ export default function WaitlistPlayground() {
           </div>
           <h2>Make room for a little more outside.</h2>
           <p className="wl-preview-intro">
-            A slower kind of weekend is on its way. Leave your email and we’ll
-            let you know when Fieldnote opens its doors.
+            A slower kind of weekend is on its way. This sample shows how a
+            Fieldnote signup could look; it is not a live waitlist.
           </p>
           <div className="wl-preview-form-space">
-            <SignUpForm
-              email={email}
-              isLoading={loading}
-              waitList={waitList}
-              onSubmit={handleSubmit}
-              setEmail={setEmail}
-              inputRef={emailRef}
-            />
+            <form onSubmit={(event) => event.preventDefault()} aria-label="Example waitlist form">
+              <label className="sr-only" htmlFor="preview-example-email">Example email address</label>
+              <input
+                id="preview-example-email"
+                aria-label="Example email address"
+                type="email"
+                value="you@example.com"
+                readOnly
+                tabIndex={-1}
+                autoComplete="off"
+              />
+              <button
+                type="button"
+                disabled
+                style={{ backgroundColor: style.buttonColor, color: style.buttonTextColor, borderColor: style.buttonBorder }}
+              >
+                Join the waitlist
+              </button>
+            </form>
+            <p className="wl-preview-notice">Interactive preview only. This example does not collect or send email.</p>
           </div>
         </div>
       </div>
@@ -131,9 +103,7 @@ export default function WaitlistPlayground() {
         </fieldset>
         <span className="wl-preview-selected-style">{style.name}</span>
       </div>
-      <p className="wl-preview-disclaimer">
-        Preview only. Your email is not saved or sent.
-      </p>
+      <p className="wl-preview-disclaimer">Choose a color to see the form update.</p>
     </div>
   );
 }

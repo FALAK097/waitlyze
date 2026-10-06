@@ -4,14 +4,13 @@ This is the first implementation slice, stacked on the roadmap. Run `pnpm lint` 
 
 `@shadcn/lint` is registered in `eslint.config.mjs`. **No shadcn design rules are enabled yet.** Registration validates compatibility; it does not certify token usage or design quality. The next foundation slice defines semantic tokens and component contracts before enabling rules in the new product namespace. Keep legacy exceptions explicit and local.
 
-The Quality workflow installs the frozen lockfile, runs lint and unit tests, generates Prisma and builds the isolated browser fixture, then runs public Chromium tests. Failure reports and traces are retained for seven days. It has no deployment step or application secrets.
+The Quality workflow installs the lockfile, runs lint, generates Prisma, compiles a production build, and runs the public Chromium smoke suite. Failure reports and traces are retained for seven days. It has no deployment step or application secrets.
 
 ## Reproduce the baseline
 
 ```sh
 pnpm install --frozen-lockfile
 pnpm lint
-pnpm test:unit
 pnpm build:test
 pnpm exec playwright install chromium
 pnpm test:browser
@@ -29,7 +28,7 @@ Local verification and remaining gaps are recorded in the roadmap ledger. Rechar
 
 ## Local validation on 2026-09-27
 
-Frozen install, lint, production compilation (23 generated pages), and all five Chromium tests pass on macOS with Node 26.7.0 and pnpm 11.5.0. CI uses Node 24, matching `.nvmrc`. Quality run 37292611529 passed frozen install, lint, unit tests, fixture build, and Chromium browser tests; it does not cover authenticated PostgreSQL flows. The first sandboxed build could not fetch Inter; the network-enabled build passed. Existing Node deprecation/localStorage and dependency peer warnings remain.
+Frozen install, lint, production compilation (23 generated pages), and all five Chromium tests pass on macOS with Node 26.7.0 and pnpm 11.5.0. CI uses Node 22; its run is not yet verified. The first sandboxed build could not fetch Inter; the network-enabled build passed. Existing Node deprecation/localStorage and dependency peer warnings remain.
 
 The keyboard regression test caught a shared-modal focus bug and now protects its fix:
 

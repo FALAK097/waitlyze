@@ -8,15 +8,20 @@ datasource db {
 }
 
 model User {
-  id            String    @id @unique @default(cuid())
-  email         String    @unique
+  id            String   @id @unique @default(cuid())
+  email         String   @unique
   name          String?
-  emailVerified Boolean   @default(false)
+  emailVerified Boolean  @default(false)
   image         String?
   imageUrl      String?
-  isOnboarded   Boolean   @default(false)
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  isOnboarded   Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  personalWorkspace    Workspace?        @relation("PersonalWorkspace")
+  workspaceMemberships WorkspaceMember[]
+  workspaceInvitationsCreated WorkspaceInvitation[] @relation("WorkspaceInvitationCreator")
+  workspaceInvitationsAccepted WorkspaceInvitation[] @relation("WorkspaceInvitationAccepter")
 
   waitLists WaitList[]
   apiKeys   ApiKey[]
@@ -26,8 +31,38 @@ model User {
   @@map("users")
 }
 
+enum CampaignStatus {
+  DRAFT
+  PUBLISHED
+  PAUSED
+}
+
+enum ReferralReviewStatus {
+  CLEAR
+  NEEDS_REVIEW
+  APPROVED
+  EXCLUDED
+}
+
+enum LaunchRehearsalStatus {
+  PASSED
+  NEEDS_ATTENTION
+}
+
 model WaitList {
+  status                  CampaignStatus @default(DRAFT)
+  publicSlug              String? @unique
+  templateSnapshot        Json?
+  templateRevision        Int @default(1)
+  templateRevisions       WaitListRevision[]
+  publicationRevisions    WaitListPublicationRevision[]
+  publishedRevision       Int?
+  publishedTemplateRevision Int?
+  creationKey             String?
+
   id                      String  @id @unique @default(cuid())
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
   name                    String?
   description             String?
   websiteUrl              String?
@@ -75,20 +110,63 @@ model WaitList {
   shareOnEmail            Boolean @default(false)
   shareOnReddit           Boolean @default(false)
 
+  workspaceId String?
+  workspace   Workspace? @relation(fields: [workspaceId], references: [id], onDelete: Restrict)
+
   userId               String
   user                 User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   signUps              SignUp[]
   impressions          Impression[]
+  launchRehearsals     LaunchRehearsal[]
   apiKeys              ApiKey[]
   emailTemplateRecords EmailTemplate[]
+  broadcasts           MarketingBroadcast[]
+  marketingConsentEvents MarketingConsentEvent[]
+  automationRecipes      AutomationRecipe[]
+  automationRuns         AutomationRun[]
+  webhookSubscriptions   WebhookSubscription[]
+  customDomain           CustomDomain?
 
+  @@unique([workspaceId, creationKey])
+  @@index([workspaceId, status])
+  @@index([workspaceId, id])
+  @@index([userId, workspaceId])
   @@map("wait_lists")
+}
+
+model WaitListRevision {
+  id           String   @id @default(cuid())
+  waitListId   String
+  revision     Int
+  snapshot     Json
+  createdAt    DateTime @default(now())
+  waitList     WaitList @relation(fields: [waitListId], references: [id], onDelete: Cascade)
+
+  @@unique([waitListId, revision])
+  @@index([waitListId, createdAt])
+  @@map("wait_list_revisions")
+}
+
+model WaitListPublicationRevision {
+  id             String   @id @default(cuid())
+  waitListId     String
+  revision       Int
+  templateRevision Int
+  snapshot       Json
+  createdAt      DateTime @default(now())
+  waitList       WaitList @relation(fields: [waitListId], references: [id], onDelete: Cascade)
+
+  @@unique([waitListId, revision])
+  @@index([waitListId, createdAt])
+  @@map("wait_list_publication_revisions")
 }
 
 model SignUp {
   id              String      @id @default(cuid())
   uniqueUserId    String
+  referralCode    String      @unique @default(dbgenerated("gen_random_uuid()::text"))
   email           String
+  emailNormalized String?
   device          String?
   deviceType      String?
   city            String?
@@ -101,14 +179,251 @@ model SignUp {
   impressionId    String?
   rank            Int?
   signUpEmailSent Boolean     @default(false)
+  verifiedAt      DateTime?
+  marketingConsentAt DateTime?
+  marketingUnsubscribedAt DateTime?
+  unsubscribeTokenHash String? @unique
   createdAt       DateTime    @default(now())
   updatedAt       DateTime    @updatedAt
   waitList        WaitList    @relation(fields: [waitListId], references: [id], onDelete: Cascade)
   impression      Impression? @relation(fields: [impressionId], references: [id], onDelete: SetNull)
   referrals       Referral[]  @relation("referredByReferral")
   referredBy      Referral[]  @relation("signUpReferral")
+  verification    SignUpVerification?
+  broadcastRecipients BroadcastRecipient[]
+  marketingConsentEvents MarketingConsentEvent[]
+  automationRuns AutomationRun[]
 
+  @@unique([waitListId, emailNormalized])
+  @@index([waitListId, uniqueUserId])
+  @@index([waitListId, createdAt, id])
   @@map("sign_ups")
+}
+
+model SignUpVerification {
+  id        String   @id @default(cuid())
+  signUpId  String   @unique
+  tokenHash String   @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime @default(now())
+  signUp    SignUp   @relation(fields: [signUpId], references: [id], onDelete: Cascade)
+
+  @@index([expiresAt])
+  @@map("sign_up_verifications")
+}
+
+enum OutboxStatus {
+  PENDING
+  PROCESSING
+  DELIVERED
+  FAILED
+}
+
+model OutboxEvent {
+  id          String       @id @default(cuid())
+  eventKey    String       @unique
+  type        String
+  payload     Json
+  status      OutboxStatus @default(PENDING)
+  attempts    Int          @default(0)
+  availableAt DateTime     @default(now())
+  createdAt   DateTime     @default(now())
+  processedAt DateTime?
+  lockedAt    DateTime?
+  waitListId  String?
+  providerMessageId String?
+  lastErrorCode String?
+
+  @@index([status, availableAt])
+  @@index([status, lockedAt])
+  @@map("outbox_events")
+}
+
+enum BroadcastStatus {
+  DRAFT
+  SENDING
+  SENT
+  CANCELED
+  FAILED
+}
+
+enum BroadcastRecipientStatus {
+  PENDING
+  PROCESSING
+  DELIVERED
+  FAILED
+  SKIPPED
+  CANCELED
+}
+
+enum MarketingConsentAction {
+  OPTED_IN
+  OPTED_OUT
+}
+
+enum MarketingConsentSource {
+  PUBLIC_SIGNUP
+  PUBLIC_UNSUBSCRIBE
+}
+
+model MarketingConsentEvent {
+  id        String                 @id @default(cuid())
+  waitListId String
+  signUpId  String
+  action    MarketingConsentAction
+  source    MarketingConsentSource
+  consentText String?
+  createdAt DateTime               @default(now())
+  waitList  WaitList               @relation(fields: [waitListId], references: [id], onDelete: Cascade)
+  signUp    SignUp                 @relation(fields: [signUpId], references: [id], onDelete: Cascade)
+
+  @@index([signUpId, createdAt])
+  @@index([waitListId, createdAt])
+  @@map("marketing_consent_events")
+}
+
+model MarketingBroadcast {
+  id             String          @id @default(cuid())
+  waitListId     String
+  waitList       WaitList        @relation(fields: [waitListId], references: [id], onDelete: Cascade)
+  name           String
+  subject        String
+  previewText    String
+  body           String
+  status         BroadcastStatus @default(DRAFT)
+  recipientCount Int             @default(0)
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  sentAt         DateTime?
+  recipients     BroadcastRecipient[]
+
+  @@index([waitListId, updatedAt])
+  @@map("marketing_broadcasts")
+}
+
+model BroadcastRecipient {
+  id                String                   @id @default(cuid())
+  broadcastId       String
+  broadcast         MarketingBroadcast       @relation(fields: [broadcastId], references: [id], onDelete: Cascade)
+  signUpId          String
+  signUp            SignUp                   @relation(fields: [signUpId], references: [id], onDelete: Cascade)
+  email             String
+  emailNormalized   String
+  status            BroadcastRecipientStatus @default(PENDING)
+  providerMessageId String?
+  lastErrorCode     String?
+  deliveredAt       DateTime?
+  createdAt         DateTime                 @default(now())
+
+  @@unique([broadcastId, signUpId])
+  @@index([broadcastId, status])
+  @@map("broadcast_recipients")
+}
+
+enum AutomationRecipeType {
+  WELCOME
+  REFERRAL_REMINDER
+  REFERRAL_MILESTONE
+}
+
+enum AutomationRecipeStatus {
+  DRAFT
+  ENABLED
+  PAUSED
+}
+
+enum AutomationRunStatus {
+  PENDING
+  PROCESSING
+  SENT
+  SKIPPED
+  FAILED
+  CANCELED
+}
+
+enum AutomationStepStatus {
+  PENDING
+  PROCESSING
+  SENT
+  SKIPPED
+  FAILED
+  CANCELED
+}
+
+model AutomationRecipe {
+  id             String                @id @default(cuid())
+  waitListId     String
+  waitList       WaitList              @relation(fields: [waitListId], references: [id], onDelete: Cascade)
+  type           AutomationRecipeType
+  status         AutomationRecipeStatus @default(DRAFT)
+  currentVersion Int                   @default(1)
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @updatedAt
+  versions       AutomationRecipeVersion[]
+  runs           AutomationRun[]
+
+  @@unique([waitListId, type])
+  @@index([waitListId, status])
+  @@map("automation_recipes")
+}
+
+model AutomationRecipeVersion {
+  id        String           @id @default(cuid())
+  recipeId  String
+  recipe    AutomationRecipe @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  version   Int
+  config    Json
+  createdAt DateTime         @default(now())
+  runs      AutomationRun[]
+
+  @@unique([recipeId, version])
+  @@map("automation_recipe_versions")
+}
+
+model AutomationRun {
+  recipeId         String
+  recipe           AutomationRecipe       @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  id               String                 @id @default(cuid())
+  recipeVersionId  String
+  recipeVersion    AutomationRecipeVersion @relation(fields: [recipeVersionId], references: [id], onDelete: Cascade)
+  waitListId       String
+  waitList         WaitList               @relation(fields: [waitListId], references: [id], onDelete: Cascade)
+  signUpId         String
+  signUp           SignUp                 @relation(fields: [signUpId], references: [id], onDelete: Cascade)
+  triggerKey       String
+  status           AutomationRunStatus    @default(PENDING)
+  scheduledAt      DateTime
+  startedAt        DateTime?
+  finishedAt       DateTime?
+  skipReason       String?
+  createdAt        DateTime               @default(now())
+  steps            AutomationRunStep[]
+
+  @@unique([recipeId, triggerKey])
+  @@index([waitListId, createdAt])
+  @@index([status, scheduledAt])
+  @@map("automation_runs")
+}
+
+model AutomationRunStep {
+  id                String               @id @default(cuid())
+  runId             String
+  run               AutomationRun        @relation(fields: [runId], references: [id], onDelete: Cascade)
+  stepKey           String
+  position          Int                  @default(0)
+  status            AutomationStepStatus @default(PENDING)
+  availableAt       DateTime
+  outboxEventKey    String               @unique
+  providerMessageId String?
+  lastErrorCode     String?
+  createdAt         DateTime             @default(now())
+  finishedAt        DateTime?
+
+  @@unique([runId, stepKey])
+  @@index([runId, position])
+  @@index([status, availableAt])
+  @@map("automation_run_steps")
 }
 
 model Impression {
@@ -135,18 +450,45 @@ model Referral {
   id           String   @id @default(cuid())
   signUpId     String   @unique
   referredById String?
+  reviewStatus ReferralReviewStatus @default(CLEAR)
+  reviewReason String?
+  resolution   String?
+  reviewedAt   DateTime?
+  reviewedById String?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
   signUp       SignUp   @relation("signUpReferral", fields: [signUpId], references: [id], onDelete: Cascade)
   referredBy   SignUp?  @relation("referredByReferral", fields: [referredById], references: [id], onDelete: Cascade)
 
+  @@index([referredById, reviewStatus])
   @@map("referrals")
+}
+
+// Rehearsal records contain checklist results only. Simulated activity never
+// becomes a SignUp, OutboxEvent, impression, or report input.
+model LaunchRehearsal {
+  id            String                @id @default(cuid())
+  waitListId    String
+  status        LaunchRehearsalStatus
+  checksPassed  Int
+  checksFailed  Int
+  checkResults  Json
+  createdAt     DateTime              @default(now())
+  waitList      WaitList              @relation(fields: [waitListId], references: [id], onDelete: Cascade)
+
+  @@index([waitListId, createdAt])
+  @@map("launch_rehearsal_runs")
 }
 
 model ApiKey {
   id         String   @id @default(cuid())
   name       String
   keyHash    String   @unique
+  keyId      String?  @unique
+  scopes     String[] @default(["waitlist:write"])
+  expiresAt  DateTime?
+  lastUsedAt DateTime?
+  revokedAt  DateTime?
   userId     String
   waitlistId String?
   createdAt  DateTime @default(now())
@@ -155,6 +497,7 @@ model ApiKey {
   user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   waitlist WaitList? @relation(fields: [waitlistId], references: [id], onDelete: SetNull)
 
+  @@index([waitlistId, revokedAt])
   @@map("api_keys")
 }
 
@@ -179,6 +522,63 @@ model EmailTemplate {
 enum EmailTemplateType {
   SIGNUP
   OFFBOARDING
+}
+
+enum WebhookDeliveryStatus {
+  PENDING
+  PROCESSING
+  DELIVERED
+  FAILED
+  PAUSED
+}
+
+model WebhookSubscription {
+  id                       String   @id @default(cuid())
+  waitListId               String
+  name                     String
+  url                      String
+  eventTypes               String[] @default(["signup.created"])
+  enabled                  Boolean  @default(true)
+  secretCiphertext         String
+  secretIv                 String
+  secretTag                String
+  previousSecretCiphertext String?
+  previousSecretIv         String?
+  previousSecretTag        String?
+  previousSecretValidUntil DateTime?
+  createdAt                DateTime @default(now())
+  updatedAt                DateTime @updatedAt
+  lastDeliveredAt          DateTime?
+  waitList                 WaitList @relation(fields: [waitListId], references: [id], onDelete: Cascade)
+  deliveries               WebhookDelivery[]
+
+  @@index([waitListId, enabled])
+  @@map("webhook_subscriptions")
+}
+
+model WebhookDelivery {
+  id               String                @id @default(cuid())
+  subscriptionId   String
+  eventId          String
+  eventKey         String                @unique
+  eventType        String
+  payload          Json
+  status           WebhookDeliveryStatus @default(PENDING)
+  attempts         Int                   @default(0)
+  replayCount      Int                   @default(0)
+  availableAt      DateTime              @default(now())
+  createdAt        DateTime              @default(now())
+  lockedAt         DateTime?
+  processedAt      DateTime?
+  deliveredAt      DateTime?
+  responseStatus   Int?
+  lastErrorCode    String?
+  subscription     WebhookSubscription   @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+
+  @@index([status, availableAt])
+  @@index([status, lockedAt])
+  @@index([subscriptionId, createdAt])
+  @@map("webhook_deliveries")
 }
 
 model Session {
@@ -223,4 +623,145 @@ model Verification {
   updatedAt  DateTime? @updatedAt
 
   @@map("verifications")
+}
+
+// Additive tenancy: personalOwnerId provides an idempotent legacy mapping.
+model Workspace {
+  id              String            @id @default(cuid())
+  name            String
+  personalOwnerId String?           @unique
+  personalOwner   User?             @relation("PersonalWorkspace", fields: [personalOwnerId], references: [id], onDelete: Restrict)
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  members         WorkspaceMember[]
+  invitations     WorkspaceInvitation[]
+  waitLists       WaitList[]
+  emailSuppressions EmailSuppression[]
+  integrations      WorkspaceIntegration[]
+  customDomains     CustomDomain[]
+
+  @@map("workspaces")
+}
+
+model WorkspaceMember {
+  workspaceId String
+  userId      String
+  role        WorkspaceRole @default(MEMBER)
+  createdAt   DateTime      @default(now())
+  workspace   Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([workspaceId, userId])
+  @@index([userId, workspaceId])
+  @@map("workspace_members")
+}
+
+enum WorkspaceRole {
+  OWNER
+  ADMIN
+  MEMBER
+}
+
+enum WorkspaceInvitationStatus {
+  PENDING
+  ACCEPTED
+  REVOKED
+  EXPIRED
+  SEND_FAILED
+}
+
+model WorkspaceInvitation {
+  id               String                    @id @default(cuid())
+  workspaceId      String
+  emailNormalized  String
+  role             WorkspaceRole             @default(MEMBER)
+  tokenHash        String                    @unique
+  tokenCiphertext  String
+  tokenIv          String
+  tokenTag         String
+  status           WorkspaceInvitationStatus @default(PENDING)
+  expiresAt        DateTime
+  createdByUserId  String
+  acceptedByUserId String?
+  acceptedAt       DateTime?
+  revokedAt        DateTime?
+  createdAt        DateTime                  @default(now())
+  updatedAt        DateTime                  @updatedAt
+  workspace        Workspace                 @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  createdBy        User                      @relation("WorkspaceInvitationCreator", fields: [createdByUserId], references: [id], onDelete: Cascade)
+  acceptedBy       User?                     @relation("WorkspaceInvitationAccepter", fields: [acceptedByUserId], references: [id], onDelete: SetNull)
+
+  @@index([workspaceId, status, createdAt])
+  @@map("workspace_invitations")
+}
+
+model EmailProviderEvent {
+  id                String   @id @default(cuid())
+  providerEventId   String   @unique
+  providerMessageId String
+  type              String
+  isPermanent       Boolean  @default(false)
+  createdAt         DateTime @default(now())
+
+  @@index([providerMessageId, type])
+  @@map("email_provider_events")
+}
+
+model EmailSuppression {
+  id              String   @id @default(cuid())
+  workspaceId     String
+  emailNormalized String
+  reason          String
+  createdAt       DateTime @default(now())
+  workspace       Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, emailNormalized])
+  @@index([workspaceId, createdAt])
+  @@map("email_suppressions")
+}
+
+model WorkspaceIntegration {
+  id                 String   @id @default(cuid())
+  workspaceId        String
+  provider           String
+  status             String   @default("NEEDS_TEST")
+  secretCiphertext   String
+  secretIv           String
+  secretTag          String
+  fromEmail          String
+  lastTestedAt       DateTime?
+  lastErrorCode      String?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  workspace          Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, provider])
+  @@index([workspaceId, status])
+  @@map("workspace_integrations")
+}
+
+enum CustomDomainStatus {
+  NEEDS_DNS
+  VERIFYING
+  ACTIVE
+  NEEDS_ATTENTION
+}
+
+model CustomDomain {
+  id             String             @id @default(cuid())
+  hostname       String             @unique
+  workspaceId    String
+  waitListId     String             @unique
+  status         CustomDomainStatus @default(NEEDS_DNS)
+  verification   Json?
+  dnsRecords     Json?
+  lastCheckedAt  DateTime?
+  lastErrorCode  String?
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+  workspace      Workspace          @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  waitList       WaitList           @relation(fields: [waitListId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, status])
+  @@map("custom_domains")
 }

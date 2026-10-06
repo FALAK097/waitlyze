@@ -1,0 +1,27 @@
+.form { max-width: 540px; margin-top: 48px; padding: 24px; border: 1px solid var(--product-border-subtle); border-radius: 12px; background: var(--product-bg-surface); }
+.label { display: block; margin-bottom: 8px; font-weight: 600; font-size: .875rem; }
+.row { display: flex; gap: 8px; }
+.email { min-width: 0; flex: 1; height: 48px; padding: 0 14px; border: 1px solid var(--product-border-control); border-radius: 8px; background: var(--product-bg-surface); color: var(--product-text-primary); font: inherit; }
+.button, .previewButton { min-height: 48px; display: inline-flex; align-items: center; justify-content: center; padding: 0 18px; border: 1px solid var(--product-accent-border); border-radius: 8px; background: var(--product-accent-solid); color: var(--product-accent-label); font: inherit; font-weight: 650; }
+.button { cursor: pointer; }
+.button:disabled { cursor: wait; opacity: .7; }
+.previewEmail { min-width: 0; flex: 1; display: flex; align-items: center; height: 48px; padding: 0 14px; border: 1px solid var(--product-border-control); border-radius: 8px; color: var(--product-text-muted); font: inherit; }
+.previewButton { text-align: center; }
+.consent { display: flex; align-items: flex-start; gap: 10px; margin: 12px 0 0; color: var(--product-text-secondary); font-size: .875rem; font-weight: 400; line-height: 1.45; }
+.checkbox, .previewCheckbox { width: 18px; height: 18px; margin: 1px 0 0; padding: 0; border: 1px solid var(--product-border-control); border-radius: 3px; flex: 0 0 auto; }
+.checkbox { background: var(--product-bg-surface); accent-color: var(--product-accent-solid); }
+.status { min-height: 1.5em; margin: 8px 0 0; color: var(--product-text-secondary); font-size: .875rem; }
+.result { width: min(100%, 540px); margin-top: 28px; padding: 24px; border: 1px solid var(--product-border-subtle); border-radius: 12px; background: var(--product-bg-surface); color: var(--product-text-primary); }
+.result h2 { margin: 8px 0 16px; font-size: 1.375rem; line-height: 1.3; }
+.thankYou { margin-bottom: 16px; color: var(--product-text-secondary); line-height: 1.55; }
+.result .status { margin: 0; color: var(--product-success-text); }
+.position { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding-block: 14px; border-block: 1px solid var(--product-border-subtle); color: var(--product-text-secondary); font-size: .9375rem; }
+.position strong { color: var(--product-text-primary); font-size: 1.25rem; font-variant-numeric: tabular-nums; }
+.referralShare { display: grid; gap: 10px; margin-top: 20px; }
+.referralShare > p { color: var(--product-text-secondary); font-size: .875rem; line-height: 1.55; }
+.referralShare label { font-size: .875rem; font-weight: 600; }
+.referralShare input { min-width: 0; flex: 1; height: 48px; padding: 0 12px; border: 1px solid var(--product-border-control); border-radius: 8px; background: var(--product-bg-surface); color: var(--product-text-primary); font: inherit; font-size: .8125rem; }
+.referralShare button { min-height: 48px; padding: 0 16px; border: 1px solid var(--product-accent-border); border-radius: 8px; background: var(--product-accent-solid); color: var(--product-accent-label); font: inherit; font-weight: 600; cursor: pointer; }
+.form :focus-visible, .result :is(input, button):focus-visible { outline: 2px solid var(--product-focus); outline-offset: 3px; }
+@media (hover: hover) and (pointer: fine) { .button:hover:not(:disabled), .referralShare button:hover { background: var(--product-accent-hover); } }
+@media (max-width: 480px) { .form, .result { padding: 18px; } .row { flex-direction: column; } .button, .referralShare button { width: 100%; } }
