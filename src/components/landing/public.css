@@ -249,7 +249,7 @@
   text-transform: uppercase;
   color: var(--wl-muted);
 }
-.wl-status-dot {
+.wl-accent-dot {
   width: 6px;
   height: 6px;
   flex-shrink: 0;
@@ -367,7 +367,7 @@
   font-weight: 600;
   color: var(--wl-ink);
 }
-.wl-status-dot {
+.wl-live-dot {
   width: 7px;
   height: 7px;
   border-radius: 50%;
@@ -670,79 +670,6 @@
   padding-block: 88px;
   background: var(--wl-wash);
   border-block: 1px solid var(--wl-line);
-}
-.wl-feature-story {
-  display: grid;
-  grid-template-columns: 0.8fr 1.2fr;
-  align-items: center;
-  gap: 64px;
-  margin-top: 64px;
-}
-.wl-feature-story-reverse {
-  grid-template-columns: 1.2fr 0.8fr;
-  margin-top: 88px;
-}
-.wl-feature-story-reverse .wl-feature-copy {
-  order: 2;
-}
-.wl-feature-index {
-  color: var(--wl-accent-ink);
-  font-size: 11px;
-}
-.wl-feature-copy h3 {
-  font-size: clamp(25px, 2.5vw, 34px);
-  letter-spacing: -0.045em;
-  line-height: 1.2;
-  margin-top: 16px;
-}
-.wl-feature-copy p {
-  font-size: 15px;
-  color: var(--wl-muted);
-  margin-top: 20px;
-  max-width: 42ch;
-}
-.wl-feature-copy ul {
-  list-style: none;
-  padding: 0;
-  margin: 24px 0 28px;
-  display: grid;
-  gap: 11px;
-  font-size: 12px;
-}
-.wl-feature-copy li {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.wl-feature-copy li svg {
-  color: var(--wl-accent-ink);
-  flex-shrink: 0;
-}
-.wl-product-figure {
-  min-width: 0;
-  background: var(--wl-surface);
-  border: 1px solid var(--wl-line);
-  border-radius: 8px;
-  overflow: hidden;
-}
-.wl-figure-caption {
-  display: flex;
-  justify-content: space-between;
-  padding: 14px 18px;
-  font-size: 10px;
-  color: var(--wl-muted);
-  border-bottom: 1px solid var(--wl-line);
-}
-.wl-product-figure img {
-  width: 100%;
-  height: auto;
-  display: block;
-}
-.wl-product-figure figcaption {
-  padding: 10px 18px;
-  font-size: 9px;
-  color: var(--wl-muted);
-  border-top: 1px solid var(--wl-line);
 }
 .wl-essentials {
   display: grid;
@@ -1165,9 +1092,6 @@
   .wl-hero-actions {
     gap: 16px;
   }
-  .wl-feature-story {
-    gap: 36px;
-  }
   .wl-reassurance {
     font-size: 10px;
     gap: 8px;
@@ -1268,24 +1192,6 @@
   }
   .wl-feature-section {
     padding-block: 64px;
-  }
-  .wl-feature-story,
-  .wl-feature-story-reverse {
-    grid-template-columns: 1fr;
-    margin-top: 44px;
-    gap: 28px;
-  }
-  .wl-feature-story-reverse {
-    margin-top: 64px;
-  }
-  .wl-feature-story-reverse .wl-feature-copy {
-    order: 0;
-  }
-  .wl-feature-copy p {
-    max-width: 60ch;
-  }
-  .wl-feature-copy h3 br {
-    display: none;
   }
   .wl-essentials {
     gap: 24px;

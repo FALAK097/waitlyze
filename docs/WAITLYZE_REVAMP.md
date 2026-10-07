@@ -1,6 +1,6 @@
 # Waitlyze revamp: product, design, architecture, and delivery
 
-Date: 2026-10-05. Status: execution roadmap; the campaign-first product is shipping through stacked PRs, and implementation continues against the latest verified `main` (`ef2f54a`).
+Date: 2026-10-07. Status: execution roadmap; the campaign-first product is shipping through stacked PRs, and implementation continues against the latest verified `main` (`ef2f54a`).
 Source: `waitlyze_product_blueprint.md` supplied from Downloads, read in full. This document resolves its conflicting scope statements and grounds delivery in the current repository. It is the working plan; update the ledger as each PR ships.
 
 ## 1. Product decision
@@ -247,3 +247,11 @@ Remaining release verification:
 - Keep deployment and any real subscriber email send as separate explicit release actions.
 
 Next: continue a focused visual and interaction pass across the landing page, Waitlists list and detail tabs, and Settings sections, using Dodo's restrained ink/lime palette, clear hierarchy, proof, and responsive product preview as reference without copying its surface. Validate keyboard, 320px reflow, contrast, loading/error/empty states, and database-backed browser flows. Once a Vercel preview is available, inspect the actual rendered public and authenticated screens. Keep all work on the current two-PR stack; the owner merges bottom-up. The overall revamp and production release remain unfinished.
+
+### 2026-10-07 interaction and visual follow-up
+
+The current local follow-up to PR #89 keeps the waitlist table to one clear row action, includes status in its accessible name, preserves selected facets when clearing an empty search, and aligns the three-column loading skeleton with the table at desktop and phone widths. Invalid publication drafts no longer show duplicate edit actions. A waitlists segment error boundary provides a retry for transient server failures.
+
+The live Dodo homepage was inspected as a visual reference: ink typography, a restrained pale background, a lime primary action, and one clear product preview. The Waitlyze landing page already shares the neutral/lime tokens; this follow-up removes stale purple product screenshots and their unused hero component, keeping the current interactive sample as the product preview. It does not claim a visual match from an unrendered Waitlyze build.
+
+Local checks for this follow-up: full ESLint, 51 unit tests, React Doctor on six changed files (86/100, no issues), and the no-browser-fixture build guard pass. PostgreSQL is unavailable locally, so database-backed browser checks were not run. The current PR heads had green Quality checks before this follow-up; CI must rerun on the updated PR head. Deployment preview and production behavior remain separate, unverified gates.

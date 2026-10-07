@@ -41,7 +41,7 @@ export default function WaitlistPlayground() {
     <div className="wl-playground" id="preview">
       <div className="wl-preview-toolbar">
         <span>
-          <span className="wl-status-dot" />
+          <span className="wl-live-dot" />
           A hosted waitlist, made with Waitlyze
         </span>
         <span>Live preview</span>

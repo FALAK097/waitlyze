@@ -54,7 +54,7 @@ test("waitlist and subscriber loading, empty, and retry states keep the next ste
   await page.getByRole("button", { name: "Switch", exact: true }).click();
   await page.goto(`${base}/wait-lists?q=${encodeURIComponent(`no-match-${randomUUID()}`)}`);
   await page.getByRole("heading", { name: "No waitlists found" }).waitFor();
-  await page.getByRole("link", { name: "Clear filters" }).click();
+  await page.locator(".product-empty").getByRole("link", { name: "Show all waitlists" }).click();
   await page.getByRole("row", { name: /First launch/ }).waitFor();
 
   await db.$executeRawUnsafe('ALTER TABLE "workspace_integrations" RENAME TO "workspace_integrations_settings_test"');

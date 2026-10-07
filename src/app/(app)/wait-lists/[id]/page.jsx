@@ -10,6 +10,7 @@ import { assessWaitlistReadiness } from "@/lib/campaigns/readiness.mjs";
 import { buttonVariants } from "@/components/product/button-variants";
 import styles from "@/components/product/waitlist-experience.module.css";
 export const metadata = { title: "Overview" };
+const dateFormat = new Intl.DateTimeFormat(undefined, { dateStyle: "medium" });
 export default async function OverviewPage({ params }) {
   const { id } = await params;
   const { user, workspace } = await currentWorkspace();
@@ -40,7 +41,6 @@ export default async function OverviewPage({ params }) {
     PUBLISHED: { title: "Your waitlist is live", detail: "This page is published and can collect signups. Use the subscriber list and analytics to follow activity." },
     PAUSED: { title: "Signups are paused", detail: "The page is not currently accepting new signups. Existing subscriber records remain available." },
   }[waitlist.status];
-  const date = (value) => new Intl.DateTimeFormat(undefined, { dateStyle: "medium" }).format(value);
   const editHref = `/wait-lists/${id}/edit#page-content`;
   const subscriberHref = `/wait-lists/${id}/subscribers`;
   return <div className={`product-section ${styles.overview}`}>
@@ -52,8 +52,8 @@ export default async function OverviewPage({ params }) {
         <dl className={styles.overviewFacts}>
           <div><dt>Status</dt><dd><span className={styles.status} data-status={waitlist.status}>{({ DRAFT: "Draft", PUBLISHED: "Published", PAUSED: "Paused" })[waitlist.status]}</span></dd></div>
           <div><dt>Subscribers</dt><dd>{waitlist._count.signUps.toLocaleString()}</dd></div>
-          <div><dt>Created</dt><dd><time dateTime={waitlist.createdAt.toISOString()}>{date(waitlist.createdAt)}</time></dd></div>
-          <div><dt>Last updated</dt><dd><time dateTime={waitlist.updatedAt.toISOString()}>{date(waitlist.updatedAt)}</time></dd></div>
+          <div><dt>Created</dt><dd><time dateTime={waitlist.createdAt.toISOString()}>{dateFormat.format(waitlist.createdAt)}</time></dd></div>
+          <div><dt>Last updated</dt><dd><time dateTime={waitlist.updatedAt.toISOString()}>{dateFormat.format(waitlist.updatedAt)}</time></dd></div>
         </dl>
       </div>
       <div className={styles.overviewActions}>
@@ -68,7 +68,7 @@ export default async function OverviewPage({ params }) {
                 : waitlist.publicSlug
                   ? <Link href={`/w/${waitlist.publicSlug}`} target="_blank" rel="noreferrer" className={buttonVariants()}>View live page</Link>
                   : <Link href={editHref} className={buttonVariants()}>Edit page</Link>}
-        {waitlist.status === "DRAFT" && canPublish && <Link href={editHref} className={buttonVariants({ variant: "outline" })}>Edit page</Link>}
+        {waitlist.status === "DRAFT" && canPublish && publicationNeedsAction && <Link href={editHref} className={buttonVariants({ variant: "outline" })}>Edit page</Link>}
         {waitlist.status === "PAUSED" && waitlist._count.signUps > 0 && <Link href={subscriberHref} className={buttonVariants({ variant: "outline" })}>View subscribers</Link>}
         {waitlist.status === "PUBLISHED" && (publicationNeedsAction
           ? waitlist._count.signUps > 0

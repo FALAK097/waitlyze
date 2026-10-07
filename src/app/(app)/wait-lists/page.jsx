@@ -22,6 +22,8 @@ import {
 export const metadata = { title: "Waitlists" };
 
 const PAGE_SIZE = 25;
+const WAITLIST_DATE_FORMAT = new Intl.DateTimeFormat(undefined, { dateStyle: "medium" });
+const WAITLIST_STATUS_LABELS = { DRAFT: "Draft", PUBLISHED: "Published", PAUSED: "Paused" };
 
 function waitlistsHref({ query, status, sort, page = 1, includeQuery = true }) {
   const search = new URLSearchParams();
@@ -70,26 +72,20 @@ function WaitlistsTable({ waitlists, query, status, sort }) {
             <SortableHeading column="name" label="Waitlist" query={query} status={status} sort={sort} />
             <SortableHeading column="subscribers" label="Subscribers" query={query} status={status} sort={sort} />
             <th scope="col">Updated</th>
-            <th scope="col"><span className="product-visually-hidden">Open waitlist</span></th>
           </tr>
         </thead>
         <tbody>
           {waitlists.map((waitlist) => (
             <tr key={waitlist.id}>
               <th scope="row">
-                <Link href={`/wait-lists/${waitlist.id}`} aria-label={`Open ${waitlist.name || "Untitled waitlist"}`}>
+                <Link href={`/wait-lists/${waitlist.id}`} aria-label={`Open ${waitlist.name || "Untitled waitlist"}, status ${WAITLIST_STATUS_LABELS[waitlist.status]}`}>
                   <span>{waitlist.name || "Untitled waitlist"}</span>{" "}
-                  <span className={styles.status} data-status={waitlist.status}>{({ DRAFT: "Draft", PUBLISHED: "Published", PAUSED: "Paused" })[waitlist.status]}</span>
+                  <span className={styles.status} data-status={waitlist.status}>{WAITLIST_STATUS_LABELS[waitlist.status]}</span>
                 </Link>
                 {waitlist.description && <p>{waitlist.description}</p>}
               </th>
               <td>{waitlist._count.signUps.toLocaleString()}</td>
-              <td><time dateTime={waitlist.updatedAt.toISOString()}>{new Intl.DateTimeFormat(undefined, { dateStyle: "medium" }).format(waitlist.updatedAt)}</time></td>
-              <td>
-                <Link href={`/wait-lists/${waitlist.id}`} aria-label={`Open ${waitlist.name || "Untitled waitlist"}`}>
-                  Open<span aria-hidden="true"> →</span>
-                </Link>
-              </td>
+              <td><time dateTime={waitlist.updatedAt.toISOString()}>{WAITLIST_DATE_FORMAT.format(waitlist.updatedAt)}</time></td>
             </tr>
           ))}
         </tbody>
@@ -98,7 +94,7 @@ function WaitlistsTable({ waitlists, query, status, sort }) {
   );
 }
 
-function WaitlistsEmptyState({ query, status, hasFilters }) {
+function WaitlistsEmptyState({ query, status, sort, hasFilters }) {
   if (!hasFilters) {
     return <div className="product-empty"><h2>Your next launch starts here.</h2><p>Create a waitlist to collect subscribers and learn who's interested.</p><Link href="/wait-lists/new" className={buttonVariants()}>Create your first waitlist</Link></div>;
   }
@@ -106,10 +102,20 @@ function WaitlistsEmptyState({ query, status, hasFilters }) {
   const selectedFilter = WAITLIST_STATUS_FILTERS.find((filter) => filter.value === status);
   const title = query ? "No waitlists found" : `No ${selectedFilter.label.toLowerCase()} waitlists`;
   const description = query
-    ? "Try another name or clear your search."
+    ? status
+      ? `Try another name, or clear your search to see all ${selectedFilter.label.toLowerCase()} waitlists.`
+      : "Try another name or clear your search."
     : `There aren't any ${selectedFilter.label.toLowerCase()} waitlists in this workspace yet.`;
+  const clearHref = query
+    ? waitlistsHref({ query, status, sort, includeQuery: false })
+    : waitlistsHref({ query, status: null, sort });
+  const clearLabel = query
+    ? status
+      ? `Show ${selectedFilter.label.toLowerCase()} waitlists`
+      : "Show all waitlists"
+    : "View all waitlists";
 
-  return <div className="product-empty"><h2>{title}</h2><p>{description}</p><Link href="/wait-lists">Clear filters</Link></div>;
+  return <div className="product-empty"><h2>{title}</h2><p>{description}</p><Link href={clearHref}>{clearLabel}</Link></div>;
 }
 
 async function WaitlistsResults({ userId, workspaceId, query, status, sort, requestedPage }) {
@@ -140,7 +146,7 @@ async function WaitlistsResults({ userId, workspaceId, query, status, sort, requ
   const hasFilters = !!query || !!status;
   return waitlists.length
     ? <><p className={styles.resultsMeta} aria-live="polite"><span>Showing {(page - 1) * PAGE_SIZE + 1}–{(page - 1) * PAGE_SIZE + waitlists.length} of {total} {total === 1 ? "waitlist" : "waitlists"}</span><span>Sorted by {sort.startsWith("subscribers") ? "subscribers" : "name"} · {sort.endsWith("asc") ? "ascending" : "descending"}</span></p><WaitlistsTable waitlists={waitlists} query={query} status={status} sort={sort} />{pageCount > 1 && <nav className={styles.pagination} aria-label="Waitlist pages"><Link href={waitlistsHref({ query, status, sort, page: Math.max(1, page - 1) })} aria-disabled={page === 1} tabIndex={page === 1 ? -1 : undefined}>Previous</Link><span>Page {page} of {pageCount}</span><Link href={waitlistsHref({ query, status, sort, page: Math.min(pageCount, page + 1) })} aria-disabled={page === pageCount} tabIndex={page === pageCount ? -1 : undefined}>Next</Link></nav>}</>
-    : <WaitlistsEmptyState query={query} status={status} hasFilters={hasFilters} />;
+    : <WaitlistsEmptyState query={query} status={status} sort={sort} hasFilters={hasFilters} />;
 }
 
 export default async function WaitlistsPage({ searchParams }) {

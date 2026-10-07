@@ -1,7 +1,5 @@
-import Image from "next/image";
 import {
   ArrowDown,
-  ArrowRight,
   ArrowUpRight,
   Check,
   Code2,
@@ -78,7 +76,7 @@ function HeroSection() {
     <section className="wl-hero wl-container" aria-labelledby="hero-title">
       <div className="wl-hero-copy">
         <p className="wl-eyebrow">
-          <span className="wl-status-dot" /> Big ideas start with a little
+          <span className="wl-accent-dot" /> Big ideas start with a little
           interest
         </p>
         <h1 id="hero-title">
@@ -202,95 +200,6 @@ function FeaturesSection() {
             Your launch, taking shape.
           </h2>
         </div>
-        <div className="wl-feature-story">
-          <div className="wl-feature-copy">
-            <span className="wl-feature-index">A / Your audience</span>
-            <h3>
-              Know where the
-              <br />
-              interest is coming from.
-            </h3>
-            <p>
-              Go beyond a subscriber count. See how people find you, where they
-              are, and how your waitlist grows over time.
-            </p>
-            <ul>
-              <li>
-                <Check size={16} aria-hidden="true" /> Signup and impression
-                trends
-              </li>
-              <li>
-                <Check size={16} aria-hidden="true" /> Traffic sources and
-                audience locations
-              </li>
-              <li>
-                <Check size={16} aria-hidden="true" /> Device and engagement
-                insights
-              </li>
-            </ul>
-            <SignupButton className="wl-button-quiet">
-              Start your waitlist
-            </SignupButton>
-          </div>
-          <figure className="wl-product-figure">
-            <div className="wl-figure-caption">
-              <span>Inside Waitlyze</span>
-              <span>Analytics</span>
-            </div>
-            <Image
-              src="/images/waitlyze_analytics.png"
-              alt="Waitlyze analytics dashboard showing signup trends and audience insights with example data"
-              width={1302}
-              height={648}
-              sizes="(max-width: 800px) 94vw, 58vw"
-            />
-            <figcaption>Actual product view · example data</figcaption>
-          </figure>
-        </div>
-        <div className="wl-feature-story wl-feature-story-reverse">
-          <div className="wl-feature-copy">
-            <span className="wl-feature-index">B / Your first impression</span>
-            <h3>
-              Your brand.
-              <br />
-              From the very first hello.
-            </h3>
-            <p>
-              A waitlist is often someone’s first interaction with your product.
-              Make yours look and feel like it belongs.
-            </p>
-            <ul>
-              <li>
-                <Check size={16} aria-hidden="true" /> Live visual form editor
-              </li>
-              <li>
-                <Check size={16} aria-hidden="true" /> Custom colors, copy, and
-                branding
-              </li>
-              <li>
-                <Check size={16} aria-hidden="true" /> Shareable and embeddable
-                forms
-              </li>
-            </ul>
-            <a href="#preview" className="wl-text-link">
-              Give it your own spin <ArrowRight size={16} aria-hidden="true" />
-            </a>
-          </div>
-          <figure className="wl-product-figure">
-            <div className="wl-figure-caption">
-              <span>Inside Waitlyze</span>
-              <span>Waitlist builder</span>
-            </div>
-            <Image
-              src="/images/waitlyze_waitlist_builder.png"
-              alt="Waitlyze visual editor with branding settings and a live waitlist form preview"
-              width={1302}
-              height={648}
-              sizes="(max-width: 800px) 94vw, 58vw"
-            />
-            <figcaption>Actual product view · example project</figcaption>
-          </figure>
-        </div>
         <div className="wl-essentials">
           <div>
             <Mail size={22} strokeWidth={1.5} aria-hidden="true" />
@@ -409,7 +318,7 @@ function FinalCTASection() {
     <section className="wl-final-cta" aria-labelledby="cta-title">
       <div className="wl-container">
         <p className="wl-eyebrow">
-          <span className="wl-status-dot" /> Your next chapter starts here
+          <span className="wl-accent-dot" /> Your next chapter starts here
         </p>
         <h2 id="cta-title">
           Something worth building.

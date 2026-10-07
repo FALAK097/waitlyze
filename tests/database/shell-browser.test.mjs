@@ -63,7 +63,10 @@ test("authenticated two-destination shell uses real workspace data", async (t) =
     const lightThemeMarker = await currentMainLink.evaluate((element) => getComputedStyle(element).boxShadow);
     assert.ok(lightThemeMarker.includes("inset") && lightThemeMarker.includes("-2px"));
     assert.equal(await page.locator("aside").count(), 0);
-    await page.getByRole("row", { name: /First launch/ }).waitFor();
+    const firstWaitlistRow = page.getByRole("row", { name: /First launch/ });
+    await firstWaitlistRow.waitFor();
+    assert.equal(await firstWaitlistRow.getByRole("link").count(), 1);
+    assert.equal(await firstWaitlistRow.getByRole("link", { name: "Open First launch, status Draft", exact: true }).count(), 1);
     assert.equal(await page.getByLabel("Workspace", { exact: true }).count(), 0);
     await page.setViewportSize({ width: 390, height: 844 });
     const waitlistTable = page.locator(".product-waitlist-table");
@@ -91,12 +94,28 @@ test("authenticated two-destination shell uses real workspace data", async (t) =
     await page.getByRole("button", { name: "Switch", exact: true }).click();
     await page.getByRole("heading", { name: "Your next launch starts here." }).waitFor();
     assert.equal(await page.getByRole("link", { name: "New waitlist", exact: true }).getAttribute("href"), "/wait-lists/new");
+    assert.equal(await page.getByRole("link", { name: "Create your first waitlist", exact: true }).getAttribute("href"), "/wait-lists/new");
+    assert.deepEqual((await new AxeBuilder({ page }).include(".product-empty").analyze()).violations, []);
 
     await page.getByLabel("Workspace", { exact: true }).selectOption(personal.id);
     await page.getByRole("button", { name: "Switch", exact: true }).click();
+    await page.goto(`${base}/wait-lists?status=PAUSED`);
+    await page.getByRole("heading", { name: "No paused waitlists", exact: true }).waitFor();
+    assert.equal(await page.getByRole("link", { name: "View all waitlists", exact: true }).getAttribute("href"), "/wait-lists");
+    assert.deepEqual((await new AxeBuilder({ page }).include(".product-empty").analyze()).violations, []);
+    await page.getByRole("link", { name: "View all waitlists", exact: true }).click();
+    await page.getByRole("row", { name: /First launch/ }).waitFor();
+
+    await page.goto(`${base}/wait-lists?status=PAUSED&q=${encodeURIComponent(`no-match-${randomUUID()}`)}`);
+    await page.getByRole("heading", { name: "No waitlists found" }).waitFor();
+    assert.equal(await page.getByRole("link", { name: "Show paused waitlists", exact: true }).getAttribute("href"), "/wait-lists?status=PAUSED");
+    assert.deepEqual((await new AxeBuilder({ page }).include(".product-empty").analyze()).violations, []);
+
     await page.goto(`${base}/wait-lists?q=${encodeURIComponent(`no-match-${randomUUID()}`)}`);
     await page.getByRole("heading", { name: "No waitlists found" }).waitFor();
-    await page.getByRole("link", { name: "Clear filters" }).click();
+    assert.equal(await page.locator(".product-empty").getByRole("link", { name: "Show all waitlists", exact: true }).getAttribute("href"), "/wait-lists");
+    assert.deepEqual((await new AxeBuilder({ page }).include(".product-empty").analyze()).violations, []);
+    await page.locator(".product-empty").getByRole("link", { name: "Show all waitlists", exact: true }).click();
     await page.getByRole("row", { name: /First launch/ }).waitFor();
   });
   await t.test("subscriber first-load skeleton and empty/filter states are useful and recoverable", async () => {
@@ -684,7 +703,7 @@ test("authenticated two-destination shell uses real workspace data", async (t) =
       await page.getByRole("search").getByLabel("Search waitlists").fill("no matching launch");
       await page.getByRole("search").getByRole("button", { name: "Search" }).click();
       await page.getByRole("heading", { name: "No waitlists found" }).waitFor();
-      await page.getByRole("link", { name: "Clear search" }).click();
+      await page.locator(".product-empty").getByRole("link", { name: "Show all waitlists" }).click();
       await page.waitForURL(`${base}/wait-lists`);
       assert.equal(await page.getByRole("row", { name: /First launch/ }).count(), 1);
     }
@@ -1010,6 +1029,7 @@ test("authenticated two-destination shell uses real workspace data", async (t) =
     const review = readiness.getByRole("link", { name: "Open publish controls: Publish your waitlist", exact: true });
     assert.equal(await review.getAttribute("href"), `/wait-lists/${initialDraft.id}/edit#publication-actions`);
     assert.equal(await page.getByRole("link", { name: "Review publication controls", exact: true }).count(), 1);
+    assert.equal(await page.getByRole("link", { name: "Edit page", exact: true }).count(), 1);
     assert.equal(await page.getByRole("link", { name: "View subscribers", exact: true }).count(), 0);
     await page.setViewportSize({ width: 320, height: 812 });
     assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
@@ -1017,6 +1037,16 @@ test("authenticated two-destination shell uses real workspace data", async (t) =
     await page.setViewportSize({ width: 1280, height: 900 });
     assert.equal((await fetch(`${base}/forms/${initialDraft.id}`)).status, 404);
     assert.equal((await db.signUp.count({ where: { waitListId: initialDraft.id } })), 0);
+    try {
+      await db.waitList.update({ where: { id: initialDraft.id }, data: { templateSnapshot: null } });
+      await page.reload();
+      await page.getByRole("region", { name: "Page checks" }).getByText("Review the page structure before publishing.").waitFor();
+      assert.equal(await page.getByRole("link", { name: "Review publication controls", exact: true }).count(), 0);
+      assert.equal(await page.getByRole("link", { name: "Edit page", exact: true }).count(), 1);
+    } finally {
+      await db.waitList.update({ where: { id: initialDraft.id }, data: { templateSnapshot: initialDraft.templateSnapshot } });
+      await page.reload();
+    }
   });
   await t.test("published, changed, paused, and demoted states stay truthful", async () => {
     const publicationWorkspace = await db.workspace.create({ data: {

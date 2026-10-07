@@ -52,10 +52,9 @@
   table-layout: fixed;
 }
 
-.table th:first-child { width: 56%; }
-.table th:nth-child(2) { width: 19%; }
-.table th:nth-child(3) { width: 19%; }
-.table th:last-child { width: 6%; }
+.table th:first-child { width: 62%; }
+.table th:nth-child(2) { width: 18%; }
+.table th:nth-child(3) { width: 20%; }
 
 .table tbody tr { transition: background-color 140ms ease; }
 .table tbody tr:hover { background: var(--product-bg-inset); }
@@ -73,8 +72,6 @@
 .table tbody th > a:hover { text-decoration: underline; text-underline-offset: 3px; }
 .table tbody td { color: var(--product-text-secondary); font-variant-numeric: tabular-nums; }
 .table tbody td:nth-child(2) { color: var(--product-text-primary); font-weight: 600; }
-.table tbody tr > td:last-child { text-align: right; }
-.table tbody tr > td:last-child a { color: var(--product-text-secondary); }
 
 .status {
   display: inline-flex;
@@ -182,10 +179,8 @@
 @media (max-width: 760px) {
   .listToolbar { grid-template-columns: minmax(0, 1fr); }
   .listToolbar > :global(.product-waitlist-filters) { margin-bottom: 0; }
-  .table th:first-child { width: 52%; }
-  .table th:nth-child(2) { width: 22%; }
-  .table th:nth-child(3) { width: 20%; }
-  .table th:last-child { width: 6%; }
+  .table th:first-child { width: 68%; }
+  .table th:nth-child(2) { width: 32%; }
   .table :global(th), .table :global(td) { padding-inline: 12px; }
   .overviewHero { flex-direction: column; }
 }

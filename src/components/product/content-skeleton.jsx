@@ -13,8 +13,8 @@ export function ProductContentSkeleton({ label, variant = "detail", rows = 5 }) 
         <div className="product-content-loading-page-panel"><i /><i /><i /><i /></div>
         <div className="product-content-loading-page-panel product-content-loading-page-panel-secondary"><i /><i /><i /></div>
       </> : variant === "table" ? <>
-        <div className="product-content-loading-table-head"><i /><i /><i /><i /></div>
-        {Array.from({ length: rows }, (_, index) => <div className="product-content-loading-table-row" key={index}><i /><i /><i /><i /></div>)}
+        <div className="product-content-loading-table-head"><i /><i /><i /></div>
+        {Array.from({ length: rows }, (_, index) => <div className="product-content-loading-table-row" key={index}><i /><i /><i /></div>)}
       </> : variant === "settings" ? [1, 2, 1, 1, 1].map((panelCount, index) => <div className="product-content-loading-settings-group" key={index}>
         <div className="product-content-loading-settings-heading"><i /><i /></div>
         {Array.from({ length: panelCount }, (_, panelIndex) => <div className="product-content-loading-settings-panel" key={panelIndex}><i /><i /><i /></div>)}
