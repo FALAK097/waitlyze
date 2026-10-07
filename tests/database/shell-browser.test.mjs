@@ -75,6 +75,8 @@ test("authenticated two-destination shell uses real workspace data", async (t) =
       assert.equal(await tableViewport.evaluate((element) => getComputedStyle(element).overflowX), "clip");
       assert.equal(await waitlistTable.locator("tbody tr:first-child td:nth-child(3)").evaluate((element) => getComputedStyle(element).display), "none");
       assert.equal(await waitlistTable.locator("tbody tr:first-child td:nth-child(2)").isVisible(), true);
+      const firstWaitlistLinkBounds = await firstWaitlistRow.getByRole("link").boundingBox();
+      assert.ok(firstWaitlistLinkBounds && firstWaitlistLinkBounds.height >= 44, "waitlist rows retain a comfortable phone-sized link target");
       assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
     } finally {
       await page.setViewportSize({ width: 1280, height: 900 });
@@ -299,8 +301,13 @@ test("authenticated two-destination shell uses real workspace data", async (t) =
     assert.equal(await page.getByLabel("Display name").inputValue(), "Updated fixture");
     await page.getByLabel("Display name").fill("   ");
     await page.getByRole("button", { name: "Save profile" }).click();
-    await page.getByRole("alert").filter({ hasText: "Enter a name" }).waitFor();
-    assert.equal(await page.getByLabel("Display name").inputValue(), "   ");
+    const profileNameError = page.getByRole("alert").filter({ hasText: "Enter a name" });
+    await profileNameError.waitFor();
+    const profileName = page.getByLabel("Display name");
+    assert.equal(await profileName.inputValue(), "   ");
+    assert.equal(await profileName.getAttribute("aria-invalid"), "true");
+    assert.deepEqual((await profileName.getAttribute("aria-describedby")).split(" "), ["profile-name-help", "profile-name-error"]);
+    assert.equal(await profileName.evaluate((input) => document.getElementById("profile-name-error")?.textContent), await profileNameError.innerText());
     await page.getByLabel("Display name").fill("Updated fixture");
     await page.locator('.product-settings-desktop a[href="#team"]').click();
     await page.getByRole("heading", { name: "Team access", exact: true }).waitFor();
@@ -1161,6 +1168,24 @@ test("authenticated two-destination shell uses real workspace data", async (t) =
     await page.getByRole("button", { name: "Permanently delete" }).click();
     await page.waitForURL(`${base}/wait-lists`);
     assert.equal(await db.waitList.findUnique({ where: { id: waitlist.id } }), null);
+  });
+  await t.test("pagination endpoints are truly disabled and active pages remain navigable", async () => {
+    await db.waitList.createMany({ data: Array.from({ length: 26 }, (_, index) => ({
+      userId,
+      workspaceId: personal.id,
+      name: `Pagination fixture ${String(index + 1).padStart(2, "0")}`,
+    })) });
+    await page.goto(`${base}/wait-lists`);
+    const pagination = page.getByRole("navigation", { name: "Waitlist pages" });
+    await pagination.waitFor();
+    assert.equal(await pagination.getByRole("link", { name: "Previous", exact: true }).count(), 0);
+    assert.equal(await pagination.locator('span[aria-disabled="true"]').innerText(), "Previous");
+    await pagination.getByRole("link", { name: "Next", exact: true }).click();
+    await page.waitForURL(/\/wait-lists\?page=2$/);
+    assert.equal(await pagination.getByRole("link", { name: "Previous", exact: true }).count(), 1);
+    assert.equal(await pagination.getByRole("link", { name: "Next", exact: true }).count(), 0);
+    assert.equal(await pagination.locator('span[aria-disabled="true"]').innerText(), "Next");
+    assert.deepEqual((await new AxeBuilder({ page }).include("nav[aria-label='Waitlist pages']").analyze()).violations, []);
   });
   assert.deepEqual(errors, []);
 });

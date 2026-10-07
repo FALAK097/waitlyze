@@ -60,12 +60,12 @@
 .table tbody tr:hover { background: var(--product-bg-inset); }
 .table tbody th { font-weight: 550; }
 .table tbody th > a {
-  min-height: 0 !important;
+  min-height: 44px !important;
   display: flex !important;
   width: fit-content;
   align-items: center;
   gap: 10px;
-  padding: 4px 0 !important;
+  padding: 8px 0 !important;
   color: var(--product-text-primary);
   font-size: .95rem;
 }
@@ -114,8 +114,8 @@
   color: var(--product-text-secondary);
   font-size: .8125rem;
 }
-.pagination a { min-height: 40px; display: inline-flex; align-items: center; padding: 0 12px; border: 1px solid var(--product-border-control); border-radius: 7px; color: var(--product-text-primary); text-decoration: none; }
-.pagination a[aria-disabled="true"] { opacity: .48; pointer-events: none; }
+.pagination a { min-height: 44px; display: inline-flex; align-items: center; padding: 0 12px; border: 1px solid var(--product-border-control); border-radius: 7px; color: var(--product-text-primary); text-decoration: none; }
+.pagination > span[aria-disabled="true"] { min-height: 44px; display: inline-flex; align-items: center; padding: 0 12px; border: 1px solid var(--product-border-subtle); border-radius: 7px; color: var(--product-text-secondary); }
 .pagination a:focus-visible { outline: 2px solid var(--product-focus); outline-offset: 2px; }
 
 .overview {
