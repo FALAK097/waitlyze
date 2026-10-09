@@ -17,7 +17,7 @@ export default async function AcceptInvitationPage({ params }) {
   const signedInEmail = normalizeInvitationEmail(session?.user?.email);
   const matchesAccount = !!signedInEmail && signedInEmail === invitation?.emailNormalized;
 
-  return <PublicShell><main className="product-ui product-invitation-page">
+  return <PublicShell><main id="main-content" tabIndex={-1} className="product-ui product-invitation-page">
     <section className="product-invitation-card" aria-labelledby="invitation-title">
       {invitation ? <>
         <p className="product-eyebrow">Workspace invitation</p>
