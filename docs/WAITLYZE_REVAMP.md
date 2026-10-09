@@ -162,12 +162,11 @@ Webhook delivery: stable event ID, signed payload and timestamp, bounded retries
 
 ## 11. Phases and stacked PR map
 
-The numbered rows remain the implementation map, but they are no longer the review units. To make this manageable, publish two aggregate PRs only:
+The numbered rows remain the implementation map, but they are no longer the review units. To make this manageable, the work ships as one aggregate PR:
 
-1. **Foundation (#88) → `main`:** tooling and design foundation, workspace foundation, stable dependency upgrades, and email sanitization. It consolidates the foundation and compatible dependency work.
-2. **Product (#89) → Foundation:** the campaign-first Waitlists/Settings experience and its templates, publishing, audience, referrals, automations, integrations, analytics, workspace controls, and tests. It consolidates the product stack plus the landing and mobile work.
+**Product (#89) → `main`:** the campaign-first Waitlists/Settings experience and its templates, publishing, audience, referrals, analytics, delivery, automations, integrations, domains, and workspace controls, stacked on the foundation work (roadmap, quality tooling, shadcn lint, design tokens, Base UI primitives, DiceBear, compatible dependency updates). It consolidates the product stack plus the landing and mobile work. Former Foundation PR #88 was closed as superseded when #89 was retargeted to `main`; its commit is retained in #89's history.
 
-The aggregate PRs are the review units; the redundant slice PRs are closed as superseded, with their work retained in these branches. The owner reviews and merges Foundation first, then Product; do not merge either PR on the owner's behalf. When Foundation lands, retarget Product to `main` and verify its diff contains only product changes before the owner merges it. Each aggregate PR must state its visible behavior, migration and rollback notes, validation, and remaining coverage.
+The aggregate PR is the review unit; the redundant slice PRs are closed as superseded, with their work retained in this branch. The owner reviews and merges; do not merge the PR on the owner's behalf. The aggregate PR must state its visible behavior, migration and rollback notes, validation, and remaining coverage.
 
 | Phase / PR | Concrete slice | Depends on | Acceptance gate |
 | --- | --- | --- | --- |
@@ -233,9 +232,11 @@ The roadmap has 22 phased implementation slices. Their code has been consolidate
 | PR | Base | Scope | Verified state |
 | --- | --- | --- | --- |
 | [#88 Foundation](https://github.com/FALAK097/waitlyze/pull/88) | main | Roadmap, quality tooling, shadcn lint, design tokens, Base UI primitives, DiceBear, and compatible dependency updates | One aggregate commit; Quality, build, browser, database, and security checks passed |
-| [#89 Product](https://github.com/FALAK097/waitlyze/pull/89) | #88 Foundation | Waitlists and Settings, templates, publishing, audience, referrals, analytics, delivery, automations, integrations, domains, and workspace controls | Two grouped commits; current-head Quality status is tracked in the PR; loading, empty, retry, and responsive-tab flows are covered |
+| [#89 Product](https://github.com/FALAK097/waitlyze/pull/89) | main | Waitlists and Settings, templates, publishing, audience, referrals, analytics, delivery, automations, integrations, domains, and workspace controls, stacked on the foundation commit | Four grouped commits; current-head Quality status is tracked in the PR; loading, empty, retry, and responsive-tab flows are covered |
 
-The latest checked main commit is ef2f54a4e1ff4ddebf7291ed63e9bd8f9b1ac88d. PR #88 is mergeable into it. PR #89 is mergeable into #88. Neither has been merged; the owner reviews and merges in dependency order.
+Former Foundation PR #88 (roadmap, quality tooling, shadcn lint, design tokens, Base UI primitives, DiceBear, dependency updates) was closed as superseded on 2026-10-09 when #89 was retargeted from the foundation branch to `main`; its commit is the first commit in #89's history. There is now one open revamp PR.
+
+The latest checked main commit is ef2f54a4e1ff4ddebf7291ed63e9bd8f9b1ac88d. PR #89 is mergeable into it. It has not been merged; the owner reviews and merges.
 
 The source tree audit found no generated dependency stores, worktrees, Playwright artifacts, or local build outputs in either PR. The product stack includes additive database migrations and tests; applying migrations or backfilling production data is not part of these PRs.
 
@@ -246,7 +247,7 @@ Remaining release verification:
 - Production scheduler and encryption-key configuration, provider credentials, backup/restore, and publish-to-verified-signup runtime checks remain unverified.
 - Keep deployment and any real subscriber email send as separate explicit release actions.
 
-Next: continue a focused visual and interaction pass across the landing page, Waitlists list and detail tabs, and Settings sections, using Dodo's restrained ink/lime palette, clear hierarchy, proof, and responsive product preview as reference without copying its surface. Validate keyboard, 320px reflow, contrast, loading/error/empty states, and database-backed browser flows. Once a Vercel preview is available, inspect the actual rendered public and authenticated screens. Keep all work on the current two-PR stack; the owner merges bottom-up. The overall revamp and production release remain unfinished.
+Next: continue a focused visual and interaction pass across the landing page, Waitlists list and detail tabs, and Settings sections, using Dodo's restrained ink/lime palette, clear hierarchy, proof, and responsive product preview as reference without copying its surface. Validate keyboard, 320px reflow, contrast, loading/error/empty states, and database-backed browser flows. Once a Vercel preview is available, inspect the actual rendered public and authenticated screens. Keep all work on the current single PR; the owner merges. The overall revamp and production release remain unfinished.
 
 ### 2026-10-07 interaction and visual follow-up
 
