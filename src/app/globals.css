@@ -1,4 +1,6 @@
 @import "tailwindcss";
+@import "../components/product/foundation.css";
+@import "tw-animate-css";
 @config "../../tailwind.config.js";
 
 @layer base {
@@ -14,7 +16,7 @@
     --secondary: hsl(8.5714 100% 95.8824%);
     --secondary-foreground: hsl(9.913 47.3251% 47.6471%);
     --muted: hsl(15 100% 96.0784%);
-    --muted-foreground: hsl(25 5.2632% 44.7059%);
+    --muted-foreground: hsl(25 5.2632% 40.5%);
     --accent: hsl(26.1069 98.4962% 73.9216%);
     --accent-foreground: hsl(346.6667 7.9646% 22.1569%);
     --destructive: hsl(355.4913 77.5785% 56.2745%);

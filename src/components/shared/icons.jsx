@@ -1,6 +1,6 @@
 "use client";
 
-import { AnimatePresence, motion, useAnimation } from "framer-motion";
+import { AnimatePresence, motion, useAnimation } from "motion/react";
 import {
   AlertTriangle,
   ArrowRight,

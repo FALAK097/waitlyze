@@ -1,0 +1,284 @@
+.product-settings-page {
+  --settings-content-width: 760px;
+}
+
+.product-settings-heading {
+  max-width: var(--settings-content-width);
+  margin-bottom: 32px;
+}
+
+.product-settings-eyebrow {
+  margin: 0 0 6px;
+  color: var(--product-text-secondary);
+  font-size: .75rem;
+  font-weight: 600;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.product-settings-heading .product-page-title {
+  margin: 0 0 8px;
+}
+
+.product-settings-intro {
+  max-width: 58ch;
+  margin: 0;
+  color: var(--product-text-secondary);
+  font-size: .9375rem;
+  line-height: 1.6;
+}
+
+.product-settings-page .product-settings-layout {
+  grid-template-columns: 200px minmax(0, var(--settings-content-width));
+  align-items: start;
+  gap: 40px;
+}
+
+.product-settings-layout > .product-content-loading {
+  margin-top: 0;
+}
+
+.product-settings-page .product-settings-sections {
+  min-width: 0;
+  gap: 40px;
+}
+
+.product-settings-loading-nav {
+  display: grid;
+  align-content: start;
+  gap: 16px;
+  padding-top: 4px;
+}
+
+.product-settings-loading-nav-group {
+  display: grid;
+  gap: 6px;
+}
+
+.product-settings-loading-nav-group i,
+.product-settings-loading-nav-mobile i {
+  display: block;
+  height: 12px;
+  border-radius: 5px;
+  background-color: var(--product-bg-inset);
+}
+
+.product-settings-loading-nav-group i:first-child {
+  width: 42%;
+  height: 10px;
+  margin-bottom: 4px;
+}
+
+.product-settings-loading-nav-group i:not(:first-child) {
+  width: 80%;
+  height: 36px;
+  border-radius: 8px;
+}
+
+.product-settings-loading-nav-mobile {
+  display: none;
+}
+
+.product-settings-loading-nav-mobile i {
+  height: 48px;
+  border: 1px solid var(--product-border-subtle);
+  border-radius: 9px;
+  background-color: var(--product-bg-surface);
+}
+
+.product-settings-group {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+  scroll-margin-top: 24px;
+}
+
+.product-settings-group-heading {
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--product-border-subtle);
+}
+
+.product-settings-group-heading h2 {
+  margin: 0 0 4px;
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: -.015em;
+}
+
+.product-settings-group-heading p {
+  margin: 0;
+  color: var(--product-text-secondary);
+  font-size: .8125rem;
+  line-height: 1.5;
+}
+
+.product-settings-group-kicker {
+  margin-bottom: 4px;
+  color: var(--product-text-secondary);
+  font-size: .6875rem;
+  font-weight: 650;
+  letter-spacing: .08em;
+  line-height: 1.4;
+  text-transform: uppercase;
+}
+
+.product-settings-group .product-settings-panel {
+  padding: 24px;
+}
+
+.product-settings-group .product-settings-panel h3 {
+  margin: 0 0 8px;
+  font-size: 1.0625rem;
+  font-weight: 600;
+  letter-spacing: -.015em;
+}
+
+.product-settings-index {
+  gap: 16px;
+  padding-top: 4px;
+}
+
+.product-settings-nav-group {
+  display: grid;
+  gap: 2px;
+}
+
+.product-settings-nav-label {
+  margin: 0 0 4px;
+  padding-inline: 12px;
+  color: var(--product-text-secondary);
+  font-size: .6875rem;
+  font-weight: 650;
+  letter-spacing: .08em;
+  line-height: 1.4;
+  text-transform: uppercase;
+}
+
+.product-settings-nav-group[data-settings-level="advanced"] .product-settings-nav-label::after {
+  content: "ADVANCED";
+  float: right;
+  color: var(--product-text-secondary);
+  font-size: .5625rem;
+  font-weight: 550;
+  letter-spacing: .04em;
+}
+
+.product-settings-index a {
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  color: var(--product-text-secondary);
+}
+
+.product-settings-index a[aria-current="location"] {
+  border-inline-start-width: 3px;
+  padding-inline-start: 9px;
+}
+
+.product-settings-mobile summary {
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 8px 12px;
+  border: 1px solid var(--product-border-subtle);
+  border-radius: 9px;
+  background: var(--product-bg-surface);
+  color: var(--product-text-secondary);
+  list-style: none;
+}
+
+.product-settings-mobile summary::-webkit-details-marker {
+  display: none;
+}
+
+.product-settings-mobile summary::after {
+  content: "";
+  width: 8px;
+  height: 8px;
+  flex: none;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: rotate(45deg) translateY(-2px);
+}
+
+.product-settings-mobile[open] summary::after {
+  transform: rotate(225deg) translate(-2px, -1px);
+}
+
+.product-settings-mobile summary strong {
+  color: var(--product-text-primary);
+  font-weight: 600;
+}
+
+.product-settings-mobile nav {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  padding: 16px 4px 4px;
+}
+
+.product-settings-mobile .product-settings-nav-label {
+  padding-inline: 8px;
+}
+
+.product-settings-mobile nav a {
+  padding-inline: 8px;
+  color: var(--product-text-secondary);
+}
+
+.product-settings-mobile nav a[aria-current="location"] {
+  border-inline-start-width: 3px;
+  padding-inline-start: 5px;
+}
+
+.product-settings-panel :is(a, button, input, select):focus-visible,
+.product-settings-mobile summary:focus-visible,
+.product-settings-index a:focus-visible {
+  outline: 2px solid var(--product-focus);
+  outline-offset: 3px;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .product-settings-index a:hover,
+  .product-settings-mobile nav a:hover {
+    color: var(--product-text-primary);
+  }
+}
+
+@media (max-width: 1064px) {
+  .product-settings-page .product-settings-layout {
+    grid-template-columns: 180px minmax(0, 1fr);
+    gap: 24px;
+  }
+}
+
+@media (max-width: 720px) {
+  .product-settings-loading-nav { display: none; }
+  .product-settings-loading-nav-mobile { display: block; }
+  .product-settings-page .product-settings-layout { grid-template-columns: minmax(0, 1fr); gap: 24px; }
+  .product-settings-page .product-settings-layout {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 20px;
+  }
+
+  .product-settings-page .product-settings-heading {
+    margin-bottom: 24px;
+  }
+
+  .product-settings-page .product-settings-sections {
+    gap: 32px;
+  }
+
+  .product-settings-group .product-settings-panel {
+    padding: 20px;
+  }
+}
+
+@media (max-width: 380px) {
+  .product-settings-mobile nav {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

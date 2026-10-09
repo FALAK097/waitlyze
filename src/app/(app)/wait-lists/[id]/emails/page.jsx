@@ -1,4 +1,5 @@
 import { cache } from "react";
+import { requireCampaignPage } from "@/lib/workspaces/authorize";
 import { notFound, redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
@@ -6,22 +7,12 @@ import prisma from "@/lib/prisma";
 import { ContentLayout } from "@/components/dashboard/content-layout";
 import { EmailTemplatesManager } from "@/components/email/email-templates-manager";
 import { getOrCreateTemplates } from "@/app/actions/emails";
-import Link from "next/link";
-import {
-  Breadcrumb,
-  BreadcrumbList,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb";
+import { env } from "@/lib/env.mjs";
+import { EmailToolsNav } from "@/components/email/email-tools-nav";
+
 
 const getUser = cache(async (id) =>
   prisma.user.findUnique({ where: { id } })
-);
-
-const getWaitList = cache(async (id, userId) =>
-  prisma.waitList.findUnique({ where: { id, userId }, select: { id: true, name: true } })
 );
 
 export const metadata = {
@@ -41,39 +32,35 @@ export default async function EmailsPage(props) {
   const user = await getUser(session.user.id);
   if (!user) return notFound();
 
-  const waitList = await getWaitList(id, user.id);
+  const { campaign: waitList } = await requireCampaignPage(id, "sendEmail");
   if (!waitList) return notFound();
 
-  const templates = await getOrCreateTemplates(waitList.id);
+  const [templates, delivery] = await Promise.all([
+    getOrCreateTemplates(waitList.id),
+    prisma.outboxEvent.findMany({
+      where: { waitListId: waitList.id, type: "SIGNUP_VERIFICATION_REQUESTED" },
+      select: { status: true, attempts: true, lastErrorCode: true, createdAt: true },
+      orderBy: { createdAt: "desc" },
+      take: 5,
+    }),
+  ]);
+  const pending = delivery.filter((event) => event.status === "PENDING" || event.status === "PROCESSING").length;
+  const failed = delivery.filter((event) => event.status === "FAILED").length;
+  const configured = Boolean(env.OUTBOX_DISPATCH_SECRET);
+  const latestFailure = delivery.find((event) => event.status === "FAILED");
 
   return (
     <ContentLayout title="Email Templates">
-      <Breadcrumb>
-        <BreadcrumbList>
-          <BreadcrumbItem>
-            <BreadcrumbLink asChild>
-              <Link href="/dashboard">Home</Link>
-            </BreadcrumbLink>
-          </BreadcrumbItem>
-          <BreadcrumbSeparator />
-          <BreadcrumbItem>
-            <BreadcrumbLink asChild>
-              <Link href="/wait-lists">WaitLists</Link>
-            </BreadcrumbLink>
-          </BreadcrumbItem>
-          <BreadcrumbSeparator />
-          <BreadcrumbItem>
-            <BreadcrumbLink asChild>
-              <Link href={`/wait-lists/${waitList.id}/edit`}>
-                {waitList.name || "Waitlist"}
-              </Link>
-            </BreadcrumbLink>
-          </BreadcrumbItem>
-          <BreadcrumbSeparator />
-          <BreadcrumbPage>Emails</BreadcrumbPage>
-        </BreadcrumbList>
-      </Breadcrumb>
-
+      <EmailToolsNav waitListId={waitList.id} current="templates" />
+      <section className="delivery-health" aria-labelledby="delivery-health-title">
+        <div>
+          <p className="delivery-health-eyebrow">DELIVERY</p>
+          <h2 id="delivery-health-title">Verification email delivery</h2>
+          <p>{configured ? (pending ? `${pending} waiting to send` : "No emails waiting to send") : "Dispatcher not configured"}{failed ? ` · ${failed} failed in the latest 5` : ""}</p>
+          {latestFailure?.lastErrorCode ? <p className="delivery-health-error">Latest issue: {latestFailure.lastErrorCode.replaceAll("_", " ").toLowerCase()}</p> : null}
+        </div>
+        <span className={`delivery-health-badge ${failed || !configured ? "is-warning" : ""}`}>{!configured ? "Setup needed" : failed ? "Needs attention" : "Key configured"}</span>
+      </section>
       <div className="mt-6">
         <EmailTemplatesManager
           waitListId={waitList.id}

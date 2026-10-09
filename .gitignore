@@ -2,11 +2,14 @@
 
 # dependencies
 /node_modules
+/.pnpm-store/
 /.pnp
 .pnp.js
 
 # testing
 /coverage
+/playwright-report/
+/test-results/
 
 # next.js
 /.next/
@@ -39,3 +42,6 @@ next-env.d.ts
 
 # prisma generated client
 /src/generated/
+
+# Temporary route materialized only during isolated browser builds
+/src/app/design-system/

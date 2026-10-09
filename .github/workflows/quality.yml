@@ -1,0 +1,61 @@
+name: Quality
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: quality-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.5.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm lint
+
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://waitlyze:waitlyze@127.0.0.1:5432/waitlyze
+      BETTER_AUTH_SECRET: waitlyze-local-fixture-secret-not-for-deployment-2026
+      BETTER_AUTH_URL: http://127.0.0.1:3000
+      R2_ACCOUNT_ID: fixture
+      R2_ACCESS_KEY_ID: fixture
+      R2_SECRET_ACCESS_KEY: fixture
+      R2_BUCKET_NAME: waitlyze-test
+      NEXT_PUBLIC_R2_PUBLIC_URL: http://127.0.0.1:3000/fixture-assets
+      RESEND_API_KEY: re_fixture_not_a_real_key
+      RESEND_FROM_EMAIL: test@example.invalid
+      RESEND_REPLY_TO: test@example.invalid
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.5.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build

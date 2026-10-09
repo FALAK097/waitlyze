@@ -3,7 +3,23 @@ import { createSignUp } from "@/services/sign-up";
 import { getDeviceInfo } from "@/utils/server/device";
 import { getGeoInfo, getIpAddress, getTimeZone } from "@/utils/server/geo";
 import { validateRequest } from "@/utils/server/validations/sign-up";
+import { DuplicateSignupError, InvalidCampaignError } from "@/lib/campaigns/signups.mjs";
+import { getCampaignPosition } from "@/lib/campaigns/referral-position.mjs";
 import { NextResponse } from "next/server";
+
+const legacySignupResponse = (signUp, { includeReferralCode = false } = {}) => {
+  // This endpoint is public. Keep the legacy fields needed by its browser
+  // clients, and never serialize operational or location data from the DB row.
+  const response = {
+    id: signUp.id,
+    email: signUp.email,
+    uniqueUserId: signUp.uniqueUserId,
+    waitListId: signUp.waitListId,
+    rank: signUp.rank,
+  };
+  if (includeReferralCode) response.referralCode = signUp.referralCode;
+  return response;
+};
 
 export const GET = async (req) => {
   const signUpId = req.nextUrl.searchParams.get("signUpId");
@@ -14,13 +30,17 @@ export const GET = async (req) => {
     );
   }
 
-  const signUp = await prisma.signUp.findUnique({ where: { id: signUpId } });
+  const signUp = await prisma.signUp.findUnique({
+    where: { id: signUpId, waitList: { status: "PUBLISHED" } },
+    select: { id: true, waitListId: true, uniqueUserId: true },
+  });
 
   if (!signUp) {
     return NextResponse.json({ message: "Sign up not found" }, { status: 404 });
   }
 
-  return NextResponse.json({ signUp });
+  const rank = await getCampaignPosition(prisma, signUp.waitListId, signUp.id);
+  return NextResponse.json({ signUp: { ...signUp, rank } });
 };
 
 export const POST = async (req) => {
@@ -28,6 +48,9 @@ export const POST = async (req) => {
     const body = await req.json();
     const validator = await validateRequest(body);
     if (validator) return validator;
+    if (body.marketingConsent !== undefined && typeof body.marketingConsent !== "boolean") {
+      return NextResponse.json({ message: "Marketing consent must be a boolean" }, { status: 400 });
+    }
 
     const { device, deviceType } = await getDeviceInfo();
     const ip = getIpAddress(req);
@@ -52,6 +75,7 @@ export const POST = async (req) => {
     let data = {
       uniqueUserId: hypeSession,
       email: body.email,
+      marketingConsent: body.marketingConsent === true,
       device,
       deviceType,
       waitListId: body.waitListId,
@@ -76,8 +100,17 @@ export const POST = async (req) => {
     }
 
     const signUp = await createSignUp(data, body?.referralId);
-    return NextResponse.json({ message: "Signed up successfully", signUp });
+    return NextResponse.json({ message: "Signed up successfully", signUp: legacySignupResponse(signUp, { includeReferralCode: true }) });
   } catch (error) {
+    if (error instanceof DuplicateSignupError) {
+      return NextResponse.json({ message: error.message }, { status: 403 });
+    }
+    if (error instanceof InvalidCampaignError) {
+      return NextResponse.json({ message: error.message }, { status: 400 });
+    }
+    if (error instanceof TypeError) {
+      return NextResponse.json({ message: error.message }, { status: 400 });
+    }
     console.error("Error in sign up route", error);
     return NextResponse.json({ message: "Failed to sign up" }, { status: 500 });
   }
