@@ -1,4 +1,5 @@
 import "@/../tests/fixtures/foundation/fixture.css";
+import "@/components/product/foundation.css";
 import { notFound } from "next/navigation";
 import { Geist, Geist_Mono } from "next/font/google";
 import { FoundationPreview } from "@/../tests/fixtures/foundation/preview";
