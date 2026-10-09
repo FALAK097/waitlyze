@@ -1,5 +1,6 @@
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
+import "../(forms)/public-page.css";
 import prisma from "@/lib/prisma";
 import { normalizeDomain } from "@/lib/domains/provider.mjs";
 import { templateSnapshotSchema } from "@/lib/templates/catalog.mjs";

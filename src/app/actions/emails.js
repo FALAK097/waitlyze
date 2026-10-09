@@ -3,9 +3,11 @@
 import { env } from "@/lib/env.mjs";
 import prisma from "@/lib/prisma";
 import { requireCampaign } from "@/lib/workspaces/authorize";
+import { checkRateLimit } from "@/lib/rate-limit";
 import { getCampaignPosition } from "@/lib/campaigns/referral-position.mjs";
 import { escapeHtmlText, renderEmailMarkdown } from "@/lib/email-markdown.mjs";
 import { Resend } from 'resend';
+import { headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 
 const resend = new Resend(env.RESEND_API_KEY);
@@ -476,12 +478,20 @@ export async function sendSignupEmail({ waitListId, to }) {
     return { success: false, message: "RESEND_API_KEY not configured" };
   }
 
+  const ip = (await headers()).get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+  if (!checkRateLimit(`signup-resend:${waitListId}:${ip}`, 10, 60 * 60 * 1000)) {
+    return { success: false, message: "Too many requests. Try again later." };
+  }
+
+  // Public action: never reveal whether this address is on the waitlist.
+  const generic = { success: true, message: "If this address is on the waitlist, its confirmation email is on the way." };
+
   const signUp = await prisma.signUp.findFirst({
     where: { waitListId, email: to, waitList: { status: "PUBLISHED" } },
     select: { id: true, signUpEmailSent: true },
   });
 
-  if (!signUp) return { success: false, message: "Signup not found" };
+  if (!signUp) return generic;
 
   const position = await getCampaignPosition(prisma, waitListId, signUp.id);
   const totalSignUps = await prisma.signUp.count({ where: { waitListId, waitList: { status: "PUBLISHED" } } });
@@ -496,12 +506,11 @@ export async function sendSignupEmail({ waitListId, to }) {
   });
 
   if (error === "Waitlist not found") return { success: false, message: error };
-  if (error === "Template not found") return { success: true, message: "No signup template" };
-  if (!waitList.sendEmailsToSubscribers)
-    return { success: true, message: "Email sending disabled" };
+  if (error === "Template not found") return generic;
+  if (!waitList.sendEmailsToSubscribers) return generic;
 
   if (signUp?.signUpEmailSent) {
-    return { success: true, message: "Email already sent" };
+    return generic;
   }
 
   try {
@@ -514,7 +523,7 @@ export async function sendSignupEmail({ waitListId, to }) {
     });
     if (error) {
       console.error("Resend send error:", error);
-      return { success: true, message: "Signup stored (email send failed)" };
+      return generic;
     }
 
     if (signUp?.id) {
@@ -524,10 +533,10 @@ export async function sendSignupEmail({ waitListId, to }) {
       });
     }
 
-    return { success: true, message: "Email sent" };
+    return generic;
   } catch (e) {
     console.error(e);
-    return { success: true, message: "Signup stored (email send exception)" };
+    return generic;
   }
 }
 

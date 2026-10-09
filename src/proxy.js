@@ -7,7 +7,10 @@ export function proxy(req) {
   const isPlatformHost = !hostname || hostname === "localhost" || hostname.endsWith(".localhost") || hostname.endsWith(".vercel.app");
   const isAppHost = appRoot && (hostname === appRoot || hostname.endsWith(`.${appRoot}`));
   const { pathname } = req.nextUrl;
-  if (appRoot && !isPlatformHost && !isAppHost && pathname !== "/domain" && !pathname.startsWith("/api") && !pathname.startsWith("/_next/")) {
+  // Never rewrite file requests on custom hosts — serve public/ assets and
+  // robots/favicon normally instead of the /domain HTML document.
+  const isFileRequest = /\.[a-z0-9]+$/i.test(pathname);
+  if (appRoot && !isPlatformHost && !isAppHost && !isFileRequest && pathname !== "/domain" && !pathname.startsWith("/api") && !pathname.startsWith("/_next/")) {
     const target = req.nextUrl.clone();
     target.pathname = "/domain";
     target.search = "";

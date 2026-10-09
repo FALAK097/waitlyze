@@ -15,3 +15,13 @@ export const currentWorkspace = cache(async () => {
   const workspace = workspaces.find((item) => item.id === selectedId) || workspaces.find((item) => item.id === personal.id);
   return { user: session.user, workspace, workspaces };
 });
+
+// Route-handler variant: returns the cookie's workspace id only when the user
+// is a member; otherwise falls back to "no selection" (undefined) so callers
+// keep the legacy cross-workspace scope instead of failing on a stale cookie.
+export const selectedWorkspaceId = cache(async (userId) => {
+  const selectedId = (await cookies()).get("waitlyze-workspace")?.value;
+  if (!selectedId) return undefined;
+  const workspaces = await createWorkspaceService(prisma).list(userId);
+  return workspaces.some((item) => item.id === selectedId) ? selectedId : undefined;
+});

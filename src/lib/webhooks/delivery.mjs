@@ -13,7 +13,7 @@ export async function enqueueWebhookEvent(tx, { waitListId, eventType, signupId,
   });
   if (!subscriptions.length) return 0;
   const eventId = randomUUID();
-  const payload = { id: eventId, type: eventType, version: 1, occurredAt: now.toISOString(), waitlistId, data: test ? { test: true } : { signupId } };
+  const payload = { id: eventId, type: eventType, version: 1, occurredAt: now.toISOString(), waitlistId: waitListId, data: test ? { test: true } : { signupId } };
   await tx.webhookDelivery.createMany({
     data: subscriptions.map(({ id }) => ({ subscriptionId: id, eventId, eventKey: `${id}:${eventId}`, eventType, payload, availableAt: now })),
     skipDuplicates: true,

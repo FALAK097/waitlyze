@@ -3,8 +3,8 @@ import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
-import { cookies } from "next/headers";
 import { campaignScope } from "@/lib/workspaces/service.mjs";
+import { selectedWorkspaceId } from "@/lib/workspaces/current";
 
 export async function DELETE(_req, { params }) {
     const { id } = await params;
@@ -41,7 +41,7 @@ export async function DELETE(_req, { params }) {
         }
         let waitlistId = null;
         if (key.waitlistId) {
-            const workspaceId = (await cookies()).get("waitlyze-workspace")?.value;
+            const workspaceId = await selectedWorkspaceId(user.id);
             const accessibleWaitlist = await prisma.waitList.findFirst({
                 where: { id: key.waitlistId, ...campaignScope(user.id, "manageConnections", workspaceId || undefined) },
                 select: { id: true },

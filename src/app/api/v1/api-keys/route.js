@@ -3,8 +3,8 @@ import { listUserApiKeys } from "@/services/api-key";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import prisma from "@/lib/prisma";
-import { cookies } from "next/headers";
 import { campaignScope } from "@/lib/workspaces/service.mjs";
+import { selectedWorkspaceId } from "@/lib/workspaces/current";
 
 export async function GET() {
   try {
@@ -29,7 +29,7 @@ export async function GET() {
       );
     }
 
-    const workspaceId = (await cookies()).get("waitlyze-workspace")?.value;
+    const workspaceId = await selectedWorkspaceId(user.id);
     const waitlists = await prisma.waitList.findMany({
       where: campaignScope(user.id, "manageConnections", workspaceId || undefined),
       select: { id: true },
