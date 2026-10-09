@@ -1,7 +1,0 @@
-.product-preview-header {
-  max-width: 80rem; margin-inline: auto; padding: 1.5rem max(1rem, env(safe-area-inset-right));
-  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 1rem;
-}
-.product-preview-main { max-width: 72rem; padding: 2rem 1rem; margin-inline: auto; }
-.product-theme-controls { display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center; }
-@media (max-width: 48rem) { .product-preview-main { padding-block-start: 1rem; } }
