@@ -4,11 +4,11 @@ Updated October 11, 2026.
 
 This checkout is linked with Vercel CLI to the existing `falaks-projects/waitlyze` project. `vercel env pull --environment development` returned no application variables; its temporary OIDC credential was discarded instead of copied into application configuration.
 
-The ignored `.env` now uses a fresh local PostgreSQL database (`waitlyze_revamp_local_20261011_v3`), the app origin `http://localhost:3011`, and freshly generated cryptographically random Better Auth, marketing unsubscribe, dispatcher, and 32-byte base64 encryption secrets. Existing OAuth, R2 and Resend credentials were preserved. Vercel project/team identifiers are populated. The env file is mode600, ignored, and is never committed. Other checkouts and existing databases are untouched.
+The ignored `.env` now uses a fresh local PostgreSQL database (`waitlyze_revamp_local_20261011_v3`), the app origin `http://localhost:3000`, and freshly generated cryptographically random Better Auth, marketing unsubscribe, dispatcher, and 32-byte base64 encryption secrets. Existing OAuth, R2 and Resend credentials were preserved. Vercel project/team identifiers are populated. The env file is mode600, ignored, and is never committed. Other checkouts and existing databases are untouched.
 
 ## Local verification
 
-- `pnpm dev --port 3011`
+- `pnpm dev --port 3000`
 - `pnpm build`
 - `pnpm lint`
 - `node --test tests/security/*.test.mjs`
