@@ -1,10 +1,13 @@
+import { SITE_URL } from "@/lib/site-metadata";
+
 export default function robots() {
   return {
     rules: {
       userAgent: "*",
       allow: "/",
-      disallow: ["/api/*", "/dashboard/*", "/wait-lists/*"],
+      disallow: ["/api/", "/dashboard", "/wait-lists", "/settings", "/api-keys", "/accept-invitation/", "/verify/", "/unsubscribe/", "/forms/", "/domain"],
     },
-    sitemap: "https://waitlyze.falakgala.dev/sitemap.xml",
+    sitemap: `${SITE_URL}/sitemap.xml`,
+    host: SITE_URL,
   };
 }

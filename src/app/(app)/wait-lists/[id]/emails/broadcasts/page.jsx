@@ -5,7 +5,7 @@ import { ContentLayout } from "@/components/dashboard/content-layout";
 import { BroadcastManager } from "@/components/email/broadcast-manager";
 import { getBroadcastRecipients, listBroadcasts } from "@/app/actions/emails";
 
-export const metadata = { title: "Broadcasts | Waitlyze", description: "Create and send opted-in waitlist updates." };
+export const metadata = { title: "Broadcasts", description: "Create and send opted-in waitlist updates." };
 
 export default async function BroadcastsPage({ params }) {
   const { id } = await params;

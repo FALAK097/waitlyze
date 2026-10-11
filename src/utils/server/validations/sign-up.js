@@ -18,6 +18,11 @@ const checkIfEmailExists = async (email, waitListId, uniqueUserId) => {
 };
 
 const checkIfRequestIsValid = async (body) => {
+  if (!body || typeof body !== "object" || Array.isArray(body) ||
+      typeof body.waitListId !== "string" || !body.waitListId || body.waitListId.length > 128 ||
+      typeof body.hypeSession !== "string" || !body.hypeSession.trim() || body.hypeSession.length > 256) {
+    return Response.json({ message: "A valid waitlist and browser identifier are required." }, { status: 400 });
+  }
   if (typeof body.email !== "string" || !body.email.trim()) {
     return Response.json(
       {

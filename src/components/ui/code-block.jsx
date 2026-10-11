@@ -1,12 +1,10 @@
 import { cn } from "@/lib/utils";
-import { useTheme } from "next-themes";
 import React from "react";
 import toast from "react-hot-toast";
 import { CopyIcon } from "../shared/icons";
 import { Button } from "./button";
 
 const CodeBlock = React.forwardRef(({ className, ...props }, ref) => {
-	const { theme } = useTheme();
 	return (
 		<div
 			className={cn(
@@ -14,7 +12,7 @@ const CodeBlock = React.forwardRef(({ className, ...props }, ref) => {
           text-sm overflow-hidden`,
 				className,
 			)}
-			style={{ backgroundColor: theme !== "light" ? "#282a36" : "#ffffff" }}
+			style={{ backgroundColor: "#ffffff" }}
 		>
 			<pre tabIndex={0} className="w-full max-w-[380px] md:max-w-[500px] lg:max-w-[480px] overflow-auto break-words whitespace-pre no-scrollbar">
 				{props.code}

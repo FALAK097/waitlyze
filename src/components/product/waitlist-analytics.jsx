@@ -1,7 +1,11 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { EvilAreaChart } from "@/components/product/evil-area-chart";
+import dynamic from "next/dynamic";
+
+const EvilAreaChart = dynamic(() => import("@/components/product/evil-area-chart").then((module) => module.EvilAreaChart), {
+  loading: () => <div className="waitlist-analytics-loading-chart" role="status" aria-label="Loading audience chart" />,
+});
 
 const ranges = [7, 30, 90];
 const number = new Intl.NumberFormat();

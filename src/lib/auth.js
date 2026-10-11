@@ -25,10 +25,10 @@ export const auth = betterAuth({
     "http://localhost:3000",
   ].filter(Boolean),
   advanced: {
-    useSecureCookies: false,
+    useSecureCookies: process.env.NODE_ENV === "production",
     cookiePrefix: "ba",
     defaultCookieAttributes: {
-      secure: true,
+      secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
       httpOnly: true,
     },

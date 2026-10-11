@@ -271,7 +271,7 @@ export async function dispatchAutomationStep(db, event, payload, send, now, atte
     await db.$transaction([
       db.automationRunStep.update({ where: { id: step.id, status: "PROCESSING" }, data: { status: "SENT", providerMessageId, finishedAt: now, lastErrorCode: null } }),
       db.automationRun.update({ where: { id: run.id }, data: { status: "SENT", finishedAt: now } }),
-      db.outboxEvent.update({ where: { id: event.id }, data: { status: "DELIVERED", providerMessageId, processedAt: now, lockedAt: null, payload: { automationStepId: step.id }, lastErrorCode: null } }),
+      db.outboxEvent.update({ where: { id: event.id }, data: { status: "DELIVERED", providerMessageId, processedAt: now, lockedAt: null, payload: { automationStepId: step.id, recipientEmail: signUp.emailNormalized || signUp.email }, lastErrorCode: null } }),
     ]);
     result.accepted++;
     try { await applyKnownProviderEvents(db, providerMessageId, waitList.workspaceId, signUp.emailNormalized || signUp.email); }

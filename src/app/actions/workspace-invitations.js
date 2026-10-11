@@ -13,6 +13,8 @@ import { decryptIntegrationSecret, encryptIntegrationSecret } from "@/lib/integr
 import { createWorkspaceService } from "@/lib/workspaces/service.mjs";
 import { acceptWorkspaceInvitation, hashInvitationToken, invitationExpiry, normalizeInvitationEmail, revokeWorkspaceInvitation } from "@/lib/workspaces/invitations.mjs";
 
+import { consumePublicBudget } from "@/lib/security/public-rate-limit.mjs";
+
 const MAX_PENDING_INVITATIONS = 50;
 
 function createInvitationSender() {
@@ -44,7 +46,8 @@ async function managerMembership(userId, workspaceId, targetRole, db = prisma) {
   return actor;
 }
 
-async function sendInvitation(invitation, token, inviterName, workspaceName) {
+async function sendInvitation(invitation, token, inviterName, workspaceName, actorId) {
+  await consumePublicBudget(prisma, { kind: "invitation", campaignId: invitation.workspaceId, actorId, email: invitation.emailNormalized });
   const url = invitationUrl(token);
   const safeName = escapeHtml(inviterName || "A workspace admin");
   const safeWorkspace = escapeHtml(workspaceName);
@@ -104,7 +107,7 @@ export async function inviteWorkspaceMember(previous, form) {
     if (prepared.error) return { error: prepared.error };
     const { invitation, workspace } = prepared;
     try {
-      await sendInvitation(invitation, token, session.user.name, workspace.name);
+      await sendInvitation(invitation, token, session.user.name, workspace.name, session.user.id);
       await prisma.workspaceInvitation.updateMany({ where: { id: invitation.id, status: "PENDING" }, data: { tokenCiphertext: "", tokenIv: "", tokenTag: "" } });
     } catch {
       await prisma.workspaceInvitation.updateMany({ where: { id: invitation.id, status: "PENDING" }, data: { status: "SEND_FAILED" } });
@@ -147,7 +150,7 @@ export async function resendWorkspaceInvitation(invitationId) {
     if (prepared.error) return { error: prepared.error };
     const { invite, token } = prepared;
     try {
-      await sendInvitation(invite, token, session.user.name, invite.workspace.name);
+      await sendInvitation(invite, token, session.user.name, invite.workspace.name, session.user.id);
     } catch {
       await prisma.workspaceInvitation.updateMany({ where: { id: invite.id, status: "PENDING" }, data: { status: "SEND_FAILED" } });
       revalidatePath("/settings#team");

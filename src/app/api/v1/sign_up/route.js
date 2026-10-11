@@ -1,3 +1,4 @@
+import { consumePublicBudget, PublicRateLimitError } from "@/lib/security/public-rate-limit.mjs";
 import prisma from "@/lib/prisma";
 import { createSignUp } from "@/services/sign-up";
 import { getDeviceInfo } from "@/utils/server/device";
@@ -32,7 +33,7 @@ export const GET = async (req) => {
 
   const signUp = await prisma.signUp.findUnique({
     where: { id: signUpId, waitList: { status: "PUBLISHED" } },
-    select: { id: true, waitListId: true, uniqueUserId: true },
+    select: { id: true, waitListId: true },
   });
 
   if (!signUp) {
@@ -46,6 +47,8 @@ export const GET = async (req) => {
 export const POST = async (req) => {
   try {
     const body = await req.json();
+    if (typeof body?.waitListId !== "string" || !body.waitListId || body.waitListId.length > 128 || typeof body.email !== "string" || body.email.length > 320) return NextResponse.json({ message: "A valid waitlist and email are required." }, { status: 400 });
+    await consumePublicBudget(prisma, { kind: "signup", campaignId: body.waitListId, headers: req.headers, email: body.email });
     const validator = await validateRequest(body);
     if (validator) return validator;
     if (body.marketingConsent !== undefined && typeof body.marketingConsent !== "boolean") {
@@ -102,6 +105,7 @@ export const POST = async (req) => {
     const signUp = await createSignUp(data, body?.referralId);
     return NextResponse.json({ message: "Signed up successfully", signUp: legacySignupResponse(signUp, { includeReferralCode: true }) });
   } catch (error) {
+    if (error instanceof PublicRateLimitError) return NextResponse.json({ message: error.message, error: error.message }, { status: error.status, headers: { "Retry-After": error.status === 429 ? "3600" : "60" } });
     if (error instanceof DuplicateSignupError) {
       return NextResponse.json({ message: error.message }, { status: 403 });
     }

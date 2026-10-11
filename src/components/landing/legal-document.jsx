@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ArrowLeft, ArrowUpRight } from "lucide-react";
+import LegalTOC from "./legal-toc";
 import PublicShell from "./public-shell";
 
 export default function LegalDocument({
@@ -18,18 +19,11 @@ export default function LegalDocument({
           <p className="wl-eyebrow">The important details</p>
           <h1>{title}</h1>
           <p>{description}</p>
-          <span>Last updated · July 13, 2025</span>
+          <span>Last updated · October 11, 2026</span>
         </header>
         <div className="wl-legal-grid">
           <aside>
-            <nav aria-label="On this page">
-              <p className="wl-eyebrow">On this page</p>
-              {sections.map(({ id, label }) => (
-                <a href={`#${id}`} key={id}>
-                  {label}
-                </a>
-              ))}
-            </nav>
+            <LegalTOC sections={sections} />
             <a className="wl-text-link" href="mailto:hi@falakgala.dev">
               Have a question? <ArrowUpRight size={14} aria-hidden="true" />
             </a>

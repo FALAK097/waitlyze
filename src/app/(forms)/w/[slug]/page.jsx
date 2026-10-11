@@ -1,10 +1,11 @@
+import { cache } from "react";
 import prisma from "@/lib/prisma";
 import { templateSnapshotSchema } from "@/lib/templates/catalog.mjs";
 import { notFound } from "next/navigation";
 import { SignupForm } from "./signup-form";
 import { WaitlistPageContent } from "@/components/product/waitlist-page-content";
 
-async function publishedPage(slug) {
+const publishedPage = cache(async function publishedPage(slug) {
   const waitList = await prisma.waitList.findUnique({ where: { publicSlug: slug }, select: { id: true, name: true, status: true, publishedRevision: true, showReferrals: true } });
   if (!waitList) return null;
   if (waitList.status === "PAUSED") return { waitList, paused: true };
@@ -16,14 +17,14 @@ async function publishedPage(slug) {
   if (!publication) return null;
   const parsed = templateSnapshotSchema.safeParse(publication.snapshot);
   return parsed.success ? { waitList, snapshot: parsed.data } : null;
-}
+});
 
 export async function generateMetadata({ params }) {
   const { slug } = await params;
   const page = await publishedPage(slug);
   if (!page || page.paused) return { title: "Waitlist unavailable", robots: { index: false, follow: false } };
   const hero = page.snapshot.sections[0];
-  return { title: page.waitList.name || hero.heading, description: hero.body, openGraph: { title: hero.heading, description: hero.body } };
+  return { title: page.waitList.name || hero.heading, description: hero.body, alternates: { canonical: `/w/${encodeURIComponent(slug)}` }, openGraph: { title: hero.heading, description: hero.body } };
 }
 
 export default async function PublicWaitlistPage({ params }) {

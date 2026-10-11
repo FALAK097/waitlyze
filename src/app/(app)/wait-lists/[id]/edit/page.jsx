@@ -10,6 +10,7 @@ import { SnapshotPageBuilder } from "@/components/product/snapshot-page-builder"
 import { saveDraftPage } from "@/app/actions/draft-snapshot";
 import { publishWaitlist, pauseWaitlist, rollbackWaitlist } from "@/app/actions/publication";
 import prisma from "@/lib/prisma";
+import { SITE_URL } from "@/lib/site-metadata";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { Laptop } from "lucide-react";
@@ -128,7 +129,7 @@ export default async function WaitListsEditPage(props) {
 	};
 
 	if (waitList.templateSnapshot) {
-		return <ContentLayout title="Page"><SnapshotPageBuilder waitList={{ id: waitList.id, name: waitList.name, publicSlug: waitList.publicSlug, status: waitList.status, templateRevision: waitList.templateRevision, publishedRevision: waitList.publishedRevision, publishedTemplateRevision: waitList.publishedTemplateRevision, templateSnapshot: waitList.templateSnapshot }} saveDraftPage={saveDraftPage} publishPage={publishWaitlist} pausePage={pauseWaitlist} rollbackPage={rollbackWaitlist} canPublish={canPublish} /></ContentLayout>;
+		return <ContentLayout title="Page"><SnapshotPageBuilder waitList={{ id: waitList.id, name: waitList.name, publicSlug: waitList.publicSlug, status: waitList.status, templateRevision: waitList.templateRevision, publishedRevision: waitList.publishedRevision, publishedTemplateRevision: waitList.publishedTemplateRevision, templateSnapshot: waitList.templateSnapshot }} saveDraftPage={saveDraftPage} publishPage={publishWaitlist} pausePage={pauseWaitlist} rollbackPage={rollbackWaitlist} canPublish={canPublish} publicationOrigin={process.env.VERCEL_ENV === "preview" && process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : (process.env.BETTER_AUTH_URL || SITE_URL)} /></ContentLayout>;
 	}
 
 	return (

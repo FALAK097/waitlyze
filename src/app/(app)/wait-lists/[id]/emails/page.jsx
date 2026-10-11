@@ -16,7 +16,7 @@ const getUser = cache(async (id) =>
 );
 
 export const metadata = {
-  title: "Email Templates | Waitlyze",
+  title: "Email templates",
   description: "Manage waitlist email templates",
 };
 

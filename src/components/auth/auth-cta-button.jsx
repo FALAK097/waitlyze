@@ -11,7 +11,7 @@ export function AuthCtaButton() {
 
   const handleClick = () => {
     if (!isPending && session) {
-      window.location.href = "/dashboard";
+      window.location.href = "/wait-lists";
     } else {
       openAuthModal();
     }

@@ -3,7 +3,7 @@
 import { env } from "@/lib/env.mjs";
 import prisma from "@/lib/prisma";
 import { requireCampaign } from "@/lib/workspaces/authorize";
-import { checkRateLimit } from "@/lib/rate-limit";
+import { consumePublicBudget, PublicRateLimitError } from "@/lib/security/public-rate-limit.mjs";
 import { getCampaignPosition } from "@/lib/campaigns/referral-position.mjs";
 import { escapeHtmlText, renderEmailMarkdown } from "@/lib/email-markdown.mjs";
 import { Resend } from 'resend';
@@ -127,6 +127,7 @@ export async function upsertEmailTemplate({ waitListId, templateType, data }) {
 }
 
 export async function sendTestEmail({ waitListId, templateType, to }) {
+  if (typeof to !== "string" || to.length > 320 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to)) return { success: false, message: "Enter one valid test email address." };
   if (!env.RESEND_API_KEY) {
     return { success: false, message: "RESEND_API_KEY not configured" };
   }
@@ -135,7 +136,8 @@ export async function sendTestEmail({ waitListId, templateType, to }) {
   if (!enumType) return { success: false, message: "Invalid template type" };
 
   try {
-    const { scope } = await requireCampaign(waitListId, "sendEmail");
+    const { user, campaign, scope } = await requireCampaign(waitListId, "sendEmail");
+    await consumePublicBudget(prisma, { kind: "testEmail", campaignId: campaign.workspaceId || campaign.id, actorId: user.id, email: to });
     const waitList = await prisma.waitList.findFirst({
       where: { id: waitListId, ...scope },
       select: { name: true },
@@ -474,20 +476,25 @@ async function renderTemplate({ waitListId, enumType, varsOverride = {} }) {
 }
 
 export async function sendSignupEmail({ waitListId, to }) {
+  if (typeof waitListId !== "string" || !waitListId || waitListId.length > 128 || typeof to !== "string" || to.length > 320 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to)) {
+    return { success: false, message: "Enter a valid email and waitlist." };
+  }
   if (!env.RESEND_API_KEY) {
     return { success: false, message: "RESEND_API_KEY not configured" };
   }
 
-  const ip = (await headers()).get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
-  if (!checkRateLimit(`signup-resend:${waitListId}:${ip}`, 10, 60 * 60 * 1000)) {
-    return { success: false, message: "Too many requests. Try again later." };
+  try {
+    await consumePublicBudget(prisma, { kind: "welcome", campaignId: waitListId, headers: await headers(), email: to });
+  } catch (error) {
+    if (error instanceof PublicRateLimitError) return { success: false, message: error.message };
+    return { success: false, message: "Email delivery is temporarily unavailable." };
   }
 
   // Public action: never reveal whether this address is on the waitlist.
   const generic = { success: true, message: "If this address is on the waitlist, its confirmation email is on the way." };
 
   const signUp = await prisma.signUp.findFirst({
-    where: { waitListId, email: to, waitList: { status: "PUBLISHED" } },
+    where: { waitListId, email: to, verifiedAt: { not: null }, waitList: { status: "PUBLISHED" } },
     select: { id: true, signUpEmailSent: true },
   });
 
@@ -520,7 +527,7 @@ export async function sendSignupEmail({ waitListId, to }) {
       subject,
       replyTo: env.RESEND_REPLY_TO,
       html: htmlBody,
-    });
+    }, { idempotencyKey: `signup-welcome:${signUp.id}` });
     if (error) {
       console.error("Resend send error:", error);
       return generic;

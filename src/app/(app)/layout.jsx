@@ -5,7 +5,7 @@ import { Avatar } from "@/components/product/avatar";
 import { currentWorkspace } from "@/lib/workspaces/current";
 import "@/components/product/shell.css";
 
-export const metadata = { title: { template: "%s | Waitlyze", default: "Waitlists | Waitlyze" } };
+export const metadata = { robots: { index: false, follow: false }, title: { template: "%s | Waitlyze", default: "Waitlists | Waitlyze" } };
 
 export default async function AppLayout({ children }) {
   const { user } = await currentWorkspace();

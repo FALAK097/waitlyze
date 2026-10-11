@@ -1,4 +1,4 @@
-.pageCanvas { min-height: 100vh; padding: clamp(48px, 10vw, 120px) 24px; color: var(--product-text-primary); background: radial-gradient(ellipse at 18% 12%, hsl(85 100% 74% / .22), transparent 42%), radial-gradient(ellipse at 84% 22%, hsl(255 70% 84% / .25), transparent 38%), var(--product-bg-page); font-family: var(--product-font-sans), sans-serif; }
+.pageCanvas { min-height: 100vh; padding: clamp(48px, 10vw, 120px) 24px; color: var(--product-text-primary); background: var(--product-bg-page); font-family: var(--product-font-sans), sans-serif; }
 .pageCanvas[data-preview-viewport="desktop"] { min-height: 720px; }
 .pageCanvas[data-preview-viewport="mobile"] { min-height: 812px; }
 .content { width: min(100%, 880px); margin-inline: auto; }

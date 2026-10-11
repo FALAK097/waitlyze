@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowDown, ArrowUp, Redo2, Undo2 } from "lucide-react";
 import { Button } from "./button";
+import { PublicationOptions } from "./publication-options";
 import { Input } from "./input";
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogTitle } from "./dialog";
 import { templateSnapshotSchema } from "@/lib/templates/catalog.mjs";
@@ -25,7 +26,7 @@ const newSection = (type) => type === "features"
     ? { type, items: [{ question: "What should people know?", answer: "Add a useful answer." }] }
     : { type, note: "Add a short note." };
 
-export function SnapshotPageBuilder({ waitList, saveDraftPage, publishPage, pausePage, rollbackPage, canPublish }) {
+export function SnapshotPageBuilder({ waitList, saveDraftPage, publishPage, pausePage, rollbackPage, canPublish, publicationOrigin }) {
   const router = useRouter();
   const [snapshot, setSnapshot] = useState(waitList.templateSnapshot);
   const [version, setVersion] = useState(waitList.templateRevision);
@@ -279,6 +280,7 @@ export function SnapshotPageBuilder({ waitList, saveDraftPage, publishPage, paus
       <div><p className="product-builder-kicker">{waitList.status === "PUBLISHED" ? "Published page" : waitList.status === "PAUSED" ? "Paused page" : "Private draft"} · {waitList.name}</p><h1 className="product-page-title">Page</h1><p className="product-help">Changes save as you edit. Publishing makes the saved version public.</p></div>
       <div className="product-builder-tools" id="publication-actions"><span role="status" aria-live="polite">{saving ? "Saving…" : message}</span><Button variant="outline" type="button" aria-label="Undo last change" onClick={undo} disabled={!undoCount}><Undo2 aria-hidden="true" /><span>Undo</span></Button><Button variant="outline" type="button" aria-label="Redo last change" onClick={redo} disabled={!redoCount}><Redo2 aria-hidden="true" /><span>Redo</span></Button><Button type="button" onClick={() => { void flush(); }} disabled={!dirty || saving || !!conflict}>{saving ? "Saving…" : "Save now"}</Button>{canPublish && hasUpdates && <Button id="publication-action" type="button" onClick={openPublishReview} disabled={dirty || saving || !!conflict || publishing}>{publishing ? "Publishing…" : waitList.status === "PAUSED" ? "Publish and resume" : waitList.status === "PUBLISHED" ? "Publish updates" : "Publish waitlist"}</Button>}{canPublish && waitList.status === "PUBLISHED" && <Button variant="outline" type="button" onClick={() => { void lifecycle(pausePage); }} disabled={dirty || saving || !!conflict || publishing}>Pause waitlist</Button>}{waitList.status !== "DRAFT" && waitList.publicSlug && <Link className="product-builder-live-link" href={`/w/${waitList.publicSlug}`} target="_blank" rel="noreferrer">View live page</Link>}{canPublish && waitList.publishedRevision > 1 && <Button variant="outline" type="button" onClick={() => { void lifecycle(rollbackPage); }} disabled={dirty || saving || !!conflict || publishing}>Restore previous version</Button>}</div>
     </header>
+    <PublicationOptions waitList={waitList} origin={publicationOrigin} />
     <Dialog open={publishReviewOpen} onOpenChange={(open) => { if (!publishing) { setPublishReviewOpen(open); if (!open) setPublishConfirmed(false); } }}>
       <DialogContent>
         <div className="product-publish-review-dialog">

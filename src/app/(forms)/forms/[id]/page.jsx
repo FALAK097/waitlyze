@@ -9,6 +9,7 @@ import { sendSignupEmail } from "@/app/actions/emails";
 const getWaitList = cache(async (id) => {
 	return await prisma.waitList.findUnique({
 		where: { id, status: "PUBLISHED" },
+    select: { id: true, name: true, description: true, mainBgColor: true, showReferrals: true, successMessage: true, shareOnEmail: true, shareOnFacebook: true, shareOnInstagram: true, shareOnLinkedin: true, shareOnReddit: true, shareOnTwitter: true, shareOnWhatsapp: true, showBranding: true, badgeColor: true, badgeText: true, badgeTextColor: true, bgColor: true, borderRadius: true, borderWidth: true, buttonBorder: true, buttonColor: true, buttonText: true, buttonTextColor: true, enableBgColor: true, fontWeight: true, inputBorder: true, inputColor: true, inputTextColor: true, logoUrl: true, placeholderText: true, showBadge: true, showLogo: true, showSocialProof: true },
 	});
 });
 
@@ -42,6 +43,7 @@ export async function generateMetadata(props) {
 
 	if (!waitList) {
 		return {
+			robots: { index: false, follow: false },
 			title: "Not Found, Check the URL and try again",
 			description: "The requested waitlist could not be found.",
 		};
@@ -56,6 +58,7 @@ export async function generateMetadata(props) {
 		"Preview and test your waitlist form before sharing it with your audience.";
 
 	return {
+		robots: { index: false, follow: false },
 		title,
 		description,
 		openGraph: {

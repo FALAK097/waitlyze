@@ -1,15 +1,10 @@
-import {
-  ArrowDown,
-  ArrowUpRight,
-  Check,
-  Code2,
-  Download,
-  Mail,
-  Plus,
-} from "lucide-react";
+import { ArrowDown, ArrowUpRight, Check, Code2, Download, Mail, ShieldCheck, LayoutTemplate, Workflow, Users, Globe, History } from "lucide-react";
 import PublicShell from "@/components/landing/public-shell";
 import SignupButton from "@/components/landing/signup-button";
 import WaitlistPlayground from "@/components/landing/waitlist-playground";
+import FAQAccordion from "@/components/landing/faq-accordion";
+import ProductTour from "@/components/landing/product-tour";
+import { SiteStructuredData } from "@/components/seo/structured-data";
 
 export const metadata = {
   title: { absolute: "Waitlyze | Build an audience before you launch" },
@@ -39,7 +34,7 @@ const faqs = [
   ],
   [
     "Can I make it look like my brand?",
-    "Yes. Customize your form’s colors, logo, text, and styling in the visual editor. Your hosted form and embedded form use the design you choose.",
+    "Yes. Choose a template, edit your headline and copy, and arrange the page sections. Your hosted page and website embed share the published design.",
   ],
   [
     "How do referrals work?",
@@ -51,284 +46,67 @@ const faqs = [
   ],
   [
     "Can I export my subscribers?",
-    "Yes. Export your signup data as CSV or PDF from your dashboard, so you can work with your audience data outside Waitlyze.",
+    "Yes. Export your signup data as CSV from your dashboard, so you can work with your audience data outside Waitlyze.",
   ],
 ];
 
 export default function LandingPage() {
   return (
     <PublicShell>
+      <SiteStructuredData faqs={faqs} />
       <main id="main-content">
-        <HeroSection />
-        <AudienceSection />
-        <HowItWorksSection />
-        <FeaturesSection />
-        <UseCasesSection />
-        <FAQSection />
-        <FinalCTASection />
+        <section className="wl-hero wl-container" aria-labelledby="hero-title">
+          <div className="wl-hero-copy">
+            <p className="wl-eyebrow"><span className="wl-accent-dot" /> Big ideas start with a little interest</p>
+            <h1 id="hero-title">Launch to people.<br /><span>Not to silence.</span></h1>
+            <p className="wl-lede">Build a branded waitlist. Grow it with referrals. Know who’s ready for launch day.</p>
+            <div className="wl-hero-actions">
+              <SignupButton />
+              <a className="wl-text-link" href="#how-it-works">Explore the product <ArrowDown size={16} aria-hidden="true" /></a>
+            </div>
+            <p className="wl-reassurance">{["Free to use", "No credit card", "No code needed"].map(text => <span key={text}><Check size={14} aria-hidden="true" />{text}</span>)}</p>
+          </div>
+          <WaitlistPlayground />
+        </section>
+        <section id="how-it-works" className="wl-container wl-section wl-tour-section" aria-labelledby="tour-title">
+          <div className="wl-section-heading wl-heading-row">
+            <div><p className="wl-eyebrow">Inside Waitlyze</p><h2 id="tour-title">Your launch starts here.</h2></div>
+            <p>Design it. Share it. Watch your audience grow.</p>
+          </div>
+          <ProductTour />
+        </section>
+        <section id="features" className="wl-container wl-section wl-capabilities" aria-labelledby="features-title">
+          <div className="wl-section-heading wl-heading-row">
+            <div><p className="wl-eyebrow">Small setup. Room to grow.</p><h2 id="features-title">More than an email field.</h2></div>
+            <p>From the first signup to your launch-day email.</p>
+          </div>
+          <div className="wl-capability-grid">
+            {[
+              [Mail, "Emails that keep it moving", "Welcome subscribers, send updates, and set up email automation."],
+              [Code2, "Your site. Your form.", "Share a hosted page, embed a form, or collect signups through the API."],
+              [Download, "An audience you own", "Take your subscriber list with you. Export your audience to CSV."],
+              [LayoutTemplate, "A starting point, ready", "Choose a launch template and make the page your own."],
+              [Workflow, "Connected to your workflow", "Connect Resend for email and use webhooks to send events to your tools."],
+              [ShieldCheck, "Quality over quantity", "Verify subscriber email addresses and track referral activity."],
+              [Users, "Build with your team", "Invite teammates and choose who can edit, publish, or send emails."],
+              [Globe, "Your launch. Your domain.", "Connect a custom domain to your hosted waitlist page."],
+              [History, "Publish with control", "Keep drafts private, pause signups, or restore a published version."],
+            ].map(([Icon, title, text]) => <article key={title}><Icon size={21} strokeWidth={1.5} aria-hidden="true" /><h3>{title}</h3><p>{text}</p></article>)}
+          </div>
+          <div className="wl-roadmap" aria-label="Planned features">
+            <div><p className="wl-eyebrow">On the roadmap</p><p>Building the next part of your launch.</p></div>
+            <ul>{[[Workflow, "More native integrations"], [ShieldCheck, "Advanced spam detection"], [Code2, "Developer docs & SDKs"], [Users, "Referral rewards"]].map(([Icon, text]) => <li key={text}><Icon size={16} aria-hidden="true" />{text}<span>Planned</span></li>)}</ul>
+          </div>
+        </section>
+        <section id="faq" className="wl-faq wl-container wl-section" aria-labelledby="faq-title">
+          <div className="wl-section-heading"><p className="wl-eyebrow">A few things, answered</p><h2 id="faq-title">FAQs.</h2><p><a href="mailto:hi@falakgala.dev" className="wl-text-link">Talk to the maker <ArrowUpRight size={15} aria-hidden="true" /></a></p></div>
+          <FAQAccordion items={faqs} />
+        </section>
+        <section className="wl-final-cta wl-container" aria-labelledby="cta-title">
+          <div><p className="wl-eyebrow">Ready when you are</p><h2 id="cta-title">Give your idea a head start.</h2></div>
+          <div><SignupButton /><span className="wl-cta-note">Free to use. No credit card needed.</span></div>
+        </section>
       </main>
     </PublicShell>
-  );
-}
-
-function HeroSection() {
-  return (
-    <section className="wl-hero wl-container" aria-labelledby="hero-title">
-      <div className="wl-hero-copy">
-        <p className="wl-eyebrow">
-          <span className="wl-accent-dot" /> Big ideas start with a little
-          interest
-        </p>
-        <h1 id="hero-title">
-          Launch to people.
-          <br />
-          <span>Not to silence.</span>
-        </h1>
-        <p className="wl-lede">
-          Give your next idea an audience. Build a branded waitlist, grow it
-          with referrals, and learn who’s interested before launch day.
-        </p>
-        <div className="wl-hero-actions">
-          <SignupButton />
-          <a className="wl-text-link" href="#how-it-works">
-            See how it works <ArrowDown size={16} aria-hidden="true" />
-          </a>
-        </div>
-        <p className="wl-reassurance">
-          <span>
-            <Check size={14} aria-hidden="true" /> Free to use
-          </span>
-          <span>
-            <Check size={14} aria-hidden="true" /> No credit card
-          </span>
-          <span>
-            <Check size={14} aria-hidden="true" /> No code needed
-          </span>
-        </p>
-      </div>
-      <WaitlistPlayground />
-    </section>
-  );
-}
-
-function AudienceSection() {
-  return (
-    <section
-      className="wl-audience wl-container"
-      aria-label="Built for your next launch"
-    >
-      <p>
-        For the idea you can’t
-        <br />
-        stop thinking about.
-      </p>
-      <span>First products</span>
-      <span>Startup launches</span>
-      <span>New features</span>
-      <span>Early-access communities</span>
-    </section>
-  );
-}
-
-function HowItWorksSection() {
-  return (
-    <section
-      id="how-it-works"
-      className="wl-section wl-container"
-      aria-labelledby="how-title"
-    >
-      <div className="wl-section-heading">
-        <p className="wl-eyebrow">01 / From idea to interest</p>
-        <h2 id="how-title">
-          Less setup.
-          <br />
-          More “keep me posted.”
-        </h2>
-        <p>
-          You’re already building something. Your waitlist shouldn’t be another
-          project.
-        </p>
-      </div>
-      <ol className="wl-steps">
-        <li>
-          <span className="wl-step-number">01</span>
-          <h3>Make it feel like you.</h3>
-          <p>
-            Add your brand, write your message, and style your form. See your
-            changes as you make them.
-          </p>
-          <a href="#preview">
-            Try the preview <ArrowUpRight size={15} aria-hidden="true" />
-          </a>
-        </li>
-        <li>
-          <span className="wl-step-number">02</span>
-          <h3>Put your idea out there.</h3>
-          <p>
-            Share a hosted waitlist page or embed the form on your website. One
-            link, ready for your next campaign.
-          </p>
-          <span className="wl-step-detail">Hosted page + website embed</span>
-        </li>
-        <li>
-          <span className="wl-step-number">03</span>
-          <h3>Find your first believers.</h3>
-          <p>
-            Collect signups, see where interest comes from, and let subscribers
-            spread the word with referral links.
-          </p>
-          <span className="wl-step-detail">Audience insights + referrals</span>
-        </li>
-      </ol>
-    </section>
-  );
-}
-
-function FeaturesSection() {
-  return (
-    <section
-      id="features"
-      className="wl-feature-section"
-      aria-labelledby="features-title"
-    >
-      <div className="wl-container">
-        <div className="wl-section-heading">
-          <p className="wl-eyebrow">02 / The whole pre-launch picture</p>
-          <h2 id="features-title">
-            Not just a list.
-            <br />
-            Your launch, taking shape.
-          </h2>
-        </div>
-        <div className="wl-essentials">
-          <div>
-            <Mail size={22} strokeWidth={1.5} aria-hidden="true" />
-            <h3>Keep the conversation going.</h3>
-            <p>
-              Customize welcome emails and give new subscribers a personal
-              referral link to share.
-            </p>
-          </div>
-          <div>
-            <Code2 size={22} strokeWidth={1.5} aria-hidden="true" />
-            <h3>Fits into what you’re building.</h3>
-            <p>
-              Use a hosted form, add the embed to your site, or connect through
-              the API.
-            </p>
-          </div>
-          <div>
-            <Download size={22} strokeWidth={1.5} aria-hidden="true" />
-            <h3>Your list, ready for what’s next.</h3>
-            <p>
-              Export your subscribers to CSV or PDF. Bring your audience data
-              into your next workflow.
-            </p>
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function UseCasesSection() {
-  return (
-    <section
-      className="wl-use-cases wl-container wl-section"
-      aria-labelledby="use-title"
-    >
-      <div className="wl-section-heading">
-        <p className="wl-eyebrow">03 / Built for your next chapter</p>
-        <h2 id="use-title">
-          One founder.
-          <br />
-          Or a whole launch team.
-        </h2>
-      </div>
-      <div className="wl-use-copy">
-        <article>
-          <span className="wl-eyebrow">For founders</span>
-          <h3>
-            Test the interest.
-            <br />
-            Then take the leap.
-          </h3>
-          <p>
-            Give your idea a home while you build. Start collecting early
-            interest without spending your weekend wiring up forms and
-            spreadsheets.
-          </p>
-        </article>
-        <article>
-          <span className="wl-eyebrow">For marketing teams</span>
-          <h3>
-            Give your campaign
-            <br />
-            somewhere to land.
-          </h3>
-          <p>
-            Launch a branded signup experience, track the channels bringing
-            people in, and keep your pre-launch audience organized.
-          </p>
-        </article>
-      </div>
-    </section>
-  );
-}
-
-function FAQSection() {
-  return (
-    <section
-      id="faq"
-      className="wl-faq wl-container wl-section"
-      aria-labelledby="faq-title"
-    >
-      <div className="wl-section-heading">
-        <p className="wl-eyebrow">A few things, answered</p>
-        <h2 id="faq-title">
-          Before you
-          <br />
-          make your move.
-        </h2>
-        <p>
-          Something else on your mind?
-          <br />
-          <a href="mailto:hi@falakgala.dev" className="wl-text-link">
-            Talk to the maker <ArrowUpRight size={15} aria-hidden="true" />
-          </a>
-        </p>
-      </div>
-      <div className="wl-faq-list">
-        {faqs.map(([question, answer]) => (
-          <details key={question}>
-            <summary>
-              {question}
-              <Plus size={18} aria-hidden="true" />
-            </summary>
-            <p>{answer}</p>
-          </details>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-function FinalCTASection() {
-  return (
-    <section className="wl-final-cta" aria-labelledby="cta-title">
-      <div className="wl-container">
-        <p className="wl-eyebrow">
-          <span className="wl-accent-dot" /> Your next chapter starts here
-        </p>
-        <h2 id="cta-title">
-          Something worth building.
-          <br />
-          <span>Someone waiting for it.</span>
-        </h2>
-        <p>Start with a waitlist. See where it takes you.</p>
-        <SignupButton />
-        <span className="wl-cta-note">Free to use. No credit card needed.</span>
-      </div>
-    </section>
   );
 }

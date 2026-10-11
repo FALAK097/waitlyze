@@ -6,7 +6,7 @@ import { getAutomationConsole } from "@/app/actions/automations";
 import { EmailToolsNav } from "@/components/email/email-tools-nav";
 import { AutomationManager } from "@/components/email/automation-manager";
 
-export const metadata = { title: "Automations | Waitlyze", description: "Set up consent-aware waitlist email automations." };
+export const metadata = { title: "Automations", description: "Set up consent-aware waitlist email automations." };
 
 export default async function AutomationsPage({ params }) {
   const { id } = await params;

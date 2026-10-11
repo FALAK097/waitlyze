@@ -89,7 +89,7 @@ export async function deliverWebhook(prisma, deliveryId, { now = new Date(), sen
 }
 
 export async function dispatchPendingWebhooks(prisma, { limit = 50, now = new Date() } = {}) {
-  const rows = await prisma.webhookDelivery.findMany({ where: { status: "PENDING", availableAt: { lte: now } }, select: { id: true }, orderBy: { availableAt: "asc" }, take: limit });
+  const rows = await prisma.webhookDelivery.findMany({ where: { availableAt: { lte: now }, OR: [{ status: "PENDING" }, { status: "PROCESSING", lockedAt: { lt: new Date(now.getTime() - 60_000) } }] }, select: { id: true }, orderBy: { availableAt: "asc" }, take: limit });
   const results = await Promise.all(rows.map(({ id }) => deliverWebhook(prisma, id, { now })));
   return { considered: rows.length, delivered: results.filter((x) => x.status === "DELIVERED").length, failed: results.filter((x) => x.status === "FAILED").length };
 }

@@ -22,20 +22,22 @@ export default async function OverviewPage({ params }) {
     _count: { select: { signUps: true } },
   } });
   if (!waitlist) notFound();
-  const publication = waitlist.publishedRevision == null ? null : await prisma.waitListPublicationRevision.findUnique({
+  const [publication, publicationMember, initialRuns] = await Promise.all([
+    waitlist.publishedRevision == null ? null : prisma.waitListPublicationRevision.findUnique({
     where: { waitListId_revision: { waitListId: id, revision: waitlist.publishedRevision } },
     select: { snapshot: true },
-  });
-  const publicationMember = waitlist.workspaceId ? await prisma.workspaceMember.findUnique({
+    }),
+    waitlist.workspaceId ? prisma.workspaceMember.findUnique({
     where: { workspaceId_userId: { workspaceId: waitlist.workspaceId, userId: user.id } },
     select: { role: true },
-  }) : null;
+    }) : null,
+    prisma.launchRehearsal.findMany({ where: { waitListId: id }, orderBy: { createdAt: "desc" }, take: 5, select: { id: true, status: true, checksPassed: true, checksFailed: true, checkResults: true, createdAt: true } }),
+  ]);
   const canPublish = publicationMember
     ? ["OWNER", "ADMIN"].includes(publicationMember.role)
     : waitlist.userId === user.id;
   const readiness = assessWaitlistReadiness({ ...waitlist, canPublish, publishedSnapshot: publication?.snapshot ?? null });
   const publicationNeedsAction = readiness.find(({ key }) => key === "publication")?.status === "action";
-  const initialRuns = await prisma.launchRehearsal.findMany({ where: { waitListId: id }, orderBy: { createdAt: "desc" }, take: 5, select: { id: true, status: true, checksPassed: true, checksFailed: true, checkResults: true, createdAt: true } });
   const lifecycle = {
     DRAFT: { title: "Get your waitlist ready", detail: canPublish ? "Review the page and signup flow, then publish when you’re ready." : "Review the page and signup flow. A workspace owner or admin can publish it when it’s ready." },
     PUBLISHED: { title: "Your waitlist is live", detail: "This page is published and can collect signups. Use the subscriber list and analytics to follow activity." },

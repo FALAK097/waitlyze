@@ -14,8 +14,8 @@ export default function AuthAction({
   const { data: session, isPending } = useSession();
   const classes = `wl-button ${compact ? "wl-button-small" : "wl-button-primary"} ${className}`;
   return session ? (
-    <Link href="/dashboard" className={classes}>
-      {compact ? "Dashboard" : "Open your dashboard"}{" "}
+    <Link href="/wait-lists" className={classes}>
+      {compact ? "Waitlists" : "Open your waitlists"}{" "}
       <ArrowUpRight size={18} aria-hidden="true" />
     </Link>
   ) : (

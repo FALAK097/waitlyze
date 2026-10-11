@@ -41,6 +41,7 @@ export function signWebhook(secret, timestamp, payload) {
 }
 
 export function verifyWebhookSignature(secret, timestamp, payload, signature) {
+  if (typeof signature !== "string" || !/^[a-f0-9]{64}$/i.test(signature)) return false;
   const expected = Buffer.from(signWebhook(secret, timestamp, payload), "hex");
   let supplied;
   try { supplied = Buffer.from(signature, "hex"); } catch { return false; }

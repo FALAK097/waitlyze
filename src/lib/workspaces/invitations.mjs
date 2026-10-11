@@ -60,7 +60,7 @@ export async function acceptWorkspaceInvitation(db, { token, user, now = new Dat
 
   return db.$transaction(async (tx) => {
     const claimed = await tx.workspaceInvitation.updateMany({
-      where: { id: invite.id, status: { in: ACTIVE_STATUSES }, expiresAt: { gt: now } },
+      where: { id: invite.id, tokenHash, status: { in: ACTIVE_STATUSES }, expiresAt: { gt: now } },
       data: {
         status: "ACCEPTED",
         acceptedByUserId: user.id,

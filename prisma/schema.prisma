@@ -164,7 +164,7 @@ model WaitListPublicationRevision {
 model SignUp {
   id              String      @id @default(cuid())
   uniqueUserId    String
-  referralCode    String      @unique @default(dbgenerated("gen_random_uuid()::text"))
+  referralCode    String      @unique @default(dbgenerated("(gen_random_uuid())::text"))
   email           String
   emailNormalized String?
   device          String?
@@ -701,6 +701,7 @@ model EmailProviderEvent {
   providerMessageId String
   type              String
   isPermanent       Boolean  @default(false)
+  recipientEmails   String[] @default([])
   createdAt         DateTime @default(now())
 
   @@index([providerMessageId, type])
@@ -764,4 +765,15 @@ model CustomDomain {
 
   @@index([workspaceId, status])
   @@map("custom_domains")
+}
+
+// Shared abuse counters enforce windows across server instances.
+model RateLimitBucket {
+  key       String   @id
+  count     Int      @default(0)
+  expiresAt DateTime @db.Timestamptz(3)
+  updatedAt DateTime @default(now()) @db.Timestamptz(3)
+
+  @@index([expiresAt])
+  @@map("rate_limit_buckets")
 }

@@ -3,6 +3,7 @@ import { ArrowUpRight } from "lucide-react";
 import { publicFontClasses } from "@/lib/public-fonts";
 import Header from "./header";
 import Wordmark from "./wordmark";
+import CopyrightYear from "./copyright-year";
 import "./public.css";
 
 export default function PublicShell({ children }) {
@@ -13,7 +14,8 @@ export default function PublicShell({ children }) {
       </a>
       <Header />
       {children}
-      <footer className="wl-footer wl-container">
+      <footer className="wl-footer">
+        <div className="wl-container">
         <div className="wl-footer-top">
           <div>
             <Link href="/" aria-label="Waitlyze home">
@@ -25,7 +27,7 @@ export default function PublicShell({ children }) {
             <span className="wl-eyebrow">Explore</span>
             <Link href="/#how-it-works">How it works</Link>
             <Link href="/#features">Features</Link>
-            <Link href="/#faq">Questions & answers</Link>
+            <Link href="/#faq">FAQs</Link>
           </nav>
           <nav aria-label="Company">
             <span className="wl-eyebrow">Good to know</span>
@@ -37,7 +39,7 @@ export default function PublicShell({ children }) {
           </nav>
         </div>
         <div className="wl-footer-bottom">
-          <span>© {new Date().getFullYear()} Waitlyze</span>
+          <span>© <CopyrightYear initialYear={new Date().getFullYear()} /> Waitlyze</span>
           <a
             href="https://falakgala.dev"
             target="_blank"
@@ -45,6 +47,7 @@ export default function PublicShell({ children }) {
           >
             Made by Falak Gala <ArrowUpRight size={14} aria-hidden="true" />
           </a>
+        </div>
         </div>
       </footer>
     </div>

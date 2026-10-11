@@ -1,3 +1,4 @@
+import { consumePublicBudget, PublicRateLimitError } from "@/lib/security/public-rate-limit.mjs";
 import { NextResponse } from "next/server";
 import { validateApiKeyAndGetWaitlist } from "@/utils/api-key-auth";
 import { getDeviceInfo } from "@/utils/server/device";
@@ -11,6 +12,7 @@ export async function POST(request) {
   let body;
   try {
     body = await request.json();
+    if (!body || typeof body !== "object") return NextResponse.json({ error: "Invalid signup request" }, { status: 400 });
     const { apiKey, waitlistId, email, referralCode } = body;
 
     if (!apiKey || !waitlistId || typeof email !== "string" || !email.trim()) {
@@ -34,6 +36,8 @@ export async function POST(request) {
       );
     }
 
+    if (typeof waitlistId !== "string" || waitlistId.length > 128 || email.length > 320) return NextResponse.json({ error: "Invalid signup request" }, { status: 400 });
+    await consumePublicBudget(prisma, { kind: "signup", campaignId: waitlistId, headers: request.headers, email });
     const auth = await validateApiKeyAndGetWaitlist(apiKey, waitlistId);
     if (!auth.success) {
       return NextResponse.json(
@@ -99,6 +103,7 @@ export async function POST(request) {
       },
     });
   } catch (error) {
+    if (error instanceof PublicRateLimitError) return NextResponse.json({ message: error.message, error: error.message }, { status: error.status, headers: { "Retry-After": error.status === 429 ? "3600" : "60" } });
     if (error instanceof DuplicateSignupError) {
       const existing = await prisma.signUp.findUnique({
         where: { waitListId_emailNormalized: { waitListId: body.waitlistId, emailNormalized: body.email.trim().toLowerCase() } },

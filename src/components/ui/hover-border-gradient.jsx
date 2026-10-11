@@ -49,7 +49,7 @@ export function HoverBorderGradient({
       }}
       onMouseLeave={() => setHovered(false)}
       className={cn(
-        "flex overflow-visible relative flex-col flex-nowrap gap-10 justify-center content-center items-center p-px rounded-full transition-all duration-700 bg-gradient-to-r from-[#ff7e5f]/20 via-[#ff7e5f]/10 to-[#ff7e5f]/20 hover:from-[#ff7e5f]/30 hover:via-[#ff7e5f]/20 hover:to-[#ff7e5f]/30 dark:from-white/20 dark:to-white/20 h-min box-decoration-clone w-fit",
+        "flex overflow-visible relative flex-col flex-nowrap gap-10 justify-center content-center items-center p-px rounded-full transition-all duration-700 bg-gradient-to-r from-[#ff7e5f]/20 via-[#ff7e5f]/10 to-[#ff7e5f]/20 hover:from-[#ff7e5f]/30 hover:via-[#ff7e5f]/20 hover:to-[#ff7e5f]/30 h-min box-decoration-clone w-fit",
         containerClassName
       )}
       {...props}

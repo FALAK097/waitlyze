@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import "../(forms)/public-page.css";
@@ -6,7 +7,7 @@ import { normalizeDomain } from "@/lib/domains/provider.mjs";
 import { templateSnapshotSchema } from "@/lib/templates/catalog.mjs";
 import { SignupForm } from "../(forms)/w/[slug]/signup-form";
 
-async function loadPage() {
+const loadPage = cache(async function loadPage() {
   const host = (await headers()).get("host")?.split(":")[0];
   let hostname;
   try { hostname = normalizeDomain(host); } catch { return null; }
@@ -18,7 +19,7 @@ async function loadPage() {
   const publication = await prisma.waitListPublicationRevision.findUnique({ where: { waitListId_revision: { waitListId: waitList.id, revision: waitList.publishedRevision } }, select: { snapshot: true } });
   const parsed = templateSnapshotSchema.safeParse(publication?.snapshot);
   return parsed.success ? { waitList, snapshot: parsed.data } : null;
-}
+});
 
 export async function generateMetadata() {
   const page = await loadPage();

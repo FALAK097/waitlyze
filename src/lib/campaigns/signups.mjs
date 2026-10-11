@@ -55,18 +55,8 @@ export async function createCampaignSignup(db, input, referralId, { now = new Da
       });
       if (existing) {
         if (existing.uniqueUserId === input.uniqueUserId) {
-          if (input.marketingConsent === true && (!existing.marketingConsentAt || existing.marketingUnsubscribedAt)) {
-            const token = createUnsubscribeToken(existing.id, input.waitListId);
-            await tx.signUp.update({
-              where: { id: existing.id },
-              data: {
-                marketingConsentAt: now,
-                marketingUnsubscribedAt: null,
-                unsubscribeTokenHash: hashUnsubscribeToken(token),
-              },
-            });
-            await tx.marketingConsentEvent.create({ data: { waitListId: input.waitListId, signUpId: existing.id, action: "OPTED_IN", source: "PUBLIC_SIGNUP", consentText: MARKETING_CONSENT_COPY, createdAt: now } });
-          }
+          // Browser IDs and referral links are public identifiers, not consent credentials.
+          // Idempotent signup retries must preserve prior opt-out/preferences.
           return existing;
         }
         throw new DuplicateSignupError();
