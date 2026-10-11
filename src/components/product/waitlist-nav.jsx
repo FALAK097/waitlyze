@@ -9,7 +9,7 @@ export function WaitlistNav({ id, canSendEmail }) {
   const navRef = useRef(null);
   const [hasOverflow, setHasOverflow] = useState(false);
   const root = `/wait-lists/${id}`;
-  const tabs = [[root, "Overview"], [`${root}/edit`, "Page"], [`${root}/subscribers`, "Subscribers"], ...(canSendEmail ? [[`${root}/emails`, "Emails"]] : []), [`${root}/settings`, "Waitlist settings"]];
+  const tabs = [[root, "Overview"], [`${root}/edit`, "Page"], [`${root}/subscribers`, "Subscribers"], [`${root}/analytics`, "Analytics"], ...(canSendEmail ? [[`${root}/emails`, "Emails"]] : []), [`${root}/settings`, "Waitlist settings"]];
   const isCurrent = (href) => pathname === href || (href !== root && pathname.startsWith(`${href}/`));
   useEffect(() => {
     const nav = navRef.current;

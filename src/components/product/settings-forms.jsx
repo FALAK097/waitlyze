@@ -3,6 +3,7 @@ import { useActionState, useState } from "react";
 import { useFormStatus } from "react-dom";
 import { Button } from "./button";
 import { Input } from "./input";
+import { useSettingsFeedback } from "./settings-feedback";
 import { saveProfile, saveWorkspaceName, selectWorkspace } from "@/app/actions/settings";
 
 function SubmitButton({ children, pendingLabel, disabled = false }) {
@@ -11,6 +12,7 @@ function SubmitButton({ children, pendingLabel, disabled = false }) {
 }
 export function ProfileForm({ name }) {
   const [state, action] = useActionState(saveProfile, {});
+  useSettingsFeedback(state);
   const [value, setValue] = useState(name || "");
   const savedName = state.savedName ?? name ?? "";
   const unchanged = value.trim() === savedName.trim();
@@ -19,7 +21,7 @@ export function ProfileForm({ name }) {
     <p id="profile-name-help" className="product-help">Used to identify you in your workspace.</p>
     <SubmitButton disabled={unchanged} pendingLabel="Saving…">Save profile</SubmitButton>
     {state.error && <p id="profile-name-error" role="alert" aria-live="assertive">{state.error}</p>}
-    {state.success && <p role="status" aria-live="polite">{state.success}</p>}
+
   </form>;
 }
 export function WorkspacePicker({ workspaces, selected }) {
@@ -29,6 +31,7 @@ export function WorkspacePicker({ workspaces, selected }) {
 
 export function WorkspaceNameForm({ workspaceId, name, canManage }) {
   const [state, action] = useActionState(saveWorkspaceName, {});
+  useSettingsFeedback(state);
   const [value, setValue] = useState(name || "");
   const savedName = state.savedName ?? name ?? "";
   const unchanged = value.trim() === savedName.trim();
@@ -45,6 +48,6 @@ export function WorkspaceNameForm({ workspaceId, name, canManage }) {
     <p id="workspace-name-help" className="product-help">Shown in your workspace switcher. Up to 80 characters.</p>
     <SubmitButton disabled={unchanged} pendingLabel="Saving…">Save workspace</SubmitButton>
     {state.error && <p id="workspace-name-error" role="alert" aria-live="assertive">{state.error}</p>}
-    {state.success && <p role="status" aria-live="polite">{state.success}</p>}
+
   </form>;
 }

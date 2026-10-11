@@ -1,9 +1,11 @@
 "use client";
 
-import { useActionState, useState, useTransition } from "react";
+import { useActionState, useEffect, useState, useTransition } from "react";
 import { Button } from "@/components/product/button";
 import { Input } from "@/components/product/input";
 import { inviteWorkspaceMember, resendWorkspaceInvitation, revokeWorkspaceInvite } from "@/app/actions/workspace-invitations";
+import { Dialog, DialogTrigger, DialogContent, DialogTitle, DialogDescription } from "@/components/product/dialog";
+import { notifySettingsResult, useSettingsFeedback } from "@/components/product/settings-feedback";
 import { Avatar } from "@/components/product/avatar";
 
 function formatDate(value) {
@@ -11,7 +13,7 @@ function formatDate(value) {
 }
 
 export function TeamAccessSettings({ workspaceId, members, invitations, canManage, canInviteAdmins, secureInvitesConfigured }) {
-  const [state, action, pending] = useActionState(inviteWorkspaceMember, {});
+  const [inviteOpen, setInviteOpen] = useState(false);
   const [rowMessage, setRowMessage] = useState("");
   const [rowError, setRowError] = useState("");
   const [rowPending, startTransition] = useTransition();
@@ -24,33 +26,31 @@ export function TeamAccessSettings({ workspaceId, members, invitations, canManag
         const result = await operation(invitationId, workspaceId);
         setRowMessage(result.success || "");
         setRowError(result.error || "");
+        notifySettingsResult(result);
       } catch {
-        setRowError("Could not update this invitation. Check your connection and try again.");
+        const error = "Could not update this invitation. Check your connection and try again.";
+        setRowError(error);
+        notifySettingsResult({ error });
       }
     });
   }
 
   return <div className="product-team-settings">
-    <p className="product-help">Invite people who help run this workspace. Invitations expire after seven days and only grant the role shown here.</p>
-    {canManage && secureInvitesConfigured ? <form action={action} className="product-team-invite-form">
-      <input type="hidden" name="workspaceId" value={workspaceId} />
-      <label className="product-team-field">Email address
-        <Input type="email" name="email" autoComplete="email" required maxLength={254} placeholder="teammate@company.com" aria-describedby="team-email-help" />
-      </label>
-      <label className="product-team-field">Role
-        <select name="role" defaultValue="MEMBER">
-          <option value="MEMBER">Member · edit waitlists and view subscribers</option>
-          {canInviteAdmins ? <option value="ADMIN">Admin · manage workspace and sending</option> : null}
-        </select>
-      </label>
-      <p id="team-email-help" className="product-help">Admins can invite members. Only owners can invite admins.</p>
-      <Button type="submit" disabled={pending} aria-busy={pending}>{pending ? "Sending invite…" : "Send invitation"}</Button>
-      <p className="product-team-announcement" role={state.error ? "alert" : "status"} aria-live={state.error ? "assertive" : "polite"}>{state.error || state.success || ""}</p>
-    </form> : canManage ? <p className="product-team-configuration" role="status">Secure invitations are unavailable until the server-side invitation encryption key is configured.</p> : <p className="product-help">Only workspace owners and admins can invite or manage teammates.</p>}
+    <div className="product-team-toolbar"><p>{members.length} {members.length === 1 ? "member" : "members"}</p>
+      {canManage && secureInvitesConfigured ? <Dialog open={inviteOpen} onOpenChange={setInviteOpen}>
+        <DialogTrigger render={<Button variant="outline" />}>Invite member</DialogTrigger>
+        <DialogContent>
+          <div className="product-team-invitation-dialog">
+          <DialogTitle>Invite a member</DialogTitle><DialogDescription>Give a teammate access to this workspace.</DialogDescription>
+          <InvitationForm workspaceId={workspaceId} canInviteAdmins={canInviteAdmins} onComplete={() => setInviteOpen(false)} />
+          </div>
+        </DialogContent>
+      </Dialog> : canManage ? <p className="product-help" role="status">Invitations are unavailable. Ask your administrator to configure secure invitations.</p> : <p className="product-help">An owner or admin can invite teammates.</p>}
+    </div>
 
     <section className="product-team-list" aria-labelledby="team-members-heading">
-      <h3 id="team-members-heading">Members <span>{members.length}</span></h3>
-      {members.length === 1 ? <p className="product-help">You’re the only member in this workspace.</p> : null}
+      <h3 id="team-members-heading" className="sr-only">Members</h3>
+
       <ul>{members.map((member) => <li key={member.userId}>
         <Avatar id={member.userId} src={member.user.image || member.user.imageUrl} size={36} />
         <span className="product-team-person"><strong>{member.user.name || member.user.email}</strong><span>{member.user.email}</span></span>
@@ -59,17 +59,31 @@ export function TeamAccessSettings({ workspaceId, members, invitations, canManag
     </section>
 
     {canManage ? <section className="product-team-list" aria-labelledby="team-pending-heading">
-      <h3 id="team-pending-heading">Pending invitations <span>{invitations.length}/50</span></h3>
+      <h3 id="team-pending-heading">Pending invitations <span>({invitations.length})</span></h3>
       {invitations.length ? <ul>{invitations.map((invite) => <li key={invite.id}>
-        <span className="product-team-pending-mark" aria-hidden="true">↗</span>
+
         <span className="product-team-person"><strong>{invite.emailNormalized}</strong><span>{invite.status === "SEND_FAILED" ? "Email delivery failed · retry available" : `Sent ${formatDate(invite.createdAt)} · expires ${formatDate(invite.expiresAt)}`}</span></span>
         <span className="product-team-role">{invite.role.toLowerCase()}</span>
         <div className="product-team-actions">
           <Button type="button" variant="outline" disabled={rowPending || !secureInvitesConfigured} aria-label={`Resend invitation to ${invite.emailNormalized}`} onClick={() => runInvitationAction(resendWorkspaceInvitation, invite.id)}>Resend</Button>
-          <Button type="button" variant="ghost" disabled={rowPending} aria-label={`Revoke invitation to ${invite.emailNormalized}`} onClick={() => runInvitationAction(revokeWorkspaceInvite, invite.id)}>Revoke</Button>
+          <Button type="button" variant="ghost" disabled={rowPending} aria-label={`Revoke invitation to ${invite.emailNormalized}`} onClick={() => { if (window.confirm(`Revoke the invitation to ${invite.emailNormalized}?`)) runInvitationAction(revokeWorkspaceInvite, invite.id); }}>Revoke</Button>
         </div>
       </li>)}</ul> : <p className="product-help">No pending invitations.</p>}
       <p className="product-team-announcement" role={rowError ? "alert" : "status"} aria-live={rowError ? "assertive" : "polite"}>{rowError || rowMessage || ""}</p>
     </section> : null}
   </div>;
+}
+
+function InvitationForm({ workspaceId, canInviteAdmins, onComplete }) {
+  const [state, action, pending] = useActionState(inviteWorkspaceMember, {});
+  useSettingsFeedback(state);
+  useEffect(() => { if (state.success) onComplete(); }, [state, onComplete]);
+  return <form action={action} className="product-team-invite-form">
+    <input type="hidden" name="workspaceId" value={workspaceId} />
+    <label className="product-team-field">Email address<Input type="email" name="email" autoComplete="email" required maxLength={254} placeholder="teammate@company.com" aria-invalid={Boolean(state.error)} aria-describedby={state.error ? "team-invite-error" : undefined} /></label>
+    <label className="product-team-field">Role<select name="role" defaultValue="MEMBER"><option value="MEMBER">Member</option>{canInviteAdmins ? <option value="ADMIN">Admin</option> : null}</select></label>
+    <p className="product-help">Members can edit waitlists. Admins can also manage workspace settings.</p>
+    {state.error ? <p id="team-invite-error" className="product-team-announcement" role="alert">{state.error}</p> : null}
+    <Button type="submit" disabled={pending} aria-busy={pending}>{pending ? "Sending invitation…" : "Send invitation"}</Button>
+  </form>;
 }

@@ -1,11 +1,7 @@
 "use client";
 
-import { SettingsLoadError } from "@/components/product/settings-load-error";
+import { StatusPage } from "@/components/product/status-page";
 
-export default function WaitlistsError({ reset }) {
-  return <SettingsLoadError
-    retry={reset}
-    title="Waitlists couldn’t load"
-    message="Your workspace and waitlist data are unchanged. Try loading this page again."
-  />;
+export default function WaitlistsError({ retry }) {
+  return <StatusPage code="500" title="Waitlists couldn’t load" description="Try loading your waitlists again." retry={retry} href="/wait-lists" linkLabel="Back to waitlists" />;
 }

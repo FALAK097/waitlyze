@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import prisma from "@/lib/prisma";
 import { currentWorkspace } from "@/lib/workspaces/current";
@@ -11,5 +10,5 @@ export default async function WaitlistLayout({ children, params }) {
   const waitlist = await prisma.waitList.findFirst({ where: { id, ...campaignScope(user.id, "viewCampaign", workspace.id) }, select: { id: true, name: true } });
   if (!waitlist) notFound();
   const canSendEmail = ["OWNER", "ADMIN"].includes(workspace.members[0]?.role);
-  return <section><Link className="product-back-link" href="/wait-lists">← Back to waitlists</Link><h1 className="product-page-title">{waitlist.name || "Untitled waitlist"}</h1><WaitlistNav id={id} canSendEmail={canSendEmail} />{children}</section>;
+  return <section><h1 className="product-page-title">{waitlist.name || "Untitled waitlist"}</h1><WaitlistNav id={id} canSendEmail={canSendEmail} />{children}</section>;
 }

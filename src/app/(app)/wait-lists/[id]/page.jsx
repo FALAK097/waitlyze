@@ -4,7 +4,6 @@ import { currentWorkspace } from "@/lib/workspaces/current";
 import { campaignScope } from "@/lib/workspaces/service.mjs";
 import { notFound } from "next/navigation";
 import { LaunchRehearsal } from "@/components/product/launch-rehearsal";
-import { WaitlistAnalytics } from "@/components/product/waitlist-analytics";
 import { LaunchReadiness } from "@/components/product/launch-readiness";
 import { assessWaitlistReadiness } from "@/lib/campaigns/readiness.mjs";
 import { buttonVariants } from "@/components/product/button-variants";
@@ -81,9 +80,7 @@ export default async function OverviewPage({ params }) {
           : <Link href={editHref} className={buttonVariants({ variant: "outline" })}>Edit page</Link>)}
       </div>
     </section>
-    {waitlist.status === "DRAFT"
-      ? <LaunchReadiness checks={readiness} />
-      : <><WaitlistAnalytics waitListId={id} /><LaunchReadiness checks={readiness} /></>}
+    <LaunchReadiness checks={readiness} />
     <LaunchRehearsal waitListId={id} initialRuns={initialRuns} className={styles.rehearsal} summaryClassName={styles.rehearsalSummary} titleClassName={styles.rehearsalTitle} bodyClassName={styles.rehearsalBody} />
   </div>;
 }

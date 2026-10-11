@@ -1,145 +1,59 @@
 import { Suspense } from "react";
 import { currentWorkspace } from "@/lib/workspaces/current";
 import { ProfileForm, WorkspaceNameForm, WorkspacePicker } from "@/components/product/settings-forms";
-import { SignOutButton } from "@/components/product/account-controls";
-import { ApiKeysClient } from "@/components/api-keys-client";
 import prisma from "@/lib/prisma";
-import { ResendIntegration } from "@/components/product/resend-integration";
+import { IntegrationsPanel } from "@/components/product/integrations-panel";
 import { SettingsSectionNavigation } from "@/components/product/settings-section-nav";
-import { buttonVariants } from "@/components/product/button-variants";
 import { TeamAccessSettings } from "@/components/product/team-access-settings";
-import { ProductContentSkeleton } from "@/components/product/content-skeleton";
+import { SettingsPanelSkeleton } from "@/components/product/settings-panel-skeleton";
 import { SettingsLoadError } from "@/components/product/settings-load-error";
 import "@/components/product/settings-page.css";
 
 export const metadata = { title: "Settings" };
 
-async function SettingsSections({ settingsPromise, user, workspace, workspaces, role, canManageIntegrations, canManageWorkspace }) {
-  const [connectionResult, membersResult, invitationsResult] = await settingsPromise;
-  const connection = connectionResult.status === "fulfilled" ? connectionResult.value : null;
-  const members = membersResult.status === "fulfilled" ? membersResult.value : null;
-  const invitations = invitationsResult.status === "fulfilled" ? invitationsResult.value : null;
-  return <div className="product-settings-sections">
-        <section className="product-settings-group" aria-labelledby="settings-account-heading">
-          <div className="product-settings-group-heading">
-            <h2 id="settings-account-heading">Account</h2>
-            <p>Your personal profile and sign-in.</p>
-          </div>
-          <section id="profile" className="product-settings-panel" aria-labelledby="settings-profile-heading">
-            <h3 id="settings-profile-heading">Profile</h3>
-            <p className="product-help">Your account details and sign-in.</p>
-            <ProfileForm name={user.name} />
-            <dl><dt>Email</dt><dd>{user.email}</dd></dl>
-            <p className="product-help">Your email is managed by your sign-in provider.</p>
-            <SignOutButton />
-          </section>
-        </section>
-
-        <section className="product-settings-group" aria-labelledby="settings-workspace-heading">
-          <div className="product-settings-group-heading">
-            <h2 id="settings-workspace-heading">Workspace</h2>
-            <p>Choose a workspace and manage the people who can access it.</p>
-          </div>
-          <section id="workspace" className="product-settings-panel" aria-labelledby="settings-workspace-name-heading">
-            <h3 id="settings-workspace-name-heading">Workspace details</h3>
-            <p className="product-help">A clear name makes the right workspace easy to spot.</p>
-            <WorkspaceNameForm workspaceId={workspace.id} name={workspace.name} canManage={canManageWorkspace} />
-            <dl><dt>Your role</dt><dd>{workspace.members[0]?.role.toLowerCase()}</dd></dl>
-            <WorkspacePicker workspaces={workspaces} selected={workspace.id} />
-          </section>
-          <section id="team" className="product-settings-panel" aria-labelledby="settings-team-heading">
-            <h3 id="settings-team-heading">Team access</h3>
-            <p className="product-help">Manage who can work in {workspace.name}.</p>
-            {members && invitations ? <TeamAccessSettings
-              workspaceId={workspace.id}
-              members={members}
-              invitations={invitations}
-              canManage={canManageWorkspace}
-              canInviteAdmins={role === "OWNER"}
-              secureInvitesConfigured={Boolean(process.env.WEBHOOK_SECRET_ENCRYPTION_KEY)}
-            /> : <SettingsLoadError title="Team access couldn’t load" message="Your profile, workspace details, and other settings are still available." />}
-          </section>
-        </section>
-
-        <section className="product-settings-group" aria-labelledby="settings-connections-heading">
-          <div className="product-settings-group-heading">
-            <h2 id="settings-connections-heading">Connections</h2>
-            <p>Set up services used to send waitlist updates.</p>
-          </div>
-          <section id="integrations" className="product-settings-panel" aria-labelledby="settings-integrations-heading">
-            <h3 id="settings-integrations-heading">Integrations</h3>
-            <p className="product-help">Connect the services your waitlists use. Credentials are encrypted and never returned after saving.</p>
-            {connectionResult.status === "fulfilled"
-              ? <ResendIntegration initialConnection={connection} accountEmail={user.email} canManage={canManageIntegrations} />
-              : <SettingsLoadError title="Integrations couldn’t load" message="Your profile and workspace settings are still available." />}
-          </section>
-        </section>
-
-        <section className="product-settings-group product-settings-group-advanced" aria-labelledby="settings-developer-group-heading">
-          <div className="product-settings-group-heading">
-            <p className="product-settings-group-kicker">Advanced</p>
-            <h2 id="settings-developer-group-heading">Developer</h2>
-            <p>Credentials for connecting your waitlists to other systems.</p>
-          </div>
-          <section id="developers" className="product-settings-panel" aria-labelledby="settings-developers-heading">
-            <h3 id="settings-developers-heading">Developers</h3>
-            <p className="product-help">Create a waitlist-bound API key for signup integrations. Keys are shown once and can be revoked here.</p>
-            <ApiKeysClient />
-          </section>
-        </section>
-
-        <section className="product-settings-group product-settings-group-advanced" aria-labelledby="settings-data-group-heading">
-          <div className="product-settings-group-heading">
-            <p className="product-settings-group-kicker">Advanced</p>
-            <h2 id="settings-data-group-heading">Data &amp; privacy</h2>
-            <p>Download a copy of your account data and understand what it includes.</p>
-          </div>
-          <section id="privacy" className="product-settings-panel" aria-labelledby="settings-privacy-heading">
-            <h3 id="settings-privacy-heading">Privacy &amp; data</h3>
-            <p className="product-help">Download a copy of your account, workspace access, campaign configuration, and safe integration metadata.</p>
-            <p className="product-help">Subscriber records are separate. Download them from each waitlist’s Subscribers page. Exports never include API keys, integration credentials, webhook signing secrets, or sign-in tokens.</p>
-            <a className={buttonVariants()} href="/api/settings/export" download>Download account data</a>
-          </section>
-        </section>
-  </div>;
+async function SelectedSettings({ section, user, workspace, workspaces, role }) {
+  const canManage = ["OWNER", "ADMIN"].includes(role);
+  if (section === "profile") return <section className="product-settings-content" aria-labelledby="settings-panel-heading">
+    <header><h2 id="settings-panel-heading">Profile</h2><p>Your personal details.</p></header>
+    <ProfileForm key={user.id} name={user.name} />
+    <div className="product-settings-detail"><h3>Email address</h3><p>{user.email}</p><p className="product-help">Managed by your sign-in provider.</p></div>
+  </section>;
+  if (section === "workspace") return <section className="product-settings-content" aria-labelledby="settings-panel-heading">
+    <header><h2 id="settings-panel-heading">Workspace</h2><p>Details for {workspace.name}.</p></header>
+    <WorkspaceNameForm key={workspace.id} workspaceId={workspace.id} name={workspace.name} canManage={canManage} />
+    <div className="product-settings-detail"><h3>Your role</h3><p className="product-settings-role">{role?.toLowerCase()}</p></div>
+    <WorkspacePicker key={workspace.id} workspaces={workspaces} selected={workspace.id} />
+  </section>;
+  if (section === "team") {
+    const results = await Promise.allSettled([
+      prisma.workspaceMember.findMany({ where: { workspaceId: workspace.id }, orderBy: [{ role: "asc" }, { createdAt: "asc" }], select: { userId: true, role: true, user: { select: { name: true, email: true, image: true, imageUrl: true } } } }),
+      canManage ? prisma.workspaceInvitation.findMany({ where: { workspaceId: workspace.id, status: { in: ["PENDING", "SEND_FAILED"] }, expiresAt: { gt: new Date() } }, orderBy: { createdAt: "desc" }, take: 50, select: { id: true, emailNormalized: true, role: true, status: true, createdAt: true, expiresAt: true } }) : Promise.resolve([]),
+    ]);
+    return <section className="product-settings-content" aria-labelledby="settings-panel-heading">
+      <header><h2 id="settings-panel-heading">Members</h2><p>People with access to {workspace.name}.</p></header>
+      {results.every((result) => result.status === "fulfilled") ? <TeamAccessSettings workspaceId={workspace.id} members={results[0].value} invitations={results[1].value} canManage={canManage} canInviteAdmins={role === "OWNER"} secureInvitesConfigured={Boolean(process.env.WEBHOOK_SECRET_ENCRYPTION_KEY)} /> : <SettingsLoadError title="Members couldn’t load" message="Try again to see your workspace members and invitations." />}
+    </section>;
+  }
+  let connection;
+  try {
+    connection = await prisma.workspaceIntegration.findUnique({ where: { workspaceId_provider: { workspaceId: workspace.id, provider: "RESEND" } }, select: { id: true, status: true, fromEmail: true, lastTestedAt: true, lastErrorCode: true } });
+  } catch {
+    return <SettingsLoadError title="Integrations couldn’t load" message="Try again to see your connected services." />;
+  }
+  return <section className="product-settings-content" aria-labelledby="settings-panel-heading">
+    <header><h2 id="settings-panel-heading">Integrations</h2><p>Connect the tools your waitlists use.</p></header>
+    <IntegrationsPanel initialConnection={connection} accountEmail={user.email} canManage={canManage} />
+  </section>;
 }
 
-export default async function SettingsPage() {
-  const { user, workspace, workspaces } = await currentWorkspace();
-  const role = workspace.members[0]?.role;
-  const canManageIntegrations = ["OWNER", "ADMIN"].includes(role);
-  const canManageWorkspace = canManageIntegrations;
-  const settingsPromise = Promise.allSettled([
-    prisma.workspaceIntegration.findUnique({
-      where: { workspaceId_provider: { workspaceId: workspace.id, provider: "RESEND" } },
-      select: { id: true, status: true, fromEmail: true, lastTestedAt: true, lastErrorCode: true },
-    }),
-    prisma.workspaceMember.findMany({
-      where: { workspaceId: workspace.id },
-      orderBy: [{ role: "asc" }, { createdAt: "asc" }],
-      select: { userId: true, role: true, user: { select: { name: true, email: true, image: true, imageUrl: true } } },
-    }),
-    canManageWorkspace
-      ? prisma.workspaceInvitation.findMany({
-          where: { workspaceId: workspace.id, status: { in: ["PENDING", "SEND_FAILED"] }, expiresAt: { gt: new Date() } },
-          orderBy: { createdAt: "desc" },
-          take: 50,
-          select: { id: true, emailNormalized: true, role: true, status: true, createdAt: true, expiresAt: true },
-        })
-      : Promise.resolve([]),
-  ]);
-
+export default async function SettingsPage({ searchParams }) {
+  const [context, query] = await Promise.all([currentWorkspace(), searchParams]);
+  const section = ["profile", "workspace", "team", "integrations"].includes(query.section) ? query.section : "profile";
   return <div className="product-settings-page">
-    <header className="product-settings-heading">
-      <p className="product-settings-eyebrow">Preferences and access</p>
-      <h1 className="product-page-title">Settings</h1>
-      <p className="product-settings-intro">Manage your account, workspace, connections, and data in one place.</p>
-    </header>
-
     <div className="product-settings-layout">
-      <SettingsSectionNavigation />
-      <Suspense fallback={<ProductContentSkeleton label="Loading settings" variant="settings" />}>
-        <SettingsSections settingsPromise={settingsPromise} user={user} workspace={workspace} workspaces={workspaces} role={role} canManageIntegrations={canManageIntegrations} canManageWorkspace={canManageWorkspace} />
+      <aside className="product-settings-menu"><h1 className="product-page-title">Settings</h1><SettingsSectionNavigation section={section} /></aside>
+      <Suspense key={`${context.workspace.id}:${section}`} fallback={<SettingsPanelSkeleton />}>
+        <SelectedSettings section={section} {...context} role={context.workspace.members[0]?.role} />
       </Suspense>
     </div>
   </div>;
