@@ -60,7 +60,7 @@ connection string before deploying. No existing local database was dropped in
 this cleanup. A fresh local development database named
 `waitlyze_revamp_local_20261011_v3` was created and all three migrations were applied, including the shared rate-limit
 bucket table. The earlier local test development database was preserved.
-Production and external databases were not modified.
+The local consolidation checks did not modify production or external databases. After push, Vercel Preview build logs confirmed the consolidated migration was successfully applied to its preview database. Production was not deployed.
 
 ## Structure and attribution
 

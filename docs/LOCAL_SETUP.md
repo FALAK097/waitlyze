@@ -24,6 +24,6 @@ The ignored `.env` now uses a fresh local PostgreSQL database (`waitlyze_revamp_
 - Apply the consolidated migration only to a database containing main's migration history. Any environment that previously applied the PR's old migrations requires explicit reconciliation, as described in MIGRATION_CONSOLIDATION.md.
 - Verify production email/domain permissions and webhook delivery separately from build, unit and local database tests. No production deployment or provider send was performed by local setup.
 
-## Current deployment blocker
+## Deployment verification
 
-Read-only checks of both configured Vercel Preview PostgreSQL URLs returned PostgreSQL `3D000` (database does not exist). No remote database data or environment values were changed. Reconnect Vercel to an active Neon database before preview/production migration and runtime validation. Temporary downloaded provider environment files were removed.
+Earlier read-only checks of the downloaded Preview PostgreSQL URLs returned `3D000` (database does not exist). The subsequent deployment `dpl_9cRG3ZzAUhSuwtkwLepisjVCXtrx` reached Ready, and its build log confirms `prisma migrate deploy` successfully applied `20261011000000_campaign_product_revamp`. This supersedes the earlier deployment blocker. The deployment applied the migration to its Preview database; the local review did not directly mutate remote provider configuration. Temporary downloaded provider environment files were removed. OAuth, mailbox/webhook delivery, scheduler execution and deployed access checks remain separate runtime gates.

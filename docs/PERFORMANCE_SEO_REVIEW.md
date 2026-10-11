@@ -47,6 +47,8 @@ For structured templates, `/forms/[id]` redirects to the current hosted `/w/[slu
 - Sharing links and embed script use the configured current environment URL, including Vercel Preview, instead of sending local/preview users to production. Email page metadata no longer repeats the product name.
 - Final Node 24 production build, whole-repository ESLint, 22 security unit tests, separate real PostgreSQL admission test, fresh/repeat migrations, legacy preservation and schema parity passed locally.
 - Tour clips are encoded captures of actual builder, publication controls and analytics component states with dummy data. They are composed walkthroughs, not continuous user-session recordings.
-- Google OAuth callback ownership, real email delivery, scheduler execution and deployed secure-cookie/cross-tenant behavior remain external checks. Preview database currently returns PostgreSQL `3D000`.
+- Google OAuth callback ownership, real email delivery, scheduler execution and deployed secure-cookie/cross-tenant behavior remain external checks. The deployed Preview is Ready and its build log confirms successful consolidated migration application; earlier downloaded-URL checks returned `3D000`.
 
 - Signed out through the real Settings control and returned to the public landing. Inert demo accepts arbitrary text with an enabled Join button and no native validation. Exclusive FAQ and no horizontal overflow were verified at 320, 390, 768 and 1280 pixels.
+
+Post-push evidence: Quality run 38148833213 passed build, lint/security regressions and PostgreSQL migrations. GitGuardian passed. Vercel deployment dpl_9cRG3ZzAUhSuwtkwLepisjVCXtrx reached Ready and its build log confirms the consolidated migration applied successfully. CodeRabbit skipped its automated review because the full PR exceeds its file limit; the independent agent review is recorded separately.
