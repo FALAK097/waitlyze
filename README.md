@@ -76,7 +76,6 @@ PR #89 preserves the two migrations already on main and consolidates its new
 schema into `20261011000000_campaign_product_revamp`. This migration also assigns
 existing users and campaigns to personal workspaces, preserves existing published
 campaigns, and normalizes historical signup addresses without deleting duplicates.
-See [migration validation and local reset guidance](docs/MIGRATION_CONSOLIDATION.md).
 
 ## Third-party attribution
 

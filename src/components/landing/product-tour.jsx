@@ -64,7 +64,7 @@ export default function ProductTour() {
     </div>
     <div id="product-view" className="wl-tour-view" role="tabpanel" aria-labelledby={`tour-tab-${view.media}`}>
       <div className="wl-tour-copy" aria-live={playing ? "off" : "polite"}><div><h3>{view.heading}</h3><p>{view.copy}</p></div><a className="wl-text-link" href={view.href}>{view.link}<HugeiconsIcon icon={ArrowUpRight01Icon} size={15} aria-hidden="true" /></a></div>
-      <div className="wl-tour-media"><video key={view.media} ref={videoRef} muted playsInline preload={inView && reducedMotion === false ? "metadata" : "none"} poster={`/product-tour/${view.media}.webp`} aria-label={view.alt} onTimeUpdate={(event) => { const video = event.currentTarget; if (progressRef.current && video.duration) progressRef.current.style.transform = `scaleX(${video.currentTime / video.duration})`; }} onEnded={() => { if (canPlay) select((selected + 1) % views.length); }} onError={() => setFailed(true)}><source src={`/product-tour/${view.media}.mp4`} type="video/mp4" /></video></div>
+      <div className="wl-tour-media"><video key={view.media} ref={videoRef} muted playsInline preload={inView && reducedMotion === false ? "metadata" : "none"} aria-label={view.alt} onTimeUpdate={(event) => { const video = event.currentTarget; if (progressRef.current && video.duration) progressRef.current.style.transform = `scaleX(${video.currentTime / video.duration})`; }} onEnded={() => { if (canPlay) select((selected + 1) % views.length); }} onError={() => setFailed(true)}><source src={`/product-tour/${view.media}.mp4`} type="video/mp4" /></video></div>
       {failed ? <p className="wl-tour-media-error">Playback is unavailable. Use the tabs to explore the product screens.</p> : null}
     </div>
   </div>;
