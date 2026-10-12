@@ -1,20 +1,49 @@
 "use client";
 
 import { HugeiconsIcon } from "@hugeicons/react";
-import { ArrowDown01Icon, Logout01Icon, Tick01Icon } from "@hugeicons/core-free-icons";
-import { Fragment, useState } from "react";
+import { Add01Icon, ArrowDown01Icon, Logout01Icon, Tick01Icon } from "@hugeicons/core-free-icons";
+import { Fragment, useActionState, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogClose, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { Breadcrumb, BreadcrumbList, BreadcrumbItem, BreadcrumbLink, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
-import { selectWorkspace } from "@/app/actions/settings";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { createWorkspace, selectWorkspace } from "@/app/actions/settings";
 import { notifySettingsResult } from "./settings-feedback";
 import { signOut } from "@/lib/auth-client";
 import "./app-shell.css";
 
+function WorkspaceAvatar({ name }) {
+  return <span className="app-workspace-avatar" aria-hidden="true">{(name || "?").slice(0, 1).toUpperCase()}</span>;
+}
+
+function CreateWorkspaceDialog({ open, onOpenChange }) {
+  const [state, action, pending] = useActionState(createWorkspace, null);
+  return <Dialog open={open} onOpenChange={onOpenChange}>
+    <DialogContent>
+      <DialogTitle>Create workspace</DialogTitle>
+      <DialogDescription>Workspaces keep waitlists, subscribers, and settings separate.</DialogDescription>
+      <form action={action} className="app-workspace-create">
+        <div className="product-field">
+          <Label htmlFor="workspace-name">Workspace name</Label>
+          <Input id="workspace-name" name="name" required minLength={1} maxLength={80} placeholder="Acme Inc" disabled={pending} autoComplete="off" aria-invalid={!!state?.error} aria-describedby={state?.error ? "workspace-name-error" : undefined} />
+        </div>
+        {state?.error && <p id="workspace-name-error" role="alert" className="product-field-error">{state.error}</p>}
+        <div className="product-actions">
+          <DialogClose render={<Button variant="outline" />} disabled={pending}>Cancel</DialogClose>
+          <Button type="submit" disabled={pending}>{pending ? "Creating…" : "Create workspace"}</Button>
+        </div>
+      </form>
+    </DialogContent>
+  </Dialog>;
+}
+
 function WorkspaceSwitcher({ workspaces, selected }) {
   const [pending, setPending] = useState(false);
+  const [createOpen, setCreateOpen] = useState(false);
   const current = workspaces.find(workspace => workspace.id === selected);
   async function switchTo(id) {
     if (id === selected || pending) return;
@@ -25,8 +54,20 @@ function WorkspaceSwitcher({ workspaces, selected }) {
     catch { notifySettingsResult({ error: "Could not switch workspace. Try again." }); }
     finally { setPending(false); }
   }
-  if (workspaces.length < 2) return <span className="app-workspace-name">{current?.name || "Workspace"}</span>;
-  return <div className="app-workspace-control"><DropdownMenu><DropdownMenuTrigger render={<Button variant="ghost" />} disabled={pending} aria-label="Switch workspace">{pending ? "Switching…" : current?.name || "Workspace"}<HugeiconsIcon icon={ArrowDown01Icon} aria-hidden="true" /></DropdownMenuTrigger><DropdownMenuContent align="start" sideOffset={8}>{workspaces.map(workspace => <DropdownMenuItem key={workspace.id} onClick={() => switchTo(workspace.id)} disabled={pending}><span>{workspace.name}</span>{workspace.id === selected && <><HugeiconsIcon icon={Tick01Icon} aria-hidden="true" /><span className="sr-only">Current workspace</span></>}</DropdownMenuItem>)}</DropdownMenuContent></DropdownMenu></div>;
+  return <div className="app-workspace-control">
+    <DropdownMenu>
+      <DropdownMenuTrigger render={<Button variant="ghost" />} disabled={pending} aria-label="Switch workspace">
+        <WorkspaceAvatar name={current?.name} />
+        <span className="app-workspace-current">{pending ? "Switching…" : current?.name || "Workspace"}</span>
+        <HugeiconsIcon icon={ArrowDown01Icon} aria-hidden="true" />
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start" sideOffset={8}>
+        {workspaces.map(workspace => <DropdownMenuItem key={workspace.id} onClick={() => switchTo(workspace.id)} disabled={pending}><WorkspaceAvatar name={workspace.name} /><span>{workspace.name}</span>{workspace.id === selected && <><HugeiconsIcon icon={Tick01Icon} aria-hidden="true" /><span className="sr-only">Current workspace</span></>}</DropdownMenuItem>)}
+        <DropdownMenuItem onClick={() => setCreateOpen(true)}><HugeiconsIcon icon={Add01Icon} aria-hidden="true" /><span>Create workspace</span></DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+    <CreateWorkspaceDialog open={createOpen} onOpenChange={setCreateOpen} />
+  </div>;
 }
 
 function Breadcrumbs({ pathname, waitlists, settingsSection }) {
@@ -42,6 +83,7 @@ function Breadcrumbs({ pathname, waitlists, settingsSection }) {
       if (segments[2]) crumbs.push({ label: ({ subscribers: "Subscribers", analytics: "Analytics", edit: "Editor", emails: "Emails", settings: "Settings", automations: "Automations", broadcasts: "Broadcasts" })[segments[2]] || "Overview" });
     }
   }
+  if (crumbs.length < 2) return null;
   return <div className="app-breadcrumbs"><Breadcrumb><BreadcrumbList>{crumbs.map((crumb, index) => <Fragment key={`${crumb.label}-${index}`}>{index > 0 && <BreadcrumbSeparator />}<BreadcrumbItem>{index === crumbs.length - 1 ? <BreadcrumbPage>{crumb.label}</BreadcrumbPage> : <BreadcrumbLink render={<Link href={crumb.href} />}>{crumb.label}</BreadcrumbLink>}</BreadcrumbItem></Fragment>)}</BreadcrumbList></Breadcrumb></div>;
 }
 
@@ -68,10 +110,10 @@ export function AppShell({ children, user, avatar, waitlists, workspaces, select
   return <div className="app-frame">
     <a className="product-skip-link" href="#product-content">Skip to content</a>
     <header className="app-header"><div className="app-header-inner">
-      <Link className="product-wordmark app-wordmark" href="/wait-lists" aria-label="Waitlyze home">Waitlyze<span aria-hidden="true">.</span></Link>
+      <Link className="app-wordmark" href="/wait-lists" aria-label="Waitlyze home"><span className="app-mark" aria-hidden="true"><i /><i /><i /></span></Link>
       <WorkspaceSwitcher workspaces={workspaces} selected={selectedWorkspace} />
       <nav aria-label="Main navigation" className="app-navigation">
-        <Link href="/wait-lists" aria-current={pathname.startsWith("/wait-lists") ? "page" : undefined}>Waitlists</Link>
+        <Link href="/wait-lists" aria-current={pathname.startsWith("/wait-lists") ? "page" : undefined}>Overview</Link>
         <Link href="/settings" aria-current={pathname.startsWith("/settings") ? "page" : undefined}>Settings</Link>
         <Link href="/docs">Docs</Link>
       </nav>

@@ -1,11 +1,7 @@
-
 import { HugeiconsIcon } from "@hugeicons/react";
-import { Add01Icon, ArrowDown01Icon, ArrowUp01Icon, ArrowUpDownIcon, Search01Icon } from "@hugeicons/core-free-icons";
+import { Add01Icon } from "@hugeicons/core-free-icons";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
-import { Label } from "@/components/ui/label";
-
-import { Input } from "@/components/ui/input";
 import Link from "next/link";
 import { Suspense } from "react";
 import prisma from "@/lib/prisma";
@@ -14,6 +10,7 @@ import { campaignScope } from "@/lib/workspaces/service.mjs";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { ProductContentSkeleton } from "@/components/product/content-skeleton";
 import styles from "@/components/product/waitlist-experience.module.css";
+import { SortableHeading, StatusTabs, WaitlistSearch, waitlistsHref } from "@/components/product/waitlists-toolbar";
 import {
   normalizeWaitlistSearch,
   normalizeWaitlistStatus,
@@ -21,9 +18,7 @@ import {
   waitlistSearchWhere,
   waitlistStatusWhere,
   waitlistSortOrderBy,
-  WAITLIST_SEARCH_LIMIT,
   WAITLIST_STATUS_FILTERS,
-  WAITLIST_DEFAULT_SORT,
 } from "@/lib/waitlist-search.mjs";
 
 export const metadata = { title: "Waitlists" };
@@ -32,43 +27,6 @@ const PAGE_SIZE = 25;
 const WAITLIST_DATE_FORMAT = new Intl.DateTimeFormat(undefined, { dateStyle: "medium" });
 const WAITLIST_STATUS_LABELS = { DRAFT: "Draft", PUBLISHED: "Published", PAUSED: "Paused" };
 
-function waitlistsHref({ query, status, sort, page = 1, includeQuery = true }) {
-  const search = new URLSearchParams();
-  if (includeQuery && query) search.set("q", query);
-  if (status) search.set("status", status);
-  if (sort !== WAITLIST_DEFAULT_SORT) search.set("sort", sort);
-  if (page > 1) search.set("page", String(page));
-  const serialized = search.toString();
-  return serialized ? `/wait-lists?${serialized}` : "/wait-lists";
-}
-
-function SortableHeading({ column, label, query, status, sort }) {
-  const [activeColumn, direction] = sort.split("-");
-  const active = activeColumn === column;
-  const nextDirection = active && direction === "asc" ? "desc" : "asc";
-  const initialDirection = column === "subscribers" ? "desc" : "asc";
-  const nextSort = `${column}-${active ? nextDirection : initialDirection}`;
-  const sortLabel = direction === "asc" ? "ascending" : "descending";
-  const ariaSort = active ? sortLabel : "none";
-  const accessibleColumn = column === "subscribers" ? "subscriber count" : "waitlist name";
-  const accessibleName = `Sort by ${accessibleColumn}${active ? `, currently ${sortLabel}` : ""}`;
-
-  return (
-    <TableHead scope="col" aria-sort={active ? ariaSort : undefined}>
-      <Link
-        className="product-table-sort"
-        href={waitlistsHref({ query, status, sort: nextSort })}
-        aria-label={accessibleName}
-      >
-        <span>{label}</span>
-        <span className={`product-table-sort-indicator${active ? " is-active" : ""}`} aria-hidden="true">
-          {active ? (direction === "asc" ? <HugeiconsIcon icon={ArrowUp01Icon} /> : <HugeiconsIcon icon={ArrowDown01Icon} />) : <HugeiconsIcon icon={ArrowUpDownIcon} />}
-        </span>
-      </Link>
-    </TableHead>
-  );
-}
-
 function WaitlistsTable({ waitlists, query, status, sort }) {
   return (
     <div className={`product-table-wrap ${styles.tableWrap}`}>
@@ -76,7 +34,7 @@ function WaitlistsTable({ waitlists, query, status, sort }) {
         <caption className="product-visually-hidden">Your waitlists</caption>
         <TableHeader>
           <TableRow>
-            <SortableHeading column="name" label="Waitlist" query={query} status={status} sort={sort} />
+            <SortableHeading column="name" label="Name" query={query} status={status} sort={sort} />
             <SortableHeading column="subscribers" label="Subscribers" query={query} status={status} sort={sort} />
             <TableHead scope="col">Updated</TableHead>
           </TableRow>
@@ -166,29 +124,12 @@ export default async function WaitlistsPage({ searchParams }) {
     <section>
       <div className={`product-page-heading ${styles.listHeader}`}>
         <h1 className={`product-page-title ${styles.listTitle}`}>Waitlists</h1>
-        <Link href="/wait-lists/new" className={buttonVariants()}><HugeiconsIcon icon={Add01Icon} aria-hidden="true" />New waitlist</Link>
       </div>
       <div className={styles.listToolbar}>
-      <form className={`product-waitlist-search ${styles.listSearch}`} role="search" action="/wait-lists" method="get">
-        <Label className="product-visually-hidden" htmlFor="waitlist-search">Search waitlists</Label>
-        <Input id="waitlist-search" name="q" type="search" maxLength={WAITLIST_SEARCH_LIMIT} defaultValue={query} placeholder="Search by name" />
-        {status && <input type="hidden" name="status" value={status} />}
-        {sort !== WAITLIST_DEFAULT_SORT && <input type="hidden" name="sort" value={sort} />}
-        <Button type="submit" aria-label="Search waitlists"><HugeiconsIcon icon={Search01Icon} aria-hidden="true" /></Button>
-        {query && <Link href={waitlistsHref({ query, status, sort, includeQuery: false })}>Clear search</Link>}
-      </form>
-      <nav className={styles.filters} aria-label="Filter waitlists by status">
-        {WAITLIST_STATUS_FILTERS.map((filter) => (
-          <Link
-            key={filter.value || "all"}
-            href={waitlistsHref({ query, status: filter.value, sort })}
-            aria-current={status === filter.value ? "page" : undefined}
-          >
-            {filter.label}
-          </Link>
-        ))}
-      </nav>
+        <WaitlistSearch query={query} status={status} sort={sort} />
+        <Button render={<Link href="/wait-lists/new" />}><HugeiconsIcon icon={Add01Icon} aria-hidden="true" />New waitlist</Button>
       </div>
+      <StatusTabs query={query} status={status} sort={sort} />
       <Suspense fallback={<ProductContentSkeleton label="Loading waitlists" variant="table" rows={5} />}>
         <WaitlistsResults userId={user.id} workspaceId={workspace.id} query={query} status={status} sort={sort} requestedPage={requestedPage} />
       </Suspense>

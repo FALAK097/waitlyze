@@ -62,3 +62,19 @@ export async function selectWorkspace(form) {
   (await cookies()).set("waitlyze-workspace", id, { httpOnly: true, sameSite: "lax", secure: process.env.NODE_ENV === "production" && !process.env.WAITLYZE_TEST_FIXTURE, path: "/", maxAge: 60 * 60 * 24 * 30 });
   redirect("/wait-lists");
 }
+
+export async function createWorkspace(form) {
+  const session = await auth.api.getSession({ headers: await headers() });
+  if (!session?.user?.id) redirect("/");
+  const name = form.get("name");
+  if (typeof name !== "string" || !name.trim() || name.trim().length > 80) {
+    return { error: "Enter a workspace name between 1 and 80 characters." };
+  }
+  try {
+    const workspace = await createWorkspaceService(prisma).createWorkspace(session.user.id, name);
+    (await cookies()).set("waitlyze-workspace", workspace.id, { httpOnly: true, sameSite: "lax", secure: process.env.NODE_ENV === "production" && !process.env.WAITLYZE_TEST_FIXTURE, path: "/", maxAge: 60 * 60 * 24 * 30 });
+  } catch {
+    return { error: "Could not create the workspace. Try again." };
+  }
+  redirect("/wait-lists");
+}

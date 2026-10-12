@@ -2,14 +2,9 @@
 .contextNav a { min-height: 44px; padding: 10px 0; border-radius: 0; }
 .listHeader:global(.product-page-heading) { display: flex; flex-direction: row; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 32px; }
 .listTitle { margin: 0 !important; font-size: var(--product-type-title) !important; }
-.listToolbar { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 16px 24px; margin-bottom: 24px; }
-.listToolbar .listSearch { order: 2; display: flex; flex-wrap: nowrap; align-items: center; width: min(100%, 320px); gap: 4px; margin: 0; }
-.listSearch input { flex: 1; min-width: 0; }
-.listSearch button { flex: 0 0 44px; padding: 0; border: 0; }
-.listSearch > a { flex-shrink: 0; border: 0; padding-inline: 8px; }
-.filters { display: flex; gap: 20px; flex-wrap: wrap; }
-.filters a { min-height: 44px; display: flex; align-items: center; padding-block: 10px; color: var(--product-text-secondary); text-decoration: none; font-size: var(--product-type-body); }
-.filters a[aria-current] { color: var(--product-text-primary); font-weight: 600; box-shadow: inset 0 -2px var(--product-accent-solid); }
+.listToolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px; margin-bottom: 20px; }
+.listToolbar > :first-child { flex: 1 1 280px; min-width: min(100%, 240px); }
+.listToolbar > :last-child { flex-shrink: 0; }
 .tableWrap { border: 0; border-radius: 0; }
 .table { table-layout: fixed; }
 .table th:first-child { width: 60%; }

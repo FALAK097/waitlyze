@@ -1,10 +1,19 @@
 /* Shared chrome stays light; each screen owns its content layout. */
 .app-frame { min-height: 100dvh; background: #fff; }
-.app-header { background: #fff; }
-.app-header-inner { max-width: var(--product-content-width, 1152px); margin-inline: auto; min-height: 80px; padding: 16px var(--product-content-gutter, 32px); display: flex; align-items: center; gap: 24px; }
-.app-wordmark { flex-shrink: 0; min-height: 44px; align-items: center; }
-.app-workspace-name, .app-workspace-control { min-width: 0; max-width: 280px; }
-.app-workspace-control button { text-align: start; white-space: normal; overflow-wrap: anywhere; }
+.app-header { background: #fff; border-bottom: 1px solid var(--product-border-subtle); }
+.app-header-inner { max-width: var(--product-content-width, 1152px); margin-inline: auto; min-height: 72px; padding: 12px var(--product-content-gutter, 32px); display: flex; align-items: center; gap: 16px; }
+.app-wordmark { flex-shrink: 0; display: inline-flex; align-items: center; min-height: 44px; min-width: 44px; justify-content: center; border-radius: 8px; }
+.app-mark { display: inline-flex; align-items: center; gap: 3px; height: 24px; transform: skew(-12deg); }
+.app-mark i { display: block; width: 5px; background: var(--product-accent-solid); border-radius: 2px; height: 14px; }
+.app-mark i:nth-child(2) { height: 22px; }
+.app-mark i:nth-child(3) { height: 17px; }
+.app-workspace-control { min-width: 0; max-width: 300px; }
+.app-workspace-control > button { display: inline-flex; align-items: center; gap: 8px; max-width: 100%; }
+.app-workspace-current { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 500; }
+.app-workspace-control > button svg:last-child { color: var(--product-text-secondary); transition: transform 150ms cubic-bezier(0.2, 0, 0, 1); }
+.app-workspace-control > button[data-popup-open] svg:last-child { transform: rotate(180deg); }
+.app-workspace-avatar { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; flex-shrink: 0; border-radius: 6px; border: 1px solid var(--product-border-subtle); background: var(--product-bg-inset); color: var(--product-text-secondary); font-size: .75rem; font-weight: 600; }
+.app-workspace-create { display: grid; gap: 16px; }
 .app-navigation { display: flex; align-items: center; gap: 8px; margin-inline-start: auto; }
 .app-navigation a { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 8px 12px; border-radius: 8px; font-size: .875rem; color: var(--product-text-secondary); text-decoration: none; }
 .app-navigation a[aria-current] { color: var(--product-text-primary); font-weight: 600; text-decoration: underline; text-underline-offset: 6px; text-decoration-color: var(--product-accent-solid); }
@@ -23,5 +32,5 @@
 .app-account-details span { font-size: .75rem; color: var(--product-text-secondary); overflow-wrap: anywhere; }
 @media (hover: hover) and (pointer: fine) { .app-navigation a:hover { background: var(--product-bg-inset); color: var(--product-text-primary); } .app-breadcrumbs a:hover { text-decoration: underline; text-underline-offset: 3px; } }
 @media (prefers-reduced-motion: no-preference) { .app-navigation a { transition-property: color, background-color; transition-duration: 150ms; } }
-@media (max-width: 767px) { .app-header-inner { min-height: 72px; padding: 12px var(--product-content-gutter, 20px); gap: 12px; flex-wrap: wrap; } .app-navigation { order: 4; width: 100%; justify-content: flex-start; margin-inline: 0; } .app-navigation a { flex: 1; } .app-workspace-control, .app-workspace-name { flex: 1; max-width: none; min-width: 0; } .app-account-control { margin-inline-start: auto; } .app-content-header { padding-inline: var(--product-content-gutter, 20px); } }
+@media (max-width: 767px) { .app-header-inner { min-height: 72px; padding: 12px var(--product-content-gutter, 20px); gap: 12px; flex-wrap: wrap; } .app-navigation { order: 4; width: 100%; justify-content: flex-start; margin-inline: 0; } .app-navigation a { flex: 1; } .app-workspace-control { flex: 1; max-width: none; min-width: 0; } .app-account-control { margin-inline-start: auto; } .app-content-header { padding-inline: var(--product-content-gutter, 20px); } }
 @media (max-width: 359px) { .app-header-inner, .app-content-header { padding-inline: 16px; } .app-header-inner { gap: 8px; } .app-navigation a { padding-inline: 8px; } }

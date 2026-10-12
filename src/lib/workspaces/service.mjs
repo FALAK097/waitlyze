@@ -81,6 +81,16 @@ export function createWorkspaceService(db) {
       if (result.count !== 1) throw new AccessError();
       return { id: workspaceId, name: name.trim() };
     },
+    async createWorkspace(userId, name) {
+      actor(userId);
+      if (typeof name !== "string" || !name.trim() || name.trim().length > 80) {
+        throw new TypeError("Workspace name must contain 1 to 80 characters.");
+      }
+      return db.workspace.create({
+        data: { name: name.trim(), members: { create: { userId, role: "OWNER" } } },
+        select: { id: true, name: true },
+      });
+    },
     async campaign(userId, id, permission = "viewCampaign", workspaceId) {
       if (typeof id !== "string" || !id) throw new AccessError();
       const campaign = await db.waitList.findFirst({ where: { id, ...campaignScope(userId, permission, workspaceId) } });
