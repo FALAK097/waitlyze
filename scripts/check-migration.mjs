@@ -60,6 +60,8 @@ try {
         assert.equal((await db.query(`SELECT COUNT(*)::int AS count FROM workspaces`)).rows[0].count, 2);
         await db.query(`INSERT INTO wait_lists (id,"userId","updatedAt") VALUES ('new-campaign','legacy-owner',now())`);
         assert.equal((await db.query(`SELECT status FROM wait_lists WHERE id='new-campaign'`)).rows[0].status, "DRAFT");
+        await db.query(await readFile("prisma/migrations/20261012000000_workspace_audit/migration.sql", "utf8"));
+        assert.equal((await db.query("SELECT to_regclass('public.workspace_audit_events') AS table_name")).rows[0].table_name, "workspace_audit_events");
       } else {
         runPrisma(["migrate", "deploy"], databaseUrl.href);
         runPrisma(["migrate", "deploy"], databaseUrl.href); // Deployment retry is a no-op.
