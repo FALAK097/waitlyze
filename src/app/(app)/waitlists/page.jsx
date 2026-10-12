@@ -56,11 +56,11 @@ function WaitlistsTable({ waitlists, query, status, sort }) {
                   </Link>
                   {waitlist.description && <p className={styles.rowDescription}>{waitlist.description}</p>}
                 </TableHead>
-                <TableCell data-label="Visitors">{visitors.toLocaleString()}</TableCell>
-                <TableCell data-label="Subscribers">{signups.toLocaleString()}</TableCell>
-                <TableCell data-label="Conversion">{conversion}</TableCell>
-                <TableCell data-label="Updated"><time dateTime={waitlist.updatedAt.toISOString()}>{WAITLIST_DATE_FORMAT.format(waitlist.updatedAt)}</time></TableCell>
-                <TableCell className={styles.rowAction}><WaitlistRowActions id={waitlist.id} name={waitlist.name} /></TableCell>
+                <TableCell>{visitors.toLocaleString()}</TableCell>
+                <TableCell>{signups.toLocaleString()}</TableCell>
+                <TableCell>{conversion}</TableCell>
+                <TableCell><time dateTime={waitlist.updatedAt.toISOString()}>{WAITLIST_DATE_FORMAT.format(waitlist.updatedAt)}</time></TableCell>
+                <TableCell><WaitlistRowActions id={waitlist.id} name={waitlist.name} /></TableCell>
               </TableRow>
             );
           })}
