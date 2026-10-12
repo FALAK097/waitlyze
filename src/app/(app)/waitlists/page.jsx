@@ -11,7 +11,7 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { ProductContentSkeleton } from "@/components/product/content-skeleton";
 import { WaitlistRowActions } from "@/components/product/waitlist-row-actions";
 import styles from "@/components/product/waitlist-experience.module.css";
-import { SortableHeading, StatusTabs, WaitlistSearch, waitlistsHref } from "@/components/product/waitlists-toolbar";
+import { SortableHeading, StatusTabs, WaitlistSearch } from "@/components/product/waitlists-toolbar";
 import {
   normalizeWaitlistSearch,
   normalizeWaitlistStatus,
@@ -19,6 +19,7 @@ import {
   waitlistSearchWhere,
   waitlistStatusWhere,
   waitlistSortOrderBy,
+  waitlistsHref,
   WAITLIST_STATUS_FILTERS,
 } from "@/lib/waitlist-search.mjs";
 

@@ -10,18 +10,8 @@ import { Label } from "@/components/ui/label";
 import {
   WAITLIST_SEARCH_LIMIT,
   WAITLIST_STATUS_FILTERS,
-  WAITLIST_DEFAULT_SORT,
+  waitlistsHref,
 } from "@/lib/waitlist-search.mjs";
-
-export function waitlistsHref({ query, status, sort, page = 1, includeQuery = true }) {
-  const search = new URLSearchParams();
-  if (includeQuery && query) search.set("q", query);
-  if (status) search.set("status", status);
-  if (sort !== WAITLIST_DEFAULT_SORT) search.set("sort", sort);
-  if (page > 1) search.set("page", String(page));
-  const serialized = search.toString();
-  return serialized ? `/waitlists?${serialized}` : "/waitlists";
-}
 
 function useReplaceParams() {
   const router = useRouter();

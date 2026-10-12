@@ -6,6 +6,16 @@ export const WAITLIST_STATUS_FILTERS = [
   { value: "PAUSED", label: "Paused" },
 ];
 export const WAITLIST_DEFAULT_SORT = "name-asc";
+
+export function waitlistsHref({ query, status, sort, page = 1, includeQuery = true }) {
+  const search = new URLSearchParams();
+  if (includeQuery && query) search.set("q", query);
+  if (status) search.set("status", status);
+  if (sort !== WAITLIST_DEFAULT_SORT) search.set("sort", sort);
+  if (page > 1) search.set("page", String(page));
+  const serialized = search.toString();
+  return serialized ? `/waitlists?${serialized}` : "/waitlists";
+}
 export const WAITLIST_SORTS = [
   "name-asc",
   "name-desc",

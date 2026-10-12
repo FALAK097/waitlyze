@@ -23,7 +23,7 @@
     --destructive-foreground: hsl(0 0% 100%);
     --border: hsl(210 4% 90%);
     --input: hsl(210 5% 84%);
-    --ring: hsl(243 75% 59%);
+    --ring: hsl(75 99.115% 55.6863%);
     --chart-1: hsl(150 60% 25%);
     --chart-2: hsl(75 80% 48%);
     --chart-3: hsl(210 4% 32%);
@@ -144,5 +144,14 @@ body {
   }
   body {
     @apply bg-background text-foreground;
+  }
+  input:-webkit-autofill,
+  input:-webkit-autofill:hover,
+  input:-webkit-autofill:focus,
+  textarea:-webkit-autofill,
+  select:-webkit-autofill {
+    -webkit-text-fill-color: var(--foreground);
+    -webkit-box-shadow: 0 0 0 100px var(--background) inset;
+    transition: background-color 600000s ease-in-out 0s;
   }
 }

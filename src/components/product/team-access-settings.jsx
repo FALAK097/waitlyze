@@ -152,6 +152,7 @@ export function TeamAccessSettings({ workspaceId, members, invitations, canManag
 
 function InvitationForm({ workspaceId, canInviteAdmins, onComplete }) {
   const [state, action, pending] = useActionState(inviteWorkspaceMember, {});
+  const [role, setRole] = useState("MEMBER");
   useEffect(() => {
     if (state?.error) toast.add({ title: state.error, type: "error" });
     else if (typeof state?.success === "string") toast.add({ title: state.success, type: "success" });
@@ -160,7 +161,7 @@ function InvitationForm({ workspaceId, canInviteAdmins, onComplete }) {
   return <form action={action} className="product-team-invite-form">
     <input type="hidden" name="workspaceId" value={workspaceId} />
     <label className="product-team-field">Email address<Input type="email" name="email" autoComplete="email" required maxLength={254} placeholder="teammate@company.com" aria-invalid={Boolean(state.error)} aria-describedby={state.error ? "team-invite-error" : undefined} /></label>
-    <div className="product-team-field"><Label htmlFor="team-invite-role">Role</Label><Select name="role" defaultValue="MEMBER"><SelectTrigger id="team-invite-role"><SelectValue>Member</SelectValue></SelectTrigger><SelectContent><SelectItem value="MEMBER">Member</SelectItem>{canInviteAdmins ? <SelectItem value="ADMIN">Admin</SelectItem> : null}</SelectContent></Select></div>
+    <div className="product-team-field"><Label htmlFor="team-invite-role">Role</Label><Select name="role" value={role} onValueChange={setRole}><SelectTrigger id="team-invite-role"><SelectValue>{role === "ADMIN" ? "Admin" : "Member"}</SelectValue></SelectTrigger><SelectContent><SelectItem value="MEMBER">Member</SelectItem>{canInviteAdmins ? <SelectItem value="ADMIN">Admin</SelectItem> : null}</SelectContent></Select></div>
     <p className="product-help">Members can edit waitlists. Admins can also manage workspace settings.</p>
     {state.error ? <p id="team-invite-error" className="product-team-announcement" role="alert">{state.error}</p> : null}
     <Button type="submit" disabled={pending} aria-busy={pending}>{pending ? "Sending invitation…" : "Send invitation"}</Button>

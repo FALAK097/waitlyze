@@ -31,7 +31,7 @@
   --product-accent-hover: var(--product-lime-500);
   --product-accent-label: var(--product-ink);
   --product-accent-border: var(--product-neutral-500);
-  --product-focus: hsl(243 75% 59%);
+  --product-focus: hsl(75 99.115% 55.6863%);
   --product-success-text: var(--product-green-700);
   --product-danger-text: var(--product-red-700);
   --product-image-outline: hsl(0 0% 0% / 0.1);

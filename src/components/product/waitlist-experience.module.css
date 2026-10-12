@@ -3,7 +3,11 @@
 .listToolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px; margin-bottom: 20px; }
 .listToolbar > :nth-child(2) { flex: 0 1 360px; min-width: min(100%, 220px); max-width: 360px; margin-inline-start: auto; }
 .listToolbar > :last-child { flex-shrink: 0; }
-@media (max-width: 639px) { .listToolbar > :nth-child(2) { flex-basis: 100%; max-width: none; margin-inline-start: 0; } }
+@media (max-width: 639px) {
+  .listToolbar > :first-child { flex-basis: 100%; }
+  .listToolbar > :nth-child(2) { flex: 1 1 auto; min-width: 0; max-width: none; margin-inline-start: 0; }
+  .table { min-width: 620px; }
+}
 .tableWrap { border: 0; border-radius: 0; }
 .table { table-layout: fixed; }
 .table th:first-child { width: 32%; }

@@ -73,6 +73,7 @@
   "devDependencies": {
     "@shadcn/lint": "^0.2.0",
     "@typescript-eslint/parser": "^8.71.0",
+    "agentation": "^3.1.2",
     "eslint": "^10.11.0",
     "postcss": "^8.5.28",
     "svix": "^1.65.0",
