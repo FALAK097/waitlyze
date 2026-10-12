@@ -3,10 +3,9 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { MoreHorizontalIcon } from "@hugeicons/core-free-icons";
+import { Delete02Icon } from "@hugeicons/core-free-icons";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/components/ui/toast";
@@ -36,12 +35,7 @@ export function WaitlistRowActions({ id, name }) {
     }
   }
   return <>
-    <DropdownMenu>
-      <DropdownMenuTrigger render={<Button variant="ghost" size="icon-sm" />} aria-label={`Actions for ${displayName}`}><HugeiconsIcon icon={MoreHorizontalIcon} aria-hidden="true" /></DropdownMenuTrigger>
-      <DropdownMenuContent align="end" sideOffset={4}>
-        <DropdownMenuItem variant="destructive" className="cursor-pointer" onClick={() => { setConfirmation(""); setError(""); setConfirmOpen(true); }}>Delete</DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+    <Button type="button" variant="ghost-destructive" size="icon-sm" className="cursor-pointer" aria-label={`Delete ${displayName}`} onClick={() => { setConfirmation(""); setError(""); setConfirmOpen(true); }}><HugeiconsIcon icon={Delete02Icon} aria-hidden="true" /></Button>
     <Dialog open={confirmOpen} onOpenChange={(open) => { if (!pending) { setConfirmOpen(open); setConfirmation(""); setError(""); } }}>
       <DialogContent>
         <DialogTitle>Delete {displayName}?</DialogTitle>
