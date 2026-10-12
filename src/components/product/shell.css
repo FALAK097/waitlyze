@@ -501,7 +501,7 @@
 .product-team-person > span { color: var(--product-text-secondary); font-size: .8125rem; }
 .product-team-role { flex: 0 0 auto; color: var(--product-text-secondary); font-size: .75rem; text-transform: capitalize; }
 .product-team-pending-mark { display: grid; place-items: center; width: 36px; height: 36px; flex: 0 0 auto; border-radius: 50%; background: var(--product-bg-inset); color: var(--product-text-secondary); }
-.product-team-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+.product-team-actions { display: flex; flex-wrap: nowrap; gap: 6px; }
 .product-team-actions .product-button { min-height: 44px; }
 .product-team-announcement { min-height: 1.5em; color: var(--product-text-secondary); font-size: .8125rem; }
 .product-team-announcement:empty { display: none; }

@@ -9,6 +9,7 @@ import { currentWorkspace } from "@/lib/workspaces/current";
 import { campaignScope } from "@/lib/workspaces/service.mjs";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { ProductContentSkeleton } from "@/components/product/content-skeleton";
+import { WaitlistRowActions } from "@/components/product/waitlist-row-actions";
 import styles from "@/components/product/waitlist-experience.module.css";
 import { SortableHeading, StatusTabs, WaitlistSearch, waitlistsHref } from "@/components/product/waitlists-toolbar";
 import {
@@ -38,6 +39,7 @@ function WaitlistsTable({ waitlists, query, status, sort }) {
             <SortableHeading column="subscribers" label="Subscribers" query={query} status={status} sort={sort} />
             <TableHead scope="col">Conversion</TableHead>
             <TableHead scope="col">Updated</TableHead>
+            <TableHead scope="col"><span className="sr-only">Actions</span></TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -57,6 +59,7 @@ function WaitlistsTable({ waitlists, query, status, sort }) {
                 <TableCell>{signups.toLocaleString()}</TableCell>
                 <TableCell>{conversion}</TableCell>
                 <TableCell><time dateTime={waitlist.updatedAt.toISOString()}>{WAITLIST_DATE_FORMAT.format(waitlist.updatedAt)}</time></TableCell>
+                <TableCell><WaitlistRowActions id={waitlist.id} name={waitlist.name} /></TableCell>
               </TableRow>
             );
           })}

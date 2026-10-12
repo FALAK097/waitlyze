@@ -6,11 +6,12 @@
 @media (max-width: 639px) { .listToolbar > :nth-child(2) { flex-basis: 100%; max-width: none; margin-inline-start: 0; } }
 .tableWrap { border: 0; border-radius: 0; }
 .table { table-layout: fixed; }
-.table th:first-child { width: 36%; }
-.table th:nth-child(2) { width: 14%; }
-.table th:nth-child(3) { width: 16%; }
-.table th:nth-child(4) { width: 14%; }
-.table th:nth-child(5) { width: 20%; }
+.table th:first-child { width: 32%; }
+.table th:nth-child(2) { width: 12%; }
+.table th:nth-child(3) { width: 14%; }
+.table th:nth-child(4) { width: 12%; }
+.table th:nth-child(5) { width: 18%; }
+.table th:nth-child(6) { width: 64px; }
 .table thead th { padding: 0 12px 8px; }
 .table tbody th, .table tbody td { padding: 16px 12px; }
 .table tbody th { font-weight: 550; }

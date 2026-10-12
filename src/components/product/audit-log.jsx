@@ -63,7 +63,7 @@ export function AuditLog({ events }) {
           {!visible.length && <TableRow><TableCell colSpan={5}><p className="product-table-empty">{events.length ? "No audit events match this search." : "No workspace activity recorded yet."}</p></TableCell></TableRow>}
       </TableBody>
     </Table>
-    <p className="product-team-results" aria-live="polite">{visible.length} of {events.length} {events.length === 1 ? "event" : "events"}</p>
     </div>
+    <p className="product-team-results" aria-live="polite">{visible.length} of {events.length} {events.length === 1 ? "event" : "events"}</p>
   </div>;
 }

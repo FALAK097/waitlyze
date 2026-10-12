@@ -114,8 +114,8 @@ export function TeamAccessSettings({ workspaceId, members, invitations, canManag
           {!visibleMembers.length && !visibleInvitations.length && <TableRow><TableCell colSpan={5}><p className="product-table-empty">Nobody matches this search.</p></TableCell></TableRow>}
         </TableBody>
       </Table>
-      <p className="product-team-results" aria-live="polite">{visibleMembers.length + visibleInvitations.length} of {members.length + invitations.length} {members.length + invitations.length === 1 ? "person" : "people"}</p>
       </div>
+      <p className="product-team-results" aria-live="polite">{visibleMembers.length + visibleInvitations.length} of {members.length + invitations.length} {members.length + invitations.length === 1 ? "person" : "people"}</p>
     </section>
     <p className="product-team-announcement" role={rowError ? "alert" : "status"} aria-live={rowError ? "assertive" : "polite"}>{rowError || rowMessage || ""}</p>
   </div>;
