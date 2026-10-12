@@ -193,5 +193,5 @@ export async function acceptWorkspaceInvite(previous, form) {
   }
   (await cookies()).set("waitlyze-workspace", result.workspaceId, { httpOnly: true, sameSite: "lax", secure: env.NODE_ENV === "production", path: "/", maxAge: 60 * 60 * 24 * 30 });
   revalidatePath("/settings");
-  redirect("/wait-lists");
+  redirect("/waitlists");
 }

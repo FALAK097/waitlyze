@@ -25,7 +25,6 @@ export const metadata = { title: "Waitlists" };
 
 const PAGE_SIZE = 25;
 const WAITLIST_DATE_FORMAT = new Intl.DateTimeFormat(undefined, { dateStyle: "medium" });
-const WAITLIST_STATUS_LABELS = { DRAFT: "Draft", PUBLISHED: "Published", PAUSED: "Paused" };
 
 function WaitlistsTable({ waitlists, query, status, sort }) {
   return (
@@ -35,24 +34,32 @@ function WaitlistsTable({ waitlists, query, status, sort }) {
         <TableHeader>
           <TableRow>
             <SortableHeading column="name" label="Name" query={query} status={status} sort={sort} />
+            <TableHead scope="col">Visitors</TableHead>
             <SortableHeading column="subscribers" label="Subscribers" query={query} status={status} sort={sort} />
+            <TableHead scope="col">Conversion</TableHead>
             <TableHead scope="col">Updated</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {waitlists.map((waitlist) => (
-            <TableRow key={waitlist.id}>
-              <TableHead scope="row">
-                <Link href={`/wait-lists/${waitlist.id}`} aria-label={`Open ${waitlist.name || "Untitled waitlist"}, status ${WAITLIST_STATUS_LABELS[waitlist.status]}`}>
-                  <span>{waitlist.name || "Untitled waitlist"}</span>{" "}
-                  <span className={styles.status} data-status={waitlist.status}>{WAITLIST_STATUS_LABELS[waitlist.status]}</span>
-                </Link>
-                {waitlist.description && <p className={styles.rowDescription}>{waitlist.description}</p>}<time className={styles.mobileDate} dateTime={waitlist.updatedAt.toISOString()}>Updated {WAITLIST_DATE_FORMAT.format(waitlist.updatedAt)}</time>
-              </TableHead>
-              <TableCell>{waitlist._count.signUps.toLocaleString()}</TableCell>
-              <TableCell><time dateTime={waitlist.updatedAt.toISOString()}>{WAITLIST_DATE_FORMAT.format(waitlist.updatedAt)}</time></TableCell>
-            </TableRow>
-          ))}
+          {waitlists.map((waitlist) => {
+            const visitors = waitlist._count.impressions;
+            const signups = waitlist._count.signUps;
+            const conversion = visitors > 0 ? `${((signups / visitors) * 100).toFixed(1)}%` : "—";
+            return (
+              <TableRow key={waitlist.id}>
+                <TableHead scope="row">
+                  <Link href={`/waitlists/${waitlist.id}`} aria-label={`Open ${waitlist.name || "Untitled waitlist"}`}>
+                    <span>{waitlist.name || "Untitled waitlist"}</span>
+                  </Link>
+                  {waitlist.description && <p className={styles.rowDescription}>{waitlist.description}</p>}<time className={styles.mobileDate} dateTime={waitlist.updatedAt.toISOString()}>Updated {WAITLIST_DATE_FORMAT.format(waitlist.updatedAt)}</time>
+                </TableHead>
+                <TableCell>{visitors.toLocaleString()}</TableCell>
+                <TableCell>{signups.toLocaleString()}</TableCell>
+                <TableCell>{conversion}</TableCell>
+                <TableCell><time dateTime={waitlist.updatedAt.toISOString()}>{WAITLIST_DATE_FORMAT.format(waitlist.updatedAt)}</time></TableCell>
+              </TableRow>
+            );
+          })}
         </TableBody>
       </Table>
     </div>
@@ -61,7 +68,7 @@ function WaitlistsTable({ waitlists, query, status, sort }) {
 
 function WaitlistsEmptyState({ query, status, sort, hasFilters }) {
   if (!hasFilters) {
-    return <div className={`product-empty ${styles.empty}`}><h2>Your next launch starts here.</h2><p>Create a waitlist to collect subscribers and learn who's interested.</p><Link href="/wait-lists/new" className={buttonVariants()}>Create your first waitlist</Link></div>;
+    return <div className={`product-empty ${styles.empty}`}><h2>Your next launch starts here.</h2><p>Create a waitlist to collect subscribers and learn who's interested.</p><Link href="/waitlists/new" className={buttonVariants()}>Create your first waitlist</Link></div>;
   }
 
   const selectedFilter = WAITLIST_STATUS_FILTERS.find((filter) => filter.value === status);
@@ -99,7 +106,7 @@ async function WaitlistsResults({ userId, workspaceId, query, status, sort, requ
     page = Math.min(Math.max(1, requestedPage), pageCount);
     waitlists = await prisma.waitList.findMany({
       where,
-      select: { id: true, name: true, description: true, status: true, updatedAt: true, _count: { select: { signUps: true } } },
+      select: { id: true, name: true, description: true, status: true, updatedAt: true, _count: { select: { signUps: true, impressions: true } } },
       orderBy: waitlistSortOrderBy(sort),
       skip: (page - 1) * PAGE_SIZE,
       take: PAGE_SIZE,
@@ -122,14 +129,11 @@ export default async function WaitlistsPage({ searchParams }) {
   const sort = normalizeWaitlistSort(params?.sort);
   const requestedPage = typeof params?.page === "string" && /^\d+$/.test(params.page) ? Number(params.page) : 1;
   return (
-    <section>
-      <div className={`product-page-heading ${styles.listHeader}`}>
-        <h1 className={`product-page-title ${styles.listTitle}`}>Waitlists</h1>
-      </div>
+    <section aria-label="Waitlists">
       <div className={styles.listToolbar}>
         <StatusTabs query={query} status={status} sort={sort} />
         <WaitlistSearch query={query} status={status} sort={sort} />
-        <Button render={<Link href="/wait-lists/new" />}><HugeiconsIcon icon={Add01Icon} aria-hidden="true" />New waitlist</Button>
+        <Button render={<Link href="/waitlists/new" />}><HugeiconsIcon icon={Add01Icon} aria-hidden="true" />New waitlist</Button>
       </div>
       <Suspense fallback={<ProductContentSkeleton label="Loading waitlists" variant="table" rows={5} />}>
         <WaitlistsResults userId={user.id} workspaceId={workspace.id} query={query} status={status} sort={sort} requestedPage={requestedPage} />

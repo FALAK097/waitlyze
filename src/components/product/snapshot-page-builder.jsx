@@ -7,7 +7,7 @@ import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/component
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 
-import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 import { Textarea } from "@/components/ui/textarea";
 
@@ -333,7 +333,7 @@ export function SnapshotPageBuilder({ waitList, saveDraftPage, publishPage, paus
           {section.type === "form" && <div className="product-builder-fields"><Label htmlFor={`section-${sectionIndex}-label`}>Email field label</Label><Input id={`section-${sectionIndex}-label`} maxLength={80} value={section.label} onChange={(event) => updateSection(sectionIndex, (item) => ({ ...item, label: event.target.value }))} /><Label htmlFor={`section-${sectionIndex}-button`}>Button text</Label><Input id={`section-${sectionIndex}-button`} maxLength={40} value={section.buttonText} onChange={(event) => updateSection(sectionIndex, (item) => ({ ...item, buttonText: event.target.value }))} /><p className="product-help">Referrals, verification and signup emails stay off in this draft.</p></div>}
           {section.type === "footer" && <div className="product-builder-fields"><Label htmlFor={`section-${sectionIndex}-note`}>Short note</Label><Textarea id={`section-${sectionIndex}-note`} maxLength={160} rows={3} value={section.note} onChange={(event) => updateSection(sectionIndex, (item) => ({ ...item, note: event.target.value }))} /></div>}
         </div></CollapsibleContent></Collapsible></div>)}
-        <div className="product-builder-add">{showAddSection ? <><Label htmlFor="section-type">Section</Label><NativeSelect id="section-type" value={addType} onChange={(event) => setAddType(event.target.value)}><NativeSelectOption value="features">Highlights</NativeSelectOption><NativeSelectOption value="faq">Questions</NativeSelectOption><NativeSelectOption value="footer">Note</NativeSelectOption></NativeSelect><Button type="button" onClick={addSection} disabled={snapshot.sections.length >= 12}>Add section</Button><Button variant="outline" type="button" onClick={() => setShowAddSection(false)}>Cancel</Button></> : <Button variant="outline" type="button" onClick={() => setShowAddSection(true)} disabled={snapshot.sections.length >= 12}>Add a section</Button>}{snapshot.sections.length >= 12 && <p className="product-help">A page can have up to 12 sections.</p>}</div>
+        <div className="product-builder-add">{showAddSection ? <><Label htmlFor="section-type">Section</Label><Select value={addType} onValueChange={setAddType}><SelectTrigger id="section-type"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="features">Highlights</SelectItem><SelectItem value="faq">Questions</SelectItem><SelectItem value="footer">Note</SelectItem></SelectContent></Select><Button type="button" onClick={addSection} disabled={snapshot.sections.length >= 12}>Add section</Button><Button variant="outline" type="button" onClick={() => setShowAddSection(false)}>Cancel</Button></> : <Button variant="outline" type="button" onClick={() => setShowAddSection(true)} disabled={snapshot.sections.length >= 12}>Add a section</Button>}{snapshot.sections.length >= 12 && <p className="product-help">A page can have up to 12 sections.</p>}</div>
       </div>
       <div className="product-builder-preview-wrap">
         <div className="product-builder-preview-heading">

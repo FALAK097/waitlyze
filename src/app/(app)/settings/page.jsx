@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import { currentWorkspace } from "@/lib/workspaces/current";
-import { ProfileForm, WorkspaceNameForm, WorkspacePicker } from "@/components/product/settings-forms";
+import { ProfileForm } from "@/components/product/settings-forms";
 import prisma from "@/lib/prisma";
 import { IntegrationsPanel } from "@/components/product/integrations-panel";
 import { SettingsSectionNavigation } from "@/components/product/settings-section-nav";
@@ -11,18 +11,12 @@ import "@/components/product/settings-page.css";
 
 export const metadata = { title: "Settings" };
 
-async function SelectedSettings({ section, user, workspace, workspaces, role }) {
+async function SelectedSettings({ section, user, workspace, role }) {
   const canManage = ["OWNER", "ADMIN"].includes(role);
   if (section === "profile") return <section className="product-settings-content" aria-labelledby="settings-panel-heading">
     <header><h2 id="settings-panel-heading">Profile</h2><p>Your personal details.</p></header>
     <ProfileForm key={user.id} name={user.name} />
     <div className="product-settings-detail"><h3>Email address</h3><p>{user.email}</p><p className="product-help">Managed by your sign-in provider.</p></div>
-  </section>;
-  if (section === "workspace") return <section className="product-settings-content" aria-labelledby="settings-panel-heading">
-    <header><h2 id="settings-panel-heading">Workspace</h2><p>Details for {workspace.name}.</p></header>
-    <WorkspaceNameForm key={`workspace-name:${workspace.id}`} workspaceId={workspace.id} name={workspace.name} canManage={canManage} />
-    <div className="product-settings-detail"><h3>Your role</h3><p className="product-settings-role">{role?.toLowerCase()}</p></div>
-    <WorkspacePicker key={`workspace-picker:${workspace.id}`} workspaces={workspaces} selected={workspace.id} />
   </section>;
   if (section === "team") {
     const results = await Promise.allSettled([
@@ -48,7 +42,7 @@ async function SelectedSettings({ section, user, workspace, workspaces, role }) 
 
 export default async function SettingsPage({ searchParams }) {
   const [context, query] = await Promise.all([currentWorkspace(), searchParams]);
-  const section = ["profile", "workspace", "team", "integrations"].includes(query.section) ? query.section : "profile";
+  const section = ["profile", "team", "integrations"].includes(query.section) ? query.section : "profile";
   return <div className="product-settings-page">
     <div className="product-settings-layout">
       <aside className="product-settings-menu"><h1 className="product-page-title">Settings</h1><SettingsSectionNavigation section={section} /></aside>

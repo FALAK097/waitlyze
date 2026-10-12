@@ -133,7 +133,7 @@ export function WaitlistCreationFlow({ templates, workspaceId, workspaceName, su
   useEffect(() => {
     if (!state.id) return;
     try { sessionStorage.removeItem(storageKey); } catch { /* Storage is optional after creation. */ }
-    router.push(`/wait-lists/${state.id}/edit`);
+    router.push(`/waitlists/${state.id}/edit`);
   }, [state.id, storageKey, router]);
 
   useEffect(() => {

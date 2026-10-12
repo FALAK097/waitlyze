@@ -1,16 +1,16 @@
 .contextNav { gap: 20px; padding: 0; margin-block-end: 32px; }
 .contextNav a { min-height: 44px; padding: 10px 0; border-radius: 0; }
-.listHeader:global(.product-page-heading) { display: flex; flex-direction: row; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 32px; }
-.listTitle { margin: 0 !important; font-size: var(--product-type-title) !important; }
 .listToolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px; margin-bottom: 20px; }
 .listToolbar > :nth-child(2) { flex: 0 1 360px; min-width: min(100%, 220px); max-width: 360px; margin-inline-start: auto; }
 .listToolbar > :last-child { flex-shrink: 0; }
 @media (max-width: 639px) { .listToolbar > :nth-child(2) { flex-basis: 100%; max-width: none; margin-inline-start: 0; } }
 .tableWrap { border: 0; border-radius: 0; }
 .table { table-layout: fixed; }
-.table th:first-child { width: 60%; }
-.table th:nth-child(2) { width: 20%; }
-.table th:nth-child(3) { width: 20%; }
+.table th:first-child { width: 36%; }
+.table th:nth-child(2) { width: 14%; }
+.table th:nth-child(3) { width: 16%; }
+.table th:nth-child(4) { width: 14%; }
+.table th:nth-child(5) { width: 20%; }
 .table thead th { padding: 0 12px 8px; }
 .table tbody th, .table tbody td { padding: 16px 12px; }
 .table tbody th { font-weight: 550; }

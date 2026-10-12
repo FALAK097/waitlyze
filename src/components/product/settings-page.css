@@ -37,7 +37,6 @@
 .product-team-invitation-dialog { max-width: 480px; }
 .product-team-invitation-dialog > h2 { margin: 0 40px 8px 0; font-size: 1.25rem; }
 .product-team-invitation-dialog > p { margin: 0 0 24px; color: var(--product-text-secondary); }
-.product-settings-toast { display: flex; align-items: center; gap: 12px; }
 .product-settings-panel-loading { min-width: 0; }
 @media (hover: hover) and (pointer: fine) { .product-settings-section-nav a:hover { background: var(--product-bg-inset); color: var(--product-text-primary); } }
 @media (prefers-reduced-motion: no-preference) { .product-settings-section-nav a { transition: background-color 150ms, color 150ms; } }

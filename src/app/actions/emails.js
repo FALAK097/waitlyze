@@ -547,7 +547,7 @@ export async function sendSignupEmail({ waitListId, to }) {
   }
 }
 
-const broadcastPath = (waitListId) => `/wait-lists/${waitListId}/emails/broadcasts`;
+const broadcastPath = (waitListId) => `/waitlists/${waitListId}/emails/broadcasts`;
 const broadcastInput = (input) => {
   if (!input || typeof input !== "object") return null;
   const value = {

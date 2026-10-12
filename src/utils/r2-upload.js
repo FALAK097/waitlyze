@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import toast from "react-hot-toast";
+import { toast } from "@/components/ui/toast";
 
 export function useR2Upload(endpoint, options = {}) {
   const [isUploading, setIsUploading] = useState(false);
@@ -81,7 +81,7 @@ export function useR2Upload(endpoint, options = {}) {
       if (options.onUploadError) {
         options.onUploadError(error);
       } else {
-        toast.error(error.message || "Upload failed");
+        toast.add({ title: error.message || "Upload failed", type: "error" });
       }
       throw error;
     }

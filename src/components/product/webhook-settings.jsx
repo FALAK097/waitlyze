@@ -7,8 +7,8 @@ import { Label } from "@/components/ui/label";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { notifySettingsResult } from "./settings-feedback";
 import { useEffect, useState } from "react";
+import { toast } from "@/components/ui/toast";
 
 const events = ["signup.created", "signup.verified"];
 
@@ -63,9 +63,9 @@ export function WebhookSettings({ waitListId, canManage = true }) {
       if (!response.ok) throw new Error(data.error || "Request failed.");
       if (data.data?.secret) { setSecret(data.data.secret); setShowSecret(false); }
       const refreshed = await refresh();
-      if (refreshed) { const success = path.endsWith("/test") ? "Test delivery queued." : path.endsWith("/rotate") ? "Signing secret rotated." : path.endsWith("/deliveries") ? "Replay queued." : method === "PATCH" ? "Endpoint updated." : "Webhook endpoint created."; setMessage(success); notifySettingsResult({ success }); }
+      if (refreshed) { const success = path.endsWith("/test") ? "Test delivery queued." : path.endsWith("/rotate") ? "Signing secret rotated." : path.endsWith("/deliveries") ? "Replay queued." : method === "PATCH" ? "Endpoint updated." : "Webhook endpoint created."; setMessage(success); toast.add({ title: success, type: "success" }); }
       return true;
-    } catch (error) { setMessage(error.message); setMessageIsError(true); notifySettingsResult({ error: error.message || "Request failed. Try again." }); return false; }
+    } catch (error) { setMessage(error.message); setMessageIsError(true); toast.add({ title: error.message || "Request failed. Try again.", type: "error" }); return false; }
     finally { setBusy(false); }
   }
 
@@ -96,7 +96,7 @@ export function WebhookSettings({ waitListId, canManage = true }) {
       <Button type="submit" disabled={controlsDisabled || !selected.length}>Add endpoint</Button>
     </form>}
     {initialLoad === "ready" && <p className="product-help">Use a public HTTPS endpoint. Payloads exclude subscriber email addresses.</p>}
-    {secret && <section className="product-webhook-secret" aria-labelledby="webhook-secret-title"><h3 id="webhook-secret-title">Signing secret</h3><p>Copy and store this secret before dismissing it.</p><code>{showSecret ? secret : "••••••••••••••••••••••••"}</code><Button variant="ghost" type="button" onClick={() => setShowSecret((value) => !value)}>{showSecret ? "Hide secret" : "Show secret"}</Button><Button variant="outline" type="button" onClick={async () => { try { await navigator.clipboard.writeText(secret); setMessageIsError(false); setMessage("Signing secret copied."); notifySettingsResult({ success: "Signing secret copied." }); } catch { setShowSecret(true); setMessageIsError(true); setMessage("Copy is unavailable. Select and copy the secret above."); } }}>Copy secret</Button><Button variant="outline" type="button" onClick={() => setSecret("")}>Dismiss</Button></section>}
+    {secret && <section className="product-webhook-secret" aria-labelledby="webhook-secret-title"><h3 id="webhook-secret-title">Signing secret</h3><p>Copy and store this secret before dismissing it.</p><code>{showSecret ? secret : "••••••••••••••••••••••••"}</code><Button variant="ghost" type="button" onClick={() => setShowSecret((value) => !value)}>{showSecret ? "Hide secret" : "Show secret"}</Button><Button variant="outline" type="button" onClick={async () => { try { await navigator.clipboard.writeText(secret); setMessageIsError(false); setMessage("Signing secret copied."); toast.add({ title: "Signing secret copied.", type: "success" }); } catch { setShowSecret(true); setMessageIsError(true); setMessage("Copy is unavailable. Select and copy the secret above."); } }}>Copy secret</Button><Button variant="outline" type="button" onClick={() => setSecret("")}>Dismiss</Button></section>}
     {rows.map((row) => <article className="product-webhook-endpoint" key={row.id}>
       <header><div><h3>{row.name}</h3><p><code>{row.url}</code> · {row.eventTypes.join(", ")}</p></div><span>{row.enabled ? "Active" : "Paused"}</span></header>
       {canManage && <div className="product-webhook-actions">

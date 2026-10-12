@@ -1,7 +1,7 @@
 import { sectionSchema, templateFormSchema, templateSnapshotSchema } from "../templates/catalog.mjs";
 
-const editPage = (id) => `/wait-lists/${id}/edit`;
-const waitlistSettings = (id) => `/wait-lists/${id}/settings#custom-domain-title`;
+const editPage = (id) => `/waitlists/${id}/edit`;
+const waitlistSettings = (id) => `/waitlists/${id}/settings#custom-domain-title`;
 
 export function assessWaitlistReadiness(waitlist) {
   const parsed = templateSnapshotSchema.safeParse(waitlist.templateSnapshot);

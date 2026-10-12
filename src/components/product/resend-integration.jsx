@@ -3,7 +3,7 @@
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Copy01Icon, Loading03Icon, ViewIcon, ViewOffIcon } from "@hugeicons/core-free-icons";
 import { useState } from "react";
-import toast from "react-hot-toast";
+import { toast } from "@/components/ui/toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Sheet, SheetTrigger, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
@@ -27,7 +27,7 @@ export function ResendIntegration({ initialConnection, accountEmail, canManage, 
   async function perform(action, callback) {
     setBusy(action); setError("");
     try { await callback(); }
-    catch (failure) { const message = failure.message || "Check your connection and try again."; setError(message); toast.error(message); }
+    catch (failure) { const message = failure.message || "Check your connection and try again."; setError(message); toast.add({ title: message, type: "error" }); }
     finally { setBusy(""); }
   }
   function changeOpen(next) {
@@ -40,26 +40,26 @@ export function ResendIntegration({ initialConnection, accountEmail, canManage, 
     perform("save", async () => {
       const data = await request("/api/settings/integrations/resend", "PUT", { apiKey, fromEmail });
       setConnection(data.data); setApiKey(""); setRevealed(false);
-      toast.success("Saved. Send a test email to activate Resend.");
+      toast.add({ title: "Saved. Send a test email to activate Resend.", type: "success" });
     });
   }
   function test() {
     perform("test", async () => {
       const data = await request("/api/settings/integrations/resend/test", "POST");
       setConnection((current) => ({ ...current, ...data.data }));
-      toast.success(`Test email sent to ${data.data.sentTo}.`);
+      toast.add({ title: `Test email sent to ${data.data.sentTo}.`, type: "success" });
     });
   }
   function disconnect() {
     perform("disconnect", async () => {
       await request("/api/settings/integrations/resend", "DELETE");
       setConnection(null); setApiKey(""); setFromEmail(""); setConfirmDisconnect(false);
-      toast.success("Resend disconnected.");
+      toast.add({ title: "Resend disconnected.", type: "success" });
     });
   }
   async function copy() {
-    try { await navigator.clipboard.writeText(apiKey); toast.success("Key copied."); }
-    catch { toast.error("Copy is unavailable. Select the key and copy it manually."); }
+    try { await navigator.clipboard.writeText(apiKey); toast.add({ title: "Key copied.", type: "success" }); }
+    catch { toast.add({ title: "Copy is unavailable. Select the key and copy it manually.", type: "error" }); }
   }
   const status = connection?.status || "DISCONNECTED";
   const statusLabel = { CONNECTED: "Connected", NEEDS_TEST: "Test needed", NEEDS_ATTENTION: "Needs attention", DISCONNECTED: "Not connected" }[status] || "Not connected";

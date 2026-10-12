@@ -1,11 +1,10 @@
 "use client";
-import { useActionState, useState } from "react";
+import { useActionState, useEffect, useState } from "react";
 import { useFormStatus } from "react-dom";
 import { Button } from "@/components/ui/button";
-import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { Input } from "@/components/ui/input";
-import { useSettingsFeedback } from "./settings-feedback";
-import { saveProfile, saveWorkspaceName, selectWorkspace } from "@/app/actions/settings";
+import { toast } from "@/components/ui/toast";
+import { saveProfile } from "@/app/actions/settings";
 
 function SubmitButton({ children, pendingLabel, disabled = false }) {
   const { pending } = useFormStatus();
@@ -13,7 +12,10 @@ function SubmitButton({ children, pendingLabel, disabled = false }) {
 }
 export function ProfileForm({ name }) {
   const [state, action] = useActionState(saveProfile, {});
-  useSettingsFeedback(state);
+  useEffect(() => {
+    if (state?.error) toast.add({ title: state.error, type: "error" });
+    else if (typeof state?.success === "string") toast.add({ title: state.success, type: "success" });
+  }, [state]);
   const [value, setValue] = useState(name || "");
   const savedName = state.savedName ?? name ?? "";
   const unchanged = value.trim() === savedName.trim();
@@ -25,30 +27,4 @@ export function ProfileForm({ name }) {
 
   </form>;
 }
-export function WorkspacePicker({ workspaces, selected }) {
-  if (workspaces.length < 2) return null;
-  return <form action={selectWorkspace} className="product-workspace-picker"><label htmlFor="workspace-id">Workspace</label><NativeSelect id="workspace-id" name="workspaceId" defaultValue={selected}>{workspaces.map((workspace) => <NativeSelectOption key={workspace.id} value={workspace.id}>{workspace.name}</NativeSelectOption>)}</NativeSelect><SubmitButton pendingLabel="Switching…">Switch</SubmitButton></form>;
-}
 
-export function WorkspaceNameForm({ workspaceId, name, canManage }) {
-  const [state, action] = useActionState(saveWorkspaceName, {});
-  useSettingsFeedback(state);
-  const [value, setValue] = useState(name || "");
-  const savedName = state.savedName ?? name ?? "";
-  const unchanged = value.trim() === savedName.trim();
-  if (!canManage) {
-    return <>
-      <dl><dt>Workspace name</dt><dd>{name}</dd></dl>
-      <p className="product-help">Only workspace owners and admins can change this name.</p>
-    </>;
-  }
-  return <form action={action} className="product-settings-form">
-    <input type="hidden" name="workspaceId" value={workspaceId} />
-    <label htmlFor="workspace-name">Workspace name</label>
-    <Input id="workspace-name" name="name" value={value} onChange={(event) => setValue(event.target.value)} aria-invalid={!!state.error} required maxLength={80} autoComplete="organization" aria-describedby={state.error ? "workspace-name-help workspace-name-error" : "workspace-name-help"} />
-    <p id="workspace-name-help" className="product-help">Shown in your workspace switcher. Up to 80 characters.</p>
-    <SubmitButton disabled={unchanged} pendingLabel="Saving…">Save workspace</SubmitButton>
-    {state.error && <p id="workspace-name-error" role="alert" aria-live="assertive">{state.error}</p>}
-
-  </form>;
-}

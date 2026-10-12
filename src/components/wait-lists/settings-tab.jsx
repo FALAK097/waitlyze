@@ -3,7 +3,6 @@
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Cancel01Icon } from "@hugeicons/core-free-icons";
 import { Button } from "@/components/ui/button";
-import { notifySettingsResult } from "@/components/product/settings-feedback";
 import styles from "./legacy-editor.module.css";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ColorPicker } from "@/components/ui/color-picker";
@@ -21,7 +20,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useR2Upload } from "@/utils/r2-upload";
 import Image from "next/image";
 import { useRef } from "react";
-import { toast } from "react-hot-toast";
+import { toast } from "@/components/ui/toast";
 
 export function SettingsTab({ formSettings, updateSetting, applyPreset }) {
 	const fileInputRef = useRef(null);
@@ -29,11 +28,11 @@ export function SettingsTab({ formSettings, updateSetting, applyPreset }) {
 		onClientUploadComplete: (res) => {
 			if (res?.[0]?.url) {
 				updateSetting("ogImage", res[0].url);
-				toast.success("Image uploaded successfully");
+				toast.add({ title: "Image uploaded successfully", type: "success" });
 			}
 		},
 		onUploadError: (error) => {
-			notifySettingsResult({ error: error.message || "Could not upload this image. Try another PNG, JPEG or WebP." });
+			toast.add({ title: error.message || "Could not upload this image. Try another PNG, JPEG or WebP.", type: "error" });
 		},
 	});
 

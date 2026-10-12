@@ -5,7 +5,6 @@ import { CodeIcon, FloppyDiskIcon, Mail01Icon, Share01Icon } from "@hugeicons/co
 import { useQueryState } from "nuqs";
 import { removeImage } from "@/app/actions/waitLists";
 import { Button } from "@/components/ui/button";
-import { notifySettingsResult } from "@/components/product/settings-feedback";
 import styles from "./legacy-editor.module.css";
 import {
   Dialog,
@@ -20,7 +19,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useEffect, useState } from "react";
-import toast from "react-hot-toast";
+import { toast } from "@/components/ui/toast";
 import { CopyIcon } from "../shared/icons";
 import { CodeBlock } from "../ui/code-block";
 import {
@@ -375,23 +374,23 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
     setIsSaving(true);
     try {
       const response = await saveWaitList(initialWaitList.id, { ...formSettings });
-      if (response.success) toast.success(response.message);
-      else notifySettingsResult({ error: response.message || "Could not save your page. Try again." });
-    } catch { notifySettingsResult({ error: "Could not save your page. Try again." }); }
+      if (response.success) toast.add({ title: response.message, type: "success" });
+      else toast.add({ title: response.message || "Could not save your page. Try again.", type: "error" });
+    } catch { toast.add({ title: "Could not save your page. Try again.", type: "error" }); }
     finally { setIsSaving(false); }
   };
 
   const copyShareUrlToClipboard = async () => {
     try {
       await navigator.clipboard.writeText(`${window.location.origin}/forms/${initialWaitList.id}`);
-      toast.success("Page link copied.");
-    } catch { notifySettingsResult({ error: "Copy is unavailable. Select the link and copy it manually." }); }
+      toast.add({ title: "Page link copied.", type: "success" });
+    } catch { toast.add({ title: "Copy is unavailable. Select the link and copy it manually.", type: "error" }); }
   };
 
   const handleDeleteLogo = async () => {
     const logoKey = formSettings.logoKey;
     if (!logoKey) {
-      notifySettingsResult({ error: "This logo cannot be removed. Upload a replacement instead." });
+      toast.add({ title: "This logo cannot be removed. Upload a replacement instead.", type: "error" });
       return;
     }
 
@@ -399,15 +398,15 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
     try {
       const response = await removeImage(logoKey, initialWaitList.id);
       if (response.success) {
-        toast.success("Logo deleted successfully.");
+        toast.add({ title: "Logo deleted successfully.", type: "success" });
         updateSetting("logoUrl", "");
         updateSetting("logoKey", "");
       } else {
-        notifySettingsResult({ error: response.message || "Could not remove the logo. Try again." });
+        toast.add({ title: response.message || "Could not remove the logo. Try again.", type: "error" });
       }
     } catch (error) {
       console.error("Error deleting logo:", error);
-      notifySettingsResult({ error: "Could not remove the logo. Try again." });
+      toast.add({ title: "Could not remove the logo. Try again.", type: "error" });
     }
   };
 
@@ -436,7 +435,7 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
               <Tooltip>
                 <TooltipTrigger
                   render={
-                    <Link className={styles.secondaryLink} href={`/wait-lists/${initialWaitList.id}/emails`}><HugeiconsIcon icon={Mail01Icon} className="w-4 h-4" aria-hidden="true" /><span>Email templates</span></Link>
+                    <Link className={styles.secondaryLink} href={`/waitlists/${initialWaitList.id}/emails`}><HugeiconsIcon icon={Mail01Icon} className="w-4 h-4" aria-hidden="true" /><span>Email templates</span></Link>
                   }
                 />
                 <TooltipContent side="bottom">

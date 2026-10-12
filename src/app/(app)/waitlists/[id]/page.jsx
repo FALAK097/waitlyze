@@ -42,8 +42,8 @@ export default async function OverviewPage({ params }) {
     PUBLISHED: { title: "Your waitlist is live", detail: "This page is published and can collect signups. Use the subscriber list and analytics to follow activity." },
     PAUSED: { title: "Signups are paused", detail: "The page is not currently accepting new signups. Existing subscriber records remain available." },
   }[waitlist.status];
-  const editHref = `/wait-lists/${id}/edit#page-content`;
-  const subscriberHref = `/wait-lists/${id}/subscribers`;
+  const editHref = `/waitlists/${id}/edit#page-content`;
+  const subscriberHref = `/waitlists/${id}/subscribers`;
   return <div className={`product-section ${styles.overview}`}>
     <section className={styles.overviewHero} aria-labelledby="waitlist-overview-title">
       <div className={styles.overviewInfo}>
@@ -58,11 +58,11 @@ export default async function OverviewPage({ params }) {
       </div>
       <div className={styles.overviewActions}>
         {waitlist.status === "DRAFT"
-          ? <Link href={`/wait-lists/${id}/edit${publicationNeedsAction ? "#publication-actions" : "#page-content"}`} className={buttonVariants()}>{publicationNeedsAction ? "Review publication controls" : "Edit page"}</Link>
+          ? <Link href={`/waitlists/${id}/edit${publicationNeedsAction ? "#publication-actions" : "#page-content"}`} className={buttonVariants()}>{publicationNeedsAction ? "Review publication controls" : "Edit page"}</Link>
           : waitlist.status === "PAUSED"
-            ? <Link href={`/wait-lists/${id}/edit${publicationNeedsAction ? "#publication-actions" : "#page-content"}`} className={buttonVariants()}>{publicationNeedsAction ? "Review publication controls" : "Edit page"}</Link>
+            ? <Link href={`/waitlists/${id}/edit${publicationNeedsAction ? "#publication-actions" : "#page-content"}`} className={buttonVariants()}>{publicationNeedsAction ? "Review publication controls" : "Edit page"}</Link>
             : publicationNeedsAction
-              ? <Link href={`/wait-lists/${id}/edit#publication-actions`} className={buttonVariants()}>Review publication controls</Link>
+              ? <Link href={`/waitlists/${id}/edit#publication-actions`} className={buttonVariants()}>Review publication controls</Link>
               : waitlist._count.signUps > 0
                 ? <Link href={subscriberHref} className={buttonVariants()}>View subscribers</Link>
                 : waitlist.publicSlug

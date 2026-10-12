@@ -7,7 +7,7 @@ import { requireCampaign } from "@/lib/workspaces/authorize";
 import { AUTOMATION_DEFAULTS, ensureAutomationRecipes, normalizeAutomationConfig } from "@/lib/email/automations.mjs";
 
 function refresh(waitListId) {
-  revalidatePath(`/wait-lists/${waitListId}/emails/automations`);
+  revalidatePath(`/waitlists/${waitListId}/emails/automations`);
 }
 
 export async function saveAutomationRecipe({ waitListId, recipeId, data }) {

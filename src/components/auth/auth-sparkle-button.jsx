@@ -10,7 +10,7 @@ export function AuthSparkleButton({ className }) {
 
   const handleClick = () => {
     if (!isPending && session) {
-      window.location.href = "/wait-lists";
+      window.location.href = "/waitlists";
     } else {
       openAuthModal();
     }

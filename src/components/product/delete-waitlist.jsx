@@ -6,8 +6,8 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogTrigger, DialogContent, DialogTitle, DialogDescription, DialogClose } from "@/components/ui/dialog";
-import { notifySettingsResult } from "./settings-feedback";
 import { deleteWaitlist } from "@/app/actions/delete-waitlist";
+import { toast } from "@/components/ui/toast";
 
 export function DeleteWaitlist({ id, name }) {
   const [confirmation, setConfirmation] = useState("");
@@ -20,9 +20,9 @@ export function DeleteWaitlist({ id, name }) {
     event.preventDefault(); setError(""); setPending(true);
     try {
       const result = await deleteWaitlist(id, confirmation);
-      if (result.error) { setError(result.error); notifySettingsResult({ error: result.error }); setPending(false); return; }
-      notifySettingsResult({ success: "Waitlist deleted." }); setOpen(false); router.replace("/wait-lists"); router.refresh();
-    } catch { setError("Could not delete this waitlist. Try again."); notifySettingsResult({ error: "Could not delete this waitlist. Try again." }); setPending(false); }
+      if (result.error) { setError(result.error); toast.add({ title: result.error, type: "error" }); setPending(false); return; }
+      toast.add({ title: "Waitlist deleted.", type: "success" }); setOpen(false); router.replace("/waitlists"); router.refresh();
+    } catch { setError("Could not delete this waitlist. Try again."); toast.add({ title: "Could not delete this waitlist. Try again.", type: "error" }); setPending(false); }
   }
   return <div ref={container}><Dialog open={open} onOpenChange={(value) => { if (!pending) { setOpen(value); setConfirmation(""); setError(""); } }}><DialogTrigger render={<Button variant="destructive" />}>Delete waitlist</DialogTrigger><DialogContent container={container}>
     <div className="product-dialog-heading"><DialogTitle>Delete {name}?</DialogTitle><DialogDescription>This permanently deletes the waitlist, subscribers and analytics. This cannot be undone.</DialogDescription></div>

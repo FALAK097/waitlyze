@@ -9,8 +9,8 @@ export async function resolveReferralReview(waitListId, referralId, status, reso
   try {
     const { user } = await requireCampaign(waitListId, "manageAudience");
     await resolve(prisma, { waitListId, referralId, status, resolution, reviewedById: user.id });
-    revalidatePath(`/wait-lists/${waitListId}/subscribers`);
-    revalidatePath(`/wait-lists/${waitListId}`);
+    revalidatePath(`/waitlists/${waitListId}/subscribers`);
+    revalidatePath(`/waitlists/${waitListId}`);
     return { success: true };
   } catch (error) {
     if (error instanceof TypeError) return { error: error.message };

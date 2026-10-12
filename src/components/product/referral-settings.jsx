@@ -4,8 +4,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 
 import { setWaitlistReferrals } from "@/app/actions/settings";
-import { notifySettingsResult } from "./settings-feedback";
 import { useState, useTransition } from "react";
+import { toast } from "@/components/ui/toast";
 
 export function ReferralSettings({ waitListId, initialEnabled }) {
   const [enabled, setEnabled] = useState(initialEnabled);
@@ -24,13 +24,13 @@ export function ReferralSettings({ waitListId, initialEnabled }) {
         if (result.error) throw new Error(result.error);
         const success = next ? "Referral sharing is on." : "Referral sharing is off.";
         setMessage(success);
-        notifySettingsResult({ success });
+        toast.add({ title: success, type: "success" });
       } catch (error) {
         setEnabled(previous);
         setFailed(true);
         const message = error.message || "Could not update referral sharing. Try again.";
         setMessage(message);
-        notifySettingsResult({ error: message });
+        toast.add({ title: message, type: "error" });
       }
     });
   }

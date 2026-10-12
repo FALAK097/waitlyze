@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { formatProductDate } from "@/lib/product-date.mjs";
 
 import { useState } from "react";
-import toast from "react-hot-toast";
+import { toast } from "@/components/ui/toast";
 import styles from "./email-tools.module.css";
 import { useRouter } from "next/navigation";
 import { EmailToolsNav } from "./email-tools-nav";
@@ -44,7 +44,7 @@ export function BroadcastManager({ waitListId, initialBroadcasts, initialPreview
   const [reviewCancel, setReviewCancel] = useState(false);
   const [pendingSelection, setPendingSelection] = useState(null);
   function requestSelection(broadcast) { if (draftDirty && broadcast.id !== selectedId) setPendingSelection(broadcast); else selectBroadcast(broadcast); }
-  function notify(text, failure = false) { setMessage(text); setMessageError(failure); if (failure) toast.error(text); else toast.success(text); }
+  function notify(text, failure = false) { setMessage(text); setMessageError(failure); if (failure) toast.add({ title: text, type: "error" }); else toast.add({ title: text, type: "success" }); }
   function edit(field, value) { setData((current) => ({ ...current, [field]: value })); setDraftDirty(true); setPreviewFresh(false); setReviewSend(false); }
 
   function selectBroadcast(broadcast) {

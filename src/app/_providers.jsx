@@ -2,7 +2,7 @@
 
 import { AuthModalProvider } from "@/components/auth/auth-modal-provider";
 import { AppProgressBar as ProgressBar } from "next-nprogress-bar";
-import { Toaster } from "react-hot-toast";
+import { Toaster } from "@/components/ui/toast";
 
 export function Providers({ children }) {
 	return (
@@ -13,7 +13,7 @@ export function Providers({ children }) {
 					options={{ showSpinner: false }}
 					shallowRouting
 				/>
-				<Toaster position="top-right" />
+				<Toaster />
 				{children}
 			</AuthModalProvider>
 	);

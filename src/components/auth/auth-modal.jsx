@@ -40,7 +40,7 @@ export function AuthModal({ open, onOpenChange, onCloseAutoFocus }) {
     try {
       const result = await authClient.signIn.social({
         provider: "google",
-        callbackURL: "/wait-lists",
+        callbackURL: "/waitlists",
       });
       if (result.error) throw new Error("Sign-in failed");
     } catch {

@@ -16,7 +16,7 @@ export async function deleteWaitlist(id, confirmation) {
       try { await r2.send(new DeleteObjectCommand({ Bucket: env.R2_BUCKET_NAME, Key: campaign.logoKey })); }
       catch { console.error("Deleted waitlist has a stored logo pending cleanup."); }
     }
-    revalidatePath("/wait-lists");
+    revalidatePath("/waitlists");
     return { success: true };
   } catch { return { error: "Could not delete this waitlist. Refresh and try again." }; }
 }

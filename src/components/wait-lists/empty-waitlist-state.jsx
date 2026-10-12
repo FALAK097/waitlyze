@@ -10,7 +10,7 @@ export default function EmptyWaitlistState() {
 	const router = useRouter();
 
 	const handleCreateWaitlist = () => {
-		router.push("/wait-lists/new");
+		router.push("/waitlists/new");
 	};
 
 	return (

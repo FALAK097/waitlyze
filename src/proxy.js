@@ -19,10 +19,10 @@ export function proxy(req) {
   const sessionCookie = getSessionCookie(req, {
     cookiePrefix: "ba",
   });
-  // Protect routes starting with /dashboard and /wait-lists
+  // Protect routes starting with /dashboard and /waitlists
   const isProtectedRoute =
     pathname.startsWith("/dashboard") ||
-    pathname.startsWith("/wait-lists") || pathname.startsWith("/settings");
+    pathname.startsWith("/waitlists") || pathname.startsWith("/settings");
 
   if (
     pathname.startsWith("/forms") ||

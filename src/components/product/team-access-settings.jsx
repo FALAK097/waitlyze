@@ -4,11 +4,12 @@ import { formatProductDate } from "@/lib/product-date.mjs";
 
 import { useActionState, useEffect, useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
-import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { inviteWorkspaceMember, resendWorkspaceInvitation, revokeWorkspaceInvite } from "@/app/actions/workspace-invitations";
 import { Dialog, DialogTrigger, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { notifySettingsResult, useSettingsFeedback } from "@/components/product/settings-feedback";
+import { toast } from "@/components/ui/toast";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 
 function formatDate(value) {
@@ -29,11 +30,11 @@ export function TeamAccessSettings({ workspaceId, members, invitations, canManag
         const result = await operation(invitationId, workspaceId);
         setRowMessage(result.success || "");
         setRowError(result.error || "");
-        notifySettingsResult(result);
+        { const notificationResult = result; if (notificationResult?.error) toast.add({ title: notificationResult.error, type: "error" }); else if (typeof notificationResult?.success === "string") toast.add({ title: notificationResult.success, type: "success" }); };
       } catch {
         const error = "Could not update this invitation. Check your connection and try again.";
         setRowError(error);
-        notifySettingsResult({ error });
+        { const notificationResult = { error }; if (notificationResult?.error) toast.add({ title: notificationResult.error, type: "error" }); else if (typeof notificationResult?.success === "string") toast.add({ title: notificationResult.success, type: "success" }); };
       }
     });
   }
@@ -79,12 +80,15 @@ export function TeamAccessSettings({ workspaceId, members, invitations, canManag
 
 function InvitationForm({ workspaceId, canInviteAdmins, onComplete }) {
   const [state, action, pending] = useActionState(inviteWorkspaceMember, {});
-  useSettingsFeedback(state);
+  useEffect(() => {
+    if (state?.error) toast.add({ title: state.error, type: "error" });
+    else if (typeof state?.success === "string") toast.add({ title: state.success, type: "success" });
+  }, [state]);
   useEffect(() => { if (state.success) onComplete(); }, [state, onComplete]);
   return <form action={action} className="product-team-invite-form">
     <input type="hidden" name="workspaceId" value={workspaceId} />
     <label className="product-team-field">Email address<Input type="email" name="email" autoComplete="email" required maxLength={254} placeholder="teammate@company.com" aria-invalid={Boolean(state.error)} aria-describedby={state.error ? "team-invite-error" : undefined} /></label>
-    <label className="product-team-field">Role<NativeSelect name="role" defaultValue="MEMBER"><NativeSelectOption value="MEMBER">Member</NativeSelectOption>{canInviteAdmins ? <NativeSelectOption value="ADMIN">Admin</NativeSelectOption> : null}</NativeSelect></label>
+    <div className="product-team-field"><Label htmlFor="team-invite-role">Role</Label><Select name="role" defaultValue="MEMBER"><SelectTrigger id="team-invite-role"><SelectValue>Member</SelectValue></SelectTrigger><SelectContent><SelectItem value="MEMBER">Member</SelectItem>{canInviteAdmins ? <SelectItem value="ADMIN">Admin</SelectItem> : null}</SelectContent></Select></div>
     <p className="product-help">Members can edit waitlists. Admins can also manage workspace settings.</p>
     {state.error ? <p id="team-invite-error" className="product-team-announcement" role="alert">{state.error}</p> : null}
     <Button type="submit" disabled={pending} aria-busy={pending}>{pending ? "Sending invitation…" : "Send invitation"}</Button>

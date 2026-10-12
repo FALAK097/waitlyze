@@ -32,7 +32,7 @@ export default function OnboardingDialog({ userId, isOnboarded, onComplete }) {
 			setStep(step + 1);
 		} else {
 			handleComplete();
-			router.push("/wait-lists/new");
+			router.push("/waitlists/new");
 		}
 	}, [step]);
 

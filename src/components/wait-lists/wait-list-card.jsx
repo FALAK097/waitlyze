@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { toast } from "react-hot-toast";
 import { Delete2Icon, SquarePenIcon, CopyIcon } from "../shared/icons";
 import { Button } from "../ui/button";
 import {
@@ -24,6 +23,7 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "../ui/dialog";
+import { toast } from "@/components/ui/toast";
 
 export const WaitListCard = ({
 	id,
@@ -48,22 +48,22 @@ export const WaitListCard = ({
 		if (response.success) {
 			setIsDeleting(false);
 			setIsDeleteDialogOpen(false);
-			toast.success(response.message);
+			toast.add({ title: response.message, type: "success" });
 			setTimeout(() => {
 				refresh();
 			}, 1000);
 		} else {
 			setIsDeleting(false);
-			toast.error("There was an error deleting the wait list");
+			toast.add({ title: "There was an error deleting the wait list", type: "error" });
 		}
 	};
 
 	const handleCopyId = async () => {
 		try {
 			await navigator.clipboard.writeText(id);
-			toast.success("ID copied to clipboard");
+			toast.add({ title: "ID copied to clipboard", type: "success" });
 		} catch (error) {
-			toast.error("Failed to copy ID");
+			toast.add({ title: "Failed to copy ID", type: "error" });
 		}
 	};
 

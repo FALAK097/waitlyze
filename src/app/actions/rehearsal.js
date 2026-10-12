@@ -9,7 +9,7 @@ export async function runWaitlistRehearsal(waitListId) {
   try {
     await requireCampaign(waitListId, "viewCampaign");
     const result = await runLaunchRehearsal(prisma, waitListId);
-    revalidatePath(`/wait-lists/${waitListId}`);
+    revalidatePath(`/waitlists/${waitListId}`);
     return { result };
   } catch {
     return { error: "The launch check could not be completed. Try again." };

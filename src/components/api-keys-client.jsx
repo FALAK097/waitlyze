@@ -6,9 +6,10 @@ import { formatProductDate } from "@/lib/product-date.mjs";
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import toast from "react-hot-toast";
+import { toast } from "@/components/ui/toast";
 import { Button } from "@/components/ui/button";
-import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 
 export function ApiKeysClient() {
@@ -54,14 +55,15 @@ export function ApiKeysClient() {
   }
   async function create(event) {
     event.preventDefault(); setBusy(true); setFormError("");
+    if (!waitlistId) { setFormError("Choose a waitlist."); setBusy(false); return; }
     try {
       const response = await fetch("/api/v1/api-keys/create-and-link", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ name: name.trim(), waitlistId, expiresInDays: expiresInDays === "never" ? null : Number(expiresInDays) }) });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error?.message || "Could not create the key. Try again.");
       const created = data.data.apiKey;
       setNewKey(created); setKeys((current) => [...current, { ...created, apiKey: undefined }]);
-      toast.success("API key created. Copy it before closing.");
-    } catch (failure) { setFormError(failure.message); toast.error(failure.message); }
+      toast.add({ title: "API key created. Copy it before closing.", type: "success" });
+    } catch (failure) { setFormError(failure.message); toast.add({ title: failure.message, type: "error" }); }
     finally { setBusy(false); }
   }
   async function revoke(event) {
@@ -69,13 +71,13 @@ export function ApiKeysClient() {
     try {
       const response = await fetch(`/api/v1/api-keys/${toRevoke.id}`, { method: "DELETE" });
       if (response.status !== 204) { const data = await response.json(); throw new Error(data.error?.message || "Could not revoke the key. Try again."); }
-      setKeys((current) => current.filter((key) => key.id !== toRevoke.id)); setToRevoke(null); toast.success("API key revoked.");
-    } catch (failure) { toast.error(failure.message); }
+      setKeys((current) => current.filter((key) => key.id !== toRevoke.id)); setToRevoke(null); toast.add({ title: "API key revoked.", type: "success" });
+    } catch (failure) { toast.add({ title: failure.message, type: "error" }); }
     finally { setBusy(false); }
   }
   async function copy() {
-    try { await navigator.clipboard.writeText(newKey.apiKey); toast.success("API key copied."); }
-    catch { toast.error("Copy is unavailable. Reveal and select the key to copy it manually."); }
+    try { await navigator.clipboard.writeText(newKey.apiKey); toast.add({ title: "API key copied.", type: "success" }); }
+    catch { toast.add({ title: "Copy is unavailable. Reveal and select the key to copy it manually.", type: "error" }); }
   }
   return <div className="settings-api-keys" aria-busy={loading}>
     <div className="flex flex-wrap items-center justify-between gap-3"><Link ref={docsLink} href="/docs/api" className="text-sm underline underline-offset-4">Read API docs</Link>{!creating && !toRevoke && <Button onClick={() => setCreating(true)} disabled={loading || Boolean(error) || !available.length}><HugeiconsIcon icon={Add01Icon} size={16} aria-hidden="true" />Create key</Button>}</div>
@@ -85,7 +87,7 @@ export function ApiKeysClient() {
       {!available.length && <p className="product-help">{waitlists.length ? "Each waitlist already has a key. Revoke a key before creating its replacement." : "Create a waitlist before adding an API key."}</p>}
     </>)}
     {creating && <section aria-labelledby="create-api-key-heading" className="space-y-4"><header><h3 id="create-api-key-heading" ref={panelHeading} tabIndex={-1} className="text-base font-semibold">{newKey ? "Save your API key" : "Create API key"}</h3><p className="product-help">{newKey ? "This secret is shown once. Keep it on your server." : "A key only creates signups for its selected waitlist."}</p></header>
-      {newKey ? <div className="space-y-4"><div className="settings-api-key-secret"><Input aria-label="New API key" type={reveal ? "text" : "password"} value={newKey.apiKey} readOnly /><Button variant="ghost" size="icon" aria-label={reveal ? "Hide new API key" : "Show new API key"} aria-pressed={reveal} onClick={() => setReveal(!reveal)}>{reveal ? <HugeiconsIcon icon={ViewOffIcon} size={16} /> : <HugeiconsIcon icon={ViewIcon} size={16} />}</Button><Button variant="ghost" size="icon" aria-label="Copy new API key" onClick={copy}><HugeiconsIcon icon={Copy01Icon} size={16} /></Button></div><Button onClick={() => changeCreate(false)}>Done</Button></div> : <form onSubmit={create} className="space-y-4"><label className="product-field"><span>Name</span><Input required minLength={3} maxLength={64} value={name} onChange={(event) => setName(event.target.value)} placeholder="Production server" disabled={busy} /></label><label className="product-field"><span>Waitlist</span><NativeSelect required value={waitlistId} onChange={(event) => setWaitlistId(event.target.value)} disabled={busy}><NativeSelectOption value="">Choose a waitlist</NativeSelectOption>{available.map((waitlist) => <NativeSelectOption key={waitlist.id} value={waitlist.id}>{waitlist.name}</NativeSelectOption>)}</NativeSelect></label><label className="product-field"><span>Expires</span><NativeSelect value={expiresInDays} onChange={(event) => setExpiresInDays(event.target.value)} disabled={busy}><NativeSelectOption value="30">In 30 days</NativeSelectOption><NativeSelectOption value="90">In 90 days</NativeSelectOption><NativeSelectOption value="365">In one year</NativeSelectOption><NativeSelectOption value="never">Never</NativeSelectOption></NativeSelect></label>{formError && <p role="alert" className="text-sm text-destructive">{formError}</p>}<div className="flex flex-wrap gap-3"><Button type="submit" disabled={busy}>{busy ? "Creating…" : "Create key"}</Button><Button type="button" variant="ghost" onClick={() => changeCreate(false)} disabled={busy}>Cancel</Button></div></form>}
+      {newKey ? <div className="space-y-4"><div className="settings-api-key-secret"><Input aria-label="New API key" type={reveal ? "text" : "password"} value={newKey.apiKey} readOnly /><Button variant="ghost" size="icon" aria-label={reveal ? "Hide new API key" : "Show new API key"} aria-pressed={reveal} onClick={() => setReveal(!reveal)}>{reveal ? <HugeiconsIcon icon={ViewOffIcon} size={16} /> : <HugeiconsIcon icon={ViewIcon} size={16} />}</Button><Button variant="ghost" size="icon" aria-label="Copy new API key" onClick={copy}><HugeiconsIcon icon={Copy01Icon} size={16} /></Button></div><Button onClick={() => changeCreate(false)}>Done</Button></div> : <form onSubmit={create} className="space-y-4"><label className="product-field"><span>Name</span><Input required minLength={3} maxLength={64} value={name} onChange={(event) => setName(event.target.value)} placeholder="Production server" disabled={busy} /></label><div className="product-field"><Label htmlFor="api-key-waitlist">Waitlist</Label><Select value={waitlistId} onValueChange={setWaitlistId} disabled={busy}><SelectTrigger id="api-key-waitlist"><SelectValue>Choose a waitlist</SelectValue></SelectTrigger><SelectContent>{available.map((waitlist) => <SelectItem key={waitlist.id} value={waitlist.id}>{waitlist.name}</SelectItem>)}</SelectContent></Select></div><div className="product-field"><Label htmlFor="api-key-expiry">Expires</Label><Select value={expiresInDays} onValueChange={setExpiresInDays} disabled={busy}><SelectTrigger id="api-key-expiry"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="30">In 30 days</SelectItem><SelectItem value="90">In 90 days</SelectItem><SelectItem value="365">In one year</SelectItem><SelectItem value="never">Never</SelectItem></SelectContent></Select></div>{formError && <p role="alert" className="text-sm text-destructive">{formError}</p>}<div className="flex flex-wrap gap-3"><Button type="submit" disabled={busy}>{busy ? "Creating…" : "Create key"}</Button><Button type="button" variant="ghost" onClick={() => changeCreate(false)} disabled={busy}>Cancel</Button></div></form>}
     </section>}
     {toRevoke && <section aria-labelledby="revoke-api-key-heading" className="space-y-4"><h3 id="revoke-api-key-heading" ref={panelHeading} tabIndex={-1} className="text-base font-semibold">Revoke {toRevoke.name}?</h3><p className="product-help">Apps using this key will lose access immediately. Create a replacement after revoking.</p><div className="flex flex-wrap gap-3"><Button variant="outline" disabled={busy} onClick={() => setToRevoke(null)}>Cancel</Button><Button variant="destructive" onClick={revoke} disabled={busy}>{busy ? "Revoking…" : "Revoke key"}</Button></div></section>}
 

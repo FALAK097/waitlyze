@@ -16,8 +16,8 @@ import { createColumnHelper, flexRender, getCoreRowModel, useReactTable } from "
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import "./audience.css";
-import { notifySettingsResult } from "@/components/product/settings-feedback";
 import { ReferralReview } from "@/components/dashboard/referral-review";
+import { toast } from "@/components/ui/toast";
 
 const PAGE_SIZE = 25;
 const statuses = [
@@ -104,7 +104,7 @@ export function AudienceTable({ waitlist, initialReviews = [], initialReviewsFai
     } catch {
       const message = "The export could not be created. Try again.";
       setExportError(message);
-      notifySettingsResult({ error: message });
+      toast.add({ title: message, type: "error" });
     } finally {
       setExporting(false);
     }
@@ -222,7 +222,7 @@ export function AudienceTable({ waitlist, initialReviews = [], initialReviewsFai
                   ))}
                 </TableRow>
               ))}
-              {!loading && !criteriaChanging && !error && rows.length === 0 && <TableRow><TableCell colSpan={columns.length} className="px-4 py-16 text-center"><HugeiconsIcon icon={UserGroupIcon} className="mx-auto mb-3 text-[var(--product-text-secondary)]" aria-hidden="true" /><p className="font-medium">{emptyTitle}</p><p className="mt-1 text-[var(--product-text-secondary)]">{emptyDescription}</p>{search || status !== "all" ? <Button className="mt-4" variant="outline" onClick={() => { setQuery(""); setStatus("all"); }}>Clear filters</Button> : <Link className={`${buttonVariants({ variant: "outline" })} mt-4`} href={`/wait-lists/${encodeURIComponent(waitlist.id)}`}>Open waitlist overview</Link>}</TableCell></TableRow>}
+              {!loading && !criteriaChanging && !error && rows.length === 0 && <TableRow><TableCell colSpan={columns.length} className="px-4 py-16 text-center"><HugeiconsIcon icon={UserGroupIcon} className="mx-auto mb-3 text-[var(--product-text-secondary)]" aria-hidden="true" /><p className="font-medium">{emptyTitle}</p><p className="mt-1 text-[var(--product-text-secondary)]">{emptyDescription}</p>{search || status !== "all" ? <Button className="mt-4" variant="outline" onClick={() => { setQuery(""); setStatus("all"); }}>Clear filters</Button> : <Link className={`${buttonVariants({ variant: "outline" })} mt-4`} href={`/waitlists/${encodeURIComponent(waitlist.id)}`}>Open waitlist overview</Link>}</TableCell></TableRow>}
               {isUpdating && rows.length === 0 && <>
                 {[0, 1, 2, 3, 4].map((row) => <TableRow className="product-subscriber-skeleton-row" aria-hidden="true" key={row}><TableCell><i /></TableCell><TableCell><i /></TableCell><TableCell className="hidden sm:table-cell"><i /></TableCell><TableCell className="hidden sm:table-cell"><i /></TableCell></TableRow>)}
               </>}

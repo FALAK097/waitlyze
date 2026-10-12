@@ -20,7 +20,7 @@ export function waitlistsHref({ query, status, sort, page = 1, includeQuery = tr
   if (sort !== WAITLIST_DEFAULT_SORT) search.set("sort", sort);
   if (page > 1) search.set("page", String(page));
   const serialized = search.toString();
-  return serialized ? `/wait-lists?${serialized}` : "/wait-lists";
+  return serialized ? `/waitlists?${serialized}` : "/waitlists";
 }
 
 function useReplaceParams() {

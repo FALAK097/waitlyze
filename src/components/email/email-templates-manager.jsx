@@ -10,7 +10,7 @@ import { useQueryState } from "nuqs";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeSanitize from "rehype-sanitize";
-import toast from "react-hot-toast";
+import { toast } from "@/components/ui/toast";
 import { Button } from "@/components/ui/button";
 import { EmailForm } from "./email-form";
 import { upsertEmailTemplate, sendTestEmail } from "@/app/actions/emails";
@@ -26,14 +26,14 @@ export function EmailTemplatesManager({ waitListId, waitListName, initialTemplat
   function markdown(text) { return <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeSanitize]}>{(text || "").replace(/\{\{waitlist\}\}/g, waitListName || "Project")}</ReactMarkdown>; }
   async function save() {
     setBusy("save"); setError("");
-    try { const result = await upsertEmailTemplate({ waitListId, templateType: current, data: form.getValues(current) }); if (!result.success) throw new Error(result.message || "Couldn’t save this template. Try again."); toast.success("Template saved."); }
-    catch (failure) { setError(failure.message || "Couldn’t save this template. Try again."); toast.error("Template could not be saved."); }
+    try { const result = await upsertEmailTemplate({ waitListId, templateType: current, data: form.getValues(current) }); if (!result.success) throw new Error(result.message || "Couldn’t save this template. Try again."); toast.add({ title: "Template saved.", type: "success" }); }
+    catch (failure) { setError(failure.message || "Couldn’t save this template. Try again."); toast.add({ title: "Template could not be saved.", type: "error" }); }
     finally { setBusy(""); }
   }
   async function sendTest(event) {
     event.preventDefault(); setBusy("test"); setError("");
-    try { const result = await sendTestEmail({ waitListId, templateType: current, to: testEmail }); if (!result.success) throw new Error(result.message || "Couldn’t send this test. Check the address and try again."); toast.success(result.message || "Test email sent."); }
-    catch (failure) { setError(failure.message || "Couldn’t send this test. Try again."); toast.error("Test email could not be sent."); }
+    try { const result = await sendTestEmail({ waitListId, templateType: current, to: testEmail }); if (!result.success) throw new Error(result.message || "Couldn’t send this test. Check the address and try again."); toast.add({ title: result.message || "Test email sent.", type: "success" }); }
+    catch (failure) { setError(failure.message || "Couldn’t send this test. Try again."); toast.add({ title: "Test email could not be sent.", type: "error" }); }
     finally { setBusy(""); }
   }
   return <div className={styles.scope}>
