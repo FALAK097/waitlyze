@@ -4,12 +4,14 @@ import { useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { UserCircleIcon, UserGroupIcon, Plug01Icon } from "@hugeicons/core-free-icons";
+import { UserCircleIcon, UserGroupIcon, Plug01Icon, HistoryIcon, Alert02Icon } from "@hugeicons/core-free-icons";
 
 const sections = [
   { id: "profile", label: "Profile", icon: UserCircleIcon },
   { id: "team", label: "Members", icon: UserGroupIcon },
   { id: "integrations", label: "Integrations", icon: Plug01Icon },
+  { id: "audit", label: "Audit", icon: HistoryIcon },
+  { id: "delete", label: "Delete workspace", icon: Alert02Icon },
 ];
 
 export function SettingsSectionNavigation({ section = "profile" }) {

@@ -27,6 +27,7 @@ model User {
   apiKeys   ApiKey[]
   sessions  Session[]
   accounts  Account[]
+  auditEvents WorkspaceAuditEvent[]
 
   @@map("users")
 }
@@ -639,8 +640,26 @@ model Workspace {
   emailSuppressions EmailSuppression[]
   integrations      WorkspaceIntegration[]
   customDomains     CustomDomain[]
+  auditEvents     WorkspaceAuditEvent[]
 
   @@map("workspaces")
+}
+
+model WorkspaceAuditEvent {
+  id           String    @id @default(cuid())
+  workspaceId  String
+  workspace    Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  userId       String?
+  user         User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+  action       String
+  resourceType String?
+  resourceId   String?
+  resourceName String?
+  detail       String?
+  createdAt    DateTime  @default(now())
+
+  @@index([workspaceId, createdAt])
+  @@map("workspace_audit_events")
 }
 
 model WorkspaceMember {

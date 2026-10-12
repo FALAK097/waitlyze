@@ -11,6 +11,7 @@ import prisma from "@/lib/prisma";
 import { createWorkspaceResendSender } from "@/lib/integrations/resend-sender.mjs";
 import { decryptIntegrationSecret, encryptIntegrationSecret } from "@/lib/integrations/secrets.mjs";
 import { createWorkspaceService } from "@/lib/workspaces/service.mjs";
+import { AUDIT_ACTIONS, recordAuditEvent } from "@/lib/workspaces/audit.mjs";
 import { acceptWorkspaceInvitation, hashInvitationToken, invitationExpiry, normalizeInvitationEmail, revokeWorkspaceInvitation } from "@/lib/workspaces/invitations.mjs";
 
 import { consumePublicBudget } from "@/lib/security/public-rate-limit.mjs";
@@ -114,6 +115,7 @@ export async function inviteWorkspaceMember(previous, form) {
       revalidatePath("/settings#team");
       return { error: "The invite is saved, but email delivery failed. Retry it from Pending invitations." };
     }
+    await recordAuditEvent(prisma, { workspaceId, userId: session.user.id, action: AUDIT_ACTIONS.MEMBER_INVITED, resourceType: "invitation", resourceId: invitation.id, resourceName: email, detail: `Invited as ${role}` });
     revalidatePath("/settings#team");
     return { success: `Invitation sent to ${email}.` };
   } catch {
@@ -157,6 +159,7 @@ export async function resendWorkspaceInvitation(invitationId) {
       return { error: "Email delivery failed. The invitation is still available to retry." };
     }
     await prisma.workspaceInvitation.updateMany({ where: { id: invite.id, status: { in: ["PENDING", "SEND_FAILED"] } }, data: { status: "PENDING", tokenCiphertext: "", tokenIv: "", tokenTag: "" } });
+    await recordAuditEvent(prisma, { workspaceId: invite.workspaceId, userId: session.user.id, action: AUDIT_ACTIONS.INVITATION_RESENT, resourceType: "invitation", resourceId: invite.id, resourceName: invite.emailNormalized });
     revalidatePath("/settings#team");
     return { success: `Invitation resent to ${invite.emailNormalized}.` };
   } catch {
@@ -170,6 +173,7 @@ export async function revokeWorkspaceInvite(invitationId, workspaceId) {
   try {
     const result = await revokeWorkspaceInvitation(prisma, { invitationId, workspaceId, actorId: session.user.id });
     if (!result.success) return { error: "This invitation has expired or is no longer available." };
+    await recordAuditEvent(prisma, { workspaceId, userId: session.user.id, action: AUDIT_ACTIONS.INVITATION_REVOKED, resourceType: "invitation", resourceId: invitationId });
     revalidatePath("/settings#team");
     return { success: "Invitation revoked." };
   } catch {
@@ -191,6 +195,7 @@ export async function acceptWorkspaceInvite(previous, form) {
     };
     return { error: messages[result.code] || messages.INVALID };
   }
+  await recordAuditEvent(prisma, { workspaceId: result.workspaceId, userId: session.user.id, action: AUDIT_ACTIONS.MEMBER_JOINED, resourceType: "member", resourceId: session.user.id, resourceName: session.user.email || session.user.name });
   (await cookies()).set("waitlyze-workspace", result.workspaceId, { httpOnly: true, sameSite: "lax", secure: env.NODE_ENV === "production", path: "/", maxAge: 60 * 60 * 24 * 30 });
   revalidatePath("/settings");
   redirect("/waitlists");

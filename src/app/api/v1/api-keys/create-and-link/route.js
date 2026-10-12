@@ -5,6 +5,7 @@ import prisma from '@/lib/prisma';
 import { createApiKey } from '@/services/api-key';
 import { campaignScope } from "@/lib/workspaces/service.mjs";
 import { selectedWorkspaceId } from "@/lib/workspaces/current";
+import { AUDIT_ACTIONS, recordAuditEvent } from "@/lib/workspaces/audit.mjs";
 
 export async function POST(request) {
   try {
@@ -82,6 +83,7 @@ export async function POST(request) {
       return NextResponse.json({ error: { message: 'This waitlist is already linked to another API key' } }, { status: 409 });
     }
     const newApiKey = result.apiKey;
+    await recordAuditEvent(prisma, { workspaceId: waitlist.workspaceId, userId: user.id, action: AUDIT_ACTIONS.API_KEY_CREATED, resourceType: "api_key", resourceId: newApiKey.id, resourceName: name.trim(), detail: `For waitlist ${waitlist.name || waitlist.id}` });
 
     const responseData = {
       apiKey: {

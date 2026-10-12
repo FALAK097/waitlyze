@@ -3,6 +3,7 @@
 import { sessionActor } from "@/lib/workspaces/authorize";
 import { AccessError } from "@/lib/workspaces/service.mjs";
 import { pauseCampaign, PublicationConflict, publishCampaign, rollbackCampaign } from "@/lib/campaigns/publication.mjs";
+import { AUDIT_ACTIONS, recordWaitlistAuditEvent } from "@/lib/workspaces/audit.mjs";
 import prisma from "@/lib/prisma";
 
 async function action(run, fallback) {
@@ -19,10 +20,18 @@ async function action(run, fallback) {
 
 export async function publishWaitlist(id, revision) {
   if (!Number.isSafeInteger(revision) || revision < 1) return { ok: false, message: "Reload the page and try again." };
-  return action((userId) => publishCampaign(prisma, userId, undefined, id, revision), "Waitlist publish failed");
+  return action(async (userId) => {
+    const result = await publishCampaign(prisma, userId, undefined, id, revision);
+    await recordWaitlistAuditEvent(prisma, { userId, waitListId: id, action: AUDIT_ACTIONS.WAITLIST_PUBLISHED });
+    return result;
+  }, "Waitlist publish failed");
 }
 export async function pauseWaitlist(id) {
-  return action((userId) => pauseCampaign(prisma, userId, undefined, id), "Waitlist pause failed");
+  return action(async (userId) => {
+    const result = await pauseCampaign(prisma, userId, undefined, id);
+    await recordWaitlistAuditEvent(prisma, { userId, waitListId: id, action: AUDIT_ACTIONS.WAITLIST_PAUSED });
+    return result;
+  }, "Waitlist pause failed");
 }
 export async function rollbackWaitlist(id) {
   return action((userId) => rollbackCampaign(prisma, userId, undefined, id), "Waitlist rollback failed");

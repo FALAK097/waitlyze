@@ -1,7 +1,7 @@
 "use client";
 
 import { HugeiconsIcon } from "@hugeicons/react";
-import { Add01Icon, ArrowDown01Icon, Logout01Icon, Tick01Icon } from "@hugeicons/core-free-icons";
+import { Add01Icon, ArrowDown01Icon, ArrowUpRight01Icon, Logout01Icon, Tick01Icon } from "@hugeicons/core-free-icons";
 import { Fragment, useActionState, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -102,7 +102,7 @@ function AccountMenu({ user, avatar }) {
   }
   return <div className="app-account-control"><DropdownMenu><DropdownMenuTrigger render={<Button variant="ghost" size="icon" />} aria-label="Open account menu">{avatar}</DropdownMenuTrigger><DropdownMenuContent align="end" sideOffset={8}>
     <div className="app-account-details">{avatar}<div><strong>{user.name || "Account"}</strong><span>{user.email}</span></div></div>
-    <DropdownMenuItem onClick={leave} disabled={pending}><HugeiconsIcon icon={Logout01Icon} aria-hidden="true" />{pending ? "Signing out…" : "Sign out"}</DropdownMenuItem>
+    <DropdownMenuItem variant="destructive" onClick={leave} disabled={pending}><HugeiconsIcon icon={Logout01Icon} aria-hidden="true" />{pending ? "Signing out…" : "Sign out"}</DropdownMenuItem>
   </DropdownMenuContent></DropdownMenu></div>;
 }
 
@@ -116,7 +116,7 @@ export function AppShell({ children, user, avatar, waitlists, workspaces, select
       <nav aria-label="Main navigation" className="app-navigation">
         <Link href="/waitlists" aria-current={pathname.startsWith("/waitlists") ? "page" : undefined}>Overview</Link>
         <Link href="/settings" aria-current={pathname.startsWith("/settings") ? "page" : undefined}>Settings</Link>
-        <Link href="/docs" target="_blank" rel="noreferrer">Docs</Link>
+        <Link href="/docs" target="_blank" rel="noreferrer">Docs<HugeiconsIcon icon={ArrowUpRight01Icon} size={14} aria-hidden="true" /></Link>
       </nav>
       <AccountMenu user={user} avatar={avatar} />
     </div></header>

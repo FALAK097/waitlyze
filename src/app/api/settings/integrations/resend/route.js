@@ -3,6 +3,7 @@ import prisma from "@/lib/prisma";
 import { env } from "@/lib/env.mjs";
 import { integrationAccess } from "@/lib/integrations/access";
 import { encryptIntegrationSecret } from "@/lib/integrations/secrets.mjs";
+import { AUDIT_ACTIONS, recordAuditEvent } from "@/lib/workspaces/audit.mjs";
 
 const PROVIDER = "RESEND";
 const safeSelect = { id: true, provider: true, status: true, fromEmail: true, lastTestedAt: true, lastErrorCode: true, updatedAt: true };
@@ -33,6 +34,7 @@ export async function PUT(request) {
       update: { fromEmail, status: "NEEDS_TEST", lastErrorCode: null, ...(secret || {}) },
       select: safeSelect,
     });
+    await recordAuditEvent(prisma, { workspaceId: access.workspace.id, userId: access.user.id, action: AUDIT_ACTIONS.RESEND_CONNECTED, resourceType: "integration", resourceName: `Resend · ${fromEmail}` });
     return NextResponse.json({ data: connection }, { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
     if (error instanceof SyntaxError) return NextResponse.json({ error: "Enter valid connection details." }, { status: 400 });
@@ -44,5 +46,6 @@ export async function DELETE(request) {
   const access = await integrationAccess(request, { manage: true });
   if (access.response) return access.response;
   await prisma.workspaceIntegration.deleteMany({ where: { workspaceId: access.workspace.id, provider: PROVIDER } });
+  await recordAuditEvent(prisma, { workspaceId: access.workspace.id, userId: access.user.id, action: AUDIT_ACTIONS.RESEND_DISCONNECTED, resourceType: "integration", resourceName: "Resend" });
   return NextResponse.json({ ok: true });
 }

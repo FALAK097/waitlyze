@@ -2,10 +2,13 @@
 
 import { formatProductDate } from "@/lib/product-date.mjs";
 
+import { HugeiconsIcon } from "@hugeicons/react";
+import { Add01Icon } from "@hugeicons/core-free-icons";
 import { useActionState, useEffect, useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { inviteWorkspaceMember, resendWorkspaceInvitation, revokeWorkspaceInvite } from "@/app/actions/workspace-invitations";
 import { Dialog, DialogTrigger, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
@@ -16,11 +19,17 @@ function formatDate(value) {
   return formatProductDate(value, { includeTime: false });
 }
 
-export function TeamAccessSettings({ workspaceId, members, invitations, canManage, canInviteAdmins, secureInvitesConfigured }) {
+export function TeamAccessSettings({ workspaceId, members, invitations, canManage, canInviteAdmins, secureInvitesConfigured, currentUserId }) {
   const [inviteOpen, setInviteOpen] = useState(false);
+  const [memberQuery, setMemberQuery] = useState("");
   const [rowMessage, setRowMessage] = useState("");
   const [rowError, setRowError] = useState("");
   const [rowPending, startTransition] = useTransition();
+  const visibleMembers = members.filter((member) => {
+    const needle = memberQuery.trim().toLowerCase();
+    if (!needle) return true;
+    return (member.user.name || "").toLowerCase().includes(needle) || (member.user.email || "").toLowerCase().includes(needle);
+  });
 
   function runInvitationAction(operation, invitationId) {
     setRowMessage("");
@@ -40,9 +49,13 @@ export function TeamAccessSettings({ workspaceId, members, invitations, canManag
   }
 
   return <div className="product-team-settings">
-    <div className="product-team-toolbar"><p>{members.length} {members.length === 1 ? "member" : "members"}</p>
+    <div className="product-team-toolbar">
+      <div className="product-team-search" role="search">
+        <Label className="sr-only" htmlFor="team-member-search">Search members</Label>
+        <Input id="team-member-search" type="search" value={memberQuery} onChange={(event) => setMemberQuery(event.target.value)} placeholder="Search" autoComplete="off" maxLength={120} />
+      </div>
       {canManage && secureInvitesConfigured ? <Dialog open={inviteOpen} onOpenChange={setInviteOpen}>
-        <DialogTrigger render={<Button variant="outline" />}>Invite member</DialogTrigger>
+        <DialogTrigger render={<Button variant="outline" />}><HugeiconsIcon icon={Add01Icon} aria-hidden="true" />Invite member</DialogTrigger>
         <DialogContent>
           <div className="product-team-invitation-dialog">
           <DialogTitle>Invite a member</DialogTitle><DialogDescription>Give a teammate access to this workspace.</DialogDescription>
@@ -52,14 +65,24 @@ export function TeamAccessSettings({ workspaceId, members, invitations, canManag
       </Dialog> : canManage ? <p className="product-help" role="status">Invitations are unavailable. Ask your administrator to configure secure invitations.</p> : <p className="product-help">An owner or admin can invite teammates.</p>}
     </div>
 
-    <section className="product-team-list" aria-labelledby="team-members-heading">
+    <section aria-labelledby="team-members-heading">
       <h3 id="team-members-heading" className="sr-only">Members</h3>
-
-      <ul>{members.map((member) => <li key={member.userId}>
-        <Avatar aria-hidden="true"><AvatarImage src={member.user.image || member.user.imageUrl} alt="" /><AvatarFallback>{(member.user.name || member.user.email || "?").slice(0, 1).toUpperCase()}</AvatarFallback></Avatar>
-        <span className="product-team-person"><strong>{member.user.name || member.user.email}</strong><span>{member.user.email}</span></span>
-        <span className="product-team-role">{member.role.toLowerCase()}</span>
-      </li>)}</ul>
+      <div className="product-table-wrap"><Table>
+        <TableHeader><TableRow><TableHead scope="col">User</TableHead><TableHead scope="col">Role</TableHead><TableHead scope="col">Joined</TableHead></TableRow></TableHeader>
+        <TableBody>
+          {visibleMembers.map((member) => {
+            const isSelf = currentUserId && member.userId === currentUserId;
+            return <TableRow key={member.userId}>
+              <TableHead scope="row"><span className="product-team-user"><Avatar aria-hidden="true"><AvatarImage src={member.user.image || member.user.imageUrl} alt="" /><AvatarFallback>{(member.user.name || member.user.email || "?").slice(0, 1).toUpperCase()}</AvatarFallback></Avatar><span className="product-team-person"><strong>{member.user.name || member.user.email}{isSelf ? " (you)" : ""}</strong><span>{member.user.email}</span></span></span></TableHead>
+              <TableCell>{member.role.toLowerCase()}</TableCell>
+              <TableCell>{member.createdAt ? formatDate(member.createdAt) : "—"}</TableCell>
+            </TableRow>;
+          })}
+          {!visibleMembers.length && <TableRow><TableCell colSpan={3}><p className="product-table-empty">No members match this search.</p></TableCell></TableRow>}
+        </TableBody>
+      </Table>
+      <p className="product-team-results" aria-live="polite">{visibleMembers.length} of {members.length} {members.length === 1 ? "member" : "members"}</p>
+      </div>
     </section>
 
     {canManage ? <section className="product-team-list" aria-labelledby="team-pending-heading">

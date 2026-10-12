@@ -3,6 +3,7 @@
 import { env } from "@/lib/env.mjs";
 import prisma from "@/lib/prisma";
 import { requireCampaign } from "@/lib/workspaces/authorize";
+import { AUDIT_ACTIONS, recordWaitlistAuditEvent } from "@/lib/workspaces/audit.mjs";
 import { consumePublicBudget, PublicRateLimitError } from "@/lib/security/public-rate-limit.mjs";
 import { getCampaignPosition } from "@/lib/campaigns/referral-position.mjs";
 import { escapeHtmlText, renderEmailMarkdown } from "@/lib/email-markdown.mjs";
@@ -652,7 +653,7 @@ export async function getBroadcastRecipients(waitListId) {
 }
 
 export async function queueBroadcast({ waitListId, broadcastId, expectedRecipientCount }) {
-  const { campaign } = await requireCampaign(waitListId, "sendEmail");
+  const { campaign, user } = await requireCampaign(waitListId, "sendEmail");
   if (!Number.isInteger(expectedRecipientCount) || expectedRecipientCount < 0) return { success: false, message: "Refresh the recipient preview before sending." };
   if (!env.OUTBOX_DISPATCH_SECRET || !env.RESEND_API_KEY) return { success: false, message: "Email delivery is not configured yet." };
   try {
@@ -708,6 +709,7 @@ export async function queueBroadcast({ waitListId, broadcastId, expectedRecipien
       return queued.count;
     });
     revalidatePath(broadcastPath(waitListId));
+    await recordWaitlistAuditEvent(prisma, { userId: user.id, waitListId: campaign.id, action: AUDIT_ACTIONS.BROADCAST_SENT, resourceType: "broadcast", resourceId: broadcastId, detail: `Queued for ${count} opted-in subscriber${count === 1 ? "" : "s"}` });
     return { success: true, message: `Queued for ${count} opted-in subscriber${count === 1 ? "" : "s"}.` };
   } catch (error) {
     return { success: false, message: error.message || "Could not queue this broadcast." };

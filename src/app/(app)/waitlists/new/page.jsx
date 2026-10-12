@@ -1,6 +1,7 @@
 import { revalidatePath } from "next/cache";
 import { currentWorkspace } from "@/lib/workspaces/current";
 import { createWorkspaceService, AccessError } from "@/lib/workspaces/service.mjs";
+import { AUDIT_ACTIONS, recordAuditEvent } from "@/lib/workspaces/audit.mjs";
 import { createDraft, DraftCreationError } from "@/lib/campaigns/create-draft.mjs";
 import { listTemplates } from "@/lib/templates/catalog.mjs";
 import { WaitlistCreationFlow } from "@/components/product/waitlist-creation-flow";
@@ -21,6 +22,7 @@ export default async function NewWaitlistPage() {
         name: formData.get("name"), description: formData.get("description"),
         publicSlug: formData.get("publicSlug"), templateId: formData.get("templateId"), creationKey: formData.get("creationKey"),
       });
+      await recordAuditEvent(prisma, { workspaceId, userId: actor.id, action: AUDIT_ACTIONS.WAITLIST_CREATED, resourceType: "waitlist", resourceId: draft.id, resourceName: String(formData.get("name") || "Untitled waitlist") });
       revalidatePath("/(app)", "layout");
       return { id: draft.id };
     } catch (error) {

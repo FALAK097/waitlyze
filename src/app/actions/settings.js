@@ -4,7 +4,8 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import prisma from "@/lib/prisma";
-import { createWorkspaceService } from "@/lib/workspaces/service.mjs";
+import { AccessError, createWorkspaceService } from "@/lib/workspaces/service.mjs";
+import { AUDIT_ACTIONS, recordAuditEvent } from "@/lib/workspaces/audit.mjs";
 import { requireCampaign } from "@/lib/workspaces/authorize";
 
 export async function saveProfile(previous, form) {
@@ -53,9 +54,33 @@ export async function createWorkspace(previous, form) {
   }
   try {
     const workspace = await createWorkspaceService(prisma).createWorkspace(session.user.id, name);
+    await recordAuditEvent(prisma, { workspaceId: workspace.id, userId: session.user.id, action: AUDIT_ACTIONS.WORKSPACE_CREATED, resourceType: "workspace", resourceId: workspace.id, resourceName: workspace.name });
     (await cookies()).set("waitlyze-workspace", workspace.id, { httpOnly: true, sameSite: "lax", secure: process.env.NODE_ENV === "production" && !process.env.WAITLYZE_TEST_FIXTURE, path: "/", maxAge: 60 * 60 * 24 * 30 });
   } catch {
     return { error: "Could not create the workspace. Try again." };
   }
+  redirect("/waitlists");
+}
+
+export async function deleteWorkspace(previous, form) {
+  const session = await auth.api.getSession({ headers: await headers() });
+  if (!session?.user?.id) redirect("/");
+  const workspaceId = form.get("workspaceId");
+  const confirmation = typeof form.get("confirmation") === "string" ? form.get("confirmation").trim() : "";
+  if (typeof workspaceId !== "string" || !workspaceId) return { error: "Choose a workspace to delete." };
+  try {
+    const service = createWorkspaceService(prisma);
+    const workspace = await service.requireAccess(session.user.id, workspaceId, "manageWorkspace");
+    if (!confirmation || confirmation !== workspace.name) {
+      return { error: `Type “${workspace.name}” to confirm deletion.` };
+    }
+    await service.deleteWorkspace(session.user.id, workspaceId);
+  } catch (error) {
+    if (error instanceof TypeError) return { error: error.message };
+    if (error instanceof AccessError) return { error: "Only a workspace owner can delete this workspace." };
+    return { error: "Could not delete this workspace. Try again." };
+  }
+  const store = await cookies();
+  if (store.get("waitlyze-workspace")?.value === workspaceId) store.delete("waitlyze-workspace");
   redirect("/waitlists");
 }

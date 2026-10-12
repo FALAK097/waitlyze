@@ -15,8 +15,9 @@ export function IntegrationsPanel({ initialConnection, accountEmail, canManage }
   const [keysOpen, setKeysOpen] = useState(false);
   return <div className="settings-integrations">
     <Sheet open={keysOpen} onOpenChange={setKeysOpen}>
-    <div className="settings-integration-toolbar">
-      <div><Button variant="ghost" render={<Link href="/docs" />}>View docs <HugeiconsIcon icon={ArrowUpRight01Icon} size={16} aria-hidden="true" /></Button>{canManage && <SheetTrigger render={<Button variant="outline" />}><HugeiconsIcon icon={Key02Icon} size={16} aria-hidden="true" /> API keys</SheetTrigger>}</div>
+    <div className="settings-integrations-heading">
+      <div><h2 id="settings-panel-heading">Integrations</h2><p>Connect the tools your waitlists use.</p></div>
+      <div className="settings-integration-toolbar"><Button variant="ghost" render={<Link href="/docs" target="_blank" rel="noreferrer" />}>View docs <HugeiconsIcon icon={ArrowUpRight01Icon} size={16} aria-hidden="true" /></Button>{canManage && <SheetTrigger render={<Button variant="outline" />}><HugeiconsIcon icon={Key02Icon} size={16} aria-hidden="true" /> API keys</SheetTrigger>}</div>
     </div>
     <ResendIntegration initialConnection={initialConnection} accountEmail={accountEmail} canManage={canManage} logo={<Image src="/integrations/resend.svg" width={32} height={32} alt="" />} />
     <SheetContent>

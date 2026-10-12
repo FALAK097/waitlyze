@@ -451,6 +451,33 @@
 }
 
 .product-team-settings { display: grid; gap: 24px; }
+.product-team-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px; }
+.product-team-search { flex: 0 1 320px; min-width: min(100%, 220px); max-width: 320px; }
+.product-team-toolbar > :last-child { margin-inline-start: auto; }
+.product-team-user { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.product-team-settings .product-table-wrap th:first-child { width: 50%; }
+.product-team-settings .product-table-wrap th:nth-child(2) { width: 25%; }
+.product-team-settings .product-table-wrap th:nth-child(3) { width: 25%; }
+.product-team-settings .product-table-wrap td { color: var(--product-text-secondary); }
+.product-team-settings .product-table-wrap tbody td:nth-child(2) { text-transform: capitalize; }
+.product-table-empty { text-align: center; color: var(--product-text-secondary); padding-block: 32px; margin: 0; }
+.product-team-results { margin: 12px 4px 0; color: var(--product-text-secondary); font-size: .8125rem; }
+.product-audit { display: grid; gap: 0; }
+.product-audit .product-table-wrap th:first-child { width: 18%; }
+.product-audit .product-table-wrap th:nth-child(2) { width: 14%; }
+.product-audit .product-table-wrap th:nth-child(3) { width: 24%; }
+.product-audit .product-table-wrap td { color: var(--product-text-secondary); }
+.product-audit-action { display: inline-flex; align-items: center; gap: 6px; color: var(--product-text-primary); font-weight: 500; white-space: nowrap; }
+.product-audit-action span { font-size: .625rem; }
+.product-audit-action[data-tone="success"] span { color: var(--product-success-text); }
+.product-audit-action[data-tone="danger"] span { color: var(--product-danger-text); }
+.product-audit-action[data-tone="info"] span { color: var(--product-accent-border); }
+.product-audit-action[data-tone="muted"] span { color: var(--product-text-secondary); }
+.product-danger-zone { display: grid; gap: 20px; padding: 24px; border: 1px solid var(--product-border-subtle); border-radius: 12px; background: var(--product-bg-surface); }
+.product-danger-zone h3 { margin: 0 0 8px; font-size: 1rem; }
+.product-danger-zone p { margin: 0; color: var(--product-text-secondary); }
+.product-danger-zone p + p { margin-top: 4px; }
+.product-danger-form { display: grid; gap: 16px; max-width: 480px; }
 .product-team-invite-form { display: grid; gap: 12px; padding: 0 0 24px; border: 0; border-radius: 0; background: transparent; }
 .product-team-field { display: grid; gap: 7px; font-size: .875rem; font-weight: 550; }
 .product-team-field select { width: 100%; min-height: 44px; padding: 8px 12px; border: 1px solid var(--product-border-control); border-radius: 8px; background: var(--product-bg-surface); color: var(--product-text-primary); font: inherit; }

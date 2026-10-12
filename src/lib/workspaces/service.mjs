@@ -91,6 +91,26 @@ export function createWorkspaceService(db) {
         select: { id: true, name: true },
       });
     },
+    async deleteWorkspace(userId, workspaceId) {
+      actor(userId);
+      if (typeof workspaceId !== "string" || !workspaceId) throw new AccessError();
+      return db.$transaction(async (tx) => {
+        const workspace = await tx.workspace.findFirst({
+          where: { id: workspaceId, members: { some: { userId, role: "OWNER" } } },
+          select: { id: true, name: true, personalOwnerId: true },
+        });
+        if (!workspace) throw new AccessError();
+        if (workspace.personalOwnerId) throw new TypeError("The personal workspace cannot be deleted.");
+        const waitlists = await tx.waitList.findMany({ where: { workspaceId }, select: { id: true } });
+        const waitlistIds = waitlists.map((waitlist) => waitlist.id);
+        if (waitlistIds.length) {
+          await tx.apiKey.deleteMany({ where: { waitlistId: { in: waitlistIds } } });
+          await tx.waitList.deleteMany({ where: { id: { in: waitlistIds } } });
+        }
+        await tx.workspace.delete({ where: { id: workspaceId } });
+        return { id: workspace.id, name: workspace.name, waitlistCount: waitlistIds.length };
+      });
+    },
     async campaign(userId, id, permission = "viewCampaign", workspaceId) {
       if (typeof id !== "string" || !id) throw new AccessError();
       const campaign = await db.waitList.findFirst({ where: { id, ...campaignScope(userId, permission, workspaceId) } });

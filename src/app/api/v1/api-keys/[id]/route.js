@@ -1,4 +1,5 @@
 import { revokeApiKey } from '@/services/api-key';
+import { AUDIT_ACTIONS, recordWaitlistAuditEvent } from "@/lib/workspaces/audit.mjs";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { NextResponse } from 'next/server';
@@ -57,6 +58,7 @@ export async function DELETE(_req, { params }) {
         if (!success) {
             return NextResponse.json({ error: { code: 'not_found', message: 'API key not found or access denied' } }, { status: 404 });
         }
+        if (waitlistId) await recordWaitlistAuditEvent(prisma, { userId: user.id, waitListId: waitlistId, action: AUDIT_ACTIONS.API_KEY_REVOKED, resourceType: "api_key", resourceId: id });
 
         return new Response(null, { status: 204 });
     } catch (err) {

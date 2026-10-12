@@ -61,18 +61,15 @@ export function ResendIntegration({ initialConnection, accountEmail, canManage, 
     try { await navigator.clipboard.writeText(apiKey); toast.add({ title: "Key copied.", type: "success" }); }
     catch { toast.add({ title: "Copy is unavailable. Select the key and copy it manually.", type: "error" }); }
   }
-  const status = connection?.status || "DISCONNECTED";
-  const statusLabel = { CONNECTED: "Connected", NEEDS_TEST: "Test needed", NEEDS_ATTENTION: "Needs attention", DISCONNECTED: "Not connected" }[status] || "Not connected";
   return <Sheet open={open} onOpenChange={changeOpen}>
     <div className="settings-integration-row">
       <div className="settings-integration-brand">{logo}<div><h3>Resend</h3><p>Send email from your own domain.</p></div></div>
-      <div className="settings-integration-row-actions"><span>{statusLabel}</span><SheetTrigger render={<Button variant="outline" />}>{canManage ? connection ? "Manage" : "Connect" : "View"}</SheetTrigger></div>
+      <div className="settings-integration-row-actions"><SheetTrigger render={<Button variant="outline" />}>{canManage ? connection ? "Manage" : "Connect" : "View"}</SheetTrigger></div>
     </div>
     <SheetContent>
       <SheetHeader><SheetTitle>Connect Resend</SheetTitle><SheetDescription>Use a sending-only API key and a verified sender address.</SheetDescription></SheetHeader>
       <div className="p-6 pt-0">
       <div className="integration-drawer-content">
-        <span className="integration-status">{statusLabel}</span>
         {canManage ? <form onSubmit={save} className="integration-drawer-form">
           <label className="product-field" htmlFor="resend-api-key"><span>Sending API key</span></label>
           <div className="integration-secret-input"><Input id="resend-api-key" type={revealed ? "text" : "password"} autoComplete="off" spellCheck="false" value={apiKey} onChange={(event) => setApiKey(event.target.value)} placeholder={connection ? "Saved key · enter a replacement" : "re_…"} required={!connection} maxLength={512} disabled={Boolean(busy)} /><Button type="button" variant="ghost" size="icon" aria-label={revealed ? "Hide API key" : "Show API key"} aria-pressed={revealed} onClick={() => setRevealed(!revealed)} disabled={!apiKey || Boolean(busy)}>{revealed ? <HugeiconsIcon icon={ViewOffIcon} size={18} /> : <HugeiconsIcon icon={ViewIcon} size={18} />}</Button><Button type="button" variant="ghost" size="icon" aria-label="Copy entered API key" disabled={!apiKey || Boolean(busy)} onClick={copy}><HugeiconsIcon icon={Copy01Icon} size={18} /></Button></div>
