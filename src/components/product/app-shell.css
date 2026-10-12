@@ -26,11 +26,11 @@
 .app-breadcrumbs a { color: var(--product-text-secondary); text-decoration: none; }
 .app-breadcrumbs [aria-current] { color: var(--product-text-primary); font-weight: 500; }
 .app-account-control { margin-inline-start: auto; flex-shrink: 0; }
-.app-account-control [data-slot="dropdown-menu-content"] { min-width: 248px; }
-.app-account-details { display: flex; align-items: center; gap: 12px; padding: 12px 8px 16px; max-width: min(320px, calc(100vw - 32px)); }
+.app-account-details { display: flex; align-items: center; gap: 12px; padding: 12px 8px 16px; max-width: min(320px, calc(100vw - 32px)); white-space: nowrap; }
 .app-account-details > div { display: grid; gap: 4px; min-width: 0; flex: 1; }
 .app-account-details strong { font-size: .875rem; font-weight: 600; overflow-wrap: break-word; }
-.app-account-details span { font-size: .75rem; color: var(--product-text-secondary); overflow-wrap: break-word; }
+.app-account-details span { font-size: .75rem; color: var(--product-text-secondary); }
+.app-account-email { display: block; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 @media (hover: hover) and (pointer: fine) { .app-navigation a:hover { background: var(--product-bg-inset); color: var(--product-text-primary); } .app-breadcrumbs a:hover { text-decoration: underline; text-underline-offset: 3px; } }
 @media (prefers-reduced-motion: no-preference) { .app-navigation a { transition-property: color, background-color; transition-duration: 150ms; } }
 @media (max-width: 767px) { .app-header-inner { min-height: 72px; padding: 12px var(--product-content-gutter, 20px); gap: 12px; flex-wrap: wrap; } .app-navigation { order: 4; width: 100%; justify-content: flex-start; margin-inline: 0; } .app-navigation a { flex: 1; } .app-workspace-control { flex: 1; max-width: none; min-width: 0; } .app-account-control { margin-inline-start: auto; } .app-content-header { padding-inline: var(--product-content-gutter, 20px); } }

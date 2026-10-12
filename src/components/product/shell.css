@@ -470,6 +470,15 @@
 .product-table-empty { text-align: center; color: var(--product-text-secondary); padding-block: 32px; margin: 0; }
 .product-team-results { margin: 12px 4px 0; color: var(--product-text-secondary); font-size: .8125rem; }
 .product-audit { display: grid; gap: 0; }
+.product-audit-heading { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 16px 24px; margin-bottom: 20px; }
+.product-audit-heading h2 { font-size: 1.5rem; margin: 0 0 8px; }
+.product-audit-heading p { color: var(--product-text-secondary); margin: 0; text-wrap: pretty; }
+.product-audit-controls { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.product-audit-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-bottom: 16px; }
+.product-audit-actor { display: inline-flex; align-items: center; gap: 8px; min-width: 0; color: var(--product-text-primary); }
+.product-audit-actor > span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.product-audit-system { color: var(--product-text-secondary); }
+.product-audit .product-table-wrap thead th { color: var(--product-text-secondary); font-weight: 500; }
 .product-audit .product-table-wrap th:first-child { width: 18%; }
 .product-audit .product-table-wrap th:nth-child(2) { width: 14%; }
 .product-audit .product-table-wrap th:nth-child(3) { width: 24%; }

@@ -43,7 +43,6 @@ async function SelectedSettings({ section, user, workspace, role }) {
       return <SettingsLoadError title="Audit couldn’t load" message="Try again to see recent workspace activity." />;
     }
     return <section className="product-settings-content" aria-labelledby="settings-panel-heading">
-      <header><h2 id="settings-panel-heading">Audit</h2><p>Every change in this workspace, newest first — who did it and what changed.</p></header>
       <AuditLog events={events.map((event) => ({ ...event, createdAt: event.createdAt.toISOString(), userName: event.user?.name || null, userEmail: event.user?.email || null }))} />
     </section>;
   }
