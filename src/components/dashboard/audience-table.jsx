@@ -1,5 +1,7 @@
 "use client";
 
+import { formatProductDate } from "@/lib/product-date.mjs";
+
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Download, Search, Users } from "lucide-react";
@@ -7,6 +9,8 @@ import { Button } from "@/components/product/button";
 import { buttonVariants } from "@/components/product/button-variants";
 import { Input } from "@/components/product/input";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/product/dialog";
+import "./audience.css";
+import { notifySettingsResult } from "@/components/product/settings-feedback";
 import { ReferralReview } from "@/components/dashboard/referral-review";
 
 const PAGE_SIZE = 25;
@@ -17,7 +21,7 @@ const statuses = [
 ];
 
 function formatDate(date) {
-  return new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(new Date(date));
+  return formatProductDate(date);
 }
 
 export function AudienceTable({ waitlist, initialReviews = [], initialReviewsFailed = false, canManage = false }) {
@@ -33,6 +37,7 @@ export function AudienceTable({ waitlist, initialReviews = [], initialReviewsFai
   const [retryCount, setRetryCount] = useState(0);
   const [error, setError] = useState("");
   const [selected, setSelected] = useState(null);
+  const [exportError, setExportError] = useState("");
   const [exporting, setExporting] = useState(false);
 
   useEffect(() => {
@@ -77,6 +82,7 @@ export function AudienceTable({ waitlist, initialReviews = [], initialReviewsFai
 
   async function exportCsv() {
     setExporting(true);
+    setExportError("");
     try {
       const params = new URLSearchParams({ status });
       if (search) params.set("q", search);
@@ -90,7 +96,9 @@ export function AudienceTable({ waitlist, initialReviews = [], initialReviewsFai
       anchor.click();
       URL.revokeObjectURL(url);
     } catch {
-      setError("The export could not be created. Try again.");
+      const message = "The export could not be created. Try again.";
+      setExportError(message);
+      notifySettingsResult({ error: message });
     } finally {
       setExporting(false);
     }
@@ -110,12 +118,11 @@ export function AudienceTable({ waitlist, initialReviews = [], initialReviewsFai
   const emptyDescription = search || status !== "all" ? "Try a different search or status filter." : "Publish and share your waitlist page to invite the first signups.";
 
   return (
-    <section className="product-ui" aria-labelledby="audience-title">
+    <section className="product-ui product-audience" aria-labelledby="audience-title">
       <header className="product-page-heading">
-        <span className="product-eyebrow">WAITLIST / SUBSCRIBERS</span>
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div className="grid gap-2">
-            <h1 id="audience-title">Subscribers</h1>
+            <h2 id="audience-title">Subscribers</h2>
             <p className="product-description">People who joined {waitlist.name || "this waitlist"}.</p>
           </div>
           {view === "subscribers" && (
@@ -124,29 +131,30 @@ export function AudienceTable({ waitlist, initialReviews = [], initialReviewsFai
             </Button>
           )}
         </div>
-        <div className="mt-4 flex gap-2" role="group" aria-label="Subscriber views">
-          <Button variant={view === "subscribers" ? "outline" : "ghost"} aria-pressed={view === "subscribers"} onClick={() => setView("subscribers")}>Subscribers</Button>
-          <Button variant={view === "referrals" ? "outline" : "ghost"} aria-pressed={view === "referrals"} onClick={() => setView("referrals")}>Referral review{initialReviews.filter((review) => review.reviewStatus === "NEEDS_REVIEW").length > 0 && ` · ${initialReviews.filter((review) => review.reviewStatus === "NEEDS_REVIEW").length}`}</Button>
+        <div className="product-audience-views" role="group" aria-label="Subscriber views">
+          <Button variant="ghost" aria-pressed={view === "subscribers"} onClick={() => setView("subscribers")}>Subscribers</Button>
+          <Button variant="ghost" aria-pressed={view === "referrals"} onClick={() => setView("referrals")}>Referral review{initialReviews.filter((review) => review.reviewStatus === "NEEDS_REVIEW").length > 0 && ` · ${initialReviews.filter((review) => review.reviewStatus === "NEEDS_REVIEW").length}`}</Button>
         </div>
       </header>
 
       {view === "referrals" ? <ReferralReview waitListId={waitlist.id} initialReviews={initialReviews} initialLoadError={initialReviewsFailed} canManage={canManage} /> : <>
 
-      <div className="product-panel overflow-hidden" aria-busy={isUpdating}>
-        <div className="flex flex-col gap-3 border-b border-[var(--product-border-subtle)] p-4 sm:flex-row sm:items-center sm:justify-between">
+      {exportError && <p className="product-field-error" role="alert">{exportError}</p>}
+      <div className="product-audience-data" aria-busy={isUpdating}>
+        <div className="product-audience-toolbar">
           <label className="relative block w-full sm:max-w-sm">
             <span className="sr-only">Search subscribers by email</span>
             <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[var(--product-text-secondary)]" aria-hidden="true" />
-            <Input className="pl-10" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search by email" maxLength={120} />
+            <Input className="pl-10" type="search" autoComplete="off" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search by email" maxLength={120} />
           </label>
-          <div className="flex gap-1 overflow-x-auto" role="group" aria-label="Filter subscribers by status">
+          <div className="product-audience-filters" role="group" aria-label="Filter subscribers by status">
             {statuses.map((item) => (
               <Button key={item.value} variant="ghost" aria-pressed={status === item.value} onClick={() => changeStatus(item.value)}>{item.label}</Button>
             ))}
           </div>
         </div>
 
-        {criteriaChanging && result.data.length > 0 && <p className="border-b border-[var(--product-border-subtle)] bg-[var(--product-bg-inset)] px-4 py-3 text-sm text-[var(--product-text-secondary)]" role="status" aria-live="polite">
+        {criteriaChanging && !error && result.data.length > 0 && <p className="border-b border-[var(--product-border-subtle)] bg-[var(--product-bg-inset)] px-4 py-3 text-sm text-[var(--product-text-secondary)]" role="status" aria-live="polite">
           Updating results. Showing subscribers for {appliedCriteriaLabel} until the new results load.
         </p>}
         {error && <div className="product-field-error flex flex-wrap items-center justify-between gap-3 px-4 py-3" role="alert">
@@ -155,12 +163,12 @@ export function AudienceTable({ waitlist, initialReviews = [], initialReviewsFai
         </div>}
         <div className="overflow-x-auto">
           <table className="w-full min-w-0 table-fixed border-collapse text-left sm:min-w-[38rem] sm:table-auto">
-            <thead className="bg-[var(--product-bg-inset)] text-[var(--product-text-secondary)]">
+            <thead className="text-[var(--product-text-secondary)]">
               <tr><th scope="col" className="w-[58%] px-4 py-3 font-medium sm:w-auto">Email</th><th scope="col" className="w-[42%] px-4 py-3 font-medium sm:w-auto">Status</th><th scope="col" className="hidden px-4 py-3 font-medium sm:table-cell">Joined</th><th scope="col" className="hidden px-4 py-3 font-medium sm:table-cell">Referrals</th></tr>
             </thead>
             <tbody>
               {result.data.map((subscriber) => (
-                <tr key={subscriber.id} className="border-t border-[var(--product-border-subtle)]">
+                <tr key={subscriber.id} className="product-audience-row">
                   <td className="px-4 py-3"><button type="button" className="break-all font-medium underline-offset-4 hover:underline focus-visible:underline sm:break-normal" onClick={() => setSelected(subscriber)}>{subscriber.email}</button></td>
                   <td className="px-4 py-3"><span className={`product-status ${subscriber.verifiedAt ? "product-status-success" : ""}`}><span aria-hidden="true">{subscriber.verifiedAt ? "●" : "○"}</span>{subscriber.verifiedAt ? "Verified" : "Needs confirmation"}</span></td>
                   <td className="hidden px-4 py-3 text-[var(--product-text-secondary)] sm:table-cell">{formatDate(subscriber.createdAt)}</td>
@@ -169,12 +177,12 @@ export function AudienceTable({ waitlist, initialReviews = [], initialReviewsFai
               ))}
               {!loading && !criteriaChanging && !error && result.data.length === 0 && <tr><td colSpan={4} className="px-4 py-16 text-center"><Users className="mx-auto mb-3 text-[var(--product-text-secondary)]" aria-hidden="true" /><p className="font-medium">{emptyTitle}</p><p className="mt-1 text-[var(--product-text-secondary)]">{emptyDescription}</p>{search || status !== "all" ? <Button className="mt-4" variant="outline" onClick={() => { setQuery(""); setStatus("all"); }}>Clear filters</Button> : <Link className={`${buttonVariants({ variant: "outline" })} mt-4`} href={`/wait-lists/${encodeURIComponent(waitlist.id)}`}>Open waitlist overview</Link>}</td></tr>}
               {isUpdating && result.data.length === 0 && <>
-                {[0, 1, 2, 3, 4].map((row) => <tr className="product-subscriber-skeleton-row" aria-hidden="true" key={row}><td><i /></td><td><i /></td><td><i /></td><td><i /></td></tr>)}
+                {[0, 1, 2, 3, 4].map((row) => <tr className="product-subscriber-skeleton-row" aria-hidden="true" key={row}><td><i /></td><td><i /></td><td className="hidden sm:table-cell"><i /></td><td className="hidden sm:table-cell"><i /></td></tr>)}
               </>}
             </tbody>
           </table>
         </div>
-        <footer className="flex flex-wrap items-center justify-between gap-3 border-t border-[var(--product-border-subtle)] px-4 py-3 text-[var(--product-text-secondary)]">
+        <footer className="product-audience-pagination">
           <span role="status" aria-live="polite" aria-atomic="true">{isUpdating ? "Updating subscribers…" : error ? "Couldn’t load subscribers." : `${showingStart}–${showingEnd} of ${result.total}`}</span>
           <div className="flex gap-2">
             <Button variant="outline" disabled={pageIndex === 0 || isUpdating} onClick={() => setPageIndex((current) => Math.max(0, current - 1))}>Previous</Button>

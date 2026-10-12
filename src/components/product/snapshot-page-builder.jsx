@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowDown, ArrowUp, Redo2, Undo2 } from "lucide-react";
+import { ArrowDown, ArrowUp, ChevronDown, Monitor, Redo2, Smartphone, Undo2 } from "lucide-react";
 import { Button } from "./button";
 import { PublicationOptions } from "./publication-options";
 import { Input } from "./input";
@@ -11,6 +11,8 @@ import { Dialog, DialogClose, DialogContent, DialogDescription, DialogTitle } fr
 import { templateSnapshotSchema } from "@/lib/templates/catalog.mjs";
 import { findUnchangedStarterCopy } from "@/lib/templates/starter-copy.mjs";
 import { WaitlistPageContent, WaitlistSignupPreview } from "@/components/product/waitlist-page-content";
+
+import styles from "./page-editor.module.css";
 
 const clone = (value) => structuredClone(value);
 const canonical = (value) => Array.isArray(value)
@@ -40,6 +42,8 @@ export function SnapshotPageBuilder({ waitList, saveDraftPage, publishPage, paus
   const [redoCount, setRedoCount] = useState(0);
   const [addType, setAddType] = useState("features");
   const [previewViewport, setPreviewViewport] = useState("desktop");
+  const [expandedSection, setExpandedSection] = useState(0);
+  const [mobileView, setMobileView] = useState("content");
   const [showAddSection, setShowAddSection] = useState(false);
   const [publishing, setPublishing] = useState(false);
   const [publishReviewOpen, setPublishReviewOpen] = useState(false);
@@ -173,6 +177,7 @@ export function SnapshotPageBuilder({ waitList, saveDraftPage, publishPage, paus
     [sections[index], sections[target]] = [sections[target], sections[index]];
     const next = { ...snapshot, sections };
     if (equal(snapshotRef.current, next)) return;
+    setExpandedSection(target);
     pendingSectionFocusRef.current = { index: target, action: direction < 0 ? "down" : "up" };
     setSectionAnnouncement(`${sectionNames[sections[target].type]} moved to position ${target + 1} of ${sections.length}.`);
     applySnapshot(next);
@@ -184,11 +189,13 @@ export function SnapshotPageBuilder({ waitList, saveDraftPage, publishPage, paus
   const updateItem = (sectionIndex, itemIndex, transform) => updateSection(sectionIndex, (section) => ({ ...section, items: section.items.map((item, index) => index === itemIndex ? transform(item) : item) }));
   const removeSection = (index) => {
     if (snapshot.sections[index].type === "hero" || snapshot.sections[index].type === "form") return;
+    setExpandedSection(Math.max(0, index - 1));
     applySnapshot({ ...snapshot, sections: snapshot.sections.filter((_, sectionIndex) => sectionIndex !== index) });
   };
   const addSection = () => {
     if (snapshot.sections.length >= 12) return;
     applySnapshot({ ...snapshot, sections: [...snapshot.sections.slice(0, -1), newSection(addType), snapshot.sections.at(-1)] });
+    setExpandedSection(snapshot.sections.length - 1);
     setShowAddSection(false);
   };
   const undo = () => {
@@ -275,12 +282,11 @@ export function SnapshotPageBuilder({ waitList, saveDraftPage, publishPage, paus
     setPublishReviewOpen(true);
   };
 
-  return <section className="product-builder" onKeyDown={onKeyDown}>
+  return <section className={`product-builder ${styles.builder}`} data-mobile-view={mobileView} onKeyDown={onKeyDown}>
     <header className="product-builder-header">
-      <div><p className="product-builder-kicker">{waitList.status === "PUBLISHED" ? "Published page" : waitList.status === "PAUSED" ? "Paused page" : "Private draft"} · {waitList.name}</p><h1 className="product-page-title">Page</h1><p className="product-help">Changes save as you edit. Publishing makes the saved version public.</p></div>
-      <div className="product-builder-tools" id="publication-actions"><span role="status" aria-live="polite">{saving ? "Saving…" : message}</span><Button variant="outline" type="button" aria-label="Undo last change" onClick={undo} disabled={!undoCount}><Undo2 aria-hidden="true" /><span>Undo</span></Button><Button variant="outline" type="button" aria-label="Redo last change" onClick={redo} disabled={!redoCount}><Redo2 aria-hidden="true" /><span>Redo</span></Button><Button type="button" onClick={() => { void flush(); }} disabled={!dirty || saving || !!conflict}>{saving ? "Saving…" : "Save now"}</Button>{canPublish && hasUpdates && <Button id="publication-action" type="button" onClick={openPublishReview} disabled={dirty || saving || !!conflict || publishing}>{publishing ? "Publishing…" : waitList.status === "PAUSED" ? "Publish and resume" : waitList.status === "PUBLISHED" ? "Publish updates" : "Publish waitlist"}</Button>}{canPublish && waitList.status === "PUBLISHED" && <Button variant="outline" type="button" onClick={() => { void lifecycle(pausePage); }} disabled={dirty || saving || !!conflict || publishing}>Pause waitlist</Button>}{waitList.status !== "DRAFT" && waitList.publicSlug && <Link className="product-builder-live-link" href={`/w/${waitList.publicSlug}`} target="_blank" rel="noreferrer">View live page</Link>}{canPublish && waitList.publishedRevision > 1 && <Button variant="outline" type="button" onClick={() => { void lifecycle(rollbackPage); }} disabled={dirty || saving || !!conflict || publishing}>Restore previous version</Button>}</div>
+      <div><p className="product-builder-kicker">{waitList.status === "PUBLISHED" ? "Published page" : waitList.status === "PAUSED" ? "Paused page" : "Private draft"}</p><h2 className={styles.editorTitle}>Page editor</h2></div>
+      <div className="product-builder-tools" id="publication-actions"><span role="status" aria-live="polite">{saving ? "Saving…" : message}</span><Button variant="ghost" type="button" aria-label="Undo last change" onClick={undo} disabled={!undoCount}><Undo2 aria-hidden="true" /><span>Undo</span></Button><Button variant="ghost" type="button" aria-label="Redo last change" onClick={redo} disabled={!redoCount}><Redo2 aria-hidden="true" /><span>Redo</span></Button><Button variant="outline" type="button" onClick={() => { void flush(); }} disabled={!dirty || saving || !!conflict}>{saving ? "Saving…" : "Save now"}</Button>{canPublish && hasUpdates && <Button id="publication-action" type="button" onClick={openPublishReview} disabled={dirty || saving || !!conflict || publishing}>{publishing ? "Publishing…" : waitList.status === "PAUSED" ? "Publish and resume" : waitList.status === "PUBLISHED" ? "Publish updates" : "Publish waitlist"}</Button>}{canPublish && waitList.status === "PUBLISHED" && <Button variant="outline" type="button" onClick={() => { void lifecycle(pausePage); }} disabled={dirty || saving || !!conflict || publishing}>Pause waitlist</Button>}{waitList.status !== "DRAFT" && waitList.publicSlug && <Link className="product-builder-live-link" href={`/w/${waitList.publicSlug}`} target="_blank" rel="noreferrer">View live page</Link>}{canPublish && waitList.publishedRevision > 1 && <Button variant="outline" type="button" onClick={() => { void lifecycle(rollbackPage); }} disabled={dirty || saving || !!conflict || publishing}>Restore previous version</Button>}</div>
     </header>
-    <PublicationOptions waitList={waitList} origin={publicationOrigin} />
     <Dialog open={publishReviewOpen} onOpenChange={(open) => { if (!publishing) { setPublishReviewOpen(open); if (!open) setPublishConfirmed(false); } }}>
       <DialogContent>
         <div className="product-publish-review-dialog">
@@ -306,33 +312,34 @@ export function SnapshotPageBuilder({ waitList, saveDraftPage, publishPage, paus
       </DialogContent>
     </Dialog>
     {error && <div className="product-builder-alert" role="alert"><p>{error}</p>{conflict && <div className="product-builder-conflict-actions"><Button variant="outline" type="button" onClick={() => resolveConflict("saved")}>Use saved version</Button><Button type="button" onClick={() => resolveConflict("mine")}>Replace saved version with mine</Button></div>}{!conflict && dirty && <Button variant="outline" type="button" onClick={() => { setError(""); void flush(); }}>Retry save</Button>}</div>}
+    <div className={styles.mobileViewToggle} role="group" aria-label="Editor view"><Button type="button" variant="ghost" aria-pressed={mobileView === "content"} onClick={() => setMobileView("content")}>Content</Button><Button type="button" variant="ghost" aria-pressed={mobileView === "preview"} onClick={() => setMobileView("preview")}>Preview</Button></div>
     <div className="product-builder-grid">
         <div className="product-builder-editor" id="page-content">
-        <div className="product-builder-editor-heading"><div><h2>Page content</h2><p>Changes save as you edit. Use the arrows to change section order.</p></div><p>Version {version}</p></div>
+        <div className="product-builder-editor-heading"><div><h3>Sections</h3><p>Choose a section to edit.</p></div><p>v{version}</p></div>
         <p className="product-visually-hidden" role="status" aria-live="polite" aria-atomic="true">{sectionAnnouncement}</p>
-        {snapshot.sections.map((section, sectionIndex) => <fieldset className="product-builder-section" key={`${section.type}-${sectionIndex}`}><legend>{sectionNames[section.type]}</legend><div className="product-builder-section-tools"><Button id={`section-${sectionIndex}-move-up`} variant="outline" type="button" aria-label={`Move ${sectionNames[section.type]} up`} onClick={() => moveSection(sectionIndex, -1)} disabled={sectionIndex <= 1}><ArrowUp aria-hidden="true" /></Button><Button id={`section-${sectionIndex}-move-down`} variant="outline" type="button" aria-label={`Move ${sectionNames[section.type]} down`} onClick={() => moveSection(sectionIndex, 1)} disabled={sectionIndex === snapshot.sections.length - 1}><ArrowDown aria-hidden="true" /></Button>{section.type !== "hero" && section.type !== "form" && <Button variant="outline" type="button" onClick={() => removeSection(sectionIndex)} aria-label={`Remove ${sectionNames[section.type]}`}>Remove</Button>}</div>
+        {snapshot.sections.map((section, sectionIndex) => <details className="product-builder-section" key={`${section.type}-${sectionIndex}`} open={expandedSection === sectionIndex}><summary onClick={(event) => { event.preventDefault(); setExpandedSection(expandedSection === sectionIndex ? null : sectionIndex); }}><span>{sectionNames[section.type]}</span><ChevronDown aria-hidden="true" /></summary><div className={styles.sectionContent}><div className="product-builder-section-tools"><Button id={`section-${sectionIndex}-move-up`} variant="outline" type="button" aria-label={`Move ${sectionNames[section.type]} up`} onClick={() => moveSection(sectionIndex, -1)} disabled={sectionIndex <= 1}><ArrowUp aria-hidden="true" /></Button><Button id={`section-${sectionIndex}-move-down`} variant="outline" type="button" aria-label={`Move ${sectionNames[section.type]} down`} onClick={() => moveSection(sectionIndex, 1)} disabled={sectionIndex === 0 || sectionIndex === snapshot.sections.length - 1}><ArrowDown aria-hidden="true" /></Button>{section.type !== "hero" && section.type !== "form" && <Button variant="outline" type="button" onClick={() => removeSection(sectionIndex)} aria-label={`Remove ${sectionNames[section.type]}`}>Remove</Button>}</div>
           {section.type === "hero" && <div className="product-builder-fields"><label htmlFor={`section-${sectionIndex}-heading`}>Headline</label><Input id={`section-${sectionIndex}-heading`} maxLength={120} value={section.heading} onChange={(event) => updateSection(sectionIndex, (item) => ({ ...item, heading: event.target.value }))} /><label htmlFor={`section-${sectionIndex}-body`}>Introduction</label><textarea id={`section-${sectionIndex}-body`} maxLength={600} rows={3} value={section.body} onChange={(event) => updateSection(sectionIndex, (item) => ({ ...item, body: event.target.value }))} /></div>}
           {(section.type === "features" || section.type === "faq") && <div className="product-builder-items">{section.items.map((item, itemIndex) => <div className="product-builder-item" key={itemIndex}><p>{section.type === "features" ? `Highlight ${itemIndex + 1}` : `Question ${itemIndex + 1}`}</p><label htmlFor={`section-${sectionIndex}-item-${itemIndex}-title`}>{section.type === "features" ? "Title" : "Question"}</label><Input id={`section-${sectionIndex}-item-${itemIndex}-title`} maxLength={section.type === "features" ? 80 : 120} value={section.type === "features" ? item.title : item.question} onChange={(event) => updateItem(sectionIndex, itemIndex, (value) => section.type === "features" ? { ...value, title: event.target.value } : { ...value, question: event.target.value })} /><label htmlFor={`section-${sectionIndex}-item-${itemIndex}-body`}>{section.type === "features" ? "Description" : "Answer"}</label><textarea id={`section-${sectionIndex}-item-${itemIndex}-body`} maxLength={section.type === "features" ? 240 : 400} rows={3} value={section.type === "features" ? item.body : item.answer} onChange={(event) => updateItem(sectionIndex, itemIndex, (value) => section.type === "features" ? { ...value, body: event.target.value } : { ...value, answer: event.target.value })} />{section.items.length > 1 && <Button variant="outline" type="button" onClick={() => updateSection(sectionIndex, (value) => ({ ...value, items: value.items.filter((_, index) => index !== itemIndex) }))}>Remove {section.type === "features" ? "highlight" : "question"}</Button>}</div>)}{section.items.length < 6 && <Button variant="outline" type="button" onClick={() => updateSection(sectionIndex, (value) => ({ ...value, items: [...value.items, section.type === "features" ? { title: "A clear benefit", body: "Explain how it helps." } : { question: "What should people know?", answer: "Add a useful answer." }] }))}>Add {section.type === "features" ? "highlight" : "question"}</Button>}</div>}
           {section.type === "form" && <div className="product-builder-fields"><label htmlFor={`section-${sectionIndex}-label`}>Email field label</label><Input id={`section-${sectionIndex}-label`} maxLength={80} value={section.label} onChange={(event) => updateSection(sectionIndex, (item) => ({ ...item, label: event.target.value }))} /><label htmlFor={`section-${sectionIndex}-button`}>Button text</label><Input id={`section-${sectionIndex}-button`} maxLength={40} value={section.buttonText} onChange={(event) => updateSection(sectionIndex, (item) => ({ ...item, buttonText: event.target.value }))} /><p className="product-help">Referrals, verification and signup emails stay off in this draft.</p></div>}
           {section.type === "footer" && <div className="product-builder-fields"><label htmlFor={`section-${sectionIndex}-note`}>Short note</label><textarea id={`section-${sectionIndex}-note`} maxLength={160} rows={3} value={section.note} onChange={(event) => updateSection(sectionIndex, (item) => ({ ...item, note: event.target.value }))} /></div>}
-        </fieldset>)}
+        </div></details>)}
         <div className="product-builder-add">{showAddSection ? <><label htmlFor="section-type">Section</label><select id="section-type" value={addType} onChange={(event) => setAddType(event.target.value)}><option value="features">Highlights</option><option value="faq">Questions</option><option value="footer">Note</option></select><Button type="button" onClick={addSection} disabled={snapshot.sections.length >= 12}>Add section</Button><Button variant="outline" type="button" onClick={() => setShowAddSection(false)}>Cancel</Button></> : <Button variant="outline" type="button" onClick={() => setShowAddSection(true)} disabled={snapshot.sections.length >= 12}>Add a section</Button>}{snapshot.sections.length >= 12 && <p className="product-help">A page can have up to 12 sections.</p>}</div>
       </div>
       <div className="product-builder-preview-wrap">
         <div className="product-builder-preview-heading">
-          <div><h2>Preview</h2><span>{previewViewport === "desktop" ? "Desktop width" : "Mobile width"} · Preview only</span></div>
+          <div><h3>Preview</h3><span>Edits stay private until published.</span></div>
           <div className="product-preview-viewport-toggle" role="group" aria-label="Preview width">
-            <Button type="button" variant={previewViewport === "desktop" ? "outline" : "ghost"} aria-pressed={previewViewport === "desktop"} onClick={() => setPreviewViewport("desktop")}>Desktop</Button>
-            <Button type="button" variant={previewViewport === "mobile" ? "outline" : "ghost"} aria-pressed={previewViewport === "mobile"} onClick={() => setPreviewViewport("mobile")}>Mobile</Button>
+            <Button type="button" variant={previewViewport === "desktop" ? "outline" : "ghost"} aria-pressed={previewViewport === "desktop"} onClick={() => setPreviewViewport("desktop")}><Monitor aria-hidden="true" /> Desktop</Button>
+            <Button type="button" variant={previewViewport === "mobile" ? "outline" : "ghost"} aria-pressed={previewViewport === "mobile"} onClick={() => setPreviewViewport("mobile")}><Smartphone aria-hidden="true" /> Mobile</Button>
           </div>
         </div>
         <div className={`product-builder-preview-frame${previewViewport === "mobile" ? " is-mobile" : ""}`} data-viewport={previewViewport}>
           <section className="product-page-preview" aria-label="Waitlist page preview">
             <WaitlistPageContent snapshot={snapshot} name={waitList.name} previewViewport={previewViewport} renderSignupForm={(section) => <WaitlistSignupPreview label={section.label} buttonText={section.buttonText} />} />
-            <p className="product-preview-footnote">Preview only · saved edits stay private until you publish them.</p>
           </section>
         </div>
       </div>
     </div>
+    <PublicationOptions waitList={waitList} origin={publicationOrigin} />
   </section>;
 }

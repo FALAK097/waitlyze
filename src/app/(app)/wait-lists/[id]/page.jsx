@@ -46,8 +46,7 @@ export default async function OverviewPage({ params }) {
   const subscriberHref = `/wait-lists/${id}/subscribers`;
   return <div className={`product-section ${styles.overview}`}>
     <section className={styles.overviewHero} aria-labelledby="waitlist-overview-title">
-      <div>
-        <p className={styles.eyebrow}>Waitlist overview</p>
+      <div className={styles.overviewInfo}>
         <h2 id="waitlist-overview-title">{lifecycle.title}</h2>
         <p>{lifecycle.detail}</p>
         <dl className={styles.overviewFacts}>

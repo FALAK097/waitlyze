@@ -1,5 +1,6 @@
 "use client";
 
+import { SITE_URL } from "@/lib/site-metadata";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Zap } from "lucide-react";
@@ -164,8 +165,8 @@ export const SignUpForm = ({
 						<span className="flex items-center justify-center text-center text-gray-500">
 							Widget by&nbsp;
 							<a
-								href="https://waitlyze.falakgala.dev"
-								className="font-medium text-[#FF6B4A]"
+								href={SITE_URL}
+								className="font-medium text-[var(--product-text-primary)] underline decoration-[var(--product-accent-solid)] underline-offset-4"
 								target="_blank"
 								rel="noopener noreferrer"
 							>

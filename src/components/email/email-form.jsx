@@ -1,135 +1,17 @@
 "use client";
 
-import {
-	FormControl,
-	FormDescription,
-	FormField,
-	FormItem,
-	FormLabel,
-	FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { FormProvider } from "react-hook-form";
+import { Input } from "@/components/product/input";
 import { MarkdownEditor } from "./markdown-editor";
+import styles from "./email-tools.module.css";
 
-export const EmailForm = ({ type, form }) => {
-	return (
-		<FormProvider {...form}>
-			<div className="space-y-6">
-				<FormField
-					control={form.control}
-					name={`${type}.subject`}
-					render={({ field }) => (
-						<FormItem>
-							<FormLabel className="flex items-center gap-2">
-								Email Subject
-							</FormLabel>
-							<FormControl>
-								<Input {...field} />
-							</FormControl>
-							<FormDescription>
-								Use {"{{"} waitlist {"}}"} to insert the waitlist name
-							</FormDescription>
-							<FormMessage />
-						</FormItem>
-					)}
-				/>
-
-				<FormField
-					control={form.control}
-					name={`${type}.previewText`}
-					render={({ field }) => (
-						<FormItem>
-							<FormLabel>Preview Text</FormLabel>
-							<FormControl>
-								<Input {...field} />
-							</FormControl>
-							<FormDescription>
-								This text appears in email clients as a preview
-							</FormDescription>
-							<FormMessage />
-						</FormItem>
-					)}
-				/>
-
-				<FormField
-					control={form.control}
-					name={`${type}.header`}
-					render={({ field }) => (
-						<FormItem>
-							<FormLabel>Header</FormLabel>
-							<FormControl>
-								<MarkdownEditor
-									value={field.value}
-									onChange={field.onChange}
-									placeholder="Enter header text..."
-								/>
-							</FormControl>
-							<FormDescription>
-								Use {"{{"} waitlist {"}}"} to insert the waitlist name
-							</FormDescription>
-							<FormMessage />
-						</FormItem>
-					)}
-				/>
-
-				<FormField
-					control={form.control}
-					name={`${type}.subHeader`}
-					render={({ field }) => (
-						<FormItem>
-							<FormLabel>Sub Header</FormLabel>
-							<FormControl>
-								<MarkdownEditor
-									value={field.value}
-									onChange={field.onChange}
-									placeholder="Enter subheader text..."
-								/>
-							</FormControl>
-							<FormMessage />
-						</FormItem>
-					)}
-				/>
-
-				<FormField
-					control={form.control}
-					name={`${type}.mainBody`}
-					render={({ field }) => (
-						<FormItem>
-							<FormLabel>Main Content</FormLabel>
-							<FormControl>
-								<MarkdownEditor
-									value={field.value}
-									onChange={field.onChange}
-									placeholder="Enter your markdown content here..."
-								/>
-							</FormControl>
-							<FormDescription>
-								Use {"{{"} waitlist {"}}"} to insert the waitlist name
-							</FormDescription>
-							<FormMessage />
-						</FormItem>
-					)}
-				/>
-
-				<FormField
-					control={form.control}
-					name={`${type}.subBody`}
-					render={({ field }) => (
-						<FormItem>
-							<FormLabel>Footer Content</FormLabel>
-							<FormControl>
-								<MarkdownEditor
-									value={field.value}
-									onChange={field.onChange}
-									placeholder="Enter footer content here..."
-								/>
-							</FormControl>
-							<FormMessage />
-						</FormItem>
-					)}
-				/>
-			</div>
-		</FormProvider>
-	);
-};
+export function EmailForm({ type, form, disabled }) {
+  const textField = (name, title, maxLength, rows = 3) => <label className="product-field"><span>{title}</span><textarea className="product-input" {...form.register(`${type}.${name}`)} maxLength={maxLength} rows={rows} disabled={disabled} /></label>;
+  return <div className={styles.templateForm}>
+    <label className="product-field"><span>Subject</span><Input {...form.register(`${type}.subject`)} maxLength={160} disabled={disabled} /></label>
+    <label className="product-field"><span>Preview text <small>Optional</small></span><Input {...form.register(`${type}.previewText`)} maxLength={180} disabled={disabled} /></label>
+    {textField("header", "Heading", 1000, 2)}
+    <div className="product-field"><span id="template-message-label">Message</span><MarkdownEditor value={form.watch(`${type}.mainBody`)} onChange={(value) => form.setValue(`${type}.mainBody`, value, { shouldDirty: true })} disabled={disabled} aria-labelledby="template-message-label" /></div>
+    <p className="product-help">Use <code>{"{{waitlist}}"}</code> for the waitlist name. Markdown is supported.</p>
+    <details><summary>Additional content</summary><div>{textField("subHeader", "Subheading", 1000)}{textField("subBody", "Footer message", 3000)}</div></details>
+  </div>;
+}

@@ -1,3 +1,4 @@
+import { revalidatePath } from "next/cache";
 import { currentWorkspace } from "@/lib/workspaces/current";
 import { createWorkspaceService, AccessError } from "@/lib/workspaces/service.mjs";
 import { createDraft, DraftCreationError } from "@/lib/campaigns/create-draft.mjs";
@@ -20,6 +21,7 @@ export default async function NewWaitlistPage() {
         name: formData.get("name"), description: formData.get("description"),
         publicSlug: formData.get("publicSlug"), templateId: formData.get("templateId"), creationKey: formData.get("creationKey"),
       });
+      revalidatePath("/(app)", "layout");
       return { id: draft.id };
     } catch (error) {
       if (error instanceof ZodError) return { message: "Check your waitlist details.", fields: error.flatten().fieldErrors };

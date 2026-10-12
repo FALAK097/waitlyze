@@ -9,6 +9,7 @@ import { EmailTemplatesManager } from "@/components/email/email-templates-manage
 import { getOrCreateTemplates } from "@/app/actions/emails";
 import { env } from "@/lib/env.mjs";
 import { EmailToolsNav } from "@/components/email/email-tools-nav";
+import styles from "@/components/email/email-tools.module.css";
 
 
 const getUser = cache(async (id) =>
@@ -52,16 +53,15 @@ export default async function EmailsPage(props) {
   return (
     <ContentLayout title="Email Templates">
       <EmailToolsNav waitListId={waitList.id} current="templates" />
-      <section className="delivery-health" aria-labelledby="delivery-health-title">
+      <section className={styles.health} aria-labelledby="delivery-health-title">
         <div>
-          <p className="delivery-health-eyebrow">DELIVERY</p>
-          <h2 id="delivery-health-title">Verification email delivery</h2>
+          <h2 id="delivery-health-title">Verification delivery</h2>
           <p>{configured ? (pending ? `${pending} waiting to send` : "No emails waiting to send") : "Dispatcher not configured"}{failed ? ` · ${failed} failed in the latest 5` : ""}</p>
           {latestFailure?.lastErrorCode ? <p className="delivery-health-error">Latest issue: {latestFailure.lastErrorCode.replaceAll("_", " ").toLowerCase()}</p> : null}
         </div>
         <span className={`delivery-health-badge ${failed || !configured ? "is-warning" : ""}`}>{!configured ? "Setup needed" : failed ? "Needs attention" : "Key configured"}</span>
       </section>
-      <div className="mt-6">
+      <div>
         <EmailTemplatesManager
           waitListId={waitList.id}
           waitListName={waitList.name || "Project"}

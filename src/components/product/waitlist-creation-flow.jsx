@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useActionState, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, ArrowRight, Check, Globe2, LayoutTemplate, LockKeyhole, Sparkles } from "lucide-react";
@@ -11,9 +10,9 @@ import styles from "./waitlist-creation-flow.module.css";
 const empty = { templateId: "saas", name: "", description: "", publicSlug: "", creationKey: "" };
 const steps = ["Choose a starter", "Name your waitlist", "Review & create"];
 const stepDescriptions = [
-  "Choose a starting point. The preview shows real starter content, which you can change later.",
+  "Pick a starter and make it your own.",
   "Give this launch a name and a short, shareable address.",
-  "Your new page will be saved as a private draft. Nothing goes live until you publish.",
+  "Check the details. Your page stays private until you publish.",
 ];
 
 function slugify(value) {
@@ -30,7 +29,7 @@ function PreviewSection({ section }) {
 
 function PagePreview({ template, hero, name, publicSlug }) {
   return <aside className={styles.previewColumn} aria-label={`${template.name} page preview`}>
-    <div className={styles.previewMeta}><span><LayoutTemplate size={15} aria-hidden="true" /> Page preview</span><span>{template.name}</span></div>
+    <div className={styles.previewMeta}><span><LayoutTemplate size={15} aria-hidden="true" /> Page preview</span></div>
     <div className={styles.previewAddress}>
       <span><LockKeyhole size={13} aria-hidden="true" /> Private preview</span>
       <strong>/w/{publicSlug || "your-page"}</strong>
@@ -39,9 +38,9 @@ function PagePreview({ template, hero, name, publicSlug }) {
       <div className={styles.previewBrand}><span aria-hidden="true" /> {name || "Your product"}</div>
       <div className={styles.previewHero}><span className={styles.previewTag}><Sparkles size={12} aria-hidden="true" /> COMING SOON</span><h3>{hero?.heading}</h3><p>{hero?.body}</p></div>
       {template.snapshot.sections.slice(1).map((section, index) => <PreviewSection section={section} key={`${section.type}-${index}`} />)}
-      <div className={styles.previewPrivacy}><LockKeyhole size={13} aria-hidden="true" /> Nothing is public until you publish.</div>
+
     </div>
-    <p className={styles.previewNote}>Starter copy is a starting point. Review and edit every section before publishing.</p>
+
   </aside>;
 }
 
@@ -88,7 +87,7 @@ function CreationStepContent({ step, templates, values, setValues, template, her
 
 function CreationActions({ step, move, pending, state, template, formRef, action, values }) {
   return <footer className={styles.actions}>
-    {step > 0 ? <Button type="button" variant="outline" disabled={pending || Boolean(state.id)} onClick={() => move(step - 1)}><ArrowLeft size={16} aria-hidden="true" /> Back</Button> : <span className={styles.actionHint}>7 starters · change it anytime</span>}
+    {step > 0 ? <Button type="button" variant="outline" disabled={pending || Boolean(state.id)} onClick={() => move(step - 1)}><ArrowLeft size={16} aria-hidden="true" /> Back</Button> : <span className={styles.actionHint}>Change your starter before creating.</span>}
     {step === 0 && <Button type="button" onClick={() => move(1)}>Continue with {template.name}<ArrowRight size={16} aria-hidden="true" /></Button>}
     {step === 1 && <Button type="button" onClick={() => formRef.current?.requestSubmit()}>Review draft<ArrowRight size={16} aria-hidden="true" /></Button>}
     {step === 2 && <form action={action} className={styles.submitForm}>{Object.entries(values).map(([name, value]) => <input key={name} type="hidden" name={name} value={value} />)}<Button type="submit" disabled={pending || Boolean(state.id)}>{pending ? "Creating draft…" : state.id ? "Opening editor…" : "Create private draft"}<ArrowRight size={16} aria-hidden="true" /></Button></form>}
@@ -157,11 +156,10 @@ export function WaitlistCreationFlow({ templates, workspaceId, workspaceName, su
   }
 
   return <div className={styles.page}>
-    <Link href="/wait-lists" className={styles.back}><ArrowLeft size={16} aria-hidden="true" /> All waitlists</Link>
     <header className={styles.header}>
-      <p className={styles.eyebrow}>New waitlist <span aria-hidden="true">/</span> {workspaceName}</p>
+      <p className={styles.eyebrow}>{workspaceName}</p>
       <h1>Create a waitlist</h1>
-      <p>Start with a page that fits your launch. You can edit every section before you publish.</p>
+      <p>Choose a starter, add your details, then open the editor.</p>
     </header>
 
     <ol className={styles.progress} aria-label="Creation steps">
@@ -177,7 +175,7 @@ export function WaitlistCreationFlow({ templates, workspaceId, workspaceName, su
       <p>{stepDescriptions[step]}</p>
     </section>
 
-    {!ready ? <div className={styles.loading} role="status">Restoring your setup…</div> : <>
+    {!ready ? <div className={styles.loading} role="status" aria-label="Loading your draft setup"><span className={styles.skeleton} /><span className={styles.skeleton} /><span className={styles.skeleton} /><span className={styles.srOnly}>Restoring your setup…</span></div> : <>
       {storageUnavailable && <p className={styles.storageNotice} role="status">This browser can’t save your progress between reloads. Keep this tab open while you create your draft.</p>}
 
       <CreationStepContent step={step} templates={templates} values={values} setValues={setValues} template={template} hero={hero} formRef={formRef} continueFromDetails={continueFromDetails} changeName={changeName} state={state} setSlugEdited={setSlugEdited} workspaceName={workspaceName} move={move} />

@@ -1,9 +1,7 @@
 import { requireCampaign, requireCampaignPage } from "@/lib/workspaces/authorize";
 import { cache } from "react";
 
-import { ClientOnly } from "@/components/client-only";
 import { ContentLayout } from "@/components/dashboard/content-layout";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 
 import { WaitlistGenerator } from "@/components/wait-lists/edit-form";
 import { SnapshotPageBuilder } from "@/components/product/snapshot-page-builder";
@@ -13,7 +11,6 @@ import prisma from "@/lib/prisma";
 import { SITE_URL } from "@/lib/site-metadata";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
-import { Laptop } from "lucide-react";
 import { notFound, redirect } from "next/navigation";
 
 const getUser = cache(async (id) => {
@@ -133,20 +130,9 @@ export default async function WaitListsEditPage(props) {
 	}
 
 	return (
-		<ContentLayout title="WaitLists">
+		<ContentLayout title="Page">
 
 
-			<ClientOnly>
-				<div className="mt-4 mb-4 md:hidden">
-					<Alert className="border-yellow-200 bg-yellow-50">
-						<Laptop className="w-4 h-4 text-yellow-600" />
-						<AlertDescription className="ml-2 text-yellow-800">
-							For the best experience customizing your waitlist, we recommend
-							using a desktop or laptop computer.
-						</AlertDescription>
-					</Alert>
-				</div>
-			</ClientOnly>
 
 			<WaitlistGenerator
 				initialWaitList={waitList}

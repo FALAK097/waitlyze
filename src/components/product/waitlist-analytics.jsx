@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
+import Link from "next/link";
 
 const EvilAreaChart = dynamic(() => import("@/components/product/evil-area-chart").then((module) => module.EvilAreaChart), {
   loading: () => <div className="waitlist-analytics-loading-chart" role="status" aria-label="Loading audience chart" />,
@@ -11,7 +12,7 @@ const ranges = [7, 30, 90];
 const number = new Intl.NumberFormat();
 
 function formatDate(value, options = { month: "short", day: "numeric" }) {
-  return new Intl.DateTimeFormat(undefined, { ...options, timeZone: "UTC" }).format(new Date(`${value}T12:00:00Z`));
+  return new Intl.DateTimeFormat("en-GB", { ...options, timeZone: "UTC" }).format(new Date(`${value}T12:00:00Z`));
 }
 
 function Metric({ label, value, detail }) {
@@ -45,7 +46,7 @@ export function WaitlistAnalytics({ waitListId }) {
       const response = await fetch(`/api/wait-lists/${waitListId}/analytics?days=${days}&timeZone=${encodeURIComponent(timeZone)}`, { signal, cache: "no-store" });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || "Could not load analytics.");
-      setAnalytics(result);
+      if (!signal.aborted) setAnalytics(result);
     } catch (cause) {
       if (cause.name !== "AbortError") setError(cause.message || "Could not load analytics.");
     } finally {
@@ -69,7 +70,7 @@ export function WaitlistAnalytics({ waitListId }) {
 
   return <section className="waitlist-analytics" aria-labelledby="waitlist-analytics-title" aria-busy={loading}>
     <header className="waitlist-analytics-header">
-      <div><p className="waitlist-analytics-eyebrow">Performance</p><h2 id="waitlist-analytics-title">Waitlist analytics</h2><p className="product-help">Visitors, signups, and verification for this waitlist.</p></div>
+      <div><h2 id="waitlist-analytics-title">Analytics</h2><p className="product-help">Visitors, signups, and verification for this waitlist.</p></div>
       <div className="waitlist-analytics-controls">
         <div className="waitlist-analytics-range" role="group" aria-label="Analytics date range">
           {ranges.map((range) => <button type="button" key={range} aria-pressed={days === range} onClick={() => setDays(range)}>{range} days</button>)}
@@ -95,7 +96,7 @@ export function WaitlistAnalytics({ waitListId }) {
             <button type="button" aria-pressed={mode === "table"} onClick={() => setMode("table")}>Table</button>
           </div>
         </header>
-        {noActivity ? <div className="waitlist-analytics-empty"><p>No activity in this period yet.</p><span>Once visitors arrive, their activity will appear here.</span></div> : mode === "chart" ? <>
+        {mode === "table" ? <div className="product-table-wrap waitlist-analytics-table-wrap"><table className="product-waitlist-table"><caption className="sr-only">Daily visitors and signups from {formatDate(currentAnalytics.range.startDate)} to {formatDate(currentAnalytics.range.endDate, { month: "short", day: "numeric", year: "numeric" })}</caption><thead><tr><th scope="col">Date</th><th scope="col">Visitors</th><th scope="col">Signups</th><th scope="col">Verified</th></tr></thead><tbody>{[...series].reverse().map((day) => <tr key={day.date}><th scope="row">{formatDate(day.date, { month: "short", day: "numeric", year: "numeric" })}</th><td>{number.format(day.visitors)}</td><td>{number.format(day.signups)}</td><td>{number.format(day.verifiedSignups)}</td></tr>)}</tbody></table></div> : noActivity ? <div className="waitlist-analytics-empty"><p>No activity yet</p><span>Share your page to start learning about your audience.</span><Link href={`/wait-lists/${waitListId}/edit`}>Open your page</Link></div> : <>
           <div className="waitlist-analytics-chart"><EvilAreaChart series={series} focusedSeries={focusedSeries} formatDate={formatDate} /></div>
           <div className="waitlist-analytics-legend" role="group" aria-label="Focus chart series">
             <span className="sr-only">Choose a series to emphasize it; choose it again to show both.</span>
@@ -103,7 +104,7 @@ export function WaitlistAnalytics({ waitListId }) {
               <i className={`waitlist-analytics-legend-${seriesName}`} aria-hidden="true" />{label}
             </button>)}
           </div>
-        </> : <div className="product-table-wrap waitlist-analytics-table-wrap"><table className="product-waitlist-table"><caption className="sr-only">Daily visitors and signups from {formatDate(currentAnalytics.range.startDate)} to {formatDate(currentAnalytics.range.endDate, { month: "short", day: "numeric", year: "numeric" })}</caption><thead><tr><th scope="col">Date</th><th scope="col">Visitors</th><th scope="col">Signups</th><th scope="col">Verified</th></tr></thead><tbody>{[...series].reverse().map((day) => <tr key={day.date}><th scope="row">{formatDate(day.date, { month: "short", day: "numeric", year: "numeric" })}</th><td>{number.format(day.visitors)}</td><td>{number.format(day.signups)}</td><td>{number.format(day.verifiedSignups)}</td></tr>)}</tbody></table></div>}
+        </>}
       </section>
       <details className="waitlist-analytics-definitions"><summary>How these numbers are counted</summary><ul><li>{currentAnalytics.definitions.visitors}</li><li>{currentAnalytics.definitions.conversionRate}</li><li>{currentAnalytics.definitions.verificationRate}</li>{currentAnalytics.caveats.slice(0, 2).map((caveat) => <li key={caveat}>{caveat}</li>)}</ul></details>
     </> : null}

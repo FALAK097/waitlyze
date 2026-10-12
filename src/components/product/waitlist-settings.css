@@ -1,0 +1,42 @@
+.product-waitlist-settings { max-width: 860px; display: grid; gap: 36px; }
+.product-waitlist-settings-heading h2 { margin: 0 0 8px; font-size: 1.5rem; }
+.product-waitlist-settings-heading > p { margin: 0; color: var(--product-text-secondary); line-height: 1.6; }
+.product-waitlist-setting h3 { margin: 0 0 24px; font-size: 1.0625rem; font-weight: 600; }
+.product-waitlist-setting-disclosure { min-width: 0; }
+.product-waitlist-setting-disclosure > summary { position: relative; list-style: none; display: grid; gap: 6px; padding: 12px 32px 12px 0; min-height: 56px; cursor: pointer; }
+.product-waitlist-setting-disclosure > summary::-webkit-details-marker { display: none; }
+.product-waitlist-setting-disclosure > summary::after { content: ""; position: absolute; inset-inline-end: 8px; top: 20px; width: 7px; height: 7px; border-inline-end: 1.5px solid currentColor; border-bottom: 1.5px solid currentColor; transform: rotate(45deg); }
+.product-waitlist-setting-disclosure[open] > summary::after { transform: rotate(225deg); }
+.product-waitlist-setting-disclosure > summary span:first-child { font-size: 1rem; font-weight: 550; }
+.product-waitlist-setting-disclosure > summary span:nth-child(2) { font-size: .875rem; color: var(--product-text-secondary); line-height: 1.6; }
+.product-waitlist-setting-disclosure > summary:focus-visible { outline: 2px solid var(--product-focus); outline-offset: 4px; border-radius: 4px; }
+.product-waitlist-setting-body { padding-block: 24px 8px; }
+.product-waitlist-setting-body > p { margin: 0 0 20px; color: var(--product-text-secondary); font-size: .875rem; line-height: 1.6; }
+.product-waitlist-setting-danger > summary span:first-child { color: var(--product-danger-text); }
+.product-waitlist-settings .product-webhook-endpoint { padding: 0; border: 0; border-radius: 0; margin-top: 36px; }
+.product-waitlist-settings .product-webhook-endpoint header { flex-wrap: wrap; align-items: flex-start; }
+.product-waitlist-settings .product-webhook-endpoint h3 { font-size: .9375rem; }
+.product-waitlist-settings .product-webhook-endpoint header p { font-size: .8125rem; line-height: 1.6; }
+.product-waitlist-settings .product-webhook-secret { border: 0; padding: 0; margin-block: 28px; }
+.product-waitlist-settings .product-webhook-secret h3 { font-size: .9375rem; }
+.product-waitlist-settings .product-webhook-secret p { font-size: .875rem; line-height: 1.6; }
+.product-waitlist-settings .product-webhook-secret code { border: 1px solid var(--product-border-control); border-radius: 8px; padding: 12px; }
+.product-webhook-secret > button { justify-self: start; }
+.product-webhook-deliveries > summary { min-height: 44px; display: flex; align-items: center; cursor: pointer; font-size: .875rem; text-decoration: underline; text-underline-offset: 4px; }
+.product-webhook-deliveries > summary:focus-visible { outline: 2px solid var(--product-focus); outline-offset: 3px; }
+.product-webhook-deliveries li { font-size: .8125rem; }
+.product-waitlist-settings .product-domain-record { border: 0; background: transparent; padding: 0; margin-block: 12px; }
+.product-waitlist-settings .product-domain-record code { font-size: .875rem; overflow-wrap: anywhere; }
+.product-waitlist-settings .product-custom-domain header h3 { overflow-wrap: anywhere; font-size: .9375rem; }
+.product-waitlist-settings .product-referral-setting .product-announcement[role="alert"] { color: var(--product-danger-text); }
+.product-waitlist-settings .product-domain-actions, .product-waitlist-settings .product-webhook-actions { gap: 8px; }
+.product-waitlist-settings .product-webhook-settings form { max-width: 560px; }
+.product-waitlist-settings .product-webhook-settings form > button, .product-waitlist-settings .product-custom-domain form > button { justify-self: start; }
+.product-waitlist-settings .product-webhook-events label { min-height: 40px; }
+.product-waitlist-settings .product-referral-setting-control input:focus-visible { outline: 2px solid var(--product-focus); outline-offset: 3px; }
+@media (max-width: 640px) { .product-waitlist-settings { gap: 28px; } .product-waitlist-settings input, .product-waitlist-settings textarea { font-size: 1rem; } .product-waitlist-settings .product-webhook-endpoint header > div { min-width: 0; } }
+.product-waitlist-settings-skeleton { display: grid; gap: 36px; }
+.product-waitlist-settings-skeleton > div { display: grid; gap: 12px; }
+.product-waitlist-settings-skeleton i { display: block; height: 14px; width: 65%; background: var(--product-bg-inset); border-radius: 5px; }
+.product-waitlist-settings-skeleton i:first-child { height: 20px; width: 140px; }
+.product-webhook-events input { accent-color: var(--product-accent-solid); }

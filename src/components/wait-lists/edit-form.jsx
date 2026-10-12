@@ -2,7 +2,9 @@
 
 import { useQueryState } from "nuqs";
 import { removeImage } from "@/app/actions/waitLists";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/product/button";
+import { notifySettingsResult } from "@/components/product/settings-feedback";
+import styles from "./legacy-editor.module.css";
 import {
   Dialog,
   DialogClose,
@@ -36,12 +38,12 @@ const EmbedModal = ({ waitList, origin }) => {
       <Tooltip delayDuration={100}>
         <TooltipTrigger asChild>
           <DialogTrigger asChild>
-            <Button size="icon" aria-label="Embed instructions">
+            <Button variant="ghost" size="icon" aria-label="Embed instructions">
               <CodeIcon className="w-4 h-4" />
             </Button>
           </DialogTrigger>
         </TooltipTrigger>
-        <TooltipContent side="bottom">Embed Wait List</TooltipContent>
+        <TooltipContent side="bottom">Embed form</TooltipContent>
       </Tooltip>
       <DialogContent className="sm:max-w-[625px]">
         <DialogHeader>
@@ -84,7 +86,6 @@ const EmbedModal = ({ waitList, origin }) => {
 export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
   const [origin, setOrigin] = useState("");
   const [testEmail, setTestEmail] = useState("");
-  const [isTestEmailLoading, setIsTestEmailLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [logoUrl, setLogoUrl] = useState(initialWaitList.logoUrl || "/images/logo.png");
   const [logoKey, setLogoKey] = useState(initialWaitList.logoKey || "");
@@ -372,37 +373,38 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
     try {
       const response = await saveWaitList(initialWaitList.id, { ...formSettings });
       if (response.success) toast.success(response.message);
-      else toast.error(response.message || "Could not save your page. Try again.");
-    } catch { toast.error("Could not save your page. Try again."); }
+      else notifySettingsResult({ error: response.message || "Could not save your page. Try again." });
+    } catch { notifySettingsResult({ error: "Could not save your page. Try again." }); }
     finally { setIsSaving(false); }
   };
 
-  const copyShareUrlToClipboard = () => {
-    const url = `${window.location.origin}/forms/${initialWaitList.id}`;
-    navigator.clipboard.writeText(url);
-    toast.success("Copied to clipboard");
+  const copyShareUrlToClipboard = async () => {
+    try {
+      await navigator.clipboard.writeText(`${window.location.origin}/forms/${initialWaitList.id}`);
+      toast.success("Page link copied.");
+    } catch { notifySettingsResult({ error: "Copy is unavailable. Select the link and copy it manually." }); }
   };
 
   const handleDeleteLogo = async () => {
     const logoKey = formSettings.logoKey;
     if (!logoKey) {
-      toast.error("No logo key found to delete.");
+      notifySettingsResult({ error: "This logo cannot be removed. Upload a replacement instead." });
       return;
     }
 
+    if (!window.confirm("Remove this logo? The uploaded image will be deleted.")) return;
     try {
       const response = await removeImage(logoKey, initialWaitList.id);
-      console.log("response", response);
       if (response.success) {
         toast.success("Logo deleted successfully.");
         updateSetting("logoUrl", "");
         updateSetting("logoKey", "");
       } else {
-        toast.error(response.message);
+        notifySettingsResult({ error: response.message || "Could not remove the logo. Try again." });
       }
     } catch (error) {
       console.error("Error deleting logo:", error);
-      toast.error("An error occurred while deleting the logo.");
+      notifySettingsResult({ error: "Could not remove the logo. Try again." });
     }
   };
 
@@ -412,38 +414,26 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
   };
 
   return (
-    <div className="flex-1 overflow-auto">
-      <div className="p-8">
-        <div className="flex items-center justify-end mb-6">
+    <div className={styles.editor}>
+      <div>
+        <header className={styles.header}><div><h2>Form editor</h2><p>Customize the form, then save your changes.</p></div><div className={styles.toolbar}>
           <TooltipProvider>
-            <div className="flex space-x-2">
+            <div className={styles.toolbarActions}>
               <Tooltip delayDuration={100}>
                 <TooltipTrigger asChild>
-                  {isSaving ? (
-                    <Button size="icon" disabled aria-label="Saving page">
-                      <Save className="w-4 h-4 animate-spin" />
-                    </Button>
-                  ) : (
-                    <Button size="icon" onClick={handleSave} aria-label="Save page">
-                      <Save className="w-4 h-4" />
-                    </Button>
-                  )}
+                  <Button disabled={isSaving} onClick={handleSave}><Save className="w-4 h-4" aria-hidden="true" />{isSaving ? "Saving…" : "Save changes"}</Button>
                 </TooltipTrigger>
                 <TooltipContent side="bottom">
-                  Save Wait List
+                  Save changes
                 </TooltipContent>
               </Tooltip>
 
               <Tooltip delayDuration={100}>
                 <TooltipTrigger asChild>
-                  <Link href={`/wait-lists/${initialWaitList.id}/emails`} target="_blank">
-                    <Button size="icon" aria-label="Email templates">
-                      <Mail className="w-4 h-4" />
-                    </Button>
-                  </Link>
+                  <Link className={styles.secondaryLink} href={`/wait-lists/${initialWaitList.id}/emails`}><Mail className="w-4 h-4" aria-hidden="true" /><span>Email templates</span></Link>
                 </TooltipTrigger>
                 <TooltipContent side="bottom">
-                  Email Templates
+                  Email templates
                 </TooltipContent>
               </Tooltip>
 
@@ -453,13 +443,13 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
                 <Tooltip delayDuration={100}>
                   <TooltipTrigger asChild>
                     <DialogTrigger asChild>
-                      <Button size="icon" aria-label="Share waitlist">
+                      <Button variant="ghost" size="icon" aria-label="Share waitlist">
                         <ShareIcon className="w-4 h-4" />
                       </Button>
                     </DialogTrigger>
                   </TooltipTrigger>
                   <TooltipContent side="bottom">
-                    Share Wait List
+                    Share link
                   </TooltipContent>
                 </Tooltip>
 
@@ -495,20 +485,22 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
               </Dialog>
             </div>
           </TooltipProvider>
-        </div>
+        </div></header>
 
-        <div className="flex flex-col gap-4 md:flex-row md:gap-0">
+        <div className={styles.grid}>
+          <SettingsTab formSettings={formSettings} updateSetting={updateSetting} applyPreset={applyPreset} />
+          <section className={styles.previewColumn} aria-labelledby="legacy-preview-heading"><div className={styles.previewHeading}><h3 id="legacy-preview-heading">Preview</h3><p>No subscriber is created here.</p></div>
           <div
             style={{
               backgroundColor: formSettings.enableMainBgColor
                 ? formSettings.mainBgColor
                 : "transparent",
             }}
-            className="flex items-center justify-center flex-1"
+            className={styles.preview}
           >
             <SignUpForm
               email={testEmail}
-              isLoading={isTestEmailLoading}
+              isLoading={false}
               setEmail={setTestEmail}
               waitList={{
                 ...formSettings,
@@ -520,24 +512,13 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
                   : null,
               }}
               onDeleteLogo={handleDeleteLogo}
-              onSubmit={async (e) => {
-                e.preventDefault();
-                setIsTestEmailLoading(true);
-                await new Promise((resolve) => setTimeout(resolve, 1500));
-                toast.success(formSettings.successMessage, {
-                  position: "top-center",
-                });
-                setIsTestEmailLoading(false);
+              onSubmit={(event) => {
+                event.preventDefault();
+                toast("Preview only. No subscriber was created.");
               }}
               onImageUploadSuccess={onImageUploadSuccess}
             />
-          </div>
-
-          <SettingsTab
-            formSettings={formSettings}
-            updateSetting={updateSetting}
-            applyPreset={applyPreset}
-          />
+          </div></section>
         </div>
       </div>
     </div>

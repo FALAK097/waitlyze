@@ -1,0 +1,36 @@
+.product-audience .product-page-heading { margin-bottom: 28px; }
+.product-audience .product-page-heading h2 { font-size: 1.5rem; margin: 0; }
+.product-audience .product-description { margin: 0; }
+.product-audience-views { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 24px; }
+.product-audience-views button[aria-pressed="true"] { background: var(--product-bg-inset); color: var(--product-text-primary); }
+.product-audience-data { min-width: 0; }
+.product-audience-toolbar { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 24px; }
+.product-audience-filters { display: flex; flex-wrap: wrap; gap: 4px; }
+.product-audience-filters button[aria-pressed="true"] { background: var(--product-bg-inset); }
+.product-audience table th, .product-audience table td { padding-inline: 12px; }
+.product-audience table th:first-child, .product-audience table td:first-child { padding-inline-start: 0; }
+.product-audience table th:last-child, .product-audience table td:last-child { padding-inline-end: 0; }
+.product-audience table th { border-bottom: 1px solid var(--product-border-subtle); font-size: .8125rem; }
+.product-audience table td { font-size: .875rem; padding-block: 18px; }
+.product-audience-row button { text-align: start; min-height: 40px; }
+.product-audience-row button:focus-visible { outline: 2px solid var(--product-focus); outline-offset: 3px; border-radius: 3px; }
+.product-audience-pagination { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 16px; align-items: center; padding-block: 24px 0; color: var(--product-text-secondary); font-size: .8125rem; font-variant-numeric: tabular-nums; }
+.product-referral-review > header { margin-bottom: 28px; }
+.product-referral-review h2 { margin: 0 0 8px; font-size: 1.125rem; }
+.product-referral-empty { padding-block: 48px; text-align: center; }
+.product-referral-empty h3 { font-size: 1rem; margin: 0 0 8px; }
+.product-referral-empty p { color: var(--product-text-secondary); line-height: 1.6; }
+.product-referral-review-list { display: grid; gap: 36px; }
+.product-referral-review-item { min-width: 0; padding-block: 0 28px; border-bottom: 1px solid var(--product-border-subtle); }
+.product-referral-review-item:last-of-type { border: 0; }
+.product-referral-review-item > header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 18px; }
+.product-referral-review-item h3 { margin: 0; font-size: .9375rem; overflow-wrap: anywhere; }
+.product-referral-review-item dl { display: flex; flex-wrap: wrap; gap: 16px 32px; margin: 0 0 18px; }
+.product-referral-review-item dt { color: var(--product-text-secondary); font-size: .8125rem; margin-bottom: 6px; }
+.product-referral-review-item dd { margin: 0; overflow-wrap: anywhere; font-size: .875rem; }
+.product-referral-review-item .product-help { max-width: 65ch; line-height: 1.6; }
+.product-referral-decision { display: grid; gap: 8px; max-width: 520px; margin-top: 24px; }
+.product-referral-decision > label { font-size: .875rem; font-weight: 550; }
+.referral-review-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+.product-referral-resolution { font-size: .875rem; line-height: 1.6; }
+@media (max-width: 640px) { .product-audience .product-status { white-space: normal; line-height: 1.5; } .product-audience-toolbar { align-items: stretch; } .product-audience-filters { width: 100%; } .product-referral-decision textarea { font-size: 1rem; } }

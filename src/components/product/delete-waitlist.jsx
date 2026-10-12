@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "./button";
 import { Input } from "./input";
 import { Dialog, DialogTrigger, DialogContent, DialogTitle, DialogDescription, DialogClose } from "./dialog";
+import { notifySettingsResult } from "./settings-feedback";
 import { deleteWaitlist } from "@/app/actions/delete-waitlist";
 
 export function DeleteWaitlist({ id, name }) {
@@ -17,9 +18,9 @@ export function DeleteWaitlist({ id, name }) {
     event.preventDefault(); setError(""); setPending(true);
     try {
       const result = await deleteWaitlist(id, confirmation);
-      if (result.error) { setError(result.error); setPending(false); return; }
-      setOpen(false); router.replace("/wait-lists"); router.refresh();
-    } catch { setError("Could not delete this waitlist. Try again."); setPending(false); }
+      if (result.error) { setError(result.error); notifySettingsResult({ error: result.error }); setPending(false); return; }
+      notifySettingsResult({ success: "Waitlist deleted." }); setOpen(false); router.replace("/wait-lists"); router.refresh();
+    } catch { setError("Could not delete this waitlist. Try again."); notifySettingsResult({ error: "Could not delete this waitlist. Try again." }); setPending(false); }
   }
   return <div ref={container}><Dialog open={open} onOpenChange={(value) => { if (!pending) { setOpen(value); setConfirmation(""); setError(""); } }}><DialogTrigger render={<Button variant="destructive" />}>Delete waitlist</DialogTrigger><DialogContent container={container}>
     <div className="product-dialog-heading"><DialogTitle>Delete {name}?</DialogTitle><DialogDescription>This permanently deletes the waitlist, subscribers and analytics. This cannot be undone.</DialogDescription></div>

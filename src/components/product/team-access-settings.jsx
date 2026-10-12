@@ -1,5 +1,7 @@
 "use client";
 
+import { formatProductDate } from "@/lib/product-date.mjs";
+
 import { useActionState, useEffect, useState, useTransition } from "react";
 import { Button } from "@/components/product/button";
 import { Input } from "@/components/product/input";
@@ -9,7 +11,7 @@ import { notifySettingsResult, useSettingsFeedback } from "@/components/product/
 import { Avatar } from "@/components/product/avatar";
 
 function formatDate(value) {
-  return new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric", year: "numeric" }).format(new Date(value));
+  return formatProductDate(value, { includeTime: false });
 }
 
 export function TeamAccessSettings({ workspaceId, members, invitations, canManage, canInviteAdmins, secureInvitesConfigured }) {

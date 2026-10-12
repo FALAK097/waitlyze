@@ -20,9 +20,9 @@ async function SelectedSettings({ section, user, workspace, workspaces, role }) 
   </section>;
   if (section === "workspace") return <section className="product-settings-content" aria-labelledby="settings-panel-heading">
     <header><h2 id="settings-panel-heading">Workspace</h2><p>Details for {workspace.name}.</p></header>
-    <WorkspaceNameForm key={workspace.id} workspaceId={workspace.id} name={workspace.name} canManage={canManage} />
+    <WorkspaceNameForm key={`workspace-name:${workspace.id}`} workspaceId={workspace.id} name={workspace.name} canManage={canManage} />
     <div className="product-settings-detail"><h3>Your role</h3><p className="product-settings-role">{role?.toLowerCase()}</p></div>
-    <WorkspacePicker key={workspace.id} workspaces={workspaces} selected={workspace.id} />
+    <WorkspacePicker key={`workspace-picker:${workspace.id}`} workspaces={workspaces} selected={workspace.id} />
   </section>;
   if (section === "team") {
     const results = await Promise.allSettled([

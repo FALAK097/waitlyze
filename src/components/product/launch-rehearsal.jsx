@@ -1,11 +1,13 @@
 "use client";
 
+import { formatProductDate } from "@/lib/product-date.mjs";
+
 import { useState, useTransition } from "react";
 import { runWaitlistRehearsal } from "@/app/actions/rehearsal";
 import { Button } from "@/components/product/button";
 
 function formatDate(value) {
-  return new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(new Date(value));
+  return formatProductDate(value);
 }
 
 export function LaunchRehearsal({ waitListId, initialRuns, className = "", summaryClassName = "", titleClassName = "", bodyClassName = "" }) {

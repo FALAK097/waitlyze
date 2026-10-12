@@ -1,4 +1,4 @@
-/* Product-only tokens: legacy screens keep their existing theme until migrated. */
+/* Shared light-only product tokens. */
 .product-ui {
   --product-neutral-50: hsl(210 5% 98%);
   --product-neutral-100: hsl(210 4% 95%);
@@ -42,6 +42,11 @@
   --product-radius-control: 0.5rem;
   --product-radius-panel: 0.75rem;
   --product-radius-dialog: var(--product-radius-panel);
+  --product-content-width: 72rem;
+  --product-content-gutter: 32px;
+  --product-space-group: 1rem;
+  --product-space-section: 2rem;
+  --product-space-page: 3rem;
   --product-type-title: 1.75rem;
   --product-type-display: 2rem;
   --product-type-section: 1.25rem;
@@ -164,3 +169,6 @@
   .product-ui :is(a, button, input, select, [tabindex]):focus-visible { outline-color: Highlight; }
   .product-button, .product-input, .product-panel { border-color: ButtonText; }
 }
+
+@media (max-width: 767px) { .product-ui { --product-content-gutter: 20px; } }
+@media (max-width: 600px) { .product-ui { --product-content-gutter: 16px; } }

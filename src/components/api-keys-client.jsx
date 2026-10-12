@@ -1,5 +1,7 @@
 "use client";
 
+import { formatProductDate } from "@/lib/product-date.mjs";
+
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Copy, Eye, EyeOff, Plus, Trash2 } from "lucide-react";
@@ -77,7 +79,7 @@ export function ApiKeysClient() {
     <div className="flex flex-wrap items-center justify-between gap-3"><Link ref={docsLink} href="/docs/api" className="text-sm underline underline-offset-4">Read API docs</Link>{!creating && !toRevoke && <Button onClick={() => setCreating(true)} disabled={loading || Boolean(error) || !available.length}><Plus size={16} aria-hidden="true" />Create key</Button>}</div>
     {!creating && !toRevoke && (loading ? <><p role="status" className="sr-only">Loading API keys…</p><div className="settings-api-key-skeleton" aria-hidden="true" /><div className="settings-api-key-skeleton" aria-hidden="true" /></> : error ? <div role="alert"><p>{error}</p><Button variant="outline" onClick={() => load()}>Try again</Button></div> : <>
       {!keys.length && <p className="product-help">No API keys yet. Create one for a waitlist to accept signups from your server.</p>}
-      {keys.map((key) => <article key={key.id} className="settings-api-key-row"><header><strong className="text-sm">{key.name}</strong><Button variant="ghost" size="icon" aria-label={`Revoke ${key.name}`} onClick={() => setToRevoke(key)}><Trash2 size={16} aria-hidden="true" /></Button></header><p>{key.waitlist?.name || "Unlinked"} · Signup access</p><code className="text-sm break-all">{key.keyId ? `wl2_${key.keyId}_` : "Legacy key · "}••••••••••••••••</code><p>{key.expiresAt ? `Expires ${new Date(key.expiresAt).toLocaleDateString()}` : "No expiry"}</p></article>)}
+      {keys.map((key) => <article key={key.id} className="settings-api-key-row"><header><strong className="text-sm">{key.name}</strong><Button variant="ghost" size="icon" aria-label={`Revoke ${key.name}`} onClick={() => setToRevoke(key)}><Trash2 size={16} aria-hidden="true" /></Button></header><p>{key.waitlist?.name || "Unlinked"} · Signup access</p><code className="text-sm break-all">{key.keyId ? `wl2_${key.keyId}_` : "Legacy key · "}••••••••••••••••</code><p>{key.expiresAt ? `Expires ${formatProductDate(key.expiresAt, { includeTime: false })}` : "No expiry"}</p></article>)}
       {!available.length && <p className="product-help">{waitlists.length ? "Each waitlist already has a key. Revoke a key before creating its replacement." : "Create a waitlist before adding an API key."}</p>}
     </>)}
     {creating && <section aria-labelledby="create-api-key-heading" className="space-y-4"><header><h3 id="create-api-key-heading" ref={panelHeading} tabIndex={-1} className="text-base font-semibold">{newKey ? "Save your API key" : "Create API key"}</h3><p className="product-help">{newKey ? "This secret is shown once. Keep it on your server." : "A key only creates signups for its selected waitlist."}</p></header>
