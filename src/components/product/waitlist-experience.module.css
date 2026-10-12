@@ -6,8 +6,20 @@
 @media (max-width: 639px) {
   .listToolbar > :first-child { flex-basis: 100%; }
   .listToolbar > :nth-child(2) { flex: 1 1 auto; min-width: 0; max-width: none; margin-inline-start: 0; }
-  .table { min-width: 620px; }
-}
+  .tableWrap { overflow: visible; }
+  .table { display: block; min-width: 0; table-layout: auto; }
+  .table thead { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
+  .table tbody { display: block; }
+  .table tr { position: relative; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 16px; padding: 16px; margin-bottom: 12px; border: 1px solid var(--product-border-subtle); border-radius: 12px; background: var(--product-bg-surface); }
+  .table th:first-child { width: auto; }
+  .table th, .table td { display: block; width: auto; padding: 0; border: 0; white-space: normal; }
+  .table tbody th { grid-column: 1 / -1; padding-inline-end: 44px; }
+  .table tbody th > a { min-height: 0; padding: 0; }
+  .table tbody td { color: var(--product-text-secondary); }
+  .table tbody td::before { content: attr(data-label); display: block; margin-bottom: 3px; font-size: .6875rem; font-weight: 500; text-transform: uppercase; letter-spacing: .04em; }
+  .rowAction { position: absolute; inset-block-start: 10px; inset-inline-end: 10px; }
+  .rowAction::before { content: none; }
+  }
 .tableWrap { border: 0; border-radius: 0; }
 .table { table-layout: fixed; }
 .table th:first-child { width: 32%; }
@@ -24,7 +36,6 @@
 .table tbody td { color: var(--product-text-secondary); font-variant-numeric: tabular-nums; }
 .table tbody td:nth-child(2) { color: var(--product-text-primary); }
 .rowDescription { max-width: 60ch; font-size: var(--product-type-caption); }
-.mobileDate { display: none; }
 .status { display: inline-flex; align-items: center; gap: 6px; color: var(--product-text-secondary); font-size: .75rem; font-weight: 500; white-space: nowrap; }
 .status::before { width: 6px; height: 6px; border-radius: 50%; background: currentColor; content: ""; }
 .status[data-status="PUBLISHED"] { color: var(--product-success-text); }
@@ -61,6 +72,6 @@
 @media (hover: hover) and (pointer: fine) { .table tbody tr:hover { background: var(--product-neutral-50); } .filters a:hover { color: var(--product-text-primary); } }
 @media (prefers-reduced-motion: no-preference) { .table tbody tr { transition: background-color 140ms ease; } }
 @media (max-width: 760px) { .listToolbar { align-items: stretch; } .listToolbar .listSearch { order: 0; width: 100%; } .filters { width: 100%; justify-content: space-between; gap: 12px; } .overviewHero { flex-direction: column; } .overviewFacts { grid-template-columns: repeat(2, minmax(0, 1fr)); } .overview { gap: 36px; } }
-@media (max-width: 520px) { .table th:first-child { width: 70%; } .table th:nth-child(2) { width: 30%; } .table thead th:nth-child(3), .table tbody td:nth-child(3) { display: none; } .table :global(th), .table :global(td) { padding-inline: 0; } .table tbody th > a { align-items: flex-start; flex-direction: column; gap: 6px; } .mobileDate { display: block; margin-top: 8px; color: var(--product-text-secondary); font-size: .75rem; font-weight: 400; } .rehearsalSummary { align-items: flex-start; } .listHeader { gap: 12px; } }
+@media (max-width: 520px) { .table tbody th > a { align-items: flex-start; flex-direction: column; gap: 6px; } .rehearsalSummary { align-items: flex-start; } .listHeader { gap: 12px; } }
 
 @media (max-width: 520px) { .table thead a { font-size: .75rem; gap: 4px; } .table thead a svg { width: 12px; height: 12px; } }

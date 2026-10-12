@@ -18,7 +18,7 @@
 .product-settings-detail h3 { margin: 0 0 8px; font-size: .875rem; font-weight: 550; }
 .product-settings-detail p { margin: 0 0 6px; overflow-wrap: anywhere; }
 .product-settings-role { text-transform: capitalize; }
-.product-settings-content .product-team-settings { display: grid; gap: 28px; }
+.product-settings-content .product-team-settings { display: grid; grid-template-columns: minmax(0, 1fr); gap: 28px; }
 .product-settings-content .product-team-list { border: 0; padding: 0; background: transparent; box-shadow: none; }
 .product-team-toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
 .product-team-toolbar p { margin: 0; font-variant-numeric: tabular-nums; color: var(--product-text-secondary); }

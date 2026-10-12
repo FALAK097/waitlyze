@@ -33,7 +33,8 @@
 .product-page-heading { display: flex; justify-content: space-between; align-items: center; gap: 24px; margin-bottom: 32px; }
 .product-page-heading h1 { margin: 0 0 8px; }
 .product-help { color: var(--product-text-secondary); font-size: .875rem; line-height: 1.6; margin: 0 0 16px; }
-.product-table-wrap { position: relative; border: 1px solid var(--product-border-subtle); border-radius: 12px; background: var(--product-bg-surface); overflow-x: auto; }
+.product-table-wrap { position: relative; border: 1px solid var(--product-border-subtle); border-radius: 12px; background: var(--product-bg-surface); overflow-x: auto; scrollbar-width: none; -ms-overflow-style: none; }
+.product-table-wrap::-webkit-scrollbar { display: none; }
 .product-waitlist-table { width: 100%; border-collapse: collapse; font-size: .875rem; }
 .product-waitlist-search { position: relative; min-width: 0; }
 .product-waitlist-search input { width: 100%; padding-right: 40px; }
@@ -450,7 +451,7 @@
   .automation-run-list time { white-space: normal; }
 }
 
-.product-team-settings { display: grid; gap: 24px; }
+.product-team-settings { display: grid; grid-template-columns: minmax(0, 1fr); gap: 24px; }
 .product-team-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px; }
 .product-team-search { flex: 0 1 320px; min-width: min(100%, 220px); max-width: 320px; }
 .product-team-toolbar > :last-child { margin-inline-start: auto; }
@@ -469,7 +470,7 @@
 .product-team-status[data-tone="info"] span { color: var(--product-accent-border); }
 .product-table-empty { text-align: center; color: var(--product-text-secondary); padding-block: 32px; margin: 0; }
 .product-team-results { margin: 12px 4px 0; color: var(--product-text-secondary); font-size: .8125rem; }
-.product-audit { display: grid; gap: 0; }
+.product-audit { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0; }
 .product-audit-heading { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 16px 24px; margin-bottom: 20px; }
 .product-audit-heading h2 { font-size: 1.5rem; margin: 0 0 8px; }
 .product-audit-heading p { color: var(--product-text-secondary); margin: 0; text-wrap: pretty; }
@@ -494,6 +495,24 @@
 .product-danger-inline p { margin: 0; }
 .product-danger-inline strong { font-size: 1rem; }
 .product-danger-inline > div p { color: var(--product-text-secondary); }
+
+/* Stacked cards keep dense tables readable on small screens. */
+@media (max-width: 639px) {
+  .product-team-settings .product-table-wrap { border: 0; border-radius: 0; background: transparent; overflow: visible; }
+  .product-team-settings .product-table-wrap [data-slot="table-container"] { overflow: visible; }
+  .product-team-settings .product-table-wrap table { display: block; min-width: 0; table-layout: auto; }
+  .product-team-settings .product-table-wrap thead { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
+  .product-team-settings .product-table-wrap tbody { display: block; }
+  .product-team-settings .product-table-wrap tr { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 16px; padding: 16px; margin-bottom: 12px; border: 1px solid var(--product-border-subtle); border-radius: 12px; background: var(--product-bg-surface); }
+  .product-team-settings .product-table-wrap tr:last-child { margin-bottom: 0; }
+  .product-team-settings .product-table-wrap th,
+  .product-team-settings .product-table-wrap td { display: block; width: auto; padding: 0; border: 0; white-space: normal; }
+  .product-team-settings .product-table-wrap tbody th { grid-column: 1 / -1; }
+  .product-team-settings .product-table-wrap td::before { content: attr(data-label); display: block; margin-bottom: 3px; font-size: .6875rem; font-weight: 500; color: var(--product-text-secondary); text-transform: uppercase; letter-spacing: .04em; }
+  .product-team-settings .product-table-wrap tbody td:last-child { grid-column: 1 / -1; }
+  .product-team-settings .product-table-wrap tbody td:last-child::before { content: none; }
+  .product-team-settings .product-table-wrap tbody td:last-child .product-team-actions { padding-inline-start: 0; }
+}
 .product-team-invite-form { display: grid; gap: 12px; padding: 0 0 24px; border: 0; border-radius: 0; background: transparent; }
 .product-team-field { display: grid; gap: 7px; font-size: .875rem; font-weight: 550; }
 .product-team-field select { width: 100%; min-height: 44px; padding: 8px 12px; border: 1px solid var(--product-border-control); border-radius: 8px; background: var(--product-bg-surface); color: var(--product-text-primary); font: inherit; }
