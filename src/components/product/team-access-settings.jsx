@@ -12,6 +12,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Input } from "@/components/ui/input";
 import { changeWorkspaceMemberRole, inviteWorkspaceMember, removeWorkspaceMember, resendWorkspaceInvitation, revokeWorkspaceInvite } from "@/app/actions/workspace-invitations";
 import { Dialog, DialogTrigger, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { toast } from "@/components/ui/toast";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 
@@ -22,9 +23,9 @@ function formatDate(value) {
 export function TeamAccessSettings({ workspaceId, members, invitations, canManage, canInviteAdmins, secureInvitesConfigured, currentUserId }) {
   const [inviteOpen, setInviteOpen] = useState(false);
   const [memberQuery, setMemberQuery] = useState("");
-  const [rowMessage, setRowMessage] = useState("");
-  const [rowError, setRowError] = useState("");
   const [rowPending, startTransition] = useTransition();
+  const [revokeTarget, setRevokeTarget] = useState(null);
+  const [removeTarget, setRemoveTarget] = useState(null);
   const visibleMembers = members.filter((member) => {
     const needle = memberQuery.trim().toLowerCase();
     if (!needle) return true;
@@ -38,28 +39,33 @@ export function TeamAccessSettings({ workspaceId, members, invitations, canManag
   });
 
   function runRowAction(operation, ...args) {
-    setRowMessage("");
-    setRowError("");
     startTransition(async () => {
       try {
         const result = await operation(...args);
-        setRowMessage(result.success || "");
-        setRowError(result.error || "");
         if (result?.error) toast.add({ title: result.error, type: "error" });
-        else if (typeof result?.success === "string") toast.add({ title: result.success, type: "success" });
+        else if (typeof result?.success === "string") {
+          toast.add({ title: result.success, type: "success" });
+          setRevokeTarget(null);
+          setRemoveTarget(null);
+        }
       } catch {
-        const error = "Could not update this workspace. Check your connection and try again.";
-        setRowError(error);
-        toast.add({ title: error, type: "error" });
+        toast.add({ title: "Could not update this workspace. Check your connection and try again.", type: "error" });
       }
     });
   }
   function runInvitationAction(operation, invitationId) {
     runRowAction(operation, invitationId, workspaceId);
   }
-  function removeMember(memberUserId, label) {
-    if (!window.confirm(`Remove ${label} from this workspace? They will lose access immediately.`)) return;
-    runRowAction(removeWorkspaceMember, memberUserId, workspaceId);
+  function confirmRemove() {
+    if (!removeTarget) return;
+    setRemoveTarget(null);
+    runRowAction(removeWorkspaceMember, removeTarget.userId, workspaceId);
+  }
+  function confirmRevoke() {
+    if (!revokeTarget) return;
+    const target = revokeTarget;
+    setRevokeTarget(null);
+    runInvitationAction(revokeWorkspaceInvite, target.id);
   }
   function changeRole(memberUserId, role) {
     runRowAction(changeWorkspaceMemberRole, memberUserId, workspaceId, role);
@@ -95,19 +101,19 @@ export function TeamAccessSettings({ workspaceId, members, invitations, canManag
               <TableCell>{canManage && !isSelf ? <Select value={member.role} onValueChange={(role) => changeRole(member.userId, role)} disabled={rowPending}><SelectTrigger aria-label={`Change role for ${label}`}><SelectValue>{member.role === "ADMIN" ? "Admin" : "Member"}</SelectValue></SelectTrigger><SelectContent><SelectItem value="MEMBER">Member</SelectItem>{canInviteAdmins ? <SelectItem value="ADMIN">Admin</SelectItem> : null}</SelectContent></Select> : member.role.toLowerCase()}</TableCell>
               <TableCell><span className="product-team-status" data-tone="success"><span aria-hidden="true">●</span>Active</span></TableCell>
               <TableCell>{member.createdAt ? formatDate(member.createdAt) : "—"}</TableCell>
-              <TableCell>{canManage && !isSelf && <div className="product-team-actions"><Button type="button" variant="destructive" size="sm" disabled={rowPending} aria-label={`Remove ${label} from the workspace`} onClick={() => removeMember(member.userId, label)}>Remove</Button></div>}</TableCell>
+              <TableCell>{canManage && !isSelf && <div className="product-team-actions"><Button type="button" variant="destructive" size="sm" disabled={rowPending} aria-label={`Remove ${label} from the workspace`} onClick={() => setRemoveTarget({ userId: member.userId, label })}>Remove</Button></div>}</TableCell>
             </TableRow>;
           })}
           {visibleInvitations.map((invite) => {
             const failed = invite.status === "SEND_FAILED";
             return <TableRow key={invite.id}>
-              <TableHead scope="row"><span className="product-team-user"><Avatar aria-hidden="true"><AvatarFallback>{(invite.emailNormalized || "?").slice(0, 1).toUpperCase()}</AvatarFallback></Avatar><span className="product-team-person"><strong>{invite.emailNormalized}</strong><span>{failed ? "Email delivery failed · retry available" : `Sent ${formatDate(invite.createdAt)} · expires ${formatDate(invite.expiresAt)}`}</span></span></span></TableHead>
+              <TableHead scope="row"><span className="product-team-user"><Avatar aria-hidden="true"><AvatarFallback>{(invite.emailNormalized || "?").slice(0, 1).toUpperCase()}</AvatarFallback></Avatar><span className="product-team-person"><strong>{invite.emailNormalized}</strong><span>{failed ? "Email delivery failed" : `Sent ${formatDate(invite.createdAt)} · expires ${formatDate(invite.expiresAt)}`}</span></span></span></TableHead>
               <TableCell>{invite.role.toLowerCase()}</TableCell>
               <TableCell><span className="product-team-status" data-tone={failed ? "danger" : "info"}><span aria-hidden="true">●</span>{failed ? "Failed" : "Pending"}</span></TableCell>
               <TableCell>{formatDate(invite.createdAt)}</TableCell>
               <TableCell>{canManage && <div className="product-team-actions">
                 <Button type="button" variant="outline" size="sm" disabled={rowPending || !secureInvitesConfigured} aria-label={`Resend invitation to ${invite.emailNormalized}`} onClick={() => runInvitationAction(resendWorkspaceInvitation, invite.id)}>Resend</Button>
-                <Button type="button" variant="ghost" size="sm" disabled={rowPending} aria-label={`Revoke invitation to ${invite.emailNormalized}`} onClick={() => { if (window.confirm(`Revoke the invitation to ${invite.emailNormalized}?`)) runInvitationAction(revokeWorkspaceInvite, invite.id); }}>Revoke</Button>
+                <Button type="button" variant="ghost" size="sm" disabled={rowPending} aria-label={`Revoke invitation to ${invite.emailNormalized}`} onClick={() => setRevokeTarget(invite)}>Revoke</Button>
               </div>}</TableCell>
             </TableRow>;
           })}
@@ -117,7 +123,30 @@ export function TeamAccessSettings({ workspaceId, members, invitations, canManag
       </div>
       <p className="product-team-results" aria-live="polite">{visibleMembers.length + visibleInvitations.length} of {members.length + invitations.length} {members.length + invitations.length === 1 ? "person" : "people"}</p>
     </section>
-    <p className="product-team-announcement" role={rowError ? "alert" : "status"} aria-live={rowError ? "assertive" : "polite"}>{rowError || rowMessage || ""}</p>
+    <AlertDialog open={Boolean(revokeTarget)} onOpenChange={(open) => { if (!open) setRevokeTarget(null); }}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Revoke invitation?</AlertDialogTitle>
+          <AlertDialogDescription>{revokeTarget ? `Revoke the invitation to ${revokeTarget.emailNormalized}? They will not be able to join with it.` : ""}</AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogAction variant="destructive" onClick={confirmRevoke} disabled={rowPending}>Revoke invitation</AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+    <AlertDialog open={Boolean(removeTarget)} onOpenChange={(open) => { if (!open) setRemoveTarget(null); }}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Remove member?</AlertDialogTitle>
+          <AlertDialogDescription>{removeTarget ? `Remove ${removeTarget.label} from this workspace? They will lose access immediately.` : ""}</AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogAction variant="destructive" onClick={confirmRemove} disabled={rowPending}>Remove member</AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   </div>;
 }
 
