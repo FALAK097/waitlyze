@@ -3,7 +3,7 @@ title: Overview
 description: Read lifecycle state, readiness, and rehearsal for one waitlist.
 ---
 
-Open any waitlist to land on **Overview** at `/waitlists/[id]`. This is the decision page: is the waitlist ready, live, paused, or needing changes?
+Open any waitlist to land on **Overview** at `/waitlists/[id]`. This is the decision page: is the waitlist ready, live, paused, or needing changes? It needs view access; publish actions here are gated by role (see [Workspace and roles](/docs/workspace)).
 
 ## Read the hero
 
@@ -33,10 +33,6 @@ Each check links directly to the fix: page content (`#page-content`), publicatio
 `LaunchRehearsal` records up to the last five runs per waitlist. Use it before publishing or after major edits to confirm the page, form, and publication path still pass.
 
 Runs store pass/fail counts, per-check results, and timestamps. A failing rehearsal does not change publication state — fix the flagged area, then publish.
-
-## Navigation and permissions
-
-The waitlist title and context nav stay visible on every child tab. Overview requires view access. Publishing from here is gated: members see guidance, owners and admins see publish controls.
 
 ## Next
 

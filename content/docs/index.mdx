@@ -12,23 +12,23 @@ This guide mirrors the app. Each waitlist has **Overview, Page, Subscribers, Ana
 <Steps>
 <Step>
 ### Create a waitlist
-Go to `/waitlists` → **New waitlist**. Name it, add an optional description and URL slug, and pick a starter template. It starts as a private **Draft**. See [Waitlists](/docs/waitlists).
+Go to `/waitlists` → **New waitlist**. It starts as a private **Draft**. See [Waitlists](/docs/waitlists).
 </Step>
 <Step>
 ### Design the page
-Open the **Page** tab to edit content, branding, form, and sharing options. Your edits autosave as a draft revision. See [Page builder](/docs/page-builder).
+Open the **Page** tab to edit content and branding. See [Page builder](/docs/page-builder).
 </Step>
 <Step>
 ### Review readiness and publish
-Check **Overview** for page, form, publication, and domain checks, then publish from the Page tab. Only owners and admins can publish. See [Publishing](/docs/publishing).
+Check **Overview**, then publish from the Page tab. See [Publishing](/docs/publishing).
 </Step>
 <Step>
 ### Share the link or embed
-Copy the hosted `/w/your-slug` URL or paste the embed snippet on your site. Optionally connect a custom domain. See [Hosted pages and embeds](/docs/embed).
+Copy the hosted URL or paste the embed snippet on your site. See [Hosted pages and embeds](/docs/embed).
 </Step>
 <Step>
 ### Follow growth
-Verify emails, review referrals, read analytics, send broadcasts and automations, and stream events to your stack. See [Subscribers](/docs/subscribers), [Analytics](/docs/analytics), [Email tools](/docs/email), [Webhooks](/docs/webhooks).
+Track subscribers, analytics, email, and webhooks. See [Subscribers](/docs/subscribers).
 </Step>
 </Steps>
 
@@ -69,20 +69,6 @@ Draft and paused waitlists do not accept signups. Saved page edits are not live 
 <Card title="Troubleshooting" href="/docs/troubleshooting" description="Fix publication, embed, email, and delivery issues." />
 </Cards>
 
-## App map
+## Where things live
 
-| Where | Route | What you do there |
-| --- | --- | --- |
-| Waitlists | `/waitlists` | Search, filter by status, sort, paginate, and create. |
-| New | `/waitlists/new` | Name, describe, slug, and template for a private draft. |
-| Overview | `/waitlists/[id]` | Lifecycle state, facts, readiness, and rehearsal. |
-| Page | `/waitlists/[id]/edit` | Edit content and publish, pause, or roll back. |
-| Subscribers | `/waitlists/[id]/subscribers` | Search, filter, inspect, review referrals, export CSV. |
-| Analytics | `/waitlists/[id]/analytics` | 7/30/90-day visitors, signups, conversion, verification. |
-| Emails | `/waitlists/[id]/emails` | Templates hub with verification delivery health. |
-| Broadcasts | `/waitlists/[id]/emails/broadcasts` | One-time sends to opted-in verified subscribers. |
-| Automations | `/waitlists/[id]/emails/automations` | Three consent-aware recipes with versioning. |
-| Waitlist settings | `/waitlists/[id]/settings` | Referrals, custom domain, webhooks, delete. |
-| Settings | `/settings?section=profile|team|integrations` | Profile, members, integrations including API keys and Resend. |
-
-Members can view and edit campaigns and audiences. Only owners and admins can publish, manage connections and keys, send email, delete campaigns, and manage the workspace. See [Workspace and roles](/docs/workspace).
+Each waitlist has six sections — **Overview, Page, Subscribers, Analytics, Emails, and Waitlist settings** — mapped with routes and permissions on the [Waitlists](/docs/waitlists) page. Workspace-wide controls (profile, members, integrations) live under **Settings** — see [Workspace and roles](/docs/workspace).
