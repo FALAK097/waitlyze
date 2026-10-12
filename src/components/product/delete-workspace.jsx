@@ -14,9 +14,7 @@ export function DeleteWorkspace({ workspaceId, workspaceName, isPersonal }) {
     if (state?.error) toast.add({ title: state.error, type: "error" });
   }, [state]);
   if (isPersonal) {
-    return <div className="product-danger-zone">
-      <div><h3>Delete workspace</h3><p>The personal workspace cannot be deleted. It holds your unassigned waitlists and is recreated automatically.</p></div>
-    </div>;
+    return <p className="product-help">The personal workspace cannot be deleted. It holds your unassigned waitlists and is recreated automatically.</p>;
   }
   return <div className="product-danger-zone">
     <div><h3>Delete workspace</h3><p>If you no longer wish to use this workspace, delete it along with its waitlists, subscribers, and settings.</p><p>This decision is permanent and can&rsquo;t be undone.</p></div>

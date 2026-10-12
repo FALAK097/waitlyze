@@ -6,7 +6,8 @@ import { Fragment, useActionState, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogClose, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogClose, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { Separator } from "@/components/ui/separator";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { Breadcrumb, BreadcrumbList, BreadcrumbItem, BreadcrumbLink, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
 import { Input } from "@/components/ui/input";
@@ -25,16 +26,17 @@ function CreateWorkspaceDialog({ open, onOpenChange }) {
   return <Dialog open={open} onOpenChange={onOpenChange}>
     <DialogContent>
       <DialogTitle>Create workspace</DialogTitle>
-      <DialogDescription>Workspaces keep waitlists, subscribers, and settings separate.</DialogDescription>
+      <Separator />
       <form action={action} className="app-workspace-create">
         <div className="product-field">
           <Label htmlFor="workspace-name">Workspace name</Label>
-          <Input id="workspace-name" name="name" required minLength={1} maxLength={80} placeholder="Acme Inc" disabled={pending} autoComplete="off" aria-invalid={!!state?.error} aria-describedby={state?.error ? "workspace-name-error" : undefined} />
+          <Input id="workspace-name" name="name" required minLength={1} maxLength={80} placeholder="Acme Inc." disabled={pending} autoComplete="off" aria-invalid={!!state?.error} aria-describedby={state?.error ? "workspace-name-error" : undefined} />
         </div>
         {state?.error && <p id="workspace-name-error" role="alert" className="product-field-error">{state.error}</p>}
+        <Separator />
         <div className="product-actions">
           <DialogClose render={<Button variant="outline" />} disabled={pending}>Cancel</DialogClose>
-          <Button type="submit" disabled={pending}>{pending ? "Creating…" : "Create workspace"}</Button>
+          <Button type="submit" disabled={pending}>{pending ? "Creating…" : "Create"}</Button>
         </div>
       </form>
     </DialogContent>

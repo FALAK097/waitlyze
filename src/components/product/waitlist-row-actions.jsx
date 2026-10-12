@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { MoreHorizontalIcon } from "@hugeicons/core-free-icons";
@@ -40,7 +39,6 @@ export function WaitlistRowActions({ id, name }) {
     <DropdownMenu>
       <DropdownMenuTrigger render={<Button variant="ghost" size="icon-sm" />} aria-label={`Actions for ${displayName}`}><HugeiconsIcon icon={MoreHorizontalIcon} aria-hidden="true" /></DropdownMenuTrigger>
       <DropdownMenuContent align="end" sideOffset={4}>
-        <DropdownMenuItem render={<Link href={`/waitlists/${id}`} />}>Open</DropdownMenuItem>
         <DropdownMenuItem variant="destructive" className="cursor-pointer" onClick={() => { setConfirmation(""); setError(""); setConfirmOpen(true); }}>Delete</DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

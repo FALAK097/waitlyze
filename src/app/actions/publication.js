@@ -22,14 +22,14 @@ export async function publishWaitlist(id, revision) {
   if (!Number.isSafeInteger(revision) || revision < 1) return { ok: false, message: "Reload the page and try again." };
   return action(async (userId) => {
     const result = await publishCampaign(prisma, userId, undefined, id, revision);
-    await recordWaitlistAuditEvent(prisma, { userId, waitListId: id, action: AUDIT_ACTIONS.WAITLIST_PUBLISHED });
+    await recordWaitlistAuditEvent(prisma, { userId, waitListId: id, action: AUDIT_ACTIONS.WAITLIST_PUBLISHED, detail: "Page published" });
     return result;
   }, "Waitlist publish failed");
 }
 export async function pauseWaitlist(id) {
   return action(async (userId) => {
     const result = await pauseCampaign(prisma, userId, undefined, id);
-    await recordWaitlistAuditEvent(prisma, { userId, waitListId: id, action: AUDIT_ACTIONS.WAITLIST_PAUSED });
+    await recordWaitlistAuditEvent(prisma, { userId, waitListId: id, action: AUDIT_ACTIONS.WAITLIST_PAUSED, detail: "Signups paused" });
     return result;
   }, "Waitlist pause failed");
 }

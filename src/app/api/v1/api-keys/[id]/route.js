@@ -36,7 +36,7 @@ export async function DELETE(_req, { params }) {
             return NextResponse.json({ error: { code: 'invalid_input', message: 'API key ID is required' } }, { status: 400 });
         }
 
-        const key = await prisma.apiKey.findUnique({ where: { id }, select: { userId: true, waitlistId: true } });
+        const key = await prisma.apiKey.findUnique({ where: { id }, select: { userId: true, waitlistId: true, name: true, waitlist: { select: { name: true } } } });
         if (!key) {
             return NextResponse.json({ error: { code: 'not_found', message: 'API key not found or access denied' } }, { status: 404 });
         }
@@ -58,7 +58,7 @@ export async function DELETE(_req, { params }) {
         if (!success) {
             return NextResponse.json({ error: { code: 'not_found', message: 'API key not found or access denied' } }, { status: 404 });
         }
-        if (waitlistId) await recordWaitlistAuditEvent(prisma, { userId: user.id, waitListId: waitlistId, action: AUDIT_ACTIONS.API_KEY_REVOKED, resourceType: "api_key", resourceId: id });
+        if (waitlistId) await recordWaitlistAuditEvent(prisma, { userId: user.id, waitListId: waitlistId, action: AUDIT_ACTIONS.API_KEY_REVOKED, resourceType: "api_key", resourceId: id, resourceName: key.name || "API key", detail: key.waitlist ? `For waitlist ${key.waitlist.name || key.waitlistId}` : "Access revoked immediately" });
 
         return new Response(null, { status: 204 });
     } catch (err) {

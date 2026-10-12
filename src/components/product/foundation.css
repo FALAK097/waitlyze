@@ -26,12 +26,12 @@
   --product-text-primary: var(--product-ink);
   --product-text-secondary: var(--product-neutral-600);
   --product-border-subtle: var(--product-neutral-200);
-  --product-border-control: var(--product-neutral-500);
+  --product-border-control: hsl(210 5% 84%);
   --product-accent-solid: var(--product-lime-400);
   --product-accent-hover: var(--product-lime-500);
   --product-accent-label: var(--product-ink);
   --product-accent-border: var(--product-neutral-500);
-  --product-focus: var(--product-neutral-900);
+  --product-focus: hsl(243 75% 59%);
   --product-success-text: var(--product-green-700);
   --product-danger-text: var(--product-red-700);
   --product-image-outline: hsl(0 0% 0% / 0.1);

@@ -54,7 +54,7 @@ export async function createWorkspace(previous, form) {
   }
   try {
     const workspace = await createWorkspaceService(prisma).createWorkspace(session.user.id, name);
-    await recordAuditEvent(prisma, { workspaceId: workspace.id, userId: session.user.id, action: AUDIT_ACTIONS.WORKSPACE_CREATED, resourceType: "workspace", resourceId: workspace.id, resourceName: workspace.name });
+    await recordAuditEvent(prisma, { workspaceId: workspace.id, userId: session.user.id, action: AUDIT_ACTIONS.WORKSPACE_CREATED, resourceType: "workspace", resourceId: workspace.id, resourceName: workspace.name, detail: "Workspace created and selected" });
     (await cookies()).set("waitlyze-workspace", workspace.id, { httpOnly: true, sameSite: "lax", secure: process.env.NODE_ENV === "production" && !process.env.WAITLYZE_TEST_FIXTURE, path: "/", maxAge: 60 * 60 * 24 * 30 });
   } catch {
     return { error: "Could not create the workspace. Try again." };

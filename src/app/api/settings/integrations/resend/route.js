@@ -46,6 +46,6 @@ export async function DELETE(request) {
   const access = await integrationAccess(request, { manage: true });
   if (access.response) return access.response;
   await prisma.workspaceIntegration.deleteMany({ where: { workspaceId: access.workspace.id, provider: PROVIDER } });
-  await recordAuditEvent(prisma, { workspaceId: access.workspace.id, userId: access.user.id, action: AUDIT_ACTIONS.RESEND_DISCONNECTED, resourceType: "integration", resourceName: "Resend" });
+  await recordAuditEvent(prisma, { workspaceId: access.workspace.id, userId: access.user.id, action: AUDIT_ACTIONS.RESEND_DISCONNECTED, resourceType: "integration", resourceName: "Resend", detail: "Falls back to the deployment sender" });
   return NextResponse.json({ ok: true });
 }
