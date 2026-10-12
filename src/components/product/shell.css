@@ -489,11 +489,11 @@
 .product-audit-action[data-tone="danger"] span { color: var(--product-danger-text); }
 .product-audit-action[data-tone="info"] span { color: var(--product-accent-border); }
 .product-audit-action[data-tone="muted"] span { color: var(--product-text-secondary); }
-.product-danger-zone { display: grid; gap: 20px; padding: 24px; border: 1px solid var(--product-border-subtle); border-radius: 12px; background: var(--product-bg-surface); }
-.product-danger-zone h3 { margin: 0 0 8px; font-size: 1rem; }
-.product-danger-zone p { margin: 0; color: var(--product-text-secondary); }
-.product-danger-zone p + p { margin-top: 4px; }
-.product-danger-form { display: grid; gap: 16px; max-width: 480px; }
+.product-danger-inline { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px 24px; }
+.product-danger-inline > div { display: grid; gap: 4px; min-width: 0; }
+.product-danger-inline p { margin: 0; }
+.product-danger-inline strong { font-size: 1rem; }
+.product-danger-inline > div p { color: var(--product-text-secondary); }
 .product-team-invite-form { display: grid; gap: 12px; padding: 0 0 24px; border: 0; border-radius: 0; background: transparent; }
 .product-team-field { display: grid; gap: 7px; font-size: .875rem; font-weight: 550; }
 .product-team-field select { width: 100%; min-height: 44px; padding: 8px 12px; border: 1px solid var(--product-border-control); border-radius: 8px; background: var(--product-bg-surface); color: var(--product-text-primary); font: inherit; }

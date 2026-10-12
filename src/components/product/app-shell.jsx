@@ -102,7 +102,7 @@ function AccountMenu({ user, avatar }) {
       router.replace("/"); router.refresh();
     } catch { toast.add({ title: "Could not sign out. Try again.", type: "error" }); setPending(false); }
   }
-  return <div className="app-account-control"><DropdownMenu><DropdownMenuTrigger render={<Button variant="ghost" size="icon" className="cursor-pointer" />} aria-label="Open account menu">{avatar}</DropdownMenuTrigger><DropdownMenuContent align="end" sideOffset={8} className="min-w-64">
+  return <div className="app-account-control"><DropdownMenu><DropdownMenuTrigger render={<Button variant="ghost" size="icon" />} aria-label="Open account menu">{avatar}</DropdownMenuTrigger><DropdownMenuContent align="end" sideOffset={8} className="min-w-64">
     <div className="app-account-details">{avatar}<div><strong>{user.name || "Account"}</strong><span className="app-account-email" title={user.email}>{user.email}</span></div></div>
     <DropdownMenuItem variant="destructive" className="cursor-pointer" onClick={leave} disabled={pending}><HugeiconsIcon icon={Logout01Icon} aria-hidden="true" />{pending ? "Signing out…" : "Sign out"}</DropdownMenuItem>
   </DropdownMenuContent></DropdownMenu></div>;

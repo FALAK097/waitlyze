@@ -35,7 +35,7 @@ export function WaitlistRowActions({ id, name }) {
     }
   }
   return <>
-    <Button type="button" variant="ghost-destructive" size="icon-sm" className="cursor-pointer" aria-label={`Delete ${displayName}`} onClick={() => { setConfirmation(""); setError(""); setConfirmOpen(true); }}><HugeiconsIcon icon={Delete02Icon} aria-hidden="true" /></Button>
+    <Button type="button" variant="ghost-destructive" size="icon-sm" aria-label={`Delete ${displayName}`} onClick={() => { setConfirmation(""); setError(""); setConfirmOpen(true); }}><HugeiconsIcon icon={Delete02Icon} aria-hidden="true" /></Button>
     <Dialog open={confirmOpen} onOpenChange={(open) => { if (!pending) { setConfirmOpen(open); setConfirmation(""); setError(""); } }}>
       <DialogContent>
         <DialogTitle>Delete {displayName}?</DialogTitle>
