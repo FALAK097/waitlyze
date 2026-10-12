@@ -8,7 +8,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogClose, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
-import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { Breadcrumb, BreadcrumbList, BreadcrumbItem, BreadcrumbLink, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -67,9 +67,10 @@ function WorkspaceSwitcher({ workspaces, selected }) {
         <span className="app-workspace-current">{pending ? "Switching…" : current?.name || "Workspace"}</span>
         <HugeiconsIcon icon={ArrowDown01Icon} aria-hidden="true" />
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" sideOffset={8}>
-        {workspaces.map(workspace => <DropdownMenuItem key={workspace.id} onClick={() => switchTo(workspace.id)} disabled={pending}><WorkspaceAvatar name={workspace.name} /><span>{workspace.name}</span>{workspace.id === selected && <><HugeiconsIcon icon={Tick01Icon} aria-hidden="true" /><span className="sr-only">Current workspace</span></>}</DropdownMenuItem>)}
-        <DropdownMenuItem onClick={() => setCreateOpen(true)} className="cursor-pointer"><HugeiconsIcon icon={Add01Icon} aria-hidden="true" /><span>Create workspace</span></DropdownMenuItem>
+      <DropdownMenuContent align="start" sideOffset={8} className="min-w-64">
+        {workspaces.map(workspace => <DropdownMenuItem key={workspace.id} onClick={() => switchTo(workspace.id)} disabled={pending}><WorkspaceAvatar name={workspace.name} /><span className="flex-1 truncate">{workspace.name}</span>{workspace.id === selected && <><HugeiconsIcon icon={Tick01Icon} aria-hidden="true" /><span className="sr-only">Current workspace</span></>}</DropdownMenuItem>)}
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onClick={() => setCreateOpen(true)} className="cursor-pointer"><HugeiconsIcon icon={Add01Icon} aria-hidden="true" /><span className="flex-1">Create workspace</span></DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
     <CreateWorkspaceDialog open={createOpen} onOpenChange={setCreateOpen} />
