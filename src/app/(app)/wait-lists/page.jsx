@@ -109,8 +109,9 @@ async function WaitlistsResults({ userId, workspaceId, query, status, sort, requ
     return <div className="product-empty" role="alert"><h2>Waitlists couldn’t load</h2><p>Your workspace is safe. Try loading this page again.</p><a href={waitlistsHref({ query, status, sort })}>Try again</a></div>;
   }
   const hasFilters = !!query || !!status;
+  const resultsAnnouncement = `${total} ${total === 1 ? "waitlist" : "waitlists"}${query ? ` matching “${query}”` : ""}`;
   return waitlists.length
-    ? <><p className={styles.resultsMeta} aria-live="polite">{pageCount > 1 ? `${(page - 1) * PAGE_SIZE + 1}–${(page - 1) * PAGE_SIZE + waitlists.length} of ` : ""}{total} {total === 1 ? "waitlist" : "waitlists"}</p><WaitlistsTable waitlists={waitlists} query={query} status={status} sort={sort} />{pageCount > 1 && <nav className={styles.pagination} aria-label="Waitlist pages">{page === 1 ? <span aria-disabled="true">Previous</span> : <Link href={waitlistsHref({ query, status, sort, page: page - 1 })}>Previous</Link>}<span>Page {page} of {pageCount}</span>{page === pageCount ? <span aria-disabled="true">Next</span> : <Link href={waitlistsHref({ query, status, sort, page: page + 1 })}>Next</Link>}</nav>}</>
+    ? <><p className="sr-only" aria-live="polite">{resultsAnnouncement}</p><WaitlistsTable waitlists={waitlists} query={query} status={status} sort={sort} />{pageCount > 1 && <nav className={styles.pagination} aria-label="Waitlist pages">{page === 1 ? <span aria-disabled="true">Previous</span> : <Link href={waitlistsHref({ query, status, sort, page: page - 1 })}>Previous</Link>}<span>Page {page} of {pageCount}</span>{page === pageCount ? <span aria-disabled="true">Next</span> : <Link href={waitlistsHref({ query, status, sort, page: page + 1 })}>Next</Link>}</nav>}</>
     : <WaitlistsEmptyState query={query} status={status} sort={sort} hasFilters={hasFilters} />;
 }
 
@@ -126,10 +127,10 @@ export default async function WaitlistsPage({ searchParams }) {
         <h1 className={`product-page-title ${styles.listTitle}`}>Waitlists</h1>
       </div>
       <div className={styles.listToolbar}>
+        <StatusTabs query={query} status={status} sort={sort} />
         <WaitlistSearch query={query} status={status} sort={sort} />
         <Button render={<Link href="/wait-lists/new" />}><HugeiconsIcon icon={Add01Icon} aria-hidden="true" />New waitlist</Button>
       </div>
-      <StatusTabs query={query} status={status} sort={sort} />
       <Suspense fallback={<ProductContentSkeleton label="Loading waitlists" variant="table" rows={5} />}>
         <WaitlistsResults userId={user.id} workspaceId={workspace.id} query={query} status={status} sort={sort} requestedPage={requestedPage} />
       </Suspense>

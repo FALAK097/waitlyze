@@ -63,7 +63,7 @@ function WorkspaceSwitcher({ workspaces, selected }) {
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" sideOffset={8}>
         {workspaces.map(workspace => <DropdownMenuItem key={workspace.id} onClick={() => switchTo(workspace.id)} disabled={pending}><WorkspaceAvatar name={workspace.name} /><span>{workspace.name}</span>{workspace.id === selected && <><HugeiconsIcon icon={Tick01Icon} aria-hidden="true" /><span className="sr-only">Current workspace</span></>}</DropdownMenuItem>)}
-        <DropdownMenuItem onClick={() => setCreateOpen(true)}><HugeiconsIcon icon={Add01Icon} aria-hidden="true" /><span>Create workspace</span></DropdownMenuItem>
+        <DropdownMenuItem onClick={() => setCreateOpen(true)} className="cursor-pointer"><HugeiconsIcon icon={Add01Icon} aria-hidden="true" /><span>Create workspace</span></DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
     <CreateWorkspaceDialog open={createOpen} onOpenChange={setCreateOpen} />
@@ -115,7 +115,7 @@ export function AppShell({ children, user, avatar, waitlists, workspaces, select
       <nav aria-label="Main navigation" className="app-navigation">
         <Link href="/wait-lists" aria-current={pathname.startsWith("/wait-lists") ? "page" : undefined}>Overview</Link>
         <Link href="/settings" aria-current={pathname.startsWith("/settings") ? "page" : undefined}>Settings</Link>
-        <Link href="/docs">Docs</Link>
+        <Link href="/docs" target="_blank" rel="noreferrer">Docs</Link>
       </nav>
       <AccountMenu user={user} avatar={avatar} />
     </div></header>

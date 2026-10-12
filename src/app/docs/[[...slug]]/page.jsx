@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { source } from "@/lib/source";
 import { getMDXComponents } from "../../../../mdx-components";
 import { createRelativeLink } from "fumadocs-ui/mdx";
-import { DocsPage, DocsBody, DocsDescription, DocsTitle, EditOnGitHub, MarkdownCopyButton, ViewOptionsPopover } from "fumadocs-ui/layouts/docs/page";
+import { DocsPage, DocsBody, DocsDescription, DocsTitle, MarkdownCopyButton, ViewOptionsPopover } from "fumadocs-ui/layouts/docs/page";
 import { getPageImageUrl, getPageMarkdownUrl, gitConfig, docsRoute } from "@/lib/docs-shared";
 import { SITE_URL } from "@/lib/site-metadata";
 
@@ -39,6 +39,5 @@ export default async function Page({ params }) {
     <DocsBody>
       <MDX components={getMDXComponents({ a: createRelativeLink(source, page) })} />
     </DocsBody>
-    <EditOnGitHub href={`https://github.com/${gitConfig.user}/${gitConfig.repo}/blob/${gitConfig.branch}/content/docs/${page.path}`} />
   </DocsPage>;
 }

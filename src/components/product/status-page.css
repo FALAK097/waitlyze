@@ -1,11 +1,16 @@
 .product-status-page { min-height: min(70svh, 700px); display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; background: var(--product-bg-page); padding: 32px 20px 64px; }
 .product-status-page.is-standalone { min-height: 100svh; position: relative; }
-.product-status-wordmark { align-self: start; color: var(--product-text-primary); text-decoration: none; font-family: var(--product-font-display); font-size: 1.3rem; font-weight: 650; margin: 0 0 48px; }
-.product-status-wordmark span { color: var(--product-success-text); }
+.product-status-brand { align-self: start; display: inline-flex; align-items: center; color: var(--product-text-primary); text-decoration: none; font-family: var(--product-font-display), var(--product-font-sans), system-ui, sans-serif; font-size: 25px; font-weight: 750; letter-spacing: -1.4px; line-height: 1; margin: 0 0 48px; }
+.product-status-word { display: inline-flex; align-items: baseline; }
+.product-status-dot { color: var(--product-success-text); }
+.product-status-mark { display: inline-flex; align-items: center; gap: 3px; margin-right: 9px; height: 27px; transform: skew(-12deg); }
+.product-status-mark i { display: block; width: 5px; background: var(--product-accent-solid); border-radius: 2px; height: 16px; }
+.product-status-mark i:nth-child(2) { height: 26px; }
+.product-status-mark i:nth-child(3) { height: 20px; }
 .product-status-content { width: min(100%, 540px); margin-block: auto; }
 .product-status-art { position: relative; width: min(100%, 360px); margin: 0 auto 24px; line-height: 1; }
-.product-status-art > span { display: block; color: var(--product-text-primary); font-size: clamp(6rem, 22vw, 10rem); font-weight: 650; letter-spacing: -.08em; }
-.product-status-art svg { position: absolute; width: 95%; height: auto; inset-inline-start: 3%; inset-block-start: 23%; color: var(--product-accent-solid); opacity: .9; transform: rotate(-7deg); }
+.product-status-art > span { position: relative; z-index: 1; display: block; color: var(--product-text-primary); font-size: clamp(6rem, 22vw, 10rem); font-weight: 650; letter-spacing: -.08em; }
+.product-status-page svg.product-status-flourish { position: absolute; z-index: 0; width: 104%; height: auto; inset-inline-start: -2%; inset-block-start: 50%; transform: translateY(-48%); color: var(--product-accent-solid); overflow: visible; }
 .product-status-content h1 { font-size: clamp(1.5rem, 5vw, 2rem); margin-block-end: 12px; }
 .product-status-content p { max-width: 42ch; margin-inline: auto; color: var(--product-text-secondary); text-wrap: pretty; }
 .product-status-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; margin-block-start: 28px; }

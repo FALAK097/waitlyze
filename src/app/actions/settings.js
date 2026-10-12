@@ -63,10 +63,10 @@ export async function selectWorkspace(form) {
   redirect("/wait-lists");
 }
 
-export async function createWorkspace(form) {
+export async function createWorkspace(previous, form) {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session?.user?.id) redirect("/");
-  const name = form.get("name");
+  const name = form?.get("name");
   if (typeof name !== "string" || !name.trim() || name.trim().length > 80) {
     return { error: "Enter a workspace name between 1 and 80 characters." };
   }

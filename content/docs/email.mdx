@@ -5,7 +5,7 @@ description: Manage templates, broadcasts, and consent-aware automations.
 
 ## Templates and tests
 
-Open the waitlist's Email tools → Templates. Edit the signup or offboarding template, including subject, preview text, heading, message, and additional content. Markdown and `{"{{waitlist}}"}` are supported.
+Open the waitlist's Email tools → Templates. Edit the signup or offboarding template, including subject, preview text, heading, message, and additional content. Markdown and `{{waitlist}}` are supported.
 
 <Callout title="Tests use the saved template">
 Save your edits before sending a test to a valid email address. A test is a real email, not an on-screen preview.
@@ -36,7 +36,7 @@ Review the current count before confirming the send. You can cancel remaining me
 | Referral reminder | After confirmation, when the subscriber still has no verified referrals at send time. |
 | Referral milestone | When an eligible verified referral reaches the configured milestone. |
 
-Set a delay from zero to 168 hours. Milestones accept one to 100 verified referrals. Save changes before enabling a recipe. Changes create a new version; already scheduled runs keep their saved version.
+Set a delay from zero to 168 hours. Milestones accept one to 100 verified referrals. The milestone message supports the `{{referral_count}}` variable with the subscriber's current count. Save changes before enabling a recipe. Changes create a new version; already scheduled runs keep their saved version.
 
 Pausing cancels scheduled messages. A message already being handed to the provider may still arrive.
 

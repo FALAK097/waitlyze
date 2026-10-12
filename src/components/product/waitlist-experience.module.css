@@ -3,8 +3,9 @@
 .listHeader:global(.product-page-heading) { display: flex; flex-direction: row; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 32px; }
 .listTitle { margin: 0 !important; font-size: var(--product-type-title) !important; }
 .listToolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px; margin-bottom: 20px; }
-.listToolbar > :first-child { flex: 1 1 280px; min-width: min(100%, 240px); }
+.listToolbar > :nth-child(2) { flex: 0 1 360px; min-width: min(100%, 220px); max-width: 360px; margin-inline-start: auto; }
 .listToolbar > :last-child { flex-shrink: 0; }
+@media (max-width: 639px) { .listToolbar > :nth-child(2) { flex-basis: 100%; max-width: none; margin-inline-start: 0; } }
 .tableWrap { border: 0; border-radius: 0; }
 .table { table-layout: fixed; }
 .table th:first-child { width: 60%; }
