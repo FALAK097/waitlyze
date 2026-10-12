@@ -33,7 +33,7 @@ function WaitlistsTable({ waitlists, query, status, sort }) {
         <caption className="product-visually-hidden">Your waitlists</caption>
         <TableHeader>
           <TableRow>
-            <SortableHeading column="name" label="Name" query={query} status={status} sort={sort} />
+            <TableHead scope="col">Name</TableHead>
             <TableHead scope="col">Visitors</TableHead>
             <SortableHeading column="subscribers" label="Subscribers" query={query} status={status} sort={sort} />
             <TableHead scope="col">Conversion</TableHead>
@@ -71,7 +71,7 @@ function WaitlistsEmptyState({ query, status, sort, hasFilters }) {
     return <div className={`product-empty ${styles.empty}`}><h2>Your next launch starts here.</h2><p>Create a waitlist to collect subscribers and learn who's interested.</p><Link href="/waitlists/new" className={buttonVariants()}>Create your first waitlist</Link></div>;
   }
 
-  const selectedFilter = WAITLIST_STATUS_FILTERS.find((filter) => filter.value === status);
+  const selectedFilter = WAITLIST_STATUS_FILTERS.find((filter) => filter.value === status) || WAITLIST_STATUS_FILTERS[0];
   const title = query ? "No waitlists found" : `No ${selectedFilter.label.toLowerCase()} waitlists`;
   const description = query
     ? status

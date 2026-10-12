@@ -29,6 +29,7 @@ export default function PublicShell({ children }) {
             <Link href="/#how-it-works">How it works</Link>
             <Link href="/#features">Features</Link>
             <Link href="/#faq">FAQs</Link>
+            <Link href="/docs">Developer docs</Link>
           </nav>
           <nav aria-label="Company">
             <span className="wl-eyebrow">Good to know</span>
