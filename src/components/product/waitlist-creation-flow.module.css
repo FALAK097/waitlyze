@@ -1,7 +1,7 @@
 .page { max-width: 1080px; margin-inline: auto; color: var(--product-text-primary); }
 .back { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; color: var(--product-text-secondary); font-size: .875rem; text-decoration: none; }
 .back:hover { color: var(--product-text-primary); }
-.back:focus-visible, .textButton:focus-visible, .inlineEdit:focus-visible { outline: 2px solid var(--product-focus); outline-offset: 3px; border-radius: 4px; }
+.back:focus-visible, .textButton:focus-visible, .inlineEdit:focus-visible { outline: 2px solid var(--product-focus); outline-offset: 2px; border-radius: 4px; }
 .header { margin: 20px 0 30px; }
 .eyebrow { display: flex; gap: 9px; margin: 0 0 9px; color: var(--product-text-secondary); font-size: .78rem; font-weight: 550; }
 .header h1 { margin: 0; font-size: clamp(1.6rem, 3vw, 2rem); font-weight: 620; letter-spacing: -.04em; line-height: 1.12; text-wrap: balance; }
@@ -24,7 +24,7 @@
 .choice { position: relative; display: flex; align-items: flex-start; min-height: 76px; gap: 11px; padding: 15px; border: 0; border-radius: 8px; background: var(--product-bg-surface); cursor: pointer; transition: border-color 120ms ease, background-color 120ms ease, box-shadow 120ms ease; }
 @media (hover: hover) and (pointer: fine) { .choice:hover { background: #fff; } }
 .choice[data-selected] { background: var(--product-bg-inset); box-shadow: inset 3px 0 0 var(--product-accent-solid); }
-.choice:has(input:focus-visible) { outline: 2px solid var(--product-focus); outline-offset: 3px; }
+.choice:has(input:focus-visible) { outline: 2px solid var(--product-focus); outline-offset: 2px; }
 .choice input { position: absolute; width: 1px; height: 1px; overflow: hidden; opacity: 0; }
 .choiceCopy { display: grid; gap: 5px; padding-right: 16px; padding-inline-end: 20px; }
 .choiceCopy strong { font-size: .875rem; font-weight: 600; }

@@ -1,0 +1,18 @@
+{
+  "title": "Documentation",
+  "pages": [
+    "---Start here---",
+    "index",
+    "embed",
+    "domains",
+    "---Build---",
+    "api",
+    "api-keys",
+    "webhooks",
+    "---Operate---",
+    "referrals",
+    "email",
+    "resend",
+    "troubleshooting"
+  ]
+}

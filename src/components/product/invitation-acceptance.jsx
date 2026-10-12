@@ -2,7 +2,7 @@
 
 import { useActionState, useState, useTransition } from "react";
 import { authClient } from "@/lib/auth-client";
-import { Button } from "@/components/product/button";
+import { Button } from "@/components/ui/button";
 import { acceptWorkspaceInvite } from "@/app/actions/workspace-invitations";
 
 export function InvitationSignIn({ callbackURL }) {

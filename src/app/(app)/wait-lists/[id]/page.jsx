@@ -6,7 +6,7 @@ import { notFound } from "next/navigation";
 import { LaunchRehearsal } from "@/components/product/launch-rehearsal";
 import { LaunchReadiness } from "@/components/product/launch-readiness";
 import { assessWaitlistReadiness } from "@/lib/campaigns/readiness.mjs";
-import { buttonVariants } from "@/components/product/button-variants";
+import { buttonVariants } from "@/components/ui/button";
 import styles from "@/components/product/waitlist-experience.module.css";
 export const metadata = { title: "Overview" };
 const dateFormat = new Intl.DateTimeFormat(undefined, { dateStyle: "medium" });

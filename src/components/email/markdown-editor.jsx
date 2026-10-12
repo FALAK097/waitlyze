@@ -1,8 +1,11 @@
 "use client";
 
+import { HugeiconsIcon } from "@hugeicons/react";
+import { Link01Icon, ListIcon, RedoIcon, TextBoldIcon, TextItalicIcon, UndoIcon } from "@hugeicons/core-free-icons";
+import { Textarea } from "@/components/ui/textarea";
+
 import { useRef, useState } from "react";
-import { Bold, Italic, List, Link as LinkIcon, Undo, Redo } from "lucide-react";
-import { Button } from "@/components/product/button";
+import { Button } from "@/components/ui/button";
 import styles from "./markdown-editor.module.css";
 
 export function MarkdownEditor({ value = "", onChange, placeholder, disabled, ...props }) {
@@ -24,11 +27,11 @@ export function MarkdownEditor({ value = "", onChange, placeholder, disabled, ..
   function move(next) { setPosition(next); onChange(history[next]); textarea.current?.focus(); }
   return <div className={styles.editor}>
     <div role="group" aria-label="Message formatting" className={styles.toolbar}>
-      {[["Bold", Bold, "**", "**"], ["Italic", Italic, "*", "*"], ["Bullet list", List, "- ", ""], ["Insert link", LinkIcon, "[", "](url)"]].map(([title, Icon, before, after]) => <Button key={title} type="button" variant="ghost" size="icon" static aria-label={title} title={title} disabled={disabled} onClick={() => insert(before, after)}><Icon size={16} aria-hidden="true" /></Button>)}
-      <Button type="button" variant="ghost" size="icon" static aria-label="Undo edit" disabled={disabled || position === 0} onClick={() => move(position - 1)}><Undo size={16} aria-hidden="true" /></Button>
-      <Button type="button" variant="ghost" size="icon" static aria-label="Redo edit" disabled={disabled || position >= history.length - 1} onClick={() => move(position + 1)}><Redo size={16} aria-hidden="true" /></Button>
-      <Button type="button" variant="ghost" static disabled={disabled} onClick={() => insert("{{waitlist}}")}>+ Waitlist</Button>
+      {[["Bold", TextBoldIcon, "**", "**"], ["Italic", TextItalicIcon, "*", "*"], ["Bullet list", ListIcon, "- ", ""], ["Insert link", Link01Icon, "[", "](url)"]].map(([title, Icon, before, after]) => <Button key={title} type="button" variant="ghost" size="icon" aria-label={title} title={title} disabled={disabled} onClick={() => insert(before, after)}><HugeiconsIcon icon={Icon} size={16} aria-hidden="true" /></Button>)}
+      <Button type="button" variant="ghost" size="icon" aria-label="Undo edit" disabled={disabled || position === 0} onClick={() => move(position - 1)}><HugeiconsIcon icon={UndoIcon} size={16} aria-hidden="true" /></Button>
+      <Button type="button" variant="ghost" size="icon" aria-label="Redo edit" disabled={disabled || position >= history.length - 1} onClick={() => move(position + 1)}><HugeiconsIcon icon={RedoIcon} size={16} aria-hidden="true" /></Button>
+      <Button type="button" variant="ghost" disabled={disabled} onClick={() => insert("{{waitlist}}")}>+ Waitlist</Button>
     </div>
-    <textarea {...props} ref={textarea} value={value} onChange={(event) => update(event.target.value)} placeholder={placeholder || "Write your message…"} maxLength={5000} rows={8} disabled={disabled} />
+    <Textarea {...props} ref={textarea} value={value} onChange={(event) => update(event.target.value)} placeholder={placeholder || "Write your message…"} maxLength={5000} rows={8} disabled={disabled} />
   </div>;
 }

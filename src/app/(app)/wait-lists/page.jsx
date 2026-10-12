@@ -1,10 +1,17 @@
+
+import { HugeiconsIcon } from "@hugeicons/react";
+import { Add01Icon, ArrowDown01Icon, ArrowUp01Icon, ArrowUpDownIcon, Search01Icon } from "@hugeicons/core-free-icons";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+
+import { Label } from "@/components/ui/label";
+
+import { Input } from "@/components/ui/input";
 import Link from "next/link";
 import { Suspense } from "react";
 import prisma from "@/lib/prisma";
 import { currentWorkspace } from "@/lib/workspaces/current";
 import { campaignScope } from "@/lib/workspaces/service.mjs";
-import { Plus, Search, ArrowUp, ArrowDown, ArrowUpDown } from "lucide-react";
-import { buttonVariants } from "@/components/product/button-variants";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { ProductContentSkeleton } from "@/components/product/content-skeleton";
 import styles from "@/components/product/waitlist-experience.module.css";
 import {
@@ -47,7 +54,7 @@ function SortableHeading({ column, label, query, status, sort }) {
   const accessibleName = `Sort by ${accessibleColumn}${active ? `, currently ${sortLabel}` : ""}`;
 
   return (
-    <th scope="col" aria-sort={active ? ariaSort : undefined}>
+    <TableHead scope="col" aria-sort={active ? ariaSort : undefined}>
       <Link
         className="product-table-sort"
         href={waitlistsHref({ query, status, sort: nextSort })}
@@ -55,41 +62,41 @@ function SortableHeading({ column, label, query, status, sort }) {
       >
         <span>{label}</span>
         <span className={`product-table-sort-indicator${active ? " is-active" : ""}`} aria-hidden="true">
-          {active ? (direction === "asc" ? <ArrowUp /> : <ArrowDown />) : <ArrowUpDown />}
+          {active ? (direction === "asc" ? <HugeiconsIcon icon={ArrowUp01Icon} /> : <HugeiconsIcon icon={ArrowDown01Icon} />) : <HugeiconsIcon icon={ArrowUpDownIcon} />}
         </span>
       </Link>
-    </th>
+    </TableHead>
   );
 }
 
 function WaitlistsTable({ waitlists, query, status, sort }) {
   return (
     <div className={`product-table-wrap ${styles.tableWrap}`}>
-      <table className={`product-waitlist-table ${styles.table}`}>
+      <Table className={`product-waitlist-table ${styles.table}`}>
         <caption className="product-visually-hidden">Your waitlists</caption>
-        <thead>
-          <tr>
+        <TableHeader>
+          <TableRow>
             <SortableHeading column="name" label="Waitlist" query={query} status={status} sort={sort} />
             <SortableHeading column="subscribers" label="Subscribers" query={query} status={status} sort={sort} />
-            <th scope="col">Updated</th>
-          </tr>
-        </thead>
-        <tbody>
+            <TableHead scope="col">Updated</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
           {waitlists.map((waitlist) => (
-            <tr key={waitlist.id}>
-              <th scope="row">
+            <TableRow key={waitlist.id}>
+              <TableHead scope="row">
                 <Link href={`/wait-lists/${waitlist.id}`} aria-label={`Open ${waitlist.name || "Untitled waitlist"}, status ${WAITLIST_STATUS_LABELS[waitlist.status]}`}>
                   <span>{waitlist.name || "Untitled waitlist"}</span>{" "}
                   <span className={styles.status} data-status={waitlist.status}>{WAITLIST_STATUS_LABELS[waitlist.status]}</span>
                 </Link>
                 {waitlist.description && <p className={styles.rowDescription}>{waitlist.description}</p>}<time className={styles.mobileDate} dateTime={waitlist.updatedAt.toISOString()}>Updated {WAITLIST_DATE_FORMAT.format(waitlist.updatedAt)}</time>
-              </th>
-              <td>{waitlist._count.signUps.toLocaleString()}</td>
-              <td><time dateTime={waitlist.updatedAt.toISOString()}>{WAITLIST_DATE_FORMAT.format(waitlist.updatedAt)}</time></td>
-            </tr>
+              </TableHead>
+              <TableCell>{waitlist._count.signUps.toLocaleString()}</TableCell>
+              <TableCell><time dateTime={waitlist.updatedAt.toISOString()}>{WAITLIST_DATE_FORMAT.format(waitlist.updatedAt)}</time></TableCell>
+            </TableRow>
           ))}
-        </tbody>
-      </table>
+        </TableBody>
+      </Table>
     </div>
   );
 }
@@ -159,15 +166,15 @@ export default async function WaitlistsPage({ searchParams }) {
     <section>
       <div className={`product-page-heading ${styles.listHeader}`}>
         <h1 className={`product-page-title ${styles.listTitle}`}>Waitlists</h1>
-        <Link href="/wait-lists/new" className={buttonVariants()}><Plus aria-hidden="true" />New waitlist</Link>
+        <Link href="/wait-lists/new" className={buttonVariants()}><HugeiconsIcon icon={Add01Icon} aria-hidden="true" />New waitlist</Link>
       </div>
       <div className={styles.listToolbar}>
       <form className={`product-waitlist-search ${styles.listSearch}`} role="search" action="/wait-lists" method="get">
-        <label className="product-visually-hidden" htmlFor="waitlist-search">Search waitlists</label>
-        <input id="waitlist-search" name="q" type="search" maxLength={WAITLIST_SEARCH_LIMIT} defaultValue={query} placeholder="Search by name" />
+        <Label className="product-visually-hidden" htmlFor="waitlist-search">Search waitlists</Label>
+        <Input id="waitlist-search" name="q" type="search" maxLength={WAITLIST_SEARCH_LIMIT} defaultValue={query} placeholder="Search by name" />
         {status && <input type="hidden" name="status" value={status} />}
         {sort !== WAITLIST_DEFAULT_SORT && <input type="hidden" name="sort" value={sort} />}
-        <button type="submit" aria-label="Search waitlists"><Search aria-hidden="true" /></button>
+        <Button type="submit" aria-label="Search waitlists"><HugeiconsIcon icon={Search01Icon} aria-hidden="true" /></Button>
         {query && <Link href={waitlistsHref({ query, status, sort, includeQuery: false })}>Clear search</Link>}
       </form>
       <nav className={styles.filters} aria-label="Filter waitlists by status">

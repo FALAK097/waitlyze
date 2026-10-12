@@ -2,7 +2,7 @@
 
 import { useId } from "react";
 import { useRouter } from "next/navigation";
-import { Button } from "@/components/product/button";
+import { Button } from "@/components/ui/button";
 
 export function SettingsLoadError({ retry, title = "Settings couldn’t load", message = "Your settings are unchanged. Try loading them again." }) {
   const router = useRouter();

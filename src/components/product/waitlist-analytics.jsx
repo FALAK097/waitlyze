@@ -1,5 +1,11 @@
 "use client";
 
+import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
+
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+
+import { Button } from "@/components/ui/button";
+
 import { useCallback, useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
@@ -73,12 +79,12 @@ export function WaitlistAnalytics({ waitListId }) {
       <div><h2 id="waitlist-analytics-title">Analytics</h2><p className="product-help">Visitors, signups, and verification for this waitlist.</p></div>
       <div className="waitlist-analytics-controls">
         <div className="waitlist-analytics-range" role="group" aria-label="Analytics date range">
-          {ranges.map((range) => <button type="button" key={range} aria-pressed={days === range} onClick={() => setDays(range)}>{range} days</button>)}
+          {ranges.map((range) => <Button type="button" key={range} aria-pressed={days === range} onClick={() => setDays(range)}>{range} days</Button>)}
         </div>
       </div>
     </header>
 
-    {error ? <div className="waitlist-analytics-message" role="alert"><p>{error}</p><button type="button" onClick={() => setRetryCount((count) => count + 1)}>Try again</button></div> : null}
+    {error ? <div className="waitlist-analytics-message" role="alert"><p>{error}</p><Button type="button" onClick={() => setRetryCount((count) => count + 1)}>Try again</Button></div> : null}
     {!error && loading && !currentAnalytics ? <><p className="waitlist-analytics-loading-label" role="status">Loading analytics…</p><AnalyticsSkeleton /></> : null}
     {!error && currentAnalytics ? <>
       {loading ? <p className="sr-only" role="status">Updating analytics…</p> : null}
@@ -92,21 +98,21 @@ export function WaitlistAnalytics({ waitListId }) {
       <section className="waitlist-analytics-panel" aria-labelledby="waitlist-trend-title">
         <header className="waitlist-analytics-panel-heading"><div><h3 id="waitlist-trend-title">Activity over time</h3><p>{formatDate(currentAnalytics.range.startDate)} – {formatDate(currentAnalytics.range.endDate, { month: "short", day: "numeric", year: "numeric" })} · {timeZone}</p></div>
           <div className="waitlist-analytics-view" role="group" aria-label="Activity display">
-            <button type="button" aria-pressed={mode === "chart"} onClick={() => setMode("chart")}>Chart</button>
-            <button type="button" aria-pressed={mode === "table"} onClick={() => setMode("table")}>Table</button>
+            <Button type="button" aria-pressed={mode === "chart"} onClick={() => setMode("chart")}>Chart</Button>
+            <Button type="button" aria-pressed={mode === "table"} onClick={() => setMode("table")}>Table</Button>
           </div>
         </header>
-        {mode === "table" ? <div className="product-table-wrap waitlist-analytics-table-wrap"><table className="product-waitlist-table"><caption className="sr-only">Daily visitors and signups from {formatDate(currentAnalytics.range.startDate)} to {formatDate(currentAnalytics.range.endDate, { month: "short", day: "numeric", year: "numeric" })}</caption><thead><tr><th scope="col">Date</th><th scope="col">Visitors</th><th scope="col">Signups</th><th scope="col">Verified</th></tr></thead><tbody>{[...series].reverse().map((day) => <tr key={day.date}><th scope="row">{formatDate(day.date, { month: "short", day: "numeric", year: "numeric" })}</th><td>{number.format(day.visitors)}</td><td>{number.format(day.signups)}</td><td>{number.format(day.verifiedSignups)}</td></tr>)}</tbody></table></div> : noActivity ? <div className="waitlist-analytics-empty"><p>No activity yet</p><span>Share your page to start learning about your audience.</span><Link href={`/wait-lists/${waitListId}/edit`}>Open your page</Link></div> : <>
+        {mode === "table" ? <div className="product-table-wrap waitlist-analytics-table-wrap product-waitlist-table"><Table><caption className="sr-only">Daily visitors and signups from {formatDate(currentAnalytics.range.startDate)} to {formatDate(currentAnalytics.range.endDate, { month: "short", day: "numeric", year: "numeric" })}</caption><TableHeader><TableRow><TableHead scope="col">Date</TableHead><TableHead scope="col">Visitors</TableHead><TableHead scope="col">Signups</TableHead><TableHead scope="col">Verified</TableHead></TableRow></TableHeader><TableBody>{[...series].reverse().map((day) => <TableRow key={day.date}><TableHead scope="row">{formatDate(day.date, { month: "short", day: "numeric", year: "numeric" })}</TableHead><TableCell>{number.format(day.visitors)}</TableCell><TableCell>{number.format(day.signups)}</TableCell><TableCell>{number.format(day.verifiedSignups)}</TableCell></TableRow>)}</TableBody></Table></div> : noActivity ? <div className="waitlist-analytics-empty"><p>No activity yet</p><span>Share your page to start learning about your audience.</span><Link href={`/wait-lists/${waitListId}/edit`}>Open your page</Link></div> : <>
           <div className="waitlist-analytics-chart"><EvilAreaChart series={series} focusedSeries={focusedSeries} formatDate={formatDate} /></div>
           <div className="waitlist-analytics-legend" role="group" aria-label="Focus chart series">
             <span className="sr-only">Choose a series to emphasize it; choose it again to show both.</span>
-            {[{ label: "Visitors", name: "visitors" }, { label: "Signups", name: "signups" }].map(({ label, name: seriesName }) => <button key={seriesName} type="button" aria-label={`Emphasize ${label.toLowerCase()}`} aria-pressed={focusedSeries === seriesName} onClick={() => toggleFocusedSeries(seriesName)}>
+            {[{ label: "Visitors", name: "visitors" }, { label: "Signups", name: "signups" }].map(({ label, name: seriesName }) => <Button key={seriesName} type="button" aria-label={`Emphasize ${label.toLowerCase()}`} aria-pressed={focusedSeries === seriesName} onClick={() => toggleFocusedSeries(seriesName)}>
               <i className={`waitlist-analytics-legend-${seriesName}`} aria-hidden="true" />{label}
-            </button>)}
+            </Button>)}
           </div>
         </>}
       </section>
-      <details className="waitlist-analytics-definitions"><summary>How these numbers are counted</summary><ul><li>{currentAnalytics.definitions.visitors}</li><li>{currentAnalytics.definitions.conversionRate}</li><li>{currentAnalytics.definitions.verificationRate}</li>{currentAnalytics.caveats.slice(0, 2).map((caveat) => <li key={caveat}>{caveat}</li>)}</ul></details>
+      <div className="waitlist-analytics-definitions"><Collapsible><CollapsibleTrigger>How these numbers are counted</CollapsibleTrigger><CollapsibleContent><ul><li>{currentAnalytics.definitions.visitors}</li><li>{currentAnalytics.definitions.conversionRate}</li><li>{currentAnalytics.definitions.verificationRate}</li>{currentAnalytics.caveats.slice(0, 2).map((caveat) => <li key={caveat}>{caveat}</li>)}</ul></CollapsibleContent></Collapsible></div>
     </> : null}
   </section>;
 }

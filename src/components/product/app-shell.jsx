@@ -1,10 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { ArrowDown01Icon, Logout01Icon, Tick01Icon } from "@hugeicons/core-free-icons";
+import { Fragment, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { Menu } from "@base-ui/react/menu";
-import { Check, ChevronDown, ChevronRight, LogOut } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
+import { Breadcrumb, BreadcrumbList, BreadcrumbItem, BreadcrumbLink, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
 import { selectWorkspace } from "@/app/actions/settings";
 import { notifySettingsResult } from "./settings-feedback";
 import { signOut } from "@/lib/auth-client";
@@ -23,7 +26,7 @@ function WorkspaceSwitcher({ workspaces, selected }) {
     finally { setPending(false); }
   }
   if (workspaces.length < 2) return <span className="app-workspace-name">{current?.name || "Workspace"}</span>;
-  return <Menu.Root><Menu.Trigger className="app-workspace-trigger" disabled={pending} aria-label="Switch workspace">{pending ? "Switching…" : current?.name || "Workspace"}<ChevronDown aria-hidden="true" /></Menu.Trigger><Menu.Portal><Menu.Positioner side="bottom" align="start" sideOffset={8} className="app-menu-positioner"><Menu.Popup className="app-workspace-menu product-ui">{workspaces.map(workspace => <Menu.Item key={workspace.id} className="app-account-item" onClick={() => switchTo(workspace.id)} disabled={pending}><span>{workspace.name}</span>{workspace.id === selected && <><Check aria-hidden="true" /><span className="app-sr-only">Current workspace</span></>}</Menu.Item>)}</Menu.Popup></Menu.Positioner></Menu.Portal></Menu.Root>;
+  return <div className="app-workspace-control"><DropdownMenu><DropdownMenuTrigger render={<Button variant="ghost" />} disabled={pending} aria-label="Switch workspace">{pending ? "Switching…" : current?.name || "Workspace"}<HugeiconsIcon icon={ArrowDown01Icon} aria-hidden="true" /></DropdownMenuTrigger><DropdownMenuContent align="start" sideOffset={8}>{workspaces.map(workspace => <DropdownMenuItem key={workspace.id} onClick={() => switchTo(workspace.id)} disabled={pending}><span>{workspace.name}</span>{workspace.id === selected && <><HugeiconsIcon icon={Tick01Icon} aria-hidden="true" /><span className="sr-only">Current workspace</span></>}</DropdownMenuItem>)}</DropdownMenuContent></DropdownMenu></div>;
 }
 
 function Breadcrumbs({ pathname, waitlists, settingsSection }) {
@@ -39,7 +42,7 @@ function Breadcrumbs({ pathname, waitlists, settingsSection }) {
       if (segments[2]) crumbs.push({ label: ({ subscribers: "Subscribers", analytics: "Analytics", edit: "Editor", emails: "Emails", settings: "Settings", automations: "Automations", broadcasts: "Broadcasts" })[segments[2]] || "Overview" });
     }
   }
-  return <nav aria-label="Breadcrumb" className="app-breadcrumbs"><ol>{crumbs.map((crumb, index) => <li key={`${crumb.label}-${index}`}>{index > 0 && <ChevronRight aria-hidden="true" />}{index === crumbs.length - 1 ? <span aria-current="page">{crumb.label}</span> : <Link href={crumb.href}>{crumb.label}</Link>}</li>)}</ol></nav>;
+  return <div className="app-breadcrumbs"><Breadcrumb><BreadcrumbList>{crumbs.map((crumb, index) => <Fragment key={`${crumb.label}-${index}`}>{index > 0 && <BreadcrumbSeparator />}<BreadcrumbItem>{index === crumbs.length - 1 ? <BreadcrumbPage>{crumb.label}</BreadcrumbPage> : <BreadcrumbLink render={<Link href={crumb.href} />}>{crumb.label}</BreadcrumbLink>}</BreadcrumbItem></Fragment>)}</BreadcrumbList></Breadcrumb></div>;
 }
 
 function AccountMenu({ user, avatar }) {
@@ -53,10 +56,10 @@ function AccountMenu({ user, avatar }) {
       router.replace("/"); router.refresh();
     } catch { notifySettingsResult({ error: "Could not sign out. Try again." }); setPending(false); }
   }
-  return <Menu.Root><Menu.Trigger className="app-account-trigger" aria-label="Open account menu">{avatar}</Menu.Trigger><Menu.Portal><Menu.Positioner side="bottom" align="end" sideOffset={8} className="app-menu-positioner"><Menu.Popup className="app-account-menu product-ui">
+  return <div className="app-account-control"><DropdownMenu><DropdownMenuTrigger render={<Button variant="ghost" size="icon" />} aria-label="Open account menu">{avatar}</DropdownMenuTrigger><DropdownMenuContent align="end" sideOffset={8}>
     <div className="app-account-details">{avatar}<div><strong>{user.name || "Account"}</strong><span>{user.email}</span></div></div>
-    <Menu.Item className="app-account-item" onClick={leave} disabled={pending}><LogOut aria-hidden="true" />{pending ? "Signing out…" : "Sign out"}</Menu.Item>
-  </Menu.Popup></Menu.Positioner></Menu.Portal></Menu.Root>;
+    <DropdownMenuItem onClick={leave} disabled={pending}><HugeiconsIcon icon={Logout01Icon} aria-hidden="true" />{pending ? "Signing out…" : "Sign out"}</DropdownMenuItem>
+  </DropdownMenuContent></DropdownMenu></div>;
 }
 
 export function AppShell({ children, user, avatar, waitlists, workspaces, selectedWorkspace }) {

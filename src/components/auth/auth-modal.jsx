@@ -1,5 +1,7 @@
 "use client";
 
+import { HugeiconsIcon } from "@hugeicons/react";
+import { Loading02Icon } from "@hugeicons/core-free-icons";
 import { useRef, useState } from "react";
 import { authClient } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
@@ -11,7 +13,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import Image from "next/image";
-import { Loader2 } from "lucide-react";
 import Link from "next/link";
 import { publicFontClasses } from "@/lib/public-fonts";
 import Wordmark from "@/components/landing/wordmark";
@@ -75,7 +76,7 @@ export function AuthModal({ open, onOpenChange, onCloseAutoFocus }) {
             aria-busy={loading}
           >
             {loading ? (
-              <Loader2 className="size-5 animate-spin" />
+              <HugeiconsIcon icon={Loading02Icon} className="size-5 animate-spin" />
             ) : (
               <Image src="/images/google.svg" alt="" width={20} height={20} />
             )}

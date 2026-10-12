@@ -1,5 +1,11 @@
 "use client";
 
+import { Label } from "@/components/ui/label";
+
+import { Input } from "@/components/ui/input";
+
+import { Button } from "@/components/ui/button";
+
 export default function WaitlistPlayground() {
   return <div className="wl-playground" id="preview">
     <div className="wl-preview-stage"><div className="wl-preview-page">
@@ -7,9 +13,9 @@ export default function WaitlistPlayground() {
       <h2>Go outside.</h2><p className="wl-preview-intro">A fresh way to find your next weekend escape.</p>
       <div className="wl-preview-form-space">
         <form noValidate onSubmit={(event) => event.preventDefault()} aria-label="Example waitlist form">
-          <label className="sr-only" htmlFor="preview-example-email">Example email address</label>
-          <input id="preview-example-email" aria-label="Example email address" type="email" placeholder="you@example.com" autoComplete="off" />
-          <button type="submit">Join the waitlist</button>
+          <Label className="sr-only" htmlFor="preview-example-email">Example email address</Label>
+          <Input id="preview-example-email" aria-label="Example email address" type="email" placeholder="you@example.com" autoComplete="off" />
+          <Button type="submit">Join the waitlist</Button>
         </form>
         <p className="wl-preview-notice">Demo form · No email is collected or sent.</p>
       </div>

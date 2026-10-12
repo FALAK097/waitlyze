@@ -1,0 +1,113 @@
+---
+title: Signup API
+description: Accept signups from your server with a scoped API key.
+---
+
+## Create an API key
+
+Open [Settings → Integrations → API keys](/settings?section=integrations). Choose a waitlist, name the key, and set its expiry. Copy the secret before closing: only its hash is stored, so it cannot be retrieved later.
+
+<Callout type="warn" title="Keep keys on your server">
+A key grants signup-write access to one waitlist. Store it in a server environment variable. Never put it in a browser bundle or public repository. [Manage and replace keys](/docs/api-keys).
+</Callout>
+
+## Create a signup
+
+`POST /api/waitlist` accepts JSON. Authentication uses the `apiKey` body field. This endpoint does not use a Bearer header.
+
+<Tabs items={['Node.js', 'Python', 'cURL']}>
+<Tab value="Node.js">
+```js title="Server-side JavaScript"
+const response = await fetch("https://waitlyze.falakgala.dev/api/waitlist", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({
+    apiKey: process.env.WAITLYZE_API_KEY,
+    waitlistId: "YOUR_WAITLIST_ID",
+    email: "person@example.com",
+    // referralCode: "OPTIONAL_REFERRAL_CODE"
+  })
+});
+const result = await response.json();
+if (!response.ok) throw new Error(result.error || "Signup failed");
+```
+</Tab>
+<Tab value="Python">
+```python title="Python · standard library"
+import json
+import os
+from urllib.request import Request, urlopen
+from urllib.error import HTTPError
+
+request = Request(
+    "https://waitlyze.falakgala.dev/api/waitlist",
+    data=json.dumps({
+        "apiKey": os.environ["WAITLYZE_API_KEY"],
+        "waitlistId": "YOUR_WAITLIST_ID",
+        "email": "person@example.com",
+    }).encode("utf-8"),
+    headers={"Content-Type": "application/json"},
+    method="POST",
+)
+try:
+    with urlopen(request, timeout=15) as response:
+        result = json.load(response)
+except HTTPError as error:
+    result = json.load(error)
+    raise RuntimeError(result.get("error", "Signup failed")) from error
+```
+</Tab>
+<Tab value="cURL">
+```bash title="Request example · placeholder key"
+curl --request POST 'https://waitlyze.falakgala.dev/api/waitlist' \
+  --header 'Content-Type: application/json' \
+  --data '{
+    "apiKey": "YOUR_SERVER_SIDE_API_KEY",
+    "waitlistId": "YOUR_WAITLIST_ID",
+    "email": "person@example.com"
+  }'
+```
+</Tab>
+</Tabs>
+
+<TypeTable
+  type={{
+    apiKey: {
+      type: "string",
+      required: true,
+      description: "Secret for the linked waitlist.",
+    },
+    waitlistId: {
+      type: "string",
+      required: true,
+      description: "The waitlist ID selected for the key.",
+    },
+    email: {
+      type: "string",
+      required: true,
+      description: "A valid email address, at most 320 characters.",
+    },
+    referralCode: {
+      type: "string",
+      required: false,
+      description: "An existing referral code for this waitlist.",
+    },
+  }}
+/>
+
+## Handle responses
+
+```json title="Success response"
+{ "success": true, "message": "Successfully joined the waitlist!", "data": { "rank": 9 } }
+```
+
+| Status | Meaning |
+| --- | --- |
+| `400` | Fix missing or invalid input. |
+| `401` | Check the key, expiry, and linked waitlist. |
+| `409` | Email already registered, or the waitlist is not accepting signups. |
+| `429` | Rate limited. Wait for the `Retry-After` interval. |
+| `503` | Rate-limit service unavailable. Retry after the provided interval. |
+| `500` | Temporary server failure. Retry with backoff. |
+
+The `/api/v1/api-keys` and `/api/v1/waitlists` endpoints are dashboard routes authenticated by your browser session. A signup key cannot manage keys, list subscribers, or access these routes.

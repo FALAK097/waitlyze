@@ -1,0 +1,31 @@
+---
+title: Resend
+description: Send waitlist email from your verified domain.
+---
+
+## Connect your sender
+
+<Steps>
+<Step>
+### Verify your domain in Resend
+Add and verify your sending domain in the Resend dashboard, then create a sending-only API key.
+</Step>
+<Step>
+### Connect in Waitlyze
+In [Settings → Integrations](/settings?section=integrations), choose Resend → Connect. Enter the key and a sender email on your verified domain.
+</Step>
+<Step>
+### Save and test
+Save the connection, then send a test email to activate it.
+</Step>
+</Steps>
+
+The saved secret is encrypted and never returned to the browser. Enter a replacement to change it.
+
+## Test and activate
+
+Save the connection, then send a test email. Tests go to the email on your Waitlyze account. The connection becomes active when the test succeeds; until then, Waitlyze uses the deployment sender.
+
+If a test fails, check your key permissions and verified sender, correct the details, and test again. Disconnecting falls back to the deployment sender.
+
+[Resend domain setup](https://resend.com/docs/dashboard/domains/introduction)

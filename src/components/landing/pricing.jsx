@@ -1,5 +1,7 @@
 "use client";
 
+import { HugeiconsIcon } from "@hugeicons/react";
+import { Cancel01Icon, Tick01Icon } from "@hugeicons/core-free-icons";
 import { Button } from "@/components/ui/button";
 import {
 	Card,
@@ -9,8 +11,6 @@ import {
 	CardTitle,
 } from "@/components/ui/card";
 import { motion } from "motion/react";
-import { Check, X } from "lucide-react";
-
 const plans = [
 	{
 		name: "Starter",
@@ -143,9 +143,9 @@ export default function Pricing({ isModal = false }) {
 												className="flex items-center"
 											>
 												{feature.available ? (
-													<Check className="w-5 h-5 mr-2 text-green-500" />
+													<HugeiconsIcon icon={Tick01Icon} className="w-5 h-5 mr-2 text-green-500" />
 												) : (
-													<X className="w-5 h-5 mr-2 text-red-500" />
+													<HugeiconsIcon icon={Cancel01Icon} className="w-5 h-5 mr-2 text-red-500" />
 												)}
 												<span
 													className={`text-sm ${

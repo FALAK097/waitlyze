@@ -1,8 +1,9 @@
 "use client";
 import { useActionState, useState } from "react";
 import { useFormStatus } from "react-dom";
-import { Button } from "./button";
-import { Input } from "./input";
+import { Button } from "@/components/ui/button";
+import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
+import { Input } from "@/components/ui/input";
 import { useSettingsFeedback } from "./settings-feedback";
 import { saveProfile, saveWorkspaceName, selectWorkspace } from "@/app/actions/settings";
 
@@ -26,7 +27,7 @@ export function ProfileForm({ name }) {
 }
 export function WorkspacePicker({ workspaces, selected }) {
   if (workspaces.length < 2) return null;
-  return <form action={selectWorkspace} className="product-workspace-picker"><label htmlFor="workspace-id">Workspace</label><select id="workspace-id" name="workspaceId" defaultValue={selected}>{workspaces.map((workspace) => <option key={workspace.id} value={workspace.id}>{workspace.name}</option>)}</select><SubmitButton pendingLabel="Switching…">Switch</SubmitButton></form>;
+  return <form action={selectWorkspace} className="product-workspace-picker"><label htmlFor="workspace-id">Workspace</label><NativeSelect id="workspace-id" name="workspaceId" defaultValue={selected}>{workspaces.map((workspace) => <NativeSelectOption key={workspace.id} value={workspace.id}>{workspace.name}</NativeSelectOption>)}</NativeSelect><SubmitButton pendingLabel="Switching…">Switch</SubmitButton></form>;
 }
 
 export function WorkspaceNameForm({ workspaceId, name, canManage }) {

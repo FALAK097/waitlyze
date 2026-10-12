@@ -62,14 +62,14 @@
   font: inherit;
 }
 .wl button,
-.wl summary {
+.wl [data-slot="collapsible-trigger"] {
   cursor: pointer;
 }
 .wl button:disabled {
   cursor: wait;
   opacity: 0.65;
 }
-.wl :is(a, button, input, summary):focus-visible {
+.wl :is(a, button, input, [data-slot="collapsible-trigger"]):focus-visible {
   outline: 2px solid var(--wl-focus);
   outline-offset: 5px;
 }
@@ -607,15 +607,8 @@
 .wl-roadmap li > span { color: var(--wl-muted); font-size: 10px; }
 .wl-faq { display: grid; grid-template-columns: 0.8fr 1.2fr; gap: 80px; }
 .wl-faq-list { display: grid; gap: 8px; }
-.wl-faq-item h3 { font: inherit; }
-.wl-faq-item h3 button { display: flex; justify-content: space-between; align-items: center; width: 100%; gap: 24px; padding: 20px 0; border: 0; background: transparent; color: var(--wl-ink); font-size: 15px; font-weight: 550; text-align: left; }
-.wl-faq-item h3 button:hover { color: var(--wl-accent-ink); }
-.wl-faq-item svg { flex-shrink: 0; color: var(--wl-muted); transition: transform 200ms cubic-bezier(.23,1,.32,1); }
-.wl-faq-item[data-open="true"] svg { transform: rotate(45deg); }
-.wl-faq-panel { display: grid; grid-template-rows: 0fr; opacity: 0; transition: grid-template-rows 220ms cubic-bezier(.23,1,.32,1), opacity 160ms ease-out; }
-.wl-faq-item[data-open="true"] .wl-faq-panel { grid-template-rows: 1fr; opacity: 1; }
-.wl-faq-panel > div { min-height: 0; overflow: hidden; }
-.wl-faq-panel p { color: var(--wl-muted); font-size: 14px; padding: 0 32px 20px 0; line-height: 1.7; }
+ .wl-faq-trigger { min-height: 56px; padding: 20px 0; background: transparent; font-size: 15px; font-weight: 550; text-align: left; text-decoration: none; }
+.wl-faq-answer p { color: var(--wl-muted); font-size: 14px; padding-right: 32px; line-height: 1.7; }
 .wl-final-cta { display: flex; align-items: center; justify-content: space-between; gap: 32px; padding-block: 56px 72px; }
 .wl-final-cta h2 { font-size: clamp(28px, 3.5vw, 46px); line-height: 1.15; letter-spacing: -0.05em; margin-top: 16px; }
 .wl-cta-note { display: block; color: var(--wl-muted); font-size: 11px; margin-top: 12px; }
@@ -654,7 +647,7 @@
   gap: 5px;
   align-items: center;
 }
-.wl :is(.wl-final-cta, .wl-footer) :is(a, button, input, summary):focus-visible {
+.wl :is(.wl-final-cta, .wl-footer) :is(a, button, input, [data-slot="collapsible-trigger"]):focus-visible {
   outline-color: var(--wl-surface);
 }
 .wl-footer-bottom {
@@ -1047,7 +1040,7 @@
   .wl-wide-only {
     display: none;
   }
-  .wl-faq summary {
+  .wl-faq [data-slot="collapsible-trigger"] {
     font-size: 14px;
   }
   .wl-final-cta {
@@ -1120,7 +1113,7 @@
 .wl-preview-intro { max-width: 40ch; }
 .wl-preview-disclaimer { padding: 12px 0 0; }
 .wl-preview-form-space form button:disabled { filter: none; }
-.wl :is(.wl-final-cta, .wl-footer) :is(a, button, input, summary):focus-visible { outline-color: var(--wl-focus); }
+.wl :is(.wl-final-cta, .wl-footer) :is(a, button, input, [data-slot="collapsible-trigger"]):focus-visible { outline-color: var(--wl-focus); }
 
 /* Tactile feedback for the product tour and preview controls. */
 .wl-tour-controls button, .wl-swatches button { transition: transform 120ms cubic-bezier(.23,1,.32,1), background-color 120ms; }

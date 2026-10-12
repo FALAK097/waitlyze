@@ -177,7 +177,7 @@
   padding: 0;
 }
 
-.scope :global(.automation-editor summary) {
+.scope :global(.automation-editor [data-slot="collapsible-trigger"]) {
   min-height: 44px;
   display: flex;
   align-items: center;
@@ -278,16 +278,16 @@
   min-width: 0;
 }
 
-.templateForm details {
+.templateForm [data-slot="collapsible"] {
   font-size: 14px;
 }
 
-.templateForm details summary {
+.templateForm [data-slot="collapsible"] [data-slot="collapsible-trigger"] {
   min-height: 44px;
   cursor: pointer;
 }
 
-.templateForm details>div {
+.templateForm [data-slot="collapsible"]>div {
   display: grid;
   gap: 20px;
   padding-top: 12px;
@@ -478,7 +478,7 @@
 
 .scope :global(:focus-visible) {
   outline: 2px solid #637c2b;
-  outline-offset: 3px;
+  outline-offset: 2px;
 }
 
 @media (max-width:900px) {

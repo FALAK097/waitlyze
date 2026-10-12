@@ -1,16 +1,11 @@
 "use client";
 
+import { HugeiconsIcon } from "@hugeicons/react";
+import { InstagramIcon, Linkedin01Icon, Loading02Icon, Mail01Icon, TwitterIcon } from "@hugeicons/core-free-icons";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import {
-	EnvelopeClosedIcon,
-	InstagramLogoIcon,
-	LinkedInLogoIcon,
-	TwitterLogoIcon,
-} from "@radix-ui/react-icons";
 import { motion } from "motion/react";
-import { Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
@@ -97,7 +92,7 @@ export const ReferralPreview = ({
 			name: "Twitter",
 			show: waitList.shareOnTwitter,
 			onClick: shareOnTwitter,
-			icon: <TwitterLogoIcon className="w-5 h-5" />,
+			icon: <HugeiconsIcon icon={TwitterIcon} className="w-5 h-5" />,
 			className: "bg-[#1DA1F2] hover:bg-[#1a8cd8] shadow-lg",
 		},
 		{
@@ -145,7 +140,7 @@ export const ReferralPreview = ({
 			name: "Instagram",
 			show: waitList.shareOnInstagram,
 			onClick: shareOnInstagram,
-			icon: <InstagramLogoIcon className="w-5 h-5" />,
+			icon: <HugeiconsIcon icon={InstagramIcon} className="w-5 h-5" />,
 			className:
 				"bg-linear-to-r from-[#833AB4] via-[#FD1D1D] to-[#FCAF45] hover:opacity-90 shadow-lg",
 		},
@@ -177,14 +172,14 @@ export const ReferralPreview = ({
 			name: "LinkedIn",
 			show: waitList.shareOnLinkedin,
 			onClick: shareOnLinkedin,
-			icon: <LinkedInLogoIcon className="w-5 h-5" />,
+			icon: <HugeiconsIcon icon={Linkedin01Icon} className="w-5 h-5" />,
 			className: "bg-[#0A66C2] hover:bg-[#095196] shadow-lg",
 		},
 		{
 			name: "Email",
 			show: waitList.shareOnEmail,
 			onClick: shareOnEmail,
-			icon: <EnvelopeClosedIcon className="w-5 h-5" />,
+			icon: <HugeiconsIcon icon={Mail01Icon} className="w-5 h-5" />,
 			className: "bg-[#EA4335] hover:bg-[#d33c2f] shadow-lg",
 		},
 		{
@@ -268,7 +263,7 @@ export const ReferralPreview = ({
 									<Button
 										className="px-8 rounded-l-none"
 										onClick={copyToClipboard}
-									>
+									 variant="ghost">
 										Copy
 									</Button>
 								</div>
@@ -313,7 +308,7 @@ export const ReferralPreview = ({
 									totalSignUps
 								) : (
 									<span className="flex justify-center items-center">
-										<Loader2 className="w-8 h-8 animate-spin" />
+										<HugeiconsIcon icon={Loading02Icon} className="w-8 h-8 animate-spin" />
 									</span>
 								)}
 							</motion.p>

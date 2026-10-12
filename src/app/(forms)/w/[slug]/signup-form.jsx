@@ -1,5 +1,12 @@
 "use client";
 
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+
+import { Input } from "@/components/ui/input";
+
+import { Button } from "@/components/ui/button";
+
 import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { MARKETING_CONSENT_COPY } from "@/lib/campaigns/marketing-consent.mjs";
@@ -66,15 +73,15 @@ export function SignupForm({ waitListId, showReferrals, label, buttonText, thank
 
   return (
     <form className={styles.form} onSubmit={submit}>
-      <label className={styles.label} htmlFor="waitlist-email">{label}</label>
+      <Label className={styles.label} htmlFor="waitlist-email">{label}</Label>
       <div className={styles.row}>
-        <input className={styles.email} id="waitlist-email" name="email" type="email" autoComplete="email" required maxLength={320} />
-        <button className={styles.button} type="submit" disabled={busy}>{busy ? "Joining…" : buttonText}</button>
+        <Input className={styles.email} id="waitlist-email" name="email" type="email" autoComplete="email" required maxLength={320} />
+        <Button className={styles.button} type="submit" disabled={busy}>{busy ? "Joining…" : buttonText}</Button>
       </div>
-      <label className={styles.consent}>
-        <input className={styles.checkbox} name="marketingConsent" type="checkbox" />
+      <Label className={styles.consent}>
+        <Checkbox className={styles.checkbox} name="marketingConsent" value="on" />
         <span>{MARKETING_CONSENT_COPY}</span>
-      </label>
+      </Label>
       <p className={styles.status} aria-live="polite" role="status">{message}</p>
     </form>
   );

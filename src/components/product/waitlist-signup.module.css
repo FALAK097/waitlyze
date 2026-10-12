@@ -22,6 +22,6 @@
 .referralShare label { font-size: .875rem; font-weight: 600; }
 .referralShare input { min-width: 0; flex: 1; height: 48px; padding: 0 12px; border: 1px solid var(--product-border-control); border-radius: 8px; background: var(--product-bg-surface); color: var(--product-text-primary); font: inherit; font-size: .8125rem; }
 .referralShare button { min-height: 48px; padding: 0 16px; border: 1px solid var(--product-accent-border); border-radius: 8px; background: var(--product-accent-solid); color: var(--product-accent-label); font: inherit; font-weight: 600; cursor: pointer; }
-.form :focus-visible, .result :is(input, button):focus-visible { outline: 2px solid var(--product-focus); outline-offset: 3px; }
+.form :focus-visible, .result :is(input, button):focus-visible { outline: 2px solid var(--product-focus); outline-offset: 2px; }
 @media (hover: hover) and (pointer: fine) { .button:hover:not(:disabled), .referralShare button:hover { background: var(--product-accent-hover); } }
 @media (max-width: 480px) { .form, .result { padding: 18px; } .row { flex-direction: column; } .button, .referralShare button { width: 100%; } }

@@ -1,6 +1,8 @@
 "use client";
 
-import { Button } from "@/components/product/button";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { Cancel01Icon } from "@hugeicons/core-free-icons";
+import { Button } from "@/components/ui/button";
 import { notifySettingsResult } from "@/components/product/settings-feedback";
 import styles from "./legacy-editor.module.css";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -17,7 +19,6 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useR2Upload } from "@/utils/r2-upload";
-import { X } from "lucide-react";
 import Image from "next/image";
 import { useRef } from "react";
 import { toast } from "react-hot-toast";
@@ -134,7 +135,7 @@ export function SettingsTab({ formSettings, updateSetting, applyPreset }) {
 							onValueChange={(value) => updateSetting("borderWidth", value)}
 						>
 							<SelectTrigger id="borderWidth">
-								<SelectValue placeholder="Select border width" />
+								<SelectValue>Select border width</SelectValue>
 							</SelectTrigger>
 							<SelectContent>
 								<SelectItem value="0px">0px</SelectItem>
@@ -150,7 +151,7 @@ export function SettingsTab({ formSettings, updateSetting, applyPreset }) {
 							onValueChange={(value) => updateSetting("borderRadius", value)}
 						>
 							<SelectTrigger id="borderRadius">
-								<SelectValue placeholder="Select border radius" />
+								<SelectValue>Select border radius</SelectValue>
 							</SelectTrigger>
 							<SelectContent>
 								<SelectItem value="small">Small</SelectItem>
@@ -166,7 +167,7 @@ export function SettingsTab({ formSettings, updateSetting, applyPreset }) {
 							onValueChange={(value) => updateSetting("fontWeight", value)}
 						>
 							<SelectTrigger id="fontWeight">
-								<SelectValue placeholder="Select font weight" />
+								<SelectValue>Select font weight</SelectValue>
 							</SelectTrigger>
 							<SelectContent>
 								<SelectItem value="normal">Normal</SelectItem>
@@ -181,7 +182,7 @@ export function SettingsTab({ formSettings, updateSetting, applyPreset }) {
 							onValueChange={(value) => updateSetting("logoSize", value)}
 						>
 							<SelectTrigger id="logoSize">
-								<SelectValue placeholder="Select logo size" />
+								<SelectValue>Select logo size</SelectValue>
 							</SelectTrigger>
 							<SelectContent>
 								<SelectItem value="1X">1X</SelectItem>
@@ -408,7 +409,7 @@ export function SettingsTab({ formSettings, updateSetting, applyPreset }) {
 													aria-label="Remove sharing image"
 													onClick={() => updateSetting("ogImage", "")}
 												>
-													<X className="w-4 h-4" aria-hidden="true" />
+													<HugeiconsIcon icon={Cancel01Icon} className="w-4 h-4" aria-hidden="true" />
 												</Button>
 											</div>
 											<div className="relative w-full overflow-hidden rounded-lg aspect-video">

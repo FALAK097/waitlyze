@@ -1,9 +1,10 @@
 "use client";
 
+import { HugeiconsIcon } from "@hugeicons/react";
+import { FlashIcon } from "@hugeicons/core-free-icons";
 import { SITE_URL } from "@/lib/site-metadata";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Zap } from "lucide-react";
 import Image from "next/image";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { Badge } from "../ui/badge";
@@ -130,7 +131,7 @@ export const SignUpForm = ({
 										: "0.75rem",
 							fontWeight: waitList.fontWeight,
 						}}
-					>
+					 variant="ghost">
 						{isLoading ? (
 							<>
 								<Spinner className="w-4 h-4 mr-2" />
@@ -143,7 +144,7 @@ export const SignUpForm = ({
 					{waitList.showSocialProof && (
 						<>
 							<div className="flex items-center space-x-2 text-sm text-gray-500">
-								<Zap className="w-4 h-4 text-purple-500" />
+								<HugeiconsIcon icon={FlashIcon} className="w-4 h-4 text-purple-500" />
 								<div className="flex -space-x-1 overflow-hidden">
 									{dummyUsers.map((_, i) => {
 										return (

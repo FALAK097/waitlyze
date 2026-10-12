@@ -1,9 +1,11 @@
 "use client";
+
+import { Label } from "@/components/ui/label";
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Button } from "./button";
-import { Input } from "./input";
-import { Dialog, DialogTrigger, DialogContent, DialogTitle, DialogDescription, DialogClose } from "./dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Dialog, DialogTrigger, DialogContent, DialogTitle, DialogDescription, DialogClose } from "@/components/ui/dialog";
 import { notifySettingsResult } from "./settings-feedback";
 import { deleteWaitlist } from "@/app/actions/delete-waitlist";
 
@@ -24,6 +26,6 @@ export function DeleteWaitlist({ id, name }) {
   }
   return <div ref={container}><Dialog open={open} onOpenChange={(value) => { if (!pending) { setOpen(value); setConfirmation(""); setError(""); } }}><DialogTrigger render={<Button variant="destructive" />}>Delete waitlist</DialogTrigger><DialogContent container={container}>
     <div className="product-dialog-heading"><DialogTitle>Delete {name}?</DialogTitle><DialogDescription>This permanently deletes the waitlist, subscribers and analytics. This cannot be undone.</DialogDescription></div>
-    <form onSubmit={remove} className="product-form"><div className="product-field"><label htmlFor="delete-confirmation">Type “{name}” to confirm</label><Input id="delete-confirmation" value={confirmation} onChange={(event) => setConfirmation(event.target.value)} disabled={pending} autoComplete="off" aria-invalid={!!error} aria-describedby={error ? "delete-error" : undefined} />{error && <p id="delete-error" role="alert">{error}</p>}</div><div className="product-actions"><DialogClose render={<Button variant="outline" />} disabled={pending}>Cancel</DialogClose><Button type="submit" variant="destructive" disabled={pending || confirmation !== name}>{pending ? "Deleting…" : "Permanently delete"}</Button></div></form>
+    <form onSubmit={remove} className="product-form"><div className="product-field"><Label htmlFor="delete-confirmation">Type “{name}” to confirm</Label><Input id="delete-confirmation" value={confirmation} onChange={(event) => setConfirmation(event.target.value)} disabled={pending} autoComplete="off" aria-invalid={!!error} aria-describedby={error ? "delete-error" : undefined} />{error && <p id="delete-error" role="alert">{error}</p>}</div><div className="product-actions"><DialogClose render={<Button variant="outline" />} disabled={pending}>Cancel</DialogClose><Button type="submit" variant="destructive" disabled={pending || confirmation !== name}>{pending ? "Deleting…" : "Permanently delete"}</Button></div></form>
   </DialogContent></Dialog></div>;
 }

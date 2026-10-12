@@ -1,10 +1,12 @@
 "use client";
 
+import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
+
 import { formatProductDate } from "@/lib/product-date.mjs";
 
 import { useState, useTransition } from "react";
 import { runWaitlistRehearsal } from "@/app/actions/rehearsal";
-import { Button } from "@/components/product/button";
+import { Button } from "@/components/ui/button";
 
 function formatDate(value) {
   return formatProductDate(value);
@@ -33,13 +35,14 @@ export function LaunchRehearsal({ waitListId, initialRuns, className = "", summa
   }
 
   return (
-    <details className={`product-panel launch-rehearsal ${className}`}>
-      <summary className={summaryClassName}>
+    <div className={`product-panel launch-rehearsal ${className}`}>
+    <Collapsible>
+      <CollapsibleTrigger className={summaryClassName}>
         <span className={titleClassName}>
           <strong>Private page test</strong>
           <span>{latest ? `${latest.status === "PASSED" ? "Latest test passed" : "Latest test needs review"} · ${formatDate(latest.createdAt)}` : "Test this page and signup setup without creating a subscriber"}</span>
         </span>
-      </summary>
+      </CollapsibleTrigger><CollapsibleContent>
       <div className={bodyClassName}>
         <div className="launch-rehearsal-heading">
           <div>
@@ -69,6 +72,7 @@ export function LaunchRehearsal({ waitListId, initialRuns, className = "", summa
         )}
         {runs.length > 1 && <p className="product-help">{runs.length} recent launch checks are saved for this waitlist.</p>}
       </div>
-    </details>
+    </CollapsibleContent></Collapsible>
+    </div>
   );
 }

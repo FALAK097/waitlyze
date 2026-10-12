@@ -1,0 +1,11 @@
+{
+  "style": "stroke",
+  "mapping": {
+    "Code2": "CodeIcon",
+    "ChartNoAxesCombined": "ChartLineData01Icon",
+    "UsersRound": "UserGroupIcon",
+    "Globe2": "GlobeIcon",
+    "ShieldCheck": "ShieldCheckIcon",
+    "Zap": "FlashIcon"
+  }
+}

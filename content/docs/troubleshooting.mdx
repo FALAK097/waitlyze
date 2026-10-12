@@ -1,0 +1,34 @@
+---
+title: Troubleshooting
+description: Resolve publication, authentication, embed, and delivery issues.
+---
+
+<Accordions type="single">
+<Accordion title="Signups and API access">
+- Confirm that the waitlist is published and accepting signups.
+- Check that `waitlistId` matches the key's linked waitlist.
+- For `401`, check expiry and whether the key was revoked.
+- For `409`, distinguish a duplicate email from a waitlist that is not accepting signups.
+- For `429` or `503`, respect `Retry-After`; do not retry in a tight loop.
+</Accordion>
+<Accordion title="Hosted page and embed">
+- Use the copied published page URL; draft edits must be published.
+- The embed requires a waitlist ID, not an API secret.
+- Check the script URL, your site's Content Security Policy, and the embed height.
+- For a custom domain, confirm DNS ownership and Ready status.
+</Accordion>
+<Accordion title="Email and webhooks">
+- Save the email template before sending a test.
+- Verify the Resend sender domain and sending-only key, then retest the connection.
+- Confirm that the dispatcher is configured and scheduled.
+- Verify subscriber email, marketing opt-in, unsubscribe state, and suppression status.
+- For webhook signature errors, use canonical JSON, check the timestamp, and test the current signing secret.
+</Accordion>
+<Accordion title="Gather safe diagnostics">
+Include the page or endpoint, HTTP status, approximate timestamp, and a relevant event or waitlist ID. Review Recent deliveries for webhook response codes.
+
+<Callout type="warn" title="Keep credentials and subscriber data private">
+Never include API secrets, webhook signing secrets, provider keys, or subscriber lists in a support report, screenshot, or public issue.
+</Callout>
+</Accordion>
+</Accordions>

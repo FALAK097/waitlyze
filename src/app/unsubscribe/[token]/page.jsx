@@ -1,3 +1,5 @@
+
+import { Button } from "@/components/ui/button";
 import prisma from "@/lib/prisma";
 import { hashUnsubscribeToken } from "@/lib/email/unsubscribe.mjs";
 
@@ -22,7 +24,7 @@ export default async function UnsubscribePage({ params, searchParams }) {
         <p>{done ? "You won’t receive future launch updates for this waitlist." : subscriber ? "Choose whether to stop receiving future launch updates for this waitlist." : "This email preference link may have expired or been copied incorrectly."}</p>
         {subscriber && !done ? <form action="/api/email/unsubscribe" method="post">
           <input type="hidden" name="token" value={token} />
-          <button type="submit">Unsubscribe from updates</button>
+          <Button type="submit">Unsubscribe from updates</Button>
         </form> : null}
       </section>
     </main>

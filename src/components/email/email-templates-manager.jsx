@@ -1,5 +1,9 @@
 "use client";
 
+import { Label } from "@/components/ui/label";
+
+import { Input } from "@/components/ui/input";
+
 import { useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { useQueryState } from "nuqs";
@@ -7,7 +11,7 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeSanitize from "rehype-sanitize";
 import toast from "react-hot-toast";
-import { Button } from "@/components/product/button";
+import { Button } from "@/components/ui/button";
 import { EmailForm } from "./email-form";
 import { upsertEmailTemplate, sendTestEmail } from "@/app/actions/emails";
 import styles from "./email-tools.module.css";
@@ -34,8 +38,8 @@ export function EmailTemplatesManager({ waitListId, waitListName, initialTemplat
   }
   return <div className={styles.scope}>
     <div className={styles.templateHeading}><div><h2>Email templates</h2><p>Write the emails subscribers receive.</p></div><Button onClick={save} disabled={Boolean(busy)}>{busy === "save" ? "Saving…" : "Save template"}</Button></div>
-    <div role="tablist" aria-label="Email template" className={styles.templateTabs}>{[["signup", "Signup"], ["offboarding", "Offboarding"]].map(([value, title]) => <button key={value} id={`template-tab-${value}`} type="button" role="tab" aria-selected={current === value} aria-controls="template-editor" tabIndex={current === value ? 0 : -1} disabled={Boolean(busy)} onClick={() => setCurrent(value)} onKeyDown={(event) => { if (["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) { event.preventDefault(); const next = event.key === "Home" ? "signup" : event.key === "End" ? "offboarding" : current === "signup" ? "offboarding" : "signup"; setCurrent(next); document.getElementById(`template-tab-${next}`)?.focus(); } }}>{title}</button>)}</div>
+    <div role="tablist" aria-label="Email template" className={styles.templateTabs}>{[["signup", "Signup"], ["offboarding", "Offboarding"]].map(([value, title]) => <Button key={value} id={`template-tab-${value}`} type="button" role="tab" aria-selected={current === value} aria-controls="template-editor" tabIndex={current === value ? 0 : -1} disabled={Boolean(busy)} onClick={() => setCurrent(value)} onKeyDown={(event) => { if (["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) { event.preventDefault(); const next = event.key === "Home" ? "signup" : event.key === "End" ? "offboarding" : current === "signup" ? "offboarding" : "signup"; setCurrent(next); document.getElementById(`template-tab-${next}`)?.focus(); } }}>{title}</Button>)}</div>
     {error && <p role="alert" className={styles.feedback}>{error}</p>}
-    <div className={styles.templateGrid}><section id="template-editor" role="tabpanel" aria-labelledby={`template-tab-${current}`}><EmailForm key={current} type={current} form={form} disabled={Boolean(busy)} /></section><aside className={styles.preview} aria-label="Email preview"><p className={styles.previewLabel}>Preview</p><div className={styles.previewMessage}><div className={styles.previewHeading}>{markdown(template.header)}</div>{markdown(template.subHeader)}{markdown(template.mainBody)}{markdown(template.subBody)}<footer>Need help? Reply to this email · {new Date().getFullYear()} Waitlyze</footer></div><form onSubmit={sendTest} className={styles.testForm}><label htmlFor="template-test-address">Send a test</label><div><input id="template-test-address" className="product-input" type="email" required maxLength={320} placeholder="you@example.com" value={testEmail} onChange={(event) => setTestEmail(event.target.value)} disabled={Boolean(busy)} /><Button variant="outline" type="submit" disabled={Boolean(busy) || !testEmail}>{busy === "test" ? "Sending…" : "Send test"}</Button></div><p>Tests use the saved template. Save your changes first.</p></form></aside></div>
+    <div className={styles.templateGrid}><section id="template-editor" role="tabpanel" aria-labelledby={`template-tab-${current}`}><EmailForm key={current} type={current} form={form} disabled={Boolean(busy)} /></section><aside className={styles.preview} aria-label="Email preview"><p className={styles.previewLabel}>Preview</p><div className={styles.previewMessage}><div className={styles.previewHeading}>{markdown(template.header)}</div>{markdown(template.subHeader)}{markdown(template.mainBody)}{markdown(template.subBody)}<footer>Need help? Reply to this email · {new Date().getFullYear()} Waitlyze</footer></div><form onSubmit={sendTest} className={styles.testForm}><Label htmlFor="template-test-address">Send a test</Label><div><Input id="template-test-address" type="email" required maxLength={320} placeholder="you@example.com" value={testEmail} onChange={(event) => setTestEmail(event.target.value)} disabled={Boolean(busy)} /><Button variant="outline" type="submit" disabled={Boolean(busy) || !testEmail}>{busy === "test" ? "Sending…" : "Send test"}</Button></div><p>Tests use the saved template. Save your changes first.</p></form></aside></div>
   </div>;
 }

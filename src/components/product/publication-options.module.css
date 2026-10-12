@@ -1,9 +1,9 @@
 .options { padding: 32px 0 0; }
 .disclosure { max-width: 760px; }
-.disclosure > summary { display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 48px; padding-block: 8px; cursor: pointer; list-style: none; }
-.disclosure > summary::-webkit-details-marker { display: none; }
-.disclosure > summary svg { width: 16px; height: 16px; }
-.disclosure[open] > summary svg { transform: rotate(180deg); }
+.disclosure > [data-slot="collapsible-trigger"] { display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 48px; padding-block: 8px; cursor: pointer; list-style: none; }
+.disclosure > [data-slot="collapsible-trigger"]::-webkit-details-marker { display: none; }
+.disclosure > [data-slot="collapsible-trigger"] svg { width: 16px; height: 16px; }
+.disclosure[data-panel-open] > [data-slot="collapsible-trigger"] svg { transform: rotate(180deg); }
 .options h2 { font-size: .875rem; font-weight: 600; margin: 0; }
 .methodToggle { display: flex; flex-wrap: wrap; gap: 8px; margin-block: 16px 20px; }
 .methodToggle button[aria-pressed="true"] { background: var(--product-bg-inset); font-weight: 600; text-decoration: underline; text-underline-offset: 6px; text-decoration-color: var(--product-accent-solid); }

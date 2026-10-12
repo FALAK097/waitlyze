@@ -134,7 +134,7 @@ export const NewWaitListForm = ({ createNewWaitList }) => {
 								type="submit"
 								className="w-full py-4 mt-6 text-md"
 								disabled={loading || isCreated}
-							>
+							 variant="ghost">
 								{loading
 									? "Creating..."
 									: isCreated

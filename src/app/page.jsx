@@ -1,4 +1,5 @@
-import { ArrowDown, ArrowUpRight, Check, Code2, Download, Mail, ShieldCheck, LayoutTemplate, Workflow, Users, Globe, History } from "lucide-react";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { ArrowDown01Icon, ArrowUpRight01Icon, CodeIcon, Download01Icon, GlobeIcon, Layout01Icon, Mail01Icon, ShieldCheckIcon, Tick01Icon, UserGroupIcon, WorkflowCircle01Icon, WorkHistoryIcon } from "@hugeicons/core-free-icons";
 import PublicShell from "@/components/landing/public-shell";
 import SignupButton from "@/components/landing/signup-button";
 import WaitlistPlayground from "@/components/landing/waitlist-playground";
@@ -62,9 +63,9 @@ export default function LandingPage() {
             <p className="wl-lede">Build a branded waitlist. Grow it with referrals. Know who’s ready for launch day.</p>
             <div className="wl-hero-actions">
               <SignupButton />
-              <a className="wl-text-link" href="#how-it-works">Explore the product <ArrowDown size={16} aria-hidden="true" /></a>
+              <a className="wl-text-link" href="#how-it-works">Explore the product <HugeiconsIcon icon={ArrowDown01Icon} size={16} aria-hidden="true" /></a>
             </div>
-            <p className="wl-reassurance">{["Free to use", "No credit card", "No code needed"].map(text => <span key={text}><Check size={14} aria-hidden="true" />{text}</span>)}</p>
+            <p className="wl-reassurance">{["Free to use", "No credit card", "No code needed"].map(text => <span key={text}><HugeiconsIcon icon={Tick01Icon} size={14} aria-hidden="true" />{text}</span>)}</p>
           </div>
           <WaitlistPlayground />
         </section>
@@ -82,24 +83,24 @@ export default function LandingPage() {
           </div>
           <div className="wl-capability-grid">
             {[
-              [Mail, "Emails that keep it moving", "Welcome subscribers, send updates, and set up email automation."],
-              [Code2, "Your site. Your form.", "Share a hosted page, embed a form, or collect signups through the API."],
-              [Download, "An audience you own", "Take your subscriber list with you. Export your audience to CSV."],
-              [LayoutTemplate, "A starting point, ready", "Choose a launch template and make the page your own."],
-              [Workflow, "Connected to your workflow", "Connect Resend for email and use webhooks to send events to your tools."],
-              [ShieldCheck, "Quality over quantity", "Verify subscriber email addresses and track referral activity."],
-              [Users, "Build with your team", "Invite teammates and choose who can edit, publish, or send emails."],
-              [Globe, "Your launch. Your domain.", "Connect a custom domain to your hosted waitlist page."],
-              [History, "Publish with control", "Keep drafts private, pause signups, or restore a published version."],
-            ].map(([Icon, title, text]) => <article key={title}><Icon size={21} strokeWidth={1.5} aria-hidden="true" /><h3>{title}</h3><p>{text}</p></article>)}
+              [Mail01Icon, "Emails that keep it moving", "Welcome subscribers, send updates, and set up email automation."],
+              [CodeIcon, "Your site. Your form.", "Share a hosted page, embed a form, or collect signups through the API."],
+              [Download01Icon, "An audience you own", "Take your subscriber list with you. Export your audience to CSV."],
+              [Layout01Icon, "A starting point, ready", "Choose a launch template and make the page your own."],
+              [WorkflowCircle01Icon, "Connected to your workflow", "Connect Resend for email and use webhooks to send events to your tools."],
+              [ShieldCheckIcon, "Quality over quantity", "Verify subscriber email addresses and track referral activity."],
+              [UserGroupIcon, "Build with your team", "Invite teammates and choose who can edit, publish, or send emails."],
+              [GlobeIcon, "Your launch. Your domain.", "Connect a custom domain to your hosted waitlist page."],
+              [WorkHistoryIcon, "Publish with control", "Keep drafts private, pause signups, or restore a published version."],
+            ].map(([Icon, title, text]) => <article key={title}><HugeiconsIcon icon={Icon} size={21} strokeWidth={1.5} aria-hidden="true" /><h3>{title}</h3><p>{text}</p></article>)}
           </div>
           <div className="wl-roadmap" aria-label="Planned features">
             <div><p className="wl-eyebrow">On the roadmap</p><p>Building the next part of your launch.</p></div>
-            <ul>{[[Workflow, "More native integrations"], [ShieldCheck, "Advanced spam detection"], [Code2, "Developer docs & SDKs"], [Users, "Referral rewards"]].map(([Icon, text]) => <li key={text}><Icon size={16} aria-hidden="true" />{text}<span>Planned</span></li>)}</ul>
+            <ul>{[[WorkflowCircle01Icon, "More native integrations"], [ShieldCheckIcon, "Advanced spam detection"], [CodeIcon, "Developer docs & SDKs"], [UserGroupIcon, "Referral rewards"]].map(([Icon, text]) => <li key={text}><HugeiconsIcon icon={Icon} size={16} aria-hidden="true" />{text}<span>Planned</span></li>)}</ul>
           </div>
         </section>
         <section id="faq" className="wl-faq wl-container wl-section" aria-labelledby="faq-title">
-          <div className="wl-section-heading"><p className="wl-eyebrow">A few things, answered</p><h2 id="faq-title">FAQs.</h2><p><a href="mailto:hi@falakgala.dev" className="wl-text-link">Talk to the maker <ArrowUpRight size={15} aria-hidden="true" /></a></p></div>
+          <div className="wl-section-heading"><p className="wl-eyebrow">A few things, answered</p><h2 id="faq-title">FAQs.</h2><p><a href="mailto:hi@falakgala.dev" className="wl-text-link">Talk to the maker <HugeiconsIcon icon={ArrowUpRight01Icon} size={15} aria-hidden="true" /></a></p></div>
           <FAQAccordion items={faqs} />
         </section>
         <section className="wl-final-cta wl-container" aria-labelledby="cta-title">

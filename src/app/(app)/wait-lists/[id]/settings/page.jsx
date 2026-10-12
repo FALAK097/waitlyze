@@ -1,3 +1,5 @@
+
+import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
 import { notFound } from "next/navigation";
 import prisma from "@/lib/prisma";
 import { currentWorkspace } from "@/lib/workspaces/current";
@@ -21,17 +23,17 @@ export default async function WaitlistSettings({ params }) {
       <h3 id="referral-settings-title">Referral sharing</h3>
       <ReferralSettings waitListId={waitlist.id} initialEnabled={waitlist.showReferrals} />
     </section>
-    <details className="product-waitlist-setting-disclosure">
-      <summary><span>Custom domain</span><span>Publish on a domain you own</span></summary>
+    <Collapsible className="product-waitlist-setting-disclosure">
+      <CollapsibleTrigger><span>Custom domain</span><span>Publish on a domain you own</span></CollapsibleTrigger><CollapsibleContent>
       <div className="product-waitlist-setting-body"><CustomDomainSettings waitListId={waitlist.id} canManage={canDelete} available={Boolean(env.VERCEL_TOKEN && env.VERCEL_PROJECT_ID && env.APP_ROOT_DOMAIN)} /></div>
-    </details>
-    <details className="product-waitlist-setting-disclosure">
-      <summary><span>Webhooks</span><span>Send signed signup events to your tools</span></summary>
+    </CollapsibleContent></Collapsible>
+    <Collapsible className="product-waitlist-setting-disclosure">
+      <CollapsibleTrigger><span>Webhooks</span><span>Send signed signup events to your tools</span></CollapsibleTrigger><CollapsibleContent>
       <div className="product-waitlist-setting-body"><WebhookSettings waitListId={waitlist.id} canManage={canDelete} /></div>
-    </details>
-    <details className="product-waitlist-setting-disclosure product-waitlist-setting-danger">
-      <summary><span>Delete waitlist</span><span>Permanently remove this waitlist and its data</span></summary>
+    </CollapsibleContent></Collapsible>
+    <Collapsible className="product-waitlist-setting-disclosure product-waitlist-setting-danger">
+      <CollapsibleTrigger><span>Delete waitlist</span><span>Permanently remove this waitlist and its data</span></CollapsibleTrigger><CollapsibleContent>
       <div className="product-waitlist-setting-body"><p>Export any subscriber data you want to keep first.</p>{canDelete ? <DeleteWaitlist id={id} name={waitlist.name || "Untitled waitlist"} /> : <p className="product-help">An owner or admin can delete this waitlist.</p>}</div>
-    </details>
+    </CollapsibleContent></Collapsible>
   </div>;
 }

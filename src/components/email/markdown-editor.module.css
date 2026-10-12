@@ -29,7 +29,7 @@
 
 .editor textarea:focus-visible {
   outline: 2px solid #637c2b;
-  outline-offset: 3px;
+  outline-offset: 2px;
 }
 
 .editor textarea:disabled {

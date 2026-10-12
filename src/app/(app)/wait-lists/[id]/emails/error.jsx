@@ -1,6 +1,6 @@
 "use client";
 
-import { Button } from "@/components/product/button";
+import { Button } from "@/components/ui/button";
 import styles from "@/components/email/email-tools.module.css";
 
 export default function Error({ retry }) {

@@ -1,5 +1,15 @@
 "use client";
 
+import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
+
+import { Label } from "@/components/ui/label";
+
+import { Input } from "@/components/ui/input";
+
+import { Textarea } from "@/components/ui/textarea";
+
+import { Button } from "@/components/ui/button";
+
 import { formatProductDate } from "@/lib/product-date.mjs";
 
 import { useState } from "react";
@@ -85,7 +95,7 @@ export function AutomationManager({ waitListId, initialRecipes, initialRuns, del
     {!deliveryReady ? <section className="automation-setup" aria-label="Email setup required"><span aria-hidden="true">i</span><p>Email delivery needs setup before a recipe can be enabled. Your saved recipes stay off until then.</p></section> : null}
 
     <div className={styles.recipeWorkspace}>
-      <nav aria-label="Automation recipes" className={styles.recipeNav}>{recipes.map((recipe) => <button key={recipe.id} type="button" aria-current={activeRecipe === recipe.id ? "true" : undefined} disabled={Boolean(busyId)} onClick={() => setActiveRecipe(recipe.id)}><strong>{recipe.title}</strong><span>{statusLabel(recipe.status)}</span></button>)}</nav>
+      <nav aria-label="Automation recipes" className={styles.recipeNav}>{recipes.map((recipe) => <Button key={recipe.id} type="button" aria-current={activeRecipe === recipe.id ? "true" : undefined} disabled={Boolean(busyId)} onClick={() => setActiveRecipe(recipe.id)}><strong>{recipe.title}</strong><span>{statusLabel(recipe.status)}</span></Button>)}</nav>
       <div className="automation-recipe-list">
       {!recipes.length && <p className="product-help">No automation recipes are available yet.</p>}
       {recipes.filter((recipe) => recipe.id === activeRecipe).map((recipe) => {
@@ -98,21 +108,21 @@ export function AutomationManager({ waitListId, initialRecipes, initialRuns, del
         return <article className="product-panel automation-recipe" key={recipe.id} aria-labelledby={`recipe-${recipe.id}`}>
           <div className="automation-recipe-top">
             <div><div className="automation-recipe-title"><h3 id={`recipe-${recipe.id}`}>{recipe.title}</h3><span className={`automation-status automation-status-${recipe.status.toLowerCase()}`}>{statusLabel(recipe.status)}</span></div><p className="product-help">{recipe.description}</p></div>
-            <button type="button" className={enabled ? "product-button product-button-outline" : "product-button product-button-primary"} onClick={() => changeStatus(recipe)} disabled={busyId === recipe.id || (!enabled && (!deliveryReady || dirty))}>{busyId === recipe.id ? "Saving…" : enabled ? "Pause" : dirty ? "Save changes first" : "Enable"}</button>
+            <Button type="button" variant={enabled ? "outline" : "default"} onClick={() => changeStatus(recipe)} disabled={busyId === recipe.id || (!enabled && (!deliveryReady || dirty))}>{busyId === recipe.id ? "Saving…" : enabled ? "Pause" : dirty ? "Save changes first" : "Enable"}</Button>
           </div>
           <dl className="automation-recipe-summary"><div><dt>Starts</dt><dd>{recipe.type === "REFERRAL_MILESTONE" ? "A referred subscriber confirms their email" : "The subscriber confirms their email"}</dd></div><div><dt>Condition</dt><dd>{recipe.type === "REFERRAL_REMINDER" ? "Still has no verified referrals when the message is due" : recipe.type === "REFERRAL_MILESTONE" ? "Referral is eligible and the recipient opted in" : "Recipient opted in to launch updates"}</dd></div><div><dt>Timing</dt><dd>{timing}</dd></div><div><dt>Action</dt><dd>Send one email · version {recipe.version}</dd></div></dl>
-          <details className="automation-editor" open>
-            <summary>Edit timing and email</summary>
+          <Collapsible className="automation-editor" defaultOpen>
+            <CollapsibleTrigger>Edit timing and email</CollapsibleTrigger><CollapsibleContent>
             <div className="automation-editor-fields">
-              {recipe.type !== "REFERRAL_MILESTONE" ? <label className="product-field"><span>Wait after confirmation (hours)</span><input type="number" min="0" max="168" step="1" value={delay} disabled={busyId === recipe.id} onChange={(event) => updateRecipe(recipe.id, { delayHours: event.target.value })} /></label> : <>
-                <label className="product-field"><span>Verified referrals to celebrate</span><input type="number" min="1" max="100" step="1" value={recipe.milestoneCount ?? recipe.config.milestoneCount} disabled={busyId === recipe.id} onChange={(event) => updateRecipe(recipe.id, { milestoneCount: event.target.value })} /></label>
-                <label className="product-field"><span>Wait after milestone (hours)</span><input type="number" min="0" max="168" step="1" value={delay} disabled={busyId === recipe.id} onChange={(event) => updateRecipe(recipe.id, { delayHours: event.target.value })} /></label>
+              {recipe.type !== "REFERRAL_MILESTONE" ? <Label className="product-field"><span>Wait after confirmation (hours)</span><Input type="number" min="0" max="168" step="1" value={delay} disabled={busyId === recipe.id} onChange={(event) => updateRecipe(recipe.id, { delayHours: event.target.value })} /></Label> : <>
+                <Label className="product-field"><span>Verified referrals to celebrate</span><Input type="number" min="1" max="100" step="1" value={recipe.milestoneCount ?? recipe.config.milestoneCount} disabled={busyId === recipe.id} onChange={(event) => updateRecipe(recipe.id, { milestoneCount: event.target.value })} /></Label>
+                <Label className="product-field"><span>Wait after milestone (hours)</span><Input type="number" min="0" max="168" step="1" value={delay} disabled={busyId === recipe.id} onChange={(event) => updateRecipe(recipe.id, { delayHours: event.target.value })} /></Label>
               </>}
-              <label className="product-field"><span>Email subject</span><input maxLength="160" value={recipe.config.subject} disabled={busyId === recipe.id} onChange={(event) => updateRecipe(recipe.id, { config: { ...recipe.config, subject: event.target.value } })} /></label>
-              <label className="product-field automation-body-field"><span>Email message</span><textarea rows="4" maxLength="3000" value={recipe.config.body} disabled={busyId === recipe.id} onChange={(event) => updateRecipe(recipe.id, { config: { ...recipe.config, body: event.target.value } })} /><small>Use <code>{"{{waitlist}}"}</code>{recipe.type === "REFERRAL_MILESTONE" ? <> and <code>{"{{referral_count}}"}</code></> : null} to personalize.</small></label>
-              <div className="automation-editor-actions"><button className="product-button product-button-outline" type="button" onClick={() => save(recipe)} disabled={busyId === recipe.id || !hasValidValues(recipe)}>{busyId === recipe.id ? "Saving…" : "Save recipe"}</button><span>Changes create a version; scheduled runs keep their saved version.</span></div>
+              <Label className="product-field"><span>Email subject</span><Input maxLength="160" value={recipe.config.subject} disabled={busyId === recipe.id} onChange={(event) => updateRecipe(recipe.id, { config: { ...recipe.config, subject: event.target.value } })} /></Label>
+              <Label className="product-field automation-body-field"><span>Email message</span><Textarea rows="4" maxLength="3000" value={recipe.config.body} disabled={busyId === recipe.id} onChange={(event) => updateRecipe(recipe.id, { config: { ...recipe.config, body: event.target.value } })} /><small>Use <code>{"{{waitlist}}"}</code>{recipe.type === "REFERRAL_MILESTONE" ? <> and <code>{"{{referral_count}}"}</code></> : null} to personalize.</small></Label>
+              <div className="automation-editor-actions"><Button type="button" variant="outline" onClick={() => save(recipe)} disabled={busyId === recipe.id || !hasValidValues(recipe)}>{busyId === recipe.id ? "Saving…" : "Save recipe"}</Button><span>Changes create a version; scheduled runs keep their saved version.</span></div>
             </div>
-          </details>
+          </CollapsibleContent></Collapsible>
         </article>;
       })}
       </div>

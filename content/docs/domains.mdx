@@ -1,0 +1,40 @@
+---
+title: Custom domains
+description: Connect a verified domain to a published waitlist.
+---
+
+## Add your domain
+
+Open a waitlist's Settings → Custom domain. Enter the hostname you want to use, such as `join.example.com`. Owners and admins can manage this connection.
+
+<Callout title="Availability depends on deployment setup">
+If custom domains are unavailable, the deployment must have the domain provider configured. The Waitlyze hosted page remains available after publication.
+</Callout>
+
+## Verify DNS and ownership
+
+<Steps>
+<Step>
+### Add the exact records shown
+Copy the DNS record type, name, and value from the application to your DNS provider. Use the records displayed for your hostname rather than a generic hardcoded target.
+</Step>
+<Step>
+### Check again after propagation
+Choose Check again. Status may move through ownership check pending and DNS or certificate setup pending before it becomes Ready.
+</Step>
+<Step>
+### Resolve any remaining issue
+If status needs attention, compare your DNS records with the current instructions and recheck. Certificate and DNS propagation may take time.
+</Step>
+</Steps>
+
+## Serve your published page
+
+The domain must be Ready and the waitlist must be published. Remove the domain connection to stop serving through it; this does not delete the waitlist or its Waitlyze hosted page.
+
+| Status | Meaning |
+| --- | --- |
+| Ownership check pending | The verification record has not been found yet. |
+| DNS / certificate setup pending | Ownership passed; DNS or the certificate is still propagating. |
+| Ready | The domain serves your published page. |
+| Needs attention | Compare your DNS records with the current instructions and recheck. |

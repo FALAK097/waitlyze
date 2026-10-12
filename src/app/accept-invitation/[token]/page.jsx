@@ -5,7 +5,7 @@ import prisma from "@/lib/prisma";
 import { loadWorkspaceInvitation, normalizeInvitationEmail } from "@/lib/workspaces/invitations.mjs";
 import { InvitationAcceptButton, InvitationSignIn, InvitationSwitchAccount } from "@/components/product/invitation-acceptance";
 import PublicShell from "@/components/landing/public-shell";
-import { buttonVariants } from "@/components/product/button-variants";
+import { buttonVariants } from "@/components/ui/button";
 import "@/components/product/shell.css";
 
 export const metadata = { title: "Workspace invitation", robots: { index: false, follow: false }, referrer: "no-referrer" };

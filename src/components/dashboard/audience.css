@@ -13,7 +13,7 @@
 .product-audience table th { border-bottom: 1px solid var(--product-border-subtle); font-size: .8125rem; }
 .product-audience table td { font-size: .875rem; padding-block: 18px; }
 .product-audience-row button { text-align: start; min-height: 40px; }
-.product-audience-row button:focus-visible { outline: 2px solid var(--product-focus); outline-offset: 3px; border-radius: 3px; }
+.product-audience-row button:focus-visible { outline: 2px solid var(--product-focus); outline-offset: 2px; border-radius: 3px; }
 .product-audience-pagination { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 16px; align-items: center; padding-block: 24px 0; color: var(--product-text-secondary); font-size: .8125rem; font-variant-numeric: tabular-nums; }
 .product-referral-review > header { margin-bottom: 28px; }
 .product-referral-review h2 { margin: 0 0 8px; font-size: 1.125rem; }

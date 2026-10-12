@@ -1,0 +1,95 @@
+---
+title: Webhooks
+description: Receive and verify signed signup events.
+---
+
+## Add an endpoint
+
+In your waitlist's Settings, add a public HTTPS endpoint and select `signup.created` or `signup.verified`. Copy the signing secret once. Your deployment must have webhook encryption and dispatch configured before delivery can run.
+
+## Event payload
+
+```json title="Signup event"
+{ "id": "EVENT_ID", "type": "signup.created", "version": 1, "occurredAt": "2026-10-11T00:00:00.000Z", "waitlistId": "WAITLIST_ID", "data": { "signupId": "SIGNUP_ID" } }
+```
+
+Subscriber emails are not included. A test event uses `{ "test": true }` in `data`. Return a successful HTTP status after durably accepting an event. Deduplicate by event ID because delivery may be retried.
+
+<TypeTable
+  type={{
+    id: {
+      type: "string",
+      required: true,
+      description: "Unique event ID. Persist it to deduplicate retried deliveries.",
+    },
+    type: {
+      type: '"signup.created" | "signup.verified"',
+      required: true,
+      description: "The event that fired.",
+    },
+    version: {
+      type: "number",
+      required: true,
+      description: "Payload version, currently 1.",
+    },
+    occurredAt: {
+      type: "string",
+      required: true,
+      description: "ISO-8601 timestamp of the event.",
+    },
+    waitlistId: {
+      type: "string",
+      required: true,
+      description: "The waitlist the signup belongs to.",
+    },
+    "data.signupId": {
+      type: "string",
+      required: true,
+      description: "The signup record. Subscriber emails are never included.",
+    },
+  }}
+/>
+
+## Verify the signature
+
+The `x-waitlyze-signature` header has the form `t=TIMESTAMP,v1=HEX_SIGNATURE`. Verify HMAC-SHA256 over the timestamp, a dot, and recursively sorted canonical JSON. Do not sign arbitrary raw request bytes. During rotation there may be multiple `v1` signatures; accept any valid signature.
+
+```js title="Verify before processing"
+import { createHmac, timingSafeEqual } from "node:crypto";
+
+function canonicalJson(value) {
+  if (Array.isArray(value)) return "[" + value.map(canonicalJson).join(",") + "]";
+  if (value && typeof value === "object") {
+    return "{" + Object.keys(value).sort().map(key =>
+      JSON.stringify(key) + ":" + canonicalJson(value[key])
+    ).join(",") + "}";
+  }
+  return JSON.stringify(value);
+}
+
+export function verifyEvent(header, payload, secret, now = Date.now()) {
+  if (typeof header !== "string") return false;
+  const parts = header.split(",");
+  const timestamp = parts.find(part => part.startsWith("t="))?.slice(2);
+  if (!/^\d+$/.test(timestamp || "")) return false;
+  if (Math.abs(now / 1000 - Number(timestamp)) > 300) return false;
+  const expected = createHmac("sha256", secret)
+    .update(timestamp + "." + canonicalJson(payload)).digest();
+  return parts.filter(part => part.startsWith("v1="))
+    .some(part => {
+      const signature = part.slice(3);
+      if (!/^[a-f0-9]{64}$/i.test(signature)) return false;
+      return timingSafeEqual(expected, Buffer.from(signature, "hex"));
+    });
+}
+```
+
+Use your saved signing secret and reject requests outside the five-minute timestamp window. Verify before processing the payload; persist event IDs to reject duplicate processing. Inspect recent deliveries, send tests, rotate the secret, or replay failed deliveries in waitlist settings.
+
+## Deliveries and recovery
+
+Recent deliveries show queue status, response status, and a failure code when available. Send a test before processing real events. Pause an endpoint to stop accepting new queued events, then resume when ready. Failed deliveries can be replayed from the same settings screen.
+
+<Callout type="warn" title="Handle repeat delivery safely">
+Deduplicate by `id` or `x-waitlyze-event-id`, verify the signature, and return a successful status only after durably accepting the event. A test payload is not a real subscriber.
+</Callout>

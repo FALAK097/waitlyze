@@ -24,23 +24,27 @@ const ColorPicker = (
 
 	return (
 		<Popover onOpenChange={setOpen} open={open}>
-			<PopoverTrigger asChild disabled={disabled} onBlur={onBlur}>
-				<Button
-					{...props}
-					className={cn("block", className)}
-					name={name}
-					onClick={() => {
-						setOpen(true);
-					}}
-					size="icon"
-					style={{
-						backgroundColor: parsedValue,
-					}}
-					variant="outline"
-				>
-					<div />
-				</Button>
-			</PopoverTrigger>
+			<PopoverTrigger
+				disabled={disabled}
+				onBlur={onBlur}
+				render={
+					<Button
+						{...props}
+						className={cn("block", className)}
+						name={name}
+						onClick={() => {
+							setOpen(true);
+						}}
+						size="icon"
+						style={{
+							backgroundColor: parsedValue,
+						}}
+						variant="outline"
+					>
+						<div />
+					</Button>
+				}
+			/>
 			<PopoverContent className="w-full">
 				<HexColorPicker color={parsedValue} onChange={onChange} />
 				<Input

@@ -1,8 +1,10 @@
 "use client";
 
+import { HugeiconsIcon } from "@hugeicons/react";
+import { CodeIcon, FloppyDiskIcon, Mail01Icon, Share01Icon } from "@hugeicons/core-free-icons";
 import { useQueryState } from "nuqs";
 import { removeImage } from "@/app/actions/waitLists";
-import { Button } from "@/components/product/button";
+import { Button } from "@/components/ui/button";
 import { notifySettingsResult } from "@/components/product/settings-feedback";
 import styles from "./legacy-editor.module.css";
 import {
@@ -17,7 +19,6 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { CodeIcon, Save, ShareIcon, Mail } from "lucide-react";
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { CopyIcon } from "../shared/icons";
@@ -35,14 +36,18 @@ import Link from "next/link";
 const EmbedModal = ({ waitList, origin }) => {
   return (
     <Dialog>
-      <Tooltip delayDuration={100}>
-        <TooltipTrigger asChild>
-          <DialogTrigger asChild>
-            <Button variant="ghost" size="icon" aria-label="Embed instructions">
-              <CodeIcon className="w-4 h-4" />
-            </Button>
-          </DialogTrigger>
-        </TooltipTrigger>
+      <Tooltip>
+        <TooltipTrigger
+          render={
+            <DialogTrigger
+              render={
+                <Button variant="ghost" size="icon" aria-label="Embed instructions">
+                  <HugeiconsIcon icon={CodeIcon} className="w-4 h-4" />
+                </Button>
+              }
+            />
+          }
+        />
         <TooltipContent side="bottom">Embed form</TooltipContent>
       </Tooltip>
       <DialogContent className="sm:max-w-[625px]">
@@ -74,9 +79,7 @@ const EmbedModal = ({ waitList, origin }) => {
           </div>
         </div>
         <DialogFooter>
-          <DialogClose asChild>
-            <Button variant="outline">Done</Button>
-          </DialogClose>
+          <DialogClose render={<Button variant="outline">Done</Button>} />
         </DialogFooter>
       </DialogContent>
     </Dialog>
@@ -417,21 +420,25 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
     <div className={styles.editor}>
       <div>
         <header className={styles.header}><div><h2>Form editor</h2><p>Customize the form, then save your changes.</p></div><div className={styles.toolbar}>
-          <TooltipProvider>
+          <TooltipProvider delay={100}>
             <div className={styles.toolbarActions}>
-              <Tooltip delayDuration={100}>
-                <TooltipTrigger asChild>
-                  <Button disabled={isSaving} onClick={handleSave}><Save className="w-4 h-4" aria-hidden="true" />{isSaving ? "Saving…" : "Save changes"}</Button>
-                </TooltipTrigger>
+              <Tooltip>
+                <TooltipTrigger
+                  render={
+                    <Button disabled={isSaving} onClick={handleSave}><HugeiconsIcon icon={FloppyDiskIcon} className="w-4 h-4" aria-hidden="true" />{isSaving ? "Saving…" : "Save changes"}</Button>
+                  }
+                />
                 <TooltipContent side="bottom">
                   Save changes
                 </TooltipContent>
               </Tooltip>
 
-              <Tooltip delayDuration={100}>
-                <TooltipTrigger asChild>
-                  <Link className={styles.secondaryLink} href={`/wait-lists/${initialWaitList.id}/emails`}><Mail className="w-4 h-4" aria-hidden="true" /><span>Email templates</span></Link>
-                </TooltipTrigger>
+              <Tooltip>
+                <TooltipTrigger
+                  render={
+                    <Link className={styles.secondaryLink} href={`/wait-lists/${initialWaitList.id}/emails`}><HugeiconsIcon icon={Mail01Icon} className="w-4 h-4" aria-hidden="true" /><span>Email templates</span></Link>
+                  }
+                />
                 <TooltipContent side="bottom">
                   Email templates
                 </TooltipContent>
@@ -439,15 +446,19 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
 
               <EmbedModal waitList={initialWaitList} origin={origin} />
 
-              <Dialog>
-                <Tooltip delayDuration={100}>
-                  <TooltipTrigger asChild>
-                    <DialogTrigger asChild>
-                      <Button variant="ghost" size="icon" aria-label="Share waitlist">
-                        <ShareIcon className="w-4 h-4" />
-                      </Button>
-                    </DialogTrigger>
-                  </TooltipTrigger>
+                <Dialog>
+                <Tooltip>
+                  <TooltipTrigger
+                    render={
+                      <DialogTrigger
+                        render={
+                          <Button variant="ghost" size="icon" aria-label="Share waitlist">
+                            <HugeiconsIcon icon={Share01Icon} className="w-4 h-4" />
+                          </Button>
+                        }
+                      />
+                    }
+                  />
                   <TooltipContent side="bottom">
                     Share link
                   </TooltipContent>
@@ -476,7 +487,7 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
                       type="submit"
                       size="sm"
                       className="px-3"
-                    >
+                     variant="ghost">
                       <span className="sr-only">Copy</span>
                       <CopyIcon />
                     </Button>

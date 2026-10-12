@@ -1,0 +1,26 @@
+---
+title: Referrals
+description: Understand sharing links, verified credit, and queue position.
+---
+
+## Enable sharing
+
+In the waitlist Settings, turn on Enable referral sharing. Subscribers can then invite others using a personal referral link.
+
+## Verified referral credit
+
+Credit requires both email addresses to be verified and the referral to be eligible. Self-referrals, duplicate signups, and referrals under review do not automatically count as approved growth.
+
+<Callout title="Two ways to pass a referral">
+Hosted pages use the link's `r` parameter. A server-side [signup request](/docs/api) passes the code in the optional `referralCode` body field. The code must belong to the same waitlist.
+</Callout>
+
+| Channel | How the code travels |
+| --- | --- |
+| Hosted page | `?r=CODE` query parameter on the shared link. |
+| Embed | Forwarded from your page URL, like the hosted page. |
+| Signup API | `referralCode` field in the JSON body. |
+
+## Queue position
+
+The product calculates position using eligible campaign referrals and signup ordering. Treat position as current campaign state, not a guaranteed reward or invitation to access your product. Referrals do not automatically deliver rewards or release access.

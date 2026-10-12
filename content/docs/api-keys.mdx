@@ -1,0 +1,35 @@
+---
+title: API keys
+description: Create, store, replace, and revoke waitlist API keys.
+---
+
+## Create and store a key
+
+<Steps>
+<Step>
+### Open API keys
+In [Settings → Integrations](/settings?section=integrations), choose API keys. Workspace owners and admins can create keys for waitlists they manage.
+</Step>
+<Step>
+### Choose a waitlist and expiry
+Name the key and select its waitlist. Choose an expiry of 30 days, 90 days, one year, or never. A waitlist has one active key at a time.
+</Step>
+<Step>
+### Save the secret once
+Reveal or copy the newly created key before closing the panel. Keep it in a server environment variable such as `WAITLYZE_API_KEY`. Waitlyze stores its hash and cannot return the plaintext later.
+</Step>
+</Steps>
+
+## Replace or revoke a key
+
+Revoke the old key, confirm the access loss, then create its replacement. Update your server configuration and test a signup request. Revocation immediately stops requests using the old key.
+
+<Callout type="warn" title="Plan for the replacement window">
+The current model has one active key per waitlist. Revoke → create may briefly interrupt integrations. There is no overlapping-key rotation or automatic default workspace key.
+</Callout>
+
+## Scope and access
+
+The UI creates `waitlist:write` keys, limited to signup creation for the selected waitlist. These keys cannot list subscribers, change pages, manage a workspace, or authenticate dashboard-only `/api/v1` routes.
+
+See the [Signup API](/docs/api) for the exact request contract.

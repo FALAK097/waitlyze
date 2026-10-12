@@ -3,12 +3,13 @@
 import { formatProductDate } from "@/lib/product-date.mjs";
 
 import { useActionState, useEffect, useState, useTransition } from "react";
-import { Button } from "@/components/product/button";
-import { Input } from "@/components/product/input";
+import { Button } from "@/components/ui/button";
+import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
+import { Input } from "@/components/ui/input";
 import { inviteWorkspaceMember, resendWorkspaceInvitation, revokeWorkspaceInvite } from "@/app/actions/workspace-invitations";
-import { Dialog, DialogTrigger, DialogContent, DialogTitle, DialogDescription } from "@/components/product/dialog";
+import { Dialog, DialogTrigger, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { notifySettingsResult, useSettingsFeedback } from "@/components/product/settings-feedback";
-import { Avatar } from "@/components/product/avatar";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 
 function formatDate(value) {
   return formatProductDate(value, { includeTime: false });
@@ -54,7 +55,7 @@ export function TeamAccessSettings({ workspaceId, members, invitations, canManag
       <h3 id="team-members-heading" className="sr-only">Members</h3>
 
       <ul>{members.map((member) => <li key={member.userId}>
-        <Avatar id={member.userId} src={member.user.image || member.user.imageUrl} size={36} />
+        <Avatar aria-hidden="true"><AvatarImage src={member.user.image || member.user.imageUrl} alt="" /><AvatarFallback>{(member.user.name || member.user.email || "?").slice(0, 1).toUpperCase()}</AvatarFallback></Avatar>
         <span className="product-team-person"><strong>{member.user.name || member.user.email}</strong><span>{member.user.email}</span></span>
         <span className="product-team-role">{member.role.toLowerCase()}</span>
       </li>)}</ul>
@@ -83,7 +84,7 @@ function InvitationForm({ workspaceId, canInviteAdmins, onComplete }) {
   return <form action={action} className="product-team-invite-form">
     <input type="hidden" name="workspaceId" value={workspaceId} />
     <label className="product-team-field">Email address<Input type="email" name="email" autoComplete="email" required maxLength={254} placeholder="teammate@company.com" aria-invalid={Boolean(state.error)} aria-describedby={state.error ? "team-invite-error" : undefined} /></label>
-    <label className="product-team-field">Role<select name="role" defaultValue="MEMBER"><option value="MEMBER">Member</option>{canInviteAdmins ? <option value="ADMIN">Admin</option> : null}</select></label>
+    <label className="product-team-field">Role<NativeSelect name="role" defaultValue="MEMBER"><NativeSelectOption value="MEMBER">Member</NativeSelectOption>{canInviteAdmins ? <NativeSelectOption value="ADMIN">Admin</NativeSelectOption> : null}</NativeSelect></label>
     <p className="product-help">Members can edit waitlists. Admins can also manage workspace settings.</p>
     {state.error ? <p id="team-invite-error" className="product-team-announcement" role="alert">{state.error}</p> : null}
     <Button type="submit" disabled={pending} aria-busy={pending}>{pending ? "Sending invitation…" : "Send invitation"}</Button>

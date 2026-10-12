@@ -1,7 +1,9 @@
 "use client";
 
-import { Button } from "./button";
-import { Input } from "./input";
+import { Label } from "@/components/ui/label";
+
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { notifySettingsResult } from "./settings-feedback";
 import { useCallback, useEffect, useState } from "react";
 
@@ -101,7 +103,7 @@ export function CustomDomainSettings({ waitListId, canManage, available }) {
     </div>}
 
     {loadState === "ready" && !domain && <form onSubmit={(event) => { event.preventDefault(); call("POST", { hostname }); }}>
-      {available ? <><label className="product-field"><span>Domain name</span><Input autoComplete="url" value={hostname} onChange={(event) => setHostname(event.target.value)} placeholder="launch.example.com" required disabled={!canManage || busy} /></label>
+      {available ? <><div className="product-field"><Label><span>Domain name</span><Input autoComplete="url" value={hostname} onChange={(event) => setHostname(event.target.value)} placeholder="launch.example.com" required disabled={!canManage || busy} /></Label></div>
       <Button type="submit" disabled={!actionsEnabled || !hostname.trim()}>{busy ? "Connecting…" : "Connect domain"}</Button></> : <p className="product-help">Custom domains are unavailable. Ask your administrator to finish domain setup.</p>}
       {!canManage && <p className="product-help">An owner or admin can connect a domain.</p>}
     </form>}

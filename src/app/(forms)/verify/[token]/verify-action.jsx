@@ -1,5 +1,11 @@
 "use client";
 
+import { Label } from "@/components/ui/label";
+
+import { Input } from "@/components/ui/input";
+
+import { Button } from "@/components/ui/button";
+
 import { useState } from "react";
 
 export function VerifyAction({ token, returnPath }) {
@@ -45,14 +51,14 @@ export function VerifyAction({ token, returnPath }) {
         <p className="verify-eyebrow">WAITLYZE</p>
         <h1 id="verify-title">{state === "success" ? "You’re confirmed" : "Confirm your email"}</h1>
         <p>{state === "success" ? "Your email is verified and your place is secured." : "Confirm this address to secure your place on the waitlist."}</p>
-        {state === "ready" || state === "loading" ? <button type="button" onClick={verify} disabled={state === "loading"}>{state === "loading" ? "Confirming…" : "Confirm email"}</button> : null}
+        {state === "ready" || state === "loading" ? <Button type="button" onClick={verify} disabled={state === "loading"}>{state === "loading" ? "Confirming…" : "Confirm email"}</Button> : null}
         {referralUrl ? (
           <div className="verify-referral">
             <p>Invite a friend to {referral.waitListName}.</p>
-            <label htmlFor="verify-referral-link">Your referral link</label>
+            <Label htmlFor="verify-referral-link">Your referral link</Label>
             <div className="verify-referral-row">
-              <input id="verify-referral-link" value={referralUrl} readOnly />
-              <button type="button" onClick={copyReferralLink}>Copy link</button>
+              <Input id="verify-referral-link" value={referralUrl} readOnly />
+              <Button type="button" onClick={copyReferralLink}>Copy link</Button>
             </div>
             <p role="status" aria-live="polite">{copyMessage}</p>
             {referral.position ? <p>Your position: <strong>#{referral.position}</strong></p> : null}

@@ -1,8 +1,11 @@
 "use client";
 
+import { HugeiconsIcon } from "@hugeicons/react";
+import { Cancel01Icon, CloudUploadIcon, Image01Icon } from "@hugeicons/core-free-icons";
+import { Button } from "@/components/ui/button";
+
 import { cn } from "@/lib/utils";
 import { useR2Upload } from "@/utils/r2-upload";
-import { X, UploadCloud, FileImage } from "lucide-react";
 import Image from "next/image";
 import { useState, useRef } from "react";
 import toast from "react-hot-toast";
@@ -81,15 +84,15 @@ export default function UploadImage({ value, onSuccess, onClear, disabled }) {
             className="object-contain p-2 transition-transform duration-500 group-hover:scale-105"
           />
           {!disabled && (
-            <button
+            <Button
               type="button"
               onClick={handleClear}
               className="absolute right-3 top-3 rounded-full bg-destructive/90 p-1.5 text-white shadow-md transition-all duration-200 hover:bg-destructive hover:scale-110 group-hover:opacity-100 lg:opacity-0"
               disabled={disabled}
-            >
-              <X className="w-4 h-4" />
+             variant="ghost">
+              <HugeiconsIcon icon={Cancel01Icon} className="w-4 h-4" />
               <span className="sr-only">Remove image</span>
-            </button>
+            </Button>
           )}
         </div>
       </div>
@@ -120,7 +123,7 @@ export default function UploadImage({ value, onSuccess, onClear, disabled }) {
         {isUploading ? (
           <div className="flex flex-col items-center gap-4 w-full max-w-[260px]">
             <div className="relative flex items-center justify-center">
-              <FileImage className="w-10 h-10 text-primary animate-pulse" />
+              <HugeiconsIcon icon={Image01Icon} className="w-10 h-10 text-primary animate-pulse" />
             </div>
             <div className="w-full space-y-2">
               <div className="flex items-center justify-between text-xs font-semibold text-muted-foreground">
@@ -138,7 +141,7 @@ export default function UploadImage({ value, onSuccess, onClear, disabled }) {
         ) : (
           <div className="flex flex-col items-center gap-3">
             <div className="p-3 transition-transform duration-300 border rounded-full shadow-sm bg-background border-muted-foreground/10 hover:scale-110">
-              <UploadCloud className="w-6 h-6 text-primary" />
+              <HugeiconsIcon icon={CloudUploadIcon} className="w-6 h-6 text-primary" />
             </div>
             <div className="grid gap-1">
               <span className="text-sm font-semibold text-foreground">

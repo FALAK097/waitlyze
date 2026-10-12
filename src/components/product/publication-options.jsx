@@ -1,8 +1,11 @@
 "use client";
 
+import { HugeiconsIcon } from "@hugeicons/react";
+import { ArrowDown01Icon, Copy01Icon, LinkSquare01Icon } from "@hugeicons/core-free-icons";
+import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
+
 import { useId, useState } from "react";
-import { ChevronDown, Copy, ExternalLink } from "lucide-react";
-import { Button } from "./button";
+import { Button } from "@/components/ui/button";
 import { SITE_URL } from "@/lib/site-metadata";
 import styles from "./publication-options.module.css";
 
@@ -20,21 +23,21 @@ export function PublicationOptions({ waitList, origin = SITE_URL }) {
     catch { setMessage("Copy is unavailable. Select the text and copy it manually."); }
   }
   return <section className={styles.options} aria-labelledby={headingId}>
-    <details className={styles.disclosure}>
-      <summary><h2 id={headingId}>Share your page</h2><ChevronDown aria-hidden="true" /></summary>
+    <Collapsible className={styles.disclosure}>
+      <CollapsibleTrigger><h2 id={headingId}>Share your page</h2><HugeiconsIcon icon={ArrowDown01Icon} aria-hidden="true" /></CollapsibleTrigger><CollapsibleContent>
       {published ? <>
         <div className={styles.methodToggle} role="group" aria-label="Publication method"><Button variant="ghost" type="button" aria-pressed={method === "hosted"} onClick={() => setMethod("hosted")}>Hosted page</Button><Button variant="ghost" type="button" aria-pressed={method === "embed"} onClick={() => setMethod("embed")}>Website embed</Button></div>
         {method === "hosted" ? <div className={styles.method}>
           <p>Share this link to start collecting signups.</p>
-          <a className={styles.url} href={hostedUrl} target="_blank" rel="noopener noreferrer">{hostedUrl}<ExternalLink size={16} aria-hidden="true" /></a>
-          <Button type="button" variant="outline" onClick={() => copy(hostedUrl, "Page link")}><Copy aria-hidden="true" /> Copy page link</Button>
+          <a className={styles.url} href={hostedUrl} target="_blank" rel="noopener noreferrer">{hostedUrl}<HugeiconsIcon icon={LinkSquare01Icon} size={16} aria-hidden="true" /></a>
+          <Button type="button" variant="outline" onClick={() => copy(hostedUrl, "Page link")}><HugeiconsIcon icon={Copy01Icon} aria-hidden="true" /> Copy page link</Button>
         </div> : <div className={styles.method}>
           <p>Paste this snippet into your website. Adjust the height to fit your page.</p>
           <pre className={styles.code} tabIndex={0} aria-label="Website embed code"><code>{embedCode}</code></pre>
-          <Button type="button" variant="outline" onClick={() => copy(embedCode, "Embed code")}><Copy aria-hidden="true" /> Copy embed code</Button>
+          <Button type="button" variant="outline" onClick={() => copy(embedCode, "Embed code")}><HugeiconsIcon icon={Copy01Icon} aria-hidden="true" /> Copy embed code</Button>
         </div>}
         <p className={styles.status} role="status" aria-live="polite">{message || "Your published version is shared. Draft edits stay private."}</p>
       </> : <p>{waitList.status === "PAUSED" ? "Resume publication to collect signups through your hosted page or website embed." : "Publish to get a hosted link and website embed code."}</p>}
-    </details>
+    </CollapsibleContent></Collapsible>
   </section>;
 }

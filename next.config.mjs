@@ -1,3 +1,5 @@
+import { createMDX } from 'fumadocs-mdx/next';
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   images: {
@@ -17,4 +19,6 @@ const nextConfig = {
   serverExternalPackages: ["geoip-lite", "better-auth"],
 };
 
-export default nextConfig;
+const withMDX = createMDX();
+
+export default withMDX(nextConfig);

@@ -1,0 +1,42 @@
+---
+title: Hosted pages & embeds
+description: Share your page or embed it on your website.
+---
+
+## Hosted page
+
+Publish the page, then use the Hosted page option in the page builder to copy its URL. You can also [connect a custom domain](/docs/domains) in the waitlist settings.
+
+## Embed on your website
+
+Copy the embed code from the builder's Publish options. It includes your waitlist ID, not an API key.
+
+```html title="Embed snippet"
+<div class="waitlyze-widget"
+  data-key-id="YOUR_WAITLIST_ID" data-height="720px"></div>
+<script src="https://waitlyze.falakgala.dev/js/embed.js" defer></script>
+```
+
+<Callout title="Public embed, private API key">
+The embed uses a public waitlist ID and does not need a secret API key.
+</Callout>
+
+Place the snippet where the form should appear. Change `data-height` to fit the page; the embedded page scrolls when it needs more room. Referral and UTM parameters from your page are forwarded to the form.
+
+<TypeTable
+  type={{
+    "data-key-id": {
+      type: "string",
+      required: true,
+      description: "Your public waitlist ID. Find it in the builder's Publish options.",
+    },
+    "data-height": {
+      type: "string",
+      required: false,
+      default: "720px",
+      description: "Height of the embedded frame. The form scrolls internally when it needs more room.",
+    },
+  }}
+/>
+
+For local development, use your local Waitlyze origin instead of the production script URL.

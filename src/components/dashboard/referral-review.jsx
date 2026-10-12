@@ -1,12 +1,16 @@
 "use client";
 
+import { Label } from "@/components/ui/label";
+
+import { Textarea } from "@/components/ui/textarea";
+
 import { formatProductDate } from "@/lib/product-date.mjs";
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { resolveReferralReview } from "@/app/actions/referral-review";
 import { notifySettingsResult } from "@/components/product/settings-feedback";
-import { Button } from "@/components/product/button";
+import { Button } from "@/components/ui/button";
 
 const reasonText = {
   same_browser: "Invitee and referrer used the same browser identifier. This can be legitimate; review before granting credit.",
@@ -58,8 +62,8 @@ export function ReferralReview({ waitListId, initialReviews, initialLoadError = 
         <dl><div><dt>Referred by</dt><dd>{review.referredBy?.email || "Referrer unavailable"}</dd></div><div><dt>Joined</dt><dd>{formatDate(review.signUp.createdAt)}</dd></div></dl>
         <p className="product-help">{reasonText[review.reviewReason] || "This referral needs a manual eligibility decision."}</p>
         {review.reviewStatus === "NEEDS_REVIEW" && canManage && <div className="product-referral-decision">
-          <label htmlFor={`review-note-${review.id}`}>Decision note</label>
-          <textarea className="product-review-note" id={`review-note-${review.id}`} aria-invalid={Boolean(errors[review.id])} aria-describedby={`review-note-hint-${review.id}${errors[review.id] ? ` review-error-${review.id}` : ""}`} minLength={8} maxLength={240} value={notes[review.id] || ""} onChange={(event) => setNotes((current) => ({ ...current, [review.id]: event.target.value }))} rows={2} placeholder="Explain your decision" />
+          <Label htmlFor={`review-note-${review.id}`}>Decision note</Label>
+          <Textarea className="product-review-note" id={`review-note-${review.id}`} aria-invalid={Boolean(errors[review.id])} aria-describedby={`review-note-hint-${review.id}${errors[review.id] ? ` review-error-${review.id}` : ""}`} minLength={8} maxLength={240} value={notes[review.id] || ""} onChange={(event) => setNotes((current) => ({ ...current, [review.id]: event.target.value }))} rows={2} placeholder="Explain your decision" />
           <p id={`review-note-hint-${review.id}`} className="product-help">Use 8–240 characters.</p>
           {errors[review.id] && <p id={`review-error-${review.id}`} className="product-field-error" role="alert">{errors[review.id]}</p>}
           <div className="referral-review-actions"><Button variant="outline" disabled={Boolean(pendingId)} onClick={() => resolve(review, "APPROVED")}>{pendingId === review.id ? "Saving…" : "Approve credit"}</Button><Button variant="ghost" disabled={Boolean(pendingId)} onClick={() => resolve(review, "EXCLUDED")}>Exclude</Button></div>

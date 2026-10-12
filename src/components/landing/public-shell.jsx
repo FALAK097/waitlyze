@@ -1,5 +1,6 @@
+import { HugeiconsIcon } from "@hugeicons/react";
+import { ArrowUpRight01Icon } from "@hugeicons/core-free-icons";
 import Link from "next/link";
-import { ArrowUpRight } from "lucide-react";
 import { publicFontClasses } from "@/lib/public-fonts";
 import Header from "./header";
 import Wordmark from "./wordmark";
@@ -34,7 +35,7 @@ export default function PublicShell({ children }) {
             <Link href="/privacy">Privacy policy</Link>
             <Link href="/terms">Terms of service</Link>
             <a href="mailto:hi@falakgala.dev">
-              Get in touch <ArrowUpRight size={14} aria-hidden="true" />
+              Get in touch <HugeiconsIcon icon={ArrowUpRight01Icon} size={14} aria-hidden="true" />
             </a>
           </nav>
         </div>
@@ -45,7 +46,7 @@ export default function PublicShell({ children }) {
             target="_blank"
             rel="noopener noreferrer"
           >
-            Made by Falak Gala <ArrowUpRight size={14} aria-hidden="true" />
+            Made by Falak Gala <HugeiconsIcon icon={ArrowUpRight01Icon} size={14} aria-hidden="true" />
           </a>
         </div>
         </div>
