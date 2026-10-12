@@ -111,6 +111,49 @@ export function createWorkspaceService(db) {
         return { id: workspace.id, name: workspace.name, waitlistCount: waitlistIds.length };
       });
     },
+    async removeWorkspaceMember(userId, workspaceId, targetUserId) {
+      actor(userId);
+      if (typeof workspaceId !== "string" || !workspaceId) throw new AccessError();
+      if (typeof targetUserId !== "string" || !targetUserId) throw new AccessError();
+      if (targetUserId === userId) throw new TypeError("You cannot remove yourself from a workspace.");
+      return db.$transaction(async (tx) => {
+        const [actor, target] = await Promise.all([
+          tx.workspaceMember.findUnique({ where: { workspaceId_userId: { workspaceId, userId } }, select: { role: true } }),
+          tx.workspaceMember.findUnique({ where: { workspaceId_userId: { workspaceId, userId: targetUserId } }, select: { role: true, user: { select: { name: true, email: true } } } }),
+        ]);
+        if (!actor || !["OWNER", "ADMIN"].includes(actor.role)) throw new AccessError();
+        if (!target) throw new AccessError();
+        if (target.role === "OWNER") {
+          const owners = await tx.workspaceMember.count({ where: { workspaceId, role: "OWNER" } });
+          if (owners < 2) throw new TypeError("A workspace needs at least one owner.");
+        }
+        await tx.workspaceMember.delete({ where: { workspaceId_userId: { workspaceId, userId: targetUserId } } });
+        return { userId: targetUserId, name: target.user.name, email: target.user.email };
+      });
+    },
+    async changeWorkspaceMemberRole(userId, workspaceId, targetUserId, role) {
+      actor(userId);
+      if (typeof workspaceId !== "string" || !workspaceId) throw new AccessError();
+      if (typeof targetUserId !== "string" || !targetUserId) throw new AccessError();
+      if (!["MEMBER", "ADMIN"].includes(role)) throw new TypeError("Choose Member or Admin.");
+      if (targetUserId === userId) throw new TypeError("You cannot change your own role.");
+      return db.$transaction(async (tx) => {
+        const [actor, target] = await Promise.all([
+          tx.workspaceMember.findUnique({ where: { workspaceId_userId: { workspaceId, userId } }, select: { role: true } }),
+          tx.workspaceMember.findUnique({ where: { workspaceId_userId: { workspaceId, userId: targetUserId } }, select: { role: true, user: { select: { name: true, email: true } } } }),
+        ]);
+        if (!actor || !["OWNER", "ADMIN"].includes(actor.role)) throw new AccessError();
+        if (!target) throw new AccessError();
+        if (role === "ADMIN" && actor.role !== "OWNER") throw new AccessError();
+        if (target.role === "OWNER" && role !== "OWNER") {
+          const owners = await tx.workspaceMember.count({ where: { workspaceId, role: "OWNER" } });
+          if (owners < 2) throw new TypeError("A workspace needs at least one owner.");
+        }
+        if (target.role === role) return { userId: targetUserId, name: target.user.name, email: target.user.email, unchanged: true };
+        await tx.workspaceMember.update({ where: { workspaceId_userId: { workspaceId, userId: targetUserId } }, data: { role } });
+        return { userId: targetUserId, name: target.user.name, email: target.user.email, role };
+      });
+    },
     async campaign(userId, id, permission = "viewCampaign", workspaceId) {
       if (typeof id !== "string" || !id) throw new AccessError();
       const campaign = await db.waitList.findFirst({ where: { id, ...campaignScope(userId, permission, workspaceId) } });

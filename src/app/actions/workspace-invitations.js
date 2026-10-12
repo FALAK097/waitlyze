@@ -181,6 +181,36 @@ export async function revokeWorkspaceInvite(invitationId, workspaceId) {
   }
 }
 
+export async function removeWorkspaceMember(memberUserId, workspaceId) {
+  const session = await auth.api.getSession({ headers: await headers() });
+  if (!session?.user?.id || typeof memberUserId !== "string" || typeof workspaceId !== "string") return { error: "Sign in again to manage members." };
+  try {
+    const removed = await createWorkspaceService(prisma).removeWorkspaceMember(session.user.id, workspaceId, memberUserId);
+    await recordAuditEvent(prisma, { workspaceId, userId: session.user.id, action: AUDIT_ACTIONS.MEMBER_REMOVED, resourceType: "member", resourceId: memberUserId, resourceName: removed.name || removed.email });
+    revalidatePath("/settings");
+    return { success: `${removed.name || removed.email || "Member"} was removed from the workspace.` };
+  } catch (error) {
+    if (error instanceof TypeError) return { error: error.message };
+    return { error: "Could not remove this member. Try again." };
+  }
+}
+
+export async function changeWorkspaceMemberRole(memberUserId, workspaceId, role) {
+  const session = await auth.api.getSession({ headers: await headers() });
+  if (!session?.user?.id || typeof memberUserId !== "string" || typeof workspaceId !== "string") return { error: "Sign in again to manage members." };
+  try {
+    const changed = await createWorkspaceService(prisma).changeWorkspaceMemberRole(session.user.id, workspaceId, memberUserId, role);
+    if (!changed.unchanged) {
+      await recordAuditEvent(prisma, { workspaceId, userId: session.user.id, action: AUDIT_ACTIONS.MEMBER_ROLE_CHANGED, resourceType: "member", resourceId: memberUserId, resourceName: changed.name || changed.email, detail: `Role set to ${role === "ADMIN" ? "Admin" : "Member"}` });
+    }
+    revalidatePath("/settings");
+    return { success: changed.unchanged ? "Role is already set." : `${changed.name || changed.email || "Member"} is now ${role === "ADMIN" ? "an admin" : "a member"}.` };
+  } catch (error) {
+    if (error instanceof TypeError) return { error: error.message };
+    return { error: "Could not change this role. Try again." };
+  }
+}
+
 export async function acceptWorkspaceInvite(previous, form) {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session?.user?.id) return { error: "Sign in with the invited account to continue." };

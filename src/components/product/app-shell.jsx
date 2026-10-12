@@ -102,7 +102,7 @@ function AccountMenu({ user, avatar }) {
   }
   return <div className="app-account-control"><DropdownMenu><DropdownMenuTrigger render={<Button variant="ghost" size="icon" />} aria-label="Open account menu">{avatar}</DropdownMenuTrigger><DropdownMenuContent align="end" sideOffset={8}>
     <div className="app-account-details">{avatar}<div><strong>{user.name || "Account"}</strong><span>{user.email}</span></div></div>
-    <DropdownMenuItem variant="destructive" onClick={leave} disabled={pending}><HugeiconsIcon icon={Logout01Icon} aria-hidden="true" />{pending ? "Signing out…" : "Sign out"}</DropdownMenuItem>
+    <DropdownMenuItem variant="destructive" className="cursor-pointer" onClick={leave} disabled={pending}><HugeiconsIcon icon={Logout01Icon} aria-hidden="true" />{pending ? "Signing out…" : "Sign out"}</DropdownMenuItem>
   </DropdownMenuContent></DropdownMenu></div>;
 }
 

@@ -51,6 +51,8 @@ export const AUDIT_ACTIONS = Object.freeze({
   WORKSPACE_CREATED: "workspace.created",
   WORKSPACE_DELETED: "workspace.deleted",
   MEMBER_INVITED: "member.invited",
+  MEMBER_REMOVED: "member.removed",
+  MEMBER_ROLE_CHANGED: "member.role_changed",
   INVITATION_RESENT: "invitation.resent",
   INVITATION_REVOKED: "invitation.revoked",
   MEMBER_JOINED: "member.joined",
