@@ -19,7 +19,7 @@ function SidebarFooter() {
 }
 
 export default function Layout({ children }) {
-  return <RootProvider theme={{ enabled: false }} search={{ options: { api: "/api/docs/search" }, links: [["Get started", "/docs"], ["Publish a waitlist", "/docs/publishing"], ["Signup API", "/docs/api"], ["Embed a form", "/docs/embed"], ["Automations", "/docs/automations"], ["Webhooks", "/docs/webhooks"], ["Troubleshooting", "/docs/troubleshooting"]] }}><DocsLayout
+  return <RootProvider theme={{ enabled: false }} search={{ options: { api: "/api/docs/search" }, links: [["Introduction", "/docs"], ["Publish a waitlist", "/docs/publishing"], ["Signup API", "/docs/api"], ["Embed a form", "/docs/embed"], ["Automations", "/docs/automations"], ["Webhooks", "/docs/webhooks"], ["Troubleshooting", "/docs/troubleshooting"]] }}><DocsLayout
     tree={source.getPageTree()}
     sidebar={{ defaultOpenLevel: 2, footer: <SidebarFooter /> }}
     nav={{ title: <DocsMark />, url: "/" }}

@@ -1,3 +1,4 @@
+import { createElement } from 'react';
 import { docs } from '../../.source/server';
 import { loader, llms } from 'fumadocs-core/source';
 import { docsRoute } from './docs-shared';
@@ -5,6 +6,17 @@ import { docsRoute } from './docs-shared';
 export const source = loader({
   baseUrl: docsRoute,
   source: docs.toFumadocsSource(),
+  icon: (icon) => {
+    if (icon === 'resend') {
+      return createElement('img', {
+        src: '/integrations/resend.svg',
+        alt: '',
+        width: 16,
+        height: 16,
+        style: { width: 16, height: 16, flexShrink: 0 },
+      });
+    }
+  },
 });
 
 export const docsLlms = llms(source, {
