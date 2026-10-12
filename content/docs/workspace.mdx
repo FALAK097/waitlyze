@@ -1,0 +1,77 @@
+---
+title: Workspace and roles
+description: Manage members, invitations, audit log, and account data.
+---
+
+Workspace controls live at `/settings?section=profile|team|integrations`. Your current workspace scopes the `/waitlists` list, and switching workspaces changes what you see.
+
+## Roles at a glance
+
+| Capability | Owner | Admin | Member |
+| --- | --- | --- | --- |
+| View and edit campaigns and audiences | Yes | Yes | Yes |
+| Publish, pause, roll back | Yes | Yes | No |
+| Send email (templates, broadcasts, automations) | Yes | Yes | No |
+| Manage connections (Resend, API keys, domains, webhooks) | Yes | Yes | No |
+| Delete campaigns | Yes | Yes | No |
+| Manage workspace (invite, remove, change roles) | Yes | Yes, except cannot invite admins | No |
+| Delete workspace | Yes | Yes | No |
+| View audit log | Yes | Yes | Depends on deployment |
+
+Only owners can invite new **admins**. Admins can invite **members**. Personal workspaces behave like owned workspaces with a single owner.
+
+## Profile
+
+Settings → **Profile** shows your name and sign-in email. Email is managed by your sign-in provider and cannot be edited here. Update your display name and it reflects in audit entries and member lists.
+
+## Members and invitations
+
+Settings → **Members** lists people with access plus pending invitations.
+
+<Steps>
+<Step>
+### Invite by email and role
+Choose **Invite**, enter the address, and pick Member or Admin (owners only for Admin). The app caps at 50 pending invitations per workspace.
+</Step>
+<Step>
+### They accept before expiry
+Invitees receive a link to `/accept-invitation/[token]`. Expired or already-used tokens show a safe error without leaking membership.
+</Step>
+<Step>
+### Manage access
+Resend, revoke, or change roles from the same panel. Removals take effect immediately; the member's waitlist URLs start returning 404.
+</Step>
+</Steps>
+
+Invitation state moves through `PENDING` → accepted, or `SEND_FAILED` when mail could not be queued, or `EXPIRED` after the window. Every invite, resend, revoke, and role change writes an audit event.
+
+<Callout title="Secure invites need encryption configured">
+If member invites cannot be created, the deployment lacks `WEBHOOK_SECRET_ENCRYPTION_KEY`. Contact your administrator — this is a deployment setting, not a docs fix.
+</Callout>
+
+## Integrations
+
+Settings → **Integrations** holds workspace-level connections:
+
+- **Resend** sender connection and test. See [Resend](/docs/resend).
+- **API keys** per waitlist with expiry and one-active-key rule. See [API keys](/docs/api-keys).
+
+Legacy `#developers` hashes redirect to this section. Bookmark `?section=integrations` going forward.
+
+## Audit log
+
+Where available, Settings supports `?section=audit` showing the newest 200 events first: who did what, to which resource, and when. Covered actions include waitlist created/published/paused, member invited, and publication changes. If the query fails, the panel offers a retry without losing navigation.
+
+## Account export and workspace delete
+
+- **Account export** (`GET /api/settings/export`, signed in) downloads your profile, memberships, campaigns with templates and recipe versions, keys metadata (never plaintext), integrations status, domains, webhooks, and email templates. Use it before deleting anything.
+- **Delete workspace** (`?section=delete`, owners/admins only) permanently removes the workspace and everything in it. Export first — deletion has no undo. Personal workspaces warn before removal.
+- **Delete waitlist** lives instead in Waitlist settings → Delete waitlist. Export its CSV first. See [Subscribers](/docs/subscribers).
+
+## Next
+
+<Cards>
+<Card title="API keys" href="/docs/api-keys" description="Keys are workspace-scoped by waitlist." />
+<Card title="Resend" href="/docs/resend" description="Workspace sender connection." />
+<Card title="Troubleshooting" href="/docs/troubleshooting" description="Fix invites, roles, and exports." />
+</Cards>

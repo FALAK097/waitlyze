@@ -1,26 +1,53 @@
 ---
 title: Referrals
-description: Understand sharing links, verified credit, and queue position.
+description: Enable sharing links, earn verified credit, and read queue position.
 ---
+
+Referrals turn subscribers into inviters. Enable sharing, let verified subscribers share links, then review credit in Subscribers.
 
 ## Enable sharing
 
-In the waitlist Settings, turn on Enable referral sharing. Subscribers can then invite others using a personal referral link.
+In Waitlist settings → **Referral sharing**, turn on Enable referral sharing. Any editor with campaign access can toggle it. When on:
 
-## Verified referral credit
+- Confirmation states show a personal referral link.
+- Hosted, embed, and API signups can carry a code.
+- Subscribers tab gains a **Referral review** view.
 
-Credit requires both email addresses to be verified and the referral to be eligible. Self-referrals, duplicate signups, and referrals under review do not automatically count as approved growth.
+Turning it off hides new sharing UI but preserves existing referral records.
 
-<Callout title="Two ways to pass a referral">
-Hosted pages use the link's `r` parameter. A server-side [signup request](/docs/api) passes the code in the optional `referralCode` body field. The code must belong to the same waitlist.
+## How a code travels
+
+<Callout title="Codes are waitlist-scoped">
+A code belongs to one waitlist. Passing another waitlist's code via API is rejected.
 </Callout>
 
 | Channel | How the code travels |
 | --- | --- |
 | Hosted page | `?r=CODE` query parameter on the shared link. |
 | Embed | Forwarded from your page URL, like the hosted page. |
-| Signup API | `referralCode` field in the JSON body. |
+| Signup API | `referralCode` field in the JSON body. See [Signup API](/docs/api). |
+
+## Verified credit rules
+
+Credit counts only when **both** the inviter and the invited email are verified, the referral is eligible, and review status is `CLEAR` or `APPROVED`.
+
+These do **not** count automatically:
+
+- Self-referrals (same address inviting itself).
+- Duplicate signups for an already-registered email.
+- Referrals flagged `NEEDS_REVIEW` until an owner/admin approves them.
+- Unverified inviters or invitees.
+
+Open Subscribers → Referral review to approve or resolve flagged referrals. The list shows inviter, invitee, reason, and resolution for the latest 50 non-clear items.
 
 ## Queue position
 
-The product calculates position using eligible campaign referrals and signup ordering. Treat position as current campaign state, not a guaranteed reward or invitation to access your product. Referrals do not automatically deliver rewards or release access.
+Position uses eligible campaign referrals plus signup ordering. It answers “where am I right now?” — not “what reward do I get?” Referrals do not automatically deliver rewards or unlock product access. Build your own reward rules on top of verified counts and [webhook events](/docs/webhooks).
+
+## Next
+
+<Cards>
+<Card title="Signup and verification" href="/docs/signup-flow" description="Where referral codes enter the flow." />
+<Card title="Subscribers" href="/docs/subscribers" description="Review and export referral-driven growth." />
+<Card title="Automations" href="/docs/automations" description="Nudge inviters with reminder and milestone email." />
+</Cards>

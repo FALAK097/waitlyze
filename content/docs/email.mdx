@@ -1,49 +1,55 @@
 ---
 title: Email tools
-description: Manage templates, broadcasts, and consent-aware automations.
+description: Templates, broadcasts, automations, and delivery rules.
 ---
+
+Email lives under `/waitlists/[id]/emails` with three sub-tabs: **Templates**, **Broadcasts**, **Automations**. All three require owner/admin email permission. If you lack it, the Emails nav item is hidden.
+
+## Start here
+
+<Cards>
+<Card title="Broadcasts" href="/docs/broadcasts" description="One-time sends to opted-in verified subscribers." />
+<Card title="Automations" href="/docs/automations" description="Welcome, reminder, and milestone recipes." />
+<Card title="Resend" href="/docs/resend" description="Connect your verified sending domain." />
+</Cards>
 
 ## Templates and tests
 
-Open the waitlist's Email tools → Templates. Edit the signup or offboarding template, including subject, preview text, heading, message, and additional content. Markdown and `{{waitlist}}` are supported.
-
-<Callout title="Tests use the saved template">
-Save your edits before sending a test to a valid email address. A test is a real email, not an on-screen preview.
-</Callout>
-
-## Broadcasts
+Open Email tools → **Templates**. You manage signup verification and offboarding templates with subject, preview text, heading, message, and additional content. Markdown and `{{waitlist}}` are supported.
 
 <Steps>
 <Step>
-### Create and save a draft
-Write the subject and message, then save. Changing the content invalidates the recipient preview.
+### Edit and save
+Change subject and body, then **Save**. Unsaved edits are not used for tests or sends.
 </Step>
 <Step>
-### Preview eligible recipients
-The audience includes verified subscribers who opted in. Unsubscribed and suppressed addresses are excluded.
+### Send a test to a valid address
+A test is a **real email**, not an on-screen preview. It uses the saved template.
 </Step>
 <Step>
-### Review and confirm
-Review the current count before confirming the send. You can cancel remaining messages, but messages already handed to the provider may still arrive.
+### Check verification delivery health
+The Templates header shows pending/failed counts for the latest 5 verification events plus dispatcher state: `Setup needed`, `Needs attention`, or `Key configured`.
 </Step>
 </Steps>
 
-## Automations
-
-| Recipe | When it runs |
-| --- | --- |
-| Welcome after confirmation | After a subscriber verifies their email. |
-| Referral reminder | After confirmation, when the subscriber still has no verified referrals at send time. |
-| Referral milestone | When an eligible verified referral reaches the configured milestone. |
-
-Set a delay from zero to 168 hours. Milestones accept one to 100 verified referrals. The milestone message supports the `{{referral_count}}` variable with the subscriber's current count. Save changes before enabling a recipe. Changes create a new version; already scheduled runs keep their saved version.
-
-Pausing cancels scheduled messages. A message already being handed to the provider may still arrive.
-
-## Delivery and consent
-
-<Callout type="warn" title="Verification does not mean marketing consent">
-Broadcasts and automations require both verified email and explicit marketing opt-in. Unsubscribe and workspace suppressions are checked again before delivery.
+<Callout title="Delivery needs a sender and a scheduler">
+A saved template alone does not send mail. You need a configured sender ([Resend](/docs/resend) or deployment default) **and** a running outbox dispatcher (`OUTBOX_DISPATCH_SECRET` plus an authenticated scheduler calling `/api/internal/email-outbox`). Without the scheduler, mail queues but never leaves.
 </Callout>
 
-Email delivery requires a configured sender and dispatcher. A saved recipe or configured secret alone does not prove that the dispatch scheduler is running. Use [Resend](/docs/resend) for your own verified sender.
+## Consent and suppression — read once
+
+<Callout type="warn" title="Verification does not mean marketing consent">
+Broadcasts and automations require **both** verified email **and** explicit marketing opt-in. Unsubscribe and workspace suppressions (bounces/complaints from provider webhooks, including early races) are checked again right before delivery.
+</Callout>
+
+- Unsubscribed addresses are excluded from previews and sends.
+- Suppressed addresses stay suppressed until the underlying bounce/complaint is resolved.
+- Pausing or cancelling stops queued messages, but messages already handed to the provider may still arrive.
+
+## Next
+
+<Cards>
+<Card title="Broadcasts" href="/docs/broadcasts" description="Draft, preview, confirm, and cancel safely." />
+<Card title="Automations" href="/docs/automations" description="Delays, milestones, versions, and pause behavior." />
+<Card title="Subscribers" href="/docs/subscribers" description="See who is eligible to receive mail." />
+</Cards>

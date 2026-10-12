@@ -1,0 +1,67 @@
+---
+title: Waitlists
+description: Create, find, and open waitlists in your workspace.
+---
+
+All work starts at `/waitlists`. This list is workspace-scoped: you only see waitlists your workspace role can view.
+
+## Create a waitlist
+
+<Steps>
+<Step>
+### Open New waitlist
+From `/waitlists`, choose **New waitlist**. Anyone with campaign edit access can start a draft.
+</Step>
+<Step>
+### Name and describe it
+Add a name, an optional description shown in the list, and an optional public slug. The slug becomes the hosted `/w/your-slug` path after publication.
+</Step>
+<Step>
+### Pick a starter template
+Choose from SaaS, mobile, AI, community, consumer, newsletter, or blank. The template seeds the first draft revision.
+</Step>
+<Step>
+### Start as a private draft
+The new waitlist opens on its **Overview** as `Draft`. It does not accept signups until an owner or admin publishes it.
+</Step>
+</Steps>
+
+<Callout title="Slugs must stay unique">
+If your slug is taken, pick another one before publishing. Renaming later changes the hosted URL visitors use.
+</Callout>
+
+## Find a waitlist
+
+The list supports all four controls at once:
+
+- **Search** by name with instant results and a polite result count.
+- **Status tabs**: all, draft, published, paused.
+- **Sort** by name, subscriber count, or last update.
+- **Pagination** at 25 per page with Previous and Next.
+
+If nothing matches, use the empty-state action to clear the search or switch status. If the table cannot load, it tells you the workspace is safe and offers a retry.
+
+The table shows name, visitors (distinct browsers), subscribers, conversion (signups divided by visitors), and last update. Select a name to open that waitlist.
+
+## Open the six sections
+
+Every waitlist ID opens the same context navigation:
+
+| Tab | Route | Who needs what |
+| --- | --- | --- |
+| Overview | `/waitlists/[id]` | View access. Lifecycle, facts, readiness, rehearsal. |
+| Page | `/waitlists/[id]/edit` | Edit access to change; owner/admin to publish. |
+| Subscribers | `/waitlists/[id]/subscribers` | View audience to read; owner/admin to manage. |
+| Analytics | `/waitlists/[id]/analytics` | View access. 7/30/90-day trends. |
+| Emails | `/waitlists/[id]/emails` | Owner/admin only. Templates, broadcasts, automations. |
+| Waitlist settings | `/waitlists/[id]/settings` | Referrals for editors; domains, webhooks, delete for owners/admins. |
+
+If you do not have email permission, the Emails tab is hidden. If you open another tenant's ID directly, you get a 404. Signed-out protected routes redirect to sign-in.
+
+## Next
+
+<Cards>
+<Card title="Understand the Overview" href="/docs/overview" description="Readiness, lifecycle copy, and rehearsal runs." />
+<Card title="Design the page" href="/docs/page-builder" description="Edit content and save draft revisions." />
+<Card title="Publish, pause, roll back" href="/docs/publishing" description="Make drafts live and control signup intake." />
+</Cards>

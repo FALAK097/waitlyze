@@ -1,0 +1,45 @@
+---
+title: Broadcasts
+description: Send a one-time email to opted-in verified subscribers.
+---
+
+Broadcasts are one-time sends from `/waitlists/[id]/emails/broadcasts`. They target the current eligible audience snapshot, not a static list.
+
+## Who receives it
+
+Eligible recipients are **verified subscribers with explicit marketing opt-in**, minus:
+
+- Unsubscribed addresses.
+- Workspace-suppressed addresses (bounces/complaints).
+- Unverified or never-opted-in signups.
+
+The preview count reflects these rules at preview time. Membership can change before you confirm — always re-read the count on the confirm screen.
+
+## Send safely
+
+<Steps>
+<Step>
+### Create and save a draft
+Write subject and message, then **Save**. Editing content after preview invalidates that preview — preview again.
+</Step>
+<Step>
+### Preview eligible recipients
+Check the count and understand who is excluded. If the count looks wrong, verify opt-in and suppression in [Subscribers](/docs/subscribers).
+</Step>
+<Step>
+### Review and confirm
+Confirm the send with the current count in view. Cancelling stops remaining queued messages, but messages already handed to the provider may still arrive.
+</Step>
+</Steps>
+
+<Callout type="warn" title="Confirm with fresh eyes">
+Recipient state can shift between preview and confirm. The confirm screen count wins over an older preview.
+</Callout>
+
+## After sending
+
+- Track queued, sending, delivered, and failed states in the broadcasts list.
+- Cancel a running broadcast to stop what has not yet left the queue.
+- Bounces and complaints feed workspace suppression via signed provider events, protecting future sends. See [Resend](/docs/resend).
+
+Delivery still requires a configured sender and running dispatcher. See [Email tools](/docs/email).

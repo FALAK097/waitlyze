@@ -1,11 +1,30 @@
 ---
 title: Webhooks
-description: Receive and verify signed signup events.
+description: Receive signed signup.created and signup.verified events.
 ---
+
+Webhooks stream signup activity to your stack in real time. Manage them in Waitlist settings → **Webhooks**. Owners and admins can manage; members can view.
 
 ## Add an endpoint
 
-In your waitlist's Settings, add a public HTTPS endpoint and select `signup.created` or `signup.verified`. Copy the signing secret once. Your deployment must have webhook encryption and dispatch configured before delivery can run.
+<Steps>
+<Step>
+### Add a public HTTPS URL
+Enter your receiver URL and select `signup.created`, `signup.verified`, or both. Localhost and non-HTTPS URLs are rejected.
+</Step>
+<Step>
+### Copy the signing secret once
+Save it in your secrets manager immediately. Waitlyze stores a protected copy — the plaintext is shown once.
+</Step>
+<Step>
+### Send a test before going live
+Tests use `{ "test": true }` in `data` and never represent a real subscriber. Confirm your receiver verifies and dedupes before processing real events.
+</Step>
+</Steps>
+
+<Callout title="Dispatch must be configured">
+Your deployment needs webhook encryption and dispatch configured before delivery runs. If tests never arrive, check deployment config first, then endpoint status. See [Troubleshooting](/docs/troubleshooting).
+</Callout>
 
 ## Event payload
 
@@ -13,7 +32,7 @@ In your waitlist's Settings, add a public HTTPS endpoint and select `signup.crea
 { "id": "EVENT_ID", "type": "signup.created", "version": 1, "occurredAt": "2026-10-11T00:00:00.000Z", "waitlistId": "WAITLIST_ID", "data": { "signupId": "SIGNUP_ID" } }
 ```
 
-Subscriber emails are not included. A test event uses `{ "test": true }` in `data`. Return a successful HTTP status after durably accepting an event. Deduplicate by event ID because delivery may be retried.
+Subscriber emails are **never** included — fetch what you need via your own subscriber read path using `signupId`. Return `2xx` only after durably accepting the event. Deduplicate by event ID because retries redeliver the same `id`.
 
 <TypeTable
   type={{
@@ -25,7 +44,7 @@ Subscriber emails are not included. A test event uses `{ "test": true }` in `dat
     type: {
       type: '"signup.created" | "signup.verified"',
       required: true,
-      description: "The event that fired.",
+      description: "signup.created fires on intake; signup.verified fires after email confirmation.",
     },
     version: {
       type: "number",
@@ -52,7 +71,7 @@ Subscriber emails are not included. A test event uses `{ "test": true }` in `dat
 
 ## Verify the signature
 
-The `x-waitlyze-signature` header has the form `t=TIMESTAMP,v1=HEX_SIGNATURE`. Verify HMAC-SHA256 over the timestamp, a dot, and recursively sorted canonical JSON. Do not sign arbitrary raw request bytes. During rotation there may be multiple `v1` signatures; accept any valid signature.
+The `x-waitlyze-signature` header looks like `t=TIMESTAMP,v1=HEX_SIGNATURE`. Verify HMAC-SHA256 over `timestamp + "." + canonicalJson(payload)` where canonical JSON is recursively key-sorted. Do not sign raw request bytes. During rotation there may be multiple `v1` signatures — accept if **any** validates. Also check `x-waitlyze-event-id` matches `id` when present.
 
 ```js title="Verify before processing"
 import { createHmac, timingSafeEqual } from "node:crypto";
@@ -84,12 +103,25 @@ export function verifyEvent(header, payload, secret, now = Date.now()) {
 }
 ```
 
-Use your saved signing secret and reject requests outside the five-minute timestamp window. Verify before processing the payload; persist event IDs to reject duplicate processing. Inspect recent deliveries, send tests, rotate the secret, or replay failed deliveries in waitlist settings.
+Reject requests outside the five-minute timestamp window. Verify **before** parsing business logic or mutating state. Use constant-time comparison.
 
 ## Deliveries and recovery
 
-Recent deliveries show queue status, response status, and a failure code when available. Send a test before processing real events. Pause an endpoint to stop accepting new queued events, then resume when ready. Failed deliveries can be replayed from the same settings screen.
+Recent deliveries show queue status, HTTP response status, and a failure code when available:
+
+- **Send a test** after any secret, URL, or firewall change.
+- **Pause** an endpoint to stop queueing new events; **resume** when ready.
+- **Replay** failed deliveries from the same settings screen after fixing your receiver.
+- **Rotate** the secret when staff changes or on a schedule; during rotation accept any valid `v1` until old deliveries drain.
 
 <Callout type="warn" title="Handle repeat delivery safely">
-Deduplicate by `id` or `x-waitlyze-event-id`, verify the signature, and return a successful status only after durably accepting the event. A test payload is not a real subscriber.
+Deduplicate by `id` or `x-waitlyze-event-id`, verify the signature first, and return success only after durable acceptance. A test payload is not a real subscriber — do not create accounts from it.
 </Callout>
+
+## Next
+
+<Cards>
+<Card title="Signup API" href="/docs/api" description="Create the signups webhooks report." />
+<Card title="Subscribers" href="/docs/subscribers" description="Inspect the signup behind an event." />
+<Card title="Troubleshooting" href="/docs/troubleshooting" description="Fix signature and delivery failures." />
+</Cards>

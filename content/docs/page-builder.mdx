@@ -1,0 +1,51 @@
+---
+title: Page builder
+description: Edit waitlist content, branding, and draft revisions.
+---
+
+The **Page** tab at `/waitlists/[id]/edit` has two anchors: `#page-content` for editing and `#publication-actions` for going live. Anyone with edit access can save drafts; only owners and admins can publish.
+
+## Choose your editor
+
+| Waitlist kind | What you see |
+| --- | --- |
+| Template snapshot waitlists | `SnapshotPageBuilder` with section editing, desktop/mobile preview, hosted-link and embed copy (published only), and publish/pause/rollback. |
+| Legacy styled waitlists | `WaitlistGenerator` with colors, borders, radius, fonts, logo, badge, inputs, share toggles, and social proof controls. |
+
+Both editors save to the same draft revision model. Saved drafts increment `templateRevision` without touching `publishedRevision` until you publish.
+
+## Edit content safely
+
+- **Autosave as draft**: edits create a new draft revision. Visitors keep seeing the last published revision.
+- **Preview before publish**: check desktop and mobile layouts, form state, success message, and referral display.
+- **One email form**: readiness requires exactly one valid email form. Extra or invalid forms block publication.
+- **Branding controls**: button, background, inputs, logo, badge, social proof, Waitlyze badge, and Open Graph title/description/image where available.
+- **Logo uploads**: raster images are normalized on upload. SVG, active content, invalid, or oversized files are rejected.
+
+<Callout title="Saved is not live">
+Saving creates a draft. Publishing copies that draft revision into the live slot. See [Publishing](/docs/publishing).
+</Callout>
+
+## Publication actions in the builder
+
+Published waitlists expose real controls only for a published version:
+
+- **Hosted page** copy for `/w/your-slug`.
+- **Embed snippet** with your public waitlist ID.
+- **Publish** (draft → published, or pending changes → live), **Pause** (stop intake), **Rollback** (restore previous published revision).
+
+URLs follow the configured local, preview, or production environment. Drafts show no public link or embed worth sharing.
+
+## Permissions and validation
+
+- Editing the `sendEmailsToSubscribers` toggle requires email permission; other fields require edit permission.
+- Logo keys must belong to the actor (`actorId-` prefix) to prevent cross-user writes.
+- Concurrent privileged changes are protected: unchanged form values do not overwrite them.
+
+## Next
+
+<Cards>
+<Card title="Publish, pause, roll back" href="/docs/publishing" description="Apply draft revisions to the live page." />
+<Card title="Hosted pages and embeds" href="/docs/embed" description="Copy the URL or snippet after publishing." />
+<Card title="Custom domains" href="/docs/domains" description="Serve the published revision from your hostname." />
+</Cards>
