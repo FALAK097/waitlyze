@@ -548,8 +548,8 @@
   .product-team-actions { width: 100%; padding-inline-start: 48px; }
   .product-team-actions .product-button { min-height: 44px; }
 }
-.product-invitation-page { display: grid; place-items: start center; width: min(100% - 32px, 560px); min-height: 50svh; margin: 56px auto 88px; }
-.product-invitation-card { display: grid; gap: 16px; width: 100%; padding: clamp(24px, 5vw, 40px); border: 1px solid var(--product-border-subtle); border-radius: 16px; background: var(--product-bg-surface); box-shadow: var(--product-shadow-elevated); }
+.product-invitation-page { display: grid; place-items: start center; width: min(100% - 32px, 620px); min-height: 50svh; margin: 56px auto 88px; }
+.product-invitation-card { display: grid; gap: 16px; width: 100%; }
 .product-invitation-card h1 { font-size: clamp(1.5rem, 5vw, 2rem); line-height: 1.2; overflow-wrap: anywhere; }
 .product-invitation-copy { color: var(--product-text-secondary); font-size: .9375rem; overflow-wrap: anywhere; }
 .product-invitation-copy strong { color: var(--product-text-primary); }
