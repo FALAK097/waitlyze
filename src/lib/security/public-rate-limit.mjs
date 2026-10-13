@@ -42,7 +42,9 @@ export async function consumePublicBudget(db, { kind, campaignId, headers, email
     await db.$transaction(async (tx) => {
       // Serialize the short counter transaction before cleanup to avoid lock-order
       // inversions across expired buckets. The lock is shared across instances.
-      await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtext('waitlyze-public-budget'))`;
+      // Cast the void-returning lock to a bool: Prisma cannot deserialize a
+      // `void` column and would fail the whole transaction.
+      await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtext('waitlyze-public-budget')) IS NULL AS acquired`;
       // Bounded cleanup; global admission limits bound new rows even under rotation.
       await tx.$executeRaw`
         DELETE FROM "rate_limit_buckets" WHERE "key" IN (
@@ -67,6 +69,7 @@ export async function consumePublicBudget(db, { kind, campaignId, headers, email
   } catch (error) {
     if (error instanceof PublicRateLimitError) throw error;
     // Do not expose raw database/connection details or silently bypass the guard.
+    console.error("Public rate-limit check failed", kind, error?.code || error?.name || "unknown", "-", String(error?.message || "").slice(0, 400));
     throw new PublicRateLimitError(503);
   }
 }

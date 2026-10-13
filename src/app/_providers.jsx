@@ -5,7 +5,9 @@ import { AppProgressBar as ProgressBar } from "next-nprogress-bar";
 import { Toaster } from "@/components/ui/toast";
 import { Agentation } from "agentation";
 
-const agentationEndpoint = process.env.NEXT_PUBLIC_AGENTATION_ENDPOINT || "http://localhost:4747";
+// No endpoint: annotations stay in localStorage (copy/paste into an agent).
+// Set NEXT_PUBLIC_AGENTATION_ENDPOINT and run `pnpm agentation` for MCP sync.
+const agentationEndpoint = process.env.NEXT_PUBLIC_AGENTATION_ENDPOINT;
 
 export function Providers({ children }) {
 	return (
@@ -18,7 +20,7 @@ export function Providers({ children }) {
 				/>
 				<Toaster />
 				{children}
-				{process.env.NODE_ENV === "development" && <Agentation endpoint={agentationEndpoint} />}
+				{process.env.NODE_ENV === "development" && <Agentation {...(agentationEndpoint ? { endpoint: agentationEndpoint } : {})} />}
 			</AuthModalProvider>
 	);
 }
