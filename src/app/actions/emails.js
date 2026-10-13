@@ -3,6 +3,7 @@
 import { env } from "@/lib/env.mjs";
 import prisma from "@/lib/prisma";
 import { requireCampaign } from "@/lib/workspaces/authorize";
+import { resolveWorkspaceEmailSender } from "@/lib/integrations/email-sender.mjs";
 import { AUDIT_ACTIONS, recordWaitlistAuditEvent } from "@/lib/workspaces/audit.mjs";
 import { consumePublicBudget, PublicRateLimitError } from "@/lib/security/public-rate-limit.mjs";
 import { getCampaignPosition } from "@/lib/campaigns/referral-position.mjs";
@@ -11,7 +12,16 @@ import { Resend } from 'resend';
 import { headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 
-const resend = new Resend(env.RESEND_API_KEY);
+const platformSender = { apiKey: env.RESEND_API_KEY, fromEmail: env.RESEND_FROM_EMAIL, replyTo: env.RESEND_REPLY_TO };
+
+// Subscriber and template email prefers the workspace's connected provider so it
+// sends from the customer's own verified domain; the platform sender is the
+// fallback so delivery never silently stops.
+async function senderForWaitlist(waitListId) {
+  const waitlist = await prisma.waitList.findUnique({ where: { id: waitListId }, select: { workspaceId: true } });
+  const provider = await resolveWorkspaceEmailSender(prisma, waitlist?.workspaceId, null).catch(() => null);
+  return provider || platformSender;
+}
 
 const TYPE_MAP = {
   signup: "SIGNUP",
@@ -294,11 +304,12 @@ export async function sendTestEmail({ waitListId, templateType, to }) {
 </body>
 </html>`;
 
-    const { error } = await resend.emails.send({
-      from: env.RESEND_FROM_EMAIL,
+    const provider = await senderForWaitlist(waitListId);
+    const { error } = await new Resend(provider.apiKey).emails.send({
+      from: provider.fromEmail,
       to,
       subject,
-      replyTo: env.RESEND_REPLY_TO,
+      replyTo: provider.replyTo,
       html: htmlBody,
     });
 
@@ -522,11 +533,12 @@ export async function sendSignupEmail({ waitListId, to }) {
   }
 
   try {
-    const { error } = await resend.emails.send({
-      from: env.RESEND_FROM_EMAIL,
+    const provider = await senderForWaitlist(waitListId);
+    const { error } = await new Resend(provider.apiKey).emails.send({
+      from: provider.fromEmail,
       to,
       subject,
-      replyTo: env.RESEND_REPLY_TO,
+      replyTo: provider.replyTo,
       html: htmlBody,
     }, { idempotencyKey: `signup-welcome:${signUp.id}` });
     if (error) {

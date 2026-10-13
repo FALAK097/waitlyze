@@ -4,11 +4,11 @@ import { randomBytes, randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { Resend } from "resend";
 import { auth } from "@/lib/auth";
 import { env } from "@/lib/env.mjs";
 import prisma from "@/lib/prisma";
-import { createWorkspaceResendSender } from "@/lib/integrations/resend-sender.mjs";
+import { renderWorkspaceInvitation } from "@/emails/render.jsx";
+import { sendPlatformEmail } from "@/lib/emails/platform.mjs";
 import { decryptIntegrationSecret, encryptIntegrationSecret } from "@/lib/integrations/secrets.mjs";
 import { createWorkspaceService } from "@/lib/workspaces/service.mjs";
 import { AUDIT_ACTIONS, recordAuditEvent } from "@/lib/workspaces/audit.mjs";
@@ -17,18 +17,6 @@ import { acceptWorkspaceInvitation, hashInvitationToken, invitationExpiry, norma
 import { consumePublicBudget } from "@/lib/security/public-rate-limit.mjs";
 
 const MAX_PENDING_INVITATIONS = 50;
-
-function createInvitationSender() {
-  return createWorkspaceResendSender({
-    db: prisma,
-    defaults: { apiKey: env.RESEND_API_KEY, fromEmail: env.RESEND_FROM_EMAIL, replyTo: env.RESEND_REPLY_TO },
-    createClient: (apiKey) => new Resend(apiKey),
-  });
-}
-
-function escapeHtml(value) {
-  return String(value).replace(/[&<>"']/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[character]);
-}
 
 function invitationUrl(token) {
   const base = new URL(env.BETTER_AUTH_URL);
@@ -47,20 +35,20 @@ async function managerMembership(userId, workspaceId, targetRole, db = prisma) {
   return actor;
 }
 
+// Workspace invitations are a Waitlyze product email: they are always sent from
+// the platform sender so they deliver even when the workspace has not connected
+// (or has misconfigured) its own email provider.
 async function sendInvitation(invitation, token, inviterName, workspaceName, actorId) {
   await consumePublicBudget(prisma, { kind: "invitation", campaignId: invitation.workspaceId, actorId, email: invitation.emailNormalized });
   const url = invitationUrl(token);
-  const safeName = escapeHtml(inviterName || "A workspace admin");
-  const safeWorkspace = escapeHtml(workspaceName);
-  const safeRole = invitation.role === "ADMIN" ? "Admin" : "Member";
-  const result = await createInvitationSender()({
+  const role = invitation.role === "ADMIN" ? "Admin" : "Member";
+  const html = await renderWorkspaceInvitation({ inviterName: inviterName || "A workspace admin", workspaceName, role, url });
+  await sendPlatformEmail({
     to: invitation.emailNormalized,
     subject: `Join ${workspaceName.replace(/[\r\n]+/g, " ")} on Waitlyze`,
-    html: `<div style="font-family:Arial,sans-serif;line-height:1.6;color:#00160d;max-width:560px;margin:auto"><p>${safeName} invited you to join <strong>${safeWorkspace}</strong> on Waitlyze as a ${safeRole}.</p><p><a href="${escapeHtml(url)}" style="display:inline-block;padding:12px 18px;background:#c6fe1e;color:#00160d;text-decoration:none;border-radius:8px;font-weight:600">Review invitation</a></p><p>This invitation expires in seven days. If you weren’t expecting it, you can ignore this email.</p></div>`,
-    workspaceId: invitation.workspaceId,
+    html,
     idempotencyKey: `workspace-invitation-${invitation.id}-${invitation.tokenHash.slice(0, 16)}`,
   });
-  if (result?.error) throw new Error("Email provider rejected the invitation.");
 }
 
 export async function inviteWorkspaceMember(previous, form) {
@@ -110,7 +98,8 @@ export async function inviteWorkspaceMember(previous, form) {
     try {
       await sendInvitation(invitation, token, session.user.name, workspace.name, session.user.id);
       await prisma.workspaceInvitation.updateMany({ where: { id: invitation.id, status: "PENDING" }, data: { tokenCiphertext: "", tokenIv: "", tokenTag: "" } });
-    } catch {
+    } catch (deliveryError) {
+      console.error("Invitation email delivery failed", deliveryError?.name || deliveryError?.message || "unknown error");
       await prisma.workspaceInvitation.updateMany({ where: { id: invitation.id, status: "PENDING" }, data: { status: "SEND_FAILED" } });
       revalidatePath("/settings#team");
       return { error: "The invite is saved, but email delivery failed. Retry it from Pending invitations." };

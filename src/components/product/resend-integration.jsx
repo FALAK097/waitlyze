@@ -63,13 +63,17 @@ export function ResendIntegration({ initialConnection, accountEmail, canManage, 
   }
   return <Sheet open={open} onOpenChange={changeOpen}>
     <div className="settings-integration-row">
-      <div className="settings-integration-brand">{logo}<div><h3>Resend</h3><p>Send email from your own domain.</p></div></div>
+      <div className="settings-integration-brand">{logo}<div><h3>Resend</h3><p>Send your waitlist email from your own domain.</p></div></div>
       <div className="settings-integration-row-actions"><SheetTrigger render={<Button variant="outline" />}>{canManage ? connection ? "Manage" : "Connect" : "View"}</SheetTrigger></div>
     </div>
     <SheetContent>
       <SheetHeader><SheetTitle>Connect Resend</SheetTitle><SheetDescription>Use a sending-only API key and a verified sender address.</SheetDescription></SheetHeader>
       <div className="p-6 pt-0">
       <div className="integration-drawer-content">
+        <div className="integration-note">
+          <p><strong>Waitlist email</strong> (confirmation, broadcasts, automations) sends from your domain once connected. Until then it uses the Waitlyze sender.</p>
+          <p><strong>Account email</strong> like workspace invitations always comes from Waitlyze, so connect this only when you want your own sender.</p>
+        </div>
         {canManage ? <form onSubmit={save} className="integration-drawer-form">
           <label className="product-field" htmlFor="resend-api-key"><span>Sending API key</span></label>
           <div className="integration-secret-input"><Input id="resend-api-key" type={revealed ? "text" : "password"} autoComplete="new-password" spellCheck="false" value={apiKey} onChange={(event) => setApiKey(event.target.value)} placeholder={connection ? "Saved key · enter a replacement" : "re_…"} required={!connection} maxLength={512} disabled={Boolean(busy)} /><Button type="button" variant="ghost" size="icon" aria-label={revealed ? "Hide API key" : "Show API key"} aria-pressed={revealed} onClick={() => setRevealed(!revealed)} disabled={!apiKey || Boolean(busy)}>{revealed ? <HugeiconsIcon icon={ViewOffIcon} size={18} /> : <HugeiconsIcon icon={ViewIcon} size={18} />}</Button><Button type="button" variant="ghost" size="icon" aria-label="Copy entered API key" disabled={!apiKey || Boolean(busy)} onClick={copy}><HugeiconsIcon icon={Copy01Icon} size={18} /></Button></div>
