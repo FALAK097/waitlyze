@@ -17,7 +17,7 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import "./audience.css";
 import { ReferralReview } from "@/components/dashboard/referral-review";
-import { toast } from "@/components/ui/toast";
+import { toast } from "sonner";
 
 const PAGE_SIZE = 25;
 const statuses = [
@@ -104,7 +104,7 @@ export function AudienceTable({ waitlist, initialReviews = [], initialReviewsFai
     } catch {
       const message = "The export could not be created. Try again.";
       setExportError(message);
-      toast.add({ title: message, type: "error" });
+      toast.error(message);
     } finally {
       setExporting(false);
     }

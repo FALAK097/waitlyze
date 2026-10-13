@@ -3,14 +3,14 @@
 import { useActionState, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
-import { toast } from "@/components/ui/toast";
+import { toast } from "sonner";
 import { leaveWorkspace } from "@/app/actions/settings";
 
 export function LeaveWorkspace({ workspaceId, workspaceName }) {
   const [open, setOpen] = useState(false);
   const [state, action, pending] = useActionState(leaveWorkspace, null);
   useEffect(() => {
-    if (state?.error) toast.add({ title: state.error, type: "error" });
+    if (state?.error) toast.error(state.error);
   }, [state]);
   return <div className="product-danger-inline">
     <div><p><strong>Leave this workspace?</strong></p><p>You’ll lose access to {workspaceName} and its waitlists until you’re invited again.</p></div>

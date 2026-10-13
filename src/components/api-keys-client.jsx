@@ -6,7 +6,7 @@ import { formatProductDate } from "@/lib/product-date.mjs";
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { toast } from "@/components/ui/toast";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -62,8 +62,8 @@ export function ApiKeysClient() {
       if (!response.ok) throw new Error(data.error?.message || "Could not create the key. Try again.");
       const created = data.data.apiKey;
       setNewKey(created); setKeys((current) => [...current, { ...created, apiKey: undefined }]);
-      toast.add({ title: "API key created. Copy it before closing.", type: "success" });
-    } catch (failure) { setFormError(failure.message); toast.add({ title: failure.message, type: "error" }); }
+      toast.success("API key created. Copy it before closing.");
+    } catch (failure) { setFormError(failure.message); toast.error(failure.message); }
     finally { setBusy(false); }
   }
   async function revoke(event) {
@@ -71,13 +71,13 @@ export function ApiKeysClient() {
     try {
       const response = await fetch(`/api/v1/api-keys/${toRevoke.id}`, { method: "DELETE" });
       if (response.status !== 204) { const data = await response.json(); throw new Error(data.error?.message || "Could not revoke the key. Try again."); }
-      setKeys((current) => current.filter((key) => key.id !== toRevoke.id)); setToRevoke(null); toast.add({ title: "API key revoked.", type: "success" });
-    } catch (failure) { toast.add({ title: failure.message, type: "error" }); }
+      setKeys((current) => current.filter((key) => key.id !== toRevoke.id)); setToRevoke(null); toast.success("API key revoked.");
+    } catch (failure) { toast.error(failure.message); }
     finally { setBusy(false); }
   }
   async function copy() {
-    try { await navigator.clipboard.writeText(newKey.apiKey); toast.add({ title: "API key copied.", type: "success" }); }
-    catch { toast.add({ title: "Copy is unavailable. Reveal and select the key to copy it manually.", type: "error" }); }
+    try { await navigator.clipboard.writeText(newKey.apiKey); toast.success("API key copied."); }
+    catch { toast.error("Copy is unavailable. Reveal and select the key to copy it manually."); }
   }
   return <div className="settings-api-keys" aria-busy={loading}>
     <div className="flex flex-wrap items-center justify-between gap-3"><Link ref={docsLink} href="/docs/api" className="text-sm underline underline-offset-4">Read API docs</Link>{!creating && !toRevoke && <Button onClick={() => setCreating(true)} disabled={loading || Boolean(error) || !available.length}><HugeiconsIcon icon={Add01Icon} size={16} aria-hidden="true" />Create key</Button>}</div>

@@ -1,6 +1,6 @@
 import { cn } from "@/lib/utils";
 import React from "react";
-import { toast } from "@/components/ui/toast";
+import { toast } from "sonner";
 import { CopyIcon } from "../shared/icons";
 import { Button } from "./button";
 
@@ -23,7 +23,7 @@ const CodeBlock = React.forwardRef(({ className, ...props }, ref) => {
 				className="absolute text-white duration-300 ease-in-out opacity-25 top-2 right-2 bg-primary hover:opacity-100"
 				onClick={() => {
 					navigator.clipboard.writeText(props.code);
-					toast.add({ title: "Copied to clipboard", type: "success" });
+					toast.success("Copied to clipboard");
 				}}
 			>
 				<CopyIcon className="w-5 h-5" />

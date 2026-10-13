@@ -3,7 +3,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { toast } from "@/components/ui/toast";
+import { toast } from "sonner";
 import { Button } from "../ui/button";
 import {
 	Card,
@@ -27,7 +27,7 @@ export const NewWaitListForm = ({ createNewWaitList }) => {
 
 	const handleSubmit = async (e) => {
 		e.preventDefault();
-		if (!projectName) return toast.add({ title: "Please enter a project name", type: "error" });
+		if (!projectName) return toast.error("Please enter a project name");
 		setLoading(true);
 		const response = await createNewWaitList({
 			name: projectName,
@@ -40,11 +40,11 @@ export const NewWaitListForm = ({ createNewWaitList }) => {
 		if (response.success) {
 			setIsCreated(true);
 			setLoading(false);
-			toast.add({ title: response.message, type: "success" });
+			toast.success(response.message);
 			push(`/waitlists/${response.waitList.id}/edit`);
 		} else {
 			setLoading(false);
-			toast.add({ title: "There was an error creating the wait list", type: "error" });
+			toast.error("There was an error creating the wait list");
 		}
 	};
 

@@ -4,7 +4,7 @@ import { HugeiconsIcon } from "@hugeicons/react";
 import { Image01Icon, Loading01Icon } from "@hugeicons/core-free-icons";
 import { useR2Upload } from "@/utils/r2-upload";
 import { useCallback, useState } from "react";
-import { toast } from "@/components/ui/toast";
+import { toast } from "sonner";
 import { Button } from "./button";
 
 export function UploadButton({ onSuccess, disabled }) {
@@ -20,7 +20,7 @@ export function UploadButton({ onSuccess, disabled }) {
 		onUploadError: (error) => {
 			setIsUploading(false);
 			console.error("Upload error:", error);
-			toast.add({ title: "Upload failed", type: "error" });
+			toast.error("Upload failed");
 		},
 		onUploadBegin: () => {
 			setIsUploading(true);

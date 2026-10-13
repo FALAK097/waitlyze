@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { toast } from "@/components/ui/toast";
+import { toast } from "sonner";
 import { deleteWorkspace } from "@/app/actions/settings";
 
 export function DeleteWorkspace({ workspaceId, workspaceName, isPersonal }) {
@@ -13,7 +13,7 @@ export function DeleteWorkspace({ workspaceId, workspaceName, isPersonal }) {
   const [state, action, pending] = useActionState(deleteWorkspace, null);
   const [confirmation, setConfirmation] = useState("");
   useEffect(() => {
-    if (state?.error) toast.add({ title: state.error, type: "error" });
+    if (state?.error) toast.error(state.error);
   }, [state]);
   function changeOpen(next) {
     if (pending) return;

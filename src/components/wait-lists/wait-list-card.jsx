@@ -23,7 +23,7 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "../ui/dialog";
-import { toast } from "@/components/ui/toast";
+import { toast } from "sonner";
 
 export const WaitListCard = ({
 	id,
@@ -48,22 +48,22 @@ export const WaitListCard = ({
 		if (response.success) {
 			setIsDeleting(false);
 			setIsDeleteDialogOpen(false);
-			toast.add({ title: response.message, type: "success" });
+			toast.success(response.message);
 			setTimeout(() => {
 				refresh();
 			}, 1000);
 		} else {
 			setIsDeleting(false);
-			toast.add({ title: "There was an error deleting the wait list", type: "error" });
+			toast.error("There was an error deleting the wait list");
 		}
 	};
 
 	const handleCopyId = async () => {
 		try {
 			await navigator.clipboard.writeText(id);
-			toast.add({ title: "ID copied to clipboard", type: "success" });
+			toast.success("ID copied to clipboard");
 		} catch (error) {
-			toast.add({ title: "Failed to copy ID", type: "error" });
+			toast.error("Failed to copy ID");
 		}
 	};
 

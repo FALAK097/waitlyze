@@ -15,7 +15,7 @@ import { Label } from "@/components/ui/label";
 import { createWorkspace, selectWorkspace } from "@/app/actions/settings";
 import { signOut } from "@/lib/auth-client";
 import "./app-shell.css";
-import { toast } from "@/components/ui/toast";
+import { toast } from "sonner";
 
 function WorkspaceAvatar({ name }) {
   return <span className="app-workspace-avatar" aria-hidden="true">{(name || "?").slice(0, 1).toUpperCase()}</span>;
@@ -56,7 +56,7 @@ function WorkspaceSwitcher({ workspaces, selected }) {
     catch (error) {
       // Server-action redirects throw; let navigation proceed.
       if (error?.digest?.startsWith("NEXT_REDIRECT")) throw error;
-      toast.add({ title: "Could not switch workspace. Try again.", type: "error" });
+      toast.error("Could not switch workspace. Try again.");
     }
     finally { setPending(false); }
   }
@@ -101,7 +101,7 @@ function AccountMenu({ user, avatar }) {
       const result = await signOut();
       if (result.error) throw new Error("Sign out failed");
       router.replace("/"); router.refresh();
-    } catch { toast.add({ title: "Could not sign out. Try again.", type: "error" }); setPending(false); }
+    } catch { toast.error("Could not sign out. Try again."); setPending(false); }
   }
   return <div className="app-account-control"><DropdownMenu><DropdownMenuTrigger render={<Button variant="ghost" size="icon" />} aria-label="Open account menu">{avatar}</DropdownMenuTrigger><DropdownMenuContent align="end" sideOffset={8} className="min-w-64">
     <div className="app-account-details">{avatar}<div><strong>{user.name || "Account"}</strong><span className="app-account-email" title={user.email}>{user.email}</span></div></div>

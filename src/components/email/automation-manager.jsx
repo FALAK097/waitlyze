@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button";
 import { formatProductDate } from "@/lib/product-date.mjs";
 
 import { useState } from "react";
-import { toast } from "@/components/ui/toast";
+import { toast } from "sonner";
 import styles from "./email-tools.module.css";
 import { useRouter } from "next/navigation";
 import { saveAutomationRecipe, setAutomationStatus } from "@/app/actions/automations";
@@ -32,7 +32,7 @@ export function AutomationManager({ waitListId, initialRecipes, initialRuns, del
   const [message, setMessage] = useState("");
   const [messageError, setMessageError] = useState(false);
   const [activeRecipe, setActiveRecipe] = useState(initialRecipes[0]?.id || null);
-  function notify(text, failure = false) { setMessage(text); setMessageError(failure); if (failure) toast.add({ title: text, type: "error" }); else toast.add({ title: text, type: "success" }); }
+  function notify(text, failure = false) { setMessage(text); setMessageError(failure); if (failure) toast.error(text); else toast.success(text); }
 
   function updateRecipe(recipeId, update) {
     setRecipes((items) => items.map((recipe) => recipe.id === recipeId ? { ...recipe, ...update } : recipe));

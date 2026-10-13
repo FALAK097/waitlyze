@@ -5,7 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useCallback, useEffect, useState } from "react";
-import { toast } from "@/components/ui/toast";
+import { toast } from "sonner";
 
 const labels = { NEEDS_DNS: "Ownership check pending", VERIFYING: "DNS or certificate setup pending", ACTIVE: "Ready", NEEDS_ATTENTION: "Needs attention" };
 
@@ -73,7 +73,7 @@ export function CustomDomainSettings({ waitListId, canManage, available }) {
             ? "Domain verified and connected."
             : "DNS is still propagating. Check again shortly.";
       setMessage(successMessage);
-      toast.add({ title: successMessage, type: "success" });
+      toast.success(successMessage);
       const refreshed = await refresh();
       if (!refreshed) {
         setMessage(`${successMessage} The latest status could not be confirmed; retry to refresh it.`);
@@ -82,7 +82,7 @@ export function CustomDomainSettings({ waitListId, canManage, available }) {
     } catch (error) {
       setMessage(error.message || "Could not update domain.");
       setMessageIsError(true);
-      toast.add({ title: error.message || "Could not update domain. Try again.", type: "error" });
+      toast.error(error.message || "Could not update domain. Try again.");
       const refreshed = await refresh();
       if (!refreshed) setMessage(`${error.message || "Could not update domain."} The current status could not be loaded; retry to recover.`);
     } finally {

@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { toast } from "@/components/ui/toast";
+import { toast } from "sonner";
 import { deleteWaitlist } from "@/app/actions/delete-waitlist";
 
 export function WaitlistRowActions({ id, name }) {
@@ -25,7 +25,7 @@ export function WaitlistRowActions({ id, name }) {
     try {
       const result = await deleteWaitlist(id, confirmation);
       if (result.error) { setError(result.error); setPending(false); return; }
-      toast.add({ title: "Waitlist deleted.", type: "success" });
+      toast.success("Waitlist deleted.");
       setConfirmOpen(false);
       setConfirmation("");
       router.refresh();

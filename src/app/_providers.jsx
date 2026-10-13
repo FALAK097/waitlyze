@@ -2,7 +2,7 @@
 
 import { AuthModalProvider } from "@/components/auth/auth-modal-provider";
 import { AppProgressBar as ProgressBar } from "next-nprogress-bar";
-import { Toaster } from "@/components/ui/toast";
+import { Toaster } from "@/components/ui/sonner";
 import { Agentation } from "agentation";
 
 // No endpoint: annotations stay in localStorage (copy/paste into an agent).

@@ -10,7 +10,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { resolveReferralReview } from "@/app/actions/referral-review";
 import { Button } from "@/components/ui/button";
-import { toast } from "@/components/ui/toast";
+import { toast } from "sonner";
 
 const reasonText = {
   same_browser: "Invitee and referrer used the same browser identifier. This can be legitimate; review before granting credit.",
@@ -41,14 +41,14 @@ export function ReferralReview({ waitListId, initialReviews, initialLoadError = 
       const response = await resolveReferralReview(waitListId, review.id, status, notes[review.id] || "");
       if (response.error) {
         setErrors((current) => ({ ...current, [review.id]: response.error }));
-        toast.add({ title: response.error, type: "error" });
+        toast.error(response.error);
       } else {
-        toast.add({ title: status === "APPROVED" ? "Referral approved." : "Referral excluded.", type: "success" });
+        toast.success(status === "APPROVED" ? "Referral approved." : "Referral excluded.");
         setReviews((current) => current.map((item) => item.id === review.id ? { ...item, reviewStatus: status, resolution: (notes[review.id] || "").trim(), reviewedAt: new Date().toISOString() } : item));
       }
     } catch {
       setErrors((current) => ({ ...current, [review.id]: "Could not save the decision. Try again." }));
-      toast.add({ title: "Could not save the decision. Try again.", type: "error" });
+      toast.error("Could not save the decision. Try again.");
     } finally {
       setPendingId(null);
     }

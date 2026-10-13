@@ -3,7 +3,7 @@ import { useActionState, useEffect, useState } from "react";
 import { useFormStatus } from "react-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { toast } from "@/components/ui/toast";
+import { toast } from "sonner";
 import { saveProfile, saveWorkspaceName } from "@/app/actions/settings";
 
 function SubmitButton({ children, pendingLabel, disabled = false }) {
@@ -13,8 +13,8 @@ function SubmitButton({ children, pendingLabel, disabled = false }) {
 export function ProfileForm({ name }) {
   const [state, action] = useActionState(saveProfile, {});
   useEffect(() => {
-    if (state?.error) toast.add({ title: state.error, type: "error" });
-    else if (typeof state?.success === "string") toast.add({ title: state.success, type: "success" });
+    if (state?.error) toast.error(state.error);
+    else if (typeof state?.success === "string") toast.success(state.success);
   }, [state]);
   const [value, setValue] = useState(name || "");
   const savedName = state.savedName ?? name ?? "";
@@ -31,8 +31,8 @@ export function ProfileForm({ name }) {
 export function WorkspaceNameForm({ workspaceId, name, canManage }) {
   const [state, action] = useActionState(saveWorkspaceName, {});
   useEffect(() => {
-    if (state?.error) toast.add({ title: state.error, type: "error" });
-    else if (typeof state?.success === "string") toast.add({ title: state.success, type: "success" });
+    if (state?.error) toast.error(state.error);
+    else if (typeof state?.success === "string") toast.success(state.success);
   }, [state]);
   const [value, setValue] = useState(name || "");
   const savedName = state.savedName ?? name ?? "";

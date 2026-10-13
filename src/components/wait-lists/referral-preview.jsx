@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { motion } from "motion/react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { toast } from "@/components/ui/toast";
+import { toast } from "sonner";
 
 export const ReferralPreview = ({
 	signUp,
@@ -69,7 +69,7 @@ export const ReferralPreview = ({
 			}! Join me and move up in line: ${referralLink}`;
 		// Since Instagram doesn't have a direct sharing API, we'll copy the text to clipboard
 		navigator.clipboard.writeText(text);
-		toast.add({ title: "Text copied! Share it on your Instagram story or post", type: "success" });
+		toast.success("Text copied! Share it on your Instagram story or post");
 	};
 
 	const container = {
@@ -224,7 +224,7 @@ export const ReferralPreview = ({
 
 	const copyToClipboard = () => {
 		navigator.clipboard.writeText(referralLink);
-		toast.add({ title: "Copied to clipboard", type: "success" });
+		toast.success("Copied to clipboard");
 	};
 
 	return (

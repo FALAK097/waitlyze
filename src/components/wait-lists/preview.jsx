@@ -5,7 +5,7 @@ import { fetchSignUp } from "@/utils/fetch/client/sign-ups";
 import { useQuery } from "@tanstack/react-query";
 import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState, Suspense } from "react";
-import { toast } from "@/components/ui/toast";
+import { toast } from "sonner";
 import { ReferralPreview } from "./referral-preview";
 import { SignUpForm } from "./sign-up-form";
 
@@ -95,7 +95,7 @@ function PreviewContent({
   }, [impressionLoading, impressionRefetch]);
 
   useEffect(() => {
-    if (isSuccess && mounted) toast.add({ title: waitList.successMessage, type: "success" });
+    if (isSuccess && mounted) toast.success(waitList.successMessage);
   }, [mounted, isSuccess, waitList.successMessage]);
 
   useEffect(() => {
@@ -112,8 +112,8 @@ function PreviewContent({
 
   useEffect(() => {
     if (isError && mounted) {
-      if (error) toast.add({ title: error.message, type: "error" });
-      else toast.add({ title: "Failed to sign up, Please try again later", type: "error" });
+      if (error) toast.error(error.message);
+      else toast.error("Failed to sign up, Please try again later");
     }
   }, [mounted, isError, error]);
 

@@ -20,7 +20,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useR2Upload } from "@/utils/r2-upload";
 import Image from "next/image";
 import { useRef } from "react";
-import { toast } from "@/components/ui/toast";
+import { toast } from "sonner";
 
 export function SettingsTab({ formSettings, updateSetting, applyPreset }) {
 	const fileInputRef = useRef(null);
@@ -28,11 +28,11 @@ export function SettingsTab({ formSettings, updateSetting, applyPreset }) {
 		onClientUploadComplete: (res) => {
 			if (res?.[0]?.url) {
 				updateSetting("ogImage", res[0].url);
-				toast.add({ title: "Image uploaded successfully", type: "success" });
+				toast.success("Image uploaded successfully");
 			}
 		},
 		onUploadError: (error) => {
-			toast.add({ title: error.message || "Could not upload this image. Try another PNG, JPEG or WebP.", type: "error" });
+			toast.error(error.message || "Could not upload this image. Try another PNG, JPEG or WebP.");
 		},
 	});
 

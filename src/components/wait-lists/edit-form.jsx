@@ -19,7 +19,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useEffect, useState } from "react";
-import { toast } from "@/components/ui/toast";
+import { toast } from "sonner";
 import { CopyIcon } from "../shared/icons";
 import { CodeBlock } from "../ui/code-block";
 import {
@@ -374,23 +374,23 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
     setIsSaving(true);
     try {
       const response = await saveWaitList(initialWaitList.id, { ...formSettings });
-      if (response.success) toast.add({ title: response.message, type: "success" });
-      else toast.add({ title: response.message || "Could not save your page. Try again.", type: "error" });
-    } catch { toast.add({ title: "Could not save your page. Try again.", type: "error" }); }
+      if (response.success) toast.success(response.message);
+      else toast.error(response.message || "Could not save your page. Try again.");
+    } catch { toast.error("Could not save your page. Try again."); }
     finally { setIsSaving(false); }
   };
 
   const copyShareUrlToClipboard = async () => {
     try {
       await navigator.clipboard.writeText(`${window.location.origin}/forms/${initialWaitList.id}`);
-      toast.add({ title: "Page link copied.", type: "success" });
-    } catch { toast.add({ title: "Copy is unavailable. Select the link and copy it manually.", type: "error" }); }
+      toast.success("Page link copied.");
+    } catch { toast.error("Copy is unavailable. Select the link and copy it manually."); }
   };
 
   const handleDeleteLogo = async () => {
     const logoKey = formSettings.logoKey;
     if (!logoKey) {
-      toast.add({ title: "This logo cannot be removed. Upload a replacement instead.", type: "error" });
+      toast.error("This logo cannot be removed. Upload a replacement instead.");
       return;
     }
 
@@ -398,15 +398,15 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
     try {
       const response = await removeImage(logoKey, initialWaitList.id);
       if (response.success) {
-        toast.add({ title: "Logo deleted successfully.", type: "success" });
+        toast.success("Logo deleted successfully.");
         updateSetting("logoUrl", "");
         updateSetting("logoKey", "");
       } else {
-        toast.add({ title: response.message || "Could not remove the logo. Try again.", type: "error" });
+        toast.error(response.message || "Could not remove the logo. Try again.");
       }
     } catch (error) {
       console.error("Error deleting logo:", error);
-      toast.add({ title: "Could not remove the logo. Try again.", type: "error" });
+      toast.error("Could not remove the logo. Try again.");
     }
   };
 

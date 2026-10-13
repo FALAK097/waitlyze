@@ -13,7 +13,7 @@ import { Input } from "@/components/ui/input";
 import { changeWorkspaceMemberRole, inviteWorkspaceMember, removeWorkspaceMember, resendWorkspaceInvitation, revokeWorkspaceInvite } from "@/app/actions/workspace-invitations";
 import { Dialog, DialogTrigger, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { toast } from "@/components/ui/toast";
+import { toast } from "sonner";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 
 function formatDate(value) {
@@ -42,14 +42,14 @@ export function TeamAccessSettings({ workspaceId, members, invitations, canManag
     startTransition(async () => {
       try {
         const result = await operation(...args);
-        if (result?.error) toast.add({ title: result.error, type: "error" });
+        if (result?.error) toast.error(result.error);
         else if (typeof result?.success === "string") {
-          toast.add({ title: result.success, type: "success" });
+          toast.success(result.success);
           setRevokeTarget(null);
           setRemoveTarget(null);
         }
       } catch {
-        toast.add({ title: "Could not update this workspace. Check your connection and try again.", type: "error" });
+        toast.error("Could not update this workspace. Check your connection and try again.");
       }
     });
   }
@@ -154,8 +154,8 @@ function InvitationForm({ workspaceId, canInviteAdmins, onComplete }) {
   const [state, action, pending] = useActionState(inviteWorkspaceMember, {});
   const [role, setRole] = useState("MEMBER");
   useEffect(() => {
-    if (state?.error) toast.add({ title: state.error, type: "error" });
-    else if (typeof state?.success === "string") toast.add({ title: state.success, type: "success" });
+    if (state?.error) toast.error(state.error);
+    else if (typeof state?.success === "string") toast.success(state.success);
   }, [state]);
   useEffect(() => { if (state.success) onComplete(); }, [state, onComplete]);
   return <form action={action} className="product-team-invite-form">

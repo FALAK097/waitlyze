@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 import { useR2Upload } from "@/utils/r2-upload";
 import Image from "next/image";
 import { useState, useRef } from "react";
-import { toast } from "@/components/ui/toast";
+import { toast } from "sonner";
 
 export default function UploadImage({ value, onSuccess, onClear, disabled }) {
   const [isDragging, setIsDragging] = useState(false);
@@ -25,7 +25,7 @@ export default function UploadImage({ value, onSuccess, onClear, disabled }) {
     },
     onUploadError: (error) => {
       console.error(`Upload failed: ${error.message}`);
-      toast.add({ title: error.message || "Failed to upload image. Please try again.", type: "error" });
+      toast.error(error.message || "Failed to upload image. Please try again.");
     },
   });
 
