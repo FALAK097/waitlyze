@@ -39,7 +39,7 @@ export async function GET() {
       orderBy: { id: "desc" },
     });
 
-    return NextResponse.json({ data: waitlists });
+    return NextResponse.json({ data: waitlists }, { headers: { "Cache-Control": "private, no-store" } });
   } catch (error) {
     console.error("Error fetching waitlists:", error);
     return NextResponse.json(

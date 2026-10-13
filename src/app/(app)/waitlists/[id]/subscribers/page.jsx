@@ -8,8 +8,7 @@ import { loadReferralReviews } from "@/lib/campaigns/referral-review-read.mjs";
 export const metadata = { title: "Subscribers" };
 
 export default async function SubscribersPage({ params }) {
-  const { id } = await params;
-  const { user, workspace } = await currentWorkspace();
+  const [{ id }, { user, workspace }] = await Promise.all([params, currentWorkspace()]);
   const waitlist = await prisma.waitList.findFirst({
     where: { id, ...campaignScope(user.id, "viewAudience", workspace.id) },
     select: { id: true, name: true },

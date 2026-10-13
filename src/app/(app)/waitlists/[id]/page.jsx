@@ -11,8 +11,7 @@ import styles from "@/components/product/waitlist-experience.module.css";
 export const metadata = { title: "Overview" };
 const dateFormat = new Intl.DateTimeFormat(undefined, { dateStyle: "medium" });
 export default async function OverviewPage({ params }) {
-  const { id } = await params;
-  const { user, workspace } = await currentWorkspace();
+  const [{ id }, { user, workspace }] = await Promise.all([params, currentWorkspace()]);
   const waitlist = await prisma.waitList.findFirst({ where: { id, ...campaignScope(user.id, "viewCampaign", workspace.id) }, select: {
     id: true, userId: true, workspaceId: true, publicSlug: true, name: true, status: true, createdAt: true, updatedAt: true,
     templateSnapshot: true, templateRevision: true,
@@ -58,25 +57,25 @@ export default async function OverviewPage({ params }) {
       </div>
       <div className={styles.overviewActions}>
         {waitlist.status === "DRAFT"
-          ? <Link href={`/waitlists/${id}/edit${publicationNeedsAction ? "#publication-actions" : "#page-content"}`} className={buttonVariants()}>{publicationNeedsAction ? "Review publication controls" : "Edit page"}</Link>
+          ? <Link prefetch={false} href={`/waitlists/${id}/edit${publicationNeedsAction ? "#publication-actions" : "#page-content"}`} className={buttonVariants()}>{publicationNeedsAction ? "Review publication controls" : "Edit page"}</Link>
           : waitlist.status === "PAUSED"
-            ? <Link href={`/waitlists/${id}/edit${publicationNeedsAction ? "#publication-actions" : "#page-content"}`} className={buttonVariants()}>{publicationNeedsAction ? "Review publication controls" : "Edit page"}</Link>
+            ? <Link prefetch={false} href={`/waitlists/${id}/edit${publicationNeedsAction ? "#publication-actions" : "#page-content"}`} className={buttonVariants()}>{publicationNeedsAction ? "Review publication controls" : "Edit page"}</Link>
             : publicationNeedsAction
-              ? <Link href={`/waitlists/${id}/edit#publication-actions`} className={buttonVariants()}>Review publication controls</Link>
+              ? <Link prefetch={false} href={`/waitlists/${id}/edit#publication-actions`} className={buttonVariants()}>Review publication controls</Link>
               : waitlist._count.signUps > 0
-                ? <Link href={subscriberHref} className={buttonVariants()}>View subscribers</Link>
+                ? <Link prefetch={false} href={subscriberHref} className={buttonVariants()}>View subscribers</Link>
                 : waitlist.publicSlug
-                  ? <Link href={`/w/${waitlist.publicSlug}`} target="_blank" rel="noreferrer" className={buttonVariants()}>View live page</Link>
-                  : <Link href={editHref} className={buttonVariants()}>Edit page</Link>}
-        {waitlist.status === "DRAFT" && canPublish && publicationNeedsAction && <Link href={editHref} className={buttonVariants({ variant: "outline" })}>Edit page</Link>}
-        {waitlist.status === "PAUSED" && waitlist._count.signUps > 0 && <Link href={subscriberHref} className={buttonVariants({ variant: "outline" })}>View subscribers</Link>}
+                  ? <Link prefetch={false} href={`/w/${waitlist.publicSlug}`} target="_blank" rel="noreferrer" className={buttonVariants()}>View live page</Link>
+                  : <Link prefetch={false} href={editHref} className={buttonVariants()}>Edit page</Link>}
+        {waitlist.status === "DRAFT" && canPublish && publicationNeedsAction && <Link prefetch={false} href={editHref} className={buttonVariants({ variant: "outline" })}>Edit page</Link>}
+        {waitlist.status === "PAUSED" && waitlist._count.signUps > 0 && <Link prefetch={false} href={subscriberHref} className={buttonVariants({ variant: "outline" })}>View subscribers</Link>}
         {waitlist.status === "PUBLISHED" && (publicationNeedsAction
           ? waitlist._count.signUps > 0
-            ? <Link href={subscriberHref} className={buttonVariants({ variant: "outline" })}>View subscribers</Link>
+            ? <Link prefetch={false} href={subscriberHref} className={buttonVariants({ variant: "outline" })}>View subscribers</Link>
             : waitlist.publicSlug
-              ? <Link href={`/w/${waitlist.publicSlug}`} target="_blank" rel="noreferrer" className={buttonVariants({ variant: "outline" })}>View live page</Link>
+              ? <Link prefetch={false} href={`/w/${waitlist.publicSlug}`} target="_blank" rel="noreferrer" className={buttonVariants({ variant: "outline" })}>View live page</Link>
               : null
-          : <Link href={editHref} className={buttonVariants({ variant: "outline" })}>Edit page</Link>)}
+          : <Link prefetch={false} href={editHref} className={buttonVariants({ variant: "outline" })}>Edit page</Link>)}
       </div>
     </section>
     <LaunchReadiness checks={readiness} />

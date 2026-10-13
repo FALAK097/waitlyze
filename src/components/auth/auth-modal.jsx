@@ -78,7 +78,7 @@ export function AuthModal({ open, onOpenChange, onCloseAutoFocus }) {
             {loading ? (
               <HugeiconsIcon icon={Loading02Icon} className="size-5 animate-spin" />
             ) : (
-              <Image src="/images/google.svg" alt="" width={20} height={20} />
+              <Image src="/images/google.svg" alt="" width={20} height={20} unoptimized />
             )}
             {loading ? "Connecting to Google…" : "Continue with Google"}
           </Button>
@@ -90,7 +90,7 @@ export function AuthModal({ open, onOpenChange, onCloseAutoFocus }) {
           <p className="wl-auth-note">Free to use. No credit card needed.</p>
           <p className="wl-auth-legal">
             By continuing, you agree to our{" "}
-            <Link
+            <Link prefetch={false}
               href="/terms"
               onClick={() => changeOpen(false)}
               className="underline underline-offset-4 hover:text-primary"
@@ -98,7 +98,7 @@ export function AuthModal({ open, onOpenChange, onCloseAutoFocus }) {
               Terms of Service
             </Link>{" "}
             and{" "}
-            <Link
+            <Link prefetch={false}
               href="/privacy"
               onClick={() => changeOpen(false)}
               className="underline underline-offset-4 hover:text-primary"

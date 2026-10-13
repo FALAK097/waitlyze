@@ -89,7 +89,7 @@ function Breadcrumbs({ pathname, waitlists }) {
     }
   }
   if (crumbs.length < 2) return null;
-  return <div className="app-breadcrumbs"><Breadcrumb><BreadcrumbList>{crumbs.map((crumb, index) => <Fragment key={`${crumb.label}-${index}`}>{index > 0 && <BreadcrumbSeparator />}<BreadcrumbItem>{index === crumbs.length - 1 ? <BreadcrumbPage>{crumb.label}</BreadcrumbPage> : <BreadcrumbLink render={<Link href={crumb.href} />}>{crumb.label}</BreadcrumbLink>}</BreadcrumbItem></Fragment>)}</BreadcrumbList></Breadcrumb></div>;
+  return <div className="app-breadcrumbs"><Breadcrumb><BreadcrumbList>{crumbs.map((crumb, index) => <Fragment key={`${crumb.label}-${index}`}>{index > 0 && <BreadcrumbSeparator />}<BreadcrumbItem>{index === crumbs.length - 1 ? <BreadcrumbPage>{crumb.label}</BreadcrumbPage> : <BreadcrumbLink render={<Link prefetch={false} href={crumb.href} />}>{crumb.label}</BreadcrumbLink>}</BreadcrumbItem></Fragment>)}</BreadcrumbList></Breadcrumb></div>;
 }
 
 function AccountMenu({ user, avatar }) {
@@ -114,12 +114,12 @@ export function AppShell({ children, user, avatar, waitlists, workspaces, select
   return <div className="app-frame">
     <a className="product-skip-link" href="#product-content">Skip to content</a>
     <header className="app-header"><div className="app-header-inner">
-      <Link className="app-wordmark" href="/waitlists" aria-label="Waitlyze home"><span className="app-mark" aria-hidden="true"><i /><i /><i /></span></Link>
+      <Link prefetch={false} className="app-wordmark" href="/waitlists" aria-label="Waitlyze home"><span className="app-mark" aria-hidden="true"><i /><i /><i /></span></Link>
       <WorkspaceSwitcher workspaces={workspaces} selected={selectedWorkspace} />
       <nav aria-label="Main navigation" className="app-navigation">
-        <Link href="/waitlists" aria-current={pathname.startsWith("/waitlists") ? "page" : undefined}>Overview</Link>
-        <Link href="/settings" aria-current={pathname.startsWith("/settings") ? "page" : undefined}>Settings</Link>
-        <Link href="/docs" target="_blank" rel="noreferrer">Docs<HugeiconsIcon icon={ArrowUpRight01Icon} size={14} aria-hidden="true" /></Link>
+        <Link prefetch={false} href="/waitlists" aria-current={pathname.startsWith("/waitlists") ? "page" : undefined}>Overview</Link>
+        <Link prefetch={false} href="/settings" aria-current={pathname.startsWith("/settings") ? "page" : undefined}>Settings</Link>
+        <Link prefetch={false} href="/docs" target="_blank" rel="noreferrer">Docs<HugeiconsIcon icon={ArrowUpRight01Icon} size={14} aria-hidden="true" /></Link>
       </nav>
       <AccountMenu user={user} avatar={avatar} />
     </div></header>

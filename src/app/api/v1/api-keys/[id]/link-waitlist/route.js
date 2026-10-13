@@ -39,13 +39,16 @@ export async function POST(request, context) {
       );
     }
 
-    const apiKey = await prisma.apiKey.findFirst({
-      where: {
-        id: id,
-        userId: user.id,
-        revokedAt: null,
-      },
-    });
+    const [apiKey, workspaceId] = await Promise.all([
+      prisma.apiKey.findFirst({
+        where: {
+          id: id,
+          userId: user.id,
+          revokedAt: null,
+        },
+      }),
+      selectedWorkspaceId(user.id),
+    ]);
 
     if (!apiKey) {
       return NextResponse.json(
@@ -63,7 +66,6 @@ export async function POST(request, context) {
       );
     }
 
-    const workspaceId = await selectedWorkspaceId(user.id);
     const waitlist = await prisma.waitList.findFirst({
       where: { id: waitlistId, ...campaignScope(user.id, "manageConnections", workspaceId || undefined) },
     });

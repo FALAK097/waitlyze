@@ -12,8 +12,7 @@ import "@/components/product/waitlist-settings.css";
 import { env } from "@/lib/env.mjs";
 export const metadata = { title: "Waitlist settings" };
 export default async function WaitlistSettings({ params }) {
-  const { id } = await params;
-  const { user, workspace } = await currentWorkspace();
+  const [{ id }, { user, workspace }] = await Promise.all([params, currentWorkspace()]);
   const waitlist = await prisma.waitList.findFirst({ where: { id, ...campaignScope(user.id, "viewCampaign", workspace.id) }, select: { id: true, name: true, showReferrals: true } });
   if (!waitlist) notFound();
   const canDelete = ["OWNER", "ADMIN"].includes(workspace.members[0]?.role);

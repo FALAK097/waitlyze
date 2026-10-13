@@ -13,7 +13,7 @@ export default function LegalDocument({
   return (
     <PublicShell>
       <main id="main-content" className="wl-container wl-legal">
-        <Link href="/" className="wl-text-link">
+        <Link prefetch={false} href="/" className="wl-text-link">
           <HugeiconsIcon icon={ArrowLeft01Icon} size={15} aria-hidden="true" /> Back to Waitlyze
         </Link>
         <header className="wl-legal-heading">
@@ -32,10 +32,10 @@ export default function LegalDocument({
           <article className="wl-legal-copy">{children}</article>
         </div>
         <nav className="wl-legal-related" aria-label="Related policies">
-          <Link href="/privacy">
+          <Link prefetch={false} href="/privacy">
             Privacy policy <HugeiconsIcon icon={ArrowUpRight01Icon} size={15} aria-hidden="true" />
           </Link>
-          <Link href="/terms">
+          <Link prefetch={false} href="/terms">
             Terms of service <HugeiconsIcon icon={ArrowUpRight01Icon} size={15} aria-hidden="true" />
           </Link>
         </nav>

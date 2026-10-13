@@ -5,8 +5,7 @@ import { campaignScope } from "@/lib/workspaces/service.mjs";
 import { WaitlistNav } from "@/components/product/waitlist-nav";
 
 export default async function WaitlistLayout({ children, params }) {
-  const { id } = await params;
-  const { user, workspace } = await currentWorkspace();
+  const [{ id }, { user, workspace }] = await Promise.all([params, currentWorkspace()]);
   const waitlist = await prisma.waitList.findFirst({ where: { id, ...campaignScope(user.id, "viewCampaign", workspace.id) }, select: { id: true, name: true } });
   if (!waitlist) notFound();
   const canSendEmail = ["OWNER", "ADMIN"].includes(workspace.members[0]?.role);

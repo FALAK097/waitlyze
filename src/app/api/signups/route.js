@@ -39,7 +39,7 @@ export async function GET(request) {
     return NextResponse.json({
       success: true,
       data: signups,
-    });
+    }, { headers: { "Cache-Control": "private, no-store" } });
   } catch (error) {
     console.error("Error fetching signups:", error);
     return NextResponse.json(

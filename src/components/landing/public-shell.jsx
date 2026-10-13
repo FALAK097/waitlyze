@@ -19,22 +19,22 @@ export default function PublicShell({ children }) {
         <div className="wl-container">
         <div className="wl-footer-top">
           <div>
-            <Link href="/" aria-label="Waitlyze home">
+            <Link prefetch={false} href="/" aria-label="Waitlyze home">
               <Wordmark />
             </Link>
             <p>Made for the quiet work that comes before a big launch.</p>
           </div>
           <nav aria-label="Product">
             <span className="wl-eyebrow">Explore</span>
-            <Link href="/#how-it-works">How it works</Link>
-            <Link href="/#features">Features</Link>
-            <Link href="/#faq">FAQs</Link>
-            <Link href="/docs">Developer docs</Link>
+            <Link prefetch={false} href="/#how-it-works">How it works</Link>
+            <Link prefetch={false} href="/#features">Features</Link>
+            <Link prefetch={false} href="/#faq">FAQs</Link>
+            <Link prefetch={false} href="/docs">Developer docs</Link>
           </nav>
           <nav aria-label="Company">
             <span className="wl-eyebrow">Good to know</span>
-            <Link href="/privacy">Privacy policy</Link>
-            <Link href="/terms">Terms of service</Link>
+            <Link prefetch={false} href="/privacy">Privacy policy</Link>
+            <Link prefetch={false} href="/terms">Terms of service</Link>
             <a href="mailto:hi@falakgala.dev">
               Get in touch <HugeiconsIcon icon={ArrowUpRight01Icon} size={14} aria-hidden="true" />
             </a>

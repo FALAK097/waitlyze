@@ -5,7 +5,9 @@ import { unsubscribeFromMarketing } from "@/lib/email/unsubscribe.mjs";
 export async function GET(request) {
   const token = request.nextUrl.searchParams.get("token");
   if (!token) return NextResponse.json({ message: "Unsubscribe link is invalid." }, { status: 400 });
-  return NextResponse.redirect(new URL(`/unsubscribe/${encodeURIComponent(token)}`, request.url), 303);
+  const response = NextResponse.redirect(new URL(`/unsubscribe/${encodeURIComponent(token)}`, request.url), 303);
+  response.headers.set("Cache-Control", "private, no-store");
+  return response;
 }
 
 export async function POST(request) {
