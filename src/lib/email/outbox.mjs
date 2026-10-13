@@ -5,6 +5,10 @@ import { applyKnownProviderEvents } from "./suppression.mjs";
 const MAX_ATTEMPTS = 6;
 const STALE_LOCK_MS = 5 * 60 * 1000;
 const RETRY_BASE_MS = 30 * 1000;
+// Signup verification: one inline send, then three retries spaced out. The
+// scheduler calls the dispatcher every 5 minutes, so the delays are multiples of that.
+const VERIFICATION_MAX_ATTEMPTS = 4;
+const VERIFICATION_RETRY_DELAYS_MS = [5, 15, 30].map((minutes) => minutes * 60 * 1000);
 const transient = (error) => error?.statusCode === 429 || error?.statusCode >= 500 || (error?.statusCode === 409 && error?.code === "concurrent_idempotent_requests") || error?.name === "TypeError";
 const normalizeEmail = (email) => String(email || "").trim().toLowerCase();
 
@@ -187,8 +191,12 @@ export async function dispatchPendingOutboxEvents(db, { send, now = new Date(), 
       await applyKnownProviderEvents(db, providerMessageId, waitList.workspaceId, signup.emailNormalized || signup.email);
     } catch (error) {
       const code = String(error?.code || error?.name || "PROVIDER_ERROR").replace(/[^A-Za-z0-9_.-]/g, "").slice(0, 80) || "PROVIDER_ERROR";
-      const canRetry = transient(error) && attempt < MAX_ATTEMPTS;
-      const delay = Math.min(RETRY_BASE_MS * (2 ** Math.min(attempt - 1, 6)), 60 * 60 * 1000);
+      const isVerificationEvent = event.type === "SIGNUP_VERIFICATION_REQUESTED";
+      const maxAttempts = isVerificationEvent ? VERIFICATION_MAX_ATTEMPTS : MAX_ATTEMPTS;
+      const canRetry = transient(error) && attempt < maxAttempts;
+      const delay = isVerificationEvent
+        ? VERIFICATION_RETRY_DELAYS_MS[attempt - 1]
+        : Math.min(RETRY_BASE_MS * (2 ** Math.min(attempt - 1, 6)), 60 * 60 * 1000);
       await db.outboxEvent.update({ where: { id: event.id }, data: { status: canRetry ? "PENDING" : "FAILED", availableAt: canRetry ? new Date(now.getTime() + delay) : now, processedAt: canRetry ? null : now, lockedAt: null, payload: canRetry ? payload : { signUpId: payload.signUpId, waitListId: waitList.id }, lastErrorCode: code } });
       if (canRetry) result.retried++; else result.failed++;
     }
