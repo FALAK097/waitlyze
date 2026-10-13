@@ -20,6 +20,27 @@ export async function saveProfile(previous, form) {
   } catch { return { error: "Could not save your profile. Try again." }; }
 }
 
+export async function saveWorkspaceName(previous, form) {
+  const session = await auth.api.getSession({ headers: await headers() });
+  if (!session?.user?.id) return { error: "Sign in again to save workspace settings." };
+  const workspaceId = form.get("workspaceId");
+  const name = form.get("name");
+  if (typeof workspaceId !== "string" || !workspaceId) return { error: "Choose a workspace to update." };
+  if (typeof name !== "string" || !name.trim() || name.trim().length > 80) {
+    return { error: "Enter a workspace name between 1 and 80 characters." };
+  }
+  try {
+    await createWorkspaceService(prisma).renameWorkspace(session.user.id, workspaceId, name);
+    await recordAuditEvent(prisma, { workspaceId, userId: session.user.id, action: AUDIT_ACTIONS.WORKSPACE_RENAMED, resourceType: "workspace", resourceId: workspaceId, resourceName: name.trim() });
+    revalidatePath("/settings");
+    revalidatePath("/(app)", "layout");
+    return { success: "Workspace name saved.", savedName: name.trim() };
+  } catch (error) {
+    if (error instanceof AccessError) return { error: "You don’t have permission to rename this workspace." };
+    return { error: "Could not save the workspace name. Try again." };
+  }
+}
+
 export async function setWaitlistReferrals(waitListId, enabled) {
   if (typeof enabled !== "boolean") return { error: "Choose whether referral sharing is enabled." };
   try {

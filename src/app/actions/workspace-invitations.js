@@ -75,9 +75,10 @@ export async function inviteWorkspaceMember(previous, form) {
       if (!actor) return { error: "You don’t have permission to invite that role." };
       const [existingMember, workspace] = await Promise.all([
         tx.workspaceMember.findFirst({ where: { workspaceId, user: { email: { equals: email, mode: "insensitive" } } }, select: { userId: true } }),
-        tx.workspace.findUnique({ where: { id: workspaceId }, select: { name: true } }),
+        tx.workspace.findUnique({ where: { id: workspaceId }, select: { name: true, personalOwnerId: true } }),
       ]);
       if (!workspace) return { error: "Workspace not found." };
+      if (workspace.personalOwnerId) return { error: "Personal workspaces are private. Create a shared workspace to invite teammates." };
       if (existingMember) return { error: "That person is already a workspace member." };
       await tx.workspaceInvitation.updateMany({ where: { workspaceId, status: { in: ["PENDING", "SEND_FAILED"] }, expiresAt: { lte: now } }, data: { status: "EXPIRED", tokenCiphertext: "", tokenIv: "", tokenTag: "" } });
       const existingInvite = await tx.workspaceInvitation.findFirst({ where: { workspaceId, emailNormalized: email, status: { in: ["PENDING", "SEND_FAILED"] }, expiresAt: { gt: now } }, select: { id: true } });

@@ -508,7 +508,7 @@
 .product-audit-pagination { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 20px; }
 .product-audit-pages { display: flex; align-items: center; gap: 12px; color: var(--product-text-secondary); font-size: .8125rem; font-variant-numeric: tabular-nums; }
 .product-audit-pages > span { white-space: nowrap; }
-.product-danger-inline { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px 24px; }
+.product-danger-inline { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px 24px; margin-block-start: 40px; padding-block-start: 28px; border-top: 1px solid var(--product-border-subtle); }
 .product-danger-inline > div { display: grid; gap: 4px; min-width: 0; }
 .product-danger-inline p { margin: 0; }
 .product-danger-inline strong { font-size: 1rem; }

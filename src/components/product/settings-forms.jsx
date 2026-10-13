@@ -4,7 +4,7 @@ import { useFormStatus } from "react-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/components/ui/toast";
-import { saveProfile } from "@/app/actions/settings";
+import { saveProfile, saveWorkspaceName } from "@/app/actions/settings";
 
 function SubmitButton({ children, pendingLabel, disabled = false }) {
   const { pending } = useFormStatus();
@@ -25,6 +25,28 @@ export function ProfileForm({ name }) {
     <SubmitButton disabled={unchanged} pendingLabel="Saving…">Save profile</SubmitButton>
     {state.error && <p id="profile-name-error" role="alert" aria-live="assertive">{state.error}</p>}
 
+  </form>;
+}
+
+export function WorkspaceNameForm({ workspaceId, name, canManage }) {
+  const [state, action] = useActionState(saveWorkspaceName, {});
+  useEffect(() => {
+    if (state?.error) toast.add({ title: state.error, type: "error" });
+    else if (typeof state?.success === "string") toast.add({ title: state.success, type: "success" });
+  }, [state]);
+  const [value, setValue] = useState(name || "");
+  const savedName = state.savedName ?? name ?? "";
+  const unchanged = value.trim() === savedName.trim();
+  if (!canManage) {
+    return <><dl><dt>Workspace name</dt><dd>{name}</dd></dl><p className="product-help">Only workspace owners and admins can rename this workspace.</p></>;
+  }
+  return <form action={action} className="product-settings-form">
+    <input type="hidden" name="workspaceId" value={workspaceId} />
+    <label htmlFor="workspace-name">Workspace name</label>
+    <Input id="workspace-name" name="name" value={value} onChange={(event) => setValue(event.target.value)} aria-invalid={!!state.error} required maxLength={80} autoComplete="organization" aria-describedby={state.error ? "workspace-name-help workspace-name-error" : "workspace-name-help"} />
+    <p id="workspace-name-help" className="product-help">Shown in your workspace switcher. Up to 80 characters.</p>
+    <SubmitButton disabled={unchanged} pendingLabel="Saving…">Save workspace</SubmitButton>
+    {state.error && <p id="workspace-name-error" role="alert" aria-live="assertive">{state.error}</p>}
   </form>;
 }
 

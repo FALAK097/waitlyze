@@ -49,6 +49,7 @@ export async function recordWaitlistAuditEvent(db, { userId, waitListId, action,
 
 export const AUDIT_ACTIONS = Object.freeze({
   WORKSPACE_CREATED: "workspace.created",
+  WORKSPACE_RENAMED: "workspace.renamed",
   WORKSPACE_DELETED: "workspace.deleted",
   MEMBER_INVITED: "member.invited",
   MEMBER_REMOVED: "member.removed",

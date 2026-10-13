@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import { currentWorkspace } from "@/lib/workspaces/current";
-import { ProfileForm } from "@/components/product/settings-forms";
+import { ProfileForm, WorkspaceNameForm } from "@/components/product/settings-forms";
 import prisma from "@/lib/prisma";
 import { IntegrationsPanel } from "@/components/product/integrations-panel";
 import { SettingsSectionNavigation } from "@/components/product/settings-section-nav";
@@ -27,7 +27,7 @@ async function SelectedSettings({ section, user, workspace, role }) {
     ]);
     return <section className="product-settings-content" aria-labelledby="settings-panel-heading">
       <header><h2 id="settings-panel-heading">Members</h2><p>People with access to {workspace.name}.</p></header>
-      {results.every((result) => result.status === "fulfilled") ? <TeamAccessSettings workspaceId={workspace.id} members={results[0].value} invitations={results[1].value} canManage={canManage} canInviteAdmins={role === "OWNER"} secureInvitesConfigured={Boolean(process.env.WEBHOOK_SECRET_ENCRYPTION_KEY)} currentUserId={user.id} /> : <SettingsLoadError title="Members couldn’t load" message="Try again to see your workspace members and invitations." />}
+      {results.every((result) => result.status === "fulfilled") ? <TeamAccessSettings workspaceId={workspace.id} members={results[0].value} invitations={results[1].value} canManage={canManage} canInviteAdmins={role === "OWNER"} secureInvitesConfigured={Boolean(process.env.WEBHOOK_SECRET_ENCRYPTION_KEY)} currentUserId={user.id} isPersonalWorkspace={Boolean(workspace.personalOwnerId)} /> : <SettingsLoadError title="Members couldn’t load" message="Try again to see your workspace members and invitations." />}
     </section>;
   }
   if (section === "audit") {
@@ -46,10 +46,10 @@ async function SelectedSettings({ section, user, workspace, role }) {
       <AuditLog events={events.map((event) => ({ ...event, createdAt: event.createdAt.toISOString(), userName: event.user?.name || null, userEmail: event.user?.email || null }))} />
     </section>;
   }
-  if (section === "delete") {
-    if (!canManage) return <SettingsLoadError title="Delete workspace" message="Only workspace owners and admins can delete this workspace." />;
+  if (section === "workspace") {
     return <section className="product-settings-content" aria-labelledby="settings-panel-heading">
-      <header><h2 id="settings-panel-heading">Delete workspace</h2><p>Permanently remove this workspace and everything in it.</p></header>
+      <header><h2 id="settings-panel-heading">Workspace</h2><p>Rename or delete {workspace.name}.</p></header>
+      <WorkspaceNameForm key={`workspace-name:${workspace.id}`} workspaceId={workspace.id} name={workspace.name} canManage={canManage} />
       <DeleteWorkspace workspaceId={workspace.id} workspaceName={workspace.name} isPersonal={Boolean(workspace.personalOwnerId)} />
     </section>;
   }
@@ -66,7 +66,7 @@ async function SelectedSettings({ section, user, workspace, role }) {
 
 export default async function SettingsPage({ searchParams }) {
   const [context, query] = await Promise.all([currentWorkspace(), searchParams]);
-  const section = ["profile", "team", "integrations", "audit", "delete"].includes(query.section) ? query.section : "profile";
+  const section = ["profile", "workspace", "team", "integrations", "audit"].includes(query.section) ? query.section : "profile";
   return <div className="product-settings-page">
     <div className="product-settings-layout">
       <aside className="product-settings-menu"><h1 className="product-page-title">Settings</h1><SettingsSectionNavigation section={section} /></aside>

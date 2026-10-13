@@ -14,6 +14,7 @@ import { formatProductDate } from "@/lib/product-date.mjs";
 
 const ACTION_LABELS = {
   "workspace.created": ["Created", "success"],
+  "workspace.renamed": ["Renamed", "info"],
   "workspace.deleted": ["Deleted", "danger"],
   "member.invited": ["Invited", "success"],
   "member.removed": ["Removed", "danger"],

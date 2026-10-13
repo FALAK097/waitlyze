@@ -20,7 +20,7 @@ function formatDate(value) {
   return formatProductDate(value, { includeTime: false });
 }
 
-export function TeamAccessSettings({ workspaceId, members, invitations, canManage, canInviteAdmins, secureInvitesConfigured, currentUserId }) {
+export function TeamAccessSettings({ workspaceId, members, invitations, canManage, canInviteAdmins, secureInvitesConfigured, currentUserId, isPersonalWorkspace = false }) {
   const [inviteOpen, setInviteOpen] = useState(false);
   const [memberQuery, setMemberQuery] = useState("");
   const [rowPending, startTransition] = useTransition();
@@ -77,7 +77,7 @@ export function TeamAccessSettings({ workspaceId, members, invitations, canManag
         <Label className="sr-only" htmlFor="team-member-search">Search members</Label>
         <Input id="team-member-search" type="search" value={memberQuery} onChange={(event) => setMemberQuery(event.target.value)} placeholder="Search" autoComplete="off" maxLength={120} />
       </div>
-      {canManage && secureInvitesConfigured ? <Dialog open={inviteOpen} onOpenChange={setInviteOpen}>
+      {isPersonalWorkspace ? <p className="product-help">Personal workspaces are just for you. Create a shared workspace from the workspace switcher to invite teammates.</p> : canManage && secureInvitesConfigured ? <Dialog open={inviteOpen} onOpenChange={setInviteOpen}>
         <DialogTrigger render={<Button variant="outline" />}><HugeiconsIcon icon={Add01Icon} aria-hidden="true" />Invite member</DialogTrigger>
         <DialogContent>
           <div className="product-team-invitation-dialog">
