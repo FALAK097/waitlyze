@@ -98,9 +98,9 @@ export function TeamAccessSettings({ workspaceId, members, invitations, canManag
             const label = member.user.name || member.user.email;
             return <TableRow key={member.userId}>
               <TableHead scope="row"><span className="product-team-user"><Avatar aria-hidden="true"><AvatarImage src={member.user.image || member.user.imageUrl} alt="" /><AvatarFallback>{(member.user.name || member.user.email || "?").slice(0, 1).toUpperCase()}</AvatarFallback></Avatar><span className="product-team-person"><strong>{label}{isSelf ? " (you)" : ""}</strong><span>{member.user.email}</span></span></span></TableHead>
-              <TableCell data-label="Role">{canManage && !isSelf ? <Select value={member.role} onValueChange={(role) => changeRole(member.userId, role)} disabled={rowPending}><SelectTrigger aria-label={`Change role for ${label}`}><SelectValue>{member.role === "ADMIN" ? "Admin" : "Member"}</SelectValue></SelectTrigger><SelectContent><SelectItem value="MEMBER">Member</SelectItem>{canInviteAdmins ? <SelectItem value="ADMIN">Admin</SelectItem> : null}</SelectContent></Select> : member.role.toLowerCase()}</TableCell>
-              <TableCell data-label="Status"><span className="product-team-status" data-tone="success"><span aria-hidden="true">●</span>Active</span></TableCell>
-              <TableCell data-label="Joined">{member.createdAt ? formatDate(member.createdAt) : "—"}</TableCell>
+              <TableCell>{canManage && !isSelf ? <Select value={member.role} onValueChange={(role) => changeRole(member.userId, role)} disabled={rowPending}><SelectTrigger aria-label={`Change role for ${label}`}><SelectValue>{member.role === "ADMIN" ? "Admin" : "Member"}</SelectValue></SelectTrigger><SelectContent><SelectItem value="MEMBER">Member</SelectItem>{canInviteAdmins ? <SelectItem value="ADMIN">Admin</SelectItem> : null}</SelectContent></Select> : member.role.toLowerCase()}</TableCell>
+              <TableCell><span className="product-team-status" data-tone="success"><span aria-hidden="true">●</span>Active</span></TableCell>
+              <TableCell>{member.createdAt ? formatDate(member.createdAt) : "—"}</TableCell>
               <TableCell>{canManage && !isSelf && <div className="product-team-actions"><Button type="button" variant="destructive" size="sm" disabled={rowPending} aria-label={`Remove ${label} from the workspace`} onClick={() => setRemoveTarget({ userId: member.userId, label })}>Remove</Button></div>}</TableCell>
             </TableRow>;
           })}
@@ -108,9 +108,9 @@ export function TeamAccessSettings({ workspaceId, members, invitations, canManag
             const failed = invite.status === "SEND_FAILED";
             return <TableRow key={invite.id}>
               <TableHead scope="row"><span className="product-team-user"><Avatar aria-hidden="true"><AvatarFallback>{(invite.emailNormalized || "?").slice(0, 1).toUpperCase()}</AvatarFallback></Avatar><span className="product-team-person"><strong>{invite.emailNormalized}</strong><span>{failed ? "Email delivery failed" : `Sent ${formatDate(invite.createdAt)} · expires ${formatDate(invite.expiresAt)}`}</span></span></span></TableHead>
-              <TableCell data-label="Role">{invite.role.toLowerCase()}</TableCell>
-              <TableCell data-label="Status"><span className="product-team-status" data-tone={failed ? "danger" : "info"}><span aria-hidden="true">●</span>{failed ? "Failed" : "Pending"}</span></TableCell>
-              <TableCell data-label="Joined">{formatDate(invite.createdAt)}</TableCell>
+              <TableCell>{invite.role.toLowerCase()}</TableCell>
+              <TableCell><span className="product-team-status" data-tone={failed ? "danger" : "info"}><span aria-hidden="true">●</span>{failed ? "Failed" : "Pending"}</span></TableCell>
+              <TableCell>{formatDate(invite.createdAt)}</TableCell>
               <TableCell>{canManage && <div className="product-team-actions">
                 <Button type="button" variant="outline" size="sm" disabled={rowPending || !secureInvitesConfigured} aria-label={`Resend invitation to ${invite.emailNormalized}`} onClick={() => runInvitationAction(resendWorkspaceInvitation, invite.id)}>Resend</Button>
                 <Button type="button" variant="ghost" size="sm" disabled={rowPending} aria-label={`Revoke invitation to ${invite.emailNormalized}`} onClick={() => setRevokeTarget(invite)}>Revoke</Button>
