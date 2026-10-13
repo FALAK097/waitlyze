@@ -73,10 +73,10 @@ export function TeamAccessSettings({ workspaceId, members, invitations, canManag
 
   return <div className="product-team-settings">
     <div className="product-team-toolbar">
-      <div className="product-team-search" role="search">
+      {isPersonalWorkspace ? null : <div className="product-team-search" role="search">
         <Label className="sr-only" htmlFor="team-member-search">Search members</Label>
         <Input id="team-member-search" type="search" value={memberQuery} onChange={(event) => setMemberQuery(event.target.value)} placeholder="Search" autoComplete="off" maxLength={120} />
-      </div>
+      </div>}
       {isPersonalWorkspace ? <p className="product-help">Personal workspaces are just for you. Create a shared workspace from the workspace switcher to invite teammates.</p> : canManage && secureInvitesConfigured ? <Dialog open={inviteOpen} onOpenChange={setInviteOpen}>
         <DialogTrigger render={<Button variant="outline" />}><HugeiconsIcon icon={Add01Icon} aria-hidden="true" />Invite member</DialogTrigger>
         <DialogContent>
