@@ -105,3 +105,20 @@ export async function deleteWorkspace(previous, form) {
   if (store.get("waitlyze-workspace")?.value === workspaceId) store.delete("waitlyze-workspace");
   redirect("/waitlists");
 }
+
+export async function leaveWorkspace(previous, form) {
+  const session = await auth.api.getSession({ headers: await headers() });
+  if (!session?.user?.id) redirect("/");
+  const workspaceId = form.get("workspaceId");
+  if (typeof workspaceId !== "string" || !workspaceId) return { error: "Choose a workspace to leave." };
+  try {
+    await createWorkspaceService(prisma).leaveWorkspace(session.user.id, workspaceId);
+    await recordAuditEvent(prisma, { workspaceId, userId: session.user.id, action: AUDIT_ACTIONS.MEMBER_LEFT, resourceType: "member", resourceId: session.user.id, resourceName: session.user.email || session.user.name });
+  } catch (error) {
+    if (error instanceof TypeError) return { error: error.message };
+    return { error: "Could not leave this workspace. Try again." };
+  }
+  const store = await cookies();
+  if (store.get("waitlyze-workspace")?.value === workspaceId) store.delete("waitlyze-workspace");
+  redirect("/waitlists");
+}

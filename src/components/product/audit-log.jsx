@@ -18,6 +18,7 @@ const ACTION_LABELS = {
   "workspace.deleted": ["Deleted", "danger"],
   "member.invited": ["Invited", "success"],
   "member.removed": ["Removed", "danger"],
+  "member.left": ["Left", "muted"],
   "member.role_changed": ["Role changed", "info"],
   "invitation.resent": ["Resent", "info"],
   "invitation.revoked": ["Revoked", "muted"],

@@ -7,6 +7,7 @@ import { SettingsSectionNavigation } from "@/components/product/settings-section
 import { TeamAccessSettings } from "@/components/product/team-access-settings";
 import { AuditLog } from "@/components/product/audit-log";
 import { DeleteWorkspace } from "@/components/product/delete-workspace";
+import { LeaveWorkspace } from "@/components/product/leave-workspace";
 import { SettingsPanelSkeleton } from "@/components/product/settings-panel-skeleton";
 import { SettingsLoadError } from "@/components/product/settings-load-error";
 import "@/components/product/settings-page.css";
@@ -47,10 +48,13 @@ async function SelectedSettings({ section, user, workspace, role }) {
     </section>;
   }
   if (section === "workspace") {
+    const isOwner = role === "OWNER";
     return <section className="product-settings-content" aria-labelledby="settings-panel-heading">
-      <header><h2 id="settings-panel-heading">Workspace</h2><p>Rename or delete {workspace.name}.</p></header>
+      <header><h2 id="settings-panel-heading">Workspace</h2><p>Rename or {isOwner ? "delete" : "leave"} {workspace.name}.</p></header>
       <WorkspaceNameForm key={`workspace-name:${workspace.id}`} workspaceId={workspace.id} name={workspace.name} canManage={canManage} />
-      <DeleteWorkspace workspaceId={workspace.id} workspaceName={workspace.name} isPersonal={Boolean(workspace.personalOwnerId)} />
+      {isOwner
+        ? <DeleteWorkspace workspaceId={workspace.id} workspaceName={workspace.name} isPersonal={Boolean(workspace.personalOwnerId)} />
+        : <LeaveWorkspace workspaceId={workspace.id} workspaceName={workspace.name} />}
     </section>;
   }
   let connection;

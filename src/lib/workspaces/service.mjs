@@ -27,6 +27,15 @@ function actor(userId) {
   if (typeof userId !== "string" || !userId) throw new AccessError(401);
 }
 
+// Personal workspaces are named after their owner so the switcher never shows
+// two identically named entries.
+export function personalWorkspaceName(name, email) {
+  const first = String(name || "").trim().split(/\s+/)[0];
+  if (first) return `${first}’s workspace`;
+  const handle = String(email || "").split("@")[0].trim();
+  return handle ? `${handle}’s workspace` : "My workspace";
+}
+
 function roles(permission) {
   if (!Object.hasOwn(permissions, permission)) throw new Error("Unknown workspace permission.");
   return permissions[permission];
@@ -111,6 +120,23 @@ export function createWorkspaceService(db) {
         return { id: workspace.id, name: workspace.name, waitlistCount: waitlistIds.length };
       });
     },
+    async leaveWorkspace(userId, workspaceId) {
+      actor(userId);
+      if (typeof workspaceId !== "string" || !workspaceId) throw new AccessError();
+      return db.$transaction(async (tx) => {
+        const membership = await tx.workspaceMember.findUnique({
+          where: { workspaceId_userId: { workspaceId, userId } },
+          select: { role: true },
+        });
+        if (!membership) throw new AccessError();
+        if (membership.role === "OWNER") {
+          const owners = await tx.workspaceMember.count({ where: { workspaceId, role: "OWNER" } });
+          if (owners < 2) throw new TypeError("You’re the only owner. Delete the workspace or make another member an owner first.");
+        }
+        await tx.workspaceMember.delete({ where: { workspaceId_userId: { workspaceId, userId } } });
+        return { workspaceId };
+      });
+    },
     async removeWorkspaceMember(userId, workspaceId, targetUserId) {
       actor(userId);
       if (typeof workspaceId !== "string" || !workspaceId) throw new AccessError();
@@ -166,13 +192,20 @@ export function createWorkspaceService(db) {
       for (let attempt = 0; attempt < 4; attempt++) {
         try {
           return await db.$transaction(async (tx) => {
-            const user = await tx.user.findUnique({ where: { id: userId }, select: { id: true } });
+            const user = await tx.user.findUnique({ where: { id: userId }, select: { id: true, name: true, email: true } });
             if (!user) throw new AccessError();
+            const personalName = personalWorkspaceName(user.name, user.email);
             const workspace = await tx.workspace.upsert({
               where: { personalOwnerId: userId },
-              create: { name: "Personal workspace", personalOwnerId: userId, members: { create: { userId, role: "OWNER" } } },
+              create: { name: personalName, personalOwnerId: userId, members: { create: { userId, role: "OWNER" } } },
               update: {},
+              select: { id: true, name: true },
             });
+            // One-time rename for workspaces still carrying the old generic default.
+            if (workspace.name === "Personal workspace") {
+              await tx.workspace.update({ where: { id: workspace.id }, data: { name: personalName } });
+              workspace.name = personalName;
+            }
             const membership = await tx.workspaceMember.findUnique({
               where: { workspaceId_userId: { workspaceId: workspace.id, userId } },
             });
