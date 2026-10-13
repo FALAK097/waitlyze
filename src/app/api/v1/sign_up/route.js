@@ -7,6 +7,7 @@ import { validateRequest } from "@/utils/server/validations/sign-up";
 import { DuplicateSignupError, InvalidCampaignError } from "@/lib/campaigns/signups.mjs";
 import { getCampaignPosition } from "@/lib/campaigns/referral-position.mjs";
 import { NextResponse } from "next/server";
+import { dispatchVerificationNow } from "@/lib/email/dispatch-now.mjs";
 
 const legacySignupResponse = (signUp, { includeReferralCode = false } = {}) => {
   // This endpoint is public. Keep the legacy fields needed by its browser
@@ -103,6 +104,7 @@ export const POST = async (req) => {
     }
 
     const signUp = await createSignUp(data, body?.referralId);
+    await dispatchVerificationNow(signUp.verificationEventKey);
     return NextResponse.json({ message: "Signed up successfully", signUp: legacySignupResponse(signUp, { includeReferralCode: true }) });
   } catch (error) {
     if (error instanceof PublicRateLimitError) return NextResponse.json({ message: error.message, error: error.message }, { status: error.status, headers: { "Retry-After": error.status === 429 ? "3600" : "60" } });

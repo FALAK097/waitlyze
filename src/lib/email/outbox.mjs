@@ -113,11 +113,11 @@ function safePayload(payload) {
   return payload;
 }
 
-export async function dispatchPendingOutboxEvents(db, { send, now = new Date(), batchSize = 20, waitListId } = {}) {
+export async function dispatchPendingOutboxEvents(db, { send, now = new Date(), batchSize = 20, waitListId, eventKeys } = {}) {
   if (typeof send !== "function") throw new TypeError("A provider send function is required.");
   const staleBefore = new Date(now.getTime() - STALE_LOCK_MS);
   const events = await db.outboxEvent.findMany({
-    where: { ...(waitListId ? { waitListId } : {}), availableAt: { lte: now }, OR: [{ status: "PENDING" }, { status: "PROCESSING", lockedAt: { lt: staleBefore } }] },
+    where: { ...(waitListId ? { waitListId } : {}), ...(eventKeys ? { eventKey: { in: eventKeys } } : {}), availableAt: { lte: now }, OR: [{ status: "PENDING" }, { status: "PROCESSING", lockedAt: { lt: staleBefore } }] },
     orderBy: [{ availableAt: "asc" }, { createdAt: "asc" }], take: batchSize,
   });
   const result = { accepted: 0, retried: 0, failed: 0, skipped: 0 };

@@ -111,19 +111,21 @@ export async function createCampaignSignup(db, input, referralId, { now = new Da
       const verification = await tx.signUpVerification.create({
         data: { signUpId: signUp.id, tokenHash: tokenDigest(token), expiresAt: new Date(now.getTime() + verificationTtlMs) },
       });
+      const verificationEventKey = `signup.verify:${verification.id}`;
       await tx.outboxEvent.create({
         data: {
-          eventKey: `signup.verify:${verification.id}`,
+          eventKey: verificationEventKey,
           type: "SIGNUP_VERIFICATION_REQUESTED",
           waitListId: input.waitListId,
           payload: { signUpId: signUp.id, waitListId: input.waitListId, email: signUp.email, token },
         },
       });
 
-      return tx.signUp.findUnique({
+      const created = await tx.signUp.findUnique({
         where: { id: signUp.id },
         include: { referrals: true, referredBy: true },
       });
+      return { ...created, verificationEventKey };
     });
   } catch (error) {
     if (error?.code !== "P2002") throw error;

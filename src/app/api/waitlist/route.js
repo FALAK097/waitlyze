@@ -7,6 +7,7 @@ import prisma from "@/lib/prisma";
 import { createSignUp } from "@/services/sign-up";
 import { DuplicateSignupError, InvalidCampaignError } from "@/lib/campaigns/signups.mjs";
 import { getCampaignPosition } from "@/lib/campaigns/referral-position.mjs";
+import { dispatchVerificationNow } from "@/lib/email/dispatch-now.mjs";
 
 export async function POST(request) {
   let body;
@@ -79,6 +80,7 @@ export async function POST(request) {
     }
 
     const signUp = await createSignUp(signupData, referralCode);
+    await dispatchVerificationNow(signUp.verificationEventKey);
 
     await prisma.impression.create({
       data: {
