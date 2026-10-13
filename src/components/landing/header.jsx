@@ -28,7 +28,7 @@ export default function Header() {
       }}
     >
       <div className="wl-container wl-header-inner">
-        <Link
+        <Link prefetch={false}
           href="/"
           aria-label="Waitlyze home"
           onClick={() => setOpen(false)}
@@ -37,7 +37,7 @@ export default function Header() {
         </Link>
         <nav aria-label="Main navigation" className="wl-desktop-nav">
           {links.map(([label, href]) => (
-            <Link href={href} key={href}>
+            <Link prefetch={false} href={href} key={href}>
               {label}
             </Link>
           ))}
@@ -64,7 +64,7 @@ export default function Header() {
         hidden={!open}
       >
         {links.map(([label, href]) => (
-          <Link href={href} key={href} onClick={() => setOpen(false)}>
+          <Link prefetch={false} href={href} key={href} onClick={() => setOpen(false)}>
             {label}
             <HugeiconsIcon icon={ArrowUpRight01Icon} size={16} aria-hidden="true" />
           </Link>

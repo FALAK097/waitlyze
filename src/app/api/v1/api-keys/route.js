@@ -40,7 +40,7 @@ export async function GET() {
       id, name, keyId, scopes, expiresAt, lastUsedAt, createdAt, waitlist, key: "••••••••••••••••",
     }));
 
-    return NextResponse.json({ data: apiKeysWithMaskedKeys });
+    return NextResponse.json({ data: apiKeysWithMaskedKeys }, { headers: { "Cache-Control": "private, no-store" } });
   } catch (error) {
     console.error("Error fetching API keys:", error);
     return NextResponse.json(

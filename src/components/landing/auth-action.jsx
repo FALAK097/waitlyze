@@ -17,7 +17,7 @@ export default function AuthAction({
   const { data: session, isPending } = useSession();
   const classes = `wl-button ${compact ? "wl-button-small" : "wl-button-primary"} ${className}`;
   return session ? (
-    <Link href="/waitlists" className={classes}>
+    <Link prefetch={false} href="/waitlists" className={classes}>
       {compact ? "Waitlists" : "Open your waitlists"}{" "}
       <HugeiconsIcon icon={ArrowUpRight01Icon} size={18} aria-hidden="true" />
     </Link>

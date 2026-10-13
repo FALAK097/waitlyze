@@ -61,7 +61,7 @@ export default function LegalPage() {
       <p>
         Welcome to Waitlyze ("Platform," "Service," "we," "us," "our"). By
         accessing or using{" "}
-        <Link href="https://waitlyze.falakgala.dev">
+        <Link prefetch={false} href="https://waitlyze.falakgala.dev">
           www.waitlyze.falakgala.dev
         </Link>
         ("Website"), you agree to comply with and be bound by these Terms of
@@ -72,8 +72,8 @@ export default function LegalPage() {
       <h2 id="acceptance-of-terms">1. Acceptance of Terms</h2>
       <p>
         By creating an account or accessing our Platform, you accept and agree
-        to be bound by these <Link href="/terms">Terms</Link>, our{" "}
-        <Link href="/privacy">Privacy Policy</Link>, and any other policies or
+        to be bound by these <Link prefetch={false} href="/terms">Terms</Link>, our{" "}
+        <Link prefetch={false} href="/privacy">Privacy Policy</Link>, and any other policies or
         guidelines that we may implement.
       </p>
 
@@ -82,7 +82,7 @@ export default function LegalPage() {
         Waitlyze provides a platform for creating and managing waitlists that
         help convert visitors into eager customers. The platform may collect
         analytics to enhance user experience, which is detailed in our{" "}
-        <Link href="/privacy">Privacy Policy</Link>.
+        <Link prefetch={false} href="/privacy">Privacy Policy</Link>.
       </p>
 
       <h2 id="eligibility">3. Eligibility</h2>
@@ -139,7 +139,7 @@ export default function LegalPage() {
       <h2 id="contact-information">10. Contact Information</h2>
       <p>
         For questions about these Terms, please contact us at{" "}
-        <Link
+        <Link prefetch={false}
           href="mailto:hi@falakgala.dev"
           className="text-purple-600 hover:text-purple-800"
         >

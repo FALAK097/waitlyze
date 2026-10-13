@@ -51,7 +51,7 @@ function WaitlistsTable({ waitlists, query, status, sort }) {
             return (
               <TableRow key={waitlist.id}>
                 <TableHead scope="row">
-                  <Link href={`/waitlists/${waitlist.id}`} aria-label={`Open ${waitlist.name || "Untitled waitlist"}`}>
+                  <Link prefetch={false} href={`/waitlists/${waitlist.id}`} aria-label={`Open ${waitlist.name || "Untitled waitlist"}`}>
                     <span>{waitlist.name || "Untitled waitlist"}</span>
                   </Link>
                   {waitlist.description && <p className={styles.rowDescription}>{waitlist.description}</p>}
@@ -72,7 +72,7 @@ function WaitlistsTable({ waitlists, query, status, sort }) {
 
 function WaitlistsEmptyState({ query, status, sort, hasFilters }) {
   if (!hasFilters) {
-    return <div className={`product-empty ${styles.empty}`}><h2>Your next launch starts here.</h2><p>Create a waitlist to collect subscribers and learn who's interested.</p><Link href="/waitlists/new" className={buttonVariants()}>Create your first waitlist</Link></div>;
+    return <div className={`product-empty ${styles.empty}`}><h2>Your next launch starts here.</h2><p>Create a waitlist to collect subscribers and learn who's interested.</p><Link prefetch={false} href="/waitlists/new" className={buttonVariants()}>Create your first waitlist</Link></div>;
   }
 
   const selectedFilter = WAITLIST_STATUS_FILTERS.find((filter) => filter.value === status) || WAITLIST_STATUS_FILTERS[0];
@@ -91,7 +91,7 @@ function WaitlistsEmptyState({ query, status, sort, hasFilters }) {
       : "Show all waitlists"
     : "View all waitlists";
 
-  return <div className={`product-empty ${styles.empty}`}><h2>{title}</h2><p>{description}</p><Link href={clearHref}>{clearLabel}</Link></div>;
+  return <div className={`product-empty ${styles.empty}`}><h2>{title}</h2><p>{description}</p><Link prefetch={false} href={clearHref}>{clearLabel}</Link></div>;
 }
 
 async function WaitlistsResults({ userId, workspaceId, query, status, sort, requestedPage }) {
@@ -122,7 +122,7 @@ async function WaitlistsResults({ userId, workspaceId, query, status, sort, requ
   const hasFilters = !!query || !!status;
   const resultsAnnouncement = `${total} ${total === 1 ? "waitlist" : "waitlists"}${query ? ` matching “${query}”` : ""}`;
   return waitlists.length
-    ? <><p className="sr-only" aria-live="polite">{resultsAnnouncement}</p><WaitlistsTable waitlists={waitlists} query={query} status={status} sort={sort} />{pageCount > 1 && <nav className={styles.pagination} aria-label="Waitlist pages">{page === 1 ? <span aria-disabled="true">Previous</span> : <Link href={waitlistsHref({ query, status, sort, page: page - 1 })}>Previous</Link>}<span>Page {page} of {pageCount}</span>{page === pageCount ? <span aria-disabled="true">Next</span> : <Link href={waitlistsHref({ query, status, sort, page: page + 1 })}>Next</Link>}</nav>}</>
+    ? <><p className="sr-only" aria-live="polite">{resultsAnnouncement}</p><WaitlistsTable waitlists={waitlists} query={query} status={status} sort={sort} />{pageCount > 1 && <nav className={styles.pagination} aria-label="Waitlist pages">{page === 1 ? <span aria-disabled="true">Previous</span> : <Link prefetch={false} href={waitlistsHref({ query, status, sort, page: page - 1 })}>Previous</Link>}<span>Page {page} of {pageCount}</span>{page === pageCount ? <span aria-disabled="true">Next</span> : <Link prefetch={false} href={waitlistsHref({ query, status, sort, page: page + 1 })}>Next</Link>}</nav>}</>
     : <WaitlistsEmptyState query={query} status={status} sort={sort} hasFilters={hasFilters} />;
 }
 
@@ -137,7 +137,7 @@ export default async function WaitlistsPage({ searchParams }) {
       <div className={styles.listToolbar}>
         <StatusTabs query={query} status={status} sort={sort} />
         <WaitlistSearch query={query} status={status} sort={sort} />
-        <Button render={<Link href="/waitlists/new" />}><HugeiconsIcon icon={Add01Icon} aria-hidden="true" />New waitlist</Button>
+        <Button render={<Link prefetch={false} href="/waitlists/new" />}><HugeiconsIcon icon={Add01Icon} aria-hidden="true" />New waitlist</Button>
       </div>
       <Suspense fallback={<ProductContentSkeleton label="Loading waitlists" variant="table" rows={5} />}>
         <WaitlistsResults userId={user.id} workspaceId={workspace.id} query={query} status={status} sort={sort} requestedPage={requestedPage} />

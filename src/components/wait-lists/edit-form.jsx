@@ -435,7 +435,7 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
               <Tooltip>
                 <TooltipTrigger
                   render={
-                    <Link className={styles.secondaryLink} href={`/waitlists/${initialWaitList.id}/emails`}><HugeiconsIcon icon={Mail01Icon} className="w-4 h-4" aria-hidden="true" /><span>Email templates</span></Link>
+                    <Link prefetch={false} className={styles.secondaryLink} href={`/waitlists/${initialWaitList.id}/emails`}><HugeiconsIcon icon={Mail01Icon} className="w-4 h-4" aria-hidden="true" /><span>Email templates</span></Link>
                   }
                 />
                 <TooltipContent side="bottom">

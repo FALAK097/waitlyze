@@ -36,13 +36,15 @@ export async function DELETE(_req, { params }) {
             return NextResponse.json({ error: { code: 'invalid_input', message: 'API key ID is required' } }, { status: 400 });
         }
 
-        const key = await prisma.apiKey.findUnique({ where: { id }, select: { userId: true, waitlistId: true, name: true, waitlist: { select: { name: true } } } });
+        const [key, workspaceId] = await Promise.all([
+            prisma.apiKey.findUnique({ where: { id }, select: { userId: true, waitlistId: true, name: true, waitlist: { select: { name: true } } } }),
+            selectedWorkspaceId(user.id),
+        ]);
         if (!key) {
             return NextResponse.json({ error: { code: 'not_found', message: 'API key not found or access denied' } }, { status: 404 });
         }
         let waitlistId = null;
         if (key.waitlistId) {
-            const workspaceId = await selectedWorkspaceId(user.id);
             const accessibleWaitlist = await prisma.waitList.findFirst({
                 where: { id: key.waitlistId, ...campaignScope(user.id, "manageConnections", workspaceId || undefined) },
                 select: { id: true },

@@ -347,7 +347,7 @@ export const ReferralPreview = ({
 					{waitList.showBranding && (
 						<p className="text-xs text-center text-muted-foreground">
 							Widget by{" "}
-							<Link href="https://waitlyze.falakgala.dev" className="hover:underline">
+							<Link prefetch={false} href="https://waitlyze.falakgala.dev" className="hover:underline">
 								Waitlyze
 							</Link>
 						</p>

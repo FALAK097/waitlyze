@@ -42,7 +42,7 @@ export const GET = async (req) => {
   }
 
   const rank = await getCampaignPosition(prisma, signUp.waitListId, signUp.id);
-  return NextResponse.json({ signUp: { ...signUp, rank } });
+  return NextResponse.json({ signUp: { ...signUp, rank } }, { headers: { "Cache-Control": "private, no-store" } });
 };
 
 export const POST = async (req) => {

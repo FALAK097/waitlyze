@@ -12,8 +12,11 @@ export const metadata = { title: "Workspace invitation", robots: { index: false,
 
 export default async function AcceptInvitationPage({ params }) {
   const { token } = await params;
-  const invitation = await loadWorkspaceInvitation(prisma, token);
-  const session = await auth.api.getSession({ headers: await headers() });
+  const requestHeaders = await headers();
+  const [invitation, session] = await Promise.all([
+    loadWorkspaceInvitation(prisma, token),
+    auth.api.getSession({ headers: requestHeaders }),
+  ]);
   const signedInEmail = normalizeInvitationEmail(session?.user?.email);
   const matchesAccount = !!signedInEmail && signedInEmail === invitation?.emailNormalized;
 
@@ -32,7 +35,7 @@ export default async function AcceptInvitationPage({ params }) {
         <p className="product-eyebrow">Workspace invitation</p>
         <h1 id="invitation-title">This invitation isn’t available</h1>
         <p className="product-invitation-copy">It may have expired, been revoked, or already been accepted. Ask a workspace admin for a new invitation.</p>
-        <Link className={buttonVariants({ variant: "outline" })} href="/">Return to Waitlyze</Link>
+        <Link prefetch={false} className={buttonVariants({ variant: "outline" })} href="/">Return to Waitlyze</Link>
       </>}
     </section>
   </main></PublicShell>;

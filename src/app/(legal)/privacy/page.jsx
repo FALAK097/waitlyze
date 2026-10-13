@@ -52,7 +52,7 @@ export default function LegalPage() {
     >
       <p>
         At Waitlyze ("we," "us," "our"), accessible from{" "}
-        <Link href="https://waitlyze.falakgala.dev">
+        <Link prefetch={false} href="https://waitlyze.falakgala.dev">
           www.waitlyze.falakgala.dev
         </Link>
         , we are committed to protecting your privacy. This Privacy Policy
@@ -151,7 +151,7 @@ export default function LegalPage() {
       <p>
         If you have questions or concerns about this Privacy Policy or our data
         practices, please contact us at{" "}
-        <Link
+        <Link prefetch={false}
           href="mailto:hi@falakgala.dev"
           className="text-purple-600 hover:text-purple-800"
         >
