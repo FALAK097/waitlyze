@@ -1,5 +1,7 @@
+import { HugeiconsIcon } from "@hugeicons/react";
+import { ArrowLeft01Icon, ArrowUpRight01Icon } from "@hugeicons/core-free-icons";
 import Link from "next/link";
-import { ArrowLeft, ArrowUpRight } from "lucide-react";
+import LegalTOC from "./legal-toc";
 import PublicShell from "./public-shell";
 
 export default function LegalDocument({
@@ -12,36 +14,29 @@ export default function LegalDocument({
     <PublicShell>
       <main id="main-content" className="wl-container wl-legal">
         <Link href="/" className="wl-text-link">
-          <ArrowLeft size={15} aria-hidden="true" /> Back to Waitlyze
+          <HugeiconsIcon icon={ArrowLeft01Icon} size={15} aria-hidden="true" /> Back to Waitlyze
         </Link>
         <header className="wl-legal-heading">
           <p className="wl-eyebrow">The important details</p>
           <h1>{title}</h1>
           <p>{description}</p>
-          <span>Last updated · July 13, 2025</span>
+          <span>Last updated · October 11, 2026</span>
         </header>
         <div className="wl-legal-grid">
           <aside>
-            <nav aria-label="On this page">
-              <p className="wl-eyebrow">On this page</p>
-              {sections.map(({ id, label }) => (
-                <a href={`#${id}`} key={id}>
-                  {label}
-                </a>
-              ))}
-            </nav>
+            <LegalTOC sections={sections} />
             <a className="wl-text-link" href="mailto:hi@falakgala.dev">
-              Have a question? <ArrowUpRight size={14} aria-hidden="true" />
+              Have a question? <HugeiconsIcon icon={ArrowUpRight01Icon} size={14} aria-hidden="true" />
             </a>
           </aside>
           <article className="wl-legal-copy">{children}</article>
         </div>
         <nav className="wl-legal-related" aria-label="Related policies">
           <Link href="/privacy">
-            Privacy policy <ArrowUpRight size={15} aria-hidden="true" />
+            Privacy policy <HugeiconsIcon icon={ArrowUpRight01Icon} size={15} aria-hidden="true" />
           </Link>
           <Link href="/terms">
-            Terms of service <ArrowUpRight size={15} aria-hidden="true" />
+            Terms of service <HugeiconsIcon icon={ArrowUpRight01Icon} size={15} aria-hidden="true" />
           </Link>
         </nav>
       </main>

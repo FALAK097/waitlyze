@@ -2,19 +2,20 @@ import { FormPreview } from "@/components/wait-lists/preview";
 import prisma from "@/lib/prisma";
 import { ReactQueryProvider } from "@/providers/query";
 import { nanoid } from "nanoid";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { cache } from "react";
 import { sendSignupEmail } from "@/app/actions/emails";
 
 const getWaitList = cache(async (id) => {
 	return await prisma.waitList.findUnique({
-		where: { id },
+		where: { id, status: "PUBLISHED" },
+    select: { id: true, name: true, description: true, mainBgColor: true, showReferrals: true, successMessage: true, shareOnEmail: true, shareOnFacebook: true, shareOnInstagram: true, shareOnLinkedin: true, shareOnReddit: true, shareOnTwitter: true, shareOnWhatsapp: true, showBranding: true, badgeColor: true, badgeText: true, badgeTextColor: true, bgColor: true, borderRadius: true, borderWidth: true, buttonBorder: true, buttonColor: true, buttonText: true, buttonTextColor: true, enableBgColor: true, fontWeight: true, inputBorder: true, inputColor: true, inputTextColor: true, logoUrl: true, placeholderText: true, showBadge: true, showLogo: true, showSocialProof: true },
 	});
 });
 
 const getWaitListMetadata = cache(async (id) => {
 	return await prisma.waitList.findUnique({
-		where: { id },
+		where: { id, status: "PUBLISHED" },
 		select: {
 			name: true,
 			description: true,
@@ -29,6 +30,7 @@ const getSignUpsCount = cache(async (waitListId) => {
 	return await prisma.signUp.count({
 		where: {
 			waitListId,
+			waitList: { status: "PUBLISHED" },
 		},
 	});
 });
@@ -41,6 +43,7 @@ export async function generateMetadata(props) {
 
 	if (!waitList) {
 		return {
+			robots: { index: false, follow: false },
 			title: "Not Found, Check the URL and try again",
 			description: "The requested waitlist could not be found.",
 		};
@@ -55,6 +58,7 @@ export async function generateMetadata(props) {
 		"Preview and test your waitlist form before sharing it with your audience.";
 
 	return {
+		robots: { index: false, follow: false },
 		title,
 		description,
 		openGraph: {
@@ -85,6 +89,8 @@ export async function generateMetadata(props) {
 export default async function WaitListsPreviewPage(props) {
 	const params = await props.params;
 	const { id } = params;
+	const structured = await prisma.waitList.findUnique({ where: { id }, select: { status: true, templateSnapshot: true, publicSlug: true } });
+	if (structured?.templateSnapshot && structured.publicSlug && ["PUBLISHED", "PAUSED"].includes(structured.status)) redirect(`/w/${structured.publicSlug}`);
 
 	const waitList = await getWaitList(id);
 

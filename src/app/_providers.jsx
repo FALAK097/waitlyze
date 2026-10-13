@@ -2,22 +2,25 @@
 
 import { AuthModalProvider } from "@/components/auth/auth-modal-provider";
 import { AppProgressBar as ProgressBar } from "next-nprogress-bar";
-import { ThemeProvider as NextThemesProvider } from "next-themes";
-import { Toaster } from "react-hot-toast";
+import { Toaster } from "@/components/ui/sonner";
+import { Agentation } from "agentation";
+
+// No endpoint: annotations stay in localStorage (copy/paste into an agent).
+// Set NEXT_PUBLIC_AGENTATION_ENDPOINT and run `pnpm agentation` for MCP sync.
+const agentationEndpoint = process.env.NEXT_PUBLIC_AGENTATION_ENDPOINT;
 
 export function Providers({ children }) {
 	return (
-		<NextThemesProvider attribute="class" forcedTheme="light" enableSystem={false}>
 			<AuthModalProvider>
 				<ProgressBar
 					height="4px"
-					color="#7c3aed"
+					color="#C6FE1E"
 					options={{ showSpinner: false }}
 					shallowRouting
 				/>
-				<Toaster position="top-right" />
+				<Toaster />
 				{children}
+				{process.env.NODE_ENV === "development" && <Agentation {...(agentationEndpoint ? { endpoint: agentationEndpoint } : {})} />}
 			</AuthModalProvider>
-		</NextThemesProvider>
 	);
 }

@@ -1,8 +1,8 @@
 "use client";
 
+import { HugeiconsIcon } from "@hugeicons/react";
+import { ArrowUpRight01Icon } from "@hugeicons/core-free-icons";
 import dynamic from "next/dynamic";
-import { ArrowUpRight } from "lucide-react";
-
 // Better Auth is externalized on the server. Keep its React hook in a
 // browser-only island while the surrounding navigation and content stay SSR.
 const AuthAction = dynamic(() => import("./auth-action"), { ssr: false });
@@ -21,7 +21,7 @@ export default function SignupButton({
         aria-hidden="true"
       >
         {children}
-        <ArrowUpRight size={18} />
+        <HugeiconsIcon icon={ArrowUpRight01Icon} size={18} />
       </span>
       <AuthAction compact={compact} className={className}>
         {children}

@@ -1,0 +1,48 @@
+---
+title: Analytics
+description: Read visitors, signups, conversion, and verification trends.
+---
+
+The **Analytics** tab at `/waitlists/[id]/analytics` requires view access. It answers three questions: are people visiting, are they signing up, and are they verifying?
+
+## Metrics at a glance
+
+| Metric | What it counts | Detail shown |
+| --- | --- | --- |
+| Visitors | Distinct browsers (impressions) | Total for the range |
+| Signups | Signup records created | Of which `N verified` |
+| Conversion | `signups / visitors` as percent | `—` when visitors are zero |
+| Verification | Verified signups share | Plus `N awaiting verification` |
+
+No activity shows an explicit empty state, not zeros pretending to be insight. If the query fails, you get the error with a **Try again** action.
+
+## Ranges and time zones
+
+- Choose **7, 30, or 90 days**. Other values return `400`.
+- The request sends your browser time zone; the header shows the active range dates plus that zone.
+- Data is `private, no-store`: it always reflects the current waitlist, never a cached copy.
+
+## Activity over time
+
+The trend panel plots visitors, signups, and verified signups per day. Use the view toggle for:
+
+- **Chart** — area visualization with series focus for overlapping lines.
+- **Table** — day-by-day numbers with dates formatted in UTC for auditability.
+
+Switching ranges reloads with a loading skeleton and a screen-reader update (“Updating analytics…”). The table view is the accessible source of truth when colors are ambiguous.
+
+## How to read it
+
+- **High visitors, low conversion**: page or offer needs work. Check [Page builder](/docs/page-builder) and [Signup flow](/docs/signup-flow).
+- **High signups, low verification**: verification email or sender needs work. Check [Resend](/docs/resend) and delivery health in [Email tools](/docs/email).
+- **Steady verification, flat referrals**: enable sharing and nudge inviters. See [Referrals](/docs/referrals) and [Automations](/docs/automations).
+
+The waitlists list reuses the same conversion math per row, so list and detail agree.
+
+## Next
+
+<Cards>
+<Card title="Subscribers" href="/docs/subscribers" description="Inspect the people behind the numbers." />
+<Card title="Email tools" href="/docs/email" description="Fix verification delivery health." />
+<Card title="Referrals" href="/docs/referrals" description="Grow verified signups faster." />
+</Cards>

@@ -3,7 +3,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import toast from "react-hot-toast";
+import { toast } from "sonner";
 import { Button } from "../ui/button";
 import {
 	Card,
@@ -41,10 +41,7 @@ export const NewWaitListForm = ({ createNewWaitList }) => {
 			setIsCreated(true);
 			setLoading(false);
 			toast.success(response.message);
-			console.log(response);
-			setTimeout(() => {
-				push(`/wait-lists/${response.waitList.id}/edit`);
-			}, 1000);
+			push(`/waitlists/${response.waitList.id}/edit`);
 		} else {
 			setLoading(false);
 			toast.error("There was an error creating the wait list");
@@ -137,7 +134,7 @@ export const NewWaitListForm = ({ createNewWaitList }) => {
 								type="submit"
 								className="w-full py-4 mt-6 text-md"
 								disabled={loading || isCreated}
-							>
+							 variant="ghost">
 								{loading
 									? "Creating..."
 									: isCreated

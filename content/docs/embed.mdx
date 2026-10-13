@@ -1,0 +1,69 @@
+---
+title: Hosted pages and embeds
+description: Share your published page or embed it on your website.
+---
+
+Only **published** revisions have a shareable URL or embed. Draft and paused waitlists show no public controls worth sharing.
+
+## Hosted page
+
+<Steps>
+<Step>
+### Publish first
+Complete [Publishing](/docs/publishing). Draft edits must be published before visitors see them.
+</Step>
+<Step>
+### Copy the hosted URL
+In Page → Publish options → **Hosted page**, copy `/w/your-slug`. This is the canonical Waitlyze URL.
+</Step>
+<Step>
+### Optionally connect a domain
+Add `join.example.com` in Waitlist settings → Custom domain. When status is Ready, it serves the same published revision. See [Custom domains](/docs/domains).
+</Step>
+</Steps>
+
+Local development uses your local origin; preview and production use their configured environment URLs. Do not hardcode one environment's URL into another.
+
+## Embed on your website
+
+Copy the embed code from the builder's Publish options. It carries your **public waitlist ID**, not a secret API key.
+
+```html title="Embed snippet"
+<div class="waitlyze-widget"
+  data-key-id="YOUR_WAITLIST_ID" data-height="720px"></div>
+<script src="https://waitlyze.falakgala.dev/js/embed.js" defer></script>
+```
+
+<Callout title="Public embed, private API key">
+The embed uses a public waitlist ID and needs no secret. Keep [API keys](/docs/api-keys) on your server only.
+</Callout>
+
+- Place the snippet where the form should appear.
+- Change `data-height` to fit your layout; the frame scrolls internally when content overflows.
+- Referral `?r=CODE` and UTM parameters from your page URL are forwarded into the widget.
+- For local development, point the script `src` at your local Waitlyze origin instead of production.
+
+<TypeTable
+  type={{
+    "data-key-id": {
+      type: "string",
+      required: true,
+      description: "Your public waitlist ID. Find it in the builder's Publish options.",
+    },
+    "data-height": {
+      type: "string",
+      required: false,
+      default: "720px",
+      description: "Height of the embedded frame. The form scrolls internally when it needs more room.",
+    },
+  }}
+/>
+
+## Checklist before sharing
+
+- Status is `Published` and Overview says `Published page`, not `Publish your latest changes`.
+- You copied the URL or snippet **after** the last publish.
+- Your site's Content Security Policy allows the Waitlyze script and frame.
+- Custom domain, if used, shows Ready.
+
+If the embed is blank, see [Troubleshooting](/docs/troubleshooting).

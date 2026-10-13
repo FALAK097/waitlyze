@@ -1,9 +1,10 @@
 "use client";
 
+import { HugeiconsIcon } from "@hugeicons/react";
+import { Image01Icon, Loading01Icon } from "@hugeicons/core-free-icons";
 import { useR2Upload } from "@/utils/r2-upload";
-import { ImageIcon, Loader } from "lucide-react";
 import { useCallback, useState } from "react";
-import toast from "react-hot-toast";
+import { toast } from "sonner";
 import { Button } from "./button";
 
 export function UploadButton({ onSuccess, disabled }) {
@@ -50,9 +51,9 @@ export function UploadButton({ onSuccess, disabled }) {
 				onClick={() => document.getElementById("file-input").click()}
 			>
 				{isUploading ? (
-					<Loader className="w-12 h-12 animate-spin bg-primary" />
+					<HugeiconsIcon icon={Loading01Icon} className="w-12 h-12 animate-spin bg-primary" />
 				) : (
-					<ImageIcon className="w-12 h-12" />
+					<HugeiconsIcon icon={Image01Icon} className="w-12 h-12" />
 				)}
 			</Button>
 			<input

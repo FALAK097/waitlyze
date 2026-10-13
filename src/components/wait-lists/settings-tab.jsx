@@ -1,7 +1,9 @@
 "use client";
 
-import { UpgradeButton } from "@/components/shared/upgrade-button";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { Cancel01Icon } from "@hugeicons/core-free-icons";
 import { Button } from "@/components/ui/button";
+import styles from "./legacy-editor.module.css";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ColorPicker } from "@/components/ui/color-picker";
 import { Input } from "@/components/ui/input";
@@ -16,10 +18,9 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useR2Upload } from "@/utils/r2-upload";
-import { X } from "lucide-react";
 import Image from "next/image";
 import { useRef } from "react";
-import { toast } from "react-hot-toast";
+import { toast } from "sonner";
 
 export function SettingsTab({ formSettings, updateSetting, applyPreset }) {
 	const fileInputRef = useRef(null);
@@ -31,7 +32,7 @@ export function SettingsTab({ formSettings, updateSetting, applyPreset }) {
 			}
 		},
 		onUploadError: (error) => {
-			toast.error(`ERROR! ${error.message}`);
+			toast.error(error.message || "Could not upload this image. Try another PNG, JPEG or WebP.");
 		},
 	});
 
@@ -47,9 +48,9 @@ export function SettingsTab({ formSettings, updateSetting, applyPreset }) {
 	};
 
 	return (
-		<div className="w-full md:w-80 ml-0 px-4 md:ml-8 h-[calc(100vh-200px)] overflow-y-auto">
+		<section className={styles.controls} aria-label="Form settings">
 			<Tabs defaultValue="general" className="w-full">
-				<TabsList>
+				<TabsList className={styles.tabList} aria-label="Form settings sections">
 					<TabsTrigger value="general">General</TabsTrigger>
 					<TabsTrigger value="input">Input</TabsTrigger>
 					<TabsTrigger value="presets">Presets</TabsTrigger>
@@ -57,7 +58,7 @@ export function SettingsTab({ formSettings, updateSetting, applyPreset }) {
 				</TabsList>
 				<TabsContent value="general" className="py-4 space-y-4">
 					<div className="flex items-center justify-between">
-						<Label htmlFor="buttonColor">Button Color</Label>
+						<Label htmlFor="buttonColor">Button color</Label>
 						<ColorPicker
 							id="buttonColor"
 							value={formSettings.buttonColor}
@@ -65,7 +66,7 @@ export function SettingsTab({ formSettings, updateSetting, applyPreset }) {
 						/>
 					</div>
 					<div className="flex items-center justify-between">
-						<Label htmlFor="buttonBorder">Button Border</Label>
+						<Label htmlFor="buttonBorder">Button border</Label>
 						<ColorPicker
 							id="buttonBorder"
 							value={formSettings.buttonBorder}
@@ -73,7 +74,7 @@ export function SettingsTab({ formSettings, updateSetting, applyPreset }) {
 						/>
 					</div>
 					<div className="flex items-center justify-between">
-						<Label htmlFor="buttonTextColor">Button Text Color</Label>
+						<Label htmlFor="buttonTextColor">Button text color</Label>
 						<ColorPicker
 							id="buttonTextColor"
 							value={formSettings.buttonTextColor}
@@ -127,13 +128,13 @@ export function SettingsTab({ formSettings, updateSetting, applyPreset }) {
 						)}
 					</div>
 					<div>
-						<Label htmlFor="borderWidth">Border Width</Label>
+						<Label htmlFor="borderWidth">Border width</Label>
 						<Select
 							value={formSettings.borderWidth}
 							onValueChange={(value) => updateSetting("borderWidth", value)}
 						>
 							<SelectTrigger id="borderWidth">
-								<SelectValue placeholder="Select border width" />
+								<SelectValue>Select border width</SelectValue>
 							</SelectTrigger>
 							<SelectContent>
 								<SelectItem value="0px">0px</SelectItem>
@@ -143,13 +144,13 @@ export function SettingsTab({ formSettings, updateSetting, applyPreset }) {
 						</Select>
 					</div>
 					<div>
-						<Label htmlFor="borderRadius">Border Radius</Label>
+						<Label htmlFor="borderRadius">Border radius</Label>
 						<Select
 							value={formSettings.borderRadius}
 							onValueChange={(value) => updateSetting("borderRadius", value)}
 						>
 							<SelectTrigger id="borderRadius">
-								<SelectValue placeholder="Select border radius" />
+								<SelectValue>Select border radius</SelectValue>
 							</SelectTrigger>
 							<SelectContent>
 								<SelectItem value="small">Small</SelectItem>
@@ -159,13 +160,13 @@ export function SettingsTab({ formSettings, updateSetting, applyPreset }) {
 						</Select>
 					</div>
 					<div>
-						<Label htmlFor="fontWeight">Font Weight</Label>
+						<Label htmlFor="fontWeight">Font weight</Label>
 						<Select
 							value={formSettings.fontWeight}
 							onValueChange={(value) => updateSetting("fontWeight", value)}
 						>
 							<SelectTrigger id="fontWeight">
-								<SelectValue placeholder="Select font weight" />
+								<SelectValue>Select font weight</SelectValue>
 							</SelectTrigger>
 							<SelectContent>
 								<SelectItem value="normal">Normal</SelectItem>
@@ -174,13 +175,13 @@ export function SettingsTab({ formSettings, updateSetting, applyPreset }) {
 						</Select>
 					</div>
 					<div>
-						<Label htmlFor="logoSize">Logo Size</Label>
+						<Label htmlFor="logoSize">Logo size</Label>
 						<Select
 							value={formSettings.logoSize}
 							onValueChange={(value) => updateSetting("logoSize", value)}
 						>
 							<SelectTrigger id="logoSize">
-								<SelectValue placeholder="Select logo size" />
+								<SelectValue>Select logo size</SelectValue>
 							</SelectTrigger>
 							<SelectContent>
 								<SelectItem value="1X">1X</SelectItem>
@@ -217,7 +218,7 @@ export function SettingsTab({ formSettings, updateSetting, applyPreset }) {
 						</>
 					)}
 					<div>
-						<Label htmlFor="buttonText">Button Text</Label>
+						<Label htmlFor="buttonText">Button text</Label>
 						<Input
 							id="buttonText"
 							value={formSettings.buttonText}
@@ -225,7 +226,7 @@ export function SettingsTab({ formSettings, updateSetting, applyPreset }) {
 						/>
 					</div>
 					<div>
-						<Label htmlFor="successMessage">Success Message</Label>
+						<Label htmlFor="successMessage">Success message</Label>
 						<Input
 							id="successMessage"
 							value={formSettings.successMessage}
@@ -246,7 +247,7 @@ export function SettingsTab({ formSettings, updateSetting, applyPreset }) {
 							checked={formSettings.showLogo}
 							onCheckedChange={(checked) => updateSetting("showLogo", checked)}
 						/>
-						<Label htmlFor="showLogo">Show Logo</Label>
+						<Label htmlFor="showLogo">Show logo</Label>
 					</div>
 					<div className="flex items-center space-x-2">
 						<Switch
@@ -256,7 +257,7 @@ export function SettingsTab({ formSettings, updateSetting, applyPreset }) {
 								updateSetting("showSocialProof", checked)
 							}
 						/>
-						<Label htmlFor="showSocialProof">Show Social Proof</Label>
+						<Label htmlFor="showSocialProof">Show social proof</Label>
 					</div>
 					<div className="flex items-center space-x-2">
 						<Switch
@@ -264,7 +265,7 @@ export function SettingsTab({ formSettings, updateSetting, applyPreset }) {
 							checked={formSettings.showBadge}
 							onCheckedChange={(checked) => updateSetting("showBadge", checked)}
 						/>
-						<Label htmlFor="showBadge">Show Badge</Label>
+						<Label htmlFor="showBadge">Show badge</Label>
 					</div>
 					<div className="flex items-center space-x-2">
 						<Switch
@@ -274,7 +275,7 @@ export function SettingsTab({ formSettings, updateSetting, applyPreset }) {
 								updateSetting("showReferrals", checked)
 							}
 						/>
-						<Label htmlFor="showReferrals">Show Referral System</Label>
+						<Label htmlFor="showReferrals">Show referrals</Label>
 					</div>
 					<div className="flex items-center space-x-2">
 						<Switch
@@ -290,7 +291,7 @@ export function SettingsTab({ formSettings, updateSetting, applyPreset }) {
 
 				<TabsContent value="input" className="py-4 space-y-4">
 					<div className="flex items-center justify-between">
-						<Label htmlFor="inputColor">Input Color</Label>
+						<Label htmlFor="inputColor">Input color</Label>
 						<ColorPicker
 							id="inputColor"
 							value={formSettings.inputColor}
@@ -298,7 +299,7 @@ export function SettingsTab({ formSettings, updateSetting, applyPreset }) {
 						/>
 					</div>
 					<div className="flex items-center justify-between">
-						<Label htmlFor="inputBorder">Input Border</Label>
+						<Label htmlFor="inputBorder">Input border</Label>
 						<ColorPicker
 							id="inputBorder"
 							value={formSettings.inputBorder}
@@ -306,7 +307,7 @@ export function SettingsTab({ formSettings, updateSetting, applyPreset }) {
 						/>
 					</div>
 					<div className="flex items-center justify-between">
-						<Label htmlFor="inputTextColor">Input Text Color</Label>
+						<Label htmlFor="inputTextColor">Input text color</Label>
 						<ColorPicker
 							id="inputTextColor"
 							value={formSettings.inputTextColor}
@@ -314,7 +315,7 @@ export function SettingsTab({ formSettings, updateSetting, applyPreset }) {
 						/>
 					</div>
 					<div>
-						<Label htmlFor="placeholderText">Placeholder Text</Label>
+						<Label htmlFor="placeholderText">Placeholder text</Label>
 						<Input
 							id="placeholderText"
 							value={formSettings.placeholderText}
@@ -325,32 +326,28 @@ export function SettingsTab({ formSettings, updateSetting, applyPreset }) {
 				<TabsContent value="presets" className="py-4 space-y-4">
 					<Button
 						className="w-full"
-						style={{ backgroundColor: "#8B5CF6", color: "#FFFFFF" }}
+						variant="outline"
 						onClick={() => applyPreset("modern")}
 					>
 						Modern
 					</Button>
 					<Button
 						className="w-full"
-						style={{ backgroundColor: "#FF4136", color: "#FFFFFF" }}
+						variant="outline"
 						onClick={() => applyPreset("hot")}
 					>
 						Hot
 					</Button>
 					<Button
 						className="w-full"
-						style={{ backgroundColor: "#000000", color: "#FFFFFF" }}
+						variant="outline"
 						onClick={() => applyPreset("minimal")}
 					>
 						Minimal
 					</Button>
 					<Button
 						className="w-full"
-						style={{
-							backgroundColor: "#FFB6C1",
-							color: "#000000",
-							border: "2px solid #000000",
-						}}
+						variant="outline"
 						onClick={() => applyPreset("funk")}
 					>
 						Funk
@@ -366,7 +363,7 @@ export function SettingsTab({ formSettings, updateSetting, applyPreset }) {
 								social media.
 							</p>
 							<div className="space-y-2">
-								<Label htmlFor="title">OG Title</Label>
+								<Label htmlFor="title">Sharing title</Label>
 								<p className="text-sm text-muted-foreground">
 									This will be the title that shows up on social media when
 									users share your waitlist.
@@ -380,7 +377,7 @@ export function SettingsTab({ formSettings, updateSetting, applyPreset }) {
 							</div>
 
 							<div className="space-y-2">
-								<Label htmlFor="description">OG Description</Label>
+								<Label htmlFor="description">Sharing description</Label>
 								<p className="text-sm text-muted-foreground">
 									This will be the description that shows up on social media
 									when users share your waitlist.
@@ -396,7 +393,7 @@ export function SettingsTab({ formSettings, updateSetting, applyPreset }) {
 							</div>
 
 							<div className="space-y-2">
-								<Label htmlFor="image">OG Image</Label>
+								<Label htmlFor="image">Sharing image</Label>
 								<p className="text-sm text-muted-foreground">
 									This will be the image that shows up on social media when
 									users share your waitlist.
@@ -406,12 +403,12 @@ export function SettingsTab({ formSettings, updateSetting, applyPreset }) {
 										<div className="space-y-2">
 											<div className="flex justify-end">
 												<Button
-													variant="destructive"
+													variant="ghost"
 													size="icon"
-													className="w-6 h-6"
+													aria-label="Remove sharing image"
 													onClick={() => updateSetting("ogImage", "")}
 												>
-													<X className="w-4 h-4" />
+													<HugeiconsIcon icon={Cancel01Icon} className="w-4 h-4" aria-hidden="true" />
 												</Button>
 											</div>
 											<div className="relative w-full overflow-hidden rounded-lg aspect-video">
@@ -429,9 +426,11 @@ export function SettingsTab({ formSettings, updateSetting, applyPreset }) {
 									<div className="flex justify-start">
 										<input
 											type="file"
+											id="image"
+											aria-label="Upload sharing image"
 											ref={fileInputRef}
 											onChange={handleFileChange}
-											accept="image/*"
+											accept="image/png,image/jpeg,image/webp"
 											className="hidden"
 											disabled={isUploading}
 										/>
@@ -441,7 +440,7 @@ export function SettingsTab({ formSettings, updateSetting, applyPreset }) {
 											disabled={isUploading}
 											className="rounded-md px-6 py-2 shadow-sm text-sm"
 										>
-											{isUploading ? "Uploading..." : "Upload Image"}
+											{isUploading ? "Uploading…" : "Upload image"}
 										</Button>
 									</div>
 								</div>
@@ -632,6 +631,6 @@ export function SettingsTab({ formSettings, updateSetting, applyPreset }) {
 					</div>
 				</TabsContent>
 			</Tabs>
-		</div>
+		</section>
 	);
 }

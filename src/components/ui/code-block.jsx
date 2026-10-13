@@ -1,12 +1,10 @@
 import { cn } from "@/lib/utils";
-import { useTheme } from "next-themes";
 import React from "react";
-import toast from "react-hot-toast";
+import { toast } from "sonner";
 import { CopyIcon } from "../shared/icons";
 import { Button } from "./button";
 
 const CodeBlock = React.forwardRef(({ className, ...props }, ref) => {
-	const { theme } = useTheme();
 	return (
 		<div
 			className={cn(
@@ -14,13 +12,14 @@ const CodeBlock = React.forwardRef(({ className, ...props }, ref) => {
           text-sm overflow-hidden`,
 				className,
 			)}
-			style={{ backgroundColor: theme !== "light" ? "#282a36" : "#ffffff" }}
+			style={{ backgroundColor: "#ffffff" }}
 		>
-			<pre className="w-full max-w-[380px] md:max-w-[500px] lg:max-w-[480px] overflow-auto break-words whitespace-pre no-scrollbar">
+			<pre tabIndex={0} className="w-full max-w-[380px] md:max-w-[500px] lg:max-w-[480px] overflow-auto break-words whitespace-pre no-scrollbar">
 				{props.code}
 			</pre>
 			<Button
 				variant="icon"
+				aria-label="Copy code"
 				className="absolute text-white duration-300 ease-in-out opacity-25 top-2 right-2 bg-primary hover:opacity-100"
 				onClick={() => {
 					navigator.clipboard.writeText(props.code);

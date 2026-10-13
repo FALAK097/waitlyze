@@ -1,5 +1,6 @@
 "use server";
 import prisma from "@/lib/prisma";
+import { requireCampaign } from "@/lib/workspaces/authorize";
 
 export async function getWaitlistReferrals(waitlistId) {
 	try {
@@ -10,6 +11,7 @@ export async function getWaitlistReferrals(waitlistId) {
 			};
 		}
 
+		const { scope } = await requireCampaign(waitlistId, "viewAudience");
 		const referrals = await prisma.referral.groupBy({
 			by: ["referredById"],
 			_count: {
@@ -18,6 +20,7 @@ export async function getWaitlistReferrals(waitlistId) {
 			where: {
 				signUp: {
 					waitListId: waitlistId,
+                    waitList: scope,
 				},
 			},
 		});

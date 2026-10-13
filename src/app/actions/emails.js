@@ -2,10 +2,26 @@
 
 import { env } from "@/lib/env.mjs";
 import prisma from "@/lib/prisma";
-import { marked } from 'marked';
+import { requireCampaign } from "@/lib/workspaces/authorize";
+import { resolveWorkspaceEmailSender } from "@/lib/integrations/email-sender.mjs";
+import { AUDIT_ACTIONS, recordWaitlistAuditEvent } from "@/lib/workspaces/audit.mjs";
+import { consumePublicBudget, PublicRateLimitError } from "@/lib/security/public-rate-limit.mjs";
+import { getCampaignPosition } from "@/lib/campaigns/referral-position.mjs";
+import { escapeHtmlText, renderEmailMarkdown } from "@/lib/email-markdown.mjs";
 import { Resend } from 'resend';
+import { headers } from "next/headers";
+import { revalidatePath } from "next/cache";
 
-const resend = new Resend(env.RESEND_API_KEY);
+const platformSender = { apiKey: env.RESEND_API_KEY, fromEmail: env.RESEND_FROM_EMAIL, replyTo: env.RESEND_REPLY_TO };
+
+// Subscriber and template email prefers the workspace's connected provider so it
+// sends from the customer's own verified domain; the platform sender is the
+// fallback so delivery never silently stops.
+async function senderForWaitlist(waitListId) {
+  const waitlist = await prisma.waitList.findUnique({ where: { id: waitListId }, select: { workspaceId: true } });
+  const provider = await resolveWorkspaceEmailSender(prisma, waitlist?.workspaceId, null).catch(() => null);
+  return provider || platformSender;
+}
 
 const TYPE_MAP = {
   signup: "SIGNUP",
@@ -33,8 +49,9 @@ const DEFAULTS = {
 };
 
 export async function getOrCreateTemplates(waitListId) {
+  const { scope } = await requireCampaign(waitListId, "sendEmail");
   const records = await prisma.emailTemplate.findMany({
-    where: { waitListId },
+    where: { waitListId, waitList: scope },
   });
 
   const byType = {};
@@ -49,7 +66,7 @@ export async function getOrCreateTemplates(waitListId) {
     if (!byType[enumType]) {
       const created = await prisma.emailTemplate.create({
         data: {
-          waitListId,
+          waitList: { connect: { id: waitListId, ...scope } },
           type: enumType,
           ...DEFAULTS[key],
         },
@@ -84,12 +101,14 @@ export async function upsertEmailTemplate({ waitListId, templateType, data }) {
   if (!enumType) return { success: false, message: "Invalid template type" };
 
   try {
+    const { scope } = await requireCampaign(waitListId, "sendEmail");
     const updated = await prisma.emailTemplate.upsert({
       where: {
         waitListId_type: {
           waitListId,
           type: enumType,
         },
+        waitList: scope,
       },
       update: {
         subject: data.subject,
@@ -100,7 +119,7 @@ export async function upsertEmailTemplate({ waitListId, templateType, data }) {
         subBody: data.subBody,
       },
       create: {
-        waitListId,
+        waitList: { connect: { id: waitListId, ...scope } },
         type: enumType,
         subject: data.subject,
         previewText: data.previewText,
@@ -119,6 +138,7 @@ export async function upsertEmailTemplate({ waitListId, templateType, data }) {
 }
 
 export async function sendTestEmail({ waitListId, templateType, to }) {
+  if (typeof to !== "string" || to.length > 320 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to)) return { success: false, message: "Enter one valid test email address." };
   if (!env.RESEND_API_KEY) {
     return { success: false, message: "RESEND_API_KEY not configured" };
   }
@@ -127,8 +147,10 @@ export async function sendTestEmail({ waitListId, templateType, to }) {
   if (!enumType) return { success: false, message: "Invalid template type" };
 
   try {
-    const waitList = await prisma.waitList.findUnique({
-      where: { id: waitListId },
+    const { user, campaign, scope } = await requireCampaign(waitListId, "sendEmail");
+    await consumePublicBudget(prisma, { kind: "testEmail", campaignId: campaign.workspaceId || campaign.id, actorId: user.id, email: to });
+    const waitList = await prisma.waitList.findFirst({
+      where: { id: waitListId, ...scope },
       select: { name: true },
     });
     if (!waitList) return { success: false, message: "Waitlist not found" };
@@ -139,6 +161,7 @@ export async function sendTestEmail({ waitListId, templateType, to }) {
           waitListId,
           type: enumType,
         },
+        waitList: scope,
       },
     });
     if (!tpl) return { success: false, message: "Template not found" };
@@ -171,7 +194,7 @@ export async function sendTestEmail({ waitListId, templateType, to }) {
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>${subject}</title>
+  <title>${escapeHtmlText(subject)}</title>
   <style>
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
@@ -281,11 +304,12 @@ export async function sendTestEmail({ waitListId, templateType, to }) {
 </body>
 </html>`;
 
-    const { error } = await resend.emails.send({
-      from: env.RESEND_FROM_EMAIL,
+    const provider = await senderForWaitlist(waitListId);
+    const { error } = await new Resend(provider.apiKey).emails.send({
+      from: provider.fromEmail,
       to,
       subject,
-      replyTo: env.RESEND_REPLY_TO,
+      replyTo: provider.replyTo,
       html: htmlBody,
     });
 
@@ -301,13 +325,12 @@ export async function sendTestEmail({ waitListId, templateType, to }) {
 }
 
 function markdownToHtml(markdown) {
-  if (!markdown) return '';
-  return marked(markdown);
+  return renderEmailMarkdown(markdown);
 }
 
 async function renderTemplate({ waitListId, enumType, varsOverride = {} }) {
   const waitList = await prisma.waitList.findUnique({
-    where: { id: waitListId },
+    where: { id: waitListId, status: "PUBLISHED" },
     select: { id: true, name: true, sendEmailsToSubscribers: true },
   });
   if (!waitList) return { error: "Waitlist not found" };
@@ -351,7 +374,7 @@ async function renderTemplate({ waitListId, enumType, varsOverride = {} }) {
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>${subject}</title>
+  <title>${escapeHtmlText(subject)}</title>
   <style>
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
@@ -465,46 +488,62 @@ async function renderTemplate({ waitListId, enumType, varsOverride = {} }) {
 }
 
 export async function sendSignupEmail({ waitListId, to }) {
+  if (typeof waitListId !== "string" || !waitListId || waitListId.length > 128 || typeof to !== "string" || to.length > 320 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to)) {
+    return { success: false, message: "Enter a valid email and waitlist." };
+  }
   if (!env.RESEND_API_KEY) {
     return { success: false, message: "RESEND_API_KEY not configured" };
   }
 
+  try {
+    await consumePublicBudget(prisma, { kind: "welcome", campaignId: waitListId, headers: await headers(), email: to });
+  } catch (error) {
+    if (error instanceof PublicRateLimitError) return { success: false, message: error.message };
+    return { success: false, message: "Email delivery is temporarily unavailable." };
+  }
+
+  // Public action: never reveal whether this address is on the waitlist.
+  const generic = { success: true, message: "If this address is on the waitlist, its confirmation email is on the way." };
+
   const signUp = await prisma.signUp.findFirst({
-    where: { waitListId, email: to },
-    select: { rank: true, id: true, signUpEmailSent: true },
+    where: { waitListId, email: to, verifiedAt: { not: null }, waitList: { status: "PUBLISHED" } },
+    select: { id: true, signUpEmailSent: true },
   });
 
-  const totalSignUps = await prisma.signUp.count({ where: { waitListId } });
+  if (!signUp) return generic;
+
+  const position = await getCampaignPosition(prisma, waitListId, signUp.id);
+  const totalSignUps = await prisma.signUp.count({ where: { waitListId, waitList: { status: "PUBLISHED" } } });
 
   const { waitList, subject, htmlBody, error } = await renderTemplate({
     waitListId,
     enumType: "SIGNUP",
     varsOverride: {
-      position: signUp?.rank != null ? String(signUp.rank) : String(totalSignUps),
+      position: position != null ? String(position) : String(totalSignUps),
       total_signups: String(totalSignUps),
     },
   });
 
   if (error === "Waitlist not found") return { success: false, message: error };
-  if (error === "Template not found") return { success: true, message: "No signup template" };
-  if (!waitList.sendEmailsToSubscribers)
-    return { success: true, message: "Email sending disabled" };
+  if (error === "Template not found") return generic;
+  if (!waitList.sendEmailsToSubscribers) return generic;
 
   if (signUp?.signUpEmailSent) {
-    return { success: true, message: "Email already sent" };
+    return generic;
   }
 
   try {
-    const { error } = await resend.emails.send({
-      from: env.RESEND_FROM_EMAIL,
+    const provider = await senderForWaitlist(waitListId);
+    const { error } = await new Resend(provider.apiKey).emails.send({
+      from: provider.fromEmail,
       to,
       subject,
-      replyTo: env.RESEND_REPLY_TO,
+      replyTo: provider.replyTo,
       html: htmlBody,
-    });
+    }, { idempotencyKey: `signup-welcome:${signUp.id}` });
     if (error) {
       console.error("Resend send error:", error);
-      return { success: true, message: "Signup stored (email send failed)" };
+      return generic;
     }
 
     if (signUp?.id) {
@@ -514,9 +553,195 @@ export async function sendSignupEmail({ waitListId, to }) {
       });
     }
 
-    return { success: true, message: "Email sent" };
+    return generic;
   } catch (e) {
     console.error(e);
-    return { success: true, message: "Signup stored (email send exception)" };
+    return generic;
   }
+}
+
+const broadcastPath = (waitListId) => `/waitlists/${waitListId}/emails/broadcasts`;
+const broadcastInput = (input) => {
+  if (!input || typeof input !== "object") return null;
+  const value = {
+    name: String(input.name || "").trim(),
+    subject: String(input.subject || "").trim(),
+    previewText: String(input.previewText || "").trim(),
+    body: String(input.body || "").trim(),
+  };
+  if (value.name.length > 120 || value.subject.length > 160 || /[\r\n]/.test(value.subject) || value.previewText.length > 180 || value.body.length > 5000) return null;
+  return value;
+};
+
+export async function listBroadcasts(waitListId) {
+  const { campaign } = await requireCampaign(waitListId, "sendEmail");
+  const [broadcasts, counts] = await Promise.all([
+    prisma.marketingBroadcast.findMany({
+      where: { waitListId: campaign.id }, orderBy: { updatedAt: "desc" },
+      select: { id: true, name: true, subject: true, previewText: true, body: true, status: true, recipientCount: true, createdAt: true, updatedAt: true, sentAt: true },
+    }),
+    prisma.$queryRaw`
+      SELECT r."broadcastId", r."status"::text AS status, COUNT(*)::int AS count
+      FROM "broadcast_recipients" r JOIN "marketing_broadcasts" b ON b."id" = r."broadcastId"
+      WHERE b."waitListId" = ${campaign.id}
+      GROUP BY r."broadcastId", r."status"`,
+  ]);
+  const metrics = new Map();
+  for (const row of counts) metrics.set(`${row.broadcastId}:${row.status}`, row.count);
+  return broadcasts.map((broadcast) => ({
+    ...broadcast,
+    deliveredCount: metrics.get(`${broadcast.id}:DELIVERED`) || 0,
+    failedCount: metrics.get(`${broadcast.id}:FAILED`) || 0,
+    skippedCount: metrics.get(`${broadcast.id}:SKIPPED`) || 0,
+    canceledCount: metrics.get(`${broadcast.id}:CANCELED`) || 0,
+  }));
+}
+
+export async function createBroadcastDraft(waitListId) {
+  const { campaign } = await requireCampaign(waitListId, "sendEmail");
+  const draft = await prisma.marketingBroadcast.create({
+    data: { waitListId: campaign.id, name: "New broadcast", subject: "", previewText: "", body: "" },
+    select: { id: true, name: true, subject: true, previewText: true, body: true, status: true, recipientCount: true, updatedAt: true },
+  });
+  revalidatePath(broadcastPath(waitListId));
+  return draft;
+}
+
+export async function saveBroadcastDraft({ waitListId, broadcastId, data }) {
+  const value = broadcastInput(data);
+  if (!value) return { success: false, message: "Keep the subject, preview, and message within their character limits." };
+  await requireCampaign(waitListId, "sendEmail");
+  const updated = await prisma.marketingBroadcast.updateMany({
+    where: { id: broadcastId, waitListId, status: "DRAFT" }, data: value,
+  });
+  if (!updated.count) return { success: false, message: "This draft can no longer be edited." };
+  revalidatePath(broadcastPath(waitListId));
+  return { success: true, message: "Draft saved." };
+}
+
+export async function getBroadcastRecipients(waitListId) {
+  const { campaign } = await requireCampaign(waitListId, "sendEmail");
+  const [countRows, samples] = await Promise.all([
+    prisma.$queryRaw`
+      SELECT COUNT(*)::int AS count
+      FROM "sign_ups" s
+      JOIN "wait_lists" w ON w."id" = s."waitListId"
+      WHERE s."waitListId" = ${campaign.id}
+        AND w."status"::text = 'PUBLISHED'
+        AND s."verifiedAt" IS NOT NULL
+        AND s."marketingConsentAt" IS NOT NULL
+        AND s."marketingUnsubscribedAt" IS NULL
+        AND COALESCE(s."emailNormalized", lower(btrim(s."email"))) <> ''
+        AND NOT EXISTS (
+          SELECT 1 FROM "email_suppressions" suppression
+          WHERE suppression."workspaceId" = w."workspaceId"
+            AND suppression."emailNormalized" = COALESCE(s."emailNormalized", lower(btrim(s."email")))
+        )`,
+    prisma.$queryRaw`
+      SELECT s."email"
+      FROM "sign_ups" s
+      JOIN "wait_lists" w ON w."id" = s."waitListId"
+      WHERE s."waitListId" = ${campaign.id}
+        AND w."status"::text = 'PUBLISHED'
+        AND s."verifiedAt" IS NOT NULL
+        AND s."marketingConsentAt" IS NOT NULL
+        AND s."marketingUnsubscribedAt" IS NULL
+        AND COALESCE(s."emailNormalized", lower(btrim(s."email"))) <> ''
+        AND NOT EXISTS (
+          SELECT 1 FROM "email_suppressions" suppression
+          WHERE suppression."workspaceId" = w."workspaceId"
+            AND suppression."emailNormalized" = COALESCE(s."emailNormalized", lower(btrim(s."email")))
+        )
+      ORDER BY s."createdAt" ASC, s."id" ASC
+      LIMIT 5`,
+  ]);
+  return {
+    count: countRows[0]?.count ?? 0,
+    samples: samples.map(({ email }) => {
+      const [local, domain] = email.split("@");
+      return `${local.slice(0, 1)}•••@${domain || ""}`;
+    }),
+  };
+}
+
+export async function queueBroadcast({ waitListId, broadcastId, expectedRecipientCount }) {
+  const { campaign, user } = await requireCampaign(waitListId, "sendEmail");
+  if (!Number.isInteger(expectedRecipientCount) || expectedRecipientCount < 0) return { success: false, message: "Refresh the recipient preview before sending." };
+  if (!env.OUTBOX_DISPATCH_SECRET || !env.RESEND_API_KEY) return { success: false, message: "Email delivery is not configured yet." };
+  try {
+    const count = await prisma.$transaction(async (tx) => {
+      const [broadcast] = await tx.$queryRaw`
+        SELECT "id", "status"::text AS status, "subject", "body"
+        FROM "marketing_broadcasts"
+        WHERE "id" = ${broadcastId} AND "waitListId" = ${campaign.id}
+        FOR UPDATE`;
+      if (!broadcast || broadcast.status !== "DRAFT") throw new Error("This broadcast is no longer a draft.");
+      if (!broadcast.subject.trim() || !broadcast.body.trim()) throw new Error("Add a subject and message before sending.");
+
+      const [preview] = await tx.$queryRaw`
+        SELECT COUNT(*)::int AS count
+        FROM "sign_ups" s JOIN "wait_lists" w ON w."id" = s."waitListId"
+        WHERE s."waitListId" = ${campaign.id} AND w."status"::text = 'PUBLISHED'
+          AND s."verifiedAt" IS NOT NULL AND s."marketingConsentAt" IS NOT NULL
+          AND s."marketingUnsubscribedAt" IS NULL
+          AND COALESCE(s."emailNormalized", lower(btrim(s."email"))) <> ''
+          AND NOT EXISTS (SELECT 1 FROM "email_suppressions" suppression
+            WHERE suppression."workspaceId" = w."workspaceId"
+              AND suppression."emailNormalized" = COALESCE(s."emailNormalized", lower(btrim(s."email"))))`;
+      if (preview.count !== expectedRecipientCount) throw new Error("The recipient list changed. Refresh the preview and confirm again.");
+      if (!preview.count) throw new Error("There are no verified subscribers who opted in to updates.");
+
+      const [queued] = await tx.$queryRaw`
+        WITH recipients AS (
+          INSERT INTO "broadcast_recipients" ("id", "broadcastId", "signUpId", "email", "emailNormalized", "status", "createdAt")
+          SELECT gen_random_uuid()::text, ${broadcastId}, s."id", s."email",
+            COALESCE(s."emailNormalized", lower(btrim(s."email"))), 'PENDING', NOW()
+          FROM "sign_ups" s JOIN "wait_lists" w ON w."id" = s."waitListId"
+          WHERE s."waitListId" = ${campaign.id} AND w."status"::text = 'PUBLISHED'
+            AND s."verifiedAt" IS NOT NULL AND s."marketingConsentAt" IS NOT NULL
+            AND s."marketingUnsubscribedAt" IS NULL
+            AND COALESCE(s."emailNormalized", lower(btrim(s."email"))) <> ''
+            AND NOT EXISTS (SELECT 1 FROM "email_suppressions" suppression
+              WHERE suppression."workspaceId" = w."workspaceId"
+                AND suppression."emailNormalized" = COALESCE(s."emailNormalized", lower(btrim(s."email"))))
+          RETURNING "id", "broadcastId"
+        ), events AS (
+          INSERT INTO "outbox_events" ("id", "eventKey", "type", "payload", "status", "attempts", "availableAt", "createdAt", "waitListId")
+          SELECT gen_random_uuid()::text, 'broadcast:' || recipients."broadcastId" || ':' || recipients."id",
+            'BROADCAST_EMAIL_REQUESTED', jsonb_build_object('broadcastId', recipients."broadcastId", 'recipientId', recipients."id"),
+            'PENDING', 0, NOW(), NOW(), ${campaign.id}
+          FROM recipients
+          RETURNING "id"
+        ) SELECT COUNT(*)::int AS count FROM recipients`;
+      if (queued.count !== expectedRecipientCount) throw new Error("The recipient list changed while queueing. Nothing was sent; refresh the preview.");
+      await tx.marketingBroadcast.update({
+        where: { id: broadcastId },
+        data: { status: "SENDING", recipientCount: queued.count },
+      });
+      return queued.count;
+    });
+    revalidatePath(broadcastPath(waitListId));
+    await recordWaitlistAuditEvent(prisma, { userId: user.id, waitListId: campaign.id, action: AUDIT_ACTIONS.BROADCAST_SENT, resourceType: "broadcast", resourceId: broadcastId, detail: `Queued for ${count} opted-in subscriber${count === 1 ? "" : "s"}` });
+    return { success: true, message: `Queued for ${count} opted-in subscriber${count === 1 ? "" : "s"}.` };
+  } catch (error) {
+    return { success: false, message: error.message || "Could not queue this broadcast." };
+  }
+}
+
+export async function cancelBroadcast({ waitListId, broadcastId }) {
+  const { campaign } = await requireCampaign(waitListId, "sendEmail");
+  const canceled = await prisma.$transaction(async (tx) => {
+    const [broadcast] = await tx.$queryRaw`
+      SELECT "id", "status"::text AS status FROM "marketing_broadcasts"
+      WHERE "id" = ${broadcastId} AND "waitListId" = ${campaign.id} FOR UPDATE`;
+    if (!broadcast || broadcast.status !== "SENDING") return false;
+    await tx.$executeRaw`
+      UPDATE "outbox_events" SET "status" = 'FAILED', "processedAt" = NOW(), "lockedAt" = NULL, "lastErrorCode" = 'BROADCAST_CANCELED'
+      WHERE "type" = 'BROADCAST_EMAIL_REQUESTED' AND "payload"->>'broadcastId' = ${broadcastId} AND "status" = 'PENDING'`;
+    await tx.broadcastRecipient.updateMany({ where: { broadcastId, status: { in: ["PENDING", "PROCESSING"] } }, data: { status: "CANCELED", lastErrorCode: "BROADCAST_CANCELED" } });
+    await tx.marketingBroadcast.update({ where: { id: broadcastId }, data: { status: "CANCELED" } });
+    return true;
+  });
+  revalidatePath(broadcastPath(waitListId));
+  return { success: canceled, message: canceled ? "Remaining queued emails were canceled." : "This broadcast is no longer sending." };
 }

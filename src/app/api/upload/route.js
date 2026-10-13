@@ -6,6 +6,7 @@ import { PutObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { env } from "@/lib/env.mjs";
 import { nanoid } from "nanoid";
+import { normalizeUploadedImage } from "@/lib/uploads/image.mjs";
 
 export async function POST(req) {
   try {
@@ -55,15 +56,15 @@ export async function POST(req) {
     const buffer = Buffer.from(arrayBuffer);
 
     // 7. Generate a unique key
-    const fileExtension = file.name.split(".").pop();
-    const uniqueKey = `${userId}-${nanoid()}.${fileExtension}`;
+    const image = await normalizeUploadedImage(buffer);
+    const uniqueKey = `${userId}-${nanoid()}.${image.extension}`;
 
     // 8. Upload to R2
     const uploadParams = {
       Bucket: env.R2_BUCKET_NAME,
       Key: uniqueKey,
-      Body: buffer,
-      ContentType: file.type,
+      Body: image.data,
+      ContentType: image.contentType,
     };
 
     await r2.send(new PutObjectCommand(uploadParams));
@@ -72,6 +73,7 @@ export async function POST(req) {
     const url = `${env.NEXT_PUBLIC_R2_PUBLIC_URL}/${uniqueKey}`;
     return NextResponse.json({ url, key: uniqueKey });
   } catch (error) {
+    if (error instanceof TypeError) return NextResponse.json({ error: error.message }, { status: 400 });
     console.error("Upload error:", error);
     return NextResponse.json(
       { error: "Internal server error" },

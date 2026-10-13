@@ -1,250 +1,37 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { Link01Icon, ListIcon, RedoIcon, TextBoldIcon, TextItalicIcon, UndoIcon } from "@hugeicons/core-free-icons";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Bold,
-  Italic,
-  List,
-  ListOrdered,
-  Link as LinkIcon,
-  Image,
-  Heading1,
-  Heading2,
-  Quote,
-  Code,
-  Undo,
-  Redo
-} from "lucide-react";
+
+import { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
+import styles from "./markdown-editor.module.css";
 
-export function MarkdownEditor({ value, onChange, placeholder, className }) {
-  const [content, setContent] = useState(value || "");
-  const [history, setHistory] = useState([value || ""]);
-  const [historyIndex, setHistoryIndex] = useState(0);
-  const textareaRef = useRef(null);
-
-  useEffect(() => {
-    setContent(value || "");
-  }, [value]);
-
-  const handleChange = (e) => {
-    const newValue = e.target.value;
-    setContent(newValue);
-    onChange(newValue);
-
-    if (newValue !== history[historyIndex]) {
-      const newHistory = history.slice(0, historyIndex + 1);
-      newHistory.push(newValue);
-      setHistory(newHistory);
-      setHistoryIndex(newHistory.length - 1);
-    }
-  };
-
-  const handleUndo = () => {
-    if (historyIndex > 0) {
-      const newIndex = historyIndex - 1;
-      setHistoryIndex(newIndex);
-      setContent(history[newIndex]);
-      onChange(history[newIndex]);
-    }
-  };
-
-  const handleRedo = () => {
-    if (historyIndex < history.length - 1) {
-      const newIndex = historyIndex + 1;
-      setHistoryIndex(newIndex);
-      setContent(history[newIndex]);
-      onChange(history[newIndex]);
-    }
-  };
-
-  const insertMarkdown = (before, after = '', cursorOffset = 0) => {
-    const textarea = textareaRef.current;
-    if (!textarea) return;
-
-    const start = textarea.selectionStart;
-    const end = textarea.selectionEnd;
-    const selectedText = content.substring(start, end);
-    const newContent =
-      content.substring(0, start) +
-      before + selectedText + after +
-      content.substring(end);
-
-    setContent(newContent);
-    onChange(newContent);
-
-    const newHistory = history.slice(0, historyIndex + 1);
-    newHistory.push(newContent);
-    setHistory(newHistory);
-    setHistoryIndex(newHistory.length - 1);
-
-    setTimeout(() => {
-      textarea.focus();
-
-      if (selectedText.length > 0) {
-        textarea.setSelectionRange(
-          start + before.length,
-          start + before.length + selectedText.length
-        );
-      } else {
-        const cursorPosition = start + before.length + cursorOffset;
-        textarea.setSelectionRange(cursorPosition, cursorPosition);
-      }
-    }, 0);
-  };
-
-  const formatHandlers = {
-    bold: () => insertMarkdown('**', '**'),
-    italic: () => insertMarkdown('*', '*'),
-    h1: () => insertMarkdown('# '),
-    h2: () => insertMarkdown('## '),
-    list: () => insertMarkdown('- '),
-    orderedList: () => insertMarkdown('1. '),
-    quote: () => insertMarkdown('> '),
-    code: () => insertMarkdown('```\n', '\n```'),
-    link: () => insertMarkdown('[', '](url)'),
-    image: () => insertMarkdown('![alt text](url)'),
-    variable: (name) => {
-      insertMarkdown(`{{${name}}}`);
-    }
-  };
-
-  return (
-    <div className="border rounded-md">
-      <div className="flex items-center px-2 py-1 space-x-1 overflow-x-auto border-b">
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-7 w-7"
-          onClick={handleUndo}
-          disabled={historyIndex === 0}
-          title="Undo"
-        >
-          <Undo className="w-4 h-4" />
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-7 w-7"
-          onClick={handleRedo}
-          disabled={historyIndex === history.length - 1}
-          title="Redo"
-        >
-          <Redo className="w-4 h-4" />
-        </Button>
-        <div className="w-px h-4 mx-1 bg-gray-300" />
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-7 w-7"
-          onClick={formatHandlers.bold}
-          title="Bold"
-        >
-          <Bold className="w-4 h-4" />
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-7 w-7"
-          onClick={formatHandlers.italic}
-          title="Italic"
-        >
-          <Italic className="w-4 h-4" />
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-7 w-7"
-          onClick={formatHandlers.h1}
-          title="Heading 1"
-        >
-          <Heading1 className="w-4 h-4" />
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-7 w-7"
-          onClick={formatHandlers.h2}
-          title="Heading 2"
-        >
-          <Heading2 className="w-4 h-4" />
-        </Button>
-        <div className="w-px h-4 mx-1 bg-gray-300" />
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-7 w-7"
-          onClick={formatHandlers.list}
-          title="Bullet List"
-        >
-          <List className="w-4 h-4" />
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-7 w-7"
-          onClick={formatHandlers.orderedList}
-          title="Numbered List"
-        >
-          <ListOrdered className="w-4 h-4" />
-        </Button>
-        <div className="w-px h-4 mx-1 bg-gray-300" />
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-7 w-7"
-          onClick={formatHandlers.link}
-          title="Insert Link"
-        >
-          <LinkIcon className="w-4 h-4" />
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-7 w-7"
-          onClick={formatHandlers.image}
-          title="Insert Image"
-        >
-          <Image className="w-4 h-4" />
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-7 w-7"
-          onClick={formatHandlers.quote}
-          title="Blockquote"
-        >
-          <Quote className="w-4 h-4" />
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-7 w-7"
-          onClick={formatHandlers.code}
-          title="Code Block"
-        >
-          <Code className="w-4 h-4" />
-        </Button>
-        <div className="w-px h-4 mx-1 bg-gray-300" />
-        <Button
-          variant="ghost"
-          size="sm"
-          className="text-xs h-7"
-          onClick={() => formatHandlers.variable('waitlist')}
-          title="Insert Waitlist Variable"
-        >
-          + Waitlist
-        </Button>
-      </div>
-
-      <Textarea
-        ref={textareaRef}
-        value={content}
-        onChange={handleChange}
-        placeholder={placeholder}
-        className="min-h-[150px] border-0 rounded-none font-mono text-sm resize-y"
-      />
+export function MarkdownEditor({ value = "", onChange, placeholder, disabled, ...props }) {
+  const textarea = useRef(null);
+  const [history, setHistory] = useState([value]);
+  const [position, setPosition] = useState(0);
+  function update(next) {
+    onChange(next);
+    const steps = [...history.slice(0, position + 1), next].slice(-100);
+    setHistory(steps); setPosition(steps.length - 1);
+  }
+  function insert(before, after = "") {
+    const field = textarea.current;
+    if (!field || disabled) return;
+    const start = field.selectionStart, end = field.selectionEnd;
+    update(value.slice(0, start) + before + value.slice(start, end) + after + value.slice(end));
+    requestAnimationFrame(() => { field.focus(); field.setSelectionRange(start + before.length, end + before.length); });
+  }
+  function move(next) { setPosition(next); onChange(history[next]); textarea.current?.focus(); }
+  return <div className={styles.editor}>
+    <div role="group" aria-label="Message formatting" className={styles.toolbar}>
+      {[["Bold", TextBoldIcon, "**", "**"], ["Italic", TextItalicIcon, "*", "*"], ["Bullet list", ListIcon, "- ", ""], ["Insert link", Link01Icon, "[", "](url)"]].map(([title, Icon, before, after]) => <Button key={title} type="button" variant="ghost" size="icon" aria-label={title} title={title} disabled={disabled} onClick={() => insert(before, after)}><HugeiconsIcon icon={Icon} size={16} aria-hidden="true" /></Button>)}
+      <Button type="button" variant="ghost" size="icon" aria-label="Undo edit" disabled={disabled || position === 0} onClick={() => move(position - 1)}><HugeiconsIcon icon={UndoIcon} size={16} aria-hidden="true" /></Button>
+      <Button type="button" variant="ghost" size="icon" aria-label="Redo edit" disabled={disabled || position >= history.length - 1} onClick={() => move(position + 1)}><HugeiconsIcon icon={RedoIcon} size={16} aria-hidden="true" /></Button>
+      <Button type="button" variant="ghost" disabled={disabled} onClick={() => insert("{{waitlist}}")}>+ Waitlist</Button>
     </div>
-  );
+    <Textarea {...props} ref={textarea} value={value} onChange={(event) => update(event.target.value)} placeholder={placeholder || "Write your message…"} maxLength={5000} rows={8} disabled={disabled} />
+  </div>;
 }

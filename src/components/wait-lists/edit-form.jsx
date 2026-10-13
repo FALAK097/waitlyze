@@ -1,8 +1,11 @@
 "use client";
 
+import { HugeiconsIcon } from "@hugeicons/react";
+import { CodeIcon, FloppyDiskIcon, Mail01Icon, Share01Icon } from "@hugeicons/core-free-icons";
 import { useQueryState } from "nuqs";
 import { removeImage } from "@/app/actions/waitLists";
 import { Button } from "@/components/ui/button";
+import styles from "./legacy-editor.module.css";
 import {
   Dialog,
   DialogClose,
@@ -15,9 +18,8 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { CodeIcon, Save, ShareIcon, Mail } from "lucide-react";
-import { useState } from "react";
-import toast from "react-hot-toast";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import { CopyIcon } from "../shared/icons";
 import { CodeBlock } from "../ui/code-block";
 import {
@@ -30,24 +32,28 @@ import { SettingsTab } from "./settings-tab";
 import { SignUpForm } from "./sign-up-form";
 import Link from "next/link";
 
-const EmbedModal = ({ waitList }) => {
+const EmbedModal = ({ waitList, origin }) => {
   return (
     <Dialog>
-      <Tooltip delayDuration={100}>
-        <TooltipTrigger asChild>
-          <DialogTrigger asChild>
-            <Button size="icon">
-              <CodeIcon className="w-4 h-4" />
-            </Button>
-          </DialogTrigger>
-        </TooltipTrigger>
-        <TooltipContent side="bottom">Embed Wait List</TooltipContent>
+      <Tooltip>
+        <TooltipTrigger
+          render={
+            <DialogTrigger
+              render={
+                <Button variant="ghost" size="icon" aria-label="Embed instructions">
+                  <HugeiconsIcon icon={CodeIcon} className="w-4 h-4" />
+                </Button>
+              }
+            />
+          }
+        />
+        <TooltipContent side="bottom">Embed form</TooltipContent>
       </Tooltip>
       <DialogContent className="sm:max-w-[625px]">
         <DialogHeader>
           <DialogTitle>Instructions</DialogTitle>
           <DialogDescription>
-            Follow the bellow instructions to embed the form on your website.
+            Follow these steps to embed the form on your website.
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
@@ -57,7 +63,7 @@ const EmbedModal = ({ waitList }) => {
             </p>
             <CodeBlock
               language="html"
-              code={`<!-- Waitlyze Widget JS -->\n<script src="${window.location.origin}/js/embed.js" defer></script>`}
+              code={`<!-- Waitlyze Widget JS -->\n<script src="${origin}/js/embed.js" defer></script>`}
             />
           </div>
           <div>
@@ -72,9 +78,7 @@ const EmbedModal = ({ waitList }) => {
           </div>
         </div>
         <DialogFooter>
-          <DialogClose asChild>
-            <Button onClick={() => { }}>Done</Button>
-          </DialogClose>
+          <DialogClose render={<Button variant="outline">Done</Button>} />
         </DialogFooter>
       </DialogContent>
     </Dialog>
@@ -82,8 +86,8 @@ const EmbedModal = ({ waitList }) => {
 };
 
 export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
+  const [origin, setOrigin] = useState("");
   const [testEmail, setTestEmail] = useState("");
-  const [isTestEmailLoading, setIsTestEmailLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [logoUrl, setLogoUrl] = useState(initialWaitList.logoUrl || "/images/logo.png");
   const [logoKey, setLogoKey] = useState(initialWaitList.logoKey || "");
@@ -97,6 +101,10 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
   const [ogTitle, setOgTitle] = useState(initialWaitList.ogTitle || "");
   const [ogDescription, setOgDescription] = useState(initialWaitList.ogDescription || "");
   const [ogImage, setOgImage] = useState(initialWaitList.ogImage || "");
+
+  useEffect(() => {
+    setOrigin(window.location.origin);
+  }, []);
 
   const [buttonColor, setButtonColor] = useQueryState('buttonColor', {
     defaultValue: initialWaitList.buttonColor || "#FF6B4A"
@@ -143,7 +151,7 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
   });
   const [sendEmailsToSubscribers, setSendEmailsToSubscribers] = useQueryState('sendEmailsToSubscribers', {
     defaultValue: initialWaitList.sendEmailsToSubscribers !== false,
-    parse: (v) => v === 'false',
+    parse: (v) => v === 'true',
     serialize: (v) => String(v)
   });
   const [showLogo, setShowLogo] = useQueryState('showLogo', {
@@ -364,42 +372,41 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
 
   const handleSave = async () => {
     setIsSaving(true);
-    const settingsToSave = {
-      ...formSettings,
-    };
-    const response = await saveWaitList(initialWaitList.id, settingsToSave);
-    setIsSaving(false);
-    if (response.success) {
-      toast.success(response.message);
-    }
+    try {
+      const response = await saveWaitList(initialWaitList.id, { ...formSettings });
+      if (response.success) toast.success(response.message);
+      else toast.error(response.message || "Could not save your page. Try again.");
+    } catch { toast.error("Could not save your page. Try again."); }
+    finally { setIsSaving(false); }
   };
 
-  const copyShareUrlToClipboard = () => {
-    const url = `${window.location.origin}/forms/${initialWaitList.id}`;
-    navigator.clipboard.writeText(url);
-    toast.success("Copied to clipboard");
+  const copyShareUrlToClipboard = async () => {
+    try {
+      await navigator.clipboard.writeText(`${window.location.origin}/forms/${initialWaitList.id}`);
+      toast.success("Page link copied.");
+    } catch { toast.error("Copy is unavailable. Select the link and copy it manually."); }
   };
 
   const handleDeleteLogo = async () => {
     const logoKey = formSettings.logoKey;
     if (!logoKey) {
-      toast.error("No logo key found to delete.");
+      toast.error("This logo cannot be removed. Upload a replacement instead.");
       return;
     }
 
+    if (!window.confirm("Remove this logo? The uploaded image will be deleted.")) return;
     try {
       const response = await removeImage(logoKey, initialWaitList.id);
-      console.log("response", response);
       if (response.success) {
         toast.success("Logo deleted successfully.");
         updateSetting("logoUrl", "");
         updateSetting("logoKey", "");
       } else {
-        toast.error(response.message);
+        toast.error(response.message || "Could not remove the logo. Try again.");
       }
     } catch (error) {
       console.error("Error deleting logo:", error);
-      toast.error("An error occurred while deleting the logo.");
+      toast.error("Could not remove the logo. Try again.");
     }
   };
 
@@ -409,54 +416,50 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
   };
 
   return (
-    <div className="flex-1 overflow-auto">
-      <div className="p-8">
-        <div className="flex items-center justify-end mb-6">
-          <TooltipProvider>
-            <div className="flex space-x-2">
-              <Tooltip delayDuration={100}>
-                <TooltipTrigger asChild>
-                  {isSaving ? (
-                    <Button size="icon" disabled>
-                      <Save className="w-4 h-4 animate-spin" />
-                    </Button>
-                  ) : (
-                    <Button size="icon" onClick={handleSave}>
-                      <Save className="w-4 h-4" />
-                    </Button>
-                  )}
-                </TooltipTrigger>
+    <div className={styles.editor}>
+      <div>
+        <header className={styles.header}><div><h2>Form editor</h2><p>Customize the form, then save your changes.</p></div><div className={styles.toolbar}>
+          <TooltipProvider delay={100}>
+            <div className={styles.toolbarActions}>
+              <Tooltip>
+                <TooltipTrigger
+                  render={
+                    <Button disabled={isSaving} onClick={handleSave}><HugeiconsIcon icon={FloppyDiskIcon} className="w-4 h-4" aria-hidden="true" />{isSaving ? "Saving…" : "Save changes"}</Button>
+                  }
+                />
                 <TooltipContent side="bottom">
-                  Save Wait List
+                  Save changes
                 </TooltipContent>
               </Tooltip>
 
-              <Tooltip delayDuration={100}>
-                <TooltipTrigger asChild>
-                  <Link href={`/wait-lists/${initialWaitList.id}/emails`} target="_blank">
-                    <Button size="icon">
-                      <Mail className="w-4 h-4" />
-                    </Button>
-                  </Link>
-                </TooltipTrigger>
+              <Tooltip>
+                <TooltipTrigger
+                  render={
+                    <Link className={styles.secondaryLink} href={`/waitlists/${initialWaitList.id}/emails`}><HugeiconsIcon icon={Mail01Icon} className="w-4 h-4" aria-hidden="true" /><span>Email templates</span></Link>
+                  }
+                />
                 <TooltipContent side="bottom">
-                  Email Templates
+                  Email templates
                 </TooltipContent>
               </Tooltip>
 
-              <EmbedModal waitList={initialWaitList} />
+              <EmbedModal waitList={initialWaitList} origin={origin} />
 
-              <Dialog>
-                <Tooltip delayDuration={100}>
-                  <TooltipTrigger asChild>
-                    <DialogTrigger asChild>
-                      <Button size="icon">
-                        <ShareIcon className="w-4 h-4" />
-                      </Button>
-                    </DialogTrigger>
-                  </TooltipTrigger>
+                <Dialog>
+                <Tooltip>
+                  <TooltipTrigger
+                    render={
+                      <DialogTrigger
+                        render={
+                          <Button variant="ghost" size="icon" aria-label="Share waitlist">
+                            <HugeiconsIcon icon={Share01Icon} className="w-4 h-4" />
+                          </Button>
+                        }
+                      />
+                    }
+                  />
                   <TooltipContent side="bottom">
-                    Share Wait List
+                    Share link
                   </TooltipContent>
                 </Tooltip>
 
@@ -474,7 +477,7 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
                       </Label>
                       <Input
                         id="link"
-                        defaultValue={`${window.location.origin}/forms/${initialWaitList.id}`}
+                        value={origin ? `${origin}/forms/${initialWaitList.id}` : ""}
                         readOnly
                       />
                     </div>
@@ -483,36 +486,31 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
                       type="submit"
                       size="sm"
                       className="px-3"
-                    >
+                     variant="ghost">
                       <span className="sr-only">Copy</span>
                       <CopyIcon />
                     </Button>
                   </div>
-                  <DialogFooter className="sm:justify-start">
-                    <DialogClose asChild>
-                      <Button type="button" variant="secondary">
-                        Close
-                      </Button>
-                    </DialogClose>
-                  </DialogFooter>
                 </DialogContent>
               </Dialog>
             </div>
           </TooltipProvider>
-        </div>
+        </div></header>
 
-        <div className="flex flex-col gap-4 md:flex-row md:gap-0">
+        <div className={styles.grid}>
+          <SettingsTab formSettings={formSettings} updateSetting={updateSetting} applyPreset={applyPreset} />
+          <section className={styles.previewColumn} aria-labelledby="legacy-preview-heading"><div className={styles.previewHeading}><h3 id="legacy-preview-heading">Preview</h3><p>No subscriber is created here.</p></div>
           <div
             style={{
               backgroundColor: formSettings.enableMainBgColor
                 ? formSettings.mainBgColor
                 : "transparent",
             }}
-            className="flex items-center justify-center flex-1"
+            className={styles.preview}
           >
             <SignUpForm
               email={testEmail}
-              isLoading={isTestEmailLoading}
+              isLoading={false}
               setEmail={setTestEmail}
               waitList={{
                 ...formSettings,
@@ -524,24 +522,13 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
                   : null,
               }}
               onDeleteLogo={handleDeleteLogo}
-              onSubmit={async (e) => {
-                e.preventDefault();
-                setIsTestEmailLoading(true);
-                await new Promise((resolve) => setTimeout(resolve, 1500));
-                toast.success(formSettings.successMessage, {
-                  position: "top-center",
-                });
-                setIsTestEmailLoading(false);
+              onSubmit={(event) => {
+                event.preventDefault();
+                toast("Preview only. No subscriber was created.");
               }}
               onImageUploadSuccess={onImageUploadSuccess}
             />
-          </div>
-
-          <SettingsTab
-            formSettings={formSettings}
-            updateSetting={updateSetting}
-            applyPreset={applyPreset}
-          />
+          </div></section>
         </div>
       </div>
     </div>

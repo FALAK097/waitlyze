@@ -1,7 +1,10 @@
 "use client";
 
+import { HugeiconsIcon } from "@hugeicons/react";
+import { ArrowUpRight01Icon } from "@hugeicons/core-free-icons";
+import { Button } from "@/components/ui/button";
+
 import Link from "next/link";
-import { ArrowUpRight } from "lucide-react";
 import { useAuthModal } from "@/components/auth/auth-modal-provider";
 import { useSession } from "@/lib/auth-client";
 
@@ -14,19 +17,19 @@ export default function AuthAction({
   const { data: session, isPending } = useSession();
   const classes = `wl-button ${compact ? "wl-button-small" : "wl-button-primary"} ${className}`;
   return session ? (
-    <Link href="/dashboard" className={classes}>
-      {compact ? "Dashboard" : "Open your dashboard"}{" "}
-      <ArrowUpRight size={18} aria-hidden="true" />
+    <Link href="/waitlists" className={classes}>
+      {compact ? "Waitlists" : "Open your waitlists"}{" "}
+      <HugeiconsIcon icon={ArrowUpRight01Icon} size={18} aria-hidden="true" />
     </Link>
   ) : (
-    <button
+    <Button
       type="button"
       className={classes}
       disabled={isPending}
       onClick={openAuthModal}
     >
       {children}
-      <ArrowUpRight size={18} aria-hidden="true" />
-    </button>
+      <HugeiconsIcon icon={ArrowUpRight01Icon} size={18} aria-hidden="true" />
+    </Button>
   );
 }

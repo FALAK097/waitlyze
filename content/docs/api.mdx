@@ -1,0 +1,127 @@
+---
+title: Signup API
+description: Accept signups from your server with a scoped API key.
+---
+
+Use this endpoint when you collect emails on your own backend and want Waitlyze to own verification, referrals, and storage. Browsers should use the [hosted page or embed](/docs/embed) instead — never expose an API key client-side.
+
+## Create an API key first
+
+Go to Settings → Integrations → API keys, choose a waitlist, name the key, and set expiry. Copy the secret before closing: only its hash is stored. See [API keys](/docs/api-keys).
+
+<Callout type="warn" title="Keep keys on your server">
+A key grants signup-write access to one waitlist. Store it in a server environment variable such as `WAITLYZE_API_KEY`. Never put it in a browser bundle or public repository.
+</Callout>
+
+## Create a signup
+
+`POST /api/waitlist` accepts JSON. Authentication uses the `apiKey` body field. This endpoint does **not** use a Bearer header.
+
+<Tabs items={['Node.js', 'Python', 'cURL']}>
+<Tab value="Node.js">
+```js title="Server-side JavaScript"
+const response = await fetch("https://waitlyze.falakgala.dev/api/waitlist", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({
+    apiKey: process.env.WAITLYZE_API_KEY,
+    waitlistId: "YOUR_WAITLIST_ID",
+    email: "person@example.com",
+    // referralCode: "OPTIONAL_REFERRAL_CODE"
+  })
+});
+const result = await response.json();
+if (!response.ok) throw new Error(result.error || "Signup failed");
+```
+</Tab>
+<Tab value="Python">
+```python title="Python · standard library"
+import json
+import os
+from urllib.request import Request, urlopen
+from urllib.error import HTTPError
+
+request = Request(
+    "https://waitlyze.falakgala.dev/api/waitlist",
+    data=json.dumps({
+        "apiKey": os.environ["WAITLYZE_API_KEY"],
+        "waitlistId": "YOUR_WAITLIST_ID",
+        "email": "person@example.com",
+    }).encode("utf-8"),
+    headers={"Content-Type": "application/json"},
+    method="POST",
+)
+try:
+    with urlopen(request, timeout=15) as response:
+        result = json.load(response)
+except HTTPError as error:
+    result = json.load(error)
+    raise RuntimeError(result.get("error", "Signup failed")) from error
+```
+</Tab>
+<Tab value="cURL">
+```bash title="Request example · placeholder key"
+curl --request POST 'https://waitlyze.falakgala.dev/api/waitlist' \
+  --header 'Content-Type: application/json' \
+  --data '{
+    "apiKey": "YOUR_SERVER_SIDE_API_KEY",
+    "waitlistId": "YOUR_WAITLIST_ID",
+    "email": "person@example.com"
+  }'
+```
+</Tab>
+</Tabs>
+
+<TypeTable
+  type={{
+    apiKey: {
+      type: "string",
+      required: true,
+      description: "Secret for the linked waitlist. See API keys.",
+    },
+    waitlistId: {
+      type: "string",
+      required: true,
+      description: "The waitlist ID selected for the key. Must match the key's linked waitlist.",
+    },
+    email: {
+      type: "string",
+      required: true,
+      description: "A valid email address, at most 320 characters.",
+    },
+    referralCode: {
+      type: "string",
+      required: false,
+      description: "An existing referral code for the same waitlist. See Referrals.",
+    },
+  }}
+/>
+
+## Handle responses
+
+```json title="Success response"
+{ "success": true, "message": "Successfully joined the waitlist!", "data": { "rank": 9 } }
+```
+
+| Status | Meaning | Fix |
+| --- | --- | --- |
+| `400` | Missing or invalid input | Validate email, IDs, and JSON shape. |
+| `401` | Bad key, expiry, or wrong linked waitlist | Check [API keys](/docs/api-keys) and `waitlistId`. |
+| `409` | Duplicate email, or not accepting signups | Distinguish duplicate from draft/paused state. |
+| `429` | Rate limited | Wait for `Retry-After`; back off, do not loop. |
+| `503` | Rate-limit service unavailable | Retry after the provided interval. |
+| `500` | Temporary server failure | Retry with exponential backoff. |
+
+New API signups follow the same [verification flow](/docs/signup-flow): they receive a 24-hour confirmation link and stay unverified until they click it.
+
+<Callout title="Dashboard routes need a session, not a signup key">
+`/api/v1/api-keys` and `/api/v1/waitlists` are browser-session routes. A `waitlist:write` signup key cannot manage keys, list subscribers, or access them.
+</Callout>
+
+## Next
+
+<Cards>
+<Card title="API keys" href="/docs/api-keys" description="Expiry, replacement, and revocation." />
+<Card title="Signup and verification" href="/docs/signup-flow" description="What happens after 200 OK." />
+<Card title="Troubleshooting" href="/docs/troubleshooting" description="Fix 401, 409, 429, and 503." />
+</Cards>

@@ -1,5 +1,6 @@
 "use server";
 import prisma from "@/lib/prisma";
+import { requireCampaign } from "@/lib/workspaces/authorize";
 
 export async function getWaitlistSignups(waitlistId) {
 	try {
@@ -10,22 +11,12 @@ export async function getWaitlistSignups(waitlistId) {
 			};
 		}
 
-		const waitlist = await prisma.waitList.findUnique({
-			where: {
-				id: waitlistId,
-			},
-		});
-
-		if (!waitlist) {
-			return {
-				success: false,
-				error: "Waitlist not found",
-			};
-		}
+		const { scope } = await requireCampaign(waitlistId, "viewAudience");
 
 		const signups = await prisma.signUp.findMany({
 			where: {
 				waitListId: waitlistId,
+                waitList: scope,
 			},
 			include: {
 				impression: true,

@@ -1,6 +1,9 @@
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import prisma from "./prisma";
+import { env } from "./env.mjs";
+import { renderWelcomeEmail } from "@/emails/render.jsx";
+import { sendPlatformEmail } from "./emails/platform.mjs";
 
 const socialProviders = {};
 if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
@@ -25,12 +28,29 @@ export const auth = betterAuth({
     "http://localhost:3000",
   ].filter(Boolean),
   advanced: {
-    useSecureCookies: false,
+    useSecureCookies: process.env.NODE_ENV === "production",
     cookiePrefix: "ba",
     defaultCookieAttributes: {
-      secure: true,
+      secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
       httpOnly: true,
+    },
+  },
+  databaseHooks: {
+    user: {
+      create: {
+        // Best-effort product welcome email. A failure must never block or
+        // roll back account creation.
+        after: async (user) => {
+          try {
+            const url = new URL("/waitlists", env.BETTER_AUTH_URL).toString();
+            const html = await renderWelcomeEmail({ name: user.name, url });
+            await sendPlatformEmail({ to: user.email, subject: "Welcome to Waitlyze", html, idempotencyKey: `welcome-${user.id}` });
+          } catch (error) {
+            console.error("Welcome email failed", error?.name || error?.message || "unknown error");
+          }
+        },
+      },
     },
   },
   user: {

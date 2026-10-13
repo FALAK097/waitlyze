@@ -1,3 +1,5 @@
+import { createMDX } from 'fumadocs-mdx/next';
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   images: {
@@ -15,6 +17,22 @@ const nextConfig = {
     ],
   },
   serverExternalPackages: ["geoip-lite", "better-auth"],
+  async redirects() {
+    return [
+      {
+        source: "/wait-lists/:path*",
+        destination: "/waitlists/:path*",
+        permanent: true,
+      },
+      {
+        source: "/dashboard/:path*",
+        destination: "/waitlists/:path*",
+        permanent: true,
+      },
+    ];
+  },
 };
 
-export default nextConfig;
+const withMDX = createMDX();
+
+export default withMDX(nextConfig);

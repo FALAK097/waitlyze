@@ -1,0 +1,43 @@
+---
+title: Overview
+description: Read lifecycle state, readiness, and rehearsal for one waitlist.
+---
+
+Open any waitlist to land on **Overview** at `/waitlists/[id]`. This is the decision page: is the waitlist ready, live, paused, or needing changes? It needs view access; publish actions here are gated by role (see [Workspace and roles](/docs/workspace)).
+
+## Read the hero
+
+The top section adapts to status:
+
+| Status | Title | Detail |
+| --- | --- | --- |
+| `Draft` | Get your waitlist ready | Review the page and signup flow, then publish when ready. Non-publishers see that an owner or admin must publish. |
+| `Published` | Your waitlist is live | The page can collect signups. Follow subscribers and analytics. |
+| `Paused` | Signups are paused | The page stops intake. Existing records stay available. |
+
+Facts always show status, subscriber count, creation date, and last update. Primary actions adapt too: drafts and paused lists point to the page editor or publication controls; published lists point to subscribers or the live page when there is nothing urgent.
+
+## Follow readiness checks
+
+`LaunchReadiness` evaluates four areas:
+
+1. **Page structure** — saved page matches the template schema.
+2. **Signup form** — exactly one valid email form exists.
+3. **Publication** — draft needs first publish; published needs latest changes live; paused needs resume. Shows `Admin required` or `Finish setup` when blocked.
+4. **Custom domain** — connected, verifying, needs DNS, or needs attention.
+
+Each check links directly to the fix: page content (`#page-content`), publication actions (`#publication-actions`), or domain settings. Resolve blocking checks before publishing.
+
+## Run a launch rehearsal
+
+`LaunchRehearsal` records up to the last five runs per waitlist. Use it before publishing or after major edits to confirm the page, form, and publication path still pass.
+
+Runs store pass/fail counts, per-check results, and timestamps. A failing rehearsal does not change publication state — fix the flagged area, then publish.
+
+## Next
+
+<Cards>
+<Card title="Design the page" href="/docs/page-builder" description="Edit content that readiness checks validate." />
+<Card title="Publish, pause, roll back" href="/docs/publishing" description="Apply the Overview action safely." />
+<Card title="Analytics" href="/docs/analytics" description="Watch visitors and signups after launch." />
+</Cards>

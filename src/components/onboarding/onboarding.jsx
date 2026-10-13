@@ -1,5 +1,7 @@
 "use client";
 
+import { HugeiconsIcon } from "@hugeicons/react";
+import { ArrowRight01Icon } from "@hugeicons/core-free-icons";
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,
@@ -10,7 +12,6 @@ import {
 	DialogTitle,
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
-import { ArrowRight } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
@@ -31,7 +32,7 @@ export default function OnboardingDialog({ userId, isOnboarded, onComplete }) {
 			setStep(step + 1);
 		} else {
 			handleComplete();
-			router.push("/wait-lists/new");
+			router.push("/waitlists/new");
 		}
 	}, [step]);
 
@@ -118,7 +119,7 @@ export default function OnboardingDialog({ userId, isOnboarded, onComplete }) {
 					<div className="flex flex-col gap-4 justify-between sm:flex-row sm:items-center">
 						<div className="flex justify-center space-x-2 max-sm:order-1">
 							{stepContent.map((content) => (
-								<button
+								<Button
 									key={content.id}
 									type="button"
 									onClick={() => setStep(stepContent.indexOf(content) + 1)}
@@ -147,13 +148,9 @@ export default function OnboardingDialog({ userId, isOnboarded, onComplete }) {
 										className="group"
 										type="button"
 										onClick={handleContinue}
-									>
+									 variant="ghost">
 										Next
-										<ArrowRight
-											className="ml-2 opacity-60 transition-transform group-hover:translate-x-0.5"
-											size={16}
-											strokeWidth={2}
-										/>
+										<HugeiconsIcon icon={ArrowRight01Icon} className="ml-2 opacity-60 transition-transform group-hover:translate-x-0.5" size={16} strokeWidth={2} />
 									</Button>
 								</>
 							) : (

@@ -1,17 +1,29 @@
 import prisma from "@/lib/prisma";
 
-const checkIfEmailExists = async (email, waitListId) => {
+const checkIfEmailExists = async (email, waitListId, uniqueUserId) => {
+  const normalizedEmail = typeof email === "string" ? email.trim().toLowerCase() : "";
   const signUp = await prisma.signUp.findFirst({
     where: {
-      email,
       waitListId,
+      OR: [
+        { emailNormalized: normalizedEmail },
+        { email: { equals: email.trim(), mode: "insensitive" } },
+      ],
     },
+    select: { uniqueUserId: true, emailNormalized: true, email: true },
   });
+  if (signUp && signUp.uniqueUserId === uniqueUserId &&
+      (signUp.emailNormalized ?? signUp.email.trim().toLowerCase()) === normalizedEmail) return null;
   return signUp;
 };
 
 const checkIfRequestIsValid = async (body) => {
-  if (!body.email) {
+  if (!body || typeof body !== "object" || Array.isArray(body) ||
+      typeof body.waitListId !== "string" || !body.waitListId || body.waitListId.length > 128 ||
+      typeof body.hypeSession !== "string" || !body.hypeSession.trim() || body.hypeSession.length > 256) {
+    return Response.json({ message: "A valid waitlist and browser identifier are required." }, { status: 400 });
+  }
+  if (typeof body.email !== "string" || !body.email.trim()) {
     return Response.json(
       {
         message: "Email is required",
@@ -32,6 +44,7 @@ const checkIfRequestIsValid = async (body) => {
   const isValidWaitList = await prisma.waitList.findUnique({
     where: {
       id: body.waitListId,
+			status: "PUBLISHED",
     },
   });
   if (!isValidWaitList) {
@@ -48,7 +61,7 @@ export const validateRequest = async (body) => {
   let validator = await checkIfRequestIsValid(body);
   // If validator is not null, return the validator
   if (validator) return validator;
-  validator = await checkIfEmailExists(body.email, body.waitListId);
+  validator = await checkIfEmailExists(body.email, body.waitListId, body.hypeSession);
   // If validator is not null, return the validator
   if (validator) {
     return Response.json(

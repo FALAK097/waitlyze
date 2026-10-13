@@ -1,0 +1,59 @@
+---
+title: Signup and verification
+description: What visitors do, confirm, and share after they submit.
+---
+
+This is the visitor-side flow for hosted `/w/slug` pages, embeds, and server-side [Signup API](/docs/api) calls. Only **published** waitlists accept signups.
+
+## Visitor steps
+
+<Steps>
+<Step>
+### Submit an email
+The visitor enters a valid email (max 320 characters). Hosted and embed forms also capture an optional `?r=CODE` referral and forward UTM parameters.
+</Step>
+<Step>
+### Confirm within 24 hours
+Waitlyze sends a verification email with a confirmation link. The link expires 24 hours after it is sent. Until confirmed, the subscriber stays in **Needs confirmation**.
+</Step>
+<Step>
+### Become verified
+Clicking the link sets `verifiedAt`. Only verified subscribers count toward referral credit, queue position, analytics verification rate, and email eligibility.
+</Step>
+<Step>
+### Optionally share
+If [referral sharing](/docs/referrals) is enabled, the confirmation state shows a personal referral link for the subscriber to share.
+</Step>
+</Steps>
+
+<Callout title="Verification is not marketing consent">
+Email confirmation proves ownership. Broadcasts and automations additionally require explicit marketing opt-in, checked again at send time. See [Email tools](/docs/email).
+</Callout>
+
+## How signups arrive
+
+| Channel | Route | Referral passing |
+| --- | --- | --- |
+| Hosted page | `/w/[slug]` | `?r=CODE` query parameter |
+| Embed widget | Your site + `/js/embed.js` | Forwarded from your page URL |
+| Server API | `POST /api/waitlist` with `apiKey`, `waitlistId`, `email` | Optional `referralCode` body field, same waitlist only |
+
+Duplicate emails return `409`. Non-accepting states (draft, paused) also return `409` with a state reason. Rate-limited clients must respect `Retry-After`. See [Signup API](/docs/api) and [Troubleshooting](/docs/troubleshooting).
+
+## Impressions and positions
+
+- Each distinct browser view records an impression used for conversion (`signups / visitors`).
+- Queue position uses eligible campaign referrals and signup ordering. It is current campaign state, not a guaranteed reward or access grant.
+- Public DTOs are minimal: APIs return rank or position without exposing other subscribers' emails.
+
+## Unsubscribe and preferences
+
+Every marketing email includes an unsubscribe link to `/unsubscribe/[token]`. Unsubscribing stops future broadcasts and automations but keeps the signup record. Resubscription requires a fresh opt-in.
+
+## Next
+
+<Cards>
+<Card title="Referrals" href="/docs/referrals" description="How shared codes become verified credit." />
+<Card title="Subscribers" href="/docs/subscribers" description="Find, review, and export signups." />
+<Card title="Analytics" href="/docs/analytics" description="Watch verification and conversion." />
+</Cards>

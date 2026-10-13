@@ -1,8 +1,11 @@
 "use client";
 
+import { HugeiconsIcon } from "@hugeicons/react";
+import { ArrowUpRight01Icon, Cancel01Icon, Menu01Icon } from "@hugeicons/core-free-icons";
+import { Button } from "@/components/ui/button";
+
 import Link from "next/link";
 import { useRef, useState } from "react";
-import { ArrowUpRight, Menu, X } from "lucide-react";
 import SignupButton from "./signup-button";
 import Wordmark from "./wordmark";
 
@@ -41,17 +44,17 @@ export default function Header() {
         </nav>
         <div className="wl-header-actions">
           <SignupButton compact>Sign in</SignupButton>
-          <button
+          <Button
             ref={menuRef}
             className="wl-icon-button wl-menu-toggle"
             type="button"
             aria-label={open ? "Close navigation" : "Open navigation"}
             aria-expanded={open}
             aria-controls="wl-mobile-nav"
-            onClick={() => setOpen(!open)}
+            variant="ghost" onClick={() => setOpen(!open)}
           >
-            {open ? <X size={20} /> : <Menu size={20} />}
-          </button>
+            {open ? <HugeiconsIcon icon={Cancel01Icon} size={20} /> : <HugeiconsIcon icon={Menu01Icon} size={20} />}
+          </Button>
         </div>
       </div>
       <nav
@@ -63,7 +66,7 @@ export default function Header() {
         {links.map(([label, href]) => (
           <Link href={href} key={href} onClick={() => setOpen(false)}>
             {label}
-            <ArrowUpRight size={16} aria-hidden="true" />
+            <HugeiconsIcon icon={ArrowUpRight01Icon} size={16} aria-hidden="true" />
           </Link>
         ))}
       </nav>

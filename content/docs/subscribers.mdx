@@ -1,0 +1,65 @@
+---
+title: Subscribers
+description: Search, filter, review referrals, and export your audience.
+---
+
+The **Subscribers** tab at `/waitlists/[id]/subscribers` requires audience view access. Owners and admins can additionally manage and delete.
+
+## Search and filter
+
+- **Search** by email (up to 120 characters). The list announces result counts politely.
+- **Status filters**: all, verified, needs confirmation. Subscriber counts update with the filter.
+- **Pagination** with `Showing X–Y of Z` and retry on load failure.
+- **Clear filters** returns to the full audience when search or status yields nothing.
+
+If the audience is empty, the tab points you to publish and share the page first.
+
+## Inspect a subscriber
+
+Select a row to see email, verification state, signup date, location (city/country when available), referral counts, and marketing consent state. The detail never exposes API secrets or other workspaces' data.
+
+Verification links expire 24 hours after sending. Unconfirmed subscribers stay in **Needs confirmation** and never receive broadcasts or automations. See [Signup and verification](/docs/signup-flow).
+
+## Review referrals
+
+Switch the view to **Referral review** when [sharing](/docs/referrals) is enabled:
+
+- Lists the latest 50 non-`CLEAR` referrals with inviter, invitee, reason, and resolution.
+- Approve eligible verified pairs or keep suspicious ones under review.
+- Only `CLEAR` and `APPROVED` referrals count toward milestones, queue position, and analytics.
+- If the review query fails, the table tells you and offers a retry without losing the audience list.
+
+## Unsubscribe and suppression
+
+Every marketing email includes an unsubscribe link. Unsubscribing stops broadcasts and automations for that subscriber but keeps the signup record. Unsubscribed and workspace-suppressed addresses are excluded from recipient previews and checked again right before delivery.
+
+<Callout type="warn" title="Verification does not mean marketing consent">
+Broadcasts and automations require both a verified email and explicit marketing opt-in. Consent is rechecked at send time.
+</Callout>
+
+## Export your audience
+
+<Steps>
+<Step>
+### Filter first
+Set search and status to the slice you want. Export respects the current filter.
+</Step>
+<Step>
+### Choose Export CSV
+Select **Export CSV** in the Subscribers toolbar. Large audiences stream as a file download.
+</Step>
+<Step>
+### Keep secrets out
+The CSV has one row per subscriber with email, verification status, and signup date. It never includes API secrets.
+</Step>
+</Steps>
+
+Need your full account data (workspaces, campaigns, templates, recipes)? Use the workspace account export in [Workspace](/docs/workspace).
+
+## Next
+
+<Cards>
+<Card title="Analytics" href="/docs/analytics" description="See the same audience as trends." />
+<Card title="Broadcasts" href="/docs/broadcasts" description="Message the filtered verified audience." />
+<Card title="Signup and verification" href="/docs/signup-flow" description="How subscribers enter this list." />
+</Cards>

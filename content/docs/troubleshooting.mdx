@@ -1,0 +1,64 @@
+---
+title: Troubleshooting
+description: Fix publication, access, embed, email, and delivery issues.
+---
+
+Work through the section that matches your symptom. Each fix links to the guide with full steps.
+
+<Accordions type="single">
+<Accordion title="Waitlist does not accept signups">
+- Confirm status is `Published` in [Overview](/docs/overview). Draft and Paused never accept signups.
+- In [Page builder](/docs/page-builder), confirm `templateRevision` equals `publishedTemplateRevision`. If not, publish again. See [Publishing](/docs/publishing).
+- For API `409`, distinguish duplicate email from not-accepting-state via the error message.
+- For hosted/custom-domain confusion, confirm you shared the post-publish URL. See [Hosted pages](/docs/embed).
+</Accordion>
+<Accordion title="Signups and API access (401, 409, 429, 503)">
+- `401`: check the key exists, has not expired, has not been revoked, and `waitlistId` matches the key's linked waitlist. See [API keys](/docs/api-keys).
+- `409`: duplicate email versus non-accepting waitlist are different causes with the same code — read the message.
+- `429` or `503`: respect `Retry-After`; back off exponentially; do not retry in a tight loop.
+- Dashboard `/api/v1/*` with a signup key always fails — those need a browser session. See [Signup API](/docs/api).
+</Accordion>
+<Accordion title="Hosted page, embed, and custom domain">
+- Use the copied published URL; draft edits must be published. See [Publishing](/docs/publishing).
+- The embed needs a waitlist ID (`data-key-id`), never an API secret. Check script URL, Content Security Policy, and `data-height`. See [Hosted pages](/docs/embed).
+- For domains, confirm Ready status in Waitlist settings. Ownership-pending means the verification record is missing; DNS-pending means propagation; Needs attention means compare records and recheck. See [Custom domains](/docs/domains).
+- Another tenant's ID returns `404` by design. Signed-out protected routes redirect to sign-in.
+</Accordion>
+<Accordion title="Verification, email, and consent">
+- Save the email template **before** sending a test — tests use saved content and are real emails. See [Email tools](/docs/email).
+- Verification links expire after 24 hours. Unconfirmed subscribers never receive broadcasts or automations. See [Signup flow](/docs/signup-flow).
+- Broadcasts/automations need verified email **plus** marketing opt-in. Check unsubscribe and suppression in [Subscribers](/docs/subscribers).
+- Resend failures: check sending-only key, verified sender domain, and Active status after test. See [Resend](/docs/resend).
+- Dispatcher not configured means `OUTBOX_DISPATCH_SECRET` or the `/api/internal/email-outbox` scheduler is missing — mail queues but never sends.
+- Bounces/complaints suppress future sends automatically via signed provider events.
+</Accordion>
+<Accordion title="Webhooks: signatures and deliveries">
+- Verify HMAC-SHA256 over `timestamp + "." + canonicalJson(payload)`, not raw bytes. Check the 5-minute window and accept any valid `v1` during rotation. See [Webhooks](/docs/webhooks).
+- Deduplicate by `id` / `x-waitlyze-event-id` and return `2xx` only after durable acceptance.
+- Use Recent deliveries for queue versus HTTP failures; send a test, pause/resume, rotate, or replay from waitlist settings.
+- If tests never arrive, confirm webhook encryption/dispatch is configured on the deployment.
+</Accordion>
+<Accordion title="Members, roles, and workspace">
+- Members cannot publish, send email, manage keys, or delete. Owners/admins can. See [Workspace](/docs/workspace).
+- Only owners can invite admins. The workspace caps at 50 pending invitations.
+- Invite creation failing usually means missing encryption config on the deployment.
+- Export (`/api/settings/export`) before deleting a workspace or waitlist — deletion has no undo.
+</Accordion>
+<Accordion title="Gather safe diagnostics">
+Include the page or endpoint, HTTP status, approximate timestamp (with time zone), and a relevant event or waitlist ID. For webhooks, include Recent deliveries response codes. For analytics, include range and time zone.
+
+<Callout type="warn" title="Keep credentials and subscriber data private">
+Never include API secrets, webhook signing secrets, provider keys, or subscriber lists in a support report, screenshot, or public issue.
+</Callout>
+</Accordion>
+</Accordions>
+
+## Still stuck?
+
+Email [hi@falakgala.dev](mailto:hi@falakgala.dev) with the diagnostics above: the page or endpoint, HTTP status, approximate timestamp with time zone, and the relevant waitlist or event ID. Do not include API secrets, signing secrets, or subscriber lists.
+
+<Cards>
+<Card title="Introduction" href="/docs" description="Retrace the five steps from draft to growth." />
+<Card title="Publishing" href="/docs/publishing" description="Confirm what is actually live." />
+<Card title="Email tools" href="/docs/email" description="Check sender and dispatcher health." />
+</Cards>

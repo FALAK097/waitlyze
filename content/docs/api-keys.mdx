@@ -1,0 +1,67 @@
+---
+title: API keys
+description: Create, store, replace, and revoke per-waitlist signup keys.
+---
+
+API keys live in Settings → Integrations → **API keys**. Workspace owners and admins can create keys for waitlists they manage. Members cannot.
+
+## Create and store a key
+
+<Steps>
+<Step>
+### Open API keys
+Go to Settings → Integrations → API keys. The legacy `/api-keys` URL redirects to this section.
+</Step>
+<Step>
+### Choose a waitlist and expiry
+Name the key and select its waitlist. Choose expiry of 30 days, 90 days, one year, or never. Each waitlist has **one active key at a time**.
+</Step>
+<Step>
+### Save the secret once
+Reveal or copy the key before closing the panel. Store it in a server variable such as `WAITLYZE_API_KEY`. Waitlyze stores only its hash and cannot show the plaintext again.
+</Step>
+<Step>
+### Test a signup
+Send a test [Signup API](/docs/api) request with the new key and matching `waitlistId`. Confirm `200` before wiring production traffic.
+</Step>
+</Steps>
+
+## Replace or revoke a key
+
+<Steps>
+<Step>
+### Revoke the old key
+Revoke, then confirm you understand access loss. Revocation takes effect immediately — in-flight requests with the old key start failing with `401`.
+</Step>
+<Step>
+### Create its replacement
+Create the new key for the same waitlist, copy it, and update your server configuration.
+</Step>
+<Step>
+### Verify and monitor
+Send another test signup. Watch for `401` (missed rotation) versus `409`/`429` (app-level, not key) in [Troubleshooting](/docs/troubleshooting).
+</Step>
+</Steps>
+
+<Callout type="warn" title="Plan for the replacement window">
+With one active key per waitlist, revoke → create briefly interrupts integrations. Rotate during low traffic. There is no overlapping-key rotation or automatic default workspace key.
+</Callout>
+
+## Scope and access
+
+The UI creates `waitlist:write` keys: signup creation for the selected waitlist only. They cannot list subscribers, change pages, manage workspaces, or call dashboard-only `/api/v1` routes.
+
+| Allowed | Denied |
+| --- | --- |
+| `POST /api/waitlist` for the linked `waitlistId` | Listing subscribers or exports |
+| Passing `referralCode` for the same waitlist | Managing keys, pages, workspace, email, domains, webhooks |
+
+Expired or revoked keys return `401`. A mismatched `waitlistId` (key for A, body says B) also returns `401`.
+
+## Next
+
+<Cards>
+<Card title="Signup API" href="/docs/api" description="Exact request contract and status codes." />
+<Card title="Webhooks" href="/docs/webhooks" description="Stream accepted signups to your stack." />
+<Card title="Workspace and roles" href="/docs/workspace" description="Who can manage keys." />
+</Cards>

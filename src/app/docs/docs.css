@@ -1,0 +1,27 @@
+@import 'tailwindcss';
+@import 'fumadocs-ui/css/preset.css';
+@theme {--color-fd-background:#fff;--color-fd-foreground:#20251c;--color-fd-muted:#f6f7f4;--color-fd-muted-foreground:#656b60;--color-fd-popover:#fff;--color-fd-popover-foreground:#20251c;--color-fd-card:#fff;--color-fd-card-foreground:#20251c;--color-fd-border:#e9ece5;--color-fd-primary:#435c17;--color-fd-primary-foreground:#fff;--color-fd-secondary:#f6f7f4;--color-fd-secondary-foreground:#20251c;--color-fd-accent:#f0f5e8;--color-fd-accent-foreground:#34490f;--color-fd-ring:#435c17;--color-fd-overlay:rgba(0,0,0,.2);--color-fd-info:#2563eb;--color-fd-warning:#b45309;--color-fd-error:#b42318;--color-fd-success:#258043;--color-fd-idea:#b45309;--color-fd-diff-remove:rgba(180,35,24,.1);--color-fd-diff-remove-symbol:#b42318;--color-fd-diff-add:rgba(37,128,67,.1);--color-fd-diff-add-symbol:#258043;}
+/* Plain fallbacks: Tailwind v4 only emits @theme variables used by utilities,
+   but the fumadocs preset references these inside var() instead. */
+:root{--color-fd-background:#fff;--color-fd-foreground:#20251c;--color-fd-muted:#f6f7f4;--color-fd-muted-foreground:#656b60;--color-fd-popover:#fff;--color-fd-popover-foreground:#20251c;--color-fd-card:#fff;--color-fd-card-foreground:#20251c;--color-fd-border:#e9ece5;--color-fd-primary:#435c17;--color-fd-primary-foreground:#fff;--color-fd-secondary:#f6f7f4;--color-fd-secondary-foreground:#20251c;--color-fd-accent:#f0f5e8;--color-fd-accent-foreground:#34490f;--color-fd-ring:#435c17;--color-fd-overlay:rgba(0,0,0,.2);--color-fd-info:#2563eb;--color-fd-warning:#b45309;--color-fd-error:#b42318;--color-fd-success:#258043;--color-fd-idea:#b45309;--color-fd-diff-remove:rgba(180,35,24,.1);--color-fd-diff-remove-symbol:#b42318;--color-fd-diff-add:rgba(37,128,67,.1);--color-fd-diff-add-symbol:#258043}
+.waitlyze-docs{background:#fff;min-height:100dvh}.waitlyze-docs h1,.waitlyze-docs h2{ text-wrap:balance }.waitlyze-docs p{ text-wrap:pretty }.waitlyze-docs .docs-code{max-width:100%;overflow:auto;padding:20px;border-radius:10px;background:#f6f7f4;color:#20251c;font-size:13px;line-height:1.7}.waitlyze-docs table{display:block;max-width:100%;overflow-x:auto}.waitlyze-docs :focus-visible{outline:2px solid #435c17;outline-offset:3px}@media(prefers-reduced-motion:reduce){.waitlyze-docs *{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+/* Docs brand mark (landing logo bars, no wordmark). */
+.docs-mark{display:inline-flex;align-items:center;gap:3px;height:24px;transform:skew(-12deg)}
+.docs-mark i{display:block;width:5px;background:#b8d912;border-radius:2px;height:14px}
+.docs-mark i:nth-child(2){height:22px}
+.docs-mark i:nth-child(3){height:17px}
+/* Sidebar footer: GitHub + Waitlists side by side. */
+.docs-sidebar-footer{display:flex;align-items:center;gap:4px;border:1px solid var(--color-fd-border);border-radius:10px;background:var(--color-fd-secondary);padding:4px}
+.docs-sidebar-footer-icon{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:7px;color:var(--color-fd-muted-foreground)}
+.docs-sidebar-footer-icon:hover{background:var(--color-fd-accent);color:var(--color-fd-accent-foreground)}
+.docs-sidebar-footer-icon svg{width:18px;height:18px}
+.docs-sidebar-footer-separator{color:var(--color-fd-border);font-size:.875rem;user-select:none}
+.docs-sidebar-footer-link{flex:1;display:inline-flex;align-items:center;gap:6px;min-height:32px;padding-inline:8px;border-radius:7px;color:var(--color-fd-foreground);font-size:.8125rem;font-weight:500;text-decoration:none}
+.docs-sidebar-footer-link:hover{background:var(--color-fd-accent);color:var(--color-fd-accent-foreground)}
+.docs-sidebar-footer-link svg{width:14px;height:14px;flex-shrink:0}
+/* High-contrast callouts driven by the fumadocs --callout-color variable. */
+.waitlyze-docs div[style*="--callout-color"]{background:color-mix(in oklch,var(--callout-color) 7%,#fff);border-color:color-mix(in oklch,var(--callout-color) 32%,#fff);color:var(--color-fd-foreground)}
+.waitlyze-docs div[style*="--callout-color"]>div[role="none"]{width:3px;background:var(--callout-color);opacity:1}
+.waitlyze-docs div[style*="--callout-color"]>svg{fill:none;color:var(--callout-color)}
+.waitlyze-docs div[style*="--callout-color"] .text-fd-muted-foreground{color:var(--color-fd-foreground)}
+.waitlyze-docs div[style*="--callout-color"] a{color:var(--color-fd-foreground);font-weight:600}

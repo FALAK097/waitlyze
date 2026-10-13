@@ -1,91 +1,49 @@
-import { randomBytes } from "crypto";
-import { promisify } from "util";
-import bcrypt from "bcryptjs";
+import { createHash, randomBytes } from "node:crypto";
 import prisma from "@/lib/prisma";
 
-const SALT_ROUNDS = 10;
-const API_KEY_PREFIX = "wl_";
 const API_KEY_BYTES = 32;
 
 export async function generateApiKey() {
-  try {
-    const randomBytesAsync = promisify(randomBytes);
-    const buffer = await randomBytesAsync(API_KEY_BYTES);
-
-    const apiKey = `${API_KEY_PREFIX}${buffer
-      .toString("base64")
-      .replace(/\+/g, "-")
-      .replace(/\//g, "_")
-      .replace(/=+$/, "")}`;
-
-    const hashedKey = await bcrypt.hash(apiKey, SALT_ROUNDS);
-
-    return { apiKey, hashedKey };
-  } catch (error) {
-    console.error("Error generating API key:", error);
-    throw new Error("Failed to generate API key");
-  }
+  const keyId = randomBytes(16).toString("hex");
+  const secret = randomBytes(API_KEY_BYTES).toString("base64url");
+  return { apiKey: `wl2_${keyId}_${secret}`, keyId, hashedKey: createHash("sha256").update(secret).digest("hex") };
 }
 
-export async function createApiKey({ name, userId }) {
-  try {
-    const { apiKey, hashedKey } = await generateApiKey();
-
-    const apiKeyRecord = await prisma.apiKey.create({
-      data: {
-        name,
-        keyHash: hashedKey,
-        userId,
-      },
-      select: {
-        id: true,
-        name: true,
-        createdAt: true,
-      },
-    });
-
-    return {
-      ...apiKeyRecord,
-      apiKey,
-    };
-  } catch (error) {
-    console.error("Error creating API key:", error);
-    throw new Error("Failed to create API key");
+export async function createApiKey({ name, userId, waitlistId, expiresAt, scopes = ["waitlist:write"], db = prisma }) {
+  if (!Array.isArray(scopes) || scopes.length === 0 || scopes.some((scope) => !["waitlist:read", "waitlist:write"].includes(scope))) {
+    throw new TypeError("Choose at least one supported API key scope.");
   }
+  const { apiKey, keyId, hashedKey } = await generateApiKey();
+  const record = await db.apiKey.create({
+    data: { name, keyId, keyHash: hashedKey, userId, waitlistId, scopes, expiresAt },
+    select: { id: true, name: true, keyId: true, scopes: true, expiresAt: true, createdAt: true, waitlist: { select: { id: true, name: true } } },
+  });
+  return { ...record, apiKey };
 }
 
-export async function revokeApiKey(id, userId) {
+export async function revokeApiKey(id, userId, waitlistId = null) {
   try {
-    const apiKey = await prisma.apiKey.findUnique({
-      where: { id },
-      select: { userId: true },
+    const result = await prisma.apiKey.updateMany({
+      where: { id, revokedAt: null, ...(waitlistId ? { waitlistId } : { userId, waitlistId: null }) },
+      data: { revokedAt: new Date() },
     });
-
-    if (!apiKey || apiKey.userId !== userId) {
-      return false;
-    }
-
-    await prisma.apiKey.delete({
-      where: { id },
-    });
-
-    return true;
+    return result.count === 1;
   } catch (error) {
     console.error("Error revoking API key:", error);
     return false;
   }
 }
 
-export async function listUserApiKeys(userId) {
+export async function listUserApiKeys(userId, waitlistIds = []) {
   try {
     return await prisma.apiKey.findMany({
-      where: { userId },
+      where: { revokedAt: null, OR: [{ userId, keyId: null }, ...(waitlistIds.length ? [{ waitlistId: { in: waitlistIds } }] : [])] },
       include: {
         waitlist: {
           select: { id: true, name: true },
         },
       },
-      orderBy: { id: "desc" },
+      orderBy: { createdAt: "desc" },
     });
   } catch (error) {
     console.error("Error listing API keys:", error);

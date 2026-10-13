@@ -1,9 +1,10 @@
 "use client";
 
+import { Button } from "@/components/ui/button";
+
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { toast } from "react-hot-toast";
 import { Delete2Icon, SquarePenIcon, CopyIcon } from "../shared/icons";
 import { Button } from "../ui/button";
 import {
@@ -22,6 +23,7 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "../ui/dialog";
+import { toast } from "sonner";
 
 export const WaitListCard = ({
 	id,
@@ -68,13 +70,13 @@ export const WaitListCard = ({
 	return (
 		<>
 			<Card className="relative w-full transition-all group hover:shadow-lg">
-				<button
+				<Button
 					onClick={handleCopyId}
 					className="absolute z-10 p-1 transition-colors duration-200 rounded-sm top-3 right-3 hover:bg-muted"
 					title="Copy ID"
-				>
+				 variant="ghost">
 					<CopyIcon />
-				</button>
+				</Button>
 				<CardHeader>
 					<CardTitle className="flex items-center gap-4">
 						<div className="relative overflow-hidden rounded-lg size-16 bg-muted">

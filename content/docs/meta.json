@@ -1,0 +1,31 @@
+{
+  "title": "Documentation",
+  "pages": [
+    "---Get started---",
+    "index",
+    "waitlists",
+    "overview",
+    "page-builder",
+    "publishing",
+    "---Share and grow---",
+    "embed",
+    "domains",
+    "signup-flow",
+    "referrals",
+    "subscribers",
+    "analytics",
+    "---Email---",
+    "email",
+    "broadcasts",
+    "automations",
+    "resend",
+    "---Connect---",
+    "api",
+    "api-keys",
+    "webhooks",
+    "---Workspace---",
+    "workspace",
+    "---Help---",
+    "troubleshooting"
+  ]
+}

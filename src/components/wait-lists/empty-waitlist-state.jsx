@@ -1,15 +1,16 @@
 "use client";
 
+import { HugeiconsIcon } from "@hugeicons/react";
+import { AddCircleIcon } from "@hugeicons/core-free-icons";
 import { Button } from "@/components/ui/button";
-import { motion } from "framer-motion";
-import { PlusCircle } from "lucide-react";
+import { motion } from "motion/react";
 import { useRouter } from "next/navigation";
 
 export default function EmptyWaitlistState() {
 	const router = useRouter();
 
 	const handleCreateWaitlist = () => {
-		router.push("/wait-lists/new");
+		router.push("/waitlists/new");
 	};
 
 	return (
@@ -58,7 +59,7 @@ export default function EmptyWaitlistState() {
 				transition={{ delay: 0.4, duration: 0.5 }}
 			>
 				<Button onClick={handleCreateWaitlist} size="lg">
-					<PlusCircle className="w-5 h-5" />
+					<HugeiconsIcon icon={AddCircleIcon} className="w-5 h-5" />
 					Create Your First Waitlist
 				</Button>
 			</motion.div>

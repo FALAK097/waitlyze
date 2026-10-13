@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import toast from "react-hot-toast";
+import { toast } from "sonner";
 
 export function useR2Upload(endpoint, options = {}) {
   const [isUploading, setIsUploading] = useState(false);

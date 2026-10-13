@@ -4,6 +4,7 @@ export const createImpression = async (data) => {
 	const waitList = await prisma.waitList.findUnique({
 		where: {
 			id: data.waitListId,
+			status: "PUBLISHED",
 		},
 	});
 	if (!waitList) {

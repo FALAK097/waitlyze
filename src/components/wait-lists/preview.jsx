@@ -3,10 +3,9 @@
 import { createImpression, createSignUp } from "@/utils/fetch/client";
 import { fetchSignUp } from "@/utils/fetch/client/sign-ups";
 import { useQuery } from "@tanstack/react-query";
-import { useTheme } from "next-themes";
 import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState, Suspense } from "react";
-import toast from "react-hot-toast";
+import { toast } from "sonner";
 import { ReferralPreview } from "./referral-preview";
 import { SignUpForm } from "./sign-up-form";
 
@@ -17,7 +16,6 @@ function PreviewContent({
   initialSignUpsCount,
   sendSignUpEmailAction,
 }) {
-  const theme = useTheme();
   const [mounted, setMounted] = useState(false);
   const searchParams = useSearchParams();
   const referralId = searchParams.get("r");
@@ -123,10 +121,6 @@ function PreviewContent({
     setMounted(true);
     return () => setMounted(false);
   }, []);
-
-  useEffect(() => {
-    theme.setTheme("light");
-  }, [theme]);
 
   useEffect(() => {
     if (!mounted) return;

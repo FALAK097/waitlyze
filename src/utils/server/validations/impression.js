@@ -12,6 +12,11 @@ const checkIfImpressionExists = async (waitListId, hypeSession) => {
 };
 
 const checkIfRequestIsValid = async (body) => {
+  if (!body || typeof body !== "object" || Array.isArray(body) ||
+      typeof body.waitListId !== "string" || !body.waitListId || body.waitListId.length > 128 ||
+      typeof body.hypeSession !== "string" || !body.hypeSession.trim() || body.hypeSession.length > 256) {
+    return Response.json({ message: "A valid waitlist and browser identifier are required." }, { status: 400 });
+  }
 	if (!body.waitListId) {
 		return NextResponse.json(
 			{
@@ -23,6 +28,7 @@ const checkIfRequestIsValid = async (body) => {
 	const isValidWaitList = await prisma.waitList.findUnique({
 		where: {
 			id: body.waitListId,
+			status: "PUBLISHED",
 		},
 	});
 	if (!isValidWaitList) {

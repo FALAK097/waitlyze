@@ -1,0 +1,61 @@
+---
+title: Custom domains
+description: Serve a published waitlist from a domain you own.
+---
+
+Custom domains serve the **same published revision** as the hosted `/w/slug` page. They do not create a separate copy.
+
+## Add your domain
+
+<Steps>
+<Step>
+### Open Custom domain
+Go to Waitlist settings → **Custom domain**. Owners and admins can manage this connection; members can view status.
+</Step>
+<Step>
+### Enter your hostname
+Type the exact hostname, such as `join.example.com`. Subdomains are recommended over apex domains.
+</Step>
+<Step>
+### Copy the DNS records shown
+Add the exact type, name, and value from the app to your DNS provider. Do not use a generic hardcoded target — use what the app shows for your hostname.
+</Step>
+</Steps>
+
+<Callout title="Availability depends on deployment setup">
+If the panel says custom domains are unavailable, the deployment lacks a domain provider (`VERCEL_TOKEN`, `VERCEL_PROJECT_ID`, `APP_ROOT_DOMAIN`). The Waitlyze hosted page still works after publication.
+</Callout>
+
+## Verify DNS and ownership
+
+<Steps>
+<Step>
+### Check again after propagation
+Choose **Check again**. DNS and certificates can take minutes to hours.
+</Step>
+<Step>
+### Track status
+| Status | Meaning | Action |
+| --- | --- | --- |
+| Ownership check pending | Verification record not found yet | Confirm the verification record at your DNS provider |
+| DNS / certificate setup pending | Ownership passed; DNS or cert propagating | Wait, then check again |
+| Ready (Active) | Domain serves your published page | Share it |
+| Needs attention | Records mismatch or expired check | Compare records with current instructions and recheck |
+</Step>
+<Step>
+### Keep the waitlist published
+A Ready domain with a draft or paused waitlist still accepts no signups. See [Publishing](/docs/publishing).
+</Step>
+</Steps>
+
+## Remove a domain
+
+Removing the connection stops serving through it. It does not delete the waitlist or its Waitlyze hosted page. Overview readiness drops the domain check once removed.
+
+## Next
+
+<Cards>
+<Card title="Hosted pages and embeds" href="/docs/embed" description="Fallback URL when domains propagate." />
+<Card title="Publishing" href="/docs/publishing" description="Keep the served revision live." />
+<Card title="Troubleshooting" href="/docs/troubleshooting" description="Fix ownership and DNS issues." />
+</Cards>

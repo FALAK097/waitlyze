@@ -1,0 +1,64 @@
+---
+title: Publishing
+description: Publish drafts, pause intake, and roll back safely.
+---
+
+Publication copies a saved draft revision into the live slot. It never edits content — it only decides which saved revision visitors see.
+
+## Lifecycle states
+
+| Status | Accepts signups? | What visitors see |
+| --- | --- | --- |
+| `Draft` | No | Nothing public. The waitlist is private. |
+| `Published` | Yes, if a valid published revision exists | The published revision at the hosted URL, embed, or custom domain. |
+| `Paused` | No | Existing subscriber records remain, but no new intake. |
+
+There is no separate archived state in the current product. Delete is permanent and lives in waitlist settings.
+
+## Who can change state
+
+| Action | Permission | Audit |
+| --- | --- | --- |
+| Publish a revision | Owner or admin (`publishCampaign`) | `WAITLIST_PUBLISHED` |
+| Pause intake | Owner or admin | `WAITLIST_PAUSED` |
+| Roll back to prior published revision | Owner or admin | Recorded as publication change |
+| Edit page content | Any member with edit access | Saved as draft revision |
+
+Members without publish rights see `Admin required` in Overview readiness and guidance in the builder instead of buttons.
+
+## Publish, pause, roll back
+
+<Steps>
+<Step>
+### Publish the reviewed draft
+In Page → `#publication-actions`, choose **Publish** with the current draft revision number. The call is revision-checked: if someone saved a newer draft first, reload and retry instead of overwriting.
+</Step>
+<Step>
+### Pause when you need to stop intake
+Choose **Pause**. The status becomes `Paused`, hosted/embed/domain stops accepting signups, and existing data stays queryable.
+</Step>
+<Step>
+### Roll back a bad publish
+Choose **Rollback** to restore the previous published revision. Draft edits you saved after the bad publish remain as drafts — they are not lost.
+</Step>
+</Steps>
+
+<Callout type="warn" title="Publish is atomic">
+Publish, pause, and rollback use conditional writes on status and revision. Stale clicks fail safely with “Reload and try again” instead of publishing the wrong version.
+</Callout>
+
+## What goes live
+
+- `publishedRevision` and `publishedTemplateRevision` point at the now-live snapshot.
+- Hosted `/w/slug`, embed widget, and Ready custom domain all serve that same revision.
+- Overview readiness flips to `Published page` when `templateRevision` equals `publishedTemplateRevision` and the snapshot validates.
+
+If readiness says `Publish your latest changes`, you saved edits after the last publish. Publish again to make them live.
+
+## Next
+
+<Cards>
+<Card title="Hosted pages and embeds" href="/docs/embed" description="Share the live revision." />
+<Card title="Custom domains" href="/docs/domains" description="Serve the live revision from your domain." />
+<Card title="Signup and verification" href="/docs/signup-flow" description="What happens after a visitor submits." />
+</Cards>

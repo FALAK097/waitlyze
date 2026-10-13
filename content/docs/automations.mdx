@@ -1,0 +1,52 @@
+---
+title: Automations
+description: Welcome, referral reminder, and milestone email recipes.
+---
+
+Automations are event-driven recipes at `/waitlists/[id]/emails/automations`. Each waitlist has the same three recipes, versioned independently.
+
+## The three recipes
+
+| Recipe | Trigger | Default delay | Purpose |
+| --- | --- | --- | --- |
+| Welcome after confirmation | `SIGNUP_VERIFIED` | 0 minutes | Thank the subscriber right after they confirm. |
+| Referral reminder | `SIGNUP_VERIFIED` | 1440 minutes (24h) | Nudge subscribers with zero verified referrals at send time. Skipped with `REFERRALS_ALREADY_VERIFIED` if they already invited someone. |
+| Referral milestone | `REFERRAL_VERIFIED` | 0 minutes | Celebrate when verified referrals reach your goal. |
+
+All three require verified email plus marketing opt-in, rechecked before each delivery.
+
+## Configure a recipe
+
+- **Delay**: 0 to 10080 minutes (0 to 168 hours). Use 0 for immediate.
+- **Subject**: up to 160 characters, supports `{{waitlist}}`.
+- **Body**: up to 3000 characters, supports `{{waitlist}}` and, for milestones only, `{{referral_count}}` with the subscriber's current eligible count.
+- **Milestone count** (milestone only): integer 1 to 100. Default 3.
+
+<Steps>
+<Step>
+### Edit and save a new version
+Saving creates a new version number. Already-scheduled runs keep their saved version; new runs use the latest.
+</Step>
+<Step>
+### Enable only after saving valid content
+Enabling validates subject and body. An invalid recipe cannot be enabled until you save valid content.
+</Step>
+<Step>
+### Pause to cancel pending runs
+Pausing cancels `PENDING` and `PROCESSING` steps for that recipe. Messages already handed to the provider may still arrive.
+</Step>
+</Steps>
+
+Duplicate triggers are deduped by idempotency keys, so retried verifications do not double-send welcomes or milestones.
+
+## Monitor runs
+
+The automations page shows the latest 30 runs with recipe, subscriber email, step status, and error codes. Use this plus [Subscribers](/docs/subscribers) to diagnose “why didn't they get it?” — usually unverified, not opted in, unsubscribed, suppressed, or paused.
+
+## Next
+
+<Cards>
+<Card title="Email tools" href="/docs/email" description="Templates and delivery health." />
+<Card title="Broadcasts" href="/docs/broadcasts" description="One-time sends with the same consent rules." />
+<Card title="Referrals" href="/docs/referrals" description="What counts toward milestones." />
+</Cards>
