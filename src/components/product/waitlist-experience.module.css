@@ -5,7 +5,7 @@
 .listToolbar > :last-child { flex-shrink: 0; }
 @media (max-width: 767px) {
   .listToolbar > :first-child { flex-basis: 100%; }
-  .listToolbar > :nth-child(2) { flex: 1 1 auto; min-width: 0; max-width: none; margin-inline-start: 0; }
+  .listToolbar > :nth-child(2) { flex: 1 1 0; min-width: 0; max-width: none; margin-inline-start: 0; }
   .tableWrap { overflow-x: auto; }
   .table { min-width: 720px; }
 }
