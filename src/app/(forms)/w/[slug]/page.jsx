@@ -35,6 +35,6 @@ export default async function PublicWaitlistPage({ params }) {
   return <main className="product-ui"><WaitlistPageContent
     snapshot={page.snapshot}
     name={page.waitList.name}
-    renderSignupForm={(section, snapshot) => <SignupForm waitListId={page.waitList.id} showReferrals={page.waitList.showReferrals} label={section.label} buttonText={section.buttonText} thankYou={snapshot.thankYou} />}
+    renderSignupForm={(section, snapshot) => <SignupForm waitListId={page.waitList.id} showReferrals={page.waitList.showReferrals} label={section.label} buttonText={section.buttonText} thankYou={snapshot.thankYou} theme={snapshot.theme} />}
   /></main>;
 }

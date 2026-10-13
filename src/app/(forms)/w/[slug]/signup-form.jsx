@@ -10,9 +10,15 @@ import { Button } from "@/components/ui/button";
 import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { MARKETING_CONSENT_COPY } from "@/lib/campaigns/marketing-consent.mjs";
+import { THEME_ACCENTS, THEME_FONTS, THEME_PRESETS, normalizeTheme } from "@/lib/templates/theme.mjs";
 import styles from "@/components/product/waitlist-signup.module.css";
 
-export function SignupForm({ waitListId, showReferrals, label, buttonText, thankYou }) {
+export function SignupForm({ waitListId, showReferrals, label, buttonText, thankYou, theme }) {
+  const normalized = normalizeTheme(theme);
+  const preset = THEME_PRESETS[normalized.preset];
+  const accent = THEME_ACCENTS[normalized.accent];
+  const font = THEME_FONTS[normalized.font];
+  const vars = { bg: preset.bg, text: preset.text, muted: preset.muted, card: preset.card, border: preset.border, accent: accent.solid, accentHover: accent.hover, accentLabel: accent.text, font: font.stack };
   const searchParams = useSearchParams();
   const referralCode = searchParams.get("r");
   const [message, setMessage] = useState("");
@@ -62,7 +68,7 @@ export function SignupForm({ waitListId, showReferrals, label, buttonText, thank
 
   if (result) {
     return (
-      <section className={styles.result} aria-labelledby="signup-result-title">
+      <section className={styles.result} aria-labelledby="signup-result-title" style={{ "--page-bg": vars.bg, "--page-text": vars.text, "--page-muted": vars.muted, "--page-card": vars.card, "--page-border": vars.border, "--page-accent": vars.accent, "--page-accent-hover": vars.accentHover, "--page-accent-label": vars.accentLabel, "--page-font": vars.font }}>
         <p className={styles.status} role="status" aria-live="polite">{message}</p>
         <h2 id="signup-result-title">{result.heading}</h2>
         <p className={styles.thankYou}>{result.notice}</p>
@@ -72,7 +78,7 @@ export function SignupForm({ waitListId, showReferrals, label, buttonText, thank
   }
 
   return (
-    <form className={styles.form} onSubmit={submit}>
+    <form className={styles.form} onSubmit={submit} style={{ "--page-bg": vars.bg, "--page-text": vars.text, "--page-muted": vars.muted, "--page-card": vars.card, "--page-border": vars.border, "--page-accent": vars.accent, "--page-accent-hover": vars.accentHover, "--page-accent-label": vars.accentLabel, "--page-font": vars.font }}>
       <Label className={styles.label} htmlFor="waitlist-email">{label}</Label>
       <div className={styles.row}>
         <Input className={styles.email} id="waitlist-email" name="email" type="email" autoComplete="email" required maxLength={320} />

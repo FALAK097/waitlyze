@@ -310,7 +310,7 @@ export function SnapshotPageBuilder({ waitList, saveDraftPage, publishPage, paus
             <ul>{unchangedStarterCopy.map(({ label, value, key }) => <li key={key}><strong>{label}</strong><span>{value}</span></li>)}</ul>
           </section>}
           <section className="product-publish-review-preview" role="region" aria-label="Public page preview" tabIndex={0}>
-            <WaitlistPageContent snapshot={snapshot} name={waitList.name} previewViewport="desktop" renderSignupForm={(section) => <WaitlistSignupPreview label={section.label} buttonText={section.buttonText} />} />
+            <WaitlistPageContent snapshot={snapshot} name={waitList.name} previewViewport="desktop" renderSignupForm={(section) => <WaitlistSignupPreview label={section.label} buttonText={section.buttonText} theme={snapshot.theme} />} />
           </section>
           {error && <p className="product-builder-alert" role="alert">{error}</p>}
           <div className="product-publish-confirm"><Label className="flex items-start"><Checkbox checked={publishConfirmed} onCheckedChange={setPublishConfirmed} disabled={publishing} /> <span>I reviewed this page as visitors will see it.</span></Label></div>
@@ -345,7 +345,7 @@ export function SnapshotPageBuilder({ waitList, saveDraftPage, publishPage, paus
         </div>
         <div className={`product-builder-preview-frame${previewViewport === "mobile" ? " is-mobile" : ""}`} data-viewport={previewViewport}>
           <section className="product-page-preview" aria-label="Waitlist page preview">
-            <WaitlistPageContent snapshot={snapshot} name={waitList.name} previewViewport={previewViewport} renderSignupForm={(section) => <WaitlistSignupPreview label={section.label} buttonText={section.buttonText} />} />
+            <WaitlistPageContent snapshot={snapshot} name={waitList.name} previewViewport={previewViewport} renderSignupForm={(section) => <WaitlistSignupPreview label={section.label} buttonText={section.buttonText} theme={snapshot.theme} />} />
           </section>
         </div>
       </div>

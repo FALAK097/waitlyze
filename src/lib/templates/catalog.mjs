@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { THEME_ACCENT_IDS, THEME_FONT_IDS, THEME_PRESET_IDS, normalizeTheme } from "./theme.mjs";
 
 const text = (max) => z.string().min(1).max(max).refine((value) => value.trim().length > 0, "Enter some text.");
 const hero = z.strictObject({ type: z.literal("hero"), heading: text(120), body: text(600) });
@@ -9,12 +10,19 @@ const footer = z.strictObject({ type: z.literal("footer"), note: text(160) });
 export const sectionSchema = z.discriminatedUnion("type", [hero, features, faq, form, footer]);
 export const templateFormSchema = z.strictObject({ fields: z.tuple([z.literal("email")]), referrals: z.literal(false), verification: z.literal(false) });
 
+export const themeSchema = z.strictObject({
+  preset: z.enum(THEME_PRESET_IDS),
+  accent: z.enum(THEME_ACCENT_IDS),
+  font: z.enum(THEME_FONT_IDS),
+});
+
 export const templateSnapshotSchema = z.strictObject({
   schemaVersion: z.literal(1),
-  templateId: z.enum(["saas", "mobile", "ai", "community", "consumer", "newsletter", "blank"]),
+  templateId: z.enum(["saas", "mobile", "ai", "community", "consumer", "newsletter", "viral", "blank"]),
   templateVersion: z.number().int().positive(),
   sections: z.array(sectionSchema).min(2).max(12),
-  theme: z.strictObject({ surface: z.literal("white"), text: z.literal("ink"), action: z.literal("lime"), font: z.literal("geist") }),
+  // normalizeTheme keeps snapshots saved before themes were editable valid.
+  theme: z.preprocess((value) => normalizeTheme(value), themeSchema),
   form: templateFormSchema,
   thankYou: z.strictObject({ heading: text(120), body: text(400) }),
   email: z.strictObject({ enabled: z.literal(false), subject: text(160), body: text(600) }),
@@ -23,20 +31,105 @@ export const templateSnapshotSchema = z.strictObject({
   if (value.sections[0]?.type !== "hero") ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Start the page with a hero section.", path: ["sections"] });
 });
 
-const signup = { type: "form", label: "Email address", buttonText: "Join the waitlist" };
-const launchFeatures = [
-  { title: "What you're building", body: "Describe the product in a sentence." },
-  { title: "Who it's for", body: "Help visitors recognize themselves." },
-  { title: "Why join now", body: "Explain what joining the waitlist means." },
-];
+const emailSignup = { type: "form", label: "Email address", buttonText: "Join the waitlist" };
+
 const definitions = [
-  { id: "saas", name: "SaaS", description: "A focused product introduction with three benefits.", sections: [{ type: "hero", heading: "Your next great workflow starts here.", body: "Introduce your product and the problem it solves." }, { type: "features", items: launchFeatures }, signup] },
-  { id: "mobile", name: "Mobile app", description: "An app introduction with a simple launch signup.", sections: [{ type: "hero", heading: "Something new for your everyday.", body: "Tell visitors what your app helps them do." }, signup, { type: "faq", items: [{ question: "Which devices will it support?", answer: "Add the platforms you plan to support." }] }] },
-  { id: "ai", name: "AI tool", description: "Lead with the task your tool helps people accomplish.", sections: [{ type: "hero", heading: "A new way to get things done.", body: "Describe what your tool does and where people stay in control." }, { type: "features", items: launchFeatures }, signup] },
-  { id: "community", name: "Community", description: "Introduce the people, purpose and invitation.", sections: [{ type: "hero", heading: "Find your people.", body: "Describe the community you're creating and who should join." }, signup, { type: "faq", items: [{ question: "What brings us together?", answer: "Explain your community's shared interest or purpose." }] }] },
-  { id: "consumer", name: "Consumer product", description: "Give one product a clear introduction.", sections: [{ type: "hero", heading: "Meet your next favorite.", body: "Introduce the product and why you're making it." }, { type: "features", items: launchFeatures }, signup] },
-  { id: "newsletter", name: "Newsletter", description: "Explain the subject and why people should subscribe.", sections: [{ type: "hero", heading: "A fresh perspective, in your inbox.", body: "Tell readers what you'll write about and how often." }, { ...signup, buttonText: "Join the list" }, { type: "footer", note: "Add a short note about what subscribers can expect." }] },
-  { id: "blank", name: "Blank", description: "Start with a heading and an email form.", sections: [{ type: "hero", heading: "Your launch starts here.", body: "Introduce what you're building." }, signup] },
+  {
+    id: "saas", name: "SaaS", description: "A focused product introduction with three benefits and a signup form.",
+    theme: { preset: "light", accent: "lime", font: "sans" },
+    sections: [
+      { type: "hero", heading: "Your next great workflow starts here.", body: "One workspace for your launch: collect interest, confirm every email, and know exactly who is waiting." },
+      { type: "features", items: [
+        { title: "Launch in minutes", body: "Pick this starter, add your copy, and publish. No code, no designer needed." },
+        { title: "Every email confirmed", body: "Double opt-in keeps your list real, so launch day reaches humans." },
+        { title: "Know your audience", body: "See where signups come from and which messages convert." },
+      ] },
+      emailSignup,
+    ],
+  },
+  {
+    id: "mobile", name: "Mobile app", description: "App-store style introduction with platform questions answered.",
+    theme: { preset: "light", accent: "sky", font: "sans" },
+    sections: [
+      { type: "hero", heading: "Something new for your everyday.", body: "Join the list for early access on iOS and Android, plus a founding-member badge at launch." },
+      { ...emailSignup, buttonText: "Notify me" },
+      { type: "faq", items: [
+        { question: "Which devices will it support?", answer: "iOS and Android from day one, with a web companion to follow." },
+        { question: "When does the beta start?", answer: "We invite the list in signup order. Early signups get in first." },
+      ] },
+    ],
+  },
+  {
+    id: "ai", name: "AI tool", description: "Dark, confident starter that leads with the job your tool does.",
+    theme: { preset: "dark", accent: "violet", font: "sans" },
+    sections: [
+      { type: "hero", heading: "A new way to get things done.", body: "Describe the task your tool takes off people's plates, and where a human stays in control." },
+      { type: "features", items: [
+        { title: "Does the busywork", body: "Say plainly what the tool drafts, summarizes, or automates." },
+        { title: "You stay in control", body: "Approvals, edits, and exports work the way your users expect." },
+        { title: "Private by default", body: "Your work stays yours. Say how you handle data in one line." },
+      ] },
+      emailSignup,
+    ],
+  },
+  {
+    id: "community", name: "Community", description: "Warm editorial starter about the people and the invitation.",
+    theme: { preset: "sand", accent: "coral", font: "serif" },
+    sections: [
+      { type: "hero", heading: "Find your people.", body: "A small, deliberate community for people who care about the same thing you do. Tell them what that thing is." },
+      { ...emailSignup, buttonText: "Request an invite" },
+      { type: "faq", items: [
+        { question: "What brings us together?", answer: "Explain the shared interest, craft, or goal members rally around." },
+        { question: "How do invites work?", answer: "Join the waitlist and we open the doors in small weekly cohorts." },
+      ] },
+    ],
+  },
+  {
+    id: "consumer", name: "Consumer product", description: "One product, one clear introduction, one signup form.",
+    theme: { preset: "mist", accent: "coral", font: "sans" },
+    sections: [
+      { type: "hero", heading: "Meet your next favorite.", body: "Introduce the product, who it is for, and when it ships. One screen, no scrolling required to join." },
+      { type: "features", items: [
+        { title: "Why it exists", body: "The frustration you felt that made you build this." },
+        { title: "What changes", body: "The before-and-after in a single sentence each." },
+        { title: "When you get it", body: "Your ship date or launch window, stated plainly." },
+      ] },
+      emailSignup,
+    ],
+  },
+  {
+    id: "newsletter", name: "Newsletter", description: "Subject-first starter with cadence set before signup.",
+    theme: { preset: "light", accent: "violet", font: "serif" },
+    sections: [
+      { type: "hero", heading: "A fresh perspective, in your inbox.", body: "Tell readers what you write about, how often it arrives, and why it is worth opening." },
+      { ...emailSignup, buttonText: "Subscribe" },
+      { type: "footer", note: "One email a week. Unsubscribe anytime, no hard feelings." },
+    ],
+  },
+  {
+    id: "viral", name: "Viral waitlist", description: "Referral-first starter: signups climb the queue by inviting friends.",
+    theme: { preset: "dark", accent: "lime", font: "sans" },
+    sections: [
+      { type: "hero", heading: "Skip the line.", body: "Join the waitlist, get your link, and every friend who joins moves you up. Early believers get in first." },
+      { type: "features", items: [
+        { title: "Your place in line", body: "Every signup sees their position the moment they join." },
+        { title: "Invites move you up", body: "Share your link. Each friend who joins jumps you forward." },
+        { title: "Rewards unlock", body: "Top referrers earn early access and founding-member perks." },
+      ] },
+      { ...emailSignup, buttonText: "Claim my spot" },
+      { type: "faq", items: [
+        { question: "How do referrals work?", answer: "After joining you get a personal link. Friends who join through it move you up the queue." },
+      ] },
+    ],
+  },
+  {
+    id: "blank", name: "Blank", description: "Start with a heading and an email form. Full control in the editor.",
+    theme: { preset: "light", accent: "lime", font: "sans" },
+    sections: [
+      { type: "hero", heading: "Your launch starts here.", body: "Introduce what you're building." },
+      emailSignup,
+    ],
+  },
 ];
 
 function deepFreeze(value) {
@@ -44,11 +137,11 @@ function deepFreeze(value) {
   return Object.freeze(value);
 }
 
-const catalog = definitions.map(({ id, name, description, sections }) => deepFreeze({
-  id, name, description,
+const catalog = definitions.map(({ id, name, description, theme, sections }) => deepFreeze({
+  id, name, description, theme,
   snapshot: templateSnapshotSchema.parse({
     schemaVersion: 1, templateId: id, templateVersion: 1, sections,
-    theme: { surface: "white", text: "ink", action: "lime", font: "geist" },
+    theme,
     form: { fields: ["email"], referrals: false, verification: false },
     thankYou: { heading: "You're on the list.", body: "Thanks for your interest." },
     email: { enabled: false, subject: "You're on the {{waitlist}} list", body: "Thanks for joining {{waitlist}}." },
@@ -60,8 +153,11 @@ export function listTemplates() {
 }
 
 // Accept only the ID from a browser. The trusted versioned snapshot comes from this catalog.
-export function snapshotTemplate(id) {
+// themeOverride lets creation-time style choices ride along; validated before use.
+export function snapshotTemplate(id, themeOverride) {
   const template = catalog.find((item) => item.id === id);
   if (!template) throw new Error("Choose an available template.");
-  return structuredClone(template.snapshot);
+  const snapshot = structuredClone(template.snapshot);
+  if (themeOverride !== undefined) snapshot.theme = themeSchema.parse(themeOverride);
+  return snapshot;
 }
