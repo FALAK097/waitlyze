@@ -2,7 +2,7 @@
 .app-frame { min-height: 100dvh; background: #fff; }
 .app-header { background: #fff; border-bottom: 1px solid var(--product-border-subtle); }
 .app-header-inner { max-width: var(--product-content-width, 1152px); margin-inline: auto; min-height: 72px; padding: 12px var(--product-content-gutter, 32px); display: flex; align-items: center; gap: 16px; }
-.app-wordmark { flex-shrink: 0; display: inline-flex; align-items: center; min-height: 44px; min-width: 44px; justify-content: center; border-radius: 8px; }
+.app-wordmark { flex-shrink: 0; display: inline-flex; align-items: center; min-height: 44px; min-width: 44px; justify-content: flex-start; border-radius: 8px; }
 .app-mark { display: inline-flex; align-items: center; gap: 3px; height: 24px; transform: skew(-12deg); }
 .app-mark i { display: block; width: 5px; background: var(--product-accent-solid); border-radius: 2px; height: 14px; }
 .app-mark i:nth-child(2) { height: 22px; }
