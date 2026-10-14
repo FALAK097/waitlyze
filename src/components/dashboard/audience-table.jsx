@@ -1,7 +1,7 @@
 "use client";
 
 import { HugeiconsIcon } from "@hugeicons/react";
-import { CopyIcon, Download01Icon, Search01Icon, Upload01Icon, UserGroupIcon } from "@hugeicons/core-free-icons";
+import { CopyIcon, Download01Icon, Search01Icon, Tick01Icon, Upload01Icon, UserGroupIcon } from "@hugeicons/core-free-icons";
 import { Button, buttonVariants } from "@/components/ui/button";
 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -73,6 +73,7 @@ export function AudienceTable({ waitlist, initialReviews = [], initialReviewsFai
   const [query, setQuery] = useState("");
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("all");
+  const [sort, setSort] = useState("joined_desc");
   const [cursors, setCursors] = useState([null]);
   const [pageIndex, setPageIndex] = useState(0);
   const [result, setResult] = useState({ data: [], total: 0, nextCursor: null, flags: null });
@@ -86,7 +87,7 @@ export function AudienceTable({ waitlist, initialReviews = [], initialReviewsFai
   const [exportColumns, setExportColumns] = useState(() => EXPORT_COLUMNS.map((column) => column.key));
   const [importing, setImporting] = useState(false);
   const [importResult, setImportResult] = useState(null);
-  const [copied, setCopied] = useState(false);
+  const [copiedId, setCopiedId] = useState(null);
 
   const flags = result.flags || { showReferrals: waitlist.showReferrals, sendEmailsToSubscribers: waitlist.sendEmailsToSubscribers, publicSlug: waitlist.publicSlug };
 
@@ -105,10 +106,16 @@ export function AudienceTable({ waitlist, initialReviews = [], initialReviewsFai
     setPageIndex(0);
   }
 
+  function toggleSort() {
+    setSort((current) => (current === "joined_asc" ? "joined_desc" : "joined_asc"));
+    setCursors([null]);
+    setPageIndex(0);
+  }
+
   const load = useCallback(async (signal) => {
     setLoading(true);
     setError("");
-    const params = new URLSearchParams({ status });
+    const params = new URLSearchParams({ status, sort });
     if (search) params.set("q", search);
     if (cursors[pageIndex]) params.set("cursor", cursors[pageIndex]);
     try {
@@ -116,13 +123,13 @@ export function AudienceTable({ waitlist, initialReviews = [], initialReviewsFai
       const payload = await response.json();
       if (!response.ok) throw new Error(payload.error || "Unable to load signups.");
       setResult(payload);
-      setLoadedCriteria(`${status}\u0000${search}`);
+      setLoadedCriteria(`${status}\u0000${search}\u0000${sort}`);
     } catch (loadError) {
       if (loadError.name !== "AbortError") setError("Unable to refresh signups.");
     } finally {
       if (!signal.aborted) setLoading(false);
     }
-  }, [cursors, pageIndex, retryCount, search, status, waitlist.id]);
+  }, [cursors, pageIndex, retryCount, search, sort, status, waitlist.id]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -134,7 +141,7 @@ export function AudienceTable({ waitlist, initialReviews = [], initialReviewsFai
     setExporting(true);
     setExportError("");
     try {
-      const params = new URLSearchParams({ status, columns: exportColumns.join(",") });
+      const params = new URLSearchParams({ status, sort, columns: exportColumns.join(",") });
       if (search) params.set("q", search);
       const response = await fetch(`/api/wait-lists/${encodeURIComponent(waitlist.id)}/subscribers?${params}`, { method: "POST" });
       if (!response.ok) throw new Error("Unable to export signups.");
@@ -178,10 +185,10 @@ export function AudienceTable({ waitlist, initialReviews = [], initialReviewsFai
     }
   }
 
-  function copyText(text) {
-    setCopied(false);
+  function copyText(text, id) {
+    setCopiedId(null);
     navigator.clipboard?.writeText(text).then(
-      () => setCopied(true),
+      () => setCopiedId(id ?? null),
       () => toast.error("Copy didn't work. Select the text manually."),
     );
   }
@@ -194,7 +201,7 @@ export function AudienceTable({ waitlist, initialReviews = [], initialReviewsFai
     ? `${window.location.origin}/w/${flags.publicSlug}?r=${profile.referralCode}`
     : null;
   const requestedSearch = query.trim();
-  const criteriaChanging = requestedSearch !== search || loadedCriteria !== `${status}\u0000${search}`;
+  const criteriaChanging = requestedSearch !== search || loadedCriteria !== `${status}\u0000${search}\u0000${sort}`;
   const isUpdating = loading || (criteriaChanging && !error);
   const loadedFilters = loadedCriteria?.split("\u0000") || [];
   const appliedCriteriaLabel = loadedCriteria
@@ -209,7 +216,12 @@ export function AudienceTable({ waitlist, initialReviews = [], initialReviewsFai
       header: "Email",
       meta: { className: "w-[42%] px-4 py-3 sm:w-auto" },
       cell: ({ row }) => (
-        <Button type="button" className="break-all font-medium underline-offset-4 hover:underline focus-visible:underline sm:break-normal" variant="ghost" onClick={() => { setCopied(false); setSheet({ type: "profile", row: row.original }); }}>{row.original.email}</Button>
+        <span className="group inline-flex max-w-full items-center gap-1">
+          <Button type="button" className="min-w-0 break-all px-1 font-medium underline-offset-4 hover:underline focus-visible:underline sm:break-normal" variant="ghost" onClick={() => { setCopiedId(null); setSheet({ type: "profile", row: row.original }); }}>{row.original.email}</Button>
+          <Button type="button" variant="ghost" size="icon-sm" className="shrink-0 opacity-0 group-hover:opacity-100 focus-visible:opacity-100" aria-label={`Copy ${row.original.email}`} onClick={(event) => { event.stopPropagation(); copyText(row.original.email, row.original.id); }}>
+            <HugeiconsIcon icon={copiedId === row.original.id ? Tick01Icon : CopyIcon} aria-hidden="true" />
+          </Button>
+        </span>
       ),
     }),
     columnHelper.accessor("country", {
@@ -223,7 +235,11 @@ export function AudienceTable({ waitlist, initialReviews = [], initialReviewsFai
       cell: ({ getValue }) => <span className="text-[var(--product-text-secondary)]">{getValue() == null ? "—" : `#${getValue()}`}</span>,
     })] : []),
     columnHelper.accessor("createdAt", {
-      header: "Joined",
+      header: () => (
+        <Button type="button" variant="ghost" size="sm" className="-ml-2 gap-1 px-2 font-medium text-[var(--product-text-secondary)]" onClick={toggleSort} aria-label={sort === "joined_asc" ? "Sort by newest first" : "Sort by oldest first"}>
+          Joined <span aria-hidden="true">{sort === "joined_asc" ? "↑" : "↓"}</span>
+        </Button>
+      ),
       meta: { className: "hidden px-4 py-3 sm:table-cell" },
       cell: ({ getValue }) => <span className="text-[var(--product-text-secondary)]" title={formatDate(getValue())}>{timeAgo(getValue())}</span>,
     }),
@@ -235,7 +251,7 @@ export function AudienceTable({ waitlist, initialReviews = [], initialReviewsFai
         return <span className={`product-status ${verified ? "product-status-success" : ""}`}><span aria-hidden="true">{verified ? "●" : "○"}</span>{verified ? "Verified" : "Needs confirmation"}</span>;
       },
     })] : []),
-  ], [columnHelper, flags.showReferrals, flags.sendEmailsToSubscribers]);
+  ], [columnHelper, flags.showReferrals, flags.sendEmailsToSubscribers, sort, copiedId]);
   const table = useReactTable({
     data: result.data,
     columns,
@@ -308,7 +324,7 @@ export function AudienceTable({ waitlist, initialReviews = [], initialReviewsFai
             </TableHeader>
             <TableBody>
               {rows.map((row) => (
-                <TableRow key={row.original.id} className="product-audience-row">
+                <TableRow key={row.original.id} className="product-audience-row cursor-pointer hover:bg-transparent" onClick={() => { setCopiedId(null); setSheet({ type: "profile", row: row.original }); }}>
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id} className={cell.column.columnDef.meta?.className || ""}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</TableCell>
                   ))}
@@ -344,13 +360,17 @@ export function AudienceTable({ waitlist, initialReviews = [], initialReviewsFai
               <div className="grid grid-cols-[104px_1fr] gap-3 py-2.5"><dt className="text-[var(--product-text-secondary)]">Device</dt><dd title={profile.device || undefined}>{deviceLabel(profile.deviceType, profile.device)}</dd></div>
               {flags.showReferrals && <div className="grid grid-cols-[104px_1fr] gap-3 py-2.5"><dt className="text-[var(--product-text-secondary)]">Referrals</dt><dd className="tabular-nums">{profile.referralCount}</dd></div>}
               <div className="grid grid-cols-[104px_1fr] gap-3 py-2.5"><dt className="text-[var(--product-text-secondary)]">Source</dt><dd>{profile.utmSource || "Direct"}</dd></div>
-              {profileLink && <div className="grid grid-cols-[104px_1fr] gap-3 py-2.5"><dt className="text-[var(--product-text-secondary)]">Referral link</dt><dd><span className="break-all">{profileLink}</span><Button variant="outline" size="sm" className="mt-2" onClick={() => copyText(profileLink)}><HugeiconsIcon icon={CopyIcon} aria-hidden="true" />{copied ? "Copied" : "Copy link"}</Button></dd></div>}
+              {profileLink && <div className="grid grid-cols-[104px_1fr] gap-3 py-2.5"><dt className="text-[var(--product-text-secondary)]">Referral link</dt><dd><span className="break-all">{profileLink}</span><Button variant="outline" size="sm" className="mt-2" onClick={() => copyText(profileLink, "sheet")}><HugeiconsIcon icon={copiedId === "sheet" ? Tick01Icon : CopyIcon} aria-hidden="true" />{copiedId === "sheet" ? "Copied" : "Copy link"}</Button></dd></div>}
             </dl>
             </div>
           </>}
           {sheet?.type === "export" && <>
             <SheetHeader><SheetTitle>Export signups</SheetTitle><SheetDescription>Choose columns. Exports the current search and filters.</SheetDescription></SheetHeader>
-            <div className="grid gap-2 px-4 pb-4">
+            <div className="grid gap-1 px-4 pb-4">
+              <div className="flex gap-1 pb-1">
+                <Button variant="ghost" size="sm" onClick={() => setExportColumns(EXPORT_COLUMNS.map((column) => column.key))}>Select all</Button>
+                <Button variant="ghost" size="sm" onClick={() => setExportColumns([])}>Clear</Button>
+              </div>
               {EXPORT_COLUMNS.map((column) => <Label key={column.key} className="flex items-center gap-3 py-1.5">
                 <Checkbox checked={exportColumns.includes(column.key)} onCheckedChange={(checked) => setExportColumns((current) => {
                   const next = new Set(checked ? [...current, column.key] : current.filter((key) => key !== column.key));
@@ -362,12 +382,11 @@ export function AudienceTable({ waitlist, initialReviews = [], initialReviewsFai
             </div>
           </>}
           {sheet?.type === "import" && <>
-            <SheetHeader><SheetTitle>Import signups</SheetTitle><SheetDescription>Add emails in bulk. Imported rows start unverified and receive no emails.</SheetDescription></SheetHeader>
-            <div className="grid gap-4 px-4 pb-4">
+            <SheetHeader><SheetTitle>Import signups</SheetTitle><SheetDescription>Email is required. Country, points, referral code, referred-by, verified and joined date are optional.</SheetDescription></SheetHeader>
+            <div className="grid gap-3 px-4 pb-4">
               <a className="text-sm font-medium underline underline-offset-4" href={`data:text/csv;charset=utf-8,${encodeURIComponent(IMPORT_TEMPLATE_CSV)}`} download="waitlyze-import-template.csv">Download the CSV template</a>
               <form onSubmit={runImport} className="grid gap-3">
-                <Label htmlFor="audience-import-file">CSV file</Label>
-                <Input id="audience-import-file" name="file" type="file" accept=".csv,text/csv" required disabled={importing} />
+                <Input id="audience-import-file" name="file" type="file" accept=".csv,text/csv" required disabled={importing} aria-label="CSV file to import" />
                 <Button type="submit" disabled={importing} aria-busy={importing}>{importing ? "Importing…" : "Import"}</Button>
               </form>
               {importResult && (

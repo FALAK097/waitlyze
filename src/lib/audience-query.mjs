@@ -1,13 +1,15 @@
 export const AUDIENCE_PAGE_SIZE = 25;
 
-export const IMPORT_TEMPLATE_CSV = "email\nvisitor@example.com\n";
+export const IMPORT_TEMPLATE_CSV = "email,country,points,referral_code,referred_by,verified,joined_at\nvisitor@example.com,US,0,,,false,\n";
 
 export function parseAudienceFilters(searchParams) {
   const query = (searchParams.get("q") ?? "").trim();
   const status = searchParams.get("status") ?? "all";
+  const sort = searchParams.get("sort") ?? "joined_desc";
   if (query.length > 120) return { error: "Search must be 120 characters or fewer." };
   if (!["all", "verified", "pending"].includes(status)) return { error: "Invalid subscriber status." };
-  return { query, status };
+  if (!["joined_desc", "joined_asc"].includes(sort)) return { error: "Invalid sort order." };
+  return { query, status, sort };
 }
 
 export function audienceWhere(waitListId, scope, filters) {

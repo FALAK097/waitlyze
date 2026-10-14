@@ -26,6 +26,7 @@ export async function GET(request, { params }) {
     const filters = parseAudienceFilters(url.searchParams);
     if (filters.error) return NextResponse.json({ error: filters.error }, { status: 400 });
     const where = audienceWhere(id, access.scope, filters);
+    const direction = filters.sort === "joined_asc" ? "asc" : "desc";
     const cursor = url.searchParams.get("cursor");
     if (cursor) {
       if (cursor.length > 128) return NextResponse.json({ error: "Invalid page cursor." }, { status: 400 });
@@ -36,7 +37,7 @@ export async function GET(request, { params }) {
       prisma.signUp.findMany({
         where,
         select: { id: true, email: true, createdAt: true, verifiedAt: true, country: true, city: true, device: true, deviceType: true, referralCode: true, utmSource: true },
-        orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+        orderBy: [{ createdAt: direction }, { id: direction }],
         take: AUDIENCE_PAGE_SIZE + 1,
         ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
       }),
@@ -67,6 +68,7 @@ export async function POST(request, { params }) {
     if (filters.error) return NextResponse.json({ error: filters.error }, { status: 400 });
     const columns = parseExportColumns(url.searchParams.get("columns"));
     if (!columns) return NextResponse.json({ error: "Select at least one export column." }, { status: 400 });
+    const direction = filters.sort === "joined_asc" ? "asc" : "desc";
     const where = audienceWhere(id, access.scope, filters);
     const needReferrals = columns.includes("referrals");
     const needPosition = columns.includes("position") && access.showReferrals;
@@ -85,7 +87,7 @@ export async function POST(request, { params }) {
             const rows = await prisma.signUp.findMany({
               where,
               select,
-              orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+              orderBy: [{ createdAt: direction }, { id: direction }],
               take: 500,
               ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
             });
