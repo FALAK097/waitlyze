@@ -16,13 +16,19 @@
   - Founder can do the core job (launch → invite → launch day) without leaving Waitlyze.
   - Marketing surface (templates, use-cases, comparisons) is part of the product, not an afterthought.
 
-## 2. Phase 0 — Stabilize & restore regressions (DO FIRST)
+## 2. Phase 0 — Stabilize & restore regressions (DO FIRST) — DONE Oct 2026, verified in headless browser
 
-- [ ] Audit the public join flow end-to-end on current `main`: confirm geo capture (ip, city, country, timezone, device, lat/long) fires for **both** signups and impressions (schema + utils exist — verify the revamped forms flow actually calls them, restore what the revamp PR broke).
-- [ ] Audit referral rank-up on the live flow: join via `?r=` link → rank/position changes for the referrer, referral preview shows correct rank + total (this worked pre-revamp — restore it).
-- [ ] Fix email validation on join (format + disposable-domain block) as part of the same audit.
-- [ ] Decide data-model gaps now (points column? reward tiers? slug field? UTM fields?) so later phases don't re-migrate — write the decisions down, migrate once.
-- [ ] Note: `tests/security/` removed (Oct 2026) — public signup/impression APIs currently have no rate limiting (only upload is limited). Proper limits ship in Phase 9; until then do not expose new public endpoints without a limit.
+- [X] Audit the public join flow end-to-end on current `main`: confirm geo capture (ip, city, country, timezone, device, lat/long) fires for **both** signups and impressions (schema + utils exist — verify the revamped forms flow actually calls them, restore what the revamp PR broke).
+  - Found + fixed: new `/w/[slug]` flow never recorded impressions (only legacy `preview.jsx` did) → added `ImpressionTracker`, visitor counts + `impressionId` linkage restored.
+  - Found + fixed: StrictMode/retries raced duplicate impressions → `@@unique([waitListId, uniqueUserId])` + P2002-tolerant `createImpression`.
+- [X] Audit referral rank-up on the live flow: join via `?r=` link → rank/position changes for the referrer, referral preview shows correct rank + total (this worked pre-revamp — restore it).
+  - Server rank-up works (verified-only scoring via `getCampaignPosition`); restored minimal post-signup panel (position + personal `/w/{slug}?r={referralCode}` link + copy) and same on the verify page. Full share cockpit stays Phase-3.
+- [X] Fix email validation on join (format + disposable-domain block) as part of the same audit.
+  - `validateSignupEmail` (strict format + ~60-domain disposable list), enforced in `validateRequest` → 400 before any DB work.
+- [X] Decide data-model gaps now (points column? reward tiers? slug field? UTM fields?) so later phases don't re-migrate — write the decisions down, migrate once.
+  - Decided + migrated (`phase0_attribution_points`): `referrer/landingPage/utmSource/utmMedium/utmCampaign/utmTerm/utmContent` on both Impression and SignUp; `points Int @default(0)` on SignUp (Phase-4 builds on it, behavior unchanged). Slug already existed (`publicSlug`) — no change. Reward tiers deferred to Phase-4 design.
+- [X] Note: `tests/security/` removed (Oct 2026) — public signup/impression APIs currently have no rate limiting (only upload is limited). Proper limits ship in Phase 9; until then do not expose new public endpoints without a limit.
+  - Public signup/impression already behind `consumePublicBudget` rate limiting — verified in code (not load-tested).
 
 ## 3. Phase 1 — Waitlist creation flow + detail view UX rework (foundation)
 

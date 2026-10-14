@@ -4,6 +4,7 @@ import { createSignUp } from "@/services/sign-up";
 import { getDeviceInfo } from "@/utils/server/device";
 import { getGeoInfo, getIpAddress, getTimeZone } from "@/utils/server/geo";
 import { validateRequest } from "@/utils/server/validations/sign-up";
+import { pickAttribution } from "@/utils/server/attribution.mjs";
 import { DuplicateSignupError, InvalidCampaignError } from "@/lib/campaigns/signups.mjs";
 import { getCampaignPosition } from "@/lib/campaigns/referral-position.mjs";
 import { NextResponse } from "next/server";
@@ -85,6 +86,7 @@ export const POST = async (req) => {
       waitListId: body.waitListId,
       ipAddress: ip,
       impressionId: impression?.id,
+      ...pickAttribution(body),
     };
 
     if (geo && (geo.city || geo.country || geo.timezone)) {

@@ -3,6 +3,7 @@ import { consumePublicBudget, PublicRateLimitError } from "@/lib/security/public
 import { createImpression } from "@/services/impressions";
 import { getDeviceInfo } from "@/utils/server/device";
 import { getGeoInfo, getIpAddress, getTimeZone } from "@/utils/server/geo";
+import { pickAttribution } from "@/utils/server/attribution.mjs";
 import { validateRequest } from "@/utils/server/validations/impression";
 import { NextResponse } from "next/server";
 
@@ -33,6 +34,7 @@ export async function POST(request) {
       deviceType,
       waitListId: body.waitListId,
       ipAddress: ip,
+      ...pickAttribution(body),
     };
 
     if (geo && (geo.city || geo.country || geo.timezone)) {

@@ -3,6 +3,7 @@ import prisma from "@/lib/prisma";
 import { templateSnapshotSchema } from "@/lib/templates/catalog.mjs";
 import { notFound } from "next/navigation";
 import { SignupForm } from "./signup-form";
+import { ImpressionTracker } from "./impression-tracker";
 import { WaitlistPageContent } from "@/components/product/waitlist-page-content";
 
 const publishedPage = cache(async function publishedPage(slug) {
@@ -32,9 +33,9 @@ export default async function PublicWaitlistPage({ params }) {
   const page = await publishedPage(slug);
   if (!page) notFound();
   if (page.paused) return <main className="product-ui public-launch public-launch-paused"><section><p className="public-launch-eyebrow">{page.waitList.name || "Waitlist"}</p><h1>This waitlist is paused</h1><p>Signups aren’t open right now. Please check back later.</p></section></main>;
-  return <main className="product-ui"><WaitlistPageContent
+  return <main className="product-ui"><ImpressionTracker waitListId={page.waitList.id} /><WaitlistPageContent
     snapshot={page.snapshot}
     name={page.waitList.name}
-    renderSignupForm={(section, snapshot) => <SignupForm waitListId={page.waitList.id} showReferrals={page.waitList.showReferrals} label={section.label} buttonText={section.buttonText} thankYou={snapshot.thankYou} />}
+    renderSignupForm={(section, snapshot) => <SignupForm slug={slug} waitListId={page.waitList.id} showReferrals={page.waitList.showReferrals} label={section.label} buttonText={section.buttonText} thankYou={snapshot.thankYou} />}
   /></main>;
 }

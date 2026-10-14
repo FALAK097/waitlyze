@@ -10,14 +10,16 @@ import { Button } from "@/components/ui/button";
 import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { MARKETING_CONSENT_COPY } from "@/lib/campaigns/marketing-consent.mjs";
+import { collectAttribution } from "@/utils/attribution";
 import styles from "@/components/product/waitlist-signup.module.css";
 
-export function SignupForm({ waitListId, showReferrals, label, buttonText, thankYou }) {
+export function SignupForm({ slug, waitListId, showReferrals, label, buttonText, thankYou }) {
   const searchParams = useSearchParams();
   const referralCode = searchParams.get("r");
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState(null);
+  const [copied, setCopied] = useState(false);
 
   async function submit(event) {
     event.preventDefault();
@@ -41,6 +43,7 @@ export function SignupForm({ waitListId, showReferrals, label, buttonText, thank
           marketingConsent,
           waitListId,
           hypeSession,
+          ...collectAttribution(),
           ...(showReferrals && referralCode && /^[A-Za-z0-9_-]{8,256}$/.test(referralCode)
             ? { referralId: referralCode }
             : {}),
@@ -49,7 +52,19 @@ export function SignupForm({ waitListId, showReferrals, label, buttonText, thank
       const data = await response.json();
       if (!response.ok) throw new Error(data.message || "Couldn't join the waitlist. Try again.");
 
-      setResult({ heading: "Check your inbox", body: thankYou?.body || "Your signup is nearly complete.", notice: `We sent a confirmation link to ${email}. Confirm your email to secure your place on the waitlist.` });
+      const rank = data.signUp?.rank;
+      const code = data.signUp?.referralCode;
+      const referralLink = showReferrals && code && slug
+        ? `${window.location.origin}/w/${slug}?r=${code}`
+        : null;
+      setResult({
+        heading: "Check your inbox",
+        body: thankYou?.body || "Your signup is nearly complete.",
+        notice: `We sent a confirmation link to ${email}. Confirm your email to secure your place on the waitlist.`,
+        position: typeof rank === "number" ? rank : null,
+        referralLink,
+      });
+      setCopied(false);
       setMessage("Signup received. Confirmation email queued.");
       form.reset();
     } catch (error) {
@@ -59,6 +74,15 @@ export function SignupForm({ waitListId, showReferrals, label, buttonText, thank
     }
   }
 
+  async function copyReferralLink() {
+    if (!result?.referralLink) return;
+    try {
+      await navigator.clipboard.writeText(result.referralLink);
+      setCopied(true);
+    } catch {
+      setMessage("Copy didn't work — long-press the link to copy it manually.");
+    }
+  }
 
   if (result) {
     return (
@@ -67,6 +91,19 @@ export function SignupForm({ waitListId, showReferrals, label, buttonText, thank
         <h2 id="signup-result-title">{result.heading}</h2>
         <p className={styles.thankYou}>{result.notice}</p>
         {result.body ? <p>{result.body}</p> : null}
+        {result.position != null ? (
+          <p className={styles.thankYou}>Your current position in line: <strong>#{result.position}</strong></p>
+        ) : null}
+        {result.referralLink ? (
+          <div className={styles.referralShare}>
+            <p>Share your personal link — every friend who joins through it moves you up in line.</p>
+            <label htmlFor="waitlist-referral-link">Your referral link</label>
+            <div style={{ display: "flex", gap: "8px" }}>
+              <input id="waitlist-referral-link" value={result.referralLink} readOnly onFocus={(event) => event.target.select()} />
+              <button type="button" onClick={copyReferralLink}>{copied ? "Copied" : "Copy"}</button>
+            </div>
+          </div>
+        ) : null}
       </section>
     );
   }
