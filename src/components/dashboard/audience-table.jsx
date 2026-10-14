@@ -352,7 +352,10 @@ export function AudienceTable({ waitlist, initialReviews = [], initialReviewsFai
             <SheetHeader><SheetTitle>Export signups</SheetTitle><SheetDescription>Choose columns. Exports the current search and filters.</SheetDescription></SheetHeader>
             <div className="grid gap-2 px-4 pb-4">
               {EXPORT_COLUMNS.map((column) => <Label key={column.key} className="flex items-center gap-3 py-1.5">
-                <Checkbox checked={exportColumns.includes(column.key)} onCheckedChange={(checked) => setExportColumns((current) => checked ? [...current, column.key] : current.filter((key) => key !== column.key))} />
+                <Checkbox checked={exportColumns.includes(column.key)} onCheckedChange={(checked) => setExportColumns((current) => {
+                  const next = new Set(checked ? [...current, column.key] : current.filter((key) => key !== column.key));
+                  return EXPORT_COLUMNS.map((item) => item.key).filter((key) => next.has(key));
+                })} />
                 <span>{column.label}</span>
               </Label>)}
               <Button onClick={exportCsv} disabled={exporting || exportColumns.length === 0 || isUpdating} aria-busy={exporting}><HugeiconsIcon icon={Download01Icon} aria-hidden="true" />{exporting ? "Preparing export…" : `Download CSV${exportColumns.length ? ` (${exportColumns.length} columns)` : ""}`}</Button>

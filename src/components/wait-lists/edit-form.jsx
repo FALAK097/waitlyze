@@ -107,6 +107,9 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
   const [publicSlug, setPublicSlug] = useState(initialWaitList.publicSlug || "");
   const [status, setStatus] = useState(initialWaitList.status || "DRAFT");
   const [isPublishing, setIsPublishing] = useState(false);
+  // Last successfully saved page address. Share links always use this, never
+  // the unsaved field value.
+  const [savedSlug, setSavedSlug] = useState(initialWaitList.publicSlug || "");
 
   useEffect(() => {
     setOrigin(window.location.origin);
@@ -382,19 +385,33 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
     });
   };
 
-  const handleSave = async () => {
+  const saveNow = async () => {
     setIsSaving(true);
     try {
       const response = await saveWaitList(initialWaitList.id, { ...formSettings });
-      if (response.success) toast.success(response.message);
-      else toast.error(response.message || "Could not save your page. Try again.");
-    } catch { toast.error("Could not save your page. Try again."); }
-    finally { setIsSaving(false); }
+      if (!response.success) {
+        toast.error(response.message || "Could not save your page. Try again.");
+        return false;
+      }
+      const typedSlug = formSettings.publicSlug.trim();
+      if (typedSlug) setSavedSlug(typedSlug);
+      toast.success(response.message);
+      return true;
+    } catch {
+      toast.error("Could not save your page. Try again.");
+      return false;
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleSave = async () => {
+    await saveNow();
   };
 
   const copyShareUrlToClipboard = async () => {
     try {
-      await navigator.clipboard.writeText(`${window.location.origin}/w/${publicSlug || initialWaitList.publicSlug}`);
+      await navigator.clipboard.writeText(`${window.location.origin}/w/${savedSlug}`);
       toast.success("Page link copied.");
     } catch { toast.error("Copy is unavailable. Select the link and copy it manually."); }
   };
@@ -423,6 +440,8 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
   };
 
   const handlePublishToggle = async () => {
+    // Publish the saved page, never unsaved field values.
+    if (!(await saveNow())) return;
     setIsPublishing(true);
     try {
       const action = status === "PUBLISHED" ? pauseLegacyWaitlist : publishLegacyWaitlist;
@@ -503,7 +522,7 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
                       </Label>
                       <Input
                         id="link"
-                        value={origin ? `${origin}/w/${publicSlug || initialWaitList.publicSlug}` : ""}
+                        value={origin && savedSlug ? `${origin}/w/${savedSlug}` : ""}
                         readOnly
                       />
                     </div>

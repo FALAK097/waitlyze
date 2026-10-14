@@ -66,6 +66,7 @@ export default async function WaitListsEditPage(props) {
 			name: typeof waitList.name === "string" && waitList.name.trim() ? waitList.name.trim().slice(0, 120) : null,
 			description: typeof waitList.description === "string" && waitList.description.trim() ? waitList.description.trim().slice(0, 600) : null,
 			...(rawSlug ? { publicSlug: rawSlug } : {}),
+			buttonColor: waitList.buttonColor,
 			buttonBorder: waitList.buttonBorder,
 			buttonTextColor: waitList.buttonTextColor,
 			mainBgColor: waitList.enableMainBgColor ? waitList.mainBgColor : null,

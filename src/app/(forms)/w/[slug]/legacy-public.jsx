@@ -11,8 +11,11 @@ import { getLegacyPublicSignUpsCount, legacyPublicSelect } from "@/lib/campaigns
 export async function LegacyPublicWaitlist({ slug }) {
   const waitList = await prisma.waitList.findFirst({ where: { publicSlug: slug }, select: legacyPublicSelect });
   if (!waitList || waitList.templateSnapshot) return notFound();
-  if (waitList.status === "PAUSED") {
-    return <main className="product-ui public-launch public-launch-paused"><section><p className="public-launch-eyebrow">{waitList.name || "Waitlist"}</p><h1>This waitlist is paused</h1><p>Signups aren’t open right now. Please check back later.</p></section></main>;
+  if (waitList.status !== "PUBLISHED") {
+    if (waitList.status === "PAUSED") {
+      return <main className="product-ui public-launch public-launch-paused"><section><p className="public-launch-eyebrow">{waitList.name || "Waitlist"}</p><h1>This waitlist is paused</h1><p>Signups aren’t open right now. Please check back later.</p></section></main>;
+    }
+    return notFound();
   }
   const uniqueUserId = nanoid();
   const initialSignUpsCount = await getLegacyPublicSignUpsCount(prisma, waitList.id);

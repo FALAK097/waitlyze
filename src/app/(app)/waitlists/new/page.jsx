@@ -15,7 +15,19 @@ const slugAlphabet = customAlphabet("abcdefghijklmnopqrstuvwxyz0123456789", 6);
 // with a unique page address. Name it and style it there.
 export default async function NewWaitlistPage() {
   const { user, workspace } = await currentWorkspace();
-  await createWorkspaceService(prisma).requireAccess(user.id, workspace.id, "editCampaign");
+  const service = createWorkspaceService(prisma);
+  await service.requireAccess(user.id, workspace.id, "editCampaign");
+  // Reloads and double visits resume the untouched draft instead of stacking
+  // blank ones. Once renamed, New creates fresh again.
+  const recent = await prisma.waitList.findFirst({
+    where: {
+      workspaceId: workspace.id, userId: user.id, status: "DRAFT",
+      name: "Untitled waitlist", createdAt: { gt: new Date(Date.now() - 10 * 60 * 1000) },
+    },
+    orderBy: { createdAt: "desc" },
+    select: { id: true },
+  });
+  if (recent) redirect(`/waitlists/${recent.id}`);
   let slug = "";
   for (let attempt = 0; attempt < 3; attempt++) {
     const candidate = `untitled-${slugAlphabet()}`;
