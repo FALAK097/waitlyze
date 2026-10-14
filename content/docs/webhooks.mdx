@@ -10,11 +10,11 @@ Webhooks stream signup activity to your stack in real time. Manage them in Waitl
 <Steps>
 <Step>
 ### Add a public HTTPS URL
-Enter your receiver URL and select `signup.created`, `signup.verified`, or both. Localhost and non-HTTPS URLs are rejected.
+Enter your receiver URL. Every endpoint receives both `signup.created` and `signup.verified` — there is nothing else to configure. Localhost and non-HTTPS URLs are rejected.
 </Step>
 <Step>
-### Copy the signing secret once
-Save it in your secrets manager immediately. Waitlyze stores a protected copy — the plaintext is shown once.
+### Copy the signing secret
+Save it in your secrets manager immediately. You can copy it again any time from the endpoint's ⋯ menu.
 </Step>
 <Step>
 ### Send a test before going live
@@ -64,7 +64,7 @@ Subscriber emails are **never** included — fetch what you need via your own su
     "data.signupId": {
       type: "string",
       required: true,
-      description: "The signup record. Subscriber emails are never included.",
+      description: "The signup record. Subscriber emails are never included. Test deliveries carry `{ test: true }` here instead.",
     },
   }}
 />
@@ -112,7 +112,8 @@ Recent deliveries show queue status, HTTP response status, and a failure code wh
 - **Send a test** after any secret, URL, or firewall change.
 - **Pause** an endpoint to stop queueing new events; **resume** when ready.
 - **Replay** failed deliveries from the same settings screen after fixing your receiver.
-- **Rotate** the secret when staff changes or on a schedule; during rotation accept any valid `v1` until old deliveries drain.
+- A waitlist can have up to five endpoints. Pause or repurpose one before adding another.
+- **Rotate** the secret when staff changes or on a schedule; the previous secret stays valid for 24 hours, so accept any valid `v1` during that window.
 
 <Callout type="warn" title="Handle repeat delivery safely">
 Deduplicate by `id` or `x-waitlyze-event-id`, verify the signature first, and return success only after durable acceptance. A test payload is not a real subscriber — do not create accounts from it.
