@@ -1,94 +1,71 @@
 # Waitlyze
 
-This is a [Next.js](https://nextjs.org/) project designed to help users create stunning waitlists quickly and efficiently. The application features a no-code designer, customizable forms, and real-time analytics to enhance user engagement and conversion rates.
+Waitlyze is a viral waitlist platform for founders and creators — launch page, referral loop, email automation, and analytics from a single list. Create a beautiful page in minutes, turn signups into referrers, and launch to a primed audience.
+
+## Features
+
+- No-code waitlist designer with templates and brand kit
+- Referral system with ranks, points, rewards, and leaderboard
+- Email builder with templates, broadcasts, and automations (Resend + BYOK)
+- Real-time analytics: signups, sources, geo, devices, referrals
+- Public API, API keys, and embeddable widgets for any site
+- Custom share slugs and social sharing with OG cards
+
+## Tech Stack
+
+Next.js (App Router) · PostgreSQL + Prisma · Better Auth · Resend · Cloudflare R2 · Tailwind + shadcn/ui
 
 ## Getting Started
 
-To set up the project locally, follow these steps:
-
 ### Prerequisites
 
-Make sure you have the following installed on your machine:
-
-- [Node.js](https://nodejs.org/) (version 24, matching `package.json`)
+- [Node.js](https://nodejs.org/) 24 (see `.nvmrc`, enforced via `engines`)
 - [pnpm](https://pnpm.io/)
+- PostgreSQL 17 for migration checks (the Compose setup below provides it)
 
-### Clone the Repository
-
-First, clone the repository to your local machine:
-
-```bash
-git clone git@github.com:FALAK097/Waitlyze.git
-cd Waitlyze
-```
-
-### Install Dependencies
-
-Next, install the project dependencies:
+### Clone and install
 
 ```bash
+git clone git@github.com:FALAK097/waitlyze.git
+cd waitlyze
 pnpm install
 ```
 
-### Set Up Environment Variables
-
-Create a `.env` file in the root of the project and add the following environment variables:
+### Environment variables
 
 ```bash
 cp .env.example .env
 ```
 
-Fill in the values of the environment variables.
+Fill in the values in `.env`.
 
-### Configure PostgreSQL
+### Database
 
-Run PostgreSQL locally, using your existing service or the provided Compose DB:
+Start the provided Postgres service:
 
 ```bash
 docker compose up -d db
 ```
 
-Set `DATABASE_URL` to your local database. Use a separate database for tests. Do
-not point local development or migration reset commands at production. Migration
-checks are validated with PostgreSQL 17; the existing Compose setup uses 15.
+Set `DATABASE_URL` to your local database. Use a separate database for tests —
+never point local development or migration reset commands at production.
 
-### Run Database Migrations
-
-Run the following command to set up the database schema:
-
-``` bash
+```bash
 pnpm prisma migrate deploy
 ```
 
-### Start the Development Server
-
-Now, you can start the development server:
+### Run the app
 
 ```bash
 pnpm dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-## Database migration history
+## Attribution
 
-PR #89 preserves the two migrations already on main and consolidates its new
-schema into `20261011000000_campaign_product_revamp`. This migration also assigns
-existing users and campaigns to personal workspaces, preserves existing published
-campaigns, and normalizes historical signup addresses without deleting duplicates.
+Area-chart styling adapted from [Evil Charts](https://evilcharts.com) by Gurbinder (MIT licensed).
 
-## Third-party attribution
+## License
 
-## Evil Charts
-
-The focused area-chart composition in `src/components/product/evil-area-chart.jsx` adapts the Recharts area-chart recipe from [Evil Charts](https://github.com/legions-developer/evilcharts), Copyright (c) 2026 Gurbinder. The adaptation keeps the gradient area and accessible Recharts structure, uses Waitlyze design tokens, and omits animation and brush controls.
-
-MIT License
-
-Copyright (c) 2026 Gurbinder
-
-Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+MIT — see [LICENSE](LICENSE).
