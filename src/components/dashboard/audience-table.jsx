@@ -60,6 +60,14 @@ function locationLabel(city, country) {
   return flag ? `${flag} ${place}` : place;
 }
 
+function deviceLabel(deviceType, agent) {
+  const ua = typeof agent === "string" ? agent : "";
+  const os = /iPhone|iPad|iPod/.test(ua) ? "iOS" : /Android/.test(ua) ? "Android" : /Mac OS X/.test(ua) ? "macOS" : /Windows/.test(ua) ? "Windows" : /Linux/.test(ua) ? "Linux" : "";
+  const browser = /Edg\//.test(ua) ? "Edge" : /OPR\/|Opera/.test(ua) ? "Opera" : /Firefox\//.test(ua) ? "Firefox" : /Chrome\//.test(ua) ? "Chrome" : /Safari\//.test(ua) ? "Safari" : "";
+  const kind = typeof deviceType === "string" && deviceType ? deviceType.charAt(0).toUpperCase() + deviceType.slice(1) : "";
+  return [kind, browser, os].filter(Boolean).join(" · ") || "Not available";
+}
+
 export function AudienceTable({ waitlist, initialReviews = [], initialReviewsFailed = false, canManage = false }) {
   const [view, setView] = useState("subscribers");
   const [query, setQuery] = useState("");
@@ -327,16 +335,16 @@ export function AudienceTable({ waitlist, initialReviews = [], initialReviewsFai
           {sheet?.type === "profile" && profile && <>
             <SheetHeader><SheetTitle>Signup details</SheetTitle><SheetDescription>Everything recorded for this signup.</SheetDescription></SheetHeader>
             <div className="px-4 pb-4">
-            <dl className="grid gap-4">
-              <div><dt className="text-[var(--product-text-secondary)]">Email</dt><dd className="mt-1 break-all font-medium">{profile.email}</dd></div>
-              {flags.sendEmailsToSubscribers && <div><dt className="text-[var(--product-text-secondary)]">Status</dt><dd className="mt-1">{profileStatus}</dd></div>}
-              {flags.showReferrals && <div><dt className="text-[var(--product-text-secondary)]">Position</dt><dd className="mt-1">{profile.position == null ? "—" : `#${profile.position}`}</dd></div>}
-              <div><dt className="text-[var(--product-text-secondary)]">Joined</dt><dd className="mt-1" title={formatDate(profile.createdAt)}>{timeAgo(profile.createdAt)}</dd></div>
-              <div><dt className="text-[var(--product-text-secondary)]">Location</dt><dd className="mt-1">{locationLabel(profile.city, profile.country) === "—" ? "Not available" : locationLabel(profile.city, profile.country)}</dd></div>
-              <div><dt className="text-[var(--product-text-secondary)]">Device</dt><dd className="mt-1">{[profile.deviceType, profile.device].filter(Boolean).join(" · ") || "Not available"}</dd></div>
-              {flags.showReferrals && <div><dt className="text-[var(--product-text-secondary)]">Referrals</dt><dd className="mt-1">{profile.referralCount}</dd></div>}
-              <div><dt className="text-[var(--product-text-secondary)]">Source</dt><dd className="mt-1">{profile.utmSource || "Direct"}</dd></div>
-              {profileLink && <div><dt className="text-[var(--product-text-secondary)]">Referral link</dt><dd className="mt-1 break-all">{profileLink}</dd><Button variant="outline" size="sm" className="mt-2" onClick={() => copyText(profileLink)}><HugeiconsIcon icon={CopyIcon} aria-hidden="true" />{copied ? "Copied" : "Copy link"}</Button></div>}
+            <dl className="divide-y divide-[var(--product-border-subtle)] text-sm">
+              <div className="grid grid-cols-[104px_1fr] gap-3 py-2.5"><dt className="text-[var(--product-text-secondary)]">Email</dt><dd className="break-all font-medium">{profile.email}</dd></div>
+              {flags.sendEmailsToSubscribers && <div className="grid grid-cols-[104px_1fr] gap-3 py-2.5"><dt className="text-[var(--product-text-secondary)]">Status</dt><dd>{profileStatus}</dd></div>}
+              {flags.showReferrals && <div className="grid grid-cols-[104px_1fr] gap-3 py-2.5"><dt className="text-[var(--product-text-secondary)]">Position</dt><dd className="tabular-nums">{profile.position == null ? "—" : `#${profile.position}`}</dd></div>}
+              <div className="grid grid-cols-[104px_1fr] gap-3 py-2.5"><dt className="text-[var(--product-text-secondary)]">Joined</dt><dd title={formatDate(profile.createdAt)}>{timeAgo(profile.createdAt)}</dd></div>
+              <div className="grid grid-cols-[104px_1fr] gap-3 py-2.5"><dt className="text-[var(--product-text-secondary)]">Location</dt><dd>{locationLabel(profile.city, profile.country) === "—" ? "Not available" : locationLabel(profile.city, profile.country)}</dd></div>
+              <div className="grid grid-cols-[104px_1fr] gap-3 py-2.5"><dt className="text-[var(--product-text-secondary)]">Device</dt><dd title={profile.device || undefined}>{deviceLabel(profile.deviceType, profile.device)}</dd></div>
+              {flags.showReferrals && <div className="grid grid-cols-[104px_1fr] gap-3 py-2.5"><dt className="text-[var(--product-text-secondary)]">Referrals</dt><dd className="tabular-nums">{profile.referralCount}</dd></div>}
+              <div className="grid grid-cols-[104px_1fr] gap-3 py-2.5"><dt className="text-[var(--product-text-secondary)]">Source</dt><dd>{profile.utmSource || "Direct"}</dd></div>
+              {profileLink && <div className="grid grid-cols-[104px_1fr] gap-3 py-2.5"><dt className="text-[var(--product-text-secondary)]">Referral link</dt><dd><span className="break-all">{profileLink}</span><Button variant="outline" size="sm" className="mt-2" onClick={() => copyText(profileLink)}><HugeiconsIcon icon={CopyIcon} aria-hidden="true" />{copied ? "Copied" : "Copy link"}</Button></dd></div>}
             </dl>
             </div>
           </>}
