@@ -23,7 +23,7 @@ Tests use `{ "test": true }` in `data` and never represent a real subscriber. Co
 </Steps>
 
 <Callout title="Dispatch must be configured">
-Your deployment needs webhook encryption and dispatch configured before delivery runs. If tests never arrive, check deployment config first, then endpoint status. See [Troubleshooting](/docs/troubleshooting).
+Your deployment needs webhook encryption and dispatch configured before delivery runs. If tests never arrive, check deployment config first, then endpoint status. See [Troubleshooting](/docs/troubleshooting). This repo ships a Cloudflare Worker cron for dispatch — see `workers/outbox-dispatch`.
 </Callout>
 
 ## Event payload

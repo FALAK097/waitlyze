@@ -1,0 +1,9 @@
+name = "waitlyze-outbox-dispatch"
+main = "src/index.js"
+compatibility_date = "2026-10-01"
+
+# Runs every minute: drains the email outbox and pending webhook
+# deliveries via the app's internal route. Adjust as needed, e.g.
+# "*/5 * * * *" for every five minutes, then redeploy.
+[triggers]
+crons = ["* * * * *"]
