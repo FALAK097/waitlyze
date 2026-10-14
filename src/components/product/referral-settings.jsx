@@ -9,27 +9,22 @@ import { toast } from "sonner";
 
 export function ReferralSettings({ waitListId, initialEnabled }) {
   const [enabled, setEnabled] = useState(initialEnabled);
-  const [message, setMessage] = useState("");
-  const [failed, setFailed] = useState(false);
+  const [error, setError] = useState("");
   const [pending, startTransition] = useTransition();
 
   function changeEnabled(next) {
     const previous = enabled;
     setEnabled(next);
-    setMessage("");
-    setFailed(false);
+    setError("");
     startTransition(async () => {
       try {
         const result = await setWaitlistReferrals(waitListId, next);
         if (result.error) throw new Error(result.error);
-        const success = next ? "Referral sharing is on." : "Referral sharing is off.";
-        setMessage(success);
-        toast.success(success);
+        toast.success(next ? "Referral sharing is on." : "Referral sharing is off.");
       } catch (error) {
         setEnabled(previous);
-        setFailed(true);
         const message = error.message || "Could not update referral sharing. Try again.";
-        setMessage(message);
+        setError(message);
         toast.error(message);
       }
     });
@@ -41,11 +36,10 @@ export function ReferralSettings({ waitListId, initialEnabled }) {
         <Checkbox id="waitlist-referrals" checked={enabled} onCheckedChange={changeEnabled} disabled={pending} />
         <span>
           <strong>Enable referral sharing</strong>
-          <span>Subscribers can invite others with a personal link.</span>
+          <span>Referral credit counts once both email addresses are verified.</span>
         </span>
       </Label>
-      <p className="product-help">Referral credit counts once both email addresses are verified.</p>
-      <p className="product-announcement" role={failed ? "alert" : "status"} aria-live={failed ? "assertive" : "polite"}>{pending ? "Saving…" : message}</p>
+      <p className="product-announcement" role={error ? "alert" : "status"} aria-live={error ? "assertive" : "polite"}>{pending ? "Saving…" : error}</p>
     </div>
   );
 }

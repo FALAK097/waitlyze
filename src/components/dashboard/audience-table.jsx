@@ -217,7 +217,7 @@ export function AudienceTable({ waitlist, initialReviews = [], initialReviewsFai
       meta: { className: "w-[42%] px-4 py-3 sm:w-auto" },
       cell: ({ row }) => (
         <span className="group inline-flex max-w-full items-center gap-1">
-          <Button type="button" className="min-w-0 break-all px-1 font-medium underline-offset-4 hover:underline focus-visible:underline sm:break-normal" variant="ghost" onClick={() => { setCopiedId(null); setSheet({ type: "profile", row: row.original }); }}>{row.original.email}</Button>
+          <Button type="button" className="min-w-0 break-all px-1 font-medium underline-offset-4 focus-visible:underline sm:break-normal" variant="ghost" onClick={() => { setCopiedId(null); setSheet({ type: "profile", row: row.original }); }}>{row.original.email}</Button>
           <Button type="button" variant="ghost" size="icon-sm" className="shrink-0 opacity-0 group-hover:opacity-100 focus-visible:opacity-100" aria-label={`Copy ${row.original.email}`} onClick={(event) => { event.stopPropagation(); copyText(row.original.email, row.original.id); }}>
             <HugeiconsIcon icon={copiedId === row.original.id ? Tick01Icon : CopyIcon} aria-hidden="true" />
           </Button>

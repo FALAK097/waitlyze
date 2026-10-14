@@ -23,7 +23,8 @@ export function WebhookSettings({ waitListId, canManage = true }) {
   const [busy, setBusy] = useState(false);
   const [initialLoad, setInitialLoad] = useState("loading");
   const [loadError, setLoadError] = useState("");
-  const controlsDisabled = !canManage || busy || initialLoad !== "ready" || Boolean(loadError);
+  const [configured, setConfigured] = useState(true);
+  const controlsDisabled = !canManage || !configured || busy || initialLoad !== "ready" || Boolean(loadError);
   const [messageIsError, setMessageIsError] = useState(false);
 
   async function refresh({ signal, initial = false } = {}) {
@@ -39,6 +40,7 @@ export function WebhookSettings({ waitListId, canManage = true }) {
       if (!response.ok) throw new Error(data.error || "Unable to load webhooks.");
       if (!Array.isArray(data.data)) throw new Error("The webhook list could not be read. Try again.");
       setRows(data.data);
+      setConfigured(data.configured !== false);
       setInitialLoad("ready");
       setLoadError("");
       return true;
@@ -88,14 +90,20 @@ export function WebhookSettings({ waitListId, canManage = true }) {
       </article>
     </>}
     {loadError && <div role="alert"><p>Webhook endpoints couldn’t be loaded.</p><p>{loadError}</p><Button variant="outline" type="button" disabled={busy} onClick={() => refresh({ initial: initialLoad !== "ready" })}>Try again</Button></div>}
-    {initialLoad === "ready" && rows.length === 0 && <p className="product-help">No endpoints connected yet.</p>}
-    {initialLoad === "ready" && <form onSubmit={createEndpoint}>
-      <div className="product-field"><Label><span>Endpoint name</span><Input value={name} onChange={(event) => setName(event.target.value)} maxLength={80} required placeholder="Production app" disabled={controlsDisabled} /></Label></div>
-      <div className="product-field"><Label><span>HTTPS endpoint</span><Input type="url" value={url} onChange={(event) => setUrl(event.target.value)} required placeholder="https://api.example.com/waitlist-events" disabled={controlsDisabled} /></Label></div>
+    {initialLoad === "ready" && !configured && <p className="product-help" role="note">Webhook delivery isn&rsquo;t configured on this deployment yet. Endpoints can be added once an administrator finishes setup.</p>}
+    {initialLoad === "ready" && configured && <form onSubmit={createEndpoint}>
+      <div className="product-field">
+        <Label htmlFor="webhook-endpoint-name">Endpoint name</Label>
+        <Input id="webhook-endpoint-name" value={name} onChange={(event) => setName(event.target.value)} maxLength={80} required placeholder="Production app" disabled={controlsDisabled} />
+      </div>
+      <div className="product-field">
+        <Label htmlFor="webhook-endpoint-url">HTTPS endpoint</Label>
+        <Input id="webhook-endpoint-url" type="url" value={url} onChange={(event) => setUrl(event.target.value)} required placeholder="https://api.example.com/waitlist-events" disabled={controlsDisabled} aria-describedby="webhook-endpoint-help" />
+        <p id="webhook-endpoint-help" className="product-help">Use a public HTTPS endpoint. Payloads exclude subscriber email addresses.</p>
+      </div>
       <fieldset className="product-webhook-events" disabled={controlsDisabled}><legend>Events</legend>{events.map((item) => <Label key={item}><Checkbox checked={selected.includes(item)} onCheckedChange={() => toggleEvent(item)} />{item}</Label>)}</fieldset>
       <Button type="submit" disabled={controlsDisabled || !selected.length}>Add endpoint</Button>
     </form>}
-    {initialLoad === "ready" && <p className="product-help">Use a public HTTPS endpoint. Payloads exclude subscriber email addresses.</p>}
     {secret && <section className="product-webhook-secret" aria-labelledby="webhook-secret-title"><h3 id="webhook-secret-title">Signing secret</h3><p>Copy and store this secret before dismissing it.</p><code>{showSecret ? secret : "••••••••••••••••••••••••"}</code><Button variant="ghost" type="button" onClick={() => setShowSecret((value) => !value)}>{showSecret ? "Hide secret" : "Show secret"}</Button><Button variant="outline" type="button" onClick={async () => { try { await navigator.clipboard.writeText(secret); setMessageIsError(false); setMessage("Signing secret copied."); toast.success("Signing secret copied."); } catch { setShowSecret(true); setMessageIsError(true); setMessage("Copy is unavailable. Select and copy the secret above."); } }}>Copy secret</Button><Button variant="outline" type="button" onClick={() => setSecret("")}>Dismiss</Button></section>}
     {rows.map((row) => <article className="product-webhook-endpoint" key={row.id}>
       <header><div><h3>{row.name}</h3><p><code>{row.url}</code> · {row.eventTypes.join(", ")}</p></div><span>{row.enabled ? "Active" : "Paused"}</span></header>
