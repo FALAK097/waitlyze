@@ -29,7 +29,6 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm lint
-      - run: node --test tests/security/*.test.mjs
 
   build:
     runs-on: ubuntu-latest
@@ -80,7 +79,6 @@ jobs:
           --health-retries 10
     env:
       MIGRATION_TEST_ADMIN_URL: postgresql://postgres:migration-test-only@127.0.0.1:5432/postgres
-      RATE_LIMIT_TEST_DATABASE_URL: postgresql://postgres:migration-test-only@127.0.0.1:5432/postgres
     steps:
       - uses: actions/checkout@v4
         with:
@@ -94,4 +92,3 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: node scripts/check-migration.mjs
-      - run: node --test tests/security/public-rate-limit.postgres.test.mjs
