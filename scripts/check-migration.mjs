@@ -39,6 +39,11 @@ try {
           INSERT INTO sign_ups (id,"uniqueUserId",email,"waitListId","createdAt","updatedAt") VALUES
           ('legacy-first','visitor-1','  PERSON@EXAMPLE.INVALID ','legacy-campaign','2026-01-01',now()),
           ('legacy-duplicate','visitor-2','person@example.invalid','legacy-campaign','2026-01-02',now());`);
+        // Duplicate page-view rows as produced by retried impression trackers.
+        await db.query(`INSERT INTO impressions (id,"uniqueUserId","waitListId","createdAt","updatedAt") VALUES
+          ('legacy-imp-keep','visitor-1','legacy-campaign','2026-01-01',now()),
+          ('legacy-imp-dup','visitor-1','legacy-campaign','2026-01-03',now());`);
+        await db.query(`UPDATE sign_ups SET "impressionId"='legacy-imp-dup' WHERE id='legacy-first'`);
         const upgrade = await readFile(`prisma/migrations/${migration}/migration.sql`, "utf8");
         // A failed statement must roll back both schema and data changes.
         await assert.rejects(db.query(upgrade.replace("COMMIT;", "SELECT 1 / 0;\nCOMMIT;")));
@@ -66,6 +71,11 @@ try {
         for (const name of ["20261014081346_phase0_attribution_points", "20261014083000_phase0_impression_dedupe"]) {
           await db.query(await readFile(`prisma/migrations/${name}/migration.sql`, "utf8"));
         }
+        // The dedupe migration keeps the earliest impression and repoints signups.
+        const deduped = await db.query(`SELECT id FROM impressions WHERE "uniqueUserId"='visitor-1'`);
+        assert.equal(deduped.rows.length, 1);
+        assert.equal(deduped.rows[0].id, "legacy-imp-keep");
+        assert.equal((await db.query(`SELECT "impressionId" FROM sign_ups WHERE id='legacy-first'`)).rows[0].impressionId, "legacy-imp-keep");
       } else {
         runPrisma(["migrate", "deploy"], databaseUrl.href);
         runPrisma(["migrate", "deploy"], databaseUrl.href); // Deployment retry is a no-op.

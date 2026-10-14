@@ -18,7 +18,6 @@ const DISPOSABLE_DOMAINS = new Set(
     "dayrep.com",
     "dispostable.com",
     "dropmail.me",
-    "duck.com",
     "emailondeck.com",
     "fakeinbox.com",
     "fakemailgenerator.com",
@@ -49,7 +48,6 @@ const DISPOSABLE_DOMAINS = new Set(
     "no-spam.ws",
     "opayq.com",
     "privatdemail.net",
-    "privaterelay.appleid.com",
     "proxymail.eu",
     "sharklasers.com",
     "shitmail.me",
@@ -75,7 +73,8 @@ const DISPOSABLE_DOMAINS = new Set(
 );
 
 // RFC-lite format check: local@domain.tld, no spaces, single @, real TLD.
-const EMAIL_FORMAT = /^[A-Za-z0-9.!#$%&'*+/=?^_`{|}~-]+@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)*\.[A-Za-z]{2,}$/;
+// Periods in the local part may only separate nonempty segments.
+const EMAIL_FORMAT = /^[A-Za-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[A-Za-z0-9!#$%&'*+/=?^_`{|}~-]+)*@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)*\.[A-Za-z]{2,}$/;
 
 export function getEmailDomain(email) {
   const at = email.lastIndexOf("@");
