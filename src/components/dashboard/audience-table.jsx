@@ -351,16 +351,16 @@ export function AudienceTable({ waitlist, initialReviews = [], initialReviewsFai
           {sheet?.type === "profile" && profile && <>
             <SheetHeader><SheetTitle>Signup details</SheetTitle><SheetDescription>Everything recorded for this signup.</SheetDescription></SheetHeader>
             <div className="px-4 pb-4">
-            <dl className="divide-y divide-[var(--product-border-subtle)] text-sm">
-              <div className="grid grid-cols-[104px_1fr] gap-3 py-2.5"><dt className="text-[var(--product-text-secondary)]">Email</dt><dd className="break-all font-medium">{profile.email}</dd></div>
-              {flags.sendEmailsToSubscribers && <div className="grid grid-cols-[104px_1fr] gap-3 py-2.5"><dt className="text-[var(--product-text-secondary)]">Status</dt><dd>{profileStatus}</dd></div>}
-              {flags.showReferrals && <div className="grid grid-cols-[104px_1fr] gap-3 py-2.5"><dt className="text-[var(--product-text-secondary)]">Position</dt><dd className="tabular-nums">{profile.position == null ? "—" : `#${profile.position}`}</dd></div>}
-              <div className="grid grid-cols-[104px_1fr] gap-3 py-2.5"><dt className="text-[var(--product-text-secondary)]">Joined</dt><dd title={formatDate(profile.createdAt)}>{timeAgo(profile.createdAt)}</dd></div>
-              <div className="grid grid-cols-[104px_1fr] gap-3 py-2.5"><dt className="text-[var(--product-text-secondary)]">Location</dt><dd>{locationLabel(profile.city, profile.country) === "—" ? "Not available" : locationLabel(profile.city, profile.country)}</dd></div>
-              <div className="grid grid-cols-[104px_1fr] gap-3 py-2.5"><dt className="text-[var(--product-text-secondary)]">Device</dt><dd title={profile.device || undefined}>{deviceLabel(profile.deviceType, profile.device)}</dd></div>
-              {flags.showReferrals && <div className="grid grid-cols-[104px_1fr] gap-3 py-2.5"><dt className="text-[var(--product-text-secondary)]">Referrals</dt><dd className="tabular-nums">{profile.referralCount}</dd></div>}
-              <div className="grid grid-cols-[104px_1fr] gap-3 py-2.5"><dt className="text-[var(--product-text-secondary)]">Source</dt><dd>{profile.utmSource || "Direct"}</dd></div>
-              {profileLink && <div className="grid grid-cols-[104px_1fr] gap-3 py-2.5"><dt className="text-[var(--product-text-secondary)]">Referral link</dt><dd><span className="break-all">{profileLink}</span><Button variant="outline" size="sm" className="mt-2" onClick={() => copyText(profileLink, "sheet")}><HugeiconsIcon icon={copiedId === "sheet" ? Tick01Icon : CopyIcon} aria-hidden="true" />{copiedId === "sheet" ? "Copied" : "Copy link"}</Button></dd></div>}
+            <dl className="grid gap-5 text-sm">
+              <div className="grid grid-cols-[104px_1fr] gap-3"><dt className="text-[var(--product-text-secondary)]">Email</dt><dd className="break-all font-medium">{profile.email}</dd></div>
+              {flags.sendEmailsToSubscribers && <div className="grid grid-cols-[104px_1fr] gap-3"><dt className="text-[var(--product-text-secondary)]">Status</dt><dd>{profileStatus}</dd></div>}
+              {flags.showReferrals && <div className="grid grid-cols-[104px_1fr] gap-3"><dt className="text-[var(--product-text-secondary)]">Position</dt><dd className="tabular-nums">{profile.position == null ? "—" : `#${profile.position}`}</dd></div>}
+              <div className="grid grid-cols-[104px_1fr] gap-3"><dt className="text-[var(--product-text-secondary)]">Joined</dt><dd title={formatDate(profile.createdAt)}>{timeAgo(profile.createdAt)}</dd></div>
+              <div className="grid grid-cols-[104px_1fr] gap-3"><dt className="text-[var(--product-text-secondary)]">Location</dt><dd>{locationLabel(profile.city, profile.country) === "—" ? "Not available" : locationLabel(profile.city, profile.country)}</dd></div>
+              <div className="grid grid-cols-[104px_1fr] gap-3"><dt className="text-[var(--product-text-secondary)]">Device</dt><dd title={profile.device || undefined}>{deviceLabel(profile.deviceType, profile.device)}</dd></div>
+              {flags.showReferrals && <div className="grid grid-cols-[104px_1fr] gap-3"><dt className="text-[var(--product-text-secondary)]">Referrals</dt><dd className="tabular-nums">{profile.referralCount}</dd></div>}
+              <div className="grid grid-cols-[104px_1fr] gap-3"><dt className="text-[var(--product-text-secondary)]">Source</dt><dd>{profile.utmSource || "Direct"}</dd></div>
+              {profileLink && <div className="grid grid-cols-[104px_1fr] items-center gap-3"><dt className="text-[var(--product-text-secondary)]">Referral link</dt><dd className="flex min-w-0 items-center gap-1.5"><span className="min-w-0 flex-1 truncate" title={profileLink}>{profileLink}</span><Button variant="ghost" size="icon-sm" className="shrink-0" aria-label="Copy referral link" onClick={() => copyText(profileLink, "sheet")}><HugeiconsIcon icon={copiedId === "sheet" ? Tick01Icon : CopyIcon} aria-hidden="true" /></Button></dd></div>}
             </dl>
             </div>
           </>}
