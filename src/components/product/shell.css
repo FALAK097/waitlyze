@@ -7,6 +7,7 @@
 .product-context-nav a[aria-current] { background: transparent; box-shadow: inset 0 -2px 0 var(--product-accent-solid); color: var(--product-text-primary); }
 .product-main { max-width: var(--product-content-width, 1152px); margin-inline: auto; padding: 40px var(--product-content-gutter, 32px) 64px; }
 .product-page-title { font-size: 1.75rem; font-weight: 600; letter-spacing: -.04em; margin: 12px 0 24px; overflow-wrap: anywhere; }
+.product-waitlist-detail > .product-page-title { font-size: 1.375rem; margin: 8px 0 16px; }
 .product-back-link { color: var(--product-text-secondary); font-size: .875rem; text-decoration: none; }
 .product-context-nav { padding-bottom: 0; overflow-x: auto; }
 .product-context-nav a { white-space: nowrap; }

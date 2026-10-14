@@ -55,6 +55,25 @@ export async function pauseCampaign(db, actorId, workspaceId, waitListId) {
   return { paused: true };
 }
 
+// Snapshot-less pages (legacy builder loop) publish without revisions.
+export async function publishLegacyCampaign(db, actorId, workspaceId, waitListId) {
+  const page = await db.waitList.findFirst({ where: adminScope(actorId, waitListId, workspaceId), select: { id: true, status: true, templateSnapshot: true } });
+  if (!page || page.templateSnapshot) throw new AccessError();
+  if (page.status === "PUBLISHED") return { published: true, unchanged: true };
+  const changed = await db.waitList.updateMany({ where: { id: waitListId, status: page.status }, data: { status: "PUBLISHED" } });
+  if (changed.count !== 1) throw new PublicationConflict("This waitlist changed. Reload and try again.");
+  return { published: true };
+}
+
+export async function pauseLegacyCampaign(db, actorId, workspaceId, waitListId) {
+  const page = await db.waitList.findFirst({ where: adminScope(actorId, waitListId, workspaceId), select: { id: true, status: true, templateSnapshot: true } });
+  if (!page || page.templateSnapshot) throw new AccessError();
+  if (page.status !== "PUBLISHED") throw new PublicationConflict("This waitlist is not currently published.");
+  const changed = await db.waitList.updateMany({ where: { id: waitListId, status: "PUBLISHED" }, data: { status: "PAUSED" } });
+  if (changed.count !== 1) throw new PublicationConflict("This waitlist changed. Reload and try again.");
+  return { paused: true };
+}
+
 export async function rollbackCampaign(db, actorId, workspaceId, waitListId) {
   return db.$transaction(async (tx) => {
     const where = adminScope(actorId, waitListId, workspaceId);

@@ -9,5 +9,5 @@ export default async function WaitlistLayout({ children, params }) {
   const waitlist = await prisma.waitList.findFirst({ where: { id, ...campaignScope(user.id, "viewCampaign", workspace.id) }, select: { id: true, name: true } });
   if (!waitlist) notFound();
   const canSendEmail = ["OWNER", "ADMIN"].includes(workspace.members[0]?.role);
-  return <section><h1 className="product-page-title">{waitlist.name || "Untitled waitlist"}</h1><WaitlistNav id={id} canSendEmail={canSendEmail} />{children}</section>;
+  return <section className="product-waitlist-detail"><h1 className="product-page-title">{waitlist.name || "Untitled waitlist"}</h1><WaitlistNav id={id} canSendEmail={canSendEmail} />{children}</section>;
 }

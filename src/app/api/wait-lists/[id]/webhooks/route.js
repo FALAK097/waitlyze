@@ -12,7 +12,7 @@ export async function GET(request, { params }) {
   const access = await webhookAccess(request, id, "viewCampaign");
   if (access.response) return access.response;
   const rows = await prisma.webhookSubscription.findMany({ where: { waitListId: id }, select, orderBy: { createdAt: "asc" } });
-  return NextResponse.json({ data: rows.map((row) => ({ ...row, url: validateWebhookUrl(row.url).safeUrl })) }, { headers: { "Cache-Control": "private, no-store" } });
+  return NextResponse.json({ data: rows.map((row) => ({ ...row, url: validateWebhookUrl(row.url).safeUrl })), configured: Boolean(env.WEBHOOK_SECRET_ENCRYPTION_KEY) }, { headers: { "Cache-Control": "private, no-store" } });
 }
 
 export async function POST(request, { params }) {

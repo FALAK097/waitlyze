@@ -20,6 +20,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { pauseLegacyWaitlist, publishLegacyWaitlist } from "@/app/actions/publication";
 import { CopyIcon } from "../shared/icons";
 import { CodeBlock } from "../ui/code-block";
 import {
@@ -101,6 +102,14 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
   const [ogTitle, setOgTitle] = useState(initialWaitList.ogTitle || "");
   const [ogDescription, setOgDescription] = useState(initialWaitList.ogDescription || "");
   const [ogImage, setOgImage] = useState(initialWaitList.ogImage || "");
+  const [name, setName] = useState(initialWaitList.name || "Untitled waitlist");
+  const [description, setDescription] = useState(initialWaitList.description || "");
+  const [publicSlug, setPublicSlug] = useState(initialWaitList.publicSlug || "");
+  const [status, setStatus] = useState(initialWaitList.status || "DRAFT");
+  const [isPublishing, setIsPublishing] = useState(false);
+  // Last successfully saved page address. Share links always use this, never
+  // the unsaved field value.
+  const [savedSlug, setSavedSlug] = useState(initialWaitList.publicSlug || "");
 
   useEffect(() => {
     setOrigin(window.location.origin);
@@ -202,6 +211,9 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
   });
 
   const formSettings = {
+    name,
+    description,
+    publicSlug,
     // URL-synced settings
     buttonColor,
     buttonBorder,
@@ -279,6 +291,9 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
       await setters[key](value);
     } else {
       const localSetters = {
+        name: setName,
+        description: setDescription,
+        publicSlug: setPublicSlug,
         logoUrl: setLogoUrl,
         logoKey: setLogoKey,
         shareOnTwitter: setShareOnTwitter,
@@ -370,19 +385,33 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
     });
   };
 
-  const handleSave = async () => {
+  const saveNow = async () => {
     setIsSaving(true);
     try {
       const response = await saveWaitList(initialWaitList.id, { ...formSettings });
-      if (response.success) toast.success(response.message);
-      else toast.error(response.message || "Could not save your page. Try again.");
-    } catch { toast.error("Could not save your page. Try again."); }
-    finally { setIsSaving(false); }
+      if (!response.success) {
+        toast.error(response.message || "Could not save your page. Try again.");
+        return false;
+      }
+      const typedSlug = formSettings.publicSlug.trim();
+      if (typedSlug) setSavedSlug(typedSlug);
+      toast.success(response.message);
+      return true;
+    } catch {
+      toast.error("Could not save your page. Try again.");
+      return false;
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleSave = async () => {
+    await saveNow();
   };
 
   const copyShareUrlToClipboard = async () => {
     try {
-      await navigator.clipboard.writeText(`${window.location.origin}/forms/${initialWaitList.id}`);
+      await navigator.clipboard.writeText(`${window.location.origin}/w/${savedSlug}`);
       toast.success("Page link copied.");
     } catch { toast.error("Copy is unavailable. Select the link and copy it manually."); }
   };
@@ -410,6 +439,22 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
     }
   };
 
+  const handlePublishToggle = async () => {
+    if (isPublishing) return;
+    setIsPublishing(true);
+    try {
+      // Publish the saved page, never unsaved field values.
+      if (!(await saveNow())) return;
+      const action = status === "PUBLISHED" ? pauseLegacyWaitlist : publishLegacyWaitlist;
+      const response = await action(initialWaitList.id);
+      if (response.ok) {
+        setStatus(response.paused ? "PAUSED" : "PUBLISHED");
+        toast.success(response.paused ? "Signups paused." : "Your page is live.");
+      } else toast.error(response.message || "Could not update publication. Try again.");
+    } catch { toast.error("Could not update publication. Try again."); }
+    finally { setIsPublishing(false); }
+  };
+
   const onImageUploadSuccess = (files) => {
     updateSetting("logoUrl", files[0].url);
     updateSetting("logoKey", files[0].key);
@@ -418,9 +463,10 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
   return (
     <div className={styles.editor}>
       <div>
-        <header className={styles.header}><div><h2>Form editor</h2><p>Customize the form, then save your changes.</p></div><div className={styles.toolbar}>
+        <header className={styles.header}><div><h2>Builder</h2><p>{name || "Untitled waitlist"} · {status === "PUBLISHED" ? "Live" : status === "PAUSED" ? "Paused" : "Private draft"}</p></div><div className={styles.toolbar}>
           <TooltipProvider delay={100}>
             <div className={styles.toolbarActions}>
+              {!initialWaitList.templateSnapshot && <Button disabled={isPublishing || isSaving} onClick={handlePublishToggle}>{isPublishing ? "Working…" : status === "PUBLISHED" ? "Pause" : "Publish"}</Button>}
               <Tooltip>
                 <TooltipTrigger
                   render={
@@ -467,7 +513,7 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
                   <DialogHeader>
                     <DialogTitle>Share link</DialogTitle>
                     <DialogDescription>
-                      Copy the link below to share your waitlist form.
+                      Copy the link below to share your waitlist page.
                     </DialogDescription>
                   </DialogHeader>
                   <div className="flex items-center space-x-2">
@@ -477,7 +523,7 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
                       </Label>
                       <Input
                         id="link"
-                        value={origin ? `${origin}/forms/${initialWaitList.id}` : ""}
+                        value={origin && savedSlug ? `${origin}/w/${savedSlug}` : ""}
                         readOnly
                       />
                     </div>
@@ -498,7 +544,6 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
         </div></header>
 
         <div className={styles.grid}>
-          <SettingsTab formSettings={formSettings} updateSetting={updateSetting} applyPreset={applyPreset} />
           <section className={styles.previewColumn} aria-labelledby="legacy-preview-heading"><div className={styles.previewHeading}><h3 id="legacy-preview-heading">Preview</h3><p>No subscriber is created here.</p></div>
           <div
             style={{
@@ -529,6 +574,7 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
               onImageUploadSuccess={onImageUploadSuccess}
             />
           </div></section>
+          <SettingsTab formSettings={formSettings} updateSetting={updateSetting} applyPreset={applyPreset} />
         </div>
       </div>
     </div>

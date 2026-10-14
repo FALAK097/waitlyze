@@ -1,84 +1,152 @@
-import Link from "next/link";
+import { requireCampaign, requireCampaignPage } from "@/lib/workspaces/authorize";
+import { cache } from "react";
+
+import { ContentLayout } from "@/components/dashboard/content-layout";
+
+import { WaitlistGenerator } from "@/components/wait-lists/edit-form";
+import { SnapshotPageBuilder } from "@/components/product/snapshot-page-builder";
+import { saveDraftPage } from "@/app/actions/draft-snapshot";
+import { publishWaitlist, pauseWaitlist, rollbackWaitlist } from "@/app/actions/publication";
 import prisma from "@/lib/prisma";
-import { currentWorkspace } from "@/lib/workspaces/current";
-import { campaignScope } from "@/lib/workspaces/service.mjs";
-import { notFound } from "next/navigation";
-import { LaunchRehearsal } from "@/components/product/launch-rehearsal";
-import { LaunchReadiness } from "@/components/product/launch-readiness";
-import { assessWaitlistReadiness } from "@/lib/campaigns/readiness.mjs";
-import { buttonVariants } from "@/components/ui/button";
-import styles from "@/components/product/waitlist-experience.module.css";
-export const metadata = { title: "Overview" };
-const dateFormat = new Intl.DateTimeFormat(undefined, { dateStyle: "medium" });
-export default async function OverviewPage({ params }) {
-  const [{ id }, { user, workspace }] = await Promise.all([params, currentWorkspace()]);
-  const waitlist = await prisma.waitList.findFirst({ where: { id, ...campaignScope(user.id, "viewCampaign", workspace.id) }, select: {
-    id: true, userId: true, workspaceId: true, publicSlug: true, name: true, status: true, createdAt: true, updatedAt: true,
-    templateSnapshot: true, templateRevision: true,
-    publishedRevision: true, publishedTemplateRevision: true,
-    customDomain: { select: { status: true } },
-    _count: { select: { signUps: true } },
-  } });
-  if (!waitlist) notFound();
-  const [publication, publicationMember, initialRuns] = await Promise.all([
-    waitlist.publishedRevision == null ? null : prisma.waitListPublicationRevision.findUnique({
-    where: { waitListId_revision: { waitListId: id, revision: waitlist.publishedRevision } },
-    select: { snapshot: true },
-    }),
-    waitlist.workspaceId ? prisma.workspaceMember.findUnique({
-    where: { workspaceId_userId: { workspaceId: waitlist.workspaceId, userId: user.id } },
-    select: { role: true },
-    }) : null,
-    prisma.launchRehearsal.findMany({ where: { waitListId: id }, orderBy: { createdAt: "desc" }, take: 5, select: { id: true, status: true, checksPassed: true, checksFailed: true, checkResults: true, createdAt: true } }),
-  ]);
-  const canPublish = publicationMember
-    ? ["OWNER", "ADMIN"].includes(publicationMember.role)
-    : waitlist.userId === user.id;
-  const readiness = assessWaitlistReadiness({ ...waitlist, canPublish, publishedSnapshot: publication?.snapshot ?? null });
-  const publicationNeedsAction = readiness.find(({ key }) => key === "publication")?.status === "action";
-  const lifecycle = {
-    DRAFT: { title: "Get your waitlist ready", detail: canPublish ? "Review the page and signup flow, then publish when you’re ready." : "Review the page and signup flow. A workspace owner or admin can publish it when it’s ready." },
-    PUBLISHED: { title: "Your waitlist is live", detail: "This page is published and can collect signups. Use the subscriber list and analytics to follow activity." },
-    PAUSED: { title: "Signups are paused", detail: "The page is not currently accepting new signups. Existing subscriber records remain available." },
-  }[waitlist.status];
-  const editHref = `/waitlists/${id}/edit#page-content`;
-  const subscriberHref = `/waitlists/${id}/subscribers`;
-  return <div className={`product-section ${styles.overview}`}>
-    <section className={styles.overviewHero} aria-labelledby="waitlist-overview-title">
-      <div className={styles.overviewInfo}>
-        <h2 id="waitlist-overview-title">{lifecycle.title}</h2>
-        <p>{lifecycle.detail}</p>
-        <dl className={styles.overviewFacts}>
-          <div><dt>Status</dt><dd><span className={styles.status} data-status={waitlist.status}>{({ DRAFT: "Draft", PUBLISHED: "Published", PAUSED: "Paused" })[waitlist.status]}</span></dd></div>
-          <div><dt>Subscribers</dt><dd><Link prefetch={false} href={subscriberHref}>{waitlist._count.signUps.toLocaleString()}</Link></dd></div>
-          <div><dt>Created</dt><dd><time dateTime={waitlist.createdAt.toISOString()}>{dateFormat.format(waitlist.createdAt)}</time></dd></div>
-          <div><dt>Last updated</dt><dd><time dateTime={waitlist.updatedAt.toISOString()}>{dateFormat.format(waitlist.updatedAt)}</time></dd></div>
-        </dl>
-      </div>
-      <div className={styles.overviewActions}>
-        {waitlist.status === "DRAFT"
-          ? <Link prefetch={false} href={`/waitlists/${id}/edit${publicationNeedsAction ? "#publication-actions" : "#page-content"}`} className={buttonVariants()}>{publicationNeedsAction ? "Review publication controls" : "Edit page"}</Link>
-          : waitlist.status === "PAUSED"
-            ? <Link prefetch={false} href={`/waitlists/${id}/edit${publicationNeedsAction ? "#publication-actions" : "#page-content"}`} className={buttonVariants()}>{publicationNeedsAction ? "Review publication controls" : "Edit page"}</Link>
-            : publicationNeedsAction
-              ? <Link prefetch={false} href={`/waitlists/${id}/edit#publication-actions`} className={buttonVariants()}>Review publication controls</Link>
-              : waitlist._count.signUps > 0
-                ? <Link prefetch={false} href={subscriberHref} className={buttonVariants()}>View subscribers</Link>
-                : waitlist.publicSlug
-                  ? <Link prefetch={false} href={`/w/${waitlist.publicSlug}`} target="_blank" rel="noreferrer" className={buttonVariants()}>View live page</Link>
-                  : <Link prefetch={false} href={editHref} className={buttonVariants()}>Edit page</Link>}
-        {waitlist.status === "DRAFT" && canPublish && publicationNeedsAction && <Link prefetch={false} href={editHref} className={buttonVariants({ variant: "outline" })}>Edit page</Link>}
-        {waitlist.status === "PAUSED" && waitlist._count.signUps > 0 && <Link prefetch={false} href={subscriberHref} className={buttonVariants({ variant: "outline" })}>View subscribers</Link>}
-        {waitlist.status === "PUBLISHED" && (publicationNeedsAction
-          ? waitlist._count.signUps > 0
-            ? <Link prefetch={false} href={subscriberHref} className={buttonVariants({ variant: "outline" })}>View subscribers</Link>
-            : waitlist.publicSlug
-              ? <Link prefetch={false} href={`/w/${waitlist.publicSlug}`} target="_blank" rel="noreferrer" className={buttonVariants({ variant: "outline" })}>View live page</Link>
-              : null
-          : <Link prefetch={false} href={editHref} className={buttonVariants({ variant: "outline" })}>Edit page</Link>)}
-      </div>
-    </section>
-    <LaunchReadiness checks={readiness} />
-    <LaunchRehearsal waitListId={id} initialRuns={initialRuns} className={styles.rehearsal} summaryClassName={styles.rehearsalSummary} titleClassName={styles.rehearsalTitle} bodyClassName={styles.rehearsalBody} />
-  </div>;
+import { SITE_URL } from "@/lib/site-metadata";
+import { auth } from "@/lib/auth";
+import { headers } from "next/headers";
+import { notFound, redirect } from "next/navigation";
+
+const getUser = cache(async (id) => {
+	return await prisma.user.findUnique({
+		where: { id },
+	});
+});
+
+export const metadata = { title: "Builder" };
+
+export default async function WaitListsEditPage(props) {
+	const params = await props.params;
+	const { id } = params;
+	const session = await auth.api.getSession({
+		headers: await headers(),
+	});
+
+	if (!id || !session) {
+		redirect("/");
+	}
+
+	const user = await getUser(session.user.id);
+
+	if (!user) {
+		return notFound();
+	}
+
+	const { campaign: waitList } = await requireCampaignPage(id, "editCampaign");
+
+	if (!waitList) {
+		return notFound();
+	}
+	const publicationMember = waitList.workspaceId ? await prisma.workspaceMember.findUnique({
+		where: { workspaceId_userId: { workspaceId: waitList.workspaceId, userId: user.id } },
+		select: { role: true },
+	}) : null;
+	const canPublish = publicationMember ? ["OWNER", "ADMIN"].includes(publicationMember.role) : waitList.userId === user.id;
+
+	const saveWaitList = async (waitListId, waitList) => {
+		"use server";
+		let response = {
+			success: false,
+			waitList: null,
+			message: "Failed to save wait list",
+		};
+
+		const rawSlug = typeof waitList.publicSlug === "string" ? waitList.publicSlug.trim() : "";
+		if (rawSlug && !/^[a-z0-9]+(-[a-z0-9]+)*$/.test(rawSlug)) {
+			response.message = "Page address must use lowercase letters, numbers and single hyphens.";
+			return response;
+		}
+		const data = {
+			name: typeof waitList.name === "string" && waitList.name.trim() ? waitList.name.trim().slice(0, 120) : null,
+			description: typeof waitList.description === "string" && waitList.description.trim() ? waitList.description.trim().slice(0, 600) : null,
+			...(rawSlug ? { publicSlug: rawSlug } : {}),
+			buttonColor: waitList.buttonColor,
+			buttonBorder: waitList.buttonBorder,
+			buttonTextColor: waitList.buttonTextColor,
+			mainBgColor: waitList.enableMainBgColor ? waitList.mainBgColor : null,
+			enableMainBgColor: waitList.enableMainBgColor,
+			bgColor: waitList.bgColor,
+			enableBgColor: waitList.enableBgColor,
+			borderWidth: waitList.borderWidth,
+			borderRadius: waitList.borderRadius,
+			fontWeight: waitList.fontWeight,
+			logoSize: waitList.logoSize,
+			buttonText: waitList.buttonText,
+			successMessage: waitList.successMessage,
+			sendEmailsToSubscribers: waitList.sendEmailsToSubscribers,
+			showLogo: waitList.showLogo,
+			showSocialProof: waitList.showSocialProof,
+			showBadge: waitList.showBadge,
+			badgeColor: waitList.badgeColor,
+			badgeText: waitList.badgeText,
+			badgeTextColor: waitList.badgeTextColor,
+			showReferrals: waitList.showReferrals,
+			showBranding: waitList.showBranding,
+			inputColor: waitList.inputColor,
+			inputBorder: waitList.inputBorder,
+			inputTextColor: waitList.inputTextColor,
+			placeholderText: waitList.placeholderText,
+			logoUrl: waitList.logoUrl,
+			logoKey: waitList.logoKey,
+			shareOnTwitter: waitList.shareOnTwitter,
+			shareOnWhatsapp: waitList.shareOnWhatsapp,
+			shareOnInstagram: waitList.shareOnInstagram,
+			shareOnFacebook: waitList.shareOnFacebook,
+			shareOnLinkedin: waitList.shareOnLinkedin,
+			shareOnEmail: waitList.shareOnEmail,
+			shareOnReddit: waitList.shareOnReddit,
+			ogTitle: waitList.ogTitle,
+			ogDescription: waitList.ogDescription,
+			ogImage: waitList.ogImage,
+		};
+
+		try {
+			const { user: actor, campaign, scope } = await requireCampaign(waitListId, "editCampaign");
+            if (data.logoKey && data.logoKey !== campaign.logoKey && !data.logoKey.startsWith(`${actor.id}-`)) throw new Error("Invalid image key");
+            let mutationScope = scope;
+            if (data.sendEmailsToSubscribers !== campaign.sendEmailsToSubscribers) {
+              mutationScope = (await requireCampaign(waitListId, "sendEmail")).scope;
+            } else {
+              // Do not overwrite a concurrent privileged change with an unchanged form value.
+              delete data.sendEmailsToSubscribers;
+            }
+            const updatedWaitList = await prisma.waitList.update({
+				where: { id: waitListId, ...mutationScope },
+				data,
+			});
+
+			response = {
+				success: true,
+				waitList: updatedWaitList,
+				message: "Wait list saved successfully",
+			};
+		} catch (error) {
+			if (error?.code === "P2002") response.message = "That page address is taken. Choose another.";
+			console.error(error);
+		}
+
+		return response;
+	};
+
+	if (waitList.templateSnapshot) {
+		return <ContentLayout title="Builder"><SnapshotPageBuilder waitList={{ id: waitList.id, name: waitList.name, publicSlug: waitList.publicSlug, status: waitList.status, templateRevision: waitList.templateRevision, publishedRevision: waitList.publishedRevision, publishedTemplateRevision: waitList.publishedTemplateRevision, templateSnapshot: waitList.templateSnapshot }} saveDraftPage={saveDraftPage} publishPage={publishWaitlist} pausePage={pauseWaitlist} rollbackPage={rollbackWaitlist} canPublish={canPublish} publicationOrigin={process.env.VERCEL_ENV === "preview" && process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : (process.env.BETTER_AUTH_URL || SITE_URL)} /></ContentLayout>;
+	}
+
+	return (
+		<ContentLayout title="Builder">
+
+
+
+			<WaitlistGenerator
+				initialWaitList={waitList}
+				saveWaitList={saveWaitList}
+			/>
+		</ContentLayout>
+	);
 }

@@ -58,8 +58,47 @@ export async function getCampaignPosition(db, waitListId, signUpId) {
   return Number.isSafeInteger(position) && position > 0 ? position : null;
 }
 
-export async function getEligibleReferralCounts(db, waitListId, signUpIds) {
-  const ids = [...new Set((signUpIds ?? []).filter((id) => typeof id === "string" && id))];
+// Batch companion to getCampaignPosition: 1-based positions for every signup
+// of a waitlist in a single query, using the same verified-only scoring.
+export async function getCampaignPositions(db, waitListId) {
+  if (typeof waitListId !== "string" || !waitListId) return new Map();
+  const rows = await db.$queryRaw`
+    WITH referral_scores AS (
+      SELECT referral."referredById" AS "referrerId", COUNT(*)::bigint AS score
+      FROM "referrals" AS referral
+      INNER JOIN "sign_ups" AS referred
+        ON referred."id" = referral."signUpId"
+      INNER JOIN "sign_ups" AS referrer
+        ON referrer."id" = referral."referredById"
+       AND referrer."waitListId" = referred."waitListId"
+      INNER JOIN "wait_lists" AS campaign
+        ON campaign."id" = referred."waitListId"
+       AND campaign."showReferrals" = true
+      WHERE referred."waitListId" = ${waitListId}
+        AND referred."verifiedAt" IS NOT NULL
+        AND referrer."verifiedAt" IS NOT NULL
+        AND referral."reviewStatus" IN ('CLEAR', 'APPROVED')
+        AND referral."referredById" IS NOT NULL
+        AND referral."referredById" <> referral."signUpId"
+      GROUP BY referral."referredById"
+    )
+    SELECT signup."id",
+      ROW_NUMBER() OVER (
+        ORDER BY COALESCE(score.score, 0) DESC, signup."createdAt" ASC, signup."id" ASC
+      ) AS position
+    FROM "sign_ups" AS signup
+    LEFT JOIN referral_scores AS score ON score."referrerId" = signup."id"
+    WHERE signup."waitListId" = ${waitListId}
+  `;
+  const positions = new Map();
+  for (const row of rows) {
+    const position = Number(row.position);
+    if (row?.id && Number.isSafeInteger(position) && position > 0) positions.set(row.id, position);
+  }
+  return positions;
+}
+
+export async function getEligibleReferralCounts(db, waitListId, signUpIds) {  const ids = [...new Set((signUpIds ?? []).filter((id) => typeof id === "string" && id))];
   if (!waitListId || ids.length === 0) return new Map();
 
   const groups = await db.referral.groupBy({
