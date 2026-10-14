@@ -33,7 +33,7 @@
 ## 3. Phase 1 — Waitlist creation flow + detail view UX rework (foundation) — SHIPPED (builder-first rebuild, calm/breathable)
 
 - [X] Kill the creation wizard: New waitlist instantly creates a private draft (`Untitled waitlist` + unique `untitled-xxxxxx` slug, no snapshot) and drops straight into the Builder.
-- [X] Builder tab (first): legacy full editor — center live preview, right-side option tabs (General/Input/Presets/Social: colors, bg, fonts, referral toggle, share platforms, OG), name/slug/description editing, Save, status-aware Publish/Pause (revision-free legacy path), Embed modal + slug share link.
+- [X] Builder tab (first): legacy full editor — center live preview, right-side option tabs (General/Input/Presets/Social: colors, bg, fonts, referral toggle, share platforms, OG), name/slug/description editing, Save, status-aware Publish/Pause (revision-free legacy path), Embed modal + slug share link. Lives at `/waitlists/{id}` (no `/edit` route, no redirect shim).
 - [X] Public loop: `/w/{slug}` serves snapshot lists as before, snapshot-less published lists via the classic form + referral loop (`/forms/{id}` unchanged).
 - [X] Detail tabs cut to five: Builder | Signups | Emails | Analytics | Settings (Overview → redirects to Builder; Referrals folded into Signups; route URLs unchanged).
 - [X] Signups v2: Email | Country | Position (referrals on) | Joined-ago | Status (emails on); row click opens a right sheet (details + referral link + copy); Import sheet (template CSV, validation, counts) + Export sheet (column picker); import creates unverified rows, no emails.
