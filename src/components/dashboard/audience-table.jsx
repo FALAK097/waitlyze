@@ -166,7 +166,7 @@ export function AudienceTable({ waitlist, initialReviews = [], initialReviewsFai
       <header className="product-page-heading">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div className="grid gap-2">
-            <h2 id="audience-title">Subscribers</h2>
+            <h2 id="audience-title">Signups</h2>
             <p className="product-description">People who joined {waitlist.name || "this waitlist"}.</p>
           </div>
           {view === "subscribers" && (
@@ -175,8 +175,8 @@ export function AudienceTable({ waitlist, initialReviews = [], initialReviewsFai
             </Button>
           )}
         </div>
-        <div className="product-audience-views" role="group" aria-label="Subscriber views">
-          <Button variant="ghost" aria-pressed={view === "subscribers"} onClick={() => setView("subscribers")}>Subscribers</Button>
+        <div className="product-audience-views" role="group" aria-label="Signup views">
+          <Button variant="ghost" aria-pressed={view === "subscribers"} onClick={() => setView("subscribers")}>Signups</Button>
           <Button variant="ghost" aria-pressed={view === "referrals"} onClick={() => setView("referrals")}>Referral review{initialReviews.filter((review) => review.reviewStatus === "NEEDS_REVIEW").length > 0 && ` · ${initialReviews.filter((review) => review.reviewStatus === "NEEDS_REVIEW").length}`}</Button>
         </div>
       </header>

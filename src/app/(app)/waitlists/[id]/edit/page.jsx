@@ -19,7 +19,7 @@ const getUser = cache(async (id) => {
 	});
 });
 
-export const metadata = { title: "Page" };
+export const metadata = { title: "Design" };
 
 export default async function WaitListsEditPage(props) {
 	const params = await props.params;
@@ -126,11 +126,11 @@ export default async function WaitListsEditPage(props) {
 	};
 
 	if (waitList.templateSnapshot) {
-		return <ContentLayout title="Page"><SnapshotPageBuilder waitList={{ id: waitList.id, name: waitList.name, publicSlug: waitList.publicSlug, status: waitList.status, templateRevision: waitList.templateRevision, publishedRevision: waitList.publishedRevision, publishedTemplateRevision: waitList.publishedTemplateRevision, templateSnapshot: waitList.templateSnapshot }} saveDraftPage={saveDraftPage} publishPage={publishWaitlist} pausePage={pauseWaitlist} rollbackPage={rollbackWaitlist} canPublish={canPublish} publicationOrigin={process.env.VERCEL_ENV === "preview" && process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : (process.env.BETTER_AUTH_URL || SITE_URL)} /></ContentLayout>;
+		return <ContentLayout title="Design"><SnapshotPageBuilder waitList={{ id: waitList.id, name: waitList.name, publicSlug: waitList.publicSlug, status: waitList.status, templateRevision: waitList.templateRevision, publishedRevision: waitList.publishedRevision, publishedTemplateRevision: waitList.publishedTemplateRevision, templateSnapshot: waitList.templateSnapshot }} saveDraftPage={saveDraftPage} publishPage={publishWaitlist} pausePage={pauseWaitlist} rollbackPage={rollbackWaitlist} canPublish={canPublish} publicationOrigin={process.env.VERCEL_ENV === "preview" && process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : (process.env.BETTER_AUTH_URL || SITE_URL)} /></ContentLayout>;
 	}
 
 	return (
-		<ContentLayout title="Page">
+		<ContentLayout title="Design">
 
 
 

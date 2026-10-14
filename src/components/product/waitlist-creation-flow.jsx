@@ -5,6 +5,7 @@ import { ArrowLeft01Icon, ArrowRight01Icon, GlobeIcon, Layout01Icon, LockKeyIcon
 import { Label } from "@/components/ui/label";
 
 import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
 
 import { useActionState, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -12,11 +13,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import styles from "./waitlist-creation-flow.module.css";
 
-const empty = { templateId: "saas", name: "", description: "", publicSlug: "", creationKey: "" };
-const steps = ["Choose a starter", "Name your waitlist", "Review & create"];
+const empty = { templateId: "saas", name: "", description: "", publicSlug: "", showReferrals: true, sendEmailsToSubscribers: true, creationKey: "" };
+const steps = ["Basics", "Design", "Referrals", "Emails", "Review"];
 const stepDescriptions = [
-  "Pick a starter and make it your own.",
   "Give this launch a name and a short, shareable address.",
+  "Pick a starter and make it your own.",
+  "Let joiners invite friends and move up in line.",
+  "Confirm new signups automatically.",
   "Check the details. Your page stays private until you publish.",
 ];
 
@@ -49,20 +52,15 @@ function PagePreview({ template, hero, name, publicSlug }) {
   </aside>;
 }
 
+function SettingRow({ id, title, body, checked, onCheckedChange }) {
+  return <div className={styles.setting}>
+    <div className={styles.settingCopy}><Label htmlFor={id}>{title}</Label><p>{body}</p></div>
+    <Switch id={id} checked={checked} onCheckedChange={onCheckedChange} />
+  </div>;
+}
+
 function CreationStepContent({ step, templates, values, setValues, template, hero, formRef, continueFromDetails, changeName, state, setSlugEdited, workspaceName, move }) {
   if (step === 0) return <div className={styles.templateGrid}>
-    <fieldset className={styles.choices}>
-      <legend className={styles.srOnly}>Choose a page starter</legend>
-      {templates.map((item) => <Label key={item.id} className={styles.choice} data-selected={values.templateId === item.id || undefined}>
-        <input type="radio" name="template" value={item.id} checked={values.templateId === item.id} onChange={() => setValues((previous) => ({ ...previous, templateId: item.id }))} />
-        <span className={styles.choiceCopy}><strong>{item.name}</strong><span>{item.description}</span></span>
-        <span className={styles.choiceMarker} aria-hidden="true">{values.templateId === item.id && <HugeiconsIcon icon={Tick01Icon} size={14} />}</span>
-      </Label>)}
-    </fieldset>
-    <PagePreview template={template} hero={hero} name={values.name} publicSlug={values.publicSlug} />
-  </div>;
-
-  if (step === 1) return <div className={styles.templateGrid}>
     <form ref={formRef} className={styles.details} onSubmit={continueFromDetails}>
       <div className={styles.field}><Label htmlFor="waitlist-name">What are you launching?</Label><p className={styles.fieldHint} id="name-hint">Use a working title. You can rename it any time.</p><Input id="waitlist-name" required maxLength={120} value={values.name} onChange={(event) => changeName(event.target.value)} aria-describedby={state.fields?.name ? "name-hint name-error" : "name-hint"} aria-invalid={state.fields?.name ? true : undefined} autoComplete="off" autoFocus />{state.fields?.name && <p id="name-error" className={styles.fieldError} role="alert">{state.fields.name[0]}</p>}</div>
       <div className={styles.field}><Label htmlFor="waitlist-description">Internal note <span>Optional</span></Label><p className={styles.fieldHint} id="description-hint">For you and your team. This won’t appear on the public page.</p><Textarea id="waitlist-description" maxLength={600} value={values.description} onChange={(event) => setValues((previous) => ({ ...previous, description: event.target.value }))} aria-describedby="description-hint" rows={3} /></div>
@@ -74,16 +72,44 @@ function CreationStepContent({ step, templates, values, setValues, template, her
     <PagePreview template={template} hero={hero} name={values.name} publicSlug={values.publicSlug} />
   </div>;
 
+  if (step === 1) return <div className={styles.templateGrid}>
+    <fieldset className={styles.choices}>
+      <legend className={styles.srOnly}>Choose a page starter</legend>
+      {templates.map((item) => <Label key={item.id} className={styles.choice} data-selected={values.templateId === item.id || undefined}>
+        <input type="radio" name="template" value={item.id} checked={values.templateId === item.id} onChange={() => setValues((previous) => ({ ...previous, templateId: item.id }))} />
+        <span className={styles.choiceCopy}><strong>{item.name}</strong><span>{item.description}</span></span>
+        <span className={styles.choiceMarker} aria-hidden="true">{values.templateId === item.id && <HugeiconsIcon icon={Tick01Icon} size={14} />}</span>
+      </Label>)}
+    </fieldset>
+    <PagePreview template={template} hero={hero} name={values.name} publicSlug={values.publicSlug} />
+  </div>;
+
+  if (step === 2) return <div className={styles.templateGrid}>
+    <div className={styles.details}>
+      <SettingRow id="waitlist-referrals" title="Referral links" body="Every joiner gets a personal link. Friends who join through it move them up in line." checked={values.showReferrals} onCheckedChange={(checked) => setValues((previous) => ({ ...previous, showReferrals: checked }))} />
+    </div>
+    <PagePreview template={template} hero={hero} name={values.name} publicSlug={values.publicSlug} />
+  </div>;
+
+  if (step === 3) return <div className={styles.templateGrid}>
+    <div className={styles.details}>
+      <SettingRow id="waitlist-emails" title="Confirmation emails" body="New joiners get an email to confirm their spot. You can add more emails later." checked={values.sendEmailsToSubscribers} onCheckedChange={(checked) => setValues((previous) => ({ ...previous, sendEmailsToSubscribers: checked }))} />
+    </div>
+    <PagePreview template={template} hero={hero} name={values.name} publicSlug={values.publicSlug} />
+  </div>;
+
   return <div className={styles.templateGrid}>
     <div className={styles.review}>
       <div className={styles.reviewMain}>
-        <div className={styles.reviewHeading}><div><p className={styles.reviewLabel}>WAITLIST</p><h3>{values.name}</h3></div><Button type="button" className={styles.textButton} onClick={() => move(1)}>Edit details</Button></div>
+        <div className={styles.reviewHeading}><div><p className={styles.reviewLabel}>WAITLIST</p><h3>{values.name}</h3></div><Button type="button" className={styles.textButton} onClick={() => move(0)}>Edit details</Button></div>
         {values.description && <p className={styles.reviewDescription}><strong>Internal note:</strong> {values.description}</p>}
         <div className={styles.reviewRow}><span>Page path</span><strong>/w/{values.publicSlug}</strong></div>
-        <div className={styles.reviewRow}><span>Page starter</span><strong>{template.name}<Button type="button" className={styles.inlineEdit} onClick={() => move(0)}>Change</Button></strong></div>
+        <div className={styles.reviewRow}><span>Page starter</span><strong>{template.name}<Button type="button" className={styles.inlineEdit} onClick={() => move(1)}>Change</Button></strong></div>
+        <div className={styles.reviewRow}><span>Referrals</span><strong>{values.showReferrals ? "On" : "Off"}<Button type="button" className={styles.inlineEdit} onClick={() => move(2)}>Change</Button></strong></div>
+        <div className={styles.reviewRow}><span>Emails</span><strong>{values.sendEmailsToSubscribers ? "On" : "Off"}<Button type="button" className={styles.inlineEdit} onClick={() => move(3)}>Change</Button></strong></div>
         <div className={styles.reviewRow}><span>Workspace</span><strong>{workspaceName}</strong></div>
       </div>
-      <aside className={styles.privacyCard}><span><HugeiconsIcon icon={LockKeyIcon} size={17} aria-hidden="true" /> Private draft</span><p>Only workspace members can see it. The page won’t accept signups until you publish.</p><ul><li><HugeiconsIcon icon={Tick01Icon} size={14} aria-hidden="true" /> Email-only signup</li><li><HugeiconsIcon icon={Tick01Icon} size={14} aria-hidden="true" /> No emails sent automatically</li><li><HugeiconsIcon icon={Tick01Icon} size={14} aria-hidden="true" /> Edit before publishing</li></ul></aside>
+      <aside className={styles.privacyCard}><span><HugeiconsIcon icon={LockKeyIcon} size={17} aria-hidden="true" /> Private draft</span><p>Only workspace members can see it. The page won’t accept signups until you publish.</p><ul><li><HugeiconsIcon icon={Tick01Icon} size={14} aria-hidden="true" /> Email-only signup</li><li><HugeiconsIcon icon={Tick01Icon} size={14} aria-hidden="true" /> {values.showReferrals ? "Referral links enabled" : "Referral links off"}</li><li><HugeiconsIcon icon={Tick01Icon} size={14} aria-hidden="true" /> {values.sendEmailsToSubscribers ? "Confirmation emails on" : "No emails sent automatically"}</li></ul></aside>
       {state.message && <div className={styles.error} role="alert"><strong>We couldn’t create this draft.</strong><span>{state.message}</span><span>Your details are saved here. You can retry without starting over.</span></div>}
     </div>
     <PagePreview template={template} hero={hero} name={values.name} publicSlug={values.publicSlug} />
@@ -92,10 +118,19 @@ function CreationStepContent({ step, templates, values, setValues, template, her
 
 function CreationActions({ step, move, pending, state, template, formRef, action, values }) {
   return <footer className={styles.actions}>
-    {step > 0 ? <Button type="button" variant="outline" disabled={pending || Boolean(state.id)} onClick={() => move(step - 1)}><HugeiconsIcon icon={ArrowLeft01Icon} size={16} aria-hidden="true" /> Back</Button> : <span className={styles.actionHint}>Change your starter before creating.</span>}
-    {step === 0 && <Button type="button" onClick={() => move(1)}>Continue with {template.name}<HugeiconsIcon icon={ArrowRight01Icon} size={16} aria-hidden="true" /></Button>}
-    {step === 1 && <Button type="button" onClick={() => formRef.current?.requestSubmit()}>Review draft<HugeiconsIcon icon={ArrowRight01Icon} size={16} aria-hidden="true" /></Button>}
-    {step === 2 && <form action={action} className={styles.submitForm}>{Object.entries(values).map(([name, value]) => <input key={name} type="hidden" name={name} value={value} />)}<Button type="submit" disabled={pending || Boolean(state.id)}>{pending ? "Creating draft…" : state.id ? "Opening editor…" : "Create private draft"}<HugeiconsIcon icon={ArrowRight01Icon} size={16} aria-hidden="true" /></Button></form>}
+    {step > 0 ? <Button type="button" variant="outline" disabled={pending || Boolean(state.id)} onClick={() => move(step - 1)}><HugeiconsIcon icon={ArrowLeft01Icon} size={16} aria-hidden="true" /> Back</Button> : <span className={styles.actionHint}>Name it first, style it next.</span>}
+    {step === 0 && <Button type="button" onClick={() => formRef.current?.requestSubmit()}>Choose starter<HugeiconsIcon icon={ArrowRight01Icon} size={16} aria-hidden="true" /></Button>}
+    {step >= 1 && step <= 3 && <Button type="button" onClick={() => move(step + 1)}>Continue<HugeiconsIcon icon={ArrowRight01Icon} size={16} aria-hidden="true" /></Button>}
+    {step === 4 && <form action={action} className={styles.submitForm}>
+      <input type="hidden" name="name" value={values.name} />
+      <input type="hidden" name="description" value={values.description} />
+      <input type="hidden" name="publicSlug" value={values.publicSlug} />
+      <input type="hidden" name="templateId" value={values.templateId} />
+      <input type="hidden" name="showReferrals" value={values.showReferrals ? "on" : ""} />
+      <input type="hidden" name="sendEmailsToSubscribers" value={values.sendEmailsToSubscribers ? "on" : ""} />
+      <input type="hidden" name="creationKey" value={values.creationKey} />
+      <Button type="submit" disabled={pending || Boolean(state.id)}>{pending ? "Creating waitlist…" : state.id ? "Opening checklist…" : "Create waitlist"}<HugeiconsIcon icon={ArrowRight01Icon} size={16} aria-hidden="true" /></Button>
+    </form>}
   </footer>;
 }
 
@@ -118,6 +153,7 @@ export function WaitlistCreationFlow({ templates, workspaceId, workspaceName, su
     try { restored = JSON.parse(sessionStorage.getItem(storageKey)); } catch { setStorageUnavailable(true); }
     const valid = restored && templates.some((item) => item.id === restored.templateId) &&
       ["name", "description", "publicSlug", "creationKey"].every((key) => typeof restored[key] === "string") &&
+      typeof restored.showReferrals === "boolean" && typeof restored.sendEmailsToSubscribers === "boolean" &&
       /^[0-9a-f-]{36}$/i.test(restored.creationKey);
     setValues(valid ? Object.fromEntries(Object.keys(empty).map((key) => [key, restored[key]])) : { ...empty, creationKey: crypto.randomUUID() });
     setSlugEdited(Boolean(valid && restored.slugEdited));
@@ -133,12 +169,12 @@ export function WaitlistCreationFlow({ templates, workspaceId, workspaceName, su
   useEffect(() => {
     if (!state.id) return;
     try { sessionStorage.removeItem(storageKey); } catch { /* Storage is optional after creation. */ }
-    router.push(`/waitlists/${state.id}/edit`);
+    router.push(`/waitlists/${state.id}/getting-started`);
   }, [state.id, storageKey, router]);
 
   useEffect(() => {
     if (!state.fields || !state.message) return;
-    setStep(1);
+    setStep(0);
     requestAnimationFrame(() => {
       const target = state.fields.name ? "#waitlist-name" : state.fields.publicSlug ? "#waitlist-address" : "input:invalid";
       formRef.current?.querySelector(target)?.focus();
@@ -157,14 +193,14 @@ export function WaitlistCreationFlow({ templates, workspaceId, workspaceName, su
   function continueFromDetails(event) {
     event.preventDefault();
     if (!formRef.current.reportValidity()) return;
-    move(2);
+    move(1);
   }
 
   return <div className={styles.page}>
     <header className={styles.header}>
       <p className={styles.eyebrow}>{workspaceName}</p>
       <h1>Create a waitlist</h1>
-      <p>Choose a starter, add your details, then open the editor.</p>
+      <p>Five quick steps, then share your page.</p>
     </header>
 
     <ol className={styles.progress} aria-label="Creation steps">

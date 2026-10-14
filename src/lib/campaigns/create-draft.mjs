@@ -7,6 +7,8 @@ export const draftInputSchema = z.strictObject({
   description: z.string().trim().max(600).default(""),
   publicSlug: z.string().min(3).max(64).regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Use lowercase letters, numbers and single hyphens."),
   templateId: z.enum(["saas", "mobile", "ai", "community", "consumer", "newsletter", "blank"]),
+  showReferrals: z.boolean().default(true),
+  sendEmailsToSubscribers: z.boolean().default(true),
   creationKey: z.uuid(),
 });
 
@@ -19,7 +21,9 @@ export class DraftCreationError extends Error {
 
 function sameRequest(record, input, actorId) {
   return record.userId === actorId && record.name === input.name && record.description === input.description &&
-    record.publicSlug === input.publicSlug && record.templateSnapshot?.templateId === input.templateId;
+    record.publicSlug === input.publicSlug && record.templateSnapshot?.templateId === input.templateId &&
+    (record.showReferrals ?? false) === input.showReferrals &&
+    (record.sendEmailsToSubscribers ?? false) === input.sendEmailsToSubscribers;
 }
 
 // The browser supplies a starter ID; it cannot supply a snapshot, owner or workspace.
@@ -45,8 +49,9 @@ export async function createDraft(db, actorId, workspaceId, rawInput) {
           data: {
             name: input.name, description: input.description, publicSlug: input.publicSlug,
             creationKey: input.creationKey, templateSnapshot: snapshot,
-            userId: actorId, workspaceId, status: "DRAFT", sendEmailsToSubscribers: false,
-            showReferrals: false, showSocialProof: false, showLogo: false,
+            showReferrals: input.showReferrals, sendEmailsToSubscribers: input.sendEmailsToSubscribers,
+            userId: actorId, workspaceId, status: "DRAFT",
+            showSocialProof: false, showLogo: false,
             buttonColor: "#C6FE1E", buttonBorder: "#C6FE1E", buttonTextColor: "#00160D",
           },
         });

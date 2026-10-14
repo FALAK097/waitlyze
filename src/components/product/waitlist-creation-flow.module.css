@@ -60,6 +60,10 @@
 .previewPrivacy { display: flex; align-items: center; gap: 6px; margin-top: 14px; padding-top: 9px; border-top: 0; color: var(--product-text-secondary); font-size: .75rem; }
 .previewNote { margin: 9px 0 0; color: var(--product-text-secondary); font-size: .72rem; line-height: 1.5; }
 .details { display: grid; gap: 22px; width: 100%; padding: 0; border: 0; border-radius: 0; background: #fff; }
+.setting { display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: 4px 0; }
+.settingCopy { display: grid; gap: 4px; max-width: 46ch; }
+.settingCopy > label { font-size: .9375rem; font-weight: 600; }
+.settingCopy > p { margin: 0; color: var(--product-text-secondary); font-size: .8125rem; line-height: 1.55; }
 .field { display: grid; gap: 7px; }
 .field > label { font-size: .875rem; font-weight: 600; }
 .field > label span { margin-left: 5px; color: var(--product-text-secondary); font-size: .75rem; font-weight: 400; }

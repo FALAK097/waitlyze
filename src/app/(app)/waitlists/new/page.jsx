@@ -21,6 +21,8 @@ export default async function NewWaitlistPage() {
       const draft = await createDraft(prisma, actor.id, workspaceId, {
         name: formData.get("name"), description: formData.get("description"),
         publicSlug: formData.get("publicSlug"), templateId: formData.get("templateId"), creationKey: formData.get("creationKey"),
+        showReferrals: formData.get("showReferrals") === "on",
+        sendEmailsToSubscribers: formData.get("sendEmailsToSubscribers") === "on",
       });
       await recordAuditEvent(prisma, { workspaceId, userId: actor.id, action: AUDIT_ACTIONS.WAITLIST_CREATED, resourceType: "waitlist", resourceId: draft.id, resourceName: String(formData.get("name") || "Untitled waitlist"), detail: "Created as a private draft" });
       revalidatePath("/(app)", "layout");

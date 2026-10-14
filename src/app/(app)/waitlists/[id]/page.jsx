@@ -68,6 +68,7 @@ export default async function OverviewPage({ params }) {
                   ? <Link prefetch={false} href={`/w/${waitlist.publicSlug}`} target="_blank" rel="noreferrer" className={buttonVariants()}>View live page</Link>
                   : <Link prefetch={false} href={editHref} className={buttonVariants()}>Edit page</Link>}
         {waitlist.status === "DRAFT" && canPublish && publicationNeedsAction && <Link prefetch={false} href={editHref} className={buttonVariants({ variant: "outline" })}>Edit page</Link>}
+        {waitlist.status === "DRAFT" && <Link prefetch={false} href={`/waitlists/${id}/getting-started`} className={buttonVariants({ variant: "outline" })}>Continue setup</Link>}
         {waitlist.status === "PAUSED" && waitlist._count.signUps > 0 && <Link prefetch={false} href={subscriberHref} className={buttonVariants({ variant: "outline" })}>View subscribers</Link>}
         {waitlist.status === "PUBLISHED" && (publicationNeedsAction
           ? waitlist._count.signUps > 0

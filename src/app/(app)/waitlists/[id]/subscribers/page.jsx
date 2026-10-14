@@ -5,7 +5,7 @@ import { notFound } from "next/navigation";
 import { AudienceTable } from "@/components/dashboard/audience-table";
 import { loadReferralReviews } from "@/lib/campaigns/referral-review-read.mjs";
 
-export const metadata = { title: "Subscribers" };
+export const metadata = { title: "Signups" };
 
 export default async function SubscribersPage({ params }) {
   const [{ id }, { user, workspace }] = await Promise.all([params, currentWorkspace()]);
