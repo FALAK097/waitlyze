@@ -10,7 +10,7 @@ const MAX_ROWS = 5000;
 const MAX_BYTES = 2 * 1024 * 1024;
 const REFERRAL_CODE_FORMAT = /^[A-Za-z0-9_-]{4,64}$/;
 
-const truthy = (value) => ["true", "1", "yes"].includes(String(value ?? "").trim().toLowerCase());
+const truthy = (value) => ["true", "1", "yes", "verified"].includes(String(value ?? "").trim().toLowerCase());
 
 function parsePoints(value) {
   if (value == null || value === "") return 0;
@@ -31,8 +31,9 @@ function parseJoinedAt(value) {
 
 // Bulk import from a CSV with an `email` column plus optional `country`,
 // `points`, `referral_code`, `referred_by` (email or code), `verified` and
-// `joined_at` columns. Imported rows start unverified unless marked verified
-// and never trigger emails. Referral links resolve in a second pass.
+// `joined_at` columns (`Status` and `Joined at` from waitlist exports are
+// recognized as fallbacks). Imported rows start unverified unless marked
+// verified and never trigger emails. Referral links resolve in a second pass.
 export async function importSignups(waitListId, formData) {
   try {
     const { scope } = await requireCampaign(waitListId, "manageAudience");
@@ -48,8 +49,8 @@ export async function importSignups(waitListId, formData) {
     const pointsKey = keyOf("points");
     const codeKey = keyOf("referral_code");
     const referredByKey = keyOf("referred_by");
-    const verifiedKey = keyOf("verified");
-    const joinedAtKey = keyOf("joined_at");
+    const verifiedKey = keyOf("verified") ?? keyOf("status");
+    const joinedAtKey = keyOf("joined_at") ?? keyOf("joined at");
     const cell = (row, key) => (key && typeof row?.[key] === "string" ? row[key].trim() : "");
 
     const raw = parsed.data.slice(0, MAX_ROWS + 1);
@@ -57,8 +58,13 @@ export async function importSignups(waitListId, formData) {
     if (raw.length > MAX_ROWS) return { ok: false, message: `Keep imports to ${MAX_ROWS.toLocaleString()} rows at a time.` };
 
     const seen = new Set();
+    // Referral codes are globally unique, so check the CSV's codes across all
+    // waitlists instead of scanning this one.
+    const csvCodes = [...new Set(raw.map((row) => cell(row, codeKey)).filter((code) => code && REFERRAL_CODE_FORMAT.test(code)))];
     const takenCodes = new Set(
-      (await prisma.signUp.findMany({ where: { waitListId }, select: { referralCode: true } })).map((row) => row.referralCode),
+      csvCodes.length
+        ? (await prisma.signUp.findMany({ where: { referralCode: { in: csvCodes } }, select: { referralCode: true } })).map((row) => row.referralCode)
+        : [],
     );
     const candidates = [];
     let invalid = 0;

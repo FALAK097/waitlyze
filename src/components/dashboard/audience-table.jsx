@@ -121,6 +121,7 @@ export function AudienceTable({ waitlist, initialReviews = [], initialReviewsFai
     try {
       const response = await fetch(`/api/wait-lists/${encodeURIComponent(waitlist.id)}/subscribers?${params}`, { signal, cache: "no-store" });
       const payload = await response.json();
+      if (signal.aborted) return;
       if (!response.ok) throw new Error(payload.error || "Unable to load signups.");
       setResult(payload);
       setLoadedCriteria(`${status}\u0000${search}\u0000${sort}`);

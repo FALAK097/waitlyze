@@ -440,10 +440,11 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
   };
 
   const handlePublishToggle = async () => {
-    // Publish the saved page, never unsaved field values.
-    if (!(await saveNow())) return;
+    if (isPublishing) return;
     setIsPublishing(true);
     try {
+      // Publish the saved page, never unsaved field values.
+      if (!(await saveNow())) return;
       const action = status === "PUBLISHED" ? pauseLegacyWaitlist : publishLegacyWaitlist;
       const response = await action(initialWaitList.id);
       if (response.ok) {
@@ -465,7 +466,7 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
         <header className={styles.header}><div><h2>Builder</h2><p>{name || "Untitled waitlist"} · {status === "PUBLISHED" ? "Live" : status === "PAUSED" ? "Paused" : "Private draft"}</p></div><div className={styles.toolbar}>
           <TooltipProvider delay={100}>
             <div className={styles.toolbarActions}>
-              {!initialWaitList.templateSnapshot && <Button disabled={isPublishing} onClick={handlePublishToggle}>{isPublishing ? "Working…" : status === "PUBLISHED" ? "Pause" : "Publish"}</Button>}
+              {!initialWaitList.templateSnapshot && <Button disabled={isPublishing || isSaving} onClick={handlePublishToggle}>{isPublishing ? "Working…" : status === "PUBLISHED" ? "Pause" : "Publish"}</Button>}
               <Tooltip>
                 <TooltipTrigger
                   render={

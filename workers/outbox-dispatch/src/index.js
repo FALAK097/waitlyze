@@ -17,8 +17,8 @@ export default {
       method: "POST",
       headers: { authorization: `Bearer ${env.OUTBOX_DISPATCH_SECRET}` },
     });
-    const body = await response.text();
-    console.log(`outbox dispatch cron=${event.cron} status=${response.status} ms=${Date.now() - started} body=${body.slice(0, 500)}`);
+    await response.text();
+    console.log(`outbox dispatch cron=${event.cron} status=${response.status} ms=${Date.now() - started}`);
     if (!response.ok) throw new Error(`Outbox dispatch failed with status ${response.status}.`);
   },
 };

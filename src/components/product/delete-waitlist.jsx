@@ -23,7 +23,7 @@ export function DeleteWaitlist({ id, name }) {
   async function remove(event) {
     event.preventDefault(); setError(""); setPending(true);
     try {
-      const result = await deleteWaitlist(id, confirmation);
+      const result = await deleteWaitlist(id, confirmation.trim());
       if (result.error) { setError(result.error); toast.error(result.error); setPending(false); return; }
       toast.success("Waitlist deleted."); setOpen(false); router.replace("/waitlists"); router.refresh();
     } catch { setError("Could not delete this waitlist. Try again."); toast.error("Could not delete this waitlist. Try again."); setPending(false); }
