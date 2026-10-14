@@ -9,11 +9,7 @@
 - **One-liner:** Waitlyze is the viral waitlist platform for founders and creators — launch page + referral loop + email automation + analytics from a single list.
 - **Who it's for:** indie founders / creators pre-launch (primary), startups running betas and early-access waves (secondary).
 - **The loop we sell:** create a beautiful page in minutes → visitors join → thank-you page turns them into referrers → automated emails keep the list warm → founder launches to a primed audience with analytics to prove it.
-- **Where competitors sit (researched Oct 2026):**
-  - `getlaunchlist.com` — most polished; viral referrals + rewards, early-access invite codes with batch analytics, updates feed, trust verdicts, MCP for AI agents.
-  - `waitlister.me` — points-based referrals (signup/referral/social-follow weights), silent fraud handling, embeddable leaderboard, unlimited subscribers on paid plans.
-  - `getwaitlist.com` — cheapest/dev-centric; unlimited signups at every tier, public unauth signup API, priority-as-integer, offboarding emails.
-- **How we win:** easiest referral cockpit + best free-tier value (generous signup limits like GetWaitlist) + BYOK email deliverability + embed-anywhere + painless switching (imports that preserve referral history). Compete on loop quality and simplicity, not feature count.
+- **How we win:** easiest referral cockpit + best free-tier value (generous signup limits) + BYOK email deliverability + embed-anywhere + painless switching (imports that preserve referral history). Compete on loop quality and simplicity, not feature count.
 - **Guiding principles for every phase:**
   - Thank-you page is a product, not a dead end (every join must feed the loop).
   - Every email carries the personal referral link + position.
@@ -94,7 +90,7 @@
 ### 7b. Founder → their list (builder, automations, testing)
 
 - [ ] Rebuild the email builder: visual block editor (keep markdown as a mode, add HTML mode) with live preview + test-send + inbox previews.
-- [ ] Variables everywhere: `{{name}} {{position}} {{referral_link}} {{points}} {{rewards}}` with Boris Johnson-proof fallback defaults.
+- [ ] Variables everywhere: `{{name}} {{position}} {{referral_link}} {{points}} {{rewards}}` with sensible fallback defaults.
 - [ ] Template set per waitlist: welcome, verification, referral-congrats (new), launch/invite (new), offboard (exists — add bulk offboard send, open item), broadcast/newsletter.
 - [ ] Automations v1: welcome series, referral nudge (joined but 0 referrals after N days), launch countdown, milestone-celebration to referrers; segment targeting (all / top referrers / unverified / inactive).
 - [ ] Broadcasts: send-now + schedule, per-send delivery report (delivered/bounced/spam/unsub).
@@ -104,17 +100,17 @@
 
 - [ ] BYOK Resend: founder connects their own Resend account, we list their domains, they send through it (open item from the old list) — per-waitlist sender identity + custom sending domain.
 - [ ] More channels in order: webhooks (signed, retried, replayable logs) → Slack/Discord notifications → Zapier → Klaviyo/Mailchimp/Kit sync. REST API docs + guides for each.
-- [ ] API keys that work on all plans (Waitlister does this — great activation lever) with scopes + per-key rate limits.
+- [ ] API keys that work on all plans (great activation lever) with scopes + per-key rate limits.
 
 ## 10. Phase 8 — Growth & marketing surface (platform marketing POV)
 
 - [ ] Landing page: replace blog-templates angle with **use-cases** (pre-launch SaaS, beta invites, creator drops, mobile app, community, event) — each use-case = page with template CTA.
-- [ ] Publish comparison pages (`/alternatives/getwaitlist` etc.), live leaderboard mock, transparent pricing table — copies Waitlister's trust playbook.
+- [ ] Publish comparison pages (`/alternatives/*`), live leaderboard mock, transparent pricing table.
 - [ ] Demo video + fresh screenshots of the reworked UI (open items from the old list); avatars for "joining N+ creators" social proof.
 - [ ] Free SEO tools (waitlist name/headline generator) + growth hub/case studies for acquisition.
-- [ ] Early-access invites: single + bulk invite (up to 1,000 filtered), personal expiring codes, claim via cockpit or API, per-batch redemption analytics (LaunchList's killer feature — justifies higher tiers).
+- [ ] Early-access invites: single + bulk invite (up to 1,000 filtered), personal expiring codes, claim via cockpit or API, per-batch redemption analytics (justifies higher tiers).
 - [ ] Updates feed per waitlist (mini changelog + RSS, surfaces on cockpit, 1-click to email draft) to keep lists warm pre-launch.
-- [ ] Import that preserves the referral graph (auto-map GetWaitlist/Waitlister/LaunchList CSVs: codes, referrers, points, join dates) + always-free CSV export — lowers switching cost to us.
+- [ ] Import that preserves the referral graph (auto-map imports from other waitlist tools: codes, referrers, points, join dates) + always-free CSV export — lowers switching cost to us.
 - [ ] Custom domains (1 DNS record, auto SSL) + hosted `*.waitlyze` subdomain + short share URLs.
 
 ## 11. Phase 9 — Trust, hardening & scale (last, protects everything above)
@@ -124,7 +120,7 @@
 - [ ] Privacy/GDPR: data-export + erasure per subscriber, retention controls, DPA-friendly posture.
 - [ ] Roles & teams (owner/admin/viewer), audit log for destructive actions.
 - [ ] Billing + plan limits wired to real usage (contacts held, emails sent, history windows, domains, seats) — overflow held, never silently deleted.
-- [ ] Docs + API reference + `/for-agents` guide (MCP-style) so AI tools and developers integrate without support load.
+- [ ] Docs + API reference + machine-readable integration guide so AI tools and developers integrate without support load.
 
 ## 12. Why this order (don't reorder without a reason)
 
