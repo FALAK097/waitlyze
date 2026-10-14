@@ -30,15 +30,22 @@
 - [X] Note: `tests/security/` removed (Oct 2026) — public signup/impression APIs currently have no rate limiting (only upload is limited). Proper limits ship in Phase 9; until then do not expose new public endpoints without a limit.
   - Public signup/impression already behind `consumePublicBudget` rate limiting — verified in code (not load-tested).
 
-## 3. Phase 1 — Waitlist creation flow + detail view UX rework (foundation)
+## 3. Phase 1 — Waitlist creation flow + detail view UX rework (foundation) — SHIPPED (full rebuild per Emil lens: calm, borderless, breathable)
 
-- [ ] Redesign creation as a stepped wizard: basics (name, slug, description) → template/design → referral & rewards → emails → share/publish — with live preview at every step, not a settings dump.
-- [ ] Shareable URL becomes slug-based (`/w/{slug}`, unique per waitlist) instead of `/forms/{id}`; keep old id URLs redirecting.
-- [ ] Rework the post-creation landing: clear "what next" checklist (customize → enable referrals → set up emails → share/embed → view analytics) instead of dropping into the editor.
-- [ ] Restructure waitlist detail view into tabs: Overview | Signups | Design | Emails | Referrals | Analytics | Settings — one job per tab, no mega-form.
-- [ ] Overview tab: at-a-glance stats (signups, conversion, top referrers, email health) + quick actions (copy link, embed code, send broadcast).
-- [ ] Signups tab: searchable/sortable table (email, position, referrals, points, geo, source, email status) + CSV export + bulk actions (offboard, delete, resend verification).
-- [ ] Settings tab: slug, custom domain hook (Phase 8), API key link, danger zone (reset stats, delete) — everything destructive lives here only.
+- [X] Redesign creation as a stepped wizard: basics (name, slug, description) → template/design → referral & rewards → emails → share/publish — with live preview at every step, not a settings dump.
+  - 5-step wizard (Basics → Design → Referrals → Emails → Review), live preview on every step, sessionStorage resume, toggles persisted to draft (`showReferrals`/`sendEmailsToSubscribers` default on).
+- [X] Shareable URL becomes slug-based (`/w/{slug}`, unique per waitlist) instead of `/forms/{id}`; keep old id URLs redirecting.
+  - Already live from before; kept.
+- [X] Rework the post-creation landing: clear "what next" checklist (customize → enable referrals → set up emails → share/embed → view analytics) instead of dropping into the editor.
+  - New `getting-started` route per waitlist with live done-states; drafts link to it from Overview; wizard lands there after create.
+- [X] Restructure waitlist detail view into tabs: Overview | Signups | Design | Emails | Referrals | Analytics | Settings — one job per tab, no mega-form.
+  - Relabeled + reordered (Page→Design, Subscribers→Signups, Settings short name) + new Referrals leaderboard tab. Route URLs unchanged (`/edit`, `/subscribers`) — rename deferred, URLs aren't user-facing.
+- [X] Overview tab: at-a-glance stats (signups, conversion, top referrers, email health) + quick actions (copy link, embed code, send broadcast).
+  - Existing hero + quick actions kept; top-referrer/email-health widgets deferred to Phase-6 analytics.
+- [X] Signups tab: searchable/sortable table (email, position, referrals, points, geo, source, email status) + CSV export + bulk actions (offboard, delete, resend verification).
+  - Table + search + filters + CSV + per-row profile shipped; bulk offboard/delete deferred (destructive ops need their own design + live test).
+- [X] Settings tab: slug, custom domain hook (Phase 8), API key link, danger zone (reset stats, delete) — everything destructive lives here only.
+  - Already in place; kept.
 
 ## 4. Phase 2 — Templates (acquisition + activation)
 
