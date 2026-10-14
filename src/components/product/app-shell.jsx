@@ -2,14 +2,13 @@
 
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Add01Icon, ArrowDown01Icon, ArrowUpRight01Icon, Logout01Icon, Tick01Icon } from "@hugeicons/core-free-icons";
-import { Fragment, useActionState, useState } from "react";
+import { useActionState, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogClose, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
-import { Breadcrumb, BreadcrumbList, BreadcrumbItem, BreadcrumbLink, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { createWorkspace, selectWorkspace } from "@/app/actions/settings";
@@ -77,21 +76,6 @@ function WorkspaceSwitcher({ workspaces, selected }) {
   </div>;
 }
 
-function Breadcrumbs({ pathname, waitlists }) {
-  const segments = pathname.split("/").filter(Boolean);
-  if (segments[0] === "settings") return null;
-  const crumbs = [{ label: "Waitlists", href: "/waitlists" }];
-  if (segments[1]) {
-    if (segments[1] === "new") crumbs.push({ label: "Create waitlist" });
-    else {
-      crumbs.push({ label: waitlists.find(item => item.id === segments[1])?.name || "Waitlist", href: `/waitlists/${segments[1]}` });
-      if (segments[2]) crumbs.push({ label: ({ subscribers: "Subscribers", analytics: "Analytics", edit: "Editor", emails: "Emails", settings: "Settings", automations: "Automations", broadcasts: "Broadcasts" })[segments[2]] || "Overview" });
-    }
-  }
-  if (crumbs.length < 2) return null;
-  return <div className="app-breadcrumbs"><Breadcrumb><BreadcrumbList>{crumbs.map((crumb, index) => <Fragment key={`${crumb.label}-${index}`}>{index > 0 && <BreadcrumbSeparator />}<BreadcrumbItem>{index === crumbs.length - 1 ? <BreadcrumbPage>{crumb.label}</BreadcrumbPage> : <BreadcrumbLink render={<Link prefetch={false} href={crumb.href} />}>{crumb.label}</BreadcrumbLink>}</BreadcrumbItem></Fragment>)}</BreadcrumbList></Breadcrumb></div>;
-}
-
 function AccountMenu({ user, avatar }) {
   const router = useRouter();
   const [pending, setPending] = useState(false);
@@ -109,7 +93,7 @@ function AccountMenu({ user, avatar }) {
   </DropdownMenuContent></DropdownMenu></div>;
 }
 
-export function AppShell({ children, user, avatar, waitlists, workspaces, selectedWorkspace }) {
+export function AppShell({ children, user, avatar, workspaces, selectedWorkspace }) {
   const pathname = usePathname();
   return <div className="app-frame">
     <a className="product-skip-link" href="#product-content">Skip to content</a>
@@ -123,7 +107,6 @@ export function AppShell({ children, user, avatar, waitlists, workspaces, select
       </nav>
       <AccountMenu user={user} avatar={avatar} />
     </div></header>
-    <div className="app-content-header"><Breadcrumbs pathname={pathname} waitlists={waitlists} /></div>
     <main id="product-content" tabIndex={-1} className="product-main">{children}</main>
   </div>;
 }

@@ -176,6 +176,14 @@ model SignUp {
   ipAddress       String?
   latitude        String?
   longitude       String?
+  referrer        String?
+  landingPage     String?
+  utmSource       String?
+  utmMedium       String?
+  utmCampaign     String?
+  utmTerm         String?
+  utmContent      String?
+  points          Int         @default(0)
   waitListId      String
   impressionId    String?
   rank            Int?
@@ -438,12 +446,20 @@ model Impression {
   ipAddress    String?
   latitude     String?
   longitude    String?
+  referrer     String?
+  landingPage  String?
+  utmSource    String?
+  utmMedium    String?
+  utmCampaign  String?
+  utmTerm      String?
+  utmContent   String?
   waitListId   String
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
   waitList     WaitList @relation(fields: [waitListId], references: [id], onDelete: Cascade)
   signUps      SignUp[]
 
+  @@unique([waitListId, uniqueUserId])
   @@map("impressions")
 }
 

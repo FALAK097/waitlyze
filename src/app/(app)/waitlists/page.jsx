@@ -7,7 +7,7 @@ import { Suspense } from "react";
 import prisma from "@/lib/prisma";
 import { currentWorkspace } from "@/lib/workspaces/current";
 import { campaignScope } from "@/lib/workspaces/service.mjs";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 import { ProductContentSkeleton } from "@/components/product/content-skeleton";
 import { WaitlistRowActions } from "@/components/product/waitlist-row-actions";
 import styles from "@/components/product/waitlist-experience.module.css";
@@ -57,8 +57,8 @@ function WaitlistsTable({ waitlists, query, status, sort }) {
                   {waitlist.description && <p className={styles.rowDescription}>{waitlist.description}</p>}
                 </TableHead>
                 <TableCell>{visitors.toLocaleString()}</TableCell>
-                <TableCell>{signups.toLocaleString()}</TableCell>
-                <TableCell>{conversion}</TableCell>
+                <TableCell><Link prefetch={false} href={`/waitlists/${waitlist.id}/subscribers`} aria-label={`View subscribers of ${waitlist.name || "Untitled waitlist"}`}>{signups.toLocaleString()}</Link></TableCell>
+                <TableCell><Link prefetch={false} href={`/waitlists/${waitlist.id}/analytics`} aria-label={`View analytics of ${waitlist.name || "Untitled waitlist"}`}>{conversion}</Link></TableCell>
                 <TableCell><time dateTime={waitlist.updatedAt.toISOString()}>{WAITLIST_DATE_FORMAT.format(waitlist.updatedAt)}</time></TableCell>
                 <TableCell><WaitlistRowActions id={waitlist.id} name={waitlist.name} /></TableCell>
               </TableRow>
@@ -137,7 +137,7 @@ export default async function WaitlistsPage({ searchParams }) {
       <div className={styles.listToolbar}>
         <StatusTabs query={query} status={status} sort={sort} />
         <WaitlistSearch query={query} status={status} sort={sort} />
-        <Button render={<Link prefetch={false} href="/waitlists/new" />}><HugeiconsIcon icon={Add01Icon} aria-hidden="true" />New waitlist</Button>
+        <Link prefetch={false} href="/waitlists/new" className={buttonVariants()}><HugeiconsIcon icon={Add01Icon} aria-hidden="true" />New waitlist</Link>
       </div>
       <Suspense fallback={<ProductContentSkeleton label="Loading waitlists" variant="table" rows={5} />}>
         <WaitlistsResults userId={user.id} workspaceId={workspace.id} query={query} status={status} sort={sort} requestedPage={requestedPage} />

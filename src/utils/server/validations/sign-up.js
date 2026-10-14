@@ -1,4 +1,5 @@
 import prisma from "@/lib/prisma";
+import { validateSignupEmail } from "@/utils/server/email-validation.mjs";
 
 const checkIfEmailExists = async (email, waitListId, uniqueUserId) => {
   const normalizedEmail = typeof email === "string" ? email.trim().toLowerCase() : "";
@@ -32,6 +33,10 @@ const checkIfRequestIsValid = async (body) => {
         status: 400,
       }
     );
+  }
+  const emailError = validateSignupEmail(body.email);
+  if (emailError) {
+    return Response.json({ message: emailError }, { status: 400 });
   }
   if (!body.waitListId) {
     return Response.json(
