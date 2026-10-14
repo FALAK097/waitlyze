@@ -50,7 +50,7 @@ export default async function OverviewPage({ params }) {
         <p>{lifecycle.detail}</p>
         <dl className={styles.overviewFacts}>
           <div><dt>Status</dt><dd><span className={styles.status} data-status={waitlist.status}>{({ DRAFT: "Draft", PUBLISHED: "Published", PAUSED: "Paused" })[waitlist.status]}</span></dd></div>
-          <div><dt>Subscribers</dt><dd>{waitlist._count.signUps.toLocaleString()}</dd></div>
+          <div><dt>Subscribers</dt><dd><Link prefetch={false} href={subscriberHref}>{waitlist._count.signUps.toLocaleString()}</Link></dd></div>
           <div><dt>Created</dt><dd><time dateTime={waitlist.createdAt.toISOString()}>{dateFormat.format(waitlist.createdAt)}</time></dd></div>
           <div><dt>Last updated</dt><dd><time dateTime={waitlist.updatedAt.toISOString()}>{dateFormat.format(waitlist.updatedAt)}</time></dd></div>
         </dl>
