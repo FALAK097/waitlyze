@@ -57,6 +57,41 @@ export function SettingsTab({ formSettings, updateSetting, applyPreset }) {
 					<TabsTrigger value="social">Social</TabsTrigger>
 				</TabsList>
 				<TabsContent value="general" className="py-4 space-y-4">
+					<div>
+						<Label htmlFor="waitlistName">Waitlist name</Label>
+						<Input
+							id="waitlistName"
+							value={formSettings.name || ""}
+							maxLength={120}
+							onChange={(e) => updateSetting("name", e.target.value)}
+						/>
+					</div>
+					<div>
+						<Label htmlFor="waitlistSlug">Page address</Label>
+						<div className="flex items-center gap-1">
+							<span aria-hidden="true" className="text-sm text-muted-foreground">/w/</span>
+							<Input
+								id="waitlistSlug"
+								value={formSettings.publicSlug || ""}
+								minLength={3}
+								maxLength={64}
+								pattern="[a-z0-9]+(-[a-z0-9]+)*"
+								autoCapitalize="none"
+								spellCheck={false}
+								autoComplete="off"
+								onChange={(e) => updateSetting("publicSlug", e.target.value)}
+							/>
+						</div>
+					</div>
+					<div>
+						<Label htmlFor="waitlistDescription">Description <span className="font-normal text-muted-foreground">Optional</span></Label>
+						<Input
+							id="waitlistDescription"
+							value={formSettings.description || ""}
+							maxLength={600}
+							onChange={(e) => updateSetting("description", e.target.value)}
+						/>
+					</div>
 					<div className="flex items-center justify-between">
 						<Label htmlFor="buttonColor">Button color</Label>
 						<ColorPicker

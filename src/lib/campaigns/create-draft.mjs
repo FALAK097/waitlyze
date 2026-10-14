@@ -6,7 +6,7 @@ export const draftInputSchema = z.strictObject({
   name: z.string().trim().min(1, "Give your waitlist a name.").max(120),
   description: z.string().trim().max(600).default(""),
   publicSlug: z.string().min(3).max(64).regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Use lowercase letters, numbers and single hyphens."),
-  templateId: z.enum(["saas", "mobile", "ai", "community", "consumer", "newsletter", "blank"]),
+  templateId: z.enum(["saas", "mobile", "ai", "community", "consumer", "newsletter", "blank"]).optional(),
   showReferrals: z.boolean().default(true),
   sendEmailsToSubscribers: z.boolean().default(true),
   creationKey: z.uuid(),
@@ -30,7 +30,8 @@ function sameRequest(record, input, actorId) {
 // A serializable transaction rechecks membership on every retry, including idempotent retries.
 export async function createDraft(db, actorId, workspaceId, rawInput) {
   const input = draftInputSchema.parse(rawInput);
-  const snapshot = snapshotTemplate(input.templateId);
+  // No template: a blank legacy-builder draft with no snapshot.
+  const snapshot = input.templateId ? snapshotTemplate(input.templateId) : null;
   for (let attempt = 0; attempt < 4; attempt++) {
     try {
       return await db.$transaction(async (tx) => {

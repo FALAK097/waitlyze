@@ -30,22 +30,14 @@
 - [X] Note: `tests/security/` removed (Oct 2026) — public signup/impression APIs currently have no rate limiting (only upload is limited). Proper limits ship in Phase 9; until then do not expose new public endpoints without a limit.
   - Public signup/impression already behind `consumePublicBudget` rate limiting — verified in code (not load-tested).
 
-## 3. Phase 1 — Waitlist creation flow + detail view UX rework (foundation) — SHIPPED (full rebuild per Emil lens: calm, borderless, breathable)
+## 3. Phase 1 — Waitlist creation flow + detail view UX rework (foundation) — SHIPPED (builder-first rebuild, calm/breathable)
 
-- [X] Redesign creation as a stepped wizard: basics (name, slug, description) → template/design → referral & rewards → emails → share/publish — with live preview at every step, not a settings dump.
-  - 5-step wizard (Basics → Design → Referrals → Emails → Review), live preview on every step, sessionStorage resume, toggles persisted to draft (`showReferrals`/`sendEmailsToSubscribers` default on).
-- [X] Shareable URL becomes slug-based (`/w/{slug}`, unique per waitlist) instead of `/forms/{id}`; keep old id URLs redirecting.
-  - Already live from before; kept.
-- [X] Rework the post-creation landing: clear "what next" checklist (customize → enable referrals → set up emails → share/embed → view analytics) instead of dropping into the editor.
-  - New `getting-started` route per waitlist with live done-states; drafts link to it from Overview; wizard lands there after create.
-- [X] Restructure waitlist detail view into tabs: Overview | Signups | Design | Emails | Referrals | Analytics | Settings — one job per tab, no mega-form.
-  - Relabeled + reordered (Page→Design, Subscribers→Signups, Settings short name) + new Referrals leaderboard tab. Route URLs unchanged (`/edit`, `/subscribers`) — rename deferred, URLs aren't user-facing.
-- [X] Overview tab: at-a-glance stats (signups, conversion, top referrers, email health) + quick actions (copy link, embed code, send broadcast).
-  - Existing hero + quick actions kept; top-referrer/email-health widgets deferred to Phase-6 analytics.
-- [X] Signups tab: searchable/sortable table (email, position, referrals, points, geo, source, email status) + CSV export + bulk actions (offboard, delete, resend verification).
-  - Table + search + filters + CSV + per-row profile shipped; bulk offboard/delete deferred (destructive ops need their own design + live test).
-- [X] Settings tab: slug, custom domain hook (Phase 8), API key link, danger zone (reset stats, delete) — everything destructive lives here only.
-  - Already in place; kept.
+- [X] Kill the creation wizard: New waitlist instantly creates a private draft (`Untitled waitlist` + unique `untitled-xxxxxx` slug, no snapshot) and drops straight into the Builder.
+- [X] Builder tab (first): legacy full editor — center live preview, right-side option tabs (General/Input/Presets/Social: colors, bg, fonts, referral toggle, share platforms, OG), name/slug/description editing, Save, status-aware Publish/Pause (revision-free legacy path), Embed modal + slug share link.
+- [X] Public loop: `/w/{slug}` serves snapshot lists as before, snapshot-less published lists via the classic form + referral loop (`/forms/{id}` unchanged).
+- [X] Detail tabs cut to five: Builder | Signups | Emails | Analytics | Settings (Overview → redirects to Builder; Referrals folded into Signups; route URLs unchanged).
+- [X] Signups v2: Email | Country | Position (referrals on) | Joined-ago | Status (emails on); row click opens a right sheet (details + referral link + copy); Import sheet (template CSV, validation, counts) + Export sheet (column picker); import creates unverified rows, no emails.
+- [ ] Bulk offboard/delete (deferred — destructive ops need their own design + live test).
 
 ## 4. Phase 2 — Templates (acquisition + activation)
 

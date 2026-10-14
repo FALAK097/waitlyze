@@ -57,8 +57,15 @@ export default async function WaitListsEditPage(props) {
 			message: "Failed to save wait list",
 		};
 
+		const rawSlug = typeof waitList.publicSlug === "string" ? waitList.publicSlug.trim() : "";
+		if (rawSlug && !/^[a-z0-9]+(-[a-z0-9]+)*$/.test(rawSlug)) {
+			response.message = "Page address must use lowercase letters, numbers and single hyphens.";
+			return response;
+		}
 		const data = {
-			buttonColor: waitList.buttonColor,
+			name: typeof waitList.name === "string" && waitList.name.trim() ? waitList.name.trim().slice(0, 120) : null,
+			description: typeof waitList.description === "string" && waitList.description.trim() ? waitList.description.trim().slice(0, 600) : null,
+			...(rawSlug ? { publicSlug: rawSlug } : {}),
 			buttonBorder: waitList.buttonBorder,
 			buttonTextColor: waitList.buttonTextColor,
 			mainBgColor: waitList.enableMainBgColor ? waitList.mainBgColor : null,
@@ -119,6 +126,7 @@ export default async function WaitListsEditPage(props) {
 				message: "Wait list saved successfully",
 			};
 		} catch (error) {
+			if (error?.code === "P2002") response.message = "That page address is taken. Choose another.";
 			console.error(error);
 		}
 

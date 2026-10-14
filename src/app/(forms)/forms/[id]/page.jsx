@@ -5,13 +5,9 @@ import { nanoid } from "nanoid";
 import { notFound, redirect } from "next/navigation";
 import { cache } from "react";
 import { sendSignupEmail } from "@/app/actions/emails";
+import { getLegacyPublicSignUpsCount, getLegacyPublicWaitList } from "@/lib/campaigns/legacy-public.mjs";
 
-const getWaitList = cache(async (id) => {
-	return await prisma.waitList.findUnique({
-		where: { id, status: "PUBLISHED" },
-    select: { id: true, name: true, description: true, mainBgColor: true, showReferrals: true, successMessage: true, shareOnEmail: true, shareOnFacebook: true, shareOnInstagram: true, shareOnLinkedin: true, shareOnReddit: true, shareOnTwitter: true, shareOnWhatsapp: true, showBranding: true, badgeColor: true, badgeText: true, badgeTextColor: true, bgColor: true, borderRadius: true, borderWidth: true, buttonBorder: true, buttonColor: true, buttonText: true, buttonTextColor: true, enableBgColor: true, fontWeight: true, inputBorder: true, inputColor: true, inputTextColor: true, logoUrl: true, placeholderText: true, showBadge: true, showLogo: true, showSocialProof: true },
-	});
-});
+const getWaitList = cache(async (id) => getLegacyPublicWaitList(prisma, { id }));
 
 const getWaitListMetadata = cache(async (id) => {
 	return await prisma.waitList.findUnique({
@@ -26,14 +22,7 @@ const getWaitListMetadata = cache(async (id) => {
 	});
 });
 
-const getSignUpsCount = cache(async (waitListId) => {
-	return await prisma.signUp.count({
-		where: {
-			waitListId,
-			waitList: { status: "PUBLISHED" },
-		},
-	});
-});
+const getSignUpsCount = cache(async (waitListId) => getLegacyPublicSignUpsCount(prisma, waitListId));
 
 export async function generateMetadata(props) {
 	const params = await props.params;

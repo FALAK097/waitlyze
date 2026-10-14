@@ -2,7 +2,7 @@
 
 import { sessionActor } from "@/lib/workspaces/authorize";
 import { AccessError } from "@/lib/workspaces/service.mjs";
-import { pauseCampaign, PublicationConflict, publishCampaign, rollbackCampaign } from "@/lib/campaigns/publication.mjs";
+import { pauseCampaign, pauseLegacyCampaign, PublicationConflict, publishCampaign, publishLegacyCampaign, rollbackCampaign } from "@/lib/campaigns/publication.mjs";
 import { AUDIT_ACTIONS, recordWaitlistAuditEvent } from "@/lib/workspaces/audit.mjs";
 import prisma from "@/lib/prisma";
 
@@ -29,6 +29,20 @@ export async function publishWaitlist(id, revision) {
 export async function pauseWaitlist(id) {
   return action(async (userId) => {
     const result = await pauseCampaign(prisma, userId, undefined, id);
+    await recordWaitlistAuditEvent(prisma, { userId, waitListId: id, action: AUDIT_ACTIONS.WAITLIST_PAUSED, detail: "Signups paused" });
+    return result;
+  }, "Waitlist pause failed");
+}
+export async function publishLegacyWaitlist(id) {
+  return action(async (userId) => {
+    const result = await publishLegacyCampaign(prisma, userId, undefined, id);
+    await recordWaitlistAuditEvent(prisma, { userId, waitListId: id, action: AUDIT_ACTIONS.WAITLIST_PUBLISHED, detail: "Page published" });
+    return result;
+  }, "Waitlist publish failed");
+}
+export async function pauseLegacyWaitlist(id) {
+  return action(async (userId) => {
+    const result = await pauseLegacyCampaign(prisma, userId, undefined, id);
     await recordWaitlistAuditEvent(prisma, { userId, waitListId: id, action: AUDIT_ACTIONS.WAITLIST_PAUSED, detail: "Signups paused" });
     return result;
   }, "Waitlist pause failed");

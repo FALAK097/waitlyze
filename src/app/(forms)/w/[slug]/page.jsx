@@ -1,9 +1,9 @@
 import { cache } from "react";
 import prisma from "@/lib/prisma";
 import { templateSnapshotSchema } from "@/lib/templates/catalog.mjs";
-import { notFound } from "next/navigation";
 import { SignupForm } from "./signup-form";
 import { ImpressionTracker } from "./impression-tracker";
+import { LegacyPublicWaitlist } from "./legacy-public";
 import { WaitlistPageContent } from "@/components/product/waitlist-page-content";
 
 const publishedPage = cache(async function publishedPage(slug) {
@@ -23,7 +23,15 @@ const publishedPage = cache(async function publishedPage(slug) {
 export async function generateMetadata({ params }) {
   const { slug } = await params;
   const page = await publishedPage(slug);
-  if (!page || page.paused) return { title: "Waitlist unavailable", robots: { index: false, follow: false } };
+  if (!page || page.paused) {
+    const legacy = await prisma.waitList.findFirst({ where: { publicSlug: slug, status: "PUBLISHED" }, select: { name: true, description: true, ogTitle: true, ogDescription: true, ogImage: true, templateSnapshot: true } });
+    if (legacy && !legacy.templateSnapshot) {
+      const title = legacy.ogTitle || legacy.name || "Waitlist";
+      const description = legacy.ogDescription || legacy.description || "";
+      return { title, description, alternates: { canonical: `/w/${encodeURIComponent(slug)}` }, openGraph: { title, description, ...(legacy.ogImage ? { images: [{ url: legacy.ogImage }] } : {}) } };
+    }
+    return { title: "Waitlist unavailable", robots: { index: false, follow: false } };
+  }
   const hero = page.snapshot.sections[0];
   return { title: page.waitList.name || hero.heading, description: hero.body, alternates: { canonical: `/w/${encodeURIComponent(slug)}` }, openGraph: { title: hero.heading, description: hero.body } };
 }
@@ -31,7 +39,8 @@ export async function generateMetadata({ params }) {
 export default async function PublicWaitlistPage({ params }) {
   const { slug } = await params;
   const page = await publishedPage(slug);
-  if (!page) notFound();
+  // Snapshot-less (legacy builder) pages render the classic form loop.
+  if (!page) return <LegacyPublicWaitlist slug={slug} />;
   if (page.paused) return <main className="product-ui public-launch public-launch-paused"><section><p className="public-launch-eyebrow">{page.waitList.name || "Waitlist"}</p><h1>This waitlist is paused</h1><p>Signups aren’t open right now. Please check back later.</p></section></main>;
   return <main className="product-ui"><ImpressionTracker waitListId={page.waitList.id} /><WaitlistPageContent
     snapshot={page.snapshot}
