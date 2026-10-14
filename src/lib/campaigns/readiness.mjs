@@ -1,6 +1,6 @@
 import { sectionSchema, templateFormSchema, templateSnapshotSchema } from "../templates/catalog.mjs";
 
-const editPage = (id) => `/waitlists/${id}/edit`;
+const editPage = (id) => `/waitlists/${id}`;
 const waitlistSettings = (id) => `/waitlists/${id}/settings#custom-domain-title`;
 
 export function assessWaitlistReadiness(waitlist) {

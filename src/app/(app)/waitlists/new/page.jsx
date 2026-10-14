@@ -30,5 +30,5 @@ export default async function NewWaitlistPage() {
     name: "Untitled waitlist", description: "", publicSlug: slug, creationKey: randomUUID(),
   });
   await recordAuditEvent(prisma, { workspaceId: workspace.id, userId: user.id, action: AUDIT_ACTIONS.WAITLIST_CREATED, resourceType: "waitlist", resourceId: draft.id, resourceName: "Untitled waitlist", detail: "Created as a private draft" });
-  redirect(`/waitlists/${draft.id}/edit`);
+  redirect(`/waitlists/${draft.id}`);
 }
