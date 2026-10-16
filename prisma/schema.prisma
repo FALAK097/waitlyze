@@ -206,6 +206,7 @@ model SignUp {
   @@unique([waitListId, emailNormalized])
   @@index([waitListId, uniqueUserId])
   @@index([waitListId, createdAt, id])
+  @@index([ipAddress, createdAt])
   @@map("sign_ups")
 }
 
