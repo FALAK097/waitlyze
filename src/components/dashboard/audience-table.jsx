@@ -232,6 +232,11 @@ export function AudienceTable({ waitlist, initialReviews = [], initialReviewsFai
       meta: { className: "hidden px-4 py-3 sm:table-cell" },
       cell: ({ getValue }) => <span className="text-[var(--product-text-secondary)]">{getValue() == null ? "—" : `#${getValue()}`}</span>,
     })] : []),
+    columnHelper.accessor("points", {
+      header: "Points",
+      meta: { className: "hidden px-4 py-3 text-right tabular-nums sm:table-cell" },
+      cell: ({ getValue }) => <span className="text-[var(--product-text-secondary)] tabular-nums">{(getValue() ?? 0).toLocaleString()}</span>,
+    }),
     columnHelper.accessor("createdAt", {
       header: () => (
         <Button type="button" variant="ghost" size="sm" className="-ml-2 gap-1 px-2 font-medium text-[var(--product-text-secondary)]" onClick={toggleSort} aria-label={sort === "joined_asc" ? "Sort by newest first" : "Sort by oldest first"}>
@@ -326,7 +331,7 @@ export function AudienceTable({ waitlist, initialReviews = [], initialReviewsFai
               ))}
               {!loading && !criteriaChanging && !error && rows.length === 0 && <TableRow><TableCell colSpan={columns.length} className="px-4 py-16 text-center"><HugeiconsIcon icon={UserGroupIcon} className="mx-auto mb-3 text-[var(--product-text-secondary)]" aria-hidden="true" /><p className="font-medium">{emptyTitle}</p><p className="mt-1 text-[var(--product-text-secondary)]">{emptyDescription}</p>{search || status !== "all" ? <Button className="mt-4" variant="outline" onClick={() => { setQuery(""); setStatus("all"); }}>Clear filters</Button> : <Link prefetch={false} className={`${buttonVariants({ variant: "outline" })} mt-4`} href={`/waitlists/${encodeURIComponent(waitlist.id)}`}>Open page builder</Link>}</TableCell></TableRow>}
               {isUpdating && rows.length === 0 && <>
-                {[0, 1, 2, 3, 4].map((row) => <TableRow className="product-subscriber-skeleton-row" aria-hidden="true" key={row}><TableCell><i /></TableCell><TableCell><i /></TableCell><TableCell className="hidden sm:table-cell"><i /></TableCell><TableCell className="hidden sm:table-cell"><i /></TableCell></TableRow>)}
+                {[0, 1, 2, 3, 4].map((row) => <TableRow className="product-subscriber-skeleton-row" aria-hidden="true" key={row}><TableCell><i /></TableCell><TableCell><i /></TableCell><TableCell className="hidden sm:table-cell"><i /></TableCell><TableCell className="hidden sm:table-cell"><i /></TableCell><TableCell className="hidden sm:table-cell"><i /></TableCell></TableRow>)}
               </>}
             </TableBody>
           </Table>
@@ -353,6 +358,7 @@ export function AudienceTable({ waitlist, initialReviews = [], initialReviewsFai
               <div className="grid grid-cols-[104px_1fr] gap-3"><dt className="text-[var(--product-text-secondary)]">Location</dt><dd>{locationLabel(profile.city, profile.country) === "—" ? "Not available" : locationLabel(profile.city, profile.country)}</dd></div>
               <div className="grid grid-cols-[104px_1fr] gap-3"><dt className="text-[var(--product-text-secondary)]">Device</dt><dd title={profile.device || undefined}>{deviceLabel(profile.deviceType, profile.device)}</dd></div>
               {flags.showReferrals && <div className="grid grid-cols-[104px_1fr] gap-3"><dt className="text-[var(--product-text-secondary)]">Referrals</dt><dd className="tabular-nums">{profile.referralCount}</dd></div>}
+              <div className="grid grid-cols-[104px_1fr] gap-3"><dt className="text-[var(--product-text-secondary)]">Points</dt><dd className="tabular-nums">{(profile.points ?? 0).toLocaleString()}</dd></div>
               <div className="grid grid-cols-[104px_1fr] gap-3"><dt className="text-[var(--product-text-secondary)]">Source</dt><dd>{profile.utmSource || "Direct"}</dd></div>
               {profileLink && <div className="grid grid-cols-[104px_1fr] items-center gap-3"><dt className="text-[var(--product-text-secondary)]">Referral link</dt><dd className="flex min-w-0 items-center gap-1.5"><span className="min-w-0 flex-1 truncate" title={profileLink}>{profileLink}</span><Button variant="ghost" size="icon-sm" className="shrink-0" aria-label="Copy referral link" onClick={() => copyText(profileLink, "sheet")}><HugeiconsIcon icon={copiedId === "sheet" ? Tick01Icon : CopyIcon} aria-hidden="true" /></Button></dd></div>}
             </dl>

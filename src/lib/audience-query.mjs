@@ -41,6 +41,7 @@ export const EXPORT_COLUMNS = [
   { key: "country", label: "Country" },
   { key: "city", label: "City" },
   { key: "device", label: "Device" },
+  { key: "points", label: "Points" },
   { key: "referrals", label: "Referrals" },
   { key: "position", label: "Position" },
 ];
@@ -67,6 +68,7 @@ export function buildExportRow(subscriber, columns, extra = {}) {
     country: subscriber.country,
     city: subscriber.city,
     device: subscriber.device,
+    points: subscriber.points ?? 0,
     referrals: extra.referralCount ?? 0,
     position: extra.position ?? "",
   };

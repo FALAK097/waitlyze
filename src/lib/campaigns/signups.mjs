@@ -1,10 +1,12 @@
 import { createHash, randomBytes } from "node:crypto";
 import { getCampaignPosition } from "./referral-position.mjs";
+import { emailLookupForms, normalizeSignupEmail } from "../normalize-email.mjs";
 import { createUnsubscribeToken, hashUnsubscribeToken } from "../email/unsubscribe.mjs";
 import { MARKETING_CONSENT_COPY } from "./marketing-consent.mjs";
 import { enqueueWebhookEvent } from "../webhooks/delivery.mjs";
+import { REFERRAL_CREDIT_STATUSES, REFERRAL_POINTS, SIGNUP_POINTS, awardPoints, isFarmSuspect, referralEventKey, signupEventKey } from "../referrals/points.mjs";
 
-const normalizeEmail = (email) => email.trim().toLowerCase();
+const normalizeEmail = normalizeSignupEmail;
 const tokenDigest = (token) => createHash("sha256").update(token).digest("hex");
 
 export class DuplicateSignupError extends Error {
@@ -49,8 +51,8 @@ export async function createCampaignSignup(db, input, referralId, { now = new Da
       `;
       if (published.length === 0) throw new InvalidCampaignError();
 
-      const existing = await tx.signUp.findUnique({
-        where: { waitListId_emailNormalized: { waitListId: input.waitListId, emailNormalized } },
+      const existing = await tx.signUp.findFirst({
+        where: { waitListId: input.waitListId, emailNormalized: { in: emailLookupForms(input.email) } },
         include: { referrals: true, referredBy: true },
       });
       if (existing) {
@@ -136,8 +138,8 @@ export async function createCampaignSignup(db, input, referralId, { now = new Da
     });
   } catch (error) {
     if (error?.code !== "P2002") throw error;
-    const committed = await db.signUp.findUnique({
-      where: { waitListId_emailNormalized: { waitListId: input.waitListId, emailNormalized } },
+    const committed = await db.signUp.findFirst({
+      where: { waitListId: input.waitListId, emailNormalized: { in: emailLookupForms(input.email) } },
       include: { referrals: true, referredBy: true },
     });
     if (committed?.uniqueUserId === input.uniqueUserId) signUp = committed;
@@ -164,8 +166,15 @@ export async function verifyCampaignSignup(db, token, { now = new Date() } = {})
       });
       if (claimed.count !== 1) return false;
       await tx.signUp.updateMany({ where: { id: verification.signUpId, verifiedAt: null }, data: { verifiedAt: now } });
-      const signup = await tx.signUp.findUnique({ where: { id: verification.signUpId }, select: { id: true, waitListId: true } });
+      const signup = await tx.signUp.findUnique({ where: { id: verification.signUpId }, select: { id: true, waitListId: true, ipAddress: true } });
       await enqueueWebhookEvent(tx, { waitListId: signup.waitListId, eventType: "signup.verified", signupId: signup.id, now });
+      if (!(await isFarmSuspect(tx, signup.ipAddress, now))) {
+        await awardPoints(tx, { waitListId: signup.waitListId, signUpId: signup.id, kind: "SIGNUP_VERIFIED", points: SIGNUP_POINTS, eventKey: signupEventKey(signup.id) });
+        const referral = await tx.referral.findUnique({ where: { signUpId: signup.id }, select: { id: true, referredById: true, reviewStatus: true } });
+        if (referral?.referredById && REFERRAL_CREDIT_STATUSES.includes(referral.reviewStatus)) {
+          await awardPoints(tx, { waitListId: signup.waitListId, signUpId: referral.referredById, kind: "REFERRAL_CREDIT", points: REFERRAL_POINTS, eventKey: referralEventKey(referral.id) });
+        }
+      }
       await tx.outboxEvent.create({
         data: {
           eventKey: `automation.trigger:signup-verified:${signup.id}`,

@@ -4,6 +4,7 @@ import Papa from "papaparse";
 import prisma from "@/lib/prisma";
 import { requireCampaign } from "@/lib/workspaces/authorize";
 import { AccessError } from "@/lib/workspaces/service.mjs";
+import { emailLookupForms, normalizeSignupEmail } from "@/lib/normalize-email.mjs";
 import { validateSignupEmail } from "@/utils/server/email-validation.mjs";
 
 const MAX_ROWS = 5000;
@@ -74,7 +75,7 @@ export async function importSignups(waitListId, formData) {
         invalid += 1;
         continue;
       }
-      const normalized = email.toLowerCase();
+      const normalized = normalizeSignupEmail(email);
       if (seen.has(normalized)) continue;
       seen.add(normalized);
       const code = cell(row, codeKey);
@@ -94,11 +95,11 @@ export async function importSignups(waitListId, formData) {
     if (candidates.length === 0) return { ok: false, message: invalid > 0 ? "Every row failed validation. Check the emails and try again." : "No new emails in that file." };
 
     const existing = await prisma.signUp.findMany({
-      where: { waitListId, waitList: scope, emailNormalized: { in: candidates.map((row) => row.emailNormalized) } },
+      where: { waitListId, waitList: scope, emailNormalized: { in: [...new Set(candidates.flatMap((row) => emailLookupForms(row.email)))] } },
       select: { emailNormalized: true },
     });
     const known = new Set(existing.map((row) => row.emailNormalized));
-    const fresh = candidates.filter((row) => !known.has(row.emailNormalized));
+    const fresh = candidates.filter((row) => !emailLookupForms(row.email).some((form) => known.has(form)));
     const duplicates = candidates.length - fresh.length;
 
     let imported = 0;
