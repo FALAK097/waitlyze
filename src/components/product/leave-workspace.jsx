@@ -21,7 +21,6 @@ export function LeaveWorkspace({ workspaceId, workspaceName }) {
         <DialogDescription>You’ll lose access to this workspace immediately. An owner or admin can invite you back.</DialogDescription>
         <form action={action} className="product-form">
           <input type="hidden" name="workspaceId" value={workspaceId} />
-          {state?.error && <p role="alert" className="product-field-error">{state.error}</p>}
           <div className="product-actions">
             <DialogClose render={<Button variant="outline" />} disabled={pending}>Cancel</DialogClose>
             <Button type="submit" variant="destructive" disabled={pending}>{pending ? "Leaving…" : "Leave workspace"}</Button>

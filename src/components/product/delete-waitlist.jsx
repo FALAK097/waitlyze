@@ -38,9 +38,8 @@ export function DeleteWaitlist({ id, name }) {
         <form onSubmit={remove} className="product-form">
           <div className="product-field">
             <Label htmlFor="delete-confirmation">Type &ldquo;{name}&rdquo; to confirm</Label>
-            <Input id="delete-confirmation" value={confirmation} onChange={(event) => setConfirmation(event.target.value)} disabled={pending} autoComplete="off" aria-invalid={!!error} aria-describedby={error ? "delete-error" : undefined} />
+            <Input id="delete-confirmation" value={confirmation} onChange={(event) => setConfirmation(event.target.value)} disabled={pending} autoComplete="off" aria-invalid={!!error} />
           </div>
-          {error && <p id="delete-error" role="alert" className="product-field-error">{error}</p>}
           <div className="product-actions">
             <DialogClose render={<Button variant="outline" />} disabled={pending}>Cancel</DialogClose>
             <Button type="submit" variant="destructive" disabled={pending || confirmation.trim() !== name}>{pending ? "Deleting…" : "Delete waitlist"}</Button>

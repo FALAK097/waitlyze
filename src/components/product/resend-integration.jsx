@@ -15,7 +15,6 @@ export function ResendIntegration({ initialConnection, accountEmail, canManage, 
   const [revealed, setRevealed] = useState(false);
   const [fromEmail, setFromEmail] = useState(initialConnection?.fromEmail || "");
   const [busy, setBusy] = useState("");
-  const [error, setError] = useState("");
   const [confirmDisconnect, setConfirmDisconnect] = useState(false);
 
   async function request(path, method, body) {
@@ -25,15 +24,15 @@ export function ResendIntegration({ initialConnection, accountEmail, canManage, 
     return data;
   }
   async function perform(action, callback) {
-    setBusy(action); setError("");
+    setBusy(action);
     try { await callback(); }
-    catch (failure) { const message = failure.message || "Check your connection and try again."; setError(message); toast.error(message); }
+    catch (failure) { toast.error(failure.message || "Check your connection and try again."); }
     finally { setBusy(""); }
   }
   function changeOpen(next) {
     if (busy) return;
     setOpen(next);
-    if (!next) { setApiKey(""); setRevealed(false); setConfirmDisconnect(false); setError(""); }
+    if (!next) { setApiKey(""); setRevealed(false); setConfirmDisconnect(false); }
   }
   function save(event) {
     event.preventDefault();
@@ -82,7 +81,6 @@ export function ResendIntegration({ initialConnection, accountEmail, canManage, 
           <Button type="submit" disabled={Boolean(busy)}>{busy === "save" && <HugeiconsIcon icon={Loading03Icon} className="animate-spin" size={16} aria-hidden="true" />}{busy === "save" ? "Saving…" : connection ? "Save changes" : "Save connection"}</Button>
         </form> : <p>Only workspace owners and admins can change this connection.</p>}
         {canManage && connection && <div className="integration-test"><p className="product-help">Tests go to {accountEmail}. After saving, emails use the deployment sender until this connection passes its test.</p><Button type="button" variant="outline" disabled={Boolean(busy)} onClick={test}>{busy === "test" ? "Sending…" : "Send test email"}</Button></div>}
-        {error && <p role="alert" className="integration-error">{error}</p>}
         {canManage && connection && <div className="integration-disconnect">{confirmDisconnect ? <><p>Disconnect Resend? Waitlist emails will use the deployment sender.</p><div><Button type="button" variant="outline" onClick={() => setConfirmDisconnect(false)} disabled={Boolean(busy)}>Cancel</Button><Button type="button" variant="destructive" onClick={disconnect} disabled={Boolean(busy)}>{busy === "disconnect" ? "Disconnecting…" : "Disconnect Resend"}</Button></div></> : <Button type="button" variant="ghost" onClick={() => setConfirmDisconnect(true)} disabled={Boolean(busy)}>Disconnect</Button>}</div>}
       </div>
       </div>

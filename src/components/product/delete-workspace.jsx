@@ -34,9 +34,8 @@ export function DeleteWorkspace({ workspaceId, workspaceName, isPersonal }) {
           <input type="hidden" name="workspaceId" value={workspaceId} />
           <div className="product-field">
             <Label htmlFor="delete-workspace-confirmation">Type &ldquo;{workspaceName}&rdquo; to confirm</Label>
-            <Input id="delete-workspace-confirmation" name="confirmation" value={confirmation} onChange={(event) => setConfirmation(event.target.value)} disabled={pending} autoComplete="off" aria-invalid={!!state?.error} aria-describedby={state?.error ? "delete-workspace-error" : undefined} />
+            <Input id="delete-workspace-confirmation" name="confirmation" value={confirmation} onChange={(event) => setConfirmation(event.target.value)} disabled={pending} autoComplete="off" aria-invalid={!!state?.error} />
           </div>
-          {state?.error && <p id="delete-workspace-error" role="alert" className="product-field-error">{state.error}</p>}
           <div className="product-actions">
             <DialogClose render={<Button variant="outline" />} disabled={pending}>Cancel</DialogClose>
             <Button type="submit" variant="destructive" disabled={pending || confirmation.trim() !== workspaceName}>{pending ? "Deleting…" : "Delete workspace"}</Button>

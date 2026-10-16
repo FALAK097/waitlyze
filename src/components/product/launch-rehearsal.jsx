@@ -7,6 +7,7 @@ import { formatProductDate } from "@/lib/product-date.mjs";
 import { useState, useTransition } from "react";
 import { runWaitlistRehearsal } from "@/app/actions/rehearsal";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 function formatDate(value) {
   return formatProductDate(value);
@@ -14,22 +15,20 @@ function formatDate(value) {
 
 export function LaunchRehearsal({ waitListId, initialRuns, className = "", summaryClassName = "", titleClassName = "", bodyClassName = "" }) {
   const [runs, setRuns] = useState(initialRuns);
-  const [error, setError] = useState("");
   const [pending, startTransition] = useTransition();
   const latest = runs[0];
 
   function run() {
-    setError("");
     startTransition(async () => {
       try {
         const response = await runWaitlistRehearsal(waitListId);
         if (response.error) {
-          setError(response.error);
+          toast.error(response.error);
           return;
         }
         setRuns((current) => [response.result, ...current].slice(0, 5));
       } catch {
-        setError("The launch check could not be completed. Try again.");
+        toast.error("The launch check could not be completed. Try again.");
       }
     });
   }
@@ -53,7 +52,6 @@ export function LaunchRehearsal({ waitListId, initialRuns, className = "", summa
             {pending ? "Checking…" : "Run check"}
           </Button>
         </div>
-        {error && <p className="product-field-error" role="alert">{error}</p>}
         {latest && (
           <div className="launch-rehearsal-result" aria-live="polite">
             <p className={`product-status ${latest.status === "PASSED" ? "product-status-success" : ""}`}>

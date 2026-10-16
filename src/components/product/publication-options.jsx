@@ -7,20 +7,20 @@ import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/component
 import { useId, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { SITE_URL } from "@/lib/site-metadata";
+import { toast } from "sonner";
 import styles from "./publication-options.module.css";
 
 const escapeAttribute = (value) => String(value).replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
 export function PublicationOptions({ waitList, origin = SITE_URL }) {
   const headingId = useId();
-  const [message, setMessage] = useState("");
   const [method, setMethod] = useState("hosted");
   const published = waitList.status === "PUBLISHED" && !!waitList.publicSlug && waitList.publishedRevision > 0;
   const hostedUrl = `${origin}/w/${encodeURIComponent(waitList.publicSlug || "")}`;
   const embedCode = `<div class="waitlyze-widget" data-key-id="${escapeAttribute(waitList.id)}" data-height="720px"></div>\n<script src="${escapeAttribute(origin)}/js/embed.js" defer></script>`;
   async function copy(text, label) {
-    try { await navigator.clipboard.writeText(text); setMessage(`${label} copied.`); }
-    catch { setMessage("Copy is unavailable. Select the text and copy it manually."); }
+    try { await navigator.clipboard.writeText(text); toast.success(`${label} copied.`); }
+    catch { toast.error("Copy is unavailable. Select the text and copy it manually."); }
   }
   return <section className={styles.options} aria-labelledby={headingId}>
     <Collapsible className={styles.disclosure}>
@@ -36,7 +36,7 @@ export function PublicationOptions({ waitList, origin = SITE_URL }) {
           <pre className={styles.code} tabIndex={0} aria-label="Website embed code"><code>{embedCode}</code></pre>
           <Button type="button" variant="outline" onClick={() => copy(embedCode, "Embed code")}><HugeiconsIcon icon={Copy01Icon} aria-hidden="true" /> Copy embed code</Button>
         </div>}
-        <p className={styles.status} role="status" aria-live="polite">{message || "Your published version is shared. Draft edits stay private."}</p>
+        <p className={styles.status}>Your published version is shared. Draft edits stay private.</p>
       </> : <p>{waitList.status === "PAUSED" ? "Resume publication to collect signups through your hosted page or website embed." : "Publish to get a hosted link and website embed code."}</p>}
     </CollapsibleContent></Collapsible>
   </section>;

@@ -7,16 +7,14 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
 import { useState } from "react";
+import { toast } from "sonner";
 
 export function VerifyAction({ token, returnPath }) {
   const [state, setState] = useState("ready");
-  const [message, setMessage] = useState("");
   const [referral, setReferral] = useState(null);
-  const [copyMessage, setCopyMessage] = useState("");
 
   async function verify() {
     setState("loading");
-    setMessage("");
     try {
       const response = await fetch("/api/v1/sign_up/verify", {
         method: "POST",
@@ -29,7 +27,7 @@ export function VerifyAction({ token, returnPath }) {
       setState("success");
     } catch (error) {
       setState("error");
-      setMessage(error.message || "Verification failed. Request a new link from the waitlist.");
+      toast.error(error.message || "Verification failed. Request a new link from the waitlist.");
     }
   }
 
@@ -39,9 +37,9 @@ export function VerifyAction({ token, returnPath }) {
     if (!referralUrl) return;
     try {
       await navigator.clipboard.writeText(referralUrl);
-      setCopyMessage("Referral link copied.");
+      toast.success("Referral link copied.");
     } catch {
-      setCopyMessage("Select the link and copy it.");
+      toast.error("Select the link and copy it.");
     }
   }
 
@@ -60,12 +58,10 @@ export function VerifyAction({ token, returnPath }) {
               <Input id="verify-referral-link" value={referralUrl} readOnly />
               <Button type="button" onClick={copyReferralLink}>Copy link</Button>
             </div>
-            <p role="status" aria-live="polite">{copyMessage}</p>
             {referral.position ? <p>Your position: <strong>#{referral.position}</strong></p> : null}
           </div>
         ) : null}
         {(state === "success" || state === "error") && !referralUrl ? <a href={returnPath}>Return to waitlist</a> : null}
-        {message ? <p className="verify-error" role="alert">{message}</p> : null}
       </section>
     </main>
   );
