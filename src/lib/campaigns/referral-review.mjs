@@ -24,8 +24,11 @@ export async function resolveReferralReview(db, { waitListId, referralId, status
         where: { id: referralId },
         select: { referredById: true, signUp: { select: { id: true, waitListId: true, verifiedAt: true, ipAddress: true } } },
       });
-      const now = new Date();
-      if (referral?.referredById && referral.signUp.verifiedAt && !(await isFarmSuspect(tx, referral.signUp.ipAddress, now))) {
+      // Anchor the farm window at verification time so a delayed approval
+      // replays the exact decision the verify flow would have made, instead
+      // of evaluating a shifted trailing window.
+      const verifiedAt = referral?.signUp.verifiedAt ? new Date(referral.signUp.verifiedAt) : new Date();
+      if (referral?.referredById && referral.signUp.verifiedAt && !(await isFarmSuspect(tx, referral.signUp.ipAddress, verifiedAt))) {
         await awardPoints(tx, { waitListId, signUpId: referral.referredById, kind: "REFERRAL_CREDIT", points: REFERRAL_POINTS, eventKey: referralEventKey(referralId) });
       }
     }

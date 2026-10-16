@@ -23,23 +23,23 @@ export function referralEventKey(referralId) {
   return `referral-credit:${referralId}`;
 }
 
-// Idempotent award: inserts the ledger row, bumps the balance only when the
-// row is new (P2002 = already awarded, e.g. retried verify or re-approve).
+// Idempotent award: ON CONFLICT DO NOTHING keeps the transaction healthy
+// (a caught unique violation would abort it), and the balance bumps only
+// when the ledger row is actually new.
 export async function awardPoints(tx, { waitListId, signUpId, kind, points, eventKey }) {
-  try {
-    await tx.pointLedger.create({ data: { waitListId, signUpId, kind, points, eventKey } });
-  } catch (error) {
-    if (error?.code === "P2002") return { awarded: false };
-    throw error;
-  }
+  const inserted = await tx.pointLedger.createMany({ data: [{ waitListId, signUpId, kind, points, eventKey }], skipDuplicates: true });
+  if (inserted.count !== 1) return { awarded: false };
   await tx.signUp.update({ where: { id: signUpId }, data: { points: { increment: points } } });
   return { awarded: true };
 }
 
 export async function isFarmSuspect(tx, ipAddress, now = new Date()) {
   if (!ipAddress) return false;
+  // Bounded on both ends so re-evaluating a historical instant (e.g. a
+  // delayed approval anchored at verification time) replays the exact
+  // decision instead of seeing a shifted window.
   const count = await tx.signUp.count({
-    where: { ipAddress, createdAt: { gte: new Date(now.getTime() - VELOCITY_WINDOW_MS) } },
+    where: { ipAddress, createdAt: { gte: new Date(now.getTime() - VELOCITY_WINDOW_MS), lte: now } },
   });
   return count > POINTS_VELOCITY_LIMIT;
 }

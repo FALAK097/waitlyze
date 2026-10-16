@@ -99,6 +99,19 @@ export async function importSignups(waitListId, formData) {
       select: { emailNormalized: true },
     });
     const known = new Set(existing.map((row) => row.emailNormalized));
+    // Legacy Gmail variants (dotted / plus-tagged rows) never match by
+    // spelling, so fold every stored Gmail address to canonical form once
+    // and match candidates against that. Single extra query, only when the
+    // CSV actually contains Gmail addresses.
+    if (candidates.some((row) => /@gmail\.com$|@googlemail\.com$/i.test(row.email))) {
+      const gmailRows = await prisma.signUp.findMany({
+        where: { waitListId, OR: [{ emailNormalized: { endsWith: "@gmail.com" } }, { emailNormalized: { endsWith: "@googlemail.com" } }] },
+        select: { emailNormalized: true },
+      });
+      for (const row of gmailRows) {
+        if (row.emailNormalized) known.add(normalizeSignupEmail(row.emailNormalized));
+      }
+    }
     const fresh = candidates.filter((row) => !emailLookupForms(row.email).some((form) => known.has(form)));
     const duplicates = candidates.length - fresh.length;
 
@@ -139,7 +152,7 @@ export async function importSignups(waitListId, formData) {
       for (const row of linkable) {
         const newcomer = byEmail.get(row.emailNormalized);
         const key = row.referredBy.trim();
-        const referrer = byEmail.get(key.toLowerCase()) || byCode.get(key);
+        const referrer = emailLookupForms(key).map((form) => byEmail.get(form)).find(Boolean) || byCode.get(key);
         if (newcomer && referrer && referrer.id !== newcomer.id) links.push({ signUpId: newcomer.id, referredById: referrer.id });
       }
       for (let index = 0; index < links.length; index += 500) {
