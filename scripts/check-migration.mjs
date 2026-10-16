@@ -68,7 +68,7 @@ try {
         await db.query(await readFile("prisma/migrations/20261012000000_workspace_audit/migration.sql", "utf8"));
         assert.equal((await db.query("SELECT to_regclass('public.workspace_audit_events') AS table_name")).rows[0].table_name, "workspace_audit_events");
         // Later additive migrations must also apply cleanly on the upgraded legacy schema.
-        for (const name of ["20261014081346_phase0_attribution_points", "20261014083000_phase0_impression_dedupe"]) {
+        for (const name of ["20261014081346_phase0_attribution_points", "20261014083000_phase0_impression_dedupe", "20261016101137_phase4_points_ledger", "20261016103339_phase4_signup_ip_index"]) {
           await db.query(await readFile(`prisma/migrations/${name}/migration.sql`, "utf8"));
         }
         // The dedupe migration keeps the earliest impression and repoints signups.

@@ -4,6 +4,7 @@ import Papa from "papaparse";
 import prisma from "@/lib/prisma";
 import { requireCampaign } from "@/lib/workspaces/authorize";
 import { AccessError } from "@/lib/workspaces/service.mjs";
+import { emailLookupForms, normalizeSignupEmail } from "@/lib/normalize-email.mjs";
 import { validateSignupEmail } from "@/utils/server/email-validation.mjs";
 
 const MAX_ROWS = 5000;
@@ -74,7 +75,7 @@ export async function importSignups(waitListId, formData) {
         invalid += 1;
         continue;
       }
-      const normalized = email.toLowerCase();
+      const normalized = normalizeSignupEmail(email);
       if (seen.has(normalized)) continue;
       seen.add(normalized);
       const code = cell(row, codeKey);
@@ -94,11 +95,24 @@ export async function importSignups(waitListId, formData) {
     if (candidates.length === 0) return { ok: false, message: invalid > 0 ? "Every row failed validation. Check the emails and try again." : "No new emails in that file." };
 
     const existing = await prisma.signUp.findMany({
-      where: { waitListId, waitList: scope, emailNormalized: { in: candidates.map((row) => row.emailNormalized) } },
+      where: { waitListId, waitList: scope, emailNormalized: { in: [...new Set(candidates.flatMap((row) => emailLookupForms(row.email)))] } },
       select: { emailNormalized: true },
     });
     const known = new Set(existing.map((row) => row.emailNormalized));
-    const fresh = candidates.filter((row) => !known.has(row.emailNormalized));
+    // Legacy Gmail variants (dotted / plus-tagged rows) never match by
+    // spelling, so fold every stored Gmail address to canonical form once
+    // and match candidates against that. Single extra query, only when the
+    // CSV actually contains Gmail addresses.
+    if (candidates.some((row) => /@gmail\.com$|@googlemail\.com$/i.test(row.email))) {
+      const gmailRows = await prisma.signUp.findMany({
+        where: { waitListId, OR: [{ emailNormalized: { endsWith: "@gmail.com" } }, { emailNormalized: { endsWith: "@googlemail.com" } }] },
+        select: { emailNormalized: true },
+      });
+      for (const row of gmailRows) {
+        if (row.emailNormalized) known.add(normalizeSignupEmail(row.emailNormalized));
+      }
+    }
+    const fresh = candidates.filter((row) => !emailLookupForms(row.email).some((form) => known.has(form)));
     const duplicates = candidates.length - fresh.length;
 
     let imported = 0;
@@ -138,7 +152,7 @@ export async function importSignups(waitListId, formData) {
       for (const row of linkable) {
         const newcomer = byEmail.get(row.emailNormalized);
         const key = row.referredBy.trim();
-        const referrer = byEmail.get(key.toLowerCase()) || byCode.get(key);
+        const referrer = emailLookupForms(key).map((form) => byEmail.get(form)).find(Boolean) || byCode.get(key);
         if (newcomer && referrer && referrer.id !== newcomer.id) links.push({ signUpId: newcomer.id, referredById: referrer.id });
       }
       for (let index = 0; index < links.length; index += 500) {

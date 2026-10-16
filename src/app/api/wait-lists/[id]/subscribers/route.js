@@ -36,7 +36,7 @@ export async function GET(request, { params }) {
     const [rows, total] = await Promise.all([
       prisma.signUp.findMany({
         where,
-        select: { id: true, email: true, createdAt: true, verifiedAt: true, country: true, city: true, device: true, deviceType: true, referralCode: true, utmSource: true },
+        select: { id: true, email: true, createdAt: true, verifiedAt: true, country: true, city: true, device: true, deviceType: true, referralCode: true, utmSource: true, points: true },
         orderBy: [{ createdAt: direction }, { id: direction }],
         take: AUDIENCE_PAGE_SIZE + 1,
         ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
@@ -76,6 +76,7 @@ export async function POST(request, { params }) {
     if (columns.includes("country")) select.country = true;
     if (columns.includes("city")) select.city = true;
     if (columns.includes("device")) select.device = true;
+    if (columns.includes("points")) select.points = true;
     const encoder = new TextEncoder();
     const body = new ReadableStream({
       async start(controller) {

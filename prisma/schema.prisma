@@ -206,6 +206,7 @@ model SignUp {
   @@unique([waitListId, emailNormalized])
   @@index([waitListId, uniqueUserId])
   @@index([waitListId, createdAt, id])
+  @@index([ipAddress, createdAt])
   @@map("sign_ups")
 }
 
@@ -479,6 +480,27 @@ model Referral {
 
   @@index([referredById, reviewStatus])
   @@map("referrals")
+}
+
+enum PointLedgerKind {
+  SIGNUP_VERIFIED
+  REFERRAL_CREDIT
+}
+
+// Append-only points ledger. SignUp.points is the denormalized balance;
+// every bump must flow through here so awards stay idempotent (eventKey)
+// and auditable. Backend only for now — UI surfaces in a later phase.
+model PointLedger {
+  id         String          @id @default(cuid())
+  waitListId String
+  signUpId   String
+  kind       PointLedgerKind
+  points     Int
+  eventKey   String          @unique
+  createdAt  DateTime        @default(now())
+
+  @@index([waitListId, signUpId])
+  @@map("point_ledger")
 }
 
 // Rehearsal records contain checklist results only. Simulated activity never
