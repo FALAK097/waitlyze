@@ -65,8 +65,9 @@ export function WebhookSettings({ waitListId, canManage = true }) {
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Request failed.");
       if (data.data?.secret) { setSecret(data.data.secret); setShowSecret(false); }
-      const refreshed = await refresh();
-      if (refreshed) { const success = path.endsWith("/test") ? "Test delivery queued." : path.endsWith("/rotate") ? "Signing secret rotated." : path.endsWith("/deliveries") ? "Replay queued." : method === "PATCH" ? "Endpoint updated." : "Webhook endpoint created."; toast.success(success); }
+      const success = path.endsWith("/test") ? "Test delivery queued." : path.endsWith("/rotate") ? "Signing secret rotated." : path.endsWith("/deliveries") ? "Replay queued." : method === "PATCH" ? "Endpoint updated." : "Webhook endpoint created.";
+      toast.success(success);
+      await refresh();
       return true;
     } catch (error) { toast.error(error.message || "Request failed. Try again."); return false; }
     finally { setBusy(false); }
