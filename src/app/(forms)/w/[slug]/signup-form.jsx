@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 
 import { useSearchParams } from "next/navigation";
 import { useState } from "react";
+import { toast } from "sonner";
 import { MARKETING_CONSENT_COPY } from "@/lib/campaigns/marketing-consent.mjs";
 import { collectAttribution } from "@/utils/attribution";
 import styles from "@/components/product/waitlist-signup.module.css";
@@ -16,7 +17,6 @@ import styles from "@/components/product/waitlist-signup.module.css";
 export function SignupForm({ slug, waitListId, showReferrals, label, buttonText, thankYou }) {
   const searchParams = useSearchParams();
   const referralCode = searchParams.get("r");
-  const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState(null);
   const [copied, setCopied] = useState(false);
@@ -28,7 +28,6 @@ export function SignupForm({ slug, waitListId, showReferrals, label, buttonText,
     const email = formData.get("email");
     const marketingConsent = formData.get("marketingConsent") === "on";
     setBusy(true);
-    setMessage("");
     try {
       let hypeSession = localStorage.getItem("hypeSession");
       if (!hypeSession) {
@@ -65,10 +64,9 @@ export function SignupForm({ slug, waitListId, showReferrals, label, buttonText,
         referralLink,
       });
       setCopied(false);
-      setMessage("Signup received. Confirmation email queued.");
       form.reset();
     } catch (error) {
-      setMessage(error.message || "Couldn't join the waitlist. Try again.");
+      toast.error(error.message || "Couldn't join the waitlist. Try again.");
     } finally {
       setBusy(false);
     }
@@ -80,14 +78,13 @@ export function SignupForm({ slug, waitListId, showReferrals, label, buttonText,
       await navigator.clipboard.writeText(result.referralLink);
       setCopied(true);
     } catch {
-      setMessage("Copy didn't work — long-press the link to copy it manually.");
+      toast.error("Copy didn't work — long-press the link to copy it manually.");
     }
   }
 
   if (result) {
     return (
       <section className={styles.result} aria-labelledby="signup-result-title">
-        <p className={styles.status} role="status" aria-live="polite">{message}</p>
         <h2 id="signup-result-title">{result.heading}</h2>
         <p className={styles.thankYou}>{result.notice}</p>
         {result.body ? <p>{result.body}</p> : null}
@@ -119,7 +116,6 @@ export function SignupForm({ slug, waitListId, showReferrals, label, buttonText,
         <Checkbox className={styles.checkbox} name="marketingConsent" value="on" />
         <span>{MARKETING_CONSENT_COPY}</span>
       </Label>
-      <p className={styles.status} aria-live="polite" role="status">{message}</p>
     </form>
   );
 }

@@ -4,6 +4,7 @@ import { HugeiconsIcon } from "@hugeicons/react";
 import { Loading02Icon } from "@hugeicons/core-free-icons";
 import { useRef, useState } from "react";
 import { authClient } from "@/lib/auth-client";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -20,14 +21,12 @@ import "@/components/landing/public.css";
 
 export function AuthModal({ open, onOpenChange, onCloseAutoFocus }) {
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
   const attemptRef = useRef(0);
 
   const changeOpen = (nextOpen) => {
     if (!nextOpen) {
       attemptRef.current += 1;
       setLoading(false);
-      setError("");
     }
     onOpenChange(nextOpen);
   };
@@ -36,7 +35,6 @@ export function AuthModal({ open, onOpenChange, onCloseAutoFocus }) {
     if (loading) return;
     const attempt = ++attemptRef.current;
     setLoading(true);
-    setError("");
     try {
       const result = await authClient.signIn.social({
         provider: "google",
@@ -45,7 +43,7 @@ export function AuthModal({ open, onOpenChange, onCloseAutoFocus }) {
       if (result.error) throw new Error("Sign-in failed");
     } catch {
       if (attempt === attemptRef.current)
-        setError("We couldn’t connect to Google. Please try again.");
+        toast.error("We couldn’t connect to Google. Please try again.");
     } finally {
       if (attempt === attemptRef.current) setLoading(false);
     }
@@ -82,12 +80,7 @@ export function AuthModal({ open, onOpenChange, onCloseAutoFocus }) {
             )}
             {loading ? "Connecting to Google…" : "Continue with Google"}
           </Button>
-          {error ? (
-            <p role="alert" className="wl-auth-error">
-              {error}
-            </p>
-          ) : null}
-          <p className="wl-auth-note">Free to use. No credit card needed.</p>
+            <p className="wl-auth-note">Free to use. No credit card needed.</p>
           <p className="wl-auth-legal">
             By continuing, you agree to our{" "}
             <Link prefetch={false}

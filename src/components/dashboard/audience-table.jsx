@@ -82,11 +82,9 @@ export function AudienceTable({ waitlist, initialReviews = [], initialReviewsFai
   const [retryCount, setRetryCount] = useState(0);
   const [error, setError] = useState("");
   const [sheet, setSheet] = useState(null);
-  const [exportError, setExportError] = useState("");
   const [exporting, setExporting] = useState(false);
   const [exportColumns, setExportColumns] = useState(() => EXPORT_COLUMNS.map((column) => column.key));
   const [importing, setImporting] = useState(false);
-  const [importResult, setImportResult] = useState(null);
   const [copiedId, setCopiedId] = useState(null);
 
   const flags = result.flags || { showReferrals: waitlist.showReferrals, sendEmailsToSubscribers: waitlist.sendEmailsToSubscribers, publicSlug: waitlist.publicSlug };
@@ -126,7 +124,10 @@ export function AudienceTable({ waitlist, initialReviews = [], initialReviewsFai
       setResult(payload);
       setLoadedCriteria(`${status}\u0000${search}\u0000${sort}`);
     } catch (loadError) {
-      if (loadError.name !== "AbortError") setError("Unable to refresh signups.");
+      if (loadError.name !== "AbortError") {
+        setError("Unable to refresh signups.");
+        toast.error("Unable to refresh signups.");
+      }
     } finally {
       if (!signal.aborted) setLoading(false);
     }
@@ -140,7 +141,6 @@ export function AudienceTable({ waitlist, initialReviews = [], initialReviewsFai
 
   async function exportCsv() {
     setExporting(true);
-    setExportError("");
     try {
       const params = new URLSearchParams({ status, sort, columns: exportColumns.join(",") });
       if (search) params.set("q", search);
@@ -155,9 +155,7 @@ export function AudienceTable({ waitlist, initialReviews = [], initialReviewsFai
       URL.revokeObjectURL(url);
       setSheet(null);
     } catch {
-      const message = "The export could not be created. Try again.";
-      setExportError(message);
-      toast.error(message);
+      toast.error("The export could not be created. Try again.");
     } finally {
       setExporting(false);
     }
@@ -167,20 +165,19 @@ export function AudienceTable({ waitlist, initialReviews = [], initialReviewsFai
     event.preventDefault();
     const file = new FormData(event.currentTarget).get("file");
     setImporting(true);
-    setImportResult(null);
     try {
       const data = new FormData();
       data.set("file", file);
       const outcome = await importSignups(waitlist.id, data);
-      setImportResult(outcome);
       if (outcome.ok) {
-        toast.success(`${outcome.imported.toLocaleString()} signup${outcome.imported === 1 ? "" : "s"} imported.`);
+        const parts = [`${outcome.imported.toLocaleString()} signup${outcome.imported === 1 ? "" : "s"} imported`];
+        if (outcome.duplicates > 0) parts.push(`${outcome.duplicates.toLocaleString()} already on the list`);
+        if (outcome.invalid > 0) parts.push(`${outcome.invalid.toLocaleString()} failed validation`);
+        toast.success(`${parts.join(", ")}.`);
         setRetryCount((count) => count + 1);
       } else toast.error(outcome.message);
     } catch {
-      const outcome = { ok: false, message: "Couldn't import that file. Try again." };
-      setImportResult(outcome);
-      toast.error(outcome.message);
+      toast.error("Couldn't import that file. Try again.");
     } finally {
       setImporting(false);
     }
@@ -274,11 +271,11 @@ export function AudienceTable({ waitlist, initialReviews = [], initialReviewsFai
           {view === "subscribers" && (
             <div className="flex flex-wrap gap-2">
               {canManage && (
-                <Button variant="outline" onClick={() => { setImportResult(null); setSheet({ type: "import" }); }}>
+                <Button variant="outline" onClick={() => setSheet({ type: "import" })}>
                   <HugeiconsIcon icon={Upload01Icon} aria-hidden="true" /> Import
                 </Button>
               )}
-              <Button variant="outline" onClick={() => { setExportError(""); setSheet({ type: "export" }); }} disabled={isUpdating}>
+              <Button variant="outline" onClick={() => setSheet({ type: "export" })} disabled={isUpdating}>
                 <HugeiconsIcon icon={Download01Icon} aria-hidden="true" /> Export
               </Button>
             </div>
@@ -292,7 +289,6 @@ export function AudienceTable({ waitlist, initialReviews = [], initialReviewsFai
 
       {view === "referrals" ? <ReferralReview waitListId={waitlist.id} initialReviews={initialReviews} initialLoadError={initialReviewsFailed} canManage={canManage} /> : <>
 
-      {exportError && <p className="product-field-error" role="alert">{exportError}</p>}
       <div className="product-audience-data" aria-busy={isUpdating}>
         <div className="product-audience-toolbar">
           <Label className="relative block w-full sm:max-w-sm">
@@ -307,9 +303,6 @@ export function AudienceTable({ waitlist, initialReviews = [], initialReviewsFai
           </div>
         </div>
 
-        {criteriaChanging && !error && result.data.length > 0 && <p className="border-b border-[var(--product-border-subtle)] bg-[var(--product-bg-inset)] px-4 py-3 text-sm text-[var(--product-text-secondary)]" role="status" aria-live="polite">
-          Updating results. Showing signups for {appliedCriteriaLabel} until the new results load.
-        </p>}
         {error && <div className="product-field-error flex flex-wrap items-center justify-between gap-3 px-4 py-3" role="alert">
           <span>{result.data.length ? `Couldn’t refresh the list. Showing the last loaded results for ${appliedCriteriaLabel}.` : "Signups couldn’t be loaded."}</span>
           <Button variant="outline" onClick={() => setRetryCount((count) => count + 1)}>Try again</Button>
@@ -339,7 +332,7 @@ export function AudienceTable({ waitlist, initialReviews = [], initialReviewsFai
           </Table>
         </div>
         <footer className="product-audience-pagination">
-          <span role="status" aria-live="polite" aria-atomic="true">{isUpdating ? "Updating signups…" : error ? "Couldn’t load signups." : `${showingStart}–${showingEnd} of ${result.total}`}</span>
+          <span aria-live="polite" aria-atomic="true">{showingStart}–{showingEnd} of {result.total}</span>
           <div className="flex gap-2">
             <Button variant="outline" disabled={pageIndex === 0 || isUpdating} onClick={() => setPageIndex((current) => Math.max(0, current - 1))}>Previous</Button>
             <Button variant="outline" disabled={!result.nextCursor || isUpdating} onClick={() => { setCursors((current) => [...current.slice(0, pageIndex + 1), result.nextCursor]); setPageIndex((current) => current + 1); }}>Next</Button>
@@ -390,11 +383,6 @@ export function AudienceTable({ waitlist, initialReviews = [], initialReviewsFai
                 <Input id="audience-import-file" name="file" type="file" accept=".csv,text/csv" required disabled={importing} aria-label="CSV file to import" />
                 <Button type="submit" disabled={importing} aria-busy={importing}>{importing ? "Importing…" : "Import"}</Button>
               </form>
-              {importResult && (
-                importResult.ok
-                  ? <p role="status" className="text-sm">{importResult.imported.toLocaleString()} imported{importResult.duplicates > 0 && `, ${importResult.duplicates.toLocaleString()} already on the list`}{importResult.invalid > 0 && `, ${importResult.invalid.toLocaleString()} failed validation`}.</p>
-                  : <p role="alert" className="product-field-error text-sm">{importResult.message}</p>
-              )}
             </div>
           </>}
         </SheetContent>

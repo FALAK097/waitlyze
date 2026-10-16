@@ -24,20 +24,16 @@ export function WebhookSettings({ waitListId, canManage = true }) {
   const [sheetId, setSheetId] = useState(null);
   const [showSecret, setShowSecret] = useState(false);
   const [secret, setSecret] = useState("");
-  const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
   const [initialLoad, setInitialLoad] = useState("loading");
   const [loadError, setLoadError] = useState("");
   const [configured, setConfigured] = useState(true);
   const controlsDisabled = !canManage || !configured || busy || initialLoad !== "ready" || Boolean(loadError);
-  const [messageIsError, setMessageIsError] = useState(false);
 
   async function refresh({ signal, initial = false } = {}) {
     if (initial) {
       setInitialLoad("loading");
       setLoadError("");
-      setMessage("");
-      setMessageIsError(false);
     }
     try {
       const response = await fetch(`/api/wait-lists/${encodeURIComponent(waitListId)}/webhooks`, { cache: "no-store", signal });
@@ -63,16 +59,16 @@ export function WebhookSettings({ waitListId, canManage = true }) {
   }, [waitListId]);
 
   async function call(path, method = "POST", body) {
-    setBusy(true); setMessage(""); setMessageIsError(false);
+    setBusy(true);
     try {
       const response = await fetch(`/api/wait-lists/${encodeURIComponent(waitListId)}/webhooks${path}`, { method, headers: { "content-type": "application/json" }, ...(body ? { body: JSON.stringify(body) } : {}) });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Request failed.");
       if (data.data?.secret) { setSecret(data.data.secret); setShowSecret(false); }
       const refreshed = await refresh();
-      if (refreshed) { const success = path.endsWith("/test") ? "Test delivery queued." : path.endsWith("/rotate") ? "Signing secret rotated." : path.endsWith("/deliveries") ? "Replay queued." : method === "PATCH" ? "Endpoint updated." : "Webhook endpoint created."; setMessage(success); toast.success(success); }
+      if (refreshed) { const success = path.endsWith("/test") ? "Test delivery queued." : path.endsWith("/rotate") ? "Signing secret rotated." : path.endsWith("/deliveries") ? "Replay queued." : method === "PATCH" ? "Endpoint updated." : "Webhook endpoint created."; toast.success(success); }
       return true;
-    } catch (error) { setMessage(error.message); setMessageIsError(true); toast.error(error.message || "Request failed. Try again."); return false; }
+    } catch (error) { toast.error(error.message || "Request failed. Try again."); return false; }
     finally { setBusy(false); }
   }
 
@@ -83,7 +79,7 @@ export function WebhookSettings({ waitListId, canManage = true }) {
   }
 
   async function copySecret(subscriptionId) {
-    setBusy(true); setMessage(""); setMessageIsError(false);
+    setBusy(true);
     try {
       const response = await fetch(`/api/wait-lists/${encodeURIComponent(waitListId)}/webhooks/${encodeURIComponent(subscriptionId)}/secret`, { method: "POST" });
       const data = await response.json();
@@ -95,14 +91,11 @@ export function WebhookSettings({ waitListId, canManage = true }) {
       }
       toast.success("Signing secret copied.");
     } catch (error) {
-      const message = error.message || "Could not copy the signing secret. Try again.";
-      setMessage(message); setMessageIsError(true); toast.error(message);
+      toast.error(error.message || "Could not copy the signing secret. Try again.");
     } finally { setBusy(false); }
   }
 
   function openAdd() {
-    setMessage("");
-    setMessageIsError(false);
     setAddOpen(true);
   }
 
@@ -111,7 +104,7 @@ export function WebhookSettings({ waitListId, canManage = true }) {
 
   return <div className="product-webhook-settings" aria-busy={initialLoad === "loading"}>
     {initialLoad === "loading" && <>
-      <p role="status">Loading webhook endpoints…</p>
+      <p role="status" className="sr-only">Loading webhook endpoints…</p>
       <div className="product-webhook-loading" aria-hidden="true"><i /><i /><i /></div>
     </>}
     {loadError && <div role="alert"><p>Webhook endpoints couldn’t be loaded.</p><p>{loadError}</p><Button variant="outline" type="button" disabled={busy} onClick={() => refresh({ initial: initialLoad !== "ready" })}>Try again</Button></div>}
@@ -174,7 +167,6 @@ export function WebhookSettings({ waitListId, canManage = true }) {
               <Input id="webhook-endpoint-url" type="url" value={url} onChange={(event) => setUrl(event.target.value)} required placeholder="https://api.example.com/waitlist-events" disabled={controlsDisabled} autoComplete="url" aria-describedby="webhook-endpoint-dialog-help" />
               <p id="webhook-endpoint-dialog-help" className="product-help">Use a public HTTPS endpoint. Receives both signup.created and signup.verified. Payloads exclude subscriber email addresses.</p>
             </div>
-            {messageIsError && <p role="alert" className="product-field-error">{message}</p>}
             <div className="product-actions">
               <DialogClose render={<Button variant="outline" />} disabled={busy}>Cancel</DialogClose>
               <Button type="submit" disabled={controlsDisabled}>{busy ? "Adding…" : "Add endpoint"}</Button>
@@ -183,6 +175,6 @@ export function WebhookSettings({ waitListId, canManage = true }) {
         </DialogContent>
       </Dialog>
     </>}
-    {secret && <section className="product-webhook-secret" aria-labelledby="webhook-secret-title"><h3 id="webhook-secret-title">Signing secret</h3><p>Copy and store this secret before dismissing it.</p><code>{showSecret ? secret : "••••••••••••••••••••••••"}</code><div className="product-webhook-secret-actions"><Button size="sm" type="button" onClick={async () => { try { await navigator.clipboard.writeText(secret); toast.success("Signing secret copied."); } catch { setShowSecret(true); setMessage("Copy is unavailable. Select and copy the secret above."); setMessageIsError(true); } }}>Copy secret</Button><Button variant="ghost" size="sm" type="button" onClick={() => setShowSecret((value) => !value)}>{showSecret ? "Hide" : "Show"}</Button><Button variant="ghost" size="sm" type="button" onClick={() => setSecret("")}>Dismiss</Button></div></section>}
+    {secret && <section className="product-webhook-secret" aria-labelledby="webhook-secret-title"><h3 id="webhook-secret-title">Signing secret</h3><p>Copy and store this secret before dismissing it.</p><code>{showSecret ? secret : "••••••••••••••••••••••••"}</code><div className="product-webhook-secret-actions"><Button size="sm" type="button" onClick={async () => { try { await navigator.clipboard.writeText(secret); toast.success("Signing secret copied."); } catch { setShowSecret(true); toast.error("Copy is unavailable. Select and copy the secret above."); } }}>Copy secret</Button><Button variant="ghost" size="sm" type="button" onClick={() => setShowSecret((value) => !value)}>{showSecret ? "Hide" : "Show"}</Button><Button variant="ghost" size="sm" type="button" onClick={() => setSecret("")}>Dismiss</Button></div></section>}
   </div>;
 }

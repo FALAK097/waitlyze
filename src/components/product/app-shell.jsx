@@ -2,7 +2,7 @@
 
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Add01Icon, ArrowDown01Icon, ArrowUpRight01Icon, Logout01Icon, Tick01Icon } from "@hugeicons/core-free-icons";
-import { useActionState, useState } from "react";
+import { useActionState, useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -22,6 +22,9 @@ function WorkspaceAvatar({ name }) {
 
 function CreateWorkspaceDialog({ open, onOpenChange }) {
   const [state, action, pending] = useActionState(createWorkspace, null);
+  useEffect(() => {
+    if (state?.error) toast.error(state.error);
+  }, [state]);
   return <Dialog open={open} onOpenChange={onOpenChange}>
     <DialogContent>
       <DialogTitle>Create workspace</DialogTitle>
@@ -29,9 +32,8 @@ function CreateWorkspaceDialog({ open, onOpenChange }) {
       <form action={action} className="app-workspace-create">
         <div className="product-field">
           <Label htmlFor="workspace-name">Workspace name</Label>
-          <Input id="workspace-name" name="name" required minLength={1} maxLength={80} placeholder="Acme Inc." disabled={pending} autoComplete="off" aria-invalid={!!state?.error} aria-describedby={state?.error ? "workspace-name-error" : undefined} />
+          <Input id="workspace-name" name="name" required minLength={1} maxLength={80} placeholder="Acme Inc." disabled={pending} autoComplete="off" aria-invalid={!!state?.error} />
         </div>
-        {state?.error && <p id="workspace-name-error" role="alert" className="product-field-error">{state.error}</p>}
         <Separator />
         <div className="product-actions">
           <DialogClose render={<Button variant="outline" />} disabled={pending}>Cancel</DialogClose>

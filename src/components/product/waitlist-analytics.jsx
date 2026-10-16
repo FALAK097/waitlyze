@@ -85,7 +85,7 @@ export function WaitlistAnalytics({ waitListId }) {
     </header>
 
     {error ? <div className="waitlist-analytics-message" role="alert"><p>{error}</p><Button type="button" onClick={() => setRetryCount((count) => count + 1)}>Try again</Button></div> : null}
-    {!error && loading && !currentAnalytics ? <><p className="waitlist-analytics-loading-label" role="status">Loading analytics…</p><AnalyticsSkeleton /></> : null}
+    {!error && loading && !currentAnalytics ? <><p className="sr-only" role="status">Loading analytics…</p><AnalyticsSkeleton /></> : null}
     {!error && currentAnalytics ? <>
       {loading ? <p className="sr-only" role="status">Updating analytics…</p> : null}
       <dl className="waitlist-analytics-metrics">

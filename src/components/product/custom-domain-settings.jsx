@@ -15,8 +15,6 @@ export function CustomDomainSettings({ waitListId, canManage, available }) {
   const [busy, setBusy] = useState(false);
   const [loadState, setLoadState] = useState("loading");
   const [loadError, setLoadError] = useState("");
-  const [message, setMessage] = useState("");
-  const [messageIsError, setMessageIsError] = useState(false);
 
   const refresh = useCallback(async (signal) => {
     setLoadState("loading");
@@ -43,15 +41,11 @@ export function CustomDomainSettings({ waitListId, canManage, available }) {
   }, [refresh]);
 
   async function retry() {
-    setMessage("");
-    setMessageIsError(false);
     await refresh();
   }
 
   async function call(method, body) {
     setBusy(true);
-    setMessage("");
-    setMessageIsError(false);
     try {
       const response = await fetch(`/api/wait-lists/${encodeURIComponent(waitListId)}/domain`, {
         method,
@@ -72,19 +66,15 @@ export function CustomDomainSettings({ waitListId, canManage, available }) {
           : result.data?.status === "ACTIVE"
             ? "Domain verified and connected."
             : "DNS is still propagating. Check again shortly.";
-      setMessage(successMessage);
       toast.success(successMessage);
       const refreshed = await refresh();
       if (!refreshed) {
-        setMessage(`${successMessage} The latest status could not be confirmed; retry to refresh it.`);
-        setMessageIsError(true);
+        toast.error(`${successMessage} The latest status could not be confirmed; retry to refresh it.`);
       }
     } catch (error) {
-      setMessage(error.message || "Could not update domain.");
-      setMessageIsError(true);
       toast.error(error.message || "Could not update domain. Try again.");
       const refreshed = await refresh();
-      if (!refreshed) setMessage(`${error.message || "Could not update domain."} The current status could not be loaded; retry to recover.`);
+      if (!refreshed) toast.error("The current status could not be loaded; retry to recover.");
     } finally {
       setBusy(false);
     }
@@ -94,7 +84,7 @@ export function CustomDomainSettings({ waitListId, canManage, available }) {
 
   return <div className="product-custom-domain" aria-busy={busy || loadState === "loading"}>
     {loadState === "loading" && !domain && <>
-      <p role="status">Loading custom domain…</p>
+      <p role="status" className="sr-only">Loading custom domain…</p>
       <div className="product-domain-skeleton" aria-hidden="true"><i /><i /><i /></div>
     </>}
     {loadState === "error" && <div role="alert" className="product-domain-load-error">
@@ -114,6 +104,5 @@ export function CustomDomainSettings({ waitListId, canManage, available }) {
       {domain.status === "ACTIVE" && <p className="product-help">Your waitlist is ready on this domain.</p>}
     </>}
 
-    <p role={messageIsError ? "alert" : "status"} aria-live={messageIsError ? "assertive" : "polite"}>{busy ? "Updating domain…" : message}</p>
   </div>;
 }

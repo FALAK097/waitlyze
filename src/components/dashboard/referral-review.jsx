@@ -33,6 +33,7 @@ export function ReferralReview({ waitListId, initialReviews, initialLoadError = 
     if ((notes[review.id] || "").trim().length < 8) {
       setErrors((current) => ({ ...current, [review.id]: "Add a decision note of at least 8 characters." }));
       document.getElementById(`review-note-${review.id}`)?.focus();
+      toast.error("Add a decision note of at least 8 characters.");
       return;
     }
     setPendingId(review.id);
@@ -63,9 +64,8 @@ export function ReferralReview({ waitListId, initialReviews, initialLoadError = 
         <p className="product-help">{reasonText[review.reviewReason] || "This referral needs a manual eligibility decision."}</p>
         {review.reviewStatus === "NEEDS_REVIEW" && canManage && <div className="product-referral-decision">
           <Label htmlFor={`review-note-${review.id}`}>Decision note</Label>
-          <Textarea className="product-review-note" id={`review-note-${review.id}`} aria-invalid={Boolean(errors[review.id])} aria-describedby={`review-note-hint-${review.id}${errors[review.id] ? ` review-error-${review.id}` : ""}`} minLength={8} maxLength={240} value={notes[review.id] || ""} onChange={(event) => setNotes((current) => ({ ...current, [review.id]: event.target.value }))} rows={2} placeholder="Explain your decision" />
+          <Textarea className="product-review-note" id={`review-note-${review.id}`} aria-invalid={Boolean(errors[review.id])} aria-describedby={`review-note-hint-${review.id}`} minLength={8} maxLength={240} value={notes[review.id] || ""} onChange={(event) => setNotes((current) => ({ ...current, [review.id]: event.target.value }))} rows={2} placeholder="Explain your decision" />
           <p id={`review-note-hint-${review.id}`} className="product-help">Use 8–240 characters.</p>
-          {errors[review.id] && <p id={`review-error-${review.id}`} className="product-field-error" role="alert">{errors[review.id]}</p>}
           <div className="referral-review-actions"><Button variant="outline" disabled={Boolean(pendingId)} onClick={() => resolve(review, "APPROVED")}>{pendingId === review.id ? "Saving…" : "Approve credit"}</Button><Button variant="ghost" disabled={Boolean(pendingId)} onClick={() => resolve(review, "EXCLUDED")}>Exclude</Button></div>
         </div>}
         {review.resolution && <p className="product-referral-resolution">Decision note: {review.resolution}</p>}

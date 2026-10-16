@@ -9,13 +9,11 @@ import { toast } from "sonner";
 
 export function ReferralSettings({ waitListId, initialEnabled }) {
   const [enabled, setEnabled] = useState(initialEnabled);
-  const [error, setError] = useState("");
   const [pending, startTransition] = useTransition();
 
   function changeEnabled(next) {
     const previous = enabled;
     setEnabled(next);
-    setError("");
     startTransition(async () => {
       try {
         const result = await setWaitlistReferrals(waitListId, next);
@@ -23,9 +21,7 @@ export function ReferralSettings({ waitListId, initialEnabled }) {
         toast.success(next ? "Referral sharing is on." : "Referral sharing is off.");
       } catch (error) {
         setEnabled(previous);
-        const message = error.message || "Could not update referral sharing. Try again.";
-        setError(message);
-        toast.error(message);
+        toast.error(error.message || "Could not update referral sharing. Try again.");
       }
     });
   }
@@ -39,7 +35,6 @@ export function ReferralSettings({ waitListId, initialEnabled }) {
           <span>Referral credit counts once both email addresses are verified.</span>
         </span>
       </Label>
-      <p className="product-announcement" role={error ? "alert" : "status"} aria-live={error ? "assertive" : "polite"}>{pending ? "Saving…" : error}</p>
     </div>
   );
 }
