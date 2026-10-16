@@ -1,9 +1,9 @@
 ---
 title: Analytics
-description: Read visitors, signups, conversion, and verification trends.
+description: Read visitors, signups, conversion, referrals, and email trends.
 ---
 
-The **Analytics** tab at `/waitlists/[id]/analytics` requires view access. It answers three questions: are people visiting, are they signing up, and are they verifying?
+The **Analytics** tab at `/waitlists/[id]/analytics` requires view access. It answers: are people visiting, signing up, verifying — and is the referral loop turning?
 
 ## Metrics at a glance
 
@@ -11,8 +11,12 @@ The **Analytics** tab at `/waitlists/[id]/analytics` requires view access. It an
 | --- | --- | --- |
 | Visitors | Distinct browsers (impressions) | Total for the range |
 | Signups | Signup records created | Of which `N verified` |
-| Conversion | `signups / visitors` as percent | `—` when visitors are zero |
+| Conversion | Impression-linked signups / visitors | Verdict chip (`Excellent` at 20%+, `Strong` at 10%+, `Typical` at 5%+, `Needs work` below) |
 | Verification | Verified signups share | Plus `N awaiting verification` |
+| Viral K-factor | Eligible referrals per verified signup | Verdict chip (`Self-sustaining` at 1.0+, `Growing` at 0.4+, `Early` at 0.1+, `Dormant` below) |
+| Points awarded | Referral-engine points in range | Split into join vs referral credit |
+
+Benchmarks are directional (waitlist median conversion ≈ 11%), not targets. A `—` means the denominator is zero, not zero performance.
 
 No activity shows an explicit empty state, not zeros pretending to be insight. If the query fails, you get the error with a **Try again** action.
 
@@ -24,20 +28,29 @@ No activity shows an explicit empty state, not zeros pretending to be insight. I
 
 ## Activity over time
 
-The trend panel plots visitors, signups, and verified signups per day. Use the view toggle for:
+The trend panel plots visitors and signups per day. Use the view toggle for:
 
 - **Chart** — area visualization with series focus for overlapping lines.
-- **Table** — day-by-day numbers with dates formatted in UTC for auditability.
+- **Table** — day-by-day numbers (visitors, signups, verified) with dates formatted in UTC for auditability.
 
 Switching ranges reloads with a loading skeleton and a screen-reader update (“Updating analytics…”). The table view is the accessible source of truth when colors are ambiguous.
+
+## Referral loop
+
+Three steps in order — **Referred in**, **Verified** (share of referred), **Shared again** (share of verified: referred signups who went on to refer eligible signups) — followed by **Top referrers** ranked by eligible referrals, with points. Below it, **Sources & audience** ranks UTM sources, referrer hosts, countries, and device types by signup share.
+
+## Emails
+
+Recent sent broadcasts with delivered and failed counts per send. Confirmation emails stay out of it; use [Email tools](/docs/email) for templates and tests.
 
 ## How to read it
 
 - **High visitors, low conversion**: page or offer needs work. Check [Page builder](/docs/page-builder) and [Signup flow](/docs/signup-flow).
 - **High signups, low verification**: verification email or sender needs work. Check [Resend](/docs/resend) and delivery health in [Email tools](/docs/email).
 - **Steady verification, flat referrals**: enable sharing and nudge inviters. See [Referrals](/docs/referrals) and [Automations](/docs/automations).
+- **K-factor below 0.1 with traffic**: the loop isn't turning — check the Referrals view for where it leaks (unverified invitees vs no resharing).
 
-The waitlists list reuses the same conversion math per row, so list and detail agree.
+The waitlists list shows a simpler signups-per-visitor ratio per row; the detail page uses impression-linked conversion, so the two can differ slightly by design.
 
 ## Next
 

@@ -461,6 +461,7 @@ model Impression {
   signUps      SignUp[]
 
   @@unique([waitListId, uniqueUserId])
+  @@index([waitListId, createdAt])
   @@map("impressions")
 }
 

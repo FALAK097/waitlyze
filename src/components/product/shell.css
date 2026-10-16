@@ -316,7 +316,24 @@
 .waitlist-analytics-range button, .waitlist-analytics-view button { min-height: 44px; padding: 7px 12px; border: 0; border-radius: 6px; background: transparent; color: var(--product-text-secondary); font: inherit; font-size: .8125rem; font-weight: 550; cursor: pointer; }
 .waitlist-analytics-range button[aria-pressed="true"], .waitlist-analytics-view button[aria-pressed="true"] { background: var(--product-bg-inset); color: var(--product-text-primary); }
 .waitlist-analytics-range button:focus-visible, .waitlist-analytics-view button:focus-visible, .waitlist-analytics-message button:focus-visible { outline: 2px solid var(--product-focus); outline-offset: 2px; }
-.waitlist-analytics-metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 24px 32px; margin: 0; background: var(--product-bg-surface); }
+.waitlist-analytics-metrics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px 32px; margin: 0; background: var(--product-bg-surface); }
+.waitlist-analytics-verdict { display: inline-block; justify-self: start; padding: 2px 10px; border-radius: 999px; font-size: .75rem; font-weight: 550; letter-spacing: 0; }
+.waitlist-analytics-verdict[data-tone="good"] { background: color-mix(in srgb, var(--product-success-text) 12%, var(--product-bg-surface)); color: var(--product-success-text); }
+.waitlist-analytics-verdict[data-tone="watch"] { background: var(--product-bg-inset); color: var(--product-text-secondary); }
+.waitlist-analytics-verdict[data-tone="bad"] { background: color-mix(in srgb, var(--product-danger-text) 10%, var(--product-bg-surface)); color: var(--product-danger-text); }
+.waitlist-analytics-funnel { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 0 0 20px; padding: 0; list-style: none; }
+.waitlist-analytics-funnel li { position: relative; display: grid; gap: 4px; align-content: start; padding: 16px; border: 1px solid var(--product-border-subtle); border-radius: 10px; background: var(--product-bg-surface); }
+.waitlist-analytics-funnel li:not(:first-child)::before { content: "→"; position: absolute; top: 50%; left: -12px; translate: 0 -50%; color: var(--product-text-secondary); font-size: .875rem; }
+.waitlist-analytics-funnel strong { font-size: 1.25rem; font-weight: 600; font-variant-numeric: tabular-nums; letter-spacing: -.02em; }
+.waitlist-analytics-funnel span { color: var(--product-text-secondary); font-size: .8125rem; }
+.waitlist-analytics-breakdowns { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px 32px; }
+.waitlist-analytics-breakdowns h4 { margin: 0 0 4px; font-size: .8125rem; font-weight: 550; color: var(--product-text-secondary); }
+.waitlist-analytics-ranked { margin: 0; padding: 0; list-style: none; display: grid; }
+.waitlist-analytics-ranked li { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 8px 0; border-top: 1px solid var(--product-border-subtle); font-size: .875rem; }
+.waitlist-analytics-ranked li span:first-child { overflow-wrap: anywhere; min-width: 0; }
+.waitlist-analytics-ranked li span:last-child { color: var(--product-text-secondary); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.waitlist-analytics-table-wrap th span { display: block; margin-top: 2px; font-weight: 400; font-size: .8125rem; color: var(--product-text-secondary); }
+@media (max-width: 760px) { .waitlist-analytics-breakdowns { grid-template-columns: minmax(0, 1fr); } .waitlist-analytics-funnel { grid-template-columns: minmax(0, 1fr); } .waitlist-analytics-funnel li:not(:first-child)::before { content: "↓"; top: -14px; left: 24px; translate: 0; } }
 .waitlist-analytics-metric { min-width: 0; padding: 0; }
 
 .waitlist-analytics-metric dt { color: var(--product-text-secondary); font-size: .8125rem; }
@@ -348,7 +365,7 @@
 .waitlist-analytics-empty span { font-size: .875rem; }
 .waitlist-analytics-loading-label { margin: 18px 0 8px; color: var(--product-text-secondary); font-size: .875rem; }
 .waitlist-analytics-loading { display: grid; gap: 16px; }
-.waitlist-analytics-loading-metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+.waitlist-analytics-loading-metrics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
 .waitlist-analytics-loading-metric, .waitlist-analytics-loading-chart { background: var(--product-bg-surface); }
 .waitlist-analytics-loading-metric { display: grid; gap: 12px; padding: 0; }
 .waitlist-analytics-loading-metric i:first-child { width: 42%; height: 12px; }

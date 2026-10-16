@@ -21,13 +21,22 @@ function formatDate(value, options = { month: "short", day: "numeric" }) {
   return new Intl.DateTimeFormat("en-GB", { ...options, timeZone: "UTC" }).format(new Date(`${value}T12:00:00Z`));
 }
 
-function Metric({ label, value, detail }) {
-  return <div className="waitlist-analytics-metric"><dt>{label}</dt><dd><span>{value}</span><small>{detail}</small></dd></div>;
+function Metric({ label, value, detail, verdict }) {
+  return <div className="waitlist-analytics-metric"><dt>{label}</dt><dd><span>{value}</span>{verdict ? <span className="waitlist-analytics-verdict" data-tone={verdict.tone}>{verdict.label}</span> : null}<small>{detail}</small></dd></div>;
+}
+
+function RankedRows({ rows, empty }) {
+  if (!rows.length) return <p className="product-help">{empty}</p>;
+  return <ul className="waitlist-analytics-ranked">{rows.map((row) => <li key={row.label}><span>{row.label}</span><span className="tabular-nums">{number.format(row.value)} · {row.share}%</span></li>)}</ul>;
+}
+
+function rateText(value) {
+  return value == null ? "—" : `${value}%`;
 }
 
 function AnalyticsSkeleton() {
   return <div className="waitlist-analytics-loading" aria-hidden="true">
-    <div className="waitlist-analytics-loading-metrics">{[0, 1, 2, 3].map((item) => <div className="waitlist-analytics-loading-metric" key={item}><i /><i /></div>)}</div>
+    <div className="waitlist-analytics-loading-metrics">{[0, 1, 2, 3, 4, 5].map((item) => <div className="waitlist-analytics-loading-metric" key={item}><i /><i /></div>)}</div>
     <div className="waitlist-analytics-loading-chart"><i /><i /><i /><i /><i /></div>
   </div>;
 }
@@ -72,6 +81,10 @@ export function WaitlistAnalytics({ waitListId }) {
   const noActivity = summary && summary.visitors === 0 && summary.signups === 0;
   const conversion = summary?.conversionRate == null ? "—" : `${summary.conversionRate}%`;
   const verification = summary?.verificationRate == null ? "—" : `${summary.verificationRate}%`;
+  const kfactor = summary?.kfactor == null ? "—" : summary.kfactor.toFixed(2);
+  const funnel = currentAnalytics?.funnel;
+  const funnelVerifiedRate = funnel && funnel.referred > 0 ? Math.round((funnel.verified / funnel.referred) * 1000) / 10 : null;
+  const funnelSharedRate = funnel && funnel.verified > 0 ? Math.round((funnel.sharedAgain / funnel.verified) * 1000) / 10 : null;
   const toggleFocusedSeries = (seriesName) => setFocusedSeries((current) => current === seriesName ? null : seriesName);
 
   return <section className="waitlist-analytics" aria-labelledby="waitlist-analytics-title" aria-busy={loading}>
@@ -91,8 +104,10 @@ export function WaitlistAnalytics({ waitListId }) {
       <dl className="waitlist-analytics-metrics">
         <Metric label="Visitors" value={number.format(summary.visitors)} detail="Distinct browsers" />
         <Metric label="Signups" value={number.format(summary.signups)} detail={`${number.format(summary.verifiedSignups)} verified`} />
-        <Metric label="Conversion" value={conversion} detail="Visitors who signed up" />
+        <Metric label="Conversion" value={conversion} detail="Visitors who signed up" verdict={summary.conversionVerdict} />
         <Metric label="Verification" value={verification} detail={`${number.format(summary.pendingVerification)} awaiting verification`} />
+        <Metric label="Viral K-factor" value={kfactor} detail="Signups per verified signup" verdict={summary.kfactorVerdict} />
+        <Metric label="Points awarded" value={number.format(summary.pointsTotal)} detail={`${number.format(summary.pointsSignup)} join · ${number.format(summary.pointsReferral)} referral`} />
       </dl>
 
       <section className="waitlist-analytics-panel" aria-labelledby="waitlist-trend-title">
@@ -112,7 +127,40 @@ export function WaitlistAnalytics({ waitListId }) {
           </div>
         </>}
       </section>
-      <div className="waitlist-analytics-definitions"><Collapsible><CollapsibleTrigger>How these numbers are counted</CollapsibleTrigger><CollapsibleContent><ul><li>{currentAnalytics.definitions.visitors}</li><li>{currentAnalytics.definitions.conversionRate}</li><li>{currentAnalytics.definitions.verificationRate}</li>{currentAnalytics.caveats.slice(0, 2).map((caveat) => <li key={caveat}>{caveat}</li>)}</ul></CollapsibleContent></Collapsible></div>
+      <section className="waitlist-analytics-panel" aria-labelledby="waitlist-loop-title">
+        <header className="waitlist-analytics-panel-heading"><div><h3 id="waitlist-loop-title">Referral loop</h3><p>Referred → verified → sharing again, plus top referrers.</p></div></header>
+        <ol className="waitlist-analytics-funnel">
+          <li><strong className="tabular-nums">{number.format(funnel.referred)}</strong><span>Referred in</span></li>
+          <li><strong className="tabular-nums">{number.format(funnel.verified)} · {rateText(funnelVerifiedRate)}</strong><span>Verified</span></li>
+          <li><strong className="tabular-nums">{number.format(funnel.sharedAgain)} · {rateText(funnelSharedRate)}</strong><span>Shared again</span></li>
+        </ol>
+        {currentAnalytics.topReferrers.length ? <div className="product-table-wrap waitlist-analytics-table-wrap product-waitlist-table"><table>
+          <caption className="sr-only">Top referrers</caption>
+          <thead><tr><th scope="col">Referrer</th><th scope="col">Referrals</th><th scope="col">Points</th></tr></thead>
+          <tbody>{currentAnalytics.topReferrers.map((referrer) => <tr key={referrer.email}><th scope="row">{referrer.email}</th><td className="tabular-nums">{number.format(referrer.referrals)}</td><td className="tabular-nums">{number.format(referrer.points)}</td></tr>)}</tbody>
+        </table></div> : <p className="product-help">No eligible referrals in this period.</p>}
+      </section>
+
+      <section className="waitlist-analytics-panel" aria-labelledby="waitlist-sources-title">
+        <header className="waitlist-analytics-panel-heading"><div><h3 id="waitlist-sources-title">Sources & audience</h3><p>Where signups came from and who they are.</p></div></header>
+        <div className="waitlist-analytics-breakdowns">
+          <div><h4>UTM sources</h4><RankedRows rows={currentAnalytics.sources.utm} empty="No source data in this period." /></div>
+          <div><h4>Referrer hosts</h4><RankedRows rows={currentAnalytics.sources.referrers} empty="No referrer data in this period." /></div>
+          <div><h4>Countries</h4><RankedRows rows={currentAnalytics.geo.countries} empty="No country data in this period." /></div>
+          <div><h4>Devices</h4><RankedRows rows={currentAnalytics.geo.devices} empty="No device data in this period." /></div>
+        </div>
+      </section>
+
+      <section className="waitlist-analytics-panel" aria-labelledby="waitlist-emails-title">
+        <header className="waitlist-analytics-panel-heading"><div><h3 id="waitlist-emails-title">Emails</h3><p>Broadcast delivery, send by send.</p></div></header>
+        {currentAnalytics.emails.length ? <div className="product-table-wrap waitlist-analytics-table-wrap product-waitlist-table"><table>
+          <caption className="sr-only">Broadcast delivery</caption>
+          <thead><tr><th scope="col">Broadcast</th><th scope="col">Sent</th><th scope="col">Delivered</th><th scope="col">Failed</th></tr></thead>
+          <tbody>{currentAnalytics.emails.map((email) => <tr key={email.id}><th scope="row">{email.name}<span>{email.sentAt ? formatDate(email.sentAt.slice(0, 10), { month: "short", day: "numeric", year: "numeric" }) : "—"}</span></th><td className="tabular-nums">{number.format(email.total)}</td><td className="tabular-nums">{number.format(email.delivered)}{email.deliveredRate == null ? "" : ` · ${email.deliveredRate}%`}</td><td className="tabular-nums">{number.format(email.failed)}</td></tr>)}</tbody>
+        </table></div> : <p className="product-help">No broadcasts sent in this period.</p>}
+      </section>
+
+      <div className="waitlist-analytics-definitions"><Collapsible><CollapsibleTrigger>How these numbers are counted</CollapsibleTrigger><CollapsibleContent><ul><li>{currentAnalytics.definitions.visitors}</li><li>{currentAnalytics.definitions.conversionRate}</li><li>{currentAnalytics.definitions.verificationRate}</li><li>{currentAnalytics.definitions.kfactor}</li><li>{currentAnalytics.definitions.points}</li>{currentAnalytics.caveats.slice(0, 2).map((caveat) => <li key={caveat}>{caveat}</li>)}</ul></CollapsibleContent></Collapsible></div>
     </> : null}
   </section>;
 }
