@@ -318,6 +318,19 @@
 .waitlist-analytics-range-presets { display: grid; gap: 2px; padding: 4px 4px 8px; border-bottom: 1px solid var(--product-border-subtle); }
 .waitlist-analytics-range-presets button { min-height: 36px; padding: 6px 10px; border: 0; border-radius: 7px; background: transparent; color: var(--product-text-secondary); font: inherit; font-size: .8125rem; font-weight: 500; text-align: start; cursor: pointer; }
 .waitlist-analytics-range-presets button[aria-pressed="true"] { background: var(--product-bg-inset); color: var(--product-text-primary); font-weight: 600; }
+.waitlist-analytics-range-calendar-header { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 2px 8px 0; color: var(--product-text-secondary); font-size: .75rem; font-weight: 550; }
+.waitlist-analytics-range-back { min-height: 28px; padding: 0 4px; border: 0; border-radius: 6px; background: transparent; color: var(--product-text-secondary); font: inherit; font-size: .75rem; font-weight: 550; cursor: pointer; }
+.waitlist-analytics-range-back:hover { background: var(--product-bg-inset); color: var(--product-text-primary); }
+.waitlist-analytics-range-footer { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 10px; padding: 8px 8px 4px; border-top: 1px solid var(--product-border-subtle); }
+.waitlist-analytics-range-fields { display: flex; gap: 10px; }
+.waitlist-analytics-range-fields label { display: grid; gap: 3px; color: var(--product-text-secondary); font-size: .6875rem; font-weight: 550; }
+.waitlist-analytics-range-fields output { display: block; min-width: 7.5rem; padding: 5px 8px; border: 1px solid var(--product-border-subtle); border-radius: 7px; background: var(--product-bg-surface); color: var(--product-text-primary); font: inherit; font-size: .75rem; font-variant-numeric: tabular-nums; }
+.waitlist-analytics-range-actions { display: flex; align-items: center; gap: 6px; }
+.waitlist-analytics-range-actions button { min-height: 32px; padding: 4px 10px; border: 0; border-radius: 7px; background: transparent; color: var(--product-text-secondary); font: inherit; font-size: .75rem; font-weight: 550; cursor: pointer; }
+.waitlist-analytics-range-actions button:hover:not(:disabled) { background: var(--product-bg-inset); color: var(--product-text-primary); }
+.waitlist-analytics-range-actions button:disabled { opacity: .45; cursor: not-allowed; }
+.waitlist-analytics-range-actions .waitlist-analytics-range-apply { background: var(--product-ink); color: var(--product-bg-surface); }
+.waitlist-analytics-range-actions .waitlist-analytics-range-apply:hover:not(:disabled) { background: var(--product-ink); opacity: .9; color: var(--product-bg-surface); }
 .waitlist-analytics-view { padding: 3px; border: 1px solid var(--product-border-subtle); border-radius: 10px; background: var(--product-bg-surface); }
 .waitlist-analytics-view button { min-height: 36px; padding: 6px 10px; border: 0; border-radius: 7px; background: transparent; color: var(--product-text-secondary); font: inherit; font-size: .75rem; font-weight: 550; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
 .waitlist-analytics-view button[aria-pressed="true"] { background: var(--product-bg-inset); color: var(--product-text-primary); }

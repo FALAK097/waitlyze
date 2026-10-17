@@ -89,12 +89,13 @@ function DimensionPicker({ label, options, value, onChange }) {
 
 function RangePicker({ range, from, to, onChange }) {
   const [open, setOpen] = useState(false);
-  const [showCalendar, setShowCalendar] = useState(false);
+  const [view, setView] = useState("presets");
+  const [draft, setDraft] = useState(undefined);
   const today = useMemo(() => {
     const now = new Date();
     return new Date(now.getFullYear(), now.getMonth(), now.getDate());
   }, []);
-  const selected = useMemo(() => {
+  const committed = useMemo(() => {
     const fromDate = parseIsoDate(from);
     const toDate = parseIsoDate(to);
     return fromDate && toDate ? { from: fromDate, to: toDate } : undefined;
@@ -102,13 +103,36 @@ function RangePicker({ range, from, to, onChange }) {
 
   const disabled = (day) => {
     if (day > today) return true;
-    if (!selected?.from) return false;
-    return Math.abs(differenceInCalendarDays(day, selected.from)) >= MAX_RANGE_DAYS;
+    if (!draft?.from) return false;
+    return Math.abs(differenceInCalendarDays(day, draft.from)) >= MAX_RANGE_DAYS;
+  };
+
+  const draftDays = draft?.from && draft?.to ? differenceInCalendarDays(draft.to, draft.from) + 1 : null;
+  const canApply = Boolean(draft?.from && draft?.to && draftDays >= 1 && draftDays <= MAX_RANGE_DAYS);
+
+  const openPicker = () => {
+    setDraft(committed);
+    setView("calendar");
+  };
+
+  const applyDraft = () => {
+    if (!canApply) return;
+    onChange({
+      range: "custom",
+      from: format(draft.from, "yyyy-MM-dd"),
+      to: format(draft.to, "yyyy-MM-dd"),
+    });
+    setOpen(false);
+    setView("presets");
+    setDraft(undefined);
   };
 
   return <Popover open={open} onOpenChange={(nextOpen) => {
     setOpen(nextOpen);
-    if (!nextOpen) setShowCalendar(false);
+    if (!nextOpen) {
+      setView("presets");
+      setDraft(undefined);
+    }
   }}>
     <PopoverTrigger
       render={
@@ -118,31 +142,41 @@ function RangePicker({ range, from, to, onChange }) {
         </button>
       }
     />
-    <PopoverContent align="end" className={showCalendar ? "w-120" : "w-48"}>
+    <PopoverContent align="end" className={view === "calendar" ? "w-120" : "w-48"}>
       <div className="waitlist-analytics-range-popover">
-        <div className="waitlist-analytics-range-presets" role="group" aria-label="Date range presets">
-          {rangePresets.map((option) => <button key={option.days} type="button" aria-pressed={range === option.days} onClick={() => { onChange({ range: option.days, from: null, to: null }); setShowCalendar(false); setOpen(false); }}>{option.label}</button>)}
-          <button type="button" aria-pressed={range === "custom"} onClick={() => { setShowCalendar(true); if (range !== "custom") onChange({ range: "custom", from: null, to: null }); }}>Custom…</button>
-        </div>
-        {showCalendar ? <Calendar
-          mode="range"
-          defaultMonth={selected?.from ?? addDaysSafe(today, -6)}
-          selected={selected}
-          onSelect={(next) => {
-            if (!next?.from || !next?.to) return;
-            const days = differenceInCalendarDays(next.to, next.from) + 1;
-            if (days > MAX_RANGE_DAYS) return;
-            onChange({
-              range: "custom",
-              from: format(next.from, "yyyy-MM-dd"),
-              to: format(next.to, "yyyy-MM-dd"),
-            });
-            setShowCalendar(false);
-            setOpen(false);
-          }}
-          disabled={disabled}
-          numberOfMonths={2}
-        /> : null}
+        {view === "presets" ? <div className="waitlist-analytics-range-presets" role="group" aria-label="Date range presets">
+          {rangePresets.map((option) => <button key={option.days} type="button" aria-pressed={range === option.days} onClick={() => { onChange({ range: option.days, from: null, to: null }); setOpen(false); }}>{option.label}</button>)}
+          <button type="button" aria-pressed={false} onClick={openPicker}>Custom…</button>
+        </div> : <>
+          <div className="waitlist-analytics-range-calendar-header">
+            <button type="button" className="waitlist-analytics-range-back" onClick={() => setView("presets")}>← Presets</button>
+            <span>{canApply ? `${format(draft.from, "LLL d")} – ${format(draft.to, "LLL d, y")}` : "Select start and end"}</span>
+          </div>
+          <Calendar
+            mode="range"
+            defaultMonth={draft?.from ?? addDaysSafe(today, -14)}
+            selected={draft}
+            onSelect={setDraft}
+            disabled={disabled}
+            numberOfMonths={2}
+          />
+          <div className="waitlist-analytics-range-footer">
+            <div className="waitlist-analytics-range-fields">
+              <label>
+                <span>Start</span>
+                <output>{draft?.from ? format(draft.from, "yyyy-MM-dd") : "—"}</output>
+              </label>
+              <label>
+                <span>End</span>
+                <output>{draft?.to ? format(draft.to, "yyyy-MM-dd") : "—"}</output>
+              </label>
+            </div>
+            <div className="waitlist-analytics-range-actions">
+              <button type="button" onClick={() => setDraft(undefined)}>Clear</button>
+              <button type="button" className="waitlist-analytics-range-apply" disabled={!canApply} onClick={applyDraft}>Apply</button>
+            </div>
+          </div>
+        </>}
       </div>
     </PopoverContent>
   </Popover>;
