@@ -1,6 +1,6 @@
 "use client";
 
-import { Area, AreaChart, CartesianGrid, Tooltip, XAxis, YAxis } from "recharts";
+import { Bar, BarChart, CartesianGrid, Tooltip, XAxis, YAxis } from "recharts";
 import { ChartContainer } from "@/components/ui/chart";
 
 const chartConfig = {
@@ -23,24 +23,13 @@ function ActivityTooltip({ active, payload, label, formatDate }) {
 
 export function EvilAreaChart({ series, formatDate }) {
   return <ChartContainer config={chartConfig} className="aspect-auto h-80">
-    <AreaChart data={series} margin={{ top: 18, right: 14, left: 0, bottom: 0 }} accessibilityLayer>
-      <defs>
-        <linearGradient id="analytics-visitors-fill" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#4b95d1" stopOpacity="0.28" />
-          <stop offset="100%" stopColor="#4b95d1" stopOpacity="0.02" />
-        </linearGradient>
-        <linearGradient id="analytics-signups-fill" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#ee9477" stopOpacity="0.26" />
-          <stop offset="100%" stopColor="#ee9477" stopOpacity="0.02" />
-        </linearGradient>
-      </defs>
+    <BarChart data={series} margin={{ top: 18, right: 14, left: 0, bottom: 0 }} accessibilityLayer barGap={0} barCategoryGap="18%">
       <CartesianGrid vertical={false} stroke="#e8edf1" strokeDasharray="0" />
       <XAxis dataKey="date" tickLine={false} axisLine={false} minTickGap={28} tickMargin={12} tickFormatter={(value) => formatDate(value)} tick={{ fill: "#6b7280", fontSize: 11 }} dy={4} />
-      <YAxis yAxisId="visitors" allowDecimals={false} tickLine={false} axisLine={false} width={40} tick={{ fill: "#6b7280", fontSize: 11 }} tickFormatter={(value) => number.format(value)} />
-      <YAxis yAxisId="signups" orientation="right" allowDecimals={false} tickLine={false} axisLine={false} width={36} tick={{ fill: "#6b7280", fontSize: 11 }} tickFormatter={(value) => number.format(value)} />
-      <Tooltip content={<ActivityTooltip formatDate={formatDate} />} cursor={{ stroke: "#c5cdd6", strokeWidth: 1, strokeDasharray: "4 4" }} />
-      <Area yAxisId="visitors" dataKey="visitors" name="visitors" type="monotone" stroke="#4b95d1" fill="url(#analytics-visitors-fill)" strokeWidth={2} strokeOpacity={0.9} dot={false} activeDot={{ r: 4, strokeWidth: 2, fill: "#fff", stroke: "#4b95d1" }} isAnimationActive={false} />
-      <Area yAxisId="signups" dataKey="signups" name="signups" type="monotone" stroke="#ee9477" fill="url(#analytics-signups-fill)" strokeWidth={2} strokeOpacity={0.9} dot={false} activeDot={{ r: 4, strokeWidth: 2, fill: "#fff", stroke: "#ee9477" }} isAnimationActive={false} />
-    </AreaChart>
+      <YAxis allowDecimals={false} tickLine={false} axisLine={false} width={40} tick={{ fill: "#6b7280", fontSize: 11 }} tickFormatter={(value) => number.format(value)} />
+      <Tooltip content={<ActivityTooltip formatDate={formatDate} />} cursor={{ fill: "rgba(0,0,0,0.04)" }} />
+      <Bar dataKey="visitors" name="visitors" stackId="activity" fill="#4b95d1" radius={[0, 0, 0, 0]} isAnimationActive={false} />
+      <Bar dataKey="signups" name="signups" stackId="activity" fill="#ee9477" radius={[3, 3, 0, 0]} isAnimationActive={false} />
+    </BarChart>
   </ChartContainer>;
 }

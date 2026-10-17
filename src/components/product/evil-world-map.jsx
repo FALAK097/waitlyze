@@ -71,7 +71,6 @@ export function EvilWorldMap({ countries = [], metric = "visitors" }) {
   const byCode = useMemo(() => new Map(countries.map((row) => [String(row.label || "").toUpperCase(), row])), [countries]);
   const max = useMemo(() => countries.reduce((current, row) => Math.max(current, metric === "signups" ? row.signups : row.visitors), 0), [countries, metric]);
   const valueOf = (row) => (metric === "signups" ? row?.signups : row?.visitors) || 0;
-  const shareOf = (row) => (metric === "signups" ? row?.signupsShare : row?.visitorsShare) || 0;
 
   const hide = () => setActive(null);
 
@@ -92,7 +91,6 @@ export function EvilWorldMap({ countries = [], metric = "visitors" }) {
       code,
       name: code ? regionNames.of(code) || name : name,
       value: valueOf(row),
-      share: shareOf(row),
       x: tooltipX,
       y: tooltipY,
     });
@@ -139,7 +137,6 @@ export function EvilWorldMap({ countries = [], metric = "visitors" }) {
         <span>Signups</span>
         <strong>{number.format(byCode.get(active.code)?.signups || 0)}</strong>
       </div>
-      {active.share ? <small>{active.share}% of measured {metric}</small> : null}
     </div> : null}
   </div>;
 }

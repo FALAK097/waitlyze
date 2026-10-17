@@ -365,7 +365,17 @@ export function WaitlistAnalytics({ waitListId, emailsEnabled = false }) {
           </div>
         </section>
 
-        <section className="waitlist-analytics-data-panel" aria-labelledby="waitlist-audience-title">
+        <section className="waitlist-analytics-data-panel" aria-labelledby="waitlist-technology-title">
+          <header><h3 id="waitlist-technology-title">Technology</h3><PanelMetricSwitch metric={technologyMetric} onChange={setTechnologyMetric} /></header>
+          <DimensionPicker label="Technology dimension" value={technologyView} onChange={setTechnologyView} options={[
+            { label: "Browser", value: "browsers" },
+            { label: "OS", value: "operatingSystems" },
+            { label: "Device", value: "devices" },
+          ]} />
+          <div className="waitlist-analytics-panel-body"><RankedBars rows={technology.rows} empty={technology.empty} kind="technology" metric={technologyMetric} /></div>
+        </section>
+
+        <section className="waitlist-analytics-data-panel waitlist-analytics-wide-panel waitlist-analytics-audience-panel" aria-labelledby="waitlist-audience-title">
           <header><h3 id="waitlist-audience-title">Audience</h3><PanelMetricSwitch metric={audienceMetric} onChange={setAudienceMetric} /></header>
           <DimensionPicker label="Audience dimension" value={audienceView} onChange={setAudienceView} options={[
             { label: "Map", value: "map" },
@@ -378,16 +388,6 @@ export function WaitlistAnalytics({ waitListId, emailsEnabled = false }) {
               ? <EvilWorldMap countries={currentAnalytics.geo.mapCountries ?? currentAnalytics.geo.countries} metric={audienceMetric} />
               : <RankedBars rows={audience.rows} empty={audience.empty} kind={audienceView === "countries" ? "country" : audienceView === "regions" ? "region" : "city"} metric={audienceMetric} />}
           </div>
-        </section>
-
-        <section className="waitlist-analytics-data-panel waitlist-analytics-wide-panel" aria-labelledby="waitlist-technology-title">
-          <header><h3 id="waitlist-technology-title">Technology</h3><PanelMetricSwitch metric={technologyMetric} onChange={setTechnologyMetric} /></header>
-          <DimensionPicker label="Technology dimension" value={technologyView} onChange={setTechnologyView} options={[
-            { label: "Browser", value: "browsers" },
-            { label: "OS", value: "operatingSystems" },
-            { label: "Device", value: "devices" },
-          ]} />
-          <div className="waitlist-analytics-panel-body"><RankedBars rows={technology.rows} empty={technology.empty} kind="technology" metric={technologyMetric} /></div>
         </section>
       </div>
 
