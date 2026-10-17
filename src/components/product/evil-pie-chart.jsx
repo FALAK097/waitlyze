@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { Cell, Pie, PieChart, Tooltip } from "recharts";
 import { ChartContainer } from "@/components/ui/chart";
 import { AnalyticsDimensionIcon } from "@/components/product/analytics-dimension-icon";
@@ -27,6 +28,7 @@ function ChannelTooltip({ active, payload }) {
 }
 
 export function EvilPieChart({ rows, metric = "visitors" }) {
+  const [active, setActive] = useState(null);
   const data = rows
     .map((row, index) => ({
       ...row,
@@ -48,14 +50,14 @@ export function EvilPieChart({ rows, metric = "visitors" }) {
         <PieChart accessibilityLayer>
           <Tooltip content={<ChannelTooltip />} />
           <Pie data={data} dataKey="value" nameKey="label" cx="50%" cy="50%" innerRadius="52%" outerRadius="86%" paddingAngle={2} cornerRadius={4} stroke="#ffffff" strokeWidth={2} isAnimationActive={false}>
-            {data.map((row) => <Cell key={row.label} fill={row.fill} />)}
+            {data.map((row) => <Cell key={row.label} fill={row.fill} fillOpacity={active ? (active === row.label ? 1 : 0.3) : 1} />)}
           </Pie>
         </PieChart>
       </ChartContainer>
       <div className="evil-pie-total" aria-hidden="true"><strong>{number.format(total)}</strong><span>{metric}</span></div>
     </div>
     <ol className="evil-pie-legend">
-      {data.map((row) => <li key={row.label}>
+      {data.map((row) => <li key={row.label} data-active={active === row.label} onMouseEnter={() => setActive(row.label)} onMouseLeave={() => setActive(null)}>
       <i style={{ "--cell-fill": row.fill }} aria-hidden="true" />
         <AnalyticsDimensionIcon label={row.label} />
         <span>{row.label}</span>

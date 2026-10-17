@@ -85,8 +85,8 @@ export function EvilWorldMap({ countries = [], metric = "visitors" }) {
     const rect = wrap.getBoundingClientRect();
     const pointerX = "clientX" in event ? event.clientX - rect.left : rect.width / 2;
     const pointerY = "clientY" in event ? event.clientY - rect.top : rect.height / 2;
-    const tooltipX = Math.min(Math.max(pointerX, 90), Math.max(rect.width - 90, 90));
-    const tooltipY = Math.min(Math.max(pointerY - 56, 8), Math.max(rect.height - 90, 8));
+    const tooltipX = Math.min(Math.max(pointerX + 16, 90), Math.max(rect.width - 90, 90));
+    const tooltipY = Math.min(Math.max(pointerY + 20, 8), Math.max(rect.height - 90, 8));
     setActive({
       code,
       name: code ? regionNames.of(code) || name : name,

@@ -371,7 +371,8 @@
 .waitlist-analytics-dimensions::-webkit-scrollbar { display: none; }
 .waitlist-analytics-dimensions button { flex: 0 0 auto; min-height: 34px; padding: 5px 9px; border: 0; border-radius: 7px; background: transparent; color: var(--product-text-secondary); font: inherit; font-size: .6875rem; cursor: pointer; }
 .waitlist-analytics-dimensions button[aria-pressed="true"] { background: var(--product-bg-inset); color: var(--product-text-primary); font-weight: 550; }
-.waitlist-analytics-panel-body { height: 246px; overflow-y: auto; border-top: 1px solid var(--product-border-subtle); }
+.waitlist-analytics-panel-body { height: 246px; overflow-y: auto; border-top: 1px solid var(--product-border-subtle); scrollbar-width: none; -ms-overflow-style: none; }
+.waitlist-analytics-panel-body::-webkit-scrollbar { display: none; }
 .waitlist-analytics-wide-panel .waitlist-analytics-panel-body { height: auto; min-height: 140px; max-height: 260px; }
 .waitlist-analytics-loading, .waitlist-analytics-panel-loading, .waitlist-analytics-panel-empty { display: grid; height: 246px; place-items: center; border-top: 1px solid var(--product-border-subtle); color: var(--product-text-secondary); font-size: .75rem; text-align: center; padding: 24px; }
 .evil-bar-rows { display: grid; margin: 0; padding: 0; list-style: none; }
@@ -399,7 +400,8 @@
 .evil-pie-total strong { color: var(--product-text-primary); font-size: 1.2rem; font-weight: 600; letter-spacing: -.03em; }
 .evil-pie-total span { color: var(--product-text-secondary); font-size: .6875rem; }
 .evil-pie-legend { display: grid; gap: 2px; margin: 0; padding: 0; list-style: none; }
-.evil-pie-legend li { display: grid; grid-template-columns: 8px 22px minmax(0, 1fr) auto 40px; align-items: center; gap: 8px; min-height: 28px; font-size: .75rem; }
+.evil-pie-legend li { display: grid; grid-template-columns: 8px 22px minmax(0, 1fr) auto 40px; align-items: center; gap: 8px; min-height: 28px; padding-inline: 4px; border-radius: 6px; font-size: .75rem; cursor: default; transition: background-color .12s ease; }
+.evil-pie-legend li[data-active="true"] { background-color: var(--product-bg-page); }
 .evil-pie-legend i { width: 8px; height: 8px; border-radius: 2px; background: var(--cell-fill, var(--product-border-control)); }
 .evil-pie-legend span { overflow: hidden; color: var(--product-text-primary); text-overflow: ellipsis; white-space: nowrap; }
 .evil-pie-legend strong { color: var(--product-text-primary); font-weight: 600; }

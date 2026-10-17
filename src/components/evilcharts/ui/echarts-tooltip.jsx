@@ -50,7 +50,7 @@ export function tooltipShell(
   }
 ) {
   return `<div class="grid min-w-32 items-start gap-1.5 border border-border/50 px-2.5 py-1.5 text-xs shadow-xl ${roundnessClass[roundness]} ${tooltipVariantClass[variant]}">
-      <div class="font-medium text-primary">${label}</div>
+      <div class="font-medium text-foreground">${label}</div>
       <div class="grid gap-1.5">${body}</div>
     </div>`;
 }
