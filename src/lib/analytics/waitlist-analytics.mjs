@@ -22,51 +22,87 @@ const ratio = (numerator, denominator) => denominator === 0
   : Math.round((numerator / denominator) * 10000) / 100;
 
 const number = (value) => Number(value ?? 0);
-
-// Benchmarks borrowed from public waitlist research (LaunchList ~11% median
-// conversion; typical SaaS K-factor 0.1–0.5, self-sustaining at 1.0+).
-const CONVERSION_BENCHMARKS = [
-  { atLeast: 20, label: "Excellent", tone: "good" },
-  { atLeast: 10, label: "Strong", tone: "good" },
-  { atLeast: 5, label: "Typical", tone: "watch" },
-  { atLeast: 0, label: "Needs work", tone: "bad" },
-];
-const KFACTOR_BENCHMARKS = [
-  { atLeast: 1, label: "Self-sustaining", tone: "good" },
-  { atLeast: 0.4, label: "Growing", tone: "good" },
-  { atLeast: 0.1, label: "Early", tone: "watch" },
-  { atLeast: 0, label: "Dormant", tone: "bad" },
-];
-
-function verdictFor(value, benchmarks) {
-  if (value == null) return null;
-  return benchmarks.find((benchmark) => value >= benchmark.atLeast) || null;
-}
+const percentChange = (current, previous) => {
+  if (current == null || previous == null) return null;
+  if (previous === 0) return current === 0 ? 0 : null;
+  return Math.round(((current - previous) / previous) * 1000) / 10;
+};
 
 function prettifyDevice(deviceType) {
   if (!deviceType) return "Unknown";
   return deviceType.charAt(0).toUpperCase() + deviceType.slice(1);
 }
 
-export async function getWaitlistAnalytics(db, { waitListId, days = 30, timeZone = "UTC", now = new Date() }) {
+function browserOf(userAgent) {
+  const agent = String(userAgent || "");
+  if (/Instagram/i.test(agent)) return "Instagram";
+  if (/FBAN|FBAV/i.test(agent)) return "Facebook";
+  if (/LinkedInApp/i.test(agent)) return "LinkedIn";
+  if (/SamsungBrowser/i.test(agent)) return "Samsung Internet";
+  if (/Edg(?:A|iOS)?\//i.test(agent)) return "Edge";
+  if (/OPR\/|Opera/i.test(agent)) return "Opera";
+  if (/Firefox\/|FxiOS\//i.test(agent)) return "Firefox";
+  if (/CriOS\/|Chrome\//i.test(agent)) return "Chrome";
+  if (/Safari\//i.test(agent)) return "Safari";
+  return agent && agent !== "unknown" ? "Other" : "Unknown";
+}
+
+function operatingSystemOf(userAgent) {
+  const agent = String(userAgent || "");
+  if (/Windows NT/i.test(agent)) return "Windows";
+  if (/iPad/i.test(agent)) return "iPadOS";
+  if (/iPhone|iPod/i.test(agent)) return "iOS";
+  if (/Android/i.test(agent)) return "Android";
+  if (/CrOS/i.test(agent)) return "ChromeOS";
+  if (/Macintosh|Mac OS X/i.test(agent)) return "macOS";
+  if (/Linux/i.test(agent)) return "Linux";
+  return agent && agent !== "unknown" ? "Other" : "Unknown";
+}
+
+function channelOf({ utmMedium, utmSource, referrer }) {
+  const medium = String(utmMedium || "").trim().toLowerCase().replace(/[\s-]+/g, "_");
+  const source = String(utmSource || "").trim().toLowerCase();
+  let host = "";
+  try { host = referrer ? new URL(referrer).hostname.replace(/^www\./, "").toLowerCase() : ""; }
+  catch { host = ""; }
+
+  const social = `${source} ${host}`;
+  if (["cpc", "ppc", "paid_search", "paidsearch", "sem"].includes(medium)) return "Paid search";
+  if (["paid_social", "paidsocial", "social_paid"].includes(medium)) return "Paid social";
+  if (["email", "newsletter"].includes(medium)) return "Email";
+  if (["affiliate", "partner"].includes(medium)) return "Affiliate";
+  if (["display", "banner", "cpm", "programmatic"].includes(medium)) return "Display";
+  if (["social", "social_network", "social_media", "organic_social"].includes(medium)) return "Organic social";
+  if (["organic", "organic_search", "seo"].includes(medium)) return "Organic search";
+  if (/twitter|x\.com|t\.co|reddit|linkedin|facebook|instagram|tiktok|youtube/.test(social)) return "Organic social";
+  if (/google\.|bing\.|yahoo\.|duckduckgo\.|baidu\.|yandex\./.test(host)) return "Organic search";
+  if (host) return "Referral";
+  if (medium || source) return "Other";
+  return "Direct";
+}
+
+export async function getWaitlistAnalytics(db, { waitListId, days = 30, endDate = null, timeZone = "UTC", now = new Date() }) {
   if (typeof waitListId !== "string" || !waitListId) throw new TypeError("Waitlist ID is required.");
   const rangeDays = validDays(days);
   const zone = validTimeZone(timeZone);
   if (!(now instanceof Date) || Number.isNaN(now.valueOf())) throw new TypeError("Choose a valid end time.");
+  const endDateParam = typeof endDate === "string" && /^\d{4}-\d{2}-\d{2}$/.test(endDate) ? endDate : "";
 
   const rows = await db.$queryRaw`
     WITH period AS (
       SELECT ${waitListId}::text AS wait_list_id,
              ${zone}::text AS time_zone,
              ${now}::timestamptz AS now_at,
-             date_trunc('day', ${now}::timestamptz AT TIME ZONE ${zone})::date AS end_date,
+             COALESCE(NULLIF(${endDateParam}, '')::date,
+                   date_trunc('day', ${now}::timestamptz AT TIME ZONE ${zone})::date) AS end_date,
              ${rangeDays}::int AS day_count
     ), bounds AS (
-      SELECT wait_list_id, time_zone,
+      SELECT wait_list_id, time_zone, day_count,
              end_date - (day_count - 1) AS start_date,
              end_date,
              ((end_date - (day_count - 1))::timestamp AT TIME ZONE time_zone AT TIME ZONE 'UTC') AS start_utc,
-             ((end_date + 1)::timestamp AT TIME ZONE time_zone AT TIME ZONE 'UTC') AS end_utc
+             ((end_date + 1)::timestamp AT TIME ZONE time_zone AT TIME ZONE 'UTC') AS end_utc,
+             ((end_date - (day_count * 2 - 1))::timestamp AT TIME ZONE time_zone AT TIME ZONE 'UTC') AS previous_start_utc
       FROM period
     ), calendar AS (
       SELECT generate_series(start_date, end_date, interval '1 day')::date AS local_date
@@ -107,61 +143,6 @@ export async function getWaitlistAnalytics(db, { waitListId, days = 30, timeZone
         AND impression."createdAt" <= signup."createdAt"
         AND impression."uniqueUserId" <> ''
       GROUP BY 1
-    ), referral_daily AS (
-      SELECT (referred."createdAt" AT TIME ZONE 'UTC' AT TIME ZONE bounds.time_zone)::date AS local_date,
-             COUNT(*)::int AS eligible_referrals
-      FROM "referrals" AS referral
-      INNER JOIN "sign_ups" AS referred ON referred."id" = referral."signUpId"
-      INNER JOIN "sign_ups" AS referrer
-        ON referrer."id" = referral."referredById"
-       AND referrer."waitListId" = referred."waitListId"
-      INNER JOIN "wait_lists" AS waitlist
-        ON waitlist."id" = referred."waitListId"
-       AND waitlist."showReferrals" = true
-      CROSS JOIN bounds
-      WHERE referred."waitListId" = bounds.wait_list_id
-        AND referred."createdAt" >= bounds.start_utc
-        AND referred."createdAt" < bounds.end_utc
-        AND referral."reviewStatus" IN ('CLEAR', 'APPROVED')
-        AND referred."verifiedAt" IS NOT NULL
-        AND referrer."verifiedAt" IS NOT NULL
-        AND referral."referredById" IS NOT NULL
-        AND referral."referredById" <> referral."signUpId"
-      GROUP BY 1
-    ), referred_cohort AS (
-      SELECT referral."id" AS referral_id,
-             referred."verifiedAt" IS NOT NULL AS is_verified,
-             referred."id" AS signup_id
-      FROM "referrals" AS referral
-      INNER JOIN "sign_ups" AS referred ON referred."id" = referral."signUpId"
-      INNER JOIN "wait_lists" AS waitlist
-        ON waitlist."id" = referred."waitListId"
-       AND waitlist."showReferrals" = true
-      CROSS JOIN bounds
-      WHERE referred."waitListId" = bounds.wait_list_id
-        AND referred."createdAt" >= bounds.start_utc
-        AND referred."createdAt" < bounds.end_utc
-        AND referral."referredById" IS NOT NULL
-        AND referral."referredById" <> referral."signUpId"
-    ), sharers AS (
-      SELECT DISTINCT referral."referredById" AS signup_id
-      FROM "referrals" AS referral
-      INNER JOIN "sign_ups" AS referred ON referred."id" = referral."signUpId"
-      INNER JOIN "sign_ups" AS referrer
-        ON referrer."id" = referral."referredById"
-       AND referrer."waitListId" = referred."waitListId"
-      CROSS JOIN bounds
-      WHERE referred."waitListId" = bounds.wait_list_id
-        AND referral."reviewStatus" IN ('CLEAR', 'APPROVED')
-        AND referred."verifiedAt" IS NOT NULL
-        AND referrer."verifiedAt" IS NOT NULL
-        AND referral."referredById" IS NOT NULL
-        AND referral."referredById" <> referral."signUpId"
-    ), funnel_summary AS (
-      SELECT (SELECT COUNT(*)::int FROM referred_cohort) AS referred,
-             (SELECT COUNT(*)::int FROM referred_cohort WHERE is_verified) AS verified,
-             (SELECT COUNT(DISTINCT referred_cohort.signup_id)::int
-              FROM referred_cohort INNER JOIN sharers ON sharers.signup_id = referred_cohort.signup_id) AS shared_again
     ), points_period AS (
       SELECT COALESCE(SUM(ledger.points) FILTER (WHERE ledger.kind = 'SIGNUP_VERIFIED'), 0)::int AS signup_points,
              COALESCE(SUM(ledger.points) FILTER (WHERE ledger.kind = 'REFERRAL_CREDIT'), 0)::int AS referral_points
@@ -199,23 +180,51 @@ export async function getWaitlistAnalytics(db, { waitListId, days = 30, timeZone
            AND impression."createdAt" >= bounds.start_utc
            AND impression."createdAt" < bounds.end_utc
            AND impression."createdAt" <= signup."createdAt"
-           AND impression."uniqueUserId" <> '') AS converted_visitors,
-        (SELECT COALESCE(SUM(eligible_referrals), 0)::int FROM referral_daily) AS eligible_referrals
+           AND impression."uniqueUserId" <> '') AS converted_visitors
+    ), previous_summary AS (
+      SELECT
+        (SELECT COUNT(DISTINCT impression."uniqueUserId")::int
+         FROM "impressions" AS impression CROSS JOIN bounds
+         WHERE impression."waitListId" = bounds.wait_list_id
+           AND impression."uniqueUserId" <> ''
+           AND impression."createdAt" >= bounds.previous_start_utc
+           AND impression."createdAt" < bounds.start_utc) AS visitors,
+        (SELECT COUNT(*)::int FROM "sign_ups" AS signup CROSS JOIN bounds
+         WHERE signup."waitListId" = bounds.wait_list_id
+           AND signup."createdAt" >= bounds.previous_start_utc
+           AND signup."createdAt" < bounds.start_utc) AS signups,
+        (SELECT COUNT(*) FILTER (WHERE signup."verifiedAt" IS NOT NULL)::int
+         FROM "sign_ups" AS signup CROSS JOIN bounds
+         WHERE signup."waitListId" = bounds.wait_list_id
+           AND signup."createdAt" >= bounds.previous_start_utc
+           AND signup."createdAt" < bounds.start_utc) AS verified_signups,
+        (SELECT COUNT(DISTINCT impression."uniqueUserId")::int
+         FROM "sign_ups" AS signup
+         INNER JOIN "impressions" AS impression
+           ON impression."id" = signup."impressionId"
+          AND impression."waitListId" = signup."waitListId"
+         CROSS JOIN bounds
+         WHERE signup."waitListId" = bounds.wait_list_id
+           AND signup."createdAt" >= bounds.previous_start_utc
+           AND signup."createdAt" < bounds.start_utc
+           AND impression."createdAt" >= bounds.previous_start_utc
+           AND impression."createdAt" < bounds.start_utc
+           AND impression."createdAt" <= signup."createdAt"
+           AND impression."uniqueUserId" <> '') AS converted_visitors
     )
     SELECT to_char(calendar.local_date, 'YYYY-MM-DD') AS date,
            COALESCE(visitor_daily.visitors, 0)::int AS visitors,
            COALESCE(signup_daily.signups, 0)::int AS signups,
            COALESCE(signup_daily.verified_signups, 0)::int AS verified_signups,
            COALESCE(converted_daily.converted_visitors, 0)::int AS converted_visitors,
-           COALESCE(referral_daily.eligible_referrals, 0)::int AS eligible_referrals,
            period_summary.visitors AS period_visitors,
            period_summary.signups AS period_signups,
            period_summary.verified_signups AS period_verified_signups,
-           period_summary.converted_visitors AS period_converted_visitors,
-            period_summary.eligible_referrals AS period_eligible_referrals,
-            funnel_summary.referred AS funnel_referred,
-            funnel_summary.verified AS funnel_verified,
-            funnel_summary.shared_again AS funnel_shared_again,
+            period_summary.converted_visitors AS period_converted_visitors,
+            previous_summary.visitors AS previous_visitors,
+            previous_summary.signups AS previous_signups,
+            previous_summary.verified_signups AS previous_verified_signups,
+            previous_summary.converted_visitors AS previous_converted_visitors,
             points_period.signup_points AS points_signup,
             points_period.referral_points AS points_referral,
             to_char(bounds.start_date, 'YYYY-MM-DD') AS start_date,
@@ -224,14 +233,13 @@ export async function getWaitlistAnalytics(db, { waitListId, days = 30, timeZone
             bounds.end_utc AS end_utc
      FROM calendar
      CROSS JOIN period_summary
-     CROSS JOIN funnel_summary
+     CROSS JOIN previous_summary
      CROSS JOIN points_period
      CROSS JOIN bounds
-    LEFT JOIN visitor_daily ON visitor_daily.local_date = calendar.local_date
-    LEFT JOIN signup_daily ON signup_daily.local_date = calendar.local_date
-    LEFT JOIN converted_daily ON converted_daily.local_date = calendar.local_date
-    LEFT JOIN referral_daily ON referral_daily.local_date = calendar.local_date
-    ORDER BY calendar.local_date
+     LEFT JOIN visitor_daily ON visitor_daily.local_date = calendar.local_date
+     LEFT JOIN signup_daily ON signup_daily.local_date = calendar.local_date
+     LEFT JOIN converted_daily ON converted_daily.local_date = calendar.local_date
+     ORDER BY calendar.local_date
   `;
 
   const first = rows[0];
@@ -239,41 +247,42 @@ export async function getWaitlistAnalytics(db, { waitListId, days = 30, timeZone
   const signups = number(first?.period_signups);
   const verifiedSignups = number(first?.period_verified_signups);
   const convertedVisitors = number(first?.period_converted_visitors);
-  const eligibleReferrals = number(first?.period_eligible_referrals);
   const conversionRate = ratio(convertedVisitors, visitors);
   const verificationRate = ratio(verifiedSignups, signups);
-  const kfactor = verifiedSignups === 0 ? null : Math.round((eligibleReferrals / verifiedSignups) * 100) / 100;
+  const previousVisitors = number(first?.previous_visitors);
+  const previousSignups = number(first?.previous_signups);
+  const previousVerifiedSignups = number(first?.previous_verified_signups);
+  const previousConvertedVisitors = number(first?.previous_converted_visitors);
+  const previousConversionRate = ratio(previousConvertedVisitors, previousVisitors);
+  const previousVerificationRate = ratio(previousVerifiedSignups, previousSignups);
 
   const startUtc = first?.start_utc instanceof Date ? first.start_utc : new Date(first?.start_utc);
   const endUtc = first?.end_utc instanceof Date ? first.end_utc : new Date(first?.end_utc);
   const inRange = { gte: startUtc, lt: endUtc };
 
   const [
-    topReferrerRows,
-    utmGroups,
+    channelGroups,
+    campaignGroups,
     referrerGroups,
+    keywordGroups,
     countryGroups,
+    regionGroups,
+    cityGroups,
     deviceGroups,
+    userAgentGroups,
+    landingPageGroups,
     broadcasts,
   ] = await Promise.all([
-    db.$queryRaw`
-      SELECT referrer."email" AS email, referrer."points" AS points, COUNT(*)::int AS referrals
-      FROM "referrals" AS referral
-      INNER JOIN "sign_ups" AS referred ON referred."id" = referral."signUpId"
-      INNER JOIN "sign_ups" AS referrer ON referrer."id" = referral."referredById"
-      INNER JOIN "wait_lists" AS waitlist ON waitlist."id" = referred."waitListId" AND waitlist."showReferrals" = true
-      WHERE referred."waitListId" = ${waitListId}
-        AND referred."createdAt" >= ${startUtc} AND referred."createdAt" < ${endUtc}
-        AND referral."reviewStatus" IN ('CLEAR', 'APPROVED')
-        AND referred."verifiedAt" IS NOT NULL AND referrer."verifiedAt" IS NOT NULL
-        AND referral."referredById" IS NOT NULL AND referral."referredById" <> referral."signUpId"
-      GROUP BY referrer."id", referrer."email", referrer."points"
-      ORDER BY COUNT(*) DESC, referrer."email" ASC
-      LIMIT 8`,
-    db.signUp.groupBy({ by: ["utmSource"], _count: { _all: true }, where: { waitListId, createdAt: inRange } }),
-    db.signUp.groupBy({ by: ["referrer"], _count: { _all: true }, where: { waitListId, createdAt: inRange } }),
-    db.signUp.groupBy({ by: ["country"], _count: { _all: true }, where: { waitListId, createdAt: inRange } }),
-    db.signUp.groupBy({ by: ["deviceType"], _count: { _all: true }, where: { waitListId, createdAt: inRange } }),
+    db.impression.groupBy({ by: ["utmMedium", "utmSource", "referrer"], _count: { _all: true }, where: { waitListId, createdAt: inRange } }),
+    db.impression.groupBy({ by: ["utmCampaign"], _count: { _all: true }, where: { waitListId, createdAt: inRange } }),
+    db.impression.groupBy({ by: ["referrer"], _count: { _all: true }, where: { waitListId, createdAt: inRange } }),
+    db.impression.groupBy({ by: ["utmTerm"], _count: { _all: true }, where: { waitListId, createdAt: inRange } }),
+    db.impression.groupBy({ by: ["country"], _count: { _all: true }, where: { waitListId, createdAt: inRange } }),
+    db.impression.groupBy({ by: ["region", "country"], _count: { _all: true }, where: { waitListId, createdAt: inRange } }),
+    db.impression.groupBy({ by: ["city", "country"], _count: { _all: true }, where: { waitListId, createdAt: inRange } }),
+    db.impression.groupBy({ by: ["deviceType"], _count: { _all: true }, where: { waitListId, createdAt: inRange } }),
+    db.impression.groupBy({ by: ["device"], _count: { _all: true }, where: { waitListId, createdAt: inRange } }),
+    db.impression.groupBy({ by: ["landingPage"], _count: { _all: true }, where: { waitListId, createdAt: inRange } }),
     db.marketingBroadcast.findMany({
       where: { waitListId, status: "SENT", sentAt: inRange },
       select: { id: true, name: true, sentAt: true },
@@ -290,12 +299,16 @@ export async function getWaitlistAnalytics(db, { waitListId, days = 30, timeZone
       })
     : [];
 
-  const rank = (groups, label) => {
-    const total = groups.reduce((sum, group) => sum + group._count._all, 0);
-    return groups
-      .map((group) => ({ label: label(group), value: group._count._all }))
+  const rank = (groups, label, limit = 5) => {
+    const merged = new Map();
+    for (const group of groups) {
+      const key = label(group);
+      merged.set(key, (merged.get(key) ?? 0) + group._count._all);
+    }
+    const total = Array.from(merged.values()).reduce((sum, value) => sum + value, 0);
+    return Array.from(merged, ([rowLabel, value]) => ({ label: rowLabel, value }))
       .sort((a, b) => b.value - a.value)
-      .slice(0, 5)
+      .slice(0, limit)
       .map((row) => ({ ...row, share: total === 0 ? 0 : Math.round((row.value / total) * 1000) / 10 }));
   };
   const hostOf = (referrer) => {
@@ -307,45 +320,66 @@ export async function getWaitlistAnalytics(db, { waitListId, days = 30, timeZone
       return "Direct";
     }
   };
+  const pathOf = (page) => {
+    if (!page) return "Unknown page";
+    try {
+      const url = new URL(page);
+      return `${url.pathname}${url.search}` || "/";
+    } catch {
+      return "Unknown page";
+    }
+  };
+  const pageHostOf = (page) => page ? hostOf(page) : "Unknown host";
+
+  const toIsoDate = (value) => {
+    if (!value) return null;
+    const date = value instanceof Date ? value : new Date(value);
+    return Number.isNaN(date.valueOf()) ? null : date.toISOString().slice(0, 10);
+  };
 
   return {
-    range: { days: rangeDays, timeZone: zone, startDate: first?.start_date ?? null, endDate: first?.end_date ?? null },
+    range: { days: rangeDays, timeZone: zone, startDate: toIsoDate(first?.start_date), endDate: toIsoDate(first?.end_date) },
     summary: {
       visitors,
       signups,
       verifiedSignups,
       pendingVerification: signups - verifiedSignups,
       convertedVisitors,
-      eligibleReferrals,
       conversionRate,
       verificationRate,
-      kfactor,
-      conversionVerdict: verdictFor(conversionRate, CONVERSION_BENCHMARKS),
-      kfactorVerdict: verdictFor(kfactor, KFACTOR_BENCHMARKS),
+      change: {
+        visitors: percentChange(visitors, previousVisitors),
+        signups: percentChange(signups, previousSignups),
+        conversionRate: percentChange(conversionRate, previousConversionRate),
+        verificationRate: percentChange(verificationRate, previousVerificationRate),
+      },
       pointsTotal: number(first?.points_signup) + number(first?.points_referral),
       pointsSignup: number(first?.points_signup),
       pointsReferral: number(first?.points_referral),
     },
-    funnel: {
-      referred: number(first?.funnel_referred),
-      verified: number(first?.funnel_verified),
-      sharedAgain: number(first?.funnel_shared_again),
-    },
-    topReferrers: topReferrerRows.map((row) => ({
-      email: row.email,
-      referrals: Number(row.referrals),
-      points: Number(row.points ?? 0),
-    })),
     sources: {
-      utm: rank(utmGroups, (group) => group.utmSource || "Direct"),
+      channels: rank(channelGroups, channelOf, 8),
+      campaigns: rank(campaignGroups, (group) => group.utmCampaign || "No campaign"),
       referrers: rank(referrerGroups, (group) => hostOf(group.referrer)),
+      keywords: rank(keywordGroups, (group) => group.utmTerm || "No keyword"),
     },
     geo: {
       countries: rank(countryGroups, (group) => group.country || "Unknown"),
-      devices: rank(deviceGroups, (group) => prettifyDevice(group.deviceType)),
+      mapCountries: rank(countryGroups, (group) => group.country || "Unknown", 250),
+      regions: rank(regionGroups, (group) => [group.region || "Unknown region", group.country].filter(Boolean).join(", ")),
+      cities: rank(cityGroups, (group) => [group.city || "Unknown city", group.country].filter(Boolean).join(", ")),
+    },
+    technology: {
+      browsers: rank(userAgentGroups, (group) => browserOf(group.device), 8),
+      operatingSystems: rank(userAgentGroups, (group) => operatingSystemOf(group.device), 8),
+      devices: rank(deviceGroups, (group) => prettifyDevice(group.deviceType), 8),
+    },
+    pages: {
+      hostnames: rank(landingPageGroups, (group) => pageHostOf(group.landingPage)),
+      landingPages: rank(landingPageGroups, (group) => pathOf(group.landingPage)),
     },
     emails: broadcasts.map((broadcast) => {
-      const counts = { DELIVERED: 0, FAILED: 0, total: 0 };
+      const counts = { delivered: 0, failed: 0, total: 0 };
       for (const stat of emailStats) {
         if (stat.broadcastId !== broadcast.id) continue;
         counts.total += stat._count._all;
@@ -368,28 +402,14 @@ export async function getWaitlistAnalytics(db, { waitListId, days = 30, timeZone
       signups: number(row.signups),
       verifiedSignups: number(row.verified_signups),
       convertedVisitors: number(row.converted_visitors),
-      eligibleReferrals: number(row.eligible_referrals),
     })),
-    definitions: {
-      visitors: "Distinct stored browser identifiers with at least one waitlist impression during the selected period. This is not a count of people.",
-      signups: "Signup records created during the selected period, including those still awaiting email verification.",
-      convertedVisitors: "Distinct visitor identifiers with a signup linked to an impression, where both records fall within the selected period.",
-      conversionRate: "Converted visitors divided by distinct visitors in the selected period; unavailable when there are no visitors.",
-      verificationRate: "Currently verified signup records created during the selected period divided by all signup records in that cohort; unavailable when there are no signups.",
-      eligibleReferrals: "Referred signups created during the selected period where both addresses are verified, referrals are enabled, and review is clear or approved.",
-      dailyVisitors: "Distinct visitor identifiers per local calendar day. A returning visitor can appear on multiple days, so daily counts do not sum to the period total.",
-      kfactor: "Eligible referrals divided by verified signups in the selected period; 1.0 means every verified signup brings another. Unavailable without verified signups.",
-      funnel: "Referred-in counts every referral link signup in the period; verified and shared-again are subsets using the same eligible rules.",
-      points: "Points awarded by the referral engine during the selected period, split by signup and referral credit.",
-      verdicts: "Conversion is weighed against an ~11% waitlist median (excellent at 20%+); K-factor against 1.0 self-sustaining. Benchmarks are directional, not targets.",
-    },
     caveats: [
       "Visitor identifiers represent browser storage, not people. Clearing storage or changing devices can count one person more than once.",
       "Conversion includes only signups linked to a stored impression; direct or legacy signups without that link remain in total signups but not converted visitors.",
-      "Verification and referral totals reflect current status. Later verification or review decisions can update historical cohorts.",
-      "The end date is the current local calendar day and may contain only partial-day activity.",
+      "Verification totals reflect current status. Later verification decisions can update historical cohorts.",
+      "Ranges that end today may include only partial-day activity.",
       "Legacy records may predate the current deduplication and verification rules; use older periods as directional comparisons.",
-      "Attribution sources are not consistently stored, so this endpoint does not claim channel performance.",
+      "Acquisition and geography breakdowns describe visitors with stored impression metadata; unknown values remain visible rather than being inferred.",
     ],
   };
 }

@@ -19,6 +19,7 @@ export const getGeoInfo = (request) => {
       return {
         country: "IN",
         city: "Thane",
+        region: "MH",
         latitude: "19.2183",
         longitude: "72.9781",
         timezone: "Asia/Kolkata",
@@ -28,14 +29,16 @@ export const getGeoInfo = (request) => {
     const headers = request.headers;
     const country = headers.get("x-vercel-ip-country");
     const city = headers.get("x-vercel-ip-city");
+    const region = headers.get("x-vercel-ip-country-region");
     const latitude = headers.get("x-vercel-ip-latitude");
     const longitude = headers.get("x-vercel-ip-longitude");
     const timezone = headers.get("x-vercel-ip-timezone");
 
-    if (country || city || timezone) {
+    if (country || city || region || timezone) {
       return {
         country: country || undefined,
         city: city || undefined,
+        region: region || undefined,
         latitude: latitude || undefined,
         longitude: longitude || undefined,
         timezone: timezone || undefined,
@@ -49,6 +52,7 @@ export const getGeoInfo = (request) => {
         return {
           country: geo.country,
           city: geo.city,
+          region: geo.region,
           latitude: geo.ll?.[0]?.toString(),
           longitude: geo.ll?.[1]?.toString(),
           timezone: undefined,

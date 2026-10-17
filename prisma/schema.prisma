@@ -442,6 +442,7 @@ model Impression {
   device       String?
   deviceType   String?
   city         String?
+  region       String?
   country      String?
   timezone     String?
   ipAddress    String?

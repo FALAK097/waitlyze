@@ -1,10 +1,10 @@
 "use client";
 
-import { useId } from "react";
 import {
   Area,
-  AreaChart,
+  Bar,
   CartesianGrid,
+  ComposedChart,
   Tooltip,
   XAxis,
   YAxis,
@@ -12,8 +12,8 @@ import {
 import { ChartContainer } from "@/components/ui/chart";
 
 const chartConfig = {
-  visitors: { label: "Visitors", color: "var(--product-text-secondary)" },
-  signups: { label: "Signups", color: "var(--product-success-text)" },
+  visitors: { label: "Visitors", color: "#4b95d1" },
+  signups: { label: "Signups", color: "#ee9477" },
 };
 const number = new Intl.NumberFormat();
 
@@ -30,30 +30,24 @@ function ActivityTooltip({ active, payload, label, formatDate }) {
   </div>;
 }
 
-// Adapted from the Evil Charts Recharts area-chart recipe. Keep the focused
-// gradient treatment and accessible Recharts layer; omit motion and brush UI.
 export function EvilAreaChart({ series, focusedSeries, formatDate }) {
-  const chartId = useId().replaceAll(":", "");
   const isOtherSeriesFocused = (name) => Boolean(focusedSeries && focusedSeries !== name);
 
-  return <ChartContainer config={chartConfig}>
-    <AreaChart data={series} margin={{ top: 8, right: 12, left: -18, bottom: 0 }} accessibilityLayer>
+  return <ChartContainer config={chartConfig} className="aspect-auto h-80">
+    <ComposedChart data={series} margin={{ top: 16, right: 10, left: 0, bottom: 0 }} accessibilityLayer>
       <defs>
-        <linearGradient id={`${chartId}-visitors`} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="var(--product-text-secondary)" stopOpacity="0.16" />
-          <stop offset="95%" stopColor="var(--product-text-secondary)" stopOpacity="0" />
-        </linearGradient>
-        <linearGradient id={`${chartId}-signups`} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="var(--product-success-text)" stopOpacity="0.26" />
-          <stop offset="95%" stopColor="var(--product-success-text)" stopOpacity="0" />
+        <linearGradient id="analytics-visitors-fill" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#72afe6" stopOpacity="0.34" />
+          <stop offset="100%" stopColor="#72afe6" stopOpacity="0.025" />
         </linearGradient>
       </defs>
-      <CartesianGrid vertical={false} stroke="var(--product-border-subtle)" />
-      <XAxis dataKey="date" tickLine={false} axisLine={false} minTickGap={28} tickFormatter={(value) => formatDate(value)} />
-      <YAxis allowDecimals={false} tickLine={false} axisLine={false} width={42} />
-      <Tooltip content={<ActivityTooltip formatDate={formatDate} />} cursor={{ stroke: "var(--product-border-control)", strokeDasharray: "3 3" }} />
-      <Area dataKey="visitors" name="visitors" type="monotone" stroke="var(--product-text-secondary)" fill={`url(#${chartId}-visitors)`} fillOpacity={isOtherSeriesFocused("visitors") ? 0.2 : 1} strokeOpacity={isOtherSeriesFocused("visitors") ? 0.35 : 1} strokeWidth={focusedSeries === "visitors" ? 2.5 : 1.5} activeDot={{ r: 4, strokeWidth: 2, fill: "var(--product-bg-surface)" }} isAnimationActive={false} />
-      <Area dataKey="signups" name="signups" type="monotone" stroke="var(--product-success-text)" fill={`url(#${chartId}-signups)`} fillOpacity={isOtherSeriesFocused("signups") ? 0.12 : 1} strokeOpacity={isOtherSeriesFocused("signups") ? 0.35 : 1} strokeWidth={focusedSeries === "signups" ? 2.5 : 2} activeDot={{ r: 4, strokeWidth: 2, fill: "var(--product-bg-surface)" }} isAnimationActive={false} />
-    </AreaChart>
+      <CartesianGrid vertical={false} stroke="#e2e8ed" strokeDasharray="3 4" />
+      <XAxis dataKey="date" tickLine={false} axisLine={false} minTickGap={32} tickMargin={10} tickFormatter={(value) => formatDate(value)} tick={{ fill: "#4e5255", fontSize: 11 }} />
+      <YAxis yAxisId="visitors" allowDecimals={false} tickLine={false} axisLine={false} width={42} tick={{ fill: "#4e5255", fontSize: 11 }} />
+      <YAxis yAxisId="signups" orientation="right" allowDecimals={false} tickLine={false} axisLine={false} width={38} tick={{ fill: "#4e5255", fontSize: 11 }} />
+      <Tooltip content={<ActivityTooltip formatDate={formatDate} />} cursor={{ stroke: "#d4d6d8", strokeDasharray: "3 3" }} />
+      <Bar yAxisId="signups" dataKey="signups" name="signups" fill="#ee9477" fillOpacity={isOtherSeriesFocused("signups") ? 0.16 : 0.74} radius={[4, 4, 0, 0]} maxBarSize={18} isAnimationActive={false} />
+      <Area yAxisId="visitors" dataKey="visitors" name="visitors" type="monotone" stroke="#4b95d1" fill="url(#analytics-visitors-fill)" fillOpacity={isOtherSeriesFocused("visitors") ? 0.18 : 1} strokeOpacity={isOtherSeriesFocused("visitors") ? 0.28 : 1} strokeWidth={focusedSeries === "visitors" ? 3 : 2.25} dot={false} activeDot={{ r: 4, strokeWidth: 2, fill: "#ffffff" }} isAnimationActive={false} />
+    </ComposedChart>
   </ChartContainer>;
 }
