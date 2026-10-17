@@ -1,43 +1,66 @@
 ---
 title: Analytics
-description: Read visitors, signups, conversion, and verification trends.
+description: Read visitors, signups, conversion, acquisition, audience, and email trends.
 ---
 
-The **Analytics** tab at `/waitlists/[id]/analytics` requires view access. It answers three questions: are people visiting, are they signing up, and are they verifying?
+The **Analytics** tab at `/waitlists/[id]/analytics` requires view access. It answers: are people visiting, signing up, verifying — where do they come from, and what do they use?
 
 ## Metrics at a glance
 
 | Metric | What it counts | Detail shown |
 | --- | --- | --- |
-| Visitors | Distinct browsers (impressions) | Total for the range |
-| Signups | Signup records created | Of which `N verified` |
-| Conversion | `signups / visitors` as percent | `—` when visitors are zero |
-| Verification | Verified signups share | Plus `N awaiting verification` |
+| Visitors | Distinct browsers (impressions) | Change from the previous matching period |
+| Signups | Signup records created | Change from the previous matching period |
+| Conversion | Impression-linked signups / visitors | Change from the previous matching period |
+| Verification | Verified signups share | Change from the previous matching period |
+| Points awarded | Referral-engine points in range | Split into join vs referral credit |
+
+A `—` means the denominator is zero, not zero performance. When the previous period has no baseline, the comparison says so instead of showing an infinite increase.
 
 No activity shows an explicit empty state, not zeros pretending to be insight. If the query fails, you get the error with a **Try again** action.
 
 ## Ranges and time zones
 
-- Choose **7, 30, or 90 days**. Other values return `400`.
+- Presets: **Daily**, **Last 7 days**, **Last 30 days**, **Last 90 days**, or a **Custom** range via the date picker.
+- Custom ranges are capped at 90 days. Other values return `400`.
 - The request sends your browser time zone; the header shows the active range dates plus that zone.
 - Data is `private, no-store`: it always reflects the current waitlist, never a cached copy.
 
 ## Activity over time
 
-The trend panel plots visitors, signups, and verified signups per day. Use the view toggle for:
+The trend panel plots visitors and signups per day. Controls:
 
-- **Chart** — area visualization with series focus for overlapping lines.
-- **Table** — day-by-day numbers with dates formatted in UTC for auditability.
+- **Visitors / Signups** — focus the chart on one series (the other dims).
+- **Chart** — visitor area and signup bars with hover details.
+- **Table** — day-by-day numbers (visitors, signups, verified) with dates formatted in UTC for auditability.
 
 Switching ranges reloads with a loading skeleton and a screen-reader update (“Updating analytics…”). The table view is the accessible source of truth when colors are ambiguous.
+
+## Acquisition, audience, pages, technology
+
+Four panels below the trend, each with a dimension switcher and ranked rows:
+
+| Panel | Dimensions | Notes |
+| --- | --- | --- |
+| Acquisition | Channel, Referrer, Campaign, Keyword | Channel is a donut; others are ranked bars. Channel comes from UTM/referrer heuristics. |
+| Audience | Map, Country, Region, City | Map is a choropleth world map with hover/focus tooltips. |
+| Pages | Hostname, Landing page | Stored page URLs on impressions. |
+| Technology | Browser, OS, Device | Derived from the user-agent string. |
+
+Counts describe visitors (stored impressions), not only people who signed up. Unknown values remain visible instead of being inferred.
+
+## Emails
+
+Recent sent broadcasts with delivered and failed counts per send. This section is hidden when subscriber emails are disabled. Confirmation emails stay out of it; use [Email tools](/docs/email) for templates and tests.
 
 ## How to read it
 
 - **High visitors, low conversion**: page or offer needs work. Check [Page builder](/docs/page-builder) and [Signup flow](/docs/signup-flow).
 - **High signups, low verification**: verification email or sender needs work. Check [Resend](/docs/resend) and delivery health in [Email tools](/docs/email).
-- **Steady verification, flat referrals**: enable sharing and nudge inviters. See [Referrals](/docs/referrals) and [Automations](/docs/automations).
+- **All traffic from one channel**: diversify acquisition — check Acquisition dimensions for where visitors actually come from.
+- **Mostly mobile, poor conversion**: inspect the landing page on a phone. Check [Page builder](/docs/page-builder).
 
-The waitlists list reuses the same conversion math per row, so list and detail agree.
+The waitlists list shows a simpler signups-per-visitor ratio per row; the detail page uses impression-linked conversion, so the two can differ slightly by design.
 
 ## Next
 

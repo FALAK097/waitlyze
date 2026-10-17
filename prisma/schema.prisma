@@ -442,6 +442,7 @@ model Impression {
   device       String?
   deviceType   String?
   city         String?
+  region       String?
   country      String?
   timezone     String?
   ipAddress    String?
@@ -461,6 +462,7 @@ model Impression {
   signUps      SignUp[]
 
   @@unique([waitListId, uniqueUserId])
+  @@index([waitListId, createdAt])
   @@map("impressions")
 }
 

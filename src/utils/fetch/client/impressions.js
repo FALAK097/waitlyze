@@ -1,3 +1,5 @@
+import { collectAttribution } from "@/utils/attribution";
+
 const createImpression = async ({ waitList }) => {
 	let uniqueUserId = localStorage.getItem("hypeSession");
 
@@ -22,6 +24,7 @@ const createImpression = async ({ waitList }) => {
 		body: JSON.stringify({
 			waitListId: waitList.id,
 			hypeSession: uniqueUserId,
+			...collectAttribution(),
 		}),
 		headers: {
 			"Content-Type": "application/json",

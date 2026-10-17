@@ -46,6 +46,7 @@ export async function POST(request) {
       data = {
         ...data,
         city: geo.city,
+        region: geo.region,
         country: geo.country,
         latitude: geo.latitude?.toString(),
         longitude: geo.longitude?.toString(),

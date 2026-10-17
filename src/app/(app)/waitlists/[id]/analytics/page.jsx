@@ -10,8 +10,8 @@ export default async function AnalyticsPage({ params }) {
   const [{ id }, { user, workspace }] = await Promise.all([params, currentWorkspace()]);
   const waitlist = await prisma.waitList.findFirst({
     where: { id, ...campaignScope(user.id, "viewCampaign", workspace.id) },
-    select: { id: true },
+    select: { id: true, sendEmailsToSubscribers: true },
   });
   if (!waitlist) notFound();
-  return <WaitlistAnalytics waitListId={waitlist.id} />;
+  return <WaitlistAnalytics waitListId={waitlist.id} emailsEnabled={waitlist.sendEmailsToSubscribers} />;
 }
