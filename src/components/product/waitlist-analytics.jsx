@@ -87,6 +87,22 @@ function DimensionPicker({ label, options, value, onChange }) {
   </div>;
 }
 
+function PanelMetricSwitch({ metric, onChange }) {
+  const next = metric === "visitors" ? "signups" : "visitors";
+  const label = metric === "visitors" ? "Visitors" : "Signups";
+  return <button
+    type="button"
+    className="waitlist-analytics-metric-switch"
+    onClick={() => onChange(next)}
+    aria-label={`Metric: ${label}. Switch to ${next}.`}
+  >
+    {label}
+    <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true" focusable="false">
+      <path d="M3.5 5L6 2.5 8.5 5M8.5 7L6 9.5 3.5 7" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  </button>;
+}
+
 function RangePicker({ range, from, to, onChange }) {
   const [open, setOpen] = useState(false);
   const [view, setView] = useState("presets");
@@ -188,9 +204,9 @@ function addDaysSafe(date, days) {
   return next;
 }
 
-function RankedBars({ rows, empty, noun = "visitors", kind }) {
+function RankedBars({ rows, empty, noun = "visitors", kind, metric = "visitors" }) {
   if (!rows.length) return <p className="waitlist-analytics-panel-empty">{empty}</p>;
-  return <EvilBarRows rows={rows} noun={noun} kind={kind} />;
+  return <EvilBarRows rows={rows} noun={metric === "signups" ? "signups" : noun} kind={kind} metric={metric} />;
 }
 
 function AnalyticsSkeleton() {
@@ -204,7 +220,7 @@ export function WaitlistAnalytics({ waitListId, emailsEnabled = false }) {
   const [{ range, from, to }, setRangeState] = useQueryStates(rangeQueryOptions, { history: "push" });
   const [retryCount, setRetryCount] = useState(0);
   const [mode, setMode] = useState("chart");
-  const [metric, setMetric] = useState("visitors");
+  const [panelMetric, setPanelMetric] = useState("visitors");
   const [acquisitionView, setAcquisitionView] = useState("channels");
   const [audienceView, setAudienceView] = useState("map");
   const [pagesView, setPagesView] = useState("hostnames");
@@ -319,10 +335,6 @@ export function WaitlistAnalytics({ waitListId, emailsEnabled = false }) {
             <p>{formatDate(currentAnalytics.range.startDate)} – {formatDate(currentAnalytics.range.endDate, { month: "short", day: "numeric", year: "numeric" })} · {timeZone}</p>
           </div>
           <div className="waitlist-analytics-toolbar-controls">
-            <div className="waitlist-analytics-view" role="group" aria-label="Chart metric">
-              <Button type="button" aria-pressed={metric === "visitors"} onClick={() => setMetric("visitors")}>Visitors</Button>
-              <Button type="button" aria-pressed={metric === "signups"} onClick={() => setMetric("signups")}>Signups</Button>
-            </div>
             <div className="waitlist-analytics-view" role="group" aria-label="Activity display">
               <Button type="button" aria-pressed={mode === "chart"} onClick={() => setMode("chart")}><HugeiconsIcon icon={ChartLineData01Icon} aria-hidden="true" />Chart</Button>
               <Button type="button" aria-pressed={mode === "table"} onClick={() => setMode("table")}>Table</Button>
@@ -331,13 +343,13 @@ export function WaitlistAnalytics({ waitListId, emailsEnabled = false }) {
         </div>
 
         {mode === "table" ? <div className="product-table-wrap waitlist-analytics-table-wrap"><Table><caption className="sr-only">Daily visitors and signups from {formatDate(currentAnalytics.range.startDate)} to {formatDate(currentAnalytics.range.endDate, { month: "short", day: "numeric", year: "numeric" })}</caption><TableHeader><TableRow><TableHead scope="col">Date</TableHead><TableHead scope="col">Visitors</TableHead><TableHead scope="col">Signups</TableHead><TableHead scope="col">Verified</TableHead></TableRow></TableHeader><TableBody>{[...series].reverse().map((day) => <TableRow key={day.date}><TableHead scope="row">{formatDate(day.date, { month: "short", day: "numeric", year: "numeric" })}</TableHead><TableCell>{number.format(day.visitors)}</TableCell><TableCell>{number.format(day.signups)}</TableCell><TableCell>{number.format(day.verifiedSignups)}</TableCell></TableRow>)}</TableBody></Table></div> : noActivity ? <div className="waitlist-analytics-empty"><p>No activity yet</p><span>Share your page to start learning about your audience.</span><Link prefetch={false} href={`/waitlists/${waitListId}`}>Open your page</Link></div> : <>
-          <div className="waitlist-analytics-chart"><EvilAreaChart series={series} focusedSeries={metric} formatDate={formatDate} /></div>
+          <div className="waitlist-analytics-chart"><EvilAreaChart series={series} formatDate={formatDate} /></div>
         </>}
       </section>
 
       <div className="waitlist-analytics-grid">
         <section className="waitlist-analytics-data-panel" aria-labelledby="waitlist-sources-title">
-          <header><h3 id="waitlist-sources-title">Acquisition</h3><span>Visitors</span></header>
+          <header><h3 id="waitlist-sources-title">Acquisition</h3><PanelMetricSwitch metric={panelMetric} onChange={setPanelMetric} /></header>
           <DimensionPicker label="Acquisition dimension" value={acquisitionView} onChange={setAcquisitionView} options={[
             { label: "Channel", value: "channels" },
             { label: "Referrer", value: "referrers" },
@@ -346,13 +358,13 @@ export function WaitlistAnalytics({ waitListId, emailsEnabled = false }) {
           ]} />
           <div className="waitlist-analytics-panel-body">
             {acquisitionView === "channels"
-              ? <EvilPieChart rows={currentAnalytics.sources.channels} />
-              : <RankedBars rows={acquisition.rows} empty={acquisition.empty} kind="acquisition" />}
+              ? <EvilPieChart rows={currentAnalytics.sources.channels} metric={panelMetric} />
+              : <RankedBars rows={acquisition.rows} empty={acquisition.empty} kind="acquisition" metric={panelMetric} />}
           </div>
         </section>
 
         <section className="waitlist-analytics-data-panel" aria-labelledby="waitlist-audience-title">
-          <header><h3 id="waitlist-audience-title">Audience</h3><span>Visitors</span></header>
+          <header><h3 id="waitlist-audience-title">Audience</h3><PanelMetricSwitch metric={panelMetric} onChange={setPanelMetric} /></header>
           <DimensionPicker label="Audience dimension" value={audienceView} onChange={setAudienceView} options={[
             { label: "Map", value: "map" },
             { label: "Country", value: "countries" },
@@ -361,28 +373,28 @@ export function WaitlistAnalytics({ waitListId, emailsEnabled = false }) {
           ]} />
           <div className="waitlist-analytics-panel-body">
             {audienceView === "map"
-              ? <EvilWorldMap countries={currentAnalytics.geo.mapCountries ?? currentAnalytics.geo.countries} />
-              : <RankedBars rows={audience.rows} empty={audience.empty} kind={audienceView === "countries" ? "country" : audienceView === "regions" ? "region" : "city"} />}
+              ? <EvilWorldMap countries={currentAnalytics.geo.mapCountries ?? currentAnalytics.geo.countries} metric={panelMetric} />
+              : <RankedBars rows={audience.rows} empty={audience.empty} kind={audienceView === "countries" ? "country" : audienceView === "regions" ? "region" : "city"} metric={panelMetric} />}
           </div>
         </section>
 
         <section className="waitlist-analytics-data-panel" aria-labelledby="waitlist-pages-title">
-          <header><h3 id="waitlist-pages-title">Pages</h3><span>Visitors</span></header>
+          <header><h3 id="waitlist-pages-title">Pages</h3><PanelMetricSwitch metric={panelMetric} onChange={setPanelMetric} /></header>
           <DimensionPicker label="Page dimension" value={pagesView} onChange={setPagesView} options={[
             { label: "Hostname", value: "hostnames" },
             { label: "Landing page", value: "landingPages" },
           ]} />
-          <div className="waitlist-analytics-panel-body"><RankedBars rows={pages.rows} empty={pages.empty} kind="page" /></div>
+          <div className="waitlist-analytics-panel-body"><RankedBars rows={pages.rows} empty={pages.empty} kind="page" metric={panelMetric} /></div>
         </section>
 
         <section className="waitlist-analytics-data-panel" aria-labelledby="waitlist-technology-title">
-          <header><h3 id="waitlist-technology-title">Technology</h3><span>Visitors</span></header>
+          <header><h3 id="waitlist-technology-title">Technology</h3><PanelMetricSwitch metric={panelMetric} onChange={setPanelMetric} /></header>
           <DimensionPicker label="Technology dimension" value={technologyView} onChange={setTechnologyView} options={[
             { label: "Browser", value: "browsers" },
             { label: "OS", value: "operatingSystems" },
             { label: "Device", value: "devices" },
           ]} />
-          <div className="waitlist-analytics-panel-body"><RankedBars rows={technology.rows} empty={technology.empty} kind="technology" /></div>
+          <div className="waitlist-analytics-panel-body"><RankedBars rows={technology.rows} empty={technology.empty} kind="technology" metric={panelMetric} /></div>
         </section>
       </div>
 

@@ -65,11 +65,13 @@ function fillFor(value, max) {
   return MAP_FILLS[level];
 }
 
-export function EvilWorldMap({ countries = [] }) {
+export function EvilWorldMap({ countries = [], metric = "visitors" }) {
   const containerRef = useRef(null);
   const [active, setActive] = useState(null);
   const byCode = useMemo(() => new Map(countries.map((row) => [String(row.label || "").toUpperCase(), row])), [countries]);
-  const max = useMemo(() => countries.reduce((current, row) => Math.max(current, row.value), 0), [countries]);
+  const max = useMemo(() => countries.reduce((current, row) => Math.max(current, metric === "signups" ? row.signups : row.visitors), 0), [countries, metric]);
+  const valueOf = (row) => (metric === "signups" ? row?.signups : row?.visitors) || 0;
+  const shareOf = (row) => (metric === "signups" ? row?.signupsShare : row?.visitorsShare) || 0;
 
   const inspect = (event, geography) => {
     const name = geography.properties?.name || "Unknown";
@@ -79,10 +81,10 @@ export function EvilWorldMap({ countries = [] }) {
     setActive({
       code,
       name: code ? regionNames.of(code) || name : name,
-      value: row?.value || 0,
-      share: row?.share || 0,
-      x: rect && "clientX" in event ? Math.min(Math.max(event.clientX - rect.left, 112), rect.width - 112) : (rect?.width || 0) / 2,
-      y: rect && "clientY" in event ? Math.min(Math.max(event.clientY - rect.top, 76), rect.height - 72) : (rect?.height || 0) * 0.66,
+      value: valueOf(row),
+      share: shareOf(row),
+      x: rect && "clientX" in event ? Math.min(Math.max(event.clientX - rect.left, 120), Math.max(rect.width - 120, 120)) : (rect?.width || 0) / 2,
+      y: 12,
     });
   };
 
@@ -93,11 +95,11 @@ export function EvilWorldMap({ countries = [] }) {
           const name = geography.properties?.name || "Unknown";
           const code = COUNTRY_CODE_BY_NAME.get(normalized(name));
           const row = byCode.get(code);
-          const label = `${code ? regionNames.of(code) || name : name}: ${number.format(row?.value || 0)} visitors`;
+          const label = `${code ? regionNames.of(code) || name : name}: ${number.format(valueOf(row))} ${metric}`;
           return <Geography
             key={geography.rsmKey}
             geography={geography}
-            fill={fillFor(row?.value, max)}
+            fill={fillFor(valueOf(row), max)}
             stroke="#cbd5dc"
             strokeWidth={0.55}
             tabIndex={row ? 0 : undefined}
@@ -113,8 +115,8 @@ export function EvilWorldMap({ countries = [] }) {
     </ComposableMap>
     {active ? <div className="evil-world-map-tooltip" style={{ "--map-tooltip-x": `${active.x}px`, "--map-tooltip-y": `${active.y}px` }}>
       <p><span aria-hidden="true">{flag(active.code)} </span>{active.name}</p>
-      <div><i aria-hidden="true" /><span>Visitors</span><strong>{number.format(active.value)}</strong></div>
-      <small>{active.share}% of measured visitors</small>
+      <div><i aria-hidden="true" /><span>{metric === "signups" ? "Signups" : "Visitors"}</span><strong>{number.format(active.value)}</strong></div>
+      <small>{active.share}% of measured {metric}</small>
     </div> : null}
   </div>;
 }

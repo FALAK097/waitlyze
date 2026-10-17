@@ -278,6 +278,15 @@ export async function getWaitlistAnalytics(db, { waitListId, days = 30, endDate 
     deviceGroups,
     userAgentGroups,
     landingPageGroups,
+    signupChannelGroups,
+    signupCampaignGroups,
+    signupReferrerGroups,
+    signupKeywordGroups,
+    signupCountryGroups,
+    signupCityGroups,
+    signupDeviceGroups,
+    signupUserAgentGroups,
+    signupLandingPageGroups,
     broadcasts,
   ] = await Promise.all([
     db.impression.groupBy({ by: ["utmMedium", "utmSource", "referrer"], _count: { _all: true }, where: { waitListId, createdAt: inRange } }),
@@ -290,6 +299,15 @@ export async function getWaitlistAnalytics(db, { waitListId, days = 30, endDate 
     db.impression.groupBy({ by: ["deviceType"], _count: { _all: true }, where: { waitListId, createdAt: inRange } }),
     db.impression.groupBy({ by: ["device"], _count: { _all: true }, where: { waitListId, createdAt: inRange } }),
     db.impression.groupBy({ by: ["landingPage"], _count: { _all: true }, where: { waitListId, createdAt: inRange } }),
+    db.signUp.groupBy({ by: ["utmMedium", "utmSource", "referrer"], _count: { _all: true }, where: { waitListId, createdAt: inRange } }),
+    db.signUp.groupBy({ by: ["utmCampaign"], _count: { _all: true }, where: { waitListId, createdAt: inRange } }),
+    db.signUp.groupBy({ by: ["referrer"], _count: { _all: true }, where: { waitListId, createdAt: inRange } }),
+    db.signUp.groupBy({ by: ["utmTerm"], _count: { _all: true }, where: { waitListId, createdAt: inRange } }),
+    db.signUp.groupBy({ by: ["country"], _count: { _all: true }, where: { waitListId, createdAt: inRange } }),
+    db.signUp.groupBy({ by: ["city", "country"], _count: { _all: true }, where: { waitListId, createdAt: inRange } }),
+    db.signUp.groupBy({ by: ["deviceType"], _count: { _all: true }, where: { waitListId, createdAt: inRange } }),
+    db.signUp.groupBy({ by: ["device"], _count: { _all: true }, where: { waitListId, createdAt: inRange } }),
+    db.signUp.groupBy({ by: ["landingPage"], _count: { _all: true }, where: { waitListId, createdAt: inRange } }),
     db.marketingBroadcast.findMany({
       where: { waitListId, status: "SENT", sentAt: inRange },
       select: { id: true, name: true, sentAt: true },
@@ -306,17 +324,33 @@ export async function getWaitlistAnalytics(db, { waitListId, days = 30, endDate 
       })
     : [];
 
-  const rank = (groups, label, limit = 5) => {
+  const rankCounts = (groups, label) => {
     const merged = new Map();
     for (const group of groups) {
       const key = label(group);
       merged.set(key, (merged.get(key) ?? 0) + group._count._all);
     }
-    const total = Array.from(merged.values()).reduce((sum, value) => sum + value, 0);
-    return Array.from(merged, ([rowLabel, value]) => ({ label: rowLabel, value }))
-      .sort((a, b) => b.value - a.value)
-      .slice(0, limit)
-      .map((row) => ({ ...row, share: total === 0 ? 0 : Math.round((row.value / total) * 1000) / 10 }));
+    return merged;
+  };
+  const rank = (visitorGroups, signupGroups, label, limit = 5) => {
+    const visitorCounts = rankCounts(visitorGroups, label);
+    const signupCounts = rankCounts(signupGroups, label);
+    const labels = new Set([...visitorCounts.keys(), ...signupCounts.keys()]);
+    const visitorTotal = Array.from(visitorCounts.values()).reduce((sum, value) => sum + value, 0);
+    const signupTotal = Array.from(signupCounts.values()).reduce((sum, value) => sum + value, 0);
+    return Array.from(labels, (rowLabel) => {
+      const visitors = visitorCounts.get(rowLabel) ?? 0;
+      const signups = signupCounts.get(rowLabel) ?? 0;
+      return {
+        label: rowLabel,
+        visitors,
+        signups,
+        visitorsShare: visitorTotal === 0 ? 0 : Math.round((visitors / visitorTotal) * 1000) / 10,
+        signupsShare: signupTotal === 0 ? 0 : Math.round((signups / signupTotal) * 1000) / 10,
+      };
+    })
+      .sort((a, b) => b.visitors - a.visitors || b.signups - a.signups)
+      .slice(0, limit);
   };
   const hostOf = (referrer) => {
     if (!referrer) return "Direct";
@@ -365,25 +399,25 @@ export async function getWaitlistAnalytics(db, { waitListId, days = 30, endDate 
       pointsReferral: number(first?.points_referral),
     },
     sources: {
-      channels: rank(channelGroups, channelOf, 8),
-      campaigns: rank(campaignGroups, (group) => group.utmCampaign || "No campaign"),
-      referrers: rank(referrerGroups, (group) => hostOf(group.referrer)),
-      keywords: rank(keywordGroups, (group) => group.utmTerm || "No keyword"),
+      channels: rank(channelGroups, signupChannelGroups, channelOf, 8),
+      campaigns: rank(campaignGroups, signupCampaignGroups, (group) => group.utmCampaign || "No campaign"),
+      referrers: rank(referrerGroups, signupReferrerGroups, (group) => hostOf(group.referrer)),
+      keywords: rank(keywordGroups, signupKeywordGroups, (group) => group.utmTerm || "No keyword"),
     },
     geo: {
-      countries: rank(countryGroups, (group) => group.country || "Unknown"),
-      mapCountries: rank(countryGroups, (group) => group.country || "Unknown", 250),
-      regions: rank(regionGroups, (group) => [group.region || "Unknown region", group.country].filter(Boolean).join(", ")),
-      cities: rank(cityGroups, (group) => [group.city || "Unknown city", group.country].filter(Boolean).join(", ")),
+      countries: rank(countryGroups, signupCountryGroups, (group) => group.country || "Unknown"),
+      mapCountries: rank(countryGroups, signupCountryGroups, (group) => group.country || "Unknown", 250),
+      regions: rank(regionGroups, [], (group) => [group.region || "Unknown region", group.country].filter(Boolean).join(", ")),
+      cities: rank(cityGroups, signupCityGroups, (group) => [group.city || "Unknown city", group.country].filter(Boolean).join(", ")),
     },
     technology: {
-      browsers: rank(userAgentGroups, (group) => browserOf(group.device), 8),
-      operatingSystems: rank(userAgentGroups, (group) => operatingSystemOf(group.device), 8),
-      devices: rank(deviceGroups, (group) => prettifyDevice(group.deviceType), 8),
+      browsers: rank(userAgentGroups, signupUserAgentGroups, (group) => browserOf(group.device), 8),
+      operatingSystems: rank(userAgentGroups, signupUserAgentGroups, (group) => operatingSystemOf(group.device), 8),
+      devices: rank(deviceGroups, signupDeviceGroups, (group) => prettifyDevice(group.deviceType), 8),
     },
     pages: {
-      hostnames: rank(landingPageGroups, (group) => pageHostOf(group.landingPage)),
-      landingPages: rank(landingPageGroups, (group) => pathOf(group.landingPage)),
+      hostnames: rank(landingPageGroups, signupLandingPageGroups, (group) => pageHostOf(group.landingPage)),
+      landingPages: rank(landingPageGroups, signupLandingPageGroups, (group) => pathOf(group.landingPage)),
     },
     emails: broadcasts.map((broadcast) => {
       const counts = { delivered: 0, failed: 0, total: 0 };

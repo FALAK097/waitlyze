@@ -1,27 +1,52 @@
 "use client";
 
-import { HugeiconsIcon } from "@hugeicons/react";
 import {
-  AndroidIcon,
-  AppleIcon,
   BrowserIcon,
-  ChromeIcon,
   ComputerIcon,
   Globe02Icon,
-  GoogleIcon,
-  InstagramIcon,
   Link01Icon,
-  Linkedin01Icon,
   Mail01Icon,
-  NewTwitterIcon,
-  RedditIcon,
-  SafariIcon,
   Search01Icon,
   SmartPhone01Icon,
   Tablet01Icon,
-  WindowsNewIcon,
-  YoutubeIcon,
 } from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
+
+const SVGL = "https://svgl.app/library";
+
+const SVGL_ICONS = {
+  chrome: `${SVGL}/chrome.svg`,
+  chromium: `${SVGL}/chromium.svg`,
+  firefox: `${SVGL}/firefox.svg`,
+  edge: `${SVGL}/edge.svg`,
+  opera: `${SVGL}/opera.svg`,
+  brave: `${SVGL}/brave.svg`,
+  safari: `${SVGL}/safari.svg`,
+  vivaldi: `${SVGL}/vivaldi.svg`,
+  arc: `${SVGL}/arc_browser.svg`,
+  tor: `${SVGL}/tor.svg`,
+  windows: `${SVGL}/windows.svg`,
+  apple: `${SVGL}/apple.svg`,
+  android: `${SVGL}/android-icon.svg`,
+  linux: `${SVGL}/linux.svg`,
+  x: `${SVGL}/x.svg`,
+  twitter: `${SVGL}/twitter.svg`,
+  linkedin: `${SVGL}/linkedin.svg`,
+  youtube: `${SVGL}/youtube.svg`,
+  reddit: `${SVGL}/reddit.svg`,
+  google: `${SVGL}/google.svg`,
+  instagram: `${SVGL}/instagram-icon.svg`,
+  facebook: `${SVGL}/facebook-icon.svg`,
+  tiktok: `${SVGL}/tiktok-icon-light.svg`,
+  telegram: `${SVGL}/telegram.svg`,
+  threads: `${SVGL}/threads.svg`,
+  bluesky: `${SVGL}/bluesky.svg`,
+  pinterest: `${SVGL}/pinterest.svg`,
+  whatsapp: `${SVGL}/whatsapp-icon.svg`,
+  discord: `${SVGL}/discord.svg`,
+  producthunt: `${SVGL}/producthunt.svg`,
+  github: `${SVGL}/github.svg`,
+};
 
 function flag(code) {
   const clean = String(code || "").trim().toUpperCase();
@@ -38,26 +63,51 @@ function hostMatches(value, domain) {
   return value === domain || value.endsWith(`.${domain}`);
 }
 
-function iconFor(label) {
+function svglKeyFor(label) {
+  const value = String(label || "").toLowerCase().trim();
+  if (!value || value === "direct" || value === "none" || value === "direct/none") return null;
+  if (value.includes("x.com") || hostMatches(value, "x.com") || hostMatches(value, "t.co") || value === "twitter" || value === "x") return "x";
+  if (value.includes("linkedin")) return "linkedin";
+  if (value.includes("youtube")) return "youtube";
+  if (value.includes("reddit")) return "reddit";
+  if (value.includes("instagram")) return "instagram";
+  if (value.includes("facebook") || hostMatches(value, "fb.me")) return "facebook";
+  if (value.includes("tiktok")) return "tiktok";
+  if (value.includes("telegram")) return "telegram";
+  if (value.includes("threads")) return "threads";
+  if (value.includes("bluesky")) return "bluesky";
+  if (value.includes("pinterest")) return "pinterest";
+  if (value.includes("whatsapp")) return "whatsapp";
+  if (value.includes("discord")) return "discord";
+  if (value.includes("product hunt") || hostMatches(value, "producthunt.com")) return "producthunt";
+  if (value.includes("github")) return "github";
+  if (value === "chrome" || value.includes("chrome")) return "chrome";
+  if (value.includes("chromium")) return "chromium";
+  if (value === "firefox" || value.includes("firefox")) return "firefox";
+  if (value.includes("edge")) return "edge";
+  if (value.includes("opera") || value.includes("opr")) return "opera";
+  if (value.includes("brave")) return "brave";
+  if (value === "safari" || value.includes("safari")) return "safari";
+  if (value.includes("vivaldi")) return "vivaldi";
+  if (value.includes("arc")) return "arc";
+  if (value.includes("tor")) return "tor";
+  if (value.includes("windows")) return "windows";
+  if (["macos", "mac os", "ios", "ipados", "apple"].includes(value) || value.includes("iphone") || value.includes("ipad")) return "apple";
+  if (value.includes("android")) return "android";
+  if (value.includes("linux") || value.includes("ubuntu")) return "linux";
+  if (value === "google" || value.includes("google")) return "google";
+  return null;
+}
+
+function hugeiconFor(label) {
   const value = String(label || "").toLowerCase();
-  if (value.includes("google")) return [GoogleIcon, "google"];
-  if (value.includes("reddit")) return [RedditIcon, "reddit"];
-  if (value.includes("twitter") || hostMatches(value, "x.com") || hostMatches(value, "t.co")) return [NewTwitterIcon, "twitter"];
-  if (value.includes("linkedin")) return [Linkedin01Icon, "linkedin"];
-  if (value.includes("youtube")) return [YoutubeIcon, "youtube"];
-  if (value.includes("instagram")) return [InstagramIcon, "instagram"];
-  if (value === "chrome") return [ChromeIcon, "chrome"];
-  if (value === "safari") return [SafariIcon, "safari"];
-  if (value === "windows") return [WindowsNewIcon, "windows"];
-  if (value === "android") return [AndroidIcon, "android"];
-  if (["macos", "ios", "ipados"].includes(value)) return [AppleIcon, "apple"];
-  if (value === "desktop") return [ComputerIcon, "device"];
-  if (value === "mobile") return [SmartPhone01Icon, "device"];
-  if (value === "tablet") return [Tablet01Icon, "device"];
-  if (value.includes("search")) return [Search01Icon, "channel"];
-  if (value === "email") return [Mail01Icon, "channel"];
-  if (value === "referral" || value.includes("direct")) return [Link01Icon, "channel"];
-  return [BrowserIcon, "default"];
+  if (value.includes("search") || value.includes("organic search")) return Search01Icon;
+  if (value === "email" || value.includes("newsletter")) return Mail01Icon;
+  if (value === "referral" || value.includes("direct")) return Link01Icon;
+  if (value === "desktop") return ComputerIcon;
+  if (value === "mobile") return SmartPhone01Icon;
+  if (value === "tablet") return Tablet01Icon;
+  return BrowserIcon;
 }
 
 export function AnalyticsDimensionIcon({ label, kind, code }) {
@@ -69,6 +119,11 @@ export function AnalyticsDimensionIcon({ label, kind, code }) {
     const countryFlag = flag(countryFromLabel(label));
     if (countryFlag) return <span className="analytics-dimension-flag" aria-hidden="true">{countryFlag}</span>;
   }
-  const [icon, brand] = iconFor(label);
-  return <span className="analytics-dimension-icon" data-brand={brand} aria-hidden="true"><HugeiconsIcon icon={icon || Globe02Icon} /></span>;
+  const key = svglKeyFor(label);
+  if (key && SVGL_ICONS[key]) {
+    return <span className="analytics-dimension-icon analytics-dimension-icon--brand" data-brand={key} aria-hidden="true">
+      <img src={SVGL_ICONS[key]} alt="" width={16} height={16} loading="lazy" />
+    </span>;
+  }
+  return <span className="analytics-dimension-icon" aria-hidden="true"><HugeiconsIcon icon={hugeiconFor(label) || Globe02Icon} /></span>;
 }
