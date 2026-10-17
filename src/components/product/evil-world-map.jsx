@@ -66,57 +66,80 @@ function fillFor(value, max) {
 }
 
 export function EvilWorldMap({ countries = [], metric = "visitors" }) {
-  const containerRef = useRef(null);
+  const wrapRef = useRef(null);
   const [active, setActive] = useState(null);
   const byCode = useMemo(() => new Map(countries.map((row) => [String(row.label || "").toUpperCase(), row])), [countries]);
   const max = useMemo(() => countries.reduce((current, row) => Math.max(current, metric === "signups" ? row.signups : row.visitors), 0), [countries, metric]);
   const valueOf = (row) => (metric === "signups" ? row?.signups : row?.visitors) || 0;
   const shareOf = (row) => (metric === "signups" ? row?.signupsShare : row?.visitorsShare) || 0;
 
-  const inspect = (event, geography) => {
-    const name = geography.properties?.name || "Unknown";
-    const code = COUNTRY_CODE_BY_NAME.get(normalized(name));
+  const hide = () => setActive(null);
+
+  const show = (event) => {
+    const target = event.target.closest?.("[data-map-code]");
+    if (!target) { hide(); return; }
+    const code = target.getAttribute("data-map-code") || "";
+    const name = target.getAttribute("data-map-name") || "Unknown";
     const row = byCode.get(code);
-    const rect = containerRef.current?.getBoundingClientRect();
+    const wrap = wrapRef.current;
+    if (!wrap) return;
+    const rect = wrap.getBoundingClientRect();
+    const pointerX = "clientX" in event ? event.clientX - rect.left : rect.width / 2;
+    const pointerY = "clientY" in event ? event.clientY - rect.top : rect.height / 2;
+    const tooltipX = Math.min(Math.max(pointerX, 90), Math.max(rect.width - 90, 90));
+    const tooltipY = Math.min(Math.max(pointerY - 56, 8), Math.max(rect.height - 90, 8));
     setActive({
       code,
       name: code ? regionNames.of(code) || name : name,
       value: valueOf(row),
       share: shareOf(row),
-      x: rect && "clientX" in event ? Math.min(Math.max(event.clientX - rect.left, 120), Math.max(rect.width - 120, 120)) : (rect?.width || 0) / 2,
-      y: 12,
+      x: tooltipX,
+      y: tooltipY,
     });
   };
 
-  return <div className="evil-world-map" ref={containerRef} onMouseLeave={() => setActive(null)}>
+  return <div
+    className="evil-world-map"
+    ref={wrapRef}
+    onPointerMove={show}
+    onPointerLeave={hide}
+    onPointerCancel={hide}
+  >
     <ComposableMap role="group" aria-label="World map of visitor activity" projection="geoEqualEarth" projectionConfig={{ center: [4, 2], scale: 148 }} width={800} height={390}>
       <Geographies geography={world}>
         {({ geographies }) => geographies.map((geography) => {
           const name = geography.properties?.name || "Unknown";
           const code = COUNTRY_CODE_BY_NAME.get(normalized(name));
           const row = byCode.get(code);
-          const label = `${code ? regionNames.of(code) || name : name}: ${number.format(valueOf(row))} ${metric}`;
+          const label = code ? regionNames.of(code) || name : name;
+          const visitors = row?.visitors || 0;
+          const signups = row?.signups || 0;
           return <Geography
             key={geography.rsmKey}
             geography={geography}
             fill={fillFor(valueOf(row), max)}
             stroke="#cbd5dc"
             strokeWidth={0.55}
-            tabIndex={row ? 0 : undefined}
-            role={row ? "img" : undefined}
-            aria-label={row ? label : undefined}
-            onMouseEnter={(event) => inspect(event, geography)}
-            onMouseMove={(event) => inspect(event, geography)}
-            onFocus={(event) => inspect(event, geography)}
-            onBlur={() => setActive(null)}
+            data-map-code={code || ""}
+            data-map-name={label}
+            aria-label={`${label}: ${number.format(visitors)} visitors, ${number.format(signups)} signups`}
           />;
         })}
       </Geographies>
     </ComposableMap>
     {active ? <div className="evil-world-map-tooltip" style={{ "--map-tooltip-x": `${active.x}px`, "--map-tooltip-y": `${active.y}px` }}>
       <p><span aria-hidden="true">{flag(active.code)} </span>{active.name}</p>
-      <div><i aria-hidden="true" /><span>{metric === "signups" ? "Signups" : "Visitors"}</span><strong>{number.format(active.value)}</strong></div>
-      <small>{active.share}% of measured {metric}</small>
+      <div>
+        <i data-series="visitors" aria-hidden="true" />
+        <span>Visitors</span>
+        <strong>{number.format(byCode.get(active.code)?.visitors || 0)}</strong>
+      </div>
+      <div>
+        <i data-series="signups" aria-hidden="true" />
+        <span>Signups</span>
+        <strong>{number.format(byCode.get(active.code)?.signups || 0)}</strong>
+      </div>
+      {active.share ? <small>{active.share}% of measured {metric}</small> : null}
     </div> : null}
   </div>;
 }

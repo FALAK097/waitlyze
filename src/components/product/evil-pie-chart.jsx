@@ -7,20 +7,20 @@ import { AnalyticsDimensionIcon } from "@/components/product/analytics-dimension
 const number = new Intl.NumberFormat();
 const COLORS = ["#72afe6", "#9ac8ed", "#bddcf3", "#d8e9f6", "#f09a7d", "#f5b8a3", "#9ca8b3", "#d3d9df"];
 
-function ChannelTooltip({ active, payload, metric }) {
+function ChannelTooltip({ active, payload }) {
   const row = payload?.[0]?.payload;
   if (!active || !row) return null;
   return <div className="waitlist-analytics-tooltip">
     <p>{row.label}</p>
     <div className="waitlist-analytics-tooltip-value">
-        <i style={{ "--cell-fill": row.fill }} aria-hidden="true" />
-      <span>{metric === "signups" ? "Signups" : "Visitors"}</span>
-      <strong>{number.format(metric === "signups" ? row.signups : row.visitors)}</strong>
+      <i data-series="visitors" style={{ "--cell-fill": row.fill }} aria-hidden="true" />
+      <span>Visitors</span>
+      <strong>{number.format(row.visitors)}</strong>
     </div>
     <div className="waitlist-analytics-tooltip-value">
-      <span />
-      <span>Share</span>
-      <strong>{metric === "signups" ? row.signupsShare : row.visitorsShare}%</strong>
+      <i data-series="signups" style={{ "--cell-fill": row.fill }} aria-hidden="true" />
+      <span>Signups</span>
+      <strong>{number.format(row.signups)}</strong>
     </div>
   </div>;
 }
@@ -42,7 +42,7 @@ export function EvilPieChart({ rows, metric = "visitors" }) {
     <div className="evil-pie-visual">
       <ChartContainer config={{}} className="aspect-auto h-full">
         <PieChart accessibilityLayer>
-          <Tooltip content={<ChannelTooltip metric={metric} />} />
+          <Tooltip content={<ChannelTooltip />} />
           <Pie data={data} dataKey="value" nameKey="label" cx="50%" cy="50%" innerRadius="52%" outerRadius="86%" paddingAngle={2} cornerRadius={4} stroke="#ffffff" strokeWidth={2} isAnimationActive={false}>
             {data.map((row) => <Cell key={row.label} fill={row.fill} />)}
           </Pie>

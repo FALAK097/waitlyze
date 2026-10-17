@@ -372,15 +372,17 @@
 .waitlist-analytics-dimensions button { flex: 0 0 auto; min-height: 34px; padding: 5px 9px; border: 0; border-radius: 7px; background: transparent; color: var(--product-text-secondary); font: inherit; font-size: .6875rem; cursor: pointer; }
 .waitlist-analytics-dimensions button[aria-pressed="true"] { background: var(--product-bg-inset); color: var(--product-text-primary); font-weight: 550; }
 .waitlist-analytics-panel-body { height: 246px; overflow-y: auto; border-top: 1px solid var(--product-border-subtle); }
-.waitlist-analytics-panel-body:has(.evil-world-map) { overflow: visible; }
-.waitlist-analytics-panel-loading, .waitlist-analytics-panel-empty { display: grid; height: 246px; place-items: center; border-top: 1px solid var(--product-border-subtle); color: var(--product-text-secondary); font-size: .75rem; text-align: center; padding: 24px; }
+.waitlist-analytics-wide-panel .waitlist-analytics-panel-body { height: auto; min-height: 140px; max-height: 260px; }
+.waitlist-analytics-loading, .waitlist-analytics-panel-loading, .waitlist-analytics-panel-empty { display: grid; height: 246px; place-items: center; border-top: 1px solid var(--product-border-subtle); color: var(--product-text-secondary); font-size: .75rem; text-align: center; padding: 24px; }
 .evil-bar-rows { display: grid; margin: 0; padding: 0; list-style: none; }
-.evil-bar-rows li { position: relative; isolation: isolate; display: grid; grid-template-columns: 22px minmax(0, 1fr) auto 48px; min-height: 41px; align-items: center; gap: 10px; padding: 7px 14px; border-top: 1px solid var(--product-border-subtle); overflow: hidden; font-size: .75rem; }
+.evil-bar-rows li { position: relative; isolation: isolate; display: grid; grid-template-columns: 22px minmax(0, 1fr) auto; min-height: 48px; align-items: center; gap: 10px; padding: 8px 14px; border-top: 1px solid var(--product-border-subtle); overflow: hidden; font-size: .75rem; }
 .evil-bar-rows li:first-child { border-top: 0; }
-.evil-bar-row-fill { position: absolute; z-index: -1; inset: 2px auto 2px 0; width: var(--evil-bar-share); border-radius: 0 5px 5px 0; background: color-mix(in srgb, var(--product-accent-solid) 20%, var(--product-bg-surface)); }
+.evil-bar-row-tracks { position: absolute; z-index: -1; inset: 6px auto 6px 0; display: grid; align-content: center; gap: 3px; width: 100%; pointer-events: none; }
+.evil-bar-row-fill { display: block; width: var(--bar-w, 0%); height: 7px; border-radius: 0 4px 4px 0; min-width: 0; transition: width .2s ease; }
+.evil-bar-row-fill[data-series="visitors"] { background: color-mix(in srgb, #4b95d1 28%, var(--product-bg-surface)); }
+.evil-bar-row-fill[data-series="signups"] { background: color-mix(in srgb, #ee9477 32%, var(--product-bg-surface)); }
 .evil-bar-row-label { overflow: hidden; color: var(--product-text-primary); font-weight: 520; text-overflow: ellipsis; white-space: nowrap; }
-.evil-bar-rows strong { color: var(--product-text-primary); font-weight: 600; }
-.evil-bar-rows small { color: var(--product-text-secondary); text-align: end; }
+.evil-bar-rows strong { color: var(--product-text-primary); font-weight: 600; font-variant-numeric: tabular-nums; }
 .analytics-dimension-icon { display: grid; width: 22px; height: 22px; flex: none; place-items: center; border-radius: 6px; background: var(--product-bg-inset); color: var(--product-text-secondary); }
 .analytics-dimension-icon svg { width: 13px; height: 13px; }
 .analytics-dimension-icon--brand { background: var(--product-bg-surface); }
@@ -402,16 +404,19 @@
 .evil-pie-legend strong { color: var(--product-text-primary); font-weight: 600; }
 .evil-pie-legend small { color: var(--product-text-secondary); text-align: end; }
 .waitlist-analytics-panel-empty:has(.evil-pie-legend) { border-top: 0; }
+.waitlist-analytics-data-panel:has(.evil-world-map) { overflow: visible; }
+.waitlist-analytics-data-panel:has(.evil-world-map) .waitlist-analytics-panel-body { overflow: visible; }
 .evil-world-map { position: relative; height: 100%; padding: 4px 10px 10px; overflow: visible; }
 .evil-world-map svg { display: block; width: 100%; height: 100%; overflow: visible; }
 .evil-world-map path { transition: none; }
 .evil-world-map .rsm-geography { cursor: help; outline: none; }
-.evil-world-map .rsm-geography:hover { filter: brightness(0.9); stroke: var(--product-text-primary); stroke-width: 1px; }
-.evil-world-map path:focus { outline: none; stroke: var(--product-text-primary); stroke-width: 1.2px; }
-.evil-world-map-tooltip { position: absolute; left: var(--map-tooltip-x); top: var(--map-tooltip-y); z-index: 20; display: grid; min-width: 150px; gap: 4px; padding: 9px 11px; border: 1px solid var(--product-border-subtle); border-radius: 9px; background: var(--product-bg-surface); box-shadow: var(--product-shadow-elevated); color: var(--product-text-primary); font-size: .75rem; pointer-events: none; translate: -50% 0; }
+.evil-world-map .rsm-geography:hover, .evil-world-map .rsm-geography:focus { filter: brightness(0.88); stroke: var(--product-text-primary); stroke-width: 1px; }
+.evil-world-map-tooltip { position: absolute; left: var(--map-tooltip-x, 50%); top: var(--map-tooltip-y, 12px); z-index: 30; display: grid; min-width: 160px; gap: 5px; padding: 10px 12px; border: 1px solid var(--product-border-subtle); border-radius: 9px; background: var(--product-bg-surface); box-shadow: var(--product-shadow-elevated); color: var(--product-text-primary); font-size: .75rem; pointer-events: none; translate: -50% 0; }
 .evil-world-map-tooltip > p { font-weight: 550; }
 .evil-world-map-tooltip > div { display: grid; grid-template-columns: 8px minmax(0, 1fr) auto; align-items: center; gap: 7px; }
-.evil-world-map-tooltip > div i { width: 8px; height: 8px; border-radius: 50%; background: #4b95d1; }
+.evil-world-map-tooltip > div i { width: 8px; height: 8px; border-radius: 50%; }
+.evil-world-map-tooltip > div i[data-series="visitors"] { background: #4b95d1; }
+.evil-world-map-tooltip > div i[data-series="signups"] { background: #ee9477; }
 .evil-world-map-tooltip > small { color: var(--product-text-secondary); font-size: .6875rem; }
 .waitlist-analytics-wide-panel { padding-block-end: 16px; }
 .waitlist-analytics-section-copy { max-width: 64ch; padding: 0 16px 14px; color: var(--product-text-secondary); font-size: .75rem; }

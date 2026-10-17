@@ -204,9 +204,9 @@ function addDaysSafe(date, days) {
   return next;
 }
 
-function RankedBars({ rows, empty, noun = "visitors", kind, metric = "visitors" }) {
+function RankedBars({ rows, empty, kind, metric = "visitors" }) {
   if (!rows.length) return <p className="waitlist-analytics-panel-empty">{empty}</p>;
-  return <EvilBarRows rows={rows} noun={metric === "signups" ? "signups" : noun} kind={kind} metric={metric} />;
+  return <EvilBarRows rows={rows} kind={kind} metric={metric} />;
 }
 
 function AnalyticsSkeleton() {
@@ -220,10 +220,11 @@ export function WaitlistAnalytics({ waitListId, emailsEnabled = false }) {
   const [{ range, from, to }, setRangeState] = useQueryStates(rangeQueryOptions, { history: "push" });
   const [retryCount, setRetryCount] = useState(0);
   const [mode, setMode] = useState("chart");
-  const [panelMetric, setPanelMetric] = useState("visitors");
+  const [acquisitionMetric, setAcquisitionMetric] = useState("visitors");
+  const [audienceMetric, setAudienceMetric] = useState("visitors");
+  const [technologyMetric, setTechnologyMetric] = useState("visitors");
   const [acquisitionView, setAcquisitionView] = useState("channels");
   const [audienceView, setAudienceView] = useState("map");
-  const [pagesView, setPagesView] = useState("hostnames");
   const [technologyView, setTechnologyView] = useState("browsers");
   const [analytics, setAnalytics] = useState(null);
   const [error, setError] = useState("");
@@ -284,7 +285,7 @@ export function WaitlistAnalytics({ waitListId, emailsEnabled = false }) {
   const acquisition = currentAnalytics ? {
     referrers: { rows: currentAnalytics.sources.referrers, empty: "No referrer data in this period." },
     campaigns: { rows: currentAnalytics.sources.campaigns, empty: "No campaign data in this period." },
-    keywords: { rows: currentAnalytics.sources.keywords, empty: "No keyword data in this period." },
+    sources: { rows: currentAnalytics.sources.sources, empty: "No UTM source data in this period." },
   }[acquisitionView] : null;
   const countryRows = currentAnalytics?.geo.countries.map((row) => ({ ...row, code: row.label, label: countryLabel(row.label) })) ?? [];
   const audience = currentAnalytics ? {
@@ -292,10 +293,6 @@ export function WaitlistAnalytics({ waitListId, emailsEnabled = false }) {
     regions: { rows: currentAnalytics.geo.regions, empty: "No region data in this period." },
     cities: { rows: currentAnalytics.geo.cities, empty: "No city data in this period." },
   }[audienceView] : null;
-  const pages = currentAnalytics ? {
-    hostnames: { rows: currentAnalytics.pages.hostnames, empty: "No hostname data in this period." },
-    landingPages: { rows: currentAnalytics.pages.landingPages, empty: "No landing page data in this period." },
-  }[pagesView] : null;
   const technology = currentAnalytics ? {
     browsers: { rows: currentAnalytics.technology.browsers, empty: "No browser data in this period." },
     operatingSystems: { rows: currentAnalytics.technology.operatingSystems, empty: "No operating system data in this period." },
@@ -349,22 +346,22 @@ export function WaitlistAnalytics({ waitListId, emailsEnabled = false }) {
 
       <div className="waitlist-analytics-grid">
         <section className="waitlist-analytics-data-panel" aria-labelledby="waitlist-sources-title">
-          <header><h3 id="waitlist-sources-title">Acquisition</h3><PanelMetricSwitch metric={panelMetric} onChange={setPanelMetric} /></header>
+          <header><h3 id="waitlist-sources-title">Acquisition</h3><PanelMetricSwitch metric={acquisitionMetric} onChange={setAcquisitionMetric} /></header>
           <DimensionPicker label="Acquisition dimension" value={acquisitionView} onChange={setAcquisitionView} options={[
             { label: "Channel", value: "channels" },
             { label: "Referrer", value: "referrers" },
             { label: "Campaign", value: "campaigns" },
-            { label: "Keyword", value: "keywords" },
+            { label: "Source", value: "sources" },
           ]} />
           <div className="waitlist-analytics-panel-body">
             {acquisitionView === "channels"
-              ? <EvilPieChart rows={currentAnalytics.sources.channels} metric={panelMetric} />
-              : <RankedBars rows={acquisition.rows} empty={acquisition.empty} kind="acquisition" metric={panelMetric} />}
+              ? <EvilPieChart rows={currentAnalytics.sources.channels} metric={acquisitionMetric} />
+              : <RankedBars rows={acquisition.rows} empty={acquisition.empty} kind="acquisition" metric={acquisitionMetric} />}
           </div>
         </section>
 
         <section className="waitlist-analytics-data-panel" aria-labelledby="waitlist-audience-title">
-          <header><h3 id="waitlist-audience-title">Audience</h3><PanelMetricSwitch metric={panelMetric} onChange={setPanelMetric} /></header>
+          <header><h3 id="waitlist-audience-title">Audience</h3><PanelMetricSwitch metric={audienceMetric} onChange={setAudienceMetric} /></header>
           <DimensionPicker label="Audience dimension" value={audienceView} onChange={setAudienceView} options={[
             { label: "Map", value: "map" },
             { label: "Country", value: "countries" },
@@ -373,28 +370,19 @@ export function WaitlistAnalytics({ waitListId, emailsEnabled = false }) {
           ]} />
           <div className="waitlist-analytics-panel-body">
             {audienceView === "map"
-              ? <EvilWorldMap countries={currentAnalytics.geo.mapCountries ?? currentAnalytics.geo.countries} metric={panelMetric} />
-              : <RankedBars rows={audience.rows} empty={audience.empty} kind={audienceView === "countries" ? "country" : audienceView === "regions" ? "region" : "city"} metric={panelMetric} />}
+              ? <EvilWorldMap countries={currentAnalytics.geo.mapCountries ?? currentAnalytics.geo.countries} metric={audienceMetric} />
+              : <RankedBars rows={audience.rows} empty={audience.empty} kind={audienceView === "countries" ? "country" : audienceView === "regions" ? "region" : "city"} metric={audienceMetric} />}
           </div>
         </section>
 
-        <section className="waitlist-analytics-data-panel" aria-labelledby="waitlist-pages-title">
-          <header><h3 id="waitlist-pages-title">Pages</h3><PanelMetricSwitch metric={panelMetric} onChange={setPanelMetric} /></header>
-          <DimensionPicker label="Page dimension" value={pagesView} onChange={setPagesView} options={[
-            { label: "Hostname", value: "hostnames" },
-            { label: "Landing page", value: "landingPages" },
-          ]} />
-          <div className="waitlist-analytics-panel-body"><RankedBars rows={pages.rows} empty={pages.empty} kind="page" metric={panelMetric} /></div>
-        </section>
-
-        <section className="waitlist-analytics-data-panel" aria-labelledby="waitlist-technology-title">
-          <header><h3 id="waitlist-technology-title">Technology</h3><PanelMetricSwitch metric={panelMetric} onChange={setPanelMetric} /></header>
+        <section className="waitlist-analytics-data-panel waitlist-analytics-wide-panel" aria-labelledby="waitlist-technology-title">
+          <header><h3 id="waitlist-technology-title">Technology</h3><PanelMetricSwitch metric={technologyMetric} onChange={setTechnologyMetric} /></header>
           <DimensionPicker label="Technology dimension" value={technologyView} onChange={setTechnologyView} options={[
             { label: "Browser", value: "browsers" },
             { label: "OS", value: "operatingSystems" },
             { label: "Device", value: "devices" },
           ]} />
-          <div className="waitlist-analytics-panel-body"><RankedBars rows={technology.rows} empty={technology.empty} kind="technology" metric={panelMetric} /></div>
+          <div className="waitlist-analytics-panel-body"><RankedBars rows={technology.rows} empty={technology.empty} kind="technology" metric={technologyMetric} /></div>
         </section>
       </div>
 

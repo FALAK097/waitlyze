@@ -271,43 +271,39 @@ export async function getWaitlistAnalytics(db, { waitListId, days = 30, endDate 
     channelGroups,
     campaignGroups,
     referrerGroups,
-    keywordGroups,
+    sourceGroups,
     countryGroups,
     regionGroups,
     cityGroups,
     deviceGroups,
     userAgentGroups,
-    landingPageGroups,
     signupChannelGroups,
     signupCampaignGroups,
     signupReferrerGroups,
-    signupKeywordGroups,
+    signupSourceGroups,
     signupCountryGroups,
     signupCityGroups,
     signupDeviceGroups,
     signupUserAgentGroups,
-    signupLandingPageGroups,
     broadcasts,
   ] = await Promise.all([
     db.impression.groupBy({ by: ["utmMedium", "utmSource", "referrer"], _count: { _all: true }, where: { waitListId, createdAt: inRange } }),
     db.impression.groupBy({ by: ["utmCampaign"], _count: { _all: true }, where: { waitListId, createdAt: inRange } }),
     db.impression.groupBy({ by: ["referrer"], _count: { _all: true }, where: { waitListId, createdAt: inRange } }),
-    db.impression.groupBy({ by: ["utmTerm"], _count: { _all: true }, where: { waitListId, createdAt: inRange } }),
+    db.impression.groupBy({ by: ["utmSource"], _count: { _all: true }, where: { waitListId, createdAt: inRange } }),
     db.impression.groupBy({ by: ["country"], _count: { _all: true }, where: { waitListId, createdAt: inRange } }),
     db.impression.groupBy({ by: ["region", "country"], _count: { _all: true }, where: { waitListId, createdAt: inRange } }),
     db.impression.groupBy({ by: ["city", "country"], _count: { _all: true }, where: { waitListId, createdAt: inRange } }),
     db.impression.groupBy({ by: ["deviceType"], _count: { _all: true }, where: { waitListId, createdAt: inRange } }),
     db.impression.groupBy({ by: ["device"], _count: { _all: true }, where: { waitListId, createdAt: inRange } }),
-    db.impression.groupBy({ by: ["landingPage"], _count: { _all: true }, where: { waitListId, createdAt: inRange } }),
     db.signUp.groupBy({ by: ["utmMedium", "utmSource", "referrer"], _count: { _all: true }, where: { waitListId, createdAt: inRange } }),
     db.signUp.groupBy({ by: ["utmCampaign"], _count: { _all: true }, where: { waitListId, createdAt: inRange } }),
     db.signUp.groupBy({ by: ["referrer"], _count: { _all: true }, where: { waitListId, createdAt: inRange } }),
-    db.signUp.groupBy({ by: ["utmTerm"], _count: { _all: true }, where: { waitListId, createdAt: inRange } }),
+    db.signUp.groupBy({ by: ["utmSource"], _count: { _all: true }, where: { waitListId, createdAt: inRange } }),
     db.signUp.groupBy({ by: ["country"], _count: { _all: true }, where: { waitListId, createdAt: inRange } }),
     db.signUp.groupBy({ by: ["city", "country"], _count: { _all: true }, where: { waitListId, createdAt: inRange } }),
     db.signUp.groupBy({ by: ["deviceType"], _count: { _all: true }, where: { waitListId, createdAt: inRange } }),
     db.signUp.groupBy({ by: ["device"], _count: { _all: true }, where: { waitListId, createdAt: inRange } }),
-    db.signUp.groupBy({ by: ["landingPage"], _count: { _all: true }, where: { waitListId, createdAt: inRange } }),
     db.marketingBroadcast.findMany({
       where: { waitListId, status: "SENT", sentAt: inRange },
       select: { id: true, name: true, sentAt: true },
@@ -361,16 +357,6 @@ export async function getWaitlistAnalytics(db, { waitListId, days = 30, endDate 
       return "Direct";
     }
   };
-  const pathOf = (page) => {
-    if (!page) return "Unknown page";
-    try {
-      const url = new URL(page);
-      return `${url.pathname}${url.search}` || "/";
-    } catch {
-      return "Unknown page";
-    }
-  };
-  const pageHostOf = (page) => page ? hostOf(page) : "Unknown host";
 
   const toIsoDate = (value) => {
     if (!value) return null;
@@ -402,7 +388,7 @@ export async function getWaitlistAnalytics(db, { waitListId, days = 30, endDate 
       channels: rank(channelGroups, signupChannelGroups, channelOf, 8),
       campaigns: rank(campaignGroups, signupCampaignGroups, (group) => group.utmCampaign || "No campaign"),
       referrers: rank(referrerGroups, signupReferrerGroups, (group) => hostOf(group.referrer)),
-      keywords: rank(keywordGroups, signupKeywordGroups, (group) => group.utmTerm || "No keyword"),
+      sources: rank(sourceGroups, signupSourceGroups, (group) => group.utmSource || "No source"),
     },
     geo: {
       countries: rank(countryGroups, signupCountryGroups, (group) => group.country || "Unknown"),
@@ -414,10 +400,6 @@ export async function getWaitlistAnalytics(db, { waitListId, days = 30, endDate 
       browsers: rank(userAgentGroups, signupUserAgentGroups, (group) => browserOf(group.device), 8),
       operatingSystems: rank(userAgentGroups, signupUserAgentGroups, (group) => operatingSystemOf(group.device), 8),
       devices: rank(deviceGroups, signupDeviceGroups, (group) => prettifyDevice(group.deviceType), 8),
-    },
-    pages: {
-      hostnames: rank(landingPageGroups, signupLandingPageGroups, (group) => pageHostOf(group.landingPage)),
-      landingPages: rank(landingPageGroups, signupLandingPageGroups, (group) => pathOf(group.landingPage)),
     },
     emails: broadcasts.map((broadcast) => {
       const counts = { delivered: 0, failed: 0, total: 0 };
