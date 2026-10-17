@@ -89,8 +89,8 @@ function svglKeyFor(label) {
   if (value.includes("brave")) return "brave";
   if (value === "safari" || value.includes("safari")) return "safari";
   if (value.includes("vivaldi")) return "vivaldi";
-  if (value.includes("arc")) return "arc";
-  if (value.includes("tor")) return "tor";
+  if (value === "arc" || value.includes("arc browser") || value.includes("arc-browser")) return "arc";
+  if (value === "tor" || value.includes("tor browser") || value.includes("tor-browser")) return "tor";
   if (value.includes("windows")) return "windows";
   if (["macos", "mac os", "ios", "ipados", "apple"].includes(value) || value.includes("iphone") || value.includes("ipad")) return "apple";
   if (value.includes("android")) return "android";
