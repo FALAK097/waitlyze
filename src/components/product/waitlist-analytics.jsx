@@ -206,7 +206,12 @@ function addDaysSafe(date, days) {
 
 function RankedBars({ rows, empty, kind, metric = "visitors" }) {
   if (!rows.length) return <p className="waitlist-analytics-panel-empty">{empty}</p>;
-  return <EvilBarRows rows={rows} kind={kind} metric={metric} />;
+  const sorted = [...rows].sort((a, b) => {
+    const avalue = metric === "signups" ? a.signups : a.visitors;
+    const bvalue = metric === "signups" ? b.signups : b.visitors;
+    return bvalue - avalue || b.visitors - a.visitors || b.signups - a.signups;
+  });
+  return <EvilBarRows rows={sorted} kind={kind} metric={metric} />;
 }
 
 function AnalyticsSkeleton() {

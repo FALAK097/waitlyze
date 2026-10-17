@@ -64,7 +64,7 @@ function hostMatches(host, domain) {
 }
 
 const SOCIAL_HOSTS = ["twitter.com", "x.com", "t.co", "reddit.com", "linkedin.com", "facebook.com", "instagram.com", "tiktok.com", "youtube.com"];
-const SEARCH_HOSTS = ["google.com", "bing.com", "yahoo.com", "duckduckgo.com", "baidu.com", "yandex.com", "brave.com"];
+const SEARCH_HOST_PATTERN = /(^|\.)(google|bing|yahoo|duckduckgo|baidu|yandex|brave)(\.[a-z]{2,3})?\.[a-z]{2,}$/;
 const SOCIAL_SOURCES = new Set(["twitter", "x", "x.com", "t.co", "reddit", "linkedin", "facebook", "instagram", "tiktok", "youtube"]);
 
 function channelOf({ utmMedium, utmSource, referrer }) {
@@ -82,7 +82,7 @@ function channelOf({ utmMedium, utmSource, referrer }) {
   if (["social", "social_network", "social_media", "organic_social"].includes(medium)) return "Organic social";
   if (["organic", "organic_search", "seo"].includes(medium)) return "Organic search";
   if (SOCIAL_SOURCES.has(source) || SOCIAL_HOSTS.some((domain) => hostMatches(host, domain))) return "Organic social";
-  if (SEARCH_HOSTS.some((domain) => hostMatches(host, domain)) || host.endsWith(".google.com")) return "Organic search";
+  if (SEARCH_HOST_PATTERN.test(host)) return "Organic search";
   if (host) return "Referral";
   if (medium || source) return "Other";
   return "Direct";
@@ -334,7 +334,7 @@ export async function getWaitlistAnalytics(db, { waitListId, days = 30, endDate 
     const labels = new Set([...visitorCounts.keys(), ...signupCounts.keys()]);
     const visitorTotal = Array.from(visitorCounts.values()).reduce((sum, value) => sum + value, 0);
     const signupTotal = Array.from(signupCounts.values()).reduce((sum, value) => sum + value, 0);
-    return Array.from(labels, (rowLabel) => {
+    const rows = Array.from(labels, (rowLabel) => {
       const visitors = visitorCounts.get(rowLabel) ?? 0;
       const signups = signupCounts.get(rowLabel) ?? 0;
       return {
@@ -344,9 +344,10 @@ export async function getWaitlistAnalytics(db, { waitListId, days = 30, endDate 
         visitorsShare: visitorTotal === 0 ? 0 : Math.round((visitors / visitorTotal) * 1000) / 10,
         signupsShare: signupTotal === 0 ? 0 : Math.round((signups / signupTotal) * 1000) / 10,
       };
-    })
-      .sort((a, b) => b.visitors - a.visitors || b.signups - a.signups)
-      .slice(0, limit);
+    });
+    const byVisitors = [...rows].sort((a, b) => b.visitors - a.visitors || b.signups - a.signups).slice(0, limit);
+    const bySignups = [...rows].sort((a, b) => b.signups - a.signups || b.visitors - a.visitors).slice(0, limit);
+    return Array.from(new Map([...byVisitors, ...bySignups].map((row) => [row.label, row])).values());
   };
   const hostOf = (referrer) => {
     if (!referrer) return "Direct";

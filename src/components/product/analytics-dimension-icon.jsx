@@ -66,7 +66,7 @@ function hostMatches(value, domain) {
 function svglKeyFor(label) {
   const value = String(label || "").toLowerCase().trim();
   if (!value || value === "direct" || value === "none" || value === "direct/none") return null;
-  if (value.includes("x.com") || hostMatches(value, "x.com") || hostMatches(value, "t.co") || value === "twitter" || value === "x") return "x";
+  if (hostMatches(value, "x.com") || hostMatches(value, "t.co") || hostMatches(value, "twitter.com") || value === "twitter" || value === "x") return "x";
   if (value.includes("linkedin")) return "linkedin";
   if (value.includes("youtube")) return "youtube";
   if (value.includes("reddit")) return "reddit";
@@ -81,14 +81,14 @@ function svglKeyFor(label) {
   if (value.includes("discord")) return "discord";
   if (value.includes("product hunt") || hostMatches(value, "producthunt.com")) return "producthunt";
   if (value.includes("github")) return "github";
-  if (value === "chrome" || value.includes("chrome")) return "chrome";
-  if (value.includes("chromium")) return "chromium";
-  if (value === "firefox" || value.includes("firefox")) return "firefox";
-  if (value.includes("edge")) return "edge";
-  if (value.includes("opera") || value.includes("opr")) return "opera";
-  if (value.includes("brave")) return "brave";
-  if (value === "safari" || value.includes("safari")) return "safari";
-  if (value.includes("vivaldi")) return "vivaldi";
+  if (value === "chrome") return "chrome";
+  if (value === "chromium") return "chromium";
+  if (value === "firefox") return "firefox";
+  if (value === "edge") return "edge";
+  if (value === "opera" || value === "opr") return "opera";
+  if (value === "brave" || hostMatches(value, "brave.com")) return "brave";
+  if (value === "safari") return "safari";
+  if (value === "vivaldi") return "vivaldi";
   if (value === "arc" || value.includes("arc browser") || value.includes("arc-browser")) return "arc";
   if (value === "tor" || value.includes("tor browser") || value.includes("tor-browser")) return "tor";
   if (value.includes("windows")) return "windows";

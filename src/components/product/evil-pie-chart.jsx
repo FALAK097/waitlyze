@@ -5,6 +5,7 @@ import { ChartContainer } from "@/components/ui/chart";
 import { AnalyticsDimensionIcon } from "@/components/product/analytics-dimension-icon";
 
 const number = new Intl.NumberFormat();
+const MAX_SLICES = 8;
 const COLORS = ["#72afe6", "#9ac8ed", "#bddcf3", "#d8e9f6", "#f09a7d", "#f5b8a3", "#9ca8b3", "#d3d9df"];
 
 function ChannelTooltip({ active, payload }) {
@@ -33,7 +34,10 @@ export function EvilPieChart({ rows, metric = "visitors" }) {
       share: metric === "signups" ? row.signupsShare : row.visitorsShare,
       fill: COLORS[index % COLORS.length],
     }))
-    .filter((row) => row.value > 0);
+    .filter((row) => row.value > 0)
+    .sort((a, b) => b.value - a.value)
+    .slice(0, MAX_SLICES)
+    .map((row, index) => ({ ...row, fill: COLORS[index % COLORS.length] }));
   const total = data.reduce((sum, row) => sum + row.value, 0);
 
   if (!data.length) return <p className="waitlist-analytics-panel-empty">No channel data in this period.</p>;
