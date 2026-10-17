@@ -3,38 +3,60 @@
 import { useState } from "react";
 import { Cell, Pie, PieChart, Tooltip } from "recharts";
 import { ChartContainer } from "@/components/ui/chart";
-import { AnalyticsDimensionIcon } from "@/components/product/analytics-dimension-icon";
 
 const number = new Intl.NumberFormat();
 const MAX_SLICES = 8;
-const COLORS = ["#72afe6", "#9ac8ed", "#bddcf3", "#d8e9f6", "#f09a7d", "#f5b8a3", "#9ca8b3", "#d3d9df"];
+const COLORS = ["#5b9bd1", "#7bb0dc", "#9cc6e7", "#bcd9f1", "#e8907a", "#f0ab95", "#9ca8b3", "#d3d9df"];
+const LABEL_COLOR = "var(--product-text-secondary, #5b6b7a)";
+const LINE_COLOR = "var(--product-border-control, #b6c2cc)";
 
 function ChannelTooltip({ active, payload }) {
   const row = payload?.[0]?.payload;
   if (!active || !row) return null;
   return <div className="waitlist-analytics-tooltip">
-    <p>{row.label}</p>
+    <p className="waitlist-analytics-tooltip-title">{row.label}</p>
     <div className="waitlist-analytics-tooltip-value">
-      <i data-series="visitors" style={{ "--cell-fill": row.fill }} aria-hidden="true" />
+      <i data-series="visitors" aria-hidden="true" />
       <span>Visitors</span>
       <strong>{number.format(row.visitors)}</strong>
     </div>
     <div className="waitlist-analytics-tooltip-value">
-      <i data-series="signups" style={{ "--cell-fill": row.fill }} aria-hidden="true" />
+      <i data-series="signups" aria-hidden="true" />
       <span>Signups</span>
       <strong>{number.format(row.signups)}</strong>
     </div>
   </div>;
 }
 
+function PieLabel({ cx, cy, midAngle, outerRadius, payload }) {
+  const RADIAN = Math.PI / 180;
+  const cos = Math.cos(-midAngle * RADIAN);
+  const sin = Math.sin(-midAngle * RADIAN);
+  const start = outerRadius + 5;
+  const elbow = outerRadius + 15;
+  const end = outerRadius + 20;
+  const sx = cx + start * cos;
+  const sy = cy + start * sin;
+  const mx = cx + elbow * cos;
+  const my = cy + elbow * sin;
+  const ex = cx + end * cos;
+  const ey = cy + end * sin;
+  const right = cos >= 0;
+  return <g pointerEvents="none">
+    <polyline points={`${sx},${sy} ${mx},${my} ${ex},${ey}`} fill="none" stroke={LINE_COLOR} strokeWidth="1" />
+    <text x={ex + (right ? 5 : -5)} y={ey} textAnchor={right ? "start" : "end"} dominantBaseline="central" fontSize="10.5" fontWeight="500" fill={LABEL_COLOR}>
+      {payload.label}
+    </text>
+  </g>;
+}
+
 export function EvilPieChart({ rows, metric = "visitors" }) {
   const [active, setActive] = useState(null);
   const data = rows
-    .map((row, index) => ({
+    .map((row) => ({
       ...row,
       value: metric === "signups" ? row.signups : row.visitors,
       share: metric === "signups" ? row.signupsShare : row.visitorsShare,
-      fill: COLORS[index % COLORS.length],
     }))
     .filter((row) => row.value > 0)
     .sort((a, b) => b.value - a.value)
@@ -46,24 +68,15 @@ export function EvilPieChart({ rows, metric = "visitors" }) {
 
   return <div className="evil-pie-layout">
     <div className="evil-pie-visual">
-      <ChartContainer config={{}} className="aspect-auto h-full">
-        <PieChart accessibilityLayer>
-          <Tooltip content={<ChannelTooltip />} />
-          <Pie data={data} dataKey="value" nameKey="label" cx="50%" cy="50%" innerRadius="52%" outerRadius="86%" paddingAngle={2} cornerRadius={4} stroke="#ffffff" strokeWidth={2} isAnimationActive={false}>
-            {data.map((row) => <Cell key={row.label} fill={row.fill} fillOpacity={active ? (active === row.label ? 1 : 0.3) : 1} />)}
+      <ChartContainer config={{}} className="aspect-auto h-full w-full">
+        <PieChart accessibilityLayer margin={{ top: 8, right: 8, bottom: 8, left: 8 }}>
+          <Tooltip content={<ChannelTooltip />} cursor={false} />
+          <Pie data={data} dataKey="value" nameKey="label" cx="50%" cy="50%" innerRadius="52%" outerRadius="74%" paddingAngle={2} cornerRadius={4} stroke="#ffffff" strokeWidth={2} isAnimationActive={false} label={PieLabel} labelLine={false}>
+            {data.map((row) => <Cell key={row.label} fill={row.fill} fillOpacity={active ? (active === row.label ? 1 : 0.32) : 1} onMouseEnter={() => setActive(row.label)} onMouseLeave={() => setActive(null)} />)}
           </Pie>
         </PieChart>
       </ChartContainer>
       <div className="evil-pie-total" aria-hidden="true"><strong>{number.format(total)}</strong><span>{metric}</span></div>
     </div>
-    <ol className="evil-pie-legend">
-      {data.map((row) => <li key={row.label} data-active={active === row.label} onMouseEnter={() => setActive(row.label)} onMouseLeave={() => setActive(null)}>
-      <i style={{ "--cell-fill": row.fill }} aria-hidden="true" />
-        <AnalyticsDimensionIcon label={row.label} />
-        <span>{row.label}</span>
-        <strong>{number.format(row.value)}</strong>
-        <small>{row.share}%</small>
-      </li>)}
-    </ol>
   </div>;
 }
