@@ -41,6 +41,7 @@
     "countries-and-timezones": "^3.10.0",
     "date-fns": "^4.4.0",
     "dotenv": "^18.0.5",
+    "echarts": "^6.1.0",
     "file-saver": "^2.0.5",
     "framer-motion": "^12.10.5",
     "fumadocs-core": "16.17.1",

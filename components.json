@@ -16,5 +16,8 @@
     "ui": "@/components/ui",
     "lib": "@/lib",
     "hooks": "@/hooks"
+  },
+  "registries": {
+    "@evilcharts": "https://evilcharts.com/r/{name}.json"
   }
 }

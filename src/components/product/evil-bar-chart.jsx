@@ -5,17 +5,18 @@ import { AnalyticsDimensionIcon } from "@/components/product/analytics-dimension
 const number = new Intl.NumberFormat();
 
 export function EvilBarRows({ rows, kind, metric = "visitors" }) {
-  const maxVisitors = rows.reduce((max, row) => Math.max(max, row.visitors), 0) || 1;
-  const maxSignups = rows.reduce((max, row) => Math.max(max, row.signups), 0) || 1;
+  const maxTotal = rows.reduce((max, row) => Math.max(max, row.visitors + row.signups), 0) || 1;
   return <ol className="evil-bar-rows">
     {rows.map((row) => {
       const value = metric === "signups" ? row.signups : row.visitors;
-      const visitorWidth = Math.max((row.visitors / maxVisitors) * 100, row.visitors > 0 ? 2 : 0);
-      const signupWidth = Math.max((row.signups / maxSignups) * 100, row.signups > 0 ? 2 : 0);
+      const total = row.visitors + row.signups;
+      const width = total > 0 ? Math.max((total / maxTotal) * 100, 2) : 0;
+      const visitorShare = total > 0 ? (row.visitors / total) * 100 : 0;
+      const signupShare = total > 0 ? (row.signups / total) * 100 : 0;
       return <li key={row.label} title={`${row.label}: ${number.format(row.visitors)} visitors · ${number.format(row.signups)} signups`}>
-        <span className="evil-bar-row-tracks" aria-hidden="true">
-          <span className="evil-bar-row-fill" data-series="visitors" style={{ "--bar-w": `${visitorWidth}%` }} />
-          <span className="evil-bar-row-fill" data-series="signups" style={{ "--bar-w": `${signupWidth}%` }} />
+        <span className="evil-bar-row-track" aria-hidden="true" style={{ "--bar-w": `${width}%` }}>
+          {row.visitors > 0 ? <span className="evil-bar-row-fill" data-series="visitors" style={{ "--seg": `${visitorShare}` }} /> : null}
+          {row.signups > 0 ? <span className="evil-bar-row-fill" data-series="signups" style={{ "--seg": `${signupShare}` }} /> : null}
         </span>
         <AnalyticsDimensionIcon label={row.label} kind={kind} code={row.code} />
         <span className="evil-bar-row-label">{row.label}</span>
