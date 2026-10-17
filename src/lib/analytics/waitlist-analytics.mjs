@@ -59,6 +59,14 @@ function operatingSystemOf(userAgent) {
   return agent && agent !== "unknown" ? "Other" : "Unknown";
 }
 
+function hostMatches(host, domain) {
+  return host === domain || host.endsWith(`.${domain}`);
+}
+
+const SOCIAL_HOSTS = ["twitter.com", "x.com", "t.co", "reddit.com", "linkedin.com", "facebook.com", "instagram.com", "tiktok.com", "youtube.com"];
+const SEARCH_HOSTS = ["google.com", "bing.com", "yahoo.com", "duckduckgo.com", "baidu.com", "yandex.com", "brave.com"];
+const SOCIAL_SOURCES = new Set(["twitter", "x", "x.com", "t.co", "reddit", "linkedin", "facebook", "instagram", "tiktok", "youtube"]);
+
 function channelOf({ utmMedium, utmSource, referrer }) {
   const medium = String(utmMedium || "").trim().toLowerCase().replace(/[\s-]+/g, "_");
   const source = String(utmSource || "").trim().toLowerCase();
@@ -66,7 +74,6 @@ function channelOf({ utmMedium, utmSource, referrer }) {
   try { host = referrer ? new URL(referrer).hostname.replace(/^www\./, "").toLowerCase() : ""; }
   catch { host = ""; }
 
-  const social = `${source} ${host}`;
   if (["cpc", "ppc", "paid_search", "paidsearch", "sem"].includes(medium)) return "Paid search";
   if (["paid_social", "paidsocial", "social_paid"].includes(medium)) return "Paid social";
   if (["email", "newsletter"].includes(medium)) return "Email";
@@ -74,8 +81,8 @@ function channelOf({ utmMedium, utmSource, referrer }) {
   if (["display", "banner", "cpm", "programmatic"].includes(medium)) return "Display";
   if (["social", "social_network", "social_media", "organic_social"].includes(medium)) return "Organic social";
   if (["organic", "organic_search", "seo"].includes(medium)) return "Organic search";
-  if (/twitter|x\.com|t\.co|reddit|linkedin|facebook|instagram|tiktok|youtube/.test(social)) return "Organic social";
-  if (/google\.|bing\.|yahoo\.|duckduckgo\.|baidu\.|yandex\./.test(host)) return "Organic search";
+  if (SOCIAL_SOURCES.has(source) || SOCIAL_HOSTS.some((domain) => hostMatches(host, domain))) return "Organic social";
+  if (SEARCH_HOSTS.some((domain) => hostMatches(host, domain)) || host.endsWith(".google.com")) return "Organic search";
   if (host) return "Referral";
   if (medium || source) return "Other";
   return "Direct";

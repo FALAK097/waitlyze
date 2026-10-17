@@ -311,10 +311,16 @@
 .waitlist-analytics-header p { padding-block-start: 5px; color: var(--product-text-secondary); font-size: .8125rem; }
 .waitlist-analytics-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 .waitlist-analytics-range, .waitlist-analytics-view, .waitlist-analytics-dimensions { display: inline-flex; align-items: center; gap: 2px; }
-.waitlist-analytics-range { padding: 3px; border: 1px solid var(--product-border-subtle); border-radius: 10px; background: var(--product-bg-surface); }
-.waitlist-analytics-range button, .waitlist-analytics-view button { min-height: 36px; padding: 6px 10px; border: 0; border-radius: 7px; background: transparent; color: var(--product-text-secondary); font: inherit; font-size: .75rem; font-weight: 550; cursor: pointer; }
-.waitlist-analytics-range button[aria-pressed="true"], .waitlist-analytics-view button[aria-pressed="true"] { background: var(--product-bg-inset); color: var(--product-text-primary); }
-.waitlist-analytics-controls [data-slot="popover-trigger"] button { min-height: 42px; border-color: var(--product-border-subtle); border-radius: 10px; color: var(--product-text-primary); font-size: .75rem; font-weight: 550; }
+.waitlist-analytics-range-trigger { display: inline-flex; min-height: 42px; align-items: center; gap: 8px; padding: 8px 14px; border: 1px solid var(--product-border-subtle); border-radius: 10px; background: var(--product-bg-surface); color: var(--product-text-primary); font: inherit; font-size: .8125rem; font-weight: 550; cursor: pointer; }
+.waitlist-analytics-range-trigger:hover { background: var(--product-bg-inset); }
+.waitlist-analytics-range-trigger svg { width: 15px; height: 15px; flex: none; color: var(--product-text-secondary); }
+.waitlist-analytics-range-popover { display: grid; gap: 8px; margin: -10px; }
+.waitlist-analytics-range-presets { display: grid; gap: 2px; padding: 4px 4px 8px; border-bottom: 1px solid var(--product-border-subtle); }
+.waitlist-analytics-range-presets button { min-height: 36px; padding: 6px 10px; border: 0; border-radius: 7px; background: transparent; color: var(--product-text-secondary); font: inherit; font-size: .8125rem; font-weight: 500; text-align: start; cursor: pointer; }
+.waitlist-analytics-range-presets button[aria-pressed="true"] { background: var(--product-bg-inset); color: var(--product-text-primary); font-weight: 600; }
+.waitlist-analytics-view { padding: 3px; border: 1px solid var(--product-border-subtle); border-radius: 10px; background: var(--product-bg-surface); }
+.waitlist-analytics-view button { min-height: 36px; padding: 6px 10px; border: 0; border-radius: 7px; background: transparent; color: var(--product-text-secondary); font: inherit; font-size: .75rem; font-weight: 550; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
+.waitlist-analytics-view button[aria-pressed="true"] { background: var(--product-bg-inset); color: var(--product-text-primary); }
 .waitlist-analytics-overview, .waitlist-analytics-data-panel { min-width: 0; overflow: hidden; border: 1px solid var(--product-border-subtle); border-radius: 14px; background: var(--product-bg-surface); box-shadow: 0 1px 2px hsl(0 0% 0% / .025); }
 .waitlist-analytics-metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(132px, 1fr)); margin: 0; border-bottom: 1px solid var(--product-border-subtle); }
 .waitlist-analytics-metric { position: relative; display: grid; align-content: start; min-width: 0; min-height: 110px; gap: 2px; padding: 17px 16px 14px; }
@@ -422,8 +428,7 @@
   .waitlist-analytics { margin-top: 24px; }
   .waitlist-analytics-header { align-items: stretch; flex-direction: column; }
   .waitlist-analytics-controls { justify-content: space-between; }
-  .waitlist-analytics-range { flex: 1; }
-  .waitlist-analytics-range button { flex: 1; padding-inline: 6px; }
+  .waitlist-analytics-range-trigger { width: 100%; }
   .waitlist-analytics-metrics { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .waitlist-analytics-metric { min-height: 102px; padding: 14px 11px 12px; }
   .waitlist-analytics-metric:nth-child(4) { border-inline-start: 0; }

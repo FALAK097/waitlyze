@@ -16,7 +16,7 @@ export async function GET(request, { params }) {
       return NextResponse.json({ error: "Choose a date range from 1 to 90 days." }, { status: 400 });
     }
     const endDate = searchParams.get("endDate");
-    if (endDate && !datePattern.test(endDate)) {
+    if (endDate && (!datePattern.test(endDate) || Number.isNaN(Date.parse(`${endDate}T00:00:00Z`)) || new Date(`${endDate}T00:00:00Z`).toISOString().slice(0, 10) !== endDate)) {
       return NextResponse.json({ error: "Choose a valid end date." }, { status: 400 });
     }
     const timeZone = searchParams.get("timeZone") || "UTC";

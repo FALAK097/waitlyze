@@ -34,11 +34,15 @@ function countryFromLabel(label) {
   return match?.[1] || "";
 }
 
+function hostMatches(value, domain) {
+  return value === domain || value.endsWith(`.${domain}`);
+}
+
 function iconFor(label) {
   const value = String(label || "").toLowerCase();
   if (value.includes("google")) return [GoogleIcon, "google"];
   if (value.includes("reddit")) return [RedditIcon, "reddit"];
-  if (value.includes("twitter") || value.includes("x.com") || value.includes("t.co")) return [NewTwitterIcon, "twitter"];
+  if (value.includes("twitter") || hostMatches(value, "x.com") || hostMatches(value, "t.co")) return [NewTwitterIcon, "twitter"];
   if (value.includes("linkedin")) return [Linkedin01Icon, "linkedin"];
   if (value.includes("youtube")) return [YoutubeIcon, "youtube"];
   if (value.includes("instagram")) return [InstagramIcon, "instagram"];

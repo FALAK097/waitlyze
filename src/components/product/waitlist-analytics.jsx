@@ -4,11 +4,13 @@ import { useEffect, useEffectEvent, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { differenceInCalendarDays, format } from "date-fns";
+import { parseAsString, parseAsStringLiteral, useQueryStates } from "nuqs";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { ChartLineData01Icon } from "@hugeicons/core-free-icons";
+import { CalendarIcon, ChartLineData01Icon } from "@hugeicons/core-free-icons";
 
 import { Button } from "@/components/ui/button";
-import { DatePickerRange } from "@/components/ui/date-picker";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { EvilBarRows } from "@/components/product/evil-bar-chart";
 
@@ -23,14 +25,19 @@ const EvilWorldMap = dynamic(() => import("@/components/product/evil-world-map")
 });
 
 const rangePresets = [
-  { label: "Daily", days: 1 },
-  { label: "Last 7 days", days: 7 },
-  { label: "Last 30 days", days: 30 },
-  { label: "Last 90 days", days: 90 },
+  { label: "Daily", days: "1" },
+  { label: "Last 7 days", days: "7" },
+  { label: "Last 30 days", days: "30" },
+  { label: "Last 90 days", days: "90" },
 ];
 const MAX_RANGE_DAYS = 90;
 const number = new Intl.NumberFormat();
 const regionNames = new Intl.DisplayNames(["en"], { type: "region" });
+const rangeQueryOptions = {
+  range: parseAsStringLiteral(["1", "7", "30", "90", "custom"]).withDefault("30"),
+  from: parseAsString,
+  to: parseAsString,
+};
 
 function formatDate(value, options = { month: "short", day: "numeric" }) {
   return new Intl.DateTimeFormat("en-GB", { ...options, timeZone: "UTC" }).format(new Date(`${value}T12:00:00Z`));
@@ -40,6 +47,20 @@ function countryLabel(code) {
   const clean = String(code || "").trim().toUpperCase();
   if (!/^[A-Z]{2}$/.test(clean)) return code || "Unknown";
   return regionNames.of(clean) || clean;
+}
+
+function parseIsoDate(value) {
+  if (!value || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return null;
+  const date = new Date(`${value}T00:00:00Z`);
+  return Number.isNaN(date.valueOf()) ? null : date;
+}
+
+function rangeLabel(range, from, to) {
+  if (range !== "custom") return rangePresets.find((option) => option.days === range)?.label ?? "Last 30 days";
+  const fromDate = parseIsoDate(from);
+  const toDate = parseIsoDate(to);
+  if (!fromDate || !toDate) return "Custom";
+  return `${format(fromDate, "LLL d")} – ${format(toDate, "LLL d, y")}`;
 }
 
 function Comparison({ value }) {
@@ -66,6 +87,73 @@ function DimensionPicker({ label, options, value, onChange }) {
   </div>;
 }
 
+function RangePicker({ range, from, to, onChange }) {
+  const [open, setOpen] = useState(false);
+  const [showCalendar, setShowCalendar] = useState(false);
+  const today = useMemo(() => {
+    const now = new Date();
+    return new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  }, []);
+  const selected = useMemo(() => {
+    const fromDate = parseIsoDate(from);
+    const toDate = parseIsoDate(to);
+    return fromDate && toDate ? { from: fromDate, to: toDate } : undefined;
+  }, [from, to]);
+
+  const disabled = (day) => {
+    if (day > today) return true;
+    if (!selected?.from) return false;
+    return Math.abs(differenceInCalendarDays(day, selected.from)) >= MAX_RANGE_DAYS;
+  };
+
+  return <Popover open={open} onOpenChange={(nextOpen) => {
+    setOpen(nextOpen);
+    if (!nextOpen) setShowCalendar(false);
+  }}>
+    <PopoverTrigger
+      render={
+        <button type="button" className="waitlist-analytics-range-trigger" aria-label={`Date range: ${rangeLabel(range, from, to)}`}>
+          <HugeiconsIcon icon={CalendarIcon} aria-hidden="true" />
+          {rangeLabel(range, from, to)}
+        </button>
+      }
+    />
+    <PopoverContent align="end" className={showCalendar ? "w-120" : "w-48"}>
+      <div className="waitlist-analytics-range-popover">
+        <div className="waitlist-analytics-range-presets" role="group" aria-label="Date range presets">
+          {rangePresets.map((option) => <button key={option.days} type="button" aria-pressed={range === option.days} onClick={() => { onChange({ range: option.days, from: null, to: null }); setShowCalendar(false); setOpen(false); }}>{option.label}</button>)}
+          <button type="button" aria-pressed={range === "custom"} onClick={() => { setShowCalendar(true); if (range !== "custom") onChange({ range: "custom", from: null, to: null }); }}>Custom…</button>
+        </div>
+        {showCalendar ? <Calendar
+          mode="range"
+          defaultMonth={selected?.from ?? addDaysSafe(today, -6)}
+          selected={selected}
+          onSelect={(next) => {
+            if (!next?.from || !next?.to) return;
+            const days = differenceInCalendarDays(next.to, next.from) + 1;
+            if (days > MAX_RANGE_DAYS) return;
+            onChange({
+              range: "custom",
+              from: format(next.from, "yyyy-MM-dd"),
+              to: format(next.to, "yyyy-MM-dd"),
+            });
+            setShowCalendar(false);
+            setOpen(false);
+          }}
+          disabled={disabled}
+          numberOfMonths={2}
+        /> : null}
+      </div>
+    </PopoverContent>
+  </Popover>;
+}
+
+function addDaysSafe(date, days) {
+  const next = new Date(date);
+  next.setDate(next.getDate() + days);
+  return next;
+}
+
 function RankedBars({ rows, empty, noun = "visitors", kind }) {
   if (!rows.length) return <p className="waitlist-analytics-panel-empty">{empty}</p>;
   return <EvilBarRows rows={rows} noun={noun} kind={kind} />;
@@ -79,8 +167,7 @@ function AnalyticsSkeleton() {
 }
 
 export function WaitlistAnalytics({ waitListId, emailsEnabled = false }) {
-  const [presetDays, setPresetDays] = useState(30);
-  const [customRange, setCustomRange] = useState(null);
+  const [{ range, from, to }, setRangeState] = useQueryStates(rangeQueryOptions, { history: "push" });
   const [retryCount, setRetryCount] = useState(0);
   const [mode, setMode] = useState("chart");
   const [metric, setMetric] = useState("visitors");
@@ -96,12 +183,19 @@ export function WaitlistAnalytics({ waitListId, emailsEnabled = false }) {
     catch { return "UTC"; }
   }, []);
 
-  const requestDays = customRange
-    ? Math.min(Math.max(differenceInCalendarDays(customRange.to, customRange.from) + 1, 1), MAX_RANGE_DAYS)
-    : presetDays;
-  const requestEnd = customRange ? format(customRange.to, "yyyy-MM-dd") : null;
+  const requestDays = range === "custom"
+    ? (() => {
+      const fromDate = parseIsoDate(from);
+      const toDate = parseIsoDate(to);
+      if (!fromDate || !toDate) return 30;
+      return Math.min(Math.max(differenceInCalendarDays(toDate, fromDate) + 1, 1), MAX_RANGE_DAYS);
+    })()
+    : Number(range);
+  const requestEnd = range === "custom" ? (parseIsoDate(to) ? to : null) : null;
+  const requestValid = range !== "custom" || Boolean(parseIsoDate(from) && parseIsoDate(to));
 
   const load = useEffectEvent(async (signal) => {
+    if (!requestValid) return;
     setLoading(true);
     setError("");
     try {
@@ -110,7 +204,7 @@ export function WaitlistAnalytics({ waitListId, emailsEnabled = false }) {
       const response = await fetch(`/api/wait-lists/${waitListId}/analytics?${query}`, { signal, cache: "no-store" });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || "Could not load analytics.");
-      if (!signal.aborted) setAnalytics(result);
+      if (!signal.aborted) setAnalytics({ ...result, requestKey: { days: requestDays, end: requestEnd ?? null } });
     } catch (cause) {
       if (cause.name !== "AbortError") setError(cause.message || "Could not load analytics.");
     } finally {
@@ -119,15 +213,19 @@ export function WaitlistAnalytics({ waitListId, emailsEnabled = false }) {
   });
 
   useEffect(() => {
+    if (!requestValid) {
+      setLoading(false);
+      return undefined;
+    }
     const controller = new AbortController();
     void load(controller.signal);
     return () => controller.abort();
-  }, [requestDays, requestEnd, retryCount, timeZone]);
+  }, [requestDays, requestEnd, requestValid, retryCount, timeZone]);
 
-  const rangeMatches = (range) => range
-    && range.days === requestDays
-    && (requestEnd ? range.endDate === requestEnd : true);
-  const currentAnalytics = analytics && rangeMatches(analytics.range) ? analytics : null;
+  const rangeMatches = (result) => result?.requestKey
+    && result.requestKey.days === requestDays
+    && result.requestKey.end === (requestEnd ?? null);
+  const currentAnalytics = analytics && rangeMatches(analytics) ? analytics : null;
   const summary = currentAnalytics?.summary;
   const series = currentAnalytics?.series ?? [];
   const noActivity = summary && summary.visitors === 0 && summary.signups === 0;
@@ -158,15 +256,18 @@ export function WaitlistAnalytics({ waitListId, emailsEnabled = false }) {
     <header className="waitlist-analytics-header">
       <div><h2 id="waitlist-analytics-title">Analytics</h2><p>Understand how people discover, join, and share this waitlist.</p></div>
       <div className="waitlist-analytics-controls">
-        <div className="waitlist-analytics-range" role="group" aria-label="Analytics date range">
-          {rangePresets.map((option) => <Button type="button" key={option.days} aria-pressed={!customRange && presetDays === option.days} onClick={() => { setCustomRange(null); setPresetDays(option.days); }}>{option.label}</Button>)}
-        </div>
-        <DatePickerRange value={customRange} onChange={setCustomRange} />
+        <RangePicker
+          range={range}
+          from={from}
+          to={to}
+          onChange={(next) => setRangeState({ range: next.range, from: next.from, to: next.to })}
+        />
       </div>
     </header>
 
     {error ? <div className="waitlist-analytics-message" role="alert"><p>{error}</p><Button type="button" onClick={() => setRetryCount((count) => count + 1)}>Try again</Button></div> : null}
-    {!error && loading && !currentAnalytics ? <><p className="sr-only" role="status">Loading analytics…</p><AnalyticsSkeleton /></> : null}
+    {!error && !requestValid ? <div className="waitlist-analytics-message" role="status"><p>Pick a complete custom range</p><span>Choose both a start and end date (up to 90 days).</span></div> : null}
+    {!error && requestValid && loading && !currentAnalytics ? <><p className="sr-only" role="status">Loading analytics…</p><AnalyticsSkeleton /></> : null}
     {!error && currentAnalytics ? <>
       {loading ? <p className="sr-only" role="status">Updating analytics…</p> : null}
       <section className="waitlist-analytics-overview" aria-labelledby="waitlist-trend-title">
