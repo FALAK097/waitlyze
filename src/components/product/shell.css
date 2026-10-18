@@ -354,8 +354,8 @@
 .waitlist-analytics-tooltip-title { padding-bottom: 6px; margin-bottom: 1px; border-bottom: 1px solid var(--product-border-subtle); color: var(--product-text-primary) !important; font-size: .8125rem; font-weight: 600; }
 .waitlist-analytics-tooltip-value { display: grid; grid-template-columns: 9px minmax(0, 1fr) auto; align-items: center; gap: 8px; }
 .waitlist-analytics-tooltip-value i { width: 8px; height: 8px; border-radius: 50%; background: var(--cell-fill, var(--product-border-control)); }
-.waitlist-analytics-tooltip-value i[data-series="visitors"] { background: #4b95d1; }
-.waitlist-analytics-tooltip-value i[data-series="signups"] { background: #ee9477; }
+.waitlist-analytics-tooltip-value i[data-series="visitors"] { background: var(--product-green-700); }
+.waitlist-analytics-tooltip-value i[data-series="signups"] { background: var(--product-lime-500); }
 .waitlist-analytics-tooltip-value strong { font-variant-numeric: tabular-nums; }
 .waitlist-analytics-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
 .waitlist-analytics-data-panel > header { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 16px 8px; }
@@ -378,8 +378,8 @@
 .evil-bar-rows li:first-child { border-top: 0; }
 .evil-bar-row-track { position: absolute; z-index: -1; inset: 8px auto 8px 0; display: flex; align-items: stretch; width: var(--bar-w, 0%); min-width: 0; pointer-events: none; }
 .evil-bar-row-fill { display: block; min-width: 0; flex: var(--seg, 0) 0 0; transition: flex .2s ease; }
-.evil-bar-row-fill[data-series="visitors"] { background: color-mix(in srgb, #4b95d1 40%, var(--product-bg-surface)); }
-.evil-bar-row-fill[data-series="signups"] { background: color-mix(in srgb, #ee9477 45%, var(--product-bg-surface)); }
+.evil-bar-row-fill[data-series="visitors"] { background: color-mix(in srgb, var(--product-green-700) 40%, var(--product-bg-surface)); }
+.evil-bar-row-fill[data-series="signups"] { background: color-mix(in srgb, var(--product-lime-500) 45%, var(--product-bg-surface)); }
 .evil-bar-row-fill:last-child { border-radius: 0 4px 4px 0; }
 .evil-bar-row-label { overflow: hidden; color: var(--product-text-primary); font-weight: 520; text-overflow: ellipsis; white-space: nowrap; }
 .evil-bar-rows strong { color: var(--product-text-primary); font-weight: 600; font-variant-numeric: tabular-nums; }
@@ -417,8 +417,8 @@
 .evil-world-map-tooltip > p { font-weight: 550; }
 .evil-world-map-tooltip > div { display: grid; grid-template-columns: 8px minmax(0, 1fr) auto; align-items: center; gap: 7px; }
 .evil-world-map-tooltip > div i { width: 8px; height: 8px; border-radius: 50%; }
-.evil-world-map-tooltip > div i[data-series="visitors"] { background: #4b95d1; }
-.evil-world-map-tooltip > div i[data-series="signups"] { background: #ee9477; }
+.evil-world-map-tooltip > div i[data-series="visitors"] { background: var(--product-green-700); }
+.evil-world-map-tooltip > div i[data-series="signups"] { background: var(--product-lime-500); }
 .evil-world-map-tooltip > small { color: var(--product-text-secondary); font-size: .6875rem; }
 .waitlist-analytics-wide-panel { padding-block-end: 16px; }
 .waitlist-analytics-audience-panel { grid-column: 1 / -1; }

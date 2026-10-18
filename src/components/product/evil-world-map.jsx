@@ -3,10 +3,10 @@
 import { useMemo, useRef, useState } from "react";
 import { ComposableMap, Geographies, Geography } from "react-simple-maps/core";
 import world from "world-atlas/countries-110m.json";
+import { MAP_FILLS } from "@/components/product/analytics-palette";
 
 const number = new Intl.NumberFormat();
 const regionNames = new Intl.DisplayNames(["en"], { type: "region" });
-const MAP_FILLS = ["#eff5fa", "#d7e9f7", "#b9d9f2", "#91c2ea", "#62a8e2", "#347fbe"];
 const GEO_ALIASES = {
   "bolivia": "BO",
   "brunei": "BN",

@@ -1,10 +1,11 @@
 "use client";
 
 import { EChartsComposedChart } from "@/components/evilcharts/charts/echarts-composed-chart";
+import { SERIES_COLORS } from "@/components/product/analytics-palette";
 
 const chartConfig = {
-  visitors: { label: "Visitors", colors: { light: ["#4b95d1"], dark: ["#4b95d1"] } },
-  signups: { label: "Signups", colors: { light: ["#ee9477"], dark: ["#ee9477"] } },
+  visitors: { label: "Visitors", colors: { light: [SERIES_COLORS.visitors], dark: [SERIES_COLORS.visitors] } },
+  signups: { label: "Signups", colors: { light: [SERIES_COLORS.signups], dark: [SERIES_COLORS.signups] } },
 };
 
 const number = new Intl.NumberFormat();
