@@ -204,13 +204,13 @@ function addDaysSafe(date, days) {
   return next;
 }
 
-function RankedBars({ rows, empty, kind, metric = "visitors" }) {
+function RankedBars({ rows, empty, kind, metric = "visitors", limit = 5 }) {
   if (!rows.length) return <p className="waitlist-analytics-panel-empty">{empty}</p>;
   const sorted = [...rows].sort((a, b) => {
     const avalue = metric === "signups" ? a.signups : a.visitors;
     const bvalue = metric === "signups" ? b.signups : b.visitors;
     return bvalue - avalue || b.visitors - a.visitors || b.signups - a.signups;
-  });
+  }).slice(0, limit);
   return <EvilBarRows rows={sorted} kind={kind} metric={metric} />;
 }
 

@@ -1,5 +1,14 @@
 import { indicatorBackground } from "@/components/evilcharts/ui/echarts-chart";
 
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 export const roundnessClass = {
   sm: "rounded-sm",
   md: "rounded-md",
@@ -33,8 +42,8 @@ export function tooltipRow(
   return `<div class="flex w-full flex-wrap items-center gap-2${dimmed}">
           ${indicatorHtml}
           <div class="flex flex-1 items-center justify-between gap-4 leading-none">
-            <span class="text-muted-foreground">${labelText}</span>
-            <span class="text-foreground font-mono font-medium tabular-nums">${valueText}</span>
+            <span class="text-muted-foreground">${escapeHtml(labelText)}</span>
+            <span class="text-foreground font-mono font-medium tabular-nums">${escapeHtml(valueText)}</span>
           </div>
         </div>`;
 }
@@ -50,7 +59,7 @@ export function tooltipShell(
   }
 ) {
   return `<div class="grid min-w-32 items-start gap-1.5 border border-border/50 px-2.5 py-1.5 text-xs shadow-xl ${roundnessClass[roundness]} ${tooltipVariantClass[variant]}">
-      <div class="font-medium text-foreground">${label}</div>
+      <div class="font-medium text-foreground">${escapeHtml(label)}</div>
       <div class="grid gap-1.5">${body}</div>
     </div>`;
 }

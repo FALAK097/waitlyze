@@ -70,18 +70,23 @@ export function LegendOverlay({
         return (
           // No entrance here — the Recharts legend appears instantly, and a
           // fade-in reads as disconnected from the canvas draw-in.
-          <div
-            key={key}
-            className={`flex items-center gap-1.5 transition-opacity ${
-              !isSelected ? "opacity-30" : ""
-            } ${isClickable ? "cursor-pointer" : ""}`}
-            onClick={() => {
-              if (isClickable) onToggle(key);
-            }}
-          >
-            <LegendIndicator variant={variant} dataKey={key} colorsCount={colorsCount} />
-            {item?.label}
-          </div>
+          isClickable ? (
+            <button
+              key={key}
+              type="button"
+              aria-pressed={selectedKey === key}
+              className={`flex items-center gap-1.5 transition-opacity cursor-pointer ${!isSelected ? "opacity-30" : ""}`}
+              onClick={() => onToggle(key)}
+            >
+              <LegendIndicator variant={variant} dataKey={key} colorsCount={colorsCount} />
+              {item?.label}
+            </button>
+          ) : (
+            <div key={key} className={`flex items-center gap-1.5 transition-opacity ${!isSelected ? "opacity-30" : ""}`}>
+              <LegendIndicator variant={variant} dataKey={key} colorsCount={colorsCount} />
+              {item?.label}
+            </div>
+          )
         );
       })}
     </div>
