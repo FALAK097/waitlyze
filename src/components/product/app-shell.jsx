@@ -1,7 +1,7 @@
 "use client";
 
 import { HugeiconsIcon } from "@hugeicons/react";
-import { Add01Icon, ArrowDown01Icon, ArrowUpRight01Icon, Logout01Icon, Tick01Icon } from "@hugeicons/core-free-icons";
+import { Add01Icon, ArrowDown01Icon, ArrowUpRight01Icon, BubbleChatIcon, Logout01Icon, Tick01Icon } from "@hugeicons/core-free-icons";
 import { useActionState, useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { createWorkspace, selectWorkspace } from "@/app/actions/settings";
 import { signOut } from "@/lib/auth-client";
+import { FeedbackForm } from "@/components/product/feedback-form";
 import "./app-shell.css";
 import { toast } from "sonner";
 
@@ -78,9 +79,12 @@ function WorkspaceSwitcher({ workspaces, selected }) {
   </div>;
 }
 
+/** Account dropdown with sign-out and feedback actions. */
 function AccountMenu({ user, avatar }) {
   const router = useRouter();
   const [pending, setPending] = useState(false);
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
+  /** Signs out the current user and returns them to the public home page. */
   async function leave() {
     setPending(true);
     try {
@@ -91,8 +95,10 @@ function AccountMenu({ user, avatar }) {
   }
   return <div className="app-account-control"><DropdownMenu><DropdownMenuTrigger render={<Button variant="ghost" size="icon" />} aria-label="Open account menu">{avatar}</DropdownMenuTrigger><DropdownMenuContent align="end" sideOffset={8} className="min-w-64">
     <div className="app-account-details">{avatar}<div><strong>{user.name || "Account"}</strong><span className="app-account-email" title={user.email}>{user.email}</span></div></div>
+    <DropdownMenuItem className="cursor-pointer" onClick={() => setFeedbackOpen(true)}><HugeiconsIcon icon={BubbleChatIcon} aria-hidden="true" /><span className="flex-1">Send feedback</span></DropdownMenuItem>
+    <DropdownMenuSeparator />
     <DropdownMenuItem variant="destructive" className="cursor-pointer" onClick={leave} disabled={pending}><HugeiconsIcon icon={Logout01Icon} aria-hidden="true" />{pending ? "Signing out…" : "Sign out"}</DropdownMenuItem>
-  </DropdownMenuContent></DropdownMenu></div>;
+  </DropdownMenuContent></DropdownMenu><FeedbackForm user={user} open={feedbackOpen} onOpenChange={setFeedbackOpen} /></div>;
 }
 
 export function AppShell({ children, user, avatar, workspaces, selectedWorkspace }) {
