@@ -10,6 +10,11 @@ export async function POST(request) {
     await consumePublicBudget(prisma, { kind: "share", campaignId: body.waitListId, headers: request.headers });
     const waitList = await prisma.waitList.findUnique({ where: { id: body.waitListId }, select: { id: true } });
     if (!waitList) return NextResponse.json({ message: "A valid waitlist is required." }, { status: 400 });
+    const signup = await prisma.signUp.findFirst({
+      where: { waitListId: body.waitListId, OR: [{ referralCode: body.code }, { uniqueUserId: body.code }] },
+      select: { id: true },
+    });
+    if (!signup) return NextResponse.json({ message: "A valid referral code is required." }, { status: 400 });
     const share = await prisma.shareEvent.create({ data: { waitListId: body.waitListId, code: body.code } });
     return NextResponse.json({ id: share.id });
   } catch (error) {

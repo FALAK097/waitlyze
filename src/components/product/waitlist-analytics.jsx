@@ -298,9 +298,11 @@ export function WaitlistAnalytics({ waitListId, emailsEnabled = false }) {
   const conversion = summary?.conversionRate == null ? "—" : `${summary.conversionRate}%`;
   const verification = summary?.verificationRate == null ? "—" : `${summary.verificationRate}%`;
   const kFactorValue = kFactor?.value == null ? "—" : kFactor.value >= 0.01 ? kFactor.value.toFixed(2) : "<0.01";
+  const invitesPerSignup = kFactor?.invitesPerSignup ?? 0;
+  const invitesLabel = invitesPerSignup === 0 ? "0.00" : invitesPerSignup >= 0.01 ? invitesPerSignup.toFixed(2) : "<0.01";
   const kFactorDetail = kFactor?.value == null
     ? "No share or link data yet"
-    : `${(kFactor.invitesPerSignup ?? 0).toFixed(2)} share × ${(kFactor.shareConversion ?? 0).toFixed(1)}% join`;
+    : `${invitesLabel} share × ${(kFactor.shareConversion ?? 0).toFixed(1)}% join`;
   const acquisition = currentAnalytics ? {
     referrers: { rows: currentAnalytics.sources.referrers, empty: "No referrer data in this period." },
     campaigns: { rows: currentAnalytics.sources.campaigns, empty: "No campaign data in this period." },

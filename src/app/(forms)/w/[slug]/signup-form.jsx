@@ -75,13 +75,13 @@ export function SignupForm({ slug, waitListId, showReferrals, label, buttonText,
 
   async function copyReferralLink() {
     if (!result?.referralLink) return;
-    fetch("/api/v1/shares", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ waitListId, code: result.referralCode ?? "" }),
-    }).catch(() => {});
     try {
       await navigator.clipboard.writeText(result.referralLink);
+      fetch("/api/v1/shares", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ waitListId, code: result.referralCode ?? "" }),
+      }).catch(() => {});
       setCopied(true);
     } catch {
       toast.error("Copy didn't work — long-press the link to copy it manually.");

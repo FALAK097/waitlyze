@@ -238,8 +238,10 @@ export const ReferralPreview = ({
 	}, [getTotalSignUpsOnWaitList]);
 
 	const copyToClipboard = () => {
-		recordShare();
-		navigator.clipboard.writeText(referralLink);
+		navigator.clipboard
+			.writeText(referralLink)
+			.then(() => recordShare())
+			.catch(() => {});
 		toast.success("Copied to clipboard");
 	};
 

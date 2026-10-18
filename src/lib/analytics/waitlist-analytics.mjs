@@ -378,7 +378,7 @@ export async function getWaitlistAnalytics(db, { waitListId, days = 30, endDate 
       LIMIT 5
     `,
     db.shareEvent.count({ where: { waitListId, createdAt: inRange } }),
-    db.impression.count({ where: { waitListId, landingPage: { contains: "r=" }, createdAt: inRange } }),
+    db.impression.count({ where: { waitListId, createdAt: inRange, OR: [{ landingPage: { contains: "?r=" } }, { landingPage: { contains: "&r=" } }] } }),
   ]);
 
   const emailStats = broadcasts.length
@@ -453,7 +453,7 @@ export async function getWaitlistAnalytics(db, { waitListId, days = 30, endDate 
 
   const shares = number(shareCount);
   const linkVisits = number(linkVisitCount);
-  const invitesPerSignup = signups === 0 ? null : Math.round((shares / signups) * 100) / 100;
+  const invitesPerSignup = signups === 0 ? null : shares / signups;
   const shareConversion = linkVisits === 0 ? null : ratio(referred, linkVisits);
   const kFactor = invitesPerSignup == null
     ? null
