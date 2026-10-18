@@ -340,6 +340,9 @@
 .waitlist-analytics-comparison { display: flex; align-items: center; gap: 4px; min-width: 0; padding-block-start: 3px; color: var(--product-text-secondary); font-size: .6875rem; font-weight: 500; line-height: 1.35; }
 .waitlist-analytics-comparison.is-up { color: var(--product-success-text); }
 .waitlist-analytics-comparison.is-down { color: var(--product-danger-text); }
+.waitlist-analytics-benchmark { display: inline-flex; width: fit-content; margin-block-start: 5px; padding: 2px 8px; border-radius: 999px; background: var(--product-bg-inset); color: var(--product-text-secondary); font-size: .625rem; font-weight: 650; line-height: 1.5; letter-spacing: .02em; text-transform: uppercase; }
+.waitlist-analytics-benchmark.is-above { background: color-mix(in srgb, var(--product-green-700) 14%, var(--product-bg-surface)); color: var(--product-green-700); }
+.waitlist-analytics-benchmark.is-below { background: color-mix(in srgb, var(--product-red-700) 10%, var(--product-bg-surface)); color: var(--product-red-700); }
 .waitlist-analytics-chart-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 17px 18px 2px; }
 .waitlist-analytics-chart-toolbar h3 { font-size: .875rem; font-weight: 600; }
 .waitlist-analytics-chart-toolbar p { padding-block-start: 2px; color: var(--product-text-secondary); font-size: .6875rem; }

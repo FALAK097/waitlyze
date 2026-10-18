@@ -73,12 +73,20 @@ function Comparison({ value }) {
   </small>;
 }
 
-function Metric({ label, value, change, detail }) {
+function Metric({ label, value, change, detail, badge }) {
   return <div className="waitlist-analytics-metric" title={detail}>
     <dt>{label}</dt>
     <dd>{value}</dd>
     {change !== undefined ? <Comparison value={change} /> : <small className="waitlist-analytics-comparison is-neutral">{detail}</small>}
+    {badge}
   </div>;
+}
+
+function BenchmarkBadge({ rate, benchmark, note }) {
+  const verdict = rate >= benchmark ? "above" : "below";
+  return <small className={`waitlist-analytics-benchmark is-${verdict}`} title={note}>
+    {verdict === "above" ? "Above" : "Below"} ~{benchmark}%
+  </small>;
 }
 
 function DimensionPicker({ label, options, value, onChange }) {
@@ -335,8 +343,8 @@ export function WaitlistAnalytics({ waitListId, emailsEnabled = false }) {
         <dl className="waitlist-analytics-metrics">
           <Metric label="Visitors" value={number.format(summary.visitors)} change={summary.change?.visitors} detail="Distinct stored browsers" />
           <Metric label="Signups" value={number.format(summary.signups)} change={summary.change?.signups} detail="People who joined" />
-          <Metric label="Conversion" value={conversion} change={summary.change?.conversionRate} detail="Visitors who signed up" />
-          <Metric label="Verification" value={verification} change={summary.change?.verificationRate} detail={`${number.format(summary.verifiedSignups)} verified`} />
+          <Metric label="Conversion" value={conversion} change={summary.change?.conversionRate} detail="Visitors who signed up" badge={summary.conversionRate == null ? null : <BenchmarkBadge rate={summary.conversionRate} benchmark={11} note="Industry median conversion ≈ 11%" />} />
+          <Metric label="Verification" value={verification} change={summary.change?.verificationRate} detail={`${number.format(summary.verifiedSignups)} verified`} badge={summary.verificationRate == null ? null : <BenchmarkBadge rate={summary.verificationRate} benchmark={55} note="Industry median verification ≈ 55%" />} />
           <Metric label="Referrals" value={number.format(referrals?.referred ?? 0)} detail={referralShareLabel} />
           <Metric label="Points awarded" value={number.format(summary.pointsTotal)} detail={`${number.format(summary.pointsSignup)} join · ${number.format(summary.pointsReferral)} referral`} />
         </dl>
