@@ -20,6 +20,7 @@ const DAY = 24 * HOUR;
 const policies = {
   signup: { global: [5000, DAY], campaign: [1000, DAY], client: [20, HOUR], recipient: [3, DAY] },
   impression: { global: [20000, HOUR], campaign: [5000, HOUR], client: [120, HOUR] },
+  share: { global: [10000, HOUR], campaign: [2000, HOUR], client: [60, HOUR] },
   welcome: { global: [1000, DAY], campaign: [250, DAY], client: [10, HOUR], recipient: [1, DAY] },
   testEmail: { global: [1000, DAY], campaign: [100, DAY], client: [20, HOUR], recipient: [3, DAY], authenticated: true },
   invitation: { global: [1000, DAY], campaign: [100, DAY], client: [20, HOUR], recipient: [3, DAY], authenticated: true },

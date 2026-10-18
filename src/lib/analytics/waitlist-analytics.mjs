@@ -334,6 +334,8 @@ export async function getWaitlistAnalytics(db, { waitListId, days = 30, endDate 
     signupUserAgentGroups,
     broadcasts,
     topReferrerRows,
+    shareCount,
+    linkVisitCount,
   ] = await Promise.all([
     db.impression.groupBy({ by: ["utmMedium", "utmSource", "referrer"], _count: { _all: true }, where: { waitListId, createdAt: inRange } }),
     db.impression.groupBy({ by: ["utmCampaign"], _count: { _all: true }, where: { waitListId, createdAt: inRange } }),
@@ -375,6 +377,8 @@ export async function getWaitlistAnalytics(db, { waitListId, days = 30, endDate 
       ORDER BY COUNT(*) DESC, referrer."email" ASC
       LIMIT 5
     `,
+    db.shareEvent.count({ where: { waitListId, createdAt: inRange } }),
+    db.impression.count({ where: { waitListId, landingPage: { contains: "r=" }, createdAt: inRange } }),
   ]);
 
   const emailStats = broadcasts.length
@@ -447,6 +451,18 @@ export async function getWaitlistAnalytics(db, { waitListId, days = 30, endDate 
     })),
   };
 
+  const shares = number(shareCount);
+  const linkVisits = number(linkVisitCount);
+  const invitesPerSignup = signups === 0 ? null : Math.round((shares / signups) * 100) / 100;
+  const shareConversion = linkVisits === 0 ? null : ratio(referred, linkVisits);
+  const kFactor = invitesPerSignup == null
+    ? null
+    : invitesPerSignup === 0
+      ? 0
+      : shareConversion == null
+        ? null
+        : Math.round(invitesPerSignup * (shareConversion / 100) * 1000) / 1000;
+
   return {
     range: { days: rangeDays, timeZone: zone, startDate: toIsoDate(first?.start_date), endDate: toIsoDate(first?.end_date) },
     summary: {
@@ -468,6 +484,7 @@ export async function getWaitlistAnalytics(db, { waitListId, days = 30, endDate 
       pointsReferral: number(first?.points_referral),
     },
     referrals,
+    kFactor: { value: kFactor, invitesPerSignup, shareConversion, shares, linkVisits },
     sources: {
       channels: rank(channelGroups, signupChannelGroups, channelOf, 8),
       campaigns: rank(campaignGroups, signupCampaignGroups, (group) => group.utmCampaign || "No campaign"),

@@ -62,6 +62,7 @@ export function SignupForm({ slug, waitListId, showReferrals, label, buttonText,
         notice: `We sent a confirmation link to ${email}. Confirm your email to secure your place on the waitlist.`,
         position: typeof rank === "number" ? rank : null,
         referralLink,
+        referralCode: code ?? null,
       });
       setCopied(false);
       form.reset();
@@ -74,6 +75,11 @@ export function SignupForm({ slug, waitListId, showReferrals, label, buttonText,
 
   async function copyReferralLink() {
     if (!result?.referralLink) return;
+    fetch("/api/v1/shares", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ waitListId, code: result.referralCode ?? "" }),
+    }).catch(() => {});
     try {
       await navigator.clipboard.writeText(result.referralLink);
       setCopied(true);

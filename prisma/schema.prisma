@@ -118,6 +118,7 @@ model WaitList {
   user                 User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   signUps              SignUp[]
   impressions          Impression[]
+  shareEvents          ShareEvent[]
   launchRehearsals     LaunchRehearsal[]
   apiKeys              ApiKey[]
   emailTemplateRecords EmailTemplate[]
@@ -301,6 +302,9 @@ model MarketingBroadcast {
   subject        String
   previewText    String
   body           String
+  editorDocument Json?
+  renderedHtml   String?
+  renderedText   String?
   status         BroadcastStatus @default(DRAFT)
   recipientCount Int             @default(0)
   createdAt      DateTime        @default(now())
@@ -466,6 +470,17 @@ model Impression {
   @@map("impressions")
 }
 
+model ShareEvent {
+  id         String   @id @default(cuid())
+  waitListId String
+  code       String
+  createdAt  DateTime @default(now())
+  waitList   WaitList @relation(fields: [waitListId], references: [id], onDelete: Cascade)
+
+  @@index([waitListId, createdAt])
+  @@map("share_events")
+}
+
 model Referral {
   id           String   @id @default(cuid())
   signUpId     String   @unique
@@ -552,6 +567,9 @@ model EmailTemplate {
   header      String
   subHeader   String
   mainBody    String
+  editorDocument Json?
+  renderedHtml   String?
+  renderedText   String?
   subBody     String
   createdAt   DateTime          @default(now())
   updatedAt   DateTime          @updatedAt
