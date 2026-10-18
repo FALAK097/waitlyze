@@ -114,6 +114,15 @@ export async function getWaitlistAnalytics(db, { waitListId, days = 30, endDate 
     ), calendar AS (
       SELECT generate_series(start_date, end_date, interval '1 day')::date AS local_date
       FROM bounds
+    ), signup_base AS (
+      SELECT signup.*
+      FROM "sign_ups" AS signup
+      WHERE signup."waitListId" = ${waitListId}::text
+        AND NOT EXISTS (
+          SELECT 1 FROM "referrals" AS held_referral
+          WHERE held_referral."signUpId" = signup."id"
+            AND held_referral."reviewStatus" IN ('NEEDS_REVIEW', 'EXCLUDED')
+        )
     ), visitor_daily AS (
       SELECT (impression."createdAt" AT TIME ZONE 'UTC' AT TIME ZONE bounds.time_zone)::date AS local_date,
              COUNT(DISTINCT impression."uniqueUserId")::int AS visitors
@@ -128,16 +137,15 @@ export async function getWaitlistAnalytics(db, { waitListId, days = 30, endDate 
       SELECT (signup."createdAt" AT TIME ZONE 'UTC' AT TIME ZONE bounds.time_zone)::date AS local_date,
              COUNT(*)::int AS signups,
              COUNT(*) FILTER (WHERE signup."verifiedAt" IS NOT NULL)::int AS verified_signups
-      FROM "sign_ups" AS signup
+      FROM signup_base AS signup
       CROSS JOIN bounds
-      WHERE signup."waitListId" = bounds.wait_list_id
-        AND signup."createdAt" >= bounds.start_utc
+      WHERE signup."createdAt" >= bounds.start_utc
         AND signup."createdAt" < bounds.end_utc
       GROUP BY 1
     ), converted_daily AS (
       SELECT (signup."createdAt" AT TIME ZONE 'UTC' AT TIME ZONE bounds.time_zone)::date AS local_date,
              COUNT(DISTINCT impression."uniqueUserId")::int AS converted_visitors
-      FROM "sign_ups" AS signup
+      FROM signup_base AS signup
       INNER JOIN "impressions" AS impression
         ON impression."id" = signup."impressionId"
        AND impression."waitListId" = signup."waitListId"
@@ -150,6 +158,36 @@ export async function getWaitlistAnalytics(db, { waitListId, days = 30, endDate 
         AND impression."createdAt" <= signup."createdAt"
         AND impression."uniqueUserId" <> ''
       GROUP BY 1
+    ), referral_period AS (
+      SELECT (SELECT COUNT(*)::int
+              FROM "referrals" AS referral
+              INNER JOIN "sign_ups" AS referred ON referred."id" = referral."signUpId"
+              CROSS JOIN bounds
+              WHERE referred."waitListId" = bounds.wait_list_id
+                AND referral."referredById" IS NOT NULL
+                AND referral."reviewStatus" IN ('CLEAR', 'APPROVED')
+                AND referred."createdAt" >= bounds.start_utc
+                AND referred."createdAt" < bounds.end_utc) AS referred,
+             (SELECT COUNT(DISTINCT referral."referredById")::int
+              FROM "referrals" AS referral
+              INNER JOIN "sign_ups" AS referred ON referred."id" = referral."signUpId"
+              CROSS JOIN bounds
+              WHERE referred."waitListId" = bounds.wait_list_id
+                AND referral."referredById" IS NOT NULL
+                AND referral."reviewStatus" IN ('CLEAR', 'APPROVED')
+                AND referred."createdAt" >= bounds.start_utc
+                AND referred."createdAt" < bounds.end_utc) AS referrers,
+             (SELECT COUNT(*)::int
+              FROM "sign_ups" AS held_signup
+              CROSS JOIN bounds
+              WHERE held_signup."waitListId" = bounds.wait_list_id
+                AND held_signup."createdAt" >= bounds.start_utc
+                AND held_signup."createdAt" < bounds.end_utc
+                AND EXISTS (
+                  SELECT 1 FROM "referrals" AS held_referral
+                  WHERE held_referral."signUpId" = held_signup."id"
+                    AND held_referral."reviewStatus" IN ('NEEDS_REVIEW', 'EXCLUDED')
+                )) AS held
     ), points_period AS (
       SELECT COALESCE(SUM(ledger.points) FILTER (WHERE ledger.kind = 'SIGNUP_VERIFIED'), 0)::int AS signup_points,
              COALESCE(SUM(ledger.points) FILTER (WHERE ledger.kind = 'REFERRAL_CREDIT'), 0)::int AS referral_points
@@ -166,18 +204,18 @@ export async function getWaitlistAnalytics(db, { waitListId, days = 30, endDate 
            AND impression."uniqueUserId" <> ''
            AND impression."createdAt" >= bounds.start_utc
            AND impression."createdAt" < bounds.end_utc) AS visitors,
-        (SELECT COUNT(*)::int FROM "sign_ups" AS signup CROSS JOIN bounds
+        (SELECT COUNT(*)::int FROM signup_base AS signup CROSS JOIN bounds
          WHERE signup."waitListId" = bounds.wait_list_id
            AND signup."createdAt" >= bounds.start_utc
            AND signup."createdAt" < bounds.end_utc) AS signups,
         (SELECT COUNT(*) FILTER (WHERE signup."verifiedAt" IS NOT NULL)::int
-         FROM "sign_ups" AS signup CROSS JOIN bounds
+         FROM signup_base AS signup CROSS JOIN bounds
          WHERE signup."waitListId" = bounds.wait_list_id
            AND signup."createdAt" >= bounds.start_utc
            AND signup."createdAt" < bounds.end_utc) AS verified_signups,
         (SELECT COUNT(DISTINCT impression."uniqueUserId")::int
-         FROM "sign_ups" AS signup
-         INNER JOIN "impressions" AS impression
+         FROM signup_base AS signup
+          INNER JOIN "impressions" AS impression
            ON impression."id" = signup."impressionId"
           AND impression."waitListId" = signup."waitListId"
          CROSS JOIN bounds
@@ -196,18 +234,18 @@ export async function getWaitlistAnalytics(db, { waitListId, days = 30, endDate 
            AND impression."uniqueUserId" <> ''
            AND impression."createdAt" >= bounds.previous_start_utc
            AND impression."createdAt" < bounds.start_utc) AS visitors,
-        (SELECT COUNT(*)::int FROM "sign_ups" AS signup CROSS JOIN bounds
+        (SELECT COUNT(*)::int FROM signup_base AS signup CROSS JOIN bounds
          WHERE signup."waitListId" = bounds.wait_list_id
            AND signup."createdAt" >= bounds.previous_start_utc
            AND signup."createdAt" < bounds.start_utc) AS signups,
         (SELECT COUNT(*) FILTER (WHERE signup."verifiedAt" IS NOT NULL)::int
-         FROM "sign_ups" AS signup CROSS JOIN bounds
+         FROM signup_base AS signup CROSS JOIN bounds
          WHERE signup."waitListId" = bounds.wait_list_id
            AND signup."createdAt" >= bounds.previous_start_utc
            AND signup."createdAt" < bounds.start_utc) AS verified_signups,
         (SELECT COUNT(DISTINCT impression."uniqueUserId")::int
-         FROM "sign_ups" AS signup
-         INNER JOIN "impressions" AS impression
+         FROM signup_base AS signup
+          INNER JOIN "impressions" AS impression
            ON impression."id" = signup."impressionId"
           AND impression."waitListId" = signup."waitListId"
          CROSS JOIN bounds
@@ -231,17 +269,21 @@ export async function getWaitlistAnalytics(db, { waitListId, days = 30, endDate 
             previous_summary.visitors AS previous_visitors,
             previous_summary.signups AS previous_signups,
             previous_summary.verified_signups AS previous_verified_signups,
-            previous_summary.converted_visitors AS previous_converted_visitors,
-            points_period.signup_points AS points_signup,
-            points_period.referral_points AS points_referral,
-            to_char(bounds.start_date, 'YYYY-MM-DD') AS start_date,
-            to_char(bounds.end_date, 'YYYY-MM-DD') AS end_date,
-            bounds.start_utc AS start_utc,
-            bounds.end_utc AS end_utc
-     FROM calendar
-     CROSS JOIN period_summary
-     CROSS JOIN previous_summary
-     CROSS JOIN points_period
+             previous_summary.converted_visitors AS previous_converted_visitors,
+             referral_period.referred AS period_referred,
+             referral_period.referrers AS period_referrers,
+             referral_period.held AS period_held,
+             points_period.signup_points AS points_signup,
+             points_period.referral_points AS points_referral,
+             to_char(bounds.start_date, 'YYYY-MM-DD') AS start_date,
+             to_char(bounds.end_date, 'YYYY-MM-DD') AS end_date,
+             bounds.start_utc AS start_utc,
+             bounds.end_utc AS end_utc
+      FROM calendar
+      CROSS JOIN period_summary
+      CROSS JOIN previous_summary
+      CROSS JOIN referral_period
+      CROSS JOIN points_period
      CROSS JOIN bounds
      LEFT JOIN visitor_daily ON visitor_daily.local_date = calendar.local_date
      LEFT JOIN signup_daily ON signup_daily.local_date = calendar.local_date
@@ -266,6 +308,11 @@ export async function getWaitlistAnalytics(db, { waitListId, days = 30, endDate 
   const startUtc = first?.start_utc instanceof Date ? first.start_utc : new Date(first?.start_utc);
   const endUtc = first?.end_utc instanceof Date ? first.end_utc : new Date(first?.end_utc);
   const inRange = { gte: startUtc, lt: endUtc };
+  const countedSignupWhere = {
+    waitListId,
+    createdAt: inRange,
+    referredBy: { none: { reviewStatus: { in: ["NEEDS_REVIEW", "EXCLUDED"] } } },
+  };
 
   const [
     channelGroups,
@@ -286,6 +333,7 @@ export async function getWaitlistAnalytics(db, { waitListId, days = 30, endDate 
     signupDeviceGroups,
     signupUserAgentGroups,
     broadcasts,
+    topReferrerRows,
   ] = await Promise.all([
     db.impression.groupBy({ by: ["utmMedium", "utmSource", "referrer"], _count: { _all: true }, where: { waitListId, createdAt: inRange } }),
     db.impression.groupBy({ by: ["utmCampaign"], _count: { _all: true }, where: { waitListId, createdAt: inRange } }),
@@ -296,20 +344,37 @@ export async function getWaitlistAnalytics(db, { waitListId, days = 30, endDate 
     db.impression.groupBy({ by: ["city", "country"], _count: { _all: true }, where: { waitListId, createdAt: inRange } }),
     db.impression.groupBy({ by: ["deviceType"], _count: { _all: true }, where: { waitListId, createdAt: inRange } }),
     db.impression.groupBy({ by: ["device"], _count: { _all: true }, where: { waitListId, createdAt: inRange } }),
-    db.signUp.groupBy({ by: ["utmMedium", "utmSource", "referrer"], _count: { _all: true }, where: { waitListId, createdAt: inRange } }),
-    db.signUp.groupBy({ by: ["utmCampaign"], _count: { _all: true }, where: { waitListId, createdAt: inRange } }),
-    db.signUp.groupBy({ by: ["referrer"], _count: { _all: true }, where: { waitListId, createdAt: inRange } }),
-    db.signUp.groupBy({ by: ["utmSource"], _count: { _all: true }, where: { waitListId, createdAt: inRange } }),
-    db.signUp.groupBy({ by: ["country"], _count: { _all: true }, where: { waitListId, createdAt: inRange } }),
-    db.signUp.groupBy({ by: ["city", "country"], _count: { _all: true }, where: { waitListId, createdAt: inRange } }),
-    db.signUp.groupBy({ by: ["deviceType"], _count: { _all: true }, where: { waitListId, createdAt: inRange } }),
-    db.signUp.groupBy({ by: ["device"], _count: { _all: true }, where: { waitListId, createdAt: inRange } }),
+    db.signUp.groupBy({ by: ["utmMedium", "utmSource", "referrer"], _count: { _all: true }, where: countedSignupWhere }),
+    db.signUp.groupBy({ by: ["utmCampaign"], _count: { _all: true }, where: countedSignupWhere }),
+    db.signUp.groupBy({ by: ["referrer"], _count: { _all: true }, where: countedSignupWhere }),
+    db.signUp.groupBy({ by: ["utmSource"], _count: { _all: true }, where: countedSignupWhere }),
+    db.signUp.groupBy({ by: ["country"], _count: { _all: true }, where: countedSignupWhere }),
+    db.signUp.groupBy({ by: ["city", "country"], _count: { _all: true }, where: countedSignupWhere }),
+    db.signUp.groupBy({ by: ["deviceType"], _count: { _all: true }, where: countedSignupWhere }),
+    db.signUp.groupBy({ by: ["device"], _count: { _all: true }, where: countedSignupWhere }),
     db.marketingBroadcast.findMany({
       where: { waitListId, status: "SENT", sentAt: inRange },
       select: { id: true, name: true, sentAt: true },
       orderBy: { sentAt: "desc" },
       take: 5,
     }),
+    db.$queryRaw`
+      SELECT referral."referredById" AS id,
+             referrer."email" AS email,
+             COUNT(*)::int AS signups
+      FROM "referrals" AS referral
+      INNER JOIN "sign_ups" AS referred ON referred."id" = referral."signUpId"
+      INNER JOIN "sign_ups" AS referrer ON referrer."id" = referral."referredById"
+      WHERE referred."waitListId" = ${waitListId}::text
+        AND referrer."waitListId" = ${waitListId}::text
+        AND referral."referredById" IS NOT NULL
+        AND referral."reviewStatus" IN ('CLEAR', 'APPROVED')
+        AND referred."createdAt" >= ${startUtc}::timestamptz
+        AND referred."createdAt" < ${endUtc}::timestamptz
+      GROUP BY referral."referredById", referrer."email"
+      ORDER BY COUNT(*) DESC, referrer."email" ASC
+      LIMIT 5
+    `,
   ]);
 
   const emailStats = broadcasts.length
@@ -365,6 +430,23 @@ export async function getWaitlistAnalytics(db, { waitListId, days = 30, endDate 
     return Number.isNaN(date.valueOf()) ? null : date.toISOString().slice(0, 10);
   };
 
+  const referred = number(first?.period_referred);
+  const referrers = number(first?.period_referrers);
+  const referrals = {
+    referred,
+    organic: Math.max(signups - referred, 0),
+    share: ratio(referred, signups),
+    referrers,
+    perReferrer: referrers === 0 ? 0 : Math.round((referred / referrers) * 10) / 10,
+    held: number(first?.period_held),
+    top: topReferrerRows.map((row) => ({
+      id: String(row.id),
+      label: row.email || "Unknown",
+      signups: number(row.signups),
+      share: ratio(number(row.signups), referred),
+    })),
+  };
+
   return {
     range: { days: rangeDays, timeZone: zone, startDate: toIsoDate(first?.start_date), endDate: toIsoDate(first?.end_date) },
     summary: {
@@ -385,6 +467,7 @@ export async function getWaitlistAnalytics(db, { waitListId, days = 30, endDate 
       pointsSignup: number(first?.points_signup),
       pointsReferral: number(first?.points_referral),
     },
+    referrals,
     sources: {
       channels: rank(channelGroups, signupChannelGroups, channelOf, 8),
       campaigns: rank(campaignGroups, signupCampaignGroups, (group) => group.utmCampaign || "No campaign"),
@@ -434,6 +517,8 @@ export async function getWaitlistAnalytics(db, { waitListId, days = 30, endDate 
       "Ranges that end today may include only partial-day activity.",
       "Legacy records may predate the current deduplication and verification rules; use older periods as directional comparisons.",
       "Acquisition and geography breakdowns describe visitors with stored impression metadata; unknown values remain visible rather than being inferred.",
+      "Signups held for fraud review or excluded by a reviewer are omitted from signup, verification, conversion, and breakdown totals until a reviewer approves them.",
+      "Referral counts include only referred signups whose referral credit is clear or approved.",
     ],
   };
 }

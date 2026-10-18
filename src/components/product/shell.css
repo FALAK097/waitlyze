@@ -427,6 +427,11 @@
 .waitlist-analytics-audience-panel { grid-column: 1 / -1; }
 .waitlist-analytics-audience-panel .waitlist-analytics-panel-body { height: auto; min-height: 380px; max-height: none; }
 .waitlist-analytics-section-copy { max-width: 64ch; padding: 0 16px 14px; color: var(--product-text-secondary); font-size: .75rem; }
+.waitlist-analytics-referrals-panel .waitlist-analytics-panel-body { max-height: 340px; }
+.waitlist-analytics-referral-cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+.waitlist-analytics-referral-cols > div + div { border-inline-start: 1px solid var(--product-border-subtle); }
+.waitlist-analytics-referral-col-title { padding: 12px 14px 6px; color: var(--product-text-secondary); font-size: .6875rem; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
+.waitlist-analytics-referral-empty { padding: 14px; color: var(--product-text-secondary); font-size: .75rem; }
 .waitlist-analytics-table-wrap { max-height: 480px; }
 .waitlist-analytics-table-wrap table th, .waitlist-analytics-table-wrap table td { padding: 10px 13px; font-size: .75rem; }
 .waitlist-analytics-table-wrap th span { display: block; padding-block-start: 2px; color: var(--product-text-secondary); font-size: .6875rem; font-weight: 400; }
@@ -470,6 +475,7 @@
   .waitlist-analytics-table-wrap table th, .waitlist-analytics-table-wrap table td { padding-inline: 10px; }
   .evil-pie-layout { place-items: center; gap: 0; }
   .evil-pie-visual { width: 100%; height: 100%; max-width: 320px; }
+  .waitlist-analytics-referral-cols > div + div { border-inline-start: 0; border-block-start: 1px solid var(--product-border-subtle); }
 }
 
 .broadcast-layout { display: grid; grid-template-columns: minmax(220px, 280px) minmax(0, 1fr); gap: 20px; align-items: start; }

@@ -103,7 +103,9 @@ function hugeiconFor(label) {
   const value = String(label || "").toLowerCase();
   if (value.includes("search") || value.includes("organic search")) return Search01Icon;
   if (value === "email" || value.includes("newsletter")) return Mail01Icon;
-  if (value === "referral" || value.includes("direct")) return Link01Icon;
+  if (value.includes("@")) return Mail01Icon;
+  if (value.includes("referral") || value.includes("referred") || value.includes("direct")) return Link01Icon;
+  if (value.startsWith("organic")) return Globe02Icon;
   if (value === "desktop") return ComputerIcon;
   if (value === "mobile") return SmartPhone01Icon;
   if (value === "tablet") return Tablet01Icon;

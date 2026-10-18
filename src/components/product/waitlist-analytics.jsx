@@ -283,6 +283,7 @@ export function WaitlistAnalytics({ waitListId, emailsEnabled = false }) {
     && result.requestKey.end === (requestEnd ?? null);
   const currentAnalytics = analytics && rangeMatches(analytics) ? analytics : null;
   const summary = currentAnalytics?.summary;
+  const referrals = currentAnalytics?.referrals;
   const series = currentAnalytics?.series ?? [];
   const noActivity = summary && summary.visitors === 0 && summary.signups === 0;
   const conversion = summary?.conversionRate == null ? "—" : `${summary.conversionRate}%`;
@@ -303,6 +304,17 @@ export function WaitlistAnalytics({ waitListId, emailsEnabled = false }) {
     operatingSystems: { rows: currentAnalytics.technology.operatingSystems, empty: "No operating system data in this period." },
     devices: { rows: currentAnalytics.technology.devices, empty: "No device data in this period." },
   }[technologyView] : null;
+  const referralSplit = referrals
+    ? [
+        { label: "Referred", visitors: 0, signups: referrals.referred },
+        { label: "Organic", visitors: 0, signups: referrals.organic },
+      ].sort((a, b) => b.signups - a.signups)
+    : [];
+  const referralTop = referrals?.top.map((row) => ({ label: row.label, visitors: 0, signups: row.signups })) ?? [];
+  const referralShareLabel = referrals?.share == null ? "No signups yet" : `${referrals.share}% of signups`;
+  const referralCopy = referrals && referrals.referrers > 0
+    ? `${number.format(referrals.referred)} ${referrals.referred === 1 ? "signup came" : "signups came"} through ${number.format(referrals.referrers)} ${referrals.referrers === 1 ? "referrer" : "referrers"} — ${referrals.perReferrer} each on average. Held or excluded signups are left out of every number.`
+    : "Signups brought in through referral links versus organic joins. Held or excluded signups are left out of every number.";
 
   return <section className="waitlist-analytics" aria-labelledby="waitlist-analytics-title" aria-busy={loading}>
     <header className="waitlist-analytics-header">
@@ -328,6 +340,7 @@ export function WaitlistAnalytics({ waitListId, emailsEnabled = false }) {
           <Metric label="Signups" value={number.format(summary.signups)} change={summary.change?.signups} detail="People who joined" />
           <Metric label="Conversion" value={conversion} change={summary.change?.conversionRate} detail="Visitors who signed up" />
           <Metric label="Verification" value={verification} change={summary.change?.verificationRate} detail={`${number.format(summary.verifiedSignups)} verified`} />
+          <Metric label="Referrals" value={number.format(referrals?.referred ?? 0)} detail={referralShareLabel} />
           <Metric label="Points awarded" value={number.format(summary.pointsTotal)} detail={`${number.format(summary.pointsSignup)} join · ${number.format(summary.pointsReferral)} referral`} />
         </dl>
 
@@ -390,6 +403,27 @@ export function WaitlistAnalytics({ waitListId, emailsEnabled = false }) {
           </div>
         </section>
       </div>
+
+      {referrals ? <section className="waitlist-analytics-data-panel waitlist-analytics-wide-panel waitlist-analytics-referrals-panel" aria-labelledby="waitlist-referrals-title">
+        <header><h3 id="waitlist-referrals-title">Referrals</h3><span>{referralShareLabel}</span></header>
+        <p className="waitlist-analytics-section-copy">{referralCopy}</p>
+        <div className="waitlist-analytics-panel-body">
+          <div className="waitlist-analytics-referral-cols">
+            <div>
+              <p className="waitlist-analytics-referral-col-title">Organic vs referred</p>
+              {referralSplit.some((row) => row.signups > 0)
+                ? <EvilBarRows rows={referralSplit} kind="acquisition" metric="signups" />
+                : <p className="waitlist-analytics-referral-empty">No signups in this period.</p>}
+            </div>
+            <div>
+              <p className="waitlist-analytics-referral-col-title">Top referrers</p>
+              {referralTop.length
+                ? <EvilBarRows rows={referralTop} kind="acquisition" metric="signups" />
+                : <p className="waitlist-analytics-referral-empty">No referral signups in this period.</p>}
+            </div>
+          </div>
+        </div>
+      </section> : null}
 
       {emailsEnabled ? <section className="waitlist-analytics-data-panel waitlist-analytics-wide-panel" aria-labelledby="waitlist-emails-title">
         <header><h3 id="waitlist-emails-title">Email delivery</h3><span>{currentAnalytics.emails.length} {currentAnalytics.emails.length === 1 ? "send" : "sends"}</span></header>
