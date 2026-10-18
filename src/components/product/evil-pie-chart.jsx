@@ -76,7 +76,7 @@ export function EvilPieChart({ rows, metric = "visitors" }) {
           </Pie>
         </PieChart>
       </ChartContainer>
-      <div className="evil-pie-total" aria-hidden="true"><strong>{number.format(total)}</strong><span>{metric}</span></div>
+      {active ? null : <div className="evil-pie-total" aria-hidden="true"><strong>{number.format(total)}</strong><span>{metric}</span></div>}
     </div>
   </div>;
 }
