@@ -2,11 +2,11 @@
 
 import { useState } from "react";
 import { Cell, Pie, PieChart, Tooltip } from "recharts";
+import { PIE_COLORS } from "@/components/product/analytics-palette";
 import { ChartContainer } from "@/components/ui/chart";
 
 const number = new Intl.NumberFormat();
 const MAX_SLICES = 8;
-const COLORS = ["#5b9bd1", "#7bb0dc", "#9cc6e7", "#bcd9f1", "#e8907a", "#f0ab95", "#9ca8b3", "#d3d9df"];
 const LABEL_COLOR = "var(--product-text-secondary, #5b6b7a)";
 const LINE_COLOR = "var(--product-border-control, #b6c2cc)";
 
@@ -61,7 +61,7 @@ export function EvilPieChart({ rows, metric = "visitors" }) {
     .filter((row) => row.value > 0)
     .sort((a, b) => b.value - a.value)
     .slice(0, MAX_SLICES)
-    .map((row, index) => ({ ...row, fill: COLORS[index % COLORS.length] }));
+    .map((row, index) => ({ ...row, fill: PIE_COLORS[index % PIE_COLORS.length] }));
   const total = data.reduce((sum, row) => sum + row.value, 0);
 
   if (!data.length) return <p className="waitlist-analytics-panel-empty">No channel data in this period.</p>;
