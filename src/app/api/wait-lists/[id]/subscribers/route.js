@@ -17,6 +17,31 @@ async function getAccess(request, id) {
   return { scope, showReferrals: waitlist.showReferrals, sendEmailsToSubscribers: waitlist.sendEmailsToSubscribers, publicSlug: waitlist.publicSlug };
 }
 
+async function verificationDelivery(waitListId, signupIds) {
+  if (!signupIds.length) return new Map();
+  const events = await prisma.outboxEvent.findMany({
+    where: { waitListId, type: "SIGNUP_VERIFICATION_REQUESTED", OR: signupIds.map((id) => ({ payload: { path: ["signUpId"], equals: id } })) },
+    orderBy: { createdAt: "desc" },
+    select: { payload: true, status: true, lastErrorCode: true, createdAt: true, processedAt: true },
+  });
+  const latest = new Map();
+  for (const event of events) {
+    const signupId = event.payload?.signUpId;
+    if (typeof signupId === "string" && !latest.has(signupId)) latest.set(signupId, { status: event.status, issue: event.lastErrorCode, createdAt: event.createdAt, processedAt: event.processedAt });
+  }
+  return latest;
+}
+
+async function failedVerificationIds(waitListId) {
+  const rows = await prisma.$queryRaw`
+    SELECT recent.signup_id AS id FROM (
+      SELECT DISTINCT ON ("payload"->>'signUpId') "payload"->>'signUpId' AS signup_id, "status"::text AS status, "lastErrorCode" AS issue
+      FROM "outbox_events" WHERE "waitListId" = ${waitListId} AND "type" = 'SIGNUP_VERIFICATION_REQUESTED' AND "payload" ? 'signUpId'
+      ORDER BY "payload"->>'signUpId', "createdAt" DESC
+    ) recent WHERE recent.status = 'FAILED' AND (recent.issue IS NULL OR recent.issue NOT IN ('SIGNUP_NOT_SENDABLE', 'RECIPIENT_SUPPRESSED'))`;
+  return rows.map(({ id }) => id);
+}
+
 export async function GET(request, { params }) {
   const { id } = await params;
   try {
@@ -25,7 +50,7 @@ export async function GET(request, { params }) {
     const url = new URL(request.url);
     const filters = parseAudienceFilters(url.searchParams);
     if (filters.error) return NextResponse.json({ error: filters.error }, { status: 400 });
-    const where = audienceWhere(id, access.scope, filters);
+    const where = { ...audienceWhere(id, access.scope, filters), ...(filters.delivery === "failed" ? { id: { in: await failedVerificationIds(id) } } : {}) };
     const direction = filters.sort === "joined_asc" ? "asc" : "desc";
     const cursor = url.searchParams.get("cursor");
     if (cursor) {
@@ -45,11 +70,12 @@ export async function GET(request, { params }) {
     ]);
     const hasMore = rows.length > AUDIENCE_PAGE_SIZE;
     const pageRows = rows.slice(0, AUDIENCE_PAGE_SIZE);
-    const [referralCounts, positions] = await Promise.all([
+    const [referralCounts, positions, delivery] = await Promise.all([
       access.showReferrals ? getEligibleReferralCounts(prisma, id, pageRows.map((row) => row.id)) : new Map(),
       access.showReferrals ? getCampaignPositions(prisma, id) : new Map(),
+      verificationDelivery(id, pageRows.map((row) => row.id)),
     ]);
-    const page = pageRows.map((row) => ({ ...row, referralCount: referralCounts.get(row.id) ?? 0, position: positions.get(row.id) ?? null }));
+    const page = pageRows.map((row) => ({ ...row, verificationDelivery: delivery.get(row.id) ?? null, referralCount: referralCounts.get(row.id) ?? 0, position: positions.get(row.id) ?? null }));
     const flags = { showReferrals: access.showReferrals, sendEmailsToSubscribers: access.sendEmailsToSubscribers, publicSlug: access.publicSlug };
     return NextResponse.json({ data: page, total, flags, nextCursor: hasMore ? page.at(-1)?.id ?? null : null });
   } catch (error) {
@@ -69,7 +95,7 @@ export async function POST(request, { params }) {
     const columns = parseExportColumns(url.searchParams.get("columns"));
     if (!columns) return NextResponse.json({ error: "Select at least one export column." }, { status: 400 });
     const direction = filters.sort === "joined_asc" ? "asc" : "desc";
-    const where = audienceWhere(id, access.scope, filters);
+    const where = { ...audienceWhere(id, access.scope, filters), ...(filters.delivery === "failed" ? { id: { in: await failedVerificationIds(id) } } : {}) };
     const needReferrals = columns.includes("referrals");
     const needPosition = columns.includes("position") && access.showReferrals;
     const select = { id: true, email: true, createdAt: true, verifiedAt: true };

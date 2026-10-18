@@ -1,7 +1,7 @@
 "use client";
 
 import { HugeiconsIcon } from "@hugeicons/react";
-import { CopyIcon, Download01Icon, Search01Icon, Tick01Icon, Upload01Icon, UserGroupIcon } from "@hugeicons/core-free-icons";
+import { CopyIcon, Download01Icon, Mail01Icon, Search01Icon, Tick01Icon, Upload01Icon, UserGroupIcon } from "@hugeicons/core-free-icons";
 import { Button, buttonVariants } from "@/components/ui/button";
 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -12,6 +12,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { formatProductDate } from "@/lib/product-date.mjs";
 import { EXPORT_COLUMNS, IMPORT_TEMPLATE_CSV } from "@/lib/audience-query.mjs";
 import { importSignups } from "@/app/actions/audience-import";
+import { retryFailedVerification } from "@/app/actions/verification-delivery";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
@@ -73,6 +74,9 @@ export function AudienceTable({ waitlist, initialReviews = [], initialReviewsFai
   const [query, setQuery] = useState("");
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("all");
+  const [deliveryFilter, setDeliveryFilter] = useState("all");
+  const [selectedIds, setSelectedIds] = useState([]);
+  const [retrying, setRetrying] = useState(false);
   const [sort, setSort] = useState("joined_desc");
   const [cursors, setCursors] = useState([null]);
   const [pageIndex, setPageIndex] = useState(0);
@@ -94,6 +98,7 @@ export function AudienceTable({ waitlist, initialReviews = [], initialReviewsFai
       setSearch(query.trim());
       setCursors([null]);
       setPageIndex(0);
+      setSelectedIds([]);
     }, 250);
     return () => clearTimeout(timeout);
   }, [query]);
@@ -102,18 +107,20 @@ export function AudienceTable({ waitlist, initialReviews = [], initialReviewsFai
     setStatus(nextStatus);
     setCursors([null]);
     setPageIndex(0);
+    setSelectedIds([]);
   }
 
   function toggleSort() {
     setSort((current) => (current === "joined_asc" ? "joined_desc" : "joined_asc"));
     setCursors([null]);
     setPageIndex(0);
+    setSelectedIds([]);
   }
 
   const load = useCallback(async (signal) => {
     setLoading(true);
     setError("");
-    const params = new URLSearchParams({ status, sort });
+    const params = new URLSearchParams({ status, sort, delivery: deliveryFilter });
     if (search) params.set("q", search);
     if (cursors[pageIndex]) params.set("cursor", cursors[pageIndex]);
     try {
@@ -122,7 +129,7 @@ export function AudienceTable({ waitlist, initialReviews = [], initialReviewsFai
       if (signal.aborted) return;
       if (!response.ok) throw new Error(payload.error || "Unable to load signups.");
       setResult(payload);
-      setLoadedCriteria(`${status}\u0000${search}\u0000${sort}`);
+      setLoadedCriteria(`${status}\u0000${search}\u0000${sort}\u0000${deliveryFilter}`);
     } catch (loadError) {
       if (loadError.name !== "AbortError") {
         setError("Unable to refresh signups.");
@@ -131,7 +138,7 @@ export function AudienceTable({ waitlist, initialReviews = [], initialReviewsFai
     } finally {
       if (!signal.aborted) setLoading(false);
     }
-  }, [cursors, pageIndex, retryCount, search, sort, status, waitlist.id]);
+  }, [cursors, deliveryFilter, pageIndex, retryCount, search, sort, status, waitlist.id]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -142,7 +149,7 @@ export function AudienceTable({ waitlist, initialReviews = [], initialReviewsFai
   async function exportCsv() {
     setExporting(true);
     try {
-      const params = new URLSearchParams({ status, sort, columns: exportColumns.join(",") });
+      const params = new URLSearchParams({ status, sort, delivery: deliveryFilter, columns: exportColumns.join(",") });
       if (search) params.set("q", search);
       const response = await fetch(`/api/wait-lists/${encodeURIComponent(waitlist.id)}/subscribers?${params}`, { method: "POST" });
       if (!response.ok) throw new Error("Unable to export signups.");
@@ -191,25 +198,48 @@ export function AudienceTable({ waitlist, initialReviews = [], initialReviewsFai
     );
   }
 
+  async function retryEmails(ids) {
+    setRetrying(true);
+    try {
+      const result = await retryFailedVerification({ waitListId: waitlist.id, signupIds: ids });
+      if (!result.ok) throw new Error(result.message);
+      toast.success(result.message);
+      setSelectedIds([]);
+      setRetryCount((count) => count + 1);
+    } catch (error) { toast.error(error.message || "Could not retry confirmation emails."); }
+    finally { setRetrying(false); }
+  }
+
+  function deliveryLabel(row) {
+    const email = row.verificationDelivery;
+    if (!email) return row.verifiedAt ? "No confirmation record" : "No confirmation email recorded";
+    if (email.status === "DELIVERED") return "Accepted by sender";
+    if (email.status === "PENDING" || email.status === "PROCESSING") return "Sending";
+    if (email.issue === "RECIPIENT_SUPPRESSED") return "Not sent · suppressed";
+    if (email.issue === "SIGNUP_NOT_SENDABLE") return "Not sent · no longer eligible";
+    return "Failed";
+  }
+
   const showingStart = result.total === 0 ? 0 : pageIndex * PAGE_SIZE + 1;
   const showingEnd = Math.min((pageIndex + 1) * PAGE_SIZE, result.total);
-  const profile = sheet?.type === "profile" ? sheet.row : null;
+  const profile = sheet?.type === "profile" ? result.data.find((row) => row.id === sheet.row.id) || sheet.row : null;
   const profileStatus = useMemo(() => profile?.verifiedAt ? "Verified" : "Needs confirmation", [profile]);
   const profileLink = profile?.referralCode && flags.publicSlug && flags.showReferrals
     ? `${window.location.origin}/w/${flags.publicSlug}?r=${profile.referralCode}`
     : null;
   const requestedSearch = query.trim();
-  const criteriaChanging = requestedSearch !== search || loadedCriteria !== `${status}\u0000${search}\u0000${sort}`;
+  const criteriaChanging = requestedSearch !== search || loadedCriteria !== `${status}\u0000${search}\u0000${sort}\u0000${deliveryFilter}`;
   const isUpdating = loading || (criteriaChanging && !error);
   const loadedFilters = loadedCriteria?.split("\u0000") || [];
   const appliedCriteriaLabel = loadedCriteria
     ? `${loadedFilters[1] ? `“${loadedFilters[1]}” · ` : ""}${statuses.find((item) => item.value === loadedFilters[0])?.label || "All signups"}`
     : "the initial signup list";
-  const emptyTitle = search ? "No signups match this search" : status === "verified" ? "No verified signups yet" : status === "pending" ? "No signups need confirmation" : "No signups yet";
-  const emptyDescription = search || status !== "all" ? "Try a different search or status filter." : "Publish and share your waitlist page to invite the first signups.";
+  const emptyTitle = deliveryFilter === "failed" ? "No failed confirmation emails" : search ? "No signups match this search" : status === "verified" ? "No verified signups yet" : status === "pending" ? "No signups need confirmation" : "No signups yet";
+  const emptyDescription = search || status !== "all" || deliveryFilter !== "all" ? "Try a different search or status filter." : "Publish and share your waitlist page to invite the first signups.";
 
   const columnHelper = useMemo(() => createColumnHelper(), []);
   const columns = useMemo(() => [
+    columnHelper.display({ id: "selection", header: () => <Checkbox aria-label="Select all signups on this page" checked={result.data.length > 0 && result.data.every((row) => selectedIds.includes(row.id))} onCheckedChange={(checked) => setSelectedIds(checked ? result.data.map((row) => row.id) : [])} />, meta: { className: "w-10 px-3" }, cell: ({ row }) => <Checkbox aria-label={`Select ${row.original.email}`} checked={selectedIds.includes(row.original.id)} onClick={(event) => event.stopPropagation()} onCheckedChange={(checked) => setSelectedIds((items) => checked ? [...items, row.original.id] : items.filter((id) => id !== row.original.id))} /> }),
     columnHelper.accessor("email", {
       header: "Email",
       meta: { className: "w-[42%] px-4 py-3 sm:w-auto" },
@@ -254,7 +284,8 @@ export function AudienceTable({ waitlist, initialReviews = [], initialReviewsFai
         return <span className={`product-status ${verified ? "product-status-success" : ""}`}><span aria-hidden="true">{verified ? "●" : "○"}</span>{verified ? "Verified" : "Needs confirmation"}</span>;
       },
     })] : []),
-  ], [columnHelper, flags.showReferrals, flags.sendEmailsToSubscribers, sort, copiedId]);
+    columnHelper.display({ id: "emailDelivery", header: "Email", meta: { className: "px-4 py-3" }, cell: ({ row }) => { const label = deliveryLabel(row.original); const failed = label === "Failed"; return <span className={`inline-flex items-center gap-1.5 text-xs ${failed ? "text-[#a03932]" : "text-[var(--product-text-secondary)]"}`} title={`Confirmation email: ${label}`}><HugeiconsIcon icon={Mail01Icon} size={15} aria-hidden="true" /><span className="sr-only">Confirmation email: </span>{label}</span>; } }),
+  ], [columnHelper, flags.showReferrals, flags.sendEmailsToSubscribers, sort, copiedId, result.data, selectedIds]);
   const table = useReactTable({
     data: result.data,
     columns,
@@ -306,14 +337,16 @@ export function AudienceTable({ waitlist, initialReviews = [], initialReviewsFai
               <Button key={item.value} variant="ghost" aria-pressed={status === item.value} onClick={() => changeStatus(item.value)}>{item.label}</Button>
             ))}
           </div>
+          <Button variant="ghost" aria-pressed={deliveryFilter === "failed"} onClick={() => { setDeliveryFilter((value) => value === "failed" ? "all" : "failed"); setCursors([null]); setPageIndex(0); setSelectedIds([]); }}>Email failed</Button>
         </div>
+        {selectedIds.length > 0 && <div className="flex flex-wrap items-center gap-3 px-4 py-3 text-sm" role="group" aria-label="Selected signups"><span>{selectedIds.length} selected on this page</span><Button variant="outline" disabled={!canManage || retrying || selectedIds.length > 25 || !result.data.some((row) => selectedIds.includes(row.id) && deliveryLabel(row) === "Failed" && !row.verifiedAt)} onClick={() => retryEmails(result.data.filter((row) => selectedIds.includes(row.id) && deliveryLabel(row) === "Failed" && !row.verifiedAt).map((row) => row.id))}>{retrying ? "Retrying…" : "Retry failed confirmations"}</Button><Button variant="ghost" onClick={() => setSelectedIds([])}>Clear selection</Button></div>}
 
         {error && <div className="product-field-error flex flex-wrap items-center justify-between gap-3 px-4 py-3" role="alert">
           <span>{result.data.length ? `Couldn’t refresh the list. Showing the last loaded results for ${appliedCriteriaLabel}.` : "Signups couldn’t be loaded."}</span>
           <Button variant="outline" onClick={() => setRetryCount((count) => count + 1)}>Try again</Button>
         </div>}
         <div className="overflow-x-auto">
-          <Table className="w-full min-w-0 table-fixed border-collapse text-left sm:min-w-[38rem] sm:table-auto">
+           <Table className="w-full min-w-[48rem] table-fixed border-collapse text-left sm:table-auto">
             <TableHeader className="text-[var(--product-text-secondary)]">
               {table.getHeaderGroups().map((headerGroup) => (
                 <TableRow key={headerGroup.id}>{headerGroup.headers.map((header) => (
@@ -352,7 +385,8 @@ export function AudienceTable({ waitlist, initialReviews = [], initialReviewsFai
             <div className="px-4 pb-4">
             <dl className="grid gap-5 text-sm">
               <div className="grid grid-cols-[104px_1fr] gap-3"><dt className="text-[var(--product-text-secondary)]">Email</dt><dd className="break-all font-medium">{profile.email}</dd></div>
-              {flags.sendEmailsToSubscribers && <div className="grid grid-cols-[104px_1fr] gap-3"><dt className="text-[var(--product-text-secondary)]">Status</dt><dd>{profileStatus}</dd></div>}
+               {flags.sendEmailsToSubscribers && <div className="grid grid-cols-[104px_1fr] gap-3"><dt className="text-[var(--product-text-secondary)]">Status</dt><dd>{profileStatus}</dd></div>}
+               <div className="grid grid-cols-[104px_1fr] gap-3"><dt className="text-[var(--product-text-secondary)]">Confirmation email</dt><dd><p>{deliveryLabel(profile)}</p>{profile.verificationDelivery?.issue && <p className="text-xs text-[var(--product-text-secondary)]">Issue: {profile.verificationDelivery.issue.replaceAll("_", " ").toLowerCase()}</p>}{deliveryLabel(profile) === "Failed" && !profile.verifiedAt && canManage && <Button className="mt-2" variant="outline" disabled={retrying} onClick={() => retryEmails([profile.id])}>{retrying ? "Retrying…" : "Retry confirmation"}</Button>}</dd></div>
               {flags.showReferrals && <div className="grid grid-cols-[104px_1fr] gap-3"><dt className="text-[var(--product-text-secondary)]">Position</dt><dd className="tabular-nums">{profile.position == null ? "—" : `#${profile.position}`}</dd></div>}
               <div className="grid grid-cols-[104px_1fr] gap-3"><dt className="text-[var(--product-text-secondary)]">Joined</dt><dd title={formatDate(profile.createdAt)}>{timeAgo(profile.createdAt)}</dd></div>
               <div className="grid grid-cols-[104px_1fr] gap-3"><dt className="text-[var(--product-text-secondary)]">Location</dt><dd>{locationLabel(profile.city, profile.country) === "—" ? "Not available" : locationLabel(profile.city, profile.country)}</dd></div>

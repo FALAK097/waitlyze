@@ -1,38 +1,27 @@
 "use client";
 
-import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
-
-import { Label } from "@/components/ui/label";
-
-import { Input } from "@/components/ui/input";
-
-import { Textarea } from "@/components/ui/textarea";
-
 import { Button } from "@/components/ui/button";
-
 import { formatProductDate } from "@/lib/product-date.mjs";
-
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { toast } from "sonner";
 import styles from "./email-tools.module.css";
 import { useRouter } from "next/navigation";
 import { saveAutomationRecipe, setAutomationStatus } from "@/app/actions/automations";
+import { EmailCanvas } from "./email-canvas";
 
 const hourValue = (minutes) => Number((minutes / 60).toFixed(2));
-const waitLabel = (minutes) => minutes === 0 ? "Immediately" : minutes % 60 === 0 ? `${minutes / 60} ${minutes === 60 ? "hour" : "hours"} later` : `${minutes} minutes later`;
+const waitLabel = (minutes) => minutes === 0 ? "immediately" : minutes % 60 === 0 ? `${minutes / 60} ${minutes === 60 ? "hour" : "hours"} later` : `${minutes} minutes later`;
 const statusLabel = (status) => ({ DRAFT: "Off", ENABLED: "Enabled", PAUSED: "Paused", PENDING: "Scheduled", PROCESSING: "Sending", SENT: "Sent", SKIPPED: "Skipped", FAILED: "Needs attention", CANCELED: "Canceled" })[status] || status;
 const reasonLabel = (value) => value ? value.toLowerCase().replaceAll("_", " ") : "";
 const formatTime = (value) => formatProductDate(value);
 
 export function AutomationManager({ waitListId, initialRecipes, initialRuns, deliveryReady }) {
+  const editorRef = useRef(null);
   const router = useRouter();
   const [recipes, setRecipes] = useState(() => initialRecipes.map((recipe) => ({ ...recipe, savedConfig: recipe.config })));
   const [runs] = useState(initialRuns);
   const [busyId, setBusyId] = useState(null);
-  const [message, setMessage] = useState("");
-  const [messageError, setMessageError] = useState(false);
   const [activeRecipe, setActiveRecipe] = useState(initialRecipes[0]?.id || null);
-  function notify(text, failure = false) { setMessage(text); setMessageError(failure); if (failure) toast.error(text); else toast.success(text); }
 
   function updateRecipe(recipeId, update) {
     setRecipes((items) => items.map((recipe) => recipe.id === recipeId ? { ...recipe, ...update } : recipe));
@@ -40,7 +29,7 @@ export function AutomationManager({ waitListId, initialRecipes, initialRuns, del
 
   function hasUnsavedChanges(recipe) {
     const delayMinutes = Math.round(Number(recipe.delayHours ?? hourValue(recipe.config.delayMinutes)) * 60);
-    return recipe.config.subject !== recipe.savedConfig.subject || recipe.config.body !== recipe.savedConfig.body || delayMinutes !== recipe.savedConfig.delayMinutes ||
+    return recipe.config.subject !== recipe.savedConfig.subject || JSON.stringify(recipe.config.editorDocument) !== JSON.stringify(recipe.savedConfig.editorDocument) || delayMinutes !== recipe.savedConfig.delayMinutes ||
       (recipe.type === "REFERRAL_MILESTONE" && Number(recipe.milestoneCount ?? recipe.config.milestoneCount) !== recipe.savedConfig.milestoneCount);
   }
 
@@ -53,18 +42,21 @@ export function AutomationManager({ waitListId, initialRecipes, initialRuns, del
 
   async function save(recipe) {
     setBusyId(recipe.id);
-    setMessage("");
-    const data = {
-      ...recipe.config,
-      delayMinutes: Math.round(Number(recipe.delayHours ?? hourValue(recipe.config.delayMinutes)) * 60),
-      ...(recipe.type === "REFERRAL_MILESTONE" ? { milestoneCount: Number(recipe.milestoneCount ?? recipe.config.milestoneCount) } : {}),
-    };
     try {
+      if (!editorRef.current?.editor) throw new Error("The message editor is still loading.");
+      const { html, text } = await editorRef.current.getEmail();
+      const data = JSON.parse(JSON.stringify({
+        ...recipe.config, editorDocument: editorRef.current.getJSON(), renderedHtml: html, renderedText: text, body: text,
+        delayMinutes: Math.round(Number(recipe.delayHours ?? hourValue(recipe.config.delayMinutes)) * 60),
+        ...(recipe.type === "REFERRAL_MILESTONE" ? { milestoneCount: Number(recipe.milestoneCount ?? recipe.config.milestoneCount) } : {}),
+      }));
       const result = await saveAutomationRecipe({ waitListId, recipeId: recipe.id, data });
-      notify(result.message, !result.success);
-      if (result.success) updateRecipe(recipe.id, { config: result.config, savedConfig: result.config, version: result.version, delayHours: undefined, milestoneCount: undefined });
-    } catch {
-      notify("Couldn’t save this recipe. Try again.", true);
+      if (result.success) {
+        updateRecipe(recipe.id, { config: result.config, savedConfig: result.config, version: result.version, delayHours: undefined, milestoneCount: undefined });
+        toast.success(result.message);
+      } else toast.error(result.message);
+    } catch (error) {
+      toast.error(error.message || "Couldn’t save this recipe. Try again.");
     } finally {
       setBusyId(null);
     }
@@ -73,68 +65,96 @@ export function AutomationManager({ waitListId, initialRecipes, initialRuns, del
   async function changeStatus(recipe) {
     const nextStatus = recipe.status === "ENABLED" ? "PAUSED" : "ENABLED";
     setBusyId(recipe.id);
-    setMessage("");
     try {
       const result = await setAutomationStatus({ waitListId, recipeId: recipe.id, status: nextStatus });
-      notify(result.message, !result.success);
       if (result.success) {
         updateRecipe(recipe.id, { status: nextStatus });
+        toast.success(result.message);
         router.refresh();
-      }
+      } else toast.error(result.message);
     } catch {
-      notify("Couldn’t update this recipe. Try again.", true);
+      toast.error("Couldn’t update this recipe. Try again.");
     } finally {
       setBusyId(null);
     }
   }
 
-  return <div className={`${styles.scope} product-section automation-console`}>
-    <div className="product-page-heading automation-heading">
-      <div><h2 className="product-section-title">Automations</h2><p className="product-help">Follow up with verified subscribers who opted in.</p></div>
-    </div>
-    {!deliveryReady ? <section className="automation-setup" aria-label="Email setup required"><span aria-hidden="true">i</span><p>Email delivery needs setup before a recipe can be enabled. Your saved recipes stay off until then.</p></section> : null}
+  const recipe = recipes.find((item) => item.id === activeRecipe);
 
-    <div className={styles.recipeWorkspace}>
-      <nav aria-label="Automation recipes" className={styles.recipeNav}>{recipes.map((recipe) => <Button key={recipe.id} type="button" aria-current={activeRecipe === recipe.id ? "true" : undefined} disabled={Boolean(busyId)} onClick={() => setActiveRecipe(recipe.id)}><strong>{recipe.title}</strong><span>{statusLabel(recipe.status)}</span></Button>)}</nav>
-      <div className="automation-recipe-list">
-      {!recipes.length && <p className="product-help">No automation recipes are available yet.</p>}
-      {recipes.filter((recipe) => recipe.id === activeRecipe).map((recipe) => {
+  return <div className={styles.scope}>
+    {!deliveryReady ? <p className={styles.notice}>Email delivery needs setup before a recipe can be enabled. Saved recipes stay off until then.</p> : null}
+    <div className={styles.split}>
+      <nav className={styles.rail} aria-label="Automations">
+        {recipes.map((item) => <button key={item.id} type="button" className={styles.railItem} aria-current={activeRecipe === item.id ? "true" : undefined} disabled={Boolean(busyId)} onClick={() => setActiveRecipe(item.id)}>
+          <strong>{item.title}</strong><span>{statusLabel(item.status)}</span>
+        </button>)}
+      </nav>
+
+      {recipe ? (() => {
         const delay = recipe.delayHours ?? hourValue(recipe.config.delayMinutes);
         const enabled = recipe.status === "ENABLED";
         const dirty = hasUnsavedChanges(recipe);
         const timing = recipe.type === "REFERRAL_MILESTONE" && Number(recipe.milestoneCount ?? recipe.config.milestoneCount) > 0
-          ? `When they reach ${recipe.milestoneCount ?? recipe.config.milestoneCount} verified referrals`
-          : `${recipe.type === "WELCOME" ? "After email confirmation" : "After email confirmation, if they have no verified referrals"} · ${waitLabel(Number.isFinite(delay) ? delay * 60 : 0)}`;
-        return <article className="product-panel automation-recipe" key={recipe.id} aria-labelledby={`recipe-${recipe.id}`}>
-          <div className="automation-recipe-top">
-            <div><div className="automation-recipe-title"><h3 id={`recipe-${recipe.id}`}>{recipe.title}</h3><span className={`automation-status automation-status-${recipe.status.toLowerCase()}`}>{statusLabel(recipe.status)}</span></div><p className="product-help">{recipe.description}</p></div>
-            <Button type="button" variant={enabled ? "outline" : "default"} onClick={() => changeStatus(recipe)} disabled={busyId === recipe.id || (!enabled && (!deliveryReady || dirty))}>{busyId === recipe.id ? "Saving…" : enabled ? "Pause" : dirty ? "Save changes first" : "Enable"}</Button>
-          </div>
-          <dl className="automation-recipe-summary"><div><dt>Starts</dt><dd>{recipe.type === "REFERRAL_MILESTONE" ? "A referred subscriber confirms their email" : "The subscriber confirms their email"}</dd></div><div><dt>Condition</dt><dd>{recipe.type === "REFERRAL_REMINDER" ? "Still has no verified referrals when the message is due" : recipe.type === "REFERRAL_MILESTONE" ? "Referral is eligible and the recipient opted in" : "Recipient opted in to launch updates"}</dd></div><div><dt>Timing</dt><dd>{timing}</dd></div><div><dt>Action</dt><dd>Send one email · version {recipe.version}</dd></div></dl>
-          <Collapsible className="automation-editor" defaultOpen>
-            <CollapsibleTrigger>Edit timing and email</CollapsibleTrigger><CollapsibleContent>
-            <div className="automation-editor-fields">
-              {recipe.type !== "REFERRAL_MILESTONE" ? <Label className="product-field"><span>Wait after confirmation (hours)</span><Input type="number" min="0" max="168" step="1" value={delay} disabled={busyId === recipe.id} onChange={(event) => updateRecipe(recipe.id, { delayHours: event.target.value })} /></Label> : <>
-                <Label className="product-field"><span>Verified referrals to celebrate</span><Input type="number" min="1" max="100" step="1" value={recipe.milestoneCount ?? recipe.config.milestoneCount} disabled={busyId === recipe.id} onChange={(event) => updateRecipe(recipe.id, { milestoneCount: event.target.value })} /></Label>
-                <Label className="product-field"><span>Wait after milestone (hours)</span><Input type="number" min="0" max="168" step="1" value={delay} disabled={busyId === recipe.id} onChange={(event) => updateRecipe(recipe.id, { delayHours: event.target.value })} /></Label>
-              </>}
-              <Label className="product-field"><span>Email subject</span><Input maxLength="160" value={recipe.config.subject} disabled={busyId === recipe.id} onChange={(event) => updateRecipe(recipe.id, { config: { ...recipe.config, subject: event.target.value } })} /></Label>
-              <Label className="product-field automation-body-field"><span>Email message</span><Textarea rows="4" maxLength="3000" value={recipe.config.body} disabled={busyId === recipe.id} onChange={(event) => updateRecipe(recipe.id, { config: { ...recipe.config, body: event.target.value } })} /><small>Use <code>{"{{waitlist}}"}</code>{recipe.type === "REFERRAL_MILESTONE" ? <> and <code>{"{{referral_count}}"}</code></> : null} to personalize.</small></Label>
-              <div className="automation-editor-actions"><Button type="button" variant="outline" onClick={() => save(recipe)} disabled={busyId === recipe.id || !hasValidValues(recipe)}>{busyId === recipe.id ? "Saving…" : "Save recipe"}</Button><span>Changes create a version; scheduled runs keep their saved version.</span></div>
+          ? `At ${recipe.milestoneCount ?? recipe.config.milestoneCount} verified referrals · ${waitLabel(Number.isFinite(delay) ? delay * 60 : 0)}`
+          : `${recipe.type === "WELCOME" ? "After confirmation" : "After confirmation, if they still have no referrals"} · ${waitLabel(Number.isFinite(delay) ? delay * 60 : 0)}`;
+        return <section className={styles.pane} aria-label={recipe.title}>
+          <header className={styles.paneHead}>
+            <div>
+              <h2 className={styles.paneTitle}>{recipe.title}</h2>
+              <p className={styles.paneMeta}>{timing}</p>
             </div>
-          </CollapsibleContent></Collapsible>
-        </article>;
-      })}
-      </div>
-    </div>
-    <p className="automation-feedback" role={messageError ? "alert" : "status"} aria-live={messageError ? "assertive" : "polite"}>{message}</p>
+            <div className={styles.paneActions}>
+              <span className={`automation-status automation-status-${recipe.status.toLowerCase()}`}>{statusLabel(recipe.status)}</span>
+              <Button type="button" variant={enabled ? "outline" : "default"} onClick={() => changeStatus(recipe)} disabled={busyId === recipe.id || (!enabled && (!deliveryReady || dirty))}>
+                {busyId === recipe.id ? "Saving…" : enabled ? "Pause" : dirty ? "Save first" : "Enable"}
+              </Button>
+            </div>
+          </header>
 
-    <section className="product-panel automation-history" aria-labelledby="automation-history-title">
-      <div className="automation-history-heading"><div><h3 id="automation-history-title">Recent runs</h3><p className="product-help">A clear record of sent messages and skipped follow-ups.</p></div><span>{runs.length} shown</span></div>
-      {runs.length ? <ul className="automation-run-list">{runs.map((run) => <li key={run.id}>
-        <div><strong>{run.recipe}</strong><span>{run.recipient}</span></div><div><span className={`automation-status automation-status-${run.status.toLowerCase()}`}>{statusLabel(run.status)}</span>{run.reason ? <small>{reasonLabel(run.reason)}</small> : null}</div><time dateTime={run.scheduledAt}>{formatTime(run.scheduledAt)}</time>
-      </li>)}</ul> : <p className="automation-empty">No runs yet. Recipes start only after you enable them.</p>}
-    </section>
-    <p className="automation-policy">All recipes require verified email and explicit marketing consent. Unsubscribe and workspace suppressions are checked again immediately before sending. Pausing cancels scheduled messages; a message already being handed to the provider may still arrive.</p>
+          <div className={styles.fieldCard}>
+            {recipe.type !== "REFERRAL_MILESTONE"
+              ? <div className={styles.fieldRow}>
+                  <input type="number" min="0" max="168" step="1" aria-label="Hours after confirmation" value={delay} disabled={busyId === recipe.id} onChange={(event) => updateRecipe(recipe.id, { delayHours: event.target.value })} />
+                  <span className={styles.unit}>hours after confirmation</span>
+                </div>
+              : <>
+                <div className={styles.fieldRow}>
+                  <input type="number" min="1" max="100" step="1" aria-label="Verified referrals to celebrate" value={recipe.milestoneCount ?? recipe.config.milestoneCount} disabled={busyId === recipe.id} onChange={(event) => updateRecipe(recipe.id, { milestoneCount: event.target.value })} />
+                  <span className={styles.unit}>verified referrals</span>
+                </div>
+                <div className={styles.fieldRow}>
+                  <input type="number" min="0" max="168" step="1" aria-label="Hours after the milestone" value={delay} disabled={busyId === recipe.id} onChange={(event) => updateRecipe(recipe.id, { delayHours: event.target.value })} />
+                  <span className={styles.unit}>hours after the milestone</span>
+                </div>
+              </>}
+            <div className={styles.fieldRow}>
+              <input maxLength={160} aria-label="Subject" placeholder="Subject — what subscribers see in the inbox" value={recipe.config.subject} disabled={busyId === recipe.id} onChange={(event) => updateRecipe(recipe.id, { config: { ...recipe.config, subject: event.target.value } })} />
+            </div>
+          </div>
+
+          <div className={styles.canvasShell}>
+            <EmailCanvas key={recipe.id} editorRef={editorRef} content={recipe.config.editorDocument || `<p>${String(recipe.config.body || "").replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char])}</p>`} onChange={(document) => updateRecipe(recipe.id, { config: { ...recipe.config, editorDocument: document } })} editable={busyId !== recipe.id} />
+          </div>
+
+          <div className={styles.metaBar}>
+            <p className={styles.chips}>Personalize <code>{"{{waitlist}}"}</code><code>{"{{referral_link}}"}</code>{recipe.type === "REFERRAL_MILESTONE" ? <code>{"{{referral_count}}"}</code> : null}</p>
+            <div className={styles.paneActions}>
+              {dirty ? <span role="status" className={styles.state}>Unsaved</span> : null}
+              <Button type="button" variant="default" onClick={() => save(recipe)} disabled={busyId === recipe.id || !hasValidValues(recipe)}>{busyId === recipe.id ? "Saving…" : "Save changes"}</Button>
+            </div>
+          </div>
+
+          <div className={styles.runsHead}><h3>Recent runs</h3></div>
+          {runs.length ? <ul className={styles.runs}>{runs.map((run) => <li key={run.id}>
+            <div className={styles.who}><strong>{run.recipe}</strong><span>{run.recipient}{run.reason ? ` · ${reasonLabel(run.reason)}` : ""}</span></div>
+            <span className={`automation-status automation-status-${run.status.toLowerCase()}`}>{statusLabel(run.status)}</span>
+            <time dateTime={run.scheduledAt}>{formatTime(run.scheduledAt)}</time>
+          </li>)}</ul> : <p className={styles.runsEmpty}>No runs yet. Runs start once a recipe is enabled.</p>}
+        </section>;
+      })() : <div className={styles.emptyPane}>
+        <h2>No automations yet</h2>
+        <p>Welcome and referral follow-ups will appear here.</p>
+      </div>}
+    </div>
   </div>;
 }

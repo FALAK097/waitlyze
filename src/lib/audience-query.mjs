@@ -6,10 +6,12 @@ export function parseAudienceFilters(searchParams) {
   const query = (searchParams.get("q") ?? "").trim();
   const status = searchParams.get("status") ?? "all";
   const sort = searchParams.get("sort") ?? "joined_desc";
+  const delivery = searchParams.get("delivery") ?? "all";
   if (query.length > 120) return { error: "Search must be 120 characters or fewer." };
   if (!["all", "verified", "pending"].includes(status)) return { error: "Invalid subscriber status." };
   if (!["joined_desc", "joined_asc"].includes(sort)) return { error: "Invalid sort order." };
-  return { query, status, sort };
+  if (!["all", "failed"].includes(delivery)) return { error: "Invalid email filter." };
+  return { query, status, sort, delivery };
 }
 
 export function audienceWhere(waitListId, scope, filters) {

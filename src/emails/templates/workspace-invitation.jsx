@@ -18,7 +18,7 @@ export function WorkspaceInvitationEmail({ inviterName, workspaceName, role, url
         ]}
       />
       <PrimaryLink href={url}>Accept invitation</PrimaryLink>
-      <Muted>This invitation link can only be used once and expires in seven days.</Muted>
+      <Muted>This invitation expires in seven days and can be used once.</Muted>
       <FallbackLink href={url} />
     </EmailLayout>
   );
