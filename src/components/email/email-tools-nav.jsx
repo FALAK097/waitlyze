@@ -7,5 +7,6 @@ export function EmailToolsNav({ waitListId, current }) {
     <Link prefetch={false} href={root} aria-current={current === "templates" ? "page" : undefined}>Templates</Link>
     <Link prefetch={false} href={`${root}/broadcasts`} aria-current={current === "broadcasts" ? "page" : undefined}>Broadcasts</Link>
     <Link prefetch={false} href={`${root}/automations`} aria-current={current === "automations" ? "page" : undefined}>Automations</Link>
+    <Link prefetch={false} href={`${root}/logs`} aria-current={current === "logs" ? "page" : undefined}>Logs</Link>
   </nav></div>;
 }

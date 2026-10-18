@@ -36,7 +36,6 @@ export function BroadcastManager({ waitListId, initialBroadcasts, initialPreview
   const [draftDirty, setDraftDirty] = useState(false);
   const [reviewCancel, setReviewCancel] = useState(false);
   const [pendingSelection, setPendingSelection] = useState(null);
-  const [messagePreview, setMessagePreview] = useState("");
   const editorRef = useRef(null);
 
   function notify(text, failure = false) { if (failure) toast.error(text); else toast.success(text); }
@@ -47,7 +46,7 @@ export function BroadcastManager({ waitListId, initialBroadcasts, initialPreview
     setDraftDirty(false); setReviewCancel(false); setPendingSelection(null);
     setSelectedId(broadcast.id);
     setData({ name: broadcast.name, subject: broadcast.subject, previewText: broadcast.previewText, body: broadcast.body, editorDocument: broadcast.editorDocument, renderedHtml: broadcast.renderedHtml });
-    setPreviewFresh(false); setMessagePreview("");
+    setPreviewFresh(false);
     setReviewSend(false);
   }
 
@@ -66,7 +65,7 @@ export function BroadcastManager({ waitListId, initialBroadcasts, initialPreview
       setBroadcasts((items) => [draft, ...items]);
       setSelectedId(draft.id);
       setData({ name: draft.name, subject: draft.subject, previewText: draft.previewText, body: draft.body, editorDocument: draft.editorDocument, renderedHtml: draft.renderedHtml });
-      setPreviewFresh(false); setMessagePreview("");
+      setPreviewFresh(false);
       setDraftDirty(false);
       notify("Draft created.");
     } catch {
@@ -141,13 +140,6 @@ export function BroadcastManager({ waitListId, initialBroadcasts, initialPreview
     }
   }
 
-  async function showMessagePreview() {
-    try {
-      if (!editorRef.current?.editor) throw new Error("The editor is still loading.");
-      setMessagePreview(await editorRef.current.getEmailHTML());
-    } catch (error) { notify(error.message || "Could not preview this email.", true); }
-  }
-
   const selected = broadcasts.find((item) => item.id === selectedId);
   const editable = !selected || selected.status === "DRAFT";
 
@@ -170,15 +162,11 @@ export function BroadcastManager({ waitListId, initialBroadcasts, initialPreview
         <header className={styles.paneHead}>
           <div>
             <h2 className={styles.paneTitle}>{editable ? (data.name || "Untitled broadcast") : "Delivery summary"}</h2>
-            <p className={styles.paneMeta}>{editable ? "Draft — nothing is sent until you confirm." : `${selected.recipientCount} recipients · ${formatDate(selected.updatedAt)}`}</p>
+            {editable ? <p className={styles.paneMeta}>Draft — nothing is sent until you confirm.</p> : null}
           </div>
           <div className={styles.paneActions}>
             {!editable && <span className={`automation-status automation-status-${selected.status.toLowerCase()}`}>{statusLabel(selected.status)}</span>}
-            {editable && <>
-              <span role="status" className={styles.state}>{draftDirty ? "Unsaved" : "Saved"}</span>
-              <Button type="button" variant="outline" onClick={showMessagePreview} disabled={busy}>Preview email</Button>
-              <Button type="submit" variant="default" disabled={busy}>{busyAction === "save" ? "Saving…" : "Save draft"}</Button>
-            </>}
+            {editable && <Button type="submit" variant="default" disabled={busy}>{busyAction === "save" ? "Saving…" : "Save draft"}</Button>}
           </div>
         </header>
 
@@ -191,10 +179,6 @@ export function BroadcastManager({ waitListId, initialBroadcasts, initialPreview
           <div className={styles.canvasShell}>
             <EmailCanvas key={selectedId} editorRef={editorRef} content={starterContent(data)} onChange={(document) => edit("editorDocument", document)} />
           </div>
-          {messagePreview && <div className={styles.broadcastPreview}>
-            <div><strong>Email preview</strong><Button type="button" variant="ghost" onClick={() => setMessagePreview("")}>Close</Button></div>
-            <iframe title="Broadcast email preview" sandbox="" srcDoc={messagePreview} />
-          </div>}
           <div className={styles.recipients}>
             <span className={styles.count}>{preview.count} eligible</span>
             <Button type="button" variant="outline" size="sm" onClick={refreshPreview} disabled={busy || draftDirty}>{busyAction === "preview" ? "Checking…" : "Check recipients"}</Button>
@@ -215,10 +199,16 @@ export function BroadcastManager({ waitListId, initialBroadcasts, initialPreview
                 </div>)
             : null}
         </> : <>
+          <div className={styles.summary}>
+            <div className={styles.summaryRow}><span>Subject</span><strong>{selected.subject || "—"}</strong></div>
+            {selected.previewText ? <div className={styles.summaryRow}><span>Preview text</span><strong>{selected.previewText}</strong></div> : null}
+            <div className={styles.summaryRow}><span>Recipients</span><strong>{selected.recipientCount}</strong></div>
+            <div className={styles.summaryRow}><span>{selected.status === "SENT" ? "Sent" : "Updated"}</span><strong>{formatDate(selected.sentAt || selected.updatedAt)}</strong></div>
+          </div>
+          <p className={styles.stats}>{selected.deliveredCount || 0} delivered · {selected.failedCount || 0} failed · {selected.skippedCount || 0} skipped · {selected.canceledCount || 0} canceled</p>
           {selected.renderedHtml
             ? <iframe className={styles.sentMessage} title="Sent email" sandbox="" srcDoc={selected.renderedHtml} />
             : <p className={`${styles.hint} whitespace-pre-line`}>{selected.body}</p>}
-          <p className={styles.hint}>{selected.deliveredCount || 0} delivered · {selected.failedCount || 0} failed · {selected.skippedCount || 0} skipped · {selected.canceledCount || 0} canceled of {selected.recipientCount}</p>
         </>}
 
         {selected?.status === "SENDING" ? <div className={styles.confirm}>

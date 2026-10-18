@@ -1,7 +1,6 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { formatProductDate } from "@/lib/product-date.mjs";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
 import styles from "./email-tools.module.css";
@@ -12,14 +11,11 @@ import { EmailCanvas } from "./email-canvas";
 const hourValue = (minutes) => Number((minutes / 60).toFixed(2));
 const waitLabel = (minutes) => minutes === 0 ? "immediately" : minutes % 60 === 0 ? `${minutes / 60} ${minutes === 60 ? "hour" : "hours"} later` : `${minutes} minutes later`;
 const statusLabel = (status) => ({ DRAFT: "Off", ENABLED: "Enabled", PAUSED: "Paused", PENDING: "Scheduled", PROCESSING: "Sending", SENT: "Sent", SKIPPED: "Skipped", FAILED: "Needs attention", CANCELED: "Canceled" })[status] || status;
-const reasonLabel = (value) => value ? value.toLowerCase().replaceAll("_", " ") : "";
-const formatTime = (value) => formatProductDate(value);
 
-export function AutomationManager({ waitListId, initialRecipes, initialRuns, deliveryReady }) {
+export function AutomationManager({ waitListId, initialRecipes, deliveryReady }) {
   const editorRef = useRef(null);
   const router = useRouter();
   const [recipes, setRecipes] = useState(() => initialRecipes.map((recipe) => ({ ...recipe, savedConfig: recipe.config })));
-  const [runs] = useState(initialRuns);
   const [busyId, setBusyId] = useState(null);
   const [activeRecipe, setActiveRecipe] = useState(initialRecipes[0]?.id || null);
 
@@ -114,16 +110,16 @@ export function AutomationManager({ waitListId, initialRecipes, initialRuns, del
           <div className={styles.fieldCard}>
             {recipe.type !== "REFERRAL_MILESTONE"
               ? <div className={styles.fieldRow}>
-                  <input type="number" min="0" max="168" step="1" aria-label="Hours after confirmation" value={delay} disabled={busyId === recipe.id} onChange={(event) => updateRecipe(recipe.id, { delayHours: event.target.value })} />
+                  <input type="number" min="0" max="168" step="1" className={styles.number} aria-label="Hours after confirmation" value={delay} disabled={busyId === recipe.id} onChange={(event) => updateRecipe(recipe.id, { delayHours: event.target.value })} />
                   <span className={styles.unit}>hours after confirmation</span>
                 </div>
               : <>
                 <div className={styles.fieldRow}>
-                  <input type="number" min="1" max="100" step="1" aria-label="Verified referrals to celebrate" value={recipe.milestoneCount ?? recipe.config.milestoneCount} disabled={busyId === recipe.id} onChange={(event) => updateRecipe(recipe.id, { milestoneCount: event.target.value })} />
+                  <input type="number" min="1" max="100" step="1" className={styles.number} aria-label="Verified referrals to celebrate" value={recipe.milestoneCount ?? recipe.config.milestoneCount} disabled={busyId === recipe.id} onChange={(event) => updateRecipe(recipe.id, { milestoneCount: event.target.value })} />
                   <span className={styles.unit}>verified referrals</span>
                 </div>
                 <div className={styles.fieldRow}>
-                  <input type="number" min="0" max="168" step="1" aria-label="Hours after the milestone" value={delay} disabled={busyId === recipe.id} onChange={(event) => updateRecipe(recipe.id, { delayHours: event.target.value })} />
+                  <input type="number" min="0" max="168" step="1" className={styles.number} aria-label="Hours after the milestone" value={delay} disabled={busyId === recipe.id} onChange={(event) => updateRecipe(recipe.id, { delayHours: event.target.value })} />
                   <span className={styles.unit}>hours after the milestone</span>
                 </div>
               </>}
@@ -138,18 +134,10 @@ export function AutomationManager({ waitListId, initialRecipes, initialRuns, del
 
           <div className={styles.metaBar}>
             <p className={styles.chips}>Personalize <code>{"{{waitlist}}"}</code><code>{"{{referral_link}}"}</code>{recipe.type === "REFERRAL_MILESTONE" ? <code>{"{{referral_count}}"}</code> : null}</p>
-            <div className={styles.paneActions}>
-              {dirty ? <span role="status" className={styles.state}>Unsaved</span> : null}
-              <Button type="button" variant="default" onClick={() => save(recipe)} disabled={busyId === recipe.id || !hasValidValues(recipe)}>{busyId === recipe.id ? "Saving…" : "Save changes"}</Button>
-            </div>
+            <Button type="button" variant="default" onClick={() => save(recipe)} disabled={busyId === recipe.id || !hasValidValues(recipe)}>{busyId === recipe.id ? "Saving…" : "Save changes"}</Button>
           </div>
 
-          <div className={styles.runsHead}><h3>Recent runs</h3></div>
-          {runs.length ? <ul className={styles.runs}>{runs.map((run) => <li key={run.id}>
-            <div className={styles.who}><strong>{run.recipe}</strong><span>{run.recipient}{run.reason ? ` · ${reasonLabel(run.reason)}` : ""}</span></div>
-            <span className={`automation-status automation-status-${run.status.toLowerCase()}`}>{statusLabel(run.status)}</span>
-            <time dateTime={run.scheduledAt}>{formatTime(run.scheduledAt)}</time>
-          </li>)}</ul> : <p className={styles.runsEmpty}>No runs yet. Runs start once a recipe is enabled.</p>}
+          {recipe.type.startsWith("REFERRAL_") ? <p className={styles.hint}>Sharing on the waitlist page is controlled in Settings → Referral sharing. This email just includes each subscriber’s personal link.</p> : null}
         </section>;
       })() : <div className={styles.emptyPane}>
         <h2>No automations yet</h2>

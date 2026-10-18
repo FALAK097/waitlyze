@@ -170,12 +170,6 @@
   justify-content: flex-end;
 }
 
-.state {
-  font-size: 12px;
-  color: var(--product-text-secondary);
-  white-space: nowrap;
-}
-
 .toolbar {
   display: flex;
   justify-content: flex-end;
@@ -222,6 +216,20 @@
 
 .fieldRow input::placeholder {
   color: #9aa59b;
+}
+
+.fieldRow input.number {
+  flex: 0 0 auto;
+  width: 88px;
+  padding: 8px 10px;
+  border: 1px solid #dce4db;
+  border-radius: 7px;
+  background: #fff;
+  font-variant-numeric: tabular-nums;
+}
+
+.fieldRow input.number:disabled {
+  opacity: .6;
 }
 
 .fieldRow .unit {
@@ -376,6 +384,45 @@
   margin: 0;
 }
 
+.summary {
+  border: 1px solid #e5e9e4;
+  border-radius: 10px;
+  background: #fff;
+  overflow: hidden;
+}
+
+.summaryRow {
+  display: flex;
+  gap: 12px;
+  align-items: baseline;
+  min-height: 46px;
+  padding: 12px 16px;
+}
+
+.summaryRow + .summaryRow {
+  border-top: 1px solid #eef1ec;
+}
+
+.summaryRow span {
+  flex: 0 0 108px;
+  font-size: 12px;
+  color: var(--product-text-secondary);
+}
+
+.summaryRow strong {
+  flex: 1;
+  min-width: 0;
+  font-size: 13.5px;
+  font-weight: 550;
+  overflow-wrap: anywhere;
+}
+
+.stats {
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--product-text-secondary);
+}
+
 .notice {
   margin: 0 0 22px;
   padding: 11px 14px;
@@ -509,41 +556,9 @@
 }
 
 .previewPane {
-  margin-top: 4px;
-  padding: 18px;
-  border: 1px solid #e5e9e4;
-  border-radius: 12px;
-  background: #f8faf5;
+  display: none;
 }
 
-.previewPane > div {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 12px;
-}
-
-.previewPane h3 {
-  margin: 0;
-  font-size: 14px;
-}
-
-.previewPane button,
-.broadcastPreview button {
-  min-height: 34px;
-  padding: 0 12px;
-  border: 0;
-  border-radius: 7px;
-  background: transparent;
-  color: #435c47;
-  font: inherit;
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.previewPane iframe,
-.broadcastPreview iframe,
 .sentMessage {
   display: block;
   width: 100%;
@@ -551,21 +566,6 @@
   border: 0;
   border-radius: 8px;
   background: #fff;
-}
-
-.broadcastPreview {
-  padding: 16px;
-  border: 1px solid #e5e9e4;
-  border-radius: 12px;
-  background: #f8faf5;
-}
-
-.broadcastPreview > div {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 12px;
-  font-size: 14px;
 }
 
 /* ---------- loading skeletons ---------- */
@@ -646,6 +646,16 @@
 .skelBar {
   width: 260px;
   height: 16px;
+}
+
+.skelLogRow {
+  height: 44px;
+  border-radius: 8px;
+  background: #f2f4ee;
+}
+
+.logsPane {
+  max-width: 860px;
 }
 
 .skelActions {

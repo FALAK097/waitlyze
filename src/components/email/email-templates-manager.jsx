@@ -18,7 +18,6 @@ export function EmailTemplatesManager({ waitListId, initialTemplates }) {
   const [dirty, setDirty] = useState(false);
   const [pending, setPending] = useState(null);
   const [busy, setBusy] = useState("");
-  const [preview, setPreview] = useState("");
   const [testTo, setTestTo] = useState("");
   const editorRef = useRef(null);
   const template = drafts[current];
@@ -27,15 +26,14 @@ export function EmailTemplatesManager({ waitListId, initialTemplates }) {
   function edit(field, value) {
     setDrafts((items) => ({ ...items, [current]: { ...items[current], [field]: value } }));
     setDirty(true);
-    setPreview("");
   }
   function select(key) {
     if (dirty) { setPending(key); return; }
-    setCurrent(key); setPreview(""); setPending(null);
+    setCurrent(key); setPending(null);
   }
   function discard() {
     setDrafts((items) => ({ ...items, [current]: initialTemplates[current] }));
-    setDirty(false); setCurrent(pending); setPreview(""); setPending(null);
+    setDirty(false); setCurrent(pending); setPending(null);
   }
   async function exportMessage() {
     if (!editorRef.current?.editor) throw new Error("The editor is still loading.");
@@ -52,12 +50,6 @@ export function EmailTemplatesManager({ waitListId, initialTemplates }) {
       setDirty(false);
       toast.success("Email saved.");
     } catch (error) { toast.error(error.message || "Couldn't save the email."); }
-    finally { setBusy(""); }
-  }
-  async function showPreview() {
-    setBusy("preview");
-    try { const { renderedHtml } = await exportMessage(); setPreview(renderedHtml); }
-    catch (error) { toast.error(error.message || "Couldn't preview the email."); }
     finally { setBusy(""); }
   }
   async function sendTest(event) {
@@ -87,8 +79,6 @@ export function EmailTemplatesManager({ waitListId, initialTemplates }) {
             <p className={styles.paneMeta}>{kind.note}</p>
           </div>
           <div className={styles.paneActions}>
-            <span role="status" className={styles.state}>{dirty ? "Unsaved" : "Saved"}</span>
-            <Button type="button" variant="outline" onClick={showPreview} disabled={Boolean(busy)}>{busy === "preview" ? "Loading…" : preview ? "Refresh preview" : "Preview"}</Button>
             <Button type="button" variant="default" onClick={save} disabled={Boolean(busy)}>{busy === "save" ? "Saving…" : "Save"}</Button>
           </div>
         </header>
@@ -110,10 +100,6 @@ export function EmailTemplatesManager({ waitListId, initialTemplates }) {
             <button type="submit" disabled={Boolean(busy) || dirty}>{busy === "test" ? "Sending…" : "Send test"}</button>
           </form>
         </div>
-        {preview && <section className={styles.previewPane} aria-label="Email preview">
-          <div><h3>Preview</h3><button type="button" onClick={() => setPreview("")}>Close</button></div>
-          <iframe title="Rendered email preview" sandbox="" srcDoc={preview} />
-        </section>}
       </section>
     </div>
   </div>;

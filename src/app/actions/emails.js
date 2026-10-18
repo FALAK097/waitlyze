@@ -752,3 +752,53 @@ export async function cancelBroadcast({ waitListId, broadcastId }) {
   revalidatePath(broadcastPath(waitListId));
   return { success: canceled, message: canceled ? "Remaining queued emails were canceled." : "This broadcast is no longer sending." };
 }
+
+const runStatusLabel = (status) => ({ DRAFT: "Off", ENABLED: "Enabled", PAUSED: "Paused", PENDING: "Scheduled", PROCESSING: "Sending", SENT: "Sent", SKIPPED: "Skipped", FAILED: "Needs attention", CANCELED: "Canceled", SENDING: "Sending" })[status] || status;
+
+export async function listEmailRuns(waitListId) {
+  const { campaign } = await requireCampaign(waitListId, "sendEmail");
+  const [runs, broadcasts] = await Promise.all([
+    prisma.automationRun.findMany({
+      where: { waitListId: campaign.id },
+      orderBy: { createdAt: "desc" },
+      take: 60,
+      include: {
+        recipe: { select: { type: true } },
+        signUp: { select: { email: true } },
+        steps: { select: { status: true, lastErrorCode: true } },
+      },
+    }),
+    prisma.marketingBroadcast.findMany({
+      where: { waitListId: campaign.id, status: { not: "DRAFT" } },
+      orderBy: { updatedAt: "desc" },
+      take: 40,
+      select: { id: true, name: true, subject: true, status: true, recipientCount: true, sentAt: true, updatedAt: true },
+    }),
+  ]);
+  const maskEmail = (email) => email.replace(/^(.).+(@.+)$/, "$1•••$2");
+  const automationTitle = (type) => ({ WELCOME: "Welcome after confirmation", REFERRAL_REMINDER: "Referral reminder", REFERRAL_MILESTONE: "Referral milestone" })[type] || type;
+  const items = [
+    ...runs.map((run) => ({
+      id: `run-${run.id}`,
+      kind: "Automation",
+      title: automationTitle(run.recipe.type),
+      recipient: maskEmail(run.signUp.email),
+      status: runStatusLabel(run.status),
+      statusCode: run.status,
+      reason: (run.skipReason || run.steps.find((step) => step.lastErrorCode)?.lastErrorCode || "").toLowerCase().replaceAll("_", " "),
+      at: (run.finishedAt || run.scheduledAt || run.createdAt).toISOString(),
+    })),
+    ...broadcasts.map((broadcast) => ({
+      id: `bc-${broadcast.id}`,
+      kind: "Broadcast",
+      title: broadcast.name || broadcast.subject || "Untitled broadcast",
+      recipient: `${broadcast.recipientCount} recipient${broadcast.recipientCount === 1 ? "" : "s"}`,
+      status: runStatusLabel(broadcast.status),
+      statusCode: broadcast.status,
+      reason: "",
+      at: (broadcast.sentAt || broadcast.updatedAt).toISOString(),
+    })),
+  ];
+  items.sort((a, b) => (a.at < b.at ? 1 : a.at > b.at ? -1 : 0));
+  return items.slice(0, 100);
+}
