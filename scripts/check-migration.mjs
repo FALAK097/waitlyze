@@ -13,6 +13,7 @@ await admin.connect();
 const created = [];
 const prisma = "node_modules/prisma/build/index.js";
 const migration = "20261011000000_campaign_product_revamp";
+/** Runs a Prisma CLI subcommand against a specific database URL and throws with captured output on failure. */
 function runPrisma(args, databaseUrl) {
   const result = spawnSync(process.execPath, [prisma, ...args], {
     env: { ...process.env, DATABASE_URL: databaseUrl }, encoding: "utf8",

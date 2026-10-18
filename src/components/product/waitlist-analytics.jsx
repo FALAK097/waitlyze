@@ -229,6 +229,7 @@ function AnalyticsSkeleton() {
   </div>;
 }
 
+/** Overview dashboard with KPI metrics, benchmark badges, and range-scoped activity charts. */
 export function WaitlistAnalytics({ waitListId, emailsEnabled = false }) {
   const [{ range, from, to }, setRangeState] = useQueryStates(rangeQueryOptions, { history: "push" });
   const [retryCount, setRetryCount] = useState(0);

@@ -14,6 +14,7 @@ import { MARKETING_CONSENT_COPY } from "@/lib/campaigns/marketing-consent.mjs";
 import { collectAttribution } from "@/utils/attribution";
 import styles from "@/components/product/waitlist-signup.module.css";
 
+/** Waitlist signup form: validates input, submits the signup, and shows the referral result. */
 export function SignupForm({ slug, waitListId, showReferrals, label, buttonText, thankYou }) {
   const searchParams = useSearchParams();
   const referralCode = searchParams.get("r");
@@ -73,6 +74,7 @@ export function SignupForm({ slug, waitListId, showReferrals, label, buttonText,
     }
   }
 
+  /** Copies the personal referral link and records a share event only after the clipboard write succeeds. */
   async function copyReferralLink() {
     if (!result?.referralLink) return;
     try {

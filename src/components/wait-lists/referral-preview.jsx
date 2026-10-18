@@ -10,6 +10,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
+/** Share panel exposing the member's referral link through copy and social-share actions. */
 export const ReferralPreview = ({
 	signUp,
 	waitList,
@@ -21,6 +22,7 @@ export const ReferralPreview = ({
 	const shareText = `I'm on the waitlist for ${waitList.name.charAt(0).toUpperCase() + waitList.name.slice(1)
 		}! Join me and move up in line: ${referralLink}`;
 
+	/** Fire-and-forget request that records a share event for the preview's unique referral code. */
 	const recordShare = () => {
 		fetch("/api/v1/shares", {
 			method: "POST",
@@ -237,6 +239,7 @@ export const ReferralPreview = ({
 		return () => clearInterval(interval);
 	}, [getTotalSignUpsOnWaitList]);
 
+	/** Copies the referral link, recording a share only when the clipboard write resolves. */
 	const copyToClipboard = () => {
 		navigator.clipboard
 			.writeText(referralLink)

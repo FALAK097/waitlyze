@@ -88,6 +88,7 @@ function channelOf({ utmMedium, utmSource, referrer }) {
   return "Direct";
 }
 
+/** Computes range metrics, breakdowns, referral totals, and K-factor for one waitlist. */
 export async function getWaitlistAnalytics(db, { waitListId, days = 30, endDate = null, timeZone = "UTC", now = new Date() }) {
   if (typeof waitListId !== "string" || !waitListId) throw new TypeError("Waitlist ID is required.");
   const rangeDays = validDays(days);

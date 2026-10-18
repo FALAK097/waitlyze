@@ -2,6 +2,7 @@ import prisma from "@/lib/prisma";
 import { consumePublicBudget, PublicRateLimitError } from "@/lib/security/public-rate-limit.mjs";
 import { NextResponse } from "next/server";
 
+/** Validates the waitlist and referral code, consumes the share rate budget, and records a share event. */
 export async function POST(request) {
   try {
     const body = await request.json();
