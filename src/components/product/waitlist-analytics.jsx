@@ -312,9 +312,6 @@ export function WaitlistAnalytics({ waitListId, emailsEnabled = false }) {
     : [];
   const referralTop = referrals?.top.map((row) => ({ label: row.label, visitors: 0, signups: row.signups })) ?? [];
   const referralShareLabel = referrals?.share == null ? "No signups yet" : `${referrals.share}% of signups`;
-  const referralCopy = referrals && referrals.referrers > 0
-    ? `${number.format(referrals.referred)} ${referrals.referred === 1 ? "signup came" : "signups came"} through ${number.format(referrals.referrers)} ${referrals.referrers === 1 ? "referrer" : "referrers"} — ${referrals.perReferrer} each on average. Held or excluded signups are left out of every number.`
-    : "Signups brought in through referral links versus organic joins. Held or excluded signups are left out of every number.";
 
   return <section className="waitlist-analytics" aria-labelledby="waitlist-analytics-title" aria-busy={loading}>
     <header className="waitlist-analytics-header">
@@ -406,7 +403,6 @@ export function WaitlistAnalytics({ waitListId, emailsEnabled = false }) {
 
       {referrals ? <section className="waitlist-analytics-data-panel waitlist-analytics-wide-panel waitlist-analytics-referrals-panel" aria-labelledby="waitlist-referrals-title">
         <header><h3 id="waitlist-referrals-title">Referrals</h3><span>{referralShareLabel}</span></header>
-        <p className="waitlist-analytics-section-copy">{referralCopy}</p>
         <div className="waitlist-analytics-panel-body">
           <div className="waitlist-analytics-referral-cols">
             <div>

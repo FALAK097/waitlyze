@@ -13,7 +13,10 @@ export function EvilBarRows({ rows, kind, metric = "visitors" }) {
       const width = total > 0 ? Math.max((total / maxTotal) * 100, 2) : 0;
       const visitorShare = total > 0 ? (row.visitors / total) * 100 : 0;
       const signupShare = total > 0 ? (row.signups / total) * 100 : 0;
-      return <li key={row.label} title={`${row.label}: ${number.format(row.visitors)} visitors · ${number.format(row.signups)} signups`}>
+      const parts = [];
+      if (row.visitors > 0) parts.push(`${number.format(row.visitors)} visitors`);
+      if (row.signups > 0) parts.push(`${number.format(row.signups)} signups`);
+      return <li key={row.label} title={`${row.label}: ${parts.join(" · ") || "0 visitors"}`}>
         <span className="evil-bar-row-track" aria-hidden="true" style={{ "--bar-w": `${width}%` }}>
           {row.visitors > 0 ? <span className="evil-bar-row-fill" data-series="visitors" style={{ "--seg": `${visitorShare}` }} /> : null}
           {row.signups > 0 ? <span className="evil-bar-row-fill" data-series="signups" style={{ "--seg": `${signupShare}` }} /> : null}

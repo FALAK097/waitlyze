@@ -12,12 +12,9 @@
 .product-context-nav { padding-bottom: 0; overflow-x: auto; }
 .product-context-nav a { white-space: nowrap; }
 @media (max-width: 480px) {
-  .product-context-nav { position: relative; scrollbar-width: thin; scrollbar-color: var(--product-neutral-400) transparent; scroll-snap-type: x proximity; }
+  .product-context-nav { position: relative; scrollbar-width: none; -ms-overflow-style: none; scroll-snap-type: x proximity; }
   .product-context-nav a { scroll-snap-align: start; }
-  .product-context-nav[data-overflow="true"]::after { position: sticky; inset-inline-end: 0; align-self: stretch; display: grid; flex: 0 0 28px; place-items: center; margin-inline-start: -28px; background: linear-gradient(90deg, transparent, var(--product-bg-page) 70%); color: var(--product-text-secondary); content: "↔"; pointer-events: none; }
-  .product-context-nav[data-overflow="true"]:dir(rtl)::after { background: linear-gradient(270deg, transparent, var(--product-bg-page) 70%); }
-  .product-context-nav::-webkit-scrollbar { height: 4px; }
-  .product-context-nav::-webkit-scrollbar-thumb { border-radius: 99px; background: var(--product-neutral-400); }
+  .product-context-nav::-webkit-scrollbar { display: none; height: 0; }
 }
 @media (prefers-reduced-motion: reduce) { .product-context-nav { scroll-snap-type: none; } }
 .product-section, .product-legacy-content { margin-top: 24px; }
@@ -426,6 +423,7 @@
 .waitlist-analytics-wide-panel { padding-block-end: 16px; }
 .waitlist-analytics-audience-panel { grid-column: 1 / -1; }
 .waitlist-analytics-audience-panel .waitlist-analytics-panel-body { height: auto; min-height: 380px; max-height: none; }
+.waitlist-analytics-audience-panel:has(.evil-world-map) .waitlist-analytics-panel-body { min-height: 0; }
 .waitlist-analytics-section-copy { max-width: 64ch; padding: 0 16px 14px; color: var(--product-text-secondary); font-size: .75rem; }
 .waitlist-analytics-referrals-panel .waitlist-analytics-panel-body { max-height: 340px; }
 .waitlist-analytics-referral-cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
