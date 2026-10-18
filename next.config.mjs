@@ -2,6 +2,9 @@ import { createMDX } from 'fumadocs-mdx/next';
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  experimental: {
+    serverActions: { bodySizeLimit: "5mb" },
+  },
   images: {
     remotePatterns: [
       {

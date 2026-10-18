@@ -12,7 +12,7 @@ function getClient() {
   return client;
 }
 
-export async function sendPlatformEmail({ to, subject, html, replyTo, idempotencyKey }) {
+export async function sendPlatformEmail({ to, subject, html, replyTo, idempotencyKey, attachments }) {
   const resend = getClient();
   const { error } = await resend.emails.send(
     {
@@ -21,6 +21,7 @@ export async function sendPlatformEmail({ to, subject, html, replyTo, idempotenc
       subject,
       replyTo: replyTo || env.RESEND_REPLY_TO,
       html,
+      ...(attachments?.length ? { attachments } : {}),
     },
     idempotencyKey ? { idempotencyKey } : undefined,
   );
