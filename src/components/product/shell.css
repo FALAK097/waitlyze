@@ -7,7 +7,9 @@
 .product-context-nav a[aria-current] { background: transparent; box-shadow: inset 0 -2px 0 var(--product-accent-solid); color: var(--product-text-primary); }
 .product-main { max-width: var(--product-content-width, 1152px); margin-inline: auto; padding: 40px var(--product-content-gutter, 32px) 64px; }
 .product-page-title { font-size: 1.75rem; font-weight: 600; letter-spacing: -.04em; margin: 12px 0 24px; overflow-wrap: anywhere; }
-.product-waitlist-detail > .product-page-title { font-size: 1.375rem; margin: 8px 0 16px; }
+.product-waitlist-header { display: flex; align-items: baseline; justify-content: space-between; gap: 4px 20px; flex-wrap: wrap; margin: 8px 0 16px; }
+.product-waitlist-header .product-page-title { font-size: 1.375rem; margin: 0; min-width: 0; }
+.product-waitlist-header .product-context-nav { margin-inline-end: -10px; }
 .product-back-link { color: var(--product-text-secondary); font-size: .875rem; text-decoration: none; }
 .product-context-nav { padding-bottom: 0; overflow-x: auto; }
 .product-context-nav a { white-space: nowrap; }
@@ -25,7 +27,7 @@
 .product-skip-link:focus { transform: none; }
 .product-shell a:focus-visible, .product-shell select:focus-visible, .product-shell [data-slot="collapsible-trigger"]:focus-visible { outline: 2px solid var(--product-focus); outline-offset: 2px; }
 @media (hover: hover) and (pointer: fine) { .product-context-nav a:hover { color: var(--product-text-primary); } .product-back-link:hover { text-decoration: underline; } }
-@media (max-width: 600px) { .product-main { padding: 24px var(--product-content-gutter, 16px) 48px; } .product-context-nav a { min-height: 44px; } .product-metrics { gap: 32px; flex-wrap: wrap; } }
+@media (max-width: 600px) { .product-main { padding: 24px var(--product-content-gutter, 16px) 48px; } .product-context-nav a { min-height: 44px; } .product-metrics { gap: 32px; flex-wrap: wrap; } .product-waitlist-header { flex-direction: column; align-items: stretch; gap: 0; } .product-waitlist-header .product-context-nav { margin-inline: -16px; padding-inline: 16px; width: calc(100% + 32px); } }
 @media (max-width: 480px) { .product-waitlist-filters { width: 100%; } .product-waitlist-filters a { flex: 1 1 calc(50% - 4px); } }
 
 .product-page-heading { display: flex; justify-content: space-between; align-items: center; gap: 24px; margin-bottom: 32px; }

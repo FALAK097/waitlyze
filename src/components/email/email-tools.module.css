@@ -52,6 +52,13 @@
   outline-offset: 2px;
 }
 
+/* Text inputs: no offset outline (fieldCard overflow clips it and the
+   dark ring reads as a stray border). Focus is shown by the row accent. */
+.scope :global(input:focus-visible),
+.scope :global(textarea:focus-visible) {
+  outline: none;
+}
+
 .scope :global(.product-button) {
   transition-property: transform, color, background-color;
   transition-duration: 150ms;
@@ -200,6 +207,7 @@
 
 .fieldRow:focus-within {
   background: #fafcf5;
+  box-shadow: inset 2px 0 0 #637c2b;
 }
 
 .fieldRow input {
@@ -218,18 +226,29 @@
   color: #9aa59b;
 }
 
-.fieldRow input.number {
+.numberField {
   flex: 0 0 auto;
-  width: 88px;
-  padding: 8px 10px;
-  border: 1px solid #dce4db;
+  width: 132px;
+  gap: 0;
+}
+
+.numberGroup {
+  height: 34px;
+  border-color: #dce4db;
   border-radius: 7px;
   background: #fff;
+}
+
+.numberInput {
   font-variant-numeric: tabular-nums;
 }
 
-.fieldRow input.number:disabled {
-  opacity: .6;
+.numberGroup button {
+  color: #5d6b60;
+}
+
+.numberGroup button:hover:not(:disabled) {
+  background: #f4f7ee;
 }
 
 .fieldRow .unit {
@@ -248,12 +267,12 @@
 }
 
 .canvas {
-  min-height: 300px;
+  min-height: 420px;
   padding: 22px 28px 30px;
 }
 
 .canvas :global(.tiptap) {
-  min-height: 240px;
+  min-height: 360px;
   outline: 0;
   color: #17261b;
   font-size: 15px;
@@ -638,7 +657,7 @@
 }
 
 .skelCanvas {
-  height: 300px;
+  height: 420px;
   border: 1px solid #eef1ec !important;
   background: #f7f9f5 !important;
 }

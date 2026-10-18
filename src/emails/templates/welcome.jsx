@@ -1,17 +1,21 @@
-import { EmailLayout, Muted, Paragraph, PrimaryLink } from "../layout";
+import { EmailLayout, Muted, NextSteps, Paragraph, PrimaryLink } from "../layout";
 
 export function WelcomeEmail({ name, url }) {
-  const greeting = name ? `Welcome to Waitlyze, ${name}.` : "Welcome to Waitlyze.";
+  const greeting = name ? `Welcome, ${name}.` : "Welcome to Waitlyze.";
   return (
     <EmailLayout
-      preview="Your Waitlyze workspace is ready"
+      preview="Your first waitlist is ready to take shape."
       heading={greeting}
       footer="You’re receiving this email because a Waitlyze account was created for this address."
     >
-      <Paragraph>Your space to turn early interest into an audience is ready.</Paragraph>
-      <Paragraph>Create a page, invite people to join, and give each signup a reason to share. You can preview everything before you publish.</Paragraph>
-      <PrimaryLink href={url}>Create a waitlist</PrimaryLink>
-      <Muted>Questions? Reply to this email. We’re here to help you get the first version live.</Muted>
+      <Paragraph>Your next idea deserves an audience. Waitlyze gives you a simple page to collect early interest and turn every signup into an invitation to share.</Paragraph>
+      <PrimaryLink href={url}>Create your first waitlist</PrimaryLink>
+      <NextSteps items={[
+        { title: "Shape your page", description: "Add your launch details and make it yours." },
+        { title: "Invite your first people", description: "Share one link wherever your community is." },
+        { title: "Let interest grow", description: "Give new subscribers a personal link to pass along." },
+      ]} />
+      <Muted>Questions as you get started? Reply to this email — we’re happy to help.</Muted>
     </EmailLayout>
   );
 }

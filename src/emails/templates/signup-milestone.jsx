@@ -1,7 +1,8 @@
-import { EmailLayout, FallbackLink, Muted, Paragraph, PrimaryLink } from "../layout";
+import { DetailList, EmailLayout, FallbackLink, Muted, Paragraph, PrimaryLink } from "../layout";
 
 export function SignupMilestoneEmail({ waitlistName, count, url }) {
   const first = count === 1;
+  const nextMilestone = count < 10 ? 10 : count < 100 ? 100 : count < 1000 ? 1000 : null;
   const heading = first ? "Your first signup is in." : `${count.toLocaleString("en-US")} signups on ${waitlistName}.`;
   return (
     <EmailLayout
@@ -11,13 +12,18 @@ export function SignupMilestoneEmail({ waitlistName, count, url }) {
     >
       <Paragraph>
         {first
-          ? `${waitlistName} has a name and an email to prove it. They’re confirming their address now, and they’ll appear in your subscribers list once they do.`
-          : `${waitlistName} keeps moving. Every subscriber has a personal referral link, so the people who joined can bring the next wave.`}
+          ? `${waitlistName} has its first sign of interest. They’re confirming their address now and will appear in your subscriber list once they do.`
+          : `${waitlistName} is gathering momentum. Every subscriber has a personal referral link, making it easy for your early audience to bring in the next wave.`}
       </Paragraph>
+      <DetailList items={[
+        { label: "Waitlist", value: waitlistName },
+        { label: "Milestone", value: first ? "First signup" : `${count.toLocaleString("en-US")} signups` },
+        { label: "Next up", value: nextMilestone ? `${nextMilestone.toLocaleString("en-US")} signups` : "Keep growing" },
+      ]} />
       <PrimaryLink href={url}>{first ? "See your subscribers" : "Open the subscribers list"}</PrimaryLink>
       <Muted>
         {first
-          ? "Next milestone: 10 signups. Share your page to get there — your thank-you screen does the referring."
+          ? "Share your page to get there — your thank-you screen makes it easy for the first people to invite others."
           : "You’ll hear from us again at 100 and 1,000 signups."}
       </Muted>
       <FallbackLink href={url} />

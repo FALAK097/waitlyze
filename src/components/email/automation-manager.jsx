@@ -7,10 +7,21 @@ import styles from "./email-tools.module.css";
 import { useRouter } from "next/navigation";
 import { saveAutomationRecipe, setAutomationStatus } from "@/app/actions/automations";
 import { EmailCanvas } from "./email-canvas";
+import { NumberField, NumberFieldDecrement, NumberFieldGroup, NumberFieldIncrement, NumberFieldInput } from "@/components/reui/number-field";
 
 const hourValue = (minutes) => Number((minutes / 60).toFixed(2));
 const waitLabel = (minutes) => minutes === 0 ? "immediately" : minutes % 60 === 0 ? `${minutes / 60} ${minutes === 60 ? "hour" : "hours"} later` : `${minutes} minutes later`;
 const statusLabel = (status) => ({ DRAFT: "Off", ENABLED: "Enabled", PAUSED: "Paused", PENDING: "Scheduled", PROCESSING: "Sending", SENT: "Sent", SKIPPED: "Skipped", FAILED: "Needs attention", CANCELED: "Canceled" })[status] || status;
+
+function AutomationNumberField({ label, value, min, max, disabled, onChange }) {
+  return <NumberField className={styles.numberField} aria-label={label} value={Number(value)} min={min} max={max} step={1} disabled={disabled} onValueChange={(nextValue) => onChange(String(nextValue ?? min))}>
+    <NumberFieldGroup className={styles.numberGroup}>
+      <NumberFieldDecrement aria-label={`Decrease ${label}`} />
+      <NumberFieldInput className={styles.numberInput} aria-label={label} />
+      <NumberFieldIncrement aria-label={`Increase ${label}`} />
+    </NumberFieldGroup>
+  </NumberField>;
+}
 
 export function AutomationManager({ waitListId, initialRecipes, deliveryReady }) {
   const editorRef = useRef(null);
@@ -110,16 +121,16 @@ export function AutomationManager({ waitListId, initialRecipes, deliveryReady })
           <div className={styles.fieldCard}>
             {recipe.type !== "REFERRAL_MILESTONE"
               ? <div className={styles.fieldRow}>
-                  <input type="number" min="0" max="168" step="1" className={styles.number} aria-label="Hours after confirmation" value={delay} disabled={busyId === recipe.id} onChange={(event) => updateRecipe(recipe.id, { delayHours: event.target.value })} />
+                  <AutomationNumberField label="Hours after confirmation" value={delay} min={0} max={168} disabled={busyId === recipe.id} onChange={(next) => updateRecipe(recipe.id, { delayHours: next })} />
                   <span className={styles.unit}>hours after confirmation</span>
                 </div>
               : <>
                 <div className={styles.fieldRow}>
-                  <input type="number" min="1" max="100" step="1" className={styles.number} aria-label="Verified referrals to celebrate" value={recipe.milestoneCount ?? recipe.config.milestoneCount} disabled={busyId === recipe.id} onChange={(event) => updateRecipe(recipe.id, { milestoneCount: event.target.value })} />
+                  <AutomationNumberField label="Verified referrals to celebrate" value={recipe.milestoneCount ?? recipe.config.milestoneCount} min={1} max={100} disabled={busyId === recipe.id} onChange={(next) => updateRecipe(recipe.id, { milestoneCount: next })} />
                   <span className={styles.unit}>verified referrals</span>
                 </div>
                 <div className={styles.fieldRow}>
-                  <input type="number" min="0" max="168" step="1" className={styles.number} aria-label="Hours after the milestone" value={delay} disabled={busyId === recipe.id} onChange={(event) => updateRecipe(recipe.id, { delayHours: event.target.value })} />
+                  <AutomationNumberField label="Hours after the milestone" value={delay} min={0} max={168} disabled={busyId === recipe.id} onChange={(next) => updateRecipe(recipe.id, { delayHours: next })} />
                   <span className={styles.unit}>hours after the milestone</span>
                 </div>
               </>}
