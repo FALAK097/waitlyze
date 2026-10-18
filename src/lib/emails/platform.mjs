@@ -7,11 +7,13 @@ import { env } from "@/lib/env.mjs";
 // uses the workspace's connected provider via createWorkspaceResendSender.
 let client;
 
+/** Reuses a single Resend client for platform-sent product email. */
 function getClient() {
   if (!client) client = new Resend(env.RESEND_API_KEY);
   return client;
 }
 
+/** Sends platform email with an optional reply address and file attachments. */
 export async function sendPlatformEmail({ to, subject, html, replyTo, idempotencyKey, attachments }) {
   const resend = getClient();
   const { error } = await resend.emails.send(

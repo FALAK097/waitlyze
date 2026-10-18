@@ -5,16 +5,19 @@ import { renderFeedbackEmail } from "@/emails/render.jsx";
 import { auth } from "@/lib/auth";
 import { sendPlatformEmail } from "@/lib/emails/platform.mjs";
 import { checkRateLimit } from "@/lib/rate-limit";
+import sharp from "sharp";
 
 const FEEDBACK_INBOX = "hi@falakgala.dev";
 const FEEDBACK_LABELS = ["Idea", "Issue", "Question", "Feature Request", "Complaint", "Other"];
 const MAX_IMAGE_BYTES = 3 * 1024 * 1024;
-const IMAGE_EXTENSIONS = {
+const IMAGE_FORMATS = {
   "image/png": "png",
-  "image/jpeg": "jpg",
+  "image/jpeg": "jpeg",
   "image/webp": "webp",
   "image/gif": "gif",
 };
+const MAX_IMAGE_PIXELS = 20_000_000;
+const MAX_PROCESSED_IMAGE_BYTES = 8 * 1024 * 1024;
 
 /** Validates and emails signed-in product feedback with an optional image attachment. */
 export async function submitFeedback(previous, formData) {
@@ -40,15 +43,28 @@ export async function submitFeedback(previous, formData) {
   const image = formData.get("image");
   let attachment;
   if (image instanceof File && image.size > 0) {
-    const extension = IMAGE_EXTENSIONS[image.type];
-    if (!extension) return { error: "Screenshots must be PNG, JPEG, WebP, or GIF images." };
+    const expectedFormat = IMAGE_FORMATS[image.type];
+    if (!expectedFormat) return { error: "Screenshots must be PNG, JPEG, WebP, or GIF images." };
     if (image.size > MAX_IMAGE_BYTES) return { error: "Keep screenshots under 3 MB." };
-    attachment = {
-      filename: `feedback-screenshot.${extension}`,
-      content: Buffer.from(await image.arrayBuffer()).toString("base64"),
-      contentType: image.type,
-      contentId: "feedback-screenshot",
-    };
+    try {
+      const source = Buffer.from(await image.arrayBuffer());
+      const metadata = await sharp(source, { limitInputPixels: MAX_IMAGE_PIXELS }).metadata();
+      if (metadata.format !== expectedFormat) return { error: "The screenshot file does not match its image type." };
+      const verifiedImage = await sharp(source, { limitInputPixels: MAX_IMAGE_PIXELS })
+        .rotate()
+        .resize({ width: 2048, height: 2048, fit: "inside", withoutEnlargement: true })
+        .png({ compressionLevel: 9 })
+        .toBuffer();
+      if (verifiedImage.byteLength > MAX_PROCESSED_IMAGE_BYTES) return { error: "The processed screenshot is too large to attach." };
+      attachment = {
+        filename: "feedback-screenshot.png",
+        content: verifiedImage.toString("base64"),
+        contentType: "image/png",
+        contentId: "feedback-screenshot",
+      };
+    } catch {
+      return { error: "That file couldn't be decoded as a supported image." };
+    }
   }
 
   const html = await renderFeedbackEmail({

@@ -26,8 +26,8 @@ export function FeedbackForm({ user, open, onOpenChange }) {
   const fileRef = useRef(null);
 
   useEffect(() => {
-    if (typeof window !== "undefined") setPage(`${window.location.pathname}${window.location.search}`);
-  }, []);
+    if (open && typeof window !== "undefined") setPage(`${window.location.pathname}${window.location.search}`);
+  }, [open]);
 
   useEffect(() => () => {
     if (previewUrl) URL.revokeObjectURL(previewUrl);
@@ -45,27 +45,32 @@ export function FeedbackForm({ user, open, onOpenChange }) {
     }
   }, [state, onOpenChange]);
 
+  /** Validates and previews an image selected for the feedback submission. */
   function chooseImage(event) {
     const file = event.target.files?.[0];
     if (!file) return;
     if (!IMAGE_TYPES.includes(file.type)) {
       toast.error("Choose a PNG, JPEG, WebP, or GIF image.");
       event.target.value = "";
+      setPreviewUrl("");
       return;
     }
     if (file.size > MAX_IMAGE_BYTES) {
       toast.error("Keep screenshots under 3 MB.");
       event.target.value = "";
+      setPreviewUrl("");
       return;
     }
     setPreviewUrl(URL.createObjectURL(file));
   }
 
+  /** Clears the selected screenshot and its local preview. */
   function removeImage() {
     setPreviewUrl("");
     if (fileRef.current) fileRef.current.value = "";
   }
 
+  /** Keeps the sheet open while its feedback request is pending. */
   function handleOpenChange(nextOpen) {
     if (!nextOpen && pending) return;
     onOpenChange(nextOpen);

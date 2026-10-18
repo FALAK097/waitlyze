@@ -79,10 +79,12 @@ function WorkspaceSwitcher({ workspaces, selected }) {
   </div>;
 }
 
+/** Account dropdown with sign-out and feedback actions. */
 function AccountMenu({ user, avatar }) {
   const router = useRouter();
   const [pending, setPending] = useState(false);
   const [feedbackOpen, setFeedbackOpen] = useState(false);
+  /** Signs out the current user and returns them to the public home page. */
   async function leave() {
     setPending(true);
     try {
