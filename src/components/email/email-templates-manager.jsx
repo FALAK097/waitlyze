@@ -15,6 +15,7 @@ const kinds = [
 export function EmailTemplatesManager({ waitListId, initialTemplates }) {
   const [current, setCurrent] = useState("signup");
   const [drafts, setDrafts] = useState(initialTemplates);
+  const [saved, setSaved] = useState(initialTemplates);
   const [dirty, setDirty] = useState(false);
   const [pending, setPending] = useState(null);
   const [busy, setBusy] = useState("");
@@ -32,7 +33,7 @@ export function EmailTemplatesManager({ waitListId, initialTemplates }) {
     setCurrent(key); setPending(null);
   }
   function discard() {
-    setDrafts((items) => ({ ...items, [current]: initialTemplates[current] }));
+    setDrafts((items) => ({ ...items, [current]: saved[current] }));
     setDirty(false); setCurrent(pending); setPending(null);
   }
   async function exportMessage() {
@@ -46,7 +47,9 @@ export function EmailTemplatesManager({ waitListId, initialTemplates }) {
       const content = await exportMessage();
       const response = await upsertEmailTemplate({ waitListId, templateType: current, data: { subject: template.subject, previewText: template.previewText, ...content } });
       if (!response.success) throw new Error(response.message);
-      setDrafts((items) => ({ ...items, [current]: { ...items[current], ...response.template } }));
+      const savedTemplate = { ...template, ...response.template };
+      setDrafts((items) => ({ ...items, [current]: savedTemplate }));
+      setSaved((items) => ({ ...items, [current]: savedTemplate }));
       setDirty(false);
       toast.success("Email saved.");
     } catch (error) { toast.error(error.message || "Couldn't save the email."); }

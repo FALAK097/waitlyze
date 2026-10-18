@@ -12,6 +12,7 @@ export async function retryFailedVerification({ waitListId, signupIds }) {
   const { campaign } = await requireCampaign(waitListId, "sendEmail");
   if (campaign.status !== "PUBLISHED") return { ok: false, message: "Publish the waitlist before resending confirmation emails." };
   const results = [];
+  let failures = 0;
   for (const signupId of signupIds) {
     let eventKey;
     try {
@@ -33,11 +34,14 @@ export async function retryFailedVerification({ waitListId, signupIds }) {
       });
     } catch (error) {
       console.error("Could not retry verification delivery", error);
+      failures++;
     }
     if (!eventKey) { results.push({ id: signupId, queued: false }); continue; }
     await dispatchVerificationNow(eventKey);
     results.push({ id: signupId, queued: true });
   }
   const queued = results.filter((item) => item.queued).length;
-  return { ok: true, queued, skipped: results.length - queued, message: queued ? `Retried ${queued} confirmation email${queued === 1 ? "" : "s"}. Check the email status for the result.` : "No eligible failed confirmation emails. Check the status or try again later." };
+  const skipped = results.length - queued - failures;
+  if (failures) return { ok: false, queued, skipped, failed: failures, message: `Could not retry ${failures} confirmation email${failures === 1 ? "" : "s"}.${queued ? ` ${queued} other retry${queued === 1 ? " was" : "ies were"} queued.` : " Try again later."}` };
+  return { ok: true, queued, skipped, message: queued ? `Retried ${queued} confirmation email${queued === 1 ? "" : "s"}. Check the email status for the result.` : "No eligible failed confirmation emails. Check the status or try again later." };
 }

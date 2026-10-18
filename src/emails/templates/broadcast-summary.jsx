@@ -1,7 +1,7 @@
 import { DetailList, EmailLayout, FallbackLink, Muted, Paragraph, PrimaryLink } from "../layout";
 
 export function BroadcastSummaryEmail({ waitlistName, subject, status, delivered, failed, skipped, canceled, url }) {
-  const failedTotal = failed + canceled;
+  const allAccepted = status === "SENT" && failed === 0 && skipped === 0 && canceled === 0;
   const heading = status === "SENT" ? (delivered === 1 ? "Your broadcast landed." : `Your broadcast reached ${delivered.toLocaleString("en-US")} people.`) : status === "CANCELED" ? "Broadcast canceled." : "Broadcast needs attention.";
   return (
     <EmailLayout
@@ -10,7 +10,7 @@ export function BroadcastSummaryEmail({ waitlistName, subject, status, delivered
       footer="You’re receiving this because you send email from a Waitlyze workspace."
     >
       <Paragraph>
-        {status === "SENT" && failedTotal === 0
+        {allAccepted
           ? `Every opted-in subscriber on ${waitlistName} was accepted by the sender. Nothing else to do here.`
           : status === "SENT"
             ? `Most of “${subject}” went out. The addresses below were skipped or rejected — they won’t be retried.`
@@ -21,7 +21,8 @@ export function BroadcastSummaryEmail({ waitlistName, subject, status, delivered
       <DetailList items={[
         { label: "Delivered", value: `${delivered.toLocaleString("en-US")} accepted` },
         { label: "Skipped", value: `${skipped.toLocaleString("en-US")}` },
-        { label: "Failed", value: `${failedTotal.toLocaleString("en-US")}` },
+        { label: "Failed", value: `${failed.toLocaleString("en-US")}` },
+        { label: "Canceled", value: `${canceled.toLocaleString("en-US")}` },
       ]} />
       <PrimaryLink href={url}>Open broadcast report</PrimaryLink>
       <Muted>“Delivered” means the email service accepted the message. Inbox placement depends on the recipient’s provider.</Muted>

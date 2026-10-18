@@ -2,6 +2,10 @@ import sanitizeHtml from "sanitize-html";
 import { escapeHtmlText, renderEmailMarkdown } from "../email-markdown.mjs";
 
 const allowedTags = ["html", "head", "body", "meta", "title", "div", "span", "table", "thead", "tbody", "tfoot", "tr", "th", "td", "h1", "h2", "h3", "h4", "h5", "h6", "p", "br", "hr", "a", "img", "strong", "b", "em", "i", "u", "s", "blockquote", "ul", "ol", "li", "pre", "code", "section", "footer"];
+const spacingValues = [/^[\d.\s]+(?:px|em|rem|%)?(?:\s+[\d.]+(?:px|em|rem|%)?)*$/];
+const borderValues = [/^[\w\s#.(),%-]+$/];
+const boxSpacingStyles = Object.fromEntries(["", "-top", "-bottom", "-left", "-right"].flatMap((side) => [[`padding${side}`, spacingValues], [`margin${side}`, spacingValues]]));
+const borderStyles = Object.fromEntries(["", "-top", "-bottom", "-left", "-right"].map((side) => [`border${side}`, borderValues]));
 const options = {
   allowedTags,
   allowedAttributes: {
@@ -26,13 +30,12 @@ const options = {
       "text-align": [/^(?:left|right|center)$/],
       "text-decoration": [/^(?:none|underline|line-through)$/],
       "letter-spacing": [/^-?[\d.]+(?:px|em)$/],
-      "padding(?:-(?:top|bottom|left|right))?": [/^[\d.\s]+(?:px|em|rem|%)?(?:\s+[\d.]+(?:px|em|rem|%)?)*$/],
-      "margin(?:-(?:top|bottom|left|right))?": [/^[\d.\s]+(?:px|em|rem|%)?(?:\s+[\d.]+(?:px|em|rem|%)?)*$/],
+      ...boxSpacingStyles,
       "max-width": [/^[\d.]+(?:px|%)$/],
       width: [/^[\d.]+(?:px|%)$/],
       height: [/^[\d.]+(?:px|%)$/],
       "border-radius": [/^[\d.]+px$/],
-      "border(?:-(?:top|bottom|left|right))?": [/^[\w\s#.(),%-]+$/],
+      ...borderStyles,
       display: [/^(?:block|inline-block|table|table-cell|none)$/],
     },
   },

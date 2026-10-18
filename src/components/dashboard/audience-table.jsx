@@ -372,8 +372,8 @@ export function AudienceTable({ waitlist, initialReviews = [], initialReviewsFai
         <footer className="product-audience-pagination">
           <span aria-live="polite" aria-atomic="true">{showingStart}–{showingEnd} of {result.total}</span>
           <div className="flex gap-2">
-            <Button variant="outline" disabled={pageIndex === 0 || isUpdating} onClick={() => setPageIndex((current) => Math.max(0, current - 1))}>Previous</Button>
-            <Button variant="outline" disabled={!result.nextCursor || isUpdating} onClick={() => { setCursors((current) => [...current.slice(0, pageIndex + 1), result.nextCursor]); setPageIndex((current) => current + 1); }}>Next</Button>
+            <Button variant="outline" disabled={pageIndex === 0 || isUpdating} onClick={() => { setSelectedIds([]); setPageIndex((current) => Math.max(0, current - 1)); }}>Previous</Button>
+            <Button variant="outline" disabled={!result.nextCursor || isUpdating} onClick={() => { setSelectedIds([]); setCursors((current) => [...current.slice(0, pageIndex + 1), result.nextCursor]); setPageIndex((current) => current + 1); }}>Next</Button>
           </div>
         </footer>
       </div>
