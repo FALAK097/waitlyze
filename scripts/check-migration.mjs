@@ -13,6 +13,7 @@ await admin.connect();
 const created = [];
 const prisma = "node_modules/prisma/build/index.js";
 const migration = "20261011000000_campaign_product_revamp";
+/** Runs a Prisma CLI subcommand against a specific database URL and throws with captured output on failure. */
 function runPrisma(args, databaseUrl) {
   const result = spawnSync(process.execPath, [prisma, ...args], {
     env: { ...process.env, DATABASE_URL: databaseUrl }, encoding: "utf8",
@@ -68,7 +69,7 @@ try {
         await db.query(await readFile("prisma/migrations/20261012000000_workspace_audit/migration.sql", "utf8"));
         assert.equal((await db.query("SELECT to_regclass('public.workspace_audit_events') AS table_name")).rows[0].table_name, "workspace_audit_events");
         // Later additive migrations must also apply cleanly on the upgraded legacy schema.
-        for (const name of ["20261014081346_phase0_attribution_points", "20261014083000_phase0_impression_dedupe", "20261016101137_phase4_points_ledger", "20261016103339_phase4_signup_ip_index", "20261016164519_analytics_impression_time_index", "20261017153000_impression_region"]) {
+        for (const name of ["20261014081346_phase0_attribution_points", "20261014083000_phase0_impression_dedupe", "20261016101137_phase4_points_ledger", "20261016103339_phase4_signup_ip_index", "20261016164519_analytics_impression_time_index", "20261017153000_impression_region", "20261018073758_share_events"]) {
           await db.query(await readFile(`prisma/migrations/${name}/migration.sql`, "utf8"));
         }
         // The dedupe migration keeps the earliest impression and repoints signups.

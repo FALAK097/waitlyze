@@ -10,6 +10,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
+/** Share panel exposing the member's referral link through copy and social-share actions. */
 export const ReferralPreview = ({
 	signUp,
 	waitList,
@@ -21,7 +22,17 @@ export const ReferralPreview = ({
 	const shareText = `I'm on the waitlist for ${waitList.name.charAt(0).toUpperCase() + waitList.name.slice(1)
 		}! Join me and move up in line: ${referralLink}`;
 
+	/** Fire-and-forget request that records a share event for the preview's unique referral code. */
+	const recordShare = () => {
+		fetch("/api/v1/shares", {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({ waitListId: waitList.id, code: signUp.uniqueUserId }),
+		}).catch(() => {});
+	};
+
 	const shareOnFacebook = () => {
+		recordShare();
 		const facebookUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(
 			referralLink,
 		)}&quote=${encodeURIComponent(shareText)}`;
@@ -29,6 +40,7 @@ export const ReferralPreview = ({
 	};
 
 	const shareOnLinkedin = () => {
+		recordShare();
 		const linkedinUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(
 			referralLink,
 		)}`;
@@ -36,6 +48,7 @@ export const ReferralPreview = ({
 	};
 
 	const shareOnEmail = () => {
+		recordShare();
 		const subject = `Join me on the waitlist for ${waitList.name}`;
 		const emailUrl = `mailto:?subject=${encodeURIComponent(
 			subject,
@@ -44,6 +57,7 @@ export const ReferralPreview = ({
 	};
 
 	const shareOnReddit = () => {
+		recordShare();
 		const redditUrl = `https://www.reddit.com/submit?url=${encodeURIComponent(
 			referralLink,
 		)}&title=${encodeURIComponent(shareText)}`;
@@ -51,6 +65,7 @@ export const ReferralPreview = ({
 	};
 
 	const shareOnTwitter = () => {
+		recordShare();
 		const text = `I'm on the waitlist for ${waitList.name.charAt(0).toUpperCase() + waitList.name.slice(1)
 			}! Join me and move up in line: ${referralLink}`;
 		const xUrl = `https://x.com/intent/post?text=${text}`;
@@ -58,6 +73,7 @@ export const ReferralPreview = ({
 	};
 
 	const shareOnWhatsApp = () => {
+		recordShare();
 		const text = `I'm on the waitlist for ${waitList.name.charAt(0).toUpperCase() + waitList.name.slice(1)
 			}! Join me and move up in line: ${referralLink}`;
 		const whatsAppUrl = `https://wa.me/?text=${text}`;
@@ -65,6 +81,7 @@ export const ReferralPreview = ({
 	};
 
 	const shareOnInstagram = () => {
+		recordShare();
 		const text = `I'm on the waitlist for ${waitList.name.charAt(0).toUpperCase() + waitList.name.slice(1)
 			}! Join me and move up in line: ${referralLink}`;
 		// Since Instagram doesn't have a direct sharing API, we'll copy the text to clipboard
@@ -222,8 +239,12 @@ export const ReferralPreview = ({
 		return () => clearInterval(interval);
 	}, [getTotalSignUpsOnWaitList]);
 
+	/** Copies the referral link, recording a share only when the clipboard write resolves. */
 	const copyToClipboard = () => {
-		navigator.clipboard.writeText(referralLink);
+		navigator.clipboard
+			.writeText(referralLink)
+			.then(() => recordShare())
+			.catch(() => {});
 		toast.success("Copied to clipboard");
 	};
 

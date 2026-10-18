@@ -332,7 +332,7 @@
 .waitlist-analytics-view button { min-height: 36px; padding: 6px 10px; border: 0; border-radius: 7px; background: transparent; color: var(--product-text-secondary); font: inherit; font-size: .75rem; font-weight: 550; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
 .waitlist-analytics-view button[aria-pressed="true"] { background: var(--product-bg-inset); color: var(--product-text-primary); }
 .waitlist-analytics-overview, .waitlist-analytics-data-panel { min-width: 0; overflow: hidden; border: 1px solid var(--product-border-subtle); border-radius: 14px; background: var(--product-bg-surface); box-shadow: 0 1px 2px hsl(0 0% 0% / .025); }
-.waitlist-analytics-metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(132px, 1fr)); margin: 0; border-bottom: 1px solid var(--product-border-subtle); }
+.waitlist-analytics-metrics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); margin: 0; border-bottom: 1px solid var(--product-border-subtle); }
 .waitlist-analytics-metric { position: relative; display: grid; align-content: start; min-width: 0; min-height: 110px; gap: 2px; padding: 17px 16px 14px; }
 .waitlist-analytics-metric + .waitlist-analytics-metric { border-inline-start: 1px solid var(--product-border-subtle); }
 .waitlist-analytics-metric dt { overflow: hidden; color: var(--product-text-secondary); font-size: .75rem; text-overflow: ellipsis; white-space: nowrap; }
@@ -340,6 +340,29 @@
 .waitlist-analytics-comparison { display: flex; align-items: center; gap: 4px; min-width: 0; padding-block-start: 3px; color: var(--product-text-secondary); font-size: .6875rem; font-weight: 500; line-height: 1.35; }
 .waitlist-analytics-comparison.is-up { color: var(--product-success-text); }
 .waitlist-analytics-comparison.is-down { color: var(--product-danger-text); }
+.waitlist-analytics-benchmark { display: inline-flex; width: fit-content; margin-block-start: 5px; padding: 2px 8px; border-radius: 999px; background: var(--product-bg-inset); color: var(--product-text-secondary); font-size: .625rem; font-weight: 650; line-height: 1.5; letter-spacing: .02em; text-transform: uppercase; }
+.waitlist-analytics-benchmark.is-above { background: color-mix(in srgb, var(--product-green-700) 14%, var(--product-bg-surface)); color: var(--product-green-700); }
+.waitlist-analytics-benchmark.is-below { background: color-mix(in srgb, var(--product-red-700) 10%, var(--product-bg-surface)); color: var(--product-red-700); }
+.waitlist-analytics-overview { container: waitlist-kpi / inline-size; }
+.waitlist-analytics-metric:nth-child(4), .waitlist-analytics-metric:nth-child(7) { border-inline-start: 0; }
+.waitlist-analytics-metric:nth-child(n+4) { border-top: 1px solid var(--product-border-subtle); }
+@container waitlist-kpi (min-width: 528px) {
+  .waitlist-analytics-metrics { grid-template-columns: repeat(auto-fit, minmax(132px, 1fr)); }
+  .waitlist-analytics-metric:nth-child(4) { border-inline-start: 1px solid var(--product-border-subtle); border-top: 0; }
+  .waitlist-analytics-metric:nth-child(5) { border-inline-start: 0; }
+  .waitlist-analytics-metric:nth-child(7) { border-inline-start: 1px solid var(--product-border-subtle); }
+}
+@container waitlist-kpi (min-width: 660px) {
+  .waitlist-analytics-metric:nth-child(5) { border-inline-start: 1px solid var(--product-border-subtle); border-top: 0; }
+  .waitlist-analytics-metric:nth-child(6) { border-inline-start: 0; }
+}
+@container waitlist-kpi (min-width: 792px) {
+  .waitlist-analytics-metric:nth-child(6) { border-inline-start: 1px solid var(--product-border-subtle); border-top: 0; }
+  .waitlist-analytics-metric:nth-child(7) { border-inline-start: 0; }
+}
+@container waitlist-kpi (min-width: 924px) {
+  .waitlist-analytics-metric:nth-child(7) { border-inline-start: 1px solid var(--product-border-subtle); border-top: 0; }
+}
 .waitlist-analytics-chart-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 17px 18px 2px; }
 .waitlist-analytics-chart-toolbar h3 { font-size: .875rem; font-weight: 600; }
 .waitlist-analytics-chart-toolbar p { padding-block-start: 2px; color: var(--product-text-secondary); font-size: .6875rem; }
@@ -460,10 +483,7 @@
   .waitlist-analytics-header { align-items: stretch; flex-direction: column; }
   .waitlist-analytics-controls { justify-content: space-between; }
   .waitlist-analytics-range-trigger { width: 100%; }
-  .waitlist-analytics-metrics { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .waitlist-analytics-metric { min-height: 102px; padding: 14px 11px 12px; }
-  .waitlist-analytics-metric:nth-child(4) { border-inline-start: 0; }
-  .waitlist-analytics-metric:nth-child(n+4) { border-top: 1px solid var(--product-border-subtle); }
   .waitlist-analytics-metric dd { font-size: 1.3rem; }
   .waitlist-analytics-chart-toolbar { align-items: flex-start; flex-direction: column; }
   .waitlist-analytics-toolbar-controls { align-self: stretch; }

@@ -73,12 +73,20 @@ function Comparison({ value }) {
   </small>;
 }
 
-function Metric({ label, value, change, detail }) {
+function Metric({ label, value, change, detail, badge }) {
   return <div className="waitlist-analytics-metric" title={detail}>
     <dt>{label}</dt>
     <dd>{value}</dd>
     {change !== undefined ? <Comparison value={change} /> : <small className="waitlist-analytics-comparison is-neutral">{detail}</small>}
+    {badge}
   </div>;
+}
+
+function BenchmarkBadge({ rate, benchmark, note }) {
+  const verdict = rate >= benchmark ? "above" : "below";
+  return <small className={`waitlist-analytics-benchmark is-${verdict}`} title={note}>
+    {verdict === "above" ? "Above" : "Below"} ~{benchmark}%
+  </small>;
 }
 
 function DimensionPicker({ label, options, value, onChange }) {
@@ -221,6 +229,7 @@ function AnalyticsSkeleton() {
   </div>;
 }
 
+/** Overview dashboard with KPI metrics, benchmark badges, and range-scoped activity charts. */
 export function WaitlistAnalytics({ waitListId, emailsEnabled = false }) {
   const [{ range, from, to }, setRangeState] = useQueryStates(rangeQueryOptions, { history: "push" });
   const [retryCount, setRetryCount] = useState(0);
@@ -284,10 +293,17 @@ export function WaitlistAnalytics({ waitListId, emailsEnabled = false }) {
   const currentAnalytics = analytics && rangeMatches(analytics) ? analytics : null;
   const summary = currentAnalytics?.summary;
   const referrals = currentAnalytics?.referrals;
+  const kFactor = currentAnalytics?.kFactor;
   const series = currentAnalytics?.series ?? [];
   const noActivity = summary && summary.visitors === 0 && summary.signups === 0;
   const conversion = summary?.conversionRate == null ? "—" : `${summary.conversionRate}%`;
   const verification = summary?.verificationRate == null ? "—" : `${summary.verificationRate}%`;
+  const kFactorValue = kFactor?.value == null ? "—" : kFactor.value >= 0.01 ? kFactor.value.toFixed(2) : "<0.01";
+  const invitesPerSignup = kFactor?.invitesPerSignup ?? 0;
+  const invitesLabel = invitesPerSignup === 0 ? "0.00" : invitesPerSignup >= 0.01 ? invitesPerSignup.toFixed(2) : "<0.01";
+  const kFactorDetail = kFactor?.value == null
+    ? "No share or link data yet"
+    : `${invitesLabel} share × ${(kFactor.shareConversion ?? 0).toFixed(1)}% join`;
   const acquisition = currentAnalytics ? {
     referrers: { rows: currentAnalytics.sources.referrers, empty: "No referrer data in this period." },
     campaigns: { rows: currentAnalytics.sources.campaigns, empty: "No campaign data in this period." },
@@ -335,9 +351,10 @@ export function WaitlistAnalytics({ waitListId, emailsEnabled = false }) {
         <dl className="waitlist-analytics-metrics">
           <Metric label="Visitors" value={number.format(summary.visitors)} change={summary.change?.visitors} detail="Distinct stored browsers" />
           <Metric label="Signups" value={number.format(summary.signups)} change={summary.change?.signups} detail="People who joined" />
-          <Metric label="Conversion" value={conversion} change={summary.change?.conversionRate} detail="Visitors who signed up" />
-          <Metric label="Verification" value={verification} change={summary.change?.verificationRate} detail={`${number.format(summary.verifiedSignups)} verified`} />
+          <Metric label="Conversion" value={conversion} change={summary.change?.conversionRate} detail="Visitors who signed up" badge={summary.conversionRate == null ? null : <BenchmarkBadge rate={summary.conversionRate} benchmark={11} note="Industry median conversion ≈ 11%" />} />
+          <Metric label="Verification" value={verification} change={summary.change?.verificationRate} detail={`${number.format(summary.verifiedSignups)} verified`} badge={summary.verificationRate == null ? null : <BenchmarkBadge rate={summary.verificationRate} benchmark={55} note="Industry median verification ≈ 55%" />} />
           <Metric label="Referrals" value={number.format(referrals?.referred ?? 0)} detail={referralShareLabel} />
+          <Metric label="K-factor" value={kFactorValue} detail={kFactorDetail} />
           <Metric label="Points awarded" value={number.format(summary.pointsTotal)} detail={`${number.format(summary.pointsSignup)} join · ${number.format(summary.pointsReferral)} referral`} />
         </dl>
 

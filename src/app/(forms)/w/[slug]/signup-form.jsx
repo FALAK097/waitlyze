@@ -14,6 +14,7 @@ import { MARKETING_CONSENT_COPY } from "@/lib/campaigns/marketing-consent.mjs";
 import { collectAttribution } from "@/utils/attribution";
 import styles from "@/components/product/waitlist-signup.module.css";
 
+/** Waitlist signup form: validates input, submits the signup, and shows the referral result. */
 export function SignupForm({ slug, waitListId, showReferrals, label, buttonText, thankYou }) {
   const searchParams = useSearchParams();
   const referralCode = searchParams.get("r");
@@ -62,6 +63,7 @@ export function SignupForm({ slug, waitListId, showReferrals, label, buttonText,
         notice: `We sent a confirmation link to ${email}. Confirm your email to secure your place on the waitlist.`,
         position: typeof rank === "number" ? rank : null,
         referralLink,
+        referralCode: code ?? null,
       });
       setCopied(false);
       form.reset();
@@ -72,10 +74,16 @@ export function SignupForm({ slug, waitListId, showReferrals, label, buttonText,
     }
   }
 
+  /** Copies the personal referral link and records a share event only after the clipboard write succeeds. */
   async function copyReferralLink() {
     if (!result?.referralLink) return;
     try {
       await navigator.clipboard.writeText(result.referralLink);
+      fetch("/api/v1/shares", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ waitListId, code: result.referralCode ?? "" }),
+      }).catch(() => {});
       setCopied(true);
     } catch {
       toast.error("Copy didn't work — long-press the link to copy it manually.");
