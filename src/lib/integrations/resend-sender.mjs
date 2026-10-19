@@ -15,10 +15,10 @@ export function createWorkspaceResendSender({ db, defaults, createClient }) {
     }
     return configByWorkspace.get(cacheKey);
   };
-  return async ({ to, subject, html, headers, idempotencyKey, workspaceId }) => {
+  return async ({ to, subject, html, text, headers, idempotencyKey, workspaceId }) => {
     const cacheKey = workspaceId || "default";
     const provider = (await resolveProvider(workspaceId, cacheKey)) || defaults;
     const resend = createClient(provider.apiKey);
-    return resend.emails.send({ from: provider.fromEmail, to, subject, replyTo: defaults.replyTo, html, ...(headers ? { headers } : {}) }, { idempotencyKey });
+    return resend.emails.send({ from: provider.fromEmail, to, subject, replyTo: provider.replyTo || defaults.replyTo, html, ...(text ? { text } : {}), ...(headers ? { headers } : {}) }, { idempotencyKey });
   };
 }

@@ -1,6 +1,10 @@
+import { createHash } from "node:crypto";
 import { createUnsubscribeToken } from "./unsubscribe.mjs";
 import { dispatchAutomationStep, processAutomationTrigger } from "./automations.mjs";
 import { applyKnownProviderEvents } from "./suppression.mjs";
+import { subscriberEmailHtml } from "./composer.mjs";
+import { renderSubscriberVerification } from "../../emails/render.jsx";
+import { notifyBroadcastSummary } from "../emails/founder-notifications.mjs";
 
 const MAX_ATTEMPTS = 6;
 const STALE_LOCK_MS = 5 * 60 * 1000;
@@ -14,10 +18,6 @@ const normalizeEmail = (email) => String(email || "").trim().toLowerCase();
 
 function escapeHtml(value) {
   return String(value).replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]);
-}
-
-function verificationHtml({ campaignName, url }) {
-  return `<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>Confirm your spot</title><body style="margin:0;background:#f5f5f1;color:#191919;font:16px/1.6 Arial,sans-serif"><main style="max-width:560px;margin:48px auto;padding:32px;background:white;border:1px solid #e8e8e2;border-radius:16px"><p style="margin:0 0 24px;color:#70706a;font-size:13px">WAITLYZE</p><h1 style="font-size:26px;line-height:1.2">Confirm your email</h1><p>Confirm this address to secure your place on <strong>${escapeHtml(campaignName)}</strong>.</p><p style="margin:28px 0"><a href="${escapeHtml(url)}" style="display:inline-block;padding:12px 18px;border-radius:8px;background:#d7ff64;color:#191919;text-decoration:none;font-weight:700">Confirm email</a></p><p style="color:#70706a;font-size:13px">This link expires in 24 hours. If you did not request a spot, you can ignore this email.</p></main></body></html>`;
 }
 
 function broadcastHtml({ campaignName, previewText, body, unsubscribeUrl }) {
@@ -35,7 +35,13 @@ async function finishBroadcastIfReady(db, broadcastId, now) {
     db.broadcastRecipient.count({ where: { broadcastId, status: "CANCELED" } }),
   ]);
   const status = canceled && !delivered && !failed && !skipped ? "CANCELED" : delivered ? "SENT" : canceled ? "CANCELED" : "FAILED";
-  await db.marketingBroadcast.updateMany({ where: { id: broadcastId, status: "SENDING" }, data: { status, sentAt: now } });
+  const transitioned = await db.marketingBroadcast.updateMany({ where: { id: broadcastId, status: "SENDING" }, data: { status, sentAt: now } });
+  // Only the caller that flips the broadcast out of SENDING reports the result,
+  // so one send produces exactly one delivery summary to the workspace owners.
+  if (transitioned.count === 1) {
+    try { await notifyBroadcastSummary(db, broadcastId); }
+    catch (error) { console.error("Broadcast summary notice failed", error?.message || "unknown error"); }
+  }
 }
 
 async function dispatchBroadcast(db, event, payload, send, now, attempt, result) {
@@ -83,7 +89,10 @@ async function dispatchBroadcast(db, event, payload, send, now, attempt, result)
     const response = await send({
       to: recipient.email,
       subject: broadcast.subject,
-      html: broadcastHtml({ campaignName: waitList.name || "Waitlist", previewText: broadcast.previewText, body: broadcast.body, unsubscribeUrl }),
+       html: broadcast.renderedHtml
+         ? subscriberEmailHtml({ name: waitList.name || "Waitlist", content: broadcast.renderedHtml, previewText: broadcast.previewText, unsubscribeUrl })
+         : broadcastHtml({ campaignName: waitList.name || "Waitlist", previewText: broadcast.previewText, body: broadcast.body, unsubscribeUrl }),
+       text: broadcast.renderedText ? `${broadcast.renderedText.trim()}\n\nUnsubscribe: ${unsubscribeUrl}` : undefined,
       headers: { "List-Unsubscribe": `<${unsubscribeUrl}>`, "List-Unsubscribe-Post": "List-Unsubscribe=One-Click" },
       idempotencyKey: event.eventKey,
       workspaceId: waitList.workspaceId,
@@ -161,7 +170,7 @@ export async function dispatchPendingOutboxEvents(db, { send, now = new Date(), 
     }
     const [signup, verification, waitList] = await Promise.all([
       db.signUp.findUnique({ where: { id: payload.signUpId }, select: { id: true, email: true, emailNormalized: true, verifiedAt: true } }),
-      db.signUpVerification.findFirst({ where: { signUpId: payload.signUpId, usedAt: null, expiresAt: { gt: now } }, select: { id: true } }),
+      db.signUpVerification.findFirst({ where: { signUpId: payload.signUpId, tokenHash: createHash("sha256").update(payload.token).digest("hex"), usedAt: null, expiresAt: { gt: now } }, select: { id: true } }),
       db.waitList.findUnique({ where: { id: event.waitListId || payload.waitListId }, select: { id: true, name: true, publicSlug: true, status: true, workspaceId: true } }),
     ]);
     if (!signup || signup.verifiedAt || !verification || !waitList || waitList.status !== "PUBLISHED") {
@@ -179,7 +188,8 @@ export async function dispatchPendingOutboxEvents(db, { send, now = new Date(), 
       const response = await send({
         to: signup.email,
         subject: `Confirm your spot on ${waitList.name || "the waitlist"}`,
-        html: verificationHtml({ campaignName: waitList.name || "the waitlist", url: `${String(process.env.BETTER_AUTH_URL || "").replace(/\/$/, "")}/verify/${encodeURIComponent(payload.token)}${waitList.publicSlug ? `?returnTo=${encodeURIComponent(`/w/${waitList.publicSlug}`)}` : ""}` }),
+        html: await renderSubscriberVerification({ waitlistName: waitList.name || "the waitlist", url: `${String(process.env.BETTER_AUTH_URL || "").replace(/\/$/, "")}/verify/${encodeURIComponent(payload.token)}${waitList.publicSlug ? `?returnTo=${encodeURIComponent(`/w/${waitList.publicSlug}`)}` : ""}` }),
+        text: `Confirm your email to secure your place on ${waitList.name || "the waitlist"}. Open this link within 24 hours: ${String(process.env.BETTER_AUTH_URL || "").replace(/\/$/, "")}/verify/${encodeURIComponent(payload.token)}`,
         idempotencyKey: event.eventKey,
         workspaceId: waitList.workspaceId,
       });
@@ -188,7 +198,11 @@ export async function dispatchPendingOutboxEvents(db, { send, now = new Date(), 
       if (!providerMessageId) throw Object.assign(new Error("Provider accepted no message id"), { code: "MISSING_PROVIDER_ID" });
       await db.outboxEvent.update({ where: { id: event.id }, data: { status: "DELIVERED", providerMessageId, processedAt: now, lockedAt: null, payload: { signUpId: payload.signUpId, waitListId: waitList.id }, lastErrorCode: null } });
       result.accepted++;
-      await applyKnownProviderEvents(db, providerMessageId, waitList.workspaceId, signup.emailNormalized || signup.email);
+      try {
+        await applyKnownProviderEvents(db, providerMessageId, waitList.workspaceId, signup.emailNormalized || signup.email);
+      } catch (error) {
+        console.error("Could not apply provider suppression event:", error?.message || "unknown error");
+      }
     } catch (error) {
       const code = String(error?.code || error?.name || "PROVIDER_ERROR").replace(/[^A-Za-z0-9_.-]/g, "").slice(0, 80) || "PROVIDER_ERROR";
       const isVerificationEvent = event.type === "SIGNUP_VERIFICATION_REQUESTED";

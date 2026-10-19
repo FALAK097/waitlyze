@@ -8,7 +8,7 @@ export function WorkspaceInvitationEmail({ inviterName, workspaceName, role, url
       footer="If you weren’t expecting this invitation, you can safely ignore this email."
     >
       <Paragraph>
-        <strong>{inviterName}</strong> invited you to join <strong>{workspaceName}</strong> on Waitlyze.
+        <strong>{inviterName}</strong> has invited you into <strong>{workspaceName}</strong> on Waitlyze. Join the team to work on waitlists, subscribers, and launch performance together.
       </Paragraph>
       <DetailList
         items={[
@@ -18,7 +18,7 @@ export function WorkspaceInvitationEmail({ inviterName, workspaceName, role, url
         ]}
       />
       <PrimaryLink href={url}>Accept invitation</PrimaryLink>
-      <Muted>This invitation link can only be used once and expires in seven days.</Muted>
+      <Muted>This private invitation expires in seven days and can be used once. If you weren’t expecting it, you can safely ignore this message.</Muted>
       <FallbackLink href={url} />
     </EmailLayout>
   );

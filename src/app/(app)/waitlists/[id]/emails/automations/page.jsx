@@ -15,6 +15,6 @@ export default async function AutomationsPage({ params }) {
   const data = await getAutomationConsole(campaign.id);
   return <ContentLayout title="Automations">
     <EmailToolsNav waitListId={campaign.id} current="automations" />
-    <AutomationManager waitListId={campaign.id} initialRecipes={data.recipes} initialRuns={data.runs} deliveryReady={Boolean(env.OUTBOX_DISPATCH_SECRET && env.RESEND_API_KEY)} />
+    <AutomationManager waitListId={campaign.id} initialRecipes={data.recipes} deliveryReady={Boolean(env.OUTBOX_DISPATCH_SECRET && env.RESEND_API_KEY)} />
   </ContentLayout>;
 }

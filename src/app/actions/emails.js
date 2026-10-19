@@ -8,6 +8,8 @@ import { AUDIT_ACTIONS, recordWaitlistAuditEvent } from "@/lib/workspaces/audit.
 import { consumePublicBudget, PublicRateLimitError } from "@/lib/security/public-rate-limit.mjs";
 import { getCampaignPosition } from "@/lib/campaigns/referral-position.mjs";
 import { escapeHtmlText, renderEmailMarkdown } from "@/lib/email-markdown.mjs";
+import { interpolateEmail, legacyEmailContent, subscriberEmailHtml, validateComposerContent } from "@/lib/email/composer.mjs";
+import { notifyBroadcastSummary } from "@/lib/emails/founder-notifications.mjs";
 import { Resend } from 'resend';
 import { headers } from "next/headers";
 import { revalidatePath } from "next/cache";
@@ -19,7 +21,7 @@ const platformSender = { apiKey: env.RESEND_API_KEY, fromEmail: env.RESEND_FROM_
 // fallback so delivery never silently stops.
 async function senderForWaitlist(waitListId) {
   const waitlist = await prisma.waitList.findUnique({ where: { id: waitListId }, select: { workspaceId: true } });
-  const provider = await resolveWorkspaceEmailSender(prisma, waitlist?.workspaceId, null).catch(() => null);
+  const provider = await resolveWorkspaceEmailSender(prisma, waitlist?.workspaceId, null);
   return provider || platformSender;
 }
 
@@ -30,21 +32,20 @@ const TYPE_MAP = {
 
 const DEFAULTS = {
   signup: {
-    subject: "Welcome to {{waitlist}}!",
-    previewText: "Join our exclusive waitlist",
-    header: "Welcome Aboard!",
-    subHeader: "We're excited to have you",
-    mainBody: "Thanks for joining {{waitlist}}.\n\nPlease verify your email to secure your spot.",
-    subBody: "You're currently #{{position}} in line",
+    subject: "You're on the {{waitlist}} list",
+    previewText: "Your place is confirmed. Here's your personal link.",
+    header: "You're on the list.",
+    subHeader: "Welcome to {{waitlist}}",
+    mainBody: "Thanks for joining {{waitlist}}. You're currently #{{position}} in line.\n\nInvite a friend with your personal link: {{referral_link}}",
+    subBody: "We'll be in touch when there's news.",
   },
   offboarding: {
-    subject: "You're off the {{waitlist}} Waitlist!",
-    previewText: "Congratulations! Time for the next step.",
-    header: "Next Steps",
-    subHeader: "{{waitlist}} is now open!",
-    mainBody:
-      "We're excited to announce that {{waitlist}} is now open for everyone. We've got some exciting news to share with you.",
-    subBody: "We'll see you on the other side!",
+    subject: "A note from {{waitlist}}",
+    previewText: "An update about your place on the waitlist.",
+    header: "A note about your place",
+    subHeader: "{{waitlist}}",
+    mainBody: "We're writing with an update about your place on {{waitlist}}. Add the next step and any dates here before sending.",
+    subBody: "Questions? Reply to this email.",
   },
 };
 
@@ -93,6 +94,10 @@ function normalize(record) {
     subHeader: record.subHeader,
     mainBody: record.mainBody,
     subBody: record.subBody,
+    editorDocument: record.editorDocument,
+    renderedHtml: record.renderedHtml,
+    renderedText: record.renderedText,
+    starterHtml: record.editorDocument ? null : legacyEmailContent(record),
   };
 }
 
@@ -101,6 +106,8 @@ export async function upsertEmailTemplate({ waitListId, templateType, data }) {
   if (!enumType) return { success: false, message: "Invalid template type" };
 
   try {
+    const content = validateComposerContent(data);
+    if (typeof data.subject !== "string" || !data.subject.trim() || data.subject.length > 160 || /[\r\n]/.test(data.subject) || typeof data.previewText !== "string" || data.previewText.length > 180) return { success: false, message: "Add a subject and keep the preview text under 180 characters." };
     const { scope } = await requireCampaign(waitListId, "sendEmail");
     const updated = await prisma.emailTemplate.upsert({
       where: {
@@ -111,29 +118,24 @@ export async function upsertEmailTemplate({ waitListId, templateType, data }) {
         waitList: scope,
       },
       update: {
-        subject: data.subject,
+        subject: data.subject.trim(),
         previewText: data.previewText,
-        header: data.header,
-        subHeader: data.subHeader,
-        mainBody: data.mainBody,
-        subBody: data.subBody,
+        ...content,
       },
       create: {
         waitList: { connect: { id: waitListId, ...scope } },
         type: enumType,
-        subject: data.subject,
+        subject: data.subject.trim(),
         previewText: data.previewText,
-        header: data.header,
-        subHeader: data.subHeader,
-        mainBody: data.mainBody,
-        subBody: data.subBody,
+        header: "", subHeader: "", mainBody: content.renderedText, subBody: "",
+        ...content,
       },
     });
 
     return { success: true, message: "Template saved", template: normalize(updated) };
   } catch (e) {
     console.error(e);
-    return { success: false, message: "Failed to save template" };
+    return { success: false, message: e.message === "Write a message before saving." || e.message?.startsWith("This email is too long") ? e.message : "Failed to save template" };
   }
 }
 
@@ -297,7 +299,7 @@ export async function sendTestEmail({ waitListId, templateType, to }) {
       <div class="footer">${subBody}</div>
       <div class="divider"></div>
       <div class="email-footer">
-        Need help? Reply to this email • © ${new Date().getFullYear()} Waitlyze
+        Need help? Reply to this email • © ${new Date().getFullYear()} ${escapeHtmlText(waitList.name || "This waitlist")}
       </div>
     </div>
   </div>
@@ -305,12 +307,14 @@ export async function sendTestEmail({ waitListId, templateType, to }) {
 </html>`;
 
     const provider = await senderForWaitlist(waitListId);
+    const richHtml = tpl.renderedHtml ? subscriberEmailHtml({ name: waitList.name || "Your project", content: interpolateEmail(tpl.renderedHtml, vars), previewText }) : null;
     const { error } = await new Resend(provider.apiKey).emails.send({
       from: provider.fromEmail,
       to,
       subject,
       replyTo: provider.replyTo,
-      html: htmlBody,
+      html: richHtml || htmlBody,
+      text: tpl.renderedText ? replaceVars(tpl.renderedText) : undefined,
     });
 
     if (error) {
@@ -477,14 +481,14 @@ async function renderTemplate({ waitListId, enumType, varsOverride = {} }) {
       <div class="footer">${subBody}</div>
       <div class="divider"></div>
       <div class="email-footer">
-        Need help? Reply to this email • © ${new Date().getFullYear()} Waitlyze
+        Need help? Reply to this email • © ${new Date().getFullYear()} ${escapeHtmlText(waitList.name || "This waitlist")}
       </div>
     </div>
   </div>
 </body>
 </html>`;
 
-  return { waitList, subject, htmlBody };
+  return { waitList, subject, htmlBody: tpl.renderedHtml ? subscriberEmailHtml({ name: waitList.name || "Your project", content: interpolateEmail(tpl.renderedHtml, vars), previewText }) : htmlBody, textBody: tpl.renderedText ? replaceVars(tpl.renderedText) : undefined };
 }
 
 export async function sendSignupEmail({ waitListId, to }) {
@@ -515,7 +519,7 @@ export async function sendSignupEmail({ waitListId, to }) {
   const position = await getCampaignPosition(prisma, waitListId, signUp.id);
   const totalSignUps = await prisma.signUp.count({ where: { waitListId, waitList: { status: "PUBLISHED" } } });
 
-  const { waitList, subject, htmlBody, error } = await renderTemplate({
+  const { waitList, subject, htmlBody, textBody, error } = await renderTemplate({
     waitListId,
     enumType: "SIGNUP",
     varsOverride: {
@@ -540,6 +544,7 @@ export async function sendSignupEmail({ waitListId, to }) {
       subject,
       replyTo: provider.replyTo,
       html: htmlBody,
+      text: textBody,
     }, { idempotencyKey: `signup-welcome:${signUp.id}` });
     if (error) {
       console.error("Resend send error:", error);
@@ -563,13 +568,16 @@ export async function sendSignupEmail({ waitListId, to }) {
 const broadcastPath = (waitListId) => `/waitlists/${waitListId}/emails/broadcasts`;
 const broadcastInput = (input) => {
   if (!input || typeof input !== "object") return null;
+  let content;
+  try { content = validateComposerContent(input); } catch (error) { return { error: typeof error?.message === "string" && error.message ? error.message : "Write a message before saving." }; }
   const value = {
     name: String(input.name || "").trim(),
     subject: String(input.subject || "").trim(),
     previewText: String(input.previewText || "").trim(),
-    body: String(input.body || "").trim(),
+    body: content.renderedText,
+    ...content,
   };
-  if (value.name.length > 120 || value.subject.length > 160 || /[\r\n]/.test(value.subject) || value.previewText.length > 180 || value.body.length > 5000) return null;
+  if (value.name.length > 120 || value.subject.length > 160 || /[\r\n]/.test(value.subject) || value.previewText.length > 180) return null;
   return value;
 };
 
@@ -578,7 +586,7 @@ export async function listBroadcasts(waitListId) {
   const [broadcasts, counts] = await Promise.all([
     prisma.marketingBroadcast.findMany({
       where: { waitListId: campaign.id }, orderBy: { updatedAt: "desc" },
-      select: { id: true, name: true, subject: true, previewText: true, body: true, status: true, recipientCount: true, createdAt: true, updatedAt: true, sentAt: true },
+      select: { id: true, name: true, subject: true, previewText: true, body: true, editorDocument: true, renderedHtml: true, renderedText: true, status: true, recipientCount: true, createdAt: true, updatedAt: true, sentAt: true },
     }),
     prisma.$queryRaw`
       SELECT r."broadcastId", r."status"::text AS status, COUNT(*)::int AS count
@@ -601,7 +609,7 @@ export async function createBroadcastDraft(waitListId) {
   const { campaign } = await requireCampaign(waitListId, "sendEmail");
   const draft = await prisma.marketingBroadcast.create({
     data: { waitListId: campaign.id, name: "New broadcast", subject: "", previewText: "", body: "" },
-    select: { id: true, name: true, subject: true, previewText: true, body: true, status: true, recipientCount: true, updatedAt: true },
+    select: { id: true, name: true, subject: true, previewText: true, body: true, editorDocument: true, renderedHtml: true, renderedText: true, status: true, recipientCount: true, updatedAt: true },
   });
   revalidatePath(broadcastPath(waitListId));
   return draft;
@@ -609,7 +617,7 @@ export async function createBroadcastDraft(waitListId) {
 
 export async function saveBroadcastDraft({ waitListId, broadcastId, data }) {
   const value = broadcastInput(data);
-  if (!value) return { success: false, message: "Keep the subject, preview, and message within their character limits." };
+  if (!value || value.error) return { success: false, message: value?.error || "Keep the subject, preview, and message within their character limits." };
   await requireCampaign(waitListId, "sendEmail");
   const updated = await prisma.marketingBroadcast.updateMany({
     where: { id: broadcastId, waitListId, status: "DRAFT" }, data: value,
@@ -742,6 +750,57 @@ export async function cancelBroadcast({ waitListId, broadcastId }) {
     await tx.marketingBroadcast.update({ where: { id: broadcastId }, data: { status: "CANCELED" } });
     return true;
   });
+  if (canceled) await notifyBroadcastSummary(prisma, broadcastId);
   revalidatePath(broadcastPath(waitListId));
   return { success: canceled, message: canceled ? "Remaining queued emails were canceled." : "This broadcast is no longer sending." };
+}
+
+const runStatusLabel = (status) => ({ DRAFT: "Off", ENABLED: "Enabled", PAUSED: "Paused", PENDING: "Scheduled", PROCESSING: "Sending", SENT: "Sent", SKIPPED: "Skipped", FAILED: "Needs attention", CANCELED: "Canceled", SENDING: "Sending" })[status] || status;
+
+export async function listEmailRuns(waitListId) {
+  const { campaign } = await requireCampaign(waitListId, "sendEmail");
+  const [runs, broadcasts] = await Promise.all([
+    prisma.automationRun.findMany({
+      where: { waitListId: campaign.id },
+      orderBy: { createdAt: "desc" },
+      take: 100,
+      include: {
+        recipe: { select: { type: true } },
+        signUp: { select: { email: true } },
+        steps: { select: { status: true, lastErrorCode: true } },
+      },
+    }),
+    prisma.marketingBroadcast.findMany({
+      where: { waitListId: campaign.id, status: { not: "DRAFT" } },
+      orderBy: { updatedAt: "desc" },
+      take: 100,
+      select: { id: true, name: true, subject: true, status: true, recipientCount: true, sentAt: true, updatedAt: true },
+    }),
+  ]);
+  const maskEmail = (email) => email.replace(/^([^@])[^@]*(@.+)$/, "$1•••$2");
+  const automationTitle = (type) => ({ WELCOME: "Welcome after confirmation", REFERRAL_REMINDER: "Referral reminder", REFERRAL_MILESTONE: "Referral milestone" })[type] || type;
+  const items = [
+    ...runs.map((run) => ({
+      id: `run-${run.id}`,
+      kind: "Automation",
+      title: automationTitle(run.recipe.type),
+      recipient: maskEmail(run.signUp.email),
+      status: runStatusLabel(run.status),
+      statusCode: run.status,
+      reason: (run.skipReason || run.steps.find((step) => step.lastErrorCode)?.lastErrorCode || "").toLowerCase().replaceAll("_", " "),
+      at: (run.finishedAt || run.scheduledAt || run.createdAt).toISOString(),
+    })),
+    ...broadcasts.map((broadcast) => ({
+      id: `bc-${broadcast.id}`,
+      kind: "Broadcast",
+      title: broadcast.name || broadcast.subject || "Untitled broadcast",
+      recipient: `${broadcast.recipientCount} recipient${broadcast.recipientCount === 1 ? "" : "s"}`,
+      status: runStatusLabel(broadcast.status),
+      statusCode: broadcast.status,
+      reason: "",
+      at: (broadcast.sentAt || broadcast.updatedAt).toISOString(),
+    })),
+  ];
+  items.sort((a, b) => (a.at < b.at ? 1 : a.at > b.at ? -1 : 0));
+  return items.slice(0, 100);
 }

@@ -1,20 +1,13 @@
 "use client";
 
-import { Label } from "@/components/ui/label";
-
-import { Input } from "@/components/ui/input";
-
-import { Textarea } from "@/components/ui/textarea";
-
 import { Button } from "@/components/ui/button";
-
 import { formatProductDate } from "@/lib/product-date.mjs";
-
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { toast } from "sonner";
 import styles from "./email-tools.module.css";
 import { useRouter } from "next/navigation";
 import { EmailToolsNav } from "./email-tools-nav";
+import { EmailCanvas } from "./email-canvas";
 import {
   cancelBroadcast,
   createBroadcastDraft,
@@ -27,6 +20,8 @@ import {
 const emptyDraft = () => ({ name: "New broadcast", subject: "", previewText: "", body: "" });
 const formatDate = (date) => formatProductDate(date);
 const statusLabel = (status) => ({ DRAFT: "Draft", SENDING: "Sending", SENT: "Complete", CANCELED: "Canceled", FAILED: "Needs attention" })[status] || status;
+const escapeText = (text) => String(text || "").replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]);
+const starterContent = (draft) => draft.editorDocument || `<p>${escapeText(draft.body || "Write your update…").replaceAll("\n", "<br>")}</p>`;
 
 export function BroadcastManager({ waitListId, initialBroadcasts, initialPreview, deliveryReady }) {
   const router = useRouter();
@@ -38,22 +33,21 @@ export function BroadcastManager({ waitListId, initialBroadcasts, initialPreview
   const [reviewSend, setReviewSend] = useState(false);
   const [busyAction, setBusyAction] = useState("");
   const busy = Boolean(busyAction);
-  const [message, setMessage] = useState("");
-  const [messageError, setMessageError] = useState(false);
   const [draftDirty, setDraftDirty] = useState(false);
   const [reviewCancel, setReviewCancel] = useState(false);
   const [pendingSelection, setPendingSelection] = useState(null);
+  const editorRef = useRef(null);
+
+  function notify(text, failure = false) { if (failure) toast.error(text); else toast.success(text); }
   function requestSelection(broadcast) { if (draftDirty && broadcast.id !== selectedId) setPendingSelection(broadcast); else selectBroadcast(broadcast); }
-  function notify(text, failure = false) { setMessage(text); setMessageError(failure); if (failure) toast.error(text); else toast.success(text); }
   function edit(field, value) { setData((current) => ({ ...current, [field]: value })); setDraftDirty(true); setPreviewFresh(false); setReviewSend(false); }
 
   function selectBroadcast(broadcast) {
     setDraftDirty(false); setReviewCancel(false); setPendingSelection(null);
     setSelectedId(broadcast.id);
-    setData({ name: broadcast.name, subject: broadcast.subject, previewText: broadcast.previewText, body: broadcast.body });
+    setData({ name: broadcast.name, subject: broadcast.subject, previewText: broadcast.previewText, body: broadcast.body, editorDocument: broadcast.editorDocument, renderedHtml: broadcast.renderedHtml });
     setPreviewFresh(false);
     setReviewSend(false);
-    setMessage("");
   }
 
   async function refreshBroadcasts(selected = selectedId) {
@@ -66,12 +60,11 @@ export function BroadcastManager({ waitListId, initialBroadcasts, initialPreview
 
   async function createDraft() {
     setBusyAction("create");
-    setMessage("");
     try {
       const draft = await createBroadcastDraft(waitListId);
       setBroadcasts((items) => [draft, ...items]);
       setSelectedId(draft.id);
-      setData({ name: draft.name, subject: draft.subject, previewText: draft.previewText, body: draft.body });
+      setData({ name: draft.name, subject: draft.subject, previewText: draft.previewText, body: draft.body, editorDocument: draft.editorDocument, renderedHtml: draft.renderedHtml });
       setPreviewFresh(false);
       setDraftDirty(false);
       notify("Draft created.");
@@ -86,9 +79,11 @@ export function BroadcastManager({ waitListId, initialBroadcasts, initialPreview
     event.preventDefault();
     if (!selectedId || data.status && data.status !== "DRAFT") return;
     setBusyAction("save");
-    setMessage("");
     try {
-      const result = await saveBroadcastDraft({ waitListId, broadcastId: selectedId, data });
+      if (!editorRef.current?.editor) throw new Error("The message editor is still loading.");
+      const { html, text } = await editorRef.current.getEmail();
+      const payload = JSON.parse(JSON.stringify({ ...data, editorDocument: editorRef.current.getJSON(), renderedHtml: html, renderedText: text }));
+      const result = await saveBroadcastDraft({ waitListId, broadcastId: selectedId, data: payload });
       if (result.success) {
         setPreviewFresh(false);
         await refreshBroadcasts(selectedId);
@@ -103,7 +98,6 @@ export function BroadcastManager({ waitListId, initialBroadcasts, initialPreview
 
   async function refreshPreview() {
     setBusyAction("preview");
-    setMessage("");
     try {
       const nextPreview = await getBroadcastRecipients(waitListId);
       setPreview(nextPreview);
@@ -120,7 +114,6 @@ export function BroadcastManager({ waitListId, initialBroadcasts, initialPreview
   async function sendBroadcast() {
     if (!selectedId || draftDirty || !previewFresh || !preview.count) return;
     setBusyAction("send");
-    setMessage("");
     try {
       const result = await queueBroadcast({ waitListId, broadcastId: selectedId, expectedRecipientCount: preview.count });
       setReviewSend(false);
@@ -150,54 +143,87 @@ export function BroadcastManager({ waitListId, initialBroadcasts, initialPreview
   const selected = broadcasts.find((item) => item.id === selectedId);
   const editable = !selected || selected.status === "DRAFT";
 
-  return <div className={`${styles.scope} product-section`}>
+  return <div className={styles.scope}>
     <EmailToolsNav waitListId={waitListId} current="broadcasts" />
-    <div className="product-page-heading">
-      <div><h2 className="product-section-title">Broadcasts</h2><p className="product-help">Send a one-time update to verified subscribers who opted in.</p></div>
+    {broadcasts.length ? <div className={styles.toolbar}>
       <Button type="button" onClick={createDraft} disabled={busy || draftDirty} variant="default">{busyAction === "create" ? "Creating…" : "New broadcast"}</Button>
-    </div>
-    {pendingSelection && <section className="broadcast-selection-confirm" aria-label="Unsaved broadcast changes"><p>You have unsaved changes. Discard them and open “{pendingSelection.name}”?</p><div><Button type="button" variant="outline" onClick={() => selectBroadcast(pendingSelection)}>Discard changes</Button><Button type="button" variant="ghost" onClick={() => setPendingSelection(null)}>Keep editing</Button></div></section>}
-    <div className="broadcast-layout">
-      <section className="product-panel broadcast-list" aria-label="Saved broadcasts">
-        <h3>Recent</h3>
-        {broadcasts.length ? <ul>{broadcasts.map((broadcast) => <li key={broadcast.id}>
-          <Button type="button" className="broadcast-list-item" aria-current={selectedId === broadcast.id ? "true" : undefined} variant="ghost" onClick={() => requestSelection(broadcast)} disabled={busy}>
-            <strong>{broadcast.name || broadcast.subject || "Untitled broadcast"}</strong>
-            <span>{statusLabel(broadcast.status)}{broadcast.status !== "DRAFT" ? ` · ${broadcast.recipientCount} recipients` : ""}</span>
-            {broadcast.status !== "DRAFT" ? <span>{broadcast.deliveredCount || 0} delivered · {broadcast.failedCount || 0} failed · {broadcast.skippedCount || 0} skipped · {broadcast.canceledCount || 0} canceled</span> : null}
-            <time dateTime={new Date(broadcast.updatedAt).toISOString()}>{formatDate(broadcast.updatedAt)}</time>
-          </Button>
-        </li>)}</ul> : <p className="product-help">Your saved drafts will appear here.</p>}
-      </section>
+    </div> : null}
+    {pendingSelection && <div className={styles.unsaved} role="alert"><span>Discard your unsaved changes to open “{pendingSelection.name}”?</span><button type="button" onClick={() => selectBroadcast(pendingSelection)}>Discard and open</button><button type="button" onClick={() => setPendingSelection(null)}>Keep editing</button></div>}
+    <div className={styles.split}>
+      <nav className={styles.rail} aria-label="Broadcasts">
+        {broadcasts.length ? broadcasts.map((broadcast) => <button key={broadcast.id} type="button" className={styles.railItem} aria-current={selectedId === broadcast.id ? "true" : undefined} disabled={busy} onClick={() => requestSelection(broadcast)}>
+          <strong>{broadcast.name || broadcast.subject || "Untitled broadcast"}</strong>
+          <span>{statusLabel(broadcast.status)}{broadcast.status !== "DRAFT" ? ` · ${broadcast.recipientCount} recipients` : ""}</span>
+          <time dateTime={new Date(broadcast.updatedAt).toISOString()}>{formatDate(broadcast.updatedAt)}</time>
+        </button>) : <p className={styles.railEmpty}>No drafts yet.</p>}
+      </nav>
 
-      {selectedId ? <section className="product-panel broadcast-editor" aria-label="Broadcast editor">
-        <form onSubmit={saveDraft}>
-          <div className="broadcast-editor-heading"><div><p className="product-eyebrow">{selected ? statusLabel(selected.status) : "DRAFT"}</p><h3>{editable ? "Write your update" : "Delivery summary"}</h3></div></div>
-          <Label className="product-field"><span>Internal name</span><Input maxLength={120} value={data.name || ""} disabled={!editable || busy} onChange={(event) => edit("name", event.target.value)} /></Label>
-          <Label className="product-field"><span>Subject</span><Input maxLength={160} value={data.subject || ""} disabled={!editable || busy} onChange={(event) => edit("subject", event.target.value)} /></Label>
-          <Label className="product-field"><span>Preview text <span className="product-help">Optional</span></span><Input maxLength={180} value={data.previewText || ""} disabled={!editable || busy} onChange={(event) => edit("previewText", event.target.value)} /></Label>
-          <Label className="product-field"><span>Message</span><Textarea maxLength={5000} rows={9} value={data.body || ""} disabled={!editable || busy} onChange={(event) => edit("body", event.target.value)} /></Label>
-          {editable ? <div className="broadcast-actions"><Button type="submit" disabled={busy} variant="outline">{busyAction === "save" ? "Saving…" : "Save draft"}</Button><Button type="button" onClick={refreshPreview} disabled={busy || draftDirty} variant="outline">{busyAction === "preview" ? "Refreshing…" : "Preview recipients"}</Button></div> : null}
-        </form>
+      {selectedId ? <form className={styles.pane} aria-label="Broadcast editor" onSubmit={saveDraft}>
+        <header className={styles.paneHead}>
+          <div>
+            <h2 className={styles.paneTitle}>{editable ? (data.name || "Untitled broadcast") : "Delivery summary"}</h2>
+            {editable ? <p className={styles.paneMeta}>Draft — nothing is sent until you confirm.</p> : null}
+          </div>
+          <div className={styles.paneActions}>
+            {!editable && <span className={`automation-status automation-status-${selected.status.toLowerCase()}`}>{statusLabel(selected.status)}</span>}
+            {editable && <Button type="submit" variant="default" disabled={busy}>{busyAction === "save" ? "Saving…" : "Save draft"}</Button>}
+          </div>
+        </header>
 
-        {draftDirty && <p className="product-help">Save your changes before previewing recipients and sending.</p>}
-        <section className="broadcast-recipient-preview" aria-labelledby="broadcast-preview-title">
-          <div><h4 id="broadcast-preview-title">Recipient preview</h4><p>{editable ? `${preview.count} verified, opted-in subscriber${preview.count === 1 ? "" : "s"} are currently eligible. Unsubscribed and suppressed addresses are excluded.` : `${selected.recipientCount} subscribers were included in this send snapshot. Eligibility is checked again before each delivery.`}</p></div>
-          {editable && preview.samples.length ? <p className="broadcast-samples">Examples: {preview.samples.join(", ")}</p> : editable ? <p className="broadcast-samples">No eligible subscribers yet. New subscribers can choose to receive updates when they join.</p> : <p className="broadcast-samples">Email addresses stay private in this delivery view.</p>}
-          {editable && previewFresh && !deliveryReady ? <p className="product-status-warning">Email delivery needs setup before you can send.</p> : null}
-          {editable && !draftDirty && previewFresh && deliveryReady && preview.count > 0 ? <div className="broadcast-review">
-            {!reviewSend ? <Button type="button" variant="default" onClick={() => setReviewSend(true)} disabled={busy || !data.subject?.trim() || !data.body?.trim()}>Review send</Button> : <div role="group" aria-label="Confirm broadcast send">
-              <p>Send “{data.subject}” to {preview.count} opted-in subscriber{preview.count === 1 ? "" : "s"}? Delivery starts immediately.</p>
-              <Button type="button" onClick={sendBroadcast} disabled={busy} variant="default">{busyAction === "send" ? "Queueing…" : `Send to ${preview.count}`}</Button>
-              <Button type="button" variant="ghost" onClick={() => setReviewSend(false)} disabled={busy}>Go back</Button>
-            </div>}
-          </div> : null}
-        </section>
-        {!editable ? <p className="broadcast-delivery-results">{selected.deliveredCount || 0} delivered of {selected.recipientCount}; {selected.failedCount || 0} failed, {selected.skippedCount || 0} skipped and {selected.canceledCount || 0} canceled.</p> : null}
-        {selected?.status === "SENDING" ? <div className="broadcast-cancel"><p className="product-help">Emails already being handed to the provider may still arrive.</p>{reviewCancel ? <div><p>Cancel all emails that have not been handed to the provider?</p><Button type="button" onClick={stopBroadcast} disabled={busy} variant="outline">{busyAction === "cancel" ? "Canceling…" : "Confirm cancellation"}</Button><Button type="button" variant="ghost" onClick={() => setReviewCancel(false)} disabled={busy}>Keep sending</Button></div> : <Button type="button" variant="outline" onClick={() => setReviewCancel(true)} disabled={busy}>Cancel remaining emails</Button>}</div> : null}
-        {selected && selected.status !== "DRAFT" ? <p className="broadcast-updated">Last updated {formatDate(selected.updatedAt)}</p> : null}
-        <p className="broadcast-message" role={messageError ? "alert" : "status"} aria-live={messageError ? "assertive" : "polite"}>{message}</p>
-      </section> : <section className="product-panel broadcast-empty"><h3>Start with a draft</h3><p>Write one clear update, preview the eligible audience, then confirm before it is queued.</p><Button type="button" onClick={createDraft} disabled={busy} variant="default">{busyAction === "create" ? "Creating…" : "Create a broadcast"}</Button></section>}
+        {editable ? <>
+          <div className={styles.fieldCard}>
+            <div className={styles.fieldRow}><input maxLength={120} aria-label="Internal name" placeholder="Name — only you see this" value={data.name || ""} onChange={(event) => edit("name", event.target.value)} /></div>
+            <div className={styles.fieldRow}><input maxLength={160} aria-label="Subject" placeholder="Subject — what subscribers see in the inbox" value={data.subject || ""} onChange={(event) => edit("subject", event.target.value)} /></div>
+            <div className={styles.fieldRow}><input maxLength={180} aria-label="Preview text" placeholder="Preview text — shown after the subject" value={data.previewText || ""} onChange={(event) => edit("previewText", event.target.value)} /></div>
+          </div>
+          <div className={styles.canvasShell}>
+            <EmailCanvas key={selectedId} editorRef={editorRef} content={starterContent(data)} onChange={(document) => edit("editorDocument", document)} />
+          </div>
+          <div className={styles.recipients}>
+            <span className={styles.count}>{preview.count} eligible</span>
+            <Button type="button" variant="outline" size="sm" onClick={refreshPreview} disabled={busy || draftDirty}>{busyAction === "preview" ? "Checking…" : "Check recipients"}</Button>
+            {draftDirty && !previewFresh ? <span className={styles.hint}>Save to check recipients.</span> : null}
+            {!deliveryReady && previewFresh ? <span className={styles.hint}>Email delivery needs setup before you can send.</span> : null}
+            {preview.samples.length ? <p className={styles.samples}>e.g. {preview.samples.join(", ")}</p> : previewFresh ? <p className={styles.samples}>No eligible subscribers yet.</p> : null}
+          </div>
+          {previewFresh && deliveryReady && !draftDirty && preview.count > 0
+            ? (reviewSend
+              ? <div className={styles.confirm} role="group" aria-label="Confirm broadcast send">
+                  <p>Send “{data.subject}” to {preview.count} opted-in subscriber{preview.count === 1 ? "" : "s"}? Delivery starts immediately.</p>
+                  <Button type="button" variant="default" onClick={sendBroadcast} disabled={busy}>{busyAction === "send" ? "Queueing…" : `Send to ${preview.count}`}</Button>
+                  <Button type="button" variant="ghost" onClick={() => setReviewSend(false)} disabled={busy}>Back</Button>
+                </div>
+              : <div className={styles.metaBar}>
+                  <p className={styles.hint}>Eligibility is checked again before each send.</p>
+                  <Button type="button" variant="default" onClick={() => setReviewSend(true)} disabled={busy || !data.subject?.trim() || !data.body?.trim()}>Review send</Button>
+                </div>)
+            : null}
+        </> : <>
+          <div className={styles.summary}>
+            <div className={styles.summaryRow}><span>Subject</span><strong>{selected.subject || "—"}</strong></div>
+            {selected.previewText ? <div className={styles.summaryRow}><span>Preview text</span><strong>{selected.previewText}</strong></div> : null}
+            <div className={styles.summaryRow}><span>Recipients</span><strong>{selected.recipientCount}</strong></div>
+            <div className={styles.summaryRow}><span>{selected.status === "SENT" ? "Sent" : "Updated"}</span><strong>{formatDate(selected.sentAt || selected.updatedAt)}</strong></div>
+          </div>
+          <p className={styles.stats}>{selected.deliveredCount || 0} delivered · {selected.failedCount || 0} failed · {selected.skippedCount || 0} skipped · {selected.canceledCount || 0} canceled</p>
+          {selected.renderedHtml
+            ? <iframe className={styles.sentMessage} title="Sent email" sandbox="" srcDoc={selected.renderedHtml} />
+            : <p className={`${styles.hint} whitespace-pre-line`}>{selected.body}</p>}
+        </>}
+
+        {selected?.status === "SENDING" ? <div className={styles.confirm}>
+          {reviewCancel
+            ? <><p>Cancel all emails that have not been handed to the provider?</p>
+                <Button type="button" variant="outline" onClick={stopBroadcast} disabled={busy}>{busyAction === "cancel" ? "Canceling…" : "Confirm cancellation"}</Button>
+                <Button type="button" variant="ghost" onClick={() => setReviewCancel(false)} disabled={busy}>Keep sending</Button></>
+            : <><p>Emails already handed to the provider may still arrive.</p>
+                <Button type="button" variant="outline" onClick={() => setReviewCancel(true)} disabled={busy}>Cancel remaining emails</Button></>}
+        </div> : null}
+      </form> : <div className={styles.emptyPane}>
+        <h2>No broadcasts yet</h2>
+        <p>Write one update, check who is eligible, then confirm to send it.</p>
+        <Button type="button" variant="default" onClick={createDraft} disabled={busy}>{busyAction === "create" ? "Creating…" : "New broadcast"}</Button>
+      </div>}
     </div>
   </div>;
 }

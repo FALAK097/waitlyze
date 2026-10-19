@@ -6,6 +6,8 @@ import { createUnsubscribeToken, hashUnsubscribeToken } from "../email/unsubscri
 import { MARKETING_CONSENT_COPY } from "./marketing-consent.mjs";
 import { enqueueWebhookEvent } from "../webhooks/delivery.mjs";
 import { REFERRAL_CREDIT_STATUSES, REFERRAL_POINTS, SIGNUP_POINTS, awardPoints, isFarmSuspect, referralEventKey, signupEventKey } from "../referrals/points.mjs";
+import { maybeNotifySignupMilestone } from "../emails/founder-notifications.mjs";
+import { after } from "next/server";
 
 const normalizeEmail = normalizeSignupEmail;
 const tokenDigest = (token) => createHash("sha256").update(token).digest("hex");
@@ -143,6 +145,11 @@ export async function createCampaignSignup(db, input, referralId, { now = new Da
   }
 
   const rank = await getCampaignPosition(db, input.waitListId, signUp.id);
+  // Idempotent retries and duplicate lookups return early above, so only a row
+  // we actually created can move the milestone counters.
+  if (signUp?.verificationEventKey) {
+    after(() => maybeNotifySignupMilestone(db, input.waitListId));
+  }
   return { ...signUp, rank };
 }
 

@@ -1,15 +1,11 @@
 "use client";
 
-import { Label } from "@/components/ui/label";
-
 import { Input } from "@/components/ui/input";
-
 import { Button } from "@/components/ui/button";
-
 import { useState } from "react";
 import { toast } from "sonner";
 
-export function VerifyAction({ token, returnPath }) {
+export function VerifyAction({ token, returnPath, waitlistName }) {
   const [state, setState] = useState("ready");
   const [referral, setReferral] = useState(null);
 
@@ -32,6 +28,7 @@ export function VerifyAction({ token, returnPath }) {
   }
 
   const referralUrl = referral ? `${window.location.origin}${referral.path}` : null;
+  const brand = waitlistName || referral?.waitListName || "this waitlist";
 
   async function copyReferralLink() {
     if (!referralUrl) return;
@@ -46,22 +43,34 @@ export function VerifyAction({ token, returnPath }) {
   return (
     <main className="verify-page" aria-labelledby="verify-title">
       <section className="verify-card">
-        <p className="verify-eyebrow">WAITLYZE</p>
+        <p className="verify-eyebrow">{brand}</p>
         <h1 id="verify-title">{state === "success" ? "You’re confirmed" : "Confirm your email"}</h1>
-        <p>{state === "success" ? "Your email is verified and your place is secured." : "Confirm this address to secure your place on the waitlist."}</p>
-        {state === "ready" || state === "loading" ? <Button type="button" onClick={verify} disabled={state === "loading"}>{state === "loading" ? "Confirming…" : "Confirm email"}</Button> : null}
+        <p>
+          {state === "success"
+            ? "Your email is verified and your place is secured."
+            : `Confirm this address to secure your place on ${brand}.`}
+        </p>
+        {state === "ready" || state === "loading" ? (
+          <Button type="button" onClick={verify} disabled={state === "loading"}>
+            {state === "loading" ? "Confirming…" : "Confirm email"}
+          </Button>
+        ) : null}
         {referralUrl ? (
           <div className="verify-referral">
-            <p>Invite a friend to {referral.waitListName}.</p>
-            <Label htmlFor="verify-referral-link">Your referral link</Label>
             <div className="verify-referral-row">
-              <Input id="verify-referral-link" value={referralUrl} readOnly />
+              <Input value={referralUrl} readOnly aria-label="Your referral link" />
               <Button type="button" onClick={copyReferralLink}>Copy link</Button>
             </div>
-            {referral.position ? <p>Your position: <strong>#{referral.position}</strong></p> : null}
+            {referral.position ? (
+              <p className="verify-referral-position">
+                You’re <strong>#{referral.position}</strong> on {brand}.
+              </p>
+            ) : null}
           </div>
         ) : null}
-        {(state === "success" || state === "error") && !referralUrl ? <a href={returnPath}>Return to waitlist</a> : null}
+        {(state === "success" || state === "error") && !referralUrl ? (
+          <a href={returnPath}>Return to waitlist</a>
+        ) : null}
       </section>
     </main>
   );

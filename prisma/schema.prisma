@@ -302,6 +302,9 @@ model MarketingBroadcast {
   subject        String
   previewText    String
   body           String
+  editorDocument Json?
+  renderedHtml   String?
+  renderedText   String?
   status         BroadcastStatus @default(DRAFT)
   recipientCount Int             @default(0)
   createdAt      DateTime        @default(now())
@@ -564,6 +567,9 @@ model EmailTemplate {
   header      String
   subHeader   String
   mainBody    String
+  editorDocument Json?
+  renderedHtml   String?
+  renderedText   String?
   subBody     String
   createdAt   DateTime          @default(now())
   updatedAt   DateTime          @updatedAt
@@ -770,6 +776,7 @@ model EmailProviderEvent {
   id                String   @id @default(cuid())
   providerEventId   String   @unique
   providerMessageId String
+  workspaceId       String?
   type              String
   isPermanent       Boolean  @default(false)
   recipientEmails   String[] @default([])
@@ -800,6 +807,9 @@ model WorkspaceIntegration {
   secretCiphertext   String
   secretIv           String
   secretTag          String
+  webhookSecretCiphertext String?
+  webhookSecretIv         String?
+  webhookSecretTag        String?
   fromEmail          String
   lastTestedAt       DateTime?
   lastErrorCode      String?

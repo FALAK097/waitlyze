@@ -11,6 +11,7 @@ import { LeaveWorkspace } from "@/components/product/leave-workspace";
 import { SettingsPanelSkeleton } from "@/components/product/settings-panel-skeleton";
 import { SettingsLoadError } from "@/components/product/settings-load-error";
 import "@/components/product/settings-page.css";
+import { env } from "@/lib/env.mjs";
 
 export const metadata = { title: "Settings" };
 
@@ -59,12 +60,12 @@ async function SelectedSettings({ section, user, workspace, role }) {
   }
   let connection;
   try {
-    connection = await prisma.workspaceIntegration.findUnique({ where: { workspaceId_provider: { workspaceId: workspace.id, provider: "RESEND" } }, select: { id: true, status: true, fromEmail: true, lastTestedAt: true, lastErrorCode: true } });
+    connection = await prisma.workspaceIntegration.findUnique({ where: { workspaceId_provider: { workspaceId: workspace.id, provider: "RESEND" } }, select: { id: true, workspaceId: true, status: true, fromEmail: true, lastTestedAt: true, lastErrorCode: true, webhookSecretCiphertext: true } });
   } catch {
     return <SettingsLoadError title="Integrations couldn’t load" message="Try again to see your connected services." />;
   }
   return <section className="product-settings-content" aria-labelledby="settings-panel-heading">
-    <IntegrationsPanel initialConnection={connection} accountEmail={user.email} canManage={canManage} />
+    <IntegrationsPanel initialConnection={connection && { id: connection.id, workspaceId: connection.workspaceId, status: connection.status, fromEmail: connection.fromEmail, lastTestedAt: connection.lastTestedAt, lastErrorCode: connection.lastErrorCode, webhookConfigured: Boolean(connection.webhookSecretCiphertext) }} accountEmail={user.email} canManage={canManage} appOrigin={env.BETTER_AUTH_URL} />
   </section>;
 }
 

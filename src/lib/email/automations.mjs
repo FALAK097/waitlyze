@@ -1,5 +1,6 @@
 import { createUnsubscribeToken } from "./unsubscribe.mjs";
 import { applyKnownProviderEvents } from "./suppression.mjs";
+import { interpolateEmail, subscriberEmailHtml, validateComposerContent } from "./composer.mjs";
 
 const EMAIL_STEP = "send_email";
 
@@ -10,7 +11,7 @@ export const AUTOMATION_DEFAULTS = {
     trigger: "SIGNUP_VERIFIED",
     delayMinutes: 0,
     subject: "You’re on {{waitlist}}",
-    body: "Thanks for confirming your email. We’ll keep you posted when there’s news.",
+    body: "Thanks for confirming your email. You're on the {{waitlist}} list. Your personal link is {{referral_link}}. We'll keep you posted when there's news.",
   },
   REFERRAL_REMINDER: {
     title: "Referral reminder",
@@ -18,7 +19,7 @@ export const AUTOMATION_DEFAULTS = {
     trigger: "SIGNUP_VERIFIED",
     delayMinutes: 1440,
     subject: "Share {{waitlist}} with a friend",
-    body: "Know someone who would love this? Share your waitlist link with them.",
+    body: "Know someone who would love this? Share your personal link: {{referral_link}}",
   },
   REFERRAL_MILESTONE: {
     title: "Referral milestone",
@@ -27,7 +28,7 @@ export const AUTOMATION_DEFAULTS = {
     delayMinutes: 0,
     milestoneCount: 3,
     subject: "You helped {{waitlist}} grow",
-    body: "You’ve brought {{referral_count}} people to the waitlist. Thank you for sharing.",
+    body: "You’ve brought {{referral_count}} people to {{waitlist}}. Thank you for sharing. Your personal link: {{referral_link}}",
   },
 };
 
@@ -46,6 +47,7 @@ export function normalizeAutomationConfig(type, input) {
     body: typeof input?.body === "string" ? input.body.trim().slice(0, 3000) : "",
   };
   if (!config.subject || !config.body) throw new TypeError("Add a subject and message before saving.");
+  if (input?.editorDocument) Object.assign(config, validateComposerContent(input));
   if (type === "REFERRAL_MILESTONE") {
     const milestoneCount = Number(input?.milestoneCount);
     if (!Number.isInteger(milestoneCount) || milestoneCount < 1 || milestoneCount > 100) throw new TypeError("Choose a referral milestone between 1 and 100.");
@@ -187,7 +189,7 @@ function escapeHtml(value) {
 }
 
 function fillCopy(value, vars) {
-  return String(value).replace(/\{\{(waitlist|referral_count)\}\}/g, (_, key) => vars[key] ?? "");
+  return String(value).replace(/\{\{(waitlist|referral_count|referral_link)\}\}/g, (_, key) => vars[key] ?? "");
 }
 
 function automationHtml({ waitListName, body, unsubscribeUrl }) {
@@ -255,12 +257,15 @@ export async function dispatchAutomationStep(db, event, payload, send, now, atte
   const unsubscribeToken = createUnsubscribeToken(signUp.id, waitList.id);
   const baseUrl = String(process.env.BETTER_AUTH_URL || "").replace(/\/$/, "");
   const unsubscribeUrl = `${baseUrl}/api/email/unsubscribe?token=${encodeURIComponent(unsubscribeToken)}`;
-  const vars = { waitlist: waitList.name || "the waitlist", referral_count: String(referralCount) };
+  const vars = { waitlist: waitList.name || "the waitlist", referral_count: String(referralCount), referral_link: waitList.publicSlug && signUp.referralCode ? `${baseUrl}/w/${encodeURIComponent(waitList.publicSlug)}?r=${encodeURIComponent(signUp.referralCode)}` : "" };
   try {
     const response = await send({
       to: signUp.email,
       subject: fillCopy(config.subject, vars).replace(/[\r\n]+/g, " ").slice(0, 200),
-      html: automationHtml({ waitListName: waitList.name || "Waitlist", body: fillCopy(config.body, vars), unsubscribeUrl }),
+       html: config.renderedHtml
+         ? subscriberEmailHtml({ name: waitList.name || "Waitlist", content: interpolateEmail(config.renderedHtml, vars), unsubscribeUrl })
+         : automationHtml({ waitListName: waitList.name || "Waitlist", body: fillCopy(config.body, vars), unsubscribeUrl }),
+       text: config.renderedText ? fillCopy(config.renderedText, vars) : undefined,
       headers: { "List-Unsubscribe": `<${unsubscribeUrl}>`, "List-Unsubscribe-Post": "List-Unsubscribe=One-Click" },
       idempotencyKey: event.eventKey,
       workspaceId: waitList.workspaceId,
