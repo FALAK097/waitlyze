@@ -16,7 +16,13 @@ import pg from "pg";
 
 const [waitlistId = "cmv7uz9eq000jfnqxf0rhul3m"] = process.argv.slice(2);
 const dbUrl = process.env.DATABASE_URL || "";
-if (!/localhost|127\.0\.0\.1/.test(dbUrl)) {
+let dbHost = "";
+try {
+  dbHost = new URL(dbUrl).hostname;
+} catch {
+  // An invalid database URL is never safe to seed.
+}
+if (!["localhost", "127.0.0.1", "[::1]"].includes(dbHost)) {
   console.error("Refusing to seed: DATABASE_URL does not point at localhost.");
   process.exit(1);
 }

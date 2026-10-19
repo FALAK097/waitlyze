@@ -47,7 +47,25 @@ function failedVerificationWhere(waitListId, filters) {
         AND "latest"."type" = 'SIGNUP_VERIFICATION_REQUESTED'
         AND "latest"."payload"->>'signUpId' = "signup"."id"
         AND "latest"."status"::text = 'FAILED'
-        AND ("latest"."lastErrorCode" IS NULL OR "latest"."lastErrorCode" NOT IN ('SIGNUP_NOT_SENDABLE', 'RECIPIENT_SUPPRESSED'))
+        AND "latest"."lastErrorCode" IS DISTINCT FROM 'RECIPIENT_SUPPRESSED'
+        AND (
+          "latest"."lastErrorCode" IS DISTINCT FROM 'SIGNUP_NOT_SENDABLE'
+          OR (
+            "signup"."verifiedAt" IS NULL
+            AND EXISTS (
+              SELECT 1
+              FROM "wait_lists" AS "eligibleWaitList"
+              WHERE "eligibleWaitList"."id" = "signup"."waitListId"
+                AND "eligibleWaitList"."status"::text = 'PUBLISHED'
+                AND NOT EXISTS (
+                  SELECT 1
+                  FROM "email_suppressions" AS "suppression"
+                  WHERE "suppression"."workspaceId" = "eligibleWaitList"."workspaceId"
+                    AND "suppression"."emailNormalized" = COALESCE(NULLIF("signup"."emailNormalized", ''), lower(btrim("signup"."email")))
+                )
+            )
+          )
+        )
         AND NOT EXISTS (
           SELECT 1
           FROM "outbox_events" AS "newer"

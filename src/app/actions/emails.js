@@ -9,6 +9,7 @@ import { consumePublicBudget, PublicRateLimitError } from "@/lib/security/public
 import { getCampaignPosition } from "@/lib/campaigns/referral-position.mjs";
 import { escapeHtmlText, renderEmailMarkdown } from "@/lib/email-markdown.mjs";
 import { interpolateEmail, legacyEmailContent, subscriberEmailHtml, validateComposerContent } from "@/lib/email/composer.mjs";
+import { notifyBroadcastSummary } from "@/lib/emails/founder-notifications.mjs";
 import { Resend } from 'resend';
 import { headers } from "next/headers";
 import { revalidatePath } from "next/cache";
@@ -298,7 +299,7 @@ export async function sendTestEmail({ waitListId, templateType, to }) {
       <div class="footer">${subBody}</div>
       <div class="divider"></div>
       <div class="email-footer">
-        Need help? Reply to this email • © ${new Date().getFullYear()} ${waitList.name || "This waitlist"}
+        Need help? Reply to this email • © ${new Date().getFullYear()} ${escapeHtmlText(waitList.name || "This waitlist")}
       </div>
     </div>
   </div>
@@ -480,7 +481,7 @@ async function renderTemplate({ waitListId, enumType, varsOverride = {} }) {
       <div class="footer">${subBody}</div>
       <div class="divider"></div>
       <div class="email-footer">
-        Need help? Reply to this email • © ${new Date().getFullYear()} ${waitList.name || "This waitlist"}
+        Need help? Reply to this email • © ${new Date().getFullYear()} ${escapeHtmlText(waitList.name || "This waitlist")}
       </div>
     </div>
   </div>
@@ -749,6 +750,7 @@ export async function cancelBroadcast({ waitListId, broadcastId }) {
     await tx.marketingBroadcast.update({ where: { id: broadcastId }, data: { status: "CANCELED" } });
     return true;
   });
+  if (canceled) await notifyBroadcastSummary(prisma, broadcastId);
   revalidatePath(broadcastPath(waitListId));
   return { success: canceled, message: canceled ? "Remaining queued emails were canceled." : "This broadcast is no longer sending." };
 }
@@ -775,7 +777,7 @@ export async function listEmailRuns(waitListId) {
       select: { id: true, name: true, subject: true, status: true, recipientCount: true, sentAt: true, updatedAt: true },
     }),
   ]);
-  const maskEmail = (email) => email.replace(/^(.).+(@.+)$/, "$1•••$2");
+  const maskEmail = (email) => email.replace(/^([^@])[^@]*(@.+)$/, "$1•••$2");
   const automationTitle = (type) => ({ WELCOME: "Welcome after confirmation", REFERRAL_REMINDER: "Referral reminder", REFERRAL_MILESTONE: "Referral milestone" })[type] || type;
   const items = [
     ...runs.map((run) => ({

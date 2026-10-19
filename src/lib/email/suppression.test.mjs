@@ -44,13 +44,13 @@ test("signed customer bounce suppresses only its own recipient; transient bounce
   assert.deepEqual(db.suppressions, [{ workspaceId: "workspace-a", emailNormalized: "member@example.com", reason: "BOUNCE" }]);
 });
 
-test("early customer event cannot later suppress a different workspace", async () => {
+test("early customer events stay workspace-neutral until delivery resolves", async () => {
   const db = fakeDatabase();
   await recordVerifiedProviderEvent(db, bounce("message-late"), "event-early", "workspace-a");
-  assert.equal(db.recorded[0].workspaceId, "workspace-a");
+  assert.equal(db.recorded[0].workspaceId, null);
   db.deliveries.set("message-late", { waitListId: "list-b", payload: { signUpId: "signup-b" } });
   await applyKnownProviderEvents(db, "message-late", "workspace-b", "member@example.com");
-  assert.equal(db.suppressions.length, 0);
+  assert.deepEqual(db.suppressions, [{ workspaceId: "workspace-b", emailNormalized: "member@example.com", reason: "BOUNCE" }]);
 });
 
 test("Resend verifies a customer signature and rejects the wrong signing secret", () => {

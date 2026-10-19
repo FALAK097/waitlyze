@@ -21,9 +21,9 @@ export async function retryFailedVerification({ waitListId, signupIds }) {
         const signup = await tx.signUp.findFirst({ where: { id: signupId, waitListId, verifiedAt: null }, select: { id: true, email: true, emailNormalized: true } });
         if (!signup) return null;
         const [latest] = await tx.outboxEvent.findMany({ where: { waitListId, type: "SIGNUP_VERIFICATION_REQUESTED", payload: { path: ["signUpId"], equals: signupId } }, orderBy: { createdAt: "desc" }, take: 1, select: { status: true, createdAt: true, lastErrorCode: true } });
-        if (!latest || latest.status !== "FAILED" || ["SIGNUP_NOT_SENDABLE", "RECIPIENT_SUPPRESSED"].includes(latest.lastErrorCode) || Date.now() - latest.createdAt.getTime() < cooldownMs) return null;
+        if (!latest || latest.status !== "FAILED" || latest.lastErrorCode === "RECIPIENT_SUPPRESSED" || Date.now() - latest.createdAt.getTime() < cooldownMs) return null;
         if (campaign.workspaceId) {
-          const suppressed = await tx.emailSuppression.findUnique({ where: { workspaceId_emailNormalized: { workspaceId: campaign.workspaceId, emailNormalized: signup.emailNormalized || signup.email.toLowerCase() } }, select: { id: true } });
+          const suppressed = await tx.emailSuppression.findUnique({ where: { workspaceId_emailNormalized: { workspaceId: campaign.workspaceId, emailNormalized: signup.emailNormalized || signup.email.trim().toLowerCase() } }, select: { id: true } });
           if (suppressed) return null;
         }
         const token = randomBytes(32).toString("base64url");

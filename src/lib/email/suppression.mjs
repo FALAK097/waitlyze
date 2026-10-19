@@ -68,7 +68,7 @@ export async function recordVerifiedProviderEvent(db, event, eventId, expectedWo
   if (expectedWorkspaceId && target && target.workspaceId !== expectedWorkspaceId) throw new WebhookWorkspaceMismatchError();
   await db.emailProviderEvent.upsert({
     where: { providerEventId: eventId },
-    create: { providerEventId: eventId, providerMessageId: messageId, workspaceId: expectedWorkspaceId, type: event.type, isPermanent, recipientEmails },
+    create: { providerEventId: eventId, providerMessageId: messageId, workspaceId: target?.workspaceId ?? null, type: event.type, isPermanent, recipientEmails },
     update: {},
   });
   if (!isPermanent) return;

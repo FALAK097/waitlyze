@@ -216,8 +216,14 @@ export function AudienceTable({ waitlist, initialReviews = [], initialReviewsFai
     if (email.status === "DELIVERED") return "Accepted by sender";
     if (email.status === "PENDING" || email.status === "PROCESSING") return "Sending";
     if (email.issue === "RECIPIENT_SUPPRESSED") return "Not sent · suppressed";
-    if (email.issue === "SIGNUP_NOT_SENDABLE") return "Not sent · no longer eligible";
+    if (email.issue === "SIGNUP_NOT_SENDABLE") return deliveryFilter === "failed" ? "Failed · needs a fresh link" : "Not sent · no longer eligible";
     return "Failed";
+  }
+
+  function retryableVerification(row) {
+    const email = row.verificationDelivery;
+    return !row.verifiedAt && email?.status === "FAILED" && email.issue !== "RECIPIENT_SUPPRESSED"
+      && (email.issue !== "SIGNUP_NOT_SENDABLE" || deliveryFilter === "failed");
   }
 
   const showingStart = result.total === 0 ? 0 : pageIndex * PAGE_SIZE + 1;
@@ -339,7 +345,7 @@ export function AudienceTable({ waitlist, initialReviews = [], initialReviewsFai
           </div>
           <Button variant="ghost" aria-pressed={deliveryFilter === "failed"} onClick={() => { setDeliveryFilter((value) => value === "failed" ? "all" : "failed"); setCursors([null]); setPageIndex(0); setSelectedIds([]); }}>Email failed</Button>
         </div>
-        {selectedIds.length > 0 && <div className="flex flex-wrap items-center gap-3 px-4 py-3 text-sm" role="group" aria-label="Selected signups"><span>{selectedIds.length} selected on this page</span><Button variant="outline" disabled={!canManage || retrying || selectedIds.length > 25 || !result.data.some((row) => selectedIds.includes(row.id) && deliveryLabel(row) === "Failed" && !row.verifiedAt)} onClick={() => retryEmails(result.data.filter((row) => selectedIds.includes(row.id) && deliveryLabel(row) === "Failed" && !row.verifiedAt).map((row) => row.id))}>{retrying ? "Retrying…" : "Retry failed confirmations"}</Button><Button variant="ghost" onClick={() => setSelectedIds([])}>Clear selection</Button></div>}
+        {selectedIds.length > 0 && <div className="flex flex-wrap items-center gap-3 px-4 py-3 text-sm" role="group" aria-label="Selected signups"><span>{selectedIds.length} selected on this page</span><Button variant="outline" disabled={!canManage || retrying || selectedIds.length > 25 || !result.data.some((row) => selectedIds.includes(row.id) && retryableVerification(row))} onClick={() => retryEmails(result.data.filter((row) => selectedIds.includes(row.id) && retryableVerification(row)).map((row) => row.id))}>{retrying ? "Retrying…" : "Retry failed confirmations"}</Button><Button variant="ghost" onClick={() => setSelectedIds([])}>Clear selection</Button></div>}
 
         {error && <div className="product-field-error flex flex-wrap items-center justify-between gap-3 px-4 py-3" role="alert">
           <span>{result.data.length ? `Couldn’t refresh the list. Showing the last loaded results for ${appliedCriteriaLabel}.` : "Signups couldn’t be loaded."}</span>
@@ -386,7 +392,7 @@ export function AudienceTable({ waitlist, initialReviews = [], initialReviewsFai
             <dl className="grid gap-5 text-sm">
               <div className="grid grid-cols-[104px_1fr] gap-3"><dt className="text-[var(--product-text-secondary)]">Email</dt><dd className="break-all font-medium">{profile.email}</dd></div>
                {flags.sendEmailsToSubscribers && <div className="grid grid-cols-[104px_1fr] gap-3"><dt className="text-[var(--product-text-secondary)]">Status</dt><dd>{profileStatus}</dd></div>}
-               <div className="grid grid-cols-[104px_1fr] gap-3"><dt className="text-[var(--product-text-secondary)]">Confirmation email</dt><dd><p>{deliveryLabel(profile)}</p>{profile.verificationDelivery?.issue && <p className="text-xs text-[var(--product-text-secondary)]">Issue: {profile.verificationDelivery.issue.replaceAll("_", " ").toLowerCase()}</p>}{deliveryLabel(profile) === "Failed" && !profile.verifiedAt && canManage && <Button className="mt-2" variant="outline" disabled={retrying} onClick={() => retryEmails([profile.id])}>{retrying ? "Retrying…" : "Retry confirmation"}</Button>}</dd></div>
+               <div className="grid grid-cols-[104px_1fr] gap-3"><dt className="text-[var(--product-text-secondary)]">Confirmation email</dt><dd><p>{deliveryLabel(profile)}</p>{profile.verificationDelivery?.issue && <p className="text-xs text-[var(--product-text-secondary)]">Issue: {profile.verificationDelivery.issue.replaceAll("_", " ").toLowerCase()}</p>}{retryableVerification(profile) && canManage && <Button className="mt-2" variant="outline" disabled={retrying} onClick={() => retryEmails([profile.id])}>{retrying ? "Retrying…" : "Retry confirmation"}</Button>}</dd></div>
               {flags.showReferrals && <div className="grid grid-cols-[104px_1fr] gap-3"><dt className="text-[var(--product-text-secondary)]">Position</dt><dd className="tabular-nums">{profile.position == null ? "—" : `#${profile.position}`}</dd></div>}
               <div className="grid grid-cols-[104px_1fr] gap-3"><dt className="text-[var(--product-text-secondary)]">Joined</dt><dd title={formatDate(profile.createdAt)}>{timeAgo(profile.createdAt)}</dd></div>
               <div className="grid grid-cols-[104px_1fr] gap-3"><dt className="text-[var(--product-text-secondary)]">Location</dt><dd>{locationLabel(profile.city, profile.country) === "—" ? "Not available" : locationLabel(profile.city, profile.country)}</dd></div>
