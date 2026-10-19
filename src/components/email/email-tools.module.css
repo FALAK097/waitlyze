@@ -52,10 +52,12 @@
   outline-offset: 2px;
 }
 
-/* Text inputs: no offset outline (fieldCard overflow clips it and the
-   dark ring reads as a stray border). Focus is shown by the row accent. */
-.scope :global(input:focus-visible),
-.scope :global(textarea:focus-visible) {
+/* Text inputs inside field rows: no offset outline (fieldCard overflow clips
+   it and the dark ring reads as a stray border). Focus is shown by the row
+   accent. Scoped to fieldRow so every other control keeps the focus-visible
+   outline above — keyboard users need a visible indicator on them too. */
+.fieldRow input:focus-visible,
+.fieldRow textarea:focus-visible {
   outline: none;
 }
 

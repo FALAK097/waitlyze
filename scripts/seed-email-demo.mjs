@@ -51,11 +51,11 @@ try {
   }
 
   const { rows: already } = await pool.query(
-    `SELECT COUNT(*)::int AS count FROM sign_ups WHERE "waitListId" = $1 AND email LIKE 'emaildemo+%'`,
+    `SELECT COUNT(*)::int AS count FROM sign_ups WHERE "waitListId" = $1 AND (email LIKE 'falakrmfc+emaildemo%' OR email LIKE 'emaildemo+%')`,
     [waitlistId],
   );
   if (already[0].count > 0) {
-    console.log(`Already seeded (${already[0].count} demo subscribers). Delete the waitlist or its emaildemo+ rows to reseed.`);
+    console.log(`Already seeded (${already[0].count} demo subscribers). Delete the waitlist or its demo subscriber rows to reseed.`);
     process.exit(0);
   }
 
@@ -76,7 +76,7 @@ try {
   ];
   const signups = [];
   for (const profile of profiles) {
-    const email = `emaildemo+${profile.tag}@gmail.com`;
+    const email = `falakrmfc+emaildemo${profile.tag}@gmail.com`;
     const id = cuid("s");
     const created = iso(60 * 24 * (14 - Number(profile.tag)));
     await pool.query(

@@ -91,12 +91,14 @@ async function failedVerificationCount(waitListId, filters) {
   return result.total;
 }
 
-async function failedVerificationCursor(waitListId, filters, cursorId) {
-  const where = failedVerificationWhere(waitListId, filters);
+// The cursor row only supplies keyset coordinates; it must not have to still
+// match the failed-delivery predicate (a retry on that row removes it from the
+// failed set, and the next page would otherwise dead-end at 400).
+async function failedVerificationCursor(waitListId, cursorId) {
   const [row] = await prisma.$queryRaw(Prisma.sql`
     SELECT "signup"."id", "signup"."createdAt"
     FROM "sign_ups" AS "signup"
-    WHERE ${where} AND "signup"."id" = ${cursorId}
+    WHERE "signup"."waitListId" = ${waitListId} AND "signup"."id" = ${cursorId}
     LIMIT 1`);
   return row ?? null;
 }
@@ -117,7 +119,7 @@ export async function GET(request, { params }) {
       if (cursor.length > 128) return NextResponse.json({ error: "Invalid page cursor." }, { status: 400 });
     }
     if (filters.delivery === "failed") {
-      const after = cursor ? await failedVerificationCursor(id, filters, cursor) : null;
+      const after = cursor ? await failedVerificationCursor(id, cursor) : null;
       if (cursor && !after) return NextResponse.json({ error: "Invalid page cursor." }, { status: 400 });
       [rows, total] = await Promise.all([
         failedVerificationPage(id, filters, after, AUDIENCE_PAGE_SIZE + 1),

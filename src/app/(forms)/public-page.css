@@ -62,8 +62,8 @@
 @media (max-width: 520px) { .delivery-health { flex-direction: column; } }
 
 .verify-referral { margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--product-border-subtle, #e8e8e2); }
-.verify-referral label { display: block; margin: 14px 0 6px; font-size: .85rem; font-weight: 650; }
 .verify-referral-row { display: flex; gap: 8px; }
-.verify-referral-row input { min-width: 0; flex: 1; padding: 9px 10px; border: 1px solid var(--product-border-subtle, #e8e8e2); border-radius: 8px; color: inherit; font: inherit; }
-.verify-referral-row button { flex: none; margin-top: 0; }
+.verify-referral-row input { min-width: 0; flex: 1; height: 42px; padding: 0 12px; border: 1px solid var(--product-border-control); border-radius: 8px; background: var(--product-bg-surface); color: var(--product-text-primary); font: inherit; font-size: .8125rem; }
+.verify-referral-row button { flex: none; margin-top: 0; min-height: 42px; }
+.verify-referral-position { margin: 12px 0 0; color: var(--product-text-secondary); font-size: .875rem; }
 @media (max-width: 520px) { .verify-referral-row { flex-direction: column; } }

@@ -92,7 +92,7 @@ async function dispatchBroadcast(db, event, payload, send, now, attempt, result)
        html: broadcast.renderedHtml
          ? subscriberEmailHtml({ name: waitList.name || "Waitlist", content: broadcast.renderedHtml, previewText: broadcast.previewText, unsubscribeUrl })
          : broadcastHtml({ campaignName: waitList.name || "Waitlist", previewText: broadcast.previewText, body: broadcast.body, unsubscribeUrl }),
-       text: broadcast.renderedText || undefined,
+       text: broadcast.renderedText ? `${broadcast.renderedText.trim()}\n\nUnsubscribe: ${unsubscribeUrl}` : undefined,
       headers: { "List-Unsubscribe": `<${unsubscribeUrl}>`, "List-Unsubscribe-Post": "List-Unsubscribe=One-Click" },
       idempotencyKey: event.eventKey,
       workspaceId: waitList.workspaceId,

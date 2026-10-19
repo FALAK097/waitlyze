@@ -54,8 +54,8 @@ export function interpolateEmail(value, variables) {
   return String(value || "").replace(/\{\{\s*([a-z_]+)\s*\}\}/gi, (match, name) => escapeHtmlText(variables[name.toLowerCase()] ?? match));
 }
 
-export function subscriberEmailHtml({ name, content, previewText = "", unsubscribeUrl, platformSender = false }) {
-  const footer = `<table role="presentation" width="100%" style="border-top:1px solid #e5e9e4;margin-top:36px;padding-top:18px"><tr><td style="font:13px/21px Arial,sans-serif;color:#616b64"><strong style="color:#16271d">${escapeHtmlText(name)}</strong><br>${unsubscribeUrl ? `You received this because you opted in to updates. <a href="${escapeHtmlText(unsubscribeUrl)}" style="color:#33543c">Unsubscribe</a>.<br>` : ""}${platformSender ? "Sent via Waitlyze on behalf of this waitlist." : ""}</td></tr></table>`;
+export function subscriberEmailHtml({ name, content, previewText = "", unsubscribeUrl }) {
+  const footer = `<table role="presentation" width="100%" style="border-top:1px solid #e5e9e4;margin-top:36px;padding-top:18px"><tr><td style="font:13px/21px Arial,sans-serif;color:#616b64"><strong style="color:#16271d">${escapeHtmlText(name)}</strong>${unsubscribeUrl ? `<br>You received this because you opted in to updates. <a href="${escapeHtmlText(unsubscribeUrl)}" style="color:#33543c">Unsubscribe</a>.` : ""}</td></tr></table>`;
   const body = content.includes("<body")
     ? content.replace(/<\/body\s*>/i, `${footer}</body>`)
     : `<!doctype html><html lang="en"><body style="margin:0;background:#f7f8f5;color:#16271d;font:16px/1.6 Arial,sans-serif"><div style="max-width:600px;margin:0 auto;padding:36px 24px"><p style="font-size:13px;color:#617267">${escapeHtmlText(name)}</p>${content}${footer}</div></body></html>`;

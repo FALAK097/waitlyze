@@ -13,7 +13,7 @@ export function BroadcastSummaryEmail({ waitlistName, subject, status, delivered
         {allAccepted
           ? `Every opted-in subscriber on ${waitlistName} was accepted by the sender. Nothing else to do here.`
           : status === "SENT"
-            ? `Most of “${subject}” went out. The addresses below were skipped or rejected — they won’t be retried.`
+            ? `“${subject}” finished sending. The addresses below were skipped or rejected — they won’t be retried.`
             : status === "CANCELED"
               ? `You stopped “${subject}” before it finished. Recipients already accepted by the sender may still receive it.`
               : `“${subject}” stopped before it could finish. Open the report to see which recipients failed and why.`}

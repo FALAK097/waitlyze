@@ -43,12 +43,12 @@ export async function maybeNotifySignupMilestone(db, waitListId) {
     if (!MILESTONE_COUNTS.includes(count)) return false;
     const waitList = await db.waitList.findUnique({
       where: { id: waitListId },
-      select: { name: true, status: true, workspaceId: true },
+      select: { name: true, status: true, workspaceId: true, showReferrals: true },
     });
     if (!waitList || waitList.status !== "PUBLISHED") return false;
     const waitlistName = waitList.name || "Your waitlist";
     const url = `${String(env.BETTER_AUTH_URL || "").replace(/\/$/, "")}/waitlists/${encodeURIComponent(waitListId)}/subscribers`;
-    const html = await renderSignupMilestone({ waitlistName, count, url });
+    const html = await renderSignupMilestone({ waitlistName, count, url, showReferrals: waitList.showReferrals });
     const subject = count === 1 ? `Your first signup on ${waitlistName}` : `${count} signups on ${waitlistName}`;
     return (await notifyOwners(db, waitList.workspaceId, { subject, html, idempotencyKey: `signup-milestone:${waitListId}:${count}` })) > 0;
   } catch (error) {

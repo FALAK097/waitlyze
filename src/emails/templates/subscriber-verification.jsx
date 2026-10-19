@@ -1,4 +1,4 @@
-import { EmailLayout, FallbackLink, Muted, Paragraph, PrimaryLink } from "../layout";
+import { EmailLayout, FallbackLink, Paragraph, PrimaryLink } from "../layout";
 
 export function SubscriberVerificationEmail({ waitlistName, url }) {
   return (
@@ -10,7 +10,6 @@ export function SubscriberVerificationEmail({ waitlistName, url }) {
     >
       <Paragraph>Confirm your email address to secure your place on <strong>{waitlistName}</strong>. Your confirmation link is valid for 24 hours.</Paragraph>
       <PrimaryLink href={url}>Confirm my place</PrimaryLink>
-      <Muted>This message was sent on behalf of {waitlistName} because someone entered this email address on its waitlist.</Muted>
       <FallbackLink href={url} />
     </EmailLayout>
   );

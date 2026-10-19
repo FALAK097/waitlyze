@@ -3,7 +3,7 @@ import { Resend } from "resend";
 import prisma from "@/lib/prisma";
 import { env } from "@/lib/env.mjs";
 import { decryptWebhookSecret } from "@/lib/integrations/secrets.mjs";
-import { recordVerifiedProviderEvent } from "@/lib/email/suppression.mjs";
+import { recordVerifiedProviderEvent, WebhookWorkspaceMismatchError } from "@/lib/email/suppression.mjs";
 
 export const runtime = "nodejs";
 
@@ -30,6 +30,10 @@ export async function POST(request, { params }) {
   try {
     await recordVerifiedProviderEvent(prisma, event, headers.id, workspaceId);
   } catch (error) {
+    // A provider account shared by several workspaces delivers each event to
+    // every endpoint. Acknowledge the other workspaces' events with 2xx so the
+    // provider does not retry and disable the endpoint.
+    if (error instanceof WebhookWorkspaceMismatchError) return NextResponse.json({ received: true, ignored: true });
     if (error instanceof TypeError) return NextResponse.json({ message: "Invalid event payload" }, { status: 400 });
     throw error;
   }

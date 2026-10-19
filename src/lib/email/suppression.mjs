@@ -1,5 +1,18 @@
 const normalizeEmail = (email) => typeof email === "string" ? email.trim().toLowerCase() : "";
 
+/**
+ * A verified provider event whose delivery belongs to a different workspace.
+ * Callers must acknowledge (not reject) these: when one provider account fans
+ * an event out to several workspace endpoints, a 4xx would make the provider
+ * retry and eventually disable the endpoint for everyone.
+ */
+export class WebhookWorkspaceMismatchError extends TypeError {
+  constructor(message = "Webhook event does not belong to this workspace.") {
+    super(message);
+    this.name = "WebhookWorkspaceMismatchError";
+  }
+}
+
 async function suppress(db, workspaceId, recipient, type) {
   const emailNormalized = normalizeEmail(recipient);
   if (!workspaceId || !emailNormalized) return;
@@ -52,7 +65,7 @@ export async function recordVerifiedProviderEvent(db, event, eventId, expectedWo
   const recipientEmails = [...new Set(recipients.slice(0, 100).map(normalizeEmail).filter((email) => email && email.length <= 320))];
   const isPermanent = event.type === "email.complained" || event.data?.bounce?.type === "Permanent";
   const target = await deliveryRecipient(db, messageId);
-  if (expectedWorkspaceId && target && target.workspaceId !== expectedWorkspaceId) throw new TypeError("Webhook event does not belong to this workspace.");
+  if (expectedWorkspaceId && target && target.workspaceId !== expectedWorkspaceId) throw new WebhookWorkspaceMismatchError();
   await db.emailProviderEvent.upsert({
     where: { providerEventId: eventId },
     create: { providerEventId: eventId, providerMessageId: messageId, workspaceId: expectedWorkspaceId, type: event.type, isPermanent, recipientEmails },

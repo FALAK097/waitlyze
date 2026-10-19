@@ -22,8 +22,8 @@ export async function renderSubscriberVerification({ waitlistName, url }) {
 }
 
 /** Renders an owner notice when a signup milestone is reached. */
-export async function renderSignupMilestone({ waitlistName, count, url }) {
-  return render(<SignupMilestoneEmail waitlistName={waitlistName} count={count} url={url} />);
+export async function renderSignupMilestone({ waitlistName, count, url, showReferrals }) {
+  return render(<SignupMilestoneEmail waitlistName={waitlistName} count={count} url={url} showReferrals={showReferrals} />);
 }
 
 /** Renders an owner notice after a broadcast finishes. */

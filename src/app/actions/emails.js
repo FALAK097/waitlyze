@@ -298,7 +298,7 @@ export async function sendTestEmail({ waitListId, templateType, to }) {
       <div class="footer">${subBody}</div>
       <div class="divider"></div>
       <div class="email-footer">
-        Need help? Reply to this email • © ${new Date().getFullYear()} Waitlyze
+        Need help? Reply to this email • © ${new Date().getFullYear()} ${waitList.name || "This waitlist"}
       </div>
     </div>
   </div>
@@ -306,7 +306,7 @@ export async function sendTestEmail({ waitListId, templateType, to }) {
 </html>`;
 
     const provider = await senderForWaitlist(waitListId);
-    const richHtml = tpl.renderedHtml ? subscriberEmailHtml({ name: waitList.name || "Your project", content: interpolateEmail(tpl.renderedHtml, vars), previewText, platformSender: provider === platformSender }) : null;
+    const richHtml = tpl.renderedHtml ? subscriberEmailHtml({ name: waitList.name || "Your project", content: interpolateEmail(tpl.renderedHtml, vars), previewText }) : null;
     const { error } = await new Resend(provider.apiKey).emails.send({
       from: provider.fromEmail,
       to,
@@ -480,7 +480,7 @@ async function renderTemplate({ waitListId, enumType, varsOverride = {} }) {
       <div class="footer">${subBody}</div>
       <div class="divider"></div>
       <div class="email-footer">
-        Need help? Reply to this email • © ${new Date().getFullYear()} Waitlyze
+        Need help? Reply to this email • © ${new Date().getFullYear()} ${waitList.name || "This waitlist"}
       </div>
     </div>
   </div>
@@ -568,7 +568,7 @@ const broadcastPath = (waitListId) => `/waitlists/${waitListId}/emails/broadcast
 const broadcastInput = (input) => {
   if (!input || typeof input !== "object") return null;
   let content;
-  try { content = validateComposerContent(input); } catch { return null; }
+  try { content = validateComposerContent(input); } catch (error) { return { error: typeof error?.message === "string" && error.message ? error.message : "Write a message before saving." }; }
   const value = {
     name: String(input.name || "").trim(),
     subject: String(input.subject || "").trim(),
@@ -616,7 +616,7 @@ export async function createBroadcastDraft(waitListId) {
 
 export async function saveBroadcastDraft({ waitListId, broadcastId, data }) {
   const value = broadcastInput(data);
-  if (!value) return { success: false, message: "Keep the subject, preview, and message within their character limits." };
+  if (!value || value.error) return { success: false, message: value?.error || "Keep the subject, preview, and message within their character limits." };
   await requireCampaign(waitListId, "sendEmail");
   const updated = await prisma.marketingBroadcast.updateMany({
     where: { id: broadcastId, waitListId, status: "DRAFT" }, data: value,
@@ -761,7 +761,7 @@ export async function listEmailRuns(waitListId) {
     prisma.automationRun.findMany({
       where: { waitListId: campaign.id },
       orderBy: { createdAt: "desc" },
-      take: 60,
+      take: 100,
       include: {
         recipe: { select: { type: true } },
         signUp: { select: { email: true } },
@@ -771,7 +771,7 @@ export async function listEmailRuns(waitListId) {
     prisma.marketingBroadcast.findMany({
       where: { waitListId: campaign.id, status: { not: "DRAFT" } },
       orderBy: { updatedAt: "desc" },
-      take: 40,
+      take: 100,
       select: { id: true, name: true, subject: true, status: true, recipientCount: true, sentAt: true, updatedAt: true },
     }),
   ]);

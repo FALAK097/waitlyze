@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { Resend } from "resend";
 import { Webhook } from "svix";
-import { applyKnownProviderEvents, recordVerifiedProviderEvent } from "./suppression.mjs";
+import { applyKnownProviderEvents, recordVerifiedProviderEvent, WebhookWorkspaceMismatchError } from "./suppression.mjs";
 import { decryptWebhookSecret, encryptWebhookSecret } from "../integrations/secrets.mjs";
 
 function fakeDatabase() {
@@ -30,7 +30,7 @@ const bounce = (id, permanent = true) => ({ type: "email.bounced", data: { email
 test("customer webhook rejects a delivery belonging to another workspace", async () => {
   const db = fakeDatabase();
   db.deliveries.set("message-b", { waitListId: "list-b", payload: { signUpId: "signup-b" } });
-  await assert.rejects(recordVerifiedProviderEvent(db, bounce("message-b"), "event-1", "workspace-a"), TypeError);
+  await assert.rejects(recordVerifiedProviderEvent(db, bounce("message-b"), "event-1", "workspace-a"), WebhookWorkspaceMismatchError);
   assert.equal(db.recorded.length, 0);
   assert.equal(db.suppressions.length, 0);
 });
