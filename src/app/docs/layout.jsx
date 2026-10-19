@@ -2,6 +2,7 @@ import { RootProvider } from "fumadocs-ui/provider/next";
 import { DocsLayout } from "fumadocs-ui/layouts/docs";
 import { source } from "@/lib/source";
 import { gitConfig } from "@/lib/docs-shared";
+import { DocsTopNav } from "@/components/docs/docs-top-nav";
 import "./docs.css";
 
 export const metadata = { title: "Developer docs", description: "Create waitlists, publish pages, grow referrals, send email, and connect your stack to Waitlyze." };
@@ -23,7 +24,8 @@ export default function Layout({ children }) {
     tree={source.getPageTree()}
     sidebar={{ defaultOpenLevel: 2, footer: <SidebarFooter /> }}
     nav={{ title: <DocsMark />, url: "/" }}
+    slots={{ header: DocsTopNav }}
     themeSwitch={{ enabled: false }}
-    containerProps={{ className: "waitlyze-docs" }}
+    containerProps={{ className: "waitlyze-docs", style: { "--fd-header-height": "68px" } }}
   >{children}</DocsLayout></RootProvider>;
 }

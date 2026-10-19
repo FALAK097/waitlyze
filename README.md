@@ -62,6 +62,24 @@ pnpm dev
 
 Open [http://localhost:3000](http://localhost:3000) in your browser.
 
+## Releasing
+
+Release notes are managed with [Tegami](https://tegami.fuma-nama.dev). To describe a change, add a Markdown file to `.tegami/`:
+
+```md
+---
+subject: Explain the update in a short phrase
+packages:
+  waitlyze: patch
+---
+
+### Highlights
+
+Describe the customer-facing change here.
+```
+
+Run `pnpm tegami` locally to draft an entry. After it merges to `main`, the Tegami workflow opens a Version Packages pull request that updates `package.json` and `CHANGELOG.md`. Waitlyze is a private app, so it is versioned without publishing an npm package. The published history is rendered at `/docs/changelog`.
+
 ## Attribution
 
 Area-chart styling adapted from [Evil Charts](https://evilcharts.com) by Gurbinder (MIT licensed).
