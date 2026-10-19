@@ -48,3 +48,6 @@ next-env.d.ts
 
 # Temporary route materialized only during isolated browser builds
 /src/app/design-system/
+
+# Tegami publish lock (private app, versioning only)
+/.tegami/publish-lock.yaml

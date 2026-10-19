@@ -20,18 +20,22 @@
 .waitlyze-docs-topnav-actions{display:none}
 .waitlyze-docs-topnav-action{display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;border:0;border-radius:8px;background:transparent;color:var(--color-fd-muted-foreground)}
 .waitlyze-docs-topnav-action:hover{background:var(--color-fd-accent);color:var(--color-fd-accent-foreground)}
+.waitlyze-changelog-intro{max-width:72ch;color:var(--color-fd-muted-foreground)}
+.waitlyze-tegami-guidance{margin-block:24px;padding:16px 18px;border:1px solid var(--color-fd-border);border-radius:12px;background:var(--color-fd-secondary)}
+.waitlyze-tegami-guidance summary{color:var(--color-fd-foreground);font-weight:600;cursor:pointer}
+.waitlyze-tegami-guidance p{margin-block:12px 0;color:var(--color-fd-muted-foreground)}
+.waitlyze-tegami-guidance pre{max-width:100%;margin-block:14px 0;padding:16px;overflow:auto;border:1px solid var(--color-fd-border);border-radius:8px;background:var(--color-fd-background);font-size:13px;line-height:1.55}
 .waitlyze-docs-changelog-index{display:flex;align-items:center;gap:6px;margin-block:28px 22px;padding:0 0 12px;overflow-x:auto;border-bottom:1px solid var(--color-fd-border);scrollbar-width:thin}
 .waitlyze-docs-changelog-index a{flex:0 0 auto;padding:7px 10px;border-radius:7px;color:var(--color-fd-muted-foreground);font-size:13px;text-decoration:none;white-space:nowrap}
 .waitlyze-docs-changelog-index a:hover,.waitlyze-docs-changelog-index a:focus-visible{background:var(--color-fd-accent);color:var(--color-fd-accent-foreground)}
 .waitlyze-docs-changelog-index a[data-latest="true"]{background:color-mix(in oklch,var(--color-fd-primary) 10%,white);color:var(--color-fd-primary);font-weight:600}
-.waitlyze-docs-changelog-release-anchor{display:block;scroll-margin-top:calc(var(--fd-docs-row-2) + 16px)}
-.waitlyze-docs .waitlyze-docs-changelog-index~.waitlyze-docs-changelog-release-anchor+h2{margin-top:0;padding-top:28px;border-top:1px solid var(--color-fd-border);font-size:clamp(24px,2.5vw,32px);letter-spacing:-.035em;line-height:1.2;scroll-margin-top:calc(var(--fd-docs-row-2) + 16px)}
-.waitlyze-docs-changelog-release-anchor+h2+h3{margin-block:10px 18px;color:var(--color-fd-muted-foreground);font-size:15px;font-weight:500}
-.waitlyze-docs-changelog-release-anchor+h2+h3+p{color:var(--color-fd-muted-foreground)}
-.waitlyze-docs-changelog-release-anchor+h2+h3+p+ul{display:grid;gap:11px;margin-block:16px 30px;padding-inline-start:20px}
-.waitlyze-docs-changelog-release-anchor+h2+h3+p+ul li{padding-inline-start:4px;line-height:1.65}
-.waitlyze-docs-changelog-release-anchor+h2+h3+p+ul li::marker{color:var(--color-fd-primary)}
-@media(max-width:767px){.waitlyze-docs-topnav{justify-content:flex-start;gap:8px;padding-inline:12px}.waitlyze-docs-topnav-brand{display:flex;align-items:center;flex:0 0 auto}.waitlyze-docs-topnav-brand .docs-mark{transform:scale(.8) skew(-12deg);transform-origin:left center}.waitlyze-docs-topnav-links{justify-content:flex-start;flex:1;gap:6px}.waitlyze-docs-topnav-link{padding-inline:5px;font-size:12px}.waitlyze-docs-topnav-actions{display:flex;align-items:center;gap:2px}.waitlyze-docs-changelog-index{margin-block:22px 18px;padding-bottom:8px}.waitlyze-docs-changelog-release{padding-block:22px}}
+.waitlyze-docs h2[id^="release-"]{margin-top:0;padding-top:28px;border-top:1px solid var(--color-fd-border);font-size:clamp(24px,2.5vw,32px);letter-spacing:-.035em;line-height:1.2;scroll-margin-top:calc(var(--fd-docs-row-2) + 16px)}
+.waitlyze-docs h2[id^="release-"]+h3{margin-block:10px 18px;color:var(--color-fd-muted-foreground);font-size:15px;font-weight:500}
+.waitlyze-docs h2[id^="release-"]+h3+h4{margin-block:18px 8px;font-size:13px;font-weight:650;letter-spacing:.02em}
+.waitlyze-docs h2[id^="release-"]+h3+h4+ul{display:grid;gap:11px;margin-block:0 30px;padding-inline-start:20px}
+.waitlyze-docs h2[id^="release-"]+h3+h4+ul li{padding-inline-start:4px;line-height:1.65}
+.waitlyze-docs h2[id^="release-"]+h3+h4+ul li::marker{color:var(--color-fd-primary)}
+@media(max-width:767px){.waitlyze-docs-topnav{justify-content:flex-start;gap:8px;padding-inline:12px}.waitlyze-docs-topnav-brand{display:flex;align-items:center;flex:0 0 auto}.waitlyze-docs-topnav-brand .docs-mark{transform:scale(.8) skew(-12deg);transform-origin:left center}.waitlyze-docs-topnav-links{justify-content:flex-start;flex:1;gap:6px}.waitlyze-docs-topnav-link{padding-inline:5px;font-size:12px}.waitlyze-docs-topnav-actions{display:flex;align-items:center;gap:2px}.waitlyze-docs-changelog-index{margin-block:22px 18px;padding-bottom:8px}}
 @media(prefers-reduced-motion:reduce){.waitlyze-docs-topnav-link{transition:none}}
 /* Sidebar footer: GitHub + Waitlists side by side. */
 .docs-sidebar-footer{display:flex;align-items:center;gap:4px;border:1px solid var(--color-fd-border);border-radius:10px;background:var(--color-fd-secondary);padding:4px}
