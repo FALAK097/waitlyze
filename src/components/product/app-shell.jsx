@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogClose, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { createWorkspace, selectWorkspace } from "@/app/actions/settings";
@@ -93,10 +94,8 @@ function AccountMenu({ user, avatar }) {
       router.replace("/"); router.refresh();
     } catch { toast.error("Could not sign out. Try again."); setPending(false); }
   }
-  return <div className="app-account-control"><DropdownMenu><DropdownMenuTrigger render={<Button variant="ghost" size="icon" />} aria-label="Open account menu">{avatar}</DropdownMenuTrigger><DropdownMenuContent align="end" sideOffset={8} className="min-w-64">
+  return <div className="app-account-control"><TooltipProvider><Tooltip><TooltipTrigger render={<Button variant="ghost" size="icon-lg" className="size-11" aria-label="Send feedback" onClick={() => setFeedbackOpen(true)} />}><HugeiconsIcon icon={BubbleChatIcon} aria-hidden="true" /></TooltipTrigger><TooltipContent side="bottom">Send Feedback</TooltipContent></Tooltip></TooltipProvider><DropdownMenu><DropdownMenuTrigger render={<Button variant="ghost" size="icon" />} aria-label="Open account menu">{avatar}</DropdownMenuTrigger><DropdownMenuContent align="end" sideOffset={8} className="min-w-64">
     <div className="app-account-details">{avatar}<div><strong>{user.name || "Account"}</strong><span className="app-account-email" title={user.email}>{user.email}</span></div></div>
-    <DropdownMenuItem className="cursor-pointer" onClick={() => setFeedbackOpen(true)}><HugeiconsIcon icon={BubbleChatIcon} aria-hidden="true" /><span className="flex-1">Send feedback</span></DropdownMenuItem>
-    <DropdownMenuSeparator />
     <DropdownMenuItem variant="destructive" className="cursor-pointer" onClick={leave} disabled={pending}><HugeiconsIcon icon={Logout01Icon} aria-hidden="true" />{pending ? "Signing out…" : "Sign out"}</DropdownMenuItem>
   </DropdownMenuContent></DropdownMenu><FeedbackForm user={user} open={feedbackOpen} onOpenChange={setFeedbackOpen} /></div>;
 }
