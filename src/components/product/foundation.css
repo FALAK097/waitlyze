@@ -1,3 +1,11 @@
+@font-face {
+  font-family: "Paper Mono";
+  src: url("/fonts/paper-mono/PaperMono-Variable.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 100 800;
+  font-display: swap;
+}
+
 /* Shared light-only product tokens. */
 .product-ui {
   --product-neutral-50: hsl(210 5% 98%);
@@ -38,7 +46,7 @@
   --product-shadow-elevated: 0 1px 3px hsl(0 0% 0% / 0.08), 0 16px 48px hsl(0 0% 0% / 0.16);
   --product-font-sans: var(--wl-body);
   --product-font-display: var(--wl-display);
-  --product-font-mono: ui-monospace, "SFMono-Regular", monospace;
+  --product-font-mono: "Paper Mono", ui-monospace, "SFMono-Regular", monospace;
   --product-radius-control: 0.5rem;
   --product-radius-panel: 0.75rem;
   --product-radius-dialog: var(--product-radius-panel);

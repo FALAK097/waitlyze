@@ -18,7 +18,7 @@
 .app-navigation a { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 8px 12px; border-radius: 8px; font-size: .875rem; color: var(--product-text-secondary); text-decoration: none; }
 .app-navigation a[aria-current] { color: var(--product-text-primary); font-weight: 600; text-decoration: underline; text-underline-offset: 6px; text-decoration-color: var(--product-accent-solid); }
 .app-frame .product-main { padding-block-start: 24px; }
-.app-account-control { margin-inline-start: auto; flex-shrink: 0; }
+.app-account-control { display: flex; align-items: center; gap: 8px; margin-inline-start: auto; flex-shrink: 0; }
 .app-account-details { display: flex; align-items: center; gap: 12px; padding: 12px 8px 16px; max-width: min(320px, calc(100vw - 32px)); white-space: nowrap; }
 .app-account-details > div { display: grid; gap: 4px; min-width: 0; flex: 1; }
 .app-account-details strong { font-size: .875rem; font-weight: 600; overflow-wrap: break-word; }
