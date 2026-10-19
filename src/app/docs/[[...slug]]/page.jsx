@@ -25,9 +25,10 @@ export default async function Page({ params }) {
   const page = source.getPage(slug);
   if (!page) notFound();
   const MDX = page.data.body;
+  const title = page.slugs[0] === "changelog" ? "What’s new in Waitlyze" : page.data.title;
   const markdownUrl = getPageMarkdownUrl(page).url;
   return <DocsPage toc={page.data.toc} full={page.data.full}>
-    <DocsTitle>{page.data.title}</DocsTitle>
+    <DocsTitle>{title}</DocsTitle>
     <DocsDescription className="mb-0">{page.data.description}</DocsDescription>
     <div className="flex flex-row gap-2 items-center border-b pb-6">
       <MarkdownCopyButton markdownUrl={markdownUrl} />

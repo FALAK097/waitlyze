@@ -16,7 +16,6 @@ export default function Header() {
     ["How it works", "/#how-it-works"],
     ["Features", "/#features"],
     ["FAQ", "/#faq"],
-    ["Changelog", "/changelog"],
   ];
   return (
     <header
