@@ -111,6 +111,7 @@ export function AppShell({ children, user, avatar, workspaces, selectedWorkspace
       <nav aria-label="Main navigation" className="app-navigation">
         <Link prefetch={false} href="/waitlists" aria-current={pathname.startsWith("/waitlists") ? "page" : undefined}>Overview</Link>
         <Link prefetch={false} href="/settings" aria-current={pathname.startsWith("/settings") ? "page" : undefined}>Settings</Link>
+        <Link prefetch={false} href="/changelog" aria-current={pathname.startsWith("/changelog") ? "page" : undefined}>Changelog</Link>
         <Link prefetch={false} href="/docs" target="_blank" rel="noreferrer">Docs<HugeiconsIcon icon={ArrowUpRight01Icon} size={14} aria-hidden="true" /></Link>
       </nav>
       <AccountMenu user={user} avatar={avatar} />

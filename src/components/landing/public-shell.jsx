@@ -29,6 +29,7 @@ export default function PublicShell({ children }) {
             <Link prefetch={false} href="/#how-it-works">How it works</Link>
             <Link prefetch={false} href="/#features">Features</Link>
             <Link prefetch={false} href="/#faq">FAQs</Link>
+            <Link prefetch={false} href="/changelog">Changelog</Link>
             <Link prefetch={false} href="/docs">Developer docs</Link>
           </nav>
           <nav aria-label="Company">
