@@ -6,7 +6,7 @@ import { DocsBody, DocsDescription, DocsPage, DocsTitle } from "fumadocs-ui/layo
 
 export const metadata = {
   title: "Changelog | Waitlyze Docs",
-  description: "Waitlyze release notes from v0.1.0 through v0.9.0, with future updates managed by Tegami.",
+  description: "Waitlyze release notes, from the first waitlist release through the latest update.",
 };
 
 function releaseId(title) {
@@ -29,21 +29,7 @@ export default async function ChangelogPage() {
       <DocsTitle>What’s new in Waitlyze</DocsTitle>
       <DocsDescription>Follow new capabilities, improvements, and fixes across the platform.</DocsDescription>
       <DocsBody>
-        <p className="waitlyze-changelog-intro">The v0.1.0–v0.9.0 entries are a retrospective of shipped work. New changes go in <code>.tegami/</code>; Tegami updates the version and this archive, then opens a Version Packages pull request. Waitlyze is a private app, so it is versioned without publishing an npm package.</p>
-        <details className="waitlyze-tegami-guidance">
-          <summary>Add a release note with Tegami</summary>
-          <p>Create a Markdown file in <code>.tegami/</code> and set the bump for the app:</p>
-          <pre><code>{`---
-subject: Explain the update in a short phrase
-packages:
-  waitlyze: patch
----
-
-### Highlights
-
-Describe the customer-facing change here.`}</code></pre>
-          <p>Run <code>pnpm tegami</code> locally to draft an entry. After it merges to <code>main</code>, the Tegami workflow prepares a Version Packages pull request that updates <code>package.json</code> and <code>CHANGELOG.md</code>.</p>
-        </details>
+        <p className="waitlyze-changelog-intro">Every capability, improvement, and fix we have shipped, from the first waitlist release through today&apos;s updates.</p>
         <nav className="waitlyze-docs-changelog-index" aria-label="Release versions">
           {releases.map((version, index) => <a key={version} href={`#${releaseId(version)}`} data-latest={index === 0 ? "true" : undefined}>{version}</a>)}
         </nav>

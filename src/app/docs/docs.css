@@ -21,10 +21,6 @@
 .waitlyze-docs-topnav-action{display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;border:0;border-radius:8px;background:transparent;color:var(--color-fd-muted-foreground)}
 .waitlyze-docs-topnav-action:hover{background:var(--color-fd-accent);color:var(--color-fd-accent-foreground)}
 .waitlyze-changelog-intro{max-width:72ch;color:var(--color-fd-muted-foreground)}
-.waitlyze-tegami-guidance{margin-block:24px;padding:16px 18px;border:1px solid var(--color-fd-border);border-radius:12px;background:var(--color-fd-secondary)}
-.waitlyze-tegami-guidance summary{color:var(--color-fd-foreground);font-weight:600;cursor:pointer}
-.waitlyze-tegami-guidance p{margin-block:12px 0;color:var(--color-fd-muted-foreground)}
-.waitlyze-tegami-guidance pre{max-width:100%;margin-block:14px 0;padding:16px;overflow:auto;border:1px solid var(--color-fd-border);border-radius:8px;background:var(--color-fd-background);font-size:13px;line-height:1.55}
 .waitlyze-docs-changelog-index{display:flex;align-items:center;gap:6px;margin-block:28px 22px;padding:0 0 12px;overflow-x:auto;border-bottom:1px solid var(--color-fd-border);scrollbar-width:thin}
 .waitlyze-docs-changelog-index a{flex:0 0 auto;padding:7px 10px;border-radius:7px;color:var(--color-fd-muted-foreground);font-size:13px;text-decoration:none;white-space:nowrap}
 .waitlyze-docs-changelog-index a:hover,.waitlyze-docs-changelog-index a:focus-visible{background:var(--color-fd-accent);color:var(--color-fd-accent-foreground)}
