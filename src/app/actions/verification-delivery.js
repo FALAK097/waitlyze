@@ -1,6 +1,6 @@
 "use server";
 
-import { createHash, randomBytes } from "node:crypto";
+import { createHash, randomBytes, randomUUID } from "node:crypto";
 import prisma from "@/lib/prisma";
 import { requireCampaign } from "@/lib/workspaces/authorize";
 import { dispatchVerificationNow } from "@/lib/email/dispatch-now.mjs";
@@ -21,14 +21,20 @@ export async function retryFailedVerification({ waitListId, signupIds }) {
         const signup = await tx.signUp.findFirst({ where: { id: signupId, waitListId, verifiedAt: null }, select: { id: true, email: true, emailNormalized: true } });
         if (!signup) return null;
         const [latest] = await tx.outboxEvent.findMany({ where: { waitListId, type: "SIGNUP_VERIFICATION_REQUESTED", payload: { path: ["signUpId"], equals: signupId } }, orderBy: { createdAt: "desc" }, take: 1, select: { status: true, createdAt: true, lastErrorCode: true } });
-        if (latest?.status !== "FAILED" || ["SIGNUP_NOT_SENDABLE", "RECIPIENT_SUPPRESSED"].includes(latest.lastErrorCode) || Date.now() - latest.createdAt.getTime() < cooldownMs) return null;
+        if (!latest || !["FAILED", "DELIVERED"].includes(latest.status) || ["SIGNUP_NOT_SENDABLE", "RECIPIENT_SUPPRESSED"].includes(latest.lastErrorCode) || Date.now() - latest.createdAt.getTime() < cooldownMs) return null;
         if (campaign.workspaceId) {
           const suppressed = await tx.emailSuppression.findUnique({ where: { workspaceId_emailNormalized: { workspaceId: campaign.workspaceId, emailNormalized: signup.emailNormalized || signup.email.toLowerCase() } }, select: { id: true } });
           if (suppressed) return null;
         }
         const token = randomBytes(32).toString("base64url");
-        const verification = await tx.signUpVerification.create({ data: { signUpId: signup.id, tokenHash: createHash("sha256").update(token).digest("hex"), expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000) } });
-        const key = `signup.verify:${verification.id}`;
+        const tokenHash = createHash("sha256").update(token).digest("hex");
+        const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+        await tx.signUpVerification.upsert({
+          where: { signUpId: signup.id },
+          create: { signUpId: signup.id, tokenHash, expiresAt },
+          update: { tokenHash, expiresAt, usedAt: null },
+        });
+        const key = `signup.verify:${randomUUID()}`;
         await tx.outboxEvent.create({ data: { eventKey: key, type: "SIGNUP_VERIFICATION_REQUESTED", waitListId, payload: { signUpId: signup.id, waitListId, email: signup.email, token } } });
         return key;
       });

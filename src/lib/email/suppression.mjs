@@ -17,7 +17,7 @@ export async function applyKnownProviderEvents(db, providerMessageId, workspaceI
   const emailNormalized = normalizeEmail(recipient);
   if (!emailNormalized) return;
   const events = await db.emailProviderEvent.findMany({
-    where: { providerMessageId, recipientEmails: { has: emailNormalized }, OR: [{ type: "email.complained" }, { type: "email.bounced", isPermanent: true }] },
+    where: { providerMessageId, recipientEmails: { has: emailNormalized }, AND: [{ OR: [{ workspaceId: null }, { workspaceId }] }, { OR: [{ type: "email.complained" }, { type: "email.bounced", isPermanent: true }] }] },
     orderBy: { type: "asc" },
   });
   for (const event of events) await suppress(db, workspaceId, emailNormalized, event.type);
@@ -44,19 +44,20 @@ async function deliveryRecipient(db, messageId) {
 }
 
 /** Called only after the provider signature has been verified by the route. */
-export async function recordVerifiedProviderEvent(db, event, eventId) {
+export async function recordVerifiedProviderEvent(db, event, eventId, expectedWorkspaceId = null) {
   const messageId = event?.data?.email_id;
   if (typeof eventId !== "string" || !eventId || typeof messageId !== "string" || !messageId) throw new TypeError("Invalid event payload");
   if (!["email.bounced", "email.complained"].includes(event.type)) return;
   const recipients = Array.isArray(event.data?.to) ? event.data.to : [event.data?.to];
   const recipientEmails = [...new Set(recipients.slice(0, 100).map(normalizeEmail).filter((email) => email && email.length <= 320))];
   const isPermanent = event.type === "email.complained" || event.data?.bounce?.type === "Permanent";
+  const target = await deliveryRecipient(db, messageId);
+  if (expectedWorkspaceId && target && target.workspaceId !== expectedWorkspaceId) throw new TypeError("Webhook event does not belong to this workspace.");
   await db.emailProviderEvent.upsert({
     where: { providerEventId: eventId },
-    create: { providerEventId: eventId, providerMessageId: messageId, type: event.type, isPermanent, recipientEmails },
+    create: { providerEventId: eventId, providerMessageId: messageId, workspaceId: expectedWorkspaceId, type: event.type, isPermanent, recipientEmails },
     update: {},
   });
   if (!isPermanent) return;
-  const target = await deliveryRecipient(db, messageId);
   if (target && recipientEmails.includes(normalizeEmail(target.recipient))) await suppress(db, target.workspaceId, target.recipient, event.type);
 }

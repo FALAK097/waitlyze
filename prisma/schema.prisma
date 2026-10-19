@@ -776,6 +776,7 @@ model EmailProviderEvent {
   id                String   @id @default(cuid())
   providerEventId   String   @unique
   providerMessageId String
+  workspaceId       String?
   type              String
   isPermanent       Boolean  @default(false)
   recipientEmails   String[] @default([])
@@ -806,6 +807,9 @@ model WorkspaceIntegration {
   secretCiphertext   String
   secretIv           String
   secretTag          String
+  webhookSecretCiphertext String?
+  webhookSecretIv         String?
+  webhookSecretTag        String?
   fromEmail          String
   lastTestedAt       DateTime?
   lastErrorCode      String?

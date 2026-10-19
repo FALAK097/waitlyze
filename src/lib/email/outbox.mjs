@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { createUnsubscribeToken } from "./unsubscribe.mjs";
 import { dispatchAutomationStep, processAutomationTrigger } from "./automations.mjs";
 import { applyKnownProviderEvents } from "./suppression.mjs";
@@ -169,7 +170,7 @@ export async function dispatchPendingOutboxEvents(db, { send, now = new Date(), 
     }
     const [signup, verification, waitList] = await Promise.all([
       db.signUp.findUnique({ where: { id: payload.signUpId }, select: { id: true, email: true, emailNormalized: true, verifiedAt: true } }),
-      db.signUpVerification.findFirst({ where: { signUpId: payload.signUpId, usedAt: null, expiresAt: { gt: now } }, select: { id: true } }),
+      db.signUpVerification.findFirst({ where: { signUpId: payload.signUpId, tokenHash: createHash("sha256").update(payload.token).digest("hex"), usedAt: null, expiresAt: { gt: now } }, select: { id: true } }),
       db.waitList.findUnique({ where: { id: event.waitListId || payload.waitListId }, select: { id: true, name: true, publicSlug: true, status: true, workspaceId: true } }),
     ]);
     if (!signup || signup.verifiedAt || !verification || !waitList || waitList.status !== "PUBLISHED") {
@@ -197,7 +198,11 @@ export async function dispatchPendingOutboxEvents(db, { send, now = new Date(), 
       if (!providerMessageId) throw Object.assign(new Error("Provider accepted no message id"), { code: "MISSING_PROVIDER_ID" });
       await db.outboxEvent.update({ where: { id: event.id }, data: { status: "DELIVERED", providerMessageId, processedAt: now, lockedAt: null, payload: { signUpId: payload.signUpId, waitListId: waitList.id }, lastErrorCode: null } });
       result.accepted++;
-      await applyKnownProviderEvents(db, providerMessageId, waitList.workspaceId, signup.emailNormalized || signup.email);
+      try {
+        await applyKnownProviderEvents(db, providerMessageId, waitList.workspaceId, signup.emailNormalized || signup.email);
+      } catch (error) {
+        console.error("Could not apply provider suppression event:", error?.message || "unknown error");
+      }
     } catch (error) {
       const code = String(error?.code || error?.name || "PROVIDER_ERROR").replace(/[^A-Za-z0-9_.-]/g, "").slice(0, 80) || "PROVIDER_ERROR";
       const isVerificationEvent = event.type === "SIGNUP_VERIFICATION_REQUESTED";

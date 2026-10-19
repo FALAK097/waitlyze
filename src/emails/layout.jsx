@@ -28,6 +28,7 @@ function Wordmark({ label = "waitlyze" }) {
 }
 
 export function EmailLayout({ preview, heading, children, footer, brandName = "waitlyze" }) {
+  const isPlatformBrand = brandName === "waitlyze";
   return (
     <Html lang="en">
       <Head />
@@ -44,9 +45,11 @@ export function EmailLayout({ preview, heading, children, footer, brandName = "w
           <Section style={{ paddingTop: 44 }}>
             <Hr style={{ borderColor: BORDER, margin: "0 0 20px" }} />
             <Text style={{ margin: 0, fontSize: 12, lineHeight: "20px", color: MUTED }}>
-              {footer || "You’re receiving this email because of activity on your Waitlyze workspace."}
+              {footer || `You’re receiving this email because of activity on ${isPlatformBrand ? "your Waitlyze workspace" : brandName}.`}
             </Text>
-            <Text style={{ margin: "12px 0 0", fontSize: 12, color: MUTED }}><Link href="https://waitlyze.falakgala.dev" style={{ color: MUTED, textDecoration: "underline" }}>Waitlyze</Link> · Build an audience before you launch.</Text>
+            {isPlatformBrand ? (
+              <Text style={{ margin: "12px 0 0", fontSize: 12, color: MUTED }}><Link href="https://waitlyze.falakgala.dev" style={{ color: MUTED, textDecoration: "underline" }}>Waitlyze</Link> · Build an audience before you launch.</Text>
+            ) : null}
           </Section>
         </Container>
       </Body>
