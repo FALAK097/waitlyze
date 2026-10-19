@@ -8,18 +8,12 @@ import { useDocsLayout } from "fumadocs-ui/layouts/docs";
 
 const links = [
   { label: "Documentation", href: "/docs", section: "docs" },
-  { label: "API Reference", href: "/docs/api", section: "api" },
-  { label: "Integrations", href: "/docs/resend", section: "integrations" },
   { label: "Changelog", href: "/docs/changelog", section: "changelog" },
 ];
 
 function isActive(pathname, section) {
   if (section === "changelog") return pathname === "/docs/changelog";
-  const inApi = pathname === "/docs/api" || pathname.startsWith("/docs/api/");
-  const inIntegrations = pathname === "/docs/resend" || pathname.startsWith("/docs/resend/");
-  if (section === "api") return inApi;
-  if (section === "integrations") return inIntegrations;
-  return pathname.startsWith("/docs") && !inApi && !inIntegrations && pathname !== "/docs/changelog";
+  return pathname.startsWith("/docs") && pathname !== "/docs/changelog";
 }
 
 export function DocsTopNav() {
@@ -40,7 +34,7 @@ export function DocsTopNav() {
       </nav>
       <div className="waitlyze-docs-topnav-actions">
         {SearchTrigger && <SearchTrigger hideIfDisabled className="waitlyze-docs-topnav-action" />}
-        {SidebarTrigger && <SidebarTrigger className="waitlyze-docs-topnav-action"><HugeiconsIcon icon={Menu01Icon} aria-hidden="true" /></SidebarTrigger>}
+        {SidebarTrigger && <SidebarTrigger className="waitlyze-docs-topnav-action waitlyze-docs-sidebar-trigger"><HugeiconsIcon icon={Menu01Icon} aria-hidden="true" /></SidebarTrigger>}
       </div>
     </header>
   );

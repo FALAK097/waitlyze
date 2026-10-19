@@ -5,7 +5,7 @@ import remarkGfm from "remark-gfm";
 import { DocsBody, DocsDescription, DocsPage, DocsTitle } from "fumadocs-ui/layouts/docs/page";
 
 export const metadata = {
-  title: "Changelog | Waitlyze Docs",
+  title: "Changelog | Waitlyze",
   description: "Waitlyze release notes, from the first waitlist release through the latest update.",
 };
 
@@ -25,14 +25,10 @@ export default async function ChangelogPage() {
   const toc = releases.map((version) => ({ title: version, url: `#${releaseId(version)}`, depth: 2 }));
 
   return (
-    <DocsPage toc={toc} full>
-      <DocsTitle>What’s new in Waitlyze</DocsTitle>
-      <DocsDescription>Follow new capabilities, improvements, and fixes across the platform.</DocsDescription>
+    <DocsPage className="waitlyze-changelog-page" toc={toc}>
+      <DocsTitle>Changelog</DocsTitle>
+      <DocsDescription>Release notes for Waitlyze.</DocsDescription>
       <DocsBody>
-        <p className="waitlyze-changelog-intro">Every capability, improvement, and fix we have shipped, from the first waitlist release through today&apos;s updates.</p>
-        <nav className="waitlyze-docs-changelog-index" aria-label="Release versions">
-          {releases.map((version, index) => <a key={version} href={`#${releaseId(version)}`} data-latest={index === 0 ? "true" : undefined}>{version}</a>)}
-        </nav>
         <ReactMarkdown
           remarkPlugins={[remarkGfm]}
           components={{
