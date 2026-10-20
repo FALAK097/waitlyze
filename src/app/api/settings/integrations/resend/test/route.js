@@ -11,6 +11,7 @@ export async function POST(request) {
   if (access.response) return access.response;
   const connection = await prisma.workspaceIntegration.findUnique({ where: { workspaceId_provider: { workspaceId: access.workspace.id, provider: "RESEND" } } });
   if (!connection) return NextResponse.json({ error: "Save a Resend connection before testing it." }, { status: 409 });
+  if (!connection.webhookSecretCiphertext) return NextResponse.json({ error: "Configure a Resend bounce and complaint webhook before activating this sender." }, { status: 409 });
   const now = new Date();
   try {
     const resend = new Resend(decryptIntegrationSecret(connection));

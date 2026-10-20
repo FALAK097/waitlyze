@@ -3,7 +3,7 @@ title: Email tools
 description: Templates, broadcasts, automations, and delivery rules.
 ---
 
-Email lives under `/waitlists/[id]/emails` with three sub-tabs: **Templates**, **Broadcasts**, **Automations**. All three require owner/admin email permission. If you lack it, the Emails nav item is hidden.
+Email lives under `/waitlists/[id]/emails` with four sub-tabs: **Templates**, **Broadcasts**, **Automations**, and **Logs**. All four require owner/admin email permission. If you lack it, the Emails nav item is hidden.
 
 ## Start here
 
@@ -15,7 +15,7 @@ Email lives under `/waitlists/[id]/emails` with three sub-tabs: **Templates**, *
 
 ## Templates and tests
 
-Open Email tools → **Templates**. You manage signup verification and offboarding templates with subject, preview text, heading, message, and additional content. Markdown and `{{waitlist}}` are supported.
+Open Email tools → **Templates**. You manage welcome and offboarding messages; confirmation links use a separate transactional verification email. Saved templates support a subject, preview text, and rich message content.
 
 <Steps>
 <Step>
@@ -28,12 +28,12 @@ A test is a **real email**, not an on-screen preview. It uses the saved template
 </Step>
 <Step>
 ### Check verification delivery health
-The Templates header shows pending/failed counts for the latest 5 verification events plus dispatcher state: `Setup needed`, `Needs attention`, or `Key configured`.
+Open a signup from the Signups tab to see its confirmation state. For an unconfirmed signup, an owner or admin can request a new confirmation email after the resend cooldown. The new link replaces the old one.
 </Step>
 </Steps>
 
 <Callout title="Delivery needs a sender and a scheduler">
-A saved template alone does not send mail. You need a configured sender ([Resend](/docs/resend) or deployment default) **and** a running outbox dispatcher (`OUTBOX_DISPATCH_SECRET` plus an authenticated scheduler calling `/api/internal/email-outbox`). Without the scheduler, mail queues but never leaves.
+A saved template alone does not send mail. You need a configured sender and bounce/complaint webhook ([Resend](/docs/resend) or deployment default) **and** a running outbox dispatcher (`OUTBOX_DISPATCH_SECRET` plus an authenticated scheduler calling `/api/internal/email-outbox`). Without the scheduler, broadcasts and automations queue but do not leave.
 </Callout>
 
 ## Consent and suppression — read once

@@ -5,6 +5,7 @@ import prisma from "@/lib/prisma";
 import { env } from "@/lib/env.mjs";
 import { requireCampaign } from "@/lib/workspaces/authorize";
 import { AUTOMATION_DEFAULTS, ensureAutomationRecipes, normalizeAutomationConfig } from "@/lib/email/automations.mjs";
+import { workspaceEmailDeliveryReady } from "@/lib/integrations/email-sender.mjs";
 
 function refresh(waitListId) {
   revalidatePath(`/waitlists/${waitListId}/emails/automations`);
@@ -37,12 +38,12 @@ export async function saveAutomationRecipe({ waitListId, recipeId, data }) {
 }
 
 export async function setAutomationStatus({ waitListId, recipeId, status }) {
-  const { scope } = await requireCampaign(waitListId, "sendEmail");
+  const { campaign, scope } = await requireCampaign(waitListId, "sendEmail");
   if (!["ENABLED", "PAUSED"].includes(status)) return { success: false, message: "Choose enable or pause." };
   const recipe = await prisma.automationRecipe.findFirst({ where: { id: recipeId, waitListId, waitList: scope }, include: { versions: { orderBy: { version: "desc" }, take: 1 } } });
   if (!recipe) return { success: false, message: "Automation recipe not found." };
   if (status === "ENABLED") {
-    if (!env.OUTBOX_DISPATCH_SECRET || !env.RESEND_API_KEY) return { success: false, message: "Configure email delivery before enabling automations." };
+    if (!env.OUTBOX_DISPATCH_SECRET || !await workspaceEmailDeliveryReady(prisma, campaign.workspaceId, Boolean(env.RESEND_API_KEY && env.RESEND_WEBHOOK_SECRET))) return { success: false, message: "Connect and test your email sender, or configure platform delivery and its webhook, before enabling automations." };
     try { normalizeAutomationConfig(recipe.type, recipe.versions[0]?.config); }
     catch { return { success: false, message: "Save a valid subject and message before enabling this recipe." }; }
     await prisma.automationRecipe.update({ where: { id: recipe.id }, data: { status: "ENABLED" } });
@@ -94,5 +95,28 @@ export async function getAutomationConsole(waitListId) {
       recipient: run.signUp.email.replace(/^(.).+(@.+)$/, "$1•••$2"),
       reason: run.skipReason || run.steps.find((step) => step.lastErrorCode)?.lastErrorCode || "",
     })),
+  };
+}
+
+export async function getAutomationRunDetail(waitListId, runId) {
+  const { campaign } = await requireCampaign(waitListId, "sendEmail");
+  if (typeof runId !== "string" || !runId || runId.length > 128) return null;
+  const run = await prisma.automationRun.findFirst({
+    where: { id: runId, waitListId: campaign.id },
+    select: {
+      id: true, recipeId: true, status: true, scheduledAt: true, finishedAt: true, skipReason: true,
+      signUp: { select: { email: true } },
+      steps: { select: { lastErrorCode: true } },
+    },
+  });
+  if (!run) return null;
+  return {
+    id: run.id,
+    recipeId: run.recipeId,
+    status: run.status,
+    recipient: run.signUp.email.replace(/^(.).+(@.+)$/, "$1•••$2"),
+    scheduledAt: run.scheduledAt.toISOString(),
+    finishedAt: run.finishedAt?.toISOString() || null,
+    reason: (run.skipReason || run.steps.find((step) => step.lastErrorCode)?.lastErrorCode || "").toLowerCase().replaceAll("_", " "),
   };
 }

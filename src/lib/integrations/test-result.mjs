@@ -7,6 +7,9 @@ export async function updateResendTestResult(db, connection, result) {
       secretCiphertext: connection.secretCiphertext,
       secretIv: connection.secretIv,
       secretTag: connection.secretTag,
+      webhookSecretCiphertext: connection.webhookSecretCiphertext,
+      webhookSecretIv: connection.webhookSecretIv,
+      webhookSecretTag: connection.webhookSecretTag,
     },
     data: result,
   });

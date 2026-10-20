@@ -18,3 +18,13 @@ export function decryptIntegrationSecret(record) {
   decipher.setAuthTag(Buffer.from(record.secretTag, "base64"));
   return Buffer.concat([decipher.update(Buffer.from(record.secretCiphertext, "base64")), decipher.final()]).toString("utf8");
 }
+
+export function encryptWebhookSecret(value) {
+  const secret = encryptIntegrationSecret(value);
+  return { webhookSecretCiphertext: secret.secretCiphertext, webhookSecretIv: secret.secretIv, webhookSecretTag: secret.secretTag };
+}
+
+export function decryptWebhookSecret(record) {
+  if (!record.webhookSecretCiphertext || !record.webhookSecretIv || !record.webhookSecretTag) throw new Error("Webhook signing secret is not configured.");
+  return decryptIntegrationSecret({ secretCiphertext: record.webhookSecretCiphertext, secretIv: record.webhookSecretIv, secretTag: record.webhookSecretTag });
+}

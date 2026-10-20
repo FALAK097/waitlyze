@@ -85,11 +85,17 @@
 .product-ui h3 { font-size: var(--product-type-item); }
 .product-ui p { text-wrap: pretty; }
 /* Blanket focus ring lives in the base layer so component utilities
-   (shadcn focus-visible ring/outline-none) can override it. */
+   (shadcn focus-visible ring/outline-none) can override it. Text inputs
+   get an inset dark-lime ring: readable on white, quiet, and safe inside
+   overflow-hidden cards (offset outlines get clipped and look broken). */
 @layer base {
-  .product-ui :where(a, button, input, select, [tabindex]):focus-visible {
+  .product-ui :where(a, button, select, [tabindex]):focus-visible {
     outline: 2px solid var(--product-focus);
     outline-offset: 2px;
+  }
+  .product-ui :where(input, textarea):focus-visible {
+    outline: 2px solid var(--product-green-700);
+    outline-offset: -2px;
   }
 }
 .product-ui svg { width: 1rem; height: 1rem; stroke-width: 1.5px; flex-shrink: 0; pointer-events: none; }

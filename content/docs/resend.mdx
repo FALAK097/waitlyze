@@ -4,7 +4,7 @@ description: Connect your verified domain to send waitlist email.
 icon: resend
 ---
 
-Resend gives Waitlyze a verified sender for verification, broadcast, and automation mail. Without it, Waitlyze falls back to the deployment sender.
+Resend gives Waitlyze a verified sender for verification, broadcast, and automation mail. One connection serves all waitlists in the current workspace. Without a connection, Waitlyze uses its deployment sender when that sender and its webhook are configured.
 
 ## Connect your sender
 
@@ -15,18 +15,23 @@ In the Resend dashboard, add and verify your sending domain, then create a **sen
 </Step>
 <Step>
 ### Connect in Waitlyze
-Go to Settings → Integrations → **Resend → Connect**. This needs owner/admin permission. Enter the key and a sender email on your verified domain, then **Save**. The secret is encrypted and never returned to the browser — enter a replacement to change it.
+Go to Settings → Integrations → **Resend → Connect**. This needs owner/admin permission. Enter the key and a sender email on your verified domain, then **Save**. The key is encrypted and never returned to the browser.
 </Step>
 <Step>
-### Save and test to activate
-Send a test email. Tests go to your Waitlyze account email. The connection becomes **Active** only when the test succeeds; until then the deployment sender is used.
+### Configure delivery events
+After saving, copy the workspace-specific webhook URL shown in Waitlyze. In your Resend account, create a webhook at that URL for `email.bounced` and `email.complained`. Paste the webhook's `whsec_…` signing secret into Waitlyze and save it. The signing secret is encrypted; you can replace it later without revealing the existing one.
+</Step>
+<Step>
+### Test to activate
+Send a test email to your Waitlyze account address. The connection becomes active when Resend accepts that email. Set up the webhook in the same Resend account before testing. A connected sender that later needs attention pauses waitlist sending until you fix or disconnect it; it never silently switches to the deployment sender.
 </Step>
 </Steps>
 
 ## If a test fails
 
-- Confirm the key is sending-only with send permission, not a full-access or expired key.
+- Confirm the key has send permission and is not expired.
 - Confirm the sender address domain matches a verified Resend domain exactly.
+- Confirm the webhook signing secret comes from this account's webhook endpoint, not the deployment sender's endpoint.
 - Correct the details, save, and test again.
 - Check [Email tools](/docs/email) delivery health for dispatcher versus sender errors.
 
@@ -34,7 +39,9 @@ Disconnecting falls back to the deployment sender immediately.
 
 ## Bounces, complaints, and suppression
 
-Signed Resend provider events update workspace suppression with recipient evidence. Bounced or complained addresses are excluded from future broadcasts and automations, including early webhook races where the complaint arrives before the send completes. This is automatic — you do not manage the suppression list by hand.
+Signed Resend provider events update workspace suppression with recipient evidence. Bounced or complained addresses are excluded from future broadcasts and automations, including early webhook races where the complaint arrives before the send completes. This requires the webhook endpoint and signing secret above. The sending test checks the API key and sender; verify webhook delivery separately in Resend's webhook delivery history.
+
+Your Resend account handles usage for waitlist email sent through its key. Waitlyze still sends account mail such as workspace invitations through its deployment sender. A waitlist's custom website domain is separate from the sending domain you verify in Resend.
 
 ## Next
 
