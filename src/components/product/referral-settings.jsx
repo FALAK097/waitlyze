@@ -27,7 +27,7 @@ export function ReferralSettings({ waitListId, initialEnabled }) {
   }
 
   return (
-    <div className="product-referral-setting">
+    <div className="grid gap-2">
       <Label className="flex min-h-11 cursor-pointer items-start" htmlFor="waitlist-referrals">
         <Checkbox
           id="waitlist-referrals"
@@ -35,9 +35,11 @@ export function ReferralSettings({ waitListId, initialEnabled }) {
           onCheckedChange={changeEnabled}
           disabled={pending}
         />
-        <span>
-          <strong>Enable referral sharing</strong>
-          <span>Referral credit counts once both email addresses are verified.</span>
+        <span className="grid gap-1">
+          <strong className="text-base font-semibold">Enable referral sharing</strong>
+          <span className="text-sm leading-normal text-product-text-secondary">
+            Referral credit counts once both email addresses are verified.
+          </span>
         </span>
       </Label>
     </div>

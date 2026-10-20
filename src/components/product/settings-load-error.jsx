@@ -13,12 +13,20 @@ export function SettingsLoadError({
   const router = useRouter();
   const titleId = useId();
   return (
-    <section className="product-empty" role="alert" aria-labelledby={titleId}>
-      <h2 id={titleId}>{title}</h2>
-      <p>{message}</p>
-      <Button className="mt-4" variant="outline" onClick={retry || (() => router.refresh())}>
-        Try again
-      </Button>
+    <section
+      className="rounded-xl border border-product-border-subtle bg-product-bg-surface px-6 py-16 text-center"
+      role="alert"
+      aria-labelledby={titleId}
+    >
+      <h2 id={titleId} className="mb-2! text-xl">
+        {title}
+      </h2>
+      <p className="text-sm text-product-text-secondary">{message}</p>
+      <div className="mt-5">
+        <Button variant="outline" onClick={retry || (() => router.refresh())}>
+          Try again
+        </Button>
+      </div>
     </section>
   );
 }

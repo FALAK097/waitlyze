@@ -97,16 +97,19 @@ export function CustomDomainSettings({ waitListId, canManage, available }) {
   const actionsEnabled = canManage && available && !busy && loadState === "ready";
 
   return (
-    <div className="product-custom-domain" aria-busy={busy || loadState === "loading"}>
+    <div className="grid gap-4" aria-busy={busy || loadState === "loading"}>
       {loadState === "loading" && !domain && (
         <>
           <p role="status" className="sr-only">
             Loading custom domain…
           </p>
-          <div className="product-domain-skeleton" aria-hidden="true">
-            <i />
-            <i />
-            <i />
+          <div
+            className="grid gap-3 rounded-lg border border-product-border-subtle bg-product-bg-surface p-4.5"
+            aria-hidden="true"
+          >
+            <i className="block h-4.5 w-3/5 rounded bg-product-bg-inset motion-safe:animate-pulse" />
+            <i className="block h-3.5 w-3/4 rounded bg-product-bg-inset motion-safe:animate-pulse" />
+            <i className="block h-3.5 w-2/5 rounded bg-product-bg-inset motion-safe:animate-pulse" />
           </div>
         </>
       )}
@@ -125,10 +128,11 @@ export function CustomDomainSettings({ waitListId, canManage, available }) {
             event.preventDefault();
             call("POST", { hostname });
           }}
+          className="grid max-w-140 gap-4 [&_input]:min-h-11 [&_input]:rounded-lg [&_input]:border [&_input]:border-product-border-control [&_input]:bg-product-bg-surface [&_input]:px-3 [&_input]:py-2.25 [&_input]:text-sm"
         >
           {available ? (
             <>
-              <div className="product-field">
+              <div className="product-field text-sm">
                 <Label>
                   <span>Domain name</span>
                   <Input
@@ -141,28 +145,36 @@ export function CustomDomainSettings({ waitListId, canManage, available }) {
                   />
                 </Label>
               </div>
-              <Button type="submit" disabled={!actionsEnabled || !hostname.trim()}>
-                {busy ? "Connecting…" : "Connect domain"}
-              </Button>
+              <div className="justify-self-start">
+                <Button type="submit" disabled={!actionsEnabled || !hostname.trim()}>
+                  {busy ? "Connecting…" : "Connect domain"}
+                </Button>
+              </div>
             </>
           ) : (
-            <p className="product-help">
+            <p className="mb-4! text-sm leading-relaxed text-product-text-secondary">
               Custom domains are unavailable. Ask your administrator to finish domain setup.
             </p>
           )}
-          {!canManage && <p className="product-help">An owner or admin can connect a domain.</p>}
+          {!canManage && (
+            <p className="mb-4! text-sm leading-relaxed text-product-text-secondary">
+              An owner or admin can connect a domain.
+            </p>
+          )}
         </form>
       )}
 
       {domain && (
         <>
-          <header>
-            <div>
-              <h3>{domain.hostname}</h3>
-              <p>{labels[domain.status] || "Status unknown"}</p>
+          <header className="flex flex-wrap items-center justify-between gap-3">
+            <div className="min-w-0">
+              <h3 className="wrap-anywhere">{domain.hostname}</h3>
+              <p className="m-0 mt-1 text-sm text-product-text-secondary">
+                {labels[domain.status] || "Status unknown"}
+              </p>
             </div>
             {canManage && available && (
-              <div className="product-domain-actions">
+              <div className="flex flex-wrap items-center justify-between gap-2 [&_button]:min-h-11 [&_button]:rounded-lg [&_button]:border [&_button]:border-product-border-control [&_button]:bg-product-bg-surface [&_button]:text-product-text-primary">
                 <Button
                   type="button"
                   variant="outline"
@@ -191,28 +203,30 @@ export function CustomDomainSettings({ waitListId, canManage, available }) {
           </header>
           {domain.status !== "ACTIVE" && (
             <>
-              <p className="product-help">
+              <p className="mb-4! text-sm leading-relaxed text-product-text-secondary">
                 Add the records at your DNS provider. Verification can take a little while after DNS
                 changes.
               </p>
               {(domain.dnsRecords || []).concat(domain.verification || []).map((record, index) => (
                 <dl
-                  className="product-domain-record"
+                  className="my-3 grid gap-2 border-0 bg-transparent p-0"
                   key={`${record.type}-${record.domain || record.name}-${index}`}
                 >
-                  <div>
-                    <dt>Type</dt>
-                    <dd>{record.type}</dd>
+                  <div className="flex gap-3">
+                    <dt className="w-18 shrink-0 text-caption text-product-text-secondary">Type</dt>
+                    <dd className="m-0 min-w-0 flex-1 text-sm wrap-anywhere">{record.type}</dd>
                   </div>
-                  <div>
-                    <dt>Name</dt>
-                    <dd>
+                  <div className="flex gap-3">
+                    <dt className="w-18 shrink-0 text-caption text-product-text-secondary">Name</dt>
+                    <dd className="m-0 min-w-0 flex-1 text-sm wrap-anywhere">
                       <code>{record.domain || record.name}</code>
                     </dd>
                   </div>
-                  <div>
-                    <dt>Value</dt>
-                    <dd>
+                  <div className="flex gap-3">
+                    <dt className="w-18 shrink-0 text-caption text-product-text-secondary">
+                      Value
+                    </dt>
+                    <dd className="m-0 min-w-0 flex-1 text-sm wrap-anywhere">
                       <code>{record.value}</code>
                     </dd>
                   </div>
@@ -221,7 +235,9 @@ export function CustomDomainSettings({ waitListId, canManage, available }) {
             </>
           )}
           {domain.status === "ACTIVE" && (
-            <p className="product-help">Your waitlist is ready on this domain.</p>
+            <p className="mb-4! text-sm leading-relaxed text-product-text-secondary">
+              Your waitlist is ready on this domain.
+            </p>
           )}
         </>
       )}

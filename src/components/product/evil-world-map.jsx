@@ -122,7 +122,8 @@ export function EvilWorldMap({ countries = [], metric = "visitors" }) {
 
   return (
     <div
-      className="evil-world-map"
+      className="relative h-full overflow-visible px-2.5 pt-1 pb-2.5 [&_.rsm-geography]:cursor-pointer [&_.rsm-geography]:outline-none [&_.rsm-geography:focus]:stroke-product-text-primary [&_.rsm-geography:focus]:stroke-1 [&_.rsm-geography:focus]:brightness-90 [&_.rsm-geography:hover]:stroke-product-text-primary [&_.rsm-geography:hover]:stroke-1 [&_.rsm-geography:hover]:brightness-90 [&_svg]:pointer-events-auto [&_svg]:block [&_svg]:h-full [&_svg]:w-full [&_svg]:overflow-visible"
+      data-analytics-map=""
       ref={wrapRef}
       onPointerMove={show}
       onPointerLeave={hide}
@@ -163,22 +164,34 @@ export function EvilWorldMap({ countries = [], metric = "visitors" }) {
       </ComposableMap>
       {active ? (
         <div
-          className="evil-world-map-tooltip"
+          className="pointer-events-none absolute top-(--map-tooltip-y) left-(--map-tooltip-x) z-30 grid min-w-40 -translate-x-1/2 gap-1.5 rounded-lg border border-product-border-subtle bg-product-bg-surface p-2.5 text-xs text-product-text-primary shadow-xl"
           style={{ "--map-tooltip-x": `${active.x}px`, "--map-tooltip-y": `${active.y}px` }}
         >
-          <p>
+          <p className="font-medium">
             <span aria-hidden="true">{flag(active.code)} </span>
             {active.name}
           </p>
-          <div>
-            <i data-series="visitors" aria-hidden="true" />
-            <span>Visitors</span>
-            <strong>{number.format(byCode.get(active.code)?.visitors || 0)}</strong>
+          <div className="flex items-center gap-1.75">
+            <i
+              className="size-2 shrink-0 rounded-full data-[series=visitors]:bg-chart-1"
+              data-series="visitors"
+              aria-hidden="true"
+            />
+            <span className="min-w-0 flex-1">Visitors</span>
+            <strong className="shrink-0 tabular-nums">
+              {number.format(byCode.get(active.code)?.visitors || 0)}
+            </strong>
           </div>
-          <div>
-            <i data-series="signups" aria-hidden="true" />
-            <span>Signups</span>
-            <strong>{number.format(byCode.get(active.code)?.signups || 0)}</strong>
+          <div className="flex items-center gap-1.75">
+            <i
+              className="size-2 shrink-0 rounded-full data-[series=signups]:bg-chart-2"
+              data-series="signups"
+              aria-hidden="true"
+            />
+            <span className="min-w-0 flex-1">Signups</span>
+            <strong className="shrink-0 tabular-nums">
+              {number.format(byCode.get(active.code)?.signups || 0)}
+            </strong>
           </div>
         </div>
       ) : null}

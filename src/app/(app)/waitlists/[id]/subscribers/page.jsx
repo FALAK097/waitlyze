@@ -27,7 +27,7 @@ export default async function SubscribersPage({ params }) {
   );
   const canManage = ["OWNER", "ADMIN"].includes(workspace.members[0]?.role);
   return (
-    <div className="product-section">
+    <div className="mt-6">
       <AudienceTable
         waitlist={waitlist}
         initialReviews={initialReviews}

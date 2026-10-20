@@ -92,10 +92,14 @@ export default async function WaitListsPreviewPage(props) {
   });
   if (structured?.status === "PAUSED")
     return (
-      <main className="product-ui public-launch public-launch-paused">
-        <section>
-          <h1>Signups are paused</h1>
-          <p>Please check back later.</p>
+      <main className="grid min-h-screen place-items-center bg-product-bg-page px-6 py-12 text-center font-product-sans text-product-text-primary xl:py-30">
+        <section className="w-full max-w-160">
+          <h1 className="mb-5 font-product-display text-5xl leading-none font-semibold tracking-tighter text-balance lg:text-7xl">
+            Signups are paused
+          </h1>
+          <p className="mx-auto max-w-155 text-lg leading-relaxed text-product-text-secondary">
+            Please check back later.
+          </p>
         </section>
       </main>
     );

@@ -8,7 +8,6 @@ import { useRef, useState } from "react";
 import { toast } from "sonner";
 
 import Wordmark from "@/components/landing/wordmark";
-import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -18,8 +17,6 @@ import {
 } from "@/components/ui/dialog";
 import { authClient } from "@/lib/auth-client";
 import { publicFontClasses } from "@/lib/public-fonts";
-
-import "@/components/landing/public.css";
 
 export function AuthModal({ open, onOpenChange, onCloseAutoFocus }) {
   const [loading, setLoading] = useState(false);
@@ -53,54 +50,65 @@ export function AuthModal({ open, onOpenChange, onCloseAutoFocus }) {
 
   return (
     <Dialog open={open} onOpenChange={changeOpen}>
-      <DialogContent
-        className={`wl wl-auth ${publicFontClasses}`}
-        onCloseAutoFocus={onCloseAutoFocus}
-      >
-        <Wordmark />
-        <DialogHeader>
-          <DialogTitle className="wl-auth-title">Your next launch starts here.</DialogTitle>
-          <DialogDescription className="wl-auth-description">
-            Create your account or sign in with Google. Your first waitlist is just a few steps
-            away.
-          </DialogDescription>
-        </DialogHeader>
-        <div>
-          <Button
-            variant="outline"
-            className="wl-auth-google"
-            onClick={handleGoogleSignIn}
-            disabled={loading}
-            aria-busy={loading}
-          >
-            {loading ? (
-              <HugeiconsIcon icon={Loading02Icon} className="size-5 animate-spin" />
-            ) : (
-              <Image src="/images/google.svg" alt="" width={20} height={20} unoptimized />
-            )}
-            {loading ? "Connecting to Google…" : "Continue with Google"}
-          </Button>
-          <p className="wl-auth-note">Free to use. No credit card needed.</p>
-          <p className="wl-auth-legal">
-            By continuing, you agree to our{" "}
-            <Link
-              prefetch={false}
-              href="/terms"
-              onClick={() => changeOpen(false)}
-              className="underline underline-offset-4 hover:text-primary"
+      <DialogContent onCloseAutoFocus={onCloseAutoFocus}>
+        <div
+          className={`flex flex-col font-product-sans text-product-text-primary ${publicFontClasses}`}
+        >
+          <div className="mb-9">
+            <Wordmark />
+          </div>
+          <DialogHeader>
+            <DialogTitle>
+              <span className="block text-left font-product-display text-3xl leading-tight tracking-tight">
+                Your next launch starts here.
+              </span>
+            </DialogTitle>
+            <DialogDescription>
+              <span className="mt-3 block text-left text-sm leading-relaxed text-product-text-secondary">
+                Create your account or sign in with Google. Your first waitlist is just a few steps
+                away.
+              </span>
+            </DialogDescription>
+          </DialogHeader>
+          <div>
+            <button
+              type="button"
+              onClick={handleGoogleSignIn}
+              disabled={loading}
+              aria-busy={loading}
+              className="mt-7 flex min-h-12 w-full items-center justify-center gap-3 rounded-md border border-product-border-subtle bg-product-bg-surface px-4 text-sm text-product-text-primary transition-colors hover:border-product-text-secondary hover:bg-product-bg-inset focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-neutral-900 disabled:cursor-wait disabled:opacity-65"
             >
-              Terms of Service
-            </Link>{" "}
-            and{" "}
-            <Link
-              prefetch={false}
-              href="/privacy"
-              onClick={() => changeOpen(false)}
-              className="underline underline-offset-4 hover:text-primary"
-            >
-              Privacy Policy
-            </Link>
-          </p>
+              {loading ? (
+                <HugeiconsIcon icon={Loading02Icon} className="size-5 animate-spin" />
+              ) : (
+                <Image src="/images/google.svg" alt="" width={20} height={20} unoptimized />
+              )}
+              {loading ? "Connecting to Google…" : "Continue with Google"}
+            </button>
+            <p className="mt-3.5 text-center text-xs text-product-text-secondary">
+              Free to use. No credit card needed.
+            </p>
+            <p className="mt-7 pt-6 text-center text-micro leading-relaxed text-product-text-secondary">
+              By continuing, you agree to our{" "}
+              <Link
+                prefetch={false}
+                href="/terms"
+                onClick={() => changeOpen(false)}
+                className="underline underline-offset-4 hover:text-primary"
+              >
+                Terms of Service
+              </Link>{" "}
+              and{" "}
+              <Link
+                prefetch={false}
+                href="/privacy"
+                onClick={() => changeOpen(false)}
+                className="underline underline-offset-4 hover:text-primary"
+              >
+                Privacy Policy
+              </Link>
+            </p>
+          </div>
         </div>
       </DialogContent>
     </Dialog>

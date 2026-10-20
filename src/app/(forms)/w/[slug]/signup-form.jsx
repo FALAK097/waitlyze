@@ -4,18 +4,18 @@ import { useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
 import { toast } from "sonner";
 
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { cn } from "@/lib/utils";
 import { collectAttribution } from "@/utils/attribution";
 
-import styles from "@/components/product/waitlist-signup.module.css";
+const control =
+  "h-12 min-w-0 flex-1 rounded-wl border border-wl-input-border bg-wl-input px-4 text-wl-input-text";
+const action =
+  "inline-flex h-12 items-center justify-center rounded-wl bg-wl-button px-5 font-bold whitespace-nowrap text-wl-button-text focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-wl-accent";
 
 /** Waitlist signup form: validates input, submits the signup, and shows the referral result. */
 export function SignupForm(props) {
   return (
-    <Suspense fallback={<div className={styles.form} aria-label="Loading signup form" />}>
+    <Suspense fallback={<div className="w-full text-wl-text" aria-label="Loading signup form" />}>
       <SignupFormInner {...props} />
     </Suspense>
   );
@@ -117,42 +117,50 @@ function SignupFormInner({ slug, waitListId, showReferrals, formConfig, statusPa
 
   if (result) {
     return (
-      <section className={styles.result} aria-labelledby="signup-result-title">
-        <h2 id="signup-result-title">{result.heading}</h2>
-        {result.notice ? <p className={styles.thankYou}>{result.notice}</p> : null}
-        {result.body ? <p>{result.body}</p> : null}
+      <section className="w-full text-wl-text" aria-labelledby="signup-result-title">
+        <h2 className="mb-4 font-wl-heading text-3xl tracking-tight" id="signup-result-title">
+          {result.heading}
+        </h2>
+        {result.notice ? <p className="leading-relaxed text-wl-muted">{result.notice}</p> : null}
+        {result.body ? <p className="leading-relaxed text-wl-muted">{result.body}</p> : null}
         {statusPage.showPosition && result.position != null ? (
-          <p className={styles.position}>
+          <p className="flex justify-between border-y border-wl-text/15 py-4">
             <span>Your position</span>
             <strong>#{result.position}</strong>
           </p>
         ) : null}
         {statusPage.showReferralCount ? (
-          <p className={styles.position}>
+          <p className="flex justify-between border-y border-wl-text/15 py-4">
             <span>Friends joined</span>
             <strong>{result.referralCount}</strong>
           </p>
         ) : null}
         {statusPage.showReferralLink && result.referralLink ? (
-          <div className={styles.referralShare}>
-            <p>{statusPage.shareMessage}</p>
-            <label htmlFor="waitlist-referral-link">Your referral link</label>
-            <div className={styles.referralRow}>
+          <div className="mt-6 grid gap-2.5">
+            <p className="m-0 text-sm text-wl-muted">{statusPage.shareMessage}</p>
+            <label className="text-caption font-bold" htmlFor="waitlist-referral-link">
+              Your referral link
+            </label>
+            <div className="flex gap-2">
               <input
+                className={cn(
+                  control,
+                  "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-wl-accent",
+                )}
                 id="waitlist-referral-link"
                 value={result.referralLink}
                 readOnly
                 onFocus={(event) => event.target.select()}
               />
-              <button type="button" onClick={copyReferralLink}>
+              <button className={action} type="button" onClick={copyReferralLink}>
                 {copied ? "Copied" : "Copy"}
               </button>
             </div>
             {statusPage.shareChannels.length > 0 && (
-              <div className={styles.referralRow}>
+              <div className="flex gap-2">
                 {statusPage.shareChannels.map((channel) => (
                   <a
-                    className={styles.button}
+                    className={action}
                     href={shareHref(channel)}
                     key={channel}
                     target={channel === "email" ? undefined : "_blank"}
@@ -171,16 +179,16 @@ function SignupFormInner({ slug, waitListId, showReferrals, formConfig, statusPa
   }
 
   return (
-    <form
-      className={`${styles.form} ${formConfig.layout === "stacked" ? styles.stacked : ""}`}
-      onSubmit={submit}
-    >
-      <Label className={styles.label} htmlFor="waitlist-email">
+    <form className="w-full text-wl-text" onSubmit={submit}>
+      <label className="mb-2 block text-caption font-bold" htmlFor="waitlist-email">
         {formConfig.label}
-      </Label>
-      <div className={styles.row}>
-        <Input
-          className={styles.email}
+      </label>
+      <div className={cn("flex gap-2", formConfig.layout === "stacked" && "flex-col")}>
+        <input
+          className={cn(
+            control,
+            "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-wl-accent",
+          )}
           id="waitlist-email"
           name="email"
           type="email"
@@ -189,15 +197,24 @@ function SignupFormInner({ slug, waitListId, showReferrals, formConfig, statusPa
           required
           maxLength={320}
         />
-        <Button className={styles.button} type="submit" disabled={busy}>
+        <button
+          className={cn(action, "cursor-pointer disabled:cursor-wait disabled:opacity-65")}
+          type="submit"
+          disabled={busy}
+        >
           {busy ? "Joining…" : formConfig.buttonText}
-        </Button>
+        </button>
       </div>
       {formConfig.requireConsent && (
-        <Label className={styles.consent}>
-          <Checkbox className={styles.checkbox} name="marketingConsent" value="on" />
+        <label className="mt-3 flex items-start gap-2.5 text-caption leading-relaxed font-normal text-wl-muted">
+          <input
+            className="mt-px size-4 shrink-0 rounded border border-wl-input-border bg-wl-input"
+            name="marketingConsent"
+            type="checkbox"
+            value="on"
+          />
           <span>{formConfig.consentLabel}</span>
-        </Label>
+        </label>
       )}
     </form>
   );

@@ -139,13 +139,17 @@ export function AuditLog({ events }) {
     ? `${rangeStart}–${rangeEnd} of ${visible.length} ${visible.length === 1 ? "event" : "events"}`
     : `0 of ${events.length} ${events.length === 1 ? "event" : "events"}`;
   return (
-    <div className="product-audit">
-      <div className="product-audit-heading">
+    <div className="grid">
+      <div className="mb-5 flex flex-wrap items-start justify-between gap-x-6 gap-y-4">
         <div>
-          <h2 id="settings-panel-heading">Audit</h2>
-          <p>Every change in this workspace, newest first.</p>
+          <h2 id="settings-panel-heading" className="mb-2! text-2xl!">
+            Audit
+          </h2>
+          <p className="m-0 text-product-text-secondary">
+            Every change in this workspace, newest first.
+          </p>
         </div>
-        <div className="product-audit-controls">
+        <div className="flex flex-wrap items-center gap-2">
           <Select
             value={range}
             onValueChange={(value) => {
@@ -186,8 +190,8 @@ export function AuditLog({ events }) {
           </Button>
         </div>
       </div>
-      <div className="product-audit-toolbar">
-        <div className="product-team-search" role="search">
+      <div className="mb-4 flex flex-wrap items-center gap-3">
+        <div className="max-w-70 min-w-0 flex-1" role="search">
           <Label className="sr-only" htmlFor="audit-search">
             Search audit events
           </Label>
@@ -227,7 +231,21 @@ export function AuditLog({ events }) {
           </SelectContent>
         </Select>
       </div>
-      <div className="product-table-wrap">
+      <div
+        className={[
+          "relative overflow-x-auto rounded-xl border border-product-border-subtle bg-product-bg-surface no-scrollbar",
+          "[&_table]:min-w-235",
+          "[&_th]:px-4.5 [&_th]:py-3.5 [&_th]:text-left [&_th]:align-middle",
+          "[&_th]:border-b [&_th]:border-product-border-subtle",
+          "[&_thead_th]:py-3.25 [&_thead_th]:font-medium [&_thead_th]:text-product-text-secondary",
+          "[&_td]:px-4.5 [&_td]:py-3.5 [&_td]:align-middle",
+          "[&_td]:border-b [&_td]:border-product-border-subtle [&_td]:text-product-text-secondary",
+          "[&_th:first-child]:w-21/100 [&_th:nth-child(2)]:w-7/50 [&_th:nth-child(3)]:w-23/100",
+          "[&_th:nth-child(4)]:w-4/25 [&_th:nth-child(5)]:w-13/50",
+          "[&_td:nth-child(4)]:whitespace-normal [&_td:nth-child(4)]:wrap-anywhere",
+          "max-[767px]:[&_th]:px-4 max-[767px]:[&_td]:px-4",
+        ].join(" ")}
+      >
         <Table>
           <TableHeader>
             <TableRow>
@@ -250,36 +268,60 @@ export function AuditLog({ events }) {
                     </time>
                   </TableCell>
                   <TableCell>
-                    <span className="product-audit-action" data-tone={tone}>
-                      <span aria-hidden="true">●</span>
+                    <span
+                      className="inline-flex items-center gap-1.5 font-medium whitespace-nowrap text-product-text-primary"
+                      data-tone={tone}
+                    >
+                      <span
+                        aria-hidden="true"
+                        className={`text-micro ${
+                          tone === "success"
+                            ? "text-product-success-text"
+                            : tone === "danger"
+                              ? "text-product-danger-text"
+                              : tone === "info"
+                                ? "text-product-text-muted"
+                                : "text-product-text-secondary"
+                        }`}
+                      >
+                        ●
+                      </span>
                       {label}
                     </span>
                   </TableCell>
                   <TableCell>
                     {event.resourceName ? (
-                      <span className="product-team-person">
-                        <strong>{event.resourceName}</strong>
-                        {event.resourceType && <span>{event.resourceType}</span>}
+                      <span className="grid min-w-32 flex-1 gap-0.5">
+                        <strong className="block truncate text-sm font-medium">
+                          {event.resourceName}
+                        </strong>
+                        {event.resourceType && (
+                          <span className="block truncate text-caption text-product-text-secondary">
+                            {event.resourceType}
+                          </span>
+                        )}
                       </span>
                     ) : (
-                      <span className="product-team-person">
-                        <span>—</span>
+                      <span className="grid min-w-32 flex-1 gap-0.5">
+                        <span className="block truncate text-caption text-product-text-secondary">
+                          —
+                        </span>
                       </span>
                     )}
                   </TableCell>
                   <TableCell>{event.detail || "—"}</TableCell>
                   <TableCell>
                     {actor ? (
-                      <span className="product-audit-actor">
+                      <span className="inline-flex min-w-0 items-center gap-2 text-product-text-primary">
                         <Avatar size="sm">
                           <AvatarFallback>
                             {(event.userName || event.userEmail || "?").slice(0, 1).toUpperCase()}
                           </AvatarFallback>
                         </Avatar>
-                        <span>{event.userEmail || event.userName}</span>
+                        <span className="truncate">{event.userEmail || event.userName}</span>
                       </span>
                     ) : (
-                      <span className="product-audit-system">System</span>
+                      <span className="text-product-text-secondary">System</span>
                     )}
                   </TableCell>
                 </TableRow>
@@ -288,7 +330,7 @@ export function AuditLog({ events }) {
             {!visible.length && (
               <TableRow>
                 <TableCell colSpan={5}>
-                  <p className="product-table-empty">
+                  <p className="m-0 py-8 text-center text-product-text-secondary">
                     {events.length
                       ? "No audit events match these filters."
                       : "No workspace activity recorded yet."}
@@ -299,12 +341,12 @@ export function AuditLog({ events }) {
           </TableBody>
         </Table>
       </div>
-      <div className="product-audit-footer">
-        <p className="product-team-results" aria-live="polite">
+      <div className="mx-1 mt-3 mb-0 flex flex-wrap items-center justify-between gap-x-4 gap-y-3">
+        <p className="m-0 text-caption text-product-text-secondary tabular-nums" aria-live="polite">
           {resultsLabel}
         </p>
         {visible.length > 0 && (
-          <div className="product-audit-pagination">
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-2.5">
             <Select
               value={String(perPage)}
               onValueChange={(value) => {
@@ -323,7 +365,10 @@ export function AuditLog({ events }) {
                 ))}
               </SelectContent>
             </Select>
-            <nav className="product-audit-pages" aria-label="Audit log pages">
+            <nav
+              className="flex items-center gap-3 text-caption text-product-text-secondary tabular-nums"
+              aria-label="Audit log pages"
+            >
               <Button
                 type="button"
                 variant="outline"
@@ -334,7 +379,7 @@ export function AuditLog({ events }) {
                 <HugeiconsIcon icon={ArrowLeft01Icon} aria-hidden="true" />
                 Previous
               </Button>
-              <span>
+              <span className="whitespace-nowrap">
                 Page {currentPage} of {totalPages}
               </span>
               <Button

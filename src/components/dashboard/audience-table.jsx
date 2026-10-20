@@ -42,8 +42,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-
-import "./audience.css";
 import { EXPORT_COLUMNS, IMPORT_TEMPLATE_CSV } from "@/lib/audience-query.mjs";
 import { formatProductDate } from "@/lib/product-date.mjs";
 
@@ -385,7 +383,7 @@ export function AudienceTable({
       }),
       columnHelper.accessor("email", {
         header: "Email",
-        meta: { className: "w-[42%] px-4 py-3 sm:w-auto" },
+        meta: { className: "w-21/50 px-4 py-3 sm:w-auto" },
         cell: ({ row }) => (
           <span className="group inline-flex max-w-full items-center gap-1">
             <Button
@@ -422,7 +420,7 @@ export function AudienceTable({
         header: "Country",
         meta: { className: "hidden px-4 py-3 sm:table-cell" },
         cell: ({ row }) => (
-          <span className="text-[var(--product-text-secondary)]">
+          <span className="text-product-text-secondary">
             {locationLabel(row.original.city, row.original.country)}
           </span>
         ),
@@ -433,7 +431,7 @@ export function AudienceTable({
               header: "Position",
               meta: { className: "hidden px-4 py-3 sm:table-cell" },
               cell: ({ getValue }) => (
-                <span className="text-[var(--product-text-secondary)]">
+                <span className="text-product-text-secondary">
                   {getValue() == null ? "—" : `#${getValue()}`}
                 </span>
               ),
@@ -444,7 +442,7 @@ export function AudienceTable({
         header: "Points",
         meta: { className: "hidden px-4 py-3 text-right tabular-nums sm:table-cell" },
         cell: ({ getValue }) => (
-          <span className="text-[var(--product-text-secondary)] tabular-nums">
+          <span className="text-product-text-secondary tabular-nums">
             {(getValue() ?? 0).toLocaleString()}
           </span>
         ),
@@ -455,7 +453,7 @@ export function AudienceTable({
             type="button"
             variant="ghost"
             size="sm"
-            className="-ml-2 gap-1 px-2 font-medium text-[var(--product-text-secondary)]"
+            className="-ml-2 gap-1 px-2 font-medium text-product-text-secondary"
             onClick={toggleSort}
             aria-label={sort === "joined_asc" ? "Sort by newest first" : "Sort by oldest first"}
           >
@@ -464,7 +462,7 @@ export function AudienceTable({
         ),
         meta: { className: "hidden px-4 py-3 sm:table-cell" },
         cell: ({ getValue }) => (
-          <span className="text-[var(--product-text-secondary)]" title={formatDate(getValue())}>
+          <span className="text-product-text-secondary" title={formatDate(getValue())}>
             {timeAgo(getValue())}
           </span>
         ),
@@ -473,7 +471,7 @@ export function AudienceTable({
         ? [
             columnHelper.accessor("verifiedAt", {
               header: "Status",
-              meta: { className: "w-[58%] px-4 py-3 text-right sm:w-auto sm:text-left" },
+              meta: { className: "w-29/50 px-4 py-3 text-right sm:w-auto sm:text-left" },
               cell: ({ getValue }) => {
                 const verified = Boolean(getValue());
                 return (
@@ -495,7 +493,7 @@ export function AudienceTable({
           const failed = label === "Failed";
           return (
             <span
-              className={`inline-flex items-center gap-1.5 text-xs ${failed ? "text-[#a03932]" : "text-[var(--product-text-secondary)]"}`}
+              className={`inline-flex items-center gap-1.5 text-xs ${failed ? "text-product-danger-text" : "text-product-text-secondary"}`}
               title={`Confirmation email: ${label}`}
             >
               <HugeiconsIcon icon={Mail01Icon} size={15} aria-hidden="true" />
@@ -527,11 +525,13 @@ export function AudienceTable({
   const rows = table.getRowModel().rows;
 
   return (
-    <section className="product-ui product-audience" aria-labelledby="audience-title">
-      <header className="product-page-heading">
+    <section className="product-ui" aria-labelledby="audience-title">
+      <header className="mb-7 flex items-center justify-between gap-6">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div className="grid gap-2">
-            <h2 id="audience-title">Signups</h2>
+            <h2 id="audience-title" className="text-2xl!">
+              Signups
+            </h2>
             <p className="product-description">
               People who joined {waitlist.name || "this waitlist"}.
             </p>
@@ -553,7 +553,11 @@ export function AudienceTable({
             </div>
           )}
         </div>
-        <div className="product-audience-views" role="group" aria-label="Signup views">
+        <div
+          className="mt-6 flex flex-wrap gap-2 [&_button[aria-pressed=true]]:bg-product-bg-inset [&_button[aria-pressed=true]]:text-product-text-primary"
+          role="group"
+          aria-label="Signup views"
+        >
           <Button
             variant="ghost"
             aria-pressed={view === "subscribers"}
@@ -582,13 +586,13 @@ export function AudienceTable({
         />
       ) : (
         <>
-          <div className="product-audience-data" aria-busy={isUpdating}>
-            <div className="product-audience-toolbar">
+          <div className="min-w-0" aria-busy={isUpdating}>
+            <div className="mb-6 flex flex-wrap items-center justify-between gap-4 max-[640px]:items-stretch">
               <Label className="relative block w-full sm:max-w-sm">
                 <span className="sr-only">Search signups by email</span>
                 <HugeiconsIcon
                   icon={Search01Icon}
-                  className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-[var(--product-text-secondary)]"
+                  className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-product-text-secondary"
                   aria-hidden="true"
                 />
                 <Input
@@ -602,7 +606,7 @@ export function AudienceTable({
                 />
               </Label>
               <div
-                className="product-audience-filters"
+                className="flex flex-wrap gap-1 max-[640px]:w-full [&_button[aria-pressed=true]]:bg-product-bg-inset"
                 role="group"
                 aria-label="Filter signups by status"
               >
@@ -678,9 +682,9 @@ export function AudienceTable({
                 </Button>
               </div>
             )}
-            <div className="overflow-x-auto">
-              <Table className="w-full min-w-[48rem] table-fixed border-collapse text-left sm:table-auto">
-                <TableHeader className="text-[var(--product-text-secondary)]">
+            <div className="overflow-x-auto [&_td]:px-3 [&_td]:py-4.5 [&_td:first-child]:pl-0 [&_td:last-child]:pr-0 [&_th]:border-b [&_th]:px-3 [&_th]:text-caption [&_th:first-child]:pl-0 [&_th:last-child]:pr-0">
+              <Table className="w-full min-w-192 table-fixed border-collapse text-left sm:table-auto">
+                <TableHeader className="text-product-text-secondary">
                   {table.getHeaderGroups().map((headerGroup) => (
                     <TableRow key={headerGroup.id}>
                       {headerGroup.headers.map((header) => (
@@ -699,7 +703,7 @@ export function AudienceTable({
                   {rows.map((row) => (
                     <TableRow
                       key={row.original.id}
-                      className="product-audience-row cursor-pointer hover:bg-transparent"
+                      className="cursor-pointer hover:bg-transparent [&_button]:min-h-10 [&_button]:text-left [&_button]:focus-visible:outline-2 [&_button]:focus-visible:outline-offset-2 [&_button]:focus-visible:outline-product-focus"
                       onClick={() => {
                         setCopiedId(null);
                         setSheet({ type: "profile", row: row.original });
@@ -720,13 +724,11 @@ export function AudienceTable({
                       <TableCell colSpan={columns.length} className="px-4 py-16 text-center">
                         <HugeiconsIcon
                           icon={UserGroupIcon}
-                          className="mx-auto mb-3 text-[var(--product-text-secondary)]"
+                          className="mx-auto mb-3 text-product-text-secondary"
                           aria-hidden="true"
                         />
                         <p className="font-medium">{emptyTitle}</p>
-                        <p className="mt-1 text-[var(--product-text-secondary)]">
-                          {emptyDescription}
-                        </p>
+                        <p className="mt-1 text-product-text-secondary">{emptyDescription}</p>
                         {search || status !== "all" ? (
                           <Button
                             className="mt-4"
@@ -753,25 +755,21 @@ export function AudienceTable({
                   {isUpdating && rows.length === 0 && (
                     <>
                       {[0, 1, 2, 3, 4].map((row) => (
-                        <TableRow
-                          className="product-subscriber-skeleton-row"
-                          aria-hidden="true"
-                          key={row}
-                        >
-                          <TableCell>
-                            <i />
+                        <TableRow aria-hidden="true" key={row}>
+                          <TableCell className="h-16">
+                            <i className="block h-3.5 w-4/5 rounded bg-product-bg-inset motion-safe:animate-pulse" />
                           </TableCell>
-                          <TableCell>
-                            <i />
+                          <TableCell className="h-16">
+                            <i className="block h-5.5 w-24 rounded-full bg-product-bg-inset motion-safe:animate-pulse" />
                           </TableCell>
-                          <TableCell className="hidden sm:table-cell">
-                            <i />
+                          <TableCell className="hidden h-16 sm:table-cell">
+                            <i className="block h-3.5 w-17/20 rounded bg-product-bg-inset motion-safe:animate-pulse" />
                           </TableCell>
-                          <TableCell className="hidden sm:table-cell">
-                            <i />
+                          <TableCell className="hidden h-16 sm:table-cell">
+                            <i className="block h-3.5 w-10 rounded bg-product-bg-inset motion-safe:animate-pulse" />
                           </TableCell>
-                          <TableCell className="hidden sm:table-cell">
-                            <i />
+                          <TableCell className="hidden h-16 sm:table-cell">
+                            <i className="block h-3.5 w-10 rounded bg-product-bg-inset motion-safe:animate-pulse" />
                           </TableCell>
                         </TableRow>
                       ))}
@@ -780,7 +778,7 @@ export function AudienceTable({
                 </TableBody>
               </Table>
             </div>
-            <footer className="product-audience-pagination">
+            <footer className="flex flex-wrap items-center justify-between gap-4 pt-6 text-caption text-product-text-secondary tabular-nums">
               <span aria-live="polite" aria-atomic="true">
                 {showingStart}–{showingEnd} of {result.total}
               </span>
@@ -828,22 +826,24 @@ export function AudienceTable({
                   </SheetHeader>
                   <div className="px-4 pb-4">
                     <dl className="grid gap-5 text-sm">
-                      <div className="grid grid-cols-[104px_1fr] gap-3">
-                        <dt className="text-[var(--product-text-secondary)]">Email</dt>
+                      <div className="flex gap-3">
+                        <dt className="w-26 shrink-0 text-product-text-secondary">Email</dt>
                         <dd className="font-medium break-all">{profile.email}</dd>
                       </div>
                       {flags.sendEmailsToSubscribers && (
-                        <div className="grid grid-cols-[104px_1fr] gap-3">
-                          <dt className="text-[var(--product-text-secondary)]">Status</dt>
+                        <div className="flex gap-3">
+                          <dt className="w-26 shrink-0 text-product-text-secondary">Status</dt>
                           <dd>{profileStatus}</dd>
                         </div>
                       )}
-                      <div className="grid grid-cols-[104px_1fr] gap-3">
-                        <dt className="text-[var(--product-text-secondary)]">Confirmation email</dt>
+                      <div className="flex gap-3">
+                        <dt className="w-26 shrink-0 text-product-text-secondary">
+                          Confirmation email
+                        </dt>
                         <dd>
                           <p>{deliveryLabel(profile)}</p>
                           {profile.verificationDelivery?.issue && (
-                            <p className="text-xs text-[var(--product-text-secondary)]">
+                            <p className="text-xs text-product-text-secondary">
                               Issue:{" "}
                               {profile.verificationDelivery.issue
                                 .replaceAll("_", " ")
@@ -863,48 +863,50 @@ export function AudienceTable({
                         </dd>
                       </div>
                       {flags.showReferrals && (
-                        <div className="grid grid-cols-[104px_1fr] gap-3">
-                          <dt className="text-[var(--product-text-secondary)]">Position</dt>
+                        <div className="flex gap-3">
+                          <dt className="w-26 shrink-0 text-product-text-secondary">Position</dt>
                           <dd className="tabular-nums">
                             {profile.position == null ? "—" : `#${profile.position}`}
                           </dd>
                         </div>
                       )}
-                      <div className="grid grid-cols-[104px_1fr] gap-3">
-                        <dt className="text-[var(--product-text-secondary)]">Joined</dt>
+                      <div className="flex gap-3">
+                        <dt className="w-26 shrink-0 text-product-text-secondary">Joined</dt>
                         <dd title={formatDate(profile.createdAt)}>{timeAgo(profile.createdAt)}</dd>
                       </div>
-                      <div className="grid grid-cols-[104px_1fr] gap-3">
-                        <dt className="text-[var(--product-text-secondary)]">Location</dt>
+                      <div className="flex gap-3">
+                        <dt className="w-26 shrink-0 text-product-text-secondary">Location</dt>
                         <dd>
                           {locationLabel(profile.city, profile.country) === "—"
                             ? "Not available"
                             : locationLabel(profile.city, profile.country)}
                         </dd>
                       </div>
-                      <div className="grid grid-cols-[104px_1fr] gap-3">
-                        <dt className="text-[var(--product-text-secondary)]">Device</dt>
+                      <div className="flex gap-3">
+                        <dt className="w-26 shrink-0 text-product-text-secondary">Device</dt>
                         <dd title={profile.device || undefined}>
                           {deviceLabel(profile.deviceType, profile.device)}
                         </dd>
                       </div>
                       {flags.showReferrals && (
-                        <div className="grid grid-cols-[104px_1fr] gap-3">
-                          <dt className="text-[var(--product-text-secondary)]">Referrals</dt>
+                        <div className="flex gap-3">
+                          <dt className="w-26 shrink-0 text-product-text-secondary">Referrals</dt>
                           <dd className="tabular-nums">{profile.referralCount}</dd>
                         </div>
                       )}
-                      <div className="grid grid-cols-[104px_1fr] gap-3">
-                        <dt className="text-[var(--product-text-secondary)]">Points</dt>
+                      <div className="flex gap-3">
+                        <dt className="w-26 shrink-0 text-product-text-secondary">Points</dt>
                         <dd className="tabular-nums">{(profile.points ?? 0).toLocaleString()}</dd>
                       </div>
-                      <div className="grid grid-cols-[104px_1fr] gap-3">
-                        <dt className="text-[var(--product-text-secondary)]">Source</dt>
+                      <div className="flex gap-3">
+                        <dt className="w-26 shrink-0 text-product-text-secondary">Source</dt>
                         <dd>{profile.utmSource || "Direct"}</dd>
                       </div>
                       {profileLink && (
-                        <div className="grid grid-cols-[104px_1fr] items-center gap-3">
-                          <dt className="text-[var(--product-text-secondary)]">Referral link</dt>
+                        <div className="flex items-center gap-3">
+                          <dt className="w-26 shrink-0 text-product-text-secondary">
+                            Referral link
+                          </dt>
                           <dd className="flex min-w-0 items-center gap-1.5">
                             <span className="min-w-0 flex-1 truncate" title={profileLink}>
                               {profileLink}

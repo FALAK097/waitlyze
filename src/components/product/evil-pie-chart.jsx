@@ -15,17 +15,27 @@ function ChannelTooltip({ active, payload }) {
   const row = payload?.[0]?.payload;
   if (!active || !row) return null;
   return (
-    <div className="waitlist-analytics-tooltip">
-      <p className="waitlist-analytics-tooltip-title">{row.label}</p>
-      <div className="waitlist-analytics-tooltip-value">
-        <i data-series="visitors" aria-hidden="true" />
-        <span>Visitors</span>
-        <strong>{number.format(row.visitors)}</strong>
+    <div className="grid min-w-40 gap-2 rounded-lg border border-product-border-subtle bg-product-bg-surface p-2.5 text-xs text-product-text-primary shadow-xl">
+      <p className="mb-px border-b border-product-border-subtle pb-1.5 text-caption font-semibold text-product-text-primary!">
+        {row.label}
+      </p>
+      <div className="flex items-center gap-2">
+        <i
+          className="size-2 shrink-0 rounded-full bg-product-border-control data-[series=visitors]:bg-chart-1"
+          data-series="visitors"
+          aria-hidden="true"
+        />
+        <span className="min-w-0 flex-1">Visitors</span>
+        <strong className="shrink-0 tabular-nums">{number.format(row.visitors)}</strong>
       </div>
-      <div className="waitlist-analytics-tooltip-value">
-        <i data-series="signups" aria-hidden="true" />
-        <span>Signups</span>
-        <strong>{number.format(row.signups)}</strong>
+      <div className="flex items-center gap-2">
+        <i
+          className="size-2 shrink-0 rounded-full bg-product-border-control data-[series=signups]:bg-chart-2"
+          data-series="signups"
+          aria-hidden="true"
+        />
+        <span className="min-w-0 flex-1">Signups</span>
+        <strong className="shrink-0 tabular-nums">{number.format(row.signups)}</strong>
       </div>
     </div>
   );
@@ -83,11 +93,15 @@ export function EvilPieChart({ rows, metric = "visitors" }) {
   const total = data.reduce((sum, row) => sum + row.value, 0);
 
   if (!data.length)
-    return <p className="waitlist-analytics-panel-empty">No channel data in this period.</p>;
+    return (
+      <p className="grid h-61.5 place-items-center border-t border-product-border-subtle p-6 text-center text-xs text-product-text-secondary">
+        No channel data in this period.
+      </p>
+    );
 
   return (
-    <div className="evil-pie-layout">
-      <div className="evil-pie-visual">
+    <div className="grid h-full place-items-center px-2.5 py-1.5">
+      <div className="relative h-full w-full max-w-95 [&_.recharts-surface]:pointer-events-auto [&_[data-chart]]:h-full [&_[data-chart]]:w-full">
         <ChartContainer config={{}} className="aspect-auto h-full w-full">
           <PieChart accessibilityLayer margin={{ top: 8, right: 8, bottom: 8, left: 8 }}>
             <Tooltip content={<ChannelTooltip />} cursor={false} />
@@ -120,9 +134,14 @@ export function EvilPieChart({ rows, metric = "visitors" }) {
           </PieChart>
         </ChartContainer>
         {active ? null : (
-          <div className="evil-pie-total" aria-hidden="true">
-            <strong>{number.format(total)}</strong>
-            <span>{metric}</span>
+          <div
+            className="pointer-events-none absolute inset-0 grid place-content-center text-center"
+            aria-hidden="true"
+          >
+            <strong className="text-xl font-semibold tracking-tight text-product-text-primary">
+              {number.format(total)}
+            </strong>
+            <span className="text-micro text-product-text-secondary">{metric}</span>
           </div>
         )}
       </div>

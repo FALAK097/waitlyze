@@ -22,8 +22,6 @@ import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useR2Upload } from "@/utils/r2-upload";
 
-import styles from "./legacy-editor.module.css";
-
 export function SettingsTab({ formSettings, updateSetting, applyPreset }) {
   const fileInputRef = useRef(null);
   const { startUpload, isUploading } = useR2Upload("imageUploader", {
@@ -50,15 +48,40 @@ export function SettingsTab({ formSettings, updateSetting, applyPreset }) {
   };
 
   return (
-    <section className={styles.controls} aria-label="Form settings">
+    <section
+      className={[
+        "min-w-70 basis-0 grow-4 p-0",
+        "max-[1050px]:min-w-65 max-[1050px]:grow-10",
+        "max-md:order-first max-md:min-w-0 max-md:flex-none max-md:basis-auto max-md:grow-0",
+        "[&_label]:inline-flex [&_label]:items-center [&_label]:min-h-11",
+        "[&_label]:text-caption [&_label]:font-medium [&_label]:wrap-anywhere",
+        "[&_button:not([role=switch])]:min-h-11",
+        "[&_[role=switch]]:h-6! [&_[role=switch]]:w-11!",
+        "[&_[role=switch]]:bg-product-border-control!",
+        "[&_[role=switch][data-checked]]:bg-product-accent-solid!",
+        "[&_[role=switch]>span]:size-5!",
+        "[&_[role=switch][data-checked]>span]:translate-x-5!",
+      ].join(" ")}
+      aria-label="Form settings"
+    >
       <Tabs defaultValue="general" className="w-full">
-        <TabsList className={styles.tabList} aria-label="Form settings sections">
+        <TabsList
+          className={[
+            "flex! w-full! h-auto! min-h-11 flex-wrap items-center justify-start! gap-1",
+            "rounded-none! bg-white! p-0!",
+            "[&_[role=tab]]:min-h-11 [&_[role=tab]]:flex-1 [&_[role=tab]]:rounded-md",
+            "[&_[role=tab]]:px-2.5 [&_[role=tab]]:py-2 [&_[role=tab]]:text-caption",
+            "[&_[role=tab]]:whitespace-normal [&_[role=tab]]:text-product-text-secondary",
+            "[&_[role=tab]]:hover:text-product-text-secondary [&_[role=tab]]:shadow-none!",
+          ].join(" ")}
+          aria-label="Form settings sections"
+        >
           <TabsTrigger value="general">General</TabsTrigger>
           <TabsTrigger value="input">Input</TabsTrigger>
           <TabsTrigger value="presets">Presets</TabsTrigger>
           <TabsTrigger value="social">Social</TabsTrigger>
         </TabsList>
-        <TabsContent value="general" className="space-y-4 py-4">
+        <TabsContent value="general" className="space-y-4 py-6 [&>div]:gap-3">
           <div>
             <Label htmlFor="waitlistName">Waitlist name</Label>
             <Input
@@ -320,7 +343,7 @@ export function SettingsTab({ formSettings, updateSetting, applyPreset }) {
           </div>
         </TabsContent>
 
-        <TabsContent value="input" className="space-y-4 py-4">
+        <TabsContent value="input" className="space-y-4 py-6 [&>div]:gap-3">
           <div className="flex items-center justify-between">
             <Label htmlFor="inputColor">Input color</Label>
             <ColorPicker
@@ -354,7 +377,7 @@ export function SettingsTab({ formSettings, updateSetting, applyPreset }) {
             />
           </div>
         </TabsContent>
-        <TabsContent value="presets" className="space-y-4 py-4">
+        <TabsContent value="presets" className="space-y-4 py-6 [&>div]:gap-3">
           <Button className="w-full" variant="outline" onClick={() => applyPreset("modern")}>
             Modern
           </Button>
@@ -369,7 +392,7 @@ export function SettingsTab({ formSettings, updateSetting, applyPreset }) {
           </Button>
         </TabsContent>
 
-        <TabsContent value="social" className="space-y-4 py-4">
+        <TabsContent value="social" className="space-y-4 py-6 [&>div]:gap-3">
           <div className="space-y-6">
             <div className="space-y-4">
               <h3 className="font-medium">Open Graph Settings</h3>

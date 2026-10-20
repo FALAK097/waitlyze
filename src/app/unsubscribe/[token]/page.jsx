@@ -1,4 +1,3 @@
-import { Button } from "@/components/ui/button";
 import { hashUnsubscribeToken } from "@/lib/email/unsubscribe.mjs";
 import prisma from "@/lib/prisma";
 
@@ -18,17 +17,25 @@ export default async function UnsubscribePage({ params, searchParams }) {
   const waitlistName = subscriber?.waitList?.name || "this waitlist";
 
   return (
-    <main className="product-ui public-launch public-preferences">
-      <section className="public-preferences-card" aria-labelledby="preferences-title">
-        <p className="public-launch-eyebrow">{waitlistName} · Email preferences</p>
-        <h1 id="preferences-title">
+    <main className="grid min-h-svh place-items-center bg-product-bg-page px-4 py-8 font-product-sans text-product-text-primary">
+      <section
+        className="w-full max-w-140 rounded-xl border border-product-border-subtle bg-product-bg-surface p-8"
+        aria-labelledby="preferences-title"
+      >
+        <p className="mb-9 text-body font-semibold text-product-text-secondary">
+          {waitlistName} · Email preferences
+        </p>
+        <h1
+          id="preferences-title"
+          className="mt-2 mb-3 font-product-display text-title leading-tight font-semibold tracking-tight"
+        >
           {done
             ? "You’re unsubscribed"
             : subscriber
               ? "Manage email updates"
               : "This link is unavailable"}
         </h1>
-        <p>
+        <p className="mb-6 text-product-text-secondary">
           {done
             ? `You won’t receive future launch updates for ${waitlistName}.`
             : subscriber
@@ -38,7 +45,12 @@ export default async function UnsubscribePage({ params, searchParams }) {
         {subscriber && !done ? (
           <form action="/api/email/unsubscribe" method="post">
             <input type="hidden" name="token" value={token} />
-            <Button type="submit">Unsubscribe from updates</Button>
+            <button
+              type="submit"
+              className="min-h-11 rounded-lg border border-product-text-secondary bg-product-accent-solid px-4 text-sm font-medium text-product-accent-label transition-colors hover:bg-product-accent-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-900"
+            >
+              Unsubscribe from updates
+            </button>
           </form>
         ) : null}
       </section>

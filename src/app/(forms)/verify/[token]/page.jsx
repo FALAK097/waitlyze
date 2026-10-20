@@ -4,8 +4,6 @@ import prisma from "@/lib/prisma";
 
 import { VerifyAction } from "./verify-action";
 
-import "../../public-page.css";
-
 export const metadata = { title: "Confirm your email", robots: { index: false, follow: false } };
 
 export default async function VerifySignupPage({ params, searchParams }) {

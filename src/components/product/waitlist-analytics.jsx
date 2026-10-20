@@ -20,13 +20,14 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { cn } from "@/lib/utils";
 
 const EvilAreaChart = dynamic(
   () => import("@/components/product/evil-area-chart").then((module) => module.EvilAreaChart),
   {
     loading: () => (
       <div
-        className="waitlist-analytics-loading-chart"
+        className="flex min-h-70 items-end gap-3 px-5 py-6"
         role="status"
         aria-label="Loading activity chart"
       />
@@ -38,7 +39,7 @@ const EvilPieChart = dynamic(
   {
     loading: () => (
       <div
-        className="waitlist-analytics-panel-loading"
+        className="grid h-61.5 place-items-center border-t border-product-border-subtle p-6 text-center text-xs text-product-text-secondary"
         role="status"
         aria-label="Loading channel chart"
       />
@@ -50,13 +51,66 @@ const EvilWorldMap = dynamic(
   {
     loading: () => (
       <div
-        className="waitlist-analytics-panel-loading"
+        className="grid h-61.5 place-items-center border-t border-product-border-subtle p-6 text-center text-xs text-product-text-secondary"
         role="status"
         aria-label="Loading visitor map"
       />
     ),
   },
 );
+
+const COMPARISON =
+  "flex min-w-0 items-center gap-1 pt-0.75 text-micro font-medium leading-snug text-product-text-secondary";
+const METRIC = [
+  "relative grid min-h-27.5 min-w-0 content-start gap-0.5",
+  "border-s border-product-border-subtle px-4 pt-4.25 pb-3.5",
+  "nth-[4]:border-s-0 nth-[7]:border-s-0 nth-[n+4]:border-t",
+  "max-[600px]:min-h-25.5 max-[600px]:px-2.75 max-[600px]:pt-3.5 max-[600px]:pb-3",
+  "@min-[33rem]:nth-[4]:border-s @min-[33rem]:nth-[4]:border-t-0",
+  "@min-[33rem]:nth-[5]:border-s-0 @min-[33rem]:nth-[7]:border-s",
+  "@min-[41.25rem]:nth-[5]:border-s @min-[41.25rem]:nth-[5]:border-t-0",
+  "@min-[41.25rem]:nth-[6]:border-s-0",
+  "@min-[49.5rem]:nth-[6]:border-s @min-[49.5rem]:nth-[6]:border-t-0",
+  "@min-[49.5rem]:nth-[7]:border-s-0",
+  "@min-[57.75rem]:nth-[7]:border-s @min-[57.75rem]:nth-[7]:border-t-0",
+].join(" ");
+const BENCHMARK =
+  "mt-1.25 inline-flex w-fit rounded-full bg-product-bg-inset px-2 py-0.5 text-micro font-semibold leading-normal tracking-wider text-product-text-secondary uppercase";
+const DIMENSIONS =
+  "inline-flex max-w-full items-center gap-0.5 overflow-x-auto px-3 pb-2.5 no-scrollbar";
+const DIMENSION_BUTTON =
+  "min-h-8.5 shrink-0 cursor-pointer rounded-lg border-0 bg-transparent px-2.25 py-1.25 text-micro text-product-text-secondary hover:bg-product-bg-inset";
+const ANALYTICS_CHART =
+  "w-full px-2.5 pb-2 pl-1 text-xs text-product-text-secondary [&>[data-chart]]:h-80 [&>[data-chart]]:w-full [&>[data-chart]]:aspect-auto";
+const DATA_PANEL = [
+  "min-w-0 overflow-hidden rounded-xl border border-product-border-subtle",
+  "bg-product-bg-surface shadow-xs has-[data-analytics-map]:overflow-visible",
+].join(" ");
+const PANEL_BODY = "h-61.5 overflow-y-auto border-t border-product-border-subtle no-scrollbar";
+const ANALYTICS_TABLE_WRAP = [
+  "relative max-h-120 overflow-x-auto rounded-none border-0 bg-product-bg-surface no-scrollbar",
+  "[&_th]:px-3.25 [&_th]:py-2.5 [&_th]:text-left [&_th]:text-xs",
+  "[&_th]:border-b [&_th]:border-product-border-subtle",
+  "[&_thead_th]:font-medium [&_thead_th]:text-product-text-secondary",
+  "[&_tbody_th]:font-medium",
+  "[&_td]:px-3.25 [&_td]:py-2.5 [&_td]:text-xs",
+  "[&_td]:border-b [&_td]:border-product-border-subtle",
+  "[&_th_span]:block [&_th_span]:pt-0.5 [&_th_span]:text-micro",
+  "[&_th_span]:font-normal [&_th_span]:text-product-text-secondary",
+].join(" ");
+const ANALYTICS_TABLE = [
+  "w-full border-collapse text-xs",
+  "[&_th]:px-3.25 [&_th]:py-2.5 [&_th]:text-left [&_th]:border-b",
+  "[&_th]:border-product-border-subtle",
+  "[&_thead_th]:font-medium [&_thead_th]:text-product-text-secondary",
+  "[&_tbody_th]:w-7/10 [&_tbody_th]:font-medium",
+  "[&_td]:px-3.25 [&_td]:py-2.5 [&_td]:border-b [&_td]:border-product-border-subtle",
+  "[&_th_span]:block [&_th_span]:pt-0.5 [&_th_span]:text-micro",
+  "[&_th_span]:font-normal [&_th_span]:text-product-text-secondary",
+].join(" ");
+const REFERRAL_COL_TITLE =
+  "px-3.5 pt-3 pb-1.5 text-micro font-semibold tracking-wider text-product-text-secondary uppercase";
+const REFERRAL_EMPTY = "p-3.5 text-xs text-product-text-secondary";
 
 const rangePresets = [
   { label: "Daily", days: "1" },
@@ -103,11 +157,11 @@ function rangeLabel(range, from, to) {
 }
 
 function Comparison({ value }) {
-  if (value == null)
-    return <small className="waitlist-analytics-comparison is-neutral">No prior baseline</small>;
-  const tone = value > 0 ? "is-up" : value < 0 ? "is-down" : "is-neutral";
+  if (value == null) return <small className={COMPARISON}>No prior baseline</small>;
+  const tone =
+    value > 0 ? "text-product-success-text" : value < 0 ? "text-product-danger-text" : "";
   return (
-    <small className={`waitlist-analytics-comparison ${tone}`}>
+    <small className={`${COMPARISON} ${tone}`}>
       <span>{Math.abs(value)}%</span>
       <span aria-hidden="true">{value > 0 ? "↑" : value < 0 ? "↓" : "–"}</span>
       <span className="sr-only">
@@ -119,13 +173,15 @@ function Comparison({ value }) {
 
 function Metric({ label, value, change, detail, badge }) {
   return (
-    <div className="waitlist-analytics-metric" title={detail}>
-      <dt>{label}</dt>
-      <dd>{value}</dd>
+    <div className={METRIC} title={detail}>
+      <dt className="truncate text-xs text-product-text-secondary">{label}</dt>
+      <dd className="mt-0.5 truncate font-product-display text-2xl leading-tight font-semibold tracking-tighter text-product-text-primary max-[600px]:text-xl">
+        {value}
+      </dd>
       {change !== undefined ? (
         <Comparison value={change} />
       ) : (
-        <small className="waitlist-analytics-comparison is-neutral">{detail}</small>
+        <small className={COMPARISON}>{detail}</small>
       )}
       {badge}
     </div>
@@ -135,7 +191,14 @@ function Metric({ label, value, change, detail, badge }) {
 function BenchmarkBadge({ rate, benchmark, note }) {
   const verdict = rate >= benchmark ? "above" : "below";
   return (
-    <small className={`waitlist-analytics-benchmark is-${verdict}`} title={note}>
+    <small
+      className={`${BENCHMARK} ${
+        verdict === "above"
+          ? "bg-product-success-text/14 text-product-success-text"
+          : "bg-product-danger-text/10 text-product-danger-text"
+      }`}
+      title={note}
+    >
       {verdict === "above" ? "Above" : "Below"} ~{benchmark}%
     </small>
   );
@@ -143,11 +206,15 @@ function BenchmarkBadge({ rate, benchmark, note }) {
 
 function DimensionPicker({ label, options, value, onChange }) {
   return (
-    <div className="waitlist-analytics-dimensions" role="group" aria-label={label}>
+    <div className={DIMENSIONS} role="group" aria-label={label}>
       {options.map((option) => (
         <button
           key={option.value}
           type="button"
+          className={cn(
+            DIMENSION_BUTTON,
+            value === option.value && "bg-product-bg-inset font-medium text-product-text-primary",
+          )}
           aria-pressed={value === option.value}
           onClick={() => onChange(option.value)}
         >
@@ -164,7 +231,7 @@ function PanelMetricSwitch({ metric, onChange }) {
   return (
     <button
       type="button"
-      className="waitlist-analytics-metric-switch"
+      className="inline-flex min-h-7 cursor-pointer items-center gap-1 rounded-lg border-0 bg-transparent px-1.5 py-0.5 ps-2 text-micro font-medium text-product-text-secondary hover:bg-product-bg-inset hover:text-product-text-primary [&_svg]:opacity-70"
       onClick={() => onChange(next)}
       aria-label={`Metric: ${label}. Switch to ${next}.`}
     >
@@ -241,7 +308,7 @@ function RangePicker({ range, from, to, onChange }) {
         render={
           <button
             type="button"
-            className="waitlist-analytics-range-trigger"
+            className="inline-flex min-h-10.5 cursor-pointer items-center gap-2 rounded-lg border border-product-border-subtle bg-product-bg-surface px-3.5 py-2 text-caption font-medium text-product-text-primary hover:bg-product-bg-inset [&_svg]:size-3.75! [&_svg]:shrink-0 [&_svg]:text-product-text-secondary"
             aria-label={`Date range: ${rangeLabel(range, from, to)}`}
           >
             <HugeiconsIcon icon={CalendarIcon} aria-hidden="true" />
@@ -250,10 +317,10 @@ function RangePicker({ range, from, to, onChange }) {
         }
       />
       <PopoverContent align="end" className={view === "calendar" ? "w-120" : "w-48"}>
-        <div className="waitlist-analytics-range-popover">
+        <div className="-m-2.5 grid gap-2">
           {view === "presets" ? (
             <div
-              className="waitlist-analytics-range-presets"
+              className="grid gap-0.5 border-b border-product-border-subtle px-1 pt-1 pb-2"
               role="group"
               aria-label="Date range presets"
             >
@@ -261,6 +328,11 @@ function RangePicker({ range, from, to, onChange }) {
                 <button
                   key={option.days}
                   type="button"
+                  className={cn(
+                    "min-h-9 cursor-pointer rounded-lg border-0 bg-transparent px-2.5 py-1.5 text-left text-caption font-medium text-product-text-secondary hover:bg-product-bg-inset",
+                    range === option.days &&
+                      "bg-product-bg-inset font-semibold text-product-text-primary",
+                  )}
                   aria-pressed={range === option.days}
                   onClick={() => {
                     onChange({ range: option.days, from: null, to: null });
@@ -270,16 +342,21 @@ function RangePicker({ range, from, to, onChange }) {
                   {option.label}
                 </button>
               ))}
-              <button type="button" aria-pressed={false} onClick={openPicker}>
+              <button
+                type="button"
+                className="min-h-9 cursor-pointer rounded-lg border-0 bg-transparent px-2.5 py-1.5 text-left text-caption font-medium text-product-text-secondary hover:bg-product-bg-inset"
+                aria-pressed={false}
+                onClick={openPicker}
+              >
                 Custom…
               </button>
             </div>
           ) : (
             <>
-              <div className="waitlist-analytics-range-calendar-header">
+              <div className="flex items-center justify-between gap-2 px-2 pt-0.5 text-xs font-medium text-product-text-secondary">
                 <button
                   type="button"
-                  className="waitlist-analytics-range-back"
+                  className="min-h-7 cursor-pointer rounded-md border-0 bg-transparent px-1 text-xs font-medium text-product-text-secondary hover:bg-product-bg-inset hover:text-product-text-primary"
                   onClick={() => setView("presets")}
                 >
                   ← Presets
@@ -298,24 +375,32 @@ function RangePicker({ range, from, to, onChange }) {
                 disabled={disabled}
                 numberOfMonths={2}
               />
-              <div className="waitlist-analytics-range-footer">
-                <div className="waitlist-analytics-range-fields">
-                  <label>
+              <div className="flex flex-wrap items-end justify-between gap-2.5 border-t border-product-border-subtle px-2 pt-2 pb-1">
+                <div className="flex gap-2.5">
+                  <label className="grid gap-0.75 text-micro font-medium text-product-text-secondary">
                     <span>Start</span>
-                    <output>{draft?.from ? format(draft.from, "yyyy-MM-dd") : "—"}</output>
+                    <output className="block min-w-30 rounded-lg border border-product-border-subtle bg-product-bg-surface px-2 py-1.25 text-xs text-product-text-primary tabular-nums">
+                      {draft?.from ? format(draft.from, "yyyy-MM-dd") : "—"}
+                    </output>
                   </label>
-                  <label>
+                  <label className="grid gap-0.75 text-micro font-medium text-product-text-secondary">
                     <span>End</span>
-                    <output>{draft?.to ? format(draft.to, "yyyy-MM-dd") : "—"}</output>
+                    <output className="block min-w-30 rounded-lg border border-product-border-subtle bg-product-bg-surface px-2 py-1.25 text-xs text-product-text-primary tabular-nums">
+                      {draft?.to ? format(draft.to, "yyyy-MM-dd") : "—"}
+                    </output>
                   </label>
                 </div>
-                <div className="waitlist-analytics-range-actions">
-                  <button type="button" onClick={() => setDraft(undefined)}>
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    className="min-h-8 cursor-pointer rounded-lg border-0 bg-transparent px-2.5 py-1 text-xs font-medium text-product-text-secondary hover:not-disabled:bg-product-bg-inset hover:not-disabled:text-product-text-primary disabled:cursor-not-allowed disabled:opacity-45"
+                    onClick={() => setDraft(undefined)}
+                  >
                     Clear
                   </button>
                   <button
                     type="button"
-                    className="waitlist-analytics-range-apply"
+                    className="min-h-8 cursor-pointer rounded-lg border-0 bg-foreground px-2.5 py-1 text-xs font-medium text-background hover:not-disabled:bg-foreground hover:not-disabled:text-background hover:not-disabled:opacity-90 disabled:cursor-not-allowed disabled:opacity-45"
                     disabled={!canApply}
                     onClick={applyDraft}
                   >
@@ -338,7 +423,12 @@ function addDaysSafe(date, days) {
 }
 
 function RankedBars({ rows, empty, kind, metric = "visitors", limit = 5 }) {
-  if (!rows.length) return <p className="waitlist-analytics-panel-empty">{empty}</p>;
+  if (!rows.length)
+    return (
+      <p className="grid h-61.5 place-items-center border-t border-product-border-subtle p-6 text-center text-xs text-product-text-secondary">
+        {empty}
+      </p>
+    );
   const sorted = [...rows]
     .sort((a, b) => {
       const avalue = metric === "signups" ? a.signups : a.visitors;
@@ -351,21 +441,24 @@ function RankedBars({ rows, empty, kind, metric = "visitors", limit = 5 }) {
 
 function AnalyticsSkeleton() {
   return (
-    <div className="waitlist-analytics-loading" aria-hidden="true">
-      <div className="waitlist-analytics-loading-metrics">
+    <div
+      className="grid gap-4 rounded-xl border border-product-border-subtle p-4.5"
+      aria-hidden="true"
+    >
+      <div className="grid grid-cols-5 gap-4 max-[840px]:grid-cols-3">
         {[0, 1, 2, 3, 4, 5].map((item) => (
-          <div className="waitlist-analytics-loading-metric" key={item}>
-            <i />
-            <i />
+          <div className="grid gap-2.5" key={item}>
+            <i className="block h-2.75 w-3/5 rounded bg-product-bg-inset motion-safe:animate-pulse" />
+            <i className="block h-6.25 w-3/4 rounded bg-product-bg-inset motion-safe:animate-pulse" />
           </div>
         ))}
       </div>
-      <div className="waitlist-analytics-loading-chart">
-        <i />
-        <i />
-        <i />
-        <i />
-        <i />
+      <div className="flex min-h-70 items-end gap-3 px-5 py-6">
+        <i className="h-19.5 min-w-2 flex-1 rounded bg-product-bg-inset motion-safe:animate-pulse" />
+        <i className="h-36.5 min-w-2 flex-1 rounded bg-product-bg-inset motion-safe:animate-pulse" />
+        <i className="h-26.5 min-w-2 flex-1 rounded bg-product-bg-inset motion-safe:animate-pulse" />
+        <i className="h-50.5 min-w-2 flex-1 rounded bg-product-bg-inset motion-safe:animate-pulse" />
+        <i className="h-42 min-w-2 flex-1 rounded bg-product-bg-inset motion-safe:animate-pulse" />
       </div>
     </div>
   );
@@ -525,16 +618,18 @@ export function WaitlistAnalytics({ waitListId, emailsEnabled = false }) {
 
   return (
     <section
-      className="waitlist-analytics"
+      className="mt-7 grid gap-4 max-[600px]:mt-6"
       aria-labelledby="waitlist-analytics-title"
       aria-busy={loading}
     >
-      <header className="waitlist-analytics-header">
+      <header className="flex items-end justify-between gap-5 pb-1 max-[600px]:flex-col max-[600px]:items-stretch">
         <div>
           <h2 id="waitlist-analytics-title">Analytics</h2>
-          <p>Understand how people discover, join, and share this waitlist.</p>
+          <p className="pt-1.25 text-caption text-product-text-secondary">
+            Understand how people discover, join, and share this waitlist.
+          </p>
         </div>
-        <div className="waitlist-analytics-controls">
+        <div className="flex flex-wrap items-center gap-2 max-[600px]:justify-between">
           <RangePicker
             range={range}
             from={from}
@@ -545,16 +640,24 @@ export function WaitlistAnalytics({ waitListId, emailsEnabled = false }) {
       </header>
 
       {error ? (
-        <div className="waitlist-analytics-message" role="alert">
-          <p>{error}</p>
+        <div
+          className="rounded-xl border border-product-border-subtle px-5 py-14 text-center text-product-text-secondary [&_button]:min-h-10 [&_button]:rounded-lg [&_button]:border [&_button]:border-product-border-control [&_button]:bg-product-bg-surface [&_button]:px-3.25 [&_button]:py-1.75 [&_button]:text-caption [&_button]:text-product-text-primary"
+          role="alert"
+        >
+          <p className="pb-1.25 font-medium text-product-text-primary">{error}</p>
           <Button type="button" onClick={() => setRetryCount((count) => count + 1)}>
             Try again
           </Button>
         </div>
       ) : null}
       {!error && !requestValid ? (
-        <div className="waitlist-analytics-message" role="status">
-          <p>Pick a complete custom range</p>
+        <div
+          className="rounded-xl border border-product-border-subtle px-5 py-14 text-center text-product-text-secondary"
+          role="status"
+        >
+          <p className="pb-1.25 font-medium text-product-text-primary">
+            Pick a complete custom range
+          </p>
           <span>Choose both a start and end date (up to 90 days).</span>
         </div>
       ) : null}
@@ -573,8 +676,11 @@ export function WaitlistAnalytics({ waitListId, emailsEnabled = false }) {
               Updating analytics…
             </p>
           ) : null}
-          <section className="waitlist-analytics-overview" aria-labelledby="waitlist-trend-title">
-            <dl className="waitlist-analytics-metrics">
+          <section
+            className="@container min-w-0 overflow-hidden rounded-xl border border-product-border-subtle bg-product-bg-surface shadow-xs"
+            aria-labelledby="waitlist-trend-title"
+          >
+            <dl className="m-0 grid grid-cols-3 border-b border-product-border-subtle @min-[33rem]:grid-cols-4 @min-[41.25rem]:grid-cols-5 @min-[49.5rem]:grid-cols-6 @min-[57.75rem]:grid-cols-7">
               <Metric
                 label="Visitors"
                 value={number.format(summary.visitors)}
@@ -630,10 +736,12 @@ export function WaitlistAnalytics({ waitListId, emailsEnabled = false }) {
               />
             </dl>
 
-            <div className="waitlist-analytics-chart-toolbar">
+            <div className="flex items-center justify-between gap-4 px-4.5 pt-4.25 pb-0.5 max-[600px]:flex-col max-[600px]:items-start">
               <div>
-                <h3 id="waitlist-trend-title">Activity</h3>
-                <p>
+                <h3 id="waitlist-trend-title" className="text-sm font-semibold">
+                  Activity
+                </h3>
+                <p className="pt-0.5 text-micro text-product-text-secondary">
                   {formatDate(currentAnalytics.range.startDate)} –{" "}
                   {formatDate(currentAnalytics.range.endDate, {
                     month: "short",
@@ -643,10 +751,15 @@ export function WaitlistAnalytics({ waitListId, emailsEnabled = false }) {
                   · {timeZone}
                 </p>
               </div>
-              <div className="waitlist-analytics-toolbar-controls">
-                <div className="waitlist-analytics-view" role="group" aria-label="Activity display">
+              <div className="flex flex-wrap items-center gap-2 max-[600px]:self-stretch">
+                <div
+                  className="inline-flex items-center gap-0.5 rounded-lg border border-product-border-subtle bg-product-bg-surface p-0.75 max-[600px]:flex-1 [&_button]:inline-flex [&_button]:min-h-9 [&_button]:cursor-pointer [&_button]:items-center [&_button]:gap-1.5 [&_button]:rounded-lg [&_button]:border-0 [&_button]:bg-transparent [&_button]:px-2.5 [&_button]:py-1.5 [&_button]:text-xs [&_button]:font-medium [&_button]:text-product-text-secondary [&_button:hover]:bg-transparent [&_button[aria-pressed=true]]:bg-product-bg-inset [&_button[aria-pressed=true]]:text-product-text-primary"
+                  role="group"
+                  aria-label="Activity display"
+                >
                   <Button
                     type="button"
+                    variant="ghost"
                     aria-pressed={mode === "chart"}
                     onClick={() => setMode("chart")}
                   >
@@ -655,6 +768,7 @@ export function WaitlistAnalytics({ waitListId, emailsEnabled = false }) {
                   </Button>
                   <Button
                     type="button"
+                    variant="ghost"
                     aria-pressed={mode === "table"}
                     onClick={() => setMode("table")}
                   >
@@ -665,7 +779,7 @@ export function WaitlistAnalytics({ waitListId, emailsEnabled = false }) {
             </div>
 
             {mode === "table" ? (
-              <div className="product-table-wrap waitlist-analytics-table-wrap">
+              <div className={ANALYTICS_TABLE_WRAP}>
                 <Table>
                   <caption className="sr-only">
                     Daily visitors and signups from {formatDate(currentAnalytics.range.startDate)}{" "}
@@ -703,29 +817,34 @@ export function WaitlistAnalytics({ waitListId, emailsEnabled = false }) {
                 </Table>
               </div>
             ) : noActivity ? (
-              <div className="waitlist-analytics-empty">
-                <p>No activity yet</p>
-                <span>Share your page to start learning about your audience.</span>
-                <Link prefetch={false} href={`/waitlists/${waitListId}`}>
+              <div className="grid justify-items-center gap-2 px-5 py-16 text-center text-product-text-secondary">
+                <p className="pb-1.25 font-medium text-product-text-primary">No activity yet</p>
+                <span className="block text-sm">
+                  Share your page to start learning about your audience.
+                </span>
+                <Link
+                  prefetch={false}
+                  href={`/waitlists/${waitListId}`}
+                  className="mt-3 inline-block font-medium text-product-text-primary underline-offset-4"
+                >
                   Open your page
                 </Link>
               </div>
             ) : (
               <>
-                <div className="waitlist-analytics-chart">
+                <div className={ANALYTICS_CHART}>
                   <EvilAreaChart series={series} formatDate={formatDate} />
                 </div>
               </>
             )}
           </section>
 
-          <div className="waitlist-analytics-grid">
-            <section
-              className="waitlist-analytics-data-panel"
-              aria-labelledby="waitlist-sources-title"
-            >
-              <header>
-                <h3 id="waitlist-sources-title">Acquisition</h3>
+          <div className="grid grid-cols-2 gap-4 max-[840px]:grid-cols-1">
+            <section className={DATA_PANEL} aria-labelledby="waitlist-sources-title">
+              <header className="flex items-center justify-between gap-3 px-4 pt-4 pb-2">
+                <h3 id="waitlist-sources-title" className="text-sm font-semibold">
+                  Acquisition
+                </h3>
                 <PanelMetricSwitch metric={acquisitionMetric} onChange={setAcquisitionMetric} />
               </header>
               <DimensionPicker
@@ -739,7 +858,7 @@ export function WaitlistAnalytics({ waitListId, emailsEnabled = false }) {
                   { label: "Source", value: "sources" },
                 ]}
               />
-              <div className="waitlist-analytics-panel-body">
+              <div className={PANEL_BODY}>
                 {acquisitionView === "channels" ? (
                   <EvilPieChart
                     rows={currentAnalytics.sources.channels}
@@ -756,12 +875,11 @@ export function WaitlistAnalytics({ waitListId, emailsEnabled = false }) {
               </div>
             </section>
 
-            <section
-              className="waitlist-analytics-data-panel"
-              aria-labelledby="waitlist-technology-title"
-            >
-              <header>
-                <h3 id="waitlist-technology-title">Technology</h3>
+            <section className={DATA_PANEL} aria-labelledby="waitlist-technology-title">
+              <header className="flex items-center justify-between gap-3 px-4 pt-4 pb-2">
+                <h3 id="waitlist-technology-title" className="text-sm font-semibold">
+                  Technology
+                </h3>
                 <PanelMetricSwitch metric={technologyMetric} onChange={setTechnologyMetric} />
               </header>
               <DimensionPicker
@@ -774,7 +892,7 @@ export function WaitlistAnalytics({ waitListId, emailsEnabled = false }) {
                   { label: "Device", value: "devices" },
                 ]}
               />
-              <div className="waitlist-analytics-panel-body">
+              <div className={PANEL_BODY}>
                 <RankedBars
                   rows={technology.rows}
                   empty={technology.empty}
@@ -785,11 +903,13 @@ export function WaitlistAnalytics({ waitListId, emailsEnabled = false }) {
             </section>
 
             <section
-              className="waitlist-analytics-data-panel waitlist-analytics-wide-panel waitlist-analytics-audience-panel"
+              className={`${DATA_PANEL} col-span-full pb-4`}
               aria-labelledby="waitlist-audience-title"
             >
-              <header>
-                <h3 id="waitlist-audience-title">Audience</h3>
+              <header className="flex items-center justify-between gap-3 px-4 pt-4 pb-2">
+                <h3 id="waitlist-audience-title" className="text-sm font-semibold">
+                  Audience
+                </h3>
                 <PanelMetricSwitch metric={audienceMetric} onChange={setAudienceMetric} />
               </header>
               <DimensionPicker
@@ -803,7 +923,9 @@ export function WaitlistAnalytics({ waitListId, emailsEnabled = false }) {
                   { label: "City", value: "cities" },
                 ]}
               />
-              <div className="waitlist-analytics-panel-body">
+              <div
+                className={`${PANEL_BODY} h-auto max-h-none min-h-95 has-[data-analytics-map]:min-h-0`}
+              >
                 {audienceView === "map" ? (
                   <EvilWorldMap
                     countries={currentAnalytics.geo.mapCountries ?? currentAnalytics.geo.countries}
@@ -828,34 +950,31 @@ export function WaitlistAnalytics({ waitListId, emailsEnabled = false }) {
           </div>
 
           {referrals ? (
-            <section
-              className="waitlist-analytics-data-panel waitlist-analytics-wide-panel waitlist-analytics-referrals-panel"
-              aria-labelledby="waitlist-referrals-title"
-            >
-              <header>
-                <h3 id="waitlist-referrals-title">Referrals</h3>
-                <span>{referralShareLabel}</span>
+            <section className={`${DATA_PANEL} pb-4`} aria-labelledby="waitlist-referrals-title">
+              <header className="flex items-center justify-between gap-3 px-4 pt-4 pb-2">
+                <h3 id="waitlist-referrals-title" className="text-sm font-semibold">
+                  Referrals
+                </h3>
+                <span className="text-micro font-medium text-product-text-secondary">
+                  {referralShareLabel}
+                </span>
               </header>
-              <div className="waitlist-analytics-panel-body">
-                <div className="waitlist-analytics-referral-cols">
+              <div className={`${PANEL_BODY} h-auto max-h-85 min-h-35`}>
+                <div className="grid grid-cols-1 sm:grid-cols-2 [&>div+div]:border-s [&>div+div]:border-product-border-subtle max-[600px]:[&>div+div]:border-s-0 max-[600px]:[&>div+div]:border-t max-[600px]:[&>div+div]:border-product-border-subtle">
                   <div>
-                    <p className="waitlist-analytics-referral-col-title">Organic vs referred</p>
+                    <p className={REFERRAL_COL_TITLE}>Organic vs referred</p>
                     {referralSplit.some((row) => row.signups > 0) ? (
                       <EvilBarRows rows={referralSplit} kind="acquisition" metric="signups" />
                     ) : (
-                      <p className="waitlist-analytics-referral-empty">
-                        No signups in this period.
-                      </p>
+                      <p className={REFERRAL_EMPTY}>No signups in this period.</p>
                     )}
                   </div>
                   <div>
-                    <p className="waitlist-analytics-referral-col-title">Top referrers</p>
+                    <p className={REFERRAL_COL_TITLE}>Top referrers</p>
                     {referralTop.length ? (
                       <EvilBarRows rows={referralTop} kind="acquisition" metric="signups" />
                     ) : (
-                      <p className="waitlist-analytics-referral-empty">
-                        No referral signups in this period.
-                      </p>
+                      <p className={REFERRAL_EMPTY}>No referral signups in this period.</p>
                     )}
                   </div>
                 </div>
@@ -864,23 +983,22 @@ export function WaitlistAnalytics({ waitListId, emailsEnabled = false }) {
           ) : null}
 
           {emailsEnabled ? (
-            <section
-              className="waitlist-analytics-data-panel waitlist-analytics-wide-panel"
-              aria-labelledby="waitlist-emails-title"
-            >
-              <header>
-                <h3 id="waitlist-emails-title">Email delivery</h3>
-                <span>
+            <section className={`${DATA_PANEL} pb-4`} aria-labelledby="waitlist-emails-title">
+              <header className="flex items-center justify-between gap-3 px-4 pt-4 pb-2">
+                <h3 id="waitlist-emails-title" className="text-sm font-semibold">
+                  Email delivery
+                </h3>
+                <span className="text-micro font-medium text-product-text-secondary">
                   {currentAnalytics.emails.length}{" "}
                   {currentAnalytics.emails.length === 1 ? "send" : "sends"}
                 </span>
               </header>
-              <p className="waitlist-analytics-section-copy">
+              <p className="max-w-prose px-4 pb-3.5 text-xs text-product-text-secondary">
                 Delivery results for broadcasts sent during this period.
               </p>
               {currentAnalytics.emails.length ? (
-                <div className="product-table-wrap waitlist-analytics-table-wrap">
-                  <table className="product-waitlist-table">
+                <div className={ANALYTICS_TABLE_WRAP}>
+                  <table className={ANALYTICS_TABLE}>
                     <caption className="sr-only">Broadcast delivery</caption>
                     <thead>
                       <tr>
@@ -917,7 +1035,7 @@ export function WaitlistAnalytics({ waitListId, emailsEnabled = false }) {
                   </table>
                 </div>
               ) : (
-                <p className="waitlist-analytics-panel-empty">
+                <p className="grid h-61.5 place-items-center border-t border-product-border-subtle p-6 text-center text-xs text-product-text-secondary">
                   No broadcasts were sent during this period.
                 </p>
               )}

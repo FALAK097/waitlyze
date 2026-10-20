@@ -124,10 +124,10 @@ export function TeamAccessSettings({
   }
 
   return (
-    <div className="product-team-settings">
-      <div className="product-team-toolbar">
+    <div className="grid grid-cols-1 gap-7">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         {isPersonalWorkspace ? null : (
-          <div className="product-team-search" role="search">
+          <div className="max-w-70 min-w-0 flex-1" role="search">
             <Label className="sr-only" htmlFor="team-member-search">
               Search members
             </Label>
@@ -143,7 +143,7 @@ export function TeamAccessSettings({
           </div>
         )}
         {isPersonalWorkspace ? (
-          <p className="product-help">
+          <p className="m-0 text-sm text-product-text-secondary tabular-nums">
             Personal workspaces are just for you. Create a shared workspace from the workspace
             switcher to invite teammates.
           </p>
@@ -154,7 +154,7 @@ export function TeamAccessSettings({
               Invite member
             </DialogTrigger>
             <DialogContent>
-              <div className="product-team-invitation-dialog">
+              <div className="max-w-120 [&_h2]:mt-0 [&_h2]:mr-10 [&_h2]:mb-2 [&_h2]:text-xl [&_p]:mt-0 [&_p]:mb-6">
                 <DialogTitle>Invite a member</DialogTitle>
                 <DialogDescription>Give a teammate access to this workspace.</DialogDescription>
                 <InvitationForm
@@ -166,11 +166,13 @@ export function TeamAccessSettings({
             </DialogContent>
           </Dialog>
         ) : canManage ? (
-          <p className="product-help" role="status">
+          <p className="m-0 text-sm text-product-text-secondary tabular-nums" role="status">
             Invitations are unavailable. Ask your administrator to configure secure invitations.
           </p>
         ) : (
-          <p className="product-help">An owner or admin can invite teammates.</p>
+          <p className="m-0 text-sm text-product-text-secondary tabular-nums">
+            An owner or admin can invite teammates.
+          </p>
         )}
       </div>
 
@@ -178,7 +180,20 @@ export function TeamAccessSettings({
         <h3 id="team-members-heading" className="sr-only">
           Members
         </h3>
-        <div className="product-table-wrap">
+        <div
+          className={[
+            "relative overflow-x-auto rounded-xl border border-product-border-subtle bg-product-bg-surface no-scrollbar",
+            "[&_th]:px-5 [&_th]:py-4 [&_th]:text-left",
+            "[&_th]:border-b [&_th]:border-product-border-subtle",
+            "[&_th:first-child]:w-9/25 [&_th:nth-child(2)]:w-4/25",
+            "[&_th:nth-child(3)]:w-7/50 [&_th:nth-child(4)]:w-4/25",
+            "[&_td]:px-5 [&_td]:py-4 [&_td]:border-b [&_td]:border-product-border-subtle",
+            "[&_td]:text-product-text-secondary [&_tbody_td:nth-child(2)]:capitalize",
+            "max-[767px]:[&_table]:min-w-210",
+            "max-[767px]:[&_th]:px-4 max-[767px]:[&_th]:py-3.5",
+            "max-[767px]:[&_td]:px-4 max-[767px]:[&_td]:py-3.5",
+          ].join(" ")}
+        >
           <Table>
             <TableHeader>
               <TableRow>
@@ -198,7 +213,7 @@ export function TeamAccessSettings({
                 return (
                   <TableRow key={member.userId}>
                     <TableHead scope="row">
-                      <span className="product-team-user">
+                      <span className="flex min-w-0 items-center gap-3">
                         <Avatar aria-hidden="true">
                           <AvatarImage src={member.user.image || member.user.imageUrl} alt="" />
                           <AvatarFallback>
@@ -207,12 +222,14 @@ export function TeamAccessSettings({
                               .toUpperCase()}
                           </AvatarFallback>
                         </Avatar>
-                        <span className="product-team-person">
-                          <strong>
+                        <span className="grid min-w-32 flex-1 gap-0.5 wrap-anywhere">
+                          <strong className="block text-sm font-medium">
                             {label}
                             {isSelf ? " (you)" : ""}
                           </strong>
-                          <span>{member.user.email}</span>
+                          <span className="block text-caption leading-relaxed text-product-text-secondary">
+                            {member.user.email}
+                          </span>
                         </span>
                       </span>
                     </TableHead>
@@ -238,14 +255,20 @@ export function TeamAccessSettings({
                       )}
                     </TableCell>
                     <TableCell>
-                      <span className="product-team-status" data-tone="success">
-                        <span aria-hidden="true">●</span>Active
+                      <span
+                        className="inline-flex items-center gap-1.5 font-medium whitespace-nowrap text-product-text-primary"
+                        data-tone="success"
+                      >
+                        <span aria-hidden="true" className="text-micro text-product-success-text">
+                          ●
+                        </span>
+                        Active
                       </span>
                     </TableCell>
                     <TableCell>{member.createdAt ? formatDate(member.createdAt) : "—"}</TableCell>
                     <TableCell>
                       {canManage && !isSelf && (
-                        <div className="product-team-actions">
+                        <div className="flex flex-wrap gap-2">
                           <Button
                             type="button"
                             variant="destructive"
@@ -267,15 +290,17 @@ export function TeamAccessSettings({
                 return (
                   <TableRow key={invite.id}>
                     <TableHead scope="row">
-                      <span className="product-team-user">
+                      <span className="flex min-w-0 items-center gap-3">
                         <Avatar aria-hidden="true">
                           <AvatarFallback>
                             {(invite.emailNormalized || "?").slice(0, 1).toUpperCase()}
                           </AvatarFallback>
                         </Avatar>
-                        <span className="product-team-person">
-                          <strong>{invite.emailNormalized}</strong>
-                          <span>
+                        <span className="grid min-w-32 flex-1 gap-0.5 wrap-anywhere">
+                          <strong className="block text-sm font-medium">
+                            {invite.emailNormalized}
+                          </strong>
+                          <span className="block text-caption leading-relaxed text-product-text-secondary">
                             {failed
                               ? "Email delivery failed"
                               : `Sent ${formatDate(invite.createdAt)} · expires ${formatDate(invite.expiresAt)}`}
@@ -285,15 +310,25 @@ export function TeamAccessSettings({
                     </TableHead>
                     <TableCell>{invite.role.toLowerCase()}</TableCell>
                     <TableCell>
-                      <span className="product-team-status" data-tone={failed ? "danger" : "info"}>
-                        <span aria-hidden="true">●</span>
+                      <span
+                        className="inline-flex items-center gap-1.5 font-medium whitespace-nowrap text-product-text-primary"
+                        data-tone={failed ? "danger" : "info"}
+                      >
+                        <span
+                          aria-hidden="true"
+                          className={`text-micro ${
+                            failed ? "text-product-danger-text" : "text-product-text-muted"
+                          }`}
+                        >
+                          ●
+                        </span>
                         {failed ? "Failed" : "Pending"}
                       </span>
                     </TableCell>
                     <TableCell>{formatDate(invite.createdAt)}</TableCell>
                     <TableCell>
                       {canManage && (
-                        <div className="product-team-actions">
+                        <div className="flex flex-wrap gap-2">
                           <Button
                             type="button"
                             variant="outline"
@@ -325,14 +360,16 @@ export function TeamAccessSettings({
               {!visibleMembers.length && !visibleInvitations.length && (
                 <TableRow>
                   <TableCell colSpan={5}>
-                    <p className="product-table-empty">Nobody matches this search.</p>
+                    <p className="m-0 py-8 text-center text-product-text-secondary">
+                      Nobody matches this search.
+                    </p>
                   </TableCell>
                 </TableRow>
               )}
             </TableBody>
           </Table>
         </div>
-        <p className="product-team-results" aria-live="polite">
+        <p className="mx-1 mt-3 mb-0 text-caption text-product-text-secondary" aria-live="polite">
           {visibleMembers.length + visibleInvitations.length} of{" "}
           {members.length + invitations.length}{" "}
           {members.length + invitations.length === 1 ? "person" : "people"}
@@ -399,9 +436,9 @@ function InvitationForm({ workspaceId, canInviteAdmins, onComplete }) {
     if (state.success) onComplete();
   }, [state, onComplete]);
   return (
-    <form action={action} className="product-team-invite-form">
+    <form action={action} className="grid gap-4.5 border-0 bg-transparent p-0">
       <input type="hidden" name="workspaceId" value={workspaceId} />
-      <label className="product-team-field">
+      <label className="grid gap-2 text-sm font-medium">
         Email address
         <Input
           type="email"
@@ -413,7 +450,7 @@ function InvitationForm({ workspaceId, canInviteAdmins, onComplete }) {
           aria-invalid={Boolean(state.error)}
         />
       </label>
-      <div className="product-team-field">
+      <div className="grid gap-2 text-sm font-medium">
         <Label htmlFor="team-invite-role">Role</Label>
         <Select name="role" value={role} onValueChange={setRole}>
           <SelectTrigger id="team-invite-role">
@@ -425,7 +462,7 @@ function InvitationForm({ workspaceId, canInviteAdmins, onComplete }) {
           </SelectContent>
         </Select>
       </div>
-      <p className="product-help">
+      <p className="mb-4! text-sm leading-relaxed text-product-text-secondary">
         Members can edit waitlists. Admins can also manage workspace settings.
       </p>
       <Button type="submit" disabled={pending} aria-busy={pending}>

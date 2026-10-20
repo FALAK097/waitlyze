@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 
+import { cn } from "@/lib/utils";
+
 export default function LegalTOC({ sections }) {
   const navRef = useRef(null);
   const [active, setActive] = useState(sections[0]?.id);
@@ -47,10 +49,24 @@ export default function LegalTOC({ sections }) {
   }, [active]);
 
   return (
-    <nav ref={navRef} aria-label="On this page">
-      <p className="wl-eyebrow">On this page</p>
+    <nav
+      ref={navRef}
+      aria-label="On this page"
+      className="mb-7 grid gap-3 text-xs text-product-text-secondary max-md:mb-0 max-md:flex max-md:overflow-x-auto max-md:p-1.5"
+    >
+      <p className="mb-2 flex items-center gap-2 text-micro font-semibold tracking-widest text-product-text-secondary uppercase max-md:hidden">
+        On this page
+      </p>
       {sections.map(({ id, label }) => (
-        <a href={`#${id}`} key={id} aria-current={active === id ? "location" : undefined}>
+        <a
+          href={`#${id}`}
+          key={id}
+          aria-current={active === id ? "location" : undefined}
+          className={cn(
+            "-ml-2 rounded px-2 py-1.5 hover:text-product-success-text focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-neutral-900 max-md:ml-0 max-md:shrink-0 max-md:whitespace-nowrap",
+            active === id && "bg-product-bg-inset font-bold text-product-success-text",
+          )}
+        >
           {label}
         </a>
       ))}

@@ -2,7 +2,6 @@ import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import { cache } from "react";
 
-import "../(forms)/public-page.css";
 import { WaitlistPageContent } from "@/components/product/waitlist-page-content";
 import { normalizeDomain } from "@/lib/domains/provider.mjs";
 import prisma from "@/lib/prisma";
@@ -73,11 +72,17 @@ export default async function CustomDomainPage() {
   if (!page) notFound();
   if (page.paused)
     return (
-      <main className="product-ui public-launch public-launch-paused">
-        <section>
-          <p className="public-launch-eyebrow">{page.waitList.name || "Waitlist"}</p>
-          <h1>This waitlist is paused</h1>
-          <p>Signups aren’t open right now. Please check back later.</p>
+      <main className="grid min-h-screen place-items-center bg-product-bg-page px-6 py-12 text-center font-product-sans text-product-text-primary xl:py-30">
+        <section className="w-full max-w-160">
+          <p className="mb-9 text-lg font-semibold text-product-text-secondary">
+            {page.waitList.name || "Waitlist"}
+          </p>
+          <h1 className="mb-5 font-product-display text-5xl leading-none font-semibold tracking-tighter text-balance lg:text-7xl">
+            This waitlist is paused
+          </h1>
+          <p className="mx-auto max-w-155 text-lg leading-relaxed text-product-text-secondary">
+            Signups aren’t open right now. Please check back later.
+          </p>
         </section>
       </main>
     );

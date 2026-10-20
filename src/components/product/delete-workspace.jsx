@@ -29,19 +29,21 @@ export function DeleteWorkspace({ workspaceId, workspaceName, isPersonal }) {
   }
   if (isPersonal) {
     return (
-      <p className="product-help">
+      <p className="mb-4! text-sm leading-relaxed text-product-text-secondary">
         The personal workspace cannot be deleted. It holds your unassigned waitlists and is
         recreated automatically.
       </p>
     );
   }
   return (
-    <div className="product-danger-inline">
-      <div>
-        <p>
-          <strong>If you no longer wish to use this workspace.</strong>
+    <div className="mt-10 flex flex-wrap items-center justify-between gap-x-6 gap-y-4 border-t border-product-border-subtle pt-7">
+      <div className="grid min-w-0 gap-1">
+        <p className="m-0">
+          <strong className="text-base">If you no longer wish to use this workspace.</strong>
         </p>
-        <p>This decision is permanent and can&rsquo;t be undone.</p>
+        <p className="m-0 text-product-text-secondary">
+          This decision is permanent and can&rsquo;t be undone.
+        </p>
       </div>
       <Button type="button" variant="outline-destructive" onClick={() => changeOpen(true)}>
         Delete workspace

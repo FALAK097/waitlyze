@@ -11,14 +11,11 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogHeader,
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-
-import styles from "./create-waitlist-dialog.module.css";
 
 function slugify(value) {
   return value
@@ -63,69 +60,75 @@ export function CreateWaitlistDialog({ initialOpen = false, first = false }) {
 
   return (
     <Dialog open={open} onOpenChange={changeOpen}>
-      <DialogTrigger render={<Button size={first ? "default" : "default"} />}>
+      <DialogTrigger render={<Button size="default" />}>
         <HugeiconsIcon icon={Add01Icon} aria-hidden="true" />
         {first ? "Create your first waitlist" : "New waitlist"}
       </DialogTrigger>
-      <DialogContent className={styles.dialog} showCloseButton={!busy}>
-        <DialogHeader className={styles.header}>
-          <DialogTitle>Start a waitlist</DialogTitle>
-          <DialogDescription>
-            Name it now. The page stays private until you publish.
-          </DialogDescription>
-        </DialogHeader>
-        <form className={styles.form} onSubmit={submit}>
-          <div className={styles.field}>
-            <Label htmlFor="new-waitlist-name">Waitlist name</Label>
-            <Input
-              id="new-waitlist-name"
-              autoFocus
-              autoComplete="off"
-              maxLength={120}
-              value={name}
-              onChange={(event) => setName(event.target.value)}
-              placeholder="Atlas early access"
-              required
-              disabled={busy}
-            />
+      <DialogContent className="sm:max-w-lg" showCloseButton={!busy}>
+        <div className="grid gap-7 p-3">
+          <div className="grid gap-2 pr-8 [&_[data-slot=dialog-description]]:max-w-ch65 [&_[data-slot=dialog-description]]:leading-relaxed [&_[data-slot=dialog-title]]:text-xl [&_[data-slot=dialog-title]]:tracking-tight">
+            <DialogTitle>Start a waitlist</DialogTitle>
+            <DialogDescription>
+              Name it now. The page stays private until you publish.
+            </DialogDescription>
           </div>
-          <div className={styles.field}>
-            <Label htmlFor="new-waitlist-slug">Page address</Label>
-            <div className={styles.address}>
-              <span>waitlyze.falakgala.dev/w/</span>
+          <form className="grid gap-6" onSubmit={submit}>
+            <div className="grid gap-2 [&_input]:h-11 [&_input]:text-body [&_label]:text-caption [&_label]:font-semibold">
+              <Label htmlFor="new-waitlist-name">Waitlist name</Label>
               <Input
-                id="new-waitlist-slug"
+                id="new-waitlist-name"
+                autoFocus
                 autoComplete="off"
-                maxLength={48}
-                value={currentSlug}
-                onChange={(event) => {
-                  setSlugTouched(true);
-                  setSlug(slugify(event.target.value));
-                }}
-                placeholder="atlas"
+                maxLength={120}
+                value={name}
+                onChange={(event) => setName(event.target.value)}
+                placeholder="Atlas early access"
                 required
                 disabled={busy}
-                aria-describedby={error ? "new-waitlist-error" : undefined}
-                aria-invalid={!!error}
               />
             </div>
-          </div>
-          {error && (
-            <p className={styles.error} id="new-waitlist-error" role="alert">
-              {error}
-            </p>
-          )}
-          <div className={styles.actions}>
-            <Button
-              type="submit"
-              size="lg"
-              disabled={busy || !name.trim() || currentSlug.length < 3}
-            >
-              {busy ? "Creating…" : "Create and open Builder"}
-              {!busy && <HugeiconsIcon icon={ArrowRight01Icon} aria-hidden="true" />}
-            </Button>
-          </div>
-        </form>
+            <div className="grid gap-2 [&_label]:text-caption [&_label]:font-semibold">
+              <Label htmlFor="new-waitlist-slug">Page address</Label>
+              <div className="flex min-h-11 items-center overflow-hidden rounded-lg bg-product-bg-inset pl-3 text-caption text-product-text-secondary focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-product-focus [&_input]:h-11 [&_input]:flex-1 [&_input]:border-0 [&_input]:bg-transparent [&_input]:pl-0.5 [&_input]:shadow-none [&_input]:outline-none">
+                <span className="shrink-0">waitlyze.falakgala.dev/w/</span>
+                <Input
+                  id="new-waitlist-slug"
+                  autoComplete="off"
+                  maxLength={48}
+                  value={currentSlug}
+                  onChange={(event) => {
+                    setSlugTouched(true);
+                    setSlug(slugify(event.target.value));
+                  }}
+                  placeholder="atlas"
+                  required
+                  disabled={busy}
+                  aria-describedby={error ? "new-waitlist-error" : undefined}
+                  aria-invalid={!!error}
+                />
+              </div>
+            </div>
+            {error && (
+              <p
+                className="-mt-2 text-caption leading-relaxed text-product-danger-text"
+                id="new-waitlist-error"
+                role="alert"
+              >
+                {error}
+              </p>
+            )}
+            <div className="flex justify-end pt-0.5">
+              <Button
+                type="submit"
+                size="lg"
+                disabled={busy || !name.trim() || currentSlug.length < 3}
+              >
+                {busy ? "Creating…" : "Create and open Builder"}
+                {!busy && <HugeiconsIcon icon={ArrowRight01Icon} aria-hidden="true" />}
+              </Button>
+            </div>
+          </form>
+        </div>
       </DialogContent>
     </Dialog>
   );

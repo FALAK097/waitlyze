@@ -15,8 +15,6 @@ import {
   normalizeInvitationEmail,
 } from "@/lib/workspaces/invitations.mjs";
 
-import "@/components/product/shell.css";
-
 export const metadata = {
   title: "Workspace invitation",
   robots: { index: false, follow: false },
@@ -35,17 +33,26 @@ export default async function AcceptInvitationPage({ params }) {
 
   return (
     <PublicShell>
-      <main id="main-content" tabIndex={-1} className="product-ui product-invitation-page">
-        <section className="product-invitation-card" aria-labelledby="invitation-title">
+      <main
+        id="main-content"
+        tabIndex={-1}
+        className="product-ui mx-auto grid w-full max-w-155 place-items-start justify-items-center pt-14 pb-22"
+      >
+        <section className="grid w-full gap-4" aria-labelledby="invitation-title">
           {invitation ? (
             <>
               <p className="product-eyebrow">Workspace invitation</p>
-              <h1 id="invitation-title">Join {invitation.workspace.name}</h1>
-              <p className="product-invitation-copy">
+              <h1
+                id="invitation-title"
+                className="text-2xl! leading-tight wrap-anywhere md:text-3xl!"
+              >
+                Join {invitation.workspace.name}
+              </h1>
+              <p className="text-sm wrap-anywhere text-product-text-secondary [&_strong]:text-product-text-primary">
                 You’ve been invited as a <strong>{invitation.role.toLowerCase()}</strong> using{" "}
                 <strong>{invitation.emailNormalized}</strong>.
               </p>
-              <p className="product-help">
+              <p className="mb-4! text-sm leading-relaxed text-product-text-secondary">
                 Invitations expire{" "}
                 {new Intl.DateTimeFormat(undefined, { dateStyle: "medium" }).format(
                   invitation.expiresAt,
@@ -54,7 +61,7 @@ export default async function AcceptInvitationPage({ params }) {
               </p>
               {!session ? (
                 <>
-                  <p className="product-invitation-copy">
+                  <p className="text-sm wrap-anywhere text-product-text-secondary [&_strong]:text-product-text-primary">
                     Sign in with the invited email address to review and accept.
                   </p>
                   <InvitationSignIn
@@ -81,8 +88,13 @@ export default async function AcceptInvitationPage({ params }) {
           ) : (
             <>
               <p className="product-eyebrow">Workspace invitation</p>
-              <h1 id="invitation-title">This invitation isn’t available</h1>
-              <p className="product-invitation-copy">
+              <h1
+                id="invitation-title"
+                className="text-2xl! leading-tight wrap-anywhere md:text-3xl!"
+              >
+                This invitation isn’t available
+              </h1>
+              <p className="text-sm wrap-anywhere text-product-text-secondary [&_strong]:text-product-text-primary">
                 It may have expired, been revoked, or already been accepted. Ask a workspace admin
                 for a new invitation.
               </p>

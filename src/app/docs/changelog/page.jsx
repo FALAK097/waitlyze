@@ -44,9 +44,51 @@ export default async function ChangelogPage() {
           components={{
             h2({ children, node, ...props }) {
               return (
-                <h2 {...props} id={releaseId(textContent(children))}>
+                <h2
+                  {...props}
+                  id={releaseId(textContent(children))}
+                  className="mt-0 scroll-mt-24 border-t border-fd-border pt-7 text-3xl leading-tight tracking-tight"
+                >
                   {children}
                 </h2>
+              );
+            },
+            h3({ children, node, ...props }) {
+              return (
+                <h3
+                  {...props}
+                  className="mt-2.5 mb-2 text-base font-medium text-fd-muted-foreground"
+                >
+                  {children}
+                </h3>
+              );
+            },
+            h4({ children, node, ...props }) {
+              return (
+                <h4 {...props} className="mt-4 mb-2 text-caption font-semibold tracking-wide">
+                  {children}
+                </h4>
+              );
+            },
+            p({ children, node, ...props }) {
+              return (
+                <p {...props} className="mb-4 max-w-144 leading-relaxed">
+                  {children}
+                </p>
+              );
+            },
+            ul({ children, node, ...props }) {
+              return (
+                <ul {...props} className="mb-8 grid gap-3 ps-5">
+                  {children}
+                </ul>
+              );
+            },
+            li({ children, node, ...props }) {
+              return (
+                <li {...props} className="ps-1 leading-relaxed marker:text-fd-primary">
+                  {children}
+                </li>
               );
             },
           }}

@@ -29,8 +29,6 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../ui/
 import { SettingsTab } from "./settings-tab";
 import { SignUpForm } from "./sign-up-form";
 
-import styles from "./legacy-editor.module.css";
-
 const EmbedModal = ({ waitList, origin }) => {
   return (
     <Dialog>
@@ -469,19 +467,19 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
   };
 
   return (
-    <div className={styles.editor}>
+    <div className="bg-white pt-2 pb-6 [&_:focus-visible]:outline-2 [&_:focus-visible]:outline-offset-2 [&_:focus-visible]:outline-product-focus">
       <div>
-        <header className={styles.header}>
+        <header className="mb-8 flex items-center justify-between gap-6 max-[1050px]:flex-col max-[1050px]:items-start">
           <div>
-            <h2>Builder</h2>
-            <p>
+            <h2 className="mt-0! mb-2! text-xl! tracking-tight">Builder</h2>
+            <p className="m-0 text-caption text-product-text-secondary">
               {name || "Untitled waitlist"} ·{" "}
               {status === "PUBLISHED" ? "Live" : status === "PAUSED" ? "Paused" : "Private draft"}
             </p>
           </div>
-          <div className={styles.toolbar}>
+          <div className="flex flex-wrap items-center gap-2 max-md:w-full">
             <TooltipProvider delay={100}>
-              <div className={styles.toolbarActions}>
+              <div className="flex flex-wrap items-center gap-2">
                 {!initialWaitList.templateSnapshot && (
                   <Button disabled={isPublishing || isSaving} onClick={handlePublishToggle}>
                     {isPublishing ? "Working…" : status === "PUBLISHED" ? "Pause" : "Publish"}
@@ -508,7 +506,7 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
                     render={
                       <Link
                         prefetch={false}
-                        className={styles.secondaryLink}
+                        className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg px-3 py-2 text-caption text-product-text-primary no-underline hover:bg-product-bg-inset max-md:px-2"
                         href={`/waitlists/${initialWaitList.id}/emails`}
                       >
                         <HugeiconsIcon icon={Mail01Icon} className="h-4 w-4" aria-hidden="true" />
@@ -573,11 +571,18 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
           </div>
         </header>
 
-        <div className={styles.grid}>
-          <section className={styles.previewColumn} aria-labelledby="legacy-preview-heading">
-            <div className={styles.previewHeading}>
-              <h3 id="legacy-preview-heading">Preview</h3>
-              <p>No subscriber is created here.</p>
+        <div className="flex items-start gap-10 max-[1050px]:gap-6 max-md:flex-col max-md:gap-8">
+          <section
+            className="sticky top-6 min-w-0 grow-7 basis-0 max-[1050px]:grow-11 max-md:static max-md:flex-none max-md:grow-0 max-md:basis-auto"
+            aria-labelledby="legacy-preview-heading"
+          >
+            <div className="mb-5">
+              <h3 id="legacy-preview-heading" className="mt-0! mb-1! text-sm! font-semibold!">
+                Preview
+              </h3>
+              <p className="m-0 text-xs text-product-text-secondary">
+                No subscriber is created here.
+              </p>
             </div>
             <div
               style={{
@@ -585,7 +590,7 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
                   ? formSettings.mainBgColor
                   : "transparent",
               }}
-              className={styles.preview}
+              className="flex min-h-105 items-center justify-center rounded-2xl p-8 shadow-xl ring-1 ring-black/10 max-[1050px]:p-5 max-md:min-h-75 max-md:px-3 max-md:py-5"
             >
               <SignUpForm
                 email={testEmail}

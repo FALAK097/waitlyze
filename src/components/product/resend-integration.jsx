@@ -116,15 +116,17 @@ export function ResendIntegration({ initialConnection, accountEmail, canManage, 
   }
   return (
     <Sheet open={open} onOpenChange={changeOpen}>
-      <div className="settings-integration-row">
-        <div className="settings-integration-brand">
+      <div className="flex items-center justify-between gap-4 py-6 max-[600px]:items-start max-[600px]:gap-3 max-[400px]:flex-col max-[400px]:gap-5">
+        <div className="flex items-center gap-4 max-[600px]:gap-3">
           {logo}
           <div>
-            <h3>Resend</h3>
-            <p>Send your waitlist email from your own domain.</p>
+            <h3 className="mb-1!">Resend</h3>
+            <p className="m-0 text-sm text-product-text-secondary">
+              Send your waitlist email from your own domain.
+            </p>
           </div>
         </div>
-        <div className="settings-integration-row-actions">
+        <div className="flex items-center gap-4 max-[600px]:flex-col max-[600px]:items-end max-[600px]:gap-2 max-[400px]:w-full max-[400px]:flex-row max-[400px]:items-center max-[400px]:justify-between [&_button]:max-[400px]:shrink-0 [&_button]:max-[400px]:whitespace-nowrap">
           <SheetTrigger render={<Button variant="outline" />}>
             {canManage ? (connection ? "Manage" : "Connect") : "View"}
           </SheetTrigger>
@@ -138,26 +140,30 @@ export function ResendIntegration({ initialConnection, accountEmail, canManage, 
           </SheetDescription>
         </SheetHeader>
         <div className="p-6 pt-0">
-          <div className="integration-drawer-content">
-            <div className="integration-note">
-              <p>
-                <strong>Waitlist email</strong> (confirmation, broadcasts, automations) sends from
-                your domain once connected. If this connection needs attention, sending pauses until
-                you fix or disconnect it.
+          <div className="grid gap-7 pt-6">
+            <div className="grid gap-2 rounded-lg border border-product-bg-inset bg-product-bg-inset px-4 py-3.5">
+              <p className="m-0 text-caption leading-relaxed text-product-text-secondary">
+                <strong className="text-product-text-primary">Waitlist email</strong> (confirmation,
+                broadcasts, automations) sends from your domain once connected. If this connection
+                needs attention, sending pauses until you fix or disconnect it.
               </p>
-              <p>
-                <strong>Account email</strong> like workspace invitations always comes from
-                Waitlyze, so connect this only when you want your own sender.
+              <p className="m-0 text-caption leading-relaxed text-product-text-secondary">
+                <strong className="text-product-text-primary">Account email</strong> like workspace
+                invitations always comes from Waitlyze, so connect this only when you want your own
+                sender.
               </p>
             </div>
             {webhookUrl && (
-              <div className="integration-note">
-                <p>
-                  <strong>Webhook endpoint</strong> — add this URL in your Resend account and
-                  subscribe to <code>email.bounced</code> and <code>email.complained</code>. Copy
-                  the signing secret Resend shows you and save it below.
+              <div className="grid gap-2 rounded-lg border border-product-bg-inset bg-product-bg-inset px-4 py-3.5">
+                <p className="m-0 text-caption leading-relaxed text-product-text-secondary">
+                  <strong className="text-product-text-primary">Webhook endpoint</strong> — add this
+                  URL in your Resend account and subscribe to <code>email.bounced</code> and{" "}
+                  <code>email.complained</code>. Copy the signing secret Resend shows you and save
+                  it below.
                 </p>
-                <p className="break-all select-all">{webhookUrl}</p>
+                <p className="m-0 text-caption leading-relaxed break-all text-product-text-secondary select-all">
+                  {webhookUrl}
+                </p>
                 {canManage && (
                   <Button type="button" variant="outline" onClick={copyWebhookUrl}>
                     Copy webhook URL
@@ -166,11 +172,11 @@ export function ResendIntegration({ initialConnection, accountEmail, canManage, 
               </div>
             )}
             {canManage ? (
-              <form onSubmit={save} className="integration-drawer-form">
+              <form onSubmit={save} className="grid gap-3.5 [&>button]:justify-self-start">
                 <label className="product-field" htmlFor="resend-api-key">
                   <span>Sending API key</span>
                 </label>
-                <div className="integration-secret-input">
+                <div className="min-w-0 [&_input]:min-w-0 [&_input]:font-mono [&_input]:text-caption">
                   <Input
                     id="resend-api-key"
                     type={revealed ? "text" : "password"}
@@ -210,7 +216,7 @@ export function ResendIntegration({ initialConnection, accountEmail, canManage, 
                   </Button>
                 </div>
                 {connection && (
-                  <p className="product-help">
+                  <p className="mb-4! text-sm leading-relaxed text-product-text-secondary">
                     Your saved key stays encrypted and cannot be viewed or copied.
                   </p>
                 )}
@@ -244,7 +250,7 @@ export function ResendIntegration({ initialConnection, accountEmail, canManage, 
                   />
                 </label>
                 {connection && !connection.webhookConfigured && (
-                  <p className="product-help">
+                  <p className="mb-4! text-sm leading-relaxed text-product-text-secondary">
                     Save the signing secret before testing or sending waitlist email.
                   </p>
                 )}
@@ -252,7 +258,7 @@ export function ResendIntegration({ initialConnection, accountEmail, canManage, 
                   {busy === "save" && (
                     <HugeiconsIcon
                       icon={Loading03Icon}
-                      className="animate-spin"
+                      className="animate-spin motion-reduce:animate-none"
                       size={16}
                       aria-hidden="true"
                     />
@@ -264,8 +270,8 @@ export function ResendIntegration({ initialConnection, accountEmail, canManage, 
               <p>Only workspace owners and admins can change this connection.</p>
             )}
             {canManage && connection && (
-              <div className="integration-test">
-                <p className="product-help">
+              <div className="grid gap-3 [&>button]:justify-self-start">
+                <p className="mb-4! text-sm leading-relaxed text-product-text-secondary">
                   Tests go to {accountEmail}. After saving the webhook signing secret, test this
                   connection before sending waitlist email.
                 </p>
@@ -280,10 +286,12 @@ export function ResendIntegration({ initialConnection, accountEmail, canManage, 
               </div>
             )}
             {canManage && connection && (
-              <div className="integration-disconnect">
+              <div className="grid gap-3 [&>div]:flex [&>div]:gap-3">
                 {confirmDisconnect ? (
                   <>
-                    <p>Disconnect Resend? Waitlist emails will use the deployment sender.</p>
+                    <p className="text-sm">
+                      Disconnect Resend? Waitlist emails will use the deployment sender.
+                    </p>
                     <div>
                       <Button
                         type="button"

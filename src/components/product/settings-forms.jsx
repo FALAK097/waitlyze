@@ -25,8 +25,10 @@ export function ProfileForm({ name }) {
   const savedName = state.savedName ?? name ?? "";
   const unchanged = value.trim() === savedName.trim();
   return (
-    <form action={action} className="product-settings-form">
-      <label htmlFor="profile-name">Display name</label>
+    <form action={action} className="m-0 grid max-w-120 grid-cols-1 gap-2.5">
+      <label htmlFor="profile-name" className="text-sm font-medium">
+        Display name
+      </label>
       <Input
         id="profile-name"
         name="name"
@@ -38,12 +40,14 @@ export function ProfileForm({ name }) {
         autoComplete="name"
         aria-describedby="profile-name-help"
       />
-      <p id="profile-name-help" className="product-help">
+      <p id="profile-name-help" className="m-0 text-sm leading-relaxed text-product-text-secondary">
         Used to identify you in your workspace.
       </p>
-      <SubmitButton disabled={unchanged} pendingLabel="Saving…">
-        Save profile
-      </SubmitButton>
+      <div className="mt-2 justify-self-start">
+        <SubmitButton disabled={unchanged} pendingLabel="Saving…">
+          Save profile
+        </SubmitButton>
+      </div>
     </form>
   );
 }
@@ -64,14 +68,18 @@ export function WorkspaceNameForm({ workspaceId, name, canManage }) {
           <dt>Workspace name</dt>
           <dd>{name}</dd>
         </dl>
-        <p className="product-help">Only workspace owners and admins can rename this workspace.</p>
+        <p className="mb-4! text-sm leading-relaxed text-product-text-secondary">
+          Only workspace owners and admins can rename this workspace.
+        </p>
       </>
     );
   }
   return (
-    <form action={action} className="product-settings-form">
+    <form action={action} className="m-0 grid max-w-120 grid-cols-1 gap-2.5">
       <input type="hidden" name="workspaceId" value={workspaceId} />
-      <label htmlFor="workspace-name">Workspace name</label>
+      <label htmlFor="workspace-name" className="text-sm font-medium">
+        Workspace name
+      </label>
       <Input
         id="workspace-name"
         name="name"
@@ -83,12 +91,17 @@ export function WorkspaceNameForm({ workspaceId, name, canManage }) {
         autoComplete="organization"
         aria-describedby="workspace-name-help"
       />
-      <p id="workspace-name-help" className="product-help">
+      <p
+        id="workspace-name-help"
+        className="m-0 text-sm leading-relaxed text-product-text-secondary"
+      >
         Shown in your workspace switcher. Up to 80 characters.
       </p>
-      <SubmitButton disabled={unchanged} pendingLabel="Saving…">
-        Save workspace
-      </SubmitButton>
+      <div className="mt-2 justify-self-start">
+        <SubmitButton disabled={unchanged} pendingLabel="Saving…">
+          Save workspace
+        </SubmitButton>
+      </div>
     </form>
   );
 }

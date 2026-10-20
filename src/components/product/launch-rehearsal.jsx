@@ -40,7 +40,7 @@ export function LaunchRehearsal({
   }
 
   return (
-    <div className={`product-panel launch-rehearsal ${className}`}>
+    <div className={`product-panel p-5 ${className}`}>
       <Collapsible>
         <CollapsibleTrigger className={summaryClassName}>
           <span className={titleClassName}>
@@ -54,36 +54,47 @@ export function LaunchRehearsal({
         </CollapsibleTrigger>
         <CollapsibleContent>
           <div className={bodyClassName}>
-            <div className="launch-rehearsal-heading">
+            <div className="flex items-start justify-between gap-5 max-[600px]:flex-col">
               <div>
-                <h2 id="launch-rehearsal-title">Private page test</h2>
-                <p className="product-help">
+                <h2 id="launch-rehearsal-title" className="mb-1! text-base!">
+                  Private page test
+                </h2>
+                <p className="m-0 max-w-prose text-sm leading-relaxed text-product-text-secondary">
                   Checks use a private test record. They do not send email or add a subscriber.
                 </p>
               </div>
-              <Button variant="outline" onClick={run} disabled={pending} aria-busy={pending}>
-                {pending ? "Checking…" : "Run check"}
-              </Button>
+              <span className="inline-flex min-h-11 items-center">
+                <Button variant="outline" onClick={run} disabled={pending} aria-busy={pending}>
+                  {pending ? "Checking…" : "Run check"}
+                </Button>
+              </span>
             </div>
             {latest && (
-              <div className="launch-rehearsal-result" aria-live="polite">
+              <div className="mt-4.5 border-t border-product-border-subtle pt-4" aria-live="polite">
                 <p
                   className={`product-status ${latest.status === "PASSED" ? "product-status-success" : ""}`}
                 >
                   {latest.status === "PASSED" ? "Page checks passed" : "Review needed"}
-                  <span>
+                  <span className="text-caption font-normal text-product-text-secondary">
                     {" "}
                     · {latest.checksPassed} of {latest.checksPassed + latest.checksFailed} checks
                     passed · {formatDate(latest.createdAt)}
                   </span>
                 </p>
-                <ul>
+                <ul className="m-0 mt-4 grid list-none gap-3 p-0">
                   {latest.checkResults.map((check) => (
-                    <li key={check.key}>
-                      <span aria-hidden="true">{check.passed ? "✓" : "!"}</span>
+                    <li key={check.key} className="flex items-start gap-2.5 text-sm">
+                      <span
+                        aria-hidden="true"
+                        className="grid size-5 shrink-0 place-items-center rounded-full border border-product-border-control text-xs"
+                      >
+                        {check.passed ? "✓" : "!"}
+                      </span>
                       <span>
-                        <strong>{check.label}</strong>
-                        <small>{check.detail}</small>
+                        <strong className="block">{check.label}</strong>
+                        <small className="mt-0.5 block text-caption leading-normal text-product-text-secondary">
+                          {check.detail}
+                        </small>
                       </span>
                     </li>
                   ))}
@@ -91,7 +102,7 @@ export function LaunchRehearsal({
               </div>
             )}
             {runs.length > 1 && (
-              <p className="product-help">
+              <p className="mb-4! text-sm leading-relaxed text-product-text-secondary">
                 {runs.length} recent launch checks are saved for this waitlist.
               </p>
             )}

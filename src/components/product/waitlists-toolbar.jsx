@@ -13,6 +13,7 @@ import { useEffect, useRef, useState, useTransition } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { TableHead } from "@/components/ui/table";
+import { cn } from "@/lib/utils";
 import {
   WAITLIST_SEARCH_LIMIT,
   WAITLIST_STATUS_FILTERS,
@@ -56,7 +57,11 @@ export function WaitlistSearch({ query, status, sort }) {
     replace({ query: "", status, sort });
   }
   return (
-    <div className="product-waitlist-search" role="search" aria-busy={isPending}>
+    <div
+      className="relative ms-auto max-w-90 min-w-0 min-w-55 shrink-1 grow-0 basis-90 max-[767px]:ms-0 max-[767px]:max-w-none max-[767px]:min-w-0 max-[767px]:grow max-[767px]:basis-auto [&_input]:w-full [&_input]:pr-10"
+      role="search"
+      aria-busy={isPending}
+    >
       <Label className="sr-only" htmlFor="waitlist-search">
         Search waitlists by name
       </Label>
@@ -72,7 +77,7 @@ export function WaitlistSearch({ query, status, sort }) {
       {value && (
         <button
           type="button"
-          className="product-waitlist-search-clear"
+          className="absolute end-1 top-1/2 inline-flex size-8 -translate-y-1/2 cursor-pointer items-center justify-center rounded-md border-0 bg-transparent text-product-text-secondary hover:bg-product-bg-inset hover:text-product-text-primary"
           onClick={clear}
           aria-label="Clear search"
         >
@@ -87,7 +92,7 @@ export function StatusTabs({ query, status, sort }) {
   const [replace, isPending] = useReplaceParams();
   return (
     <div
-      className="product-waitlist-filters"
+      className="mb-8 flex flex-wrap gap-5 max-[767px]:basis-full"
       role="group"
       aria-label="Filter waitlists by status"
       aria-busy={isPending}
@@ -96,6 +101,11 @@ export function StatusTabs({ query, status, sort }) {
         <button
           key={filter.value || "all"}
           type="button"
+          className={cn(
+            "inline-flex min-h-11 items-center border-0 border-b-2 border-transparent bg-transparent py-2.5 text-sm text-product-text-secondary hover:text-product-text-primary",
+            status === filter.value &&
+              "border-product-accent-solid font-semibold text-product-text-primary",
+          )}
           onClick={() => replace({ query, status: filter.value, sort })}
           aria-current={status === filter.value ? "page" : undefined}
         >
@@ -119,13 +129,16 @@ export function SortableHeading({ column, label, query, status, sort }) {
     <TableHead scope="col" aria-sort={active ? sortLabel : undefined}>
       <button
         type="button"
-        className="product-table-sort"
+        className="inline-flex min-h-11 cursor-pointer items-center gap-1.5 border-0 bg-transparent px-1 whitespace-nowrap text-inherit hover:text-product-text-primary"
         onClick={() => replace({ query, status, sort: nextSort })}
         aria-label={`Sort by ${accessibleColumn}${active ? `, currently ${sortLabel}` : ""}`}
       >
         <span>{label}</span>
         <span
-          className={`product-table-sort-indicator${active ? " is-active" : ""}`}
+          className={cn(
+            "text-base leading-none text-product-text-secondary",
+            active && "text-product-text-primary",
+          )}
           aria-hidden="true"
         >
           {active ? (

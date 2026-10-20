@@ -2,7 +2,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 export function SettingsPanelSkeleton() {
   return (
-    <div className="product-settings-panel-loading" aria-busy="true">
+    <div className="max-w-190 min-w-0 flex-1" aria-busy="true">
       <p className="sr-only" role="status">
         Loading settings…
       </p>

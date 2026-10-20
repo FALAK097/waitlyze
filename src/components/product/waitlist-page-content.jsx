@@ -1,5 +1,4 @@
-import page from "./waitlist-page-content.module.css";
-import signup from "./waitlist-signup.module.css";
+import { cn } from "@/lib/utils";
 
 const font = {
   hanken: "var(--wl-body)",
@@ -9,9 +8,13 @@ const font = {
   archivo: "var(--wl-archivo)",
 };
 const radius = { sharp: "0px", soft: "10px", round: "18px", pill: "999px" };
-function Heading({ level = 2, children, ...props }) {
+function Heading({ level = 2, children, className, ...props }) {
   const Tag = `h${level}`;
-  return <Tag {...props}>{children}</Tag>;
+  return (
+    <Tag className={cn("font-wl-heading tracking-tight text-balance", className)} {...props}>
+      {children}
+    </Tag>
+  );
 }
 
 export function WaitlistPageContent({
@@ -22,11 +25,15 @@ export function WaitlistPageContent({
   signupCount = 128,
 }) {
   const visible = snapshot.sections.filter((section) => section.visible);
+  const mobile = previewViewport === "mobile";
   const renderForm = (section) =>
     renderSignupForm?.(section, snapshot) ?? <WaitlistSignupPreview form={snapshot.form} />;
   return (
     <div
-      className={page.pageCanvas}
+      className={cn(
+        "min-h-screen overflow-clip bg-wl-page px-6 font-wl-body text-wl-text",
+        mobile && "min-h-203 px-4",
+      )}
       data-preview-viewport={previewViewport}
       style={{
         "--wl-page": snapshot.brand.pageBackground,
@@ -44,23 +51,34 @@ export function WaitlistPageContent({
         "--wl-body-font": font[snapshot.brand.bodyFont],
       }}
     >
-      <div className={page.content}>
+      <div className="mx-auto w-full max-w-7xl">
         {visible.map((section) => {
-          const sectionClass = `${page.section} ${page[section.type] || ""}`;
+          const sectionClass = "scroll-mt-6";
           if (section.type === "navigation")
             return (
-              <nav className={sectionClass} key={section.id} aria-label="Waitlist navigation">
-                <a href="#top" className={page.wordmark}>
+              <nav
+                className={cn(sectionClass, "flex min-h-20 items-center justify-between gap-6")}
+                key={section.id}
+                aria-label="Waitlist navigation"
+              >
+                <a href="#top" className="font-wl-heading font-bold text-wl-text no-underline">
                   {section.brand || name}
                 </a>
-                <div className={page.navLinks}>
+                <div className="flex items-center gap-6">
                   {section.links.map((link) => (
-                    <a href={link.href} key={`${link.label}-${link.href}`}>
+                    <a
+                      className="text-sm text-wl-muted no-underline"
+                      href={link.href}
+                      key={`${link.label}-${link.href}`}
+                    >
                       {link.label}
                     </a>
                   ))}
                   {section.buttonText && (
-                    <a className={page.navButton} href="#signup">
+                    <a
+                      className="rounded-wl bg-wl-button px-4 py-2.5 font-bold text-wl-button-text no-underline"
+                      href="#signup"
+                    >
                       {section.buttonText}
                     </a>
                   )}
@@ -70,17 +88,26 @@ export function WaitlistPageContent({
           if (section.type === "hero")
             return (
               <section
-                className={`${sectionClass} ${page[`variant_${section.variant}`] || ""}`}
+                className={cn(
+                  sectionClass,
+                  "grid min-h-190 items-center justify-items-center py-20 text-center",
+                )}
                 id="top"
                 key={section.id}
               >
-                <div className={page.heroCopy}>
-                  {section.eyebrow && <p className={page.eyebrow}>{section.eyebrow}</p>}
-                  <h1>{section.heading}</h1>
-                  <p className={page.lede}>{section.body}</p>
+                <div className="max-w-4xl">
+                  {section.eyebrow && (
+                    <p className="mb-6 text-xs font-bold tracking-widest text-wl-muted uppercase">
+                      {section.eyebrow}
+                    </p>
+                  )}
+                  <h1 className="m-0 text-5xl leading-none font-bold md:text-6xl lg:text-7xl">
+                    {section.heading}
+                  </h1>
+                  <p className="mx-auto mt-7 max-w-3xl text-lg text-wl-muted">{section.body}</p>
                 </div>
                 {section.showForm && (
-                  <div id="signup" className={page.heroForm}>
+                  <div className="mt-11 w-full max-w-2xl text-left" id="signup">
                     {renderForm(section)}
                   </div>
                 )}
@@ -88,9 +115,13 @@ export function WaitlistPageContent({
             );
           if (section.type === "logos")
             return (
-              <section className={sectionClass} key={section.id}>
-                {section.heading && <p className={page.sectionKicker}>{section.heading}</p>}
-                <div className={page.logoRow}>
+              <section className={cn(sectionClass, "py-11 text-center")} key={section.id}>
+                {section.heading && (
+                  <p className="mb-6 text-xs font-bold tracking-widest text-wl-muted uppercase">
+                    {section.heading}
+                  </p>
+                )}
+                <div className="flex flex-wrap justify-center gap-x-11 gap-y-4 font-wl-heading font-bold text-wl-muted">
                   {section.items.map((item) => (
                     <span key={item}>{item}</span>
                   ))}
@@ -99,18 +130,23 @@ export function WaitlistPageContent({
             );
           if (section.type === "features" || section.type === "steps")
             return (
-              <section className={sectionClass} key={section.id}>
-                <Heading>{section.heading}</Heading>
-                <div className={section.type === "steps" ? page.stepGrid : page.featureGrid}>
+              <section className={cn(sectionClass, "py-20")} key={section.id}>
+                <Heading className="mb-12 max-w-ch16 text-4xl leading-none md:text-5xl lg:text-6xl">
+                  {section.heading}
+                </Heading>
+                <div className={cn("grid gap-6 md:grid-cols-3 md:gap-12", mobile && "grid-cols-1")}>
                   {section.items.map((item, index) => (
-                    <article key={`${item.title}-${item.body}`}>
+                    <article
+                      className="border-t border-wl-text/20 pt-5"
+                      key={`${item.title}-${item.body}`}
+                    >
                       {section.type === "steps" && (
-                        <span className={page.stepNumber}>
+                        <span className="text-xs text-wl-muted tabular-nums">
                           {String(index + 1).padStart(2, "0")}
                         </span>
                       )}
-                      <h3>{item.title}</h3>
-                      <p>{item.body}</p>
+                      <h3 className="my-4 text-xl">{item.title}</h3>
+                      <p className="m-0 text-wl-muted">{item.body}</p>
                     </article>
                   ))}
                 </div>
@@ -118,12 +154,17 @@ export function WaitlistPageContent({
             );
           if (section.type === "stats")
             return (
-              <section className={sectionClass} key={section.id}>
-                <div className={page.statGrid}>
+              <section className={cn(sectionClass, "py-16")} key={section.id}>
+                <div className="grid gap-px bg-wl-text/15 md:grid-cols-3">
                   {section.items.map((item) => (
-                    <div key={`${item.value}-${item.label}`}>
-                      <strong>{item.value}</strong>
-                      <span>{item.label}</span>
+                    <div
+                      className="grid gap-2 bg-wl-page p-9 text-center"
+                      key={`${item.value}-${item.label}`}
+                    >
+                      <strong className="font-wl-heading text-4xl tracking-tight md:text-5xl">
+                        {item.value}
+                      </strong>
+                      <span className="text-sm text-wl-muted">{item.label}</span>
                     </div>
                   ))}
                 </div>
@@ -131,15 +172,22 @@ export function WaitlistPageContent({
             );
           if (section.type === "testimonials")
             return (
-              <section className={sectionClass} key={section.id}>
-                <Heading>{section.heading}</Heading>
-                <div className={page.quoteGrid}>
+              <section className={cn(sectionClass, "py-20")} key={section.id}>
+                <Heading className="mb-12 max-w-ch16 text-4xl leading-none md:text-5xl lg:text-6xl">
+                  {section.heading}
+                </Heading>
+                <div className={cn("grid gap-6 md:grid-cols-3 md:gap-12", mobile && "grid-cols-1")}>
                   {section.items.map((item) => (
-                    <figure key={`${item.name}-${item.quote}`}>
-                      <blockquote>“{item.quote}”</blockquote>
-                      <figcaption>
+                    <figure
+                      className="m-0 rounded-wl bg-wl-surface p-7"
+                      key={`${item.name}-${item.quote}`}
+                    >
+                      <blockquote className="mb-7 font-wl-heading text-lg leading-relaxed">
+                        “{item.quote}”
+                      </blockquote>
+                      <figcaption className="grid gap-0.5 text-sm">
                         <strong>{item.name}</strong>
-                        {item.role && <span>{item.role}</span>}
+                        {item.role && <span className="text-wl-muted">{item.role}</span>}
                       </figcaption>
                     </figure>
                   ))}
@@ -148,13 +196,20 @@ export function WaitlistPageContent({
             );
           if (section.type === "faq")
             return (
-              <section className={sectionClass} key={section.id}>
-                <Heading>{section.heading}</Heading>
-                <div className={page.faqList}>
+              <section className={cn(sectionClass, "py-20")} key={section.id}>
+                <Heading className="mb-12 max-w-ch16 text-4xl leading-none md:text-5xl lg:text-6xl">
+                  {section.heading}
+                </Heading>
+                <div className="ml-auto max-w-4xl">
                   {section.items.map((item) => (
-                    <details key={item.question}>
-                      <summary>{item.question}</summary>
-                      <p>{item.answer}</p>
+                    <details
+                      className="border-t border-wl-text/20 last:border-b"
+                      key={item.question}
+                    >
+                      <summary className="cursor-pointer py-5 pr-8 font-wl-heading text-lg font-bold">
+                        {item.question}
+                      </summary>
+                      <p className="mt-2 mb-5 max-w-ch65 text-wl-muted">{item.answer}</p>
                     </details>
                   ))}
                 </div>
@@ -162,14 +217,26 @@ export function WaitlistPageContent({
             );
           if (section.type === "media")
             return (
-              <section className={sectionClass} key={section.id}>
-                <div>
-                  <Heading>{section.heading}</Heading>
-                  {section.body && <p>{section.body}</p>}
+              <section
+                className={cn(
+                  sectionClass,
+                  "flex flex-col items-center gap-10 py-20 md:flex-row md:gap-16",
+                )}
+                key={section.id}
+              >
+                <div className="md:grow-7 md:basis-0">
+                  <Heading className="mb-6 text-4xl leading-none md:text-5xl">
+                    {section.heading}
+                  </Heading>
+                  {section.body && <p className="text-wl-muted">{section.body}</p>}
                 </div>
-                <div className={page.mediaFrame}>
+                <div className="grid aspect-16/10 w-full place-items-center overflow-hidden rounded-wl bg-wl-surface text-wl-muted md:grow-13 md:basis-0">
                   {section.imageUrl ? (
-                    <img src={section.imageUrl} alt={section.imageAlt} />
+                    <img
+                      className="h-full w-full object-cover"
+                      src={section.imageUrl}
+                      alt={section.imageAlt}
+                    />
                   ) : (
                     <span>Product image</span>
                   )}
@@ -178,33 +245,51 @@ export function WaitlistPageContent({
             );
           if (section.type === "form")
             return (
-              <section className={sectionClass} id="signup" key={section.id}>
-                <div>
-                  {section.heading && <Heading>{section.heading}</Heading>}
-                  {section.body && <p>{section.body}</p>}
+              <section
+                className={cn(
+                  sectionClass,
+                  "flex flex-col items-start gap-9 py-20 md:flex-row md:gap-16",
+                )}
+                id="signup"
+                key={section.id}
+              >
+                <div className="md:grow-8 md:basis-0">
+                  {section.heading && (
+                    <Heading className="mb-5 text-4xl leading-none md:text-5xl">
+                      {section.heading}
+                    </Heading>
+                  )}
+                  {section.body && <p className="text-wl-muted">{section.body}</p>}
                 </div>
-                {renderForm(section)}
+                <div className="w-full md:grow-12 md:basis-0">{renderForm(section)}</div>
               </section>
             );
           if (section.type === "signupCount")
             return (
-              <section className={sectionClass} key={section.id}>
-                <p>
-                  {section.prefix} <strong>{Number(signupCount).toLocaleString()}</strong>{" "}
+              <section className={cn(sectionClass, "py-12 text-center")} key={section.id}>
+                <p className="m-0 text-2xl md:text-3xl">
+                  {section.prefix}{" "}
+                  <strong className="font-wl-heading text-wl-text">
+                    {Number(signupCount).toLocaleString()}
+                  </strong>{" "}
                   {section.suffix}
                 </p>
               </section>
             );
           if (section.type === "referralRewards")
             return (
-              <section className={sectionClass} key={section.id}>
-                <Heading>{section.heading}</Heading>
-                <ol>
+              <section className={cn(sectionClass, "py-20")} key={section.id}>
+                <Heading className="mb-12 max-w-ch16 text-4xl leading-none md:text-5xl lg:text-6xl">
+                  {section.heading}
+                </Heading>
+                <ol className="m-0 grid list-none gap-px bg-wl-text/15 p-0 md:grid-cols-3">
                   {section.items.map((item) => (
-                    <li key={item.referrals}>
-                      <strong>{item.referrals}</strong>
-                      <span>{item.referrals === 1 ? "referral" : "referrals"}</span>
-                      <p>{item.reward}</p>
+                    <li className="bg-wl-page p-7" key={item.referrals}>
+                      <strong className="block font-wl-heading text-3xl">{item.referrals}</strong>
+                      <span className="text-xs text-wl-muted uppercase">
+                        {item.referrals === 1 ? "referral" : "referrals"}
+                      </span>
+                      <p className="m-0 text-wl-muted">{item.reward}</p>
                     </li>
                   ))}
                 </ol>
@@ -212,23 +297,40 @@ export function WaitlistPageContent({
             );
           if (section.type === "cta")
             return (
-              <section className={sectionClass} key={section.id}>
+              <section
+                className={cn(
+                  sectionClass,
+                  "flex flex-col items-start justify-between gap-10 border-t border-wl-text/15 py-20 md:flex-row md:gap-10",
+                )}
+                key={section.id}
+              >
                 <div>
-                  <Heading>{section.heading}</Heading>
-                  {section.body && <p>{section.body}</p>}
+                  <Heading className="mb-4 text-4xl leading-none md:text-5xl">
+                    {section.heading}
+                  </Heading>
+                  {section.body && <p className="text-wl-muted">{section.body}</p>}
                 </div>
-                <a className={page.ctaButton} href="#signup">
+                <a
+                  className="shrink-0 rounded-wl bg-wl-button px-4 py-2.5 font-bold text-wl-button-text no-underline"
+                  href="#signup"
+                >
                   {section.buttonText}
                 </a>
               </section>
             );
           if (section.type === "footer")
             return (
-              <footer className={sectionClass} key={section.id}>
-                <p>{section.note}</p>
-                <div>
+              <footer
+                className={cn(
+                  sectionClass,
+                  "flex min-h-28 flex-col items-start justify-center gap-6 border-t border-wl-text/15 text-sm md:flex-row md:items-center",
+                )}
+                key={section.id}
+              >
+                <p className="m-0">{section.note}</p>
+                <div className="flex gap-5">
                   {section.links.map((link) => (
-                    <a href={link.href} key={`${link.label}-${link.href}`}>
+                    <a className="text-wl-text" href={link.href} key={`${link.label}-${link.href}`}>
                       {link.label}
                     </a>
                   ))}
@@ -245,17 +347,21 @@ export function WaitlistPageContent({
 export function WaitlistSignupPreview({ form }) {
   return (
     <div
-      className={`${signup.form} ${form.layout === "stacked" ? signup.stacked : ""}`}
+      className={cn("w-full text-wl-text", form.layout === "stacked" && "flex-col gap-2")}
       aria-label="Signup form preview"
     >
-      <span className={signup.label}>{form.label}</span>
-      <div className={signup.row}>
-        <span className={signup.previewEmail}>{form.placeholder}</span>
-        <span className={signup.previewButton}>{form.buttonText}</span>
+      <span className="mb-2 block text-caption font-bold">{form.label}</span>
+      <div className="flex gap-2">
+        <span className="flex h-12 flex-1 items-center rounded-wl border border-wl-input-border bg-wl-input px-4 text-wl-muted">
+          {form.placeholder}
+        </span>
+        <span className="inline-flex h-12 items-center justify-center rounded-wl bg-wl-button px-5 font-bold text-wl-button-text">
+          {form.buttonText}
+        </span>
       </div>
       {form.requireConsent && (
-        <div className={signup.consent}>
-          <span className={signup.previewCheckbox} />
+        <div className="mt-3 flex items-start gap-2.5 text-caption leading-relaxed font-normal text-wl-muted">
+          <span className="mt-px size-4 shrink-0 rounded border border-wl-input-border bg-wl-input" />
           <span>{form.consentLabel}</span>
         </div>
       )}
@@ -267,7 +373,7 @@ export function StatusPagePreview({ snapshot, pending = false }) {
   const status = snapshot.statusPage;
   return (
     <div
-      className={page.statusPreview}
+      className="grid min-h-full items-center justify-items-center bg-wl-page px-6 py-20 text-center font-wl-body text-wl-text"
       style={{
         "--wl-page": snapshot.brand.pageBackground,
         "--wl-surface": snapshot.brand.surfaceColor,
@@ -280,17 +386,25 @@ export function StatusPagePreview({ snapshot, pending = false }) {
         "--wl-body-font": font[snapshot.brand.bodyFont],
       }}
     >
-      <p className={page.statusMark}>✓</p>
-      <h1>{pending ? status.pendingHeading : status.heading}</h1>
-      <p>{pending ? status.pendingBody : status.body}</p>
+      <p className="m-0 grid size-12 place-items-center rounded-full bg-wl-button text-wl-button-text">
+        ✓
+      </p>
+      <h1 className="my-4 max-w-ch14 font-wl-heading text-4xl leading-none tracking-tight text-balance md:text-5xl">
+        {pending ? status.pendingHeading : status.heading}
+      </h1>
+      <p className="max-w-xl leading-relaxed text-wl-muted">
+        {pending ? status.pendingBody : status.body}
+      </p>
       {status.showPosition && (
-        <div className={page.positionPreview}>
+        <div className="mt-8 flex w-full max-w-md justify-between border-y border-wl-text/15 py-4">
           <span>Your position</span>
-          <strong>#128</strong>
+          <strong className="text-xl">#128</strong>
         </div>
       )}
       {status.showReferralLink && (
-        <div className={page.linkPreview}>waitlyze.falakgala.dev/w/your-launch?r=friend</div>
+        <div className="mt-3 w-full max-w-md overflow-hidden rounded-wl bg-wl-surface px-3 py-3 text-caption text-ellipsis whitespace-nowrap text-wl-muted">
+          waitlyze.falakgala.dev/w/your-launch?r=friend
+        </div>
       )}
     </div>
   );

@@ -169,16 +169,16 @@ export function WebhookSettings({ waitListId, canManage = true }) {
   const sheetRow = sheetId ? rows.find((row) => row.id === sheetId) || null : null;
 
   return (
-    <div className="product-webhook-settings" aria-busy={initialLoad === "loading"}>
+    <div aria-busy={initialLoad === "loading"}>
       {initialLoad === "loading" && (
         <>
           <p role="status" className="sr-only">
             Loading webhook endpoints…
           </p>
-          <div className="product-webhook-loading" aria-hidden="true">
-            <i />
-            <i />
-            <i />
+          <div className="mt-4 grid gap-3" aria-hidden="true">
+            <i className="block h-11 rounded-lg bg-product-bg-inset" />
+            <i className="block h-11 rounded-lg bg-product-bg-inset" />
+            <i className="block h-11 rounded-lg bg-product-bg-inset" />
           </div>
         </>
       )}
@@ -197,15 +197,15 @@ export function WebhookSettings({ waitListId, canManage = true }) {
         </div>
       )}
       {initialLoad === "ready" && !configured && (
-        <p className="product-help" role="note">
+        <p className="mb-4! text-sm leading-relaxed text-product-text-secondary" role="note">
           Webhook delivery isn&rsquo;t configured on this deployment yet. Endpoints can be added
           once an administrator finishes setup.
         </p>
       )}
       {initialLoad === "ready" && configured && (
         <>
-          <div className="product-webhook-toolbar">
-            <p>
+          <div className="mb-2 flex flex-wrap items-center justify-between gap-3">
+            <p className="m-0 text-sm text-product-text-secondary tabular-nums">
               {rows.length ? `${rows.length} of ${MAX_ENDPOINTS} endpoints` : "No endpoints yet"}
             </p>
             {canManage && (
@@ -222,9 +222,20 @@ export function WebhookSettings({ waitListId, canManage = true }) {
             )}
           </div>
           {rows.length > 0 && (
-            <div className="product-table-wrap product-webhook-table-wrap">
-              <table className="product-waitlist-table product-webhook-table">
-                <caption className="product-visually-hidden">Webhook endpoints</caption>
+            <div className="no-scrollbar relative overflow-x-auto rounded-none border-0 bg-transparent">
+              <table
+                className={[
+                  "w-full border-collapse text-sm",
+                  "[&_th]:px-4 [&_th]:py-3.5 [&_th]:text-left [&_th]:align-middle",
+                  "[&_th]:border-b [&_th]:border-product-border-subtle",
+                  "[&_thead_th]:font-medium [&_thead_th]:text-product-text-secondary",
+                  "[&_tbody_th]:w-auto [&_tbody_th]:font-medium",
+                  "[&_td]:px-4 [&_td]:py-3.5 [&_td]:align-middle",
+                  "[&_td]:border-b [&_td]:border-product-border-subtle",
+                  "max-[640px]:[&_th:nth-child(3)]:hidden max-[640px]:[&_td:nth-child(3)]:hidden",
+                ].join(" ")}
+              >
+                <caption className="sr-only">Webhook endpoints</caption>
                 <thead>
                   <tr>
                     <th scope="col">Endpoint</th>
@@ -238,16 +249,19 @@ export function WebhookSettings({ waitListId, canManage = true }) {
                 <tbody>
                   {rows.map((row) => (
                     <tr key={row.id}>
-                      <th scope="row" className="product-webhook-endpoint-cell">
+                      <th
+                        scope="row"
+                        className="[&_code]:text-caption [&_code]:wrap-anywhere [&_code]:text-product-text-secondary [&_strong]:block [&_strong]:font-medium [&_strong]:wrap-anywhere"
+                      >
                         <strong>{row.name}</strong>
                         <code>{row.url}</code>
                       </th>
                       <td>
                         <span
-                          className="product-webhook-status"
+                          className="group inline-flex items-center gap-2 text-sm whitespace-nowrap"
                           data-state={row.enabled ? "active" : "paused"}
                         >
-                          <i aria-hidden="true" />
+                          <i className="size-1.75 shrink-0 rounded-full bg-product-text-secondary group-data-[state=active]:bg-product-success-text group-data-[state=active]:ring-3 group-data-[state=active]:ring-product-success-text/16" />
                           {row.enabled ? "Active" : "Paused"}
                         </span>
                       </td>
@@ -349,9 +363,11 @@ export function WebhookSettings({ waitListId, canManage = true }) {
                   <SheetHeader>
                     <SheetTitle>{sheetRow.name}</SheetTitle>
                   </SheetHeader>
-                  <div className="product-webhook-sheet-body">
-                    <div className="product-webhook-sheet-meta">
-                      <code>{sheetRow.url}</code>
+                  <div className="grid min-h-0 min-w-0 flex-1 content-start gap-5 overflow-x-clip overflow-y-auto px-4 pt-0 pb-4 [&>*]:min-w-0">
+                    <div className="flex items-center gap-2 rounded-lg border border-product-border-subtle bg-product-bg-inset p-3">
+                      <code className="min-w-0 flex-1 truncate text-caption text-product-text-secondary">
+                        {sheetRow.url}
+                      </code>
                       <Button
                         variant="ghost"
                         size="icon-sm"
@@ -369,21 +385,27 @@ export function WebhookSettings({ waitListId, canManage = true }) {
                         <HugeiconsIcon icon={Copy01Icon} aria-hidden="true" />
                       </Button>
                       <span
-                        className="product-webhook-status"
+                        className="group inline-flex items-center gap-2 text-sm whitespace-nowrap"
                         data-state={sheetRow.enabled ? "active" : "paused"}
                       >
-                        <i aria-hidden="true" />
+                        <i className="size-1.75 shrink-0 rounded-full bg-product-text-secondary group-data-[state=active]:bg-product-success-text group-data-[state=active]:ring-3 group-data-[state=active]:ring-product-success-text/16" />
                         {sheetRow.enabled ? "Active" : "Paused"}
                       </span>
                     </div>
-                    <div className="product-webhook-detail">
-                      <h4>Recent deliveries</h4>
+                    <div className="grid content-start gap-1">
+                      <h4 className="mt-3 mb-0 text-caption font-medium text-product-text-secondary">
+                        Recent deliveries
+                      </h4>
                       {sheetRow.deliveries.length ? (
                         <ul>
                           {sheetRow.deliveries.map((delivery) => (
-                            <li key={delivery.id} data-status={delivery.status.toLowerCase()}>
-                              <i aria-hidden="true" />
-                              <div>
+                            <li
+                              key={delivery.id}
+                              data-status={delivery.status.toLowerCase()}
+                              className="group flex items-center gap-3 border-t border-product-border-subtle py-3 text-sm [&_button]:min-h-8 [&_button]:px-3 [&_button]:py-1 [&_button]:text-caption"
+                            >
+                              <i className="size-1.75 shrink-0 rounded-full bg-product-text-secondary group-data-[status=delivered]:bg-product-success-text group-data-[status=failed]:bg-product-danger-text" />
+                              <div className="grid min-w-0 flex-1 gap-0.5 [&>span]:wrap-anywhere [&>span:first-child]:font-medium [&>span:last-child]:text-caption [&>span:last-child]:text-product-text-secondary">
                                 <span>
                                   {delivery.eventType} ·{" "}
                                   {delivery.status.charAt(0) +
@@ -415,7 +437,9 @@ export function WebhookSettings({ waitListId, canManage = true }) {
                           ))}
                         </ul>
                       ) : (
-                        <p className="product-help">No deliveries yet.</p>
+                        <p className="mb-4! text-sm leading-relaxed text-product-text-secondary">
+                          No deliveries yet.
+                        </p>
                       )}
                     </div>
                   </div>
@@ -459,7 +483,10 @@ export function WebhookSettings({ waitListId, canManage = true }) {
                     autoComplete="url"
                     aria-describedby="webhook-endpoint-dialog-help"
                   />
-                  <p id="webhook-endpoint-dialog-help" className="product-help">
+                  <p
+                    id="webhook-endpoint-dialog-help"
+                    className="mb-4! text-sm leading-relaxed text-product-text-secondary"
+                  >
                     Use a public HTTPS endpoint. Receives both signup.created and signup.verified.
                     Payloads exclude subscriber email addresses.
                   </p>
@@ -478,11 +505,20 @@ export function WebhookSettings({ waitListId, canManage = true }) {
         </>
       )}
       {secret && (
-        <section className="product-webhook-secret" aria-labelledby="webhook-secret-title">
-          <h3 id="webhook-secret-title">Signing secret</h3>
-          <p>Copy and store this secret before dismissing it.</p>
-          <code>{showSecret ? secret : "••••••••••••••••••••••••"}</code>
-          <div className="product-webhook-secret-actions">
+        <section
+          className="my-7 grid gap-2.5 border-0 p-0 wrap-anywhere"
+          aria-labelledby="webhook-secret-title"
+        >
+          <h3 id="webhook-secret-title" className="text-base">
+            Signing secret
+          </h3>
+          <p className="m-0 text-sm leading-relaxed">
+            Copy and store this secret before dismissing it.
+          </p>
+          <code className="rounded-lg border border-product-border-control bg-product-bg-inset p-3">
+            {showSecret ? secret : "••••••••••••••••••••••••"}
+          </code>
+          <div className="flex flex-wrap gap-2 [&_button]:min-h-8 [&_button]:px-3 [&_button]:py-1 [&_button]:text-caption">
             <Button
               size="sm"
               type="button"

@@ -20,12 +20,14 @@ export function LeaveWorkspace({ workspaceId, workspaceName }) {
     if (state?.error) toast.error(state.error);
   }, [state]);
   return (
-    <div className="product-danger-inline">
-      <div>
-        <p>
-          <strong>Leave this workspace?</strong>
+    <div className="mt-10 flex flex-wrap items-center justify-between gap-x-6 gap-y-4 border-t border-product-border-subtle pt-7">
+      <div className="grid min-w-0 gap-1">
+        <p className="m-0">
+          <strong className="text-base">Leave this workspace?</strong>
         </p>
-        <p>You’ll lose access to {workspaceName} and its waitlists until you’re invited again.</p>
+        <p className="m-0 text-product-text-secondary">
+          You’ll lose access to {workspaceName} and its waitlists until you’re invited again.
+        </p>
       </div>
       <Button type="button" variant="outline-destructive" onClick={() => setOpen(true)}>
         Leave workspace
