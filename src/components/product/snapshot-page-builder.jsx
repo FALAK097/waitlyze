@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -23,6 +23,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { assessPublishReadiness, summarizeChanges } from "@/lib/campaigns/publish-readiness.mjs";
+import { brandContrastIssues } from "@/lib/color/contrast.mjs";
 import {
   BLOCK_TYPES,
   createSection,
@@ -32,14 +34,12 @@ import {
 } from "@/lib/templates/catalog.mjs";
 import { findUnchangedStarterCopy } from "@/lib/templates/starter-copy.mjs";
 
-import { PublicationOptions } from "./publication-options";
+import { PublishAndShare } from "./publish-and-share";
 import {
   StatusPagePreview,
   WaitlistPageContent,
   WaitlistSignupPreview,
 } from "./waitlist-page-content";
-
-import styles from "./page-editor.module.css";
 
 const clone = (value) => structuredClone(value);
 const canonical = (value) =>
@@ -75,7 +75,7 @@ const itemDefaults = {
 function Field({ label, value, onChange, multiline = false, type = "text", maxLength }) {
   const id = useId();
   return (
-    <div className={styles.field}>
+    <div className="grid gap-1.5 [&_input]:text-caption [&_label]:text-caption [&_label]:font-semibold [&_textarea]:text-caption">
       <Label htmlFor={id}>{label}</Label>
       {multiline ? (
         <Textarea
@@ -99,17 +99,20 @@ function Field({ label, value, onChange, multiline = false, type = "text", maxLe
 }
 function Toggle({ label, checked, onChange }) {
   return (
-    <Label className={styles.toggle}>
+    <label className="flex items-center gap-2 text-caption font-medium">
       <Checkbox checked={checked} onCheckedChange={(value) => onChange(value === true)} />
       <span>{label}</span>
-    </Label>
+    </label>
   );
 }
 function StringItems({ section, fields, update }) {
   return (
-    <div className={styles.itemList}>
+    <div className="grid gap-5">
       {section.items.map((item, index) => (
-        <div className={styles.itemEditor} key={index}>
+        <div
+          className="grid gap-2.5 border-t border-product-border-subtle pt-4 [&>button]:justify-self-start [&>span]:text-micro [&>span]:text-product-text-muted"
+          key={index}
+        >
           <span>{index + 1}</span>
           {fields.map(({ key, label, multiline, type = "text" }) => (
             <Field
@@ -166,9 +169,12 @@ function StringItems({ section, fields, update }) {
 }
 function LinkItems({ section, update }) {
   return (
-    <div className={styles.itemList}>
+    <div className="grid gap-5">
       {section.links.map((link, index) => (
-        <div className={styles.itemEditor} key={index}>
+        <div
+          className="grid gap-2.5 border-t border-product-border-subtle pt-4 [&>button]:justify-self-start"
+          key={index}
+        >
           <Field
             label="Label"
             value={link.label}
@@ -226,7 +232,7 @@ function LinkItems({ section, update }) {
 function BlockInspector({ section, update, remove, duplicate }) {
   if (!section)
     return (
-      <div className={styles.emptyInspector}>
+      <div className={"px-5 py-8 text-caption leading-relaxed text-product-text-secondary"}>
         <p>Select a block on the left or in the preview.</p>
       </div>
     );
@@ -239,11 +245,13 @@ function BlockInspector({ section, update, remove, duplicate }) {
     />
   );
   return (
-    <div className={styles.inspector}>
-      <div className={styles.inspectorHeading}>
+    <div className="grid gap-4 p-5">
+      <div className="flex items-start justify-between gap-3 pb-1.5">
         <div>
-          <span>Block</span>
-          <h3>{names[section.type]}</h3>
+          <span className="text-micro font-bold tracking-widest text-product-text-secondary uppercase">
+            Block
+          </span>
+          <h3 className="mt-1 text-item">{names[section.type]}</h3>
         </div>
         <Toggle
           label="Visible"
@@ -376,7 +384,7 @@ function BlockInspector({ section, update, remove, duplicate }) {
           <LinkItems section={section} update={update} />
         </>
       )}
-      <div className={styles.inspectorActions}>
+      <div className="flex gap-2 pt-2">
         <Button variant="outline" type="button" onClick={duplicate}>
           Duplicate
         </Button>
@@ -668,19 +676,54 @@ export function SnapshotPageBuilder({
   const unchangedStarterCopy = findUnchangedStarterCopy(snapshot);
   const hasUpdates =
     waitList.status !== "PUBLISHED" || waitList.publishedTemplateRevision !== version;
+  const readiness = useMemo(
+    () =>
+      assessPublishReadiness(snapshot, {
+        publishedSnapshot: waitList.publishedSnapshot,
+        showReferrals: waitList.showReferrals,
+      }),
+    [snapshot, waitList.publishedSnapshot, waitList.showReferrals],
+  );
+  const changes = useMemo(
+    () => summarizeChanges(snapshot, waitList.publishedSnapshot),
+    [snapshot, waitList.publishedSnapshot],
+  );
+  const goToFix = (fix) => {
+    if (!fix) return;
+    if (fix.surface === "referrals") {
+      router.push(`/waitlists/${waitList.id}/settings?section=referral`);
+      return;
+    }
+    if (fix.surface === "seo") {
+      setSurface("publish");
+      return;
+    }
+    if (fix.surface === "design") {
+      setSurface("page");
+      setPanel("design");
+      return;
+    }
+    setSurface(fix.surface || "page");
+    if (fix.panel) setPanel(fix.panel);
+  };
 
   return (
     // Delegated undo/redo shortcuts for every control inside the studio.
     // oxlint-disable-next-line jsx-a11y/no-static-element-interactions
-    <section className={styles.builder} onKeyDown={onKeyDown}>
-      <header className={styles.commandBar}>
-        <div className={styles.titleGroup}>
+    <section className={"min-w-0"} onKeyDown={onKeyDown}>
+      <header className={"flex min-h-16 items-center gap-5 px-2 pb-4"}>
+        <div className={"flex min-w-0 flex-1 items-center gap-2 text-caption"}>
           <Link href="/waitlists">Waitlists</Link>
           <span>/</span>
           <strong>{waitList.name}</strong>
-          <span className={styles.saveState}>{saving ? "Saving…" : message}</span>
+          <span className={"ml-1 text-micro text-product-text-secondary"}>
+            {saving ? "Saving…" : message}
+          </span>
         </div>
-        <nav className={styles.surfaceTabs} aria-label="Builder surfaces">
+        <nav
+          className="flex items-center gap-1 [&_button]:cursor-pointer [&_button]:border-0 [&_button]:bg-transparent [&_button]:px-3.5 [&_button]:text-caption [&_button]:font-semibold [&_button]:text-product-text-secondary [&_button[aria-current=page]]:relative [&_button[aria-current=page]]:text-product-text-primary [&_button[aria-current=page]]:after:absolute [&_button[aria-current=page]]:after:inset-x-3 [&_button[aria-current=page]]:after:bottom-1 [&_button[aria-current=page]]:after:h-0.5 [&_button[aria-current=page]]:after:rounded-full [&_button[aria-current=page]]:after:bg-product-accent-solid"
+          aria-label="Builder surfaces"
+        >
           {[
             ["page", "Page"],
             ["form", "Form"],
@@ -697,7 +740,7 @@ export function SnapshotPageBuilder({
             </button>
           ))}
         </nav>
-        <div className={styles.commandActions}>
+        <div className={"flex flex-1 items-center justify-end gap-1"}>
           <Button variant="ghost" size="sm" onClick={undo} disabled={!undoCount}>
             Undo
           </Button>
@@ -728,7 +771,10 @@ export function SnapshotPageBuilder({
         </div>
       </header>
       {error && (
-        <div className={styles.alert} role="alert">
+        <div
+          className="mx-2 mb-3 flex items-center gap-2.5 rounded-lg bg-product-danger-bg px-3 py-2.5 text-caption text-product-danger-text [&>span]:mr-auto"
+          role="alert"
+        >
           <span>{error}</span>
           {conflict ? (
             <>
@@ -749,9 +795,9 @@ export function SnapshotPageBuilder({
         </div>
       )}
       {surface === "page" && (
-        <div className={styles.studio}>
-          <aside className={styles.library}>
-            <div className={styles.panelTabs}>
+        <div className="flex h-studio min-h-studio overflow-hidden border-t border-product-border-subtle bg-product-bg-inset max-[1180px]:h-studio-compact max-[900px]:h-auto max-[900px]:min-h-0 max-[680px]:flex-col">
+          <aside className="w-library shrink-0 overflow-auto border-r border-product-border-subtle bg-product-bg-surface max-[1180px]:w-55 max-[680px]:w-full max-[680px]:border-r-0 max-[680px]:border-b max-[680px]:border-product-border-subtle">
+            <div className="sticky top-0 z-2 grid grid-cols-3 gap-1 bg-product-bg-surface p-2.5 [&_button]:min-h-9 [&_button]:cursor-pointer [&_button]:rounded-lg [&_button]:border-0 [&_button]:bg-transparent [&_button]:text-caption [&_button]:font-semibold [&_button]:text-product-text-secondary [&_button[aria-pressed=true]]:bg-product-bg-inset [&_button[aria-pressed=true]]:text-product-text-primary">
               {[
                 ["blocks", "Blocks"],
                 ["templates", "Templates"],
@@ -769,10 +815,10 @@ export function SnapshotPageBuilder({
             </div>
             {panel === "blocks" && (
               <>
-                <div className={styles.layers}>
+                <div className="px-2.5 pt-1 pb-4">
                   {snapshot.sections.map((section, index) => (
                     <div
-                      className={styles.layer}
+                      className="group flex items-center gap-1 rounded-lg data-[selected=true]:bg-product-bg-inset [&>button]:min-w-0 [&>button]:flex-1 [&>button]:cursor-pointer [&>button]:items-center [&>button]:justify-between [&>button]:gap-2 [&>button]:border-0 [&>button]:bg-transparent [&>button]:px-2.5 [&>button]:py-3 [&>button]:text-left [&>button]:text-caption [&>button]:text-product-text-primary [&>div]:hidden [&>div]:pr-1 focus-within:[&>div]:flex hover:[&>div]:flex [&>div>button]:size-7 [&>div>button]:cursor-pointer [&>div>button]:border-0 [&>div>button]:bg-transparent [&>div>button]:text-product-text-secondary [&>div>button:disabled]:opacity-25 [&>small]:text-micro [&>small]:text-product-text-muted"
                       data-selected={selectedId === section.id}
                       key={section.id}
                     >
@@ -799,7 +845,7 @@ export function SnapshotPageBuilder({
                     </div>
                   ))}
                 </div>
-                <div className={styles.addBlocks}>
+                <div className="border-t border-product-border-subtle px-4 pt-3.5 pb-6 [&_button]:flex [&_button]:w-full [&_button]:cursor-pointer [&_button]:justify-between [&_button]:border-0 [&_button]:bg-transparent [&_button]:px-0 [&_button]:py-2 [&_button]:text-caption [&_button]:text-product-text-primary [&_button_span]:text-item [&_button_span]:text-product-text-muted [&_p]:mb-2 [&_p]:text-micro [&_p]:font-bold [&_p]:tracking-widest [&_p]:text-product-text-secondary [&_p]:uppercase">
                   <p>Add block</p>
                   {BLOCK_TYPES.map((block) => (
                     <button type="button" key={block.type} onClick={() => addBlock(block.type)}>
@@ -811,7 +857,7 @@ export function SnapshotPageBuilder({
               </>
             )}
             {panel === "templates" && (
-              <div className={styles.templateList}>
+              <div className="grid px-4 pt-1 pb-6 [&_button]:grid [&_button]:cursor-pointer [&_button]:gap-1 [&_button]:border-0 [&_button]:border-b [&_button]:border-product-border-subtle [&_button]:bg-transparent [&_button]:py-3.5 [&_button]:text-left [&_button]:text-product-text-primary [&_span]:text-caption [&_span]:leading-relaxed [&_span]:text-product-text-secondary [&_strong]:text-caption">
                 {templates.map((template) => (
                   <button
                     type="button"
@@ -833,8 +879,8 @@ export function SnapshotPageBuilder({
               <DesignPanel brand={snapshot.brand} update={(value) => updateRoot("brand", value)} />
             )}
           </aside>
-          <main className={styles.canvasArea}>
-            <div className={styles.canvasTools}>
+          <main className={"min-w-0 flex-1 overflow-auto px-7 pt-0 pb-9"}>
+            <div className="flex h-canvas-tools items-center justify-between text-caption text-product-text-secondary [&_button]:cursor-pointer [&_button]:rounded-md [&_button]:border-0 [&_button]:bg-transparent [&_button]:px-2.5 [&_button]:py-2 [&_button]:text-micro [&_button]:text-product-text-secondary [&_button[aria-pressed=true]]:bg-product-bg-surface [&_button[aria-pressed=true]]:text-product-text-primary [&_button[aria-pressed=true]]:shadow-pressed">
               <span>Preview</span>
               <div>
                 <button
@@ -853,7 +899,11 @@ export function SnapshotPageBuilder({
                 </button>
               </div>
             </div>
-            <div className={styles.canvas} data-viewport={previewViewport}>
+            <div
+              className="max-w-canvas w-full canvas-zoom overflow-auto rounded-xl bg-white shadow-canvas data-[viewport=mobile]:w-mobile-canvas data-[viewport=mobile]:max-w-full"
+              data-viewport={previewViewport}
+              style={{ "--canvas-zoom": previewViewport === "mobile" ? 0.85 : 0.72 }}
+            >
               <WaitlistPageContent
                 snapshot={snapshot}
                 name={waitList.name}
@@ -862,7 +912,7 @@ export function SnapshotPageBuilder({
               />
             </div>
           </main>
-          <aside className={styles.properties}>
+          <aside className="w-inspector shrink-0 overflow-auto border-l border-product-border-subtle bg-product-bg-surface max-[1180px]:w-68 max-[680px]:w-full max-[680px]:border-t max-[680px]:border-l-0 max-[680px]:border-product-border-subtle">
             <BlockInspector
               section={selected}
               update={updateSection}
@@ -878,7 +928,7 @@ export function SnapshotPageBuilder({
           title="Signup form"
           description="The same form is used wherever it appears on your page or embed."
         >
-          <div className={styles.formPreview}>
+          <div className={"mx-auto w-full max-w-2xl p-15"}>
             <WaitlistSignupPreview form={snapshot.form} />
           </div>
         </SurfaceLayout>
@@ -898,20 +948,17 @@ export function SnapshotPageBuilder({
         </SurfaceLayout>
       )}
       {surface === "publish" && (
-        <div className={styles.publishSurface}>
-          <div>
-            <p className={styles.overline}>Distribution</p>
-            <h2>One waitlist, wherever your audience is.</h2>
-            <p>Publish a hosted page, embed the form, connect your domain, or use the API.</p>
-          </div>
-          <PublicationOptions waitList={waitList} origin={publicationOrigin} />
-          <div className={styles.channelLinks}>
-            <Link href={`/waitlists/${waitList.id}/settings`}>
-              Custom domain <span>→</span>
-            </Link>
-            <Link href="/docs/api">
-              API access <span>→</span>
-            </Link>
+        <div className={"mx-auto w-full max-w-4xl"}>
+          <PublishAndShare
+            snapshot={snapshot}
+            waitList={waitList}
+            origin={publicationOrigin}
+            readiness={readiness}
+            changes={changes}
+            onFix={goToFix}
+            onSeoChange={(patch) => updateRoot("seo", patch)}
+          />
+          <div className="mt-7 flex flex-col items-stretch gap-0 [&_button]:mt-4 [&_button]:self-start [&>a]:flex [&>a]:justify-between [&>a]:border-t [&>a]:border-product-border-subtle [&>a]:px-0.5 [&>a]:py-4 [&>a]:text-body [&>a]:text-product-text-primary [&>a]:no-underline [&>a:last-of-type]:border-b">
             {waitList.status === "PUBLISHED" && (
               <Button
                 variant="outline"
@@ -943,8 +990,29 @@ export function SnapshotPageBuilder({
             Your saved draft becomes the public version. Future edits remain private until you
             publish again.
           </DialogDescription>
-          {unchangedStarterCopy.length > 0 && (
-            <div className={styles.reviewNote}>
+          {readiness.blockers.length > 0 && (
+            <div
+              className="grid gap-1 rounded-lg bg-product-warning-bg p-3 text-caption data-[tone=blocker]:bg-product-danger-bg data-[tone=blocker]:text-product-danger-text [&_span]:text-product-text-secondary data-[tone=blocker]:[&_span]:text-product-danger-text"
+              data-tone="blocker"
+            >
+              <strong>
+                {readiness.blockers.length}{" "}
+                {readiness.blockers.length === 1 ? "thing blocks" : "things block"} this publish
+              </strong>
+              <span>{readiness.blockers.map((blocker) => blocker.title).join(" · ")}</span>
+            </div>
+          )}
+          {readiness.warnings.length > 0 && (
+            <div className="grid gap-1 rounded-lg bg-product-warning-bg p-3 text-caption [&_span]:text-product-text-secondary">
+              <strong>
+                {readiness.warnings.length} {readiness.warnings.length === 1 ? "note" : "notes"} to
+                review
+              </strong>
+              <span>{readiness.warnings.map((warning) => warning.title).join(" · ")}</span>
+            </div>
+          )}
+          {unchangedStarterCopy.length > 0 && readiness.warnings.length === 0 && (
+            <div className="grid gap-1 rounded-lg bg-product-warning-bg p-3 text-caption [&_span]:text-product-text-secondary">
               <strong>
                 Starter copy remains in {unchangedStarterCopy.length}{" "}
                 {unchangedStarterCopy.length === 1 ? "place" : "places"}.
@@ -952,7 +1020,10 @@ export function SnapshotPageBuilder({
               <span>Keep it if it fits, or return to edit.</span>
             </div>
           )}
-          <div className={styles.reviewPreview}>
+          <div
+            className="max-h-88 canvas-zoom overflow-auto rounded-lg shadow-outline"
+            style={{ "--canvas-zoom": 0.48 }}
+          >
             <WaitlistPageContent
               snapshot={snapshot}
               name={waitList.name}
@@ -965,9 +1036,12 @@ export function SnapshotPageBuilder({
             checked={publishConfirmed}
             onChange={setPublishConfirmed}
           />
-          <div className={styles.dialogActions}>
+          <div className={"flex items-center justify-end gap-2"}>
             <DialogClose render={<Button variant="outline" />}>Back</DialogClose>
-            <Button disabled={!publishConfirmed || publishing} onClick={() => void publish()}>
+            <Button
+              disabled={!publishConfirmed || publishing || readiness.blockers.length > 0}
+              onClick={() => void publish()}
+            >
               {publishing ? "Publishing…" : "Publish page"}
             </Button>
           </div>
@@ -979,24 +1053,36 @@ export function SnapshotPageBuilder({
 
 function SurfaceLayout({ sidebar, title, description, children }) {
   return (
-    <div className={styles.surfaceLayout}>
-      <aside>
-        <p className={styles.overline}>Settings</p>
+    <div className="flex min-h-studio border-t border-product-border-subtle bg-product-bg-inset">
+      <aside className="w-78 shrink-0 overflow-auto border-r border-product-border-subtle bg-product-bg-surface max-[900px]:w-70">
+        <p
+          className={
+            "block text-micro font-bold tracking-widest text-product-text-secondary uppercase"
+          }
+        >
+          Settings
+        </p>
         {sidebar}
       </aside>
-      <main>
-        <div className={styles.surfaceHeading}>
-          <h2>{title}</h2>
-          <p>{description}</p>
+      <main className="min-w-0 flex-1 p-10 max-[900px]:p-7">
+        <div className="mx-auto mb-6 max-w-2xl">
+          <h2 className="text-section">{title}</h2>
+          <p className="mt-1.5 text-caption text-product-text-secondary">{description}</p>
         </div>
-        <div className={styles.surfaceCanvas}>{children}</div>
+        <div
+          className={
+            "mx-auto grid min-h-140 w-full max-w-4xl items-center overflow-hidden rounded-xl bg-white shadow-surface"
+          }
+        >
+          {children}
+        </div>
       </main>
     </div>
   );
 }
 function DesignPanel({ brand, update }) {
   return (
-    <div className={styles.settings}>
+    <div className={"grid gap-4 p-4"}>
       <SelectField
         label="Heading font"
         value={brand.headingFont}
@@ -1020,7 +1106,7 @@ function DesignPanel({ brand, update }) {
         ]}
         onChange={(radius) => update({ radius })}
       />
-      <div className={styles.colors}>
+      <div className="grid gap-0.5 pt-2 [&_input]:size-8 [&_input]:cursor-pointer [&_input]:rounded-lg [&_input]:border [&_input]:border-product-border-control [&_input]:bg-transparent [&_input]:p-0.5 [&_label]:flex [&_label]:min-h-10 [&_label]:items-center [&_label]:justify-between [&_label]:text-caption">
         {[
           ["pageBackground", "Page"],
           ["surfaceColor", "Surface"],
@@ -1043,12 +1129,57 @@ function DesignPanel({ brand, update }) {
           </label>
         ))}
       </div>
+      <ContrastPanel brand={brand} update={update} />
+    </div>
+  );
+}
+function ContrastPanel({ brand, update }) {
+  const issues = brandContrastIssues(brand);
+  if (!issues.length)
+    return (
+      <p className={"m-0 text-caption leading-relaxed text-product-text-secondary"}>
+        Every text and background pair meets the WCAG AA contrast minimum.
+      </p>
+    );
+  return (
+    <div className={"grid gap-2.5 border-t border-product-border-subtle pt-3.5"}>
+      <p
+        className={
+          "block text-micro font-bold tracking-widest text-product-text-secondary uppercase"
+        }
+      >
+        Contrast
+      </p>
+      {issues.map((issue) => (
+        <div
+          key={issue.id}
+          className="grid gap-2 rounded-lg bg-product-warning-bg p-2.5 [&_button]:justify-self-start [&_span]:text-micro [&_span]:leading-relaxed [&_span]:text-product-text-secondary [&_strong]:text-caption [&_strong]:font-semibold [&>div]:grid [&>div]:gap-0.5"
+        >
+          <div>
+            <strong>{issue.label}</strong>
+            <span>
+              {issue.ratio.toFixed(2)}:1 — needs {issue.required}:1 or better.
+            </span>
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => update({ [issue.fix.key]: issue.fix.value })}
+          >
+            Use a readable colour
+          </Button>
+        </div>
+      ))}
+      <p className={"m-0 text-micro leading-relaxed text-product-text-muted"}>
+        The suggested colour keeps your background and changes the text to stay legible.
+      </p>
     </div>
   );
 }
 function SelectField({ label, value, options, onChange }) {
   return (
-    <div className={styles.field}>
+    <div className={"grid gap-1.5"}>
       <Label>{label}</Label>
       <Select value={value} onValueChange={onChange}>
         <SelectTrigger>
@@ -1067,7 +1198,7 @@ function SelectField({ label, value, options, onChange }) {
 }
 function FormPanel({ form, update }) {
   return (
-    <div className={styles.settings}>
+    <div className={"grid gap-4 p-4"}>
       <Field label="Field label" value={form.label} onChange={(label) => update({ label })} />
       <Field
         label="Placeholder"
@@ -1111,7 +1242,7 @@ function FormPanel({ form, update }) {
 }
 function StatusPanel({ status, update }) {
   return (
-    <div className={styles.settings}>
+    <div className={"grid gap-4 p-4"}>
       <Field
         label="Confirmed heading"
         value={status.heading}
@@ -1155,8 +1286,14 @@ function StatusPanel({ status, update }) {
         multiline
         onChange={(shareMessage) => update({ shareMessage })}
       />
-      <div className={styles.itemList}>
-        <span className={styles.overline}>Share buttons</span>
+      <div className={"grid gap-5"}>
+        <span
+          className={
+            "block text-micro font-bold tracking-widest text-product-text-secondary uppercase"
+          }
+        >
+          Share buttons
+        </span>
         {["x", "linkedin", "whatsapp", "email"].map((channel) => (
           <Toggle
             key={channel}

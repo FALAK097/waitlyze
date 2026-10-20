@@ -56,6 +56,21 @@ export default async function WaitListsEditPage(props) {
   const templateSnapshot = parsedSnapshot.success
     ? parsedSnapshot.data
     : snapshotTemplate("simple");
+  const [publication, domain] = await Promise.all([
+    waitList.publishedRevision
+      ? prisma.waitListPublicationRevision.findUnique({
+          where: {
+            waitListId_revision: { waitListId: waitList.id, revision: waitList.publishedRevision },
+          },
+          select: { snapshot: true },
+        })
+      : null,
+    prisma.customDomain.findUnique({
+      where: { waitListId: waitList.id },
+      select: { hostname: true, status: true },
+    }),
+  ]);
+  const parsedPublished = templateSnapshotSchema.safeParse(publication?.snapshot);
   return (
     <ContentLayout title="Builder">
       <SnapshotPageBuilder
@@ -64,10 +79,13 @@ export default async function WaitListsEditPage(props) {
           name: waitList.name,
           publicSlug: waitList.publicSlug,
           status: waitList.status,
+          showReferrals: waitList.showReferrals,
           templateRevision: waitList.templateRevision,
           publishedRevision: waitList.publishedRevision,
           publishedTemplateRevision: waitList.publishedTemplateRevision,
           templateSnapshot,
+          publishedSnapshot: parsedPublished.success ? parsedPublished.data : null,
+          customDomain: domain,
         }}
         saveDraftPage={saveDraftPage}
         publishPage={publishWaitlist}
