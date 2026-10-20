@@ -1,118 +1,129 @@
-import { FormPreview } from "@/components/wait-lists/preview";
-import prisma from "@/lib/prisma";
-import { ReactQueryProvider } from "@/providers/query";
 import { nanoid } from "nanoid";
 import { notFound, redirect } from "next/navigation";
 import { cache } from "react";
+
 import { sendSignupEmail } from "@/app/actions/emails";
-import { getLegacyPublicSignUpsCount, getLegacyPublicWaitList } from "@/lib/campaigns/legacy-public.mjs";
+import { FormPreview } from "@/components/wait-lists/preview";
+import {
+  getLegacyPublicSignUpsCount,
+  getLegacyPublicWaitList,
+} from "@/lib/campaigns/legacy-public.mjs";
+import prisma from "@/lib/prisma";
+import { ReactQueryProvider } from "@/providers/query";
 
 const getWaitList = cache(async (id) => getLegacyPublicWaitList(prisma, { id }));
 
 const getWaitListMetadata = cache(async (id) => {
-	return await prisma.waitList.findUnique({
-		where: { id, status: "PUBLISHED" },
-		select: {
-			name: true,
-			description: true,
-			ogTitle: true,
-			ogDescription: true,
-			ogImage: true,
-		},
-	});
+  return await prisma.waitList.findUnique({
+    where: { id, status: "PUBLISHED" },
+    select: {
+      name: true,
+      description: true,
+      ogTitle: true,
+      ogDescription: true,
+      ogImage: true,
+    },
+  });
 });
 
-const getSignUpsCount = cache(async (waitListId) => getLegacyPublicSignUpsCount(prisma, waitListId));
+const getSignUpsCount = cache(async (waitListId) =>
+  getLegacyPublicSignUpsCount(prisma, waitListId),
+);
 
 export async function generateMetadata(props) {
-	const params = await props.params;
-	const { id } = params;
+  const params = await props.params;
+  const { id } = params;
 
-	const waitList = await getWaitListMetadata(id);
+  const waitList = await getWaitListMetadata(id);
 
-	if (!waitList) {
-		return {
-			robots: { index: false, follow: false },
-			title: "Not Found, Check the URL and try again",
-			description: "The requested waitlist could not be found.",
-		};
-	}
+  if (!waitList) {
+    return {
+      robots: { index: false, follow: false },
+      title: "Not Found, Check the URL and try again",
+      description: "The requested waitlist could not be found.",
+    };
+  }
 
-	const title =
-		waitList.ogTitle ||
-		waitList.name.charAt(0).toUpperCase() + waitList.name.slice(1);
-	const description =
-		waitList.ogDescription ||
-		waitList.description ||
-		"Preview and test your waitlist form before sharing it with your audience.";
+  const title = waitList.ogTitle || waitList.name.charAt(0).toUpperCase() + waitList.name.slice(1);
+  const description =
+    waitList.ogDescription ||
+    waitList.description ||
+    "Preview and test your waitlist form before sharing it with your audience.";
 
-	return {
-		robots: { index: false, follow: false },
-		title,
-		description,
-		openGraph: {
-			title,
-			description,
-			...(waitList.ogImage && {
-				images: [
-					{
-						url: waitList.ogImage,
-						width: 1200,
-						height: 630,
-						alt: `${title} Preview`,
-					},
-				],
-			}),
-		},
-		twitter: {
-			card: "summary_large_image",
-			title,
-			description,
-			...(waitList.ogImage && {
-				images: [waitList.ogImage],
-			}),
-		},
-	};
+  return {
+    robots: { index: false, follow: false },
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+      ...(waitList.ogImage && {
+        images: [
+          {
+            url: waitList.ogImage,
+            width: 1200,
+            height: 630,
+            alt: `${title} Preview`,
+          },
+        ],
+      }),
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      ...(waitList.ogImage && {
+        images: [waitList.ogImage],
+      }),
+    },
+  };
 }
 
 export default async function WaitListsPreviewPage(props) {
-	const params = await props.params;
-	const { id } = params;
-	const structured = await prisma.waitList.findUnique({ where: { id }, select: { status: true, templateSnapshot: true, publicSlug: true } });
-	if (structured?.templateSnapshot && structured.publicSlug && ["PUBLISHED", "PAUSED"].includes(structured.status)) redirect(`/w/${structured.publicSlug}`);
+  const params = await props.params;
+  const { id } = params;
+  const structured = await prisma.waitList.findUnique({
+    where: { id },
+    select: { status: true, templateSnapshot: true, publicSlug: true },
+  });
+  if (
+    structured?.templateSnapshot &&
+    structured.publicSlug &&
+    ["PUBLISHED", "PAUSED"].includes(structured.status)
+  )
+    redirect(`/w/${structured.publicSlug}`);
 
-	const waitList = await getWaitList(id);
+  const waitList = await getWaitList(id);
 
-	if (!waitList) {
-		return notFound();
-	}
+  if (!waitList) {
+    return notFound();
+  }
 
-	const uniqueUserId = nanoid();
-	const initialSignUpsCount = await getSignUpsCount(id);
+  const uniqueUserId = nanoid();
+  const initialSignUpsCount = await getSignUpsCount(id);
 
-	const getTotalSignUpsOnWaitList = async (waitListId) => {
-		"use server";
-		return getSignUpsCount(waitListId);
-	};
+  const getTotalSignUpsOnWaitList = async (waitListId) => {
+    "use server";
+    return getSignUpsCount(waitListId);
+  };
 
-	const sendSignUpEmailAction = async ({ email }) => {
-		"use server";
-		if (!email) return { success: false, message: "Missing email" };
-		return await sendSignupEmail({ waitListId: id, to: email });
-	};
+  const sendSignUpEmailAction = async ({ email }) => {
+    "use server";
+    if (!email) return { success: false, message: "Missing email" };
+    return await sendSignupEmail({ waitListId: id, to: email });
+  };
 
-
-	return (
-		<div>
-			<ReactQueryProvider>
-				<FormPreview
-					uniqueUserId={uniqueUserId}
-					waitList={waitList}
-					initialSignUpsCount={initialSignUpsCount}
-					getTotalSignUpsOnWaitList={getTotalSignUpsOnWaitList.bind(null, id)}
-					sendSignUpEmailAction={sendSignUpEmailAction}
-				/>
-			</ReactQueryProvider>
-		</div>
-	);
+  return (
+    <div>
+      <ReactQueryProvider>
+        <FormPreview
+          uniqueUserId={uniqueUserId}
+          waitList={waitList}
+          initialSignUpsCount={initialSignUpsCount}
+          getTotalSignUpsOnWaitList={getTotalSignUpsOnWaitList.bind(null, id)}
+          sendSignUpEmailAction={sendSignUpEmailAction}
+        />
+      </ReactQueryProvider>
+    </div>
+  );
 }

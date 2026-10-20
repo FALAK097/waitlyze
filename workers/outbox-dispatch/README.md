@@ -22,11 +22,11 @@ wrangler deploy
 
 ## How it maps to the app
 
-| Piece | Where it lives |
-| --- | --- |
-| Dispatch logic | `src/app/api/internal/email-outbox/route.js` (emails + `dispatchPendingWebhooks`) |
-| Signing/retries | `src/lib/webhooks/delivery.mjs` |
-| Cadence | `[triggers] crons` in `wrangler.toml` (currently every minute) |
+| Piece           | Where it lives                                                                    |
+| --------------- | --------------------------------------------------------------------------------- |
+| Dispatch logic  | `src/app/api/internal/email-outbox/route.js` (emails + `dispatchPendingWebhooks`) |
+| Signing/retries | `src/lib/webhooks/delivery.mjs`                                                   |
+| Cadence         | `[triggers] crons` in `wrangler.toml` (currently every minute)                    |
 
 ## Verify it works
 

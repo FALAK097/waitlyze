@@ -1,7 +1,8 @@
 const MAX_DAYS = 90;
 
 function validTimeZone(timeZone) {
-  if (typeof timeZone !== "string" || timeZone.length > 64) throw new TypeError("Choose a valid time zone.");
+  if (typeof timeZone !== "string" || timeZone.length > 64)
+    throw new TypeError("Choose a valid time zone.");
   try {
     new Intl.DateTimeFormat("en", { timeZone }).format();
     return timeZone;
@@ -17,9 +18,8 @@ function validDays(days) {
   return days;
 }
 
-const ratio = (numerator, denominator) => denominator === 0
-  ? null
-  : Math.round((numerator / denominator) * 10000) / 100;
+const ratio = (numerator, denominator) =>
+  denominator === 0 ? null : Math.round((numerator / denominator) * 10000) / 100;
 
 const number = (value) => Number(value ?? 0);
 const percentChange = (current, previous) => {
@@ -63,25 +63,57 @@ function hostMatches(host, domain) {
   return host === domain || host.endsWith(`.${domain}`);
 }
 
-const SOCIAL_HOSTS = ["twitter.com", "x.com", "t.co", "reddit.com", "linkedin.com", "facebook.com", "instagram.com", "tiktok.com", "youtube.com"];
-const SEARCH_HOST_PATTERN = /(^|\.)(google|bing|yahoo|duckduckgo|baidu|yandex|brave)(\.[a-z]{2,3})?\.[a-z]{2,}$/;
-const SOCIAL_SOURCES = new Set(["twitter", "x", "x.com", "t.co", "reddit", "linkedin", "facebook", "instagram", "tiktok", "youtube"]);
+const SOCIAL_HOSTS = [
+  "twitter.com",
+  "x.com",
+  "t.co",
+  "reddit.com",
+  "linkedin.com",
+  "facebook.com",
+  "instagram.com",
+  "tiktok.com",
+  "youtube.com",
+];
+const SEARCH_HOST_PATTERN =
+  /(^|\.)(google|bing|yahoo|duckduckgo|baidu|yandex|brave)(\.[a-z]{2,3})?\.[a-z]{2,}$/;
+const SOCIAL_SOURCES = new Set([
+  "twitter",
+  "x",
+  "x.com",
+  "t.co",
+  "reddit",
+  "linkedin",
+  "facebook",
+  "instagram",
+  "tiktok",
+  "youtube",
+]);
 
 function channelOf({ utmMedium, utmSource, referrer }) {
-  const medium = String(utmMedium || "").trim().toLowerCase().replace(/[\s-]+/g, "_");
-  const source = String(utmSource || "").trim().toLowerCase();
+  const medium = String(utmMedium || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[\s-]+/g, "_");
+  const source = String(utmSource || "")
+    .trim()
+    .toLowerCase();
   let host = "";
-  try { host = referrer ? new URL(referrer).hostname.replace(/^www\./, "").toLowerCase() : ""; }
-  catch { host = ""; }
+  try {
+    host = referrer ? new URL(referrer).hostname.replace(/^www\./, "").toLowerCase() : "";
+  } catch {
+    host = "";
+  }
 
   if (["cpc", "ppc", "paid_search", "paidsearch", "sem"].includes(medium)) return "Paid search";
   if (["paid_social", "paidsocial", "social_paid"].includes(medium)) return "Paid social";
   if (["email", "newsletter"].includes(medium)) return "Email";
   if (["affiliate", "partner"].includes(medium)) return "Affiliate";
   if (["display", "banner", "cpm", "programmatic"].includes(medium)) return "Display";
-  if (["social", "social_network", "social_media", "organic_social"].includes(medium)) return "Organic social";
+  if (["social", "social_network", "social_media", "organic_social"].includes(medium))
+    return "Organic social";
   if (["organic", "organic_search", "seo"].includes(medium)) return "Organic search";
-  if (SOCIAL_SOURCES.has(source) || SOCIAL_HOSTS.some((domain) => hostMatches(host, domain))) return "Organic social";
+  if (SOCIAL_SOURCES.has(source) || SOCIAL_HOSTS.some((domain) => hostMatches(host, domain)))
+    return "Organic social";
   if (SEARCH_HOST_PATTERN.test(host)) return "Organic search";
   if (host) return "Referral";
   if (medium || source) return "Other";
@@ -89,12 +121,18 @@ function channelOf({ utmMedium, utmSource, referrer }) {
 }
 
 /** Computes range metrics, breakdowns, referral totals, and K-factor for one waitlist. */
-export async function getWaitlistAnalytics(db, { waitListId, days = 30, endDate = null, timeZone = "UTC", now = new Date() }) {
-  if (typeof waitListId !== "string" || !waitListId) throw new TypeError("Waitlist ID is required.");
+export async function getWaitlistAnalytics(
+  db,
+  { waitListId, days = 30, endDate = null, timeZone = "UTC", now = new Date() },
+) {
+  if (typeof waitListId !== "string" || !waitListId)
+    throw new TypeError("Waitlist ID is required.");
   const rangeDays = validDays(days);
   const zone = validTimeZone(timeZone);
-  if (!(now instanceof Date) || Number.isNaN(now.valueOf())) throw new TypeError("Choose a valid end time.");
-  const endDateParam = typeof endDate === "string" && /^\d{4}-\d{2}-\d{2}$/.test(endDate) ? endDate : "";
+  if (!(now instanceof Date) || Number.isNaN(now.valueOf()))
+    throw new TypeError("Choose a valid end time.");
+  const endDateParam =
+    typeof endDate === "string" && /^\d{4}-\d{2}-\d{2}$/.test(endDate) ? endDate : "";
 
   const rows = await db.$queryRaw`
     WITH period AS (
@@ -338,21 +376,65 @@ export async function getWaitlistAnalytics(db, { waitListId, days = 30, endDate 
     shareCount,
     linkVisitCount,
   ] = await Promise.all([
-    db.impression.groupBy({ by: ["utmMedium", "utmSource", "referrer"], _count: { _all: true }, where: { waitListId, createdAt: inRange } }),
-    db.impression.groupBy({ by: ["utmCampaign"], _count: { _all: true }, where: { waitListId, createdAt: inRange } }),
-    db.impression.groupBy({ by: ["referrer"], _count: { _all: true }, where: { waitListId, createdAt: inRange } }),
-    db.impression.groupBy({ by: ["utmSource"], _count: { _all: true }, where: { waitListId, createdAt: inRange } }),
-    db.impression.groupBy({ by: ["country"], _count: { _all: true }, where: { waitListId, createdAt: inRange } }),
-    db.impression.groupBy({ by: ["region", "country"], _count: { _all: true }, where: { waitListId, createdAt: inRange } }),
-    db.impression.groupBy({ by: ["city", "country"], _count: { _all: true }, where: { waitListId, createdAt: inRange } }),
-    db.impression.groupBy({ by: ["deviceType"], _count: { _all: true }, where: { waitListId, createdAt: inRange } }),
-    db.impression.groupBy({ by: ["device"], _count: { _all: true }, where: { waitListId, createdAt: inRange } }),
-    db.signUp.groupBy({ by: ["utmMedium", "utmSource", "referrer"], _count: { _all: true }, where: countedSignupWhere }),
+    db.impression.groupBy({
+      by: ["utmMedium", "utmSource", "referrer"],
+      _count: { _all: true },
+      where: { waitListId, createdAt: inRange },
+    }),
+    db.impression.groupBy({
+      by: ["utmCampaign"],
+      _count: { _all: true },
+      where: { waitListId, createdAt: inRange },
+    }),
+    db.impression.groupBy({
+      by: ["referrer"],
+      _count: { _all: true },
+      where: { waitListId, createdAt: inRange },
+    }),
+    db.impression.groupBy({
+      by: ["utmSource"],
+      _count: { _all: true },
+      where: { waitListId, createdAt: inRange },
+    }),
+    db.impression.groupBy({
+      by: ["country"],
+      _count: { _all: true },
+      where: { waitListId, createdAt: inRange },
+    }),
+    db.impression.groupBy({
+      by: ["region", "country"],
+      _count: { _all: true },
+      where: { waitListId, createdAt: inRange },
+    }),
+    db.impression.groupBy({
+      by: ["city", "country"],
+      _count: { _all: true },
+      where: { waitListId, createdAt: inRange },
+    }),
+    db.impression.groupBy({
+      by: ["deviceType"],
+      _count: { _all: true },
+      where: { waitListId, createdAt: inRange },
+    }),
+    db.impression.groupBy({
+      by: ["device"],
+      _count: { _all: true },
+      where: { waitListId, createdAt: inRange },
+    }),
+    db.signUp.groupBy({
+      by: ["utmMedium", "utmSource", "referrer"],
+      _count: { _all: true },
+      where: countedSignupWhere,
+    }),
     db.signUp.groupBy({ by: ["utmCampaign"], _count: { _all: true }, where: countedSignupWhere }),
     db.signUp.groupBy({ by: ["referrer"], _count: { _all: true }, where: countedSignupWhere }),
     db.signUp.groupBy({ by: ["utmSource"], _count: { _all: true }, where: countedSignupWhere }),
     db.signUp.groupBy({ by: ["country"], _count: { _all: true }, where: countedSignupWhere }),
-    db.signUp.groupBy({ by: ["city", "country"], _count: { _all: true }, where: countedSignupWhere }),
+    db.signUp.groupBy({
+      by: ["city", "country"],
+      _count: { _all: true },
+      where: countedSignupWhere,
+    }),
     db.signUp.groupBy({ by: ["deviceType"], _count: { _all: true }, where: countedSignupWhere }),
     db.signUp.groupBy({ by: ["device"], _count: { _all: true }, where: countedSignupWhere }),
     db.marketingBroadcast.findMany({
@@ -379,7 +461,13 @@ export async function getWaitlistAnalytics(db, { waitListId, days = 30, endDate 
       LIMIT 5
     `,
     db.shareEvent.count({ where: { waitListId, createdAt: inRange } }),
-    db.impression.count({ where: { waitListId, createdAt: inRange, OR: [{ landingPage: { contains: "?r=" } }, { landingPage: { contains: "&r=" } }] } }),
+    db.impression.count({
+      where: {
+        waitListId,
+        createdAt: inRange,
+        OR: [{ landingPage: { contains: "?r=" } }, { landingPage: { contains: "&r=" } }],
+      },
+    }),
   ]);
 
   const emailStats = broadcasts.length
@@ -415,9 +503,15 @@ export async function getWaitlistAnalytics(db, { waitListId, days = 30, endDate 
         signupsShare: signupTotal === 0 ? 0 : Math.round((signups / signupTotal) * 1000) / 10,
       };
     });
-    const byVisitors = [...rows].sort((a, b) => b.visitors - a.visitors || b.signups - a.signups).slice(0, limit);
-    const bySignups = [...rows].sort((a, b) => b.signups - a.signups || b.visitors - a.visitors).slice(0, limit);
-    return Array.from(new Map([...byVisitors, ...bySignups].map((row) => [row.label, row])).values());
+    const byVisitors = [...rows]
+      .sort((a, b) => b.visitors - a.visitors || b.signups - a.signups)
+      .slice(0, limit);
+    const bySignups = [...rows]
+      .sort((a, b) => b.signups - a.signups || b.visitors - a.visitors)
+      .slice(0, limit);
+    return Array.from(
+      new Map([...byVisitors, ...bySignups].map((row) => [row.label, row])).values(),
+    );
   };
   const hostOf = (referrer) => {
     if (!referrer) return "Direct";
@@ -456,16 +550,22 @@ export async function getWaitlistAnalytics(db, { waitListId, days = 30, endDate 
   const linkVisits = number(linkVisitCount);
   const invitesPerSignup = signups === 0 ? null : shares / signups;
   const shareConversion = linkVisits === 0 ? null : ratio(referred, linkVisits);
-  const kFactor = invitesPerSignup == null
-    ? null
-    : invitesPerSignup === 0
-      ? 0
-      : shareConversion == null
-        ? null
-        : Math.round(invitesPerSignup * (shareConversion / 100) * 1000) / 1000;
+  const kFactor =
+    invitesPerSignup == null
+      ? null
+      : invitesPerSignup === 0
+        ? 0
+        : shareConversion == null
+          ? null
+          : Math.round(invitesPerSignup * (shareConversion / 100) * 1000) / 1000;
 
   return {
-    range: { days: rangeDays, timeZone: zone, startDate: toIsoDate(first?.start_date), endDate: toIsoDate(first?.end_date) },
+    range: {
+      days: rangeDays,
+      timeZone: zone,
+      startDate: toIsoDate(first?.start_date),
+      endDate: toIsoDate(first?.end_date),
+    },
     summary: {
       visitors,
       signups,
@@ -488,20 +588,43 @@ export async function getWaitlistAnalytics(db, { waitListId, days = 30, endDate 
     kFactor: { value: kFactor, invitesPerSignup, shareConversion, shares, linkVisits },
     sources: {
       channels: rank(channelGroups, signupChannelGroups, channelOf, 8),
-      campaigns: rank(campaignGroups, signupCampaignGroups, (group) => group.utmCampaign || "No campaign"),
+      campaigns: rank(
+        campaignGroups,
+        signupCampaignGroups,
+        (group) => group.utmCampaign || "No campaign",
+      ),
       referrers: rank(referrerGroups, signupReferrerGroups, (group) => hostOf(group.referrer)),
       sources: rank(sourceGroups, signupSourceGroups, (group) => group.utmSource || "No source"),
     },
     geo: {
       countries: rank(countryGroups, signupCountryGroups, (group) => group.country || "Unknown"),
-      mapCountries: rank(countryGroups, signupCountryGroups, (group) => group.country || "Unknown", 250),
-      regions: rank(regionGroups, [], (group) => [group.region || "Unknown region", group.country].filter(Boolean).join(", ")),
-      cities: rank(cityGroups, signupCityGroups, (group) => [group.city || "Unknown city", group.country].filter(Boolean).join(", ")),
+      mapCountries: rank(
+        countryGroups,
+        signupCountryGroups,
+        (group) => group.country || "Unknown",
+        250,
+      ),
+      regions: rank(regionGroups, [], (group) =>
+        [group.region || "Unknown region", group.country].filter(Boolean).join(", "),
+      ),
+      cities: rank(cityGroups, signupCityGroups, (group) =>
+        [group.city || "Unknown city", group.country].filter(Boolean).join(", "),
+      ),
     },
     technology: {
       browsers: rank(userAgentGroups, signupUserAgentGroups, (group) => browserOf(group.device), 8),
-      operatingSystems: rank(userAgentGroups, signupUserAgentGroups, (group) => operatingSystemOf(group.device), 8),
-      devices: rank(deviceGroups, signupDeviceGroups, (group) => prettifyDevice(group.deviceType), 8),
+      operatingSystems: rank(
+        userAgentGroups,
+        signupUserAgentGroups,
+        (group) => operatingSystemOf(group.device),
+        8,
+      ),
+      devices: rank(
+        deviceGroups,
+        signupDeviceGroups,
+        (group) => prettifyDevice(group.deviceType),
+        8,
+      ),
     },
     emails: broadcasts.map((broadcast) => {
       const counts = { delivered: 0, failed: 0, total: 0 };
@@ -509,7 +632,8 @@ export async function getWaitlistAnalytics(db, { waitListId, days = 30, endDate 
         if (stat.broadcastId !== broadcast.id) continue;
         counts.total += stat._count._all;
         if (stat.status === "DELIVERED") counts.delivered = stat._count._all;
-        else if (["FAILED", "SKIPPED", "CANCELED"].includes(stat.status)) counts.failed += stat._count._all;
+        else if (["FAILED", "SKIPPED", "CANCELED"].includes(stat.status))
+          counts.failed += stat._count._all;
       }
       return {
         id: broadcast.id,

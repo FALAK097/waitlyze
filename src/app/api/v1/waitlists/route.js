@@ -1,9 +1,10 @@
-import { NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
-import { campaignScope } from "@/lib/workspaces/service.mjs";
-import { selectedWorkspaceId } from "@/lib/workspaces/current";
+import { NextResponse } from "next/server";
+
+import { auth } from "@/lib/auth";
 import prisma from "@/lib/prisma";
+import { selectedWorkspaceId } from "@/lib/workspaces/current";
+import { campaignScope } from "@/lib/workspaces/service.mjs";
 
 export async function GET() {
   try {
@@ -11,10 +12,7 @@ export async function GET() {
       headers: await headers(),
     });
     if (!session) {
-      return NextResponse.json(
-        { error: { message: "Unauthorized" } },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: { message: "Unauthorized" } }, { status: 401 });
     }
 
     const user = await prisma.user.findUnique({
@@ -22,10 +20,7 @@ export async function GET() {
     });
 
     if (!user) {
-      return NextResponse.json(
-        { error: { message: "User not found" } },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: { message: "User not found" } }, { status: 404 });
     }
 
     const workspaceId = await selectedWorkspaceId(user.id);
@@ -39,12 +34,12 @@ export async function GET() {
       orderBy: { id: "desc" },
     });
 
-    return NextResponse.json({ data: waitlists }, { headers: { "Cache-Control": "private, no-store" } });
+    return NextResponse.json(
+      { data: waitlists },
+      { headers: { "Cache-Control": "private, no-store" } },
+    );
   } catch (error) {
     console.error("Error fetching waitlists:", error);
-    return NextResponse.json(
-      { error: { message: "Internal server error" } },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: { message: "Internal server error" } }, { status: 500 });
   }
 }

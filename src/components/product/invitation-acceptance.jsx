@@ -1,10 +1,11 @@
 "use client";
 
 import { useActionState, useEffect, useTransition } from "react";
-import { authClient } from "@/lib/auth-client";
-import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+
 import { acceptWorkspaceInvite } from "@/app/actions/workspace-invitations";
+import { Button } from "@/components/ui/button";
+import { authClient } from "@/lib/auth-client";
 
 export function InvitationSignIn({ callbackURL }) {
   const [pending, startTransition] = useTransition();
@@ -18,7 +19,13 @@ export function InvitationSignIn({ callbackURL }) {
       }
     });
   }
-  return <div className="product-invitation-actions"><Button type="button" onClick={signIn} disabled={pending}>{pending ? "Connecting…" : "Continue with Google"}</Button></div>;
+  return (
+    <div className="product-invitation-actions">
+      <Button type="button" onClick={signIn} disabled={pending}>
+        {pending ? "Connecting…" : "Continue with Google"}
+      </Button>
+    </div>
+  );
 }
 
 export function InvitationSwitchAccount() {
@@ -34,7 +41,13 @@ export function InvitationSwitchAccount() {
       }
     });
   }
-  return <div className="product-invitation-actions"><Button type="button" variant="outline" onClick={signOut} disabled={pending}>{pending ? "Signing out…" : "Switch account"}</Button></div>;
+  return (
+    <div className="product-invitation-actions">
+      <Button type="button" variant="outline" onClick={signOut} disabled={pending}>
+        {pending ? "Signing out…" : "Switch account"}
+      </Button>
+    </div>
+  );
 }
 
 export function InvitationAcceptButton({ token }) {
@@ -42,8 +55,12 @@ export function InvitationAcceptButton({ token }) {
   useEffect(() => {
     if (state?.error) toast.error(state.error);
   }, [state]);
-  return <form action={action} className="product-invitation-actions">
-    <input type="hidden" name="token" value={token} />
-    <Button type="submit" disabled={pending} aria-busy={pending}>{pending ? "Joining workspace…" : "Accept invitation"}</Button>
-  </form>;
+  return (
+    <form action={action} className="product-invitation-actions">
+      <input type="hidden" name="token" value={token} />
+      <Button type="submit" disabled={pending} aria-busy={pending}>
+        {pending ? "Joining workspace…" : "Accept invitation"}
+      </Button>
+    </form>
+  );
 }

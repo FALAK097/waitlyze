@@ -15,7 +15,10 @@ export default function CopyrightYear({ initialYear }) {
     }
     update();
     document.addEventListener("visibilitychange", update);
-    return () => { clearTimeout(timer); document.removeEventListener("visibilitychange", update); };
+    return () => {
+      clearTimeout(timer);
+      document.removeEventListener("visibilitychange", update);
+    };
   }, []);
   return year;
 }

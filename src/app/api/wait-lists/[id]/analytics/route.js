@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
-import prisma from "@/lib/prisma";
+
 import { getWaitlistAnalytics } from "@/lib/analytics/waitlist-analytics.mjs";
+import prisma from "@/lib/prisma";
 import { requireCampaign } from "@/lib/workspaces/authorize";
 import { AccessError } from "@/lib/workspaces/service.mjs";
 
@@ -13,14 +14,27 @@ export async function GET(request, { params }) {
     const { searchParams } = new URL(request.url);
     const requestedDays = Number(searchParams.get("days") ?? 30);
     if (!Number.isInteger(requestedDays) || requestedDays < 1 || requestedDays > 90) {
-      return NextResponse.json({ error: "Choose a date range from 1 to 90 days." }, { status: 400 });
+      return NextResponse.json(
+        { error: "Choose a date range from 1 to 90 days." },
+        { status: 400 },
+      );
     }
     const endDate = searchParams.get("endDate");
-    if (endDate && (!datePattern.test(endDate) || Number.isNaN(Date.parse(`${endDate}T00:00:00Z`)) || new Date(`${endDate}T00:00:00Z`).toISOString().slice(0, 10) !== endDate)) {
+    if (
+      endDate &&
+      (!datePattern.test(endDate) ||
+        Number.isNaN(Date.parse(`${endDate}T00:00:00Z`)) ||
+        new Date(`${endDate}T00:00:00Z`).toISOString().slice(0, 10) !== endDate)
+    ) {
       return NextResponse.json({ error: "Choose a valid end date." }, { status: 400 });
     }
     const timeZone = searchParams.get("timeZone") || "UTC";
-    const analytics = await getWaitlistAnalytics(prisma, { waitListId: id, days: requestedDays, endDate, timeZone });
+    const analytics = await getWaitlistAnalytics(prisma, {
+      waitListId: id,
+      days: requestedDays,
+      endDate,
+      timeZone,
+    });
     return NextResponse.json(analytics, { headers: { "Cache-Control": "private, no-store" } });
   } catch (error) {
     if (error instanceof AccessError) {

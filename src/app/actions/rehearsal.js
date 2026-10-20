@@ -1,9 +1,10 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+
+import { runLaunchRehearsal } from "@/lib/campaigns/launch-rehearsal.mjs";
 import prisma from "@/lib/prisma";
 import { requireCampaign } from "@/lib/workspaces/authorize";
-import { runLaunchRehearsal } from "@/lib/campaigns/launch-rehearsal.mjs";
 
 export async function runWaitlistRehearsal(waitListId) {
   try {

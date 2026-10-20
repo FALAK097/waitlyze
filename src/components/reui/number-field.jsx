@@ -1,15 +1,15 @@
 "use client";
-import { createContext, useContext, useId } from "react"
-import { NumberField as NumberFieldPrimitive } from "@base-ui/react/number-field"
-import { cva } from "class-variance-authority"
+import { NumberField as NumberFieldPrimitive } from "@base-ui/react/number-field";
+import { cva } from "class-variance-authority";
+import { createContext, useContext, useId } from "react";
 
-import { cn } from "@/lib/utils"
-import { Label } from "@/components/ui/label"
+import { Label } from "@/components/ui/label";
+import { cn } from "@/lib/utils";
 
-const NumberFieldContext = createContext(null)
+const NumberFieldContext = createContext(null);
 
 const numberFieldGroupVariants = cva(
-  "relative flex w-full justify-between border border-input data-disabled:pointer-events-none data-disabled:opacity-50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive focus-within:has-aria-invalid:border-destructive focus-within:has-aria-invalid:ring-destructive/20 dark:focus-within:has-aria-invalid:ring-destructive/40 rounded-lg bg-transparent dark:bg-input/30 transition-colors focus-within:border-ring focus-within:ring-ring/50 focus-within:ring-3",
+  "relative flex w-full justify-between rounded-lg border border-input bg-transparent transition-colors focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/50 focus-within:has-aria-invalid:border-destructive focus-within:has-aria-invalid:ring-destructive/20 aria-invalid:border-destructive aria-invalid:ring-destructive/20 data-disabled:pointer-events-none data-disabled:opacity-50 dark:bg-input/30 dark:focus-within:has-aria-invalid:ring-destructive/40 dark:aria-invalid:ring-destructive/40",
   {
     variants: {
       size: {
@@ -21,11 +21,11 @@ const numberFieldGroupVariants = cva(
     defaultVariants: {
       size: "default",
     },
-  }
-)
+  },
+);
 
 const numberFieldButtonVariants = cva(
-  "relative flex shrink-0 cursor-pointer items-center justify-center transition-colors pointer-coarse:after:absolute pointer-coarse:after:size-full pointer-coarse:after:min-h-11 pointer-coarse:after:min-w-11 hover:bg-accent",
+  "relative flex shrink-0 cursor-pointer items-center justify-center transition-colors hover:bg-accent pointer-coarse:after:absolute pointer-coarse:after:size-full pointer-coarse:after:min-h-11 pointer-coarse:after:min-w-11",
   {
     variants: {
       // Ladders restored from the pre-rename source. Rhea was added after they
@@ -33,16 +33,15 @@ const numberFieldButtonVariants = cva(
       // shadcn Input is h-8 px-2.5 in both sheets, where luma is h-9 px-3.
       size: {
         sm: ["px-1.5", "[&_svg:not([class*='size-'])]:size-3.5"],
-        default:
-          ["px-2", "[&_svg:not([class*='size-'])]:size-4"],
+        default: ["px-2", "[&_svg:not([class*='size-'])]:size-4"],
         lg: ["px-2.5", "[&_svg:not([class*='size-'])]:size-4"],
       },
     },
     defaultVariants: {
       size: "default",
     },
-  }
-)
+  },
+);
 
 const numberFieldInputVariants = cva(
   "w-full min-w-0 flex-1 bg-transparent text-center tabular-nums outline-none",
@@ -57,18 +56,13 @@ const numberFieldInputVariants = cva(
     defaultVariants: {
       size: "default",
     },
-  }
-)
+  },
+);
 
-function NumberField({
-  id,
-  className,
-  size = "default",
-  ...props
-}) {
-  const generatedId = useId()
-  const fieldId = id ?? generatedId
-  const sizeValue = size ?? "default"
+function NumberField({ id, className, size = "default", ...props }) {
+  const generatedId = useId();
+  const fieldId = id ?? generatedId;
+  const sizeValue = size ?? "default";
 
   return (
     <NumberFieldContext.Provider value={{ fieldId, size: sizeValue }}>
@@ -80,21 +74,15 @@ function NumberField({
         {...props}
       />
     </NumberFieldContext.Provider>
-  )
+  );
 }
 
-function NumberFieldGroup({
-  className,
-  size: sizeProp,
-  ...props
-}) {
-  const context = useContext(NumberFieldContext)
+function NumberFieldGroup({ className, size: sizeProp, ...props }) {
+  const context = useContext(NumberFieldContext);
   if (!context) {
-    throw new Error(
-      "NumberFieldGroup must be used within a NumberField component."
-    )
+    throw new Error("NumberFieldGroup must be used within a NumberField component.");
   }
-  const size = sizeProp ?? context.size
+  const size = sizeProp ?? context.size;
 
   return (
     <NumberFieldPrimitive.Group
@@ -102,79 +90,71 @@ function NumberFieldGroup({
       data-slot="number-field-group"
       {...props}
     />
-  )
+  );
 }
 
-function NumberFieldDecrement({
-  className,
-  size: sizeProp,
-  children,
-  ...props
-}) {
-  const context = useContext(NumberFieldContext)
+function NumberFieldDecrement({ className, size: sizeProp, children, ...props }) {
+  const context = useContext(NumberFieldContext);
   if (!context) {
-    throw new Error(
-      "NumberFieldDecrement must be used within a NumberField component."
-    )
+    throw new Error("NumberFieldDecrement must be used within a NumberField component.");
   }
-  const size = sizeProp ?? context.size
+  const size = sizeProp ?? context.size;
 
   return (
     <NumberFieldPrimitive.Decrement
-      className={cn(
-        numberFieldButtonVariants({ size }),
-        "rounded-s-lg border-e-0",
-        className
-      )}
+      className={cn(numberFieldButtonVariants({ size }), "rounded-s-lg border-e-0", className)}
       data-slot="number-field-decrement"
       {...props}
     >
-      {children ?? <svg aria-hidden="true" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.75"><path d="M3 8h10" /></svg>}
+      {children ?? (
+        <svg
+          aria-hidden="true"
+          viewBox="0 0 16 16"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.75"
+        >
+          <path d="M3 8h10" />
+        </svg>
+      )}
     </NumberFieldPrimitive.Decrement>
-  )
+  );
 }
 
-function NumberFieldIncrement({
-  className,
-  size: sizeProp,
-  children,
-  ...props
-}) {
-  const context = useContext(NumberFieldContext)
+function NumberFieldIncrement({ className, size: sizeProp, children, ...props }) {
+  const context = useContext(NumberFieldContext);
   if (!context) {
-    throw new Error(
-      "NumberFieldIncrement must be used within a NumberField component."
-    )
+    throw new Error("NumberFieldIncrement must be used within a NumberField component.");
   }
-  const size = sizeProp ?? context.size
+  const size = sizeProp ?? context.size;
 
   return (
     <NumberFieldPrimitive.Increment
-      className={cn(
-        numberFieldButtonVariants({ size }),
-        "rounded-e-lg border-s-0",
-        className
-      )}
+      className={cn(numberFieldButtonVariants({ size }), "rounded-e-lg border-s-0", className)}
       data-slot="number-field-increment"
       {...props}
     >
-      {children ?? <svg aria-hidden="true" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.75"><path d="M8 3v10M3 8h10" /></svg>}
+      {children ?? (
+        <svg
+          aria-hidden="true"
+          viewBox="0 0 16 16"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.75"
+        >
+          <path d="M8 3v10M3 8h10" />
+        </svg>
+      )}
     </NumberFieldPrimitive.Increment>
-  )
+  );
 }
 
-function NumberFieldInput({
-  className,
-  size: sizeProp,
-  ...props
-}) {
-  const context = useContext(NumberFieldContext)
+function NumberFieldInput({ className, size: sizeProp, ...props }) {
+  const context = useContext(NumberFieldContext);
   if (!context) {
-    throw new Error(
-      "NumberFieldInput must be used within a NumberField component."
-    )
+    throw new Error("NumberFieldInput must be used within a NumberField component.");
   }
-  const size = sizeProp ?? context.size
+  const size = sizeProp ?? context.size;
 
   return (
     <NumberFieldPrimitive.Input
@@ -182,19 +162,15 @@ function NumberFieldInput({
       data-slot="number-field-input"
       {...props}
     />
-  )
+  );
 }
 
-function NumberFieldScrubArea({
-  className,
-  label,
-  ...props
-}) {
-  const context = useContext(NumberFieldContext)
+function NumberFieldScrubArea({ className, label, ...props }) {
+  const context = useContext(NumberFieldContext);
   if (!context) {
     throw new Error(
-      "NumberFieldScrubArea must be used within a NumberField component for accessibility."
-    )
+      "NumberFieldScrubArea must be used within a NumberField component for accessibility.",
+    );
   }
 
   return (
@@ -210,7 +186,7 @@ function NumberFieldScrubArea({
         <CursorGrowIcon />
       </NumberFieldPrimitive.ScrubAreaCursor>
     </NumberFieldPrimitive.ScrubArea>
-  )
+  );
 }
 
 function CursorGrowIcon(props) {
@@ -226,7 +202,7 @@ function CursorGrowIcon(props) {
     >
       <path d="M19.5 5.5L6.49737 5.51844V2L1 6.9999L6.5 12L6.49737 8.5L19.5 8.5V12L25 6.9999L19.5 2V5.5Z" />
     </svg>
-  )
+  );
 }
 
 export {
@@ -236,4 +212,4 @@ export {
   NumberFieldIncrement,
   NumberFieldGroup,
   NumberFieldInput,
-}
+};

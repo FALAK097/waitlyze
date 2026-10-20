@@ -10,12 +10,12 @@ import { useEffect, useState } from "react";
  * @returns {F | undefined} The current state from the store.
  */
 export const useStore = (store, callback) => {
-	const result = store(callback);
-	const [data, setData] = useState();
+  const result = store(callback);
+  const [data, setData] = useState();
 
-	useEffect(() => {
-		setData(result);
-	}, [result]);
+  useEffect(() => {
+    setData(result);
+  }, [result]);
 
-	return data;
+  return data;
 };

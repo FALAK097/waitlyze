@@ -1,7 +1,7 @@
 "use client";
 
-import { HugeiconsIcon } from "@hugeicons/react";
 import { ArrowUpRight01Icon } from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
 import dynamic from "next/dynamic";
 // Better Auth is externalized on the server. Keep its React hook in a
 // browser-only island while the surrounding navigation and content stay SSR.
@@ -13,9 +13,7 @@ export default function SignupButton({
   className = "",
 }) {
   return (
-    <span
-      className={`wl-auth-action ${compact ? "wl-auth-action-compact" : ""}`}
-    >
+    <span className={`wl-auth-action ${compact ? "wl-auth-action-compact" : ""}`}>
       <span
         className={`wl-button wl-auth-placeholder ${compact ? "wl-button-small" : "wl-button-primary"} ${className}`}
         aria-hidden="true"

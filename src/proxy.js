@@ -1,16 +1,30 @@
-import { NextResponse } from "next/server";
 import { getSessionCookie } from "better-auth/cookies";
+import { NextResponse } from "next/server";
 
 export function proxy(req) {
   const hostname = req.headers.get("host")?.split(":")[0]?.toLowerCase().replace(/\.$/, "");
-  const appRoot = process.env.APP_ROOT_DOMAIN?.toLowerCase().replace(/^https?:\/\//, "").replace(/\/$/, "");
-  const isPlatformHost = !hostname || hostname === "localhost" || hostname.endsWith(".localhost") || hostname.endsWith(".vercel.app");
+  const appRoot = process.env.APP_ROOT_DOMAIN?.toLowerCase()
+    .replace(/^https?:\/\//, "")
+    .replace(/\/$/, "");
+  const isPlatformHost =
+    !hostname ||
+    hostname === "localhost" ||
+    hostname.endsWith(".localhost") ||
+    hostname.endsWith(".vercel.app");
   const isAppHost = appRoot && (hostname === appRoot || hostname.endsWith(`.${appRoot}`));
   const { pathname } = req.nextUrl;
   // Never rewrite file requests on custom hosts — serve public/ assets and
   // robots/favicon normally instead of the /domain HTML document.
   const isFileRequest = /\.[a-z0-9]+$/i.test(pathname);
-  if (appRoot && !isPlatformHost && !isAppHost && !isFileRequest && pathname !== "/domain" && !pathname.startsWith("/api") && !pathname.startsWith("/_next/")) {
+  if (
+    appRoot &&
+    !isPlatformHost &&
+    !isAppHost &&
+    !isFileRequest &&
+    pathname !== "/domain" &&
+    !pathname.startsWith("/api") &&
+    !pathname.startsWith("/_next/")
+  ) {
     const target = req.nextUrl.clone();
     target.pathname = "/domain";
     target.search = "";
@@ -22,12 +36,10 @@ export function proxy(req) {
   // Protect routes starting with /dashboard and /waitlists
   const isProtectedRoute =
     pathname.startsWith("/dashboard") ||
-    pathname.startsWith("/waitlists") || pathname.startsWith("/settings");
+    pathname.startsWith("/waitlists") ||
+    pathname.startsWith("/settings");
 
-  if (
-    pathname.startsWith("/forms") ||
-    pathname.startsWith("/api/waitlist")
-  ) {
+  if (pathname.startsWith("/forms") || pathname.startsWith("/api/waitlist")) {
     return NextResponse.next();
   }
 
@@ -36,11 +48,7 @@ export function proxy(req) {
   }
 
   const res = NextResponse.next();
-  const ip =
-    req.headers.get("x-forwarded-for") ||
-    req.ip ||
-    req.headers.get("x-real-ip") ||
-    "::1";
+  const ip = req.headers.get("x-forwarded-for") || req.ip || req.headers.get("x-real-ip") || "::1";
   res.headers.set("x-forwarded-for", ip);
 
   return res;

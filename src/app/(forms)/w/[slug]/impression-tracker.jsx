@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+
 import { collectAttribution } from "@/utils/attribution";
 
 // Records one page-view impression per browser (server dedupes by

@@ -1,72 +1,271 @@
 /* Waitlist settings reuses the /settings sidebar layout (see settings-page.css).
    This file only holds per-section tweaks for the waitlist panels. */
 
-.product-waitlist-settings-page .product-settings-section-nav a[data-danger] { color: var(--product-danger-text); }
-.product-waitlist-settings-page .product-settings-content > .product-help { margin: 0 0 20px; max-width: 65ch; }
+.product-waitlist-settings-page .product-settings-section-nav a[data-danger] {
+  color: var(--product-danger-text);
+}
+.product-waitlist-settings-page .product-settings-content > .product-help {
+  margin: 0 0 20px;
+  max-width: 65ch;
+}
 /* No panel above the danger row here, so the separator border from the shared pattern is dropped. */
-.product-waitlist-settings-page .product-danger-inline { margin-block-start: 0; padding-block-start: 0; border-top: 0; }
+.product-waitlist-settings-page .product-danger-inline {
+  margin-block-start: 0;
+  padding-block-start: 0;
+  border-top: 0;
+}
 /* Split section header: title block plus a docs action, wrapping on narrow screens. */
-.product-waitlist-settings-page .product-settings-header-split { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px 16px; flex-wrap: wrap; }
-.product-waitlist-settings-page .product-settings-header-split > div { min-width: 0; }
+.product-waitlist-settings-page .product-settings-header-split {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px 16px;
+  flex-wrap: wrap;
+}
+.product-waitlist-settings-page .product-settings-header-split > div {
+  min-width: 0;
+}
 
 /* Webhook endpoints table. Borderless like the waitlist list. */
-.product-waitlist-settings-page .product-table-wrap { overflow-x: auto; }
-.product-waitlist-settings-page .product-webhook-table-wrap { border: 0; border-radius: 0; background: transparent; }
-.product-webhook-status { display: inline-flex; align-items: center; gap: 8px; font-size: .875rem; white-space: nowrap; }
-.product-webhook-status i { flex: none; width: 7px; height: 7px; border-radius: 999px; background: var(--product-text-secondary); }
-.product-webhook-status[data-state="active"] i, .product-webhook-status[data-state="delivered"] i { background: var(--product-success-text); box-shadow: 0 0 0 3px color-mix(in srgb, var(--product-success-text) 16%, transparent); }
-.product-webhook-status[data-state="failed"] i { background: var(--product-danger-text); box-shadow: 0 0 0 3px color-mix(in srgb, var(--product-danger-text) 14%, transparent); }
-.product-webhook-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 8px; }
-.product-webhook-toolbar p { margin: 0; color: var(--product-text-secondary); font-size: .875rem; font-variant-numeric: tabular-nums; }
-.product-webhook-table th, .product-webhook-table td { padding: 14px 16px; vertical-align: middle; }
-.product-webhook-table tbody th { width: auto; }
-.product-webhook-table .product-webhook-endpoint-cell strong { display: block; font-weight: 550; overflow-wrap: anywhere; }
-.product-webhook-table .product-webhook-endpoint-cell code { font-size: .8125rem; color: var(--product-text-secondary); overflow-wrap: anywhere; }
-.product-webhook-sheet-body { flex: 1; min-height: 0; min-width: 0; overflow-y: auto; overflow-x: clip; padding: 0 16px 16px; display: grid; gap: 20px; align-content: start; }
+.product-waitlist-settings-page .product-table-wrap {
+  overflow-x: auto;
+}
+.product-waitlist-settings-page .product-webhook-table-wrap {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+.product-webhook-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.875rem;
+  white-space: nowrap;
+}
+.product-webhook-status i {
+  flex: none;
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: var(--product-text-secondary);
+}
+.product-webhook-status[data-state="active"] i,
+.product-webhook-status[data-state="delivered"] i {
+  background: var(--product-success-text);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--product-success-text) 16%, transparent);
+}
+.product-webhook-status[data-state="failed"] i {
+  background: var(--product-danger-text);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--product-danger-text) 14%, transparent);
+}
+.product-webhook-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+.product-webhook-toolbar p {
+  margin: 0;
+  color: var(--product-text-secondary);
+  font-size: 0.875rem;
+  font-variant-numeric: tabular-nums;
+}
+.product-webhook-table th,
+.product-webhook-table td {
+  padding: 14px 16px;
+  vertical-align: middle;
+}
+.product-webhook-table tbody th {
+  width: auto;
+}
+.product-webhook-table .product-webhook-endpoint-cell strong {
+  display: block;
+  font-weight: 550;
+  overflow-wrap: anywhere;
+}
+.product-webhook-table .product-webhook-endpoint-cell code {
+  font-size: 0.8125rem;
+  color: var(--product-text-secondary);
+  overflow-wrap: anywhere;
+}
+.product-webhook-sheet-body {
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+  overflow-y: auto;
+  overflow-x: clip;
+  padding: 0 16px 16px;
+  display: grid;
+  gap: 20px;
+  align-content: start;
+}
 /* Grid items default to min-width: auto and refuse to shrink, which pushed
    wide rows past the sheet edge. Force them to shrink instead. */
-.product-webhook-sheet-body > * { min-width: 0; }
-.product-webhook-sheet-meta { display: flex; align-items: center; gap: 8px; padding: 12px; border: 1px solid var(--product-border-subtle); border-radius: 10px; background: var(--product-bg-inset); }
-.product-webhook-sheet-meta code { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: .8125rem; color: var(--product-text-secondary); }
-.product-webhook-detail { display: grid; gap: 4px; align-content: start; }
-.product-webhook-detail .product-webhook-actions { margin-block: 0; }
-.product-webhook-detail h4 { margin: 12px 0 0; font-size: .8125rem; font-weight: 550; color: var(--product-text-secondary); }
-.product-webhook-detail ul { display: grid; margin: 0; padding: 0; list-style: none; }
-.product-webhook-detail li { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 4px 12px; padding: 12px 0; border-top: 1px solid var(--product-border-subtle); font-size: .875rem; }
-.product-webhook-detail li > div { display: grid; gap: 2px; min-width: 0; }
-.product-webhook-detail li > div span { overflow-wrap: anywhere; }
-.product-webhook-detail li > div span:first-child { font-weight: 550; }
-.product-webhook-detail li > div span:last-child { color: var(--product-text-secondary); font-size: .8125rem; }
-.product-webhook-detail li i { flex: none; width: 7px; height: 7px; border-radius: 999px; background: var(--product-text-secondary); }
-.product-webhook-detail li[data-status="delivered"] i { background: var(--product-success-text); }
-.product-webhook-detail li[data-status="failed"] i { background: var(--product-danger-text); }
-.product-webhook-detail .product-help { margin: 4px 0 0; }
-.product-webhook-loading { display: grid; gap: 12px; margin-top: 16px; }
-.product-webhook-loading i { display: block; height: 44px; border-radius: 8px; background: var(--product-bg-inset); }
+.product-webhook-sheet-body > * {
+  min-width: 0;
+}
+.product-webhook-sheet-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid var(--product-border-subtle);
+  border-radius: 10px;
+  background: var(--product-bg-inset);
+}
+.product-webhook-sheet-meta code {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.8125rem;
+  color: var(--product-text-secondary);
+}
+.product-webhook-detail {
+  display: grid;
+  gap: 4px;
+  align-content: start;
+}
+.product-webhook-detail .product-webhook-actions {
+  margin-block: 0;
+}
+.product-webhook-detail h4 {
+  margin: 12px 0 0;
+  font-size: 0.8125rem;
+  font-weight: 550;
+  color: var(--product-text-secondary);
+}
+.product-webhook-detail ul {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.product-webhook-detail li {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 4px 12px;
+  padding: 12px 0;
+  border-top: 1px solid var(--product-border-subtle);
+  font-size: 0.875rem;
+}
+.product-webhook-detail li > div {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+.product-webhook-detail li > div span {
+  overflow-wrap: anywhere;
+}
+.product-webhook-detail li > div span:first-child {
+  font-weight: 550;
+}
+.product-webhook-detail li > div span:last-child {
+  color: var(--product-text-secondary);
+  font-size: 0.8125rem;
+}
+.product-webhook-detail li i {
+  flex: none;
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: var(--product-text-secondary);
+}
+.product-webhook-detail li[data-status="delivered"] i {
+  background: var(--product-success-text);
+}
+.product-webhook-detail li[data-status="failed"] i {
+  background: var(--product-danger-text);
+}
+.product-webhook-detail .product-help {
+  margin: 4px 0 0;
+}
+.product-webhook-loading {
+  display: grid;
+  gap: 12px;
+  margin-top: 16px;
+}
+.product-webhook-loading i {
+  display: block;
+  height: 44px;
+  border-radius: 8px;
+  background: var(--product-bg-inset);
+}
 /* Compact action rows: content-sized buttons instead of full-width 44px targets. */
-.product-waitlist-settings-page .product-webhook-secret-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.product-waitlist-settings-page .product-webhook-secret-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
 .product-waitlist-settings-page .product-webhook-actions button,
 .product-waitlist-settings-page .product-webhook-secret-actions button,
-.product-waitlist-settings-page .product-webhook-detail li button { min-height: 32px; padding: 4px 12px; font-size: .8125rem; }
+.product-waitlist-settings-page .product-webhook-detail li button {
+  min-height: 32px;
+  padding: 4px 12px;
+  font-size: 0.8125rem;
+}
 
 /* Signing secret reveal (shown once after creating an endpoint). */
-.product-waitlist-settings-page .product-webhook-secret { border: 0; padding: 0; margin-block: 28px; }
-.product-waitlist-settings-page .product-webhook-secret h3 { font-size: .9375rem; }
-.product-waitlist-settings-page .product-webhook-secret p { font-size: .875rem; line-height: 1.6; }
-.product-waitlist-settings-page .product-webhook-secret code { border: 1px solid var(--product-border-control); border-radius: 8px; padding: 12px; }
+.product-waitlist-settings-page .product-webhook-secret {
+  border: 0;
+  padding: 0;
+  margin-block: 28px;
+}
+.product-waitlist-settings-page .product-webhook-secret h3 {
+  font-size: 0.9375rem;
+}
+.product-waitlist-settings-page .product-webhook-secret p {
+  font-size: 0.875rem;
+  line-height: 1.6;
+}
+.product-waitlist-settings-page .product-webhook-secret code {
+  border: 1px solid var(--product-border-control);
+  border-radius: 8px;
+  padding: 12px;
+}
 
 /* Custom domain panel. */
-.product-waitlist-settings-page .product-domain-record { border: 0; background: transparent; padding: 0; margin-block: 12px; }
-.product-waitlist-settings-page .product-domain-record code { font-size: .875rem; overflow-wrap: anywhere; }
-.product-waitlist-settings-page .product-custom-domain header h3 { overflow-wrap: anywhere; font-size: .9375rem; }
-.product-waitlist-settings-page .product-domain-actions { gap: 8px; }
-.product-waitlist-settings-page .product-custom-domain form > button { justify-self: start; }
+.product-waitlist-settings-page .product-domain-record {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  margin-block: 12px;
+}
+.product-waitlist-settings-page .product-domain-record code {
+  font-size: 0.875rem;
+  overflow-wrap: anywhere;
+}
+.product-waitlist-settings-page .product-custom-domain header h3 {
+  overflow-wrap: anywhere;
+  font-size: 0.9375rem;
+}
+.product-waitlist-settings-page .product-domain-actions {
+  gap: 8px;
+}
+.product-waitlist-settings-page .product-custom-domain form > button {
+  justify-self: start;
+}
 
 /* Referral panel. */
-.product-waitlist-settings-page .product-referral-setting .product-announcement[role="alert"] { color: var(--product-danger-text); }
-.product-waitlist-settings-page .product-referral-setting input:focus-visible { outline: 2px solid var(--product-focus); outline-offset: 2px; }
+.product-waitlist-settings-page .product-referral-setting .product-announcement[role="alert"] {
+  color: var(--product-danger-text);
+}
+.product-waitlist-settings-page .product-referral-setting input:focus-visible {
+  outline: 2px solid var(--product-focus);
+  outline-offset: 2px;
+}
 
 @media (max-width: 640px) {
-  .product-waitlist-settings-page input, .product-waitlist-settings-page textarea { font-size: 1rem; }
-  .product-webhook-table th:nth-child(3), .product-webhook-table td:nth-child(3) { display: none; }
+  .product-waitlist-settings-page input,
+  .product-waitlist-settings-page textarea {
+    font-size: 1rem;
+  }
+  .product-webhook-table th:nth-child(3),
+  .product-webhook-table td:nth-child(3) {
+    display: none;
+  }
 }

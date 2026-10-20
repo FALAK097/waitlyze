@@ -1,11 +1,12 @@
 "use client";
 
-import { HugeiconsIcon } from "@hugeicons/react";
 import { ArrowUpRight01Icon, Cancel01Icon, Menu01Icon } from "@hugeicons/core-free-icons";
-import { Button } from "@/components/ui/button";
-
+import { HugeiconsIcon } from "@hugeicons/react";
 import Link from "next/link";
 import { useRef, useState } from "react";
+
+import { Button } from "@/components/ui/button";
+
 import SignupButton from "./signup-button";
 import Wordmark from "./wordmark";
 
@@ -28,11 +29,7 @@ export default function Header() {
       }}
     >
       <div className="wl-container wl-header-inner">
-        <Link prefetch={false}
-          href="/"
-          aria-label="Waitlyze home"
-          onClick={() => setOpen(false)}
-        >
+        <Link prefetch={false} href="/" aria-label="Waitlyze home" onClick={() => setOpen(false)}>
           <Wordmark />
         </Link>
         <nav aria-label="Main navigation" className="wl-desktop-nav">
@@ -51,9 +48,14 @@ export default function Header() {
             aria-label={open ? "Close navigation" : "Open navigation"}
             aria-expanded={open}
             aria-controls="wl-mobile-nav"
-            variant="ghost" onClick={() => setOpen(!open)}
+            variant="ghost"
+            onClick={() => setOpen(!open)}
           >
-            {open ? <HugeiconsIcon icon={Cancel01Icon} size={20} /> : <HugeiconsIcon icon={Menu01Icon} size={20} />}
+            {open ? (
+              <HugeiconsIcon icon={Cancel01Icon} size={20} />
+            ) : (
+              <HugeiconsIcon icon={Menu01Icon} size={20} />
+            )}
           </Button>
         </div>
       </div>

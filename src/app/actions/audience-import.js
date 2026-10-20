@@ -1,17 +1,23 @@
 "use server";
 
 import Papa from "papaparse";
+
+import { emailLookupForms, normalizeSignupEmail } from "@/lib/normalize-email.mjs";
 import prisma from "@/lib/prisma";
 import { requireCampaign } from "@/lib/workspaces/authorize";
 import { AccessError } from "@/lib/workspaces/service.mjs";
-import { emailLookupForms, normalizeSignupEmail } from "@/lib/normalize-email.mjs";
 import { validateSignupEmail } from "@/utils/server/email-validation.mjs";
 
 const MAX_ROWS = 5000;
 const MAX_BYTES = 2 * 1024 * 1024;
 const REFERRAL_CODE_FORMAT = /^[A-Za-z0-9_-]{4,64}$/;
 
-const truthy = (value) => ["true", "1", "yes", "verified"].includes(String(value ?? "").trim().toLowerCase());
+const truthy = (value) =>
+  ["true", "1", "yes", "verified"].includes(
+    String(value ?? "")
+      .trim()
+      .toLowerCase(),
+  );
 
 function parsePoints(value) {
   if (value == null || value === "") return 0;
@@ -20,7 +26,9 @@ function parsePoints(value) {
 }
 
 function parseCountry(value) {
-  const code = String(value ?? "").trim().toUpperCase();
+  const code = String(value ?? "")
+    .trim()
+    .toUpperCase();
   return /^[A-Z]{2}$/.test(code) ? code : null;
 }
 
@@ -39,13 +47,19 @@ export async function importSignups(waitListId, formData) {
   try {
     const { scope } = await requireCampaign(waitListId, "manageAudience");
     const file = formData.get("file");
-    if (!(file instanceof File) || file.size === 0) return { ok: false, message: "Choose a CSV file to import." };
-    if (file.size > MAX_BYTES) return { ok: false, message: "That file is too large. Keep imports under 2 MB." };
+    if (!(file instanceof File) || file.size === 0)
+      return { ok: false, message: "Choose a CSV file to import." };
+    if (file.size > MAX_BYTES)
+      return { ok: false, message: "That file is too large. Keep imports under 2 MB." };
     const parsed = Papa.parse(await file.text(), { header: true, skipEmptyLines: true });
     const fields = parsed.meta.fields || [];
     const keyOf = (name) => fields.find((field) => field.trim().toLowerCase() === name);
     const emailKey = keyOf("email");
-    if (!emailKey) return { ok: false, message: "The CSV needs an 'email' column. Download the template to see the format." };
+    if (!emailKey)
+      return {
+        ok: false,
+        message: "The CSV needs an 'email' column. Download the template to see the format.",
+      };
     const countryKey = keyOf("country");
     const pointsKey = keyOf("points");
     const codeKey = keyOf("referral_code");
@@ -56,15 +70,27 @@ export async function importSignups(waitListId, formData) {
 
     const raw = parsed.data.slice(0, MAX_ROWS + 1);
     if (raw.length === 0) return { ok: false, message: "No rows found in that file." };
-    if (raw.length > MAX_ROWS) return { ok: false, message: `Keep imports to ${MAX_ROWS.toLocaleString()} rows at a time.` };
+    if (raw.length > MAX_ROWS)
+      return { ok: false, message: `Keep imports to ${MAX_ROWS.toLocaleString()} rows at a time.` };
 
     const seen = new Set();
     // Referral codes are globally unique, so check the CSV's codes across all
     // waitlists instead of scanning this one.
-    const csvCodes = [...new Set(raw.map((row) => cell(row, codeKey)).filter((code) => code && REFERRAL_CODE_FORMAT.test(code)))];
+    const csvCodes = [
+      ...new Set(
+        raw
+          .map((row) => cell(row, codeKey))
+          .filter((code) => code && REFERRAL_CODE_FORMAT.test(code)),
+      ),
+    ];
     const takenCodes = new Set(
       csvCodes.length
-        ? (await prisma.signUp.findMany({ where: { referralCode: { in: csvCodes } }, select: { referralCode: true } })).map((row) => row.referralCode)
+        ? (
+            await prisma.signUp.findMany({
+              where: { referralCode: { in: csvCodes } },
+              select: { referralCode: true },
+            })
+          ).map((row) => row.referralCode)
         : [],
     );
     const candidates = [];
@@ -79,7 +105,8 @@ export async function importSignups(waitListId, formData) {
       if (seen.has(normalized)) continue;
       seen.add(normalized);
       const code = cell(row, codeKey);
-      const useCode = code && REFERRAL_CODE_FORMAT.test(code) && !takenCodes.has(code) ? code : null;
+      const useCode =
+        code && REFERRAL_CODE_FORMAT.test(code) && !takenCodes.has(code) ? code : null;
       if (useCode) takenCodes.add(useCode);
       candidates.push({
         email,
@@ -92,10 +119,23 @@ export async function importSignups(waitListId, formData) {
         createdAt: joinedAtKey ? parseJoinedAt(cell(row, joinedAtKey)) : null,
       });
     }
-    if (candidates.length === 0) return { ok: false, message: invalid > 0 ? "Every row failed validation. Check the emails and try again." : "No new emails in that file." };
+    if (candidates.length === 0)
+      return {
+        ok: false,
+        message:
+          invalid > 0
+            ? "Every row failed validation. Check the emails and try again."
+            : "No new emails in that file.",
+      };
 
     const existing = await prisma.signUp.findMany({
-      where: { waitListId, waitList: scope, emailNormalized: { in: [...new Set(candidates.flatMap((row) => emailLookupForms(row.email)))] } },
+      where: {
+        waitListId,
+        waitList: scope,
+        emailNormalized: {
+          in: [...new Set(candidates.flatMap((row) => emailLookupForms(row.email)))],
+        },
+      },
       select: { emailNormalized: true },
     });
     const known = new Set(existing.map((row) => row.emailNormalized));
@@ -105,14 +145,22 @@ export async function importSignups(waitListId, formData) {
     // CSV actually contains Gmail addresses.
     if (candidates.some((row) => /@gmail\.com$|@googlemail\.com$/i.test(row.email))) {
       const gmailRows = await prisma.signUp.findMany({
-        where: { waitListId, OR: [{ emailNormalized: { endsWith: "@gmail.com" } }, { emailNormalized: { endsWith: "@googlemail.com" } }] },
+        where: {
+          waitListId,
+          OR: [
+            { emailNormalized: { endsWith: "@gmail.com" } },
+            { emailNormalized: { endsWith: "@googlemail.com" } },
+          ],
+        },
         select: { emailNormalized: true },
       });
       for (const row of gmailRows) {
         if (row.emailNormalized) known.add(normalizeSignupEmail(row.emailNormalized));
       }
     }
-    const fresh = candidates.filter((row) => !emailLookupForms(row.email).some((form) => known.has(form)));
+    const fresh = candidates.filter(
+      (row) => !emailLookupForms(row.email).some((form) => known.has(form)),
+    );
     const duplicates = candidates.length - fresh.length;
 
     let imported = 0;
@@ -143,7 +191,10 @@ export async function importSignups(waitListId, formData) {
       });
       const byEmail = new Map(created.map((row) => [row.emailNormalized, row]));
       const byCode = new Map(created.map((row) => [row.referralCode, row]));
-      const slots = await prisma.signUp.findMany({ where: { waitListId, waitList: scope }, select: { id: true, emailNormalized: true, referralCode: true } });
+      const slots = await prisma.signUp.findMany({
+        where: { waitListId, waitList: scope },
+        select: { id: true, emailNormalized: true, referralCode: true },
+      });
       for (const row of slots) {
         if (!byEmail.has(row.emailNormalized)) byEmail.set(row.emailNormalized, row);
         if (row.referralCode && !byCode.has(row.referralCode)) byCode.set(row.referralCode, row);
@@ -152,17 +203,31 @@ export async function importSignups(waitListId, formData) {
       for (const row of linkable) {
         const newcomer = byEmail.get(row.emailNormalized);
         const key = row.referredBy.trim();
-        const referrer = emailLookupForms(key).map((form) => byEmail.get(form)).find(Boolean) || byCode.get(key);
-        if (newcomer && referrer && referrer.id !== newcomer.id) links.push({ signUpId: newcomer.id, referredById: referrer.id });
+        const referrer =
+          emailLookupForms(key)
+            .map((form) => byEmail.get(form))
+            .find(Boolean) || byCode.get(key);
+        if (newcomer && referrer && referrer.id !== newcomer.id)
+          links.push({ signUpId: newcomer.id, referredById: referrer.id });
       }
       for (let index = 0; index < links.length; index += 500) {
-        const result = await prisma.referral.createMany({ data: links.slice(index, index + 500), skipDuplicates: true });
+        const result = await prisma.referral.createMany({
+          data: links.slice(index, index + 500),
+          skipDuplicates: true,
+        });
         referralsLinked += result.count;
       }
     }
-    return { ok: true, imported, duplicates: duplicates + (fresh.length - imported), invalid, referralsLinked };
+    return {
+      ok: true,
+      imported,
+      duplicates: duplicates + (fresh.length - imported),
+      invalid,
+      referralsLinked,
+    };
   } catch (error) {
-    if (error instanceof AccessError) return { ok: false, message: "You no longer have access to this waitlist." };
+    if (error instanceof AccessError)
+      return { ok: false, message: "You no longer have access to this waitlist." };
     console.error("Audience import failed", error?.code || error?.name);
     return { ok: false, message: "Couldn't import that file. Try again." };
   }

@@ -12,8 +12,10 @@ const permissions = Object.freeze({
 });
 
 function isWorkspaceInitializationConflict(error) {
-  return ["P2034", "P2002"].includes(error?.code)
-    || ["TransactionWriteConflict", "UniqueConstraintViolation"].includes(error?.cause?.kind);
+  return (
+    ["P2034", "P2002"].includes(error?.code) ||
+    ["TransactionWriteConflict", "UniqueConstraintViolation"].includes(error?.cause?.kind)
+  );
 }
 
 export class AccessError extends Error {
@@ -30,9 +32,13 @@ function actor(userId) {
 // Personal workspaces are named after their owner so the switcher never shows
 // two identically named entries.
 export function personalWorkspaceName(name, email) {
-  const first = String(name || "").trim().split(/\s+/)[0];
+  const first = String(name || "")
+    .trim()
+    .split(/\s+/)[0];
   if (first) return `${first}’s workspace`;
-  const handle = String(email || "").split("@")[0].trim();
+  const handle = String(email || "")
+    .split("@")[0]
+    .trim();
   return handle ? `${handle}’s workspace` : "My workspace";
 }
 
@@ -60,7 +66,12 @@ export function createWorkspaceService(db) {
       actor(userId);
       return db.workspace.findMany({
         where: { members: { some: { userId } } },
-        select: { id: true, name: true, personalOwnerId: true, members: { where: { userId }, select: { role: true } } },
+        select: {
+          id: true,
+          name: true,
+          personalOwnerId: true,
+          members: { where: { userId }, select: { role: true } },
+        },
         orderBy: [{ createdAt: "asc" }, { id: "asc" }],
       });
     },
@@ -109,8 +120,12 @@ export function createWorkspaceService(db) {
           select: { id: true, name: true, personalOwnerId: true },
         });
         if (!workspace) throw new AccessError();
-        if (workspace.personalOwnerId) throw new TypeError("The personal workspace cannot be deleted.");
-        const waitlists = await tx.waitList.findMany({ where: { workspaceId }, select: { id: true } });
+        if (workspace.personalOwnerId)
+          throw new TypeError("The personal workspace cannot be deleted.");
+        const waitlists = await tx.waitList.findMany({
+          where: { workspaceId },
+          select: { id: true },
+        });
         const waitlistIds = waitlists.map((waitlist) => waitlist.id);
         if (waitlistIds.length) {
           await tx.apiKey.deleteMany({ where: { waitlistId: { in: waitlistIds } } });
@@ -131,7 +146,10 @@ export function createWorkspaceService(db) {
         if (!membership) throw new AccessError();
         if (membership.role === "OWNER") {
           const owners = await tx.workspaceMember.count({ where: { workspaceId, role: "OWNER" } });
-          if (owners < 2) throw new TypeError("You’re the only owner. Delete the workspace or make another member an owner first.");
+          if (owners < 2)
+            throw new TypeError(
+              "You’re the only owner. Delete the workspace or make another member an owner first.",
+            );
         }
         await tx.workspaceMember.delete({ where: { workspaceId_userId: { workspaceId, userId } } });
         return { workspaceId };
@@ -141,11 +159,18 @@ export function createWorkspaceService(db) {
       actor(userId);
       if (typeof workspaceId !== "string" || !workspaceId) throw new AccessError();
       if (typeof targetUserId !== "string" || !targetUserId) throw new AccessError();
-      if (targetUserId === userId) throw new TypeError("You cannot remove yourself from a workspace.");
+      if (targetUserId === userId)
+        throw new TypeError("You cannot remove yourself from a workspace.");
       return db.$transaction(async (tx) => {
         const [actor, target] = await Promise.all([
-          tx.workspaceMember.findUnique({ where: { workspaceId_userId: { workspaceId, userId } }, select: { role: true } }),
-          tx.workspaceMember.findUnique({ where: { workspaceId_userId: { workspaceId, userId: targetUserId } }, select: { role: true, user: { select: { name: true, email: true } } } }),
+          tx.workspaceMember.findUnique({
+            where: { workspaceId_userId: { workspaceId, userId } },
+            select: { role: true },
+          }),
+          tx.workspaceMember.findUnique({
+            where: { workspaceId_userId: { workspaceId, userId: targetUserId } },
+            select: { role: true, user: { select: { name: true, email: true } } },
+          }),
         ]);
         if (!actor || !["OWNER", "ADMIN"].includes(actor.role)) throw new AccessError();
         if (!target) throw new AccessError();
@@ -153,7 +178,9 @@ export function createWorkspaceService(db) {
           const owners = await tx.workspaceMember.count({ where: { workspaceId, role: "OWNER" } });
           if (owners < 2) throw new TypeError("A workspace needs at least one owner.");
         }
-        await tx.workspaceMember.delete({ where: { workspaceId_userId: { workspaceId, userId: targetUserId } } });
+        await tx.workspaceMember.delete({
+          where: { workspaceId_userId: { workspaceId, userId: targetUserId } },
+        });
         return { userId: targetUserId, name: target.user.name, email: target.user.email };
       });
     },
@@ -165,8 +192,14 @@ export function createWorkspaceService(db) {
       if (targetUserId === userId) throw new TypeError("You cannot change your own role.");
       return db.$transaction(async (tx) => {
         const [actor, target] = await Promise.all([
-          tx.workspaceMember.findUnique({ where: { workspaceId_userId: { workspaceId, userId } }, select: { role: true } }),
-          tx.workspaceMember.findUnique({ where: { workspaceId_userId: { workspaceId, userId: targetUserId } }, select: { role: true, user: { select: { name: true, email: true } } } }),
+          tx.workspaceMember.findUnique({
+            where: { workspaceId_userId: { workspaceId, userId } },
+            select: { role: true },
+          }),
+          tx.workspaceMember.findUnique({
+            where: { workspaceId_userId: { workspaceId, userId: targetUserId } },
+            select: { role: true, user: { select: { name: true, email: true } } },
+          }),
         ]);
         if (!actor || !["OWNER", "ADMIN"].includes(actor.role)) throw new AccessError();
         if (!target) throw new AccessError();
@@ -175,14 +208,25 @@ export function createWorkspaceService(db) {
           const owners = await tx.workspaceMember.count({ where: { workspaceId, role: "OWNER" } });
           if (owners < 2) throw new TypeError("A workspace needs at least one owner.");
         }
-        if (target.role === role) return { userId: targetUserId, name: target.user.name, email: target.user.email, unchanged: true };
-        await tx.workspaceMember.update({ where: { workspaceId_userId: { workspaceId, userId: targetUserId } }, data: { role } });
+        if (target.role === role)
+          return {
+            userId: targetUserId,
+            name: target.user.name,
+            email: target.user.email,
+            unchanged: true,
+          };
+        await tx.workspaceMember.update({
+          where: { workspaceId_userId: { workspaceId, userId: targetUserId } },
+          data: { role },
+        });
         return { userId: targetUserId, name: target.user.name, email: target.user.email, role };
       });
     },
     async campaign(userId, id, permission = "viewCampaign", workspaceId) {
       if (typeof id !== "string" || !id) throw new AccessError();
-      const campaign = await db.waitList.findFirst({ where: { id, ...campaignScope(userId, permission, workspaceId) } });
+      const campaign = await db.waitList.findFirst({
+        where: { id, ...campaignScope(userId, permission, workspaceId) },
+      });
       if (!campaign) throw new AccessError();
       return campaign;
     },
@@ -191,32 +235,49 @@ export function createWorkspaceService(db) {
       // Retry serialization/unique conflicts when login and a backfill race.
       for (let attempt = 0; attempt < 4; attempt++) {
         try {
-          return await db.$transaction(async (tx) => {
-            const user = await tx.user.findUnique({ where: { id: userId }, select: { id: true, name: true, email: true } });
-            if (!user) throw new AccessError();
-            const personalName = personalWorkspaceName(user.name, user.email);
-            const workspace = await tx.workspace.upsert({
-              where: { personalOwnerId: userId },
-              create: { name: personalName, personalOwnerId: userId, members: { create: { userId, role: "OWNER" } } },
-              update: {},
-              select: { id: true, name: true },
-            });
-            // One-time rename for workspaces still carrying the old generic default.
-            if (workspace.name === "Personal workspace") {
-              await tx.workspace.update({ where: { id: workspace.id }, data: { name: personalName } });
-              workspace.name = personalName;
-            }
-            const membership = await tx.workspaceMember.findUnique({
-              where: { workspaceId_userId: { workspaceId: workspace.id, userId } },
-            });
-            // Existing missing/revoked membership is never recreated by login/backfill.
-            if (membership?.role !== "OWNER") throw new Error("Personal workspace ownership requires review.");
-            await tx.waitList.updateMany({ where: { userId, workspaceId: null }, data: { workspaceId: workspace.id } });
-            return workspace;
-          }, { isolationLevel: "Serializable" });
+          return await db.$transaction(
+            async (tx) => {
+              const user = await tx.user.findUnique({
+                where: { id: userId },
+                select: { id: true, name: true, email: true },
+              });
+              if (!user) throw new AccessError();
+              const personalName = personalWorkspaceName(user.name, user.email);
+              const workspace = await tx.workspace.upsert({
+                where: { personalOwnerId: userId },
+                create: {
+                  name: personalName,
+                  personalOwnerId: userId,
+                  members: { create: { userId, role: "OWNER" } },
+                },
+                update: {},
+                select: { id: true, name: true },
+              });
+              // One-time rename for workspaces still carrying the old generic default.
+              if (workspace.name === "Personal workspace") {
+                await tx.workspace.update({
+                  where: { id: workspace.id },
+                  data: { name: personalName },
+                });
+                workspace.name = personalName;
+              }
+              const membership = await tx.workspaceMember.findUnique({
+                where: { workspaceId_userId: { workspaceId: workspace.id, userId } },
+              });
+              // Existing missing/revoked membership is never recreated by login/backfill.
+              if (membership?.role !== "OWNER")
+                throw new Error("Personal workspace ownership requires review.");
+              await tx.waitList.updateMany({
+                where: { userId, workspaceId: null },
+                data: { workspaceId: workspace.id },
+              });
+              return workspace;
+            },
+            { isolationLevel: "Serializable" },
+          );
         } catch (error) {
           if (!isWorkspaceInitializationConflict(error) || attempt === 3) throw error;
-          await new Promise((resolve) => setTimeout(resolve, 10 * (2 ** attempt)));
+          await new Promise((resolve) => setTimeout(resolve, 10 * 2 ** attempt));
         }
       }
     },

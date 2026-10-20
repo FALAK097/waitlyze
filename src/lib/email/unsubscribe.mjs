@@ -1,6 +1,10 @@
 import { createHash, createHmac } from "node:crypto";
 
-export function createUnsubscribeToken(signUpId, waitListId, secret = process.env.MARKETING_UNSUBSCRIBE_SECRET || process.env.BETTER_AUTH_SECRET) {
+export function createUnsubscribeToken(
+  signUpId,
+  waitListId,
+  secret = process.env.MARKETING_UNSUBSCRIBE_SECRET || process.env.BETTER_AUTH_SECRET,
+) {
   if (!secret) throw new Error("Unsubscribe signing secret is not configured.");
   return createHmac("sha256", secret)
     .update(`waitlyze:unsubscribe:v1:${waitListId}:${signUpId}`)
@@ -25,13 +29,15 @@ export async function unsubscribeFromMarketing(db, token, { now = new Date() } =
       data: { marketingUnsubscribedAt: now },
     });
     if (updated.count) {
-      await tx.marketingConsentEvent.create({ data: {
-        waitListId: signup.waitListId,
-        signUpId: signup.id,
-        action: "OPTED_OUT",
-        source: "PUBLIC_UNSUBSCRIBE",
-        createdAt: now,
-      } });
+      await tx.marketingConsentEvent.create({
+        data: {
+          waitListId: signup.waitListId,
+          signUpId: signup.id,
+          action: "OPTED_OUT",
+          source: "PUBLIC_UNSUBSCRIBE",
+          createdAt: now,
+        },
+      });
     }
     return true;
   });

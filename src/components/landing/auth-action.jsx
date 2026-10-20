@@ -1,11 +1,11 @@
 "use client";
 
-import { HugeiconsIcon } from "@hugeicons/react";
 import { ArrowUpRight01Icon } from "@hugeicons/core-free-icons";
-import { Button } from "@/components/ui/button";
-
+import { HugeiconsIcon } from "@hugeicons/react";
 import Link from "next/link";
+
 import { useAuthModal } from "@/components/auth/auth-modal-provider";
+import { Button } from "@/components/ui/button";
 import { useSession } from "@/lib/auth-client";
 
 export default function AuthAction({
@@ -22,12 +22,7 @@ export default function AuthAction({
       <HugeiconsIcon icon={ArrowUpRight01Icon} size={18} aria-hidden="true" />
     </Link>
   ) : (
-    <Button
-      type="button"
-      className={classes}
-      disabled={isPending}
-      onClick={openAuthModal}
-    >
+    <Button type="button" className={classes} disabled={isPending} onClick={openAuthModal}>
       {children}
       <HugeiconsIcon icon={ArrowUpRight01Icon} size={18} aria-hidden="true" />
     </Button>

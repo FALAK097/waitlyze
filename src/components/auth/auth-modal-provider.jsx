@@ -1,19 +1,9 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import {
-  createContext,
-  useContext,
-  useState,
-  useCallback,
-  useRef,
-  useMemo,
-} from "react";
+import { createContext, useContext, useState, useCallback, useRef, useMemo } from "react";
 
-const AuthModal = dynamic(
-  () => import("./auth-modal").then((m) => m.AuthModal),
-  { ssr: false },
-);
+const AuthModal = dynamic(() => import("./auth-modal").then((m) => m.AuthModal), { ssr: false });
 
 const AuthModalContext = createContext(null);
 

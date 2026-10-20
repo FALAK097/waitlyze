@@ -13,7 +13,11 @@ export async function normalizeUploadedImage(buffer) {
     const image = sharp(buffer, { limitInputPixels: MAX_PIXELS, failOn: "error" });
     const metadata = await image.metadata();
     if (!FORMATS.has(metadata.format)) throw new Error("unsupported_format");
-    const data = await image.rotate().resize({ width: 2400, height: 2400, fit: "inside", withoutEnlargement: true }).webp({ quality: 85 }).toBuffer();
+    const data = await image
+      .rotate()
+      .resize({ width: 2400, height: 2400, fit: "inside", withoutEnlargement: true })
+      .webp({ quality: 85 })
+      .toBuffer();
     return { data, extension: "webp", contentType: "image/webp" };
   } catch {
     throw new TypeError("Choose a valid PNG, JPEG, WebP, GIF, or AVIF image.");

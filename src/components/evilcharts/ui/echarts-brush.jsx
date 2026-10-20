@@ -1,5 +1,6 @@
-import { withAlpha } from "@/components/evilcharts/ui/echarts-chart";
 import * as echarts from "echarts/core";
+
+import { withAlpha } from "@/components/evilcharts/ui/echarts-chart";
 
 const BRUSH_BORDER_OPACITY = 1; // brush frame, × border alpha (evil-brush uses the full token)
 
@@ -8,11 +9,7 @@ export { BRUSH_BORDER_OPACITY };
 /** Declares the zoom brush below the chart. Presence renders it; renders nothing itself. */
 export const Brush = () => null;
 
-export function syncBrushOverlay(
-  chart,
-  store,
-  params,
-) {
+export function syncBrushOverlay(chart, store, params) {
   const zr = chart.getZr();
   if (!zr) return;
 

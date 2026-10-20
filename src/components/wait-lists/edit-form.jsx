@@ -1,11 +1,15 @@
 "use client";
 
-import { HugeiconsIcon } from "@hugeicons/react";
 import { CodeIcon, FloppyDiskIcon, Mail01Icon, Share01Icon } from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
+import Link from "next/link";
 import { useQueryState } from "nuqs";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
+
+import { pauseLegacyWaitlist, publishLegacyWaitlist } from "@/app/actions/publication";
 import { removeImage } from "@/app/actions/waitLists";
 import { Button } from "@/components/ui/button";
-import styles from "./legacy-editor.module.css";
 import {
   Dialog,
   DialogClose,
@@ -18,20 +22,14 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useEffect, useState } from "react";
-import { toast } from "sonner";
-import { pauseLegacyWaitlist, publishLegacyWaitlist } from "@/app/actions/publication";
+
 import { CopyIcon } from "../shared/icons";
 import { CodeBlock } from "../ui/code-block";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "../ui/tooltip";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../ui/tooltip";
 import { SettingsTab } from "./settings-tab";
 import { SignUpForm } from "./sign-up-form";
-import Link from "next/link";
+
+import styles from "./legacy-editor.module.css";
 
 const EmbedModal = ({ waitList, origin }) => {
   return (
@@ -42,7 +40,7 @@ const EmbedModal = ({ waitList, origin }) => {
             <DialogTrigger
               render={
                 <Button variant="ghost" size="icon" aria-label="Embed instructions">
-                  <HugeiconsIcon icon={CodeIcon} className="w-4 h-4" />
+                  <HugeiconsIcon icon={CodeIcon} className="h-4 w-4" />
                 </Button>
               }
             />
@@ -69,8 +67,8 @@ const EmbedModal = ({ waitList, origin }) => {
           </div>
           <div>
             <p className="col-span-3 my-2 mb-4">
-              Step 2. Paste the following code anywhere on your page where you
-              want to display the form
+              Step 2. Paste the following code anywhere on your page where you want to display the
+              form
             </p>
             <CodeBlock
               language="html"
@@ -94,7 +92,9 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
   const [logoKey, setLogoKey] = useState(initialWaitList.logoKey || "");
   const [shareOnTwitter, setShareOnTwitter] = useState(initialWaitList.shareOnTwitter || false);
   const [shareOnWhatsapp, setShareOnWhatsapp] = useState(initialWaitList.shareOnWhatsapp || false);
-  const [shareOnInstagram, setShareOnInstagram] = useState(initialWaitList.shareOnInstagram || false);
+  const [shareOnInstagram, setShareOnInstagram] = useState(
+    initialWaitList.shareOnInstagram || false,
+  );
   const [shareOnFacebook, setShareOnFacebook] = useState(initialWaitList.shareOnFacebook || false);
   const [shareOnLinkedin, setShareOnLinkedin] = useState(initialWaitList.shareOnLinkedin || false);
   const [shareOnEmail, setShareOnEmail] = useState(initialWaitList.shareOnEmail || false);
@@ -115,99 +115,102 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
     setOrigin(window.location.origin);
   }, []);
 
-  const [buttonColor, setButtonColor] = useQueryState('buttonColor', {
-    defaultValue: initialWaitList.buttonColor || "#FF6B4A"
+  const [buttonColor, setButtonColor] = useQueryState("buttonColor", {
+    defaultValue: initialWaitList.buttonColor || "#FF6B4A",
   });
-  const [buttonBorder, setButtonBorder] = useQueryState('buttonBorder', {
-    defaultValue: initialWaitList.buttonBorder || "#FF9D7A"
+  const [buttonBorder, setButtonBorder] = useQueryState("buttonBorder", {
+    defaultValue: initialWaitList.buttonBorder || "#FF9D7A",
   });
-  const [buttonTextColor, setButtonTextColor] = useQueryState('buttonTextColor', {
-    defaultValue: initialWaitList.buttonTextColor || "#FFFFFF"
+  const [buttonTextColor, setButtonTextColor] = useQueryState("buttonTextColor", {
+    defaultValue: initialWaitList.buttonTextColor || "#FFFFFF",
   });
-  const [mainBgColor, setMainBgColor] = useQueryState('mainBgColor', {
-    defaultValue: initialWaitList.mainBgColor || "#FFFFFF"
+  const [mainBgColor, setMainBgColor] = useQueryState("mainBgColor", {
+    defaultValue: initialWaitList.mainBgColor || "#FFFFFF",
   });
-  const [enableMainBgColor, setEnableMainBgColor] = useQueryState('enableMainBgColor', {
+  const [enableMainBgColor, setEnableMainBgColor] = useQueryState("enableMainBgColor", {
     defaultValue: initialWaitList.enableMainBgColor || false,
-    parse: (v) => v === 'true',
-    serialize: (v) => String(v)
+    parse: (v) => v === "true",
+    serialize: (v) => String(v),
   });
-  const [bgColor, setBgColor] = useQueryState('bgColor', {
-    defaultValue: initialWaitList.bgColor || "#FFFFFF"
+  const [bgColor, setBgColor] = useQueryState("bgColor", {
+    defaultValue: initialWaitList.bgColor || "#FFFFFF",
   });
-  const [enableBgColor, setEnableBgColor] = useQueryState('enableBgColor', {
+  const [enableBgColor, setEnableBgColor] = useQueryState("enableBgColor", {
     defaultValue: initialWaitList.enableBgColor || false,
-    parse: (v) => v === 'true',
-    serialize: (v) => String(v)
+    parse: (v) => v === "true",
+    serialize: (v) => String(v),
   });
-  const [borderWidth, setBorderWidth] = useQueryState('borderWidth', {
-    defaultValue: initialWaitList.borderWidth || "0px"
+  const [borderWidth, setBorderWidth] = useQueryState("borderWidth", {
+    defaultValue: initialWaitList.borderWidth || "0px",
   });
-  const [borderRadius, setBorderRadius] = useQueryState('borderRadius', {
-    defaultValue: initialWaitList.borderRadius || "large"
+  const [borderRadius, setBorderRadius] = useQueryState("borderRadius", {
+    defaultValue: initialWaitList.borderRadius || "large",
   });
-  const [fontWeight, setFontWeight] = useQueryState('fontWeight', {
-    defaultValue: initialWaitList.fontWeight || "normal"
+  const [fontWeight, setFontWeight] = useQueryState("fontWeight", {
+    defaultValue: initialWaitList.fontWeight || "normal",
   });
-  const [logoSize, setLogoSize] = useQueryState('logoSize', {
-    defaultValue: initialWaitList.logoSize || "1X"
+  const [logoSize, setLogoSize] = useQueryState("logoSize", {
+    defaultValue: initialWaitList.logoSize || "1X",
   });
-  const [buttonText, setButtonText] = useQueryState('buttonText', {
-    defaultValue: initialWaitList.buttonText || "Join waitlist"
+  const [buttonText, setButtonText] = useQueryState("buttonText", {
+    defaultValue: initialWaitList.buttonText || "Join waitlist",
   });
-  const [successMessage, setSuccessMessage] = useQueryState('successMessage', {
-    defaultValue: initialWaitList.successMessage || "Success! You're on the waitlist"
+  const [successMessage, setSuccessMessage] = useQueryState("successMessage", {
+    defaultValue: initialWaitList.successMessage || "Success! You're on the waitlist",
   });
-  const [sendEmailsToSubscribers, setSendEmailsToSubscribers] = useQueryState('sendEmailsToSubscribers', {
-    defaultValue: initialWaitList.sendEmailsToSubscribers !== false,
-    parse: (v) => v === 'true',
-    serialize: (v) => String(v)
-  });
-  const [showLogo, setShowLogo] = useQueryState('showLogo', {
+  const [sendEmailsToSubscribers, setSendEmailsToSubscribers] = useQueryState(
+    "sendEmailsToSubscribers",
+    {
+      defaultValue: initialWaitList.sendEmailsToSubscribers !== false,
+      parse: (v) => v === "true",
+      serialize: (v) => String(v),
+    },
+  );
+  const [showLogo, setShowLogo] = useQueryState("showLogo", {
     defaultValue: initialWaitList.showLogo !== false,
-    parse: (v) => v === 'true',
-    serialize: (v) => String(v)
+    parse: (v) => v === "true",
+    serialize: (v) => String(v),
   });
-  const [showSocialProof, setShowSocialProof] = useQueryState('showSocialProof', {
+  const [showSocialProof, setShowSocialProof] = useQueryState("showSocialProof", {
     defaultValue: initialWaitList.showSocialProof !== false,
-    parse: (v) => v === 'true',
-    serialize: (v) => String(v)
+    parse: (v) => v === "true",
+    serialize: (v) => String(v),
   });
-  const [showBadge, setShowBadge] = useQueryState('showBadge', {
+  const [showBadge, setShowBadge] = useQueryState("showBadge", {
     defaultValue: initialWaitList.showBadge !== false,
-    parse: (v) => v === 'true',
-    serialize: (v) => String(v)
+    parse: (v) => v === "true",
+    serialize: (v) => String(v),
   });
-  const [showBranding, setShowBranding] = useQueryState('showBranding', {
+  const [showBranding, setShowBranding] = useQueryState("showBranding", {
     defaultValue: initialWaitList.showBranding !== false,
-    parse: (v) => v === 'true',
-    serialize: (v) => String(v)
+    parse: (v) => v === "true",
+    serialize: (v) => String(v),
   });
-  const [showReferrals, setShowReferrals] = useQueryState('showReferrals', {
+  const [showReferrals, setShowReferrals] = useQueryState("showReferrals", {
     defaultValue: initialWaitList.showReferrals !== false,
-    parse: (v) => v === 'true',
-    serialize: (v) => String(v)
+    parse: (v) => v === "true",
+    serialize: (v) => String(v),
   });
-  const [badgeText, setBadgeText] = useQueryState('badgeText', {
-    defaultValue: initialWaitList.badgeText || "Sign Up and get 50% off on launch"
+  const [badgeText, setBadgeText] = useQueryState("badgeText", {
+    defaultValue: initialWaitList.badgeText || "Sign Up and get 50% off on launch",
   });
-  const [badgeColor, setBadgeColor] = useQueryState('badgeColor', {
-    defaultValue: initialWaitList.badgeColor || "#FF9D7A"
+  const [badgeColor, setBadgeColor] = useQueryState("badgeColor", {
+    defaultValue: initialWaitList.badgeColor || "#FF9D7A",
   });
-  const [badgeTextColor, setBadgeTextColor] = useQueryState('badgeTextColor', {
-    defaultValue: initialWaitList.badgeTextColor || "#FFFFFF"
+  const [badgeTextColor, setBadgeTextColor] = useQueryState("badgeTextColor", {
+    defaultValue: initialWaitList.badgeTextColor || "#FFFFFF",
   });
-  const [inputColor, setInputColor] = useQueryState('inputColor', {
-    defaultValue: initialWaitList.inputColor || "#FFFFFF"
+  const [inputColor, setInputColor] = useQueryState("inputColor", {
+    defaultValue: initialWaitList.inputColor || "#FFFFFF",
   });
-  const [inputBorder, setInputBorder] = useQueryState('inputBorder', {
-    defaultValue: initialWaitList.inputBorder || "#E5E7EB"
+  const [inputBorder, setInputBorder] = useQueryState("inputBorder", {
+    defaultValue: initialWaitList.inputBorder || "#E5E7EB",
   });
-  const [inputTextColor, setInputTextColor] = useQueryState('inputTextColor', {
-    defaultValue: initialWaitList.inputTextColor || "#000000"
+  const [inputTextColor, setInputTextColor] = useQueryState("inputTextColor", {
+    defaultValue: initialWaitList.inputTextColor || "#000000",
   });
-  const [placeholderText, setPlaceholderText] = useQueryState('placeholderText', {
-    defaultValue: initialWaitList.placeholderText || "Enter your email"
+  const [placeholderText, setPlaceholderText] = useQueryState("placeholderText", {
+    defaultValue: initialWaitList.placeholderText || "Enter your email",
   });
 
   const formSettings = {
@@ -413,7 +416,9 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
     try {
       await navigator.clipboard.writeText(`${window.location.origin}/w/${savedSlug}`);
       toast.success("Page link copied.");
-    } catch { toast.error("Copy is unavailable. Select the link and copy it manually."); }
+    } catch {
+      toast.error("Copy is unavailable. Select the link and copy it manually.");
+    }
   };
 
   const handleDeleteLogo = async () => {
@@ -451,8 +456,11 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
         setStatus(response.paused ? "PAUSED" : "PUBLISHED");
         toast.success(response.paused ? "Signups paused." : "Your page is live.");
       } else toast.error(response.message || "Could not update publication. Try again.");
-    } catch { toast.error("Could not update publication. Try again."); }
-    finally { setIsPublishing(false); }
+    } catch {
+      toast.error("Could not update publication. Try again.");
+    } finally {
+      setIsPublishing(false);
+    }
   };
 
   const onImageUploadSuccess = (files) => {
@@ -463,118 +471,145 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
   return (
     <div className={styles.editor}>
       <div>
-        <header className={styles.header}><div><h2>Builder</h2><p>{name || "Untitled waitlist"} · {status === "PUBLISHED" ? "Live" : status === "PAUSED" ? "Paused" : "Private draft"}</p></div><div className={styles.toolbar}>
-          <TooltipProvider delay={100}>
-            <div className={styles.toolbarActions}>
-              {!initialWaitList.templateSnapshot && <Button disabled={isPublishing || isSaving} onClick={handlePublishToggle}>{isPublishing ? "Working…" : status === "PUBLISHED" ? "Pause" : "Publish"}</Button>}
-              <Tooltip>
-                <TooltipTrigger
-                  render={
-                    <Button disabled={isSaving} onClick={handleSave}><HugeiconsIcon icon={FloppyDiskIcon} className="w-4 h-4" aria-hidden="true" />{isSaving ? "Saving…" : "Save changes"}</Button>
-                  }
-                />
-                <TooltipContent side="bottom">
-                  Save changes
-                </TooltipContent>
-              </Tooltip>
-
-              <Tooltip>
-                <TooltipTrigger
-                  render={
-                    <Link prefetch={false} className={styles.secondaryLink} href={`/waitlists/${initialWaitList.id}/emails`}><HugeiconsIcon icon={Mail01Icon} className="w-4 h-4" aria-hidden="true" /><span>Email templates</span></Link>
-                  }
-                />
-                <TooltipContent side="bottom">
-                  Email templates
-                </TooltipContent>
-              </Tooltip>
-
-              <EmbedModal waitList={initialWaitList} origin={origin} />
-
-                <Dialog>
+        <header className={styles.header}>
+          <div>
+            <h2>Builder</h2>
+            <p>
+              {name || "Untitled waitlist"} ·{" "}
+              {status === "PUBLISHED" ? "Live" : status === "PAUSED" ? "Paused" : "Private draft"}
+            </p>
+          </div>
+          <div className={styles.toolbar}>
+            <TooltipProvider delay={100}>
+              <div className={styles.toolbarActions}>
+                {!initialWaitList.templateSnapshot && (
+                  <Button disabled={isPublishing || isSaving} onClick={handlePublishToggle}>
+                    {isPublishing ? "Working…" : status === "PUBLISHED" ? "Pause" : "Publish"}
+                  </Button>
+                )}
                 <Tooltip>
                   <TooltipTrigger
                     render={
-                      <DialogTrigger
-                        render={
-                          <Button variant="ghost" size="icon" aria-label="Share waitlist">
-                            <HugeiconsIcon icon={Share01Icon} className="w-4 h-4" />
-                          </Button>
-                        }
-                      />
+                      <Button disabled={isSaving} onClick={handleSave}>
+                        <HugeiconsIcon
+                          icon={FloppyDiskIcon}
+                          className="h-4 w-4"
+                          aria-hidden="true"
+                        />
+                        {isSaving ? "Saving…" : "Save changes"}
+                      </Button>
                     }
                   />
-                  <TooltipContent side="bottom">
-                    Share link
-                  </TooltipContent>
+                  <TooltipContent side="bottom">Save changes</TooltipContent>
                 </Tooltip>
 
-                <DialogContent className="sm:max-w-md">
-                  <DialogHeader>
-                    <DialogTitle>Share link</DialogTitle>
-                    <DialogDescription>
-                      Copy the link below to share your waitlist page.
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="flex items-center space-x-2">
-                    <div className="grid flex-1 gap-2">
-                      <Label htmlFor="link" className="sr-only">
-                        Link
-                      </Label>
-                      <Input
-                        id="link"
-                        value={origin && savedSlug ? `${origin}/w/${savedSlug}` : ""}
-                        readOnly
-                      />
+                <Tooltip>
+                  <TooltipTrigger
+                    render={
+                      <Link
+                        prefetch={false}
+                        className={styles.secondaryLink}
+                        href={`/waitlists/${initialWaitList.id}/emails`}
+                      >
+                        <HugeiconsIcon icon={Mail01Icon} className="h-4 w-4" aria-hidden="true" />
+                        <span>Email templates</span>
+                      </Link>
+                    }
+                  />
+                  <TooltipContent side="bottom">Email templates</TooltipContent>
+                </Tooltip>
+
+                <EmbedModal waitList={initialWaitList} origin={origin} />
+
+                <Dialog>
+                  <Tooltip>
+                    <TooltipTrigger
+                      render={
+                        <DialogTrigger
+                          render={
+                            <Button variant="ghost" size="icon" aria-label="Share waitlist">
+                              <HugeiconsIcon icon={Share01Icon} className="h-4 w-4" />
+                            </Button>
+                          }
+                        />
+                      }
+                    />
+                    <TooltipContent side="bottom">Share link</TooltipContent>
+                  </Tooltip>
+
+                  <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                      <DialogTitle>Share link</DialogTitle>
+                      <DialogDescription>
+                        Copy the link below to share your waitlist page.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="flex items-center space-x-2">
+                      <div className="grid flex-1 gap-2">
+                        <Label htmlFor="link" className="sr-only">
+                          Link
+                        </Label>
+                        <Input
+                          id="link"
+                          value={origin && savedSlug ? `${origin}/w/${savedSlug}` : ""}
+                          readOnly
+                        />
+                      </div>
+                      <Button
+                        onClick={copyShareUrlToClipboard}
+                        type="submit"
+                        size="sm"
+                        className="px-3"
+                        variant="ghost"
+                      >
+                        <span className="sr-only">Copy</span>
+                        <CopyIcon />
+                      </Button>
                     </div>
-                    <Button
-                      onClick={copyShareUrlToClipboard}
-                      type="submit"
-                      size="sm"
-                      className="px-3"
-                     variant="ghost">
-                      <span className="sr-only">Copy</span>
-                      <CopyIcon />
-                    </Button>
-                  </div>
-                </DialogContent>
-              </Dialog>
-            </div>
-          </TooltipProvider>
-        </div></header>
+                  </DialogContent>
+                </Dialog>
+              </div>
+            </TooltipProvider>
+          </div>
+        </header>
 
         <div className={styles.grid}>
-          <section className={styles.previewColumn} aria-labelledby="legacy-preview-heading"><div className={styles.previewHeading}><h3 id="legacy-preview-heading">Preview</h3><p>No subscriber is created here.</p></div>
-          <div
-            style={{
-              backgroundColor: formSettings.enableMainBgColor
-                ? formSettings.mainBgColor
-                : "transparent",
-            }}
-            className={styles.preview}
-          >
-            <SignUpForm
-              email={testEmail}
-              isLoading={false}
-              setEmail={setTestEmail}
-              waitList={{
-                ...formSettings,
-                mainBgColor: formSettings.enableMainBgColor
+          <section className={styles.previewColumn} aria-labelledby="legacy-preview-heading">
+            <div className={styles.previewHeading}>
+              <h3 id="legacy-preview-heading">Preview</h3>
+              <p>No subscriber is created here.</p>
+            </div>
+            <div
+              style={{
+                backgroundColor: formSettings.enableMainBgColor
                   ? formSettings.mainBgColor
-                  : null,
-                bgColor: formSettings.enableBgColor
-                  ? formSettings.bgColor
-                  : null,
+                  : "transparent",
               }}
-              onDeleteLogo={handleDeleteLogo}
-              onSubmit={(event) => {
-                event.preventDefault();
-                toast("Preview only. No subscriber was created.");
-              }}
-              onImageUploadSuccess={onImageUploadSuccess}
-            />
-          </div></section>
-          <SettingsTab formSettings={formSettings} updateSetting={updateSetting} applyPreset={applyPreset} />
+              className={styles.preview}
+            >
+              <SignUpForm
+                email={testEmail}
+                isLoading={false}
+                setEmail={setTestEmail}
+                waitList={{
+                  ...formSettings,
+                  mainBgColor: formSettings.enableMainBgColor ? formSettings.mainBgColor : null,
+                  bgColor: formSettings.enableBgColor ? formSettings.bgColor : null,
+                }}
+                onDeleteLogo={handleDeleteLogo}
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  toast("Preview only. No subscriber was created.");
+                }}
+                onImageUploadSuccess={onImageUploadSuccess}
+              />
+            </div>
+          </section>
+          <SettingsTab
+            formSettings={formSettings}
+            updateSetting={updateSetting}
+            applyPreset={applyPreset}
+          />
         </div>
       </div>
     </div>

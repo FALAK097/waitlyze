@@ -13,16 +13,31 @@ const checkIfEmailExists = async (email, waitListId, uniqueUserId) => {
     },
     select: { uniqueUserId: true, emailNormalized: true, email: true },
   });
-  if (signUp && signUp.uniqueUserId === uniqueUserId &&
-      (signUp.emailNormalized ?? signUp.email.trim().toLowerCase()) === normalizedEmail) return null;
+  if (
+    signUp &&
+    signUp.uniqueUserId === uniqueUserId &&
+    (signUp.emailNormalized ?? signUp.email.trim().toLowerCase()) === normalizedEmail
+  )
+    return null;
   return signUp;
 };
 
 const checkIfRequestIsValid = async (body) => {
-  if (!body || typeof body !== "object" || Array.isArray(body) ||
-      typeof body.waitListId !== "string" || !body.waitListId || body.waitListId.length > 128 ||
-      typeof body.hypeSession !== "string" || !body.hypeSession.trim() || body.hypeSession.length > 256) {
-    return Response.json({ message: "A valid waitlist and browser identifier are required." }, { status: 400 });
+  if (
+    !body ||
+    typeof body !== "object" ||
+    Array.isArray(body) ||
+    typeof body.waitListId !== "string" ||
+    !body.waitListId ||
+    body.waitListId.length > 128 ||
+    typeof body.hypeSession !== "string" ||
+    !body.hypeSession.trim() ||
+    body.hypeSession.length > 256
+  ) {
+    return Response.json(
+      { message: "A valid waitlist and browser identifier are required." },
+      { status: 400 },
+    );
   }
   if (typeof body.email !== "string" || !body.email.trim()) {
     return Response.json(
@@ -31,7 +46,7 @@ const checkIfRequestIsValid = async (body) => {
       },
       {
         status: 400,
-      }
+      },
     );
   }
   const emailError = validateSignupEmail(body.email);
@@ -43,13 +58,13 @@ const checkIfRequestIsValid = async (body) => {
       {
         message: "WaitList ID is required",
       },
-      { status: 400 }
+      { status: 400 },
     );
   }
   const isValidWaitList = await prisma.waitList.findUnique({
     where: {
       id: body.waitListId,
-			status: "PUBLISHED",
+      status: "PUBLISHED",
     },
   });
   if (!isValidWaitList) {
@@ -57,7 +72,7 @@ const checkIfRequestIsValid = async (body) => {
       {
         message: "Invalid WaitList ID",
       },
-      { status: 400 }
+      { status: 400 },
     );
   }
 };
@@ -75,7 +90,7 @@ export const validateRequest = async (body) => {
       },
       {
         status: 403,
-      }
+      },
     );
   }
 };

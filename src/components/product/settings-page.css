@@ -1,56 +1,250 @@
-.product-settings-page { width: 100%; max-width: 1120px; margin-inline: auto; }
-.product-settings-page .product-settings-layout { display: grid; grid-template-columns: 210px minmax(0, 760px); gap: clamp(32px, 5vw, 72px); align-items: start; }
-.product-settings-menu { position: sticky; top: 24px; min-width: 0; }
-.product-settings-menu .product-page-title { margin: 0 0 30px; font-size: 1.25rem; }
-.product-settings-section-nav { display: grid; gap: 4px; }
-.product-settings-section-nav a { display: flex; align-items: center; gap: 12px; min-height: 44px; padding: 10px 12px; border-radius: 8px; color: var(--product-text-secondary); text-decoration: none; font-size: .9375rem; }
-.product-settings-section-nav a[aria-current="page"] { background: var(--product-bg-inset); color: var(--product-text-primary); font-weight: 550; }
-.product-settings-section-nav a:focus-visible { outline: 2px solid var(--product-focus); outline-offset: 2px; }
-.product-settings-content { min-width: 0; }
-.product-settings-content > header { margin-bottom: 36px; }
-.product-settings-content > header h2 { margin: 0 0 6px; font-size: 1.25rem; font-weight: 600; text-wrap: balance; }
-.product-settings-content > header p { margin: 0; color: var(--product-text-secondary); line-height: 1.6; text-wrap: pretty; }
-.product-settings-content .product-settings-form { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; max-width: 480px; margin: 0; }
-.product-settings-form > label { font-size: .875rem; font-weight: 550; }
-.product-settings-form > button { justify-self: start; margin-top: 8px; }
-.product-settings-form .product-help { margin: 0; }
-.product-settings-detail { margin-block: 36px; }
-.product-settings-detail h3 { margin: 0 0 8px; font-size: .875rem; font-weight: 550; }
-.product-settings-detail p { margin: 0 0 6px; overflow-wrap: anywhere; }
-.product-settings-role { text-transform: capitalize; }
-.product-settings-content .product-team-settings { display: grid; grid-template-columns: minmax(0, 1fr); gap: 28px; }
-.product-settings-content .product-team-list { border: 0; padding: 0; background: transparent; box-shadow: none; }
-.product-team-toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
-.product-team-toolbar p { margin: 0; font-variant-numeric: tabular-nums; color: var(--product-text-secondary); }
-.product-settings-content .product-team-list h3 { font-size: .9375rem; margin: 0 0 16px; }
-.product-settings-content .product-team-list ul { margin: 0; padding: 0; list-style: none; }
-.product-settings-content .product-team-list li { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; padding: 16px 0; border: 0; background: transparent; }
-.product-settings-content .product-team-person { flex: 1; min-width: 130px; overflow-wrap: anywhere; }
-.product-team-person strong, .product-team-person > span { display: block; }
-.product-team-person strong { font-size: .875rem; font-weight: 550; }
-.product-team-person > span { font-size: .8125rem; color: var(--product-text-secondary); line-height: 1.6; }
-.product-team-role { font-size: .8125rem; text-transform: capitalize; }
-.product-team-actions { display: flex; gap: 8px; flex-wrap: wrap; }
-.product-team-invite-form { display: grid; gap: 18px; padding: 0; border: 0; background: transparent; }
-.product-team-field { display: grid; gap: 8px; font-size: .875rem; }
-.product-team-announcement { margin: 0; line-height: 1.6; font-size: .875rem; }
-.product-team-invitation-dialog { max-width: 480px; }
-.product-team-invitation-dialog > h2 { margin: 0 40px 8px 0; font-size: 1.25rem; }
-.product-team-invitation-dialog > p { margin: 0 0 24px; color: var(--product-text-secondary); }
-.product-settings-panel-loading { min-width: 0; }
-@media (hover: hover) and (pointer: fine) { .product-settings-section-nav a:hover { background: var(--product-bg-inset); color: var(--product-text-primary); } }
-@media (prefers-reduced-motion: no-preference) { .product-settings-section-nav a { transition: background-color 150ms, color 150ms; } }
+.product-settings-page {
+  width: 100%;
+  max-width: 1120px;
+  margin-inline: auto;
+}
+.product-settings-page .product-settings-layout {
+  display: grid;
+  grid-template-columns: 210px minmax(0, 760px);
+  gap: clamp(32px, 5vw, 72px);
+  align-items: start;
+}
+.product-settings-menu {
+  position: sticky;
+  top: 24px;
+  min-width: 0;
+}
+.product-settings-menu .product-page-title {
+  margin: 0 0 30px;
+  font-size: 1.25rem;
+}
+.product-settings-section-nav {
+  display: grid;
+  gap: 4px;
+}
+.product-settings-section-nav a {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 44px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  color: var(--product-text-secondary);
+  text-decoration: none;
+  font-size: 0.9375rem;
+}
+.product-settings-section-nav a[aria-current="page"] {
+  background: var(--product-bg-inset);
+  color: var(--product-text-primary);
+  font-weight: 550;
+}
+.product-settings-section-nav a:focus-visible {
+  outline: 2px solid var(--product-focus);
+  outline-offset: 2px;
+}
+.product-settings-content {
+  min-width: 0;
+}
+.product-settings-content > header {
+  margin-bottom: 36px;
+}
+.product-settings-content > header h2 {
+  margin: 0 0 6px;
+  font-size: 1.25rem;
+  font-weight: 600;
+  text-wrap: balance;
+}
+.product-settings-content > header p {
+  margin: 0;
+  color: var(--product-text-secondary);
+  line-height: 1.6;
+  text-wrap: pretty;
+}
+.product-settings-content .product-settings-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 10px;
+  max-width: 480px;
+  margin: 0;
+}
+.product-settings-form > label {
+  font-size: 0.875rem;
+  font-weight: 550;
+}
+.product-settings-form > button {
+  justify-self: start;
+  margin-top: 8px;
+}
+.product-settings-form .product-help {
+  margin: 0;
+}
+.product-settings-detail {
+  margin-block: 36px;
+}
+.product-settings-detail h3 {
+  margin: 0 0 8px;
+  font-size: 0.875rem;
+  font-weight: 550;
+}
+.product-settings-detail p {
+  margin: 0 0 6px;
+  overflow-wrap: anywhere;
+}
+.product-settings-role {
+  text-transform: capitalize;
+}
+.product-settings-content .product-team-settings {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 28px;
+}
+.product-settings-content .product-team-list {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.product-team-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.product-team-toolbar p {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+  color: var(--product-text-secondary);
+}
+.product-settings-content .product-team-list h3 {
+  font-size: 0.9375rem;
+  margin: 0 0 16px;
+}
+.product-settings-content .product-team-list ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.product-settings-content .product-team-list li {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 16px 0;
+  border: 0;
+  background: transparent;
+}
+.product-settings-content .product-team-person {
+  flex: 1;
+  min-width: 130px;
+  overflow-wrap: anywhere;
+}
+.product-team-person strong,
+.product-team-person > span {
+  display: block;
+}
+.product-team-person strong {
+  font-size: 0.875rem;
+  font-weight: 550;
+}
+.product-team-person > span {
+  font-size: 0.8125rem;
+  color: var(--product-text-secondary);
+  line-height: 1.6;
+}
+.product-team-role {
+  font-size: 0.8125rem;
+  text-transform: capitalize;
+}
+.product-team-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.product-team-invite-form {
+  display: grid;
+  gap: 18px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+.product-team-field {
+  display: grid;
+  gap: 8px;
+  font-size: 0.875rem;
+}
+.product-team-announcement {
+  margin: 0;
+  line-height: 1.6;
+  font-size: 0.875rem;
+}
+.product-team-invitation-dialog {
+  max-width: 480px;
+}
+.product-team-invitation-dialog > h2 {
+  margin: 0 40px 8px 0;
+  font-size: 1.25rem;
+}
+.product-team-invitation-dialog > p {
+  margin: 0 0 24px;
+  color: var(--product-text-secondary);
+}
+.product-settings-panel-loading {
+  min-width: 0;
+}
+@media (hover: hover) and (pointer: fine) {
+  .product-settings-section-nav a:hover {
+    background: var(--product-bg-inset);
+    color: var(--product-text-primary);
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .product-settings-section-nav a {
+    transition:
+      background-color 150ms,
+      color 150ms;
+  }
+}
 @media (max-width: 760px) {
-  .product-settings-page .product-settings-layout { grid-template-columns: minmax(0, 1fr); gap: 32px; }
-  .product-settings-menu { position: static; }
-  .product-settings-menu .product-page-title { margin-bottom: 16px; }
-  .product-settings-section-nav { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
-  .product-settings-section-nav a { padding-inline: 10px; gap: 8px; }
-  .product-settings-content > header { margin-bottom: 24px; }
-  .product-settings-content .product-team-list li { align-items: flex-start; }
-  .product-team-actions { width: 100%; }
+  .product-settings-page .product-settings-layout {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 32px;
+  }
+  .product-settings-menu {
+    position: static;
+  }
+  .product-settings-menu .product-page-title {
+    margin-bottom: 16px;
+  }
+  .product-settings-section-nav {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+  }
+  .product-settings-section-nav a {
+    padding-inline: 10px;
+    gap: 8px;
+  }
+  .product-settings-content > header {
+    margin-bottom: 24px;
+  }
+  .product-settings-content .product-team-list li {
+    align-items: flex-start;
+  }
+  .product-team-actions {
+    width: 100%;
+  }
 }
 
-.product-settings-content .product-team-person strong, .product-settings-content .product-team-person > span { white-space: normal; overflow: visible; text-overflow: clip; }
-.product-settings-content .product-team-list ul { border: 0; overflow: visible; }
-.product-settings-content .product-team-actions { padding-inline-start: 0; }
+.product-settings-content .product-team-person strong,
+.product-settings-content .product-team-person > span {
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+}
+.product-settings-content .product-team-list ul {
+  border: 0;
+  overflow: visible;
+}
+.product-settings-content .product-team-actions {
+  padding-inline-start: 0;
+}

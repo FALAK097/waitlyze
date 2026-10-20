@@ -1,9 +1,11 @@
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
-import prisma from "./prisma";
-import { env } from "./env.mjs";
+
 import { renderWelcomeEmail } from "@/emails/render.jsx";
+
 import { sendPlatformEmail } from "./emails/platform.mjs";
+import { env } from "./env.mjs";
+import prisma from "./prisma";
 
 const socialProviders = {};
 if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
@@ -45,7 +47,12 @@ export const auth = betterAuth({
           try {
             const url = new URL("/waitlists", env.BETTER_AUTH_URL).toString();
             const html = await renderWelcomeEmail({ name: user.name, url });
-            await sendPlatformEmail({ to: user.email, subject: "Welcome to Waitlyze", html, idempotencyKey: `welcome-${user.id}` });
+            await sendPlatformEmail({
+              to: user.email,
+              subject: "Welcome to Waitlyze",
+              html,
+              idempotencyKey: `welcome-${user.id}`,
+            });
           } catch (error) {
             console.error("Welcome email failed", error?.name || error?.message || "unknown error");
           }

@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+
 import styles from "./waitlist-experience.module.css";
 
 export function WaitlistNav({ id, canSendEmail }) {
@@ -9,8 +10,15 @@ export function WaitlistNav({ id, canSendEmail }) {
   const navRef = useRef(null);
   const [hasOverflow, setHasOverflow] = useState(false);
   const root = `/waitlists/${id}`;
-  const tabs = [[root, "Builder"], [`${root}/subscribers`, "Signups"], ...(canSendEmail ? [[`${root}/emails`, "Emails"]] : []), [`${root}/analytics`, "Analytics"], [`${root}/settings`, "Settings"]];
-  const isCurrent = (href) => href === root ? pathname === root : (pathname === href || pathname.startsWith(`${href}/`));
+  const tabs = [
+    [root, "Builder"],
+    [`${root}/subscribers`, "Signups"],
+    ...(canSendEmail ? [[`${root}/emails`, "Emails"]] : []),
+    [`${root}/analytics`, "Analytics"],
+    [`${root}/settings`, "Settings"],
+  ];
+  const isCurrent = (href) =>
+    href === root ? pathname === root : pathname === href || pathname.startsWith(`${href}/`);
   useEffect(() => {
     const nav = navRef.current;
     if (!nav) return;
@@ -23,8 +31,31 @@ export function WaitlistNav({ id, canSendEmail }) {
     return () => observer.disconnect();
   }, [id, canSendEmail]);
 
-  return <>
-    <nav ref={navRef} aria-label="Waitlist sections" aria-describedby={hasOverflow ? "waitlist-section-scroll-hint" : undefined} data-overflow={hasOverflow || undefined} className={`product-context-nav ${styles.contextNav}`}>{tabs.map(([href, label]) => <Link prefetch={false} key={href} href={href} aria-current={isCurrent(href) ? "page" : undefined}>{label}</Link>)}</nav>
-    {hasOverflow && <span id="waitlist-section-scroll-hint" className="product-visually-hidden">Scroll horizontally to see all waitlist sections.</span>}
-  </>;
+  return (
+    <>
+      <nav
+        ref={navRef}
+        aria-label="Waitlist sections"
+        aria-describedby={hasOverflow ? "waitlist-section-scroll-hint" : undefined}
+        data-overflow={hasOverflow || undefined}
+        className={`product-context-nav ${styles.contextNav}`}
+      >
+        {tabs.map(([href, label]) => (
+          <Link
+            prefetch={false}
+            key={href}
+            href={href}
+            aria-current={isCurrent(href) ? "page" : undefined}
+          >
+            {label}
+          </Link>
+        ))}
+      </nav>
+      {hasOverflow && (
+        <span id="waitlist-section-scroll-hint" className="product-visually-hidden">
+          Scroll horizontally to see all waitlist sections.
+        </span>
+      )}
+    </>
+  );
 }

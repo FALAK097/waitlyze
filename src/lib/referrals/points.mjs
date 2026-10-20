@@ -27,7 +27,10 @@ export function referralEventKey(referralId) {
 // (a caught unique violation would abort it), and the balance bumps only
 // when the ledger row is actually new.
 export async function awardPoints(tx, { waitListId, signUpId, kind, points, eventKey }) {
-  const inserted = await tx.pointLedger.createMany({ data: [{ waitListId, signUpId, kind, points, eventKey }], skipDuplicates: true });
+  const inserted = await tx.pointLedger.createMany({
+    data: [{ waitListId, signUpId, kind, points, eventKey }],
+    skipDuplicates: true,
+  });
   if (inserted.count !== 1) return { awarded: false };
   await tx.signUp.update({ where: { id: signUpId }, data: { points: { increment: points } } });
   return { awarded: true };
@@ -39,7 +42,10 @@ export async function isFarmSuspect(tx, ipAddress, now = new Date()) {
   // delayed approval anchored at verification time) replays the exact
   // decision instead of seeing a shifted window.
   const count = await tx.signUp.count({
-    where: { ipAddress, createdAt: { gte: new Date(now.getTime() - VELOCITY_WINDOW_MS), lte: now } },
+    where: {
+      ipAddress,
+      createdAt: { gte: new Date(now.getTime() - VELOCITY_WINDOW_MS), lte: now },
+    },
   });
   return count > POINTS_VELOCITY_LIMIT;
 }

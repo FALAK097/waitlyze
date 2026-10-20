@@ -1,0 +1,35 @@
+{
+  "$schema": "./node_modules/oxfmt/configuration_schema.json",
+  "printWidth": 100,
+  "tabWidth": 2,
+  "useTabs": false,
+  "semi": true,
+  "singleQuote": false,
+  "jsxSingleQuote": false,
+  "trailingComma": "all",
+  "arrowParens": "always",
+  "endOfLine": "lf",
+  "sortPackageJson": true,
+  "sortImports": {
+    "internalPattern": ["@/"],
+    "newlinesBetween": true
+  },
+  "sortTailwindcss": {
+    "stylesheet": "./src/app/globals.css",
+    "functions": ["cn", "cva", "clsx"]
+  },
+  "ignorePatterns": [
+    ".next/**",
+    ".source/**",
+    "node_modules/**",
+    "src/generated/**",
+    "prisma/migrations/**",
+    "pnpm-lock.yaml",
+    "CHANGELOG.md",
+    "content/**",
+    "public/**",
+    "coverage/**",
+    "playwright-report/**",
+    "test-results/**"
+  ]
+}

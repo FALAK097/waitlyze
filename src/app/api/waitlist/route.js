@@ -1,19 +1,21 @@
-import { consumePublicBudget, PublicRateLimitError } from "@/lib/security/public-rate-limit.mjs";
 import { NextResponse } from "next/server";
+
+import { getCampaignPosition } from "@/lib/campaigns/referral-position.mjs";
+import { DuplicateSignupError, InvalidCampaignError } from "@/lib/campaigns/signups.mjs";
+import { dispatchVerificationNow } from "@/lib/email/dispatch-now.mjs";
+import prisma from "@/lib/prisma";
+import { consumePublicBudget, PublicRateLimitError } from "@/lib/security/public-rate-limit.mjs";
+import { createSignUp } from "@/services/sign-up";
 import { validateApiKeyAndGetWaitlist } from "@/utils/api-key-auth";
 import { getDeviceInfo } from "@/utils/server/device";
 import { getGeoInfo, getIpAddress, getTimeZone } from "@/utils/server/geo";
-import prisma from "@/lib/prisma";
-import { createSignUp } from "@/services/sign-up";
-import { DuplicateSignupError, InvalidCampaignError } from "@/lib/campaigns/signups.mjs";
-import { getCampaignPosition } from "@/lib/campaigns/referral-position.mjs";
-import { dispatchVerificationNow } from "@/lib/email/dispatch-now.mjs";
 
 export async function POST(request) {
   let body;
   try {
     body = await request.json();
-    if (!body || typeof body !== "object") return NextResponse.json({ error: "Invalid signup request" }, { status: 400 });
+    if (!body || typeof body !== "object")
+      return NextResponse.json({ error: "Invalid signup request" }, { status: 400 });
     const { apiKey, waitlistId, email, referralCode } = body;
 
     if (!apiKey || !waitlistId || typeof email !== "string" || !email.trim()) {
@@ -22,7 +24,7 @@ export async function POST(request) {
           success: false,
           error: "apiKey, waitlistId, and email are required",
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -33,12 +35,18 @@ export async function POST(request) {
           success: false,
           error: "Invalid email format",
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
-    if (typeof waitlistId !== "string" || waitlistId.length > 128 || email.length > 320) return NextResponse.json({ error: "Invalid signup request" }, { status: 400 });
-    await consumePublicBudget(prisma, { kind: "signup", campaignId: waitlistId, headers: request.headers, email });
+    if (typeof waitlistId !== "string" || waitlistId.length > 128 || email.length > 320)
+      return NextResponse.json({ error: "Invalid signup request" }, { status: 400 });
+    await consumePublicBudget(prisma, {
+      kind: "signup",
+      campaignId: waitlistId,
+      headers: request.headers,
+      email,
+    });
     const auth = await validateApiKeyAndGetWaitlist(apiKey, waitlistId);
     if (!auth.success) {
       return NextResponse.json(
@@ -46,7 +54,7 @@ export async function POST(request) {
           success: false,
           error: auth.error,
         },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -64,11 +72,7 @@ export async function POST(request) {
     };
 
     if (geo && (geo.city || geo.country || geo.timezone)) {
-      const timezone = getTimeZone(
-        geo.city,
-        geo.country,
-        geo.timezone
-      );
+      const timezone = getTimeZone(geo.city, geo.country, geo.timezone);
       signupData = {
         ...signupData,
         city: geo.city,
@@ -105,23 +109,38 @@ export async function POST(request) {
       },
     });
   } catch (error) {
-    if (error instanceof PublicRateLimitError) return NextResponse.json({ message: error.message, error: error.message }, { status: error.status, headers: { "Retry-After": error.status === 429 ? "3600" : "60" } });
+    if (error instanceof PublicRateLimitError)
+      return NextResponse.json(
+        { message: error.message, error: error.message },
+        { status: error.status, headers: { "Retry-After": error.status === 429 ? "3600" : "60" } },
+      );
     if (error instanceof DuplicateSignupError) {
       const existing = await prisma.signUp.findUnique({
-        where: { waitListId_emailNormalized: { waitListId: body.waitlistId, emailNormalized: body.email.trim().toLowerCase() } },
+        where: {
+          waitListId_emailNormalized: {
+            waitListId: body.waitlistId,
+            emailNormalized: body.email.trim().toLowerCase(),
+          },
+        },
         select: { id: true, createdAt: true },
       });
       const rank = existing
         ? await getCampaignPosition(prisma, body.waitlistId, existing.id)
         : undefined;
-      return NextResponse.json({
-        success: false,
-        error: "Email already registered for this waitlist",
-        data: { rank, signupDate: existing?.createdAt },
-      }, { status: 409 });
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Email already registered for this waitlist",
+          data: { rank, signupDate: existing?.createdAt },
+        },
+        { status: 409 },
+      );
     }
     if (error instanceof InvalidCampaignError) {
-      return NextResponse.json({ success: false, error: "This waitlist is not accepting signups" }, { status: 409 });
+      return NextResponse.json(
+        { success: false, error: "This waitlist is not accepting signups" },
+        { status: 409 },
+      );
     }
     if (error instanceof TypeError) {
       return NextResponse.json({ success: false, error: error.message }, { status: 400 });
@@ -132,12 +151,12 @@ export async function POST(request) {
         success: false,
         error: "Internal server error",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
 
-export async function OPTIONS(request) {
+export async function OPTIONS() {
   return new NextResponse(null, {
     status: 200,
     headers: {

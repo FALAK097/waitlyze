@@ -1,15 +1,11 @@
-import { HugeiconsIcon } from "@hugeicons/react";
 import { ArrowLeft01Icon, ArrowUpRight01Icon } from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
 import Link from "next/link";
+
 import LegalTOC from "./legal-toc";
 import PublicShell from "./public-shell";
 
-export default function LegalDocument({
-  title,
-  description,
-  sections,
-  children,
-}) {
+export default function LegalDocument({ title, description, sections, children }) {
   return (
     <PublicShell>
       <main id="main-content" className="wl-container wl-legal">
@@ -26,7 +22,8 @@ export default function LegalDocument({
           <aside>
             <LegalTOC sections={sections} />
             <a className="wl-text-link" href="mailto:hi@falakgala.dev">
-              Have a question? <HugeiconsIcon icon={ArrowUpRight01Icon} size={14} aria-hidden="true" />
+              Have a question?{" "}
+              <HugeiconsIcon icon={ArrowUpRight01Icon} size={14} aria-hidden="true" />
             </a>
           </aside>
           <article className="wl-legal-copy">{children}</article>
@@ -36,7 +33,8 @@ export default function LegalDocument({
             Privacy policy <HugeiconsIcon icon={ArrowUpRight01Icon} size={15} aria-hidden="true" />
           </Link>
           <Link prefetch={false} href="/terms">
-            Terms of service <HugeiconsIcon icon={ArrowUpRight01Icon} size={15} aria-hidden="true" />
+            Terms of service{" "}
+            <HugeiconsIcon icon={ArrowUpRight01Icon} size={15} aria-hidden="true" />
           </Link>
         </nav>
       </main>

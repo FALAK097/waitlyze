@@ -98,21 +98,24 @@ export async function getCampaignPositions(db, waitListId) {
   return positions;
 }
 
-export async function getEligibleReferralCounts(db, waitListId, signUpIds) {  const ids = [...new Set((signUpIds ?? []).filter((id) => typeof id === "string" && id))];
+export async function getEligibleReferralCounts(db, waitListId, signUpIds) {
+  const ids = [...new Set((signUpIds ?? []).filter((id) => typeof id === "string" && id))];
   if (!waitListId || ids.length === 0) return new Map();
 
   const groups = await db.referral.groupBy({
     by: ["referredById"],
-      where: {
-        referredById: { in: ids },
-        reviewStatus: { in: ["CLEAR", "APPROVED"] },
-        referredBy: { is: { waitListId, verifiedAt: { not: null } } },
+    where: {
+      referredById: { in: ids },
+      reviewStatus: { in: ["CLEAR", "APPROVED"] },
+      referredBy: { is: { waitListId, verifiedAt: { not: null } } },
       signUp: { is: { waitListId, verifiedAt: { not: null } } },
     },
     _count: { _all: true },
   });
 
-  return new Map(groups
-    .filter((group) => group.referredById)
-    .map((group) => [group.referredById, group._count._all]));
+  return new Map(
+    groups
+      .filter((group) => group.referredById)
+      .map((group) => [group.referredById, group._count._all]),
+  );
 }

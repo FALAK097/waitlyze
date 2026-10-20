@@ -4,8 +4,8 @@ overrides:
   mysql2: 3.24.5
 
 allowBuilds:
-  '@prisma/engines': true
-  '@tailwindcss/oxide': true
+  "@prisma/engines": true
+  "@tailwindcss/oxide": true
   core-js: true
   esbuild: true
   prisma: true

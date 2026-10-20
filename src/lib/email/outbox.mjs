@@ -1,10 +1,11 @@
 import { createHash } from "node:crypto";
-import { createUnsubscribeToken } from "./unsubscribe.mjs";
-import { dispatchAutomationStep, processAutomationTrigger } from "./automations.mjs";
-import { applyKnownProviderEvents } from "./suppression.mjs";
-import { subscriberEmailHtml } from "./composer.mjs";
+
 import { renderSubscriberVerification } from "../../emails/render.jsx";
 import { notifyBroadcastSummary } from "../emails/founder-notifications.mjs";
+import { dispatchAutomationStep, processAutomationTrigger } from "./automations.mjs";
+import { subscriberEmailHtml } from "./composer.mjs";
+import { applyKnownProviderEvents } from "./suppression.mjs";
+import { createUnsubscribeToken } from "./unsubscribe.mjs";
 
 const MAX_ATTEMPTS = 6;
 const STALE_LOCK_MS = 5 * 60 * 1000;
@@ -13,20 +14,35 @@ const RETRY_BASE_MS = 30 * 1000;
 // scheduler calls the dispatcher every 5 minutes, so the delays are multiples of that.
 const VERIFICATION_MAX_ATTEMPTS = 4;
 const VERIFICATION_RETRY_DELAYS_MS = [5, 15, 30].map((minutes) => minutes * 60 * 1000);
-const transient = (error) => error?.statusCode === 429 || error?.statusCode >= 500 || (error?.statusCode === 409 && error?.code === "concurrent_idempotent_requests") || error?.name === "TypeError";
-const normalizeEmail = (email) => String(email || "").trim().toLowerCase();
+const transient = (error) =>
+  error?.statusCode === 429 ||
+  error?.statusCode >= 500 ||
+  (error?.statusCode === 409 && error?.code === "concurrent_idempotent_requests") ||
+  error?.name === "TypeError";
+const normalizeEmail = (email) =>
+  String(email || "")
+    .trim()
+    .toLowerCase();
 
 function escapeHtml(value) {
-  return String(value).replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]);
+  return String(value).replace(
+    /[&<>"']/g,
+    (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char],
+  );
 }
 
 function broadcastHtml({ campaignName, previewText, body, unsubscribeUrl }) {
-  const paragraphs = escapeHtml(body).split(/\n{2,}/).map((text) => `<p>${text.replaceAll("\n", "<br>")}</p>`).join("");
+  const paragraphs = escapeHtml(body)
+    .split(/\n{2,}/)
+    .map((text) => `<p>${text.replaceAll("\n", "<br>")}</p>`)
+    .join("");
   return `<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>${escapeHtml(campaignName)}</title><body style="margin:0;background:#f5f5f1;color:#191919;font:16px/1.6 Arial,sans-serif"><div style="display:none;max-height:0;overflow:hidden;opacity:0">${escapeHtml(previewText)}</div><main style="max-width:600px;margin:32px auto;padding:32px;background:#fff;border:1px solid #e8e8e2;border-radius:16px"><p style="margin:0 0 24px;color:#70706a;font-size:13px">${escapeHtml(campaignName)}</p>${paragraphs}<hr style="border:0;border-top:1px solid #e8e8e2;margin:32px 0"><p style="color:#70706a;font-size:13px">You’re receiving this because you opted in to updates about this waitlist.</p><p style="font-size:13px"><a href="${escapeHtml(unsubscribeUrl)}">Unsubscribe from updates</a></p></main></body></html>`;
 }
 
 async function finishBroadcastIfReady(db, broadcastId, now) {
-  const active = await db.broadcastRecipient.count({ where: { broadcastId, status: { in: ["PENDING", "PROCESSING"] } } });
+  const active = await db.broadcastRecipient.count({
+    where: { broadcastId, status: { in: ["PENDING", "PROCESSING"] } },
+  });
   if (active) return;
   const [delivered, failed, skipped, canceled] = await Promise.all([
     db.broadcastRecipient.count({ where: { broadcastId, status: "DELIVERED" } }),
@@ -34,36 +50,79 @@ async function finishBroadcastIfReady(db, broadcastId, now) {
     db.broadcastRecipient.count({ where: { broadcastId, status: "SKIPPED" } }),
     db.broadcastRecipient.count({ where: { broadcastId, status: "CANCELED" } }),
   ]);
-  const status = canceled && !delivered && !failed && !skipped ? "CANCELED" : delivered ? "SENT" : canceled ? "CANCELED" : "FAILED";
-  const transitioned = await db.marketingBroadcast.updateMany({ where: { id: broadcastId, status: "SENDING" }, data: { status, sentAt: now } });
+  const status =
+    canceled && !delivered && !failed && !skipped
+      ? "CANCELED"
+      : delivered
+        ? "SENT"
+        : canceled
+          ? "CANCELED"
+          : "FAILED";
+  const transitioned = await db.marketingBroadcast.updateMany({
+    where: { id: broadcastId, status: "SENDING" },
+    data: { status, sentAt: now },
+  });
   // Only the caller that flips the broadcast out of SENDING reports the result,
   // so one send produces exactly one delivery summary to the workspace owners.
   if (transitioned.count === 1) {
-    try { await notifyBroadcastSummary(db, broadcastId); }
-    catch (error) { console.error("Broadcast summary notice failed", error?.message || "unknown error"); }
+    try {
+      await notifyBroadcastSummary(db, broadcastId);
+    } catch (error) {
+      console.error("Broadcast summary notice failed", error?.message || "unknown error");
+    }
   }
 }
 
 async function dispatchBroadcast(db, event, payload, send, now, attempt, result) {
   if (typeof payload?.broadcastId !== "string" || typeof payload?.recipientId !== "string") {
-    await db.outboxEvent.update({ where: { id: event.id }, data: { status: "FAILED", processedAt: now, lockedAt: null, payload: {}, lastErrorCode: "INVALID_BROADCAST_EVENT" } });
+    await db.outboxEvent.update({
+      where: { id: event.id },
+      data: {
+        status: "FAILED",
+        processedAt: now,
+        lockedAt: null,
+        payload: {},
+        lastErrorCode: "INVALID_BROADCAST_EVENT",
+      },
+    });
     result.failed++;
     return;
   }
 
   const recipient = await db.$transaction(async (tx) => {
     const claimed = await tx.broadcastRecipient.updateMany({
-      where: { id: payload.recipientId, broadcastId: payload.broadcastId, status: { in: ["PENDING", "PROCESSING"] }, broadcast: { status: "SENDING" } },
+      where: {
+        id: payload.recipientId,
+        broadcastId: payload.broadcastId,
+        status: { in: ["PENDING", "PROCESSING"] },
+        broadcast: { status: "SENDING" },
+      },
       data: { status: "PROCESSING", lastErrorCode: null },
     });
     if (claimed.count !== 1) return null;
     return tx.broadcastRecipient.findUnique({
       where: { id: payload.recipientId },
-      include: { signUp: true, broadcast: { include: { waitList: { select: { id: true, name: true, status: true, workspaceId: true } } } } },
+      include: {
+        signUp: true,
+        broadcast: {
+          include: {
+            waitList: { select: { id: true, name: true, status: true, workspaceId: true } },
+          },
+        },
+      },
     });
   });
   if (!recipient) {
-    await db.outboxEvent.update({ where: { id: event.id }, data: { status: "FAILED", processedAt: now, lockedAt: null, payload: { broadcastId: payload.broadcastId, recipientId: payload.recipientId }, lastErrorCode: "BROADCAST_CANCELED" } });
+    await db.outboxEvent.update({
+      where: { id: event.id },
+      data: {
+        status: "FAILED",
+        processedAt: now,
+        lockedAt: null,
+        payload: { broadcastId: payload.broadcastId, recipientId: payload.recipientId },
+        lastErrorCode: "BROADCAST_CANCELED",
+      },
+    });
     result.skipped++;
     return;
   }
@@ -71,12 +130,41 @@ async function dispatchBroadcast(db, event, payload, send, now, attempt, result)
   const { broadcast, signUp } = recipient;
   const waitList = broadcast.waitList;
   const emailNormalized = normalizeEmail(signUp.emailNormalized || signUp.email);
-  const suppressed = waitList.workspaceId && await db.emailSuppression.findUnique({ where: { workspaceId_emailNormalized: { workspaceId: waitList.workspaceId, emailNormalized } } });
-  if (waitList.status !== "PUBLISHED" || !signUp.verifiedAt || !signUp.marketingConsentAt || signUp.marketingUnsubscribedAt || suppressed || emailNormalized !== recipient.emailNormalized) {
-    const errorCode = suppressed ? "RECIPIENT_SUPPRESSED" : signUp.marketingUnsubscribedAt ? "RECIPIENT_UNSUBSCRIBED" : "RECIPIENT_NOT_ELIGIBLE";
+  const suppressed =
+    waitList.workspaceId &&
+    (await db.emailSuppression.findUnique({
+      where: {
+        workspaceId_emailNormalized: { workspaceId: waitList.workspaceId, emailNormalized },
+      },
+    }));
+  if (
+    waitList.status !== "PUBLISHED" ||
+    !signUp.verifiedAt ||
+    !signUp.marketingConsentAt ||
+    signUp.marketingUnsubscribedAt ||
+    suppressed ||
+    emailNormalized !== recipient.emailNormalized
+  ) {
+    const errorCode = suppressed
+      ? "RECIPIENT_SUPPRESSED"
+      : signUp.marketingUnsubscribedAt
+        ? "RECIPIENT_UNSUBSCRIBED"
+        : "RECIPIENT_NOT_ELIGIBLE";
     await db.$transaction([
-      db.broadcastRecipient.update({ where: { id: recipient.id }, data: { status: "SKIPPED", lastErrorCode: errorCode } }),
-      db.outboxEvent.update({ where: { id: event.id }, data: { status: "FAILED", processedAt: now, lockedAt: null, payload: { broadcastId: broadcast.id, recipientId: recipient.id }, lastErrorCode: errorCode } }),
+      db.broadcastRecipient.update({
+        where: { id: recipient.id },
+        data: { status: "SKIPPED", lastErrorCode: errorCode },
+      }),
+      db.outboxEvent.update({
+        where: { id: event.id },
+        data: {
+          status: "FAILED",
+          processedAt: now,
+          lockedAt: null,
+          payload: { broadcastId: broadcast.id, recipientId: recipient.id },
+          lastErrorCode: errorCode,
+        },
+      }),
     ]);
     result.skipped++;
     await finishBroadcastIfReady(db, broadcast.id, now);
@@ -89,61 +177,145 @@ async function dispatchBroadcast(db, event, payload, send, now, attempt, result)
     const response = await send({
       to: recipient.email,
       subject: broadcast.subject,
-       html: broadcast.renderedHtml
-         ? subscriberEmailHtml({ name: waitList.name || "Waitlist", content: broadcast.renderedHtml, previewText: broadcast.previewText, unsubscribeUrl })
-         : broadcastHtml({ campaignName: waitList.name || "Waitlist", previewText: broadcast.previewText, body: broadcast.body, unsubscribeUrl }),
-       text: broadcast.renderedText ? `${broadcast.renderedText.trim()}\n\nUnsubscribe: ${unsubscribeUrl}` : undefined,
-      headers: { "List-Unsubscribe": `<${unsubscribeUrl}>`, "List-Unsubscribe-Post": "List-Unsubscribe=One-Click" },
+      html: broadcast.renderedHtml
+        ? subscriberEmailHtml({
+            name: waitList.name || "Waitlist",
+            content: broadcast.renderedHtml,
+            previewText: broadcast.previewText,
+            unsubscribeUrl,
+          })
+        : broadcastHtml({
+            campaignName: waitList.name || "Waitlist",
+            previewText: broadcast.previewText,
+            body: broadcast.body,
+            unsubscribeUrl,
+          }),
+      text: broadcast.renderedText
+        ? `${broadcast.renderedText.trim()}\n\nUnsubscribe: ${unsubscribeUrl}`
+        : undefined,
+      headers: {
+        "List-Unsubscribe": `<${unsubscribeUrl}>`,
+        "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
+      },
       idempotencyKey: event.eventKey,
       workspaceId: waitList.workspaceId,
     });
     if (response?.error) throw response.error;
     const providerMessageId = response?.data?.id || response?.id;
-    if (!providerMessageId) throw Object.assign(new Error("Provider accepted no message id"), { code: "MISSING_PROVIDER_ID" });
+    if (!providerMessageId)
+      throw Object.assign(new Error("Provider accepted no message id"), {
+        code: "MISSING_PROVIDER_ID",
+      });
     await db.$transaction([
-      db.broadcastRecipient.update({ where: { id: recipient.id }, data: { status: "DELIVERED", providerMessageId, deliveredAt: now, lastErrorCode: null } }),
-      db.outboxEvent.update({ where: { id: event.id }, data: { status: "DELIVERED", providerMessageId, processedAt: now, lockedAt: null, payload: { broadcastId: broadcast.id, recipientId: recipient.id }, lastErrorCode: null } }),
+      db.broadcastRecipient.update({
+        where: { id: recipient.id },
+        data: { status: "DELIVERED", providerMessageId, deliveredAt: now, lastErrorCode: null },
+      }),
+      db.outboxEvent.update({
+        where: { id: event.id },
+        data: {
+          status: "DELIVERED",
+          providerMessageId,
+          processedAt: now,
+          lockedAt: null,
+          payload: { broadcastId: broadcast.id, recipientId: recipient.id },
+          lastErrorCode: null,
+        },
+      }),
     ]);
     result.accepted++;
-    try { await applyKnownProviderEvents(db, providerMessageId, waitList.workspaceId, recipient.email); }
-    catch (error) { console.error("Could not apply provider suppression event:", error?.message || "unknown error"); }
+    try {
+      await applyKnownProviderEvents(db, providerMessageId, waitList.workspaceId, recipient.email);
+    } catch (error) {
+      console.error(
+        "Could not apply provider suppression event:",
+        error?.message || "unknown error",
+      );
+    }
   } catch (error) {
-    const code = String(error?.code || error?.name || "PROVIDER_ERROR").replace(/[^A-Za-z0-9_.-]/g, "").slice(0, 80) || "PROVIDER_ERROR";
-    const currentBroadcast = await db.marketingBroadcast.findUnique({ where: { id: broadcast.id }, select: { status: true } });
-    const canRetry = currentBroadcast?.status === "SENDING" && transient(error) && attempt < MAX_ATTEMPTS;
-    const delay = Math.min(RETRY_BASE_MS * (2 ** Math.min(attempt - 1, 6)), 60 * 60 * 1000);
+    const code =
+      String(error?.code || error?.name || "PROVIDER_ERROR")
+        .replace(/[^A-Za-z0-9_.-]/g, "")
+        .slice(0, 80) || "PROVIDER_ERROR";
+    const currentBroadcast = await db.marketingBroadcast.findUnique({
+      where: { id: broadcast.id },
+      select: { status: true },
+    });
+    const canRetry =
+      currentBroadcast?.status === "SENDING" && transient(error) && attempt < MAX_ATTEMPTS;
+    const delay = Math.min(RETRY_BASE_MS * 2 ** Math.min(attempt - 1, 6), 60 * 60 * 1000);
     await db.$transaction([
-      db.broadcastRecipient.update({ where: { id: recipient.id }, data: { status: canRetry ? "PENDING" : currentBroadcast?.status === "CANCELED" ? "CANCELED" : "FAILED", lastErrorCode: code } }),
-      db.outboxEvent.update({ where: { id: event.id }, data: { status: canRetry ? "PENDING" : "FAILED", availableAt: canRetry ? new Date(now.getTime() + delay) : now, processedAt: canRetry ? null : now, lockedAt: null, payload: { broadcastId: broadcast.id, recipientId: recipient.id }, lastErrorCode: code } }),
+      db.broadcastRecipient.update({
+        where: { id: recipient.id },
+        data: {
+          status: canRetry
+            ? "PENDING"
+            : currentBroadcast?.status === "CANCELED"
+              ? "CANCELED"
+              : "FAILED",
+          lastErrorCode: code,
+        },
+      }),
+      db.outboxEvent.update({
+        where: { id: event.id },
+        data: {
+          status: canRetry ? "PENDING" : "FAILED",
+          availableAt: canRetry ? new Date(now.getTime() + delay) : now,
+          processedAt: canRetry ? null : now,
+          lockedAt: null,
+          payload: { broadcastId: broadcast.id, recipientId: recipient.id },
+          lastErrorCode: code,
+        },
+      }),
     ]);
-    if (canRetry) result.retried++; else result.failed++;
+    if (canRetry) result.retried++;
+    else result.failed++;
   }
   await finishBroadcastIfReady(db, broadcast.id, now);
 }
 
 function safePayload(payload) {
-  if (!payload || typeof payload !== "object" || typeof payload.signUpId !== "string" || typeof payload.token !== "string") return null;
+  if (
+    !payload ||
+    typeof payload !== "object" ||
+    typeof payload.signUpId !== "string" ||
+    typeof payload.token !== "string"
+  )
+    return null;
   return payload;
 }
 
-export async function dispatchPendingOutboxEvents(db, { send, now = new Date(), batchSize = 20, waitListId, eventKeys } = {}) {
+export async function dispatchPendingOutboxEvents(
+  db,
+  { send, now = new Date(), batchSize = 20, waitListId, eventKeys } = {},
+) {
   if (typeof send !== "function") throw new TypeError("A provider send function is required.");
   const staleBefore = new Date(now.getTime() - STALE_LOCK_MS);
   const events = await db.outboxEvent.findMany({
-    where: { ...(waitListId ? { waitListId } : {}), ...(eventKeys ? { eventKey: { in: eventKeys } } : {}), availableAt: { lte: now }, OR: [{ status: "PENDING" }, { status: "PROCESSING", lockedAt: { lt: staleBefore } }] },
-    orderBy: [{ availableAt: "asc" }, { createdAt: "asc" }], take: batchSize,
+    where: {
+      ...(waitListId ? { waitListId } : {}),
+      ...(eventKeys ? { eventKey: { in: eventKeys } } : {}),
+      availableAt: { lte: now },
+      OR: [{ status: "PENDING" }, { status: "PROCESSING", lockedAt: { lt: staleBefore } }],
+    },
+    orderBy: [{ availableAt: "asc" }, { createdAt: "asc" }],
+    take: batchSize,
   });
   const result = { accepted: 0, retried: 0, failed: 0, skipped: 0 };
   for (const event of events) {
     const claimed = await db.outboxEvent.updateMany({
-      where: { id: event.id, OR: [{ status: "PENDING" }, { status: "PROCESSING", lockedAt: { lt: staleBefore } }] },
+      where: {
+        id: event.id,
+        OR: [{ status: "PENDING" }, { status: "PROCESSING", lockedAt: { lt: staleBefore } }],
+      },
       data: { status: "PROCESSING", lockedAt: now, attempts: { increment: 1 } },
     });
     if (claimed.count !== 1) continue;
     const payload = safePayload(event.payload);
     const attempt = event.attempts + 1;
     if (event.type === "BROADCAST_EMAIL_REQUESTED") {
-      const broadcastPayload = event.payload && typeof event.payload === "object" ? event.payload : null;
+      const broadcastPayload =
+        event.payload && typeof event.payload === "object" ? event.payload : null;
       await dispatchBroadcast(db, event, broadcastPayload, send, now, attempt, result);
       continue;
     }
@@ -151,11 +323,25 @@ export async function dispatchPendingOutboxEvents(db, { send, now = new Date(), 
       try {
         await processAutomationTrigger(db, event, now);
       } catch (error) {
-        const code = String(error?.code || error?.name || "AUTOMATION_TRIGGER_ERROR").replace(/[^A-Za-z0-9_.-]/g, "").slice(0, 80) || "AUTOMATION_TRIGGER_ERROR";
+        const code =
+          String(error?.code || error?.name || "AUTOMATION_TRIGGER_ERROR")
+            .replace(/[^A-Za-z0-9_.-]/g, "")
+            .slice(0, 80) || "AUTOMATION_TRIGGER_ERROR";
         const canRetry = attempt < MAX_ATTEMPTS;
-        const delay = Math.min(RETRY_BASE_MS * (2 ** Math.min(attempt - 1, 6)), 60 * 60 * 1000);
-        await db.outboxEvent.update({ where: { id: event.id }, data: { status: canRetry ? "PENDING" : "FAILED", availableAt: canRetry ? new Date(now.getTime() + delay) : now, processedAt: canRetry ? null : now, lockedAt: null, payload: { signUpId: event.payload?.signUpId }, lastErrorCode: code } });
-        if (canRetry) result.retried++; else result.failed++;
+        const delay = Math.min(RETRY_BASE_MS * 2 ** Math.min(attempt - 1, 6), 60 * 60 * 1000);
+        await db.outboxEvent.update({
+          where: { id: event.id },
+          data: {
+            status: canRetry ? "PENDING" : "FAILED",
+            availableAt: canRetry ? new Date(now.getTime() + delay) : now,
+            processedAt: canRetry ? null : now,
+            lockedAt: null,
+            payload: { signUpId: event.payload?.signUpId },
+            lastErrorCode: code,
+          },
+        });
+        if (canRetry) result.retried++;
+        else result.failed++;
       }
       continue;
     }
@@ -164,23 +350,78 @@ export async function dispatchPendingOutboxEvents(db, { send, now = new Date(), 
       continue;
     }
     if (event.type !== "SIGNUP_VERIFICATION_REQUESTED" || !payload) {
-      await db.outboxEvent.update({ where: { id: event.id }, data: { status: "FAILED", processedAt: now, lockedAt: null, lastErrorCode: "UNSUPPORTED_EVENT" } });
+      await db.outboxEvent.update({
+        where: { id: event.id },
+        data: {
+          status: "FAILED",
+          processedAt: now,
+          lockedAt: null,
+          lastErrorCode: "UNSUPPORTED_EVENT",
+        },
+      });
       result.failed++;
       continue;
     }
     const [signup, verification, waitList] = await Promise.all([
-      db.signUp.findUnique({ where: { id: payload.signUpId }, select: { id: true, email: true, emailNormalized: true, verifiedAt: true } }),
-      db.signUpVerification.findFirst({ where: { signUpId: payload.signUpId, tokenHash: createHash("sha256").update(payload.token).digest("hex"), usedAt: null, expiresAt: { gt: now } }, select: { id: true } }),
-      db.waitList.findUnique({ where: { id: event.waitListId || payload.waitListId }, select: { id: true, name: true, publicSlug: true, status: true, workspaceId: true } }),
+      db.signUp.findUnique({
+        where: { id: payload.signUpId },
+        select: { id: true, email: true, emailNormalized: true, verifiedAt: true },
+      }),
+      db.signUpVerification.findFirst({
+        where: {
+          signUpId: payload.signUpId,
+          tokenHash: createHash("sha256").update(payload.token).digest("hex"),
+          usedAt: null,
+          expiresAt: { gt: now },
+        },
+        select: { id: true },
+      }),
+      db.waitList.findUnique({
+        where: { id: event.waitListId || payload.waitListId },
+        select: { id: true, name: true, publicSlug: true, status: true, workspaceId: true },
+      }),
     ]);
-    if (!signup || signup.verifiedAt || !verification || !waitList || waitList.status !== "PUBLISHED") {
-      await db.outboxEvent.update({ where: { id: event.id }, data: { status: "FAILED", processedAt: now, lockedAt: null, payload: { signUpId: payload.signUpId, waitListId: waitList?.id || event.waitListId }, lastErrorCode: "SIGNUP_NOT_SENDABLE" } });
+    if (
+      !signup ||
+      signup.verifiedAt ||
+      !verification ||
+      !waitList ||
+      waitList.status !== "PUBLISHED"
+    ) {
+      await db.outboxEvent.update({
+        where: { id: event.id },
+        data: {
+          status: "FAILED",
+          processedAt: now,
+          lockedAt: null,
+          payload: { signUpId: payload.signUpId, waitListId: waitList?.id || event.waitListId },
+          lastErrorCode: "SIGNUP_NOT_SENDABLE",
+        },
+      });
       result.skipped++;
       continue;
     }
-    const suppressed = waitList.workspaceId && await db.emailSuppression.findUnique({ where: { workspaceId_emailNormalized: { workspaceId: waitList.workspaceId, emailNormalized: normalizeEmail(signup.emailNormalized || signup.email) } } });
+    const suppressed =
+      waitList.workspaceId &&
+      (await db.emailSuppression.findUnique({
+        where: {
+          workspaceId_emailNormalized: {
+            workspaceId: waitList.workspaceId,
+            emailNormalized: normalizeEmail(signup.emailNormalized || signup.email),
+          },
+        },
+      }));
     if (suppressed) {
-      await db.outboxEvent.update({ where: { id: event.id }, data: { status: "FAILED", processedAt: now, lockedAt: null, payload: { signUpId: payload.signUpId, waitListId: waitList.id }, lastErrorCode: "RECIPIENT_SUPPRESSED" } });
+      await db.outboxEvent.update({
+        where: { id: event.id },
+        data: {
+          status: "FAILED",
+          processedAt: now,
+          lockedAt: null,
+          payload: { signUpId: payload.signUpId, waitListId: waitList.id },
+          lastErrorCode: "RECIPIENT_SUPPRESSED",
+        },
+      });
       result.skipped++;
       continue;
     }
@@ -188,31 +429,69 @@ export async function dispatchPendingOutboxEvents(db, { send, now = new Date(), 
       const response = await send({
         to: signup.email,
         subject: `Confirm your spot on ${waitList.name || "the waitlist"}`,
-        html: await renderSubscriberVerification({ waitlistName: waitList.name || "the waitlist", url: `${String(process.env.BETTER_AUTH_URL || "").replace(/\/$/, "")}/verify/${encodeURIComponent(payload.token)}${waitList.publicSlug ? `?returnTo=${encodeURIComponent(`/w/${waitList.publicSlug}`)}` : ""}` }),
+        html: await renderSubscriberVerification({
+          waitlistName: waitList.name || "the waitlist",
+          url: `${String(process.env.BETTER_AUTH_URL || "").replace(/\/$/, "")}/verify/${encodeURIComponent(payload.token)}${waitList.publicSlug ? `?returnTo=${encodeURIComponent(`/w/${waitList.publicSlug}`)}` : ""}`,
+        }),
         text: `Confirm your email to secure your place on ${waitList.name || "the waitlist"}. Open this link within 24 hours: ${String(process.env.BETTER_AUTH_URL || "").replace(/\/$/, "")}/verify/${encodeURIComponent(payload.token)}`,
         idempotencyKey: event.eventKey,
         workspaceId: waitList.workspaceId,
       });
       if (response?.error) throw response.error;
       const providerMessageId = response?.data?.id || response?.id;
-      if (!providerMessageId) throw Object.assign(new Error("Provider accepted no message id"), { code: "MISSING_PROVIDER_ID" });
-      await db.outboxEvent.update({ where: { id: event.id }, data: { status: "DELIVERED", providerMessageId, processedAt: now, lockedAt: null, payload: { signUpId: payload.signUpId, waitListId: waitList.id }, lastErrorCode: null } });
+      if (!providerMessageId)
+        throw Object.assign(new Error("Provider accepted no message id"), {
+          code: "MISSING_PROVIDER_ID",
+        });
+      await db.outboxEvent.update({
+        where: { id: event.id },
+        data: {
+          status: "DELIVERED",
+          providerMessageId,
+          processedAt: now,
+          lockedAt: null,
+          payload: { signUpId: payload.signUpId, waitListId: waitList.id },
+          lastErrorCode: null,
+        },
+      });
       result.accepted++;
       try {
-        await applyKnownProviderEvents(db, providerMessageId, waitList.workspaceId, signup.emailNormalized || signup.email);
+        await applyKnownProviderEvents(
+          db,
+          providerMessageId,
+          waitList.workspaceId,
+          signup.emailNormalized || signup.email,
+        );
       } catch (error) {
-        console.error("Could not apply provider suppression event:", error?.message || "unknown error");
+        console.error(
+          "Could not apply provider suppression event:",
+          error?.message || "unknown error",
+        );
       }
     } catch (error) {
-      const code = String(error?.code || error?.name || "PROVIDER_ERROR").replace(/[^A-Za-z0-9_.-]/g, "").slice(0, 80) || "PROVIDER_ERROR";
+      const code =
+        String(error?.code || error?.name || "PROVIDER_ERROR")
+          .replace(/[^A-Za-z0-9_.-]/g, "")
+          .slice(0, 80) || "PROVIDER_ERROR";
       const isVerificationEvent = event.type === "SIGNUP_VERIFICATION_REQUESTED";
       const maxAttempts = isVerificationEvent ? VERIFICATION_MAX_ATTEMPTS : MAX_ATTEMPTS;
       const canRetry = transient(error) && attempt < maxAttempts;
       const delay = isVerificationEvent
         ? VERIFICATION_RETRY_DELAYS_MS[attempt - 1]
-        : Math.min(RETRY_BASE_MS * (2 ** Math.min(attempt - 1, 6)), 60 * 60 * 1000);
-      await db.outboxEvent.update({ where: { id: event.id }, data: { status: canRetry ? "PENDING" : "FAILED", availableAt: canRetry ? new Date(now.getTime() + delay) : now, processedAt: canRetry ? null : now, lockedAt: null, payload: canRetry ? payload : { signUpId: payload.signUpId, waitListId: waitList.id }, lastErrorCode: code } });
-      if (canRetry) result.retried++; else result.failed++;
+        : Math.min(RETRY_BASE_MS * 2 ** Math.min(attempt - 1, 6), 60 * 60 * 1000);
+      await db.outboxEvent.update({
+        where: { id: event.id },
+        data: {
+          status: canRetry ? "PENDING" : "FAILED",
+          availableAt: canRetry ? new Date(now.getTime() + delay) : now,
+          processedAt: canRetry ? null : now,
+          lockedAt: null,
+          payload: canRetry ? payload : { signUpId: payload.signUpId, waitListId: waitList.id },
+          lastErrorCode: code,
+        },
+      });
+      if (canRetry) result.retried++;
+      else result.failed++;
     }
   }
   return result;

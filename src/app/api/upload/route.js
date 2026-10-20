@@ -1,11 +1,12 @@
-import { NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
-import { r2 } from "@/lib/r2";
 import { PutObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3";
-import { checkRateLimit } from "@/lib/rate-limit";
-import { env } from "@/lib/env.mjs";
 import { nanoid } from "nanoid";
+import { headers } from "next/headers";
+import { NextResponse } from "next/server";
+
+import { auth } from "@/lib/auth";
+import { env } from "@/lib/env.mjs";
+import { r2 } from "@/lib/r2";
+import { checkRateLimit } from "@/lib/rate-limit";
 import { normalizeUploadedImage } from "@/lib/uploads/image.mjs";
 
 export async function POST(req) {
@@ -24,7 +25,7 @@ export async function POST(req) {
     if (!isAllowed) {
       return NextResponse.json(
         { error: "Too many uploads. Please try again in an hour." },
-        { status: 429 }
+        { status: 429 },
       );
     }
 
@@ -37,18 +38,12 @@ export async function POST(req) {
 
     // 4. File size check (4MB)
     if (file.size > 4 * 1024 * 1024) {
-      return NextResponse.json(
-        { error: "File size exceeds the 4MB limit" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "File size exceeds the 4MB limit" }, { status: 400 });
     }
 
     // 5. Allowed MIME types (images only)
     if (!file.type.startsWith("image/")) {
-      return NextResponse.json(
-        { error: "Only image uploads are allowed" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Only image uploads are allowed" }, { status: 400 });
     }
 
     // 6. Read file data into buffer
@@ -73,12 +68,10 @@ export async function POST(req) {
     const url = `${env.NEXT_PUBLIC_R2_PUBLIC_URL}/${uniqueKey}`;
     return NextResponse.json({ url, key: uniqueKey });
   } catch (error) {
-    if (error instanceof TypeError) return NextResponse.json({ error: error.message }, { status: 400 });
+    if (error instanceof TypeError)
+      return NextResponse.json({ error: error.message }, { status: 400 });
     console.error("Upload error:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
 
@@ -102,10 +95,7 @@ export async function DELETE(req) {
 
     // 3. Security check: Only allow users to delete their own uploaded files
     if (!key.startsWith(`${userId}-`)) {
-      return NextResponse.json(
-        { error: "Unauthorized to delete this file" },
-        { status: 403 }
-      );
+      return NextResponse.json({ error: "Unauthorized to delete this file" }, { status: 403 });
     }
 
     // 4. Delete from R2
@@ -119,9 +109,6 @@ export async function DELETE(req) {
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Delete error:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

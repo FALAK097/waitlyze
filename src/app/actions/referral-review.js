@@ -1,9 +1,10 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+
+import { resolveReferralReview as resolve } from "@/lib/campaigns/referral-review.mjs";
 import prisma from "@/lib/prisma";
 import { requireCampaign } from "@/lib/workspaces/authorize";
-import { resolveReferralReview as resolve } from "@/lib/campaigns/referral-review.mjs";
 
 export async function resolveReferralReview(waitListId, referralId, status, resolution) {
   try {

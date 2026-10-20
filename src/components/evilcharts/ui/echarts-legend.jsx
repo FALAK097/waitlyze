@@ -1,4 +1,4 @@
-"use client";;
+"use client";
 import { getColorsCount, indicatorBackground } from "@/components/evilcharts/ui/echarts-chart";
 
 export function legendFillStyle(key, colorsCount) {
@@ -18,11 +18,7 @@ export function legendOutlineStyle(key, colorsCount) {
   return { ...legendFillStyle(key, colorsCount), ...mask };
 }
 
-export function LegendIndicator({
-  variant,
-  dataKey,
-  colorsCount
-}) {
+export function LegendIndicator({ variant, dataKey, colorsCount }) {
   const fill = legendFillStyle(dataKey, colorsCount);
   const outline = legendOutlineStyle(dataKey, colorsCount);
 
@@ -54,7 +50,7 @@ export function LegendOverlay({
   hoveredKey,
   isClickable,
   onToggle,
-  style
+  style,
 }) {
   const legendJustify =
     align === "left" ? "justify-start" : align === "center" ? "justify-center" : "justify-end";
@@ -75,14 +71,17 @@ export function LegendOverlay({
               key={key}
               type="button"
               aria-pressed={selectedKey === key}
-              className={`flex items-center gap-1.5 transition-opacity cursor-pointer ${!isSelected ? "opacity-30" : ""}`}
+              className={`flex cursor-pointer items-center gap-1.5 transition-opacity ${!isSelected ? "opacity-30" : ""}`}
               onClick={() => onToggle(key)}
             >
               <LegendIndicator variant={variant} dataKey={key} colorsCount={colorsCount} />
               {item?.label}
             </button>
           ) : (
-            <div key={key} className={`flex items-center gap-1.5 transition-opacity ${!isSelected ? "opacity-30" : ""}`}>
+            <div
+              key={key}
+              className={`flex items-center gap-1.5 transition-opacity ${!isSelected ? "opacity-30" : ""}`}
+            >
               <LegendIndicator variant={variant} dataKey={key} colorsCount={colorsCount} />
               {item?.label}
             </div>

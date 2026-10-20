@@ -1,4 +1,5 @@
 import { Resend } from "resend";
+
 import { env } from "@/lib/env.mjs";
 
 // Platform email: always sent from Waitlyze's own verified sender. Use this for
@@ -14,7 +15,14 @@ function getClient() {
 }
 
 /** Sends platform email with an optional reply address and file attachments. */
-export async function sendPlatformEmail({ to, subject, html, replyTo, idempotencyKey, attachments }) {
+export async function sendPlatformEmail({
+  to,
+  subject,
+  html,
+  replyTo,
+  idempotencyKey,
+  attachments,
+}) {
   const resend = getClient();
   const { error } = await resend.emails.send(
     {

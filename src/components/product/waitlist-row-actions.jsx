@@ -1,15 +1,22 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { HugeiconsIcon } from "@hugeicons/react";
 import { Delete02Icon } from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { toast } from "sonner";
+
+import { deleteWaitlist } from "@/app/actions/delete-waitlist";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogClose, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { toast } from "sonner";
-import { deleteWaitlist } from "@/app/actions/delete-waitlist";
 
 export function WaitlistRowActions({ id, name }) {
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -22,7 +29,11 @@ export function WaitlistRowActions({ id, name }) {
     setPending(true);
     try {
       const result = await deleteWaitlist(id, confirmation);
-      if (result.error) { toast.error(result.error); setPending(false); return; }
+      if (result.error) {
+        toast.error(result.error);
+        setPending(false);
+        return;
+      }
       toast.success("Waitlist deleted.");
       setConfirmOpen(false);
       setConfirmation("");
@@ -32,23 +43,62 @@ export function WaitlistRowActions({ id, name }) {
       setPending(false);
     }
   }
-  return <>
-    <Button type="button" variant="ghost-destructive" size="icon-sm" aria-label={`Delete ${displayName}`} onClick={() => { setConfirmation(""); setConfirmOpen(true); }}><HugeiconsIcon icon={Delete02Icon} aria-hidden="true" /></Button>
-  <Dialog open={confirmOpen} onOpenChange={(open) => { if (!pending) { setConfirmOpen(open); setConfirmation(""); } }}>
-      <DialogContent>
-        <DialogTitle>Delete {displayName}?</DialogTitle>
-        <DialogDescription>This permanently deletes the waitlist, subscribers and analytics. This cannot be undone.</DialogDescription>
-        <form onSubmit={remove} className="product-form">
-          <div className="product-field">
-            <Label htmlFor={`delete-confirm-${id}`}>Type &ldquo;{displayName}&rdquo; to confirm</Label>
-            <Input id={`delete-confirm-${id}`} value={confirmation} onChange={(event) => setConfirmation(event.target.value)} disabled={pending} autoComplete="off" />
-          </div>
-          <div className="product-actions">
-            <DialogClose render={<Button variant="outline" />} disabled={pending}>Cancel</DialogClose>
-            <Button type="submit" variant="destructive" disabled={pending || confirmation !== displayName}>{pending ? "Deleting…" : "Permanently delete"}</Button>
-          </div>
-        </form>
-      </DialogContent>
-    </Dialog>
-  </>;
+  return (
+    <>
+      <Button
+        type="button"
+        variant="ghost-destructive"
+        size="icon-sm"
+        aria-label={`Delete ${displayName}`}
+        onClick={() => {
+          setConfirmation("");
+          setConfirmOpen(true);
+        }}
+      >
+        <HugeiconsIcon icon={Delete02Icon} aria-hidden="true" />
+      </Button>
+      <Dialog
+        open={confirmOpen}
+        onOpenChange={(open) => {
+          if (!pending) {
+            setConfirmOpen(open);
+            setConfirmation("");
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogTitle>Delete {displayName}?</DialogTitle>
+          <DialogDescription>
+            This permanently deletes the waitlist, subscribers and analytics. This cannot be undone.
+          </DialogDescription>
+          <form onSubmit={remove} className="product-form">
+            <div className="product-field">
+              <Label htmlFor={`delete-confirm-${id}`}>
+                Type &ldquo;{displayName}&rdquo; to confirm
+              </Label>
+              <Input
+                id={`delete-confirm-${id}`}
+                value={confirmation}
+                onChange={(event) => setConfirmation(event.target.value)}
+                disabled={pending}
+                autoComplete="off"
+              />
+            </div>
+            <div className="product-actions">
+              <DialogClose render={<Button variant="outline" />} disabled={pending}>
+                Cancel
+              </DialogClose>
+              <Button
+                type="submit"
+                variant="destructive"
+                disabled={pending || confirmation !== displayName}
+              >
+                {pending ? "Deleting…" : "Permanently delete"}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
 }

@@ -1,17 +1,16 @@
 "use client";
 
-import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
-
-import { Input } from "@/components/ui/input";
-
-import { Button } from "@/components/ui/button";
-
 import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
+
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { MARKETING_CONSENT_COPY } from "@/lib/campaigns/marketing-consent.mjs";
 import { collectAttribution } from "@/utils/attribution";
+
 import styles from "@/components/product/waitlist-signup.module.css";
 
 /** Waitlist signup form: validates input, submits the signup, and shows the referral result. */
@@ -54,9 +53,8 @@ export function SignupForm({ slug, waitListId, showReferrals, label, buttonText,
 
       const rank = data.signUp?.rank;
       const code = data.signUp?.referralCode;
-      const referralLink = showReferrals && code && slug
-        ? `${window.location.origin}/w/${slug}?r=${code}`
-        : null;
+      const referralLink =
+        showReferrals && code && slug ? `${window.location.origin}/w/${slug}?r=${code}` : null;
       setResult({
         heading: "Check your inbox",
         body: thankYou?.body || "Your signup is nearly complete.",
@@ -97,15 +95,26 @@ export function SignupForm({ slug, waitListId, showReferrals, label, buttonText,
         <p className={styles.thankYou}>{result.notice}</p>
         {result.body ? <p>{result.body}</p> : null}
         {result.position != null ? (
-          <p className={styles.thankYou}>Your current position in line: <strong>#{result.position}</strong></p>
+          <p className={styles.thankYou}>
+            Your current position in line: <strong>#{result.position}</strong>
+          </p>
         ) : null}
         {result.referralLink ? (
           <div className={styles.referralShare}>
-            <p>Share your personal link — every friend who joins through it moves you up in line.</p>
+            <p>
+              Share your personal link — every friend who joins through it moves you up in line.
+            </p>
             <label htmlFor="waitlist-referral-link">Your referral link</label>
             <div style={{ display: "flex", gap: "8px" }}>
-              <input id="waitlist-referral-link" value={result.referralLink} readOnly onFocus={(event) => event.target.select()} />
-              <button type="button" onClick={copyReferralLink}>{copied ? "Copied" : "Copy"}</button>
+              <input
+                id="waitlist-referral-link"
+                value={result.referralLink}
+                readOnly
+                onFocus={(event) => event.target.select()}
+              />
+              <button type="button" onClick={copyReferralLink}>
+                {copied ? "Copied" : "Copy"}
+              </button>
             </div>
           </div>
         ) : null}
@@ -115,10 +124,22 @@ export function SignupForm({ slug, waitListId, showReferrals, label, buttonText,
 
   return (
     <form className={styles.form} onSubmit={submit}>
-      <Label className={styles.label} htmlFor="waitlist-email">{label}</Label>
+      <Label className={styles.label} htmlFor="waitlist-email">
+        {label}
+      </Label>
       <div className={styles.row}>
-        <Input className={styles.email} id="waitlist-email" name="email" type="email" autoComplete="email" required maxLength={320} />
-        <Button className={styles.button} type="submit" disabled={busy}>{busy ? "Joining…" : buttonText}</Button>
+        <Input
+          className={styles.email}
+          id="waitlist-email"
+          name="email"
+          type="email"
+          autoComplete="email"
+          required
+          maxLength={320}
+        />
+        <Button className={styles.button} type="submit" disabled={busy}>
+          {busy ? "Joining…" : buttonText}
+        </Button>
       </div>
       <Label className={styles.consent}>
         <Checkbox className={styles.checkbox} name="marketingConsent" value="on" />

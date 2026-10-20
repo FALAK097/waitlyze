@@ -1,9 +1,10 @@
 "use client";
-import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { signOut } from "@/lib/auth-client";
-import { Button } from "@/components/ui/button";
+import { useState } from "react";
 import { toast } from "sonner";
+
+import { Button } from "@/components/ui/button";
+import { signOut } from "@/lib/auth-client";
 
 export function SignOutButton() {
   const [pending, setPending] = useState(false);
@@ -13,8 +14,18 @@ export function SignOutButton() {
     try {
       const result = await signOut();
       if (result.error) throw new Error("Sign out failed");
-      router.replace("/"); router.refresh();
-    } catch { toast.error("Could not sign out. Try again."); setPending(false); }
+      router.replace("/");
+      router.refresh();
+    } catch {
+      toast.error("Could not sign out. Try again.");
+      setPending(false);
+    }
   }
-  return <div><Button variant="ghost" onClick={leave} disabled={pending}>{pending ? "Signing out…" : "Sign out"}</Button></div>;
+  return (
+    <div>
+      <Button variant="ghost" onClick={leave} disabled={pending}>
+        {pending ? "Signing out…" : "Sign out"}
+      </Button>
+    </div>
+  );
 }

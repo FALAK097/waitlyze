@@ -1,0 +1,103 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": [
+    "eslint",
+    "react",
+    "nextjs",
+    "jsx-a11y",
+    "import",
+    "unicorn",
+    "oxc",
+    "promise",
+    "node"
+  ],
+  "jsPlugins": ["@shadcn/lint"],
+  "env": {
+    "browser": true,
+    "node": true,
+    "es2024": true
+  },
+  "categories": {
+    "correctness": "error",
+    "suspicious": "warn",
+    "perf": "warn"
+  },
+  "settings": {
+    "next": { "rootDir": "." },
+    "react": { "version": "19" },
+    "shadcn": {
+      "ui": "@/components/product",
+      "componentImports": ["^\\./(button|input|dialog)$"]
+    }
+  },
+  "rules": {
+    "no-debugger": "error",
+    "no-dupe-keys": "error",
+    "no-duplicate-case": "error",
+    "no-invalid-regexp": "error",
+    "no-unreachable": "error",
+    "no-unsafe-finally": "error",
+    "no-undef": "error",
+    "eqeqeq": ["error", "smart"],
+    "no-var": "error",
+    "prefer-const": "warn",
+    "react/rules-of-hooks": "error",
+    "react/exhaustive-deps": "warn",
+    "react/jsx-key": "error",
+    "react/react-in-jsx-scope": "off",
+    "import/no-cycle": "warn",
+    "import/no-duplicates": "error",
+    "import/no-self-import": "error",
+    "no-unused-vars": [
+      "error",
+      {
+        "argsIgnorePattern": "^_",
+        "varsIgnorePattern": "^_",
+        "caughtErrors": "none",
+        "ignoreRestSiblings": true
+      }
+    ],
+
+    "react/set-state-in-effect": "warn",
+    "react/refs": "warn",
+    "react/purity": "warn",
+    "react/immutability": "warn",
+    "react/incompatible-library": "warn",
+    "nextjs/no-img-element": "warn",
+    "jsx-a11y/prefer-tag-over-role": "warn",
+    "jsx-a11y/label-has-associated-control": "warn",
+    "jsx-a11y/no-static-element-interactions": "warn",
+    "jsx-a11y/click-events-have-key-events": "warn",
+    "jsx-a11y/interactive-supports-focus": "warn",
+    "jsx-a11y/no-noninteractive-tabindex": "warn",
+    "jsx-a11y/no-autofocus": "warn",
+
+    "no-await-in-loop": "off",
+    "no-underscore-dangle": "off",
+    "import/no-unassigned-import": "off",
+    "import/no-named-as-default-member": "off",
+    "unicorn/consistent-function-scoping": "off",
+    "unicorn/no-array-sort": "off",
+    "unicorn/no-array-reverse": "off",
+    "oxc/no-map-spread": "off"
+  },
+  "overrides": [
+    {
+      "files": ["src/components/product/**/*.{js,jsx}"],
+      "rules": {
+        "shadcn/no-arbitrary-values": "error",
+        "shadcn/no-inline-styles": "error",
+        "shadcn/no-restyle": ["error", { "allow": ["layout"] }]
+      }
+    }
+  ],
+  "ignorePatterns": [
+    ".next/**",
+    ".source/**",
+    "node_modules/**",
+    "src/generated/**",
+    "coverage/**",
+    "playwright-report/**",
+    "test-results/**"
+  ]
+}

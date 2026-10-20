@@ -76,7 +76,7 @@ export const getTimeZone = (city, countryCode, fallbackTimezone) => {
     if (city) {
       const timezones = ct.getAllTimezones();
       const matchingTimezone = Object.values(timezones).find((tz) =>
-        tz.name.toLowerCase().includes(city.toLowerCase())
+        tz.name.toLowerCase().includes(city.toLowerCase()),
       );
       if (matchingTimezone) {
         return matchingTimezone.name;
@@ -84,9 +84,7 @@ export const getTimeZone = (city, countryCode, fallbackTimezone) => {
     }
 
     if (countryCode) {
-      const countryTimezones = ct.getTimezonesForCountry(
-        countryCode.toUpperCase()
-      );
+      const countryTimezones = ct.getTimezonesForCountry(countryCode.toUpperCase());
       if (countryTimezones && countryTimezones.length > 0) {
         return countryTimezones[0].name;
       }

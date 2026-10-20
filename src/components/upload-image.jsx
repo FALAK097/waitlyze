@@ -1,14 +1,14 @@
 "use client";
 
-import { HugeiconsIcon } from "@hugeicons/react";
 import { Cancel01Icon, CloudUploadIcon, Image01Icon } from "@hugeicons/core-free-icons";
-import { Button } from "@/components/ui/button";
-
-import { cn } from "@/lib/utils";
-import { useR2Upload } from "@/utils/r2-upload";
+import { HugeiconsIcon } from "@hugeicons/react";
 import Image from "next/image";
 import { useState, useRef } from "react";
 import { toast } from "sonner";
+
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import { useR2Upload } from "@/utils/r2-upload";
 
 export default function UploadImage({ value, onSuccess, onClear, disabled }) {
   const [isDragging, setIsDragging] = useState(false);
@@ -74,8 +74,8 @@ export default function UploadImage({ value, onSuccess, onClear, disabled }) {
 
   if (preview) {
     return (
-      <div className="relative group">
-        <div className="relative w-full h-40 overflow-hidden transition-all duration-300 border-2 border-dashed rounded-xl border-muted-foreground/20 bg-muted/10 hover:border-muted-foreground/40">
+      <div className="group relative">
+        <div className="relative h-40 w-full overflow-hidden rounded-xl border-2 border-dashed border-muted-foreground/20 bg-muted/10 transition-all duration-300 hover:border-muted-foreground/40">
           <Image
             src={preview}
             alt="Uploaded preview"
@@ -87,10 +87,11 @@ export default function UploadImage({ value, onSuccess, onClear, disabled }) {
             <Button
               type="button"
               onClick={handleClear}
-              className="absolute right-3 top-3 rounded-full bg-destructive/90 p-1.5 text-white shadow-md transition-all duration-200 hover:bg-destructive hover:scale-110 group-hover:opacity-100 lg:opacity-0"
+              className="absolute top-3 right-3 rounded-full bg-destructive/90 p-1.5 text-white shadow-md transition-all duration-200 group-hover:opacity-100 hover:scale-110 hover:bg-destructive lg:opacity-0"
               disabled={disabled}
-             variant="ghost">
-              <HugeiconsIcon icon={Cancel01Icon} className="w-4 h-4" />
+              variant="ghost"
+            >
+              <HugeiconsIcon icon={Cancel01Icon} className="h-4 w-4" />
               <span className="sr-only">Remove image</span>
             </Button>
           )}
@@ -107,9 +108,10 @@ export default function UploadImage({ value, onSuccess, onClear, disabled }) {
         onDrop={handleDrop}
         onClick={() => !disabled && !isUploading && fileInputRef.current?.click()}
         className={cn(
-          "flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-muted-foreground/20 bg-muted/10 px-6 py-8 text-center transition-all duration-300 cursor-pointer hover:border-primary/50 hover:bg-muted/20",
-          isDragging && "border-primary bg-primary/5 scale-[1.01] shadow-sm",
-          (disabled || isUploading) && "opacity-60 cursor-not-allowed hover:border-muted-foreground/20 hover:bg-muted/10"
+          "flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-muted-foreground/20 bg-muted/10 px-6 py-8 text-center transition-all duration-300 hover:border-primary/50 hover:bg-muted/20",
+          isDragging && "scale-[1.01] border-primary bg-primary/5 shadow-sm",
+          (disabled || isUploading) &&
+            "cursor-not-allowed opacity-60 hover:border-muted-foreground/20 hover:bg-muted/10",
         )}
       >
         <input
@@ -121,18 +123,18 @@ export default function UploadImage({ value, onSuccess, onClear, disabled }) {
           disabled={disabled || isUploading}
         />
         {isUploading ? (
-          <div className="flex flex-col items-center gap-4 w-full max-w-[260px]">
+          <div className="flex w-full max-w-[260px] flex-col items-center gap-4">
             <div className="relative flex items-center justify-center">
-              <HugeiconsIcon icon={Image01Icon} className="w-10 h-10 text-primary animate-pulse" />
+              <HugeiconsIcon icon={Image01Icon} className="h-10 w-10 animate-pulse text-primary" />
             </div>
             <div className="w-full space-y-2">
               <div className="flex items-center justify-between text-xs font-semibold text-muted-foreground">
                 <span>Uploading logo...</span>
                 <span>{progress}%</span>
               </div>
-              <div className="w-full h-2 overflow-hidden rounded-full bg-secondary">
+              <div className="h-2 w-full overflow-hidden rounded-full bg-secondary">
                 <div
-                  className="h-full transition-all duration-300 ease-out rounded-full bg-primary"
+                  className="h-full rounded-full bg-primary transition-all duration-300 ease-out"
                   style={{ width: `${progress}%` }}
                 />
               </div>
@@ -140,13 +142,13 @@ export default function UploadImage({ value, onSuccess, onClear, disabled }) {
           </div>
         ) : (
           <div className="flex flex-col items-center gap-3">
-            <div className="p-3 transition-transform duration-300 border rounded-full shadow-sm bg-background border-muted-foreground/10 hover:scale-110">
-              <HugeiconsIcon icon={CloudUploadIcon} className="w-6 h-6 text-primary" />
+            <div className="rounded-full border border-muted-foreground/10 bg-background p-3 shadow-sm transition-transform duration-300 hover:scale-110">
+              <HugeiconsIcon icon={CloudUploadIcon} className="h-6 w-6 text-primary" />
             </div>
             <div className="grid gap-1">
               <span className="text-sm font-semibold text-foreground">
                 Drag & Drop your logo or{" "}
-                <span className="underline text-primary hover:text-primary/90 decoration-2 underline-offset-2">
+                <span className="text-primary underline decoration-2 underline-offset-2 hover:text-primary/90">
                   Browse Files
                 </span>
               </span>

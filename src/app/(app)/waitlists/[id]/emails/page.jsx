@@ -1,8 +1,8 @@
-import { requireCampaignPage } from "@/lib/workspaces/authorize";
+import { getOrCreateTemplates } from "@/app/actions/emails";
 import { ContentLayout } from "@/components/dashboard/content-layout";
 import { EmailTemplatesManager } from "@/components/email/email-templates-manager";
-import { getOrCreateTemplates } from "@/app/actions/emails";
 import { EmailToolsNav } from "@/components/email/email-tools-nav";
+import { requireCampaignPage } from "@/lib/workspaces/authorize";
 
 export const metadata = {
   title: "Emails",

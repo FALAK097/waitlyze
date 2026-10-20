@@ -1,10 +1,17 @@
 "use client";
 
 import { useActionState, useEffect, useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Dialog, DialogClose, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
+
 import { leaveWorkspace } from "@/app/actions/settings";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 export function LeaveWorkspace({ workspaceId, workspaceName }) {
   const [open, setOpen] = useState(false);
@@ -12,21 +19,41 @@ export function LeaveWorkspace({ workspaceId, workspaceName }) {
   useEffect(() => {
     if (state?.error) toast.error(state.error);
   }, [state]);
-  return <div className="product-danger-inline">
-    <div><p><strong>Leave this workspace?</strong></p><p>You’ll lose access to {workspaceName} and its waitlists until you’re invited again.</p></div>
-    <Button type="button" variant="outline-destructive" onClick={() => setOpen(true)}>Leave workspace</Button>
-    <Dialog open={open} onOpenChange={(next) => { if (!pending) setOpen(next); }}>
-      <DialogContent>
-        <DialogTitle>Leave {workspaceName}?</DialogTitle>
-        <DialogDescription>You’ll lose access to this workspace immediately. An owner or admin can invite you back.</DialogDescription>
-        <form action={action} className="product-form">
-          <input type="hidden" name="workspaceId" value={workspaceId} />
-          <div className="product-actions">
-            <DialogClose render={<Button variant="outline" />} disabled={pending}>Cancel</DialogClose>
-            <Button type="submit" variant="destructive" disabled={pending}>{pending ? "Leaving…" : "Leave workspace"}</Button>
-          </div>
-        </form>
-      </DialogContent>
-    </Dialog>
-  </div>;
+  return (
+    <div className="product-danger-inline">
+      <div>
+        <p>
+          <strong>Leave this workspace?</strong>
+        </p>
+        <p>You’ll lose access to {workspaceName} and its waitlists until you’re invited again.</p>
+      </div>
+      <Button type="button" variant="outline-destructive" onClick={() => setOpen(true)}>
+        Leave workspace
+      </Button>
+      <Dialog
+        open={open}
+        onOpenChange={(next) => {
+          if (!pending) setOpen(next);
+        }}
+      >
+        <DialogContent>
+          <DialogTitle>Leave {workspaceName}?</DialogTitle>
+          <DialogDescription>
+            You’ll lose access to this workspace immediately. An owner or admin can invite you back.
+          </DialogDescription>
+          <form action={action} className="product-form">
+            <input type="hidden" name="workspaceId" value={workspaceId} />
+            <div className="product-actions">
+              <DialogClose render={<Button variant="outline" />} disabled={pending}>
+                Cancel
+              </DialogClose>
+              <Button type="submit" variant="destructive" disabled={pending}>
+                {pending ? "Leaving…" : "Leave workspace"}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
 }

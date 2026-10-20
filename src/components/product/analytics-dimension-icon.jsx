@@ -49,7 +49,9 @@ const SVGL_ICONS = {
 };
 
 function flag(code) {
-  const clean = String(code || "").trim().toUpperCase();
+  const clean = String(code || "")
+    .trim()
+    .toUpperCase();
   if (!/^[A-Z]{2}$/.test(clean)) return "";
   return String.fromCodePoint(...[...clean].map((letter) => 0x1f1e6 + letter.charCodeAt(0) - 65));
 }
@@ -64,9 +66,18 @@ function hostMatches(value, domain) {
 }
 
 function svglKeyFor(label) {
-  const value = String(label || "").toLowerCase().trim();
+  const value = String(label || "")
+    .toLowerCase()
+    .trim();
   if (!value || value === "direct" || value === "none" || value === "direct/none") return null;
-  if (hostMatches(value, "x.com") || hostMatches(value, "t.co") || hostMatches(value, "twitter.com") || value === "twitter" || value === "x") return "x";
+  if (
+    hostMatches(value, "x.com") ||
+    hostMatches(value, "t.co") ||
+    hostMatches(value, "twitter.com") ||
+    value === "twitter" ||
+    value === "x"
+  )
+    return "x";
   if (value.includes("linkedin")) return "linkedin";
   if (value.includes("youtube")) return "youtube";
   if (value.includes("reddit")) return "reddit";
@@ -89,10 +100,17 @@ function svglKeyFor(label) {
   if (value === "brave" || hostMatches(value, "brave.com")) return "brave";
   if (value === "safari") return "safari";
   if (value === "vivaldi") return "vivaldi";
-  if (value === "arc" || value.includes("arc browser") || value.includes("arc-browser")) return "arc";
-  if (value === "tor" || value.includes("tor browser") || value.includes("tor-browser")) return "tor";
+  if (value === "arc" || value.includes("arc browser") || value.includes("arc-browser"))
+    return "arc";
+  if (value === "tor" || value.includes("tor browser") || value.includes("tor-browser"))
+    return "tor";
   if (value.includes("windows")) return "windows";
-  if (["macos", "mac os", "ios", "ipados", "apple"].includes(value) || value.includes("iphone") || value.includes("ipad")) return "apple";
+  if (
+    ["macos", "mac os", "ios", "ipados", "apple"].includes(value) ||
+    value.includes("iphone") ||
+    value.includes("ipad")
+  )
+    return "apple";
   if (value.includes("android")) return "android";
   if (value.includes("linux") || value.includes("ubuntu")) return "linux";
   if (value === "google" || value.includes("google")) return "google";
@@ -104,7 +122,8 @@ function hugeiconFor(label) {
   if (value.includes("search") || value.includes("organic search")) return Search01Icon;
   if (value === "email" || value.includes("newsletter")) return Mail01Icon;
   if (value.includes("@")) return Mail01Icon;
-  if (value.includes("referral") || value.includes("referred") || value.includes("direct")) return Link01Icon;
+  if (value.includes("referral") || value.includes("referred") || value.includes("direct"))
+    return Link01Icon;
   if (value.startsWith("organic")) return Globe02Icon;
   if (value === "desktop") return ComputerIcon;
   if (value === "mobile") return SmartPhone01Icon;
@@ -115,17 +134,36 @@ function hugeiconFor(label) {
 export function AnalyticsDimensionIcon({ label, kind, code }) {
   if (kind === "country") {
     const countryFlag = flag(code || label);
-    return <span className="analytics-dimension-flag" aria-hidden="true">{countryFlag || "·"}</span>;
+    return (
+      <span className="analytics-dimension-flag" aria-hidden="true">
+        {countryFlag || "·"}
+      </span>
+    );
   }
   if (kind === "region" || kind === "city") {
     const countryFlag = flag(countryFromLabel(label));
-    if (countryFlag) return <span className="analytics-dimension-flag" aria-hidden="true">{countryFlag}</span>;
+    if (countryFlag)
+      return (
+        <span className="analytics-dimension-flag" aria-hidden="true">
+          {countryFlag}
+        </span>
+      );
   }
   const key = svglKeyFor(label);
   if (key && SVGL_ICONS[key]) {
-    return <span className="analytics-dimension-icon analytics-dimension-icon--brand" data-brand={key} aria-hidden="true">
-      <img src={SVGL_ICONS[key]} alt="" width={16} height={16} loading="lazy" />
-    </span>;
+    return (
+      <span
+        className="analytics-dimension-icon analytics-dimension-icon--brand"
+        data-brand={key}
+        aria-hidden="true"
+      >
+        <img src={SVGL_ICONS[key]} alt="" width={16} height={16} loading="lazy" />
+      </span>
+    );
   }
-  return <span className="analytics-dimension-icon" aria-hidden="true"><HugeiconsIcon icon={hugeiconFor(label) || Globe02Icon} /></span>;
+  return (
+    <span className="analytics-dimension-icon" aria-hidden="true">
+      <HugeiconsIcon icon={hugeiconFor(label) || Globe02Icon} />
+    </span>
+  );
 }

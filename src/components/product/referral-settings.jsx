@@ -1,11 +1,11 @@
 "use client";
 
-import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
-
-import { setWaitlistReferrals } from "@/app/actions/settings";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
+
+import { setWaitlistReferrals } from "@/app/actions/settings";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 
 export function ReferralSettings({ waitListId, initialEnabled }) {
   const [enabled, setEnabled] = useState(initialEnabled);
@@ -28,8 +28,13 @@ export function ReferralSettings({ waitListId, initialEnabled }) {
 
   return (
     <div className="product-referral-setting">
-      <Label className="flex items-start min-h-11 cursor-pointer" htmlFor="waitlist-referrals">
-        <Checkbox id="waitlist-referrals" checked={enabled} onCheckedChange={changeEnabled} disabled={pending} />
+      <Label className="flex min-h-11 cursor-pointer items-start" htmlFor="waitlist-referrals">
+        <Checkbox
+          id="waitlist-referrals"
+          checked={enabled}
+          onCheckedChange={changeEnabled}
+          disabled={pending}
+        />
         <span>
           <strong>Enable referral sharing</strong>
           <span>Referral credit counts once both email addresses are verified.</span>

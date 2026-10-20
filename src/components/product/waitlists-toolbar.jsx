@@ -1,12 +1,18 @@
 "use client";
 
+import {
+  ArrowDown01Icon,
+  ArrowUp01Icon,
+  ArrowUpDownIcon,
+  Cancel01Icon,
+} from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { ArrowDown01Icon, ArrowUp01Icon, ArrowUpDownIcon, Cancel01Icon } from "@hugeicons/core-free-icons";
-import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { TableHead } from "@/components/ui/table";
+import { useEffect, useRef, useState, useTransition } from "react";
+
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { TableHead } from "@/components/ui/table";
 import {
   WAITLIST_SEARCH_LIMIT,
   WAITLIST_STATUS_FILTERS,
@@ -28,8 +34,15 @@ export function WaitlistSearch({ query, status, sort }) {
   const [replace, isPending] = useReplaceParams();
   const [value, setValue] = useState(query);
   const timer = useRef(null);
-  useEffect(() => { setValue(query); }, [query]);
-  useEffect(() => () => { if (timer.current) clearTimeout(timer.current); }, []);
+  useEffect(() => {
+    setValue(query);
+  }, [query]);
+  useEffect(
+    () => () => {
+      if (timer.current) clearTimeout(timer.current);
+    },
+    [],
+  );
   function schedule(next) {
     setValue(next);
     if (timer.current) clearTimeout(timer.current);
@@ -44,7 +57,9 @@ export function WaitlistSearch({ query, status, sort }) {
   }
   return (
     <div className="product-waitlist-search" role="search" aria-busy={isPending}>
-      <Label className="sr-only" htmlFor="waitlist-search">Search waitlists by name</Label>
+      <Label className="sr-only" htmlFor="waitlist-search">
+        Search waitlists by name
+      </Label>
       <Input
         id="waitlist-search"
         type="search"
@@ -55,7 +70,12 @@ export function WaitlistSearch({ query, status, sort }) {
         autoComplete="off"
       />
       {value && (
-        <button type="button" className="product-waitlist-search-clear" onClick={clear} aria-label="Clear search">
+        <button
+          type="button"
+          className="product-waitlist-search-clear"
+          onClick={clear}
+          aria-label="Clear search"
+        >
           <HugeiconsIcon icon={Cancel01Icon} aria-hidden="true" />
         </button>
       )}
@@ -66,7 +86,12 @@ export function WaitlistSearch({ query, status, sort }) {
 export function StatusTabs({ query, status, sort }) {
   const [replace, isPending] = useReplaceParams();
   return (
-    <div className="product-waitlist-filters" role="group" aria-label="Filter waitlists by status" aria-busy={isPending}>
+    <div
+      className="product-waitlist-filters"
+      role="group"
+      aria-label="Filter waitlists by status"
+      aria-busy={isPending}
+    >
       {WAITLIST_STATUS_FILTERS.map((filter) => (
         <button
           key={filter.value || "all"}
@@ -99,8 +124,19 @@ export function SortableHeading({ column, label, query, status, sort }) {
         aria-label={`Sort by ${accessibleColumn}${active ? `, currently ${sortLabel}` : ""}`}
       >
         <span>{label}</span>
-        <span className={`product-table-sort-indicator${active ? " is-active" : ""}`} aria-hidden="true">
-          {active ? (direction === "asc" ? <HugeiconsIcon icon={ArrowUp01Icon} /> : <HugeiconsIcon icon={ArrowDown01Icon} />) : <HugeiconsIcon icon={ArrowUpDownIcon} />}
+        <span
+          className={`product-table-sort-indicator${active ? " is-active" : ""}`}
+          aria-hidden="true"
+        >
+          {active ? (
+            direction === "asc" ? (
+              <HugeiconsIcon icon={ArrowUp01Icon} />
+            ) : (
+              <HugeiconsIcon icon={ArrowDown01Icon} />
+            )
+          ) : (
+            <HugeiconsIcon icon={ArrowUpDownIcon} />
+          )}
         </span>
       </button>
     </TableHead>

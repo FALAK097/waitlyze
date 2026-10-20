@@ -1,14 +1,15 @@
-import { consumePublicBudget, PublicRateLimitError } from "@/lib/security/public-rate-limit.mjs";
+import { NextResponse } from "next/server";
+
+import { getCampaignPosition } from "@/lib/campaigns/referral-position.mjs";
+import { DuplicateSignupError, InvalidCampaignError } from "@/lib/campaigns/signups.mjs";
+import { dispatchVerificationNow } from "@/lib/email/dispatch-now.mjs";
 import prisma from "@/lib/prisma";
+import { consumePublicBudget, PublicRateLimitError } from "@/lib/security/public-rate-limit.mjs";
 import { createSignUp } from "@/services/sign-up";
+import { pickAttribution } from "@/utils/server/attribution.mjs";
 import { getDeviceInfo } from "@/utils/server/device";
 import { getGeoInfo, getIpAddress, getTimeZone } from "@/utils/server/geo";
 import { validateRequest } from "@/utils/server/validations/sign-up";
-import { pickAttribution } from "@/utils/server/attribution.mjs";
-import { DuplicateSignupError, InvalidCampaignError } from "@/lib/campaigns/signups.mjs";
-import { getCampaignPosition } from "@/lib/campaigns/referral-position.mjs";
-import { NextResponse } from "next/server";
-import { dispatchVerificationNow } from "@/lib/email/dispatch-now.mjs";
 
 const legacySignupResponse = (signUp, { includeReferralCode = false } = {}) => {
   // This endpoint is public. Keep the legacy fields needed by its browser
@@ -27,10 +28,7 @@ const legacySignupResponse = (signUp, { includeReferralCode = false } = {}) => {
 export const GET = async (req) => {
   const signUpId = req.nextUrl.searchParams.get("signUpId");
   if (!signUpId) {
-    return NextResponse.json(
-      { message: "Sign up ID is required" },
-      { status: 400 }
-    );
+    return NextResponse.json({ message: "Sign up ID is required" }, { status: 400 });
   }
 
   const signUp = await prisma.signUp.findUnique({
@@ -43,14 +41,32 @@ export const GET = async (req) => {
   }
 
   const rank = await getCampaignPosition(prisma, signUp.waitListId, signUp.id);
-  return NextResponse.json({ signUp: { ...signUp, rank } }, { headers: { "Cache-Control": "private, no-store" } });
+  return NextResponse.json(
+    { signUp: { ...signUp, rank } },
+    { headers: { "Cache-Control": "private, no-store" } },
+  );
 };
 
 export const POST = async (req) => {
   try {
     const body = await req.json();
-    if (typeof body?.waitListId !== "string" || !body.waitListId || body.waitListId.length > 128 || typeof body.email !== "string" || body.email.length > 320) return NextResponse.json({ message: "A valid waitlist and email are required." }, { status: 400 });
-    await consumePublicBudget(prisma, { kind: "signup", campaignId: body.waitListId, headers: req.headers, email: body.email });
+    if (
+      typeof body?.waitListId !== "string" ||
+      !body.waitListId ||
+      body.waitListId.length > 128 ||
+      typeof body.email !== "string" ||
+      body.email.length > 320
+    )
+      return NextResponse.json(
+        { message: "A valid waitlist and email are required." },
+        { status: 400 },
+      );
+    await consumePublicBudget(prisma, {
+      kind: "signup",
+      campaignId: body.waitListId,
+      headers: req.headers,
+      email: body.email,
+    });
     const validator = await validateRequest(body);
     if (validator) return validator;
     if (body.marketingConsent !== undefined && typeof body.marketingConsent !== "boolean") {
@@ -64,10 +80,7 @@ export const POST = async (req) => {
     const hypeSession = body.hypeSession;
 
     if (!hypeSession) {
-      return NextResponse.json(
-        { message: "Unique User ID is required" },
-        { status: 400 }
-      );
+      return NextResponse.json({ message: "Unique User ID is required" }, { status: 400 });
     }
 
     const impression = await prisma.impression.findFirst({
@@ -90,11 +103,7 @@ export const POST = async (req) => {
     };
 
     if (geo && (geo.city || geo.country || geo.timezone)) {
-      const timezone = getTimeZone(
-        geo.city,
-        geo.country,
-        geo.timezone
-      );
+      const timezone = getTimeZone(geo.city, geo.country, geo.timezone);
       data = {
         ...data,
         city: geo.city,
@@ -107,9 +116,16 @@ export const POST = async (req) => {
 
     const signUp = await createSignUp(data, body?.referralId);
     await dispatchVerificationNow(signUp.verificationEventKey);
-    return NextResponse.json({ message: "Signed up successfully", signUp: legacySignupResponse(signUp, { includeReferralCode: true }) });
+    return NextResponse.json({
+      message: "Signed up successfully",
+      signUp: legacySignupResponse(signUp, { includeReferralCode: true }),
+    });
   } catch (error) {
-    if (error instanceof PublicRateLimitError) return NextResponse.json({ message: error.message, error: error.message }, { status: error.status, headers: { "Retry-After": error.status === 429 ? "3600" : "60" } });
+    if (error instanceof PublicRateLimitError)
+      return NextResponse.json(
+        { message: error.message, error: error.message },
+        { status: error.status, headers: { "Retry-After": error.status === 429 ? "3600" : "60" } },
+      );
     if (error instanceof DuplicateSignupError) {
       return NextResponse.json({ message: error.message }, { status: 403 });
     }

@@ -31,14 +31,7 @@ export function tooltipIndicatorHtml(key, colorsCount) {
 // One tooltip row: indicator swatch + label/value pair. `dimmed` is a class
 // fragment (e.g. " opacity-30") appended to the row so the selection/hover dim
 // stays byte-identical to the inlined markup.
-export function tooltipRow(
-  {
-    indicatorHtml,
-    labelText,
-    valueText,
-    dimmed
-  }
-) {
+export function tooltipRow({ indicatorHtml, labelText, valueText, dimmed }) {
   return `<div class="flex w-full flex-wrap items-center gap-2${dimmed}">
           ${indicatorHtml}
           <div class="flex flex-1 items-center justify-between gap-4 leading-none">
@@ -50,14 +43,7 @@ export function tooltipRow(
 
 // The outer tooltip surface — border, padding, shadow, roundness + variant
 // classes — wrapping the axis label and the composed rows.
-export function tooltipShell(
-  {
-    label,
-    body,
-    roundness,
-    variant
-  }
-) {
+export function tooltipShell({ label, body, roundness, variant }) {
   return `<div class="grid min-w-32 items-start gap-1.5 border border-border/50 px-2.5 py-1.5 text-xs shadow-xl ${roundnessClass[roundness]} ${tooltipVariantClass[variant]}">
       <div class="font-medium text-foreground">${escapeHtml(label)}</div>
       <div class="grid gap-1.5">${body}</div>
