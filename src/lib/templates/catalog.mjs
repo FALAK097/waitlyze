@@ -1,184 +1,604 @@
 import { z } from "zod";
 
-const text = (max) =>
-  z
-    .string()
-    .min(1)
-    .max(max)
-    .refine((value) => value.trim().length > 0, "Enter some text.");
-const hero = z.strictObject({ type: z.literal("hero"), heading: text(120), body: text(600) });
+const text = (max, { optional = false } = {}) =>
+  optional
+    ? z.string().max(max)
+    : z
+        .string()
+        .min(1)
+        .max(max)
+        .refine((value) => value.trim().length > 0, "Enter some text.");
+const hex = z.string().regex(/^#[0-9a-f]{6}$/i, "Choose a six-digit hex color.");
+const blockId = z
+  .string()
+  .min(3)
+  .max(80)
+  .regex(/^[a-z0-9-]+$/i);
+const base = { id: blockId, visible: z.boolean(), variant: z.string().min(1).max(40) };
+const item = z.strictObject({ title: text(80), body: text(280) });
+
+const navigation = z.strictObject({
+  ...base,
+  type: z.literal("navigation"),
+  brand: text(80),
+  links: z.array(z.strictObject({ label: text(40), href: z.string().max(240) })).max(5),
+  buttonText: text(40, { optional: true }),
+});
+const heroSchema = z.strictObject({
+  ...base,
+  type: z.literal("hero"),
+  eyebrow: text(80, { optional: true }),
+  heading: text(140),
+  body: text(700),
+  showForm: z.boolean(),
+});
 const features = z.strictObject({
+  ...base,
   type: z.literal("features"),
+  heading: text(120),
+  items: z.array(item).min(1).max(8),
+});
+const steps = z.strictObject({
+  ...base,
+  type: z.literal("steps"),
+  heading: text(120),
+  items: z.array(item).min(1).max(6),
+});
+const logos = z.strictObject({
+  ...base,
+  type: z.literal("logos"),
+  heading: text(120, { optional: true }),
+  items: z.array(text(50)).min(2).max(8),
+});
+const stats = z.strictObject({
+  ...base,
+  type: z.literal("stats"),
   items: z
-    .array(z.strictObject({ title: text(80), body: text(240) }))
+    .array(z.strictObject({ value: text(30), label: text(80) }))
+    .min(1)
+    .max(6),
+});
+const testimonials = z.strictObject({
+  ...base,
+  type: z.literal("testimonials"),
+  heading: text(120),
+  items: z
+    .array(
+      z.strictObject({ quote: text(360), name: text(80), role: text(100, { optional: true }) }),
+    )
     .min(1)
     .max(6),
 });
 const faq = z.strictObject({
+  ...base,
   type: z.literal("faq"),
+  heading: text(120),
   items: z
-    .array(z.strictObject({ question: text(120), answer: text(400) }))
+    .array(z.strictObject({ question: text(140), answer: text(500) }))
     .min(1)
-    .max(6),
+    .max(10),
 });
-const form = z.strictObject({ type: z.literal("form"), label: text(80), buttonText: text(40) });
-const footer = z.strictObject({ type: z.literal("footer"), note: text(160) });
-export const sectionSchema = z.discriminatedUnion("type", [hero, features, faq, form, footer]);
+const media = z.strictObject({
+  ...base,
+  type: z.literal("media"),
+  heading: text(120),
+  body: text(360, { optional: true }),
+  imageUrl: z.string().max(500),
+  imageAlt: text(160, { optional: true }),
+});
+const formBlock = z.strictObject({
+  ...base,
+  type: z.literal("form"),
+  heading: text(120, { optional: true }),
+  body: text(360, { optional: true }),
+});
+const signupCount = z.strictObject({
+  ...base,
+  type: z.literal("signupCount"),
+  prefix: text(80),
+  suffix: text(80, { optional: true }),
+});
+const referralRewards = z.strictObject({
+  ...base,
+  type: z.literal("referralRewards"),
+  heading: text(120),
+  items: z
+    .array(z.strictObject({ referrals: z.number().int().min(1).max(100000), reward: text(120) }))
+    .min(1)
+    .max(8),
+});
+const cta = z.strictObject({
+  ...base,
+  type: z.literal("cta"),
+  heading: text(120),
+  body: text(360, { optional: true }),
+  buttonText: text(40),
+});
+const footer = z.strictObject({
+  ...base,
+  type: z.literal("footer"),
+  note: text(220),
+  links: z.array(z.strictObject({ label: text(40), href: z.string().max(240) })).max(6),
+});
+
+export const sectionSchema = z.discriminatedUnion("type", [
+  navigation,
+  heroSchema,
+  logos,
+  features,
+  steps,
+  stats,
+  testimonials,
+  faq,
+  media,
+  formBlock,
+  signupCount,
+  referralRewards,
+  cta,
+  footer,
+]);
+
+export const FONT_IDS = ["hanken", "manrope", "bricolage", "figtree", "archivo"];
+export const RADIUS_IDS = ["sharp", "soft", "round", "pill"];
 export const templateFormSchema = z.strictObject({
   fields: z.tuple([z.literal("email")]),
-  referrals: z.literal(false),
-  verification: z.literal(false),
+  label: text(80),
+  placeholder: text(120),
+  buttonText: text(40),
+  layout: z.enum(["inline", "stacked"]),
+  requireConsent: z.boolean(),
+  consentLabel: text(240),
+  verification: z.boolean(),
+});
+const brandSchema = z.strictObject({
+  headingFont: z.enum(FONT_IDS),
+  bodyFont: z.enum(FONT_IDS),
+  pageBackground: hex,
+  surfaceColor: hex,
+  textColor: hex,
+  mutedColor: hex,
+  accentColor: hex,
+  buttonColor: hex,
+  buttonTextColor: hex,
+  inputBackground: hex,
+  inputBorder: hex,
+  inputTextColor: hex,
+  radius: z.enum(RADIUS_IDS),
+});
+const statusPageSchema = z.strictObject({
+  heading: text(120),
+  body: text(500),
+  pendingHeading: text(120),
+  pendingBody: text(500),
+  showPosition: z.boolean(),
+  showReferralLink: z.boolean(),
+  showReferralCount: z.boolean(),
+  shareMessage: text(280),
+  shareChannels: z.array(z.enum(["x", "linkedin", "whatsapp", "email"])).max(4),
+});
+const seoSchema = z.strictObject({
+  title: text(70, { optional: true }),
+  description: text(180, { optional: true }),
+  image: z.string().max(500),
+  indexable: z.boolean(),
 });
 
 export const templateSnapshotSchema = z
   .strictObject({
-    schemaVersion: z.literal(1),
-    templateId: z.enum(["saas", "mobile", "ai", "community", "consumer", "newsletter", "blank"]),
+    schemaVersion: z.literal(2),
+    templateId: z.enum([
+      "simple",
+      "saas",
+      "ai",
+      "mobile",
+      "creator",
+      "community",
+      "event",
+      "commerce",
+      "developer",
+      "blank",
+    ]),
     templateVersion: z.number().int().positive(),
-    sections: z.array(sectionSchema).min(2).max(12),
-    theme: z.strictObject({
-      surface: z.literal("white"),
-      text: z.literal("ink"),
-      action: z.literal("lime"),
-      font: z.literal("geist"),
-    }),
+    brand: brandSchema,
+    sections: z.array(sectionSchema).min(1).max(24),
     form: templateFormSchema,
-    thankYou: z.strictObject({ heading: text(120), body: text(400) }),
-    email: z.strictObject({ enabled: z.literal(false), subject: text(160), body: text(600) }),
+    statusPage: statusPageSchema,
+    seo: seoSchema,
   })
   .superRefine((value, ctx) => {
-    if (value.sections.filter((section) => section.type === "form").length !== 1)
+    const visibleForms = value.sections.filter(
+      (section) => section.type === "form" && section.visible,
+    ).length;
+    const heroForms = value.sections.filter(
+      (section) => section.type === "hero" && section.visible && section.showForm,
+    ).length;
+    if (visibleForms + heroForms < 1)
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: "A page needs exactly one signup form.",
+        message: "Add a visible signup form before publishing.",
         path: ["sections"],
       });
-    if (value.sections[0]?.type !== "hero")
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "Start the page with a hero section.",
-        path: ["sections"],
-      });
+    const ids = new Set();
+    value.sections.forEach((section, index) => {
+      if (ids.has(section.id))
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Every block needs a unique id.",
+          path: ["sections", index, "id"],
+        });
+      ids.add(section.id);
+    });
   });
 
-const signup = { type: "form", label: "Email address", buttonText: "Join the waitlist" };
-const launchFeatures = [
-  { title: "What you're building", body: "Describe the product in a sentence." },
-  { title: "Who it's for", body: "Help visitors recognize themselves." },
-  { title: "Why join now", body: "Explain what joining the waitlist means." },
+const defaultBrand = {
+  headingFont: "manrope",
+  bodyFont: "hanken",
+  pageBackground: "#f7f8f2",
+  surfaceColor: "#ffffff",
+  textColor: "#182018",
+  mutedColor: "#657064",
+  accentColor: "#c6fe1e",
+  buttonColor: "#182018",
+  buttonTextColor: "#f8faf3",
+  inputBackground: "#ffffff",
+  inputBorder: "#cbd2c7",
+  inputTextColor: "#182018",
+  radius: "soft",
+};
+const defaultForm = {
+  fields: ["email"],
+  label: "Email address",
+  placeholder: "you@company.com",
+  buttonText: "Join the waitlist",
+  layout: "inline",
+  requireConsent: false,
+  consentLabel: "Send me launch updates. I can unsubscribe anytime.",
+  verification: true,
+};
+const defaultStatusPage = {
+  heading: "You're on the list.",
+  body: "We'll keep you close to the launch.",
+  pendingHeading: "Check your inbox",
+  pendingBody: "Confirm your email to secure your place.",
+  showPosition: true,
+  showReferralLink: true,
+  showReferralCount: false,
+  shareMessage: "I joined the waitlist. Come with me:",
+  shareChannels: ["x", "linkedin", "whatsapp", "email"],
+};
+const defaultSeo = { title: "", description: "", image: "", indexable: false };
+const makeSection = (templateId, type, index, props = {}, variant = "default") => ({
+  id: `${templateId}-${type}-${index}`,
+  type,
+  visible: true,
+  variant,
+  ...props,
+});
+const form = (id, index = 1, props = {}) =>
+  makeSection(id, "form", index, {
+    heading: "Get early access",
+    body: "Join the people hearing about the launch first.",
+    ...props,
+  });
+const hero = (id, heading, body, props = {}) =>
+  makeSection(
+    id,
+    "hero",
+    0,
+    { eyebrow: "EARLY ACCESS", heading, body, showForm: false, ...props },
+    "split",
+  );
+const benefits = (id, items) =>
+  makeSection(id, "features", 1, { heading: "Why join early", items }, "columns");
+const baseBenefits = [
+  { title: "See it first", body: "Get a first look before the public launch." },
+  { title: "Shape the product", body: "Tell us what matters while we are still building." },
+  { title: "Keep your place", body: "Early members receive priority access." },
 ];
+
 const definitions = [
   {
-    id: "saas",
-    name: "SaaS",
-    description: "A focused product introduction with three benefits.",
+    id: "simple",
+    name: "Simple form",
+    description: "A focused one-screen signup with no extra sections.",
+    category: "Start fast",
     sections: [
-      {
-        type: "hero",
-        heading: "Your next great workflow starts here.",
-        body: "Introduce your product and the problem it solves.",
-      },
-      { type: "features", items: launchFeatures },
-      signup,
+      hero(
+        "simple",
+        "Something useful is taking shape.",
+        "Join the waitlist and be first to know when it is ready.",
+        {
+          showForm: true,
+        },
+      ),
+    ],
+  },
+  {
+    id: "saas",
+    name: "SaaS beta",
+    description: "A clear product promise, benefits and questions.",
+    category: "Software",
+    sections: [
+      hero(
+        "saas",
+        "A calmer way to run your work.",
+        "One place for the work your team keeps rebuilding in spreadsheets.",
+      ),
+      benefits("saas", baseBenefits),
+      makeSection("saas", "steps", 2, {
+        heading: "From invite to impact",
+        items: [
+          { title: "Join", body: "Reserve your place with one email." },
+          { title: "Try", body: "Get invited in small, thoughtful cohorts." },
+          { title: "Shape", body: "Share feedback directly with the team." },
+        ],
+      }),
+      form("saas", 3),
+      makeSection("saas", "faq", 4, {
+        heading: "Before you join",
+        items: [
+          {
+            question: "When does the beta open?",
+            answer: "We are inviting the first group soon and will email you before access opens.",
+          },
+          {
+            question: "Will it be free to try?",
+            answer: "Yes. Early members can explore the beta before choosing a plan.",
+          },
+        ],
+      }),
+    ],
+  },
+  {
+    id: "ai",
+    name: "AI product",
+    description: "Lead with the job the product helps people complete.",
+    category: "Software",
+    brand: {
+      headingFont: "bricolage",
+      bodyFont: "figtree",
+      pageBackground: "#f4f4ef",
+      accentColor: "#d8ff55",
+    },
+    sections: [
+      hero(
+        "ai",
+        "Do the thinking that matters. Delegate the rest.",
+        "A focused assistant that turns the work around your work into clear next steps.",
+      ),
+      makeSection(
+        "ai",
+        "media",
+        1,
+        {
+          heading: "Your workflow, visible",
+          body: "Show a real product screenshot here when you are ready.",
+          imageUrl: "",
+          imageAlt: "",
+        },
+        "browser",
+      ),
+      benefits("ai", baseBenefits),
+      form("ai", 3),
     ],
   },
   {
     id: "mobile",
     name: "Mobile app",
-    description: "An app introduction with a simple launch signup.",
+    description: "An app-first page with a product visual and concise benefits.",
+    category: "Consumer",
+    brand: {
+      headingFont: "figtree",
+      bodyFont: "hanken",
+      pageBackground: "#f5f7fb",
+      accentColor: "#bdf02c",
+    },
     sections: [
-      {
-        type: "hero",
-        heading: "Something new for your everyday.",
-        body: "Tell visitors what your app helps them do.",
-      },
-      signup,
-      {
-        type: "faq",
-        items: [
-          {
-            question: "Which devices will it support?",
-            answer: "Add the platforms you plan to support.",
-          },
-        ],
-      },
+      hero(
+        "mobile",
+        "A better rhythm for every day.",
+        "A thoughtful new app designed to make the small things feel easier.",
+      ),
+      makeSection(
+        "mobile",
+        "media",
+        1,
+        {
+          heading: "Made for the screen in your hand",
+          body: "Add an app screenshot or product preview.",
+          imageUrl: "",
+          imageAlt: "",
+        },
+        "phone",
+      ),
+      benefits("mobile", baseBenefits),
+      form("mobile", 3),
     ],
   },
   {
-    id: "ai",
-    name: "AI tool",
-    description: "Lead with the task your tool helps people accomplish.",
+    id: "creator",
+    name: "Creator or newsletter",
+    description: "Build anticipation around a point of view and regular updates.",
+    category: "Audience",
+    brand: {
+      headingFont: "archivo",
+      bodyFont: "figtree",
+      pageBackground: "#fbf8f0",
+      accentColor: "#f1ff9c",
+    },
     sections: [
-      {
-        type: "hero",
-        heading: "A new way to get things done.",
-        body: "Describe what your tool does and where people stay in control.",
-      },
-      { type: "features", items: launchFeatures },
-      signup,
+      hero(
+        "creator",
+        "One useful idea, delivered well.",
+        "Field notes for people building thoughtful products and businesses.",
+      ),
+      makeSection(
+        "creator",
+        "testimonials",
+        1,
+        {
+          heading: "Why readers stay",
+          items: [
+            {
+              quote: "The rare update I save and return to.",
+              name: "Early reader",
+              role: "Founder",
+            },
+          ],
+        },
+        "editorial",
+      ),
+      form("creator", 2, {
+        heading: "Read the next issue",
+        body: "Occasional, considered, and easy to leave.",
+      }),
+      makeSection("creator", "footer", 3, {
+        note: "Published independently. No noise, no rented attention.",
+        links: [],
+      }),
     ],
   },
   {
     id: "community",
     name: "Community",
-    description: "Introduce the people, purpose and invitation.",
+    description: "Introduce the people, shared purpose and invitation.",
+    category: "Audience",
     sections: [
-      {
-        type: "hero",
-        heading: "Find your people.",
-        body: "Describe the community you're creating and who should join.",
-      },
-      signup,
-      {
-        type: "faq",
+      hero(
+        "community",
+        "Find the people building beside you.",
+        "A small, useful community for honest conversations and practical support.",
+      ),
+      makeSection("community", "stats", 1, {
+        items: [
+          { value: "Small", label: "by design" },
+          { value: "Useful", label: "over noisy" },
+          { value: "Kind", label: "without posturing" },
+        ],
+      }),
+      benefits("community", baseBenefits),
+      form("community", 3),
+    ],
+  },
+  {
+    id: "event",
+    name: "Event or course",
+    description: "Set expectations and collect interest for a dated experience.",
+    category: "Launch",
+    sections: [
+      hero(
+        "event",
+        "Learn the thing by building it.",
+        "A focused live session for people who want practical progress, not another recording.",
+      ),
+      makeSection("event", "steps", 1, {
+        heading: "What the session covers",
+        items: [
+          { title: "Frame", body: "Choose the problem worth solving." },
+          { title: "Build", body: "Work through the core decisions together." },
+          { title: "Leave ready", body: "Take a clear plan into the next week." },
+        ],
+      }),
+      makeSection("event", "testimonials", 2, {
+        heading: "From past sessions",
         items: [
           {
-            question: "What brings us together?",
-            answer: "Explain your community's shared interest or purpose.",
+            quote: "Specific, generous and immediately useful.",
+            name: "Past attendee",
+            role: "Product lead",
           },
         ],
-      },
+      }),
+      form("event", 3, { heading: "Get the first invitation" }),
     ],
   },
   {
-    id: "consumer",
-    name: "Consumer product",
-    description: "Give one product a clear introduction.",
+    id: "commerce",
+    name: "Pre-order",
+    description: "A visual product story with proof and reservation intent.",
+    category: "Commerce",
+    brand: {
+      headingFont: "bricolage",
+      bodyFont: "hanken",
+      pageBackground: "#f6f1e8",
+      accentColor: "#d4ff65",
+    },
     sections: [
-      {
-        type: "hero",
-        heading: "Meet your next favorite.",
-        body: "Introduce the product and why you're making it.",
-      },
-      { type: "features", items: launchFeatures },
-      signup,
+      hero(
+        "commerce",
+        "Made slowly. Ready soon.",
+        "A considered product for people who would rather buy one good thing.",
+      ),
+      makeSection(
+        "commerce",
+        "media",
+        1,
+        {
+          heading: "The product, without the theatre",
+          body: "Replace this space with your clearest product image.",
+          imageUrl: "",
+          imageAlt: "",
+        },
+        "gallery",
+      ),
+      benefits("commerce", baseBenefits),
+      makeSection("commerce", "signupCount", 3, { prefix: "Join", suffix: "people waiting" }),
+      form("commerce", 4, { heading: "Reserve an early place" }),
     ],
   },
   {
-    id: "newsletter",
-    name: "Newsletter",
-    description: "Explain the subject and why people should subscribe.",
+    id: "developer",
+    name: "Developer tool",
+    description: "Explain the workflow, proof and early-access contract.",
+    category: "Software",
+    brand: {
+      headingFont: "archivo",
+      bodyFont: "hanken",
+      pageBackground: "#f5f6f1",
+      accentColor: "#c6fe1e",
+    },
     sections: [
-      {
-        type: "hero",
-        heading: "A fresh perspective, in your inbox.",
-        body: "Tell readers what you'll write about and how often.",
-      },
-      { ...signup, buttonText: "Join the list" },
-      { type: "footer", note: "Add a short note about what subscribers can expect." },
+      hero(
+        "developer",
+        "Less glue code. More product.",
+        "A developer tool for the repetitive edges between idea and production.",
+      ),
+      makeSection(
+        "developer",
+        "steps",
+        1,
+        {
+          heading: "A smaller path to production",
+          items: [
+            { title: "Connect", body: "Bring the stack you already use." },
+            { title: "Configure", body: "Keep the decisions explicit and versioned." },
+            { title: "Ship", body: "Deploy without another bespoke integration." },
+          ],
+        },
+        "timeline",
+      ),
+      makeSection("developer", "stats", 2, {
+        items: [
+          { value: "2 min", label: "to first request" },
+          { value: "0", label: "new services to host" },
+          { value: "100%", label: "portable" },
+        ],
+      }),
+      form("developer", 3),
     ],
   },
   {
     id: "blank",
-    name: "Blank",
-    description: "Start with a heading and an email form.",
+    name: "Blank page",
+    description: "Start with only the essential hero and signup form.",
+    category: "Start fast",
     sections: [
-      {
-        type: "hero",
-        heading: "Your launch starts here.",
-        body: "Introduce what you're building.",
-      },
-      signup,
+      hero(
+        "blank",
+        "Your launch starts here.",
+        "Write one clear sentence about what you are building.",
+      ),
+      form("blank", 1),
     ],
   },
 ];
@@ -188,36 +608,111 @@ function deepFreeze(value) {
     if (child && typeof child === "object") deepFreeze(child);
   return Object.freeze(value);
 }
-
-const catalog = definitions.map(({ id, name, description, sections }) =>
+const catalog = definitions.map(({ id, name, description, category, sections, brand = {} }) =>
   deepFreeze({
     id,
     name,
     description,
+    category,
     snapshot: templateSnapshotSchema.parse({
-      schemaVersion: 1,
+      schemaVersion: 2,
       templateId: id,
       templateVersion: 1,
+      brand: { ...defaultBrand, ...brand },
       sections,
-      theme: { surface: "white", text: "ink", action: "lime", font: "geist" },
-      form: { fields: ["email"], referrals: false, verification: false },
-      thankYou: { heading: "You're on the list.", body: "Thanks for your interest." },
-      email: {
-        enabled: false,
-        subject: "You're on the {{waitlist}} list",
-        body: "Thanks for joining {{waitlist}}.",
-      },
+      form: defaultForm,
+      statusPage: defaultStatusPage,
+      seo: defaultSeo,
     }),
   }),
 );
 
+export const BLOCK_TYPES = [
+  { type: "hero", label: "Hero", category: "Essentials" },
+  { type: "form", label: "Signup form", category: "Essentials" },
+  { type: "navigation", label: "Navigation", category: "Structure" },
+  { type: "features", label: "Benefits", category: "Content" },
+  { type: "steps", label: "Steps", category: "Content" },
+  { type: "logos", label: "Logos", category: "Proof" },
+  { type: "stats", label: "Numbers", category: "Proof" },
+  { type: "testimonials", label: "Testimonials", category: "Proof" },
+  { type: "faq", label: "Questions", category: "Content" },
+  { type: "media", label: "Media", category: "Content" },
+  { type: "signupCount", label: "Signup count", category: "Growth" },
+  { type: "referralRewards", label: "Referral rewards", category: "Growth" },
+  { type: "cta", label: "Call to action", category: "Essentials" },
+  { type: "footer", label: "Footer", category: "Structure" },
+];
+
+export function createSection(type, id = `block-${crypto.randomUUID()}`) {
+  const common = { id, type, visible: true, variant: "default" };
+  const values = {
+    navigation: { brand: "Your product", links: [], buttonText: "Join the waitlist" },
+    hero: {
+      eyebrow: "EARLY ACCESS",
+      heading: "A clear promise belongs here.",
+      body: "Explain what you are building and who it helps.",
+      showForm: false,
+    },
+    features: { heading: "Why it matters", items: structuredClone(baseBenefits) },
+    steps: {
+      heading: "How it works",
+      items: [
+        { title: "Join", body: "Reserve your place." },
+        { title: "Hear first", body: "Get the important updates." },
+        { title: "Get access", body: "Be part of the first group." },
+      ],
+    },
+    logos: { heading: "Built with people from", items: ["Northstar", "Acme", "Studio"] },
+    stats: {
+      items: [
+        { value: "100+", label: "people waiting" },
+        { value: "3", label: "early cohorts" },
+      ],
+    },
+    testimonials: {
+      heading: "What people say",
+      items: [
+        { quote: "Add an honest quote from a real person.", name: "Customer name", role: "Role" },
+      ],
+    },
+    faq: {
+      heading: "Questions",
+      items: [
+        { question: "When will it launch?", answer: "Share the most useful answer you can today." },
+      ],
+    },
+    media: {
+      heading: "Show the product",
+      body: "Add context for the image.",
+      imageUrl: "",
+      imageAlt: "",
+    },
+    form: { heading: "Get early access", body: "Join the people hearing about the launch first." },
+    signupCount: { prefix: "Join", suffix: "people waiting" },
+    referralRewards: {
+      heading: "Invite friends. Move forward.",
+      items: [
+        { referrals: 1, reward: "Move up the queue" },
+        { referrals: 3, reward: "Priority access" },
+      ],
+    },
+    cta: {
+      heading: "Be there from the beginning.",
+      body: "Join the waitlist for launch updates.",
+      buttonText: "Join the waitlist",
+    },
+    footer: { note: "Built with care. Updates only when they matter.", links: [] },
+  };
+  if (!values[type]) throw new Error("Choose an available block.");
+  return sectionSchema.parse({ ...common, ...values[type] });
+}
+
 export function listTemplates() {
   return structuredClone(catalog);
 }
-
-// Accept only the ID from a browser. The trusted versioned snapshot comes from this catalog.
 export function snapshotTemplate(id) {
-  const template = catalog.find((item) => item.id === id);
+  const template = catalog.find((entry) => entry.id === id);
   if (!template) throw new Error("Choose an available template.");
   return structuredClone(template.snapshot);
 }

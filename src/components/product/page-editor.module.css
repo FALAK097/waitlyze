@@ -1,250 +1,621 @@
 .builder {
-  padding-block: 8px 24px;
+  min-width: 0;
 }
-.builder :global(.product-builder-header) {
-  align-items: center;
-  gap: 24px;
-  padding-block: 8px 24px;
-  margin-bottom: 16px;
-}
-.editorTitle {
-  margin: 6px 0 0;
-  font-size: 1.25rem;
-  font-weight: 600;
-  letter-spacing: -0.03em;
-  text-wrap: balance;
-}
-.builder :global(.product-builder-kicker) {
-  margin: 0;
-  font-size: 0.75rem;
-  color: var(--product-text-secondary);
-}
-.builder :global(.product-builder-tools) {
-  flex-wrap: wrap;
-  gap: 8px;
-}
-.builder :global(.product-builder-tools) > span {
-  font-size: 0.75rem;
-  padding-inline-end: 8px;
-  min-width: 56px;
-}
-.builder :global(.product-builder-grid) {
+.commandBar {
+  min-height: 64px;
   display: grid;
-  grid-template-columns: minmax(280px, 0.8fr) minmax(0, 1.4fr);
-  gap: 40px;
-  align-items: start;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 20px;
+  padding: 0 8px 16px;
 }
-.builder :global(.product-builder-editor) {
-  min-width: 0;
-  padding: 0;
-  border: 0;
-  border-radius: 0;
-  background: #fff;
-}
-.builder :global(.product-builder-editor-heading),
-.builder :global(.product-builder-preview-heading) {
+.titleGroup,
+.commandActions,
+.surfaceTabs,
+.canvasTools,
+.canvasTools > div,
+.dialogActions,
+.channelLinks {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 0 0 20px;
-  margin: 0;
 }
-.builder :global(.product-builder-editor-heading) h3,
-.builder :global(.product-builder-preview-heading) h3 {
-  margin: 0 0 4px;
-  font-size: 0.875rem;
+.titleGroup {
+  min-width: 0;
+  gap: 8px;
+  font-size: 0.8125rem;
+}
+.titleGroup a {
+  color: var(--product-text-secondary);
+  text-decoration: none;
+}
+.titleGroup strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.titleGroup > span:not(.saveState) {
+  color: var(--product-text-muted);
+}
+.saveState {
+  margin-left: 5px;
+  color: var(--product-text-secondary);
+  font-size: 0.75rem;
+}
+.surfaceTabs {
+  align-self: stretch;
+  gap: 3px;
+}
+.surfaceTabs button,
+.panelTabs button,
+.canvasTools button {
+  border: 0;
+  background: transparent;
+  color: var(--product-text-secondary);
+  font: inherit;
+  cursor: pointer;
+}
+.surfaceTabs button {
+  position: relative;
+  padding: 0 14px;
+  font-size: 0.8125rem;
   font-weight: 600;
 }
-.builder :global(.product-builder-editor-heading) p,
-.builder :global(.product-builder-preview-heading) span {
-  margin: 0;
-  font-size: 0.75rem;
-  color: var(--product-text-secondary);
+.surfaceTabs button[aria-current="page"] {
+  color: var(--product-text-primary);
 }
-.builder :global(.product-builder-section) {
-  margin: 0 0 8px;
-  padding: 0;
-  border: 0;
-  border-radius: 0;
-  min-width: 0;
-  background: #fff;
+.surfaceTabs button[aria-current="page"]::after {
+  content: "";
+  position: absolute;
+  inset: auto 12px 3px;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--product-accent-solid);
 }
-.builder :global(.product-builder-section) [data-slot="collapsible-trigger"] {
+.commandActions {
+  justify-content: flex-end;
+  gap: 5px;
+}
+.alert {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  min-height: 48px;
-  padding: 12px 8px;
-  border-radius: 6px;
-  cursor: pointer;
-  list-style: none;
-  color: var(--product-text-primary);
-  font-size: 0.875rem;
-  font-weight: 550;
+  gap: 10px;
+  margin: 0 8px 12px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  color: var(--product-danger-text);
+  background: var(--product-danger-bg);
+  font-size: 0.8125rem;
 }
-.builder
-  :global(.product-builder-section)
-  [data-slot="collapsible-trigger"]::-webkit-details-marker {
-  display: none;
+.alert span {
+  margin-right: auto;
 }
-.builder :global(.product-builder-section) [data-slot="collapsible-trigger"] svg {
-  width: 16px;
-  height: 16px;
-  stroke-width: 1.5;
-}
-.builder :global(.product-builder-section:has([data-open])) [data-slot="collapsible-trigger"] {
+.studio {
+  height: calc(100dvh - 156px);
+  min-height: 620px;
+  display: grid;
+  grid-template-columns: 248px minmax(400px, 1fr) 292px;
+  overflow: hidden;
+  border-top: 1px solid var(--product-border-subtle);
   background: var(--product-bg-inset);
 }
-.builder :global(.product-builder-section:has([data-open])) [data-slot="collapsible-trigger"] svg {
-  transform: rotate(180deg);
-}
-.sectionContent {
-  padding: 16px 8px 24px;
-}
-.builder :global(.product-builder-section-tools) {
-  justify-content: flex-end;
-  position: static;
-  margin: 0 0 16px;
-  gap: 8px;
-}
-.builder :global(.product-builder-section-tools) button {
-  min-width: 40px;
-  min-height: 40px;
-}
-.builder :global(.product-builder-section-tools) button svg {
-  width: 16px;
-  height: 16px;
-}
-.builder :global(.product-builder-fields),
-.builder :global(.product-builder-item) {
-  display: grid;
-  gap: 8px;
-  min-width: 0;
-}
-.builder :global(.product-builder-fields) label,
-.builder :global(.product-builder-item) label {
-  font-size: 0.8125rem;
-  font-weight: 500;
-}
-.builder :global(.product-builder-fields) label:not(:first-child),
-.builder :global(.product-builder-item) label:not(:first-child) {
-  margin-top: 8px;
-}
-.builder :global(.product-builder-item) {
-  padding: 0 0 20px;
-  margin-bottom: 20px;
-  border: 0;
-  border-radius: 0;
-  background: #fff;
-}
-.builder :global(.product-builder-item) > p {
-  font-size: 0.75rem;
-  color: var(--product-text-secondary);
-  margin: 0 0 4px;
-}
-.builder :global(.product-builder-item) button {
-  justify-self: start;
-  margin-top: 4px;
-}
-.builder :global(.product-builder-preview-wrap) {
-  min-width: 0;
-  position: sticky;
-  top: 24px;
-}
-.builder :global(.product-builder-preview-frame) {
-  padding: 0;
-  border: 0;
-  border-radius: 14px;
+.library,
+.properties {
   overflow: auto;
-  max-height: 78dvh;
+  background: var(--product-bg-surface);
+}
+.library {
+  border-right: 1px solid var(--product-border-subtle);
+}
+.properties {
+  border-left: 1px solid var(--product-border-subtle);
+}
+.panelTabs {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  padding: 10px;
+  background: var(--product-bg-surface);
+}
+.panelTabs button {
+  min-height: 36px;
+  border-radius: 7px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+.panelTabs button[aria-pressed="true"] {
+  color: var(--product-text-primary);
+  background: var(--product-bg-inset);
+}
+.layers {
+  padding: 4px 10px 16px;
+}
+.layer {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  border-radius: 7px;
+}
+.layer[data-selected="true"] {
+  background: var(--product-bg-inset);
+}
+.layer > button {
+  min-width: 0;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 11px 9px;
+  border: 0;
+  background: transparent;
+  color: var(--product-text-primary);
+  font: inherit;
+  font-size: 0.8125rem;
+  text-align: left;
+  cursor: pointer;
+}
+.layer small {
+  color: var(--product-text-muted);
+  font-size: 0.65rem;
+}
+.layer > div {
+  display: none;
+  padding-right: 4px;
+}
+.layer:hover > div,
+.layer:focus-within > div {
+  display: flex;
+}
+.layer > div button {
+  width: 25px;
+  height: 28px;
+  border: 0;
+  background: transparent;
+  color: var(--product-text-secondary);
+  cursor: pointer;
+}
+.layer > div button:disabled {
+  opacity: 0.25;
+}
+.addBlocks {
+  padding: 14px 18px 24px;
+  border-top: 1px solid var(--product-border-subtle);
+}
+.addBlocks p {
+  margin: 0 0 8px;
+  color: var(--product-text-secondary);
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+}
+.addBlocks button {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  border: 0;
+  background: transparent;
+  color: var(--product-text-primary);
+  font: inherit;
+  font-size: 0.8125rem;
+  cursor: pointer;
+}
+.addBlocks button span {
+  color: var(--product-text-muted);
+  font-size: 1rem;
+}
+.templateList {
+  display: grid;
+  padding: 4px 16px 24px;
+}
+.templateList button {
+  display: grid;
+  gap: 4px;
+  padding: 14px 0;
+  border: 0;
+  border-bottom: 1px solid var(--product-border-subtle);
+  background: transparent;
+  color: var(--product-text-primary);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.templateList button strong {
+  font-size: 0.8125rem;
+}
+.templateList button span {
+  color: var(--product-text-secondary);
+  font-size: 0.75rem;
+  line-height: 1.45;
+}
+.templateList button[data-active="true"] strong::after {
+  content: "Current";
+  margin-left: 8px;
+  color: var(--product-success-text);
+  font-size: 0.625rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+.canvasArea {
+  min-width: 0;
+  overflow: auto;
+  padding: 0 28px 36px;
+}
+.canvasTools {
+  height: 52px;
+  justify-content: space-between;
+  color: var(--product-text-secondary);
+  font-size: 0.75rem;
+}
+.canvasTools > div {
+  gap: 3px;
+}
+.canvasTools button {
+  padding: 7px 9px;
+  border-radius: 6px;
+  font-size: 0.7rem;
+}
+.canvasTools button[aria-pressed="true"] {
+  color: var(--product-text-primary);
+  background: var(--product-bg-surface);
+  box-shadow: 0 1px 2px rgb(0 0 0/0.06);
+}
+.canvas {
+  width: 100%;
+  max-width: 1180px;
+  margin-inline: auto;
+  overflow: auto;
+  border-radius: 12px;
   background: #fff;
   box-shadow:
-    0 0 0 1px rgb(0 0 0 / 0.08),
-    0 8px 24px rgb(0 0 0 / 0.04);
+    0 0 0 1px rgb(0 0 0/0.06),
+    0 14px 40px rgb(0 0 0/0.08);
 }
-.builder :global(.product-page-preview) {
-  border: 0;
-  border-radius: 0;
-  min-width: 0;
+.canvas[data-viewport="mobile"] {
+  width: 390px;
+  max-width: 100%;
 }
-.builder :global(.product-preview-viewport-toggle) {
+.canvas > div {
+  zoom: 0.72;
+}
+.canvas[data-viewport="mobile"] > div {
+  zoom: 0.85;
+}
+.inspector {
+  display: grid;
+  gap: 15px;
+  padding: 20px;
+}
+.inspectorHeading {
   display: flex;
-  flex-shrink: 0;
-  gap: 4px;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 5px;
 }
-.builder :global(.product-preview-viewport-toggle) button {
+.inspectorHeading span,
+.overline {
+  color: var(--product-text-secondary);
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.inspectorHeading h3 {
+  margin: 3px 0 0;
+  font-size: 1rem;
+}
+.emptyInspector {
+  padding: 32px 20px;
+  color: var(--product-text-secondary);
+  font-size: 0.8125rem;
+  line-height: 1.5;
+}
+.field {
+  display: grid;
+  gap: 6px;
+}
+.field label {
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+.field :is(input, textarea, button) {
+  font-size: 0.8125rem;
+}
+.toggle {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 0.75rem;
+  font-weight: 550;
+}
+.itemList {
+  display: grid;
+  gap: 20px;
+}
+.itemEditor {
+  display: grid;
+  gap: 10px;
+  padding-top: 15px;
+  border-top: 1px solid var(--product-border-subtle);
+}
+.itemEditor > span {
+  color: var(--product-text-muted);
+  font-size: 0.65rem;
+}
+.itemEditor > button {
+  justify-self: start;
+}
+.inspectorActions {
+  display: flex;
+  gap: 7px;
+  padding-top: 8px;
+}
+.settings {
+  display: grid;
+  gap: 16px;
+  padding: 18px;
+}
+.colors {
+  display: grid;
+  gap: 2px;
+  padding-top: 8px;
+}
+.colors label {
   min-height: 40px;
-  padding-inline: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   font-size: 0.75rem;
 }
-.builder :global(.product-builder-add) {
-  border: 0;
-  padding: 12px 8px;
+.colors input {
+  width: 30px;
+  height: 30px;
+  padding: 2px;
+  border: 1px solid var(--product-border-control);
+  border-radius: 7px;
+  background: transparent;
+  cursor: pointer;
 }
-.mobileViewToggle {
-  display: none;
+.surfaceLayout {
+  min-height: calc(100dvh - 156px);
+  display: grid;
+  grid-template-columns: 310px minmax(0, 1fr);
+  border-top: 1px solid var(--product-border-subtle);
+  background: var(--product-bg-inset);
 }
-@media (hover: hover) and (pointer: fine) {
-  .builder :global(.product-builder-section) [data-slot="collapsible-trigger"]:hover {
-    background: var(--product-bg-inset);
+.surfaceLayout > aside {
+  overflow: auto;
+  background: var(--product-bg-surface);
+  border-right: 1px solid var(--product-border-subtle);
+}
+.surfaceLayout > aside > .overline {
+  display: block;
+  margin: 20px 18px 0;
+}
+.surfaceLayout > main {
+  min-width: 0;
+  padding: 42px;
+}
+.surfaceHeading {
+  max-width: 620px;
+  margin: 0 auto 24px;
+}
+.surfaceHeading h2 {
+  margin: 0 0 5px;
+  font-size: 1.15rem;
+}
+.surfaceHeading p {
+  margin: 0;
+  color: var(--product-text-secondary);
+  font-size: 0.8125rem;
+}
+.surfaceCanvas {
+  width: min(100%, 820px);
+  min-height: 560px;
+  display: grid;
+  align-items: center;
+  margin: auto;
+  overflow: hidden;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow:
+    0 0 0 1px rgb(0 0 0/0.06),
+    0 14px 40px rgb(0 0 0/0.07);
+}
+.formPreview {
+  width: min(100% - 48px, 620px);
+  margin: auto;
+  padding: 60px;
+}
+.publishSurface {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 72px 24px;
+}
+.publishSurface > div:first-child {
+  max-width: 650px;
+}
+.publishSurface h2 {
+  margin: 8px 0 14px;
+  font-size: clamp(2rem, 4vw, 3.5rem);
+  line-height: 1;
+  letter-spacing: -0.055em;
+  text-wrap: balance;
+}
+.publishSurface > div:first-child > p:last-child {
+  color: var(--product-text-secondary);
+  line-height: 1.6;
+}
+.channelLinks {
+  align-items: stretch;
+  flex-direction: column;
+  gap: 0;
+  margin-top: 30px;
+}
+.channelLinks > a {
+  display: flex;
+  justify-content: space-between;
+  padding: 17px 2px;
+  border-top: 1px solid var(--product-border-subtle);
+  color: var(--product-text-primary);
+  font-size: 0.875rem;
+  text-decoration: none;
+}
+.channelLinks > a:last-of-type {
+  border-bottom: 1px solid var(--product-border-subtle);
+}
+.channelLinks button {
+  align-self: flex-start;
+  margin-top: 18px;
+}
+.reviewNote {
+  display: grid;
+  gap: 3px;
+  padding: 12px;
+  border-radius: 8px;
+  background: var(--product-warning-bg);
+  font-size: 0.8125rem;
+}
+.reviewNote span {
+  color: var(--product-text-secondary);
+}
+.reviewPreview {
+  max-height: 350px;
+  overflow: auto;
+  border-radius: 9px;
+  box-shadow: 0 0 0 1px var(--product-border-subtle);
+}
+.reviewPreview > div {
+  zoom: 0.48;
+}
+.dialogActions {
+  justify-content: flex-end;
+  gap: 8px;
+}
+@media (max-width: 1180px) {
+  .studio {
+    grid-template-columns: 220px minmax(360px, 1fr) 270px;
+  }
+  .commandBar {
+    grid-template-columns: 1fr auto;
+  }
+  .surfaceTabs {
+    grid-row: 2;
+    grid-column: 1/-1;
+    justify-self: center;
+    height: 42px;
+  }
+  .studio {
+    height: calc(100dvh - 194px);
   }
 }
-@media (max-width: 1050px) {
-  .builder :global(.product-builder-header) {
-    align-items: flex-start;
-    flex-direction: column;
-  }
-  .builder :global(.product-builder-grid) {
-    gap: 24px;
-    grid-template-columns: minmax(260px, 1fr) minmax(0, 1.15fr);
-  }
-  .builder :global(.product-builder-preview-heading) {
-    align-items: flex-start;
+@media (max-width: 900px) {
+  .commandBar {
+    display: flex;
     flex-wrap: wrap;
   }
+  .titleGroup {
+    width: 100%;
+  }
+  .surfaceTabs {
+    order: 3;
+    width: 100%;
+    justify-content: center;
+  }
+  .commandActions {
+    margin-left: auto;
+  }
+  .studio {
+    height: auto;
+    min-height: 0;
+    grid-template-columns: 220px minmax(0, 1fr);
+  }
+  .properties {
+    grid-column: 1/-1;
+    min-height: 280px;
+    border-top: 1px solid var(--product-border-subtle);
+    border-left: 0;
+  }
+  .canvasArea {
+    padding-inline: 16px;
+  }
+  .surfaceLayout {
+    grid-template-columns: 280px minmax(0, 1fr);
+  }
 }
-@media (max-width: 767px) {
-  .builder :global(.product-builder-grid) {
-    grid-template-columns: minmax(0, 1fr);
-  }
-  .builder :global(.product-builder-preview-wrap) {
-    position: static;
-  }
-  .builder :global(.product-builder-preview-frame) {
-    max-height: none;
-  }
-  .mobileViewToggle {
-    display: flex;
-    gap: 8px;
-    margin-bottom: 24px;
-  }
-  .mobileViewToggle button {
-    flex: 1;
-  }
-  .mobileViewToggle button[aria-pressed="true"] {
-    background: var(--product-bg-inset);
-    font-weight: 600;
-    text-decoration: underline;
-    text-underline-offset: 6px;
-    text-decoration-color: var(--product-accent-solid);
-  }
-  .builder[data-mobile-view="content"] :global(.product-builder-preview-wrap),
-  .builder[data-mobile-view="preview"] :global(.product-builder-editor) {
+@media (max-width: 680px) {
+  .saveState,
+  .commandActions [data-slot="button"]:nth-child(-n + 2) {
     display: none;
   }
-  .builder :global(.product-builder-tools) {
-    width: 100%;
+  .surfaceTabs {
+    overflow: auto;
+    justify-content: flex-start;
   }
-  .builder :global(.product-builder-tools) button {
-    flex-grow: 1;
+  .surfaceTabs button {
+    flex: 1;
   }
-  .builder :global(.product-builder-tools) > span {
-    width: 100%;
+  .studio {
+    display: flex;
+    flex-direction: column;
   }
-  .builder :global(.product-builder-fields) textarea,
-  .builder :global(.product-builder-item) textarea {
-    font-size: 1rem;
+  .library,
+  .properties {
+    max-height: none;
+    border: 0;
+    border-bottom: 1px solid var(--product-border-subtle);
+  }
+  .canvasArea {
+    order: 2;
+    overflow: visible;
+  }
+  .properties {
+    order: 3;
+  }
+  .canvas > div {
+    zoom: 0.55;
+  }
+  .canvas[data-viewport="mobile"] > div {
+    zoom: 0.75;
+  }
+  .surfaceLayout {
+    display: flex;
+    flex-direction: column;
+  }
+  .surfaceLayout > aside {
+    border-right: 0;
+    border-bottom: 1px solid var(--product-border-subtle);
+  }
+  .surfaceLayout > main {
+    padding: 28px 16px;
+  }
+  .surfaceCanvas {
+    min-height: 500px;
+  }
+  .formPreview {
+    padding: 26px;
+  }
+  .publishSurface {
+    padding-top: 42px;
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .surfaceTabs button,
+  .panelTabs button,
+  .layer,
+  .addBlocks button,
+  .templateList button {
+    transition:
+      color 140ms ease,
+      background-color 140ms ease,
+      opacity 140ms ease;
+  }
+  .addBlocks button:hover,
+  .templateList button:hover {
+    opacity: 0.65;
   }
 }

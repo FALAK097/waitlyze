@@ -12,10 +12,13 @@ export function assessWaitlistReadiness(waitlist) {
   const sections = Array.isArray(waitlist.templateSnapshot?.sections)
     ? waitlist.templateSnapshot.sections
     : [];
-  const formSections = sections.filter((section) => section?.type === "form");
+  const formSections = sections.filter((section) => section?.type === "form" && section.visible);
+  const heroForms = sections.filter(
+    (section) => section?.type === "hero" && section.visible && section.showForm,
+  );
   const formReady =
-    formSections.length === 1 &&
-    sectionSchema.safeParse(formSections[0]).success &&
+    formSections.every((section) => sectionSchema.safeParse(section).success) &&
+    formSections.length + heroForms.length > 0 &&
     templateFormSchema.safeParse(waitlist.templateSnapshot?.form).success;
   const contentReady = parsed.success && formReady;
 
@@ -35,8 +38,8 @@ export function assessWaitlistReadiness(waitlist) {
       label: "Signup form",
       status: formReady ? "ready" : "action",
       detail: formReady
-        ? "One valid email signup form is configured."
-        : "Add one valid email signup form to accept signups.",
+        ? "A valid email signup form is configured."
+        : "Add a visible email signup form to accept signups.",
       href: `${editPage(waitlist.id)}#page-content`,
       actionLabel: "Open page editor",
     },

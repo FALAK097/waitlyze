@@ -11,7 +11,14 @@ import { SignupForm } from "./signup-form";
 const publishedPage = cache(async function publishedPage(slug) {
   const waitList = await prisma.waitList.findUnique({
     where: { publicSlug: slug },
-    select: { id: true, name: true, status: true, publishedRevision: true, showReferrals: true },
+    select: {
+      id: true,
+      name: true,
+      status: true,
+      publishedRevision: true,
+      showReferrals: true,
+      _count: { select: { signUps: true } },
+    },
   });
   if (!waitList) return null;
   if (waitList.status === "PAUSED") return { waitList, paused: true };
@@ -58,12 +65,19 @@ export async function generateMetadata({ params }) {
     }
     return { title: "Waitlist unavailable", robots: { index: false, follow: false } };
   }
-  const hero = page.snapshot.sections[0];
+  const hero = page.snapshot.sections.find((section) => section.type === "hero");
+  const title = page.snapshot.seo.title || page.waitList.name || hero?.heading || "Waitlist";
+  const description = page.snapshot.seo.description || hero?.body || "";
   return {
-    title: page.waitList.name || hero.heading,
-    description: hero.body,
+    title,
+    description,
+    robots: { index: page.snapshot.seo.indexable, follow: page.snapshot.seo.indexable },
     alternates: { canonical: `/w/${encodeURIComponent(slug)}` },
-    openGraph: { title: hero.heading, description: hero.body },
+    openGraph: {
+      title,
+      description,
+      ...(page.snapshot.seo.image ? { images: [{ url: page.snapshot.seo.image }] } : {}),
+    },
   };
 }
 
@@ -88,14 +102,14 @@ export default async function PublicWaitlistPage({ params }) {
       <WaitlistPageContent
         snapshot={page.snapshot}
         name={page.waitList.name}
-        renderSignupForm={(section, snapshot) => (
+        signupCount={page.waitList._count.signUps}
+        renderSignupForm={(_section, snapshot) => (
           <SignupForm
             slug={slug}
             waitListId={page.waitList.id}
             showReferrals={page.waitList.showReferrals}
-            label={section.label}
-            buttonText={section.buttonText}
-            thankYou={snapshot.thankYou}
+            formConfig={snapshot.form}
+            statusPage={snapshot.statusPage}
           />
         )}
       />

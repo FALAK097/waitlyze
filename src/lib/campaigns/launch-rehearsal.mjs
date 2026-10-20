@@ -28,11 +28,22 @@ function checksFor(waitlist, publishedSnapshot) {
     {
       key: "signup_form",
       label: "Email signup form is ready",
-      passed: parsed.success && parsed.data.sections.some((section) => section.type === "form"),
+      passed:
+        parsed.success &&
+        parsed.data.sections.some(
+          (section) =>
+            section.visible &&
+            (section.type === "form" || (section.type === "hero" && section.showForm)),
+        ),
       detail:
-        parsed.success && parsed.data.sections.some((section) => section.type === "form")
-          ? "The page has one valid signup form."
-          : "Add a valid email signup form to continue.",
+        parsed.success &&
+        parsed.data.sections.some(
+          (section) =>
+            section.visible &&
+            (section.type === "form" || (section.type === "hero" && section.showForm)),
+        )
+          ? "The page has a valid signup form."
+          : "Add a visible email signup form to continue.",
     },
   ];
 }

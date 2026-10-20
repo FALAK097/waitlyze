@@ -1,15 +1,19 @@
 import { nanoid } from "nanoid";
-import { notFound, redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 import { cache } from "react";
 
 import { sendSignupEmail } from "@/app/actions/emails";
+import { WaitlistPageContent } from "@/components/product/waitlist-page-content";
 import { FormPreview } from "@/components/wait-lists/preview";
 import {
   getLegacyPublicSignUpsCount,
   getLegacyPublicWaitList,
 } from "@/lib/campaigns/legacy-public.mjs";
 import prisma from "@/lib/prisma";
+import { templateSnapshotSchema } from "@/lib/templates/catalog.mjs";
 import { ReactQueryProvider } from "@/providers/query";
+
+import { SignupForm } from "../../w/[slug]/signup-form";
 
 const getWaitList = cache(async (id) => getLegacyPublicWaitList(prisma, { id }));
 
@@ -84,14 +88,54 @@ export default async function WaitListsPreviewPage(props) {
   const { id } = params;
   const structured = await prisma.waitList.findUnique({
     where: { id },
-    select: { status: true, templateSnapshot: true, publicSlug: true },
+    select: { id: true, name: true, status: true, showReferrals: true, publishedRevision: true },
   });
-  if (
-    structured?.templateSnapshot &&
-    structured.publicSlug &&
-    ["PUBLISHED", "PAUSED"].includes(structured.status)
-  )
-    redirect(`/w/${structured.publicSlug}`);
+  if (structured?.status === "PAUSED")
+    return (
+      <main className="product-ui public-launch public-launch-paused">
+        <section>
+          <h1>Signups are paused</h1>
+          <p>Please check back later.</p>
+        </section>
+      </main>
+    );
+  if (structured?.status === "PUBLISHED" && structured.publishedRevision) {
+    const publication = await prisma.waitListPublicationRevision.findUnique({
+      where: { waitListId_revision: { waitListId: id, revision: structured.publishedRevision } },
+      select: { snapshot: true },
+    });
+    const parsed = templateSnapshotSchema.safeParse(publication?.snapshot);
+    if (parsed.success) {
+      const embedSnapshot = {
+        ...parsed.data,
+        sections: [
+          {
+            id: "embed-form",
+            type: "form",
+            visible: true,
+            variant: "default",
+            heading: "",
+            body: "",
+          },
+        ],
+      };
+      return (
+        <WaitlistPageContent
+          snapshot={embedSnapshot}
+          name={structured.name}
+          previewViewport="mobile"
+          renderSignupForm={(_section, snapshot) => (
+            <SignupForm
+              waitListId={id}
+              showReferrals={structured.showReferrals}
+              formConfig={snapshot.form}
+              statusPage={snapshot.statusPage}
+            />
+          )}
+        />
+      );
+    }
+  }
 
   const waitList = await getWaitList(id);
 

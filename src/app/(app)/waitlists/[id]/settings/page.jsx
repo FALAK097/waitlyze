@@ -19,7 +19,7 @@ import { campaignScope } from "@/lib/workspaces/service.mjs";
 
 export const metadata = { title: "Waitlist settings" };
 
-const VALID_SECTIONS = ["referral", "domain", "webhooks", "delete"];
+const VALID_SECTIONS = new Set(["referral", "domain", "webhooks", "delete"]);
 
 function SelectedWaitlistSettings({ section, waitlist, canManage, domainAvailable }) {
   if (section === "domain")
@@ -87,7 +87,7 @@ export default async function WaitlistSettings({ params, searchParams }) {
     searchParams,
     currentWorkspace(),
   ]);
-  const section = VALID_SECTIONS.includes(query?.section) ? query.section : "referral";
+  const section = VALID_SECTIONS.has(query?.section) ? query.section : "referral";
   const waitlist = await prisma.waitList.findFirst({
     where: { id, ...campaignScope(user.id, "viewCampaign", workspace.id) },
     select: { id: true, name: true, showReferrals: true },

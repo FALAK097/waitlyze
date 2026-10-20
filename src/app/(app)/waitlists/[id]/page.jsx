@@ -6,11 +6,11 @@ import { saveDraftPage } from "@/app/actions/draft-snapshot";
 import { publishWaitlist, pauseWaitlist, rollbackWaitlist } from "@/app/actions/publication";
 import { ContentLayout } from "@/components/dashboard/content-layout";
 import { SnapshotPageBuilder } from "@/components/product/snapshot-page-builder";
-import { WaitlistGenerator } from "@/components/wait-lists/edit-form";
 import { auth } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 import { SITE_URL } from "@/lib/site-metadata";
-import { requireCampaign, requireCampaignPage } from "@/lib/workspaces/authorize";
+import { snapshotTemplate, templateSnapshotSchema } from "@/lib/templates/catalog.mjs";
+import { requireCampaignPage } from "@/lib/workspaces/authorize";
 
 const getUser = cache(async (id) => {
   return await prisma.user.findUnique({
@@ -52,134 +52,34 @@ export default async function WaitListsEditPage(props) {
     ? ["OWNER", "ADMIN"].includes(publicationMember.role)
     : waitList.userId === user.id;
 
-  const saveWaitList = async (waitListId, waitList) => {
-    "use server";
-    let response = {
-      success: false,
-      waitList: null,
-      message: "Failed to save wait list",
-    };
-
-    const rawSlug = typeof waitList.publicSlug === "string" ? waitList.publicSlug.trim() : "";
-    if (rawSlug && !/^[a-z0-9]+(-[a-z0-9]+)*$/.test(rawSlug)) {
-      response.message = "Page address must use lowercase letters, numbers and single hyphens.";
-      return response;
-    }
-    const data = {
-      name:
-        typeof waitList.name === "string" && waitList.name.trim()
-          ? waitList.name.trim().slice(0, 120)
-          : null,
-      description:
-        typeof waitList.description === "string" && waitList.description.trim()
-          ? waitList.description.trim().slice(0, 600)
-          : null,
-      ...(rawSlug ? { publicSlug: rawSlug } : {}),
-      buttonColor: waitList.buttonColor,
-      buttonBorder: waitList.buttonBorder,
-      buttonTextColor: waitList.buttonTextColor,
-      mainBgColor: waitList.enableMainBgColor ? waitList.mainBgColor : null,
-      enableMainBgColor: waitList.enableMainBgColor,
-      bgColor: waitList.bgColor,
-      enableBgColor: waitList.enableBgColor,
-      borderWidth: waitList.borderWidth,
-      borderRadius: waitList.borderRadius,
-      fontWeight: waitList.fontWeight,
-      logoSize: waitList.logoSize,
-      buttonText: waitList.buttonText,
-      successMessage: waitList.successMessage,
-      sendEmailsToSubscribers: waitList.sendEmailsToSubscribers,
-      showLogo: waitList.showLogo,
-      showSocialProof: waitList.showSocialProof,
-      showBadge: waitList.showBadge,
-      badgeColor: waitList.badgeColor,
-      badgeText: waitList.badgeText,
-      badgeTextColor: waitList.badgeTextColor,
-      showReferrals: waitList.showReferrals,
-      showBranding: waitList.showBranding,
-      inputColor: waitList.inputColor,
-      inputBorder: waitList.inputBorder,
-      inputTextColor: waitList.inputTextColor,
-      placeholderText: waitList.placeholderText,
-      logoUrl: waitList.logoUrl,
-      logoKey: waitList.logoKey,
-      shareOnTwitter: waitList.shareOnTwitter,
-      shareOnWhatsapp: waitList.shareOnWhatsapp,
-      shareOnInstagram: waitList.shareOnInstagram,
-      shareOnFacebook: waitList.shareOnFacebook,
-      shareOnLinkedin: waitList.shareOnLinkedin,
-      shareOnEmail: waitList.shareOnEmail,
-      shareOnReddit: waitList.shareOnReddit,
-      ogTitle: waitList.ogTitle,
-      ogDescription: waitList.ogDescription,
-      ogImage: waitList.ogImage,
-    };
-
-    try {
-      const { user: actor, campaign, scope } = await requireCampaign(waitListId, "editCampaign");
-      if (
-        data.logoKey &&
-        data.logoKey !== campaign.logoKey &&
-        !data.logoKey.startsWith(`${actor.id}-`)
-      )
-        throw new Error("Invalid image key");
-      let mutationScope = scope;
-      if (data.sendEmailsToSubscribers !== campaign.sendEmailsToSubscribers) {
-        mutationScope = (await requireCampaign(waitListId, "sendEmail")).scope;
-      } else {
-        // Do not overwrite a concurrent privileged change with an unchanged form value.
-        delete data.sendEmailsToSubscribers;
-      }
-      const updatedWaitList = await prisma.waitList.update({
-        where: { id: waitListId, ...mutationScope },
-        data,
-      });
-
-      response = {
-        success: true,
-        waitList: updatedWaitList,
-        message: "Wait list saved successfully",
-      };
-    } catch (error) {
-      if (error?.code === "P2002") response.message = "That page address is taken. Choose another.";
-      console.error(error);
-    }
-
-    return response;
-  };
-
-  if (waitList.templateSnapshot) {
-    return (
-      <ContentLayout title="Builder">
-        <SnapshotPageBuilder
-          waitList={{
-            id: waitList.id,
-            name: waitList.name,
-            publicSlug: waitList.publicSlug,
-            status: waitList.status,
-            templateRevision: waitList.templateRevision,
-            publishedRevision: waitList.publishedRevision,
-            publishedTemplateRevision: waitList.publishedTemplateRevision,
-            templateSnapshot: waitList.templateSnapshot,
-          }}
-          saveDraftPage={saveDraftPage}
-          publishPage={publishWaitlist}
-          pausePage={pauseWaitlist}
-          rollbackPage={rollbackWaitlist}
-          canPublish={canPublish}
-          publicationOrigin={
-            process.env.VERCEL_ENV === "preview" && process.env.VERCEL_URL
-              ? `https://${process.env.VERCEL_URL}`
-              : process.env.BETTER_AUTH_URL || SITE_URL
-          }
-        />
-      </ContentLayout>
-    );
-  }
-
+  const parsedSnapshot = templateSnapshotSchema.safeParse(waitList.templateSnapshot);
+  const templateSnapshot = parsedSnapshot.success
+    ? parsedSnapshot.data
+    : snapshotTemplate("simple");
   return (
     <ContentLayout title="Builder">
-      <WaitlistGenerator initialWaitList={waitList} saveWaitList={saveWaitList} />
+      <SnapshotPageBuilder
+        waitList={{
+          id: waitList.id,
+          name: waitList.name,
+          publicSlug: waitList.publicSlug,
+          status: waitList.status,
+          templateRevision: waitList.templateRevision,
+          publishedRevision: waitList.publishedRevision,
+          publishedTemplateRevision: waitList.publishedTemplateRevision,
+          templateSnapshot,
+        }}
+        saveDraftPage={saveDraftPage}
+        publishPage={publishWaitlist}
+        pausePage={pauseWaitlist}
+        rollbackPage={rollbackWaitlist}
+        canPublish={canPublish}
+        publicationOrigin={
+          process.env.VERCEL_ENV === "preview" && process.env.VERCEL_URL
+            ? `https://${process.env.VERCEL_URL}`
+            : process.env.BETTER_AUTH_URL || SITE_URL
+        }
+      />
     </ContentLayout>
   );
 }

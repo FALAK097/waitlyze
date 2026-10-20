@@ -1,16 +1,14 @@
-import { Add01Icon } from "@hugeicons/core-free-icons";
-import { HugeiconsIcon } from "@hugeicons/react";
 import Link from "next/link";
 import { Suspense } from "react";
 
 import { ProductContentSkeleton } from "@/components/product/content-skeleton";
+import { CreateWaitlistDialog } from "@/components/product/create-waitlist-dialog";
 import { WaitlistRowActions } from "@/components/product/waitlist-row-actions";
 import {
   SortableHeading,
   StatusTabs,
   WaitlistSearch,
 } from "@/components/product/waitlists-toolbar";
-import { buttonVariants } from "@/components/ui/button";
 import {
   Table,
   TableBody,
@@ -124,9 +122,7 @@ function WaitlistsEmptyState({ query, status, sort, hasFilters }) {
       <div className={`product-empty ${styles.empty}`}>
         <h2>Your next launch starts here.</h2>
         <p>Create a waitlist to collect subscribers and learn who's interested.</p>
-        <Link prefetch={false} href="/waitlists/new" className={buttonVariants()}>
-          Create your first waitlist
-        </Link>
+        <CreateWaitlistDialog first />
       </div>
     );
   }
@@ -244,10 +240,7 @@ export default async function WaitlistsPage({ searchParams }) {
       <div className={styles.listToolbar}>
         <StatusTabs query={query} status={status} sort={sort} />
         <WaitlistSearch query={query} status={status} sort={sort} />
-        <Link prefetch={false} href="/waitlists/new" className={buttonVariants()}>
-          <HugeiconsIcon icon={Add01Icon} aria-hidden="true" />
-          New waitlist
-        </Link>
+        <CreateWaitlistDialog />
       </div>
       <Suspense
         fallback={<ProductContentSkeleton label="Loading waitlists" variant="table" rows={5} />}
