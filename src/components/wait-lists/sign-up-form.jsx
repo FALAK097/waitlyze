@@ -43,7 +43,6 @@ export const SignUpForm = ({
   onSubmit,
   setEmail,
   inputRef,
-  onDeleteLogo,
   onImageUploadSuccess,
 }) => {
   return (

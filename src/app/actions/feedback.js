@@ -9,7 +9,14 @@ import { sendPlatformEmail } from "@/lib/emails/platform.mjs";
 import { checkRateLimit } from "@/lib/rate-limit";
 
 const FEEDBACK_INBOX = "hi@falakgala.dev";
-const FEEDBACK_LABELS = ["Idea", "Issue", "Question", "Feature Request", "Complaint", "Other"];
+const FEEDBACK_LABELS = new Set([
+  "Idea",
+  "Issue",
+  "Question",
+  "Feature Request",
+  "Complaint",
+  "Other",
+]);
 const MAX_IMAGE_BYTES = 3 * 1024 * 1024;
 const IMAGE_FORMATS = {
   "image/png": "png",
@@ -37,7 +44,7 @@ export async function submitFeedback(previous, formData) {
 
   if (title.length < 3 || title.length > 150)
     return { error: "Enter a title between 3 and 150 characters." };
-  if (!FEEDBACK_LABELS.includes(label)) return { error: "Choose a feedback type." };
+  if (!FEEDBACK_LABELS.has(label)) return { error: "Choose a feedback type." };
   if (feedback.length < 10 || feedback.length > 5000)
     return { error: "Feedback must be between 10 and 5000 characters." };
   if (!checkRateLimit(session.user.id, 10, 60 * 60 * 1000)) {

@@ -26,7 +26,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 
 const FEEDBACK_LABELS = ["Idea", "Issue", "Question", "Feature Request", "Complaint", "Other"];
-const IMAGE_TYPES = ["image/png", "image/jpeg", "image/webp", "image/gif"];
+const IMAGE_TYPES = new Set(["image/png", "image/jpeg", "image/webp", "image/gif"]);
 const MAX_IMAGE_BYTES = 3 * 1024 * 1024;
 
 /** Feedback sheet with optional screenshot upload for signed-in Waitlyze users. */
@@ -66,7 +66,7 @@ export function FeedbackForm({ user, open, onOpenChange }) {
   function chooseImage(event) {
     const file = event.target.files?.[0];
     if (!file) return;
-    if (!IMAGE_TYPES.includes(file.type)) {
+    if (!IMAGE_TYPES.has(file.type)) {
       toast.error("Choose a PNG, JPEG, WebP, or GIF image.");
       event.target.value = "";
       setPreviewUrl("");

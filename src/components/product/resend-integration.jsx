@@ -31,11 +31,10 @@ export function ResendIntegration({ initialConnection, accountEmail, canManage, 
       : null;
 
   async function request(path, method, body) {
-    const response = await fetch(path, {
-      method,
-      headers: body ? { "content-type": "application/json" } : undefined,
-      body: body ? JSON.stringify(body) : undefined,
-    });
+    const init = body
+      ? { method, headers: { "content-type": "application/json" }, body: JSON.stringify(body) }
+      : { method };
+    const response = await fetch(path, init);
     const data = await response.json();
     if (!response.ok)
       throw new Error(data.error || "The request could not be completed. Try again.");

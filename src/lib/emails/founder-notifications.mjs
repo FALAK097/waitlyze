@@ -6,7 +6,7 @@ import { sendPlatformEmail } from "./platform.mjs";
 // Product notices from Waitlyze to the people who own a workspace. These are
 // always best-effort: a failed notice must never block a signup or a send, and
 // the recipient set is capped so one workspace cannot trigger a fan-out.
-const MILESTONE_COUNTS = [1, 10, 100, 1000];
+const MILESTONE_COUNTS = new Set([1, 10, 100, 1000]);
 const MAX_NOTICE_RECIPIENTS = 5;
 
 const clean = (value) =>
@@ -50,7 +50,7 @@ async function notifyOwners(db, workspaceId, { subject, html, idempotencyKey }) 
 export async function maybeNotifySignupMilestone(db, waitListId) {
   try {
     const count = await db.signUp.count({ where: { waitListId } });
-    if (!MILESTONE_COUNTS.includes(count)) return false;
+    if (!MILESTONE_COUNTS.has(count)) return false;
     const waitList = await db.waitList.findUnique({
       where: { id: waitListId },
       select: { name: true, status: true, workspaceId: true, showReferrals: true },

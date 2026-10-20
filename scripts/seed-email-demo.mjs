@@ -71,7 +71,6 @@ try {
     process.exit(0);
   }
 
-  const now = Date.now();
   const profiles = [
     { tag: "01", verified: true, consent: true, unsub: false, sent: true },
     { tag: "02", verified: true, consent: true, unsub: false, sent: true },
@@ -190,7 +189,6 @@ try {
           iso(60 * 48),
         ],
       );
-      recipeId = recipeId;
     } else {
       const version = (
         await pool.query(

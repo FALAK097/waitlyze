@@ -29,6 +29,7 @@ export function audienceWhere(waitListId, scope, filters) {
 export function csvCell(value) {
   let text = value == null ? "" : value instanceof Date ? value.toISOString() : String(value);
   // Prefix formula-like values even when attackers hide the trigger after whitespace/control chars.
+  // oxlint-disable-next-line no-control-regex -- control chars are the attack surface being neutralized.
   if (/^[\s\u0000-\u001f\u007f-\u009f]*[=+@-]/u.test(text)) text = `'${text}`;
   return `"${text.replaceAll('"', '""')}"`;
 }

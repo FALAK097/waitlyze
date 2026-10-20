@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 import { CopyIcon } from "../shared/icons";
 import { Button } from "./button";
 
-const CodeBlock = React.forwardRef(({ className, ...props }, ref) => {
+const CodeBlock = React.forwardRef(({ className, ...props }, _ref) => {
   return (
     <div
       className={cn(

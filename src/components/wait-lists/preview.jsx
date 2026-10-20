@@ -35,13 +35,7 @@ function PreviewContent({
     retry: 0,
   });
   // fetch sign up
-  const {
-    isSuccess: fetchSignUpSuccess,
-    isLoading: fetchSignUpLoading,
-    isError: fetchSignUpError,
-    error: fetchSignUpErrorData,
-    refetch: fetchSignUpRefetch,
-  } = useQuery({
+  const { isSuccess: fetchSignUpSuccess, refetch: fetchSignUpRefetch } = useQuery({
     enabled: false,
     queryFn: async () => await fetchSignUp({ waitListId: waitList.id }),
     queryKey: ["fetchSignUp"],
@@ -54,13 +48,7 @@ function PreviewContent({
     return existingSignups.find((signUp) => signUp.waitListId === waitList.id);
   });
   // Impression mutation
-  const {
-    isSuccess: impressionSuccess,
-    isLoading: impressionLoading,
-    isError: impressionError,
-    error: impressionErrorData,
-    refetch: impressionRefetch,
-  } = useQuery({
+  const { isLoading: impressionLoading, refetch: impressionRefetch } = useQuery({
     enabled: false,
     queryFn: async () => await createImpression({ waitList }),
     queryKey: ["createImpression", waitList.id, isImpressionCreated],

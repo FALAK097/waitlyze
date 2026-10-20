@@ -593,7 +593,6 @@ export function SnapshotPageBuilder({
             )}
             <section
               className="product-publish-review-preview"
-              role="region"
               aria-label="Public page preview"
               tabIndex={0}
             >

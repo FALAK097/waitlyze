@@ -81,6 +81,6 @@ export async function listUserApiKeys(userId, waitlistIds = []) {
     });
   } catch (error) {
     console.error("Error listing API keys:", error);
-    throw new Error("Failed to list API keys");
+    throw new Error("Failed to list API keys", { cause: error });
   }
 }

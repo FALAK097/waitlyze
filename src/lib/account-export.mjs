@@ -61,15 +61,7 @@ function automationConfig(config) {
   return pick(config, ["trigger", "delayMinutes", "subject", "body", "milestoneCount"]);
 }
 
-export function buildAccountExport({
-  user,
-  memberships,
-  campaigns,
-  apiKeys,
-  integrations,
-  customDomains,
-  webhooks,
-}) {
+export function buildAccountExport({ user, memberships, campaigns, apiKeys, integrations }) {
   return {
     exportedAt: new Date().toISOString(),
     formatVersion: 1,

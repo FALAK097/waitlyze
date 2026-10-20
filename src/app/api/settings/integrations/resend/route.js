@@ -91,15 +91,9 @@ export async function PUT(request) {
         provider: PROVIDER,
         fromEmail,
         ...secret,
-        ...(webhook || {}),
+        ...webhook,
       },
-      update: {
-        fromEmail,
-        status: "NEEDS_TEST",
-        lastErrorCode: null,
-        ...(secret || {}),
-        ...(webhook || {}),
-      },
+      update: { fromEmail, status: "NEEDS_TEST", lastErrorCode: null, ...secret, ...webhook },
       select: safeSelect,
     });
     await recordAuditEvent(prisma, {
