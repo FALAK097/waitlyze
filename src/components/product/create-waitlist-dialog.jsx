@@ -17,14 +17,18 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-function slugify(value) {
+function normalizeSlugInput(value) {
   return value
     .toLowerCase()
     .normalize("NFKD")
     .replace(/[\u0300-\u036f]/g, "")
     .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-|-$/g, "")
+    .replace(/^-+/, "")
     .slice(0, 48);
+}
+
+function slugify(value) {
+  return normalizeSlugInput(value).replace(/-+$/, "");
 }
 
 export function CreateWaitlistDialog({ initialOpen = false, first = false }) {
@@ -35,27 +39,46 @@ export function CreateWaitlistDialog({ initialOpen = false, first = false }) {
   const [slugTouched, setSlugTouched] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [creationKey, setCreationKey] = useState(() => crypto.randomUUID());
   const suggestedSlug = useMemo(() => slugify(name), [name]);
   const currentSlug = slugTouched ? slug : suggestedSlug;
+  const slugHint =
+    name.trim() && slugify(currentSlug).length < 3
+      ? "Enter a page address with at least 3 letters or numbers. Your waitlist name can stay as it is."
+      : "";
 
   async function submit(event) {
     event.preventDefault();
-    if (!name.trim() || currentSlug.length < 3) return;
+    const publicSlug = slugify(currentSlug);
+    if (busy || !name.trim() || publicSlug.length < 3) return;
     setBusy(true);
     setError("");
-    const result = await createWaitlistDraft({ name: name.trim(), publicSlug: currentSlug });
-    if (result?.ok) {
-      router.push(`/waitlists/${result.id}`);
-      return;
+    try {
+      const result = await createWaitlistDraft({
+        name: name.trim(),
+        publicSlug,
+        creationKey,
+      });
+      if (result?.ok) {
+        setCreationKey(crypto.randomUUID());
+        router.push(`/waitlists/${result.id}`);
+        return;
+      }
+      setError(result?.message || "We couldn't create the waitlist. Try again.");
+    } catch {
+      setError("We couldn't create the waitlist. Try again.");
+    } finally {
+      setBusy(false);
     }
-    setBusy(false);
-    setError(result?.message || "We couldn't create the waitlist. Try again.");
   }
 
   function changeOpen(next) {
     if (busy) return;
     setOpen(next);
-    if (!next) setError("");
+    if (!next) {
+      setCreationKey(crypto.randomUUID());
+      setError("");
+    }
   }
 
   return (
@@ -98,15 +121,22 @@ export function CreateWaitlistDialog({ initialOpen = false, first = false }) {
                   value={currentSlug}
                   onChange={(event) => {
                     setSlugTouched(true);
-                    setSlug(slugify(event.target.value));
+                    setSlug(normalizeSlugInput(event.target.value));
                   }}
                   placeholder="atlas"
                   required
                   disabled={busy}
-                  aria-describedby={error ? "new-waitlist-error" : undefined}
+                  aria-describedby={
+                    error ? "new-waitlist-error" : slugHint ? "new-waitlist-slug-hint" : undefined
+                  }
                   aria-invalid={!!error}
                 />
               </div>
+              {slugHint && (
+                <p id="new-waitlist-slug-hint" className="text-caption text-product-text-secondary">
+                  {slugHint}
+                </p>
+              )}
             </div>
             {error && (
               <p
@@ -121,7 +151,7 @@ export function CreateWaitlistDialog({ initialOpen = false, first = false }) {
               <Button
                 type="submit"
                 size="lg"
-                disabled={busy || !name.trim() || currentSlug.length < 3}
+                disabled={busy || !name.trim() || slugify(currentSlug).length < 3}
               >
                 {busy ? "Creating…" : "Create and open Builder"}
                 {!busy && <HugeiconsIcon icon={ArrowRight01Icon} aria-hidden="true" />}

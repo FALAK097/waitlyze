@@ -2,7 +2,7 @@ import { headers } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 import { cache } from "react";
 
-import { saveDraftPage } from "@/app/actions/draft-snapshot";
+import { replaceInvalidDraftPage, saveDraftPage } from "@/app/actions/draft-snapshot";
 import { publishWaitlist, pauseWaitlist, rollbackWaitlist } from "@/app/actions/publication";
 import { ContentLayout } from "@/components/dashboard/content-layout";
 import { SnapshotPageBuilder } from "@/components/product/snapshot-page-builder";
@@ -84,10 +84,12 @@ export default async function WaitListsEditPage(props) {
           publishedRevision: waitList.publishedRevision,
           publishedTemplateRevision: waitList.publishedTemplateRevision,
           templateSnapshot,
+          snapshotReplacement: !parsedSnapshot.success,
           publishedSnapshot: parsedPublished.success ? parsedPublished.data : null,
           customDomain: domain,
         }}
         saveDraftPage={saveDraftPage}
+        replaceInvalidDraftPage={replaceInvalidDraftPage}
         publishPage={publishWaitlist}
         pausePage={pauseWaitlist}
         rollbackPage={rollbackWaitlist}

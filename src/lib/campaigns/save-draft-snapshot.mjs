@@ -24,11 +24,20 @@ const sameSnapshot = (left, right) =>
 const scopedPage = (actorId, waitListId, workspaceId) => ({
   id: waitListId,
   status: { in: ["DRAFT", "PUBLISHED", "PAUSED"] },
-  templateSnapshot: { not: null },
   ...campaignScope(actorId, "editCampaign", workspaceId),
 });
 
-export async function saveDraftSnapshot(
+export async function saveDraftSnapshot(...args) {
+  return persistSnapshot(false, ...args);
+}
+
+// Only an explicit replacement action may overwrite an unreadable stored record.
+export async function replaceInvalidDraftSnapshot(...args) {
+  return persistSnapshot(true, ...args);
+}
+
+async function persistSnapshot(
+  replaceInvalid,
   db,
   actorId,
   workspaceId,
@@ -46,7 +55,11 @@ export async function saveDraftSnapshot(
       select: { id: true, templateRevision: true, templateSnapshot: true },
     });
     if (!current) throw new AccessError();
+    const stored = templateSnapshotSchema.safeParse(current.templateSnapshot);
+    if (!replaceInvalid && !stored.success) throw stored.error;
     if (current.templateRevision !== expectedRevision) throw new DraftRevisionConflict(current);
+    if (replaceInvalid && stored.success)
+      throw new Error("This page is now valid. Reload before editing it.");
     if (sameSnapshot(current.templateSnapshot, snapshot)) {
       return {
         revision: current.templateRevision,
@@ -66,9 +79,10 @@ export async function saveDraftSnapshot(
       if (!latest) throw new AccessError();
       throw new DraftRevisionConflict(latest);
     }
-    await tx.waitListRevision.create({
-      data: { waitListId, revision: expectedRevision, snapshot: current.templateSnapshot },
-    });
+    if (current.templateSnapshot !== null)
+      await tx.waitListRevision.create({
+        data: { waitListId, revision: expectedRevision, snapshot: current.templateSnapshot },
+      });
     await tx.waitListRevision.deleteMany({
       where: { waitListId, revision: { lt: Math.max(1, expectedRevision - 48) } },
     });

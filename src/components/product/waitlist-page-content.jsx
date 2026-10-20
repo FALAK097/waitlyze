@@ -25,6 +25,9 @@ export function WaitlistPageContent({
   signupCount = 128,
 }) {
   const visible = snapshot.sections.filter((section) => section.visible);
+  const firstForm = visible.find(
+    (section) => section.type === "form" || (section.type === "hero" && section.showForm),
+  );
   const mobile = previewViewport === "mobile";
   const renderForm = (section) =>
     renderSignupForm?.(section, snapshot) ?? <WaitlistSignupPreview form={snapshot.form} />;
@@ -107,7 +110,10 @@ export function WaitlistPageContent({
                   <p className="mx-auto mt-7 max-w-3xl text-lg text-wl-muted">{section.body}</p>
                 </div>
                 {section.showForm && (
-                  <div className="mt-11 w-full max-w-2xl text-left" id="signup">
+                  <div
+                    className="mt-11 w-full max-w-2xl text-left"
+                    id={section.id === firstForm?.id ? "signup" : undefined}
+                  >
                     {renderForm(section)}
                   </div>
                 )}
@@ -250,7 +256,7 @@ export function WaitlistPageContent({
                   sectionClass,
                   "flex flex-col items-start gap-9 py-20 md:flex-row md:gap-16",
                 )}
-                id="signup"
+                id={section.id === firstForm?.id ? "signup" : undefined}
                 key={section.id}
               >
                 <div className="md:grow-8 md:basis-0">

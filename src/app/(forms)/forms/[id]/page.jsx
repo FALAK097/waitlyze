@@ -88,7 +88,14 @@ export default async function WaitListsPreviewPage(props) {
   const { id } = params;
   const structured = await prisma.waitList.findUnique({
     where: { id },
-    select: { id: true, name: true, status: true, showReferrals: true, publishedRevision: true },
+    select: {
+      id: true,
+      name: true,
+      publicSlug: true,
+      status: true,
+      showReferrals: true,
+      publishedRevision: true,
+    },
   });
   if (structured?.status === "PAUSED")
     return (
@@ -130,6 +137,7 @@ export default async function WaitListsPreviewPage(props) {
           previewViewport="mobile"
           renderSignupForm={(_section, snapshot) => (
             <SignupForm
+              slug={structured.publicSlug || undefined}
               waitListId={id}
               showReferrals={structured.showReferrals}
               formConfig={snapshot.form}

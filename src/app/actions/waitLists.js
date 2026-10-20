@@ -1,6 +1,4 @@
 "use server";
-import { randomUUID } from "node:crypto";
-
 import { DeleteObjectCommand } from "@aws-sdk/client-s3";
 import { ZodError } from "zod";
 
@@ -12,15 +10,15 @@ import { AUDIT_ACTIONS, recordAuditEvent } from "@/lib/workspaces/audit.mjs";
 import { requireCampaign } from "@/lib/workspaces/authorize";
 import { currentWorkspace } from "@/lib/workspaces/current";
 
-export async function createWaitlistDraft({ name, publicSlug }) {
+export async function createWaitlistDraft({ name, publicSlug, creationKey }) {
+  const { user, workspace } = await currentWorkspace();
   try {
-    const { user, workspace } = await currentWorkspace();
     const draft = await createDraft(prisma, user.id, workspace.id, {
       name,
       description: "",
       publicSlug,
       templateId: "simple",
-      creationKey: randomUUID(),
+      creationKey,
     });
     await recordAuditEvent(prisma, {
       workspaceId: workspace.id,

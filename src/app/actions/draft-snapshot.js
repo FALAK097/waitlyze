@@ -2,15 +2,27 @@
 
 import { ZodError } from "zod";
 
-import { DraftRevisionConflict, saveDraftSnapshot } from "@/lib/campaigns/save-draft-snapshot.mjs";
+import {
+  DraftRevisionConflict,
+  replaceInvalidDraftSnapshot,
+  saveDraftSnapshot,
+} from "@/lib/campaigns/save-draft-snapshot.mjs";
 import prisma from "@/lib/prisma";
 import { currentWorkspace } from "@/lib/workspaces/current";
 import { AccessError } from "@/lib/workspaces/service.mjs";
 
 export async function saveDraftPage(waitListId, expectedRevision, snapshot) {
+  return savePage(saveDraftSnapshot, waitListId, expectedRevision, snapshot);
+}
+
+export async function replaceInvalidDraftPage(waitListId, expectedRevision, snapshot) {
+  return savePage(replaceInvalidDraftSnapshot, waitListId, expectedRevision, snapshot);
+}
+
+async function savePage(save, waitListId, expectedRevision, snapshot) {
   try {
     const { user, workspace } = await currentWorkspace();
-    const result = await saveDraftSnapshot(
+    const result = await save(
       prisma,
       user.id,
       workspace.id,

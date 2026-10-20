@@ -9,9 +9,8 @@ const waitlistSettings = (id) => `/waitlists/${id}/settings#custom-domain-title`
 
 export function assessWaitlistReadiness(waitlist) {
   const parsed = templateSnapshotSchema.safeParse(waitlist.templateSnapshot);
-  const sections = Array.isArray(waitlist.templateSnapshot?.sections)
-    ? waitlist.templateSnapshot.sections
-    : [];
+  const snapshot = parsed.success ? parsed.data : waitlist.templateSnapshot;
+  const sections = Array.isArray(snapshot?.sections) ? snapshot.sections : [];
   const formSections = sections.filter((section) => section?.type === "form" && section.visible);
   const heroForms = sections.filter(
     (section) => section?.type === "hero" && section.visible && section.showForm,
@@ -19,7 +18,7 @@ export function assessWaitlistReadiness(waitlist) {
   const formReady =
     formSections.every((section) => sectionSchema.safeParse(section).success) &&
     formSections.length + heroForms.length > 0 &&
-    templateFormSchema.safeParse(waitlist.templateSnapshot?.form).success;
+    templateFormSchema.safeParse(snapshot?.form).success;
   const contentReady = parsed.success && formReady;
 
   const checks = [

@@ -1,7 +1,7 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
-import { Suspense, useState } from "react";
+import { Suspense, useId, useState } from "react";
 import { toast } from "sonner";
 
 import { cn } from "@/lib/utils";
@@ -22,6 +22,9 @@ export function SignupForm(props) {
 }
 
 function SignupFormInner({ slug, waitListId, showReferrals, formConfig, statusPage }) {
+  const emailId = useId();
+  const referralId = useId();
+  const resultTitleId = useId();
   const searchParams = useSearchParams();
   const referralCode = searchParams.get("r");
   const [busy, setBusy] = useState(false);
@@ -117,8 +120,8 @@ function SignupFormInner({ slug, waitListId, showReferrals, formConfig, statusPa
 
   if (result) {
     return (
-      <section className="w-full text-wl-text" aria-labelledby="signup-result-title">
-        <h2 className="mb-4 font-wl-heading text-3xl tracking-tight" id="signup-result-title">
+      <section className="w-full text-wl-text" aria-labelledby={resultTitleId}>
+        <h2 className="mb-4 font-wl-heading text-3xl tracking-tight" id={resultTitleId}>
           {result.heading}
         </h2>
         {result.notice ? <p className="leading-relaxed text-wl-muted">{result.notice}</p> : null}
@@ -138,7 +141,7 @@ function SignupFormInner({ slug, waitListId, showReferrals, formConfig, statusPa
         {statusPage.showReferralLink && result.referralLink ? (
           <div className="mt-6 grid gap-2.5">
             <p className="m-0 text-sm text-wl-muted">{statusPage.shareMessage}</p>
-            <label className="text-caption font-bold" htmlFor="waitlist-referral-link">
+            <label className="text-caption font-bold" htmlFor={referralId}>
               Your referral link
             </label>
             <div className="flex gap-2">
@@ -147,7 +150,7 @@ function SignupFormInner({ slug, waitListId, showReferrals, formConfig, statusPa
                   control,
                   "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-wl-accent",
                 )}
-                id="waitlist-referral-link"
+                id={referralId}
                 value={result.referralLink}
                 readOnly
                 onFocus={(event) => event.target.select()}
@@ -180,7 +183,7 @@ function SignupFormInner({ slug, waitListId, showReferrals, formConfig, statusPa
 
   return (
     <form className="w-full text-wl-text" onSubmit={submit}>
-      <label className="mb-2 block text-caption font-bold" htmlFor="waitlist-email">
+      <label className="mb-2 block text-caption font-bold" htmlFor={emailId}>
         {formConfig.label}
       </label>
       <div className={cn("flex gap-2", formConfig.layout === "stacked" && "flex-col")}>
@@ -189,7 +192,7 @@ function SignupFormInner({ slug, waitListId, showReferrals, formConfig, statusPa
             control,
             "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-wl-accent",
           )}
-          id="waitlist-email"
+          id={emailId}
           name="email"
           type="email"
           autoComplete="email"

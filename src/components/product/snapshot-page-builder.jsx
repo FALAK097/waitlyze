@@ -399,6 +399,7 @@ function BlockInspector({ section, update, remove, duplicate }) {
 export function SnapshotPageBuilder({
   waitList,
   saveDraftPage,
+  replaceInvalidDraftPage,
   publishPage,
   pausePage,
   rollbackPage,
@@ -408,6 +409,7 @@ export function SnapshotPageBuilder({
   const router = useRouter();
   const [snapshot, setSnapshot] = useState(waitList.templateSnapshot);
   const [version, setVersion] = useState(waitList.templateRevision);
+  const [replacement, setReplacement] = useState(waitList.snapshotReplacement);
   const [surface, setSurface] = useState("page");
   const [panel, setPanel] = useState("blocks");
   const [selectedId, setSelectedId] = useState(waitList.templateSnapshot.sections[0]?.id);
@@ -440,7 +442,14 @@ export function SnapshotPageBuilder({
   }, [snapshot, version, dirty, conflict]);
   const applySnapshot = useCallback(
     (next) => {
-      if (equal(snapshotRef.current, next)) return;
+      const parsed = templateSnapshotSchema.safeParse(next);
+      if (!parsed.success) {
+        const issue =
+          parsed.error.issues.find((issue) => issue.code === "custom") || parsed.error.issues[0];
+        setError(issue?.message || "Review the page content.");
+        return false;
+      }
+      if (equal(snapshotRef.current, next)) return true;
       undoStack.current.push(clone(snapshotRef.current));
       if (undoStack.current.length > 100) undoStack.current.shift();
       redoStack.current = [];
@@ -462,11 +471,12 @@ export function SnapshotPageBuilder({
           "This browser could not keep a recovery copy. Keep this tab open until the page says Saved.",
         );
       }
+      return true;
     },
     [key],
   );
   const flush = useCallback(async () => {
-    if (!dirtyRef.current || conflictRef.current) return;
+    if (replacement || !dirtyRef.current || conflictRef.current) return;
     if (inFlightRef.current) {
       saveAgainRef.current = true;
       return;
@@ -517,34 +527,35 @@ export function SnapshotPageBuilder({
         window.setTimeout(() => void flush(), 0);
       }
     }
-  }, [key, saveDraftPage, waitList.id]);
+  }, [key, replacement, saveDraftPage, waitList.id]);
   useEffect(() => {
     try {
       const stored = JSON.parse(sessionStorage.getItem(key) || "null");
+      const parsed = templateSnapshotSchema.safeParse(stored?.snapshot);
       if (
         stored &&
         Number.isSafeInteger(stored.revision) &&
-        templateSnapshotSchema.safeParse(stored.snapshot).success &&
-        !equal(stored.snapshot, waitList.templateSnapshot)
+        parsed.success &&
+        !equal(parsed.data, waitList.templateSnapshot)
       ) {
-        snapshotRef.current = clone(stored.snapshot);
-        setSnapshot(clone(stored.snapshot));
+        snapshotRef.current = clone(parsed.data);
+        setSnapshot(clone(parsed.data));
         dirtyRef.current = true;
         setDirty(true);
         setMessage("Recovered unsaved edits");
-        if (stored.revision !== waitList.templateRevision)
+        if (!waitList.snapshotReplacement && stored.revision !== waitList.templateRevision)
           setConflict({ revision: waitList.templateRevision, snapshot: waitList.templateSnapshot });
       }
     } catch {
       setError("The last saved version is loaded; a browser recovery copy could not be read.");
     }
     setHydrated(true);
-  }, [key, waitList.templateRevision, waitList.templateSnapshot]);
+  }, [key, waitList.templateRevision, waitList.templateSnapshot, waitList.snapshotReplacement]);
   useEffect(() => {
-    if (!hydrated || !dirty || conflict) return;
+    if (replacement || !hydrated || !dirty || conflict) return;
     const timer = window.setTimeout(() => void flush(), 700);
     return () => window.clearTimeout(timer);
-  }, [snapshot, dirty, conflict, hydrated, flush]);
+  }, [snapshot, dirty, conflict, hydrated, flush, replacement]);
   const undo = () => {
     const previous = undoStack.current.pop();
     if (!previous) return;
@@ -570,14 +581,15 @@ export function SnapshotPageBuilder({
     setMessage("Unsaved changes");
   };
   const resolveConflict = (choice) => {
-    const next = choice === "saved" ? clone(conflict.snapshot) : clone(snapshotRef.current);
+    const saved = templateSnapshotSchema.parse(conflict.snapshot);
+    const next = choice === "saved" ? clone(saved) : clone(snapshotRef.current);
     versionRef.current = conflict.revision;
     setVersion(conflict.revision);
     setConflict(null);
     conflictRef.current = null;
     snapshotRef.current = next;
     setSnapshot(next);
-    const changed = !equal(next, conflict.snapshot);
+    const changed = !equal(next, saved);
     dirtyRef.current = changed;
     setDirty(changed);
     setError("");
@@ -590,16 +602,19 @@ export function SnapshotPageBuilder({
     });
   const selected = snapshot.sections.find((section) => section.id === selectedId);
   const addBlock = (type) => {
+    if (snapshot.sections.length >= 24) {
+      setError("A page can have up to 24 blocks.");
+      return;
+    }
     const block = createSection(type);
     applySnapshot({ ...snapshot, sections: [...snapshot.sections, block] });
     setSelectedId(block.id);
     setPanel("blocks");
   };
   const removeBlock = () => {
-    if (!selected || snapshot.sections.length === 1) return;
+    if (!selected) return;
     const sections = snapshot.sections.filter((section) => section.id !== selected.id);
-    setSelectedId(sections[0]?.id);
-    applySnapshot({ ...snapshot, sections });
+    if (applySnapshot({ ...snapshot, sections })) setSelectedId(sections[0]?.id);
   };
   const duplicateBlock = () => {
     if (!selected || snapshot.sections.length >= 24) return;
@@ -636,7 +651,7 @@ export function SnapshotPageBuilder({
     }
   };
   const publish = async () => {
-    if (dirty || saving || conflict || publishing || !publishConfirmed) return;
+    if (replacement || dirty || saving || conflict || publishing || !publishConfirmed) return;
     setPublishing(true);
     try {
       const result = await publishPage(waitList.id, version);
@@ -652,7 +667,7 @@ export function SnapshotPageBuilder({
     }
   };
   const lifecycle = async (action) => {
-    if (dirty || saving || conflict || publishing) return;
+    if (replacement || dirty || saving || conflict || publishing) return;
     setPublishing(true);
     try {
       const result = await action(waitList.id);
@@ -661,16 +676,66 @@ export function SnapshotPageBuilder({
         return;
       }
       if (result.snapshot) {
+        const restored = templateSnapshotSchema.parse(result.snapshot);
         versionRef.current = result.templateRevision;
         setVersion(result.templateRevision);
-        snapshotRef.current = clone(result.snapshot);
-        setSnapshot(clone(result.snapshot));
+        snapshotRef.current = clone(restored);
+        setSnapshot(clone(restored));
         setDirty(false);
         dirtyRef.current = false;
+        try {
+          sessionStorage.setItem(
+            key,
+            JSON.stringify({ revision: result.templateRevision, snapshot: restored }),
+          );
+        } catch {
+          /* restored on server */
+        }
       }
       router.refresh();
     } finally {
       setPublishing(false);
+    }
+  };
+  const acceptReplacement = async () => {
+    if (saving || !replacement) return;
+    setSaving(true);
+    const sent = clone(snapshotRef.current);
+    try {
+      const result = await replaceInvalidDraftPage(waitList.id, versionRef.current, sent);
+      if (!result?.ok) {
+        setError(
+          result?.conflict
+            ? "The saved page changed. Reload before accepting a replacement."
+            : result?.message || "Could not replace this page. Try again.",
+        );
+        return;
+      }
+      versionRef.current = result.revision;
+      setVersion(result.revision);
+      const changed = !equal(snapshotRef.current, sent);
+      if (!changed) {
+        snapshotRef.current = result.snapshot;
+        setSnapshot(result.snapshot);
+      }
+      dirtyRef.current = changed;
+      setDirty(changed);
+      setReplacement(false);
+      setMessage(changed ? "Unsaved changes" : "Saved");
+      setError("");
+      try {
+        sessionStorage.setItem(
+          key,
+          JSON.stringify({ revision: result.revision, snapshot: snapshotRef.current }),
+        );
+      } catch {
+        /* saved on server */
+      }
+      router.refresh();
+    } catch {
+      setError("Could not replace this page. Try again.");
+    } finally {
+      setSaving(false);
     }
   };
   const unchangedStarterCopy = findUnchangedStarterCopy(snapshot);
@@ -763,13 +828,27 @@ export function SnapshotPageBuilder({
                 setPublishConfirmed(false);
                 setPublishReviewOpen(true);
               }}
-              disabled={dirty || saving || !!conflict}
+              disabled={replacement || dirty || saving || !!conflict}
             >
               {waitList.status === "PUBLISHED" ? "Publish updates" : "Publish"}
             </Button>
           )}
         </div>
       </header>
+      {replacement && (
+        <div
+          className="mx-2 mb-3 grid gap-3 rounded-lg bg-product-danger-bg px-3 py-2.5 text-caption text-product-danger-text"
+          role="alert"
+        >
+          <p>
+            The saved page could not be read. This is a replacement preview. Autosave is paused
+            until you accept replacing the saved page.
+          </p>
+          <Button size="sm" disabled={saving} onClick={() => void acceptReplacement()}>
+            Accept and save replacement
+          </Button>
+        </div>
+      )}
       {error && (
         <div
           className="mx-2 mb-3 flex items-center gap-2.5 rounded-lg bg-product-danger-bg px-3 py-2.5 text-caption text-product-danger-text [&>span]:mr-auto"
@@ -786,7 +865,8 @@ export function SnapshotPageBuilder({
               </Button>
             </>
           ) : (
-            dirty && (
+            dirty &&
+            !replacement && (
               <Button size="sm" variant="outline" onClick={() => void flush()}>
                 Retry
               </Button>
@@ -818,7 +898,7 @@ export function SnapshotPageBuilder({
                 <div className="px-2.5 pt-1 pb-4">
                   {snapshot.sections.map((section, index) => (
                     <div
-                      className="group flex items-center gap-1 rounded-lg data-[selected=true]:bg-product-bg-inset [&>button]:min-w-0 [&>button]:flex-1 [&>button]:cursor-pointer [&>button]:items-center [&>button]:justify-between [&>button]:gap-2 [&>button]:border-0 [&>button]:bg-transparent [&>button]:px-2.5 [&>button]:py-3 [&>button]:text-left [&>button]:text-caption [&>button]:text-product-text-primary [&>div]:hidden [&>div]:pr-1 focus-within:[&>div]:flex hover:[&>div]:flex [&>div>button]:size-7 [&>div>button]:cursor-pointer [&>div>button]:border-0 [&>div>button]:bg-transparent [&>div>button]:text-product-text-secondary [&>div>button:disabled]:opacity-25 [&>small]:text-micro [&>small]:text-product-text-muted"
+                      className="group flex items-center gap-1 rounded-lg data-[selected=true]:bg-product-bg-inset [&>button]:min-w-0 [&>button]:flex-1 [&>button]:cursor-pointer [&>button]:items-center [&>button]:justify-between [&>button]:gap-2 [&>button]:border-0 [&>button]:bg-transparent [&>button]:px-2.5 [&>button]:py-3 [&>button]:text-left [&>button]:text-caption [&>button]:text-product-text-primary [&>div]:hidden [&>div]:pr-1 focus-within:[&>div]:flex hover:[&>div]:flex data-[selected=true]:[&>div]:flex [&>div>button]:size-7 [&>div>button]:cursor-pointer [&>div>button]:border-0 [&>div>button]:bg-transparent [&>div>button]:text-product-text-secondary [&>div>button:disabled]:opacity-25 [&>small]:text-micro [&>small]:text-product-text-muted [@media(hover:none)]:[&>div]:flex"
                       data-selected={selectedId === section.id}
                       key={section.id}
                     >
@@ -864,9 +944,14 @@ export function SnapshotPageBuilder({
                     key={template.id}
                     data-active={snapshot.templateId === template.id}
                     onClick={() => {
-                      const next = snapshotTemplate(template.id);
-                      applySnapshot(next);
-                      setSelectedId(next.sections[0].id);
+                      const next = {
+                        ...snapshotTemplate(template.id),
+                        form: snapshot.form,
+                        statusPage: snapshot.statusPage,
+                        seo: snapshot.seo,
+                        ...(snapshot.legacy ? { legacy: snapshot.legacy } : {}),
+                      };
+                      if (applySnapshot(next)) setSelectedId(next.sections[0].id);
                     }}
                   >
                     <strong>{template.name}</strong>
