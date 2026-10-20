@@ -1,9 +1,10 @@
 "use client";
 
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { toast } from "sonner";
+
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 export function VerifyAction({ token, returnPath, waitlistName }) {
   const [state, setState] = useState("ready");
@@ -59,7 +60,9 @@ export function VerifyAction({ token, returnPath, waitlistName }) {
           <div className="verify-referral">
             <div className="verify-referral-row">
               <Input value={referralUrl} readOnly aria-label="Your referral link" />
-              <Button type="button" onClick={copyReferralLink}>Copy link</Button>
+              <Button type="button" onClick={copyReferralLink}>
+                Copy link
+              </Button>
             </div>
             {referral.position ? (
               <p className="verify-referral-position">

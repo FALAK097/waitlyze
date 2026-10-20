@@ -3,15 +3,15 @@
 import { useEffect, useState } from "react";
 
 export function ClientOnly({ children }) {
-	const [mounted, setMounted] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
-	useEffect(() => {
-		setMounted(true);
-	}, []);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
-	if (!mounted) {
-		return null;
-	}
+  if (!mounted) {
+    return null;
+  }
 
-	return children;
+  return children;
 }

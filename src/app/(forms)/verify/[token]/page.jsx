@@ -1,6 +1,9 @@
 import { createHash } from "node:crypto";
+
 import prisma from "@/lib/prisma";
+
 import { VerifyAction } from "./verify-action";
+
 import "../../public-page.css";
 
 export const metadata = { title: "Confirm your email", robots: { index: false, follow: false } };
@@ -8,7 +11,8 @@ export const metadata = { title: "Confirm your email", robots: { index: false, f
 export default async function VerifySignupPage({ params, searchParams }) {
   const [{ token }, query] = await Promise.all([params, searchParams]);
   const candidate = query?.returnTo;
-  const returnPath = typeof candidate === "string" && /^\/w\/[A-Za-z0-9_-]+$/.test(candidate) ? candidate : "/";
+  const returnPath =
+    typeof candidate === "string" && /^\/w\/[A-Za-z0-9_-]+$/.test(candidate) ? candidate : "/";
 
   let waitlistName = null;
   if (typeof token === "string" && token.length >= 16 && token.length <= 128) {

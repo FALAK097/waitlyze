@@ -4,7 +4,9 @@
 // Every other provider keeps trim + lowercase only.
 
 export function normalizeSignupEmail(email) {
-  const base = String(email ?? "").trim().toLowerCase();
+  const base = String(email ?? "")
+    .trim()
+    .toLowerCase();
   const at = base.lastIndexOf("@");
   if (at <= 0) return base;
   const domain = base.slice(at + 1);
@@ -17,7 +19,9 @@ export function normalizeSignupEmail(email) {
 }
 
 export function legacyLowerEmail(email) {
-  return String(email ?? "").trim().toLowerCase();
+  return String(email ?? "")
+    .trim()
+    .toLowerCase();
 }
 
 // All stored forms an address may have: rows written before canonical

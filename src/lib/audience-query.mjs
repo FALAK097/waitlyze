@@ -1,6 +1,7 @@
 export const AUDIENCE_PAGE_SIZE = 25;
 
-export const IMPORT_TEMPLATE_CSV = "email,country,points,referral_code,referred_by,verified,joined_at\nvisitor@example.com,US,0,,,false,\n";
+export const IMPORT_TEMPLATE_CSV =
+  "email,country,points,referral_code,referred_by,verified,joined_at\nvisitor@example.com,US,0,,,false,\n";
 
 export function parseAudienceFilters(searchParams) {
   const query = (searchParams.get("q") ?? "").trim();
@@ -8,7 +9,8 @@ export function parseAudienceFilters(searchParams) {
   const sort = searchParams.get("sort") ?? "joined_desc";
   const delivery = searchParams.get("delivery") ?? "all";
   if (query.length > 120) return { error: "Search must be 120 characters or fewer." };
-  if (!["all", "verified", "pending"].includes(status)) return { error: "Invalid subscriber status." };
+  if (!["all", "verified", "pending"].includes(status))
+    return { error: "Invalid subscriber status." };
   if (!["joined_desc", "joined_asc"].includes(sort)) return { error: "Invalid sort order." };
   if (!["all", "failed"].includes(delivery)) return { error: "Invalid email filter." };
   return { query, status, sort, delivery };
@@ -32,8 +34,13 @@ export function csvCell(value) {
 }
 
 export function subscriberCsvRow(subscriber) {
-  return [subscriber.email, subscriber.verifiedAt ? "Verified" : "Needs confirmation", subscriber.createdAt]
-    .map(csvCell).join(",");
+  return [
+    subscriber.email,
+    subscriber.verifiedAt ? "Verified" : "Needs confirmation",
+    subscriber.createdAt,
+  ]
+    .map(csvCell)
+    .join(",");
 }
 
 export const EXPORT_COLUMNS = [
@@ -53,13 +60,21 @@ const EXPORT_DEFAULTS = ["email", "status", "joined"];
 // Parses the `columns` export parameter into a validated key list.
 export function parseExportColumns(value) {
   if (value == null || value === "") return EXPORT_DEFAULTS;
-  const keys = String(value).split(",").map((key) => key.trim()).filter(Boolean);
-  const valid = [...new Set(keys)].filter((key) => EXPORT_COLUMNS.some((column) => column.key === key));
+  const keys = String(value)
+    .split(",")
+    .map((key) => key.trim())
+    .filter(Boolean);
+  const valid = [...new Set(keys)].filter((key) =>
+    EXPORT_COLUMNS.some((column) => column.key === key),
+  );
   return valid.length ? valid.slice(0, EXPORT_COLUMNS.length) : null;
 }
 
 export function exportHeaderRow(columns) {
-  return columns.map((key) => EXPORT_COLUMNS.find((column) => column.key === key).label).map(csvCell).join(",");
+  return columns
+    .map((key) => EXPORT_COLUMNS.find((column) => column.key === key).label)
+    .map(csvCell)
+    .join(",");
 }
 
 export function buildExportRow(subscriber, columns, extra = {}) {

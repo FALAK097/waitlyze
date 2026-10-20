@@ -12,7 +12,7 @@
 
 .scope h2,
 .scope h3 {
-  letter-spacing: -.025em;
+  letter-spacing: -0.025em;
   text-wrap: balance;
 }
 
@@ -42,7 +42,7 @@
   border-radius: 0;
 }
 
-.scope :global(.product-context-nav a[aria-current=page]) {
+.scope :global(.product-context-nav a[aria-current="page"]) {
   background: transparent;
   color: var(--product-text-primary);
 }
@@ -67,7 +67,7 @@
 }
 
 .scope :global(.product-button:active:not(:disabled)) {
-  transform: scale(.96);
+  transform: scale(0.96);
 }
 
 /* ---------- layout ---------- */
@@ -114,7 +114,7 @@
 
 .railItem:disabled {
   cursor: default;
-  opacity: .6;
+  opacity: 0.6;
 }
 
 .railItem strong {
@@ -288,7 +288,7 @@
 .canvas :global(.tiptap h1) {
   font-size: 26px;
   font-weight: 650;
-  letter-spacing: -.035em;
+  letter-spacing: -0.035em;
 }
 
 .canvas :global(.tiptap h2) {
@@ -361,7 +361,7 @@
 }
 
 .testForm button:disabled {
-  opacity: .5;
+  opacity: 0.5;
   cursor: not-allowed;
 }
 
@@ -691,8 +691,13 @@
 }
 
 @keyframes skelPulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: .55; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.55;
+  }
 }
 
 /* ---------- error ---------- */

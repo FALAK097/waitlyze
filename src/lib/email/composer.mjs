@@ -1,11 +1,59 @@
 import sanitizeHtml from "sanitize-html";
+
 import { escapeHtmlText, renderEmailMarkdown } from "../email-markdown.mjs";
 
-const allowedTags = ["html", "head", "body", "meta", "title", "div", "span", "table", "thead", "tbody", "tfoot", "tr", "th", "td", "h1", "h2", "h3", "h4", "h5", "h6", "p", "br", "hr", "a", "img", "strong", "b", "em", "i", "u", "s", "blockquote", "ul", "ol", "li", "pre", "code", "section", "footer"];
+const allowedTags = [
+  "html",
+  "head",
+  "body",
+  "meta",
+  "title",
+  "div",
+  "span",
+  "table",
+  "thead",
+  "tbody",
+  "tfoot",
+  "tr",
+  "th",
+  "td",
+  "h1",
+  "h2",
+  "h3",
+  "h4",
+  "h5",
+  "h6",
+  "p",
+  "br",
+  "hr",
+  "a",
+  "img",
+  "strong",
+  "b",
+  "em",
+  "i",
+  "u",
+  "s",
+  "blockquote",
+  "ul",
+  "ol",
+  "li",
+  "pre",
+  "code",
+  "section",
+  "footer",
+];
 const spacingValues = [/^[\d.\s]+(?:px|em|rem|%)?(?:\s+[\d.]+(?:px|em|rem|%)?)*$/];
 const borderValues = [/^[\w\s#.(),%-]+$/];
-const boxSpacingStyles = Object.fromEntries(["", "-top", "-bottom", "-left", "-right"].flatMap((side) => [[`padding${side}`, spacingValues], [`margin${side}`, spacingValues]]));
-const borderStyles = Object.fromEntries(["", "-top", "-bottom", "-left", "-right"].map((side) => [`border${side}`, borderValues]));
+const boxSpacingStyles = Object.fromEntries(
+  ["", "-top", "-bottom", "-left", "-right"].flatMap((side) => [
+    [`padding${side}`, spacingValues],
+    [`margin${side}`, spacingValues],
+  ]),
+);
+const borderStyles = Object.fromEntries(
+  ["", "-top", "-bottom", "-left", "-right"].map((side) => [`border${side}`, borderValues]),
+);
 const options = {
   allowedTags,
   allowedAttributes: {
@@ -42,8 +90,16 @@ const options = {
 };
 
 export function validateComposerContent({ editorDocument, renderedHtml, renderedText }) {
-  if (!editorDocument || editorDocument.type !== "doc" || !Array.isArray(editorDocument.content)) throw new Error("Write a message before saving.");
-  if (JSON.stringify(editorDocument).length > 60000 || typeof renderedHtml !== "string" || renderedHtml.length > 120000 || typeof renderedText !== "string" || renderedText.length > 12000) throw new Error("This email is too long. Shorten it and try again.");
+  if (!editorDocument || editorDocument.type !== "doc" || !Array.isArray(editorDocument.content))
+    throw new Error("Write a message before saving.");
+  if (
+    JSON.stringify(editorDocument).length > 60000 ||
+    typeof renderedHtml !== "string" ||
+    renderedHtml.length > 120000 ||
+    typeof renderedText !== "string" ||
+    renderedText.length > 12000
+  )
+    throw new Error("This email is too long. Shorten it and try again.");
   if (!renderedText.trim()) throw new Error("Write a message before saving.");
   const html = sanitizeHtml(renderedHtml, options);
   if (!html.trim()) throw new Error("Write a message before saving.");
@@ -51,7 +107,9 @@ export function validateComposerContent({ editorDocument, renderedHtml, rendered
 }
 
 export function interpolateEmail(value, variables) {
-  return String(value || "").replace(/\{\{\s*([a-z_]+)\s*\}\}/gi, (match, name) => escapeHtmlText(variables[name.toLowerCase()] ?? match));
+  return String(value || "").replace(/\{\{\s*([a-z_]+)\s*\}\}/gi, (match, name) =>
+    escapeHtmlText(variables[name.toLowerCase()] ?? match),
+  );
 }
 
 export function subscriberEmailHtml({ name, content, previewText = "", unsubscribeUrl }) {
@@ -59,9 +117,19 @@ export function subscriberEmailHtml({ name, content, previewText = "", unsubscri
   const body = content.includes("<body")
     ? content.replace(/<\/body\s*>/i, `${footer}</body>`)
     : `<!doctype html><html lang="en"><body style="margin:0;background:#f7f8f5;color:#16271d;font:16px/1.6 Arial,sans-serif"><div style="max-width:600px;margin:0 auto;padding:36px 24px"><p style="font-size:13px;color:#617267">${escapeHtmlText(name)}</p>${content}${footer}</div></body></html>`;
-  return previewText ? body.replace(/<body([^>]*)>/i, `<body$1><div style="display:none;max-height:0;overflow:hidden;opacity:0">${escapeHtmlText(previewText)}</div>`) : body;
+  return previewText
+    ? body.replace(
+        /<body([^>]*)>/i,
+        `<body$1><div style="display:none;max-height:0;overflow:hidden;opacity:0">${escapeHtmlText(previewText)}</div>`,
+      )
+    : body;
 }
 
 export function legacyEmailContent({ header, subHeader, mainBody, subBody }) {
-  return [header ? `<h1>${escapeHtmlText(header)}</h1>` : "", subHeader ? renderEmailMarkdown(subHeader) : "", renderEmailMarkdown(mainBody), subBody ? renderEmailMarkdown(subBody) : ""].join("");
+  return [
+    header ? `<h1>${escapeHtmlText(header)}</h1>` : "",
+    subHeader ? renderEmailMarkdown(subHeader) : "",
+    renderEmailMarkdown(mainBody),
+    subBody ? renderEmailMarkdown(subBody) : "",
+  ].join("");
 }

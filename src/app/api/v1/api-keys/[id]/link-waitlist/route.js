@@ -1,9 +1,10 @@
-import { NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
+import { NextResponse } from "next/server";
+
+import { auth } from "@/lib/auth";
 import prisma from "@/lib/prisma";
-import { campaignScope } from "@/lib/workspaces/service.mjs";
 import { selectedWorkspaceId } from "@/lib/workspaces/current";
+import { campaignScope } from "@/lib/workspaces/service.mjs";
 
 export async function POST(request, context) {
   try {
@@ -11,10 +12,7 @@ export async function POST(request, context) {
       headers: await headers(),
     });
     if (!session) {
-      return NextResponse.json(
-        { error: { message: "Unauthorized" } },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: { message: "Unauthorized" } }, { status: 401 });
     }
 
     const user = await prisma.user.findUnique({
@@ -22,10 +20,7 @@ export async function POST(request, context) {
     });
 
     if (!user) {
-      return NextResponse.json(
-        { error: { message: "User not found" } },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: { message: "User not found" } }, { status: 404 });
     }
 
     const params = await context.params;
@@ -33,10 +28,7 @@ export async function POST(request, context) {
     const { waitlistId } = await request.json();
 
     if (!waitlistId) {
-      return NextResponse.json(
-        { error: { message: "Waitlist ID is required" } },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: { message: "Waitlist ID is required" } }, { status: 400 });
     }
 
     const [apiKey, workspaceId] = await Promise.all([
@@ -51,10 +43,7 @@ export async function POST(request, context) {
     ]);
 
     if (!apiKey) {
-      return NextResponse.json(
-        { error: { message: "API key not found" } },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: { message: "API key not found" } }, { status: 404 });
     }
 
     if (apiKey.waitlistId) {
@@ -62,19 +51,19 @@ export async function POST(request, context) {
         {
           error: { message: "This API key is already linked to a waitlist" },
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     const waitlist = await prisma.waitList.findFirst({
-      where: { id: waitlistId, ...campaignScope(user.id, "manageConnections", workspaceId || undefined) },
+      where: {
+        id: waitlistId,
+        ...campaignScope(user.id, "manageConnections", workspaceId || undefined),
+      },
     });
 
     if (!waitlist) {
-      return NextResponse.json(
-        { error: { message: "Waitlist not found" } },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: { message: "Waitlist not found" } }, { status: 404 });
     }
 
     const updatedApiKey = await prisma.$transaction(async (tx) => {
@@ -85,7 +74,10 @@ export async function POST(request, context) {
         select: { id: true },
       });
       if (!linkable) return null;
-      const active = await tx.apiKey.findFirst({ where: { waitlistId, revokedAt: null }, select: { id: true } });
+      const active = await tx.apiKey.findFirst({
+        where: { waitlistId, revokedAt: null },
+        select: { id: true },
+      });
       if (active) return null;
       return tx.apiKey.update({
         where: { id },
@@ -102,15 +94,16 @@ export async function POST(request, context) {
         },
       });
     });
-    if (!updatedApiKey) return NextResponse.json({ error: { message: "This waitlist is already linked to another API key" } }, { status: 409 });
+    if (!updatedApiKey)
+      return NextResponse.json(
+        { error: { message: "This waitlist is already linked to another API key" } },
+        { status: 409 },
+      );
     const apiKeyWithMaskedKey = { ...updatedApiKey, key: "••••••••••••••••" };
 
     return NextResponse.json({ data: apiKeyWithMaskedKey });
   } catch (error) {
     console.error("Error linking API key to waitlist:", error);
-    return NextResponse.json(
-      { error: { message: "Internal server error" } },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: { message: "Internal server error" } }, { status: 500 });
   }
 }

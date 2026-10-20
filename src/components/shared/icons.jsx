@@ -32,7 +32,7 @@ const MessageCircleMoreIcon = () => {
 
   return (
     <div
-      className="flex items-center justify-center overflow-hidden transition-colors duration-200 rounded-md cursor-pointer select-none"
+      className="flex cursor-pointer items-center justify-center overflow-hidden rounded-md transition-colors duration-200 select-none"
       onMouseEnter={() => controls.start("animate")}
       onMouseLeave={() => controls.start("normal")}
     >
@@ -50,24 +50,9 @@ const MessageCircleMoreIcon = () => {
         aria-label="Message Circle More Icon"
       >
         <path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z" />
-        <motion.path
-          d="M8 12h.01"
-          variants={dotVariants}
-          animate={controls}
-          custom={0}
-        />
-        <motion.path
-          d="M12 12h.01"
-          variants={dotVariants}
-          animate={controls}
-          custom={1}
-        />
-        <motion.path
-          d="M16 12h.01"
-          variants={dotVariants}
-          animate={controls}
-          custom={2}
-        />
+        <motion.path d="M8 12h.01" variants={dotVariants} animate={controls} custom={0} />
+        <motion.path d="M12 12h.01" variants={dotVariants} animate={controls} custom={1} />
+        <motion.path d="M16 12h.01" variants={dotVariants} animate={controls} custom={2} />
       </svg>
     </div>
   );
@@ -93,7 +78,7 @@ const DownloadIcon = () => {
 
   return (
     <div
-      className="flex items-center justify-center transition-colors duration-200 rounded-md cursor-pointer select-none"
+      className="flex cursor-pointer items-center justify-center rounded-md transition-colors duration-200 select-none"
       onMouseEnter={() => controls.start("animate")}
       onMouseLeave={() => controls.start("normal")}
     >
@@ -138,7 +123,7 @@ const DeleteIcon = () => {
 
   return (
     <div
-      className="flex items-center justify-center mr-2 text-red-600 transition-colors duration-200 rounded-md cursor-pointer select-none"
+      className="mr-2 flex cursor-pointer items-center justify-center rounded-md text-red-600 transition-colors duration-200 select-none"
       onMouseEnter={() => controls.start("animate")}
       onMouseLeave={() => controls.start("normal")}
     >
@@ -155,11 +140,7 @@ const DeleteIcon = () => {
         role="img"
         aria-label="Delete Icon"
       >
-        <motion.g
-          variants={lidVariants}
-          animate={controls}
-          transition={springTransition}
-        >
+        <motion.g variants={lidVariants} animate={controls} transition={springTransition}>
           <path d="M3 6h18" />
           <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
         </motion.g>
@@ -208,7 +189,7 @@ const Delete2Icon = () => {
 
   return (
     <div
-      className="flex items-center justify-center transition-colors duration-200 rounded-md cursor-pointer select-none"
+      className="flex cursor-pointer items-center justify-center rounded-md transition-colors duration-200 select-none"
       onMouseEnter={() => controls.start("animate")}
       onMouseLeave={() => controls.start("normal")}
     >
@@ -225,11 +206,7 @@ const Delete2Icon = () => {
         role="img"
         aria-label="Delete Icon"
       >
-        <motion.g
-          variants={lidVariants}
-          animate={controls}
-          transition={springTransition}
-        >
+        <motion.g variants={lidVariants} animate={controls} transition={springTransition}>
           <path d="M3 6h18" />
           <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
         </motion.g>
@@ -285,7 +262,7 @@ const CopyIcon = () => {
 
   return (
     <div
-      className="flex items-center justify-center transition-colors duration-200 rounded-md cursor-pointer select-none"
+      className="flex cursor-pointer items-center justify-center rounded-md transition-colors duration-200 select-none"
       onMouseEnter={() => controls.start("animate")}
       onMouseLeave={() => controls.start("normal")}
     >
@@ -391,7 +368,7 @@ const TrendingUpIcon = () => {
 
   return (
     <div
-      className="flex items-center justify-center transition-colors duration-200 rounded-md cursor-pointer select-none"
+      className="flex cursor-pointer items-center justify-center rounded-md transition-colors duration-200 select-none"
       onMouseEnter={() => controls.start("animate")}
       onMouseLeave={() => controls.start("normal")}
     >
@@ -455,7 +432,7 @@ const UsersIcon = () => {
 
   return (
     <div
-      className="flex items-center justify-center transition-colors duration-200 rounded-md cursor-pointer select-none"
+      className="flex cursor-pointer items-center justify-center rounded-md transition-colors duration-200 select-none"
       onMouseEnter={() => controls.start("animate")}
       onMouseLeave={() => controls.start("normal")}
     >
@@ -479,11 +456,7 @@ const UsersIcon = () => {
           variants={pathUserVariants}
           animate={controls}
         />
-        <motion.path
-          d="M16 3.13a4 4 0 0 1 0 7.75"
-          variants={pathUserVariants}
-          animate={controls}
-        />
+        <motion.path d="M16 3.13a4 4 0 0 1 0 7.75" variants={pathUserVariants} animate={controls} />
       </svg>
     </div>
   );
@@ -496,7 +469,7 @@ const SearchIcon = () => {
 
   return (
     <div
-      className="absolute flex items-center justify-center p-2 overflow-hidden transition-colors duration-200 transform -translate-y-1/2 rounded-md cursor-pointer select-none left-2 top-1/2"
+      className="absolute top-1/2 left-2 flex -translate-y-1/2 transform cursor-pointer items-center justify-center overflow-hidden rounded-md p-2 transition-colors duration-200 select-none"
       onMouseEnter={() => controls.start("animate")}
       onMouseLeave={() => controls.start("normal")}
     >
@@ -549,7 +522,7 @@ const LogoutIcon = () => {
 
   return (
     <div
-      className="flex items-center justify-center transition-colors duration-200 rounded-md cursor-pointer select-none"
+      className="flex cursor-pointer items-center justify-center rounded-md transition-colors duration-200 select-none"
       onMouseEnter={() => controls.start("animate")}
       onMouseLeave={() => controls.start("normal")}
     >
@@ -605,7 +578,7 @@ const SquarePenIcon = () => {
 
   return (
     <div
-      className="flex items-center justify-center transition-colors duration-200 rounded-md cursor-pointer select-none"
+      className="flex cursor-pointer items-center justify-center rounded-md transition-colors duration-200 select-none"
       onMouseEnter={() => controls.start("animate")}
       onMouseLeave={() => controls.start("normal")}
     >
@@ -667,7 +640,7 @@ const ActivityIcon = () => {
 
   return (
     <div
-      className="flex items-center justify-center transition-colors duration-200 rounded-md cursor-pointer select-none"
+      className="flex cursor-pointer items-center justify-center rounded-md transition-colors duration-200 select-none"
       onMouseEnter={() => {
         controls.start("animate");
       }}
@@ -745,7 +718,7 @@ const RocketIcon = () => {
 
   return (
     <div
-      className="flex items-center justify-center transition-colors duration-200 rounded-md cursor-pointer select-none"
+      className="flex cursor-pointer items-center justify-center rounded-md transition-colors duration-200 select-none"
       onMouseEnter={() => {
         controls.start("animate");
       }}
@@ -808,7 +781,7 @@ const LayersIcon = () => {
 
   return (
     <div
-      className="flex items-center justify-center transition-colors duration-200 rounded-md cursor-pointer select-none"
+      className="flex cursor-pointer items-center justify-center rounded-md transition-colors duration-200 select-none"
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
@@ -894,7 +867,7 @@ const GripIcon = () => {
 
   return (
     <motion.div
-      className="flex items-center justify-center transition-colors duration-200 rounded-md cursor-pointer select-none"
+      className="flex cursor-pointer items-center justify-center rounded-md transition-colors duration-200 select-none"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
@@ -976,7 +949,7 @@ const SparklesIcon = () => {
 
   return (
     <div
-      className="flex items-center justify-center p-2 transition-colors duration-200 rounded-md cursor-pointer select-none"
+      className="flex cursor-pointer items-center justify-center rounded-md p-2 transition-colors duration-200 select-none"
       onMouseEnter={() => {
         sparkleControls.start("hover");
         starControls.start("blink", { delay: 1 });
@@ -1004,26 +977,10 @@ const SparklesIcon = () => {
           variants={sparkleVariants}
           animate={sparkleControls}
         />
-        <motion.path
-          d="M20 3v4"
-          variants={starVariants}
-          animate={starControls}
-        />
-        <motion.path
-          d="M22 5h-4"
-          variants={starVariants}
-          animate={starControls}
-        />
-        <motion.path
-          d="M4 17v2"
-          variants={starVariants}
-          animate={starControls}
-        />
-        <motion.path
-          d="M5 18H3"
-          variants={starVariants}
-          animate={starControls}
-        />
+        <motion.path d="M20 3v4" variants={starVariants} animate={starControls} />
+        <motion.path d="M22 5h-4" variants={starVariants} animate={starControls} />
+        <motion.path d="M4 17v2" variants={starVariants} animate={starControls} />
+        <motion.path d="M5 18H3" variants={starVariants} animate={starControls} />
       </svg>
     </div>
   );
@@ -1055,7 +1012,7 @@ const CircleCheckIcon = () => {
 
   return (
     <div
-      className="flex items-center justify-center transition-colors duration-200 rounded-md cursor-pointer select-none"
+      className="flex cursor-pointer items-center justify-center rounded-md transition-colors duration-200 select-none"
       onMouseEnter={() => controls.start("animate")}
       onMouseLeave={() => controls.start("normal")}
     >
@@ -1108,7 +1065,7 @@ const PlayIcon = () => {
 
   return (
     <div
-      className="flex items-center justify-center px-2 transition-colors duration-200 rounded-md cursor-pointer select-none"
+      className="flex cursor-pointer items-center justify-center rounded-md px-2 transition-colors duration-200 select-none"
       onMouseEnter={() => controls.start("animate")}
       onMouseLeave={() => controls.start("normal")}
     >
@@ -1152,7 +1109,7 @@ const EyeOffIcon = () => {
 
   return (
     <div
-      className="flex items-center justify-center transition-colors duration-200 rounded-md cursor-pointer select-none"
+      className="flex cursor-pointer items-center justify-center rounded-md transition-colors duration-200 select-none"
       onMouseEnter={() => controls.start("animate")}
       onMouseLeave={() => controls.start("normal")}
     >
@@ -1172,11 +1129,7 @@ const EyeOffIcon = () => {
         <path d="M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .696 10.747 10.747 0 0 1-1.444 2.49" />
         <path d="M14.084 14.158a3 3 0 0 1-4.242-4.242" />
         <path d="M17.479 17.499a10.75 10.75 0 0 1-15.417-5.151 1 1 0 0 1 0-.696 10.75 10.75 0 0 1 4.446-5.143" />
-        <motion.path
-          variants={pathEyeVariants}
-          d="m2 2 20 20"
-          animate={controls}
-        />
+        <motion.path variants={pathEyeVariants} d="m2 2 20 20" animate={controls} />
       </svg>
     </div>
   );

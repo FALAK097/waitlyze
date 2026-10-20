@@ -1,11 +1,13 @@
 "use client";
 
-import { createImpression, createSignUp } from "@/utils/fetch/client";
-import { fetchSignUp } from "@/utils/fetch/client/sign-ups";
 import { useQuery } from "@tanstack/react-query";
 import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState, Suspense } from "react";
 import { toast } from "sonner";
+
+import { createImpression, createSignUp } from "@/utils/fetch/client";
+import { fetchSignUp } from "@/utils/fetch/client/sign-ups";
+
 import { ReferralPreview } from "./referral-preview";
 import { SignUpForm } from "./sign-up-form";
 
@@ -21,12 +23,8 @@ function PreviewContent({
   const referralId = searchParams.get("r");
   const isImpressionCreated = useMemo(() => {
     if (typeof window === "undefined") return;
-    const existingImpressions = JSON.parse(
-      localStorage.getItem("waitlist_impressions") || "[]"
-    );
-    return existingImpressions.some(
-      (impression) => impression.waitListId === waitList.id
-    );
+    const existingImpressions = JSON.parse(localStorage.getItem("waitlist_impressions") || "[]");
+    return existingImpressions.some((impression) => impression.waitListId === waitList.id);
   }, [waitList.id]);
   const [email, setEmail] = useState("");
   // Sign up mutation
@@ -52,9 +50,7 @@ function PreviewContent({
   const [signUp, setSignUp] = useState(() => {
     if (typeof window === "undefined") return;
     // fetch sign up from local storage
-    const existingSignups = JSON.parse(
-      localStorage.getItem("waitlist_sign_ups") || "[]"
-    );
+    const existingSignups = JSON.parse(localStorage.getItem("waitlist_sign_ups") || "[]");
     return existingSignups.find((signUp) => signUp.waitListId === waitList.id);
   });
   // Impression mutation
@@ -78,12 +74,8 @@ function PreviewContent({
     if (isLoading) return;
     await refetch();
     setTimeout(() => {
-      const existingSignUps = JSON.parse(
-        localStorage.getItem("waitlist_sign_ups") || "[]"
-      );
-      const signUp = existingSignUps.find(
-        (signUp) => signUp.waitListId === waitList.id
-      );
+      const existingSignUps = JSON.parse(localStorage.getItem("waitlist_sign_ups") || "[]");
+      const signUp = existingSignUps.find((signUp) => signUp.waitListId === waitList.id);
       if (signUp) setSignUp(signUp);
       else setSignUp(null);
     }, 1000);
@@ -106,7 +98,7 @@ function PreviewContent({
     if (emailSentRef.current.has(email)) return;
     emailSentRef.current.add(email);
     sendSignUpEmailAction({ email }).catch((err) =>
-      console.error("sendSignUpEmailAction error", err)
+      console.error("sendSignUpEmailAction error", err),
     );
   }, [mounted, isSuccess, email, sendSignUpEmailAction]);
 
@@ -142,12 +134,8 @@ function PreviewContent({
       await fetchSignUpRefetch();
       // check if sign up is success
       if (fetchSignUpSuccess) {
-        const existingSignUps = JSON.parse(
-          localStorage.getItem("waitlist_sign_ups") || "[]"
-        );
-        const signUp = existingSignUps.find(
-          (signUp) => signUp.waitListId === waitList.id
-        );
+        const existingSignUps = JSON.parse(localStorage.getItem("waitlist_sign_ups") || "[]");
+        const signUp = existingSignUps.find((signUp) => signUp.waitListId === waitList.id);
         if (signUp) setSignUp(signUp);
         else setSignUp(null);
       }
@@ -178,7 +166,7 @@ function PreviewContent({
       style={{
         backgroundColor: waitList.mainBgColor,
       }}
-      className="flex flex-col items-center justify-center h-screen"
+      className="flex h-screen flex-col items-center justify-center"
     >
       <SignUpForm
         email={email}

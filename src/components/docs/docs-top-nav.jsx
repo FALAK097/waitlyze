@@ -1,10 +1,10 @@
 "use client";
 
+import { Menu01Icon } from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { useDocsLayout } from "fumadocs-ui/layouts/docs";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { HugeiconsIcon } from "@hugeicons/react";
-import { Menu01Icon } from "@hugeicons/core-free-icons";
-import { useDocsLayout } from "fumadocs-ui/layouts/docs";
 
 const links = [
   { label: "Documentation", href: "/docs", section: "docs" },
@@ -29,12 +29,25 @@ export function DocsTopNav() {
       <nav className="waitlyze-docs-topnav-links" aria-label="Documentation sections">
         {links.map(({ label, href, section }) => {
           const active = isActive(pathname, section);
-          return <Link key={href} href={href} className="waitlyze-docs-topnav-link" aria-current={active ? "page" : undefined}>{label}</Link>;
+          return (
+            <Link
+              key={href}
+              href={href}
+              className="waitlyze-docs-topnav-link"
+              aria-current={active ? "page" : undefined}
+            >
+              {label}
+            </Link>
+          );
         })}
       </nav>
       <div className="waitlyze-docs-topnav-actions">
         {SearchTrigger && <SearchTrigger hideIfDisabled className="waitlyze-docs-topnav-action" />}
-        {SidebarTrigger && <SidebarTrigger className="waitlyze-docs-topnav-action waitlyze-docs-sidebar-trigger"><HugeiconsIcon icon={Menu01Icon} aria-hidden="true" /></SidebarTrigger>}
+        {SidebarTrigger && (
+          <SidebarTrigger className="waitlyze-docs-topnav-action waitlyze-docs-sidebar-trigger">
+            <HugeiconsIcon icon={Menu01Icon} aria-hidden="true" />
+          </SidebarTrigger>
+        )}
       </div>
     </header>
   );

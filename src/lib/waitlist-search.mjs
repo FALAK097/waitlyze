@@ -16,12 +16,7 @@ export function waitlistsHref({ query, status, sort, page = 1, includeQuery = tr
   const serialized = search.toString();
   return serialized ? `/waitlists?${serialized}` : "/waitlists";
 }
-export const WAITLIST_SORTS = [
-  "name-asc",
-  "name-desc",
-  "subscribers-asc",
-  "subscribers-desc",
-];
+export const WAITLIST_SORTS = ["name-asc", "name-desc", "subscribers-asc", "subscribers-desc"];
 
 export function normalizeWaitlistSearch(value) {
   return typeof value === "string" ? value.trim().slice(0, WAITLIST_SEARCH_LIMIT) : "";
@@ -32,7 +27,10 @@ export function waitlistSearchWhere(query) {
 }
 
 export function normalizeWaitlistStatus(value) {
-  return typeof value === "string" && WAITLIST_STATUS_FILTERS.some((filter) => filter.value === value) ? value : "";
+  return typeof value === "string" &&
+    WAITLIST_STATUS_FILTERS.some((filter) => filter.value === value)
+    ? value
+    : "";
 }
 
 export function waitlistStatusWhere(status) {
@@ -40,7 +38,9 @@ export function waitlistStatusWhere(status) {
 }
 
 export function normalizeWaitlistSort(value) {
-  return typeof value === "string" && WAITLIST_SORTS.includes(value) ? value : WAITLIST_DEFAULT_SORT;
+  return typeof value === "string" && WAITLIST_SORTS.includes(value)
+    ? value
+    : WAITLIST_DEFAULT_SORT;
 }
 
 export function waitlistSortOrderBy(sort) {

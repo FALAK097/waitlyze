@@ -1,10 +1,13 @@
 "use client";
 
-import { HugeiconsIcon } from "@hugeicons/react";
 import { Loading02Icon } from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
+import Image from "next/image";
+import Link from "next/link";
 import { useRef, useState } from "react";
-import { authClient } from "@/lib/auth-client";
 import { toast } from "sonner";
+
+import Wordmark from "@/components/landing/wordmark";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -13,10 +16,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import Image from "next/image";
-import Link from "next/link";
+import { authClient } from "@/lib/auth-client";
 import { publicFontClasses } from "@/lib/public-fonts";
-import Wordmark from "@/components/landing/wordmark";
+
 import "@/components/landing/public.css";
 
 export function AuthModal({ open, onOpenChange, onCloseAutoFocus }) {
@@ -57,12 +59,10 @@ export function AuthModal({ open, onOpenChange, onCloseAutoFocus }) {
       >
         <Wordmark />
         <DialogHeader>
-          <DialogTitle className="wl-auth-title">
-            Your next launch starts here.
-          </DialogTitle>
+          <DialogTitle className="wl-auth-title">Your next launch starts here.</DialogTitle>
           <DialogDescription className="wl-auth-description">
-            Create your account or sign in with Google. Your first waitlist is
-            just a few steps away.
+            Create your account or sign in with Google. Your first waitlist is just a few steps
+            away.
           </DialogDescription>
         </DialogHeader>
         <div>
@@ -80,10 +80,11 @@ export function AuthModal({ open, onOpenChange, onCloseAutoFocus }) {
             )}
             {loading ? "Connecting to Google…" : "Continue with Google"}
           </Button>
-            <p className="wl-auth-note">Free to use. No credit card needed.</p>
+          <p className="wl-auth-note">Free to use. No credit card needed.</p>
           <p className="wl-auth-legal">
             By continuing, you agree to our{" "}
-            <Link prefetch={false}
+            <Link
+              prefetch={false}
               href="/terms"
               onClick={() => changeOpen(false)}
               className="underline underline-offset-4 hover:text-primary"
@@ -91,7 +92,8 @@ export function AuthModal({ open, onOpenChange, onCloseAutoFocus }) {
               Terms of Service
             </Link>{" "}
             and{" "}
-            <Link prefetch={false}
+            <Link
+              prefetch={false}
               href="/privacy"
               onClick={() => changeOpen(false)}
               className="underline underline-offset-4 hover:text-primary"

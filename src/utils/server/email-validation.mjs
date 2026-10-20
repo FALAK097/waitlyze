@@ -183,7 +183,8 @@ const DISPOSABLE_DOMAINS = new Set(
 
 // RFC-lite format check: local@domain.tld, no spaces, single @, real TLD.
 // Periods in the local part may only separate nonempty segments.
-const EMAIL_FORMAT = /^[A-Za-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[A-Za-z0-9!#$%&'*+/=?^_`{|}~-]+)*@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)*\.[A-Za-z]{2,}$/;
+const EMAIL_FORMAT =
+  /^[A-Za-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[A-Za-z0-9!#$%&'*+/=?^_`{|}~-]+)*@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)*\.[A-Za-z]{2,}$/;
 
 export function getEmailDomain(email) {
   const at = email.lastIndexOf("@");

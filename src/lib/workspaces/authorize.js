@@ -1,7 +1,9 @@
-import { notFound } from "next/navigation";
 import { headers } from "next/headers";
+import { notFound } from "next/navigation";
+
 import { auth } from "@/lib/auth";
 import prisma from "@/lib/prisma";
+
 import { AccessError, campaignScope, createWorkspaceService } from "./service.mjs";
 
 export async function sessionActor() {
@@ -16,6 +18,10 @@ export async function requireCampaign(id, permission = "viewCampaign") {
 }
 
 export async function requireCampaignPage(id, permission) {
-  try { return await requireCampaign(id, permission); }
-  catch (error) { if (error instanceof AccessError) notFound(); throw error; }
+  try {
+    return await requireCampaign(id, permission);
+  } catch (error) {
+    if (error instanceof AccessError) notFound();
+    throw error;
+  }
 }

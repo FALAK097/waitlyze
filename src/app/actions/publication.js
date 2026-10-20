@@ -1,17 +1,25 @@
 "use server";
 
+import {
+  pauseCampaign,
+  pauseLegacyCampaign,
+  PublicationConflict,
+  publishCampaign,
+  publishLegacyCampaign,
+  rollbackCampaign,
+} from "@/lib/campaigns/publication.mjs";
+import prisma from "@/lib/prisma";
+import { AUDIT_ACTIONS, recordWaitlistAuditEvent } from "@/lib/workspaces/audit.mjs";
 import { sessionActor } from "@/lib/workspaces/authorize";
 import { AccessError } from "@/lib/workspaces/service.mjs";
-import { pauseCampaign, pauseLegacyCampaign, PublicationConflict, publishCampaign, publishLegacyCampaign, rollbackCampaign } from "@/lib/campaigns/publication.mjs";
-import { AUDIT_ACTIONS, recordWaitlistAuditEvent } from "@/lib/workspaces/audit.mjs";
-import prisma from "@/lib/prisma";
 
 async function action(run, fallback) {
   try {
     const user = await sessionActor();
-    return { ok: true, ...await run(user.id) };
+    return { ok: true, ...(await run(user.id)) };
   } catch (error) {
-    if (error instanceof AccessError) return { ok: false, message: "You need to be an owner or admin to change publication." };
+    if (error instanceof AccessError)
+      return { ok: false, message: "You need to be an owner or admin to change publication." };
     if (error instanceof PublicationConflict) return { ok: false, message: error.message };
     console.error(fallback, error.code || error.name);
     return { ok: false, message: "Couldn't update publication. Try again." };
@@ -19,34 +27,58 @@ async function action(run, fallback) {
 }
 
 export async function publishWaitlist(id, revision) {
-  if (!Number.isSafeInteger(revision) || revision < 1) return { ok: false, message: "Reload the page and try again." };
+  if (!Number.isSafeInteger(revision) || revision < 1)
+    return { ok: false, message: "Reload the page and try again." };
   return action(async (userId) => {
     const result = await publishCampaign(prisma, userId, undefined, id, revision);
-    await recordWaitlistAuditEvent(prisma, { userId, waitListId: id, action: AUDIT_ACTIONS.WAITLIST_PUBLISHED, detail: "Page published" });
+    await recordWaitlistAuditEvent(prisma, {
+      userId,
+      waitListId: id,
+      action: AUDIT_ACTIONS.WAITLIST_PUBLISHED,
+      detail: "Page published",
+    });
     return result;
   }, "Waitlist publish failed");
 }
 export async function pauseWaitlist(id) {
   return action(async (userId) => {
     const result = await pauseCampaign(prisma, userId, undefined, id);
-    await recordWaitlistAuditEvent(prisma, { userId, waitListId: id, action: AUDIT_ACTIONS.WAITLIST_PAUSED, detail: "Signups paused" });
+    await recordWaitlistAuditEvent(prisma, {
+      userId,
+      waitListId: id,
+      action: AUDIT_ACTIONS.WAITLIST_PAUSED,
+      detail: "Signups paused",
+    });
     return result;
   }, "Waitlist pause failed");
 }
 export async function publishLegacyWaitlist(id) {
   return action(async (userId) => {
     const result = await publishLegacyCampaign(prisma, userId, undefined, id);
-    await recordWaitlistAuditEvent(prisma, { userId, waitListId: id, action: AUDIT_ACTIONS.WAITLIST_PUBLISHED, detail: "Page published" });
+    await recordWaitlistAuditEvent(prisma, {
+      userId,
+      waitListId: id,
+      action: AUDIT_ACTIONS.WAITLIST_PUBLISHED,
+      detail: "Page published",
+    });
     return result;
   }, "Waitlist publish failed");
 }
 export async function pauseLegacyWaitlist(id) {
   return action(async (userId) => {
     const result = await pauseLegacyCampaign(prisma, userId, undefined, id);
-    await recordWaitlistAuditEvent(prisma, { userId, waitListId: id, action: AUDIT_ACTIONS.WAITLIST_PAUSED, detail: "Signups paused" });
+    await recordWaitlistAuditEvent(prisma, {
+      userId,
+      waitListId: id,
+      action: AUDIT_ACTIONS.WAITLIST_PAUSED,
+      detail: "Signups paused",
+    });
     return result;
   }, "Waitlist pause failed");
 }
 export async function rollbackWaitlist(id) {
-  return action((userId) => rollbackCampaign(prisma, userId, undefined, id), "Waitlist rollback failed");
+  return action(
+    (userId) => rollbackCampaign(prisma, userId, undefined, id),
+    "Waitlist rollback failed",
+  );
 }

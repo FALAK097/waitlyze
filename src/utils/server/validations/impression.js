@@ -1,58 +1,70 @@
-import prisma from "@/lib/prisma";
 import { NextResponse } from "next/server";
 
+import prisma from "@/lib/prisma";
+
 const checkIfImpressionExists = async (waitListId, hypeSession) => {
-	const signUp = await prisma.impression.findFirst({
-		where: {
-			uniqueUserId: hypeSession,
-			waitListId,
-		},
-	});
-	return signUp;
+  const signUp = await prisma.impression.findFirst({
+    where: {
+      uniqueUserId: hypeSession,
+      waitListId,
+    },
+  });
+  return signUp;
 };
 
 const checkIfRequestIsValid = async (body) => {
-  if (!body || typeof body !== "object" || Array.isArray(body) ||
-      typeof body.waitListId !== "string" || !body.waitListId || body.waitListId.length > 128 ||
-      typeof body.hypeSession !== "string" || !body.hypeSession.trim() || body.hypeSession.length > 256) {
-    return Response.json({ message: "A valid waitlist and browser identifier are required." }, { status: 400 });
+  if (
+    !body ||
+    typeof body !== "object" ||
+    Array.isArray(body) ||
+    typeof body.waitListId !== "string" ||
+    !body.waitListId ||
+    body.waitListId.length > 128 ||
+    typeof body.hypeSession !== "string" ||
+    !body.hypeSession.trim() ||
+    body.hypeSession.length > 256
+  ) {
+    return Response.json(
+      { message: "A valid waitlist and browser identifier are required." },
+      { status: 400 },
+    );
   }
-	if (!body.waitListId) {
-		return NextResponse.json(
-			{
-				message: "WaitList ID is required",
-			},
-			{ status: 400 },
-		);
-	}
-	const isValidWaitList = await prisma.waitList.findUnique({
-		where: {
-			id: body.waitListId,
-			status: "PUBLISHED",
-		},
-	});
-	if (!isValidWaitList) {
-		return NextResponse.json(
-			{
-				message: "Invalid WaitList ID",
-			},
-			{ status: 400 },
-		);
-	}
+  if (!body.waitListId) {
+    return NextResponse.json(
+      {
+        message: "WaitList ID is required",
+      },
+      { status: 400 },
+    );
+  }
+  const isValidWaitList = await prisma.waitList.findUnique({
+    where: {
+      id: body.waitListId,
+      status: "PUBLISHED",
+    },
+  });
+  if (!isValidWaitList) {
+    return NextResponse.json(
+      {
+        message: "Invalid WaitList ID",
+      },
+      { status: 400 },
+    );
+  }
 };
 
 export const validateRequest = async (body) => {
-	let validator = await checkIfRequestIsValid(body);
-	if (validator) return validator;
-	validator = await checkIfImpressionExists(body.waitListId, body.hypeSession);
-	if (validator) {
-		return NextResponse.json(
-			{
-				message: "You have already signed up!",
-			},
-			{
-				status: 403,
-			},
-		);
-	}
+  let validator = await checkIfRequestIsValid(body);
+  if (validator) return validator;
+  validator = await checkIfImpressionExists(body.waitListId, body.hypeSession);
+  if (validator) {
+    return NextResponse.json(
+      {
+        message: "You have already signed up!",
+      },
+      {
+        status: 403,
+      },
+    );
+  }
 };

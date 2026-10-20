@@ -1,9 +1,9 @@
-import { CanvasRenderer, SVGRenderer } from "echarts/renderers";
 import * as echarts from "echarts/core";
+import { CanvasRenderer, SVGRenderer } from "echarts/renderers";
 
 export const ECHARTS_RENDERERS = {
   canvas: "canvas",
-  svg: "svg"
+  svg: "svg",
 };
 
 export const DEFAULT_ECHARTS_RENDERER = ECHARTS_RENDERERS.canvas;
@@ -21,7 +21,7 @@ echarts.use([CanvasRenderer, SVGRenderer]);
 // Theme selectors mirror the repo's <ChartStyle>: light is the bare root, dark is `.dark`.
 export const THEMES = {
   light: "",
-  dark: ".dark"
+  dark: ".dark",
 };
 export const THEME_KEYS = Object.keys(THEMES);
 
@@ -179,7 +179,6 @@ export function flattenColor(color, base) {
       .map((part) => Number.parseFloat(part)) ?? [0, 0, 0, 1];
   const [r, g, b, a = 1] = parse(color);
   const [baseR, baseG, baseB] = parse(base);
-  const mix = (channel, baseChannel) =>
-    Math.round(channel * a + baseChannel * (1 - a));
+  const mix = (channel, baseChannel) => Math.round(channel * a + baseChannel * (1 - a));
   return `rgb(${mix(r, baseR)}, ${mix(g, baseG)}, ${mix(b, baseB)})`;
 }

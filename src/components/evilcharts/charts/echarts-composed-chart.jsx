@@ -1,16 +1,8 @@
-"use client";;
-import {
-  DEFAULT_ECHARTS_RENDERER,
-  buildChartCss,
-  flattenColor,
-  getColorsCount,
-  resolveColors,
-  seriesPaint,
-  withAlpha,
-} from "@/components/evilcharts/ui/echarts-chart";
-import { tooltipBaseOption, tooltipIndicatorHtml, tooltipRow, tooltipShell } from "@/components/evilcharts/ui/echarts-tooltip";
-import { Brush, buildBrushDataZoom, syncBrushOverlay } from "@/components/evilcharts/ui/echarts-brush";
+"use client";
+import { BarChart, LineChart } from "echarts/charts";
 import { DataZoomComponent, GridComponent, TooltipComponent } from "echarts/components";
+import * as echarts from "echarts/core";
+import { motion, useReducedMotion } from "motion/react";
 import {
   Children,
   isValidElement,
@@ -21,11 +13,29 @@ import {
   useRef,
   useState,
 } from "react";
+
+import {
+  Brush,
+  buildBrushDataZoom,
+  syncBrushOverlay,
+} from "@/components/evilcharts/ui/echarts-brush";
+import {
+  DEFAULT_ECHARTS_RENDERER,
+  buildChartCss,
+  flattenColor,
+  getColorsCount,
+  resolveColors,
+  seriesPaint,
+  withAlpha,
+} from "@/components/evilcharts/ui/echarts-chart";
 import { dotItemStyle, dotStyle, sampleGradient } from "@/components/evilcharts/ui/echarts-dot";
-import { BarChart, LineChart } from "echarts/charts";
 import { LegendOverlay } from "@/components/evilcharts/ui/echarts-legend";
-import { motion, useReducedMotion } from "motion/react";
-import * as echarts from "echarts/core";
+import {
+  tooltipBaseOption,
+  tooltipIndicatorHtml,
+  tooltipRow,
+  tooltipShell,
+} from "@/components/evilcharts/ui/echarts-tooltip";
 
 // Modular registration keeps the bundle lean — only the pieces a composed chart
 // needs. A composed chart mixes `BarChart` and `LineChart` series in one grid.
@@ -191,9 +201,9 @@ function collectConfig(children) {
       Children.forEach(props.children, (dotChild) => {
         if (!isValidElement(dotChild)) return;
         if (dotChild.type === Dot) {
-          dotVariant = (dotChild.props).variant ?? "default";
+          dotVariant = dotChild.props.variant ?? "default";
         } else if (dotChild.type === ActiveDot) {
-          activeDotVariant = (dotChild.props).variant ?? "default";
+          activeDotVariant = dotChild.props.variant ?? "default";
         }
       });
       lines.push({
@@ -507,14 +517,7 @@ function shimmerWindowStops(center, color, peak) {
 // Grid insets plus the footer band reserved for the brush. ECharts 6 contains
 // axis labels automatically (the legacy `containLabel` flag now only triggers a
 // deprecation warning).
-function buildChartLayout(
-  {
-    legendSlot,
-    xAxisSlot,
-    showBrush,
-    brushHeight
-  }
-) {
+function buildChartLayout({ legendSlot, xAxisSlot, showBrush, brushHeight }) {
   const legendTop = legendSlot.present && legendSlot.verticalAlign === "top";
   const legendBottom = legendSlot.present && legendSlot.verticalAlign === "bottom";
   // Clearance covers the x-axis labels plus the same breathing room the
@@ -575,9 +578,7 @@ function buildMainAxes(ctx) {
       color: axisLabelColor,
       fontSize: 10,
       margin: 8,
-      formatter: xTickFormatter
-        ? (value, index) => xTickFormatter(value, index)
-        : undefined,
+      formatter: xTickFormatter ? (value, index) => xTickFormatter(value, index) : undefined,
     },
   };
 
@@ -615,9 +616,7 @@ function buildMainAxes(ctx) {
       color: axisLabelColor,
       fontSize: 10,
       margin: 8,
-      formatter: yTickFormatter
-        ? (value, index) => yTickFormatter(value, index)
-        : undefined,
+      formatter: yTickFormatter ? (value, index) => yTickFormatter(value, index) : undefined,
     },
   };
 
@@ -628,7 +627,7 @@ function buildMainAxes(ctx) {
 function createTooltipFormatter(ctx) {
   const { config, selectedDataKey, tooltipSlot } = ctx;
 
-  return params => {
+  return (params) => {
     const rows = Array.isArray(params) ? params : [params];
     if (!rows.length) return "";
 
@@ -1060,26 +1059,24 @@ function buildLineGlowSeries(ctx) {
  * ECharts instance. Fully self-contained: its only dependencies are `react`,
  * `echarts`, and `motion`.
  */
-export function EChartsComposedChart(
-  {
-    data,
-    config,
-    renderer = DEFAULT_ECHARTS_RENDERER,
-    xDataKey,
-    className,
-    curveType = "linear",
-    animation = true,
-    animationType = "left-to-right",
-    barGap,
-    barCategoryGap,
-    defaultSelectedDataKey = null,
-    onSelectionChange,
-    isLoading = false,
-    loadingBars = LOADING_DEFAULT_BARS,
-    chartOptions,
-    children
-  }
-) {
+export function EChartsComposedChart({
+  data,
+  config,
+  renderer = DEFAULT_ECHARTS_RENDERER,
+  xDataKey,
+  className,
+  curveType = "linear",
+  animation = true,
+  animationType = "left-to-right",
+  barGap,
+  barCategoryGap,
+  defaultSelectedDataKey = null,
+  onSelectionChange,
+  isLoading = false,
+  loadingBars = LOADING_DEFAULT_BARS,
+  chartOptions,
+  children,
+}) {
   const rawId = useId();
   const chartId = `chart-${rawId.replace(/:/g, "")}`;
 
@@ -1675,9 +1672,9 @@ export function EChartsComposedChart(
             initial={shouldReduceMotion ? false : { opacity: 0, scale: 0.92 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.25, ease: "easeOut" }}
-            className="text-primary bg-background flex items-center justify-center gap-2 rounded-md border px-2 py-0.5 text-sm"
+            className="flex items-center justify-center gap-2 rounded-md border bg-background px-2 py-0.5 text-sm text-primary"
           >
-            <div className="border-border border-t-primary h-3 w-3 animate-spin rounded-full border" />
+            <div className="h-3 w-3 animate-spin rounded-full border border-border border-t-primary" />
             <span>Loading</span>
           </motion.div>
         </div>

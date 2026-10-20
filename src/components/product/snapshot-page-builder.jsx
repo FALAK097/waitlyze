@@ -1,44 +1,84 @@
 "use client";
 
+import {
+  ArrowDown01Icon,
+  ArrowUp01Icon,
+  ComputerIcon,
+  Redo02Icon,
+  SmartPhone01Icon,
+  Undo02Icon,
+} from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { ArrowDown01Icon, ArrowUp01Icon, ComputerIcon, Redo02Icon, SmartPhone01Icon, Undo02Icon } from "@hugeicons/core-free-icons";
-import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
-
-import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
-
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-
-import { Textarea } from "@/components/ui/textarea";
-
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+
+import {
+  WaitlistPageContent,
+  WaitlistSignupPreview,
+} from "@/components/product/waitlist-page-content";
 import { Button } from "@/components/ui/button";
-import { PublicationOptions } from "./publication-options";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Dialog, DialogClose, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import { templateSnapshotSchema } from "@/lib/templates/catalog.mjs";
 import { findUnchangedStarterCopy } from "@/lib/templates/starter-copy.mjs";
-import { WaitlistPageContent, WaitlistSignupPreview } from "@/components/product/waitlist-page-content";
+
+import { PublicationOptions } from "./publication-options";
 
 import styles from "./page-editor.module.css";
 
 const clone = (value) => structuredClone(value);
-const canonical = (value) => Array.isArray(value)
-  ? value.map(canonical)
-  : value && typeof value === "object"
-    ? Object.fromEntries(Object.keys(value).sort().map((key) => [key, canonical(value[key])]))
-    : value;
+const canonical = (value) =>
+  Array.isArray(value)
+    ? value.map(canonical)
+    : value && typeof value === "object"
+      ? Object.fromEntries(
+          Object.keys(value)
+            .sort()
+            .map((key) => [key, canonical(value[key])]),
+        )
+      : value;
 const equal = (left, right) => JSON.stringify(canonical(left)) === JSON.stringify(canonical(right));
-const sectionNames = { hero: "Introduction", features: "Highlights", faq: "Questions", form: "Signup form", footer: "Note" };
-const newSection = (type) => type === "features"
-  ? { type, items: [{ title: "A clear benefit", body: "Explain how it helps." }] }
-  : type === "faq"
-    ? { type, items: [{ question: "What should people know?", answer: "Add a useful answer." }] }
-    : { type, note: "Add a short note." };
+const sectionNames = {
+  hero: "Introduction",
+  features: "Highlights",
+  faq: "Questions",
+  form: "Signup form",
+  footer: "Note",
+};
+const newSection = (type) =>
+  type === "features"
+    ? { type, items: [{ title: "A clear benefit", body: "Explain how it helps." }] }
+    : type === "faq"
+      ? { type, items: [{ question: "What should people know?", answer: "Add a useful answer." }] }
+      : { type, note: "Add a short note." };
 
-export function SnapshotPageBuilder({ waitList, saveDraftPage, publishPage, pausePage, rollbackPage, canPublish, publicationOrigin }) {
+export function SnapshotPageBuilder({
+  waitList,
+  saveDraftPage,
+  publishPage,
+  pausePage,
+  rollbackPage,
+  canPublish,
+  publicationOrigin,
+}) {
   const router = useRouter();
   const [snapshot, setSnapshot] = useState(waitList.templateSnapshot);
   const [version, setVersion] = useState(waitList.templateRevision);
@@ -78,34 +118,52 @@ export function SnapshotPageBuilder({ waitList, saveDraftPage, publishPage, paus
   useLayoutEffect(() => {
     const pending = pendingSectionFocusRef.current;
     if (!pending) return;
-    document.getElementById(`section-${pending.index}-move-${pending.action}`)?.focus({ preventScroll: true });
+    document
+      .getElementById(`section-${pending.index}-move-${pending.action}`)
+      ?.focus({ preventScroll: true });
     pendingSectionFocusRef.current = null;
   }, [snapshot]);
 
-  const applySnapshot = useCallback((next) => {
-    const validated = clone(next);
-    if (!Array.isArray(validated.sections) || validated.sections.length < 2 || validated.sections.length > 12) return;
-    if (equal(snapshotRef.current, validated)) return;
-    undoStack.current.push(clone(snapshotRef.current));
-    if (undoStack.current.length > 100) undoStack.current.shift();
-    redoStack.current = [];
-    setUndoCount(undoStack.current.length);
-    setRedoCount(0);
-    snapshotRef.current = validated;
-    setSnapshot(validated);
-    setDirty(true);
-    setMessage("Unsaved changes");
-    setError("");
-    try {
-      sessionStorage.setItem(key, JSON.stringify({ revision: versionRef.current, snapshot: validated }));
-    } catch {
-      setError("This browser could not keep a recovery copy. Leave this tab open until the page says Saved.");
-    }
-  }, [key]);
+  const applySnapshot = useCallback(
+    (next) => {
+      const validated = clone(next);
+      if (
+        !Array.isArray(validated.sections) ||
+        validated.sections.length < 2 ||
+        validated.sections.length > 12
+      )
+        return;
+      if (equal(snapshotRef.current, validated)) return;
+      undoStack.current.push(clone(snapshotRef.current));
+      if (undoStack.current.length > 100) undoStack.current.shift();
+      redoStack.current = [];
+      setUndoCount(undoStack.current.length);
+      setRedoCount(0);
+      snapshotRef.current = validated;
+      setSnapshot(validated);
+      setDirty(true);
+      setMessage("Unsaved changes");
+      setError("");
+      try {
+        sessionStorage.setItem(
+          key,
+          JSON.stringify({ revision: versionRef.current, snapshot: validated }),
+        );
+      } catch {
+        setError(
+          "This browser could not keep a recovery copy. Leave this tab open until the page says Saved.",
+        );
+      }
+    },
+    [key],
+  );
 
   const flush = useCallback(async () => {
     if (!dirtyRef.current || conflictRef.current) return;
-    if (inFlightRef.current) { saveAgainRef.current = true; return; }
+    if (inFlightRef.current) {
+      saveAgainRef.current = true;
+      return;
+    }
     inFlightRef.current = true;
     setSaving(true);
     const sent = clone(snapshotRef.current);
@@ -113,12 +171,16 @@ export function SnapshotPageBuilder({ waitList, saveDraftPage, publishPage, paus
       const result = await saveDraftPage(waitList.id, versionRef.current, sent);
       if (result?.conflict) {
         setConflict({ revision: result.revision, snapshot: result.snapshot });
-        setError("A newer page version was saved elsewhere. Your edits are still safe in this tab.");
+        setError(
+          "A newer page version was saved elsewhere. Your edits are still safe in this tab.",
+        );
         setMessage("Review changes");
         return;
       }
       if (!result?.ok) {
-        setError(result?.message || "Couldn't save just now. Your edits are kept in this tab; try again.");
+        setError(
+          result?.message || "Couldn't save just now. Your edits are kept in this tab; try again.",
+        );
         setMessage("Not saved");
         return;
       }
@@ -137,8 +199,14 @@ export function SnapshotPageBuilder({ waitList, saveDraftPage, publishPage, paus
         setDirty(true);
         saveAgainRef.current = true;
       }
-      try { sessionStorage.setItem(key, JSON.stringify({ revision: result.revision, snapshot: snapshotRef.current })); }
-      catch { setError("Page saved. This browser could not keep a recovery copy of newer edits."); }
+      try {
+        sessionStorage.setItem(
+          key,
+          JSON.stringify({ revision: result.revision, snapshot: snapshotRef.current }),
+        );
+      } catch {
+        setError("Page saved. This browser could not keep a recovery copy of newer edits.");
+      }
     } catch {
       setError("Couldn't save just now. Your edits are kept in this tab; try again.");
       setMessage("Not saved");
@@ -147,7 +215,9 @@ export function SnapshotPageBuilder({ waitList, saveDraftPage, publishPage, paus
       setSaving(false);
       if (saveAgainRef.current) {
         saveAgainRef.current = false;
-        window.setTimeout(() => { void flush(); }, 0);
+        window.setTimeout(() => {
+          void flush();
+        }, 0);
       }
     }
   }, [key, saveDraftPage, waitList.id]);
@@ -155,7 +225,12 @@ export function SnapshotPageBuilder({ waitList, saveDraftPage, publishPage, paus
   useEffect(() => {
     try {
       const stored = JSON.parse(sessionStorage.getItem(key) || "null");
-      if (stored && Number.isSafeInteger(stored.revision) && templateSnapshotSchema.safeParse(stored.snapshot).success && !equal(stored.snapshot, waitList.templateSnapshot)) {
+      if (
+        stored &&
+        Number.isSafeInteger(stored.revision) &&
+        templateSnapshotSchema.safeParse(stored.snapshot).success &&
+        !equal(stored.snapshot, waitList.templateSnapshot)
+      ) {
         const recovered = clone(stored.snapshot);
         snapshotRef.current = recovered;
         setSnapshot(recovered);
@@ -163,7 +238,10 @@ export function SnapshotPageBuilder({ waitList, saveDraftPage, publishPage, paus
         dirtyRef.current = true;
         if (stored.revision !== waitList.templateRevision) {
           setConflict({ revision: waitList.templateRevision, snapshot: waitList.templateSnapshot });
-          conflictRef.current = { revision: waitList.templateRevision, snapshot: waitList.templateSnapshot };
+          conflictRef.current = {
+            revision: waitList.templateRevision,
+            snapshot: waitList.templateSnapshot,
+          };
           setError("This tab has edits from an older saved version. Choose which version to keep.");
           setMessage("Review changes");
         } else setMessage("Recovered unsaved edits");
@@ -176,7 +254,9 @@ export function SnapshotPageBuilder({ waitList, saveDraftPage, publishPage, paus
 
   useEffect(() => {
     if (!hydrated || !dirty || conflict) return undefined;
-    const timer = window.setTimeout(() => { void flush(); }, 700);
+    const timer = window.setTimeout(() => {
+      void flush();
+    }, 700);
     return () => window.clearTimeout(timer);
   }, [snapshot, dirty, conflict, hydrated, flush]);
 
@@ -189,22 +269,37 @@ export function SnapshotPageBuilder({ waitList, saveDraftPage, publishPage, paus
     if (equal(snapshotRef.current, next)) return;
     setExpandedSection(target);
     pendingSectionFocusRef.current = { index: target, action: direction < 0 ? "down" : "up" };
-    setSectionAnnouncement(`${sectionNames[sections[target].type]} moved to position ${target + 1} of ${sections.length}.`);
+    setSectionAnnouncement(
+      `${sectionNames[sections[target].type]} moved to position ${target + 1} of ${sections.length}.`,
+    );
     applySnapshot(next);
   };
   const updateSection = (sectionIndex, transform) => {
-    const sections = snapshot.sections.map((section, index) => index === sectionIndex ? transform(section) : section);
+    const sections = snapshot.sections.map((section, index) =>
+      index === sectionIndex ? transform(section) : section,
+    );
     applySnapshot({ ...snapshot, sections });
   };
-  const updateItem = (sectionIndex, itemIndex, transform) => updateSection(sectionIndex, (section) => ({ ...section, items: section.items.map((item, index) => index === itemIndex ? transform(item) : item) }));
+  const updateItem = (sectionIndex, itemIndex, transform) =>
+    updateSection(sectionIndex, (section) => ({
+      ...section,
+      items: section.items.map((item, index) => (index === itemIndex ? transform(item) : item)),
+    }));
   const removeSection = (index) => {
-    if (snapshot.sections[index].type === "hero" || snapshot.sections[index].type === "form") return;
+    if (snapshot.sections[index].type === "hero" || snapshot.sections[index].type === "form")
+      return;
     setExpandedSection(Math.max(0, index - 1));
-    applySnapshot({ ...snapshot, sections: snapshot.sections.filter((_, sectionIndex) => sectionIndex !== index) });
+    applySnapshot({
+      ...snapshot,
+      sections: snapshot.sections.filter((_, sectionIndex) => sectionIndex !== index),
+    });
   };
   const addSection = () => {
     if (snapshot.sections.length >= 12) return;
-    applySnapshot({ ...snapshot, sections: [...snapshot.sections.slice(0, -1), newSection(addType), snapshot.sections.at(-1)] });
+    applySnapshot({
+      ...snapshot,
+      sections: [...snapshot.sections.slice(0, -1), newSection(addType), snapshot.sections.at(-1)],
+    });
     setExpandedSection(snapshot.sections.length - 1);
     setShowAddSection(false);
   };
@@ -212,46 +307,91 @@ export function SnapshotPageBuilder({ waitList, saveDraftPage, publishPage, paus
     if (!undoStack.current.length) return;
     redoStack.current.push(clone(snapshotRef.current));
     const previous = undoStack.current.pop();
-    setUndoCount(undoStack.current.length); setRedoCount(redoStack.current.length);
-    snapshotRef.current = previous; setSnapshot(previous); setDirty(true); setMessage("Unsaved changes");
-    try { sessionStorage.setItem(key, JSON.stringify({ revision: versionRef.current, snapshot: previous })); } catch { setError("This browser could not keep a recovery copy."); }
+    setUndoCount(undoStack.current.length);
+    setRedoCount(redoStack.current.length);
+    snapshotRef.current = previous;
+    setSnapshot(previous);
+    setDirty(true);
+    setMessage("Unsaved changes");
+    try {
+      sessionStorage.setItem(
+        key,
+        JSON.stringify({ revision: versionRef.current, snapshot: previous }),
+      );
+    } catch {
+      setError("This browser could not keep a recovery copy.");
+    }
   };
   const redo = () => {
     if (!redoStack.current.length) return;
     undoStack.current.push(clone(snapshotRef.current));
     const next = redoStack.current.pop();
-    setUndoCount(undoStack.current.length); setRedoCount(redoStack.current.length);
-    snapshotRef.current = next; setSnapshot(next); setDirty(true); setMessage("Unsaved changes");
-    try { sessionStorage.setItem(key, JSON.stringify({ revision: versionRef.current, snapshot: next })); } catch { setError("This browser could not keep a recovery copy."); }
+    setUndoCount(undoStack.current.length);
+    setRedoCount(redoStack.current.length);
+    snapshotRef.current = next;
+    setSnapshot(next);
+    setDirty(true);
+    setMessage("Unsaved changes");
+    try {
+      sessionStorage.setItem(key, JSON.stringify({ revision: versionRef.current, snapshot: next }));
+    } catch {
+      setError("This browser could not keep a recovery copy.");
+    }
   };
   const resolveConflict = (choice) => {
     if (!conflict) return;
     const remote = conflict;
     const next = choice === "saved" ? clone(remote.snapshot) : clone(snapshotRef.current);
-    undoStack.current = []; redoStack.current = []; setUndoCount(0); setRedoCount(0);
-    versionRef.current = remote.revision; setVersion(remote.revision);
-    setConflict(null); conflictRef.current = null; setError("");
-    snapshotRef.current = next; setSnapshot(next);
+    undoStack.current = [];
+    redoStack.current = [];
+    setUndoCount(0);
+    setRedoCount(0);
+    versionRef.current = remote.revision;
+    setVersion(remote.revision);
+    setConflict(null);
+    conflictRef.current = null;
+    setError("");
+    snapshotRef.current = next;
+    setSnapshot(next);
     const changed = !equal(next, remote.snapshot);
-    dirtyRef.current = changed; setDirty(changed); setMessage(changed ? "Saving your version…" : "Saved");
-    try { sessionStorage.setItem(key, JSON.stringify({ revision: remote.revision, snapshot: next })); } catch { /* The editor remains usable in this tab. */ }
+    dirtyRef.current = changed;
+    setDirty(changed);
+    setMessage(changed ? "Saving your version…" : "Saved");
+    try {
+      sessionStorage.setItem(key, JSON.stringify({ revision: remote.revision, snapshot: next }));
+    } catch {
+      /* The editor remains usable in this tab. */
+    }
   };
   const onKeyDown = (event) => {
     if (!(event.metaKey || event.ctrlKey) || event.altKey) return;
     const target = event.target;
-    if (target instanceof HTMLElement && (target.isContentEditable || target.closest("input, textarea, select, [contenteditable='true']"))) return;
+    if (
+      target instanceof HTMLElement &&
+      (target.isContentEditable ||
+        target.closest("input, textarea, select, [contenteditable='true']"))
+    )
+      return;
     if (event.key.toLowerCase() === "z") {
       event.preventDefault();
-      if (event.shiftKey) redo(); else undo();
-    } else if (event.key.toLowerCase() === "y") { event.preventDefault(); redo(); }
+      if (event.shiftKey) redo();
+      else undo();
+    } else if (event.key.toLowerCase() === "y") {
+      event.preventDefault();
+      redo();
+    }
   };
 
   const publish = async () => {
     if (dirty || saving || conflict || publishing || !publishConfirmed) return;
-    setPublishing(true); setError("");
+    setPublishing(true);
+    setError("");
     try {
       const result = await publishPage(waitList.id, version);
-      if (!result?.ok) { setError(result?.message || "Couldn't publish this page."); return; }
+      if (!result?.ok) {
+        setError(result?.message || "Couldn't publish this page.");
+        return;
+      }
       setMessage(result.unchanged ? "Already live" : `Published · version ${result.revision}`);
       setPublishReviewOpen(false);
       router.refresh();
@@ -263,18 +403,37 @@ export function SnapshotPageBuilder({ waitList, saveDraftPage, publishPage, paus
   };
   const lifecycle = async (action) => {
     if (dirty || saving || conflict || publishing) return;
-    setPublishing(true); setError("");
+    setPublishing(true);
+    setError("");
     try {
       const result = await action(waitList.id);
-      if (!result?.ok) { setError(result?.message || "Couldn't update publication."); return; }
+      if (!result?.ok) {
+        setError(result?.message || "Couldn't update publication.");
+        return;
+      }
       if (Number.isSafeInteger(result.templateRevision) && result.snapshot) {
         const restored = clone(result.snapshot);
-        versionRef.current = result.templateRevision; setVersion(result.templateRevision);
-        snapshotRef.current = restored; setSnapshot(restored);
-        dirtyRef.current = false; setDirty(false); setConflict(null); conflictRef.current = null;
-        undoStack.current = []; redoStack.current = []; setUndoCount(0); setRedoCount(0);
+        versionRef.current = result.templateRevision;
+        setVersion(result.templateRevision);
+        snapshotRef.current = restored;
+        setSnapshot(restored);
+        dirtyRef.current = false;
+        setDirty(false);
+        setConflict(null);
+        conflictRef.current = null;
+        undoStack.current = [];
+        redoStack.current = [];
+        setUndoCount(0);
+        setRedoCount(0);
         setMessage("Restored previous published version");
-        try { sessionStorage.setItem(key, JSON.stringify({ revision: result.templateRevision, snapshot: restored })); } catch { /* A future reload still uses the saved server version. */ }
+        try {
+          sessionStorage.setItem(
+            key,
+            JSON.stringify({ revision: result.templateRevision, snapshot: restored }),
+          );
+        } catch {
+          /* A future reload still uses the saved server version. */
+        }
       }
       router.refresh();
     } catch {
@@ -283,7 +442,8 @@ export function SnapshotPageBuilder({ waitList, saveDraftPage, publishPage, paus
       setPublishing(false);
     }
   };
-  const hasUpdates = waitList.status !== "PUBLISHED" || waitList.publishedTemplateRevision !== version;
+  const hasUpdates =
+    waitList.status !== "PUBLISHED" || waitList.publishedTemplateRevision !== version;
   const unchangedStarterCopy = findUnchangedStarterCopy(snapshot);
   const openPublishReview = () => {
     if (dirty || saving || conflict || publishing) return;
@@ -292,64 +452,557 @@ export function SnapshotPageBuilder({ waitList, saveDraftPage, publishPage, paus
     setPublishReviewOpen(true);
   };
 
-  return <section className={`product-builder ${styles.builder}`} data-mobile-view={mobileView} onKeyDown={onKeyDown}>
-    <header className="product-builder-header">
-      <div><p className="product-builder-kicker">{waitList.status === "PUBLISHED" ? "Published page" : waitList.status === "PAUSED" ? "Paused page" : "Private draft"}</p><h2 className={styles.editorTitle}>Design editor</h2></div>
-      <div className="product-builder-tools" id="publication-actions"><span role="status" aria-live="polite">{saving ? "Saving…" : message}</span><Button variant="ghost" type="button" aria-label="Undo last change" onClick={undo} disabled={!undoCount}><HugeiconsIcon icon={Undo02Icon} aria-hidden="true" /><span>Undo</span></Button><Button variant="ghost" type="button" aria-label="Redo last change" onClick={redo} disabled={!redoCount}><HugeiconsIcon icon={Redo02Icon} aria-hidden="true" /><span>Redo</span></Button><Button variant="outline" type="button" onClick={() => { void flush(); }} disabled={!dirty || saving || !!conflict}>{saving ? "Saving…" : "Save now"}</Button>{canPublish && hasUpdates && <Button id="publication-action" type="button" onClick={openPublishReview} disabled={dirty || saving || !!conflict || publishing}>{publishing ? "Publishing…" : waitList.status === "PAUSED" ? "Publish and resume" : waitList.status === "PUBLISHED" ? "Publish updates" : "Publish waitlist"}</Button>}{canPublish && waitList.status === "PUBLISHED" && <Button variant="outline" type="button" onClick={() => { void lifecycle(pausePage); }} disabled={dirty || saving || !!conflict || publishing}>Pause waitlist</Button>}{waitList.status !== "DRAFT" && waitList.publicSlug && <Link prefetch={false} className="product-builder-live-link" href={`/w/${waitList.publicSlug}`} target="_blank" rel="noreferrer">View live page</Link>}{canPublish && waitList.publishedRevision > 1 && <Button variant="outline" type="button" onClick={() => { void lifecycle(rollbackPage); }} disabled={dirty || saving || !!conflict || publishing}>Restore previous version</Button>}</div>
-    </header>
-    <Dialog open={publishReviewOpen} onOpenChange={(open) => { if (!publishing) { setPublishReviewOpen(open); if (!open) setPublishConfirmed(false); } }}>
-      <DialogContent>
-        <div className="product-publish-review-dialog">
-          <div className="product-dialog-heading">
-            <DialogTitle>Review your public page</DialogTitle>
-            <DialogDescription>This saved version will be visible to anyone with the link. Check the page before you publish.</DialogDescription>
-          </div>
-          {unchangedStarterCopy.length > 0 && <section className="product-publish-starter-copy" aria-labelledby="publish-starter-copy-title">
-            <h3 id="publish-starter-copy-title">Some starter copy is unchanged</h3>
-            <p>Edit these lines or keep them after reviewing the preview.</p>
-            <ul>{unchangedStarterCopy.map(({ label, value, key }) => <li key={key}><strong>{label}</strong><span>{value}</span></li>)}</ul>
-          </section>}
-          <section className="product-publish-review-preview" role="region" aria-label="Public page preview" tabIndex={0}>
-            <WaitlistPageContent snapshot={snapshot} name={waitList.name} previewViewport="desktop" renderSignupForm={(section) => <WaitlistSignupPreview label={section.label} buttonText={section.buttonText} />} />
-          </section>
-          {error && <p className="product-builder-alert" role="alert">{error}</p>}
-          <div className="product-publish-confirm"><Label className="flex items-start"><Checkbox checked={publishConfirmed} onCheckedChange={setPublishConfirmed} disabled={publishing} /> <span>I reviewed this page as visitors will see it.</span></Label></div>
-          <div className="product-actions">
-            <DialogClose render={<Button variant="outline" />} disabled={publishing}>Back to editor</DialogClose>
-            <Button type="button" onClick={() => { void publish(); }} disabled={!publishConfirmed || publishing}>{publishing ? "Publishing…" : waitList.status === "PAUSED" ? "Publish and resume" : waitList.status === "PUBLISHED" ? "Publish updates" : "Publish page"}</Button>
-          </div>
+  return (
+    <section
+      className={`product-builder ${styles.builder}`}
+      data-mobile-view={mobileView}
+      onKeyDown={onKeyDown}
+    >
+      <header className="product-builder-header">
+        <div>
+          <p className="product-builder-kicker">
+            {waitList.status === "PUBLISHED"
+              ? "Published page"
+              : waitList.status === "PAUSED"
+                ? "Paused page"
+                : "Private draft"}
+          </p>
+          <h2 className={styles.editorTitle}>Design editor</h2>
         </div>
-      </DialogContent>
-    </Dialog>
-    {error && <div className="product-builder-alert" role="alert"><p>{error}</p>{conflict && <div className="product-builder-conflict-actions"><Button variant="outline" type="button" onClick={() => resolveConflict("saved")}>Use saved version</Button><Button type="button" onClick={() => resolveConflict("mine")}>Replace saved version with mine</Button></div>}{!conflict && dirty && <Button variant="outline" type="button" onClick={() => { setError(""); void flush(); }}>Retry save</Button>}</div>}
-    <div className={styles.mobileViewToggle} role="group" aria-label="Editor view"><Button type="button" variant="ghost" aria-pressed={mobileView === "content"} onClick={() => setMobileView("content")}>Content</Button><Button type="button" variant="ghost" aria-pressed={mobileView === "preview"} onClick={() => setMobileView("preview")}>Preview</Button></div>
-    <div className="product-builder-grid">
+        <div className="product-builder-tools" id="publication-actions">
+          <span role="status" aria-live="polite">
+            {saving ? "Saving…" : message}
+          </span>
+          <Button
+            variant="ghost"
+            type="button"
+            aria-label="Undo last change"
+            onClick={undo}
+            disabled={!undoCount}
+          >
+            <HugeiconsIcon icon={Undo02Icon} aria-hidden="true" />
+            <span>Undo</span>
+          </Button>
+          <Button
+            variant="ghost"
+            type="button"
+            aria-label="Redo last change"
+            onClick={redo}
+            disabled={!redoCount}
+          >
+            <HugeiconsIcon icon={Redo02Icon} aria-hidden="true" />
+            <span>Redo</span>
+          </Button>
+          <Button
+            variant="outline"
+            type="button"
+            onClick={() => {
+              void flush();
+            }}
+            disabled={!dirty || saving || !!conflict}
+          >
+            {saving ? "Saving…" : "Save now"}
+          </Button>
+          {canPublish && hasUpdates && (
+            <Button
+              id="publication-action"
+              type="button"
+              onClick={openPublishReview}
+              disabled={dirty || saving || !!conflict || publishing}
+            >
+              {publishing
+                ? "Publishing…"
+                : waitList.status === "PAUSED"
+                  ? "Publish and resume"
+                  : waitList.status === "PUBLISHED"
+                    ? "Publish updates"
+                    : "Publish waitlist"}
+            </Button>
+          )}
+          {canPublish && waitList.status === "PUBLISHED" && (
+            <Button
+              variant="outline"
+              type="button"
+              onClick={() => {
+                void lifecycle(pausePage);
+              }}
+              disabled={dirty || saving || !!conflict || publishing}
+            >
+              Pause waitlist
+            </Button>
+          )}
+          {waitList.status !== "DRAFT" && waitList.publicSlug && (
+            <Link
+              prefetch={false}
+              className="product-builder-live-link"
+              href={`/w/${waitList.publicSlug}`}
+              target="_blank"
+              rel="noreferrer"
+            >
+              View live page
+            </Link>
+          )}
+          {canPublish && waitList.publishedRevision > 1 && (
+            <Button
+              variant="outline"
+              type="button"
+              onClick={() => {
+                void lifecycle(rollbackPage);
+              }}
+              disabled={dirty || saving || !!conflict || publishing}
+            >
+              Restore previous version
+            </Button>
+          )}
+        </div>
+      </header>
+      <Dialog
+        open={publishReviewOpen}
+        onOpenChange={(open) => {
+          if (!publishing) {
+            setPublishReviewOpen(open);
+            if (!open) setPublishConfirmed(false);
+          }
+        }}
+      >
+        <DialogContent>
+          <div className="product-publish-review-dialog">
+            <div className="product-dialog-heading">
+              <DialogTitle>Review your public page</DialogTitle>
+              <DialogDescription>
+                This saved version will be visible to anyone with the link. Check the page before
+                you publish.
+              </DialogDescription>
+            </div>
+            {unchangedStarterCopy.length > 0 && (
+              <section
+                className="product-publish-starter-copy"
+                aria-labelledby="publish-starter-copy-title"
+              >
+                <h3 id="publish-starter-copy-title">Some starter copy is unchanged</h3>
+                <p>Edit these lines or keep them after reviewing the preview.</p>
+                <ul>
+                  {unchangedStarterCopy.map(({ label, value, key }) => (
+                    <li key={key}>
+                      <strong>{label}</strong>
+                      <span>{value}</span>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            )}
+            <section
+              className="product-publish-review-preview"
+              role="region"
+              aria-label="Public page preview"
+              tabIndex={0}
+            >
+              <WaitlistPageContent
+                snapshot={snapshot}
+                name={waitList.name}
+                previewViewport="desktop"
+                renderSignupForm={(section) => (
+                  <WaitlistSignupPreview label={section.label} buttonText={section.buttonText} />
+                )}
+              />
+            </section>
+            {error && (
+              <p className="product-builder-alert" role="alert">
+                {error}
+              </p>
+            )}
+            <div className="product-publish-confirm">
+              <Label className="flex items-start">
+                <Checkbox
+                  checked={publishConfirmed}
+                  onCheckedChange={setPublishConfirmed}
+                  disabled={publishing}
+                />{" "}
+                <span>I reviewed this page as visitors will see it.</span>
+              </Label>
+            </div>
+            <div className="product-actions">
+              <DialogClose render={<Button variant="outline" />} disabled={publishing}>
+                Back to editor
+              </DialogClose>
+              <Button
+                type="button"
+                onClick={() => {
+                  void publish();
+                }}
+                disabled={!publishConfirmed || publishing}
+              >
+                {publishing
+                  ? "Publishing…"
+                  : waitList.status === "PAUSED"
+                    ? "Publish and resume"
+                    : waitList.status === "PUBLISHED"
+                      ? "Publish updates"
+                      : "Publish page"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+      {error && (
+        <div className="product-builder-alert" role="alert">
+          <p>{error}</p>
+          {conflict && (
+            <div className="product-builder-conflict-actions">
+              <Button variant="outline" type="button" onClick={() => resolveConflict("saved")}>
+                Use saved version
+              </Button>
+              <Button type="button" onClick={() => resolveConflict("mine")}>
+                Replace saved version with mine
+              </Button>
+            </div>
+          )}
+          {!conflict && dirty && (
+            <Button
+              variant="outline"
+              type="button"
+              onClick={() => {
+                setError("");
+                void flush();
+              }}
+            >
+              Retry save
+            </Button>
+          )}
+        </div>
+      )}
+      <div className={styles.mobileViewToggle} role="group" aria-label="Editor view">
+        <Button
+          type="button"
+          variant="ghost"
+          aria-pressed={mobileView === "content"}
+          onClick={() => setMobileView("content")}
+        >
+          Content
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          aria-pressed={mobileView === "preview"}
+          onClick={() => setMobileView("preview")}
+        >
+          Preview
+        </Button>
+      </div>
+      <div className="product-builder-grid">
         <div className="product-builder-editor" id="page-content">
-        <div className="product-builder-editor-heading"><div><h3>Sections</h3><p>Choose a section to edit.</p></div><p>v{version}</p></div>
-        <p className="product-visually-hidden" role="status" aria-live="polite" aria-atomic="true">{sectionAnnouncement}</p>
-        {snapshot.sections.map((section, sectionIndex) => <div className="product-builder-section" key={`${section.type}-${sectionIndex}`}><Collapsible open={expandedSection === sectionIndex} onOpenChange={(nextOpen) => setExpandedSection(nextOpen ? sectionIndex : null)}><CollapsibleTrigger ><span>{sectionNames[section.type]}</span><HugeiconsIcon icon={ArrowDown01Icon} aria-hidden="true" /></CollapsibleTrigger><CollapsibleContent><div className={styles.sectionContent}><div className="product-builder-section-tools"><Button id={`section-${sectionIndex}-move-up`} variant="outline" type="button" aria-label={`Move ${sectionNames[section.type]} up`} onClick={() => moveSection(sectionIndex, -1)} disabled={sectionIndex <= 1}><HugeiconsIcon icon={ArrowUp01Icon} aria-hidden="true" /></Button><Button id={`section-${sectionIndex}-move-down`} variant="outline" type="button" aria-label={`Move ${sectionNames[section.type]} down`} onClick={() => moveSection(sectionIndex, 1)} disabled={sectionIndex === 0 || sectionIndex === snapshot.sections.length - 1}><HugeiconsIcon icon={ArrowDown01Icon} aria-hidden="true" /></Button>{section.type !== "hero" && section.type !== "form" && <Button variant="outline" type="button" onClick={() => removeSection(sectionIndex)} aria-label={`Remove ${sectionNames[section.type]}`}>Remove</Button>}</div>
-          {section.type === "hero" && <div className="product-builder-fields"><Label htmlFor={`section-${sectionIndex}-heading`}>Headline</Label><Input id={`section-${sectionIndex}-heading`} maxLength={120} value={section.heading} onChange={(event) => updateSection(sectionIndex, (item) => ({ ...item, heading: event.target.value }))} /><Label htmlFor={`section-${sectionIndex}-body`}>Introduction</Label><Textarea id={`section-${sectionIndex}-body`} maxLength={600} rows={3} value={section.body} onChange={(event) => updateSection(sectionIndex, (item) => ({ ...item, body: event.target.value }))} /></div>}
-          {(section.type === "features" || section.type === "faq") && <div className="product-builder-items">{section.items.map((item, itemIndex) => <div className="product-builder-item" key={itemIndex}><p>{section.type === "features" ? `Highlight ${itemIndex + 1}` : `Question ${itemIndex + 1}`}</p><Label htmlFor={`section-${sectionIndex}-item-${itemIndex}-title`}>{section.type === "features" ? "Title" : "Question"}</Label><Input id={`section-${sectionIndex}-item-${itemIndex}-title`} maxLength={section.type === "features" ? 80 : 120} value={section.type === "features" ? item.title : item.question} onChange={(event) => updateItem(sectionIndex, itemIndex, (value) => section.type === "features" ? { ...value, title: event.target.value } : { ...value, question: event.target.value })} /><Label htmlFor={`section-${sectionIndex}-item-${itemIndex}-body`}>{section.type === "features" ? "Description" : "Answer"}</Label><Textarea id={`section-${sectionIndex}-item-${itemIndex}-body`} maxLength={section.type === "features" ? 240 : 400} rows={3} value={section.type === "features" ? item.body : item.answer} onChange={(event) => updateItem(sectionIndex, itemIndex, (value) => section.type === "features" ? { ...value, body: event.target.value } : { ...value, answer: event.target.value })} />{section.items.length > 1 && <Button variant="outline" type="button" onClick={() => updateSection(sectionIndex, (value) => ({ ...value, items: value.items.filter((_, index) => index !== itemIndex) }))}>Remove {section.type === "features" ? "highlight" : "question"}</Button>}</div>)}{section.items.length < 6 && <Button variant="outline" type="button" onClick={() => updateSection(sectionIndex, (value) => ({ ...value, items: [...value.items, section.type === "features" ? { title: "A clear benefit", body: "Explain how it helps." } : { question: "What should people know?", answer: "Add a useful answer." }] }))}>Add {section.type === "features" ? "highlight" : "question"}</Button>}</div>}
-          {section.type === "form" && <div className="product-builder-fields"><Label htmlFor={`section-${sectionIndex}-label`}>Email field label</Label><Input id={`section-${sectionIndex}-label`} maxLength={80} value={section.label} onChange={(event) => updateSection(sectionIndex, (item) => ({ ...item, label: event.target.value }))} /><Label htmlFor={`section-${sectionIndex}-button`}>Button text</Label><Input id={`section-${sectionIndex}-button`} maxLength={40} value={section.buttonText} onChange={(event) => updateSection(sectionIndex, (item) => ({ ...item, buttonText: event.target.value }))} /><p className="product-help">Referrals, verification and signup emails stay off in this draft.</p></div>}
-          {section.type === "footer" && <div className="product-builder-fields"><Label htmlFor={`section-${sectionIndex}-note`}>Short note</Label><Textarea id={`section-${sectionIndex}-note`} maxLength={160} rows={3} value={section.note} onChange={(event) => updateSection(sectionIndex, (item) => ({ ...item, note: event.target.value }))} /></div>}
-        </div></CollapsibleContent></Collapsible></div>)}
-        <div className="product-builder-add">{showAddSection ? <><Label htmlFor="section-type">Section</Label><Select value={addType} onValueChange={setAddType}><SelectTrigger id="section-type"><SelectValue>{{ features: "Highlights", faq: "Questions", footer: "Note" }[addType]}</SelectValue></SelectTrigger><SelectContent><SelectItem value="features">Highlights</SelectItem><SelectItem value="faq">Questions</SelectItem><SelectItem value="footer">Note</SelectItem></SelectContent></Select><Button type="button" onClick={addSection} disabled={snapshot.sections.length >= 12}>Add section</Button><Button variant="outline" type="button" onClick={() => setShowAddSection(false)}>Cancel</Button></> : <Button variant="outline" type="button" onClick={() => setShowAddSection(true)} disabled={snapshot.sections.length >= 12}>Add a section</Button>}{snapshot.sections.length >= 12 && <p className="product-help">A page can have up to 12 sections.</p>}</div>
-      </div>
-      <div className="product-builder-preview-wrap">
-        <div className="product-builder-preview-heading">
-          <div><h3>Preview</h3><span>Edits stay private until published.</span></div>
-          <div className="product-preview-viewport-toggle" role="group" aria-label="Preview width">
-            <Button type="button" variant={previewViewport === "desktop" ? "outline" : "ghost"} aria-pressed={previewViewport === "desktop"} onClick={() => setPreviewViewport("desktop")}><HugeiconsIcon icon={ComputerIcon} aria-hidden="true" /> Desktop</Button>
-            <Button type="button" variant={previewViewport === "mobile" ? "outline" : "ghost"} aria-pressed={previewViewport === "mobile"} onClick={() => setPreviewViewport("mobile")}><HugeiconsIcon icon={SmartPhone01Icon} aria-hidden="true" /> Mobile</Button>
+          <div className="product-builder-editor-heading">
+            <div>
+              <h3>Sections</h3>
+              <p>Choose a section to edit.</p>
+            </div>
+            <p>v{version}</p>
+          </div>
+          <p
+            className="product-visually-hidden"
+            role="status"
+            aria-live="polite"
+            aria-atomic="true"
+          >
+            {sectionAnnouncement}
+          </p>
+          {snapshot.sections.map((section, sectionIndex) => (
+            <div className="product-builder-section" key={`${section.type}-${sectionIndex}`}>
+              <Collapsible
+                open={expandedSection === sectionIndex}
+                onOpenChange={(nextOpen) => setExpandedSection(nextOpen ? sectionIndex : null)}
+              >
+                <CollapsibleTrigger>
+                  <span>{sectionNames[section.type]}</span>
+                  <HugeiconsIcon icon={ArrowDown01Icon} aria-hidden="true" />
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <div className={styles.sectionContent}>
+                    <div className="product-builder-section-tools">
+                      <Button
+                        id={`section-${sectionIndex}-move-up`}
+                        variant="outline"
+                        type="button"
+                        aria-label={`Move ${sectionNames[section.type]} up`}
+                        onClick={() => moveSection(sectionIndex, -1)}
+                        disabled={sectionIndex <= 1}
+                      >
+                        <HugeiconsIcon icon={ArrowUp01Icon} aria-hidden="true" />
+                      </Button>
+                      <Button
+                        id={`section-${sectionIndex}-move-down`}
+                        variant="outline"
+                        type="button"
+                        aria-label={`Move ${sectionNames[section.type]} down`}
+                        onClick={() => moveSection(sectionIndex, 1)}
+                        disabled={
+                          sectionIndex === 0 || sectionIndex === snapshot.sections.length - 1
+                        }
+                      >
+                        <HugeiconsIcon icon={ArrowDown01Icon} aria-hidden="true" />
+                      </Button>
+                      {section.type !== "hero" && section.type !== "form" && (
+                        <Button
+                          variant="outline"
+                          type="button"
+                          onClick={() => removeSection(sectionIndex)}
+                          aria-label={`Remove ${sectionNames[section.type]}`}
+                        >
+                          Remove
+                        </Button>
+                      )}
+                    </div>
+                    {section.type === "hero" && (
+                      <div className="product-builder-fields">
+                        <Label htmlFor={`section-${sectionIndex}-heading`}>Headline</Label>
+                        <Input
+                          id={`section-${sectionIndex}-heading`}
+                          maxLength={120}
+                          value={section.heading}
+                          onChange={(event) =>
+                            updateSection(sectionIndex, (item) => ({
+                              ...item,
+                              heading: event.target.value,
+                            }))
+                          }
+                        />
+                        <Label htmlFor={`section-${sectionIndex}-body`}>Introduction</Label>
+                        <Textarea
+                          id={`section-${sectionIndex}-body`}
+                          maxLength={600}
+                          rows={3}
+                          value={section.body}
+                          onChange={(event) =>
+                            updateSection(sectionIndex, (item) => ({
+                              ...item,
+                              body: event.target.value,
+                            }))
+                          }
+                        />
+                      </div>
+                    )}
+                    {(section.type === "features" || section.type === "faq") && (
+                      <div className="product-builder-items">
+                        {section.items.map((item, itemIndex) => (
+                          <div className="product-builder-item" key={itemIndex}>
+                            <p>
+                              {section.type === "features"
+                                ? `Highlight ${itemIndex + 1}`
+                                : `Question ${itemIndex + 1}`}
+                            </p>
+                            <Label htmlFor={`section-${sectionIndex}-item-${itemIndex}-title`}>
+                              {section.type === "features" ? "Title" : "Question"}
+                            </Label>
+                            <Input
+                              id={`section-${sectionIndex}-item-${itemIndex}-title`}
+                              maxLength={section.type === "features" ? 80 : 120}
+                              value={section.type === "features" ? item.title : item.question}
+                              onChange={(event) =>
+                                updateItem(sectionIndex, itemIndex, (value) =>
+                                  section.type === "features"
+                                    ? { ...value, title: event.target.value }
+                                    : { ...value, question: event.target.value },
+                                )
+                              }
+                            />
+                            <Label htmlFor={`section-${sectionIndex}-item-${itemIndex}-body`}>
+                              {section.type === "features" ? "Description" : "Answer"}
+                            </Label>
+                            <Textarea
+                              id={`section-${sectionIndex}-item-${itemIndex}-body`}
+                              maxLength={section.type === "features" ? 240 : 400}
+                              rows={3}
+                              value={section.type === "features" ? item.body : item.answer}
+                              onChange={(event) =>
+                                updateItem(sectionIndex, itemIndex, (value) =>
+                                  section.type === "features"
+                                    ? { ...value, body: event.target.value }
+                                    : { ...value, answer: event.target.value },
+                                )
+                              }
+                            />
+                            {section.items.length > 1 && (
+                              <Button
+                                variant="outline"
+                                type="button"
+                                onClick={() =>
+                                  updateSection(sectionIndex, (value) => ({
+                                    ...value,
+                                    items: value.items.filter((_, index) => index !== itemIndex),
+                                  }))
+                                }
+                              >
+                                Remove {section.type === "features" ? "highlight" : "question"}
+                              </Button>
+                            )}
+                          </div>
+                        ))}
+                        {section.items.length < 6 && (
+                          <Button
+                            variant="outline"
+                            type="button"
+                            onClick={() =>
+                              updateSection(sectionIndex, (value) => ({
+                                ...value,
+                                items: [
+                                  ...value.items,
+                                  section.type === "features"
+                                    ? { title: "A clear benefit", body: "Explain how it helps." }
+                                    : {
+                                        question: "What should people know?",
+                                        answer: "Add a useful answer.",
+                                      },
+                                ],
+                              }))
+                            }
+                          >
+                            Add {section.type === "features" ? "highlight" : "question"}
+                          </Button>
+                        )}
+                      </div>
+                    )}
+                    {section.type === "form" && (
+                      <div className="product-builder-fields">
+                        <Label htmlFor={`section-${sectionIndex}-label`}>Email field label</Label>
+                        <Input
+                          id={`section-${sectionIndex}-label`}
+                          maxLength={80}
+                          value={section.label}
+                          onChange={(event) =>
+                            updateSection(sectionIndex, (item) => ({
+                              ...item,
+                              label: event.target.value,
+                            }))
+                          }
+                        />
+                        <Label htmlFor={`section-${sectionIndex}-button`}>Button text</Label>
+                        <Input
+                          id={`section-${sectionIndex}-button`}
+                          maxLength={40}
+                          value={section.buttonText}
+                          onChange={(event) =>
+                            updateSection(sectionIndex, (item) => ({
+                              ...item,
+                              buttonText: event.target.value,
+                            }))
+                          }
+                        />
+                        <p className="product-help">
+                          Referrals, verification and signup emails stay off in this draft.
+                        </p>
+                      </div>
+                    )}
+                    {section.type === "footer" && (
+                      <div className="product-builder-fields">
+                        <Label htmlFor={`section-${sectionIndex}-note`}>Short note</Label>
+                        <Textarea
+                          id={`section-${sectionIndex}-note`}
+                          maxLength={160}
+                          rows={3}
+                          value={section.note}
+                          onChange={(event) =>
+                            updateSection(sectionIndex, (item) => ({
+                              ...item,
+                              note: event.target.value,
+                            }))
+                          }
+                        />
+                      </div>
+                    )}
+                  </div>
+                </CollapsibleContent>
+              </Collapsible>
+            </div>
+          ))}
+          <div className="product-builder-add">
+            {showAddSection ? (
+              <>
+                <Label htmlFor="section-type">Section</Label>
+                <Select value={addType} onValueChange={setAddType}>
+                  <SelectTrigger id="section-type">
+                    <SelectValue>
+                      {{ features: "Highlights", faq: "Questions", footer: "Note" }[addType]}
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="features">Highlights</SelectItem>
+                    <SelectItem value="faq">Questions</SelectItem>
+                    <SelectItem value="footer">Note</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Button
+                  type="button"
+                  onClick={addSection}
+                  disabled={snapshot.sections.length >= 12}
+                >
+                  Add section
+                </Button>
+                <Button variant="outline" type="button" onClick={() => setShowAddSection(false)}>
+                  Cancel
+                </Button>
+              </>
+            ) : (
+              <Button
+                variant="outline"
+                type="button"
+                onClick={() => setShowAddSection(true)}
+                disabled={snapshot.sections.length >= 12}
+              >
+                Add a section
+              </Button>
+            )}
+            {snapshot.sections.length >= 12 && (
+              <p className="product-help">A page can have up to 12 sections.</p>
+            )}
           </div>
         </div>
-        <div className={`product-builder-preview-frame${previewViewport === "mobile" ? " is-mobile" : ""}`} data-viewport={previewViewport}>
-          <section className="product-page-preview" aria-label="Waitlist page preview">
-            <WaitlistPageContent snapshot={snapshot} name={waitList.name} previewViewport={previewViewport} renderSignupForm={(section) => <WaitlistSignupPreview label={section.label} buttonText={section.buttonText} />} />
-          </section>
+        <div className="product-builder-preview-wrap">
+          <div className="product-builder-preview-heading">
+            <div>
+              <h3>Preview</h3>
+              <span>Edits stay private until published.</span>
+            </div>
+            <div
+              className="product-preview-viewport-toggle"
+              role="group"
+              aria-label="Preview width"
+            >
+              <Button
+                type="button"
+                variant={previewViewport === "desktop" ? "outline" : "ghost"}
+                aria-pressed={previewViewport === "desktop"}
+                onClick={() => setPreviewViewport("desktop")}
+              >
+                <HugeiconsIcon icon={ComputerIcon} aria-hidden="true" /> Desktop
+              </Button>
+              <Button
+                type="button"
+                variant={previewViewport === "mobile" ? "outline" : "ghost"}
+                aria-pressed={previewViewport === "mobile"}
+                onClick={() => setPreviewViewport("mobile")}
+              >
+                <HugeiconsIcon icon={SmartPhone01Icon} aria-hidden="true" /> Mobile
+              </Button>
+            </div>
+          </div>
+          <div
+            className={`product-builder-preview-frame${previewViewport === "mobile" ? " is-mobile" : ""}`}
+            data-viewport={previewViewport}
+          >
+            <section className="product-page-preview" aria-label="Waitlist page preview">
+              <WaitlistPageContent
+                snapshot={snapshot}
+                name={waitList.name}
+                previewViewport={previewViewport}
+                renderSignupForm={(section) => (
+                  <WaitlistSignupPreview label={section.label} buttonText={section.buttonText} />
+                )}
+              />
+            </section>
+          </div>
         </div>
       </div>
-    </div>
-    <PublicationOptions waitList={waitList} origin={publicationOrigin} />
-  </section>;
+      <PublicationOptions waitList={waitList} origin={publicationOrigin} />
+    </section>
+  );
 }

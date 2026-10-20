@@ -1,28 +1,51 @@
 "use server";
-import { revalidatePath } from "next/cache";
-import prisma from "@/lib/prisma";
-import { requireCampaign } from "@/lib/workspaces/authorize";
-import { AUDIT_ACTIONS, recordAuditEvent } from "@/lib/workspaces/audit.mjs";
-import { r2 } from "@/lib/r2";
-import { env } from "@/lib/env.mjs";
 import { DeleteObjectCommand } from "@aws-sdk/client-s3";
+import { revalidatePath } from "next/cache";
+
+import { env } from "@/lib/env.mjs";
+import prisma from "@/lib/prisma";
+import { r2 } from "@/lib/r2";
+import { AUDIT_ACTIONS, recordAuditEvent } from "@/lib/workspaces/audit.mjs";
+import { requireCampaign } from "@/lib/workspaces/authorize";
 
 export async function deleteWaitlist(id, confirmation) {
   try {
     const { campaign, scope, user } = await requireCampaign(id, "deleteCampaign");
-    if (confirmation !== (campaign.name || "Untitled waitlist")) return { error: "Enter the waitlist name exactly to confirm." };
-    const context = await prisma.waitList.findUnique({ where: { id }, select: { workspaceId: true, _count: { select: { signUps: true } } } });
-    const result = await prisma.waitList.deleteMany({ where: { id, name: campaign.name, ...scope } });
-    if (!result.count) return { error: "Waitlist not found or access changed. Refresh and try again." };
+    if (confirmation !== (campaign.name || "Untitled waitlist"))
+      return { error: "Enter the waitlist name exactly to confirm." };
+    const context = await prisma.waitList.findUnique({
+      where: { id },
+      select: { workspaceId: true, _count: { select: { signUps: true } } },
+    });
+    const result = await prisma.waitList.deleteMany({
+      where: { id, name: campaign.name, ...scope },
+    });
+    if (!result.count)
+      return { error: "Waitlist not found or access changed. Refresh and try again." };
     if (context?.workspaceId) {
       const removed = context._count.signUps;
-      await recordAuditEvent(prisma, { workspaceId: context.workspaceId, userId: user.id, action: AUDIT_ACTIONS.WAITLIST_DELETED, resourceType: "waitlist", resourceId: id, resourceName: campaign.name || "Untitled waitlist", detail: removed === 1 ? "1 subscriber removed" : `${removed} subscribers removed` });
+      await recordAuditEvent(prisma, {
+        workspaceId: context.workspaceId,
+        userId: user.id,
+        action: AUDIT_ACTIONS.WAITLIST_DELETED,
+        resourceType: "waitlist",
+        resourceId: id,
+        resourceName: campaign.name || "Untitled waitlist",
+        detail: removed === 1 ? "1 subscriber removed" : `${removed} subscribers removed`,
+      });
     }
     if (campaign.logoKey) {
-      try { await r2.send(new DeleteObjectCommand({ Bucket: env.R2_BUCKET_NAME, Key: campaign.logoKey })); }
-      catch { console.error("Deleted waitlist has a stored logo pending cleanup."); }
+      try {
+        await r2.send(
+          new DeleteObjectCommand({ Bucket: env.R2_BUCKET_NAME, Key: campaign.logoKey }),
+        );
+      } catch {
+        console.error("Deleted waitlist has a stored logo pending cleanup.");
+      }
     }
     revalidatePath("/waitlists");
     return { success: true };
-  } catch { return { error: "Could not delete this waitlist. Refresh and try again." }; }
+  } catch {
+    return { error: "Could not delete this waitlist. Refresh and try again." };
+  }
 }

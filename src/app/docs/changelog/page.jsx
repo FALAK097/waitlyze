@@ -1,8 +1,9 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
+
+import { DocsBody, DocsDescription, DocsPage, DocsTitle } from "fumadocs-ui/layouts/docs/page";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { DocsBody, DocsDescription, DocsPage, DocsTitle } from "fumadocs-ui/layouts/docs/page";
 
 export const metadata = {
   title: "Changelog | Waitlyze",
@@ -10,7 +11,10 @@ export const metadata = {
 };
 
 function releaseId(title) {
-  return `release-${title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}`;
+  return `release-${title
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "")}`;
 }
 
 function textContent(node) {
@@ -21,8 +25,14 @@ function textContent(node) {
 
 export default async function ChangelogPage() {
   const changelog = await readFile(path.join(process.cwd(), "CHANGELOG.md"), "utf8");
-  const releases = [...changelog.matchAll(/^##\s+(v\d+\.\d+\.\d+)\s*$/gm)].map(([, version]) => version);
-  const toc = releases.map((version) => ({ title: version, url: `#${releaseId(version)}`, depth: 2 }));
+  const releases = [...changelog.matchAll(/^##\s+(v\d+\.\d+\.\d+)\s*$/gm)].map(
+    ([, version]) => version,
+  );
+  const toc = releases.map((version) => ({
+    title: version,
+    url: `#${releaseId(version)}`,
+    depth: 2,
+  }));
 
   return (
     <DocsPage className="waitlyze-changelog-page" toc={toc}>
@@ -33,7 +43,11 @@ export default async function ChangelogPage() {
           remarkPlugins={[remarkGfm]}
           components={{
             h2({ children, node, ...props }) {
-              return <h2 {...props} id={releaseId(textContent(children))}>{children}</h2>;
+              return (
+                <h2 {...props} id={releaseId(textContent(children))}>
+                  {children}
+                </h2>
+              );
             },
           }}
         >

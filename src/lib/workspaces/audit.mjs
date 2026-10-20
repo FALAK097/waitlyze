@@ -2,7 +2,8 @@
 // mutation it describes, so failures are logged and swallowed.
 export async function recordAuditEvent(db, event) {
   try {
-    const { workspaceId, userId, action, resourceType, resourceId, resourceName, detail } = event || {};
+    const { workspaceId, userId, action, resourceType, resourceId, resourceName, detail } =
+      event || {};
     if (!workspaceId || !action) return null;
     return await db.workspaceAuditEvent.create({
       data: {
@@ -24,7 +25,10 @@ export async function recordAuditEvent(db, event) {
 
 // Waitlist-scoped mutations resolve their workspace context here so call
 // sites stay one-liners.
-export async function recordWaitlistAuditEvent(db, { userId, waitListId, action, detail, resourceType, resourceId, resourceName }) {
+export async function recordWaitlistAuditEvent(
+  db,
+  { userId, waitListId, action, detail, resourceType, resourceId, resourceName },
+) {
   try {
     if (!waitListId || !action) return null;
     const waitlist = await db.waitList.findUnique({

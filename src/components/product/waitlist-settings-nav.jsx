@@ -1,8 +1,13 @@
 "use client";
 
-import Link from "next/link";
+import {
+  UserGroupIcon,
+  LinkSquare01Icon,
+  Plug01Icon,
+  Delete02Icon,
+} from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { UserGroupIcon, LinkSquare01Icon, Plug01Icon, Delete02Icon } from "@hugeicons/core-free-icons";
+import Link from "next/link";
 
 const sections = [
   { id: "referral", label: "Referral sharing", icon: UserGroupIcon },
@@ -12,14 +17,21 @@ const sections = [
 ];
 
 export function WaitlistSettingsNavigation({ waitlistId, section = "referral" }) {
-  return <nav aria-label="Waitlist settings sections" className="product-settings-section-nav">
-    {sections.map(({ id, label, icon, danger }) => <Link
-      prefetch={false}
-      key={id}
-      href={`/waitlists/${waitlistId}/settings?section=${id}`}
-      aria-current={section === id ? "page" : undefined}
-      data-danger={danger || undefined}
-      scroll={false}
-    ><HugeiconsIcon icon={icon} size={18} strokeWidth={1.5} aria-hidden="true" /><span>{label}</span></Link>)}
-  </nav>;
+  return (
+    <nav aria-label="Waitlist settings sections" className="product-settings-section-nav">
+      {sections.map(({ id, label, icon, danger }) => (
+        <Link
+          prefetch={false}
+          key={id}
+          href={`/waitlists/${waitlistId}/settings?section=${id}`}
+          aria-current={section === id ? "page" : undefined}
+          data-danger={danger || undefined}
+          scroll={false}
+        >
+          <HugeiconsIcon icon={icon} size={18} strokeWidth={1.5} aria-hidden="true" />
+          <span>{label}</span>
+        </Link>
+      ))}
+    </nav>
+  );
 }

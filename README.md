@@ -62,6 +62,19 @@ pnpm dev
 
 Open [http://localhost:3000](http://localhost:3000) in your browser.
 
+### Lint and format
+
+Linting uses [Oxlint](https://oxc.rs/docs/guide/usage/linter) (`.oxlintrc.json`) and formatting uses [Oxfmt](https://oxc.rs/docs/guide/usage/formatter) (`.oxfmtrc.json`). Both run in CI.
+
+```bash
+pnpm lint          # oxlint
+pnpm lint:fix      # apply safe fixes
+pnpm format        # format all files
+pnpm check         # lint + format check, as run in CI
+```
+
+Install the recommended [Oxc VS Code extension](https://marketplace.visualstudio.com/items?itemName=oxc.oxc-vscode) for format-on-save and inline diagnostics.
+
 ## Releasing
 
 Release notes are managed with [Tegami](https://tegami.fuma-nama.dev). To describe a change, add a Markdown file to `.tegami/`:

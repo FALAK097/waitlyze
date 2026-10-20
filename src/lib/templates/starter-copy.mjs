@@ -3,19 +3,23 @@ import { listTemplates } from "./catalog.mjs";
 const templates = listTemplates();
 
 const copyFields = (section, sectionIndex) => {
-  if (section.type === "hero") return [
-    { label: "Introduction headline", value: section.heading },
-    { label: "Introduction copy", value: section.body },
-  ];
-  if (section.type === "features") return section.items.flatMap((item, index) => [
-    { label: `Highlight ${index + 1} title`, value: item.title },
-    { label: `Highlight ${index + 1} description`, value: item.body },
-  ]);
-  if (section.type === "faq") return section.items.flatMap((item, index) => [
-    { label: `Question ${index + 1}`, value: item.question },
-    { label: `Answer ${index + 1}`, value: item.answer },
-  ]);
-  if (section.type === "footer") return [{ label: `Page note ${sectionIndex + 1}`, value: section.note }];
+  if (section.type === "hero")
+    return [
+      { label: "Introduction headline", value: section.heading },
+      { label: "Introduction copy", value: section.body },
+    ];
+  if (section.type === "features")
+    return section.items.flatMap((item, index) => [
+      { label: `Highlight ${index + 1} title`, value: item.title },
+      { label: `Highlight ${index + 1} description`, value: item.body },
+    ]);
+  if (section.type === "faq")
+    return section.items.flatMap((item, index) => [
+      { label: `Question ${index + 1}`, value: item.question },
+      { label: `Answer ${index + 1}`, value: item.answer },
+    ]);
+  if (section.type === "footer")
+    return [{ label: `Page note ${sectionIndex + 1}`, value: section.note }];
   return [];
 };
 

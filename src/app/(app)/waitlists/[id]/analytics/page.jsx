@@ -1,8 +1,9 @@
 import { notFound } from "next/navigation";
+
+import { WaitlistAnalytics } from "@/components/product/waitlist-analytics";
 import prisma from "@/lib/prisma";
 import { currentWorkspace } from "@/lib/workspaces/current";
 import { campaignScope } from "@/lib/workspaces/service.mjs";
-import { WaitlistAnalytics } from "@/components/product/waitlist-analytics";
 
 export const metadata = { title: "Analytics" };
 
@@ -13,5 +14,7 @@ export default async function AnalyticsPage({ params }) {
     select: { id: true, sendEmailsToSubscribers: true },
   });
   if (!waitlist) notFound();
-  return <WaitlistAnalytics waitListId={waitlist.id} emailsEnabled={waitlist.sendEmailsToSubscribers} />;
+  return (
+    <WaitlistAnalytics waitListId={waitlist.id} emailsEnabled={waitlist.sendEmailsToSubscribers} />
+  );
 }

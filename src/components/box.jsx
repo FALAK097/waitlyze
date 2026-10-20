@@ -1,21 +1,9 @@
 import { twMerge } from "tailwind-merge";
 
 const Box = ({ children, className }) => {
-	return (
-		<div
-			className={twMerge(
-				`
-          bg-neutral-900
-          rounded-lg
-          h-fit
-          w-full
-        `,
-				className,
-			)}
-		>
-			{children}
-		</div>
-	);
+  return (
+    <div className={twMerge(`h-fit w-full rounded-lg bg-neutral-900`, className)}>{children}</div>
+  );
 };
 
 export default Box;

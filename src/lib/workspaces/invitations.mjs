@@ -46,9 +46,17 @@ export async function acceptWorkspaceInvitation(db, { token, user, now = new Dat
 
   const invite = await db.workspaceInvitation.findUnique({
     where: { tokenHash },
-    select: { id: true, workspaceId: true, emailNormalized: true, role: true, status: true, expiresAt: true },
+    select: {
+      id: true,
+      workspaceId: true,
+      emailNormalized: true,
+      role: true,
+      status: true,
+      expiresAt: true,
+    },
   });
-  if (!invite || !ACTIVE_STATUSES.includes(invite.status)) return { success: false, code: "INVALID" };
+  if (!invite || !ACTIVE_STATUSES.includes(invite.status))
+    return { success: false, code: "INVALID" };
   if (invite.emailNormalized !== email) return { success: false, code: "WRONG_ACCOUNT" };
   if (invite.expiresAt <= now) {
     await db.workspaceInvitation.updateMany({
@@ -80,8 +88,18 @@ export async function acceptWorkspaceInvitation(db, { token, user, now = new Dat
   });
 }
 
-export async function revokeWorkspaceInvitation(db, { invitationId, workspaceId, actorId, now = new Date() }) {
-  if (typeof invitationId !== "string" || !invitationId || typeof workspaceId !== "string" || !workspaceId || typeof actorId !== "string" || !actorId) {
+export async function revokeWorkspaceInvitation(
+  db,
+  { invitationId, workspaceId, actorId, now = new Date() },
+) {
+  if (
+    typeof invitationId !== "string" ||
+    !invitationId ||
+    typeof workspaceId !== "string" ||
+    !workspaceId ||
+    typeof actorId !== "string" ||
+    !actorId
+  ) {
     return { success: false, code: "NOT_FOUND" };
   }
   const result = await db.workspaceInvitation.updateMany({

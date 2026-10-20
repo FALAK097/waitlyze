@@ -8,12 +8,18 @@ export class DraftRevisionConflict extends Error {
   }
 }
 
-const canonical = (value) => Array.isArray(value)
-  ? value.map(canonical)
-  : value && typeof value === "object"
-    ? Object.fromEntries(Object.keys(value).sort().map((key) => [key, canonical(value[key])]))
-    : value;
-const sameSnapshot = (left, right) => JSON.stringify(canonical(left)) === JSON.stringify(canonical(right));
+const canonical = (value) =>
+  Array.isArray(value)
+    ? value.map(canonical)
+    : value && typeof value === "object"
+      ? Object.fromEntries(
+          Object.keys(value)
+            .sort()
+            .map((key) => [key, canonical(value[key])]),
+        )
+      : value;
+const sameSnapshot = (left, right) =>
+  JSON.stringify(canonical(left)) === JSON.stringify(canonical(right));
 
 const scopedPage = (actorId, waitListId, workspaceId) => ({
   id: waitListId,
@@ -22,23 +28,41 @@ const scopedPage = (actorId, waitListId, workspaceId) => ({
   ...campaignScope(actorId, "editCampaign", workspaceId),
 });
 
-export async function saveDraftSnapshot(db, actorId, workspaceId, waitListId, expectedRevision, rawSnapshot) {
-  if (!Number.isSafeInteger(expectedRevision) || expectedRevision < 1) throw new Error("Invalid page version.");
+export async function saveDraftSnapshot(
+  db,
+  actorId,
+  workspaceId,
+  waitListId,
+  expectedRevision,
+  rawSnapshot,
+) {
+  if (!Number.isSafeInteger(expectedRevision) || expectedRevision < 1)
+    throw new Error("Invalid page version.");
   const snapshot = templateSnapshotSchema.parse(rawSnapshot);
   return db.$transaction(async (tx) => {
     const where = scopedPage(actorId, waitListId, workspaceId);
-    const current = await tx.waitList.findFirst({ where, select: { id: true, templateRevision: true, templateSnapshot: true } });
+    const current = await tx.waitList.findFirst({
+      where,
+      select: { id: true, templateRevision: true, templateSnapshot: true },
+    });
     if (!current) throw new AccessError();
     if (current.templateRevision !== expectedRevision) throw new DraftRevisionConflict(current);
     if (sameSnapshot(current.templateSnapshot, snapshot)) {
-      return { revision: current.templateRevision, snapshot: current.templateSnapshot, unchanged: true };
+      return {
+        revision: current.templateRevision,
+        snapshot: current.templateSnapshot,
+        unchanged: true,
+      };
     }
     const updated = await tx.waitList.updateMany({
       where: { ...where, templateRevision: expectedRevision },
       data: { templateSnapshot: snapshot, templateRevision: { increment: 1 } },
     });
     if (updated.count !== 1) {
-      const latest = await tx.waitList.findFirst({ where, select: { id: true, templateRevision: true, templateSnapshot: true } });
+      const latest = await tx.waitList.findFirst({
+        where,
+        select: { id: true, templateRevision: true, templateSnapshot: true },
+      });
       if (!latest) throw new AccessError();
       throw new DraftRevisionConflict(latest);
     }

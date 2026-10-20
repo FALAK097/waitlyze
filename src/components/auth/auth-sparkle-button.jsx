@@ -1,8 +1,8 @@
 "use client";
 
 import { useAuthModal } from "@/components/auth/auth-modal-provider";
-import { useSession } from "@/lib/auth-client";
 import SparkleButton from "@/components/ui/sparkle-button";
+import { useSession } from "@/lib/auth-client";
 
 export function AuthSparkleButton({ className }) {
   const { data: session, isPending } = useSession();
@@ -18,10 +18,7 @@ export function AuthSparkleButton({ className }) {
 
   return (
     <div className={className}>
-      <SparkleButton
-        className="w-full text-base sm:text-lg group"
-        onClick={handleClick}
-      />
+      <SparkleButton className="group w-full text-base sm:text-lg" onClick={handleClick} />
     </div>
   );
 }

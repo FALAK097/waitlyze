@@ -1,9 +1,10 @@
 "use server";
-import { r2 } from "@/lib/r2";
 import { DeleteObjectCommand } from "@aws-sdk/client-s3";
-import { env } from "@/lib/env.mjs";
-import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
+
+import { auth } from "@/lib/auth";
+import { env } from "@/lib/env.mjs";
+import { r2 } from "@/lib/r2";
 
 export const removeUpload = async (logoKey) => {
   try {

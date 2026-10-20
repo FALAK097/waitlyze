@@ -3,37 +3,37 @@ import prisma from "@/lib/prisma";
 import { requireCampaign } from "@/lib/workspaces/authorize";
 
 export async function getWaitlistReferrals(waitlistId) {
-	try {
-		if (!waitlistId) {
-			return {
-				success: false,
-				error: "Waitlist ID is required",
-			};
-		}
+  try {
+    if (!waitlistId) {
+      return {
+        success: false,
+        error: "Waitlist ID is required",
+      };
+    }
 
-		const { scope } = await requireCampaign(waitlistId, "viewAudience");
-		const referrals = await prisma.referral.groupBy({
-			by: ["referredById"],
-			_count: {
-				signUpId: true,
-			},
-			where: {
-				signUp: {
-					waitListId: waitlistId,
-                    waitList: scope,
-				},
-			},
-		});
+    const { scope } = await requireCampaign(waitlistId, "viewAudience");
+    const referrals = await prisma.referral.groupBy({
+      by: ["referredById"],
+      _count: {
+        signUpId: true,
+      },
+      where: {
+        signUp: {
+          waitListId: waitlistId,
+          waitList: scope,
+        },
+      },
+    });
 
-		return {
-			success: true,
-			data: referrals,
-		};
-	} catch (error) {
-		console.error("Error fetching waitlist referrals:", error);
-		return {
-			success: false,
-			error: "Failed to fetch referrals",
-		};
-	}
+    return {
+      success: true,
+      data: referrals,
+    };
+  } catch (error) {
+    console.error("Error fetching waitlist referrals:", error);
+    return {
+      success: false,
+      error: "Failed to fetch referrals",
+    };
+  }
 }
