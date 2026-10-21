@@ -14,6 +14,7 @@ import { templateSnapshotSchema } from "@/lib/templates/catalog.mjs";
 import { ReactQueryProvider } from "@/providers/query";
 
 import { SignupForm } from "../../w/[slug]/signup-form";
+import { EmbedResizeBridge } from "./embed-resize-bridge";
 
 const getWaitList = cache(async (id) => getLegacyPublicWaitList(prisma, { id }));
 
@@ -131,20 +132,23 @@ export default async function WaitListsPreviewPage(props) {
         ],
       };
       return (
-        <WaitlistPageContent
-          snapshot={embedSnapshot}
-          name={structured.name}
-          previewViewport="mobile"
-          renderSignupForm={(_section, snapshot) => (
-            <SignupForm
-              slug={structured.publicSlug || undefined}
-              waitListId={id}
-              showReferrals={structured.showReferrals}
-              formConfig={snapshot.form}
-              statusPage={snapshot.statusPage}
-            />
-          )}
-        />
+        <>
+          <EmbedResizeBridge />
+          <WaitlistPageContent
+            snapshot={embedSnapshot}
+            name={structured.name}
+            previewViewport="mobile"
+            renderSignupForm={(_section, snapshot) => (
+              <SignupForm
+                slug={structured.publicSlug || undefined}
+                waitListId={id}
+                showReferrals={structured.showReferrals}
+                formConfig={snapshot.form}
+                statusPage={snapshot.statusPage}
+              />
+            )}
+          />
+        </>
       );
     }
   }
@@ -171,6 +175,7 @@ export default async function WaitListsPreviewPage(props) {
 
   return (
     <div>
+      <EmbedResizeBridge />
       <ReactQueryProvider>
         <FormPreview
           uniqueUserId={uniqueUserId}

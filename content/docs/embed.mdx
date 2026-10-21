@@ -29,8 +29,7 @@ Local development uses your local origin; preview and production use their confi
 Copy the embed code from the builder's Publish options. It carries your **public waitlist ID**, not a secret API key.
 
 ```html title="Embed snippet"
-<div class="waitlyze-widget"
-  data-key-id="YOUR_WAITLIST_ID" data-height="720px"></div>
+<div class="waitlyze-widget" data-key-id="YOUR_WAITLIST_ID"></div>
 <script src="https://waitlyze.falakgala.dev/js/embed.js" defer></script>
 ```
 
@@ -39,8 +38,9 @@ The embed uses a public waitlist ID and needs no secret. Keep [API keys](/docs/a
 </Callout>
 
 - Place the snippet where the form should appear.
-- Change `data-height` to fit your layout; the frame scrolls internally when content overflows.
+- The frame sizes itself to the form, so there is nothing to tune. Set `data-height` only if you want to reserve space before the form loads.
 - Referral `?r=CODE` and UTM parameters from your page URL are forwarded into the widget.
+- The frame reports its own height to the page that embeds it. Only messages from the Waitlyze origin are accepted.
 - For local development, point the script `src` at your local Waitlyze origin instead of production.
 
 <TypeTable
@@ -53,8 +53,9 @@ The embed uses a public waitlist ID and needs no secret. Keep [API keys](/docs/a
     "data-height": {
       type: "string",
       required: false,
-      default: "720px",
-      description: "Height of the embedded frame. The form scrolls internally when it needs more room.",
+      default: "380px",
+      description:
+        "Height to start with. The frame resizes itself to the form as soon as it loads, so this is only a placeholder.",
     },
   }}
 />
