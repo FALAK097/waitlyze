@@ -375,8 +375,10 @@ export function WaitlistSignupPreview({ form }) {
   );
 }
 
-export function StatusPagePreview({ snapshot, pending = false }) {
+export function StatusPagePreview({ snapshot, state = "confirmed" }) {
   const status = snapshot.statusPage;
+  const pending = state === "pending";
+  const returning = state === "returning";
   return (
     <div
       className="grid min-h-full items-center justify-items-center bg-wl-page px-6 py-20 text-center font-wl-body text-wl-text"
@@ -393,7 +395,7 @@ export function StatusPagePreview({ snapshot, pending = false }) {
       }}
     >
       <p className="m-0 grid size-12 place-items-center rounded-full bg-wl-button text-wl-button-text">
-        ✓
+        {pending ? "✉" : "✓"}
       </p>
       <h1 className="my-4 max-w-ch14 font-wl-heading text-4xl leading-none tracking-tight text-balance md:text-5xl">
         {pending ? status.pendingHeading : status.heading}
@@ -401,13 +403,19 @@ export function StatusPagePreview({ snapshot, pending = false }) {
       <p className="max-w-xl leading-relaxed text-wl-muted">
         {pending ? status.pendingBody : status.body}
       </p>
-      {status.showPosition && (
+      {status.showPosition && !pending && (
         <div className="mt-8 flex w-full max-w-md justify-between border-y border-wl-text/15 py-4">
           <span>Your position</span>
           <strong className="text-xl">#128</strong>
         </div>
       )}
-      {status.showReferralLink && (
+      {returning && status.showReferralCount && (
+        <div className="mt-4 flex w-full max-w-md justify-between border-y border-wl-text/15 py-4">
+          <span>Friends joined</span>
+          <strong className="text-xl">3</strong>
+        </div>
+      )}
+      {status.showReferralLink && !pending && (
         <div className="mt-3 w-full max-w-md overflow-hidden rounded-wl bg-wl-surface px-3 py-3 text-caption text-ellipsis whitespace-nowrap text-wl-muted">
           waitlyze.falakgala.dev/w/your-launch?r=friend
         </div>

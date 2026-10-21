@@ -34,6 +34,7 @@ import {
 } from "@/lib/templates/catalog.mjs";
 import { findUnchangedStarterCopy } from "@/lib/templates/starter-copy.mjs";
 
+import { ImageUploadField } from "./image-upload-field";
 import { PublishAndShare } from "./publish-and-share";
 import {
   StatusPagePreview,
@@ -97,11 +98,22 @@ function Field({ label, value, onChange, multiline = false, type = "text", maxLe
     </div>
   );
 }
-function Toggle({ label, checked, onChange }) {
+function Toggle({ label, checked, onChange, disabled = false, hint = "" }) {
   return (
-    <label className="flex items-center gap-2 text-caption font-medium">
-      <Checkbox checked={checked} onCheckedChange={(value) => onChange(value === true)} />
+    <label
+      className={
+        disabled
+          ? "flex items-center gap-2 text-caption font-medium text-product-text-muted"
+          : "flex items-center gap-2 text-caption font-medium"
+      }
+    >
+      <Checkbox
+        checked={checked}
+        disabled={disabled}
+        onCheckedChange={(value) => onChange(value === true)}
+      />
       <span>{label}</span>
+      {hint && <span className="text-micro text-product-text-muted">{hint}</span>}
     </label>
   );
 }
@@ -342,7 +354,12 @@ function BlockInspector({ section, update, remove, duplicate }) {
         <>
           {field("heading", "Heading")}
           {field("body", "Description", true)}
-          {field("imageUrl", "Image URL")}
+          <ImageUploadField
+            label="Image"
+            value={section.imageUrl}
+            onChange={(imageUrl) => update({ ...section, imageUrl })}
+            hint="PNG, JPEG, or WebP up to 4MB."
+          />
           {field("imageAlt", "Image description")}
         </>
       )}
@@ -414,11 +431,13 @@ export function SnapshotPageBuilder({
   const [panel, setPanel] = useState("blocks");
   const [selectedId, setSelectedId] = useState(waitList.templateSnapshot.sections[0]?.id);
   const [previewViewport, setPreviewViewport] = useState("desktop");
+  const [statusState, setStatusState] = useState("confirmed");
   const [dirty, setDirty] = useState(false),
     [saving, setSaving] = useState(false),
     [hydrated, setHydrated] = useState(false);
   const [message, setMessage] = useState("Saved"),
     [error, setError] = useState(""),
+    [announcement, setAnnouncement] = useState(""),
     [conflict, setConflict] = useState(null);
   const [undoCount, setUndoCount] = useState(0),
     [redoCount, setRedoCount] = useState(0),
@@ -610,11 +629,15 @@ export function SnapshotPageBuilder({
     applySnapshot({ ...snapshot, sections: [...snapshot.sections, block] });
     setSelectedId(block.id);
     setPanel("blocks");
+    setAnnouncement(`${names[type]} block added.`);
   };
   const removeBlock = () => {
     if (!selected) return;
     const sections = snapshot.sections.filter((section) => section.id !== selected.id);
-    if (applySnapshot({ ...snapshot, sections })) setSelectedId(sections[0]?.id);
+    if (applySnapshot({ ...snapshot, sections })) {
+      setSelectedId(sections[0]?.id);
+      setAnnouncement(`${names[selected.type]} block removed.`);
+    }
   };
   const duplicateBlock = () => {
     if (!selected || snapshot.sections.length >= 24) return;
@@ -624,6 +647,7 @@ export function SnapshotPageBuilder({
     sections.splice(at + 1, 0, copy);
     applySnapshot({ ...snapshot, sections });
     setSelectedId(copy.id);
+    setAnnouncement(`${names[selected.type]} block duplicated.`);
   };
   const moveBlock = (index, direction) => {
     const target = index + direction;
@@ -631,6 +655,9 @@ export function SnapshotPageBuilder({
     const sections = [...snapshot.sections];
     [sections[index], sections[target]] = [sections[target], sections[index]];
     applySnapshot({ ...snapshot, sections });
+    setAnnouncement(
+      `${names[sections[target].type]} block moved ${direction < 0 ? "up" : "down"}.`,
+    );
   };
   const updateRoot = (key, value) =>
     applySnapshot({ ...snapshot, [key]: { ...snapshot[key], ...value } });
@@ -660,6 +687,7 @@ export function SnapshotPageBuilder({
         return;
       }
       setMessage(result.unchanged ? "Already live" : "Published");
+      setAnnouncement(result.unchanged ? "This page is already live." : "Page published.");
       setPublishReviewOpen(false);
       router.refresh();
     } finally {
@@ -776,12 +804,19 @@ export function SnapshotPageBuilder({
     // Delegated undo/redo shortcuts for every control inside the studio.
     // oxlint-disable-next-line jsx-a11y/no-static-element-interactions
     <section className={"min-w-0"} onKeyDown={onKeyDown}>
+      <p className="sr-only" role="status" aria-live="polite">
+        {announcement}
+      </p>
       <header className={"flex min-h-16 items-center gap-5 px-2 pb-4"}>
         <div className={"flex min-w-0 flex-1 items-center gap-2 text-caption"}>
           <Link href="/waitlists">Waitlists</Link>
           <span>/</span>
           <strong>{waitList.name}</strong>
-          <span className={"ml-1 text-micro text-product-text-secondary"}>
+          <span
+            className="ml-1 text-micro text-product-text-secondary"
+            role="status"
+            aria-live="polite"
+          >
             {saving ? "Saving…" : message}
           </span>
         </div>
@@ -1023,13 +1058,43 @@ export function SnapshotPageBuilder({
           sidebar={
             <StatusPanel
               status={snapshot.statusPage}
+              showReferrals={waitList.showReferrals}
+              waitListId={waitList.id}
               update={(value) => updateRoot("statusPage", value)}
             />
           }
           title="After signup"
           description="Edit both the pending confirmation and confirmed states."
         >
-          <StatusPagePreview snapshot={snapshot} pending={snapshot.form.verification} />
+          <div className="grid gap-4">
+            <div
+              className="flex flex-wrap gap-1 [&_button]:cursor-pointer [&_button]:rounded-lg [&_button]:border-0 [&_button]:bg-transparent [&_button]:px-3 [&_button]:py-2 [&_button]:text-caption [&_button]:font-semibold [&_button]:text-product-text-secondary [&_button[aria-pressed=true]]:bg-product-bg-inset [&_button[aria-pressed=true]]:text-product-text-primary"
+              role="group"
+              aria-label="Preview state"
+            >
+              {[
+                ["confirmed", "Confirmed"],
+                ["pending", "Pending email"],
+                ["returning", "Returning visitor"],
+              ]
+                .filter(
+                  ([id]) =>
+                    (id !== "pending" || snapshot.form.verification) &&
+                    (id !== "returning" || waitList.showReferrals),
+                )
+                .map(([id, label]) => (
+                  <button
+                    key={id}
+                    type="button"
+                    aria-pressed={statusState === id}
+                    onClick={() => setStatusState(id)}
+                  >
+                    {label}
+                  </button>
+                ))}
+            </div>
+            <StatusPagePreview snapshot={snapshot} state={statusState} />
+          </div>
         </SurfaceLayout>
       )}
       {surface === "publish" && (
@@ -1325,7 +1390,18 @@ function FormPanel({ form, update }) {
     </div>
   );
 }
-function StatusPanel({ status, update }) {
+function StatusPanel({ status, update, showReferrals = true, waitListId }) {
+  const referralNote = showReferrals ? null : (
+    <p className="m-0 text-caption leading-relaxed text-product-text-secondary">
+      Referral sharing is off for this waitlist, so the referral link and share buttons stay hidden.{" "}
+      <Link
+        className="underline underline-offset-4"
+        href={`/waitlists/${waitListId}/settings?section=referral`}
+      >
+        Turn referrals on
+      </Link>
+    </p>
+  );
   return (
     <div className={"grid gap-4 p-4"}>
       <Field
@@ -1355,20 +1431,24 @@ function StatusPanel({ status, update }) {
         checked={status.showPosition}
         onChange={(showPosition) => update({ showPosition })}
       />
+      {referralNote}
       <Toggle
         label="Show referral link"
         checked={status.showReferralLink}
+        disabled={!showReferrals}
         onChange={(showReferralLink) => update({ showReferralLink })}
       />
       <Toggle
         label="Show referral count"
         checked={status.showReferralCount}
+        disabled={!showReferrals}
         onChange={(showReferralCount) => update({ showReferralCount })}
       />
       <Field
         label="Share message"
         value={status.shareMessage}
         multiline
+        disabled={!showReferrals}
         onChange={(shareMessage) => update({ shareMessage })}
       />
       <div className={"grid gap-5"}>
@@ -1384,6 +1464,7 @@ function StatusPanel({ status, update }) {
             key={channel}
             label={channel === "x" ? "X" : channel[0].toUpperCase() + channel.slice(1)}
             checked={status.shareChannels.includes(channel)}
+            disabled={!showReferrals}
             onChange={(enabled) =>
               update({
                 shareChannels: enabled

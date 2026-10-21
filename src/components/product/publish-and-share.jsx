@@ -11,6 +11,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 
+import { ImageUploadField } from "./image-upload-field";
+
 const escapeAttribute = (value) =>
   String(value)
     .replace(/&/g, "&amp;")
@@ -334,17 +336,12 @@ export function PublishAndShare({
             onChange={(event) => onSeoChange({ description: event.target.value })}
           />
         </div>
-        <div className="mt-4 grid gap-2">
-          <div className="text-sm font-medium text-product-text-primary">Share image URL</div>
-          <Label className="sr-only" htmlFor="publish-seo-image">
-            Share image URL
-          </Label>
-          <Input
-            id="publish-seo-image"
+        <div className="mt-4">
+          <ImageUploadField
+            label="Share image"
             value={snapshot.seo.image}
-            maxLength={500}
-            placeholder="https://…"
-            onChange={(event) => onSeoChange({ image: event.target.value })}
+            onChange={(image) => onSeoChange({ image })}
+            hint="Shown when someone shares the page. 1200×630 works best."
           />
         </div>
         <div className="mt-4 flex items-center gap-3">
