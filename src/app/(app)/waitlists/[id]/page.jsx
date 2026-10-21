@@ -53,10 +53,10 @@ export default async function WaitListsEditPage(props) {
     : waitList.userId === user.id;
 
   const parsedSnapshot = templateSnapshotSchema.safeParse(waitList.templateSnapshot);
-  // A waitlist without a valid snapshot still runs on the classic editor. The
-  // new Builder must not open it, or saving would replace that page with a
-  // starter template.
-  if (!parsedSnapshot.success)
+  // A waitlist with no stored page still runs on the classic editor. The new
+  // Builder stays closed for it, so opening one cannot replace that page with
+  // a starter template.
+  if (!waitList.templateSnapshot)
     return (
       <ContentLayout title="Builder">
         <div className="grid max-w-2xl gap-4 py-8">

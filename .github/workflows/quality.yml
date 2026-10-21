@@ -28,6 +28,7 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm lint --format=github
       - run: pnpm format:check
+      - run: pnpm test
 
   build:
     runs-on: ubuntu-latest
