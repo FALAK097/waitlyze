@@ -432,6 +432,7 @@ export function SnapshotPageBuilder({
   const [selectedId, setSelectedId] = useState(waitList.templateSnapshot.sections[0]?.id);
   const [previewViewport, setPreviewViewport] = useState("desktop");
   const [statusState, setStatusState] = useState("confirmed");
+  const [pendingTemplate, setPendingTemplate] = useState(null);
   const [dirty, setDirty] = useState(false),
     [saving, setSaving] = useState(false),
     [hydrated, setHydrated] = useState(false);
@@ -766,6 +767,23 @@ export function SnapshotPageBuilder({
       setSaving(false);
     }
   };
+  const applyTemplate = (templateId) => {
+    const next = {
+      ...snapshotTemplate(templateId),
+      form: snapshot.form,
+      statusPage: snapshot.statusPage,
+      seo: snapshot.seo,
+      ...(snapshot.legacy ? { legacy: snapshot.legacy } : {}),
+    };
+    if (applySnapshot(next)) setSelectedId(next.sections[0].id);
+  };
+  // A template replaces the blocks and the brand kit, so an edited page asks
+  // first. The previous page stays in the undo history either way.
+  const starter = snapshotTemplate(snapshot.templateId);
+  const hasCustomContent = !equal(
+    { sections: snapshot.sections, brand: snapshot.brand },
+    { sections: starter.sections, brand: starter.brand },
+  );
   const unchangedStarterCopy = findUnchangedStarterCopy(snapshot);
   const hasUpdates =
     waitList.status !== "PUBLISHED" || waitList.publishedTemplateRevision !== version;
@@ -979,17 +997,19 @@ export function SnapshotPageBuilder({
                     key={template.id}
                     data-active={snapshot.templateId === template.id}
                     onClick={() => {
-                      const next = {
-                        ...snapshotTemplate(template.id),
-                        form: snapshot.form,
-                        statusPage: snapshot.statusPage,
-                        seo: snapshot.seo,
-                        ...(snapshot.legacy ? { legacy: snapshot.legacy } : {}),
-                      };
-                      if (applySnapshot(next)) setSelectedId(next.sections[0].id);
+                      if (hasCustomContent && template.id !== snapshot.templateId)
+                        setPendingTemplate(template);
+                      else applyTemplate(template.id);
                     }}
                   >
-                    <strong>{template.name}</strong>
+                    <strong>
+                      {template.name}
+                      {snapshot.templateId === template.id && (
+                        <span className="ml-2 text-micro font-semibold tracking-widest text-product-success-text uppercase">
+                          Current
+                        </span>
+                      )}
+                    </strong>
                     <span>{template.description}</span>
                   </button>
                 ))}
@@ -1130,6 +1150,29 @@ export function SnapshotPageBuilder({
           </div>
         </div>
       )}
+      <Dialog open={!!pendingTemplate} onOpenChange={(open) => !open && setPendingTemplate(null)}>
+        <DialogContent>
+          <DialogTitle>Replace the blocks on this page?</DialogTitle>
+          <DialogDescription>
+            {pendingTemplate
+              ? `${pendingTemplate.name} brings its own blocks and colours. Your current page is kept in the undo history, so you can go back to it.`
+              : ""}
+          </DialogDescription>
+          <div className="flex items-center justify-end gap-2">
+            <Button variant="outline" onClick={() => setPendingTemplate(null)}>
+              Keep my page
+            </Button>
+            <Button
+              onClick={() => {
+                if (pendingTemplate) applyTemplate(pendingTemplate.id);
+                setPendingTemplate(null);
+              }}
+            >
+              Use this template
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
       <Dialog
         open={publishReviewOpen}
         onOpenChange={(open) => !publishing && setPublishReviewOpen(open)}
