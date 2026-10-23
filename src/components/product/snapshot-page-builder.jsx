@@ -1,10 +1,13 @@
 "use client";
 
+import { Redo02Icon, Undo02Icon } from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { parseAsStringLiteral, useQueryState } from "nuqs";
 import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
@@ -23,6 +26,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { assessPublishReadiness, summarizeChanges } from "@/lib/campaigns/publish-readiness.mjs";
 import { brandContrastIssues } from "@/lib/color/contrast.mjs";
 import {
@@ -33,6 +37,7 @@ import {
   templateSnapshotSchema,
 } from "@/lib/templates/catalog.mjs";
 import { findUnchangedStarterCopy } from "@/lib/templates/starter-copy.mjs";
+import { cn } from "@/lib/utils";
 
 import { ImageUploadField } from "./image-upload-field";
 import { PublishAndShare } from "./publish-and-share";
@@ -258,18 +263,11 @@ function BlockInspector({ section, update, remove, duplicate }) {
   );
   return (
     <div className="grid gap-4 p-5">
-      <div className="flex items-start justify-between gap-3 pb-1.5">
-        <div>
-          <span className="text-micro font-bold tracking-widest text-product-text-secondary uppercase">
-            Block
-          </span>
-          <h3 className="mt-1 text-item">{names[section.type]}</h3>
-        </div>
-        <Toggle
-          label="Visible"
-          checked={section.visible}
-          onChange={(visible) => update({ ...section, visible })}
-        />
+      <div className="pb-1.5">
+        <span className="text-micro font-bold tracking-widest text-product-text-secondary uppercase">
+          Block
+        </span>
+        <h3 className="mt-1 text-item">{names[section.type]}</h3>
       </div>
       {section.type === "navigation" && (
         <>
@@ -427,8 +425,13 @@ export function SnapshotPageBuilder({
   const [snapshot, setSnapshot] = useState(waitList.templateSnapshot);
   const [version, setVersion] = useState(waitList.templateRevision);
   const [replacement, setReplacement] = useState(waitList.snapshotReplacement);
-  const [surface, setSurface] = useState("page");
+  const [surface, setSurface] = useQueryState(
+    "tab",
+    parseAsStringLiteral(["page", "form", "status", "publish"]).withDefault("page"),
+  );
   const [panel, setPanel] = useState("blocks");
+  const [mobileMode, setMobileMode] = useState("edit");
+  const [mobileEditorPanel, setMobileEditorPanel] = useState("structure");
   const [selectedId, setSelectedId] = useState(waitList.templateSnapshot.sections[0]?.id);
   const [previewViewport, setPreviewViewport] = useState("desktop");
   const [statusState, setStatusState] = useState("confirmed");
@@ -773,7 +776,6 @@ export function SnapshotPageBuilder({
       form: snapshot.form,
       statusPage: snapshot.statusPage,
       seo: snapshot.seo,
-      ...(snapshot.legacy ? { legacy: snapshot.legacy } : {}),
     };
     if (applySnapshot(next)) setSelectedId(next.sections[0].id);
   };
@@ -806,15 +808,15 @@ export function SnapshotPageBuilder({
       return;
     }
     if (fix.surface === "seo") {
-      setSurface("publish");
+      void setSurface("publish");
       return;
     }
     if (fix.surface === "design") {
-      setSurface("page");
+      void setSurface("page");
       setPanel("design");
       return;
     }
-    setSurface(fix.surface || "page");
+    void setSurface(fix.surface || "page");
     if (fix.panel) setPanel(fix.panel);
   };
 
@@ -825,54 +827,84 @@ export function SnapshotPageBuilder({
       <p className="sr-only" role="status" aria-live="polite">
         {announcement}
       </p>
-      <header className={"flex min-h-16 items-center gap-5 px-2 pb-4"}>
-        <div className={"flex min-w-0 flex-1 items-center gap-2 text-caption"}>
-          <Link href="/waitlists">Waitlists</Link>
-          <span>/</span>
-          <strong>{waitList.name}</strong>
-          <span
-            className="ml-1 text-micro text-product-text-secondary"
-            role="status"
-            aria-live="polite"
-          >
-            {saving ? "Saving…" : message}
-          </span>
-        </div>
+      <header className="flex min-h-14 flex-wrap items-center gap-x-5 gap-y-2 px-2 pb-3 max-[760px]:pt-2">
         <nav
-          className="flex items-center gap-1 [&_button]:cursor-pointer [&_button]:border-0 [&_button]:bg-transparent [&_button]:px-3.5 [&_button]:text-caption [&_button]:font-semibold [&_button]:text-product-text-secondary [&_button[aria-current=page]]:relative [&_button[aria-current=page]]:text-product-text-primary [&_button[aria-current=page]]:after:absolute [&_button[aria-current=page]]:after:inset-x-3 [&_button[aria-current=page]]:after:bottom-1 [&_button[aria-current=page]]:after:h-0.5 [&_button[aria-current=page]]:after:rounded-full [&_button[aria-current=page]]:after:bg-product-accent-solid"
           aria-label="Builder surfaces"
+          className="flex min-w-0 flex-1 gap-5.5 overflow-x-auto max-[760px]:basis-full"
         >
           {[
             ["page", "Page"],
             ["form", "Form"],
             ["status", "Status"],
-            ["publish", "Publish"],
+            ["publish", "Publish & share"],
           ].map(([id, label]) => (
             <button
               key={id}
               type="button"
               aria-current={surface === id ? "page" : undefined}
-              onClick={() => setSurface(id)}
+              onClick={() => void setSurface(id)}
+              className={cn(
+                "inline-block min-h-10 shrink-0 cursor-pointer border-b-2 border-transparent py-2 font-medium text-product-text-secondary transition-colors hover:text-product-text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-product-success-text! motion-reduce:transition-none",
+                surface === id && "border-product-accent-solid text-product-text-primary",
+              )}
             >
               {label}
             </button>
           ))}
         </nav>
-        <div className={"flex flex-1 items-center justify-end gap-1"}>
-          <Button variant="ghost" size="sm" onClick={undo} disabled={!undoCount}>
-            Undo
-          </Button>
-          <Button variant="ghost" size="sm" onClick={redo} disabled={!redoCount}>
-            Redo
-          </Button>
+        <div className="flex flex-1 items-center justify-end gap-1 max-[760px]:order-2 max-[760px]:w-full max-[760px]:justify-start max-[760px]:overflow-x-auto [&>*]:shrink-0">
+          <span className="text-micro text-product-text-secondary" role="status" aria-live="polite">
+            {saving ? "Saving…" : message}
+          </span>
+          <TooltipProvider>
+            <div className="flex items-center gap-1">
+              <Tooltip>
+                <TooltipTrigger
+                  render={
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      aria-label="Undo"
+                      onClick={undo}
+                      disabled={!undoCount}
+                    />
+                  }
+                >
+                  <HugeiconsIcon icon={Undo02Icon} size={18} aria-hidden="true" />
+                </TooltipTrigger>
+                <TooltipContent side="bottom">
+                  Undo <kbd data-slot="kbd">⌘Z</kbd>
+                </TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger
+                  render={
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      aria-label="Redo"
+                      onClick={redo}
+                      disabled={!redoCount}
+                    />
+                  }
+                >
+                  <HugeiconsIcon icon={Redo02Icon} size={18} aria-hidden="true" />
+                </TooltipTrigger>
+                <TooltipContent side="bottom">
+                  Redo <kbd data-slot="kbd">⌘⇧Z</kbd>
+                </TooltipContent>
+              </Tooltip>
+            </div>
+          </TooltipProvider>
           {waitList.status !== "DRAFT" && waitList.publicSlug && (
-            <Button
-              render={<Link href={`/w/${waitList.publicSlug}`} target="_blank" />}
-              variant="outline"
-              size="sm"
+            <Link
+              className={buttonVariants({ variant: "outline", size: "sm" })}
+              href={`/w/${waitList.publicSlug}`}
+              target="_blank"
+              rel="noopener noreferrer"
             >
               View live
-            </Button>
+            </Link>
           )}
           {canPublish && hasUpdates && (
             <Button
@@ -927,9 +959,50 @@ export function SnapshotPageBuilder({
           )}
         </div>
       )}
+      {surface !== "publish" && (
+        <div className="hidden items-center gap-1 border-t border-product-border-subtle bg-product-bg-surface p-2 max-[680px]:flex">
+          {[
+            ["edit", "Edit"],
+            ["preview", "Preview"],
+          ].map(([id, label]) => (
+            <button
+              className="min-h-11 flex-1 rounded-lg border-0 bg-transparent px-4 text-caption font-semibold text-product-text-secondary aria-pressed:bg-product-bg-inset aria-pressed:text-product-text-primary"
+              key={id}
+              type="button"
+              aria-pressed={mobileMode === id}
+              onClick={() => setMobileMode(id)}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      )}
       {surface === "page" && (
-        <div className="flex h-studio min-h-studio overflow-hidden border-t border-product-border-subtle bg-product-bg-inset max-[1180px]:h-studio-compact max-[900px]:h-auto max-[900px]:min-h-0 max-[680px]:flex-col">
-          <aside className="w-library shrink-0 overflow-auto border-r border-product-border-subtle bg-product-bg-surface max-[1180px]:w-55 max-[680px]:w-full max-[680px]:border-r-0 max-[680px]:border-b max-[680px]:border-product-border-subtle">
+        <div className="flex h-studio min-h-studio overflow-hidden bg-product-bg-inset max-[1180px]:h-studio-compact max-[900px]:h-auto max-[900px]:min-h-0 max-[680px]:flex-col">
+          <div
+            className="hidden items-center gap-1 border-b border-product-border-subtle bg-product-bg-surface p-2 max-[680px]:flex max-[680px]:data-[mobile-mode=preview]:hidden"
+            data-mobile-mode={mobileMode}
+          >
+            {[
+              ["structure", "Structure"],
+              ["properties", "Block settings"],
+            ].map(([id, label]) => (
+              <button
+                className="min-h-11 flex-1 rounded-lg border-0 bg-transparent px-3 text-caption font-semibold text-product-text-secondary aria-pressed:bg-product-bg-inset aria-pressed:text-product-text-primary"
+                key={id}
+                type="button"
+                aria-pressed={mobileEditorPanel === id}
+                onClick={() => setMobileEditorPanel(id)}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+          <aside
+            className="w-library shrink-0 overflow-auto border-r border-product-border-subtle bg-product-bg-surface max-[1180px]:w-55 max-[680px]:w-full max-[680px]:border-r-0 max-[680px]:border-b max-[680px]:border-product-border-subtle max-[680px]:data-[mobile-mode=preview]:hidden max-[680px]:data-[mobile-panel=properties]:hidden"
+            data-mobile-mode={mobileMode}
+            data-mobile-panel={mobileEditorPanel}
+          >
             <div className="sticky top-0 z-2 grid grid-cols-3 gap-1 bg-product-bg-surface p-2.5 [&_button]:min-h-9 [&_button]:cursor-pointer [&_button]:rounded-lg [&_button]:border-0 [&_button]:bg-transparent [&_button]:text-caption [&_button]:font-semibold [&_button]:text-product-text-secondary [&_button[aria-pressed=true]]:bg-product-bg-inset [&_button[aria-pressed=true]]:text-product-text-primary">
               {[
                 ["blocks", "Blocks"],
@@ -955,9 +1028,14 @@ export function SnapshotPageBuilder({
                       data-selected={selectedId === section.id}
                       key={section.id}
                     >
-                      <button type="button" onClick={() => setSelectedId(section.id)}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedId(section.id);
+                          setMobileEditorPanel("properties");
+                        }}
+                      >
                         <span>{names[section.type]}</span>
-                        {!section.visible && <small>Hidden</small>}
                       </button>
                       <div>
                         <button
@@ -1019,9 +1097,11 @@ export function SnapshotPageBuilder({
               <DesignPanel brand={snapshot.brand} update={(value) => updateRoot("brand", value)} />
             )}
           </aside>
-          <main className={"min-w-0 flex-1 overflow-auto px-7 pt-0 pb-9"}>
-            <div className="flex h-canvas-tools items-center justify-between text-caption text-product-text-secondary [&_button]:cursor-pointer [&_button]:rounded-md [&_button]:border-0 [&_button]:bg-transparent [&_button]:px-2.5 [&_button]:py-2 [&_button]:text-micro [&_button]:text-product-text-secondary [&_button[aria-pressed=true]]:bg-product-bg-surface [&_button[aria-pressed=true]]:text-product-text-primary [&_button[aria-pressed=true]]:shadow-pressed">
-              <span>Preview</span>
+          <main
+            className="min-w-0 flex-1 overflow-auto px-7 pt-0 pb-9 max-[680px]:px-3 max-[680px]:data-[mobile-mode=edit]:hidden"
+            data-mobile-mode={mobileMode}
+          >
+            <div className="flex h-canvas-tools items-center justify-end text-caption text-product-text-secondary [&_button]:cursor-pointer [&_button]:rounded-md [&_button]:border-0 [&_button]:bg-transparent [&_button]:px-2.5 [&_button]:py-2 [&_button]:text-micro [&_button]:text-product-text-secondary [&_button[aria-pressed=true]]:bg-product-bg-surface [&_button[aria-pressed=true]]:text-product-text-primary [&_button[aria-pressed=true]]:shadow-pressed">
               <div>
                 <button
                   type="button"
@@ -1040,7 +1120,7 @@ export function SnapshotPageBuilder({
               </div>
             </div>
             <div
-              className="max-w-canvas w-full canvas-zoom overflow-auto rounded-xl bg-white shadow-canvas data-[viewport=mobile]:w-mobile-canvas data-[viewport=mobile]:max-w-full"
+              className="max-w-canvas w-full canvas-zoom overflow-auto rounded-xl bg-white shadow-canvas data-[viewport=mobile]:mx-auto data-[viewport=mobile]:w-mobile-canvas data-[viewport=mobile]:max-w-full"
               data-viewport={previewViewport}
               style={{ "--canvas-zoom": previewViewport === "mobile" ? 0.85 : 0.72 }}
             >
@@ -1052,7 +1132,11 @@ export function SnapshotPageBuilder({
               />
             </div>
           </main>
-          <aside className="w-inspector shrink-0 overflow-auto border-l border-product-border-subtle bg-product-bg-surface max-[1180px]:w-68 max-[680px]:w-full max-[680px]:border-t max-[680px]:border-l-0 max-[680px]:border-product-border-subtle">
+          <aside
+            className="w-inspector shrink-0 overflow-auto border-l border-product-border-subtle bg-product-bg-surface max-[1180px]:w-68 max-[680px]:w-full max-[680px]:border-t max-[680px]:border-l-0 max-[680px]:border-product-border-subtle max-[680px]:data-[mobile-mode=preview]:hidden max-[680px]:data-[mobile-panel=structure]:hidden"
+            data-mobile-mode={mobileMode}
+            data-mobile-panel={mobileEditorPanel}
+          >
             <BlockInspector
               section={selected}
               update={updateSection}
@@ -1064,6 +1148,7 @@ export function SnapshotPageBuilder({
       )}
       {surface === "form" && (
         <SurfaceLayout
+          mobileMode={mobileMode}
           sidebar={<FormPanel form={snapshot.form} update={(value) => updateRoot("form", value)} />}
           title="Signup form"
           description="The same form is used wherever it appears on your page or embed."
@@ -1075,6 +1160,7 @@ export function SnapshotPageBuilder({
       )}
       {surface === "status" && (
         <SurfaceLayout
+          mobileMode={mobileMode}
           sidebar={
             <StatusPanel
               status={snapshot.statusPage}
@@ -1118,7 +1204,7 @@ export function SnapshotPageBuilder({
         </SurfaceLayout>
       )}
       {surface === "publish" && (
-        <div className={"mx-auto w-full max-w-4xl"}>
+        <div className="pt-6 pb-16">
           <PublishAndShare
             snapshot={snapshot}
             waitList={waitList}
@@ -1127,27 +1213,18 @@ export function SnapshotPageBuilder({
             changes={changes}
             onFix={goToFix}
             onSeoChange={(patch) => updateRoot("seo", patch)}
+            pageStatus={
+              waitList.status === "PUBLISHED" || waitList.publishedRevision > 1
+                ? {
+                    publishing,
+                    canPause: waitList.status === "PUBLISHED",
+                    canRollback: waitList.publishedRevision > 1,
+                    onPause: () => void lifecycle(pausePage),
+                    onRollback: () => void lifecycle(rollbackPage),
+                  }
+                : null
+            }
           />
-          <div className="mt-7 flex flex-col items-stretch gap-0 [&_button]:mt-4 [&_button]:self-start [&>a]:flex [&>a]:justify-between [&>a]:border-t [&>a]:border-product-border-subtle [&>a]:px-0.5 [&>a]:py-4 [&>a]:text-body [&>a]:text-product-text-primary [&>a]:no-underline [&>a:last-of-type]:border-b">
-            {waitList.status === "PUBLISHED" && (
-              <Button
-                variant="outline"
-                onClick={() => void lifecycle(pausePage)}
-                disabled={publishing}
-              >
-                Pause page
-              </Button>
-            )}
-            {waitList.publishedRevision > 1 && (
-              <Button
-                variant="ghost"
-                onClick={() => void lifecycle(rollbackPage)}
-                disabled={publishing}
-              >
-                Restore previous version
-              </Button>
-            )}
-          </div>
         </div>
       )}
       <Dialog open={!!pendingTemplate} onOpenChange={(open) => !open && setPendingTemplate(null)}>
@@ -1244,10 +1321,13 @@ export function SnapshotPageBuilder({
   );
 }
 
-function SurfaceLayout({ sidebar, title, description, children }) {
+function SurfaceLayout({ sidebar, title, description, children, mobileMode }) {
   return (
-    <div className="flex min-h-studio border-t border-product-border-subtle bg-product-bg-inset">
-      <aside className="w-78 shrink-0 overflow-auto border-r border-product-border-subtle bg-product-bg-surface max-[900px]:w-70">
+    <div className="flex min-h-studio bg-product-bg-inset max-[680px]:flex-col">
+      <aside
+        className="w-78 shrink-0 overflow-auto border-r border-product-border-subtle bg-product-bg-surface max-[900px]:w-70 max-[680px]:w-full max-[680px]:border-r-0 max-[680px]:data-[mobile-mode=preview]:hidden"
+        data-mobile-mode={mobileMode}
+      >
         <p
           className={
             "block text-micro font-bold tracking-widest text-product-text-secondary uppercase"
@@ -1257,7 +1337,10 @@ function SurfaceLayout({ sidebar, title, description, children }) {
         </p>
         {sidebar}
       </aside>
-      <main className="min-w-0 flex-1 p-10 max-[900px]:p-7">
+      <main
+        className="min-w-0 flex-1 p-10 max-[900px]:p-7 max-[680px]:p-3 max-[680px]:data-[mobile-mode=edit]:hidden"
+        data-mobile-mode={mobileMode}
+      >
         <div className="mx-auto mb-6 max-w-2xl">
           <h2 className="text-section">{title}</h2>
           <p className="mt-1.5 text-caption text-product-text-secondary">{description}</p>
@@ -1299,7 +1382,7 @@ function DesignPanel({ brand, update }) {
         ]}
         onChange={(radius) => update({ radius })}
       />
-      <div className="grid gap-0.5 pt-2 [&_input]:size-8 [&_input]:cursor-pointer [&_input]:rounded-lg [&_input]:border [&_input]:border-product-border-control [&_input]:bg-transparent [&_input]:p-0.5 [&_label]:flex [&_label]:min-h-10 [&_label]:items-center [&_label]:justify-between [&_label]:text-caption">
+      <div className="grid gap-0.5 pt-2 [&_input]:size-8 [&_input]:cursor-pointer [&_input]:rounded-lg [&_input]:bg-transparent [&_input]:p-0.5 [&_label]:flex [&_label]:min-h-10 [&_label]:items-center [&_label]:justify-between [&_label]:text-caption">
         {[
           ["pageBackground", "Page"],
           ["surfaceColor", "Surface"],
@@ -1371,12 +1454,13 @@ function ContrastPanel({ brand, update }) {
   );
 }
 function SelectField({ label, value, options, onChange }) {
+  const id = useId();
   return (
     <div className={"grid gap-1.5"}>
-      <Label>{label}</Label>
+      <Label htmlFor={id}>{label}</Label>
       <Select value={value} onValueChange={onChange}>
-        <SelectTrigger>
-          <SelectValue />
+        <SelectTrigger id={id}>
+          <SelectValue>{options.find((option) => option.id === value)?.label ?? value}</SelectValue>
         </SelectTrigger>
         <SelectContent>
           {options.map((option) => (

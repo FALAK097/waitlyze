@@ -1,7 +1,5 @@
 import { z } from "zod";
 
-import { legacySnapshotSchema, migrateLegacySnapshot } from "./legacy-snapshot.mjs";
-
 const text = (max, { optional = false } = {}) =>
   optional
     ? z.string().max(max)
@@ -206,7 +204,6 @@ const v2SnapshotSchema = z
     form: templateFormSchema,
     statusPage: statusPageSchema,
     seo: seoSchema,
-    legacy: legacySnapshotSchema.optional(),
   })
   .superRefine((value, ctx) => {
     const visibleForms = value.sections.filter(
@@ -270,18 +267,7 @@ const defaultStatusPage = {
   shareChannels: ["x", "linkedin", "whatsapp", "email"],
 };
 const defaultSeo = { title: "", description: "", image: "", indexable: false };
-// Read both stored drafts and immutable publication revisions without rewriting v2 data.
-export const templateSnapshotSchema = z.preprocess((value) => {
-  if (value?.schemaVersion !== 1) return value;
-  const parsed = legacySnapshotSchema.safeParse(value);
-  if (!parsed.success) return value;
-  return migrateLegacySnapshot(parsed.data, {
-    brand: defaultBrand,
-    form: defaultForm,
-    statusPage: defaultStatusPage,
-    seo: defaultSeo,
-  });
-}, v2SnapshotSchema);
+export const templateSnapshotSchema = v2SnapshotSchema;
 
 const makeSection = (templateId, type, index, props = {}, variant = "default") => ({
   id: `${templateId}-${type}-${index}`,

@@ -93,40 +93,6 @@ export async function pauseCampaign(db, actorId, workspaceId, waitListId) {
   return { paused: true };
 }
 
-// Snapshot-less pages (legacy builder loop) publish without revisions.
-export async function publishLegacyCampaign(db, actorId, workspaceId, waitListId) {
-  const page = await db.waitList.findFirst({
-    where: adminScope(actorId, waitListId, workspaceId),
-    select: { id: true, status: true, templateSnapshot: true },
-  });
-  if (!page || page.templateSnapshot) throw new AccessError();
-  if (page.status === "PUBLISHED") return { published: true, unchanged: true };
-  const changed = await db.waitList.updateMany({
-    where: { id: waitListId, status: page.status },
-    data: { status: "PUBLISHED" },
-  });
-  if (changed.count !== 1)
-    throw new PublicationConflict("This waitlist changed. Reload and try again.");
-  return { published: true };
-}
-
-export async function pauseLegacyCampaign(db, actorId, workspaceId, waitListId) {
-  const page = await db.waitList.findFirst({
-    where: adminScope(actorId, waitListId, workspaceId),
-    select: { id: true, status: true, templateSnapshot: true },
-  });
-  if (!page || page.templateSnapshot) throw new AccessError();
-  if (page.status !== "PUBLISHED")
-    throw new PublicationConflict("This waitlist is not currently published.");
-  const changed = await db.waitList.updateMany({
-    where: { id: waitListId, status: "PUBLISHED" },
-    data: { status: "PAUSED" },
-  });
-  if (changed.count !== 1)
-    throw new PublicationConflict("This waitlist changed. Reload and try again.");
-  return { paused: true };
-}
-
 export async function rollbackCampaign(db, actorId, workspaceId, waitListId) {
   return db.$transaction(async (tx) => {
     const where = adminScope(actorId, waitListId, workspaceId);
@@ -154,6 +120,19 @@ export async function rollbackCampaign(db, actorId, workspaceId, waitListId) {
       await tx.waitListRevision.create({
         data: { waitListId, revision: page.templateRevision, snapshot: page.templateSnapshot },
       });
+    const latest = await tx.waitListPublicationRevision.findFirst({
+      where: { waitListId },
+      orderBy: { revision: "desc" },
+      select: { revision: true },
+    });
+    const restoredPublication = await tx.waitListPublicationRevision.create({
+      data: {
+        waitListId,
+        revision: (latest?.revision || 0) + 1,
+        templateRevision: nextTemplateRevision,
+        snapshot: previous.snapshot,
+      },
+    });
     const updated = await tx.waitList.updateMany({
       where: {
         ...where,
@@ -163,7 +142,7 @@ export async function rollbackCampaign(db, actorId, workspaceId, waitListId) {
       },
       data: {
         status: page.status === "PAUSED" ? "PAUSED" : "PUBLISHED",
-        publishedRevision: previous.revision,
+        publishedRevision: restoredPublication.revision,
         publishedTemplateRevision: nextTemplateRevision,
         ...(restoreDraft
           ? { templateSnapshot: previous.snapshot, templateRevision: nextTemplateRevision }
@@ -172,7 +151,7 @@ export async function rollbackCampaign(db, actorId, workspaceId, waitListId) {
     });
     if (updated.count !== 1) throw new PublicationConflict();
     return {
-      revision: previous.revision,
+      revision: restoredPublication.revision,
       templateRevision: nextTemplateRevision,
       snapshot: previous.snapshot,
     };

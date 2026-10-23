@@ -1,3 +1,4 @@
+import { notFound } from "next/navigation";
 import { cache } from "react";
 
 import { WaitlistPageContent } from "@/components/product/waitlist-page-content";
@@ -5,7 +6,6 @@ import prisma from "@/lib/prisma";
 import { templateSnapshotSchema } from "@/lib/templates/catalog.mjs";
 
 import { ImpressionTracker } from "./impression-tracker";
-import { LegacyPublicWaitlist } from "./legacy-public";
 import { SignupForm } from "./signup-form";
 
 const publishedPage = cache(async function publishedPage(slug) {
@@ -37,34 +37,8 @@ const publishedPage = cache(async function publishedPage(slug) {
 export async function generateMetadata({ params }) {
   const { slug } = await params;
   const page = await publishedPage(slug);
-  if (!page || page.paused) {
-    const legacy = await prisma.waitList.findFirst({
-      where: { publicSlug: slug, status: "PUBLISHED" },
-      select: {
-        name: true,
-        description: true,
-        ogTitle: true,
-        ogDescription: true,
-        ogImage: true,
-        templateSnapshot: true,
-      },
-    });
-    if (legacy && !legacy.templateSnapshot) {
-      const title = legacy.ogTitle || legacy.name || "Waitlist";
-      const description = legacy.ogDescription || legacy.description || "";
-      return {
-        title,
-        description,
-        alternates: { canonical: `/w/${encodeURIComponent(slug)}` },
-        openGraph: {
-          title,
-          description,
-          ...(legacy.ogImage ? { images: [{ url: legacy.ogImage }] } : {}),
-        },
-      };
-    }
+  if (!page || page.paused)
     return { title: "Waitlist unavailable", robots: { index: false, follow: false } };
-  }
   const hero = page.snapshot.sections.find((section) => section.type === "hero");
   const title = page.snapshot.seo.title || page.waitList.name || hero?.heading || "Waitlist";
   const description = page.snapshot.seo.description || hero?.body || "";
@@ -84,8 +58,7 @@ export async function generateMetadata({ params }) {
 export default async function PublicWaitlistPage({ params }) {
   const { slug } = await params;
   const page = await publishedPage(slug);
-  // Snapshot-less (legacy builder) pages render the classic form loop.
-  if (!page) return <LegacyPublicWaitlist slug={slug} />;
+  if (!page) return notFound();
   if (page.paused)
     return (
       <main className="grid min-h-screen place-items-center bg-product-bg-page px-6 py-12 text-center font-product-sans text-product-text-primary xl:py-30">

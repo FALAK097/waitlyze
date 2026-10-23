@@ -1,22 +1,12 @@
-import { nanoid } from "nanoid";
 import { notFound } from "next/navigation";
 import { cache } from "react";
 
-import { sendSignupEmail } from "@/app/actions/emails";
 import { WaitlistPageContent } from "@/components/product/waitlist-page-content";
-import { FormPreview } from "@/components/wait-lists/preview";
-import {
-  getLegacyPublicSignUpsCount,
-  getLegacyPublicWaitList,
-} from "@/lib/campaigns/legacy-public.mjs";
 import prisma from "@/lib/prisma";
 import { templateSnapshotSchema } from "@/lib/templates/catalog.mjs";
-import { ReactQueryProvider } from "@/providers/query";
 
 import { SignupForm } from "../../w/[slug]/signup-form";
 import { EmbedResizeBridge } from "./embed-resize-bridge";
-
-const getWaitList = cache(async (id) => getLegacyPublicWaitList(prisma, { id }));
 
 const getWaitListMetadata = cache(async (id) => {
   return await prisma.waitList.findUnique({
@@ -30,10 +20,6 @@ const getWaitListMetadata = cache(async (id) => {
     },
   });
 });
-
-const getSignUpsCount = cache(async (waitListId) =>
-  getLegacyPublicSignUpsCount(prisma, waitListId),
-);
 
 export async function generateMetadata(props) {
   const params = await props.params;
@@ -153,38 +139,5 @@ export default async function WaitListsPreviewPage(props) {
     }
   }
 
-  const waitList = await getWaitList(id);
-
-  if (!waitList) {
-    return notFound();
-  }
-
-  const uniqueUserId = nanoid();
-  const initialSignUpsCount = await getSignUpsCount(id);
-
-  const getTotalSignUpsOnWaitList = async (waitListId) => {
-    "use server";
-    return getSignUpsCount(waitListId);
-  };
-
-  const sendSignUpEmailAction = async ({ email }) => {
-    "use server";
-    if (!email) return { success: false, message: "Missing email" };
-    return await sendSignupEmail({ waitListId: id, to: email });
-  };
-
-  return (
-    <div>
-      <EmbedResizeBridge />
-      <ReactQueryProvider>
-        <FormPreview
-          uniqueUserId={uniqueUserId}
-          waitList={waitList}
-          initialSignUpsCount={initialSignUpsCount}
-          getTotalSignUpsOnWaitList={getTotalSignUpsOnWaitList.bind(null, id)}
-          sendSignUpEmailAction={sendSignUpEmailAction}
-        />
-      </ReactQueryProvider>
-    </div>
-  );
+  return notFound();
 }

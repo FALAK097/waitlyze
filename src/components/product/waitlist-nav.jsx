@@ -38,7 +38,7 @@ export function WaitlistNav({ id, canSendEmail }) {
         aria-label="Waitlist sections"
         aria-describedby={hasOverflow ? "waitlist-section-scroll-hint" : undefined}
         data-overflow={hasOverflow || undefined}
-        className="no-scrollbar -me-2.5 mb-8 flex gap-5 overflow-x-auto pb-0 motion-reduce:snap-none max-[480px]:snap-x max-sm:me-0 max-sm:w-full max-sm:px-4"
+        className="no-scrollbar -me-2.5 flex gap-5 overflow-x-auto pb-0 motion-reduce:snap-none max-[480px]:snap-x max-sm:me-0 max-sm:w-full max-sm:px-4"
       >
         {tabs.map(([href, label]) => (
           <Link

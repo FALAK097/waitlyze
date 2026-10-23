@@ -1,3 +1,5 @@
+import Image from "next/image";
+
 import { cn } from "@/lib/utils";
 
 const font = {
@@ -34,7 +36,7 @@ export function WaitlistPageContent({
   return (
     <div
       className={cn(
-        "min-h-screen overflow-clip bg-wl-page px-6 font-wl-body text-wl-text",
+        "min-h-screen overflow-x-clip bg-wl-page px-6 font-wl-body text-wl-text",
         mobile && "min-h-203 px-4",
       )}
       data-preview-viewport={previewViewport}
@@ -60,14 +62,17 @@ export function WaitlistPageContent({
           if (section.type === "navigation")
             return (
               <nav
-                className={cn(sectionClass, "flex min-h-20 items-center justify-between gap-6")}
+                className={cn(
+                  sectionClass,
+                  "flex min-h-20 flex-wrap items-center justify-between gap-x-6 gap-y-3 py-4",
+                )}
                 key={section.id}
                 aria-label="Waitlist navigation"
               >
                 <a href="#top" className="font-wl-heading font-bold text-wl-text no-underline">
                   {section.brand || name}
                 </a>
-                <div className="flex items-center gap-6">
+                <div className="flex max-w-full flex-wrap items-center justify-end gap-x-5 gap-y-3 max-sm:w-full max-sm:justify-start">
                   {section.links.map((link) => (
                     <a
                       className="text-sm text-wl-muted no-underline"
@@ -93,7 +98,7 @@ export function WaitlistPageContent({
               <section
                 className={cn(
                   sectionClass,
-                  "grid min-h-190 items-center justify-items-center py-20 text-center",
+                  "grid min-h-190 items-center justify-items-center py-20 text-center max-sm:min-h-0 max-sm:py-16",
                 )}
                 id="top"
                 key={section.id}
@@ -104,7 +109,7 @@ export function WaitlistPageContent({
                       {section.eyebrow}
                     </p>
                   )}
-                  <h1 className="m-0 text-5xl leading-none font-bold md:text-6xl lg:text-7xl">
+                  <h1 className="m-0 text-4xl leading-none font-bold break-words sm:text-5xl md:text-6xl lg:text-7xl">
                     {section.heading}
                   </h1>
                   <p className="mx-auto mt-7 max-w-3xl text-lg text-wl-muted">{section.body}</p>
@@ -236,12 +241,15 @@ export function WaitlistPageContent({
                   </Heading>
                   {section.body && <p className="text-wl-muted">{section.body}</p>}
                 </div>
-                <div className="grid aspect-16/10 w-full place-items-center overflow-hidden rounded-wl bg-wl-surface text-wl-muted md:grow-13 md:basis-0">
+                <div className="relative grid aspect-16/10 w-full place-items-center overflow-hidden rounded-wl bg-wl-surface text-wl-muted md:grow-13 md:basis-0">
                   {section.imageUrl ? (
-                    <img
-                      className="h-full w-full object-cover"
+                    <Image
+                      className="object-cover"
                       src={section.imageUrl}
                       alt={section.imageAlt}
+                      fill
+                      sizes="(max-width: 768px) 100vw, 60vw"
+                      unoptimized
                     />
                   ) : (
                     <span>Product image</span>
@@ -334,7 +342,7 @@ export function WaitlistPageContent({
                 key={section.id}
               >
                 <p className="m-0">{section.note}</p>
-                <div className="flex gap-5">
+                <div className="flex flex-wrap gap-x-5 gap-y-2">
                   {section.links.map((link) => (
                     <a className="text-wl-text" href={link.href} key={`${link.label}-${link.href}`}>
                       {link.label}
@@ -357,7 +365,7 @@ export function WaitlistSignupPreview({ form }) {
       aria-label="Signup form preview"
     >
       <span className="mb-2 block text-caption font-bold">{form.label}</span>
-      <div className="flex gap-2">
+      <div className="flex gap-2 max-sm:flex-col">
         <span className="flex h-12 flex-1 items-center rounded-wl border border-wl-input-border bg-wl-input px-4 text-wl-muted">
           {form.placeholder}
         </span>
@@ -395,7 +403,16 @@ export function StatusPagePreview({ snapshot, state = "confirmed" }) {
       }}
     >
       <p className="m-0 grid size-12 place-items-center rounded-full bg-wl-button text-wl-button-text">
-        {pending ? "✉" : "✓"}
+        <svg
+          viewBox="0 0 24 24"
+          className="size-5"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          aria-hidden="true"
+        >
+          {pending ? <path d="M3 6h18v12H3zM3 7l9 6 9-6" /> : <path d="m5 12 4 4L19 6" />}
+        </svg>
       </p>
       <h1 className="my-4 max-w-ch14 font-wl-heading text-4xl leading-none tracking-tight text-balance md:text-5xl">
         {pending ? status.pendingHeading : status.heading}

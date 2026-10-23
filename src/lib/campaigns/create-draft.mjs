@@ -3,14 +3,30 @@ import { z } from "zod";
 import { snapshotTemplate } from "../templates/catalog.mjs";
 import { campaignScope, createWorkspaceService } from "../workspaces/service.mjs";
 
+export const RESERVED_WAITLIST_SLUGS = new Set([
+  "admin",
+  "api",
+  "app",
+  "docs",
+  "help",
+  "login",
+  "new",
+  "settings",
+  "status",
+  "support",
+  "verify",
+  "waitlists",
+]);
+
 export const draftInputSchema = z.strictObject({
   name: z.string().trim().min(1, "Give your waitlist a name.").max(120),
   description: z.string().trim().max(600).default(""),
   publicSlug: z
     .string()
     .min(3)
-    .max(64)
-    .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Use lowercase letters, numbers and single hyphens."),
+    .max(48)
+    .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Use lowercase letters, numbers and single hyphens.")
+    .refine((slug) => !RESERVED_WAITLIST_SLUGS.has(slug), "This address is reserved."),
   templateId: z
     .enum([
       "simple",
@@ -104,8 +120,14 @@ export async function createDraft(db, actorId, workspaceId, rawInput) {
       );
     } catch (error) {
       if (!["P2034", "P2002"].includes(error.code)) throw error;
-      if (attempt === 3)
+      if (attempt === 3) {
+        if (error.code === "P2002")
+          throw new DraftCreationError(
+            "This address was just claimed. Choose another.",
+            "publicSlug",
+          );
         throw new DraftCreationError("Couldn't finish creating your waitlist. Try again.");
+      }
     }
   }
 }

@@ -9,7 +9,7 @@ import { SnapshotPageBuilder } from "@/components/product/snapshot-page-builder"
 import { auth } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 import { SITE_URL } from "@/lib/site-metadata";
-import { templateSnapshotSchema } from "@/lib/templates/catalog.mjs";
+import { snapshotTemplate, templateSnapshotSchema } from "@/lib/templates/catalog.mjs";
 import { requireCampaignPage } from "@/lib/workspaces/authorize";
 
 const getUser = cache(async (id) => {
@@ -53,22 +53,9 @@ export default async function WaitListsEditPage(props) {
     : waitList.userId === user.id;
 
   const parsedSnapshot = templateSnapshotSchema.safeParse(waitList.templateSnapshot);
-  // A waitlist with no stored page still runs on the classic editor. The new
-  // Builder stays closed for it, so opening one cannot replace that page with
-  // a starter template.
-  if (!waitList.templateSnapshot)
-    return (
-      <ContentLayout title="Builder">
-        <div className="grid max-w-2xl gap-4 py-8">
-          <h2 className="m-0 text-section">{waitList.name || "This waitlist"}</h2>
-          <p className="m-0 text-caption leading-relaxed text-product-text-secondary">
-            This waitlist still uses the classic editor, so the new Builder stays closed for it. Its
-            published page keeps working as it is.
-          </p>
-        </div>
-      </ContentLayout>
-    );
-  const templateSnapshot = parsedSnapshot.data;
+  const templateSnapshot = parsedSnapshot.success
+    ? parsedSnapshot.data
+    : snapshotTemplate("simple");
   const [publication, domain] = await Promise.all([
     waitList.publishedRevision
       ? prisma.waitListPublicationRevision.findUnique({

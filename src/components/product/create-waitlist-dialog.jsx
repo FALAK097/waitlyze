@@ -3,9 +3,9 @@
 import { Add01Icon, ArrowRight01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
-import { createWaitlistDraft } from "@/app/actions/waitLists";
+import { checkWaitlistSlug, createWaitlistDraft } from "@/app/actions/waitLists";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -39,6 +39,7 @@ export function CreateWaitlistDialog({ initialOpen = false, first = false }) {
   const [slugTouched, setSlugTouched] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [slugStatus, setSlugStatus] = useState({ state: "idle", message: "" });
   const [creationKey, setCreationKey] = useState(() => crypto.randomUUID());
   const suggestedSlug = useMemo(() => slugify(name), [name]);
   const currentSlug = slugTouched ? slug : suggestedSlug;
@@ -46,6 +47,28 @@ export function CreateWaitlistDialog({ initialOpen = false, first = false }) {
     name.trim() && slugify(currentSlug).length < 3
       ? "Enter a page address with at least 3 letters or numbers. Your waitlist name can stay as it is."
       : "";
+
+  useEffect(() => {
+    const publicSlug = slugify(currentSlug);
+    if (publicSlug.length < 3) return;
+    let active = true;
+    const timer = window.setTimeout(async () => {
+      try {
+        const result = await checkWaitlistSlug(publicSlug);
+        if (active)
+          setSlugStatus({
+            state: result.available ? "available" : "taken",
+            message: result.message,
+          });
+      } catch {
+        if (active) setSlugStatus({ state: "idle", message: "Availability could not be checked." });
+      }
+    }, 350);
+    return () => {
+      active = false;
+      window.clearTimeout(timer);
+    };
+  }, [currentSlug]);
 
   async function submit(event) {
     event.preventDefault();
@@ -65,6 +88,8 @@ export function CreateWaitlistDialog({ initialOpen = false, first = false }) {
         return;
       }
       setError(result?.message || "We couldn't create the waitlist. Try again.");
+      if (result?.field === "publicSlug")
+        setSlugStatus({ state: "taken", message: result.message });
     } catch {
       setError("We couldn't create the waitlist. Try again.");
     } finally {
@@ -100,11 +125,14 @@ export function CreateWaitlistDialog({ initialOpen = false, first = false }) {
               <Label htmlFor="new-waitlist-name">Waitlist name</Label>
               <Input
                 id="new-waitlist-name"
-                autoFocus
                 autoComplete="off"
                 maxLength={120}
                 value={name}
-                onChange={(event) => setName(event.target.value)}
+                onChange={(event) => {
+                  setName(event.target.value);
+                  if (!slugTouched)
+                    setSlugStatus({ state: "checking", message: "Checking availability…" });
+                }}
                 placeholder="Atlas early access"
                 required
                 disabled={busy}
@@ -121,20 +149,47 @@ export function CreateWaitlistDialog({ initialOpen = false, first = false }) {
                   value={currentSlug}
                   onChange={(event) => {
                     setSlugTouched(true);
-                    setSlug(normalizeSlugInput(event.target.value));
+                    const nextSlug = normalizeSlugInput(event.target.value);
+                    setSlug(nextSlug);
+                    setSlugStatus(
+                      slugify(nextSlug).length >= 3
+                        ? { state: "checking", message: "Checking availability…" }
+                        : { state: "idle", message: "" },
+                    );
                   }}
                   placeholder="atlas"
                   required
                   disabled={busy}
                   aria-describedby={
-                    error ? "new-waitlist-error" : slugHint ? "new-waitlist-slug-hint" : undefined
+                    error
+                      ? "new-waitlist-error"
+                      : slugHint
+                        ? "new-waitlist-slug-hint"
+                        : slugStatus.message
+                          ? "new-waitlist-slug-status"
+                          : undefined
                   }
-                  aria-invalid={!!error}
+                  aria-invalid={!!error || slugStatus.state === "taken"}
                 />
               </div>
               {slugHint && (
                 <p id="new-waitlist-slug-hint" className="text-caption text-product-text-secondary">
                   {slugHint}
+                </p>
+              )}
+              {!slugHint && slugStatus.message && (
+                <p
+                  id="new-waitlist-slug-status"
+                  className={
+                    slugStatus.state === "available"
+                      ? "text-caption text-product-success-text"
+                      : slugStatus.state === "taken"
+                        ? "text-caption text-product-danger-text"
+                        : "text-caption text-product-text-secondary"
+                  }
+                  aria-live="polite"
+                >
+                  {slugStatus.message}
                 </p>
               )}
             </div>
@@ -151,7 +206,12 @@ export function CreateWaitlistDialog({ initialOpen = false, first = false }) {
               <Button
                 type="submit"
                 size="lg"
-                disabled={busy || !name.trim() || slugify(currentSlug).length < 3}
+                disabled={
+                  busy ||
+                  !name.trim() ||
+                  slugify(currentSlug).length < 3 ||
+                  slugStatus.state !== "available"
+                }
               >
                 {busy ? "Creating…" : "Create and open Builder"}
                 {!busy && <HugeiconsIcon icon={ArrowRight01Icon} aria-hidden="true" />}

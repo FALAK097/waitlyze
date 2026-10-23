@@ -1,13 +1,13 @@
 "use server";
-import { DeleteObjectCommand } from "@aws-sdk/client-s3";
 import { ZodError } from "zod";
 
-import { createDraft, DraftCreationError } from "@/lib/campaigns/create-draft.mjs";
-import { env } from "@/lib/env.mjs";
+import {
+  createDraft,
+  DraftCreationError,
+  RESERVED_WAITLIST_SLUGS,
+} from "@/lib/campaigns/create-draft.mjs";
 import prisma from "@/lib/prisma";
-import { r2 } from "@/lib/r2";
 import { AUDIT_ACTIONS, recordAuditEvent } from "@/lib/workspaces/audit.mjs";
-import { requireCampaign } from "@/lib/workspaces/authorize";
 import { currentWorkspace } from "@/lib/workspaces/current";
 
 export async function createWaitlistDraft({ name, publicSlug, creationKey }) {
@@ -46,18 +46,21 @@ export async function createWaitlistDraft({ name, publicSlug, creationKey }) {
   }
 }
 
-export async function removeImage(logoKey, waitListId) {
-  try {
-    const { campaign, scope } = await requireCampaign(waitListId, "editCampaign");
-    if (!logoKey || logoKey !== campaign.logoKey)
-      return { success: false, message: "Image not found." };
-    await r2.send(new DeleteObjectCommand({ Bucket: env.R2_BUCKET_NAME, Key: campaign.logoKey }));
-    await prisma.waitList.update({
-      where: { id: waitListId, logoKey, ...scope },
-      data: { logoUrl: "", logoKey: "" },
-    });
-    return { success: true, message: "Image removed." };
-  } catch {
-    return { success: false, message: "Could not remove the image. Try again." };
-  }
+export async function checkWaitlistSlug(publicSlug) {
+  await currentWorkspace();
+  if (
+    typeof publicSlug !== "string" ||
+    !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(publicSlug) ||
+    publicSlug.length < 3 ||
+    publicSlug.length > 48 ||
+    RESERVED_WAITLIST_SLUGS.has(publicSlug)
+  )
+    return { available: false, message: "Choose another page address." };
+  const existing = await prisma.waitList.findUnique({
+    where: { publicSlug },
+    select: { id: true },
+  });
+  return existing
+    ? { available: false, message: "This address is already taken." }
+    : { available: true, message: "This address is available." };
 }

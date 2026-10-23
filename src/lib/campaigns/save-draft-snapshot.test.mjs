@@ -95,29 +95,6 @@ test("ordinary saves retain no-op, conflict, and revision-history behavior", asy
   assert.equal(raced.history.length, 0);
 });
 
-test("reads and saves a legacy draft while retaining the original in history", async () => {
-  const legacy = {
-    schemaVersion: 1,
-    templateId: "newsletter",
-    templateVersion: 1,
-    sections: [
-      { type: "hero", heading: "Original", body: "Original content" },
-      { type: "form", label: "Your email", buttonText: "Subscribe" },
-    ],
-    theme: { surface: "white", text: "ink", action: "lime", font: "geist" },
-    form: { fields: ["email"], referrals: false, verification: false },
-    thankYou: { heading: "Thank you", body: "Original message" },
-    email: { enabled: false, subject: "Original subject", body: "Original email" },
-  };
-  const db = database(legacy);
-  const result = await save(db, legacy);
-  assert.equal(result.snapshot.schemaVersion, 2);
-  assert.equal(result.snapshot.form.label, "Your email");
-  assert.equal(result.snapshot.statusPage.heading, "Thank you");
-  assert.deepEqual(result.snapshot.legacy, legacy);
-  assert.deepEqual(db.history[0].snapshot, legacy);
-});
-
 test("explicit replacement also handles a missing snapshot without an invalid JSON history write", async () => {
   const db = database(null);
   assert.equal((await replace(db, snapshotTemplate("simple"))).revision, 2);

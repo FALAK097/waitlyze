@@ -67,14 +67,20 @@ function SignupFormInner({ slug, waitListId, showReferrals, formConfig, statusPa
         showReferrals && code
           ? `${window.location.origin}${slug ? `/w/${slug}` : "/"}?r=${code}`
           : null;
+      const verified = data.signUp?.verified === true;
+      const returning = data.signUp?.outcome === "returning";
       setResult({
-        heading: formConfig.verification ? statusPage.pendingHeading : statusPage.heading,
-        body: formConfig.verification ? statusPage.pendingBody : statusPage.body,
-        notice: formConfig.verification ? `We sent a confirmation link to ${email}.` : null,
+        heading: verified ? statusPage.heading : statusPage.pendingHeading,
+        body: verified ? statusPage.body : statusPage.pendingBody,
+        notice: returning
+          ? "You're already on this waitlist. Here are your current details."
+          : verified
+            ? null
+            : `We sent a confirmation link to ${email}.`,
         position: typeof rank === "number" ? rank : null,
         referralLink,
         referralCode: code ?? null,
-        referralCount: 0,
+        referralCount: data.signUp?.referralCount ?? 0,
       });
       setCopied(false);
       form.reset();
@@ -132,7 +138,7 @@ function SignupFormInner({ slug, waitListId, showReferrals, formConfig, statusPa
             <strong>#{result.position}</strong>
           </p>
         ) : null}
-        {statusPage.showReferralCount ? (
+        {showReferrals && statusPage.showReferralCount ? (
           <p className="flex justify-between border-y border-wl-text/15 py-4">
             <span>Friends joined</span>
             <strong>{result.referralCount}</strong>
@@ -144,7 +150,7 @@ function SignupFormInner({ slug, waitListId, showReferrals, formConfig, statusPa
             <label className="text-caption font-bold" htmlFor={referralId}>
               Your referral link
             </label>
-            <div className="flex gap-2">
+            <div className="flex gap-2 max-sm:flex-col">
               <input
                 className={cn(
                   control,
@@ -160,7 +166,7 @@ function SignupFormInner({ slug, waitListId, showReferrals, formConfig, statusPa
               </button>
             </div>
             {statusPage.shareChannels.length > 0 && (
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
                 {statusPage.shareChannels.map((channel) => (
                   <a
                     className={action}

@@ -14,6 +14,7 @@ import {
   referralEventKey,
   signupEventKey,
 } from "../referrals/points.mjs";
+import { templateSnapshotSchema } from "../templates/catalog.mjs";
 import { enqueueWebhookEvent } from "../webhooks/delivery.mjs";
 import { MARKETING_CONSENT_COPY } from "./marketing-consent.mjs";
 import { getCampaignPosition } from "./referral-position.mjs";
@@ -21,6 +22,46 @@ import { findSignupByEmail } from "./signup-lookup.mjs";
 
 const normalizeEmail = normalizeSignupEmail;
 const tokenDigest = (token) => createHash("sha256").update(token).digest("hex");
+
+async function recordVerifiedSignup(tx, signup, now) {
+  await enqueueWebhookEvent(tx, {
+    waitListId: signup.waitListId,
+    eventType: "signup.verified",
+    signupId: signup.id,
+    now,
+  });
+  if (!(await isFarmSuspect(tx, signup.ipAddress, now))) {
+    await awardPoints(tx, {
+      waitListId: signup.waitListId,
+      signUpId: signup.id,
+      kind: "SIGNUP_VERIFIED",
+      points: SIGNUP_POINTS,
+      eventKey: signupEventKey(signup.id),
+    });
+    await tx.$queryRaw`SELECT "id" FROM "referrals" WHERE "signUpId" = ${signup.id} FOR UPDATE`;
+    const referral = await tx.referral.findUnique({
+      where: { signUpId: signup.id },
+      select: { id: true, referredById: true, reviewStatus: true },
+    });
+    if (referral?.referredById && REFERRAL_CREDIT_STATUSES.includes(referral.reviewStatus)) {
+      await awardPoints(tx, {
+        waitListId: signup.waitListId,
+        signUpId: referral.referredById,
+        kind: "REFERRAL_CREDIT",
+        points: REFERRAL_POINTS,
+        eventKey: referralEventKey(referral.id),
+      });
+    }
+  }
+  await tx.outboxEvent.create({
+    data: {
+      eventKey: `automation.trigger:signup-verified:${signup.id}`,
+      type: "MARKETING_AUTOMATION_TRIGGER_REQUESTED",
+      waitListId: signup.waitListId,
+      payload: { signUpId: signup.id },
+    },
+  });
+}
 
 export class DuplicateSignupError extends Error {
   constructor() {
@@ -68,11 +109,26 @@ export async function createCampaignSignup(
       // Hold a share lock until the signup commits so a concurrent pause cannot
       // slip between the publication check and the subscriber insert.
       const published = await tx.$queryRaw`
-        SELECT "id", "showReferrals" FROM "wait_lists"
+        SELECT "id", "showReferrals", "publishedRevision" FROM "wait_lists"
         WHERE "id" = ${input.waitListId} AND "status"::text = 'PUBLISHED'
         FOR SHARE
       `;
       if (published.length === 0) throw new InvalidCampaignError();
+      const publication = published[0].publishedRevision
+        ? await tx.waitListPublicationRevision.findUnique({
+            where: {
+              waitListId_revision: {
+                waitListId: input.waitListId,
+                revision: published[0].publishedRevision,
+              },
+            },
+            select: { snapshot: true },
+          })
+        : null;
+      const publishedSnapshot = templateSnapshotSchema.safeParse(publication?.snapshot);
+      const requiresVerification = publishedSnapshot.success
+        ? publishedSnapshot.data.form.verification
+        : true;
 
       const existing = await findSignupByEmail(tx, input.waitListId, input.email, {
         referrals: true,
@@ -82,12 +138,12 @@ export async function createCampaignSignup(
         if (existing.uniqueUserId === input.uniqueUserId) {
           // Browser IDs and referral links are public identifiers, not consent credentials.
           // Idempotent signup retries must preserve prior opt-out/preferences.
-          return existing;
+          return { ...existing, signupOutcome: "returning" };
         }
         throw new DuplicateSignupError();
       }
 
-      const signUp = await tx.signUp.create({
+      const createdSignup = await tx.signUp.create({
         data: {
           uniqueUserId: input.uniqueUserId,
           email: input.email.trim(),
@@ -109,27 +165,27 @@ export async function createCampaignSignup(
           utmCampaign: input.utmCampaign || null,
           utmTerm: input.utmTerm || null,
           utmContent: input.utmContent || null,
-          verifiedAt: null,
+          verifiedAt: requiresVerification ? null : now,
           ...(input.marketingConsent === true ? { marketingConsentAt: now } : {}),
         },
       });
       await enqueueWebhookEvent(tx, {
         waitListId: input.waitListId,
         eventType: "signup.created",
-        signupId: signUp.id,
+        signupId: createdSignup.id,
         now,
       });
 
       if (input.marketingConsent === true) {
-        const token = createUnsubscribeToken(signUp.id, input.waitListId);
+        const token = createUnsubscribeToken(createdSignup.id, input.waitListId);
         await tx.signUp.update({
-          where: { id: signUp.id },
+          where: { id: createdSignup.id },
           data: { unsubscribeTokenHash: hashUnsubscribeToken(token) },
         });
         await tx.marketingConsentEvent.create({
           data: {
             waitListId: input.waitListId,
-            signUpId: signUp.id,
+            signUpId: createdSignup.id,
             action: "OPTED_IN",
             source: "PUBLIC_SIGNUP",
             consentText: MARKETING_CONSENT_COPY,
@@ -152,7 +208,7 @@ export async function createCampaignSignup(
           const sameBrowser = referredBy.uniqueUserId === input.uniqueUserId;
           await tx.referral.create({
             data: {
-              signUpId: signUp.id,
+              signUpId: createdSignup.id,
               referredById: referredBy.id,
               ...(sameBrowser
                 ? { reviewStatus: "NEEDS_REVIEW", reviewReason: "same_browser" }
@@ -162,34 +218,39 @@ export async function createCampaignSignup(
         }
       }
 
-      const token = randomBytes(32).toString("base64url");
-      const verification = await tx.signUpVerification.create({
-        data: {
-          signUpId: signUp.id,
-          tokenHash: tokenDigest(token),
-          expiresAt: new Date(now.getTime() + verificationTtlMs),
-        },
-      });
-      const verificationEventKey = `signup.verify:${verification.id}`;
-      await tx.outboxEvent.create({
-        data: {
-          eventKey: verificationEventKey,
-          type: "SIGNUP_VERIFICATION_REQUESTED",
-          waitListId: input.waitListId,
-          payload: {
-            signUpId: signUp.id,
-            waitListId: input.waitListId,
-            email: signUp.email,
-            token,
+      let verificationEventKey;
+      if (requiresVerification) {
+        const token = randomBytes(32).toString("base64url");
+        const verification = await tx.signUpVerification.create({
+          data: {
+            signUpId: createdSignup.id,
+            tokenHash: tokenDigest(token),
+            expiresAt: new Date(now.getTime() + verificationTtlMs),
           },
-        },
-      });
+        });
+        verificationEventKey = `signup.verify:${verification.id}`;
+        await tx.outboxEvent.create({
+          data: {
+            eventKey: verificationEventKey,
+            type: "SIGNUP_VERIFICATION_REQUESTED",
+            waitListId: input.waitListId,
+            payload: {
+              signUpId: createdSignup.id,
+              waitListId: input.waitListId,
+              email: createdSignup.email,
+              token,
+            },
+          },
+        });
+      } else {
+        await recordVerifiedSignup(tx, createdSignup, now);
+      }
 
       const created = await tx.signUp.findUnique({
-        where: { id: signUp.id },
+        where: { id: createdSignup.id },
         include: { referrals: true, referredBy: true },
       });
-      return { ...created, verificationEventKey };
+      return { ...created, verificationEventKey, signupOutcome: "created" };
     });
   } catch (error) {
     if (error?.code !== "P2002") throw error;
@@ -197,7 +258,8 @@ export async function createCampaignSignup(
       referrals: true,
       referredBy: true,
     });
-    if (committed?.uniqueUserId === input.uniqueUserId) signUp = committed;
+    if (committed?.uniqueUserId === input.uniqueUserId)
+      signUp = { ...committed, signupOutcome: "returning" };
     else if (committed) throw new DuplicateSignupError();
     else throw error;
   }
@@ -205,7 +267,7 @@ export async function createCampaignSignup(
   const rank = await getCampaignPosition(db, input.waitListId, signUp.id);
   // Idempotent retries and duplicate lookups return early above, so only a row
   // we actually created can move the milestone counters.
-  if (signUp?.verificationEventKey) {
+  if (signUp?.signupOutcome === "created") {
     after(() => maybeNotifySignupMilestone(db, input.waitListId));
   }
   return { ...signUp, rank };
@@ -233,46 +295,7 @@ export async function verifyCampaignSignup(db, token, { now = new Date() } = {})
       where: { id: verification.signUpId },
       select: { id: true, waitListId: true, ipAddress: true },
     });
-    await enqueueWebhookEvent(tx, {
-      waitListId: signup.waitListId,
-      eventType: "signup.verified",
-      signupId: signup.id,
-      now,
-    });
-    if (!(await isFarmSuspect(tx, signup.ipAddress, now))) {
-      await awardPoints(tx, {
-        waitListId: signup.waitListId,
-        signUpId: signup.id,
-        kind: "SIGNUP_VERIFIED",
-        points: SIGNUP_POINTS,
-        eventKey: signupEventKey(signup.id),
-      });
-      // Lock the referral row (when one exists) so a concurrent approval
-      // serializes around this decision: whichever transaction commits
-      // first, exactly one of the two paths awards the credit.
-      await tx.$queryRaw`SELECT "id" FROM "referrals" WHERE "signUpId" = ${signup.id} FOR UPDATE`;
-      const referral = await tx.referral.findUnique({
-        where: { signUpId: signup.id },
-        select: { id: true, referredById: true, reviewStatus: true },
-      });
-      if (referral?.referredById && REFERRAL_CREDIT_STATUSES.includes(referral.reviewStatus)) {
-        await awardPoints(tx, {
-          waitListId: signup.waitListId,
-          signUpId: referral.referredById,
-          kind: "REFERRAL_CREDIT",
-          points: REFERRAL_POINTS,
-          eventKey: referralEventKey(referral.id),
-        });
-      }
-    }
-    await tx.outboxEvent.create({
-      data: {
-        eventKey: `automation.trigger:signup-verified:${signup.id}`,
-        type: "MARKETING_AUTOMATION_TRIGGER_REQUESTED",
-        waitListId: signup.waitListId,
-        payload: { signUpId: signup.id },
-      },
-    });
+    await recordVerifiedSignup(tx, signup, now);
     return true;
   });
 }

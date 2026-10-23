@@ -820,8 +820,8 @@ body {
   --shadow-surface: 0 0 0 1px rgb(0 0 0/0.06), 0 14px 40px rgb(0 0 0/0.07);
   --shadow-outline: 0 0 0 1px var(--product-border-subtle);
   --shadow-pressed: 0 1px 2px rgb(0 0 0/0.06);
-  --height-studio: calc(100dvh - 156px);
-  --height-studio-compact: calc(100dvh - 194px);
+  --height-studio: calc(100dvh - 148px);
+  --height-studio-compact: calc(100dvh - 186px);
   --min-height-studio: 620px;
   --width-library: 248px;
   --width-inspector: 292px;
