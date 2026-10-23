@@ -1,14 +1,29 @@
 "use client";
 
 import {
+  Add01Icon,
+  AlignLeftIcon,
+  Analytics01Icon,
   ArrowDown01Icon,
   ArrowUp01Icon,
+  CheckListIcon,
   Copy01Icon,
   Delete02Icon,
+  FlowchartIcon,
+  FormIcon,
+  GiftIcon,
+  HelpCircleIcon,
+  Image01Icon,
+  Message01Icon,
   MonitorIcon,
+  Mouse02Icon,
+  Navigation01Icon,
   Redo02Icon,
+  Rocket01Icon,
   SmartphoneIcon,
+  StarIcon,
   Undo02Icon,
+  UserMultiple02Icon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import Link from "next/link";
@@ -70,6 +85,26 @@ const canonical = (value) =>
       : value;
 const equal = (a, b) => JSON.stringify(canonical(a)) === JSON.stringify(canonical(b));
 const names = Object.fromEntries(BLOCK_TYPES.map((block) => [block.type, block.label]));
+const blockIcons = {
+  hero: Rocket01Icon,
+  form: FormIcon,
+  navigation: Navigation01Icon,
+  features: CheckListIcon,
+  steps: FlowchartIcon,
+  logos: StarIcon,
+  stats: Analytics01Icon,
+  testimonials: Message01Icon,
+  faq: HelpCircleIcon,
+  media: Image01Icon,
+  signupCount: UserMultiple02Icon,
+  referralRewards: GiftIcon,
+  cta: Mouse02Icon,
+  footer: AlignLeftIcon,
+};
+const blockGroups = BLOCK_TYPES.reduce((groups, block) => {
+  (groups[block.category] ??= []).push(block);
+  return groups;
+}, {});
 const templates = listTemplates();
 const fonts = [
   { id: "hanken", label: "Hanken Grotesk" },
@@ -441,6 +476,7 @@ export function SnapshotPageBuilder({
   );
   const [panel, setPanel] = useState("blocks");
   const [rightPanel, setRightPanel] = useState("properties");
+  const [addOpen, setAddOpen] = useState(false);
   const [mobileMode, setMobileMode] = useState("edit");
   const [mobileEditorPanel, setMobileEditorPanel] = useState("structure");
   const [selectedId, setSelectedId] = useState(waitList.templateSnapshot.sections[0]?.id);
@@ -1122,15 +1158,55 @@ export function SnapshotPageBuilder({
                     </div>
                   ))}
                 </div>
-                <div className="border-t border-product-border-subtle px-4 pt-3.5 pb-6 [&_button]:flex [&_button]:w-full [&_button]:cursor-pointer [&_button]:justify-between [&_button]:border-0 [&_button]:bg-transparent [&_button]:px-0 [&_button]:py-2 [&_button]:text-caption [&_button]:text-product-text-primary [&_button_span]:text-item [&_button_span]:text-product-text-muted [&_p]:mb-2 [&_p]:text-micro [&_p]:font-bold [&_p]:tracking-widest [&_p]:text-product-text-secondary [&_p]:uppercase">
-                  <p>Add block</p>
-                  {BLOCK_TYPES.map((block) => (
-                    <button type="button" key={block.type} onClick={() => addBlock(block.type)}>
-                      {block.label}
-                      <span>+</span>
-                    </button>
-                  ))}
+                <div className="border-t border-product-border-subtle px-4 pt-3.5 pb-6">
+                  <Button type="button" className="w-full" onClick={() => setAddOpen(true)}>
+                    <HugeiconsIcon icon={Add01Icon} size={16} aria-hidden="true" />
+                    Add block
+                  </Button>
                 </div>
+                <Dialog open={addOpen} onOpenChange={setAddOpen}>
+                  <DialogContent className="max-h-screen overflow-auto">
+                    <DialogTitle>Add a block</DialogTitle>
+                    <DialogDescription>
+                      New blocks land at the bottom of your page.
+                    </DialogDescription>
+                    {Object.entries(blockGroups).map(([category, blocks]) => (
+                      <div className="grid gap-1.5" key={category}>
+                        <p className="text-micro font-bold tracking-widest text-product-text-secondary uppercase">
+                          {category}
+                        </p>
+                        <div className="grid gap-1.5 sm:grid-cols-2">
+                          {blocks.map((block) => (
+                            <button
+                              key={block.type}
+                              type="button"
+                              className="flex cursor-pointer items-start gap-2.5 rounded-lg border border-product-border-subtle bg-product-bg-surface p-2.5 text-left transition-colors hover:border-product-accent-solid"
+                              onClick={() => {
+                                addBlock(block.type);
+                                setAddOpen(false);
+                              }}
+                            >
+                              <HugeiconsIcon
+                                aria-hidden="true"
+                                className="mt-0.5 shrink-0 text-product-text-secondary"
+                                icon={blockIcons[block.type]}
+                                size={16}
+                              />
+                              <span className="grid gap-0.5">
+                                <span className="text-caption font-semibold text-product-text-primary">
+                                  {block.label}
+                                </span>
+                                <span className="text-micro leading-relaxed text-product-text-secondary">
+                                  {block.description}
+                                </span>
+                              </span>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </DialogContent>
+                </Dialog>
               </>
             )}
             {panel === "templates" && (

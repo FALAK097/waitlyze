@@ -621,20 +621,90 @@ const catalog = definitions.map(({ id, name, description, category, sections, br
 );
 
 export const BLOCK_TYPES = [
-  { type: "hero", label: "Hero", category: "Essentials" },
-  { type: "form", label: "Signup form", category: "Essentials" },
-  { type: "navigation", label: "Navigation", category: "Structure" },
-  { type: "features", label: "Benefits", category: "Content" },
-  { type: "steps", label: "Steps", category: "Content" },
-  { type: "logos", label: "Logos", category: "Proof" },
-  { type: "stats", label: "Numbers", category: "Proof" },
-  { type: "testimonials", label: "Testimonials", category: "Proof" },
-  { type: "faq", label: "Questions", category: "Content" },
-  { type: "media", label: "Media", category: "Content" },
-  { type: "signupCount", label: "Signup count", category: "Growth" },
-  { type: "referralRewards", label: "Referral rewards", category: "Growth" },
-  { type: "cta", label: "Call to action", category: "Essentials" },
-  { type: "footer", label: "Footer", category: "Structure" },
+  {
+    type: "hero",
+    label: "Hero",
+    category: "Essentials",
+    description: "Headline, intro, and signup form above the fold.",
+  },
+  {
+    type: "form",
+    label: "Signup form",
+    category: "Essentials",
+    description: "Email signup form anywhere on the page.",
+  },
+  {
+    type: "navigation",
+    label: "Navigation",
+    category: "Structure",
+    description: "Top bar with your brand and links.",
+  },
+  {
+    type: "features",
+    label: "Benefits",
+    category: "Content",
+    description: "Grid of benefits your product delivers.",
+  },
+  {
+    type: "steps",
+    label: "Steps",
+    category: "Content",
+    description: "Numbered flow from sign-up to launch.",
+  },
+  {
+    type: "logos",
+    label: "Logos",
+    category: "Proof",
+    description: "Customer or press logos for social proof.",
+  },
+  {
+    type: "stats",
+    label: "Numbers",
+    category: "Proof",
+    description: "Key numbers in a bold three-up row.",
+  },
+  {
+    type: "testimonials",
+    label: "Testimonials",
+    category: "Proof",
+    description: "Quotes from people who back you.",
+  },
+  {
+    type: "faq",
+    label: "Questions",
+    category: "Content",
+    description: "Expandable answers to common questions.",
+  },
+  {
+    type: "media",
+    label: "Media",
+    category: "Content",
+    description: "Image next to supporting copy.",
+  },
+  {
+    type: "signupCount",
+    label: "Signup count",
+    category: "Growth",
+    description: "Live count of joined signups.",
+  },
+  {
+    type: "referralRewards",
+    label: "Referral rewards",
+    category: "Growth",
+    description: "Rewards for referred signups.",
+  },
+  {
+    type: "cta",
+    label: "Call to action",
+    category: "Essentials",
+    description: "Closing pitch with a jump-to-form button.",
+  },
+  {
+    type: "footer",
+    label: "Footer",
+    category: "Structure",
+    description: "Footer note and links at the bottom.",
+  },
 ];
 
 export function createSection(type, id = `block-${crypto.randomUUID()}`) {
