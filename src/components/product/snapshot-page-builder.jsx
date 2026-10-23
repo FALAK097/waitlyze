@@ -18,6 +18,7 @@ import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useSta
 
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { ColorPicker } from "@/components/ui/color-picker";
 import {
   Dialog,
   DialogClose,
@@ -259,7 +260,7 @@ function BlockInspector({ section, update, remove, duplicate }) {
   if (!section)
     return (
       <div className={"px-5 py-8 text-caption leading-relaxed text-product-text-secondary"}>
-        <p>Select a block on the left or in the preview.</p>
+        <p>Click a block in the preview or the list to edit it.</p>
       </div>
     );
   const field = (key, label, multiline = false) => (
@@ -439,6 +440,7 @@ export function SnapshotPageBuilder({
     parseAsStringLiteral(["page", "form", "status", "publish"]).withDefault("page"),
   );
   const [panel, setPanel] = useState("blocks");
+  const [rightPanel, setRightPanel] = useState("properties");
   const [mobileMode, setMobileMode] = useState("edit");
   const [mobileEditorPanel, setMobileEditorPanel] = useState("structure");
   const [selectedId, setSelectedId] = useState(waitList.templateSnapshot.sections[0]?.id);
@@ -870,7 +872,8 @@ export function SnapshotPageBuilder({
     }
     if (fix.surface === "design") {
       void setSurface("page");
-      setPanel("design");
+      setRightPanel("design");
+      setMobileEditorPanel("properties");
       return;
     }
     void setSurface(fix.surface || "page");
@@ -1060,11 +1063,10 @@ export function SnapshotPageBuilder({
             data-mobile-mode={mobileMode}
             data-mobile-panel={mobileEditorPanel}
           >
-            <div className="sticky top-0 z-2 grid grid-cols-3 gap-1 bg-product-bg-surface p-2.5 [&_button]:min-h-9 [&_button]:cursor-pointer [&_button]:rounded-lg [&_button]:border-0 [&_button]:bg-transparent [&_button]:text-caption [&_button]:font-semibold [&_button]:text-product-text-secondary [&_button[aria-pressed=true]]:bg-product-bg-inset [&_button[aria-pressed=true]]:text-product-text-primary">
+            <div className="sticky top-0 z-2 grid grid-cols-2 gap-1 bg-product-bg-surface p-2.5 [&_button]:min-h-9 [&_button]:cursor-pointer [&_button]:rounded-lg [&_button]:border-0 [&_button]:bg-transparent [&_button]:text-caption [&_button]:font-semibold [&_button]:text-product-text-secondary [&_button[aria-pressed=true]]:bg-product-bg-inset [&_button[aria-pressed=true]]:text-product-text-primary">
               {[
                 ["blocks", "Blocks"],
                 ["templates", "Templates"],
-                ["design", "Design"],
               ].map(([id, label]) => (
                 <button
                   key={id}
@@ -1089,6 +1091,7 @@ export function SnapshotPageBuilder({
                         type="button"
                         onClick={() => {
                           setSelectedId(section.id);
+                          setRightPanel("properties");
                           setMobileEditorPanel("properties");
                         }}
                       >
@@ -1156,9 +1159,6 @@ export function SnapshotPageBuilder({
                 ))}
               </div>
             )}
-            {panel === "design" && (
-              <DesignPanel brand={snapshot.brand} update={(value) => updateRoot("brand", value)} />
-            )}
           </aside>
           <main
             className="min-w-0 flex-1 overflow-auto px-7 pt-0 pb-9 max-[680px]:px-3 max-[680px]:data-[mobile-mode=edit]:hidden"
@@ -1214,6 +1214,7 @@ export function SnapshotPageBuilder({
                 selectedBlockId={selectedId}
                 onBlockSelect={(id) => {
                   setSelectedId(id);
+                  setRightPanel("properties");
                   setMobileEditorPanel("properties");
                 }}
                 renderBlockToolbar={renderBlockToolbar}
@@ -1225,12 +1226,31 @@ export function SnapshotPageBuilder({
             data-mobile-mode={mobileMode}
             data-mobile-panel={mobileEditorPanel}
           >
-            <BlockInspector
-              section={selected}
-              update={updateSection}
-              remove={removeBlock}
-              duplicate={duplicateBlock}
-            />
+            <div className="sticky top-0 z-2 grid grid-cols-2 gap-1 bg-product-bg-surface p-2.5 [&_button]:min-h-9 [&_button]:cursor-pointer [&_button]:rounded-lg [&_button]:border-0 [&_button]:bg-transparent [&_button]:text-caption [&_button]:font-semibold [&_button]:text-product-text-secondary [&_button[aria-pressed=true]]:bg-product-bg-inset [&_button[aria-pressed=true]]:text-product-text-primary">
+              {[
+                ["properties", "Properties"],
+                ["design", "Design"],
+              ].map(([id, label]) => (
+                <button
+                  key={id}
+                  type="button"
+                  aria-pressed={rightPanel === id}
+                  onClick={() => setRightPanel(id)}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+            {rightPanel === "properties" ? (
+              <BlockInspector
+                section={selected}
+                update={updateSection}
+                remove={removeBlock}
+                duplicate={duplicateBlock}
+              />
+            ) : (
+              <DesignPanel brand={snapshot.brand} update={(value) => updateRoot("brand", value)} />
+            )}
           </aside>
         </div>
       )}
@@ -1458,18 +1478,31 @@ function DesignPanel({ brand, update }) {
         options={fonts}
         onChange={(bodyFont) => update({ bodyFont })}
       />
-      <SelectField
-        label="Corners"
-        value={brand.radius}
-        options={[
-          { id: "sharp", label: "Sharp" },
-          { id: "soft", label: "Soft" },
-          { id: "round", label: "Round" },
-          { id: "pill", label: "Pill" },
-        ]}
-        onChange={(radius) => update({ radius })}
-      />
-      <div className="grid gap-0.5 pt-2 [&_input]:size-8 [&_input]:cursor-pointer [&_input]:rounded-lg [&_input]:bg-transparent [&_input]:p-0.5 [&_label]:flex [&_label]:min-h-10 [&_label]:items-center [&_label]:justify-between [&_label]:text-caption">
+      <div className="grid gap-1.5">
+        <span className="text-sm font-medium">Corners</span>
+        <div className="grid grid-cols-4 gap-1 rounded-lg bg-product-bg-inset p-1">
+          {[
+            { id: "sharp", label: "Sharp", shape: "rounded-none" },
+            { id: "soft", label: "Soft", shape: "rounded-md" },
+            { id: "round", label: "Round", shape: "rounded-xl" },
+            { id: "pill", label: "Pill", shape: "rounded-full" },
+          ].map((option) => (
+            <button
+              key={option.id}
+              type="button"
+              aria-pressed={brand.radius === option.id}
+              className="flex min-h-17 cursor-pointer flex-col items-center justify-center gap-1.5 rounded-md border-0 bg-transparent px-1 py-2 text-micro text-product-text-secondary aria-pressed:bg-product-bg-surface aria-pressed:text-product-text-primary aria-pressed:shadow-pressed"
+              onClick={() => update({ radius: option.id })}
+            >
+              <span
+                className={cn("block size-5 border border-product-text-secondary", option.shape)}
+              />
+              {option.label}
+            </button>
+          ))}
+        </div>
+      </div>
+      <div className="grid gap-0.5 pt-2 [&_label]:flex [&_label]:min-h-10 [&_label]:items-center [&_label]:justify-between [&_label]:text-caption">
         {[
           ["pageBackground", "Page"],
           ["surfaceColor", "Surface"],
@@ -1484,10 +1517,10 @@ function DesignPanel({ brand, update }) {
         ].map(([key, label]) => (
           <label key={key}>
             <span>{label}</span>
-            <input
-              type="color"
+            <ColorPicker
+              aria-label={`${label} color`}
               value={brand[key]}
-              onChange={(event) => update({ [key]: event.target.value })}
+              onChange={(value) => update({ [key]: value })}
             />
           </label>
         ))}

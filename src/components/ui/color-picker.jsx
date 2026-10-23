@@ -14,6 +14,7 @@ const ColorPicker = (
 ) => {
   const ref = useForwardedRef(forwardedRef);
   const [open, setOpen] = useState(false);
+  const [draft, setDraft] = useState(null);
 
   const parsedValue = useMemo(() => {
     return value || "#FFFFFF";
@@ -42,15 +43,19 @@ const ColorPicker = (
           </Button>
         }
       />
-      <PopoverContent className="w-full">
+      <PopoverContent className="w-60">
         <HexColorPicker color={parsedValue} onChange={onChange} />
         <Input
+          aria-label="Hex color"
           maxLength={7}
-          onChange={(e) => {
-            onChange(e?.currentTarget?.value);
+          onBlur={() => setDraft(null)}
+          onChange={(event) => {
+            const next = event.currentTarget.value;
+            setDraft(next);
+            if (/^#[0-9a-f]{6}$/i.test(next)) onChange(next);
           }}
           ref={ref}
-          value={parsedValue}
+          value={draft ?? parsedValue}
         />
       </PopoverContent>
     </Popover>
