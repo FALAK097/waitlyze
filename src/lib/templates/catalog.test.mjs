@@ -27,6 +27,15 @@ test("rejects excessive blocks and edits that remove the last visible signup for
   assert.equal(templateSnapshotSchema.safeParse(snapshot).success, false);
 });
 
+test("starter status pages offer all share channels", () => {
+  const { statusPage } = snapshotTemplate("simple");
+  assert.deepEqual(statusPage.shareChannels, ["x", "instagram", "linkedin", "whatsapp", "email"]);
+  assert.ok(
+    templateSnapshotSchema.safeParse(snapshotTemplate("event")).success,
+    "templates with all channels still validate",
+  );
+});
+
 test("accepts persisted Google Font family names", () => {
   const snapshot = snapshotTemplate("simple");
   snapshot.brand.headingFont = "DM Sans";

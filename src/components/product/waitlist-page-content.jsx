@@ -1,5 +1,6 @@
 import Image from "next/image";
 
+import { ShareButtons } from "@/components/product/share-buttons";
 import { fontFamilyValue, googleFontsStylesheet } from "@/lib/google-fonts.mjs";
 import { SITE_URL } from "@/lib/site-metadata";
 import { cn } from "@/lib/utils";
@@ -713,7 +714,7 @@ export function WaitlistSignupPreview({ form, brand }) {
   );
 }
 
-export function StatusPagePreview({ snapshot, state = "confirmed" }) {
+export function StatusPagePreview({ snapshot, state = "confirmed", showReferrals = true }) {
   const status = snapshot.statusPage;
   const pending = state === "pending";
   const returning = state === "returning";
@@ -763,15 +764,26 @@ export function StatusPagePreview({ snapshot, state = "confirmed" }) {
           <strong className="text-xl">#128</strong>
         </div>
       )}
-      {returning && status.showReferralCount && (
+      {returning && showReferrals && status.showReferralCount && (
         <div className="mt-4 flex w-full max-w-md justify-between border-y border-wl-text/15 py-4">
           <span>Friends joined</span>
           <strong className="text-xl">3</strong>
         </div>
       )}
-      {status.showReferralLink && !pending && (
-        <div className="mt-3 w-full max-w-md overflow-hidden rounded-wl bg-wl-surface px-3 py-3 text-caption text-ellipsis whitespace-nowrap text-wl-muted">
-          waitlyze.falakgala.dev/w/your-launch?r=friend
+      {showReferrals && status.showReferralLink && !pending && (
+        <div className="mt-8 grid w-full max-w-md gap-2.5">
+          <p className="m-0 text-sm text-wl-muted">{status.shareMessage}</p>
+          <div className="overflow-hidden rounded-wl bg-wl-surface px-3 py-3 text-caption text-ellipsis whitespace-nowrap text-wl-muted">
+            {`${SITE_URL.replace(/^https?:\/\//, "")}/w/your-launch?r=friend`}
+          </div>
+          {status.shareChannels.length > 0 && (
+            <ShareButtons
+              channels={status.shareChannels}
+              message={`${status.shareMessage} ${SITE_URL}/w/your-launch?r=friend`}
+              link={`${SITE_URL}/w/your-launch?r=friend`}
+              subject={status.heading}
+            />
+          )}
         </div>
       )}
     </div>

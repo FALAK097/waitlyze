@@ -167,7 +167,7 @@ const statusPageSchema = z.strictObject({
   showReferralLink: z.boolean(),
   showReferralCount: z.boolean(),
   shareMessage: text(280),
-  shareChannels: z.array(z.enum(["x", "linkedin", "whatsapp", "email"])).max(4),
+  shareChannels: z.array(z.enum(["x", "instagram", "linkedin", "whatsapp", "email"])).max(5),
 });
 const seoSchema = z.strictObject({
   title: text(70),
@@ -261,7 +261,7 @@ const defaultStatusPage = {
   showReferralLink: true,
   showReferralCount: false,
   shareMessage: "I joined the waitlist. Come with me:",
-  shareChannels: ["x", "linkedin", "whatsapp", "email"],
+  shareChannels: ["x", "instagram", "linkedin", "whatsapp", "email"],
 };
 const defaultSeo = { title: "", description: "", image: "", indexable: false };
 export const templateSnapshotSchema = v2SnapshotSchema;

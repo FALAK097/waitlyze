@@ -4,6 +4,7 @@ import { useSearchParams } from "next/navigation";
 import { Suspense, useId, useState } from "react";
 import { toast } from "sonner";
 
+import { ShareButtons } from "@/components/product/share-buttons";
 import { cn } from "@/lib/utils";
 import { collectAttribution } from "@/utils/attribution";
 
@@ -107,15 +108,6 @@ function SignupFormInner({ slug, waitListId, showReferrals, formConfig, statusPa
     }
   }
 
-  function shareHref(channel) {
-    const message = `${statusPage.shareMessage} ${result.referralLink}`;
-    if (channel === "x") return `https://x.com/intent/post?text=${encodeURIComponent(message)}`;
-    if (channel === "linkedin")
-      return `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(result.referralLink)}`;
-    if (channel === "whatsapp") return `https://wa.me/?text=${encodeURIComponent(message)}`;
-    return `mailto:?subject=${encodeURIComponent(statusPage.heading)}&body=${encodeURIComponent(message)}`;
-  }
-
   function trackShare() {
     fetch("/api/v1/shares", {
       method: "POST",
@@ -166,20 +158,13 @@ function SignupFormInner({ slug, waitListId, showReferrals, formConfig, statusPa
               </button>
             </div>
             {statusPage.shareChannels.length > 0 && (
-              <div className="flex flex-wrap gap-2">
-                {statusPage.shareChannels.map((channel) => (
-                  <a
-                    className={action}
-                    href={shareHref(channel)}
-                    key={channel}
-                    target={channel === "email" ? undefined : "_blank"}
-                    rel={channel === "email" ? undefined : "noreferrer"}
-                    onClick={trackShare}
-                  >
-                    {channel === "x" ? "X" : channel[0].toUpperCase() + channel.slice(1)}
-                  </a>
-                ))}
-              </div>
+              <ShareButtons
+                channels={statusPage.shareChannels}
+                message={`${statusPage.shareMessage} ${result.referralLink}`}
+                link={result.referralLink}
+                subject={statusPage.heading}
+                onShare={trackShare}
+              />
             )}
           </div>
         ) : null}

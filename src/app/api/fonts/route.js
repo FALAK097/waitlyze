@@ -18,14 +18,13 @@ export async function GET() {
       `${GOOGLE_FONTS_URL}?key=${encodeURIComponent(env.GOOGLE_FONTS_API_KEY)}&sort=popularity`,
       { next: { revalidate: 86_400 } },
     );
-    if (!response.ok)
-      return NextResponse.json({ error: "Google Fonts could not be loaded." }, { status: 502 });
+    if (!response.ok) throw new Error(`Google Fonts responded ${response.status}`);
     const data = await response.json();
     const fonts = Array.isArray(data.items)
       ? data.items.map(({ family, category }) => ({ family, category }))
       : [];
     return NextResponse.json({ fonts });
   } catch {
-    return NextResponse.json({ error: "Google Fonts could not be loaded." }, { status: 502 });
+    return NextResponse.json({ fonts: FALLBACK_FONTS, fallback: true });
   }
 }

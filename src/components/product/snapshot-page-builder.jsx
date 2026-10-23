@@ -85,6 +85,7 @@ import { cn } from "@/lib/utils";
 
 import { ImageUploadField } from "./image-upload-field";
 import { PublishAndShare } from "./publish-and-share";
+import { ShareChannelIcon } from "./share-buttons";
 import {
   StatusPagePreview,
   WaitlistPageContent,
@@ -1294,12 +1295,12 @@ export function SnapshotPageBuilder({
                   </Button>
                 </div>
                 <Dialog open={addOpen} onOpenChange={setAddOpen}>
-                  <DialogContent className="max-h-screen sm:max-w-3xl">
+                  <DialogContent className="flex max-h-screen flex-col sm:max-w-3xl">
                     <DialogTitle>Add a block</DialogTitle>
                     <DialogDescription>
                       New blocks are inserted after your current selection.
                     </DialogDescription>
-                    <div className="no-scrollbar grid gap-5 overflow-y-auto">
+                    <div className="no-scrollbar grid min-h-0 flex-1 gap-5 overflow-y-auto">
                       {Object.entries(blockGroups).map(([category, blocks]) => (
                         <div className="grid gap-1.5" key={category}>
                           <p className="text-micro font-bold tracking-widest text-product-text-secondary uppercase">
@@ -1526,7 +1527,11 @@ export function SnapshotPageBuilder({
                   </button>
                 ))}
             </div>
-            <StatusPagePreview snapshot={snapshot} state={statusState} />
+            <StatusPagePreview
+              snapshot={snapshot}
+              state={statusState}
+              showReferrals={waitList.showReferrals}
+            />
           </div>
         </SurfaceLayout>
       )}
@@ -1936,10 +1941,15 @@ function StatusPanel({ status, update, showReferrals = true, waitListId }) {
         >
           Share buttons
         </span>
-        {["x", "linkedin", "whatsapp", "email"].map((channel) => (
+        {["x", "instagram", "linkedin", "whatsapp", "email"].map((channel) => (
           <Toggle
             key={channel}
-            label={channel === "x" ? "X" : channel[0].toUpperCase() + channel.slice(1)}
+            label={
+              <span className="inline-flex items-center gap-2">
+                <ShareChannelIcon channel={channel} />
+                {channel === "x" ? "X" : channel[0].toUpperCase() + channel.slice(1)}
+              </span>
+            }
             checked={status.shareChannels.includes(channel)}
             disabled={!showReferrals}
             onChange={(enabled) =>
