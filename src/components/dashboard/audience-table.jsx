@@ -2,6 +2,7 @@
 
 import {
   CopyIcon,
+  CircleQuestionMarkIcon,
   Download01Icon,
   Mail01Icon,
   Search01Icon,
@@ -28,6 +29,13 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Sheet,
   SheetContent,
   SheetDescription,
@@ -42,6 +50,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { EXPORT_COLUMNS, IMPORT_TEMPLATE_CSV } from "@/lib/audience-query.mjs";
 import { formatProductDate } from "@/lib/product-date.mjs";
 
@@ -115,6 +124,21 @@ function deviceLabel(deviceType, agent) {
   return [kind, browser, os].filter(Boolean).join(" · ") || "Not available";
 }
 
+function SortHeaderButton({ label, active, direction, onToggle, actionLabel }) {
+  return (
+    <Button
+      type="button"
+      variant="ghost"
+      size="sm"
+      className="-ml-2 gap-1 px-2 font-medium text-product-text-secondary"
+      onClick={onToggle}
+      aria-label={active ? actionLabel : `Sort by ${label}`}
+    >
+      {label} <span aria-hidden="true">{active ? (direction === "asc" ? "↑" : "↓") : ""}</span>
+    </Button>
+  );
+}
+
 export function AudienceTable({
   waitlist,
   initialReviews = [],
@@ -129,6 +153,9 @@ export function AudienceTable({
   const [selectedIds, setSelectedIds] = useState([]);
   const [retrying, setRetrying] = useState(false);
   const [sort, setSort] = useState("joined_desc");
+  const [selectAll, setSelectAll] = useState(false);
+  const [selectTruncated, setSelectTruncated] = useState(false);
+  const [selecting, setSelecting] = useState(false);
   const [cursors, setCursors] = useState([null]);
   const [pageIndex, setPageIndex] = useState(0);
   const [result, setResult] = useState({ data: [], total: 0, nextCursor: null, flags: null });
@@ -156,22 +183,48 @@ export function AudienceTable({
       setCursors([null]);
       setPageIndex(0);
       setSelectedIds([]);
+      setSelectAll(false);
+      setSelectTruncated(false);
     }, 250);
     return () => clearTimeout(timeout);
   }, [query]);
 
-  function changeStatus(nextStatus) {
-    setStatus(nextStatus);
+  function resetList() {
     setCursors([null]);
     setPageIndex(0);
     setSelectedIds([]);
+    setSelectAll(false);
+    setSelectTruncated(false);
   }
+
+  function changeFilter(value) {
+    if (value === "failed") {
+      setStatus("all");
+      setDeliveryFilter("failed");
+    } else {
+      setStatus(value);
+      setDeliveryFilter("all");
+    }
+    resetList();
+  }
+
+  const isJoinedSort = sort === "joined_asc" || sort === "joined_desc";
 
   function toggleSort() {
     setSort((current) => (current === "joined_asc" ? "joined_desc" : "joined_asc"));
-    setCursors([null]);
-    setPageIndex(0);
-    setSelectedIds([]);
+    resetList();
+  }
+
+  function toggleColumnSort(column) {
+    setSort((current) => {
+      const [field, dir] = current.split("_");
+      if (field === column) return `${column}_${dir === "asc" ? "desc" : "asc"}`;
+      if (column === "email") return "email_asc";
+      if (column === "points") return "points_desc";
+      if (column === "status") return "status_desc";
+      return "position_asc";
+    });
+    resetList();
   }
 
   const load = useCallback(
@@ -180,7 +233,8 @@ export function AudienceTable({
       setError("");
       const params = new URLSearchParams({ status, sort, delivery: deliveryFilter });
       if (search) params.set("q", search);
-      if (cursors[pageIndex]) params.set("cursor", cursors[pageIndex]);
+      params.set("page", String(pageIndex));
+      if (isJoinedSort && cursors[pageIndex]) params.set("cursor", cursors[pageIndex]);
       try {
         const response = await fetch(
           `/api/wait-lists/${encodeURIComponent(waitlist.id)}/subscribers?${params}`,
@@ -200,7 +254,17 @@ export function AudienceTable({
         if (!signal.aborted) setLoading(false);
       }
     },
-    [cursors, deliveryFilter, pageIndex, retryCount, search, sort, status, waitlist.id],
+    [
+      cursors,
+      deliveryFilter,
+      isJoinedSort,
+      pageIndex,
+      retryCount,
+      search,
+      sort,
+      status,
+      waitlist.id,
+    ],
   );
 
   useEffect(() => {
@@ -255,6 +319,10 @@ export function AudienceTable({
           parts.push(`${outcome.duplicates.toLocaleString()} already on the list`);
         if (outcome.invalid > 0)
           parts.push(`${outcome.invalid.toLocaleString()} failed validation`);
+        if (outcome.referralsLinked > 0)
+          parts.push(
+            `${outcome.referralsLinked.toLocaleString()} referral${outcome.referralsLinked === 1 ? "" : "s"} linked`,
+          );
         toast.success(`${parts.join(", ")}.`);
         setRetryCount((count) => count + 1);
       } else toast.error(outcome.message);
@@ -285,6 +353,28 @@ export function AudienceTable({
       toast.error(error.message || "Could not retry confirmation emails.");
     } finally {
       setRetrying(false);
+    }
+  }
+
+  async function selectAllMatching() {
+    setSelecting(true);
+    try {
+      const params = new URLSearchParams({ status, sort, delivery: deliveryFilter });
+      if (search) params.set("q", search);
+      params.set("select", "ids");
+      const response = await fetch(
+        `/api/wait-lists/${encodeURIComponent(waitlist.id)}/subscribers?${params}`,
+        { cache: "no-store" },
+      );
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error || "Unable to select signups.");
+      setSelectedIds(payload.ids);
+      setSelectAll(true);
+      setSelectTruncated(Boolean(payload.truncated));
+    } catch {
+      toast.error("Could not select every signup. Try again.");
+    } finally {
+      setSelecting(false);
     }
   }
 
@@ -332,7 +422,11 @@ export function AudienceTable({
   const isUpdating = loading || (criteriaChanging && !error);
   const loadedFilters = loadedCriteria?.split("\u0000") || [];
   const appliedCriteriaLabel = loadedCriteria
-    ? `${loadedFilters[1] ? `“${loadedFilters[1]}” · ` : ""}${statuses.find((item) => item.value === loadedFilters[0])?.label || "All signups"}`
+    ? `${loadedFilters[1] ? `“${loadedFilters[1]}” · ` : ""}${
+        loadedFilters[3] === "failed"
+          ? "Email failed"
+          : statuses.find((item) => item.value === loadedFilters[0])?.label || "All signups"
+      }`
     : "the initial signup list";
   const emptyTitle =
     deliveryFilter === "failed"
@@ -360,9 +454,11 @@ export function AudienceTable({
             checked={
               result.data.length > 0 && result.data.every((row) => selectedIds.includes(row.id))
             }
-            onCheckedChange={(checked) =>
-              setSelectedIds(checked ? result.data.map((row) => row.id) : [])
-            }
+            onCheckedChange={(checked) => {
+              setSelectedIds(checked ? result.data.map((row) => row.id) : []);
+              setSelectAll(false);
+              setSelectTruncated(false);
+            }}
           />
         ),
         meta: { className: "w-10 px-3" },
@@ -371,18 +467,28 @@ export function AudienceTable({
             aria-label={`Select ${row.original.email}`}
             checked={selectedIds.includes(row.original.id)}
             onClick={(event) => event.stopPropagation()}
-            onCheckedChange={(checked) =>
+            onCheckedChange={(checked) => {
               setSelectedIds((items) =>
                 checked
                   ? [...items, row.original.id]
                   : items.filter((id) => id !== row.original.id),
-              )
-            }
+              );
+              setSelectAll(false);
+              setSelectTruncated(false);
+            }}
           />
         ),
       }),
       columnHelper.accessor("email", {
-        header: "Email",
+        header: () => (
+          <SortHeaderButton
+            label="Email"
+            active={sort === "email_asc" || sort === "email_desc"}
+            direction={sort === "email_desc" ? "desc" : "asc"}
+            actionLabel={sort === "email_asc" ? "Sort emails Z to A" : "Sort emails A to Z"}
+            onToggle={() => toggleColumnSort("email")}
+          />
+        ),
         meta: { className: "w-21/50 px-4 py-3 sm:w-auto" },
         cell: ({ row }) => (
           <span className="group inline-flex max-w-full items-center gap-1">
@@ -428,7 +534,19 @@ export function AudienceTable({
       ...(flags.showReferrals
         ? [
             columnHelper.accessor("position", {
-              header: "Position",
+              header: () => (
+                <SortHeaderButton
+                  label="Position"
+                  active={sort === "position_asc" || sort === "position_desc"}
+                  direction={sort === "position_desc" ? "desc" : "asc"}
+                  actionLabel={
+                    sort === "position_asc"
+                      ? "Sort by lowest position first"
+                      : "Sort by leaderboard first"
+                  }
+                  onToggle={() => toggleColumnSort("position")}
+                />
+              ),
               meta: { className: "hidden px-4 py-3 sm:table-cell" },
               cell: ({ getValue }) => (
                 <span className="text-product-text-secondary">
@@ -439,7 +557,39 @@ export function AudienceTable({
           ]
         : []),
       columnHelper.accessor("points", {
-        header: "Points",
+        header: () => (
+          <span className="inline-flex items-center gap-1">
+            <SortHeaderButton
+              label="Points"
+              active={sort === "points_desc" || sort === "points_asc"}
+              direction={sort === "points_asc" ? "asc" : "desc"}
+              actionLabel={
+                sort === "points_desc" ? "Sort by fewest points first" : "Sort by most points first"
+              }
+              onToggle={() => toggleColumnSort("points")}
+            />
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger
+                  render={
+                    <button
+                      type="button"
+                      className="flex size-6 cursor-help items-center justify-center rounded-full border-0 bg-transparent p-0 text-product-text-secondary"
+                      aria-label="How points work"
+                    />
+                  }
+                >
+                  <HugeiconsIcon icon={CircleQuestionMarkIcon} size={14} aria-hidden="true" />
+                </TooltipTrigger>
+                <TooltipContent side="bottom" className="max-w-64">
+                  Verifying an email earns 50 points. When someone they referred verifies, the
+                  referrer earns 30 points. Referrals only count while marked clear or approved, and
+                  signups from one IP over the velocity limit earn nothing.
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </span>
+        ),
         meta: { className: "hidden px-4 py-3 text-right tabular-nums sm:table-cell" },
         cell: ({ getValue }) => (
           <span className="text-product-text-secondary tabular-nums">
@@ -470,7 +620,17 @@ export function AudienceTable({
       ...(flags.sendEmailsToSubscribers
         ? [
             columnHelper.accessor("verifiedAt", {
-              header: "Status",
+              header: () => (
+                <SortHeaderButton
+                  label="Status"
+                  active={sort === "status_desc" || sort === "status_asc"}
+                  direction={sort === "status_asc" ? "asc" : "desc"}
+                  actionLabel={
+                    sort === "status_desc" ? "Show needs confirmation first" : "Show verified first"
+                  }
+                  onToggle={() => toggleColumnSort("status")}
+                />
+              ),
               meta: { className: "w-29/50 px-4 py-3 text-right sm:w-auto sm:text-left" },
               cell: ({ getValue }) => {
                 const verified = Boolean(getValue());
@@ -605,34 +765,20 @@ export function AudienceTable({
                   maxLength={120}
                 />
               </Label>
-              <div
-                className="flex flex-wrap gap-1 max-[640px]:w-full [&_button[aria-pressed=true]]:bg-product-bg-inset"
-                role="group"
-                aria-label="Filter signups by status"
+              <Select
+                value={deliveryFilter === "failed" ? "failed" : status}
+                onValueChange={changeFilter}
               >
-                {statuses.map((item) => (
-                  <Button
-                    key={item.value}
-                    variant="ghost"
-                    aria-pressed={status === item.value}
-                    onClick={() => changeStatus(item.value)}
-                  >
-                    {item.label}
-                  </Button>
-                ))}
-              </div>
-              <Button
-                variant="ghost"
-                aria-pressed={deliveryFilter === "failed"}
-                onClick={() => {
-                  setDeliveryFilter((value) => (value === "failed" ? "all" : "failed"));
-                  setCursors([null]);
-                  setPageIndex(0);
-                  setSelectedIds([]);
-                }}
-              >
-                Email failed
-              </Button>
+                <SelectTrigger className="w-52 max-[640px]:w-full" aria-label="Filter signups">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All signups</SelectItem>
+                  <SelectItem value="verified">Verified</SelectItem>
+                  <SelectItem value="pending">Needs confirmation</SelectItem>
+                  <SelectItem value="failed">Email failed</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             {selectedIds.length > 0 && (
               <div
@@ -640,12 +786,18 @@ export function AudienceTable({
                 role="group"
                 aria-label="Selected signups"
               >
-                <span>{selectedIds.length} selected on this page</span>
+                <span>
+                  {selectAll
+                    ? `All ${selectedIds.length.toLocaleString()} signups selected`
+                    : `${selectedIds.length} selected on this page`}
+                  {selectTruncated ? " (first 2,000)" : ""}
+                </span>
                 <Button
                   variant="outline"
                   disabled={
                     !canManage ||
                     retrying ||
+                    selectAll ||
                     selectedIds.length > 25 ||
                     !result.data.some(
                       (row) => selectedIds.includes(row.id) && retryableVerification(row),
@@ -661,11 +813,40 @@ export function AudienceTable({
                 >
                   {retrying ? "Retrying…" : "Retry failed confirmations"}
                 </Button>
-                <Button variant="ghost" onClick={() => setSelectedIds([])}>
+                {(selectAll || selectedIds.length > 25) && (
+                  <span className="text-product-text-secondary">
+                    Select up to 25 at a time to retry.
+                  </span>
+                )}
+                <Button
+                  variant="ghost"
+                  onClick={() => {
+                    setSelectedIds([]);
+                    setSelectAll(false);
+                    setSelectTruncated(false);
+                  }}
+                >
                   Clear selection
                 </Button>
               </div>
             )}
+            {!selectAll &&
+              selectedIds.length > 0 &&
+              selectedIds.length === result.data.length &&
+              result.total > result.data.length && (
+                <div className="flex flex-wrap items-center gap-3 px-4 pb-1 text-sm text-product-text-secondary">
+                  <span>All {result.data.length} on this page selected.</span>
+                  <Button
+                    variant="ghost"
+                    disabled={selecting || !canManage}
+                    onClick={selectAllMatching}
+                  >
+                    {selecting
+                      ? "Selecting…"
+                      : `Select all ${result.total.toLocaleString()} signups`}
+                  </Button>
+                </div>
+              )}
 
             {error && (
               <div
@@ -736,6 +917,7 @@ export function AudienceTable({
                             onClick={() => {
                               setQuery("");
                               setStatus("all");
+                              setDeliveryFilter("all");
                             }}
                           >
                             Clear filters
@@ -788,6 +970,8 @@ export function AudienceTable({
                   disabled={pageIndex === 0 || isUpdating}
                   onClick={() => {
                     setSelectedIds([]);
+                    setSelectAll(false);
+                    setSelectTruncated(false);
                     setPageIndex((current) => Math.max(0, current - 1));
                   }}
                 >
@@ -795,13 +979,17 @@ export function AudienceTable({
                 </Button>
                 <Button
                   variant="outline"
-                  disabled={!result.nextCursor || isUpdating}
+                  disabled={!(isJoinedSort ? result.nextCursor : result.hasMore) || isUpdating}
                   onClick={() => {
                     setSelectedIds([]);
-                    setCursors((current) => [
-                      ...current.slice(0, pageIndex + 1),
-                      result.nextCursor,
-                    ]);
+                    setSelectAll(false);
+                    setSelectTruncated(false);
+                    if (isJoinedSort) {
+                      setCursors((current) => [
+                        ...current.slice(0, pageIndex + 1),
+                        result.nextCursor,
+                      ]);
+                    }
                     setPageIndex((current) => current + 1);
                   }}
                 >

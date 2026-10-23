@@ -3,11 +3,15 @@ import { NextResponse } from "next/server";
 import { Prisma } from "@/generated/prisma/client";
 import {
   AUDIENCE_PAGE_SIZE,
+  audienceOrderBy,
   audienceWhere,
   buildExportRow,
   exportHeaderRow,
+  isJoinedSort,
+  isPositionSort,
   parseAudienceFilters,
   parseExportColumns,
+  sortAudienceRows,
 } from "@/lib/audience-query.mjs";
 import { auth } from "@/lib/auth";
 import {
@@ -122,10 +126,12 @@ function failedVerificationAfter(filters, cursor) {
   return Prisma.sql`AND ("signup"."createdAt" < ${cursor.createdAt} OR ("signup"."createdAt" = ${cursor.createdAt} AND "signup"."id" < ${cursor.id}))`;
 }
 
-async function failedVerificationPage(waitListId, filters, cursor, take) {
+async function failedVerificationPage(waitListId, filters, cursor, take, offset = null) {
   const where = failedVerificationWhere(waitListId, filters);
-  const after = failedVerificationAfter(filters, cursor);
-  return prisma.$queryRaw(Prisma.sql`
+  const after = offset == null ? failedVerificationAfter(filters, cursor) : Prisma.empty;
+  const paging =
+    offset == null ? Prisma.sql`LIMIT ${take}` : Prisma.sql`LIMIT ${take} OFFSET ${offset}`;
+  return prisma.$queryRaw`
     SELECT "signup"."id", "signup"."email", "signup"."createdAt", "signup"."verifiedAt",
       "signup"."country", "signup"."city", "signup"."device", "signup"."deviceType",
       "signup"."referralCode", "signup"."utmSource", "signup"."points"
@@ -134,9 +140,16 @@ async function failedVerificationPage(waitListId, filters, cursor, take) {
     ORDER BY
       CASE WHEN ${filters.sort} = 'joined_asc' THEN "signup"."createdAt" END ASC,
       CASE WHEN ${filters.sort} = 'joined_desc' THEN "signup"."createdAt" END DESC,
+      CASE WHEN ${filters.sort} = 'email_asc' THEN "signup"."email" END ASC,
+      CASE WHEN ${filters.sort} = 'email_desc' THEN "signup"."email" END DESC,
+      CASE WHEN ${filters.sort} = 'points_desc' THEN "signup"."points" END DESC,
+      CASE WHEN ${filters.sort} = 'points_asc' THEN "signup"."points" END ASC,
+      CASE WHEN ${filters.sort} = 'status_desc' THEN "signup"."verifiedAt" END DESC NULLS LAST,
+      CASE WHEN ${filters.sort} = 'status_asc' THEN "signup"."verifiedAt" END ASC NULLS FIRST,
       CASE WHEN ${filters.sort} = 'joined_asc' THEN "signup"."id" END ASC,
-      CASE WHEN ${filters.sort} = 'joined_desc' THEN "signup"."id" END DESC
-    LIMIT ${take}`);
+      CASE WHEN ${filters.sort} = 'joined_desc' THEN "signup"."id" END DESC,
+      CASE WHEN ${filters.sort} NOT IN ('joined_asc', 'joined_desc') THEN "signup"."id" END ASC
+    ${paging}`;
 }
 
 async function failedVerificationCount(waitListId, filters) {
@@ -159,6 +172,47 @@ async function failedVerificationCursor(waitListId, cursorId) {
   return row ?? null;
 }
 
+const ROW_SELECT = {
+  id: true,
+  email: true,
+  createdAt: true,
+  verifiedAt: true,
+  country: true,
+  city: true,
+  device: true,
+  deviceType: true,
+  referralCode: true,
+  utmSource: true,
+  points: true,
+  referredBy: {
+    select: {
+      referredBy: {
+        select: {
+          id: true,
+          email: true,
+          verifiedAt: true,
+          createdAt: true,
+          country: true,
+          city: true,
+          device: true,
+          deviceType: true,
+          referralCode: true,
+          utmSource: true,
+          points: true,
+        },
+      },
+    },
+  },
+};
+
+// "Select all" support: every matching id (capped), honoring the same filters
+// and workspace scope as the list itself.
+const ID_SELECT_LIMIT = 2000;
+// In-memory ranking window for the failed-delivery view, which has no score
+// column to order by. Delivery failures are rare; this bound only guards
+// against pathological volumes.
+const FAILED_SORT_WINDOW = 5000;
+
 export async function GET(request, { params }) {
   const { id } = await params;
   try {
@@ -169,21 +223,37 @@ export async function GET(request, { params }) {
     if (filters.error) return NextResponse.json({ error: filters.error }, { status: 400 });
     const direction = filters.sort === "joined_asc" ? "asc" : "desc";
     const cursor = url.searchParams.get("cursor");
+    const pageIndex = Math.max(0, Number.parseInt(url.searchParams.get("page") || "0", 10) || 0);
+    const failedOnly = filters.delivery === "failed";
+    const cursorMode = isJoinedSort(filters.sort);
+    if (cursor && cursorMode && cursor.length > 128)
+      return NextResponse.json({ error: "Invalid page cursor." }, { status: 400 });
+
+    if (url.searchParams.get("select") === "ids") {
+      const ids = failedOnly
+        ? (await failedVerificationPage(id, filters, null, ID_SELECT_LIMIT)).map((row) => row.id)
+        : (
+            await prisma.signUp.findMany({
+              where: audienceWhere(id, access.scope, filters),
+              select: { id: true },
+              orderBy: [{ id: "asc" }],
+              take: ID_SELECT_LIMIT + 1,
+            })
+          ).map((row) => row.id);
+      return NextResponse.json({
+        ids: ids.slice(0, ID_SELECT_LIMIT),
+        truncated: ids.length > ID_SELECT_LIMIT,
+      });
+    }
+
+    const positions =
+      access.showReferrals && (isPositionSort(filters.sort) || !failedOnly)
+        ? await getCampaignPositions(prisma, id)
+        : new Map();
+
     let rows;
     let total;
-    if (cursor) {
-      if (cursor.length > 128)
-        return NextResponse.json({ error: "Invalid page cursor." }, { status: 400 });
-    }
-    if (filters.delivery === "failed") {
-      const after = cursor ? await failedVerificationCursor(id, cursor) : null;
-      if (cursor && !after)
-        return NextResponse.json({ error: "Invalid page cursor." }, { status: 400 });
-      [rows, total] = await Promise.all([
-        failedVerificationPage(id, filters, after, AUDIENCE_PAGE_SIZE + 1),
-        failedVerificationCount(id, filters),
-      ]);
-    } else {
+    if (cursorMode && !failedOnly) {
       const where = audienceWhere(id, access.scope, filters);
       if (cursor) {
         const cursorExists = await prisma.signUp.findFirst({
@@ -196,48 +266,65 @@ export async function GET(request, { params }) {
       [rows, total] = await Promise.all([
         prisma.signUp.findMany({
           where,
-          select: {
-            id: true,
-            email: true,
-            createdAt: true,
-            verifiedAt: true,
-            country: true,
-            city: true,
-            device: true,
-            deviceType: true,
-            referralCode: true,
-            utmSource: true,
-            points: true,
-            referredBy: {
-              select: {
-                referredBy: {
-                  select: {
-                    id: true,
-                    email: true,
-                    verifiedAt: true,
-                    createdAt: true,
-                    country: true,
-                    city: true,
-                    device: true,
-                    deviceType: true,
-                    referralCode: true,
-                    utmSource: true,
-                    points: true,
-                  },
-                },
-              },
-            },
-          },
+          select: ROW_SELECT,
           orderBy: [{ createdAt: direction }, { id: direction }],
           take: AUDIENCE_PAGE_SIZE + 1,
           ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
         }),
         prisma.signUp.count({ where }),
       ]);
+    } else if (cursorMode) {
+      const after = cursor ? await failedVerificationCursor(id, cursor) : null;
+      if (cursor && !after)
+        return NextResponse.json({ error: "Invalid page cursor." }, { status: 400 });
+      [rows, total] = await Promise.all([
+        failedVerificationPage(id, filters, after, AUDIENCE_PAGE_SIZE + 1),
+        failedVerificationCount(id, filters),
+      ]);
+    } else if (!failedOnly && !isPositionSort(filters.sort)) {
+      const where = audienceWhere(id, access.scope, filters);
+      [rows, total] = await Promise.all([
+        prisma.signUp.findMany({
+          where,
+          select: ROW_SELECT,
+          orderBy: audienceOrderBy(filters.sort),
+          skip: pageIndex * AUDIENCE_PAGE_SIZE,
+          take: AUDIENCE_PAGE_SIZE + 1,
+        }),
+        prisma.signUp.count({ where }),
+      ]);
+    } else if (!failedOnly) {
+      const where = audienceWhere(id, access.scope, filters);
+      const [matches, count] = await Promise.all([
+        prisma.signUp.findMany({
+          where,
+          select: { id: true, createdAt: true },
+          orderBy: [{ id: "asc" }],
+        }),
+        prisma.signUp.count({ where }),
+      ]);
+      total = count;
+      const slice = sortAudienceRows(matches, filters.sort, positions).slice(
+        pageIndex * AUDIENCE_PAGE_SIZE,
+        pageIndex * AUDIENCE_PAGE_SIZE + AUDIENCE_PAGE_SIZE + 1,
+      );
+      const fetched = await prisma.signUp.findMany({
+        where: { id: { in: slice.map((row) => row.id) } },
+        select: ROW_SELECT,
+      });
+      const byId = new Map(fetched.map((row) => [row.id, row]));
+      rows = slice.map((row) => byId.get(row.id)).filter(Boolean);
+    } else {
+      const pool = await failedVerificationPage(id, filters, null, FAILED_SORT_WINDOW);
+      total = await failedVerificationCount(id, filters);
+      rows = sortAudienceRows(pool, filters.sort, positions).slice(
+        pageIndex * AUDIENCE_PAGE_SIZE,
+        pageIndex * AUDIENCE_PAGE_SIZE + AUDIENCE_PAGE_SIZE + 1,
+      );
     }
     const hasMore = rows.length > AUDIENCE_PAGE_SIZE;
     const pageRows = rows.slice(0, AUDIENCE_PAGE_SIZE);
-    const [referralCounts, positions, delivery] = await Promise.all([
+    const [referralCounts, delivery] = await Promise.all([
       access.showReferrals
         ? getEligibleReferralCounts(
             prisma,
@@ -245,7 +332,6 @@ export async function GET(request, { params }) {
             pageRows.map((row) => row.id),
           )
         : new Map(),
-      access.showReferrals ? getCampaignPositions(prisma, id) : new Map(),
       verificationDelivery(
         id,
         pageRows.map((row) => row.id),
@@ -268,6 +354,7 @@ export async function GET(request, { params }) {
       total,
       flags,
       nextCursor: hasMore ? (page.at(-1)?.id ?? null) : null,
+      hasMore,
     });
   } catch (error) {
     console.error("Error fetching audience:", error);
@@ -299,24 +386,25 @@ export async function POST(request, { params }) {
     if (columns.includes("referral_code")) select.referralCode = true;
     if (columns.includes("referred_by"))
       select.referredBy = { select: { referredBy: { select: { email: true } } } };
+    const joinedSort = isJoinedSort(filters.sort);
+    const positionSort = isPositionSort(filters.sort);
     const encoder = new TextEncoder();
     const body = new ReadableStream({
       async start(controller) {
         try {
           controller.enqueue(encoder.encode(`${exportHeaderRow(columns)}\r\n`));
-          const positions = needPosition ? await getCampaignPositions(prisma, id) : new Map();
-          let cursor;
-          let failedCursor;
-          while (true) {
-            const rows = failedOnly
-              ? await failedVerificationPage(id, filters, failedCursor, 500)
-              : await prisma.signUp.findMany({
-                  where,
-                  select,
-                  orderBy: [{ createdAt: direction }, { id: direction }],
-                  take: 500,
-                  ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
-                });
+          const positions =
+            access.showReferrals && (needPosition || positionSort)
+              ? await getCampaignPositions(prisma, id)
+              : new Map();
+          const streamRow = async (row, counts) => {
+            controller.enqueue(
+              encoder.encode(
+                `${buildExportRow(row, columns, { referralCount: counts.get(row.id) ?? 0, position: positions.get(row.id) ?? "" })}\r\n`,
+              ),
+            );
+          };
+          const enrichAndStream = async (rows) => {
             const counts = needReferrals
               ? await getEligibleReferralCounts(
                   prisma,
@@ -324,16 +412,81 @@ export async function POST(request, { params }) {
                   rows.map((row) => row.id),
                 )
               : new Map();
-            for (const row of rows) {
-              controller.enqueue(
-                encoder.encode(
-                  `${buildExportRow(row, columns, { referralCount: counts.get(row.id) ?? 0, position: positions.get(row.id) ?? "" })}\r\n`,
-                ),
-              );
+            for (const row of rows) await streamRow(row, counts);
+          };
+          if (!failedOnly && !positionSort) {
+            const orderBy = joinedSort
+              ? [{ createdAt: direction }, { id: direction }]
+              : audienceOrderBy(filters.sort);
+            let cursor;
+            let skipped = 0;
+            while (true) {
+              const rows = joinedSort
+                ? await prisma.signUp.findMany({
+                    where,
+                    select,
+                    orderBy,
+                    take: 500,
+                    ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+                  })
+                : await prisma.signUp.findMany({
+                    where,
+                    select,
+                    orderBy,
+                    take: 500,
+                    skip: skipped,
+                  });
+              await enrichAndStream(rows);
+              if (rows.length < 500) break;
+              if (joinedSort) cursor = rows.at(-1).id;
+              else skipped += rows.length;
             }
-            if (rows.length < 500) break;
-            if (failedOnly) failedCursor = { id: rows.at(-1).id, createdAt: rows.at(-1).createdAt };
-            else cursor = rows.at(-1).id;
+          } else if (!failedOnly) {
+            // Position ranking has no database ordering: snapshot the ordered ids,
+            // then chunk-fetch rows and stream them in rank order.
+            const matches = await prisma.signUp.findMany({
+              where,
+              select: { id: true, createdAt: true },
+              orderBy: [{ id: "asc" }],
+            });
+            const ordered = sortAudienceRows(matches, filters.sort, positions);
+            for (let index = 0; index < ordered.length; index += 500) {
+              const chunk = ordered.slice(index, index + 500);
+              const rows = await prisma.signUp.findMany({
+                where: { id: { in: chunk.map((row) => row.id) } },
+                select,
+              });
+              const byId = new Map(rows.map((row) => [row.id, row]));
+              await enrichAndStream(chunk.map((ref) => byId.get(ref.id)).filter(Boolean));
+            }
+          } else if (joinedSort) {
+            let failedCursor;
+            while (true) {
+              const rows = await failedVerificationPage(id, filters, failedCursor, 500);
+              await enrichAndStream(rows);
+              if (rows.length < 500) break;
+              failedCursor = { id: rows.at(-1).id, createdAt: rows.at(-1).createdAt };
+            }
+          } else if (!positionSort) {
+            let skipped = 0;
+            while (true) {
+              const rows = await failedVerificationPage(id, filters, null, 500, skipped);
+              await enrichAndStream(rows);
+              if (rows.length < 500) break;
+              skipped += rows.length;
+            }
+          } else {
+            // Failed rows have no score column: collect the bounded failure set,
+            // rank it in memory, then stream.
+            const collected = [];
+            let failedCursor;
+            while (true) {
+              const batch = await failedVerificationPage(id, filters, failedCursor, 2000);
+              collected.push(...batch);
+              if (batch.length < 2000) break;
+              failedCursor = { id: batch.at(-1).id, createdAt: batch.at(-1).createdAt };
+            }
+            await enrichAndStream(sortAudienceRows(collected, filters.sort, positions));
           }
           controller.close();
         } catch (error) {
