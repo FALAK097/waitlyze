@@ -55,10 +55,11 @@ import { EXPORT_COLUMNS, IMPORT_TEMPLATE_CSV } from "@/lib/audience-query.mjs";
 import { formatProductDate } from "@/lib/product-date.mjs";
 
 const PAGE_SIZE = 25;
-const statuses = [
+const FILTER_OPTIONS = [
   { value: "all", label: "All signups" },
   { value: "verified", label: "Verified" },
   { value: "pending", label: "Needs confirmation" },
+  { value: "failed", label: "Email failed" },
 ];
 
 function formatDate(date) {
@@ -134,7 +135,7 @@ function SortHeaderButton({ label, active, direction, onToggle, actionLabel }) {
       onClick={onToggle}
       aria-label={active ? actionLabel : `Sort by ${label}`}
     >
-      {label} <span aria-hidden="true">{active ? (direction === "asc" ? "↑" : "↓") : ""}</span>
+      {label} <span aria-hidden="true">{active ? (direction === "asc" ? "↑" : "↓") : "↕"}</span>
     </Button>
   );
 }
@@ -422,7 +423,8 @@ export function AudienceTable({
     ? `${loadedFilters[1] ? `“${loadedFilters[1]}” · ` : ""}${
         loadedFilters[3] === "failed"
           ? "Email failed"
-          : statuses.find((item) => item.value === loadedFilters[0])?.label || "All signups"
+          : FILTER_OPTIONS.find((option) => option.value === loadedFilters[0])?.label ||
+            "All signups"
       }`
     : "the initial signup list";
   const emptyTitle =
@@ -477,15 +479,7 @@ export function AudienceTable({
         ),
       }),
       columnHelper.accessor("email", {
-        header: () => (
-          <SortHeaderButton
-            label="Email"
-            active={sort === "email_asc" || sort === "email_desc"}
-            direction={sort === "email_desc" ? "desc" : "asc"}
-            actionLabel={sort === "email_asc" ? "Sort emails Z to A" : "Sort emails A to Z"}
-            onToggle={() => toggleColumnSort("email")}
-          />
-        ),
+        header: "Email",
         meta: { className: "w-21/50 px-4 py-3 sm:w-auto" },
         cell: ({ row }) => (
           <span className="group inline-flex max-w-full items-center gap-1">
@@ -643,7 +637,7 @@ export function AudienceTable({
         : []),
       columnHelper.display({
         id: "emailDelivery",
-        header: "Email",
+        header: "Confirmation",
         meta: { className: "px-4 py-3" },
         cell: ({ row }) => {
           const label = deliveryLabel(row.original);
@@ -764,13 +758,16 @@ export function AudienceTable({
               </Label>
               <Select value={filter} onValueChange={changeFilter}>
                 <SelectTrigger className="w-52 max-[640px]:w-full" aria-label="Filter signups">
-                  <SelectValue />
+                  <SelectValue>
+                    {FILTER_OPTIONS.find((option) => option.value === filter)?.label ?? filter}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All signups</SelectItem>
-                  <SelectItem value="verified">Verified</SelectItem>
-                  <SelectItem value="pending">Needs confirmation</SelectItem>
-                  <SelectItem value="failed">Email failed</SelectItem>
+                  {FILTER_OPTIONS.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
