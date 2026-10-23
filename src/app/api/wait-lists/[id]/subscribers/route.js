@@ -208,7 +208,25 @@ export async function GET(request, { params }) {
             referralCode: true,
             utmSource: true,
             points: true,
-            referredBy: { select: { email: true } },
+            referredBy: {
+              select: {
+                referredBy: {
+                  select: {
+                    id: true,
+                    email: true,
+                    verifiedAt: true,
+                    createdAt: true,
+                    country: true,
+                    city: true,
+                    device: true,
+                    deviceType: true,
+                    referralCode: true,
+                    utmSource: true,
+                    points: true,
+                  },
+                },
+              },
+            },
           },
           orderBy: [{ createdAt: direction }, { id: direction }],
           take: AUDIENCE_PAGE_SIZE + 1,
@@ -235,6 +253,7 @@ export async function GET(request, { params }) {
     ]);
     const page = pageRows.map((row) => ({
       ...row,
+      referredBy: row.referredBy?.[0]?.referredBy ?? null,
       verificationDelivery: delivery.get(row.id) ?? null,
       referralCount: referralCounts.get(row.id) ?? 0,
       position: positions.get(row.id) ?? null,
@@ -278,7 +297,8 @@ export async function POST(request, { params }) {
     if (columns.includes("device")) select.device = true;
     if (columns.includes("points")) select.points = true;
     if (columns.includes("referral_code")) select.referralCode = true;
-    if (columns.includes("referred_by")) select.referredBy = { select: { email: true } };
+    if (columns.includes("referred_by"))
+      select.referredBy = { select: { referredBy: { select: { email: true } } } };
     const encoder = new TextEncoder();
     const body = new ReadableStream({
       async start(controller) {

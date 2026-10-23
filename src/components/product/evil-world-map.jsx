@@ -1,5 +1,7 @@
 "use client";
 
+import { Globe02Icon } from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
 import { useMemo, useRef, useState } from "react";
 import { ComposableMap, Geographies, Geography } from "react-simple-maps/core";
 import world from "world-atlas/countries-110m.json";
@@ -95,6 +97,29 @@ export function EvilWorldMap({ countries = [], metric = "visitors" }) {
 
   const hide = () => setActive(null);
 
+  if (!max)
+    return (
+      <div
+        className="grid h-full min-h-60 place-items-center p-6 text-center"
+        data-analytics-map=""
+      >
+        <div className="grid justify-items-center gap-2">
+          <HugeiconsIcon
+            icon={Globe02Icon}
+            size={20}
+            aria-hidden="true"
+            className="text-product-text-muted"
+          />
+          <p className="m-0 text-caption font-semibold text-product-text-primary">
+            No location data yet
+          </p>
+          <p className="m-0 text-micro text-product-text-secondary">
+            Countries light up here as visitors arrive.
+          </p>
+        </div>
+      </div>
+    );
+
   const show = (event) => {
     const target = event.target.closest?.("[data-map-code]");
     if (!target) {
@@ -122,7 +147,7 @@ export function EvilWorldMap({ countries = [], metric = "visitors" }) {
 
   return (
     <div
-      className="relative h-full overflow-visible px-2.5 pt-1 pb-2.5 [&_.rsm-geography]:cursor-pointer [&_.rsm-geography]:outline-none [&_.rsm-geography:focus]:stroke-product-text-primary [&_.rsm-geography:focus]:stroke-1 [&_.rsm-geography:focus]:brightness-90 [&_.rsm-geography:hover]:stroke-product-text-primary [&_.rsm-geography:hover]:stroke-1 [&_.rsm-geography:hover]:brightness-90 [&_svg]:pointer-events-auto [&_svg]:block [&_svg]:h-full [&_svg]:w-full [&_svg]:overflow-visible"
+      className="relative aspect-2/1 w-full overflow-visible px-2.5 pt-1 pb-2.5 [&_.rsm-geography]:cursor-pointer [&_.rsm-geography]:outline-none [&_.rsm-geography:focus]:stroke-product-text-primary [&_.rsm-geography:focus]:stroke-1 [&_.rsm-geography:focus]:brightness-90 [&_.rsm-geography:hover]:stroke-product-text-primary [&_.rsm-geography:hover]:stroke-1 [&_.rsm-geography:hover]:brightness-90 [&_svg]:pointer-events-auto [&_svg]:block [&_svg]:h-full [&_svg]:w-full [&_svg]:overflow-visible"
       data-analytics-map=""
       ref={wrapRef}
       onPointerMove={show}

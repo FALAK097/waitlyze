@@ -91,7 +91,7 @@ export function buildExportRow(subscriber, columns, extra = {}) {
     points: subscriber.points ?? 0,
     referrals: extra.referralCount ?? 0,
     referral_code: subscriber.referralCode ?? "",
-    referred_by: subscriber.referredBy?.email ?? "",
+    referred_by: subscriber.referredBy?.[0]?.referredBy?.email ?? "",
     position: extra.position ?? "",
   };
   return columns.map((key) => csvCell(values[key])).join(",");

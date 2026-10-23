@@ -889,7 +889,7 @@ export function AudienceTable({
                       {flags.showReferrals && (
                         <div className="grid grid-cols-[104px_minmax(0,1fr)] gap-3">
                           <dt className="text-product-text-secondary">Referrals</dt>
-                          <dd className="tabular-nums">{profile.referralCount}</dd>
+                          <dd className="tabular-nums">{profile.referralCount ?? "—"}</dd>
                         </div>
                       )}
                       <div className="grid grid-cols-[104px_minmax(0,1fr)] gap-3">
@@ -903,8 +903,21 @@ export function AudienceTable({
                       {flags.showReferrals && (
                         <div className="grid grid-cols-[104px_minmax(0,1fr)] gap-3">
                           <dt className="text-product-text-secondary">Referred by</dt>
-                          <dd className="truncate" title={profile.referredBy?.email || undefined}>
-                            {profile.referredBy?.email || "—"}
+                          <dd className="min-w-0">
+                            {profile.referredBy?.email ? (
+                              <button
+                                type="button"
+                                title={profile.referredBy.email}
+                                onClick={() =>
+                                  setSheet({ type: "profile", row: profile.referredBy })
+                                }
+                                className="block w-full cursor-pointer truncate border-0 bg-transparent p-0 text-left text-product-text-primary underline underline-offset-4 hover:text-product-text-secondary"
+                              >
+                                {profile.referredBy.email}
+                              </button>
+                            ) : (
+                              "—"
+                            )}
                           </dd>
                         </div>
                       )}
