@@ -148,8 +148,11 @@ export function AudienceTable({
   const [view, setView] = useState("subscribers");
   const [query, setQuery] = useState("");
   const [search, setSearch] = useState("");
-  const [status, setStatus] = useState("all");
-  const [deliveryFilter, setDeliveryFilter] = useState("all");
+  const [filter, setFilter] = useState("all");
+  // Single source of truth for the table filter. status/delivery are derived
+  // together so the dropdown selection can never disagree with the query.
+  const status = filter === "failed" ? "all" : filter;
+  const deliveryFilter = filter === "failed" ? "failed" : "all";
   const [selectedIds, setSelectedIds] = useState([]);
   const [retrying, setRetrying] = useState(false);
   const [sort, setSort] = useState("joined_desc");
@@ -198,13 +201,7 @@ export function AudienceTable({
   }
 
   function changeFilter(value) {
-    if (value === "failed") {
-      setStatus("all");
-      setDeliveryFilter("failed");
-    } else {
-      setStatus(value);
-      setDeliveryFilter("all");
-    }
+    setFilter(value);
     resetList();
   }
 
@@ -765,10 +762,7 @@ export function AudienceTable({
                   maxLength={120}
                 />
               </Label>
-              <Select
-                value={deliveryFilter === "failed" ? "failed" : status}
-                onValueChange={changeFilter}
-              >
+              <Select value={filter} onValueChange={changeFilter}>
                 <SelectTrigger className="w-52 max-[640px]:w-full" aria-label="Filter signups">
                   <SelectValue />
                 </SelectTrigger>
@@ -916,8 +910,7 @@ export function AudienceTable({
                             variant="outline"
                             onClick={() => {
                               setQuery("");
-                              setStatus("all");
-                              setDeliveryFilter("all");
+                              setFilter("all");
                             }}
                           >
                             Clear filters
