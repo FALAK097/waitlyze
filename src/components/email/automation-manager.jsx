@@ -13,6 +13,7 @@ import {
   NumberFieldInput,
 } from "@/components/reui/number-field";
 import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 import { EmailCanvas } from "./email-canvas";
 
@@ -205,25 +206,39 @@ export function AutomationManager({ waitListId, initialRecipes, deliveryReady })
                     <p className={styles.paneMeta}>{timing}</p>
                   </div>
                   <div className={styles.paneActions}>
-                    <span
-                      className={`automation-status automation-status-${recipe.status.toLowerCase()}`}
-                    >
-                      {statusLabel(recipe.status)}
-                    </span>
-                    <Button
-                      type="button"
-                      variant={enabled ? "outline" : "default"}
-                      onClick={() => changeStatus(recipe)}
-                      disabled={busyId === recipe.id || (!enabled && (!deliveryReady || dirty))}
-                    >
-                      {busyId === recipe.id
-                        ? "Saving…"
-                        : enabled
-                          ? "Pause"
-                          : dirty
-                            ? "Save first"
-                            : "Enable"}
-                    </Button>
+                    <TooltipProvider delay={100}>
+                      <Tooltip>
+                        <TooltipTrigger
+                          render={
+                            <Button
+                              type="button"
+                              variant={enabled ? "outline" : "default"}
+                              onClick={() => changeStatus(recipe)}
+                              disabled={
+                                busyId === recipe.id || (!enabled && (!deliveryReady || dirty))
+                              }
+                            >
+                              {busyId === recipe.id
+                                ? "Saving…"
+                                : enabled
+                                  ? "Pause"
+                                  : dirty
+                                    ? "Save first"
+                                    : "Enable"}
+                            </Button>
+                          }
+                        />
+                        <TooltipContent side="bottom">
+                          {enabled
+                            ? "Sends automatically. Pause to stop until you resume it."
+                            : deliveryReady
+                              ? dirty
+                                ? "Save your changes first, then enable."
+                                : "Sends this email automatically to eligible subscribers."
+                              : "Set up email delivery first to enable this email."}
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
                   </div>
                 </header>
 

@@ -1059,11 +1059,24 @@
 }
 .product-domain-record dd {
   margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
   overflow-wrap: anywhere;
   font-size: 0.875rem;
 }
 .product-domain-record code {
   font-size: 0.8125rem;
+}
+.product-domain-record dd .product-domain-copy {
+  margin-inline-start: -2px;
+  flex-shrink: 0;
+  opacity: 0;
+  transition: opacity 120ms ease;
+}
+.product-domain-record div:hover .product-domain-copy,
+.product-domain-record div:focus-within .product-domain-copy {
+  opacity: 1;
 }
 .product-custom-domain :is(button, input):focus-visible {
   outline: 2px solid var(--product-focus);

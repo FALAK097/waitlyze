@@ -1,11 +1,15 @@
 "use client";
 
+import { Copy01Icon } from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 const labels = {
   NEEDS_DNS: "Ownership check pending",
@@ -14,12 +18,44 @@ const labels = {
   NEEDS_ATTENTION: "Needs attention",
 };
 
+function RecordCopyButton({ text, label }) {
+  return (
+    <TooltipProvider delay={100}>
+      <Tooltip>
+        <TooltipTrigger
+          render={
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-xs"
+              className="product-domain-copy"
+              aria-label={`Copy DNS record ${label}`}
+              onClick={async () => {
+                try {
+                  await navigator.clipboard.writeText(text);
+                  toast.success("Copied to clipboard");
+                } catch {
+                  toast.error("Copy is unavailable. Select the text and copy it manually.");
+                }
+              }}
+            >
+              <HugeiconsIcon icon={Copy01Icon} className="h-3.5 w-3.5" aria-hidden="true" />
+            </Button>
+          }
+        />
+        <TooltipContent side="top">Copy {label}</TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
+}
+
 export function CustomDomainSettings({ waitListId, canManage, available }) {
   const [domain, setDomain] = useState(null);
   const [hostname, setHostname] = useState("");
   const [busy, setBusy] = useState(false);
   const [loadState, setLoadState] = useState("loading");
   const [loadError, setLoadError] = useState("");
+  const [removeOpen, setRemoveOpen] = useState(false);
 
   const refresh = useCallback(
     async (signal) => {
@@ -175,20 +211,22 @@ export function CustomDomainSettings({ waitListId, canManage, available }) {
                   type="button"
                   variant="ghost"
                   disabled={!actionsEnabled}
-                  onClick={() => {
-                    if (
-                      window.confirm(
-                        `Remove ${domain.hostname}? This disconnects the domain from your waitlist.`,
-                      )
-                    )
-                      call("DELETE");
-                  }}
+                  onClick={() => setRemoveOpen(true)}
                 >
                   Remove domain
                 </Button>
               </div>
             )}
           </header>
+          <ConfirmDialog
+            open={removeOpen}
+            onOpenChange={setRemoveOpen}
+            title={`Remove ${domain.hostname}?`}
+            description="This disconnects the domain from your waitlist. Subscribers keep using this waitlist's own URL."
+            confirmLabel="Remove domain"
+            pendingLabel="Removing…"
+            onConfirm={() => call("DELETE")}
+          />
           {domain.status !== "ACTIVE" && (
             <>
               <p className="product-help">
@@ -202,18 +240,23 @@ export function CustomDomainSettings({ waitListId, canManage, available }) {
                 >
                   <div>
                     <dt>Type</dt>
-                    <dd>{record.type}</dd>
+                    <dd>
+                      <code>{record.type}</code>
+                      <RecordCopyButton text={record.type} label="type" />
+                    </dd>
                   </div>
                   <div>
                     <dt>Name</dt>
                     <dd>
                       <code>{record.domain || record.name}</code>
+                      <RecordCopyButton text={record.domain || record.name} label="name" />
                     </dd>
                   </div>
                   <div>
                     <dt>Value</dt>
                     <dd>
                       <code>{record.value}</code>
+                      <RecordCopyButton text={record.value} label="value" />
                     </dd>
                   </div>
                 </dl>

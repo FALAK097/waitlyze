@@ -15,6 +15,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import {
   Dialog,
   DialogClose,
@@ -53,6 +54,7 @@ export function WebhookSettings({ waitListId, canManage = true }) {
   const [initialLoad, setInitialLoad] = useState("loading");
   const [loadError, setLoadError] = useState("");
   const [configured, setConfigured] = useState(true);
+  const [rotateTarget, setRotateTarget] = useState(null);
   const controlsDisabled =
     !canManage || !configured || busy || initialLoad !== "ready" || Boolean(loadError);
 
@@ -308,14 +310,7 @@ export function WebhookSettings({ waitListId, canManage = true }) {
                               <DropdownMenuItem
                                 className="cursor-pointer"
                                 disabled={controlsDisabled}
-                                onClick={() => {
-                                  if (
-                                    window.confirm(
-                                      "Rotate this signing secret? Update your receiving endpoint with the new secret immediately.",
-                                    )
-                                  )
-                                    call(`/${row.id}/rotate`);
-                                }}
+                                onClick={() => setRotateTarget(row)}
                               >
                                 <HugeiconsIcon icon={RotateLeft01Icon} aria-hidden="true" />
                                 <span className="flex-1 whitespace-nowrap">Rotate secret</span>
@@ -511,6 +506,21 @@ export function WebhookSettings({ waitListId, canManage = true }) {
             </Button>
           </div>
         </section>
+      )}
+      {rotateTarget && (
+        <ConfirmDialog
+          open={Boolean(rotateTarget)}
+          onOpenChange={(next) => {
+            if (!next) setRotateTarget(null);
+          }}
+          title="Rotate this signing secret?"
+          description="The current secret stops working immediately. Update your receiving endpoint with the new secret right away."
+          confirmLabel="Rotate secret"
+          pendingLabel="Rotating…"
+          onConfirm={async () => {
+            await call(`/${rotateTarget.id}/rotate`);
+          }}
+        />
       )}
     </div>
   );

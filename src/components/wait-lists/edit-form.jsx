@@ -25,6 +25,7 @@ import { Label } from "@/components/ui/label";
 
 import { CopyIcon } from "../shared/icons";
 import { CodeBlock } from "../ui/code-block";
+import { ConfirmDialog } from "../ui/confirm-dialog";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../ui/tooltip";
 import { SettingsTab } from "./settings-tab";
 import { SignUpForm } from "./sign-up-form";
@@ -110,6 +111,7 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
   // Last successfully saved page address. Share links always use this, never
   // the unsaved field value.
   const [savedSlug, setSavedSlug] = useState(initialWaitList.publicSlug || "");
+  const [logoConfirmOpen, setLogoConfirmOpen] = useState(false);
 
   useEffect(() => {
     setOrigin(window.location.origin);
@@ -428,7 +430,6 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
       return;
     }
 
-    if (!window.confirm("Remove this logo? The uploaded image will be deleted.")) return;
     try {
       const response = await removeImage(logoKey, initialWaitList.id);
       if (response.success) {
@@ -573,6 +574,15 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
           </div>
         </header>
 
+        <ConfirmDialog
+          open={logoConfirmOpen}
+          onOpenChange={setLogoConfirmOpen}
+          title="Remove this logo?"
+          description="The uploaded image will be deleted. You can upload a new one afterwards."
+          confirmLabel="Remove logo"
+          pendingLabel="Removing…"
+          onConfirm={handleDeleteLogo}
+        />
         <div className={styles.grid}>
           <section className={styles.previewColumn} aria-labelledby="legacy-preview-heading">
             <div className={styles.previewHeading}>
@@ -596,7 +606,13 @@ export const WaitlistGenerator = ({ initialWaitList, saveWaitList }) => {
                   mainBgColor: formSettings.enableMainBgColor ? formSettings.mainBgColor : null,
                   bgColor: formSettings.enableBgColor ? formSettings.bgColor : null,
                 }}
-                onDeleteLogo={handleDeleteLogo}
+                onDeleteLogo={() => {
+                  if (formSettings.logoKey) {
+                    setLogoConfirmOpen(true);
+                  } else {
+                    toast.error("This logo cannot be removed. Upload a replacement instead.");
+                  }
+                }}
                 onSubmit={(event) => {
                   event.preventDefault();
                   toast("Preview only. No subscriber was created.");

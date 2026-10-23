@@ -268,13 +268,6 @@ export function BroadcastManager({ waitListId, initialBroadcasts, initialPreview
                 ) : null}
               </div>
               <div className={styles.paneActions}>
-                {!editable && (
-                  <span
-                    className={`automation-status automation-status-${selected.status.toLowerCase()}`}
-                  >
-                    {statusLabel(selected.status)}
-                  </span>
-                )}
                 {editable && (
                   <Button type="submit" variant="default" disabled={busy}>
                     {busyAction === "save" ? "Saving…" : "Save draft"}
