@@ -27,6 +27,26 @@ test("rejects excessive blocks and edits that remove the last visible signup for
   assert.equal(templateSnapshotSchema.safeParse(snapshot).success, false);
 });
 
+test("brand type size accepts presets or pixels", () => {
+  const snapshot = snapshotTemplate("simple");
+  assert.equal(snapshot.brand.headingSize, "medium");
+  snapshot.brand.headingSize = 48;
+  snapshot.brand.bodySize = 18;
+  assert.equal(templateSnapshotSchema.safeParse(snapshot).success, true);
+  snapshot.brand.headingSize = "gigantic";
+  assert.equal(templateSnapshotSchema.safeParse(snapshot).success, false);
+});
+
+test("status page supports icon style and card layout", () => {
+  const { statusPage } = snapshotTemplate("blank");
+  assert.equal(statusPage.iconStyle, "filled");
+  assert.equal(statusPage.layout, "centered");
+  const snapshot = snapshotTemplate("blank");
+  snapshot.statusPage.iconStyle = "soft";
+  snapshot.statusPage.layout = "card";
+  assert.equal(templateSnapshotSchema.safeParse(snapshot).success, true);
+});
+
 test("starter status pages offer all share channels", () => {
   const { statusPage } = snapshotTemplate("simple");
   assert.deepEqual(statusPage.shareChannels, ["x", "instagram", "linkedin", "whatsapp", "email"]);
@@ -34,12 +54,6 @@ test("starter status pages offer all share channels", () => {
     templateSnapshotSchema.safeParse(snapshotTemplate("event")).success,
     "templates with all channels still validate",
   );
-});
-
-test("brand type scale defaults to medium", () => {
-  const { brand } = snapshotTemplate("blank");
-  assert.equal(brand.headingSize, "medium");
-  assert.equal(brand.bodySize, "medium");
 });
 
 test("logos accept names, images, or a mix", () => {

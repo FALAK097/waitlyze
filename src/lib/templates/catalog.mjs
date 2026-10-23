@@ -135,6 +135,9 @@ export const sectionSchema = z.discriminatedUnion("type", [
 
 export const RADIUS_IDS = ["sharp", "soft", "round", "pill"];
 const fontFamily = z.string().min(1).max(80);
+const typeSize = z
+  .union([z.enum(["small", "medium", "large"]), z.number().min(12).max(160)])
+  .default("medium");
 export const templateFormSchema = z.strictObject({
   fields: z.tuple([z.literal("email")]),
   label: text(80),
@@ -161,8 +164,8 @@ const brandSchema = z.strictObject({
   radius: z.enum(RADIUS_IDS),
   logo: z.string().max(500).default(""),
   showPoweredBy: z.boolean().default(true),
-  headingSize: z.enum(["small", "medium", "large"]).default("medium"),
-  bodySize: z.enum(["small", "medium", "large"]).default("medium"),
+  headingSize: typeSize,
+  bodySize: typeSize,
 });
 const statusPageSchema = z.strictObject({
   heading: text(120),
@@ -174,6 +177,8 @@ const statusPageSchema = z.strictObject({
   showReferralCount: z.boolean(),
   shareMessage: text(280),
   shareChannels: z.array(z.enum(["x", "instagram", "linkedin", "whatsapp", "email"])).max(5),
+  iconStyle: z.enum(["filled", "soft"]).default("filled"),
+  layout: z.enum(["centered", "card"]).default("centered"),
 });
 const seoSchema = z.strictObject({
   title: text(70),
@@ -268,6 +273,8 @@ const defaultStatusPage = {
   showReferralCount: false,
   shareMessage: "I joined the waitlist. Come with me:",
   shareChannels: ["x", "instagram", "linkedin", "whatsapp", "email"],
+  iconStyle: "filled",
+  layout: "centered",
 };
 const defaultSeo = { title: "", description: "", image: "", indexable: false };
 export const templateSnapshotSchema = v2SnapshotSchema;

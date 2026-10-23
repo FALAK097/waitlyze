@@ -648,6 +648,7 @@ export function SnapshotPageBuilder({
   const [selectedId, setSelectedId] = useState(waitList.templateSnapshot.sections[0]?.id);
   const [previewViewport, setPreviewViewport] = useState("desktop");
   const [statusState, setStatusState] = useState("confirmed");
+  const [statusViewport, setStatusViewport] = useState("desktop");
   const [pendingTemplate, setPendingTemplate] = useState(null);
   const [dirty, setDirty] = useState(false),
     [saving, setSaving] = useState(false),
@@ -1552,41 +1553,72 @@ export function SnapshotPageBuilder({
               update={(value) => updateRoot("statusPage", value)}
             />
           }
-          title="After signup"
-          description="Edit the pending, confirmed and returning-visitor states."
         >
-          <div className="grid gap-4">
-            <div
-              className="flex flex-wrap gap-1 [&_button]:cursor-pointer [&_button]:rounded-lg [&_button]:border-0 [&_button]:bg-transparent [&_button]:px-3 [&_button]:py-2 [&_button]:text-caption [&_button]:font-semibold [&_button]:text-product-text-secondary [&_button[aria-pressed=true]]:bg-product-bg-inset [&_button[aria-pressed=true]]:text-product-text-primary"
-              role="group"
-              aria-label="Preview state"
-            >
-              {[
-                ["confirmed", "Confirmed"],
-                ["pending", "Pending email"],
-                ["returning", "Returning visitor"],
-              ]
-                .filter(
-                  ([id]) =>
-                    (id !== "pending" || snapshot.form.verification) &&
-                    (id !== "returning" || waitList.showReferrals),
-                )
-                .map(([id, label]) => (
-                  <button
-                    key={id}
-                    type="button"
-                    aria-pressed={statusState === id}
-                    onClick={() => setStatusState(id)}
-                  >
-                    {label}
-                  </button>
-                ))}
+          <div className="mx-auto w-full max-w-4xl">
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+              <div
+                className="flex flex-wrap gap-1 [&_button]:cursor-pointer [&_button]:rounded-lg [&_button]:border-0 [&_button]:bg-transparent [&_button]:px-3 [&_button]:py-2 [&_button]:text-caption [&_button]:font-semibold [&_button]:text-product-text-secondary [&_button[aria-pressed=true]]:bg-product-bg-surface [&_button[aria-pressed=true]]:text-product-text-primary"
+                role="group"
+                aria-label="Preview state"
+              >
+                {[
+                  ["confirmed", "Confirmed"],
+                  ["pending", "Pending email"],
+                  ["returning", "Returning visitor"],
+                ]
+                  .filter(
+                    ([id]) =>
+                      (id !== "pending" || snapshot.form.verification) &&
+                      (id !== "returning" || waitList.showReferrals),
+                  )
+                  .map(([id, label]) => (
+                    <button
+                      key={id}
+                      type="button"
+                      aria-pressed={statusState === id}
+                      onClick={() => setStatusState(id)}
+                    >
+                      {label}
+                    </button>
+                  ))}
+              </div>
+              <div
+                className="flex gap-1 [&_button]:flex [&_button]:size-9 [&_button]:cursor-pointer [&_button]:items-center [&_button]:justify-center [&_button]:rounded-lg [&_button]:border-0 [&_button]:bg-transparent [&_button]:text-product-text-secondary [&_button[aria-pressed=true]]:bg-product-bg-surface [&_button[aria-pressed=true]]:text-product-text-primary"
+                role="group"
+                aria-label="Preview viewport"
+              >
+                <button
+                  type="button"
+                  aria-label="Desktop preview"
+                  aria-pressed={statusViewport === "desktop"}
+                  onClick={() => setStatusViewport("desktop")}
+                >
+                  <HugeiconsIcon icon={MonitorIcon} size={17} aria-hidden="true" />
+                </button>
+                <button
+                  type="button"
+                  aria-label="Mobile preview"
+                  aria-pressed={statusViewport === "mobile"}
+                  onClick={() => setStatusViewport("mobile")}
+                >
+                  <HugeiconsIcon icon={SmartphoneIcon} size={17} aria-hidden="true" />
+                </button>
+              </div>
             </div>
-            <StatusPagePreview
-              snapshot={snapshot}
-              state={statusState}
-              showReferrals={waitList.showReferrals}
-            />
+            <div
+              className={cn(
+                "grid overflow-hidden rounded-xl bg-white shadow-surface",
+                statusViewport === "mobile"
+                  ? "mx-auto min-h-160 w-full max-w-md"
+                  : "min-h-140 w-full",
+              )}
+            >
+              <StatusPagePreview
+                snapshot={snapshot}
+                state={statusState}
+                showReferrals={waitList.showReferrals}
+              />
+            </div>
           </div>
         </SurfaceLayout>
       )}
@@ -1707,7 +1739,7 @@ export function SnapshotPageBuilder({
   );
 }
 
-function SurfaceLayout({ sidebar, title, description, children, mobileMode }) {
+function SurfaceLayout({ sidebar, children, mobileMode }) {
   return (
     <div className="flex min-h-studio bg-product-bg-inset max-[680px]:flex-col">
       <aside
@@ -1720,19 +1752,54 @@ function SurfaceLayout({ sidebar, title, description, children, mobileMode }) {
         className="min-w-0 flex-1 p-10 max-[900px]:p-7 max-[680px]:p-3 max-[680px]:data-[mobile-mode=edit]:hidden"
         data-mobile-mode={mobileMode}
       >
-        <div className="mx-auto mb-6 max-w-2xl">
-          <h2 className="text-section">{title}</h2>
-          <p className="mt-1.5 text-caption text-product-text-secondary">{description}</p>
-        </div>
-        <div
-          className={
-            "mx-auto grid min-h-140 w-full max-w-4xl items-center overflow-hidden rounded-xl bg-white shadow-surface"
-          }
-        >
-          {children}
-        </div>
+        {children}
       </main>
     </div>
+  );
+}
+function TypeSizeField({ label, value, onChange, customDefault, min = 12, max = 160 }) {
+  const id = useId();
+  if (typeof value === "number")
+    return (
+      <div className="grid gap-1.5">
+        <div className="flex items-center justify-between gap-2">
+          <Label htmlFor={id}>{label}</Label>
+          <button
+            type="button"
+            className="cursor-pointer border-0 bg-transparent p-0 text-micro font-semibold text-product-text-secondary underline underline-offset-4 hover:text-product-text-primary"
+            onClick={() => onChange("medium")}
+          >
+            Presets
+          </button>
+        </div>
+        <div className="flex items-center gap-2">
+          <Input
+            id={id}
+            type="number"
+            min={min}
+            max={max}
+            value={value}
+            onChange={(event) => {
+              const next = Number(event.target.value);
+              if (Number.isFinite(next)) onChange(Math.min(max, Math.max(min, Math.round(next))));
+            }}
+          />
+          <span className="text-micro text-product-text-secondary">px</span>
+        </div>
+      </div>
+    );
+  return (
+    <SelectField
+      label={label}
+      value={value}
+      options={[
+        { id: "small", label: "Small" },
+        { id: "medium", label: "Medium" },
+        { id: "large", label: "Large" },
+        { id: "custom", label: "Custom px…" },
+      ]}
+      onChange={(next) => onChange(next === "custom" ? customDefault : next)}
+    />
   );
 }
 function DesignPanel({ brand, update }) {
@@ -1765,24 +1832,16 @@ function DesignPanel({ brand, update }) {
         onValueChange={(bodyFont) => update({ bodyFont })}
       />
       <div className="grid gap-4 sm:grid-cols-2">
-        <SelectField
+        <TypeSizeField
           label="Heading size"
           value={brand.headingSize || "medium"}
-          options={[
-            { id: "small", label: "Small" },
-            { id: "medium", label: "Medium" },
-            { id: "large", label: "Large" },
-          ]}
+          customDefault={48}
           onChange={(headingSize) => update({ headingSize })}
         />
-        <SelectField
+        <TypeSizeField
           label="Body size"
           value={brand.bodySize || "medium"}
-          options={[
-            { id: "small", label: "Small" },
-            { id: "medium", label: "Medium" },
-            { id: "large", label: "Large" },
-          ]}
+          customDefault={16}
           onChange={(bodySize) => update({ bodySize })}
         />
       </div>
@@ -1985,6 +2044,26 @@ function StatusPanel({ status, update, showReferrals = true, waitListId }) {
         multiline
         onChange={(pendingBody) => update({ pendingBody })}
       />
+      <div className="grid gap-4 sm:grid-cols-2">
+        <SelectField
+          label="Icon style"
+          value={status.iconStyle || "filled"}
+          options={[
+            { id: "filled", label: "Filled" },
+            { id: "soft", label: "Soft" },
+          ]}
+          onChange={(iconStyle) => update({ iconStyle })}
+        />
+        <SelectField
+          label="Layout"
+          value={status.layout || "centered"}
+          options={[
+            { id: "centered", label: "Centered" },
+            { id: "card", label: "Card" },
+          ]}
+          onChange={(layout) => update({ layout })}
+        />
+      </div>
       <Toggle
         label="Show position"
         checked={status.showPosition}

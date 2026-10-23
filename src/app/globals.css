@@ -42,6 +42,18 @@
   transition: var(--sortable-transition);
 }
 
+.wl-type-h1 {
+  font-size: var(--wl-h1);
+}
+
+.wl-type-h2 {
+  font-size: var(--wl-h2);
+}
+
+.wl-type-body {
+  font-size: var(--wl-body);
+}
+
 @layer base {
   :root {
     --product-neutral-50: hsl(210 5% 98%);

@@ -2,6 +2,7 @@ import { ArrowDown01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import Image from "next/image";
 
+import { CopyButton } from "@/components/product/copy-button";
 import { ShareButtons } from "@/components/product/share-buttons";
 import { fontFamilyValue, googleFontsStylesheet } from "@/lib/google-fonts.mjs";
 import { SITE_URL } from "@/lib/site-metadata";
@@ -50,10 +51,20 @@ export function WaitlistPageContent({
     (section) => section.type === "form" || (section.type === "hero" && section.showForm),
   );
   const mobile = previewViewport === "mobile";
-  const h1Centered = H1_CENTERED[snapshot.brand.headingSize] ?? H1_CENTERED.medium;
-  const h1Split = H1_SPLIT[snapshot.brand.headingSize] ?? H1_SPLIT.medium;
-  const h2 = H2[snapshot.brand.headingSize] ?? H2.medium;
-  const bodyText = BODY_TEXT[snapshot.brand.bodySize] ?? "";
+  const headingPx =
+    typeof snapshot.brand.headingSize === "number" ? snapshot.brand.headingSize : null;
+  const h1Centered =
+    headingPx == null
+      ? (H1_CENTERED[snapshot.brand.headingSize] ?? H1_CENTERED.medium)
+      : "wl-type-h1";
+  const h1Split =
+    headingPx == null ? (H1_SPLIT[snapshot.brand.headingSize] ?? H1_SPLIT.medium) : "wl-type-h1";
+  const h2 = headingPx == null ? (H2[snapshot.brand.headingSize] ?? H2.medium) : "wl-type-h2";
+  const h1Px = headingPx == null ? undefined : `${headingPx}px`;
+  const h2Px = headingPx == null ? undefined : `${Math.max(12, Math.round(headingPx * 0.66))}px`;
+  const bodyPx = typeof snapshot.brand.bodySize === "number" ? snapshot.brand.bodySize : null;
+  const bodyText = bodyPx == null ? (BODY_TEXT[snapshot.brand.bodySize] ?? "") : "wl-type-body";
+  const bodyPxValue = bodyPx == null ? undefined : `${bodyPx}px`;
   const hasVisibleNavigation = visible.some((section) => section.type === "navigation");
   const brandLogo = snapshot.brand.logo || null;
   const fontStylesheet = googleFontsStylesheet([
@@ -84,6 +95,7 @@ export function WaitlistPageContent({
         "--wl-radius": radius[snapshot.brand.radius],
         "--wl-heading-font": fontFamilyValue(snapshot.brand.headingFont),
         "--wl-body-font": fontFamilyValue(snapshot.brand.bodyFont),
+        "--wl-body": bodyPxValue,
       }}
     >
       {fontStylesheet ? (
@@ -147,7 +159,10 @@ export function WaitlistPageContent({
                         {section.eyebrow}
                       </p>
                     )}
-                    <h1 className={cn("m-0 leading-none font-bold break-words", h1Split)}>
+                    <h1
+                      className={cn("m-0 leading-none font-bold break-words", h1Split)}
+                      style={{ "--wl-h1": h1Px }}
+                    >
                       {section.heading}
                     </h1>
                     <p className="mt-7 max-w-3xl text-lg text-wl-muted">{section.body}</p>
@@ -211,7 +226,10 @@ export function WaitlistPageContent({
                         {section.eyebrow}
                       </p>
                     )}
-                    <h1 className={cn("m-0 leading-none font-bold break-words", h1Centered)}>
+                    <h1
+                      className={cn("m-0 leading-none font-bold break-words", h1Centered)}
+                      style={{ "--wl-h1": h1Px }}
+                    >
                       {section.heading}
                     </h1>
                     <p className="mx-auto mt-7 max-w-3xl text-lg text-wl-muted">{section.body}</p>
@@ -261,7 +279,10 @@ export function WaitlistPageContent({
               if (section.variant === "timeline")
                 return (
                   <section className={cn(sectionClass, "py-20")} key={section.id}>
-                    <Heading className={cn("mb-12 max-w-ch16 leading-none", h2)}>
+                    <Heading
+                      className={cn("mb-12 max-w-ch16 leading-none", h2)}
+                      style={{ "--wl-h2": h2Px }}
+                    >
                       {section.heading}
                     </Heading>
                     <div className="relative grid gap-10">
@@ -285,7 +306,10 @@ export function WaitlistPageContent({
               if (section.variant === "list")
                 return (
                   <section className={cn(sectionClass, "py-20")} key={section.id}>
-                    <Heading className={cn("mb-12 max-w-ch16 leading-none", h2)}>
+                    <Heading
+                      className={cn("mb-12 max-w-ch16 leading-none", h2)}
+                      style={{ "--wl-h2": h2Px }}
+                    >
                       {section.heading}
                     </Heading>
                     <div className="grid gap-px bg-wl-text/15">
@@ -458,7 +482,9 @@ export function WaitlistPageContent({
                     key={section.id}
                   >
                     <div className="max-w-2xl text-center">
-                      <Heading className={cn("mb-6 leading-none", h2)}>{section.heading}</Heading>
+                      <Heading className={cn("mb-6 leading-none", h2)} style={{ "--wl-h2": h2Px }}>
+                        {section.heading}
+                      </Heading>
                       {section.body && <p className="text-wl-muted">{section.body}</p>}
                     </div>
                     <div className="w-full max-w-70 overflow-hidden rounded-3xl border border-wl-text/15">
@@ -479,7 +505,9 @@ export function WaitlistPageContent({
                     key={section.id}
                   >
                     <div className="max-w-2xl text-center">
-                      <Heading className={cn("mb-6 leading-none", h2)}>{section.heading}</Heading>
+                      <Heading className={cn("mb-6 leading-none", h2)} style={{ "--wl-h2": h2Px }}>
+                        {section.heading}
+                      </Heading>
                       {section.body && <p className="text-wl-muted">{section.body}</p>}
                     </div>
                     {visual("aspect-video w-full rounded-wl", "100vw")}
@@ -526,7 +554,10 @@ export function WaitlistPageContent({
                     <div className="rounded-wl bg-wl-surface p-8 md:p-14">
                       <div className="mx-auto max-w-2xl text-center">
                         {section.heading && (
-                          <Heading className={cn("mb-5 leading-none text-balance", h2)}>
+                          <Heading
+                            className={cn("mb-5 leading-none text-balance", h2)}
+                            style={{ "--wl-h2": h2Px }}
+                          >
                             {section.heading}
                           </Heading>
                         )}
@@ -549,7 +580,10 @@ export function WaitlistPageContent({
                 >
                   <div className="md:grow-8 md:basis-0">
                     {section.heading && (
-                      <Heading className={cn("mb-5 leading-none md:text-5xl", h2)}>
+                      <Heading
+                        className={cn("mb-5 leading-none md:text-5xl", h2)}
+                        style={{ "--wl-h2": h2Px }}
+                      >
                         {section.heading}
                       </Heading>
                     )}
@@ -607,7 +641,9 @@ export function WaitlistPageContent({
                   key={section.id}
                 >
                   <div>
-                    <Heading className={cn("mb-4 leading-none", h2)}>{section.heading}</Heading>
+                    <Heading className={cn("mb-4 leading-none", h2)} style={{ "--wl-h2": h2Px }}>
+                      {section.heading}
+                    </Heading>
                     {section.body && <p className="text-wl-muted">{section.body}</p>}
                   </div>
                   <a
@@ -750,12 +786,47 @@ export function WaitlistSignupPreview({ form, brand }) {
   );
 }
 
+export function StatusBadge({ pending, iconStyle = "filled", className }) {
+  return (
+    <p
+      className={cn(
+        "m-0 grid size-12 shrink-0 place-items-center rounded-full",
+        iconStyle === "soft"
+          ? "bg-wl-button/10 text-wl-button"
+          : "bg-wl-button text-wl-button-text",
+        className,
+      )}
+    >
+      <svg
+        viewBox="0 0 24 24"
+        className="size-5"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        aria-hidden="true"
+      >
+        {pending ? <path d="M3 6h18v12H3zM3 7l9 6 9-6" /> : <path d="m5 12 4 4L19 6" />}
+      </svg>
+    </p>
+  );
+}
+
 export function StatusPagePreview({ snapshot, state = "confirmed", showReferrals = true }) {
   const status = snapshot.statusPage;
   const pending = state === "pending";
   const returning = state === "returning";
-  const h1Centered = H1_CENTERED[snapshot.brand.headingSize] ?? H1_CENTERED.medium;
-  const bodyText = BODY_TEXT[snapshot.brand.bodySize] ?? "";
+  const card = status.layout === "card";
+  const demoLink = `${SITE_URL}/w/your-launch?r=friend`;
+  const headingPx =
+    typeof snapshot.brand.headingSize === "number" ? snapshot.brand.headingSize : null;
+  const h1Centered =
+    headingPx == null
+      ? (H1_CENTERED[snapshot.brand.headingSize] ?? H1_CENTERED.medium)
+      : "wl-type-h1";
+  const h1Px = headingPx == null ? undefined : `${headingPx}px`;
+  const bodyPx = typeof snapshot.brand.bodySize === "number" ? snapshot.brand.bodySize : null;
+  const bodyText = bodyPx == null ? (BODY_TEXT[snapshot.brand.bodySize] ?? "") : "wl-type-body";
+  const bodyPxValue = bodyPx == null ? undefined : `${bodyPx}px`;
   const fontStylesheet = googleFontsStylesheet([
     snapshot.brand.headingFont,
     snapshot.brand.bodyFont,
@@ -776,62 +847,68 @@ export function StatusPagePreview({ snapshot, state = "confirmed", showReferrals
         "--wl-radius": radius[snapshot.brand.radius],
         "--wl-heading-font": fontFamilyValue(snapshot.brand.headingFont),
         "--wl-body-font": fontFamilyValue(snapshot.brand.bodyFont),
+        "--wl-body": bodyPxValue,
       }}
     >
       {fontStylesheet ? (
         <link href={fontStylesheet} rel="stylesheet" precedence="waitlyze-fonts" />
       ) : null}
-      <p className="m-0 grid size-12 place-items-center rounded-full bg-wl-button text-wl-button-text">
-        <svg
-          viewBox="0 0 24 24"
-          className="size-5"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          aria-hidden="true"
-        >
-          {pending ? <path d="M3 6h18v12H3zM3 7l9 6 9-6" /> : <path d="m5 12 4 4L19 6" />}
-        </svg>
-      </p>
-      <h1
+      <div
         className={cn(
-          "my-4 max-w-ch14 font-wl-heading leading-none tracking-tight text-balance",
-          h1Centered,
+          "grid w-full max-w-2xl items-center justify-items-center",
+          card && "rounded-wl bg-wl-surface p-8 md:p-12",
         )}
       >
-        {pending ? status.pendingHeading : status.heading}
-      </h1>
-      <p className="max-w-xl leading-relaxed text-wl-muted">
-        {pending ? status.pendingBody : status.body}
-      </p>
-      {status.showPosition && !pending && (
-        <div className="mt-8 flex w-full max-w-md justify-between border-y border-wl-text/15 py-4">
-          <span>Your position</span>
-          <strong className="text-xl">#128</strong>
-        </div>
-      )}
-      {returning && showReferrals && status.showReferralCount && (
-        <div className="mt-4 flex w-full max-w-md justify-between border-y border-wl-text/15 py-4">
-          <span>Friends joined</span>
-          <strong className="text-xl">3</strong>
-        </div>
-      )}
-      {showReferrals && status.showReferralLink && !pending && (
-        <div className="mt-8 grid w-full max-w-md gap-2.5">
-          <p className="m-0 text-sm text-wl-muted">{status.shareMessage}</p>
-          <div className="overflow-hidden rounded-wl bg-wl-surface px-3 py-3 text-caption text-ellipsis whitespace-nowrap text-wl-muted">
-            {`${SITE_URL.replace(/^https?:\/\//, "")}/w/your-launch?r=friend`}
-          </div>
-          {status.shareChannels.length > 0 && (
-            <ShareButtons
-              channels={status.shareChannels}
-              message={`${status.shareMessage} ${SITE_URL}/w/your-launch?r=friend`}
-              link={`${SITE_URL}/w/your-launch?r=friend`}
-              subject={status.heading}
-            />
+        <StatusBadge pending={pending} iconStyle={status.iconStyle} />
+        <h1
+          className={cn(
+            "my-4 max-w-ch14 font-wl-heading leading-none tracking-tight text-balance",
+            h1Centered,
           )}
-        </div>
-      )}
+          style={{ "--wl-h1": h1Px }}
+        >
+          {pending ? status.pendingHeading : status.heading}
+        </h1>
+        <p className="max-w-xl leading-relaxed text-wl-muted">
+          {pending ? status.pendingBody : status.body}
+        </p>
+        {status.showPosition && !pending && (
+          <div className="mt-8 flex w-full max-w-md justify-between border-y border-wl-text/15 py-4">
+            <span>Your position</span>
+            <strong className="text-xl">#128</strong>
+          </div>
+        )}
+        {returning && showReferrals && status.showReferralCount && (
+          <div className="mt-4 flex w-full max-w-md justify-between border-y border-wl-text/15 py-4">
+            <span>Friends joined</span>
+            <strong className="text-xl">3</strong>
+          </div>
+        )}
+        {showReferrals && status.showReferralLink && !pending && (
+          <div className="mt-8 grid w-full max-w-md gap-2.5">
+            <p className="m-0 text-sm text-wl-muted">{status.shareMessage}</p>
+            <div
+              className={cn(
+                "flex items-center gap-2 overflow-hidden rounded-wl py-2 pr-2 pl-3",
+                card ? "border border-wl-text/10 bg-wl-page" : "bg-wl-surface",
+              )}
+            >
+              <span className="min-w-0 flex-1 text-left text-caption text-ellipsis whitespace-nowrap text-wl-muted">
+                {demoLink.replace(/^https?:\/\//, "")}
+              </span>
+              <CopyButton text={demoLink} />
+            </div>
+            {status.shareChannels.length > 0 && (
+              <ShareButtons
+                channels={status.shareChannels}
+                message={`${status.shareMessage} ${demoLink}`}
+                link={demoLink}
+                subject={status.heading}
+              />
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

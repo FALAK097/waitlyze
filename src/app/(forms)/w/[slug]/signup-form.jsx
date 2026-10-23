@@ -5,6 +5,7 @@ import { Suspense, useId, useState } from "react";
 import { toast } from "sonner";
 
 import { ShareButtons } from "@/components/product/share-buttons";
+import { StatusBadge } from "@/components/product/waitlist-page-content";
 import { cn } from "@/lib/utils";
 import { collectAttribution } from "@/utils/attribution";
 
@@ -73,6 +74,7 @@ function SignupFormInner({ slug, waitListId, showReferrals, formConfig, statusPa
       setResult({
         heading: verified ? statusPage.heading : statusPage.pendingHeading,
         body: verified ? statusPage.body : statusPage.pendingBody,
+        pending: !verified && !returning,
         notice: returning
           ? "You're already on this waitlist. Here are your current details."
           : verified
@@ -118,7 +120,14 @@ function SignupFormInner({ slug, waitListId, showReferrals, formConfig, statusPa
 
   if (result) {
     return (
-      <section className="w-full text-wl-text" aria-labelledby={resultTitleId}>
+      <section
+        className={cn(
+          "w-full text-wl-text",
+          statusPage.layout === "card" && "rounded-wl bg-wl-surface p-6 md:p-10",
+        )}
+        aria-labelledby={resultTitleId}
+      >
+        <StatusBadge pending={result.pending} iconStyle={statusPage.iconStyle} className="mb-4" />
         <h2 className="mb-4 font-wl-heading text-3xl tracking-tight" id={resultTitleId}>
           {result.heading}
         </h2>
