@@ -817,7 +817,7 @@ export function AudienceTable({
               if (!open) setSheet(null);
             }}
           >
-            <SheetContent className="overflow-y-auto">
+            <SheetContent className="min-w-0 overflow-x-hidden overflow-y-auto">
               {sheet?.type === "profile" && profile && (
                 <>
                   <SheetHeader>
@@ -826,20 +826,18 @@ export function AudienceTable({
                   </SheetHeader>
                   <div className="px-4 pb-4">
                     <dl className="grid gap-5 text-sm">
-                      <div className="flex gap-3">
-                        <dt className="w-26 shrink-0 text-product-text-secondary">Email</dt>
+                      <div className="grid grid-cols-[104px_minmax(0,1fr)] gap-3">
+                        <dt className="text-product-text-secondary">Email</dt>
                         <dd className="font-medium break-all">{profile.email}</dd>
                       </div>
                       {flags.sendEmailsToSubscribers && (
-                        <div className="flex gap-3">
-                          <dt className="w-26 shrink-0 text-product-text-secondary">Status</dt>
+                        <div className="grid grid-cols-[104px_minmax(0,1fr)] gap-3">
+                          <dt className="text-product-text-secondary">Status</dt>
                           <dd>{profileStatus}</dd>
                         </div>
                       )}
-                      <div className="flex gap-3">
-                        <dt className="w-26 shrink-0 text-product-text-secondary">
-                          Confirmation email
-                        </dt>
+                      <div className="grid grid-cols-[104px_minmax(0,1fr)] gap-3">
+                        <dt className="text-product-text-secondary">Confirmation email</dt>
                         <dd>
                           <p>{deliveryLabel(profile)}</p>
                           {profile.verificationDelivery?.issue && (
@@ -863,50 +861,48 @@ export function AudienceTable({
                         </dd>
                       </div>
                       {flags.showReferrals && (
-                        <div className="flex gap-3">
-                          <dt className="w-26 shrink-0 text-product-text-secondary">Position</dt>
+                        <div className="grid grid-cols-[104px_minmax(0,1fr)] gap-3">
+                          <dt className="text-product-text-secondary">Position</dt>
                           <dd className="tabular-nums">
                             {profile.position == null ? "—" : `#${profile.position}`}
                           </dd>
                         </div>
                       )}
-                      <div className="flex gap-3">
-                        <dt className="w-26 shrink-0 text-product-text-secondary">Joined</dt>
+                      <div className="grid grid-cols-[104px_minmax(0,1fr)] gap-3">
+                        <dt className="text-product-text-secondary">Joined</dt>
                         <dd title={formatDate(profile.createdAt)}>{timeAgo(profile.createdAt)}</dd>
                       </div>
-                      <div className="flex gap-3">
-                        <dt className="w-26 shrink-0 text-product-text-secondary">Location</dt>
+                      <div className="grid grid-cols-[104px_minmax(0,1fr)] gap-3">
+                        <dt className="text-product-text-secondary">Location</dt>
                         <dd>
                           {locationLabel(profile.city, profile.country) === "—"
                             ? "Not available"
                             : locationLabel(profile.city, profile.country)}
                         </dd>
                       </div>
-                      <div className="flex gap-3">
-                        <dt className="w-26 shrink-0 text-product-text-secondary">Device</dt>
+                      <div className="grid grid-cols-[104px_minmax(0,1fr)] gap-3">
+                        <dt className="text-product-text-secondary">Device</dt>
                         <dd title={profile.device || undefined}>
                           {deviceLabel(profile.deviceType, profile.device)}
                         </dd>
                       </div>
                       {flags.showReferrals && (
-                        <div className="flex gap-3">
-                          <dt className="w-26 shrink-0 text-product-text-secondary">Referrals</dt>
+                        <div className="grid grid-cols-[104px_minmax(0,1fr)] gap-3">
+                          <dt className="text-product-text-secondary">Referrals</dt>
                           <dd className="tabular-nums">{profile.referralCount}</dd>
                         </div>
                       )}
-                      <div className="flex gap-3">
-                        <dt className="w-26 shrink-0 text-product-text-secondary">Points</dt>
+                      <div className="grid grid-cols-[104px_minmax(0,1fr)] gap-3">
+                        <dt className="text-product-text-secondary">Points</dt>
                         <dd className="tabular-nums">{(profile.points ?? 0).toLocaleString()}</dd>
                       </div>
-                      <div className="flex gap-3">
-                        <dt className="w-26 shrink-0 text-product-text-secondary">Source</dt>
+                      <div className="grid grid-cols-[104px_minmax(0,1fr)] gap-3">
+                        <dt className="text-product-text-secondary">Source</dt>
                         <dd>{profile.utmSource || "Direct"}</dd>
                       </div>
                       {profileLink && (
-                        <div className="flex items-center gap-3">
-                          <dt className="w-26 shrink-0 text-product-text-secondary">
-                            Referral link
-                          </dt>
+                        <div className="grid grid-cols-[104px_minmax(0,1fr)] items-center gap-3">
+                          <dt className="text-product-text-secondary">Referral link</dt>
                           <dd className="flex min-w-0 items-center gap-1.5">
                             <span className="min-w-0 flex-1 truncate" title={profileLink}>
                               {profileLink}
