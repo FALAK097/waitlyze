@@ -19,19 +19,19 @@ import {
 
 import { ResendIntegration } from "./resend-integration";
 
-import "./integrations-panel.css";
-
 export function IntegrationsPanel({ initialConnection, accountEmail, canManage, appOrigin }) {
   const [keysOpen, setKeysOpen] = useState(false);
   return (
-    <div className="settings-integrations">
+    <div>
       <Sheet open={keysOpen} onOpenChange={setKeysOpen}>
-        <div className="settings-integrations-heading">
+        <div className="mb-2 flex flex-wrap items-start justify-between gap-x-6 gap-y-4">
           <div>
-            <h2 id="settings-panel-heading">Integrations</h2>
-            <p>Connect the tools your waitlists use.</p>
+            <h2 id="settings-panel-heading" className="mb-2! text-2xl!">
+              Integrations
+            </h2>
+            <p className="m-0 text-product-text-secondary">Connect the tools your waitlists use.</p>
           </div>
-          <div className="settings-integration-toolbar">
+          <div className="flex flex-wrap items-center justify-end gap-4 max-[600px]:gap-2">
             <Button
               variant="ghost"
               render={<Link prefetch={false} href="/docs" target="_blank" rel="noreferrer" />}
@@ -50,7 +50,16 @@ export function IntegrationsPanel({ initialConnection, accountEmail, canManage, 
           accountEmail={accountEmail}
           canManage={canManage}
           appOrigin={appOrigin}
-          logo={<Image src="/integrations/resend.svg" width={32} height={32} alt="" unoptimized />}
+          logo={
+            <Image
+              src="/integrations/resend.svg"
+              width={32}
+              height={32}
+              alt=""
+              unoptimized
+              className="shrink-0 bg-transparent outline-none"
+            />
+          }
         />
         <SheetContent>
           <SheetHeader>

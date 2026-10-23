@@ -31,11 +31,7 @@ export const metadata = {
     description:
       "Your waitlist, referrals, and audience insights. One place to get your next launch started.",
   },
-  twitter: {
-    title: "Waitlyze | Build an audience before you launch",
-    description:
-      "Create a branded waitlist and turn early interest into your next launch’s audience.",
-  },
+  twitter: { card: "summary_large_image", title: "Waitlyze | Build an audience before you launch" },
 };
 
 const faqs = [
@@ -65,34 +61,53 @@ const faqs = [
   ],
 ];
 
+const containerClasses = "mx-auto w-full max-w-7xl px-4 sm:px-5 md:px-8 lg:px-12";
+const eyebrowClasses =
+  "flex items-center gap-2 text-micro font-semibold tracking-widest text-product-text-secondary uppercase";
+
 export default function LandingPage() {
   return (
     <PublicShell>
       <SiteStructuredData faqs={faqs} />
-      <main id="main-content">
-        <section className="wl-hero wl-container" aria-labelledby="hero-title">
-          <div className="wl-hero-copy">
-            <p className="wl-eyebrow">
-              <span className="wl-accent-dot" /> Big ideas start with a little interest
+      <main id="main-content" className="scroll-mt-28">
+        <section
+          className={`${containerClasses} relative isolate grid grid-cols-1 justify-items-center gap-13 pt-18 pb-22 md:gap-8 md:py-12 2xl:gap-22`}
+          aria-labelledby="hero-title"
+        >
+          <div className="w-full max-w-4xl text-center">
+            <p className={`${eyebrowClasses} justify-center`}>
+              <span className="inline-block size-1.5 shrink-0 rounded-full bg-product-accent-solid" />{" "}
+              Big ideas start with a little interest
             </p>
-            <h1 id="hero-title">
+            <h1
+              id="hero-title"
+              className="mt-5 font-product-display text-5xl leading-tight font-medium tracking-tighter text-balance lg:text-6xl"
+            >
               Launch to people.
               <br />
               <span>Not to silence.</span>
             </h1>
-            <p className="wl-lede">
+            <p className="mx-auto mt-5 max-w-84 text-base leading-normal text-product-text-secondary">
               Build a branded waitlist. Grow it with referrals. Know who’s ready for launch day.
             </p>
-            <div className="wl-hero-actions">
-              <SignupButton />
-              <a className="wl-text-link" href="#how-it-works">
+            <div className="mt-8 flex flex-wrap items-center justify-center gap-3 max-sm:flex-col max-sm:gap-5 md:gap-4">
+              <SignupButton className="max-sm:w-full" />
+              <a
+                className="group inline-flex items-center gap-2.5 text-sm font-medium underline-offset-4 hover:underline focus:outline-2 focus:outline-offset-4 focus:outline-neutral-900"
+                href="#how-it-works"
+              >
                 Explore the product{" "}
-                <HugeiconsIcon icon={ArrowDown01Icon} size={16} aria-hidden="true" />
+                <HugeiconsIcon
+                  icon={ArrowDown01Icon}
+                  size={16}
+                  aria-hidden="true"
+                  className="shrink-0 transition-transform duration-180 group-hover:translate-x-0.5"
+                />
               </a>
             </div>
-            <p className="wl-reassurance">
+            <p className="mt-5 flex flex-wrap justify-center gap-2 gap-x-4 text-micro text-product-text-secondary">
               {["Free to use", "No credit card", "No code needed"].map((text) => (
-                <span key={text}>
+                <span key={text} className="flex items-center gap-1">
                   <HugeiconsIcon icon={Tick01Icon} size={14} aria-hidden="true" />
                   {text}
                 </span>
@@ -103,31 +118,45 @@ export default function LandingPage() {
         </section>
         <section
           id="how-it-works"
-          className="wl-container wl-section wl-tour-section"
+          className={`${containerClasses} scroll-mt-28 py-16 md:pt-6 md:pb-14 lg:pb-18 xl:pb-24`}
           aria-labelledby="tour-title"
         >
-          <div className="wl-section-heading wl-heading-row">
+          <div className="flex items-end justify-between gap-8 max-md:block">
             <div>
-              <p className="wl-eyebrow">Inside Waitlyze</p>
-              <h2 id="tour-title">Your launch starts here.</h2>
+              <p className={eyebrowClasses}>Inside Waitlyze</p>
+              <h2
+                id="tour-title"
+                className="mt-4 font-product-display text-4xl leading-tight font-semibold tracking-tighter text-balance lg:text-5xl"
+              >
+                Your launch starts here.
+              </h2>
             </div>
-            <p>Design it. Share it. Watch your audience grow.</p>
+            <p className="mt-5 max-w-54 text-body text-product-text-secondary max-md:mt-5 max-md:max-w-none">
+              Design it. Share it. Watch your audience grow.
+            </p>
           </div>
           <ProductTour />
         </section>
         <section
           id="features"
-          className="wl-container wl-section wl-capabilities"
+          className={`${containerClasses} scroll-mt-28 py-16 md:py-14 lg:py-18 xl:py-24`}
           aria-labelledby="features-title"
         >
-          <div className="wl-section-heading wl-heading-row">
+          <div className="flex items-end justify-between gap-8 max-md:block">
             <div>
-              <p className="wl-eyebrow">Small setup. Room to grow.</p>
-              <h2 id="features-title">More than an email field.</h2>
+              <p className={eyebrowClasses}>Small setup. Room to grow.</p>
+              <h2
+                id="features-title"
+                className="mt-4 font-product-display text-4xl leading-tight font-semibold tracking-tighter text-balance lg:text-5xl"
+              >
+                More than an email field.
+              </h2>
             </div>
-            <p>From the first signup to your launch-day email.</p>
+            <p className="mt-5 max-w-54 text-body text-product-text-secondary max-md:mt-5 max-md:max-w-none">
+              From the first signup to your launch-day email.
+            </p>
           </div>
-          <div className="wl-capability-grid">
+          <div className="mt-12 grid grid-cols-1 gap-7 max-sm:mt-8 md:grid-cols-3 md:gap-6 lg:gap-12">
             {[
               [
                 Mail01Icon,
@@ -176,54 +205,94 @@ export default function LandingPage() {
               ],
             ].map(([Icon, title, text]) => (
               <article key={title}>
-                <HugeiconsIcon icon={Icon} size={21} strokeWidth={1.5} aria-hidden="true" />
-                <h3>{title}</h3>
-                <p>{text}</p>
+                <HugeiconsIcon
+                  icon={Icon}
+                  size={21}
+                  strokeWidth={1.5}
+                  aria-hidden="true"
+                  className="text-product-success-text"
+                />
+                <h3 className="mt-4 font-product-display text-section leading-snug font-semibold tracking-tight text-balance">
+                  {title}
+                </h3>
+                <p className="mt-2.5 max-w-60 text-sm text-product-text-secondary">{text}</p>
               </article>
             ))}
           </div>
-          <div className="wl-roadmap" aria-label="Planned features">
+          <div
+            className="mt-12 grid grid-cols-1 gap-12 pt-8 md:grid-cols-2 md:gap-6"
+            aria-label="Planned features"
+          >
             <div>
-              <p className="wl-eyebrow">On the roadmap</p>
-              <p>Building the next part of your launch.</p>
+              <p className={eyebrowClasses}>On the roadmap</p>
+              <p className="mt-3 max-w-48 text-base text-product-text-secondary">
+                Building the next part of your launch.
+              </p>
             </div>
-            <ul>
+            <ul className="flex flex-wrap gap-4 gap-x-6">
               {[
                 [WorkflowCircle01Icon, "More native integrations"],
                 [ShieldCheckIcon, "Advanced spam detection"],
                 [CodeIcon, "Developer docs & SDKs"],
                 [UserGroupIcon, "Referral rewards"],
               ].map(([Icon, text]) => (
-                <li key={text}>
+                <li key={text} className="flex items-center gap-2 text-caption">
                   <HugeiconsIcon icon={Icon} size={16} aria-hidden="true" />
                   {text}
-                  <span>Planned</span>
+                  <span className="text-micro text-product-text-secondary">Planned</span>
                 </li>
               ))}
             </ul>
           </div>
         </section>
-        <section id="faq" className="wl-faq wl-container wl-section" aria-labelledby="faq-title">
-          <div className="wl-section-heading">
-            <p className="wl-eyebrow">A few things, answered</p>
-            <h2 id="faq-title">FAQs.</h2>
-            <p>
-              <a href="mailto:hi@falakgala.dev" className="wl-text-link">
+        <section
+          id="faq"
+          className={`${containerClasses} flex scroll-mt-28 flex-col gap-8 py-16 md:py-14 lg:flex-row lg:gap-20 lg:pb-18 xl:pb-24`}
+          aria-labelledby="faq-title"
+        >
+          <div className="lg:w-2/5">
+            <p className={eyebrowClasses}>A few things, answered</p>
+            <h2
+              id="faq-title"
+              className="mt-4 font-product-display text-4xl leading-tight font-semibold tracking-tighter text-balance lg:text-5xl"
+            >
+              FAQs.
+            </h2>
+            <p className="mt-5 max-w-80 text-product-text-secondary">
+              <a
+                href="mailto:hi@falakgala.dev"
+                className="group inline-flex items-center gap-2.5 text-sm font-medium underline-offset-4 hover:underline focus:outline-2 focus:outline-offset-4 focus:outline-neutral-900"
+              >
                 Talk to the maker{" "}
-                <HugeiconsIcon icon={ArrowUpRight01Icon} size={15} aria-hidden="true" />
+                <HugeiconsIcon
+                  icon={ArrowUpRight01Icon}
+                  size={15}
+                  aria-hidden="true"
+                  className="shrink-0 transition-transform duration-180 group-hover:translate-x-0.5"
+                />
               </a>
             </p>
           </div>
           <FAQAccordion items={faqs} />
         </section>
-        <section className="wl-final-cta wl-container" aria-labelledby="cta-title">
+        <section
+          className={`${containerClasses} flex items-center justify-between gap-8 py-14 pb-18 max-md:flex-col max-md:items-start max-sm:py-15`}
+          aria-labelledby="cta-title"
+        >
           <div>
-            <p className="wl-eyebrow">Ready when you are</p>
-            <h2 id="cta-title">Give your idea a head start.</h2>
+            <p className={eyebrowClasses}>Ready when you are</p>
+            <h2
+              id="cta-title"
+              className="mt-4 font-product-display text-4xl leading-tight font-semibold tracking-tighter text-balance max-sm:text-3xl lg:text-5xl"
+            >
+              Give your idea a head start.
+            </h2>
           </div>
           <div>
             <SignupButton />
-            <span className="wl-cta-note">Free to use. No credit card needed.</span>
+            <span className="mt-3 block text-micro text-product-text-secondary">
+              Free to use. No credit card needed.
+            </span>
           </div>
         </section>
       </main>

@@ -1,20 +1,21 @@
-import "@/components/product/settings-page.css";
-import "@/components/product/waitlist-settings.css";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function WaitlistSettingsLoading() {
   return (
-    <div className="product-settings-page product-waitlist-settings-page" aria-busy="true">
-      <div className="product-settings-layout">
-        <aside className="product-settings-menu" aria-hidden="true">
-          <nav className="product-settings-section-nav">
+    <div className="mx-auto w-full max-w-280" aria-busy="true">
+      <div className="flex items-start gap-8 max-[760px]:flex-col max-[760px]:gap-8 lg:gap-12 xl:gap-18">
+        <aside
+          className="sticky top-6 w-52.5 min-w-0 shrink-0 max-[760px]:static max-[760px]:w-full"
+          aria-hidden="true"
+        >
+          <nav className="grid gap-1 max-[760px]:grid-cols-2 max-[760px]:gap-1.5">
             {[0, 1, 2, 3].map((item) => (
               <Skeleton key={item} className="h-11 w-full rounded-lg" />
             ))}
           </nav>
         </aside>
-        <div className="product-settings-content" aria-hidden="true">
-          <header>
+        <div className="max-w-190 min-w-0 flex-1" aria-hidden="true">
+          <header className="mb-9 max-[760px]:mb-6">
             <Skeleton className="h-6 w-44" />
             <Skeleton className="mt-2 h-4 w-3/5" />
           </header>

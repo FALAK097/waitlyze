@@ -6,8 +6,6 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { publicFontClasses } from "@/lib/public-fonts";
 import { currentWorkspace } from "@/lib/workspaces/current";
 
-import "@/components/product/shell.css";
-
 export const metadata = {
   robots: { index: false, follow: false },
   title: { template: "%s | Waitlyze", default: "Waitlists | Waitlyze" },
@@ -31,7 +29,7 @@ function AccountAvatar({ id, src, name }) {
 export default async function AppLayout({ children }) {
   const { user, workspace, workspaces } = await currentWorkspace();
   return (
-    <div className={`product-ui product-shell ${publicFontClasses}`}>
+    <div className={`product-ui min-h-dvh bg-product-bg-page ${publicFontClasses}`}>
       <AppShell
         user={{ name: user.name, email: user.email }}
         avatar={<AccountAvatar id={user.id} src={user.image || user.imageUrl} name={user.name} />}

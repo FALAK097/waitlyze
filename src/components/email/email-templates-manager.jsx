@@ -8,7 +8,44 @@ import { Button } from "@/components/ui/button";
 
 import { EmailCanvas } from "./email-canvas";
 
-import styles from "./email-tools.module.css";
+const scope = "min-w-0 bg-white text-product-text-primary";
+const unsaved =
+  "mb-5.5 flex flex-wrap items-center gap-3 rounded-product-control bg-product-warning-bg px-4 py-3 text-caption";
+const unsavedText = "min-w-45 flex-1";
+const unsavedButton =
+  "min-h-8.5 rounded-product-control px-3 text-caption font-semibold text-product-text-primary cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-product-success-text!";
+const unsavedGhost = `${unsavedButton} border-0 bg-transparent`;
+const unsavedSolid = `${unsavedButton} border border-product-border-subtle bg-white`;
+const split = "flex flex-col gap-6 md:gap-8 xl:gap-10 lg:flex-row lg:items-start";
+const rail =
+  "flex w-full shrink-0 flex-col gap-1 self-start sticky top-22 max-lg:static max-lg:flex-row max-lg:flex-wrap max-lg:gap-1.5 lg:w-52";
+const railItem =
+  "flex w-full flex-col gap-0.75 rounded-product-control border-0 bg-transparent p-3 text-left cursor-pointer hover:bg-product-bg-inset aria-[current=true]:bg-product-bg-inset disabled:cursor-default disabled:opacity-60 max-lg:min-w-38 max-lg:flex-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-product-success-text!";
+const railItemTitle = "text-body font-semibold wrap-anywhere";
+const railItemMeta = "text-micro leading-normal text-product-text-secondary";
+const pane = "min-w-0 max-w-195 flex flex-col gap-5 lg:flex-1";
+const paneHead = "flex items-start justify-between gap-4 max-sm:flex-col max-sm:items-stretch";
+const paneTitle = "m-0 text-section font-semibold";
+const paneMeta = "m-0 text-caption leading-normal text-product-text-secondary";
+const paneActions = "flex shrink-0 flex-wrap items-center justify-end gap-2 max-sm:justify-start";
+const fieldCard = "overflow-hidden rounded-lg border border-product-border-subtle bg-white";
+const fieldRow =
+  "relative flex min-h-13 items-center gap-3 px-4 [&+&]:border-t border-product-border-subtle focus-within:bg-product-bg-inset focus-within:before:absolute focus-within:before:inset-y-0 focus-within:before:left-0 focus-within:before:w-0.5 focus-within:before:bg-product-success-text";
+const fieldInput =
+  "min-w-0 flex-1 border-0 bg-transparent py-3.5 text-body text-product-text-primary focus-visible:outline-none!";
+const canvasShell = "overflow-hidden rounded-lg border border-product-border-subtle bg-white";
+const metaBar =
+  "flex flex-wrap items-center justify-between gap-3.5 max-sm:flex-col max-sm:items-stretch";
+const chips = "m-0 text-xs text-product-text-secondary";
+const chipCode =
+  "ml-1 rounded-sm bg-product-bg-inset px-1.5 py-0.5 font-product-mono text-micro text-product-text-primary";
+const chipCodeNext =
+  "ml-1.5 rounded-sm bg-product-bg-inset px-1.5 py-0.5 font-product-mono text-micro text-product-text-primary";
+const testForm = "flex items-center gap-2";
+const testInput =
+  "h-9 w-45 min-w-0 rounded-product-control border border-product-border-control bg-white px-2.5 text-caption max-sm:w-auto max-sm:flex-1 max-sm:text-base";
+const testButton =
+  "min-h-9 rounded-product-control border border-transparent bg-product-bg-inset px-3.5 text-caption font-semibold text-product-text-primary cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-product-success-text!";
 
 const kinds = [
   {
@@ -103,48 +140,51 @@ export function EmailTemplatesManager({ waitListId, initialTemplates }) {
   }
 
   return (
-    <div className={styles.scope}>
+    <div className={scope}>
       {pending && (
-        <div className={styles.unsaved} role="alert">
-          <span>Save this email before switching, or discard your edits.</span>
-          <button type="button" onClick={() => setPending(null)}>
+        <div className={unsaved} role="alert">
+          <span className={unsavedText}>
+            Save this email before switching, or discard your edits.
+          </span>
+          <button type="button" className={unsavedGhost} onClick={() => setPending(null)}>
             Keep editing
           </button>
-          <button type="button" onClick={discard}>
+          <button type="button" className={unsavedSolid} onClick={discard}>
             Discard edits
           </button>
         </div>
       )}
-      <div className={styles.split}>
-        <nav className={styles.rail} aria-label="Email templates">
+      <div className={split}>
+        <nav className={rail} aria-label="Email templates">
           {kinds.map((item) => (
             <button
               key={item.key}
               type="button"
-              className={styles.railItem}
+              className={railItem}
               aria-current={current === item.key ? "true" : undefined}
               onClick={() => select(item.key)}
             >
-              <strong>{item.label}</strong>
-              <span>{item.timing}</span>
+              <strong className={railItemTitle}>{item.label}</strong>
+              <span className={railItemMeta}>{item.timing}</span>
             </button>
           ))}
         </nav>
-        <section className={styles.pane} aria-label={`${kind.label} email`}>
-          <header className={styles.paneHead}>
+        <section className={pane} aria-label={`${kind.label} email`}>
+          <header className={paneHead}>
             <div>
-              <h2 className={styles.paneTitle}>{kind.label}</h2>
-              <p className={styles.paneMeta}>{kind.note}</p>
+              <h2 className={paneTitle}>{kind.label}</h2>
+              <p className={paneMeta}>{kind.note}</p>
             </div>
-            <div className={styles.paneActions}>
+            <div className={paneActions}>
               <Button type="button" variant="default" onClick={save} disabled={Boolean(busy)}>
                 {busy === "save" ? "Saving…" : "Save"}
               </Button>
             </div>
           </header>
-          <div className={styles.fieldCard}>
-            <div className={styles.fieldRow}>
+          <div className={fieldCard}>
+            <div className={fieldRow}>
               <input
+                className={fieldInput}
                 type="text"
                 maxLength={160}
                 aria-label="Subject"
@@ -153,8 +193,9 @@ export function EmailTemplatesManager({ waitListId, initialTemplates }) {
                 onChange={(event) => edit("subject", event.target.value)}
               />
             </div>
-            <div className={styles.fieldRow}>
+            <div className={fieldRow}>
               <input
+                className={fieldInput}
                 type="text"
                 maxLength={180}
                 aria-label="Preview text"
@@ -164,7 +205,7 @@ export function EmailTemplatesManager({ waitListId, initialTemplates }) {
               />
             </div>
           </div>
-          <div className={styles.canvasShell}>
+          <div className={canvasShell}>
             <EmailCanvas
               key={current}
               editorRef={editorRef}
@@ -174,14 +215,15 @@ export function EmailTemplatesManager({ waitListId, initialTemplates }) {
               onChange={(value) => edit("editorDocument", value)}
             />
           </div>
-          <div className={styles.metaBar}>
-            <p className={styles.chips}>
-              Personalize <code>{"{{waitlist}}"}</code>
-              <code>{"{{position}}"}</code>
-              <code>{"{{referral_link}}"}</code>
+          <div className={metaBar}>
+            <p className={chips}>
+              Personalize <code className={chipCode}>{"{{waitlist}}"}</code>
+              <code className={chipCodeNext}>{"{{position}}"}</code>
+              <code className={chipCodeNext}>{"{{referral_link}}"}</code>
             </p>
-            <form className={styles.testForm} onSubmit={sendTest}>
+            <form className={testForm} onSubmit={sendTest}>
               <input
+                className={testInput}
                 id="subscriber-test-address"
                 type="email"
                 placeholder="you@example.com"
@@ -191,7 +233,7 @@ export function EmailTemplatesManager({ waitListId, initialTemplates }) {
                 value={testTo}
                 onChange={(event) => setTestTo(event.target.value)}
               />
-              <button type="submit" disabled={Boolean(busy) || dirty}>
+              <button type="submit" className={testButton} disabled={Boolean(busy) || dirty}>
                 {busy === "test" ? "Sending…" : "Send test"}
               </button>
             </form>

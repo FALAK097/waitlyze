@@ -17,7 +17,43 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 
 import { EmailCanvas } from "./email-canvas";
 
-import styles from "./email-tools.module.css";
+const scope = "min-w-0 bg-white text-product-text-primary";
+const notice =
+  "m-0 rounded-lg bg-product-bg-inset px-3.5 py-2.75 text-caption leading-relaxed text-product-text-primary";
+const split = "flex flex-col gap-6 md:gap-8 xl:gap-10 lg:flex-row lg:items-start";
+const rail =
+  "flex w-full shrink-0 flex-col gap-1 self-start sticky top-22 max-lg:static max-lg:flex-row max-lg:flex-wrap max-lg:gap-1.5 lg:w-52";
+const railItem =
+  "flex w-full flex-col gap-0.75 rounded-product-control border-0 bg-transparent p-3 text-left cursor-pointer hover:bg-product-bg-inset aria-[current=true]:bg-product-bg-inset disabled:cursor-default disabled:opacity-60 max-lg:min-w-38 max-lg:flex-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-product-success-text!";
+const railItemTitle = "text-body font-semibold wrap-anywhere";
+const railItemMeta = "text-micro leading-normal text-product-text-secondary";
+const pane = "min-w-0 max-w-195 flex flex-col gap-5 lg:flex-1";
+const paneHead = "flex items-start justify-between gap-4 max-sm:flex-col max-sm:items-stretch";
+const paneTitle = "m-0 text-section font-semibold";
+const paneMeta = "m-0 text-caption leading-normal text-product-text-secondary";
+const paneActions = "flex shrink-0 flex-wrap items-center justify-end gap-2 max-sm:justify-start";
+const fieldCard = "overflow-hidden rounded-lg border border-product-border-subtle bg-white";
+const fieldRow =
+  "relative flex min-h-13 items-center gap-3 px-4 [&+&]:border-t border-product-border-subtle focus-within:bg-product-bg-inset focus-within:before:absolute focus-within:before:inset-y-0 focus-within:before:left-0 focus-within:before:w-0.5 focus-within:before:bg-product-success-text";
+const fieldUnit = "shrink-0 text-xs text-product-text-secondary";
+const fieldInput =
+  "min-w-0 flex-1 border-0 bg-transparent py-3.5 text-body text-product-text-primary focus-visible:outline-none!";
+const numberField = "w-33 flex-none gap-0";
+const numberGroup = "h-8.5 rounded-product-control border-product-border-control bg-white";
+const numberInput = "tabular-nums";
+const numberButton = "text-product-text-secondary hover:bg-product-bg-inset";
+const canvasShell = "overflow-hidden rounded-lg border border-product-border-subtle bg-white";
+const metaBar =
+  "flex flex-wrap items-center justify-between gap-3.5 max-sm:flex-col max-sm:items-stretch";
+const chips = "m-0 text-xs text-product-text-secondary";
+const chipCode =
+  "ml-1 rounded-sm bg-product-bg-inset px-1.5 py-0.5 font-product-mono text-micro text-product-text-primary";
+const chipCodeNext =
+  "ml-1.5 rounded-sm bg-product-bg-inset px-1.5 py-0.5 font-product-mono text-micro text-product-text-primary";
+const hint = "m-0 text-caption leading-normal text-product-text-secondary";
+const emptyPane = "max-w-107 py-1.5";
+const emptyPaneTitle = "m-0 mb-1.5! text-section";
+const emptyPaneBody = "m-0 mb-4.5! leading-relaxed text-product-text-secondary";
 
 const hourValue = (minutes) => Number((minutes / 60).toFixed(2));
 const waitLabel = (minutes) =>
@@ -42,7 +78,7 @@ const statusLabel = (status) =>
 function AutomationNumberField({ label, value, min, max, disabled, onChange }) {
   return (
     <NumberField
-      className={styles.numberField}
+      className={numberField}
       aria-label={label}
       value={Number(value)}
       min={min}
@@ -51,10 +87,10 @@ function AutomationNumberField({ label, value, min, max, disabled, onChange }) {
       disabled={disabled}
       onValueChange={(nextValue) => onChange(String(nextValue ?? min))}
     >
-      <NumberFieldGroup className={styles.numberGroup}>
-        <NumberFieldDecrement aria-label={`Decrease ${label}`} />
-        <NumberFieldInput className={styles.numberInput} aria-label={label} />
-        <NumberFieldIncrement aria-label={`Increase ${label}`} />
+      <NumberFieldGroup className={numberGroup}>
+        <NumberFieldDecrement className={numberButton} aria-label={`Decrease ${label}`} />
+        <NumberFieldInput className={numberInput} aria-label={label} />
+        <NumberFieldIncrement className={numberButton} aria-label={`Increase ${label}`} />
       </NumberFieldGroup>
     </NumberField>
   );
@@ -164,26 +200,26 @@ export function AutomationManager({ waitListId, initialRecipes, deliveryReady })
   const recipe = recipes.find((item) => item.id === activeRecipe);
 
   return (
-    <div className={styles.scope}>
+    <div className={scope}>
       {!deliveryReady ? (
-        <p className={styles.notice}>
+        <p className={notice}>
           Email delivery needs setup before a recipe can be enabled. Saved recipes stay off until
           then.
         </p>
       ) : null}
-      <div className={styles.split}>
-        <nav className={styles.rail} aria-label="Automations">
+      <div className={split}>
+        <nav className={rail} aria-label="Automations">
           {recipes.map((item) => (
             <button
               key={item.id}
               type="button"
-              className={styles.railItem}
+              className={railItem}
               aria-current={activeRecipe === item.id ? "true" : undefined}
               disabled={Boolean(busyId)}
               onClick={() => setActiveRecipe(item.id)}
             >
-              <strong>{item.title}</strong>
-              <span>{statusLabel(item.status)}</span>
+              <strong className={railItemTitle}>{item.title}</strong>
+              <span className={railItemMeta}>{statusLabel(item.status)}</span>
             </button>
           ))}
         </nav>
@@ -199,13 +235,13 @@ export function AutomationManager({ waitListId, initialRecipes, deliveryReady })
                 ? `At ${recipe.milestoneCount ?? recipe.config.milestoneCount} verified referrals · ${waitLabel(Number.isFinite(delay) ? delay * 60 : 0)}`
                 : `${recipe.type === "WELCOME" ? "After confirmation" : "After confirmation, if they still have no referrals"} · ${waitLabel(Number.isFinite(delay) ? delay * 60 : 0)}`;
             return (
-              <section className={styles.pane} aria-label={recipe.title}>
-                <header className={styles.paneHead}>
+              <section className={pane} aria-label={recipe.title}>
+                <header className={paneHead}>
                   <div>
-                    <h2 className={styles.paneTitle}>{recipe.title}</h2>
-                    <p className={styles.paneMeta}>{timing}</p>
+                    <h2 className={paneTitle}>{recipe.title}</h2>
+                    <p className={paneMeta}>{timing}</p>
                   </div>
-                  <div className={styles.paneActions}>
+                  <div className={paneActions}>
                     <TooltipProvider delay={100}>
                       <Tooltip>
                         <TooltipTrigger
@@ -242,9 +278,9 @@ export function AutomationManager({ waitListId, initialRecipes, deliveryReady })
                   </div>
                 </header>
 
-                <div className={styles.fieldCard}>
+                <div className={fieldCard}>
                   {recipe.type !== "REFERRAL_MILESTONE" ? (
-                    <div className={styles.fieldRow}>
+                    <div className={fieldRow}>
                       <AutomationNumberField
                         label="Hours after confirmation"
                         value={delay}
@@ -253,11 +289,11 @@ export function AutomationManager({ waitListId, initialRecipes, deliveryReady })
                         disabled={busyId === recipe.id}
                         onChange={(next) => updateRecipe(recipe.id, { delayHours: next })}
                       />
-                      <span className={styles.unit}>hours after confirmation</span>
+                      <span className={fieldUnit}>hours after confirmation</span>
                     </div>
                   ) : (
                     <>
-                      <div className={styles.fieldRow}>
+                      <div className={fieldRow}>
                         <AutomationNumberField
                           label="Verified referrals to celebrate"
                           value={recipe.milestoneCount ?? recipe.config.milestoneCount}
@@ -266,9 +302,9 @@ export function AutomationManager({ waitListId, initialRecipes, deliveryReady })
                           disabled={busyId === recipe.id}
                           onChange={(next) => updateRecipe(recipe.id, { milestoneCount: next })}
                         />
-                        <span className={styles.unit}>verified referrals</span>
+                        <span className={fieldUnit}>verified referrals</span>
                       </div>
-                      <div className={styles.fieldRow}>
+                      <div className={fieldRow}>
                         <AutomationNumberField
                           label="Hours after the milestone"
                           value={delay}
@@ -277,12 +313,13 @@ export function AutomationManager({ waitListId, initialRecipes, deliveryReady })
                           disabled={busyId === recipe.id}
                           onChange={(next) => updateRecipe(recipe.id, { delayHours: next })}
                         />
-                        <span className={styles.unit}>hours after the milestone</span>
+                        <span className={fieldUnit}>hours after the milestone</span>
                       </div>
                     </>
                   )}
-                  <div className={styles.fieldRow}>
+                  <div className={fieldRow}>
                     <input
+                      className={fieldInput}
                       maxLength={160}
                       aria-label="Subject"
                       placeholder="Subject — what subscribers see in the inbox"
@@ -297,7 +334,7 @@ export function AutomationManager({ waitListId, initialRecipes, deliveryReady })
                   </div>
                 </div>
 
-                <div className={styles.canvasShell}>
+                <div className={canvasShell}>
                   <EmailCanvas
                     key={recipe.id}
                     editorRef={editorRef}
@@ -314,12 +351,12 @@ export function AutomationManager({ waitListId, initialRecipes, deliveryReady })
                   />
                 </div>
 
-                <div className={styles.metaBar}>
-                  <p className={styles.chips}>
-                    Personalize <code>{"{{waitlist}}"}</code>
-                    <code>{"{{referral_link}}"}</code>
+                <div className={metaBar}>
+                  <p className={chips}>
+                    Personalize <code className={chipCode}>{"{{waitlist}}"}</code>
+                    <code className={chipCodeNext}>{"{{referral_link}}"}</code>
                     {recipe.type === "REFERRAL_MILESTONE" ? (
-                      <code>{"{{referral_count}}"}</code>
+                      <code className={chipCodeNext}>{"{{referral_count}}"}</code>
                     ) : null}
                   </p>
                   <Button
@@ -333,7 +370,7 @@ export function AutomationManager({ waitListId, initialRecipes, deliveryReady })
                 </div>
 
                 {recipe.type.startsWith("REFERRAL_") ? (
-                  <p className={styles.hint}>
+                  <p className={hint}>
                     Sharing on the waitlist page is controlled in Settings → Referral sharing. This
                     email just includes each subscriber’s personal link.
                   </p>
@@ -342,9 +379,9 @@ export function AutomationManager({ waitListId, initialRecipes, deliveryReady })
             );
           })()
         ) : (
-          <div className={styles.emptyPane}>
-            <h2>No automations yet</h2>
-            <p>Welcome and referral follow-ups will appear here.</p>
+          <div className={emptyPane}>
+            <h2 className={emptyPaneTitle}>No automations yet</h2>
+            <p className={emptyPaneBody}>Welcome and referral follow-ups will appear here.</p>
           </div>
         )}
       </div>

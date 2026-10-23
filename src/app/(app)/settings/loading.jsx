@@ -1,14 +1,12 @@
 import { SettingsPanelSkeleton } from "@/components/product/settings-panel-skeleton";
 import { SettingsSectionNavigation } from "@/components/product/settings-section-nav";
 
-import "@/components/product/settings-page.css";
-
 export default function SettingsLoading() {
   return (
-    <div className="product-settings-page">
-      <div className="product-settings-layout">
-        <aside className="product-settings-menu">
-          <h1 className="product-page-title">Settings</h1>
+    <div className="mx-auto w-full max-w-280">
+      <div className="flex items-start gap-8 max-[760px]:flex-col max-[760px]:gap-8 lg:gap-12 xl:gap-18">
+        <aside className="sticky top-6 w-52.5 min-w-0 shrink-0 max-[760px]:static max-[760px]:w-full">
+          <h1 className="mt-0! mb-7.5! text-xl! max-[760px]:mb-4!">Settings</h1>
           <SettingsSectionNavigation />
         </aside>
         <SettingsPanelSkeleton />

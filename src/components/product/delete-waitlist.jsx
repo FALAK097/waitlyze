@@ -53,12 +53,12 @@ export function DeleteWaitlist({ id, name }) {
     }
   }
   return (
-    <div className="product-danger-inline">
-      <div>
-        <p>
-          <strong>If you no longer wish to use this waitlist.</strong>
+    <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-4">
+      <div className="grid min-w-0 gap-1">
+        <p className="m-0">
+          <strong className="text-base">If you no longer wish to use this waitlist.</strong>
         </p>
-        <p>
+        <p className="m-0 text-product-text-secondary">
           Export any subscriber data you want to keep first. This decision is permanent and
           can&rsquo;t be undone.
         </p>

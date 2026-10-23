@@ -204,7 +204,9 @@ export function FeedbackForm({ user, open, onOpenChange }) {
                 Attach image
               </Button>
             )}
-            <p className="product-help">PNG, JPEG, WebP, or GIF up to 3 MB.</p>
+            <p className="mb-4! text-sm leading-relaxed text-product-text-secondary">
+              PNG, JPEG, WebP, or GIF up to 3 MB.
+            </p>
           </div>
           <Button type="submit" disabled={pending || !label}>
             {pending ? "Sending…" : "Send feedback"}

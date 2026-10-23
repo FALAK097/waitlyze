@@ -5,8 +5,7 @@ import { HugeiconsIcon } from "@hugeicons/react";
 import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
-
-import "./status-page.css";
+import { cn } from "@/lib/utils";
 
 export function StatusPage({
   code = "404",
@@ -19,28 +18,42 @@ export function StatusPage({
 }) {
   const content = (
     <section
-      className={`product-ui product-status-page${standalone ? " is-standalone" : ""}`}
+      className={cn(
+        "product-ui flex min-h-svh flex-col items-center justify-center bg-product-bg-page px-5 pt-8 pb-16 text-center",
+        standalone ? "relative min-[700px]:px-12 min-[700px]:pt-8 min-[700px]:pb-20" : "max-h-175",
+      )}
       aria-labelledby="status-title"
     >
       {standalone && (
-        <Link prefetch={false} href="/" className="product-status-brand" aria-label="Waitlyze home">
-          <span className="product-status-mark" aria-hidden="true">
-            <i />
-            <i />
-            <i />
+        <Link
+          prefetch={false}
+          href="/"
+          className="mt-0 mb-12 inline-flex items-center self-start font-product-display text-2xl leading-none font-bold tracking-tighter text-product-text-primary no-underline"
+          aria-label="Waitlyze home"
+        >
+          <span className="mr-2 inline-flex h-7 -skew-x-12 items-center gap-1" aria-hidden="true">
+            <i className="block h-4 w-1.25 rounded-xs bg-product-accent-solid" />
+            <i className="block h-6.5 w-1.25 rounded-xs bg-product-accent-solid" />
+            <i className="block h-5 w-1.25 rounded-xs bg-product-accent-solid" />
           </span>
-          <span className="product-status-word">
+          <span className="inline-flex items-baseline">
             waitlyze
-            <span className="product-status-dot" aria-hidden="true">
+            <span className="text-product-success-text" aria-hidden="true">
               .
             </span>
           </span>
         </Link>
       )}
-      <div className="product-status-content">
-        <div className="product-status-art" aria-hidden="true">
-          <span>{code}</span>
-          <svg className="product-status-flourish" viewBox="0 0 320 160" fill="none">
+      <div className="my-auto w-full max-w-135">
+        <div className="relative mx-auto mb-6 w-full max-w-90 leading-none" aria-hidden="true">
+          <span className="relative z-1 block text-8xl font-semibold tracking-tighter text-product-text-primary md:text-9xl">
+            {code}
+          </span>
+          <svg
+            className="absolute top-1/2 -left-2 z-0 h-auto! w-full! -translate-y-1/2 overflow-visible text-product-accent-solid"
+            viewBox="0 0 320 160"
+            fill="none"
+          >
             <path
               d="M14 112C80 48 150 118 218 86C244 74 268 84 298 84"
               stroke="currentColor"
@@ -56,9 +69,11 @@ export function StatusPage({
             />
           </svg>
         </div>
-        <h1 id="status-title">{title}</h1>
-        <p>{description}</p>
-        <div className="product-status-actions">
+        <h1 id="status-title" className="mb-3! text-2xl! md:text-3xl!">
+          {title}
+        </h1>
+        <p className="mx-auto! max-w-sm text-product-text-secondary">{description}</p>
+        <div className="mt-7 flex flex-wrap justify-center gap-3">
           {retry && (
             <Button onClick={retry}>
               <HugeiconsIcon icon={RotateLeft01Icon} size={16} aria-hidden="true" />

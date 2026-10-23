@@ -1,6 +1,6 @@
 export function ContentLayout({ title, children }) {
   return (
-    <section className="product-legacy-content" aria-label={title}>
+    <section className="mt-2" aria-label={title}>
       {children}
     </section>
   );

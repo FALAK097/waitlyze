@@ -1,25 +1,56 @@
 "use client";
 
 import {
+  closestCenter,
+  DndContext,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import {
+  Add01Icon,
+  AlignLeftIcon,
+  Analytics01Icon,
   ArrowDown01Icon,
   ArrowUp01Icon,
-  ComputerIcon,
+  CheckListIcon,
+  Copy01Icon,
+  Delete02Icon,
+  DragDropIcon,
+  FlowchartIcon,
+  FormIcon,
+  GiftIcon,
+  HelpCircleIcon,
+  Image01Icon,
+  Message01Icon,
+  MonitorIcon,
+  Mouse02Icon,
+  Navigation01Icon,
   Redo02Icon,
-  SmartPhone01Icon,
+  Rocket01Icon,
+  SmartphoneIcon,
+  StarIcon,
   Undo02Icon,
+  UserMultiple02Icon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { parseAsStringLiteral, useQueryState } from "nuqs";
+import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 
-import {
-  WaitlistPageContent,
-  WaitlistSignupPreview,
-} from "@/components/product/waitlist-page-content";
-import { Button } from "@/components/ui/button";
+import { ColorPicker } from "@/components/reui/color-picker";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
 import {
   Dialog,
   DialogClose,
@@ -27,6 +58,7 @@ import {
   DialogDescription,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { FontPicker } from "@/components/ui/font-picker";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -36,13 +68,29 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import { templateSnapshotSchema } from "@/lib/templates/catalog.mjs";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { assessPublishReadiness } from "@/lib/campaigns/publish-readiness.mjs";
+import { brandContrastIssues } from "@/lib/color/contrast.mjs";
+import {
+  BLOCK_TYPES,
+  createSection,
+  listTemplates,
+  snapshotTemplate,
+  templateSnapshotSchema,
+} from "@/lib/templates/catalog.mjs";
 import { findUnchangedStarterCopy } from "@/lib/templates/starter-copy.mjs";
+import { cn } from "@/lib/utils";
 
-import { PublicationOptions } from "./publication-options";
-
-import styles from "./page-editor.module.css";
+import { ImageUploadField } from "./image-upload-field";
+import { PublishAndShare } from "./publish-and-share";
+import { ShareChannelIcon } from "./share-buttons";
+import {
+  StatusPagePreview,
+  WaitlistPageContent,
+  WaitlistSignupPreview,
+} from "./waitlist-page-content";
 
 const clone = (value) => structuredClone(value);
 const canonical = (value) =>
@@ -55,24 +103,525 @@ const canonical = (value) =>
             .map((key) => [key, canonical(value[key])]),
         )
       : value;
-const equal = (left, right) => JSON.stringify(canonical(left)) === JSON.stringify(canonical(right));
-const sectionNames = {
-  hero: "Introduction",
-  features: "Highlights",
-  faq: "Questions",
-  form: "Signup form",
-  footer: "Note",
+const equal = (a, b) => JSON.stringify(canonical(a)) === JSON.stringify(canonical(b));
+const names = Object.fromEntries(BLOCK_TYPES.map((block) => [block.type, block.label]));
+const blockIcons = {
+  hero: Rocket01Icon,
+  form: FormIcon,
+  navigation: Navigation01Icon,
+  features: CheckListIcon,
+  steps: FlowchartIcon,
+  logos: StarIcon,
+  stats: Analytics01Icon,
+  testimonials: Message01Icon,
+  faq: HelpCircleIcon,
+  media: Image01Icon,
+  signupCount: UserMultiple02Icon,
+  referralRewards: GiftIcon,
+  cta: Mouse02Icon,
+  footer: AlignLeftIcon,
 };
-const newSection = (type) =>
-  type === "features"
-    ? { type, items: [{ title: "A clear benefit", body: "Explain how it helps." }] }
-    : type === "faq"
-      ? { type, items: [{ question: "What should people know?", answer: "Add a useful answer." }] }
-      : { type, note: "Add a short note." };
+const blockGroups = BLOCK_TYPES.reduce((groups, block) => {
+  (groups[block.category] ??= []).push(block);
+  return groups;
+}, {});
+const templates = listTemplates();
+const itemDefaults = {
+  features: { title: "A clear benefit", body: "Explain how it helps." },
+  steps: { title: "Next step", body: "Explain what happens here." },
+  logos: "Company",
+  stats: { value: "100+", label: "people waiting" },
+  testimonials: { quote: "Add an honest quote.", name: "Customer name", role: "Role" },
+  faq: { question: "What should people know?", answer: "Add a useful answer." },
+  referralRewards: { referrals: 5, reward: "Early access" },
+};
+
+function Field({ label, value, onChange, multiline = false, type = "text", maxLength }) {
+  const id = useId();
+  return (
+    <div className="grid gap-1.5 [&_input]:text-caption [&_label]:text-caption [&_label]:font-semibold [&_textarea]:text-caption">
+      <Label htmlFor={id}>{label}</Label>
+      {multiline ? (
+        <Textarea
+          id={id}
+          value={value}
+          maxLength={maxLength}
+          rows={3}
+          onChange={(event) => onChange(event.target.value)}
+        />
+      ) : (
+        <Input
+          id={id}
+          type={type}
+          value={value}
+          maxLength={maxLength}
+          onChange={(event) => onChange(event.target.value)}
+        />
+      )}
+    </div>
+  );
+}
+function Toggle({ label, checked, onChange, disabled = false, hint = "" }) {
+  return (
+    <label
+      className={
+        disabled
+          ? "flex items-center gap-2 text-caption font-medium text-product-text-muted"
+          : "flex items-center gap-2 text-caption font-medium"
+      }
+    >
+      <Checkbox
+        checked={checked}
+        disabled={disabled}
+        onCheckedChange={(value) => onChange(value === true)}
+      />
+      <span>{label}</span>
+      {hint && <span className="text-micro text-product-text-muted">{hint}</span>}
+    </label>
+  );
+}
+function StringItems({ section, fields, update }) {
+  return (
+    <div className="grid gap-5">
+      {section.items.map((item, index) => (
+        <div
+          className="grid gap-2.5 border-t border-product-border-subtle pt-4 [&>button]:justify-self-start [&>span]:text-micro [&>span]:text-product-text-muted"
+          key={index}
+        >
+          <span>{index + 1}</span>
+          {fields.map(({ key, label, multiline, type = "text" }) => (
+            <Field
+              key={key}
+              label={label}
+              type={type}
+              multiline={multiline}
+              value={typeof item === "string" ? item : item[key]}
+              onChange={(value) =>
+                update({
+                  ...section,
+                  items: section.items.map((entry, itemIndex) =>
+                    itemIndex === index
+                      ? typeof entry === "string"
+                        ? value
+                        : { ...entry, [key]: type === "number" ? Number(value) : value }
+                      : entry,
+                  ),
+                })
+              }
+            />
+          ))}
+          {section.items.length > 1 && (
+            <Button
+              variant="ghost"
+              size="sm"
+              type="button"
+              onClick={() =>
+                update({
+                  ...section,
+                  items: section.items.filter((_, itemIndex) => itemIndex !== index),
+                })
+              }
+            >
+              Remove
+            </Button>
+          )}
+        </div>
+      ))}
+      {section.items.length < 8 && (
+        <Button
+          variant="outline"
+          size="sm"
+          type="button"
+          onClick={() =>
+            update({ ...section, items: [...section.items, clone(itemDefaults[section.type])] })
+          }
+        >
+          Add item
+        </Button>
+      )}
+    </div>
+  );
+}
+function LogoItems({ section, update }) {
+  const setItem = (index, next) =>
+    update({
+      ...section,
+      items: section.items.map((entry, itemIndex) => (itemIndex === index ? next : entry)),
+    });
+  return (
+    <div className="grid gap-5">
+      {section.items.map((raw, index) => {
+        const item = typeof raw === "string" ? { label: raw, imageUrl: "" } : raw;
+        return (
+          <div
+            className="grid gap-2.5 border-t border-product-border-subtle pt-4 [&>button]:justify-self-start [&>span]:text-micro [&>span]:text-product-text-secondary"
+            key={index}
+          >
+            <span>{index + 1}</span>
+            <Field
+              label="Name"
+              value={item.label}
+              onChange={(label) => setItem(index, { ...item, label })}
+            />
+            <ImageUploadField
+              label="Logo image"
+              hint="Optional. Shown instead of the name when set."
+              value={item.imageUrl}
+              onChange={(imageUrl) => setItem(index, { ...item, imageUrl })}
+              previewClassName="aspect-16/9 object-contain bg-product-bg-inset"
+            />
+            {section.items.length > 1 && (
+              <Button
+                variant="ghost"
+                size="sm"
+                type="button"
+                onClick={() =>
+                  update({
+                    ...section,
+                    items: section.items.filter((_, itemIndex) => itemIndex !== index),
+                  })
+                }
+              >
+                Remove
+              </Button>
+            )}
+          </div>
+        );
+      })}
+      {section.items.length < 8 && (
+        <Button
+          variant="outline"
+          size="sm"
+          type="button"
+          onClick={() => update({ ...section, items: [...section.items, "Company"] })}
+        >
+          Add item
+        </Button>
+      )}
+    </div>
+  );
+}
+function LinkItems({ section, update }) {
+  return (
+    <div className="grid gap-5">
+      {section.links.map((link, index) => (
+        <div
+          className="grid gap-2.5 border-t border-product-border-subtle pt-4 [&>button]:justify-self-start"
+          key={index}
+        >
+          <Field
+            label="Label"
+            value={link.label}
+            onChange={(label) =>
+              update({
+                ...section,
+                links: section.links.map((entry, itemIndex) =>
+                  itemIndex === index ? { ...entry, label } : entry,
+                ),
+              })
+            }
+          />
+          <Field
+            label="Link"
+            value={link.href}
+            onChange={(href) =>
+              update({
+                ...section,
+                links: section.links.map((entry, itemIndex) =>
+                  itemIndex === index ? { ...entry, href } : entry,
+                ),
+              })
+            }
+          />
+          <Button
+            variant="ghost"
+            size="sm"
+            type="button"
+            onClick={() =>
+              update({
+                ...section,
+                links: section.links.filter((_, itemIndex) => itemIndex !== index),
+              })
+            }
+          >
+            Remove
+          </Button>
+        </div>
+      ))}
+      {section.links.length < 5 && (
+        <Button
+          variant="outline"
+          size="sm"
+          type="button"
+          onClick={() =>
+            update({ ...section, links: [...section.links, { label: "Link", href: "#" }] })
+          }
+        >
+          Add link
+        </Button>
+      )}
+    </div>
+  );
+}
+function BlockInspector({ section, update, form, updateForm }) {
+  if (!section)
+    return (
+      <div className={"px-5 py-8 text-caption leading-relaxed text-product-text-secondary"}>
+        <p>Click a block in the preview or the list to edit it.</p>
+      </div>
+    );
+  const field = (key, label, multiline = false) => (
+    <Field
+      label={label}
+      multiline={multiline}
+      value={section[key] ?? ""}
+      onChange={(value) => update({ ...section, [key]: value })}
+    />
+  );
+  return (
+    <div className="grid gap-4 p-5">
+      {section.type === "navigation" && (
+        <>
+          {field("brand", "Brand")}
+          {field("buttonText", "Button")}
+          <LinkItems section={section} update={update} />
+        </>
+      )}
+      {section.type === "hero" && (
+        <>
+          {field("eyebrow", "Eyebrow")}
+          {field("heading", "Headline")}
+          {field("body", "Description", true)}
+          <Toggle
+            label="Show signup form"
+            checked={section.showForm}
+            onChange={(showForm) => update({ ...section, showForm })}
+          />
+        </>
+      )}
+      {["features", "steps"].includes(section.type) && (
+        <>
+          {field("heading", "Heading")}
+          <StringItems
+            section={section}
+            fields={[
+              { key: "title", label: "Title" },
+              { key: "body", label: "Description", multiline: true },
+            ]}
+            update={update}
+          />
+        </>
+      )}
+      {section.type === "logos" && (
+        <>
+          {field("heading", "Heading")}
+          <LogoItems section={section} update={update} />
+        </>
+      )}
+      {section.type === "stats" && (
+        <StringItems
+          section={section}
+          fields={[
+            { key: "value", label: "Value" },
+            { key: "label", label: "Label" },
+          ]}
+          update={update}
+        />
+      )}
+      {section.type === "testimonials" && (
+        <>
+          {field("heading", "Heading")}
+          <StringItems
+            section={section}
+            fields={[
+              { key: "quote", label: "Quote", multiline: true },
+              { key: "name", label: "Name" },
+              { key: "role", label: "Role" },
+            ]}
+            update={update}
+          />
+        </>
+      )}
+      {section.type === "faq" && (
+        <>
+          {field("heading", "Heading")}
+          <StringItems
+            section={section}
+            fields={[
+              { key: "question", label: "Question" },
+              { key: "answer", label: "Answer", multiline: true },
+            ]}
+            update={update}
+          />
+        </>
+      )}
+      {section.type === "media" && (
+        <>
+          {field("heading", "Heading")}
+          {field("body", "Description", true)}
+          <ImageUploadField
+            label="Image"
+            value={section.imageUrl}
+            onChange={(imageUrl) => update({ ...section, imageUrl })}
+            hint="PNG, JPEG, or WebP up to 4MB."
+          />
+          {field("imageAlt", "Image description")}
+        </>
+      )}
+      {section.type === "form" && (
+        <>
+          {field("heading", "Heading")}
+          {field("body", "Description", true)}
+        </>
+      )}
+      {section.type === "signupCount" && (
+        <>
+          {field("prefix", "Before number")}
+          {field("suffix", "After number")}
+        </>
+      )}
+      {section.type === "referralRewards" && (
+        <>
+          {field("heading", "Heading")}
+          <StringItems
+            section={section}
+            fields={[
+              { key: "referrals", label: "Referrals", type: "number" },
+              { key: "reward", label: "Reward" },
+            ]}
+            update={update}
+          />
+        </>
+      )}
+      {section.type === "cta" && (
+        <>
+          {field("heading", "Heading")}
+          {field("body", "Description", true)}
+          {field("buttonText", "Button")}
+        </>
+      )}
+      {section.type === "footer" && (
+        <>
+          {field("note", "Footer note", true)}
+          <LinkItems section={section} update={update} />
+        </>
+      )}
+      {(section.type === "form" || (section.type === "hero" && section.showForm)) && (
+        <div className="grid gap-4 border-t border-product-border-subtle pt-4">
+          <div className="grid gap-1">
+            <p className="text-micro font-bold tracking-widest text-product-text-secondary uppercase">
+              Signup form
+            </p>
+            <p className="text-micro leading-relaxed text-product-text-secondary">
+              The same form is used wherever it appears on your page or embed.
+            </p>
+          </div>
+          <FormPanel form={form} update={updateForm} />
+        </div>
+      )}
+    </div>
+  );
+}
+
+function SortableBlockRow({ section, selected, disabled, onSelect, onDuplicate, onRemove }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: section.id,
+    disabled,
+  });
+  return (
+    <div
+      className={cn(
+        "sortable-block-row group relative flex items-center gap-1 rounded-lg data-[selected=true]:bg-product-bg-inset",
+        isDragging && "z-10 bg-product-bg-surface opacity-80 shadow-md",
+      )}
+      data-selected={selected}
+      ref={setNodeRef}
+      style={{
+        "--sortable-transform": CSS.Transform.toString(transform),
+        "--sortable-transition": transition,
+      }}
+    >
+      <button
+        {...attributes}
+        {...listeners}
+        aria-label={`Drag ${names[section.type]} block`}
+        className="flex size-11 shrink-0 cursor-grab touch-none items-center justify-center rounded-md border-0 bg-transparent text-product-text-muted active:cursor-grabbing"
+        type="button"
+      >
+        <HugeiconsIcon icon={DragDropIcon} size={15} aria-hidden="true" />
+      </button>
+      <span className="flex size-7 shrink-0 items-center justify-center rounded-md text-product-text-muted group-data-[selected=true]:bg-product-bg-surface group-data-[selected=true]:text-product-text-primary">
+        <HugeiconsIcon icon={blockIcons[section.type]} size={15} aria-hidden="true" />
+      </span>
+      <button
+        aria-pressed={selected}
+        className="flex min-h-11 min-w-0 flex-1 cursor-pointer items-center border-0 bg-transparent px-1 py-2 text-left text-caption text-product-text-primary"
+        type="button"
+        onClick={onSelect}
+      >
+        <span className="truncate">{names[section.type]}</span>
+      </button>
+      <div className="hidden items-center pr-1 group-focus-within:flex group-hover:flex group-data-[selected=true]:flex [@media(hover:none)]:flex">
+        <button
+          aria-label="Duplicate"
+          className="flex size-7 cursor-pointer items-center justify-center border-0 bg-transparent text-product-text-secondary"
+          onClick={onDuplicate}
+        >
+          <HugeiconsIcon icon={Copy01Icon} size={14} aria-hidden="true" />
+        </button>
+        <button
+          aria-label="Remove"
+          className="flex size-7 cursor-pointer items-center justify-center border-0 bg-transparent text-product-text-secondary"
+          onClick={onRemove}
+        >
+          <HugeiconsIcon icon={Delete02Icon} size={14} aria-hidden="true" />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function TemplatePreview({ template }) {
+  const hero = template.snapshot.sections.find((section) => section.type === "hero");
+  const visibleBlocks = template.snapshot.sections.filter((section) => section.visible).slice(0, 4);
+  return (
+    <div
+      aria-hidden="true"
+      className="border-product-border flex aspect-video flex-col overflow-hidden rounded-lg border bg-(--template-bg) p-3 text-(--template-text)"
+      style={{
+        "--template-accent": template.snapshot.brand.accentColor,
+        "--template-bg": template.snapshot.brand.pageBackground,
+        "--template-text": template.snapshot.brand.textColor,
+      }}
+    >
+      <div className="flex items-center justify-between">
+        <span className="h-1.5 w-9 rounded-full bg-(--template-text) opacity-80" />
+        <span className="h-1.5 w-5 rounded-full bg-(--template-accent)" />
+      </div>
+      <div className="flex flex-1 flex-col justify-center gap-1.5 py-2">
+        <span className="max-w-32 truncate text-micro leading-none font-bold">
+          {hero?.heading || template.name}
+        </span>
+        <span className="h-1 w-20 rounded-full bg-(--template-text) opacity-25" />
+        <span className="h-1 w-14 rounded-full bg-(--template-text) opacity-15" />
+        <span className="mt-1 h-2.5 w-16 rounded-sm bg-(--template-accent)" />
+      </div>
+      <div className="flex gap-1">
+        {visibleBlocks.map((section) => (
+          <span
+            className="h-1 flex-1 rounded-full bg-(--template-text) opacity-15"
+            key={section.id}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
 
 export function SnapshotPageBuilder({
   waitList,
   saveDraftPage,
+  replaceInvalidDraftPage,
   publishPage,
   pausePage,
   rollbackPage,
@@ -80,86 +629,97 @@ export function SnapshotPageBuilder({
   publicationOrigin,
 }) {
   const router = useRouter();
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
   const [snapshot, setSnapshot] = useState(waitList.templateSnapshot);
   const [version, setVersion] = useState(waitList.templateRevision);
-  const [dirty, setDirty] = useState(false);
-  const [hydrated, setHydrated] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [message, setMessage] = useState("Saved");
-  const [error, setError] = useState("");
-  const [conflict, setConflict] = useState(null);
-  const [undoCount, setUndoCount] = useState(0);
-  const [redoCount, setRedoCount] = useState(0);
-  const [addType, setAddType] = useState("features");
+  const [replacement, setReplacement] = useState(waitList.snapshotReplacement);
+  const [surface, setSurface] = useQueryState(
+    "tab",
+    parseAsStringLiteral(["page", "status", "publish"]).withDefault("page"),
+  );
+  const [panel, setPanel] = useState("blocks");
+  const [rightPanel, setRightPanel] = useState("properties");
+  const [addOpen, setAddOpen] = useState(false);
+  const [mobileMode, setMobileMode] = useState("edit");
+  const [mobileEditorPanel, setMobileEditorPanel] = useState("structure");
+  const [selectedId, setSelectedId] = useState(waitList.templateSnapshot.sections[0]?.id);
   const [previewViewport, setPreviewViewport] = useState("desktop");
-  const [expandedSection, setExpandedSection] = useState(0);
-  const [mobileView, setMobileView] = useState("content");
-  const [showAddSection, setShowAddSection] = useState(false);
-  const [publishing, setPublishing] = useState(false);
-  const [publishReviewOpen, setPublishReviewOpen] = useState(false);
-  const [publishConfirmed, setPublishConfirmed] = useState(false);
-  const undoStack = useRef([]);
-  const redoStack = useRef([]);
-  const snapshotRef = useRef(snapshot);
-  const versionRef = useRef(version);
-  const dirtyRef = useRef(dirty);
-  const conflictRef = useRef(conflict);
-  const inFlightRef = useRef(false);
-  const saveAgainRef = useRef(false);
-  const pendingSectionFocusRef = useRef(null);
-  const [sectionAnnouncement, setSectionAnnouncement] = useState("");
+  const [statusState, setStatusState] = useState("confirmed");
+  const [statusViewport, setStatusViewport] = useState("desktop");
+  const [pendingTemplate, setPendingTemplate] = useState(null);
+  const [dirty, setDirty] = useState(false),
+    [saving, setSaving] = useState(false),
+    [hydrated, setHydrated] = useState(false);
+  const [message, setMessage] = useState("Saved"),
+    [error, setError] = useState(""),
+    [announcement, setAnnouncement] = useState(""),
+    [conflict, setConflict] = useState(null);
+  const [undoCount, setUndoCount] = useState(0),
+    [redoCount, setRedoCount] = useState(0),
+    [publishing, setPublishing] = useState(false);
+  const [publishReviewOpen, setPublishReviewOpen] = useState(false),
+    [publishConfirmed, setPublishConfirmed] = useState(false);
+  const undoStack = useRef([]),
+    redoStack = useRef([]),
+    snapshotRef = useRef(snapshot),
+    versionRef = useRef(version),
+    dirtyRef = useRef(false),
+    conflictRef = useRef(null),
+    inFlightRef = useRef(false),
+    saveAgainRef = useRef(false);
+  const canvasRef = useRef(null);
+  const scrollRestoreRef = useRef(null);
   const key = `waitlyze:page:${waitList.id}`;
   useLayoutEffect(() => {
     snapshotRef.current = snapshot;
     versionRef.current = version;
     dirtyRef.current = dirty;
     conflictRef.current = conflict;
+    if (scrollRestoreRef.current != null && canvasRef.current) {
+      canvasRef.current.scrollTop = scrollRestoreRef.current;
+      scrollRestoreRef.current = null;
+    }
   }, [snapshot, version, dirty, conflict]);
-  useLayoutEffect(() => {
-    const pending = pendingSectionFocusRef.current;
-    if (!pending) return;
-    document
-      .getElementById(`section-${pending.index}-move-${pending.action}`)
-      ?.focus({ preventScroll: true });
-    pendingSectionFocusRef.current = null;
-  }, [snapshot]);
-
   const applySnapshot = useCallback(
     (next) => {
-      const validated = clone(next);
-      if (
-        !Array.isArray(validated.sections) ||
-        validated.sections.length < 2 ||
-        validated.sections.length > 12
-      )
-        return;
-      if (equal(snapshotRef.current, validated)) return;
+      const parsed = templateSnapshotSchema.safeParse(next);
+      if (!parsed.success) {
+        const issue =
+          parsed.error.issues.find((issue) => issue.code === "custom") || parsed.error.issues[0];
+        setError(issue?.message || "Review the page content.");
+        return false;
+      }
+      if (equal(snapshotRef.current, next)) return true;
       undoStack.current.push(clone(snapshotRef.current));
       if (undoStack.current.length > 100) undoStack.current.shift();
       redoStack.current = [];
       setUndoCount(undoStack.current.length);
       setRedoCount(0);
-      snapshotRef.current = validated;
-      setSnapshot(validated);
+      snapshotRef.current = clone(next);
+      setSnapshot(clone(next));
+      dirtyRef.current = true;
       setDirty(true);
       setMessage("Unsaved changes");
       setError("");
       try {
         sessionStorage.setItem(
           key,
-          JSON.stringify({ revision: versionRef.current, snapshot: validated }),
+          JSON.stringify({ revision: versionRef.current, snapshot: next }),
         );
       } catch {
         setError(
-          "This browser could not keep a recovery copy. Leave this tab open until the page says Saved.",
+          "This browser could not keep a recovery copy. Keep this tab open until the page says Saved.",
         );
       }
+      return true;
     },
     [key],
   );
-
   const flush = useCallback(async () => {
-    if (!dirtyRef.current || conflictRef.current) return;
+    if (replacement || !dirtyRef.current || conflictRef.current) return;
     if (inFlightRef.current) {
       saveAgainRef.current = true;
       return;
@@ -171,205 +731,229 @@ export function SnapshotPageBuilder({
       const result = await saveDraftPage(waitList.id, versionRef.current, sent);
       if (result?.conflict) {
         setConflict({ revision: result.revision, snapshot: result.snapshot });
-        setError(
-          "A newer page version was saved elsewhere. Your edits are still safe in this tab.",
-        );
+        setError("A newer version was saved elsewhere. Choose which version to keep.");
         setMessage("Review changes");
         return;
       }
       if (!result?.ok) {
-        setError(
-          result?.message || "Couldn't save just now. Your edits are kept in this tab; try again.",
-        );
+        setError(result?.message || "Could not save just now. Your edits remain in this tab.");
         setMessage("Not saved");
         return;
       }
       versionRef.current = result.revision;
       setVersion(result.revision);
-      setError("");
       if (equal(snapshotRef.current, sent)) {
-        const canonicalSnapshot = result.snapshot || sent;
-        snapshotRef.current = canonicalSnapshot;
-        setSnapshot(canonicalSnapshot);
+        const saved = result.snapshot || sent;
+        snapshotRef.current = saved;
+        setSnapshot(saved);
         dirtyRef.current = false;
         setDirty(false);
-        setMessage(result.unchanged ? "Saved" : `Saved · version ${result.revision}`);
-      } else {
-        dirtyRef.current = true;
-        setDirty(true);
-        saveAgainRef.current = true;
-      }
+        setMessage("Saved");
+      } else saveAgainRef.current = true;
+      setError("");
       try {
         sessionStorage.setItem(
           key,
           JSON.stringify({ revision: result.revision, snapshot: snapshotRef.current }),
         );
       } catch {
-        setError("Page saved. This browser could not keep a recovery copy of newer edits.");
+        /* saved on server */
       }
     } catch {
-      setError("Couldn't save just now. Your edits are kept in this tab; try again.");
+      setError("Could not save just now. Your edits remain in this tab.");
       setMessage("Not saved");
     } finally {
       inFlightRef.current = false;
       setSaving(false);
       if (saveAgainRef.current) {
         saveAgainRef.current = false;
-        window.setTimeout(() => {
-          void flush();
-        }, 0);
+        window.setTimeout(() => void flush(), 0);
       }
     }
-  }, [key, saveDraftPage, waitList.id]);
-
+  }, [key, replacement, saveDraftPage, waitList.id]);
   useEffect(() => {
     try {
       const stored = JSON.parse(sessionStorage.getItem(key) || "null");
+      const parsed = templateSnapshotSchema.safeParse(stored?.snapshot);
       if (
         stored &&
         Number.isSafeInteger(stored.revision) &&
-        templateSnapshotSchema.safeParse(stored.snapshot).success &&
-        !equal(stored.snapshot, waitList.templateSnapshot)
+        parsed.success &&
+        !equal(parsed.data, waitList.templateSnapshot)
       ) {
-        const recovered = clone(stored.snapshot);
-        snapshotRef.current = recovered;
-        setSnapshot(recovered);
-        setDirty(true);
+        snapshotRef.current = clone(parsed.data);
+        setSnapshot(clone(parsed.data));
         dirtyRef.current = true;
-        if (stored.revision !== waitList.templateRevision) {
+        setDirty(true);
+        setMessage("Recovered unsaved edits");
+        if (!waitList.snapshotReplacement && stored.revision !== waitList.templateRevision)
           setConflict({ revision: waitList.templateRevision, snapshot: waitList.templateSnapshot });
-          conflictRef.current = {
-            revision: waitList.templateRevision,
-            snapshot: waitList.templateSnapshot,
-          };
-          setError("This tab has edits from an older saved version. Choose which version to keep.");
-          setMessage("Review changes");
-        } else setMessage("Recovered unsaved edits");
       }
     } catch {
-      setError("A recovery copy could not be read. The last saved version is loaded.");
+      setError("The last saved version is loaded; a browser recovery copy could not be read.");
     }
     setHydrated(true);
-  }, [key, waitList.templateRevision, waitList.templateSnapshot]);
-
+  }, [key, waitList.templateRevision, waitList.templateSnapshot, waitList.snapshotReplacement]);
   useEffect(() => {
-    if (!hydrated || !dirty || conflict) return undefined;
-    const timer = window.setTimeout(() => {
-      void flush();
-    }, 700);
+    if (replacement || !hydrated || !dirty || conflict) return;
+    const timer = window.setTimeout(() => void flush(), 700);
     return () => window.clearTimeout(timer);
-  }, [snapshot, dirty, conflict, hydrated, flush]);
-
-  const moveSection = (index, direction) => {
-    const target = index + direction;
-    if (index === 0 || target <= 0 || target >= snapshot.sections.length) return;
-    const sections = [...snapshot.sections];
-    [sections[index], sections[target]] = [sections[target], sections[index]];
-    const next = { ...snapshot, sections };
-    if (equal(snapshotRef.current, next)) return;
-    setExpandedSection(target);
-    pendingSectionFocusRef.current = { index: target, action: direction < 0 ? "down" : "up" };
-    setSectionAnnouncement(
-      `${sectionNames[sections[target].type]} moved to position ${target + 1} of ${sections.length}.`,
-    );
-    applySnapshot(next);
-  };
-  const updateSection = (sectionIndex, transform) => {
-    const sections = snapshot.sections.map((section, index) =>
-      index === sectionIndex ? transform(section) : section,
-    );
-    applySnapshot({ ...snapshot, sections });
-  };
-  const updateItem = (sectionIndex, itemIndex, transform) =>
-    updateSection(sectionIndex, (section) => ({
-      ...section,
-      items: section.items.map((item, index) => (index === itemIndex ? transform(item) : item)),
-    }));
-  const removeSection = (index) => {
-    if (snapshot.sections[index].type === "hero" || snapshot.sections[index].type === "form")
-      return;
-    setExpandedSection(Math.max(0, index - 1));
-    applySnapshot({
-      ...snapshot,
-      sections: snapshot.sections.filter((_, sectionIndex) => sectionIndex !== index),
-    });
-  };
-  const addSection = () => {
-    if (snapshot.sections.length >= 12) return;
-    applySnapshot({
-      ...snapshot,
-      sections: [...snapshot.sections.slice(0, -1), newSection(addType), snapshot.sections.at(-1)],
-    });
-    setExpandedSection(snapshot.sections.length - 1);
-    setShowAddSection(false);
-  };
+  }, [snapshot, dirty, conflict, hydrated, flush, replacement]);
   const undo = () => {
-    if (!undoStack.current.length) return;
-    redoStack.current.push(clone(snapshotRef.current));
     const previous = undoStack.current.pop();
+    if (!previous) return;
+    redoStack.current.push(clone(snapshotRef.current));
     setUndoCount(undoStack.current.length);
     setRedoCount(redoStack.current.length);
     snapshotRef.current = previous;
     setSnapshot(previous);
+    dirtyRef.current = true;
     setDirty(true);
     setMessage("Unsaved changes");
-    try {
-      sessionStorage.setItem(
-        key,
-        JSON.stringify({ revision: versionRef.current, snapshot: previous }),
-      );
-    } catch {
-      setError("This browser could not keep a recovery copy.");
-    }
   };
   const redo = () => {
-    if (!redoStack.current.length) return;
-    undoStack.current.push(clone(snapshotRef.current));
     const next = redoStack.current.pop();
+    if (!next) return;
+    undoStack.current.push(clone(snapshotRef.current));
     setUndoCount(undoStack.current.length);
     setRedoCount(redoStack.current.length);
     snapshotRef.current = next;
     setSnapshot(next);
+    dirtyRef.current = true;
     setDirty(true);
     setMessage("Unsaved changes");
-    try {
-      sessionStorage.setItem(key, JSON.stringify({ revision: versionRef.current, snapshot: next }));
-    } catch {
-      setError("This browser could not keep a recovery copy.");
-    }
   };
   const resolveConflict = (choice) => {
-    if (!conflict) return;
-    const remote = conflict;
-    const next = choice === "saved" ? clone(remote.snapshot) : clone(snapshotRef.current);
-    undoStack.current = [];
-    redoStack.current = [];
-    setUndoCount(0);
-    setRedoCount(0);
-    versionRef.current = remote.revision;
-    setVersion(remote.revision);
+    const saved = templateSnapshotSchema.parse(conflict.snapshot);
+    const next = choice === "saved" ? clone(saved) : clone(snapshotRef.current);
+    versionRef.current = conflict.revision;
+    setVersion(conflict.revision);
     setConflict(null);
     conflictRef.current = null;
-    setError("");
     snapshotRef.current = next;
     setSnapshot(next);
-    const changed = !equal(next, remote.snapshot);
+    const changed = !equal(next, saved);
     dirtyRef.current = changed;
     setDirty(changed);
+    setError("");
     setMessage(changed ? "Saving your version…" : "Saved");
-    try {
-      sessionStorage.setItem(key, JSON.stringify({ revision: remote.revision, snapshot: next }));
-    } catch {
-      /* The editor remains usable in this tab. */
+  };
+  const updateSection = (next) =>
+    applySnapshot({
+      ...snapshot,
+      sections: snapshot.sections.map((section) => (section.id === next.id ? next : section)),
+    });
+  const selected = snapshot.sections.find((section) => section.id === selectedId);
+  const addBlock = (type) => {
+    if (snapshot.sections.length >= 24) {
+      setError("A page can have up to 24 blocks.");
+      return;
+    }
+    const block = createSection(type);
+    const sections = [...snapshot.sections];
+    const selectedIndex = sections.findIndex((section) => section.id === selectedId);
+    sections.splice(selectedIndex < 0 ? sections.length : selectedIndex + 1, 0, block);
+    applySnapshot({ ...snapshot, sections });
+    setSelectedId(block.id);
+    setPanel("blocks");
+    setAnnouncement(`${names[type]} block added.`);
+  };
+  const removeBlock = (target) => {
+    const id = typeof target === "string" ? target : selectedId;
+    const section = snapshot.sections.find((item) => item.id === id);
+    if (!section) return;
+    const sections = snapshot.sections.filter((item) => item.id !== id);
+    if (applySnapshot({ ...snapshot, sections })) {
+      setSelectedId((current) =>
+        sections.some((item) => item.id === current) ? current : sections[0]?.id,
+      );
+      setAnnouncement(`${names[section.type]} block removed.`);
     }
   };
+  const duplicateBlock = (target) => {
+    const id = typeof target === "string" ? target : selectedId;
+    const section = snapshot.sections.find((item) => item.id === id);
+    if (!section || snapshot.sections.length >= 24) return;
+    const copy = { ...clone(section), id: `block-${crypto.randomUUID()}` };
+    const at = snapshot.sections.findIndex((item) => item.id === id);
+    const sections = [...snapshot.sections];
+    sections.splice(at + 1, 0, copy);
+    applySnapshot({ ...snapshot, sections });
+    setSelectedId(copy.id);
+    setAnnouncement(`${names[section.type]} block duplicated.`);
+  };
+  const moveBlock = (index, direction) => {
+    const target = index + direction;
+    if (target < 0 || target >= snapshot.sections.length) return;
+    const sections = [...snapshot.sections];
+    [sections[index], sections[target]] = [sections[target], sections[index]];
+    applySnapshot({ ...snapshot, sections });
+    setAnnouncement(
+      `${names[sections[target].type]} block moved ${direction < 0 ? "up" : "down"}.`,
+    );
+  };
+  const finishBlockDrag = ({ active, over }) => {
+    if (!over || active.id === over.id) return;
+    const from = snapshot.sections.findIndex((section) => section.id === active.id);
+    const to = snapshot.sections.findIndex((section) => section.id === over.id);
+    if (from < 0 || to < 0) return;
+    const sections = arrayMove(snapshot.sections, from, to);
+    if (applySnapshot({ ...snapshot, sections }))
+      setAnnouncement(`${names[sections[to].type]} block moved to position ${to + 1}.`);
+  };
+  const renderBlockToolbar = (section) => {
+    const index = snapshot.sections.findIndex((item) => item.id === section.id);
+    const action =
+      "flex size-7 cursor-pointer items-center justify-center rounded-md border-0 bg-transparent text-white/70 transition-colors hover:bg-white/15 hover:text-white disabled:pointer-events-none disabled:opacity-30";
+    return (
+      <div className="absolute top-2 left-2 z-10 hidden items-center gap-0.5 rounded-lg bg-product-text-primary p-1 shadow-canvas group-focus-within:flex group-hover:flex group-data-[selected=true]:flex">
+        <span className="rounded-md bg-product-accent-solid px-2 py-1 text-micro font-bold text-product-text-primary">
+          {names[section.type]}
+        </span>
+        <button
+          type="button"
+          className={action}
+          aria-label="Move up"
+          disabled={index <= 0}
+          onClick={() => moveBlock(index, -1)}
+        >
+          <HugeiconsIcon icon={ArrowUp01Icon} size={14} aria-hidden="true" />
+        </button>
+        <button
+          type="button"
+          className={action}
+          aria-label="Move down"
+          disabled={index >= snapshot.sections.length - 1}
+          onClick={() => moveBlock(index, 1)}
+        >
+          <HugeiconsIcon icon={ArrowDown01Icon} size={14} aria-hidden="true" />
+        </button>
+        <button
+          type="button"
+          className={action}
+          aria-label="Duplicate"
+          onClick={() => duplicateBlock(section.id)}
+        >
+          <HugeiconsIcon icon={Copy01Icon} size={14} aria-hidden="true" />
+        </button>
+        <button
+          type="button"
+          className={action}
+          aria-label="Remove"
+          onClick={() => removeBlock(section.id)}
+        >
+          <HugeiconsIcon icon={Delete02Icon} size={14} aria-hidden="true" />
+        </button>
+      </div>
+    );
+  };
+  const updateRoot = (key, value) =>
+    applySnapshot({ ...snapshot, [key]: { ...snapshot[key], ...value } });
   const onKeyDown = (event) => {
-    if (!(event.metaKey || event.ctrlKey) || event.altKey) return;
-    const target = event.target;
     if (
-      target instanceof HTMLElement &&
-      (target.isContentEditable ||
-        target.closest("input, textarea, select, [contenteditable='true']"))
+      !(event.metaKey || event.ctrlKey) ||
+      event.altKey ||
+      event.target.closest?.("input,textarea,select,[contenteditable=true]")
     )
       return;
     if (event.key.toLowerCase() === "z") {
@@ -381,627 +965,1137 @@ export function SnapshotPageBuilder({
       redo();
     }
   };
-
   const publish = async () => {
-    if (dirty || saving || conflict || publishing || !publishConfirmed) return;
+    if (replacement || dirty || saving || conflict || publishing || !publishConfirmed) return;
     setPublishing(true);
-    setError("");
     try {
       const result = await publishPage(waitList.id, version);
       if (!result?.ok) {
-        setError(result?.message || "Couldn't publish this page.");
+        setError(result?.message || "Could not publish this page.");
         return;
       }
-      setMessage(result.unchanged ? "Already live" : `Published · version ${result.revision}`);
+      setMessage(result.unchanged ? "Already live" : "Published");
+      setAnnouncement(result.unchanged ? "This page is already live." : "Page published.");
       setPublishReviewOpen(false);
       router.refresh();
-    } catch {
-      setError("Couldn't publish this page. Check your connection and try again.");
     } finally {
       setPublishing(false);
     }
   };
   const lifecycle = async (action) => {
-    if (dirty || saving || conflict || publishing) return;
+    if (replacement || dirty || saving || conflict || publishing) return;
     setPublishing(true);
-    setError("");
     try {
       const result = await action(waitList.id);
       if (!result?.ok) {
-        setError(result?.message || "Couldn't update publication.");
+        setError(result?.message || "Could not update publication.");
         return;
       }
-      if (Number.isSafeInteger(result.templateRevision) && result.snapshot) {
-        const restored = clone(result.snapshot);
+      if (result.snapshot) {
+        const restored = templateSnapshotSchema.parse(result.snapshot);
         versionRef.current = result.templateRevision;
         setVersion(result.templateRevision);
-        snapshotRef.current = restored;
-        setSnapshot(restored);
-        dirtyRef.current = false;
+        snapshotRef.current = clone(restored);
+        setSnapshot(clone(restored));
         setDirty(false);
-        setConflict(null);
-        conflictRef.current = null;
-        undoStack.current = [];
-        redoStack.current = [];
-        setUndoCount(0);
-        setRedoCount(0);
-        setMessage("Restored previous published version");
+        dirtyRef.current = false;
         try {
           sessionStorage.setItem(
             key,
             JSON.stringify({ revision: result.templateRevision, snapshot: restored }),
           );
         } catch {
-          /* A future reload still uses the saved server version. */
+          /* restored on server */
         }
       }
       router.refresh();
-    } catch {
-      setError("Couldn't update publication. Check your connection and try again.");
     } finally {
       setPublishing(false);
     }
   };
+  const acceptReplacement = async () => {
+    if (saving || !replacement) return;
+    setSaving(true);
+    const sent = clone(snapshotRef.current);
+    try {
+      const result = await replaceInvalidDraftPage(waitList.id, versionRef.current, sent);
+      if (!result?.ok) {
+        setError(
+          result?.conflict
+            ? "The saved page changed. Reload before accepting a replacement."
+            : result?.message || "Could not replace this page. Try again.",
+        );
+        return;
+      }
+      versionRef.current = result.revision;
+      setVersion(result.revision);
+      const changed = !equal(snapshotRef.current, sent);
+      if (!changed) {
+        snapshotRef.current = result.snapshot;
+        setSnapshot(result.snapshot);
+      }
+      dirtyRef.current = changed;
+      setDirty(changed);
+      setReplacement(false);
+      setMessage(changed ? "Unsaved changes" : "Saved");
+      setError("");
+      try {
+        sessionStorage.setItem(
+          key,
+          JSON.stringify({ revision: result.revision, snapshot: snapshotRef.current }),
+        );
+      } catch {
+        /* saved on server */
+      }
+      router.refresh();
+    } catch {
+      setError("Could not replace this page. Try again.");
+    } finally {
+      setSaving(false);
+    }
+  };
+  const applyTemplate = (templateId) => {
+    const template = snapshotTemplate(templateId);
+    scrollRestoreRef.current = canvasRef.current?.scrollTop ?? null;
+    const next = {
+      ...template,
+      brand: {
+        ...template.brand,
+        logo: snapshot.brand.logo,
+        showPoweredBy: snapshot.brand.showPoweredBy,
+      },
+      form: snapshot.form,
+      statusPage: snapshot.statusPage,
+      seo: snapshot.seo,
+    };
+    if (applySnapshot(next)) setSelectedId(next.sections[0].id);
+  };
+  const applyTemplateStyle = (templateId) => {
+    const template = templates.find((item) => item.id === templateId);
+    if (!template) return;
+    scrollRestoreRef.current = canvasRef.current?.scrollTop ?? null;
+    const brand = {
+      ...clone(template.snapshot.brand),
+      logo: snapshot.brand.logo,
+      showPoweredBy: snapshot.brand.showPoweredBy,
+    };
+    if (applySnapshot({ ...snapshot, brand })) {
+      setAnnouncement(`${template.name} style applied. Page content was preserved.`);
+    }
+  };
+  const unchangedStarterCopy = findUnchangedStarterCopy(snapshot);
   const hasUpdates =
     waitList.status !== "PUBLISHED" || waitList.publishedTemplateRevision !== version;
-  const unchangedStarterCopy = findUnchangedStarterCopy(snapshot);
-  const openPublishReview = () => {
-    if (dirty || saving || conflict || publishing) return;
-    setPublishConfirmed(false);
-    setError("");
-    setPublishReviewOpen(true);
+  const readiness = useMemo(
+    () =>
+      assessPublishReadiness(snapshot, {
+        publishedSnapshot: waitList.publishedSnapshot,
+        showReferrals: waitList.showReferrals,
+      }),
+    [snapshot, waitList.publishedSnapshot, waitList.showReferrals],
+  );
+  const goToFix = (fix) => {
+    if (!fix) return;
+    if (fix.surface === "referrals") {
+      router.push(`/waitlists/${waitList.id}/settings?section=referral`);
+      return;
+    }
+    if (fix.surface === "seo") {
+      void setSurface("publish");
+      return;
+    }
+    if (fix.surface === "design") {
+      void setSurface("page");
+      setRightPanel("design");
+      setMobileEditorPanel("properties");
+      return;
+    }
+    void setSurface(fix.surface || "page");
+    if (fix.panel) setPanel(fix.panel);
   };
 
   return (
-    <section
-      className={`product-builder ${styles.builder}`}
-      data-mobile-view={mobileView}
-      onKeyDown={onKeyDown}
-    >
-      <header className="product-builder-header">
-        <div>
-          <p className="product-builder-kicker">
-            {waitList.status === "PUBLISHED"
-              ? "Published page"
-              : waitList.status === "PAUSED"
-                ? "Paused page"
-                : "Private draft"}
-          </p>
-          <h2 className={styles.editorTitle}>Design editor</h2>
-        </div>
-        <div className="product-builder-tools" id="publication-actions">
-          <span role="status" aria-live="polite">
+    // Delegated undo/redo shortcuts for every control inside the studio.
+    // oxlint-disable-next-line jsx-a11y/no-static-element-interactions
+    <section className={"min-w-0"} onKeyDown={onKeyDown}>
+      <p className="sr-only" role="status" aria-live="polite">
+        {announcement}
+      </p>
+      <header className="flex min-h-14 flex-wrap items-center gap-x-5 gap-y-2 px-2 pb-3 max-[760px]:pt-2">
+        <nav
+          aria-label="Builder surfaces"
+          className="flex min-w-0 flex-1 gap-5.5 overflow-x-auto max-[760px]:basis-full"
+        >
+          {[
+            ["page", "Hosted page"],
+            ["status", "After signup"],
+            ["publish", "Publish & share"],
+          ].map(([id, label]) => (
+            <button
+              key={id}
+              type="button"
+              aria-current={surface === id ? "page" : undefined}
+              onClick={() => void setSurface(id)}
+              className={cn(
+                "inline-block min-h-10 shrink-0 cursor-pointer border-b-2 border-transparent py-2 font-medium text-product-text-secondary transition-colors hover:text-product-text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-product-success-text! motion-reduce:transition-none",
+                surface === id && "border-product-accent-solid text-product-text-primary",
+              )}
+            >
+              {label}
+            </button>
+          ))}
+        </nav>
+        <div className="flex flex-1 items-center justify-end gap-1 max-[760px]:order-2 max-[760px]:w-full max-[760px]:justify-start max-[760px]:overflow-x-auto [&>*]:shrink-0">
+          <span className="text-micro text-product-text-secondary" role="status" aria-live="polite">
             {saving ? "Saving…" : message}
           </span>
-          <Button
-            variant="ghost"
-            type="button"
-            aria-label="Undo last change"
-            onClick={undo}
-            disabled={!undoCount}
-          >
-            <HugeiconsIcon icon={Undo02Icon} aria-hidden="true" />
-            <span>Undo</span>
-          </Button>
-          <Button
-            variant="ghost"
-            type="button"
-            aria-label="Redo last change"
-            onClick={redo}
-            disabled={!redoCount}
-          >
-            <HugeiconsIcon icon={Redo02Icon} aria-hidden="true" />
-            <span>Redo</span>
-          </Button>
-          <Button
-            variant="outline"
-            type="button"
-            onClick={() => {
-              void flush();
-            }}
-            disabled={!dirty || saving || !!conflict}
-          >
-            {saving ? "Saving…" : "Save now"}
-          </Button>
-          {canPublish && hasUpdates && (
-            <Button
-              id="publication-action"
-              type="button"
-              onClick={openPublishReview}
-              disabled={dirty || saving || !!conflict || publishing}
-            >
-              {publishing
-                ? "Publishing…"
-                : waitList.status === "PAUSED"
-                  ? "Publish and resume"
-                  : waitList.status === "PUBLISHED"
-                    ? "Publish updates"
-                    : "Publish waitlist"}
-            </Button>
-          )}
-          {canPublish && waitList.status === "PUBLISHED" && (
-            <Button
-              variant="outline"
-              type="button"
-              onClick={() => {
-                void lifecycle(pausePage);
-              }}
-              disabled={dirty || saving || !!conflict || publishing}
-            >
-              Pause waitlist
-            </Button>
-          )}
+          <TooltipProvider>
+            <div className="flex items-center gap-1">
+              <Tooltip>
+                <TooltipTrigger
+                  render={
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      aria-label="Undo"
+                      onClick={undo}
+                      disabled={!undoCount}
+                    />
+                  }
+                >
+                  <HugeiconsIcon icon={Undo02Icon} size={18} aria-hidden="true" />
+                </TooltipTrigger>
+                <TooltipContent side="bottom">
+                  Undo <kbd data-slot="kbd">⌘Z</kbd>
+                </TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger
+                  render={
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      aria-label="Redo"
+                      onClick={redo}
+                      disabled={!redoCount}
+                    />
+                  }
+                >
+                  <HugeiconsIcon icon={Redo02Icon} size={18} aria-hidden="true" />
+                </TooltipTrigger>
+                <TooltipContent side="bottom">
+                  Redo <kbd data-slot="kbd">⌘⇧Z</kbd>
+                </TooltipContent>
+              </Tooltip>
+            </div>
+          </TooltipProvider>
           {waitList.status !== "DRAFT" && waitList.publicSlug && (
             <Link
-              prefetch={false}
-              className="product-builder-live-link"
+              className={buttonVariants({ variant: "outline", size: "sm" })}
               href={`/w/${waitList.publicSlug}`}
               target="_blank"
-              rel="noreferrer"
+              rel="noopener noreferrer"
             >
-              View live page
+              View live
             </Link>
           )}
-          {canPublish && waitList.publishedRevision > 1 && (
+          {canPublish && hasUpdates && (
             <Button
-              variant="outline"
-              type="button"
+              size="sm"
               onClick={() => {
-                void lifecycle(rollbackPage);
+                setPublishConfirmed(false);
+                setPublishReviewOpen(true);
               }}
-              disabled={dirty || saving || !!conflict || publishing}
+              disabled={replacement || dirty || saving || !!conflict}
             >
-              Restore previous version
+              {waitList.status === "PUBLISHED" ? "Publish updates" : "Publish"}
             </Button>
           )}
         </div>
       </header>
-      <Dialog
-        open={publishReviewOpen}
-        onOpenChange={(open) => {
-          if (!publishing) {
-            setPublishReviewOpen(open);
-            if (!open) setPublishConfirmed(false);
-          }
-        }}
-      >
-        <DialogContent>
-          <div className="product-publish-review-dialog">
-            <div className="product-dialog-heading">
-              <DialogTitle>Review your public page</DialogTitle>
-              <DialogDescription>
-                This saved version will be visible to anyone with the link. Check the page before
-                you publish.
-              </DialogDescription>
-            </div>
-            {unchangedStarterCopy.length > 0 && (
-              <section
-                className="product-publish-starter-copy"
-                aria-labelledby="publish-starter-copy-title"
-              >
-                <h3 id="publish-starter-copy-title">Some starter copy is unchanged</h3>
-                <p>Edit these lines or keep them after reviewing the preview.</p>
-                <ul>
-                  {unchangedStarterCopy.map(({ label, value, key }) => (
-                    <li key={key}>
-                      <strong>{label}</strong>
-                      <span>{value}</span>
-                    </li>
-                  ))}
-                </ul>
-              </section>
-            )}
-            <section
-              className="product-publish-review-preview"
-              aria-label="Public page preview"
-              tabIndex={0}
-            >
-              <WaitlistPageContent
-                snapshot={snapshot}
-                name={waitList.name}
-                previewViewport="desktop"
-                renderSignupForm={(section) => (
-                  <WaitlistSignupPreview label={section.label} buttonText={section.buttonText} />
-                )}
-              />
-            </section>
-            {error && (
-              <p className="product-builder-alert" role="alert">
-                {error}
-              </p>
-            )}
-            <div className="product-publish-confirm">
-              <Label className="flex items-start">
-                <Checkbox
-                  checked={publishConfirmed}
-                  onCheckedChange={setPublishConfirmed}
-                  disabled={publishing}
-                />{" "}
-                <span>I reviewed this page as visitors will see it.</span>
-              </Label>
-            </div>
-            <div className="product-actions">
-              <DialogClose render={<Button variant="outline" />} disabled={publishing}>
-                Back to editor
-              </DialogClose>
-              <Button
-                type="button"
-                onClick={() => {
-                  void publish();
-                }}
-                disabled={!publishConfirmed || publishing}
-              >
-                {publishing
-                  ? "Publishing…"
-                  : waitList.status === "PAUSED"
-                    ? "Publish and resume"
-                    : waitList.status === "PUBLISHED"
-                      ? "Publish updates"
-                      : "Publish page"}
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+      {replacement && (
+        <div
+          className="mx-2 mb-3 grid gap-3 rounded-lg bg-product-danger-bg px-3 py-2.5 text-caption text-product-danger-text"
+          role="alert"
+        >
+          <p>
+            The saved page could not be read. This is a replacement preview. Autosave is paused
+            until you accept replacing the saved page.
+          </p>
+          <Button size="sm" disabled={saving} onClick={() => void acceptReplacement()}>
+            Accept and save replacement
+          </Button>
+        </div>
+      )}
       {error && (
-        <div className="product-builder-alert" role="alert">
-          <p>{error}</p>
-          {conflict && (
-            <div className="product-builder-conflict-actions">
-              <Button variant="outline" type="button" onClick={() => resolveConflict("saved")}>
-                Use saved version
+        <div
+          className="mx-2 mb-3 flex items-center gap-2.5 rounded-lg bg-product-danger-bg px-3 py-2.5 text-caption text-product-danger-text [&>span]:mr-auto"
+          role="alert"
+        >
+          <span>{error}</span>
+          {conflict ? (
+            <>
+              <Button size="sm" variant="outline" onClick={() => resolveConflict("saved")}>
+                Use saved
               </Button>
-              <Button type="button" onClick={() => resolveConflict("mine")}>
-                Replace saved version with mine
+              <Button size="sm" onClick={() => resolveConflict("mine")}>
+                Keep mine
               </Button>
-            </div>
-          )}
-          {!conflict && dirty && (
-            <Button
-              variant="outline"
-              type="button"
-              onClick={() => {
-                setError("");
-                void flush();
-              }}
-            >
-              Retry save
-            </Button>
+            </>
+          ) : (
+            dirty &&
+            !replacement && (
+              <Button size="sm" variant="outline" onClick={() => void flush()}>
+                Retry
+              </Button>
+            )
           )}
         </div>
       )}
-      <div className={styles.mobileViewToggle} role="group" aria-label="Editor view">
-        <Button
-          type="button"
-          variant="ghost"
-          aria-pressed={mobileView === "content"}
-          onClick={() => setMobileView("content")}
-        >
-          Content
-        </Button>
-        <Button
-          type="button"
-          variant="ghost"
-          aria-pressed={mobileView === "preview"}
-          onClick={() => setMobileView("preview")}
-        >
-          Preview
-        </Button>
-      </div>
-      <div className="product-builder-grid">
-        <div className="product-builder-editor" id="page-content">
-          <div className="product-builder-editor-heading">
-            <div>
-              <h3>Sections</h3>
-              <p>Choose a section to edit.</p>
-            </div>
-            <p>v{version}</p>
-          </div>
-          <p
-            className="product-visually-hidden"
-            role="status"
-            aria-live="polite"
-            aria-atomic="true"
-          >
-            {sectionAnnouncement}
-          </p>
-          {snapshot.sections.map((section, sectionIndex) => (
-            <div className="product-builder-section" key={`${section.type}-${sectionIndex}`}>
-              <Collapsible
-                open={expandedSection === sectionIndex}
-                onOpenChange={(nextOpen) => setExpandedSection(nextOpen ? sectionIndex : null)}
-              >
-                <CollapsibleTrigger>
-                  <span>{sectionNames[section.type]}</span>
-                  <HugeiconsIcon icon={ArrowDown01Icon} aria-hidden="true" />
-                </CollapsibleTrigger>
-                <CollapsibleContent>
-                  <div className={styles.sectionContent}>
-                    <div className="product-builder-section-tools">
-                      <Button
-                        id={`section-${sectionIndex}-move-up`}
-                        variant="outline"
-                        type="button"
-                        aria-label={`Move ${sectionNames[section.type]} up`}
-                        onClick={() => moveSection(sectionIndex, -1)}
-                        disabled={sectionIndex <= 1}
-                      >
-                        <HugeiconsIcon icon={ArrowUp01Icon} aria-hidden="true" />
-                      </Button>
-                      <Button
-                        id={`section-${sectionIndex}-move-down`}
-                        variant="outline"
-                        type="button"
-                        aria-label={`Move ${sectionNames[section.type]} down`}
-                        onClick={() => moveSection(sectionIndex, 1)}
-                        disabled={
-                          sectionIndex === 0 || sectionIndex === snapshot.sections.length - 1
-                        }
-                      >
-                        <HugeiconsIcon icon={ArrowDown01Icon} aria-hidden="true" />
-                      </Button>
-                      {section.type !== "hero" && section.type !== "form" && (
-                        <Button
-                          variant="outline"
-                          type="button"
-                          onClick={() => removeSection(sectionIndex)}
-                          aria-label={`Remove ${sectionNames[section.type]}`}
-                        >
-                          Remove
-                        </Button>
-                      )}
-                    </div>
-                    {section.type === "hero" && (
-                      <div className="product-builder-fields">
-                        <Label htmlFor={`section-${sectionIndex}-heading`}>Headline</Label>
-                        <Input
-                          id={`section-${sectionIndex}-heading`}
-                          maxLength={120}
-                          value={section.heading}
-                          onChange={(event) =>
-                            updateSection(sectionIndex, (item) => ({
-                              ...item,
-                              heading: event.target.value,
-                            }))
-                          }
-                        />
-                        <Label htmlFor={`section-${sectionIndex}-body`}>Introduction</Label>
-                        <Textarea
-                          id={`section-${sectionIndex}-body`}
-                          maxLength={600}
-                          rows={3}
-                          value={section.body}
-                          onChange={(event) =>
-                            updateSection(sectionIndex, (item) => ({
-                              ...item,
-                              body: event.target.value,
-                            }))
-                          }
-                        />
-                      </div>
-                    )}
-                    {(section.type === "features" || section.type === "faq") && (
-                      <div className="product-builder-items">
-                        {section.items.map((item, itemIndex) => (
-                          <div className="product-builder-item" key={itemIndex}>
-                            <p>
-                              {section.type === "features"
-                                ? `Highlight ${itemIndex + 1}`
-                                : `Question ${itemIndex + 1}`}
-                            </p>
-                            <Label htmlFor={`section-${sectionIndex}-item-${itemIndex}-title`}>
-                              {section.type === "features" ? "Title" : "Question"}
-                            </Label>
-                            <Input
-                              id={`section-${sectionIndex}-item-${itemIndex}-title`}
-                              maxLength={section.type === "features" ? 80 : 120}
-                              value={section.type === "features" ? item.title : item.question}
-                              onChange={(event) =>
-                                updateItem(sectionIndex, itemIndex, (value) =>
-                                  section.type === "features"
-                                    ? { ...value, title: event.target.value }
-                                    : { ...value, question: event.target.value },
-                                )
-                              }
-                            />
-                            <Label htmlFor={`section-${sectionIndex}-item-${itemIndex}-body`}>
-                              {section.type === "features" ? "Description" : "Answer"}
-                            </Label>
-                            <Textarea
-                              id={`section-${sectionIndex}-item-${itemIndex}-body`}
-                              maxLength={section.type === "features" ? 240 : 400}
-                              rows={3}
-                              value={section.type === "features" ? item.body : item.answer}
-                              onChange={(event) =>
-                                updateItem(sectionIndex, itemIndex, (value) =>
-                                  section.type === "features"
-                                    ? { ...value, body: event.target.value }
-                                    : { ...value, answer: event.target.value },
-                                )
-                              }
-                            />
-                            {section.items.length > 1 && (
-                              <Button
-                                variant="outline"
-                                type="button"
-                                onClick={() =>
-                                  updateSection(sectionIndex, (value) => ({
-                                    ...value,
-                                    items: value.items.filter((_, index) => index !== itemIndex),
-                                  }))
-                                }
-                              >
-                                Remove {section.type === "features" ? "highlight" : "question"}
-                              </Button>
-                            )}
-                          </div>
-                        ))}
-                        {section.items.length < 6 && (
-                          <Button
-                            variant="outline"
-                            type="button"
-                            onClick={() =>
-                              updateSection(sectionIndex, (value) => ({
-                                ...value,
-                                items: [
-                                  ...value.items,
-                                  section.type === "features"
-                                    ? { title: "A clear benefit", body: "Explain how it helps." }
-                                    : {
-                                        question: "What should people know?",
-                                        answer: "Add a useful answer.",
-                                      },
-                                ],
-                              }))
-                            }
-                          >
-                            Add {section.type === "features" ? "highlight" : "question"}
-                          </Button>
-                        )}
-                      </div>
-                    )}
-                    {section.type === "form" && (
-                      <div className="product-builder-fields">
-                        <Label htmlFor={`section-${sectionIndex}-label`}>Email field label</Label>
-                        <Input
-                          id={`section-${sectionIndex}-label`}
-                          maxLength={80}
-                          value={section.label}
-                          onChange={(event) =>
-                            updateSection(sectionIndex, (item) => ({
-                              ...item,
-                              label: event.target.value,
-                            }))
-                          }
-                        />
-                        <Label htmlFor={`section-${sectionIndex}-button`}>Button text</Label>
-                        <Input
-                          id={`section-${sectionIndex}-button`}
-                          maxLength={40}
-                          value={section.buttonText}
-                          onChange={(event) =>
-                            updateSection(sectionIndex, (item) => ({
-                              ...item,
-                              buttonText: event.target.value,
-                            }))
-                          }
-                        />
-                        <p className="product-help">
-                          Referrals, verification and signup emails stay off in this draft.
-                        </p>
-                      </div>
-                    )}
-                    {section.type === "footer" && (
-                      <div className="product-builder-fields">
-                        <Label htmlFor={`section-${sectionIndex}-note`}>Short note</Label>
-                        <Textarea
-                          id={`section-${sectionIndex}-note`}
-                          maxLength={160}
-                          rows={3}
-                          value={section.note}
-                          onChange={(event) =>
-                            updateSection(sectionIndex, (item) => ({
-                              ...item,
-                              note: event.target.value,
-                            }))
-                          }
-                        />
-                      </div>
-                    )}
-                  </div>
-                </CollapsibleContent>
-              </Collapsible>
-            </div>
+      {surface !== "publish" && (
+        <div className="hidden items-center gap-1 border-t border-product-border-subtle bg-product-bg-surface p-2 max-[680px]:flex">
+          {[
+            ["edit", "Edit"],
+            ["preview", "Preview"],
+          ].map(([id, label]) => (
+            <button
+              className="min-h-11 flex-1 rounded-lg border-0 bg-transparent px-4 text-caption font-semibold text-product-text-secondary aria-pressed:bg-product-bg-inset aria-pressed:text-product-text-primary"
+              key={id}
+              type="button"
+              aria-pressed={mobileMode === id}
+              onClick={() => setMobileMode(id)}
+            >
+              {label}
+            </button>
           ))}
-          <div className="product-builder-add">
-            {showAddSection ? (
-              <>
-                <Label htmlFor="section-type">Section</Label>
-                <Select value={addType} onValueChange={setAddType}>
-                  <SelectTrigger id="section-type">
-                    <SelectValue>
-                      {{ features: "Highlights", faq: "Questions", footer: "Note" }[addType]}
-                    </SelectValue>
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="features">Highlights</SelectItem>
-                    <SelectItem value="faq">Questions</SelectItem>
-                    <SelectItem value="footer">Note</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Button
-                  type="button"
-                  onClick={addSection}
-                  disabled={snapshot.sections.length >= 12}
-                >
-                  Add section
-                </Button>
-                <Button variant="outline" type="button" onClick={() => setShowAddSection(false)}>
-                  Cancel
-                </Button>
-              </>
-            ) : (
-              <Button
-                variant="outline"
-                type="button"
-                onClick={() => setShowAddSection(true)}
-                disabled={snapshot.sections.length >= 12}
-              >
-                Add a section
-              </Button>
-            )}
-            {snapshot.sections.length >= 12 && (
-              <p className="product-help">A page can have up to 12 sections.</p>
-            )}
-          </div>
         </div>
-        <div className="product-builder-preview-wrap">
-          <div className="product-builder-preview-heading">
-            <div>
-              <h3>Preview</h3>
-              <span>Edits stay private until published.</span>
+      )}
+      {surface === "page" && (
+        <div className="flex h-studio min-h-studio overflow-hidden bg-product-bg-inset max-[1180px]:h-studio-compact max-[900px]:h-auto max-[900px]:min-h-0 max-[680px]:flex-col">
+          <div
+            className="hidden items-center gap-1 border-b border-product-border-subtle bg-product-bg-surface p-2 max-[680px]:flex max-[680px]:data-[mobile-mode=preview]:hidden"
+            data-mobile-mode={mobileMode}
+          >
+            {[
+              ["structure", "Structure"],
+              ["properties", "Block settings"],
+            ].map(([id, label]) => (
+              <button
+                className="min-h-11 flex-1 rounded-lg border-0 bg-transparent px-3 text-caption font-semibold text-product-text-secondary aria-pressed:bg-product-bg-inset aria-pressed:text-product-text-primary"
+                key={id}
+                type="button"
+                aria-pressed={mobileEditorPanel === id}
+                onClick={() => setMobileEditorPanel(id)}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+          <aside
+            className={cn(
+              "w-library shrink-0 overflow-auto border-r border-product-border-subtle bg-product-bg-surface max-[1180px]:w-55 max-[680px]:w-full max-[680px]:border-r-0 max-[680px]:border-b max-[680px]:border-product-border-subtle max-[680px]:data-[mobile-mode=preview]:hidden max-[680px]:data-[mobile-panel=properties]:hidden",
+              panel === "templates" && "no-scrollbar",
+            )}
+            data-mobile-mode={mobileMode}
+            data-mobile-panel={mobileEditorPanel}
+          >
+            <div className="sticky top-0 z-2 grid grid-cols-2 gap-1 bg-product-bg-surface p-2.5 [&_button]:min-h-9 [&_button]:cursor-pointer [&_button]:rounded-lg [&_button]:border-0 [&_button]:bg-transparent [&_button]:text-caption [&_button]:font-semibold [&_button]:text-product-text-secondary [&_button[aria-pressed=true]]:bg-product-bg-inset [&_button[aria-pressed=true]]:text-product-text-primary">
+              {[
+                ["blocks", "Blocks"],
+                ["templates", "Templates"],
+              ].map(([id, label]) => (
+                <button
+                  key={id}
+                  type="button"
+                  aria-pressed={panel === id}
+                  onClick={() => setPanel(id)}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+            {panel === "blocks" && (
+              <>
+                <div className="px-2.5 pt-1 pb-4">
+                  <DndContext
+                    collisionDetection={closestCenter}
+                    sensors={sensors}
+                    onDragEnd={finishBlockDrag}
+                  >
+                    <SortableContext
+                      items={snapshot.sections.map((section) => section.id)}
+                      strategy={verticalListSortingStrategy}
+                    >
+                      {snapshot.sections.map((section) => (
+                        <SortableBlockRow
+                          disabled={!!conflict || !!replacement}
+                          key={section.id}
+                          section={section}
+                          selected={selectedId === section.id}
+                          onDuplicate={() => duplicateBlock(section.id)}
+                          onRemove={() => removeBlock(section.id)}
+                          onSelect={() => {
+                            setSelectedId(section.id);
+                            setRightPanel("properties");
+                            setMobileEditorPanel("properties");
+                          }}
+                        />
+                      ))}
+                    </SortableContext>
+                  </DndContext>
+                </div>
+                <div className="border-t border-product-border-subtle px-4 pt-3.5 pb-6">
+                  <Button type="button" className="w-full" onClick={() => setAddOpen(true)}>
+                    <HugeiconsIcon icon={Add01Icon} size={16} aria-hidden="true" />
+                    Add block
+                  </Button>
+                </div>
+                <Dialog open={addOpen} onOpenChange={setAddOpen}>
+                  <DialogContent className="flex max-h-screen flex-col sm:max-w-3xl">
+                    <DialogTitle>Add a block</DialogTitle>
+                    <DialogDescription>
+                      New blocks are inserted after your current selection.
+                    </DialogDescription>
+                    <div className="no-scrollbar grid min-h-0 flex-1 gap-5 overflow-y-auto">
+                      {Object.entries(blockGroups).map(([category, blocks]) => (
+                        <div className="grid gap-1.5" key={category}>
+                          <p className="text-micro font-bold tracking-widest text-product-text-secondary uppercase">
+                            {category}
+                          </p>
+                          <div className="grid gap-1.5 sm:grid-cols-2">
+                            {blocks.map((block) => (
+                              <button
+                                key={block.type}
+                                type="button"
+                                className="flex cursor-pointer items-start gap-2.5 rounded-lg border border-product-border-subtle bg-product-bg-surface p-2.5 text-left transition-colors hover:border-product-accent-solid"
+                                onClick={() => {
+                                  addBlock(block.type);
+                                  setAddOpen(false);
+                                }}
+                              >
+                                <HugeiconsIcon
+                                  aria-hidden="true"
+                                  className="mt-0.5 shrink-0 text-product-text-secondary"
+                                  icon={blockIcons[block.type]}
+                                  size={16}
+                                />
+                                <span className="grid gap-0.5">
+                                  <span className="text-caption font-semibold text-product-text-primary">
+                                    {block.label}
+                                  </span>
+                                  <span className="text-micro leading-relaxed text-product-text-secondary">
+                                    {block.description}
+                                  </span>
+                                </span>
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              </>
+            )}
+            {panel === "templates" && (
+              <div className="grid gap-3 px-3 pt-1 pb-6">
+                <p className="px-1 text-micro leading-relaxed text-product-text-secondary">
+                  Use style keeps your blocks, signup form, after-signup states, SEO, logo, and
+                  powered-by preference. Replace page changes its blocks, copy, and visual style.
+                </p>
+                {templates.map((template) => (
+                  <div
+                    className="shadow-panel grid gap-2 rounded-xl border border-product-border-subtle bg-product-bg-surface p-2"
+                    key={template.id}
+                  >
+                    <TemplatePreview template={template} />
+                    <div className="grid gap-0.5 px-0.5">
+                      <strong className="text-caption text-product-text-primary">
+                        {template.name}
+                        {snapshot.templateId === template.id && (
+                          <span className="ml-2 text-micro font-semibold tracking-widest text-product-success-text uppercase">
+                            Current structure
+                          </span>
+                        )}
+                      </strong>
+                      <span className="text-micro leading-relaxed text-product-text-secondary">
+                        {template.description}
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-1.5">
+                      <Button
+                        className="h-8"
+                        size="sm"
+                        type="button"
+                        variant="outline"
+                        onClick={() => applyTemplateStyle(template.id)}
+                      >
+                        Use style
+                      </Button>
+                      <Button
+                        className="h-8"
+                        size="sm"
+                        type="button"
+                        variant="ghost"
+                        onClick={() => setPendingTemplate(template)}
+                      >
+                        Replace page
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </aside>
+          <main
+            className="min-w-0 flex-1 overflow-auto px-7 pt-0 pb-9 max-[680px]:px-3 max-[680px]:data-[mobile-mode=edit]:hidden"
+            data-mobile-mode={mobileMode}
+          >
+            <div className="flex h-canvas-tools items-center justify-end text-caption text-product-text-secondary [&_button]:cursor-pointer [&_button]:rounded-md [&_button]:border-0 [&_button]:bg-transparent [&_button]:px-2.5 [&_button]:py-2 [&_button]:text-micro [&_button]:text-product-text-secondary [&_button[aria-pressed=true]]:bg-product-bg-surface [&_button[aria-pressed=true]]:text-product-text-primary [&_button[aria-pressed=true]]:shadow-pressed">
+              <TooltipProvider>
+                <div className="flex items-center gap-0.5">
+                  <Tooltip>
+                    <TooltipTrigger
+                      render={
+                        <button
+                          type="button"
+                          aria-label="Desktop preview"
+                          aria-pressed={previewViewport === "desktop"}
+                          onClick={() => setPreviewViewport("desktop")}
+                        />
+                      }
+                    >
+                      <HugeiconsIcon icon={MonitorIcon} size={18} aria-hidden="true" />
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom">Desktop</TooltipContent>
+                  </Tooltip>
+                  <Tooltip>
+                    <TooltipTrigger
+                      render={
+                        <button
+                          type="button"
+                          aria-label="Mobile preview"
+                          aria-pressed={previewViewport === "mobile"}
+                          onClick={() => setPreviewViewport("mobile")}
+                        />
+                      }
+                    >
+                      <HugeiconsIcon icon={SmartphoneIcon} size={18} aria-hidden="true" />
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom">Mobile</TooltipContent>
+                  </Tooltip>
+                </div>
+              </TooltipProvider>
             </div>
             <div
-              className="product-preview-viewport-toggle"
-              role="group"
-              aria-label="Preview width"
+              className="max-w-canvas w-full canvas-zoom overflow-auto rounded-xl bg-white shadow-canvas data-[viewport=mobile]:mx-auto data-[viewport=mobile]:w-mobile-canvas data-[viewport=mobile]:max-w-full"
+              data-viewport={previewViewport}
+              ref={canvasRef}
+              style={{ "--canvas-zoom": previewViewport === "mobile" ? 0.85 : 0.72 }}
             >
-              <Button
-                type="button"
-                variant={previewViewport === "desktop" ? "outline" : "ghost"}
-                aria-pressed={previewViewport === "desktop"}
-                onClick={() => setPreviewViewport("desktop")}
-              >
-                <HugeiconsIcon icon={ComputerIcon} aria-hidden="true" /> Desktop
-              </Button>
-              <Button
-                type="button"
-                variant={previewViewport === "mobile" ? "outline" : "ghost"}
-                aria-pressed={previewViewport === "mobile"}
-                onClick={() => setPreviewViewport("mobile")}
-              >
-                <HugeiconsIcon icon={SmartPhone01Icon} aria-hidden="true" /> Mobile
-              </Button>
-            </div>
-          </div>
-          <div
-            className={`product-builder-preview-frame${previewViewport === "mobile" ? " is-mobile" : ""}`}
-            data-viewport={previewViewport}
-          >
-            <section className="product-page-preview" aria-label="Waitlist page preview">
               <WaitlistPageContent
                 snapshot={snapshot}
                 name={waitList.name}
                 previewViewport={previewViewport}
-                renderSignupForm={(section) => (
-                  <WaitlistSignupPreview label={section.label} buttonText={section.buttonText} />
-                )}
+                renderSignupForm={() => <WaitlistSignupPreview form={snapshot.form} />}
+                interactive
+                selectedBlockId={selectedId}
+                onBlockSelect={(id) => {
+                  setSelectedId(id);
+                  setRightPanel("properties");
+                  setMobileEditorPanel("properties");
+                }}
+                renderBlockToolbar={renderBlockToolbar}
               />
-            </section>
+            </div>
+          </main>
+          <aside
+            className="w-inspector shrink-0 overflow-auto border-l border-product-border-subtle bg-product-bg-surface max-[1180px]:w-68 max-[680px]:w-full max-[680px]:border-t max-[680px]:border-l-0 max-[680px]:border-product-border-subtle max-[680px]:data-[mobile-mode=preview]:hidden max-[680px]:data-[mobile-panel=structure]:hidden"
+            data-mobile-mode={mobileMode}
+            data-mobile-panel={mobileEditorPanel}
+          >
+            <div className="sticky top-0 z-2 grid grid-cols-2 gap-1 bg-product-bg-surface p-2.5 [&_button]:min-h-9 [&_button]:cursor-pointer [&_button]:rounded-lg [&_button]:border-0 [&_button]:bg-transparent [&_button]:text-caption [&_button]:font-semibold [&_button]:text-product-text-secondary [&_button[aria-pressed=true]]:bg-product-bg-inset [&_button[aria-pressed=true]]:text-product-text-primary">
+              {[
+                ["properties", "Properties"],
+                ["design", "Design"],
+              ].map(([id, label]) => (
+                <button
+                  key={id}
+                  type="button"
+                  aria-pressed={rightPanel === id}
+                  onClick={() => setRightPanel(id)}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+            {rightPanel === "properties" ? (
+              <BlockInspector
+                section={selected}
+                update={updateSection}
+                form={snapshot.form}
+                updateForm={(value) => updateRoot("form", value)}
+              />
+            ) : (
+              <DesignPanel brand={snapshot.brand} update={(value) => updateRoot("brand", value)} />
+            )}
+          </aside>
+        </div>
+      )}
+      {surface === "status" && (
+        <SurfaceLayout
+          mobileMode={mobileMode}
+          sidebar={
+            <StatusPanel
+              status={snapshot.statusPage}
+              showReferrals={waitList.showReferrals}
+              waitListId={waitList.id}
+              update={(value) => updateRoot("statusPage", value)}
+            />
+          }
+        >
+          <div className="mx-auto w-full max-w-4xl">
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+              <div
+                className="flex flex-wrap gap-1 [&_button]:cursor-pointer [&_button]:rounded-lg [&_button]:border-0 [&_button]:bg-transparent [&_button]:px-3 [&_button]:py-2 [&_button]:text-caption [&_button]:font-semibold [&_button]:text-product-text-secondary [&_button[aria-pressed=true]]:bg-product-bg-surface [&_button[aria-pressed=true]]:text-product-text-primary"
+                role="group"
+                aria-label="Preview state"
+              >
+                {[
+                  ["confirmed", "Confirmed"],
+                  ["pending", "Pending email"],
+                  ["returning", "Returning visitor"],
+                ]
+                  .filter(
+                    ([id]) =>
+                      (id !== "pending" || snapshot.form.verification) &&
+                      (id !== "returning" || waitList.showReferrals),
+                  )
+                  .map(([id, label]) => (
+                    <button
+                      key={id}
+                      type="button"
+                      aria-pressed={statusState === id}
+                      onClick={() => setStatusState(id)}
+                    >
+                      {label}
+                    </button>
+                  ))}
+              </div>
+              <div
+                className="flex gap-1 [&_button]:flex [&_button]:size-9 [&_button]:cursor-pointer [&_button]:items-center [&_button]:justify-center [&_button]:rounded-lg [&_button]:border-0 [&_button]:bg-transparent [&_button]:text-product-text-secondary [&_button[aria-pressed=true]]:bg-product-bg-surface [&_button[aria-pressed=true]]:text-product-text-primary"
+                role="group"
+                aria-label="Preview viewport"
+              >
+                <button
+                  type="button"
+                  aria-label="Desktop preview"
+                  aria-pressed={statusViewport === "desktop"}
+                  onClick={() => setStatusViewport("desktop")}
+                >
+                  <HugeiconsIcon icon={MonitorIcon} size={17} aria-hidden="true" />
+                </button>
+                <button
+                  type="button"
+                  aria-label="Mobile preview"
+                  aria-pressed={statusViewport === "mobile"}
+                  onClick={() => setStatusViewport("mobile")}
+                >
+                  <HugeiconsIcon icon={SmartphoneIcon} size={17} aria-hidden="true" />
+                </button>
+              </div>
+            </div>
+            <div
+              className={cn(
+                "grid overflow-hidden rounded-xl bg-white shadow-surface",
+                statusViewport === "mobile"
+                  ? "mx-auto min-h-160 w-full max-w-md"
+                  : "min-h-140 w-full",
+              )}
+            >
+              <StatusPagePreview
+                snapshot={snapshot}
+                state={statusState}
+                showReferrals={waitList.showReferrals}
+              />
+            </div>
           </div>
+        </SurfaceLayout>
+      )}
+      {surface === "publish" && (
+        <div className="pt-6 pb-16">
+          <PublishAndShare
+            snapshot={snapshot}
+            waitList={waitList}
+            origin={publicationOrigin}
+            readiness={readiness}
+            onFix={goToFix}
+            onSeoChange={(patch) => updateRoot("seo", patch)}
+            pageStatus={
+              waitList.status === "PUBLISHED" || waitList.publishedRevision > 1
+                ? {
+                    publishing,
+                    canPause: waitList.status === "PUBLISHED",
+                    canRollback: waitList.publishedRevision > 1,
+                    onPause: () => void lifecycle(pausePage),
+                    onRollback: () => void lifecycle(rollbackPage),
+                  }
+                : null
+            }
+          />
+        </div>
+      )}
+      <Dialog open={!!pendingTemplate} onOpenChange={(open) => !open && setPendingTemplate(null)}>
+        <DialogContent>
+          <DialogTitle>Replace the blocks on this page?</DialogTitle>
+          <DialogDescription>
+            {pendingTemplate
+              ? `${pendingTemplate.name} replaces your blocks, copy, and visual style. Signup settings, after-signup states, SEO, logo, and powered-by preference stay intact. Your current page is kept in undo history.`
+              : ""}
+          </DialogDescription>
+          <div className="flex items-center justify-end gap-2">
+            <Button variant="outline" onClick={() => setPendingTemplate(null)}>
+              Keep my page
+            </Button>
+            <Button
+              onClick={() => {
+                if (pendingTemplate) applyTemplate(pendingTemplate.id);
+                setPendingTemplate(null);
+              }}
+            >
+              Replace page
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+      <Dialog
+        open={publishReviewOpen}
+        onOpenChange={(open) => !publishing && setPublishReviewOpen(open)}
+      >
+        <DialogContent>
+          <DialogTitle>Ready to publish?</DialogTitle>
+          <DialogDescription>
+            Your saved draft becomes the public version. Future edits remain private until you
+            publish again.
+          </DialogDescription>
+          {readiness.blockers.length > 0 && (
+            <div
+              className="grid gap-1 rounded-lg bg-product-warning-bg p-3 text-caption data-[tone=blocker]:bg-product-danger-bg data-[tone=blocker]:text-product-danger-text [&_span]:text-product-text-secondary data-[tone=blocker]:[&_span]:text-product-danger-text"
+              data-tone="blocker"
+            >
+              <strong>
+                {readiness.blockers.length}{" "}
+                {readiness.blockers.length === 1 ? "thing blocks" : "things block"} this publish
+              </strong>
+              <span>{readiness.blockers.map((blocker) => blocker.title).join(" · ")}</span>
+            </div>
+          )}
+          {readiness.warnings.length > 0 && (
+            <div className="grid gap-1 rounded-lg bg-product-warning-bg p-3 text-caption [&_span]:text-product-text-secondary">
+              <strong>
+                {readiness.warnings.length} {readiness.warnings.length === 1 ? "note" : "notes"} to
+                review
+              </strong>
+              <span>{readiness.warnings.map((warning) => warning.title).join(" · ")}</span>
+            </div>
+          )}
+          {unchangedStarterCopy.length > 0 && readiness.warnings.length === 0 && (
+            <div className="grid gap-1 rounded-lg bg-product-warning-bg p-3 text-caption [&_span]:text-product-text-secondary">
+              <strong>
+                Starter copy remains in {unchangedStarterCopy.length}{" "}
+                {unchangedStarterCopy.length === 1 ? "place" : "places"}.
+              </strong>
+              <span>Keep it if it fits, or return to edit.</span>
+            </div>
+          )}
+          <div
+            className="max-h-88 canvas-zoom overflow-auto rounded-lg shadow-outline"
+            style={{ "--canvas-zoom": 0.48 }}
+          >
+            <WaitlistPageContent
+              snapshot={snapshot}
+              name={waitList.name}
+              previewViewport="desktop"
+              renderSignupForm={() => <WaitlistSignupPreview form={snapshot.form} />}
+            />
+          </div>
+          <Toggle
+            label="I reviewed the public page."
+            checked={publishConfirmed}
+            onChange={setPublishConfirmed}
+          />
+          <div className={"flex items-center justify-end gap-2"}>
+            <DialogClose render={<Button variant="outline" />}>Back</DialogClose>
+            <Button
+              disabled={!publishConfirmed || publishing || readiness.blockers.length > 0}
+              onClick={() => void publish()}
+            >
+              {publishing ? "Publishing…" : "Publish page"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </section>
+  );
+}
+
+function SurfaceLayout({ sidebar, children, mobileMode }) {
+  return (
+    <div className="flex min-h-studio bg-product-bg-inset max-[680px]:flex-col">
+      <aside
+        className="w-78 shrink-0 overflow-auto border-r border-product-border-subtle bg-product-bg-surface max-[900px]:w-70 max-[680px]:w-full max-[680px]:border-r-0 max-[680px]:data-[mobile-mode=preview]:hidden"
+        data-mobile-mode={mobileMode}
+      >
+        {sidebar}
+      </aside>
+      <main
+        className="min-w-0 flex-1 p-10 max-[900px]:p-7 max-[680px]:p-3 max-[680px]:data-[mobile-mode=edit]:hidden"
+        data-mobile-mode={mobileMode}
+      >
+        {children}
+      </main>
+    </div>
+  );
+}
+function TypeSizeField({ label, value, defaultValue, onChange, min = 12, max = 160 }) {
+  const id = useId();
+  const shown = typeof value === "number" ? value : defaultValue;
+  return (
+    <div className="grid gap-1.5">
+      <Label htmlFor={id}>{label}</Label>
+      <div className="flex items-center gap-2">
+        <Input
+          id={id}
+          type="number"
+          min={min}
+          max={max}
+          value={shown}
+          onChange={(event) => {
+            const next = Number(event.target.value);
+            if (Number.isFinite(next)) onChange(Math.min(max, Math.max(min, Math.round(next))));
+          }}
+        />
+        <span className="text-micro text-product-text-secondary">px</span>
+      </div>
+    </div>
+  );
+}
+function DesignPanel({ brand, update }) {
+  const poweredById = useId();
+  return (
+    <div className={"grid gap-4 p-4"}>
+      <ImageUploadField
+        label="Logo"
+        hint="Shown instead of your brand name in the page header."
+        value={brand.logo ?? ""}
+        onChange={(logo) => update({ logo })}
+        previewClassName="aspect-16/9 object-contain bg-product-bg-inset"
+      />
+      <div className="flex items-center justify-between gap-3">
+        <Label htmlFor={poweredById}>Powered by Waitlyze</Label>
+        <Switch
+          checked={brand.showPoweredBy !== false}
+          id={poweredById}
+          onCheckedChange={(checked) => update({ showPoweredBy: checked })}
+        />
+      </div>
+      <FontPicker
+        label="Heading font"
+        value={brand.headingFont}
+        onValueChange={(headingFont) => update({ headingFont })}
+      />
+      <FontPicker
+        label="Body font"
+        value={brand.bodyFont}
+        onValueChange={(bodyFont) => update({ bodyFont })}
+      />
+      <div className="grid gap-4 sm:grid-cols-2">
+        <TypeSizeField
+          label="Heading size"
+          value={brand.headingSize}
+          defaultValue={48}
+          onChange={(headingSize) => update({ headingSize })}
+        />
+        <TypeSizeField
+          label="Body size"
+          value={brand.bodySize}
+          defaultValue={16}
+          onChange={(bodySize) => update({ bodySize })}
+        />
+      </div>
+      <div className="grid gap-1.5">
+        <span className="text-sm font-medium">Corners</span>
+        <div className="grid grid-cols-4 gap-1 rounded-lg bg-product-bg-inset p-1">
+          {[
+            { id: "sharp", label: "Sharp", shape: "rounded-none" },
+            { id: "soft", label: "Soft", shape: "rounded-md" },
+            { id: "round", label: "Round", shape: "rounded-xl" },
+            { id: "pill", label: "Pill", shape: "rounded-full" },
+          ].map((option) => (
+            <button
+              key={option.id}
+              type="button"
+              aria-pressed={brand.radius === option.id}
+              className="flex min-h-17 cursor-pointer flex-col items-center justify-center gap-1.5 rounded-md border-0 bg-transparent px-1 py-2 text-micro text-product-text-secondary aria-pressed:bg-product-bg-surface aria-pressed:text-product-text-primary aria-pressed:shadow-pressed"
+              onClick={() => update({ radius: option.id })}
+            >
+              <span
+                className={cn("block size-5 border border-product-text-secondary", option.shape)}
+              />
+              {option.label}
+            </button>
+          ))}
         </div>
       </div>
-      <PublicationOptions waitList={waitList} origin={publicationOrigin} />
-    </section>
+      <div className="grid gap-0.5 pt-2 [&_label]:flex [&_label]:min-h-10 [&_label]:items-center [&_label]:justify-between [&_label]:text-caption">
+        {[
+          ["pageBackground", "Page"],
+          ["surfaceColor", "Surface"],
+          ["textColor", "Text"],
+          ["mutedColor", "Muted text"],
+          ["accentColor", "Accent"],
+          ["buttonColor", "Button"],
+          ["buttonTextColor", "Button text"],
+          ["inputBackground", "Input"],
+          ["inputBorder", "Input border"],
+          ["inputTextColor", "Input text"],
+        ].map(([key, label]) => (
+          <label key={key}>
+            <span>{label}</span>
+            <ColorPicker
+              aria-label={`${label} color`}
+              className="w-32"
+              format="hex"
+              value={brand[key]}
+              onValueChange={(value) => {
+                if (value) update({ [key]: value });
+              }}
+            />
+          </label>
+        ))}
+      </div>
+      <ContrastPanel brand={brand} update={update} />
+    </div>
+  );
+}
+function ContrastPanel({ brand, update }) {
+  const issues = brandContrastIssues(brand);
+  if (!issues.length)
+    return (
+      <p className={"m-0 text-caption leading-relaxed text-product-text-secondary"}>
+        Every text and background pair meets the WCAG AA contrast minimum.
+      </p>
+    );
+  return (
+    <div className={"grid gap-2.5 border-t border-product-border-subtle pt-3.5"}>
+      <p
+        className={
+          "block text-micro font-bold tracking-widest text-product-text-secondary uppercase"
+        }
+      >
+        Contrast
+      </p>
+      {issues.map((issue) => (
+        <div
+          key={issue.id}
+          className="grid gap-2 rounded-lg bg-product-warning-bg p-2.5 [&_button]:justify-self-start [&_span]:text-micro [&_span]:leading-relaxed [&_span]:text-product-text-secondary [&_strong]:text-caption [&_strong]:font-semibold [&>div]:grid [&>div]:gap-0.5"
+        >
+          <div>
+            <strong>{issue.label}</strong>
+            <span>
+              {issue.ratio.toFixed(2)}:1 — needs {issue.required}:1 or better.
+            </span>
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => update({ [issue.fix.key]: issue.fix.value })}
+          >
+            Use a readable colour
+          </Button>
+        </div>
+      ))}
+      <p className={"m-0 text-micro leading-relaxed text-product-text-muted"}>
+        The suggested colour keeps your background and changes the text to stay legible.
+      </p>
+    </div>
+  );
+}
+function SelectField({ label, value, options, onChange }) {
+  const id = useId();
+  return (
+    <div className={"grid gap-1.5"}>
+      <Label htmlFor={id}>{label}</Label>
+      <Select value={value} onValueChange={onChange}>
+        <SelectTrigger id={id}>
+          <SelectValue>{options.find((option) => option.id === value)?.label ?? value}</SelectValue>
+        </SelectTrigger>
+        <SelectContent>
+          {options.map((option) => (
+            <SelectItem value={option.id} key={option.id}>
+              {option.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
+  );
+}
+function FormPanel({ form, update }) {
+  return (
+    <div className={"grid gap-4"}>
+      <Field label="Field label" value={form.label} onChange={(label) => update({ label })} />
+      <Field
+        label="Placeholder"
+        value={form.placeholder}
+        onChange={(placeholder) => update({ placeholder })}
+      />
+      <Field
+        label="Button"
+        value={form.buttonText}
+        onChange={(buttonText) => update({ buttonText })}
+      />
+      <SelectField
+        label="Layout"
+        value={form.layout}
+        options={[
+          { id: "inline", label: "Inline" },
+          { id: "stacked", label: "Stacked" },
+        ]}
+        onChange={(layout) => update({ layout })}
+      />
+      <Toggle
+        label="Require marketing consent"
+        checked={form.requireConsent}
+        onChange={(requireConsent) => update({ requireConsent })}
+      />
+      {form.requireConsent && (
+        <Field
+          label="Consent copy"
+          value={form.consentLabel}
+          multiline
+          onChange={(consentLabel) => update({ consentLabel })}
+        />
+      )}
+      <Toggle
+        label="Email verification"
+        checked={form.verification}
+        onChange={(verification) => update({ verification })}
+      />
+    </div>
+  );
+}
+function StatusPanel({ status, update, showReferrals = true, waitListId }) {
+  const referralNote = showReferrals ? null : (
+    <p className="m-0 text-caption leading-relaxed text-product-text-secondary">
+      Referral sharing is off for this waitlist, so the referral link and share buttons stay hidden.{" "}
+      <Link
+        className="underline underline-offset-4"
+        href={`/waitlists/${waitListId}/settings?section=referral`}
+      >
+        Turn referrals on
+      </Link>
+    </p>
+  );
+  return (
+    <div className={"grid gap-4 p-4"}>
+      <Field
+        label="Confirmed heading"
+        value={status.heading}
+        onChange={(heading) => update({ heading })}
+      />
+      <Field
+        label="Confirmed message"
+        value={status.body}
+        multiline
+        onChange={(body) => update({ body })}
+      />
+      <Field
+        label="Pending heading"
+        value={status.pendingHeading}
+        onChange={(pendingHeading) => update({ pendingHeading })}
+      />
+      <Field
+        label="Pending message"
+        value={status.pendingBody}
+        multiline
+        onChange={(pendingBody) => update({ pendingBody })}
+      />
+      <div className="grid gap-4 sm:grid-cols-2">
+        <SelectField
+          label="Icon style"
+          value={status.iconStyle || "filled"}
+          options={[
+            { id: "filled", label: "Filled" },
+            { id: "soft", label: "Soft" },
+          ]}
+          onChange={(iconStyle) => update({ iconStyle })}
+        />
+        <SelectField
+          label="Layout"
+          value={status.layout || "centered"}
+          options={[
+            { id: "centered", label: "Centered" },
+            { id: "card", label: "Card" },
+          ]}
+          onChange={(layout) => update({ layout })}
+        />
+      </div>
+      <Toggle
+        label="Show position"
+        checked={status.showPosition}
+        onChange={(showPosition) => update({ showPosition })}
+      />
+      {referralNote}
+      <Toggle
+        label="Show referral link"
+        checked={status.showReferralLink}
+        disabled={!showReferrals}
+        onChange={(showReferralLink) => update({ showReferralLink })}
+      />
+      <Toggle
+        label="Show referral count"
+        checked={status.showReferralCount}
+        disabled={!showReferrals}
+        onChange={(showReferralCount) => update({ showReferralCount })}
+      />
+      <Field
+        label="Share message"
+        value={status.shareMessage}
+        multiline
+        disabled={!showReferrals}
+        onChange={(shareMessage) => update({ shareMessage })}
+      />
+      <div className={"grid gap-5"}>
+        <span
+          className={
+            "block text-micro font-bold tracking-widest text-product-text-secondary uppercase"
+          }
+        >
+          Share buttons
+        </span>
+        {["x", "instagram", "linkedin", "whatsapp", "email"].map((channel) => (
+          <Toggle
+            key={channel}
+            label={
+              <span className="inline-flex items-center gap-2">
+                <ShareChannelIcon channel={channel} />
+                {channel === "x" ? "X" : channel[0].toUpperCase() + channel.slice(1)}
+              </span>
+            }
+            checked={status.shareChannels.includes(channel)}
+            disabled={!showReferrals}
+            onChange={(enabled) =>
+              update({
+                shareChannels: enabled
+                  ? [...status.shareChannels, channel]
+                  : status.shareChannels.filter((item) => item !== channel),
+              })
+            }
+          />
+        ))}
+      </div>
+    </div>
   );
 }

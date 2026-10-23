@@ -2,11 +2,12 @@ import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import { cache } from "react";
 
-import "../(forms)/public-page.css";
+import { WaitlistPageContent } from "@/components/product/waitlist-page-content";
 import { normalizeDomain } from "@/lib/domains/provider.mjs";
 import prisma from "@/lib/prisma";
 import { templateSnapshotSchema } from "@/lib/templates/catalog.mjs";
 
+import { ImpressionTracker } from "../(forms)/w/[slug]/impression-tracker";
 import { SignupForm } from "../(forms)/w/[slug]/signup-form";
 
 const loadPage = cache(async function loadPage() {
@@ -28,6 +29,7 @@ const loadPage = cache(async function loadPage() {
           status: true,
           publishedRevision: true,
           showReferrals: true,
+          _count: { select: { signUps: true } },
         },
       },
     },
@@ -50,11 +52,18 @@ export async function generateMetadata() {
   const page = await loadPage();
   if (!page || page.paused)
     return { title: "Waitlist unavailable", robots: { index: false, follow: false } };
-  const hero = page.snapshot.sections[0];
+  const hero = page.snapshot.sections.find((section) => section.type === "hero");
+  const title = page.snapshot.seo.title || page.waitList.name || hero?.heading || "Waitlist";
+  const description = page.snapshot.seo.description || hero?.body || "";
   return {
-    title: page.waitList.name || hero.heading,
-    description: hero.body,
-    openGraph: { title: hero.heading, description: hero.body },
+    title,
+    description,
+    robots: { index: page.snapshot.seo.indexable, follow: page.snapshot.seo.indexable },
+    openGraph: {
+      title,
+      description,
+      ...(page.snapshot.seo.image ? { images: [{ url: page.snapshot.seo.image }] } : {}),
+    },
   };
 }
 
@@ -63,62 +72,36 @@ export default async function CustomDomainPage() {
   if (!page) notFound();
   if (page.paused)
     return (
-      <main className="product-ui public-launch public-launch-paused">
-        <section>
-          <p className="public-launch-eyebrow">{page.waitList.name || "Waitlist"}</p>
-          <h1>This waitlist is paused</h1>
-          <p>Signups aren’t open right now. Please check back later.</p>
+      <main className="grid min-h-screen place-items-center bg-product-bg-page px-6 py-12 text-center font-product-sans text-product-text-primary xl:py-30">
+        <section className="w-full max-w-160">
+          <p className="mb-9 text-lg font-semibold text-product-text-secondary">
+            {page.waitList.name || "Waitlist"}
+          </p>
+          <h1 className="mb-5 font-product-display text-5xl leading-none font-semibold tracking-tighter text-balance lg:text-7xl">
+            This waitlist is paused
+          </h1>
+          <p className="mx-auto max-w-155 text-lg leading-relaxed text-product-text-secondary">
+            Signups aren’t open right now. Please check back later.
+          </p>
         </section>
       </main>
     );
   return (
-    <main className="product-ui public-launch">
-      <div className="public-launch-content">
-        <p className="public-launch-eyebrow">{page.waitList.name || "Waitlist"}</p>
-        {page.snapshot.sections.map((section, index) => (
-          <section
-            className={`public-launch-section public-launch-${section.type}`}
-            key={`${section.type}-${index}`}
-          >
-            {section.type === "hero" && (
-              <>
-                <h1>{section.heading}</h1>
-                <p>{section.body}</p>
-              </>
-            )}
-            {section.type === "features" && (
-              <div className="public-launch-features">
-                {section.items.map((item, itemIndex) => (
-                  <article key={itemIndex}>
-                    <h2>{item.title}</h2>
-                    <p>{item.body}</p>
-                  </article>
-                ))}
-              </div>
-            )}
-            {section.type === "faq" && (
-              <div className="public-launch-faq">
-                {section.items.map((item, itemIndex) => (
-                  <article key={itemIndex}>
-                    <h2>{item.question}</h2>
-                    <p>{item.answer}</p>
-                  </article>
-                ))}
-              </div>
-            )}
-            {section.type === "form" && (
-              <SignupForm
-                waitListId={page.waitList.id}
-                showReferrals={page.waitList.showReferrals}
-                label={section.label}
-                buttonText={section.buttonText}
-                thankYou={page.snapshot.thankYou}
-              />
-            )}
-            {section.type === "footer" && <p>{section.note}</p>}
-          </section>
-        ))}
-      </div>
+    <main className="product-ui">
+      <ImpressionTracker waitListId={page.waitList.id} />
+      <WaitlistPageContent
+        snapshot={page.snapshot}
+        name={page.waitList.name}
+        signupCount={page.waitList._count.signUps}
+        renderSignupForm={(_section, snapshot) => (
+          <SignupForm
+            waitListId={page.waitList.id}
+            showReferrals={page.waitList.showReferrals}
+            formConfig={snapshot.form}
+            statusPage={snapshot.statusPage}
+          />
+        )}
+      />
     </main>
   );
 }

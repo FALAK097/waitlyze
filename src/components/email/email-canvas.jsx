@@ -5,7 +5,19 @@ import { EmailEditor } from "@react-email/editor";
 import "@react-email/editor/themes/default.css";
 import { useState } from "react";
 
-import styles from "./email-tools.module.css";
+// The editor reads its chrome colours from the --re-* custom properties.
+// The email palette is intentionally close to the product surface colours.
+const editorTheme = {
+  "--re-bg": "#fff",
+  "--re-text": "#17261b",
+  "--re-text-muted": "#667469",
+  "--re-border": "#e5e9e4",
+  "--re-hover": "#f4f7ee",
+  "--re-radius": "8px",
+};
+
+const canvas =
+  "min-h-105 py-5.5 px-7 pb-7.5 max-sm:p-4.5 [&_.tiptap]:min-h-90 [&_.tiptap]:text-body [&_.tiptap]:leading-relaxed [&_.tiptap_p]:mb-4";
 
 async function uploadEditorImage(file) {
   const formData = new FormData();
@@ -21,7 +33,12 @@ async function uploadEditorImage(file) {
 export function EmailCanvas({ editorRef, content, onChange, editable = true }) {
   const [ready, setReady] = useState(false);
   return (
-    <div className={styles.canvas} aria-label="Email message editor" aria-busy={!ready}>
+    <div
+      className={canvas}
+      style={editorTheme}
+      aria-label="Email message editor"
+      aria-busy={!ready}
+    >
       <EmailEditor
         ref={editorRef}
         content={content}

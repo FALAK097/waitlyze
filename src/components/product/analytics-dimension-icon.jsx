@@ -135,7 +135,10 @@ export function AnalyticsDimensionIcon({ label, kind, code }) {
   if (kind === "country") {
     const countryFlag = flag(code || label);
     return (
-      <span className="analytics-dimension-flag" aria-hidden="true">
+      <span
+        className="inline-flex w-5.5 shrink-0 items-center justify-center text-sm leading-none"
+        aria-hidden="true"
+      >
         {countryFlag || "·"}
       </span>
     );
@@ -144,7 +147,10 @@ export function AnalyticsDimensionIcon({ label, kind, code }) {
     const countryFlag = flag(countryFromLabel(label));
     if (countryFlag)
       return (
-        <span className="analytics-dimension-flag" aria-hidden="true">
+        <span
+          className="inline-flex w-5.5 shrink-0 items-center justify-center text-sm leading-none"
+          aria-hidden="true"
+        >
           {countryFlag}
         </span>
       );
@@ -153,7 +159,7 @@ export function AnalyticsDimensionIcon({ label, kind, code }) {
   if (key && SVGL_ICONS[key]) {
     return (
       <span
-        className="analytics-dimension-icon analytics-dimension-icon--brand"
+        className="grid size-5.5 shrink-0 place-items-center rounded-md bg-product-bg-surface text-product-text-secondary [&_img]:size-4 [&_img]:object-contain"
         data-brand={key}
         aria-hidden="true"
       >
@@ -162,7 +168,10 @@ export function AnalyticsDimensionIcon({ label, kind, code }) {
     );
   }
   return (
-    <span className="analytics-dimension-icon" aria-hidden="true">
+    <span
+      className="grid size-5.5 shrink-0 place-items-center rounded-md bg-product-bg-inset text-product-text-secondary [&_svg]:size-3.25"
+      aria-hidden="true"
+    >
       <HugeiconsIcon icon={hugeiconFor(label) || Globe02Icon} />
     </span>
   );

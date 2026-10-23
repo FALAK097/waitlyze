@@ -1,65 +1,27 @@
-import { randomUUID } from "node:crypto";
+import Link from "next/link";
 
-import { customAlphabet } from "nanoid";
-import { redirect } from "next/navigation";
-
-import { createDraft } from "@/lib/campaigns/create-draft.mjs";
-import prisma from "@/lib/prisma";
-import { AUDIT_ACTIONS, recordAuditEvent } from "@/lib/workspaces/audit.mjs";
-import { currentWorkspace } from "@/lib/workspaces/current";
-import { createWorkspaceService } from "@/lib/workspaces/service.mjs";
+import { CreateWaitlistDialog } from "@/components/product/create-waitlist-dialog";
 
 export const metadata = { title: "New waitlist" };
 
-const slugAlphabet = customAlphabet("abcdefghijklmnopqrstuvwxyz0123456789", 6);
-
-// Creating a waitlist drops straight into the builder: a blank private draft
-// with a unique page address. Name it and style it there.
-export default async function NewWaitlistPage() {
-  const { user, workspace } = await currentWorkspace();
-  const service = createWorkspaceService(prisma);
-  await service.requireAccess(user.id, workspace.id, "editCampaign");
-  // Reloads and double visits resume the untouched draft instead of stacking
-  // blank ones. Once renamed, New creates fresh again.
-  const recent = await prisma.waitList.findFirst({
-    where: {
-      workspaceId: workspace.id,
-      userId: user.id,
-      status: "DRAFT",
-      name: "Untitled waitlist",
-      createdAt: { gt: new Date(Date.now() - 10 * 60 * 1000) },
-    },
-    orderBy: { createdAt: "desc" },
-    select: { id: true },
-  });
-  if (recent) redirect(`/waitlists/${recent.id}`);
-  let slug = "";
-  for (let attempt = 0; attempt < 3; attempt++) {
-    const candidate = `untitled-${slugAlphabet()}`;
-    const taken = await prisma.waitList.findUnique({
-      where: { publicSlug: candidate },
-      select: { id: true },
-    });
-    if (!taken) {
-      slug = candidate;
-      break;
-    }
-  }
-  if (!slug) slug = `untitled-${randomUUID().slice(0, 8)}`;
-  const draft = await createDraft(prisma, user.id, workspace.id, {
-    name: "Untitled waitlist",
-    description: "",
-    publicSlug: slug,
-    creationKey: randomUUID(),
-  });
-  await recordAuditEvent(prisma, {
-    workspaceId: workspace.id,
-    userId: user.id,
-    action: AUDIT_ACTIONS.WAITLIST_CREATED,
-    resourceType: "waitlist",
-    resourceId: draft.id,
-    resourceName: "Untitled waitlist",
-    detail: "Created as a private draft",
-  });
-  redirect(`/waitlists/${draft.id}`);
+export default function NewWaitlistPage() {
+  return (
+    <section
+      className="rounded-xl border border-product-border-subtle bg-product-bg-surface px-6 py-16 text-center"
+      aria-labelledby="new-waitlist-title"
+    >
+      <h1 id="new-waitlist-title" className="mb-2! text-title">
+        Create a waitlist
+      </h1>
+      <p className="text-sm text-product-text-secondary">
+        Name the launch, then shape the page in Builder.
+      </p>
+      <div className="mt-5">
+        <CreateWaitlistDialog initialOpen />
+      </div>
+      <Link prefetch={false} href="/waitlists" className="mt-5 inline-block">
+        Back to waitlists
+      </Link>
+    </section>
+  );
 }

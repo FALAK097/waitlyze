@@ -14,4 +14,4 @@ export const PIE_COLORS = [
   "#d3d9df",
 ];
 
-export const MAP_FILLS = ["#f5fbec", "#e6f9cc", "#d3f3a1", "#bee96d", "#9fd62a", "#7fb806"];
+export const MAP_FILLS = ["#e6ebdd", "#e6f9cc", "#d3f3a1", "#bee96d", "#9fd62a", "#7fb806"];

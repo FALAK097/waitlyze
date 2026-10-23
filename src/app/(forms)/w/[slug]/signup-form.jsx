@@ -1,20 +1,34 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { Suspense, useId, useState } from "react";
 import { toast } from "sonner";
 
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { MARKETING_CONSENT_COPY } from "@/lib/campaigns/marketing-consent.mjs";
+import { ShareButtons } from "@/components/product/share-buttons";
+import { StatusBadge } from "@/components/product/waitlist-page-content";
+import { cn } from "@/lib/utils";
 import { collectAttribution } from "@/utils/attribution";
 
-import styles from "@/components/product/waitlist-signup.module.css";
+const control =
+  "h-12 min-w-0 flex-1 rounded-wl border border-wl-input-border bg-wl-input px-4 text-wl-input-text";
+const action =
+  "inline-flex h-12 items-center justify-center rounded-wl bg-wl-button px-5 font-bold whitespace-nowrap text-wl-button-text focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-wl-accent";
 
 /** Waitlist signup form: validates input, submits the signup, and shows the referral result. */
-export function SignupForm({ slug, waitListId, showReferrals, label, buttonText, thankYou }) {
+export function SignupForm(props) {
+  return (
+    <Suspense fallback={<div className="w-full text-wl-text" aria-label="Loading signup form" />}>
+      <SignupFormInner {...props} />
+    </Suspense>
+  );
+}
+
+function SignupFormInner({ slug, waitListId, showReferrals, formConfig, statusPage, brand }) {
+  const emailId = useId();
+  const referralId = useId();
+  const resultTitleId = useId();
+  const headingPx = typeof brand?.headingSize === "number" ? brand.headingSize : null;
+  const bodyPx = typeof brand?.bodySize === "number" ? brand.bodySize : null;
   const searchParams = useSearchParams();
   const referralCode = searchParams.get("r");
   const [busy, setBusy] = useState(false);
@@ -54,14 +68,24 @@ export function SignupForm({ slug, waitListId, showReferrals, label, buttonText,
       const rank = data.signUp?.rank;
       const code = data.signUp?.referralCode;
       const referralLink =
-        showReferrals && code && slug ? `${window.location.origin}/w/${slug}?r=${code}` : null;
+        showReferrals && code
+          ? `${window.location.origin}${slug ? `/w/${slug}` : "/"}?r=${encodeURIComponent(code)}`
+          : null;
+      const verified = data.signUp?.verified === true;
+      const returning = data.signUp?.outcome === "returning";
       setResult({
-        heading: "Check your inbox",
-        body: thankYou?.body || "Your signup is nearly complete.",
-        notice: `We sent a confirmation link to ${email}. Confirm your email to secure your place on the waitlist.`,
+        heading: verified ? statusPage.heading : statusPage.pendingHeading,
+        body: verified ? statusPage.body : statusPage.pendingBody,
+        pending: !verified && !returning,
+        notice: returning
+          ? "You're already on this waitlist. Here are your current details."
+          : verified
+            ? null
+            : `We sent a confirmation link to ${email}.`,
         position: typeof rank === "number" ? rank : null,
         referralLink,
         referralCode: code ?? null,
+        referralCount: data.signUp?.referralCount ?? 0,
       });
       setCopied(false);
       form.reset();
@@ -88,34 +112,80 @@ export function SignupForm({ slug, waitListId, showReferrals, label, buttonText,
     }
   }
 
+  function trackShare() {
+    fetch("/api/v1/shares", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ waitListId, code: result.referralCode ?? "" }),
+    }).catch(() => {});
+  }
+
   if (result) {
     return (
-      <section className={styles.result} aria-labelledby="signup-result-title">
-        <h2 id="signup-result-title">{result.heading}</h2>
-        <p className={styles.thankYou}>{result.notice}</p>
-        {result.body ? <p>{result.body}</p> : null}
-        {result.position != null ? (
-          <p className={styles.thankYou}>
-            Your current position in line: <strong>#{result.position}</strong>
+      <section
+        className={cn(
+          "grid w-full justify-items-center text-center text-wl-text",
+          bodyPx != null && "wl-type-body",
+          statusPage.layout === "card" && "rounded-wl bg-wl-surface p-6 md:p-10",
+        )}
+        style={bodyPx != null ? { "--wl-body": `${bodyPx}px` } : undefined}
+        aria-labelledby={resultTitleId}
+      >
+        <StatusBadge pending={result.pending} iconStyle={statusPage.iconStyle} className="mb-4" />
+        <h2
+          className={cn(
+            "my-4 max-w-ch14 font-wl-heading leading-none tracking-tight text-balance",
+            headingPx == null ? "text-3xl" : "wl-type-h1",
+          )}
+          style={headingPx == null ? undefined : { "--wl-h1": `${headingPx}px` }}
+          id={resultTitleId}
+        >
+          {result.heading}
+        </h2>
+        {result.notice ? <p className="leading-relaxed text-wl-muted">{result.notice}</p> : null}
+        {result.body ? <p className="leading-relaxed text-wl-muted">{result.body}</p> : null}
+        {statusPage.showPosition && result.position != null ? (
+          <p className="flex w-full max-w-md justify-between border-y border-wl-text/15 py-4">
+            <span>Your position</span>
+            <strong>#{result.position}</strong>
           </p>
         ) : null}
-        {result.referralLink ? (
-          <div className={styles.referralShare}>
-            <p>
-              Share your personal link — every friend who joins through it moves you up in line.
-            </p>
-            <label htmlFor="waitlist-referral-link">Your referral link</label>
-            <div style={{ display: "flex", gap: "8px" }}>
+        {showReferrals && statusPage.showReferralCount ? (
+          <p className="flex w-full max-w-md justify-between border-y border-wl-text/15 py-4">
+            <span>Friends joined</span>
+            <strong>{result.referralCount}</strong>
+          </p>
+        ) : null}
+        {showReferrals && statusPage.showReferralLink && result.referralLink ? (
+          <div className="mt-6 grid w-full max-w-md gap-2.5">
+            <p className="m-0 text-sm text-wl-muted">{statusPage.shareMessage}</p>
+            <label className="text-caption font-bold" htmlFor={referralId}>
+              Your referral link
+            </label>
+            <div className="flex gap-2 max-sm:flex-col">
               <input
-                id="waitlist-referral-link"
+                className={cn(
+                  control,
+                  "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-wl-accent",
+                )}
+                id={referralId}
                 value={result.referralLink}
                 readOnly
                 onFocus={(event) => event.target.select()}
               />
-              <button type="button" onClick={copyReferralLink}>
+              <button className={action} type="button" onClick={copyReferralLink}>
                 {copied ? "Copied" : "Copy"}
               </button>
             </div>
+            {statusPage.shareChannels.length > 0 && (
+              <ShareButtons
+                channels={statusPage.shareChannels}
+                message={`${statusPage.shareMessage} ${result.referralLink}`}
+                link={result.referralLink}
+                subject={statusPage.heading}
+                onShare={trackShare}
+              />
+            )}
           </div>
         ) : null}
       </section>
@@ -123,28 +193,49 @@ export function SignupForm({ slug, waitListId, showReferrals, label, buttonText,
   }
 
   return (
-    <form className={styles.form} onSubmit={submit}>
-      <Label className={styles.label} htmlFor="waitlist-email">
-        {label}
-      </Label>
-      <div className={styles.row}>
-        <Input
-          className={styles.email}
-          id="waitlist-email"
+    <form className="w-full text-wl-text" onSubmit={submit}>
+      <label className="mb-2 block text-caption font-bold" htmlFor={emailId}>
+        {formConfig.label}
+      </label>
+      <div
+        className={cn(
+          "flex gap-2 max-sm:flex-col",
+          formConfig.layout === "stacked" && "flex-col gap-3",
+        )}
+      >
+        <input
+          className={cn(
+            control,
+            formConfig.layout === "stacked" && "h-14",
+            "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-wl-accent",
+          )}
+          id={emailId}
           name="email"
           type="email"
           autoComplete="email"
+          placeholder={formConfig.placeholder}
           required
           maxLength={320}
         />
-        <Button className={styles.button} type="submit" disabled={busy}>
-          {busy ? "Joining…" : buttonText}
-        </Button>
+        <button
+          className={cn(action, "cursor-pointer disabled:cursor-wait disabled:opacity-65")}
+          type="submit"
+          disabled={busy}
+        >
+          {busy ? "Joining…" : formConfig.buttonText}
+        </button>
       </div>
-      <Label className={styles.consent}>
-        <Checkbox className={styles.checkbox} name="marketingConsent" value="on" />
-        <span>{MARKETING_CONSENT_COPY}</span>
-      </Label>
+      {formConfig.requireConsent && (
+        <label className="mt-3 flex items-start gap-2.5 text-caption leading-relaxed font-normal text-wl-muted">
+          <input
+            className="mt-px size-4 shrink-0 rounded border border-wl-input-border bg-wl-input"
+            name="marketingConsent"
+            type="checkbox"
+            value="on"
+          />
+          <span>{formConfig.consentLabel}</span>
+        </label>
+      )}
     </form>
   );
 }

@@ -3,9 +3,6 @@
 import { useState } from "react";
 import { toast } from "sonner";
 
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-
 export function VerifyAction({ token, returnPath, waitlistName }) {
   const [state, setState] = useState("ready");
   const [referral, setReferral] = useState(null);
@@ -41,31 +38,56 @@ export function VerifyAction({ token, returnPath, waitlistName }) {
     }
   }
 
+  const actionClasses =
+    "inline-flex min-h-11 items-center justify-center rounded-lg border border-product-accent-solid bg-product-accent-solid px-5 text-sm font-semibold text-product-text-primary transition-colors hover:bg-product-accent-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-product-focus disabled:cursor-wait disabled:opacity-70";
+
   return (
-    <main className="verify-page" aria-labelledby="verify-title">
-      <section className="verify-card">
-        <p className="verify-eyebrow">{brand}</p>
-        <h1 id="verify-title">{state === "success" ? "You’re confirmed" : "Confirm your email"}</h1>
+    <main
+      className="grid min-h-svh place-items-center bg-product-bg-page p-6 text-product-text-primary"
+      aria-labelledby="verify-title"
+    >
+      <section className="w-full max-w-lg rounded-2xl border border-product-border-subtle bg-product-bg-surface p-6 md:p-10">
+        <p className="text-xs font-bold tracking-widest text-product-text-muted">{brand}</p>
+        <h1
+          id="verify-title"
+          className="mt-2 mb-3 font-product-display text-title leading-tight font-semibold md:text-display"
+        >
+          {state === "success" ? "You’re confirmed" : "Confirm your email"}
+        </h1>
         <p>
           {state === "success"
             ? "Your email is verified and your place is secured."
             : `Confirm this address to secure your place on ${brand}.`}
         </p>
         {state === "ready" || state === "loading" ? (
-          <Button type="button" onClick={verify} disabled={state === "loading"}>
+          <button
+            type="button"
+            className={actionClasses}
+            onClick={verify}
+            disabled={state === "loading"}
+          >
             {state === "loading" ? "Confirming…" : "Confirm email"}
-          </Button>
+          </button>
         ) : null}
         {referralUrl ? (
-          <div className="verify-referral">
-            <div className="verify-referral-row">
-              <Input value={referralUrl} readOnly aria-label="Your referral link" />
-              <Button type="button" onClick={copyReferralLink}>
+          <div className="mt-6 border-t border-product-border-subtle pt-5">
+            <div className="flex gap-2 max-sm:flex-col">
+              <input
+                value={referralUrl}
+                readOnly
+                aria-label="Your referral link"
+                className="h-11 min-w-0 flex-1 rounded-lg border border-product-border-control bg-product-bg-surface px-3 text-caption text-product-text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-product-focus"
+              />
+              <button
+                type="button"
+                className={`${actionClasses} shrink-0 max-sm:w-full`}
+                onClick={copyReferralLink}
+              >
                 Copy link
-              </Button>
+              </button>
             </div>
             {referral.position ? (
-              <p className="verify-referral-position">
+              <p className="mt-3 text-sm text-product-text-secondary">
                 You’re <strong>#{referral.position}</strong> on {brand}.
               </p>
             ) : null}

@@ -11,8 +11,6 @@ import { SettingsSectionNavigation } from "@/components/product/settings-section
 import { TeamAccessSettings } from "@/components/product/team-access-settings";
 import { env } from "@/lib/env.mjs";
 import prisma from "@/lib/prisma";
-
-import "@/components/product/settings-page.css";
 import { currentWorkspace } from "@/lib/workspaces/current";
 
 export const metadata = { title: "Settings" };
@@ -21,16 +19,20 @@ async function SelectedSettings({ section, user, workspace, role }) {
   const canManage = ["OWNER", "ADMIN"].includes(role);
   if (section === "profile")
     return (
-      <section className="product-settings-content" aria-labelledby="settings-panel-heading">
-        <header>
-          <h2 id="settings-panel-heading">Profile</h2>
-          <p>Your personal details.</p>
+      <section className="max-w-190 min-w-0 flex-1" aria-labelledby="settings-panel-heading">
+        <header className="mb-9 max-[760px]:mb-6">
+          <h2 id="settings-panel-heading" className="mb-1.5!">
+            Profile
+          </h2>
+          <p className="text-product-text-secondary">Your personal details.</p>
         </header>
         <ProfileForm key={user.id} name={user.name} />
-        <div className="product-settings-detail">
-          <h3>Email address</h3>
-          <p>{user.email}</p>
-          <p className="product-help">Managed by your sign-in provider.</p>
+        <div className="my-9">
+          <h3 className="mb-2! text-sm! font-medium!">Email address</h3>
+          <p className="mb-1.5! wrap-anywhere">{user.email}</p>
+          <p className="mb-1.5! text-sm leading-relaxed wrap-anywhere text-product-text-secondary">
+            Managed by your sign-in provider.
+          </p>
         </div>
       </section>
     );
@@ -67,10 +69,12 @@ async function SelectedSettings({ section, user, workspace, role }) {
         : Promise.resolve([]),
     ]);
     return (
-      <section className="product-settings-content" aria-labelledby="settings-panel-heading">
-        <header>
-          <h2 id="settings-panel-heading">Members</h2>
-          <p>People with access to {workspace.name}.</p>
+      <section className="max-w-190 min-w-0 flex-1" aria-labelledby="settings-panel-heading">
+        <header className="mb-9 max-[760px]:mb-6">
+          <h2 id="settings-panel-heading" className="mb-1.5!">
+            Members
+          </h2>
+          <p className="text-product-text-secondary">People with access to {workspace.name}.</p>
         </header>
         {results.every((result) => result.status === "fulfilled") ? (
           <TeamAccessSettings
@@ -119,7 +123,7 @@ async function SelectedSettings({ section, user, workspace, role }) {
       );
     }
     return (
-      <section className="product-settings-content" aria-labelledby="settings-panel-heading">
+      <section className="max-w-190 min-w-0 flex-1" aria-labelledby="settings-panel-heading">
         <AuditLog
           events={events.map((event) => ({
             ...event,
@@ -134,10 +138,12 @@ async function SelectedSettings({ section, user, workspace, role }) {
   if (section === "workspace") {
     const isOwner = role === "OWNER";
     return (
-      <section className="product-settings-content" aria-labelledby="settings-panel-heading">
-        <header>
-          <h2 id="settings-panel-heading">Workspace</h2>
-          <p>
+      <section className="max-w-190 min-w-0 flex-1" aria-labelledby="settings-panel-heading">
+        <header className="mb-9 max-[760px]:mb-6">
+          <h2 id="settings-panel-heading" className="mb-1.5!">
+            Workspace
+          </h2>
+          <p className="text-product-text-secondary">
             Rename or {isOwner ? "delete" : "leave"} {workspace.name}.
           </p>
         </header>
@@ -182,7 +188,7 @@ async function SelectedSettings({ section, user, workspace, role }) {
     );
   }
   return (
-    <section className="product-settings-content" aria-labelledby="settings-panel-heading">
+    <section className="max-w-190 min-w-0 flex-1" aria-labelledby="settings-panel-heading">
       <IntegrationsPanel
         initialConnection={
           connection && {
@@ -209,10 +215,10 @@ export default async function SettingsPage({ searchParams }) {
     ? query.section
     : "profile";
   return (
-    <div className="product-settings-page">
-      <div className="product-settings-layout">
-        <aside className="product-settings-menu">
-          <h1 className="product-page-title">Settings</h1>
+    <div className="mx-auto w-full max-w-280">
+      <div className="flex items-start gap-8 max-[760px]:flex-col max-[760px]:gap-8 lg:gap-12 xl:gap-18">
+        <aside className="sticky top-6 w-52.5 min-w-0 shrink-0 max-[760px]:static max-[760px]:w-full">
+          <h1 className="mt-0! mb-7.5! text-xl! max-[760px]:mb-4!">Settings</h1>
           <SettingsSectionNavigation section={section} />
         </aside>
         <Suspense key={`${context.workspace.id}:${section}`} fallback={<SettingsPanelSkeleton />}>

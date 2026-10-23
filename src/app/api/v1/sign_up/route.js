@@ -20,6 +20,9 @@ const legacySignupResponse = (signUp, { includeReferralCode = false } = {}) => {
     uniqueUserId: signUp.uniqueUserId,
     waitListId: signUp.waitListId,
     rank: signUp.rank,
+    verified: !!signUp.verifiedAt,
+    outcome: signUp.signupOutcome || "created",
+    referralCount: Array.isArray(signUp.referrals) ? signUp.referrals.length : 0,
   };
   if (includeReferralCode) response.referralCode = signUp.referralCode;
   return response;
@@ -115,7 +118,7 @@ export const POST = async (req) => {
     }
 
     const signUp = await createSignUp(data, body?.referralId);
-    await dispatchVerificationNow(signUp.verificationEventKey);
+    if (signUp.verificationEventKey) await dispatchVerificationNow(signUp.verificationEventKey);
     return NextResponse.json({
       message: "Signed up successfully",
       signUp: legacySignupResponse(signUp, { includeReferralCode: true }),

@@ -2,6 +2,7 @@
 
 import {
   CopyIcon,
+  CircleQuestionMarkIcon,
   Download01Icon,
   Mail01Icon,
   Search01Icon,
@@ -28,6 +29,13 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Sheet,
   SheetContent,
   SheetDescription,
@@ -42,16 +50,16 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-
-import "./audience.css";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { EXPORT_COLUMNS, IMPORT_TEMPLATE_CSV } from "@/lib/audience-query.mjs";
 import { formatProductDate } from "@/lib/product-date.mjs";
 
 const PAGE_SIZE = 25;
-const statuses = [
+const FILTER_OPTIONS = [
   { value: "all", label: "All signups" },
   { value: "verified", label: "Verified" },
   { value: "pending", label: "Needs confirmation" },
+  { value: "failed", label: "Email failed" },
 ];
 
 function formatDate(date) {
@@ -117,6 +125,21 @@ function deviceLabel(deviceType, agent) {
   return [kind, browser, os].filter(Boolean).join(" · ") || "Not available";
 }
 
+function SortHeaderButton({ label, active, direction, onToggle, actionLabel }) {
+  return (
+    <Button
+      type="button"
+      variant="ghost"
+      size="sm"
+      className="-ml-2 gap-1 px-2 font-medium text-product-text-secondary"
+      onClick={onToggle}
+      aria-label={active ? actionLabel : `Sort by ${label}`}
+    >
+      {label} <span aria-hidden="true">{active ? (direction === "asc" ? "↑" : "↓") : "↕"}</span>
+    </Button>
+  );
+}
+
 export function AudienceTable({
   waitlist,
   initialReviews = [],
@@ -126,11 +149,17 @@ export function AudienceTable({
   const [view, setView] = useState("subscribers");
   const [query, setQuery] = useState("");
   const [search, setSearch] = useState("");
-  const [status, setStatus] = useState("all");
-  const [deliveryFilter, setDeliveryFilter] = useState("all");
+  const [filter, setFilter] = useState("all");
+  // Single source of truth for the table filter. status/delivery are derived
+  // together so the dropdown selection can never disagree with the query.
+  const status = filter === "failed" ? "all" : filter;
+  const deliveryFilter = filter === "failed" ? "failed" : "all";
   const [selectedIds, setSelectedIds] = useState([]);
   const [retrying, setRetrying] = useState(false);
   const [sort, setSort] = useState("joined_desc");
+  const [selectAll, setSelectAll] = useState(false);
+  const [selectTruncated, setSelectTruncated] = useState(false);
+  const [selecting, setSelecting] = useState(false);
   const [cursors, setCursors] = useState([null]);
   const [pageIndex, setPageIndex] = useState(0);
   const [result, setResult] = useState({ data: [], total: 0, nextCursor: null, flags: null });
@@ -158,22 +187,42 @@ export function AudienceTable({
       setCursors([null]);
       setPageIndex(0);
       setSelectedIds([]);
+      setSelectAll(false);
+      setSelectTruncated(false);
     }, 250);
     return () => clearTimeout(timeout);
   }, [query]);
 
-  function changeStatus(nextStatus) {
-    setStatus(nextStatus);
+  function resetList() {
     setCursors([null]);
     setPageIndex(0);
     setSelectedIds([]);
+    setSelectAll(false);
+    setSelectTruncated(false);
   }
+
+  function changeFilter(value) {
+    setFilter(value);
+    resetList();
+  }
+
+  const isJoinedSort = sort === "joined_asc" || sort === "joined_desc";
 
   function toggleSort() {
     setSort((current) => (current === "joined_asc" ? "joined_desc" : "joined_asc"));
-    setCursors([null]);
-    setPageIndex(0);
-    setSelectedIds([]);
+    resetList();
+  }
+
+  function toggleColumnSort(column) {
+    setSort((current) => {
+      const [field, dir] = current.split("_");
+      if (field === column) return `${column}_${dir === "asc" ? "desc" : "asc"}`;
+      if (column === "email") return "email_asc";
+      if (column === "points") return "points_desc";
+      if (column === "status") return "status_desc";
+      return "position_asc";
+    });
+    resetList();
   }
 
   const load = useCallback(
@@ -182,7 +231,8 @@ export function AudienceTable({
       setError("");
       const params = new URLSearchParams({ status, sort, delivery: deliveryFilter });
       if (search) params.set("q", search);
-      if (cursors[pageIndex]) params.set("cursor", cursors[pageIndex]);
+      params.set("page", String(pageIndex));
+      if (isJoinedSort && cursors[pageIndex]) params.set("cursor", cursors[pageIndex]);
       try {
         const response = await fetch(
           `/api/wait-lists/${encodeURIComponent(waitlist.id)}/subscribers?${params}`,
@@ -202,7 +252,17 @@ export function AudienceTable({
         if (!signal.aborted) setLoading(false);
       }
     },
-    [cursors, deliveryFilter, pageIndex, retryCount, search, sort, status, waitlist.id],
+    [
+      cursors,
+      deliveryFilter,
+      isJoinedSort,
+      pageIndex,
+      retryCount,
+      search,
+      sort,
+      status,
+      waitlist.id,
+    ],
   );
 
   useEffect(() => {
@@ -257,6 +317,10 @@ export function AudienceTable({
           parts.push(`${outcome.duplicates.toLocaleString()} already on the list`);
         if (outcome.invalid > 0)
           parts.push(`${outcome.invalid.toLocaleString()} failed validation`);
+        if (outcome.referralsLinked > 0)
+          parts.push(
+            `${outcome.referralsLinked.toLocaleString()} referral${outcome.referralsLinked === 1 ? "" : "s"} linked`,
+          );
         toast.success(`${parts.join(", ")}.`);
         setRetryCount((count) => count + 1);
       } else toast.error(outcome.message);
@@ -287,6 +351,28 @@ export function AudienceTable({
       toast.error(error.message || "Could not retry confirmation emails.");
     } finally {
       setRetrying(false);
+    }
+  }
+
+  async function selectAllMatching() {
+    setSelecting(true);
+    try {
+      const params = new URLSearchParams({ status, sort, delivery: deliveryFilter });
+      if (search) params.set("q", search);
+      params.set("select", "ids");
+      const response = await fetch(
+        `/api/wait-lists/${encodeURIComponent(waitlist.id)}/subscribers?${params}`,
+        { cache: "no-store" },
+      );
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error || "Unable to select signups.");
+      setSelectedIds(payload.ids);
+      setSelectAll(true);
+      setSelectTruncated(Boolean(payload.truncated));
+    } catch {
+      toast.error("Could not select every signup. Try again.");
+    } finally {
+      setSelecting(false);
     }
   }
 
@@ -334,7 +420,12 @@ export function AudienceTable({
   const isUpdating = loading || (criteriaChanging && !error);
   const loadedFilters = loadedCriteria?.split("\u0000") || [];
   const appliedCriteriaLabel = loadedCriteria
-    ? `${loadedFilters[1] ? `“${loadedFilters[1]}” · ` : ""}${statuses.find((item) => item.value === loadedFilters[0])?.label || "All signups"}`
+    ? `${loadedFilters[1] ? `“${loadedFilters[1]}” · ` : ""}${
+        loadedFilters[3] === "failed"
+          ? "Email failed"
+          : FILTER_OPTIONS.find((option) => option.value === loadedFilters[0])?.label ||
+            "All signups"
+      }`
     : "the initial signup list";
   const emptyTitle =
     deliveryFilter === "failed"
@@ -362,9 +453,11 @@ export function AudienceTable({
             checked={
               result.data.length > 0 && result.data.every((row) => selectedIds.includes(row.id))
             }
-            onCheckedChange={(checked) =>
-              setSelectedIds(checked ? result.data.map((row) => row.id) : [])
-            }
+            onCheckedChange={(checked) => {
+              setSelectedIds(checked ? result.data.map((row) => row.id) : []);
+              setSelectAll(false);
+              setSelectTruncated(false);
+            }}
           />
         ),
         meta: { className: "w-10 px-3" },
@@ -373,19 +466,21 @@ export function AudienceTable({
             aria-label={`Select ${row.original.email}`}
             checked={selectedIds.includes(row.original.id)}
             onClick={(event) => event.stopPropagation()}
-            onCheckedChange={(checked) =>
+            onCheckedChange={(checked) => {
               setSelectedIds((items) =>
                 checked
                   ? [...items, row.original.id]
                   : items.filter((id) => id !== row.original.id),
-              )
-            }
+              );
+              setSelectAll(false);
+              setSelectTruncated(false);
+            }}
           />
         ),
       }),
       columnHelper.accessor("email", {
         header: "Email",
-        meta: { className: "w-[42%] px-4 py-3 sm:w-auto" },
+        meta: { className: "w-21/50 px-4 py-3 sm:w-auto" },
         cell: ({ row }) => (
           <span className="group inline-flex max-w-full items-center gap-1">
             <Button
@@ -422,7 +517,7 @@ export function AudienceTable({
         header: "Country",
         meta: { className: "hidden px-4 py-3 sm:table-cell" },
         cell: ({ row }) => (
-          <span className="text-[var(--product-text-secondary)]">
+          <span className="text-product-text-secondary">
             {locationLabel(row.original.city, row.original.country)}
           </span>
         ),
@@ -430,10 +525,22 @@ export function AudienceTable({
       ...(flags.showReferrals
         ? [
             columnHelper.accessor("position", {
-              header: "Position",
+              header: () => (
+                <SortHeaderButton
+                  label="Position"
+                  active={sort === "position_asc" || sort === "position_desc"}
+                  direction={sort === "position_desc" ? "desc" : "asc"}
+                  actionLabel={
+                    sort === "position_asc"
+                      ? "Sort by lowest position first"
+                      : "Sort by leaderboard first"
+                  }
+                  onToggle={() => toggleColumnSort("position")}
+                />
+              ),
               meta: { className: "hidden px-4 py-3 sm:table-cell" },
               cell: ({ getValue }) => (
-                <span className="text-[var(--product-text-secondary)]">
+                <span className="text-product-text-secondary">
                   {getValue() == null ? "—" : `#${getValue()}`}
                 </span>
               ),
@@ -441,10 +548,42 @@ export function AudienceTable({
           ]
         : []),
       columnHelper.accessor("points", {
-        header: "Points",
+        header: () => (
+          <span className="inline-flex items-center gap-1">
+            <SortHeaderButton
+              label="Points"
+              active={sort === "points_desc" || sort === "points_asc"}
+              direction={sort === "points_asc" ? "asc" : "desc"}
+              actionLabel={
+                sort === "points_desc" ? "Sort by fewest points first" : "Sort by most points first"
+              }
+              onToggle={() => toggleColumnSort("points")}
+            />
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger
+                  render={
+                    <button
+                      type="button"
+                      className="flex size-6 cursor-help items-center justify-center rounded-full border-0 bg-transparent p-0 text-product-text-secondary"
+                      aria-label="How points work"
+                    />
+                  }
+                >
+                  <HugeiconsIcon icon={CircleQuestionMarkIcon} size={14} aria-hidden="true" />
+                </TooltipTrigger>
+                <TooltipContent side="bottom" className="max-w-64">
+                  Verifying an email earns 50 points. When someone they referred verifies, the
+                  referrer earns 30 points. Referrals only count while marked clear or approved, and
+                  signups from one IP over the velocity limit earn nothing.
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </span>
+        ),
         meta: { className: "hidden px-4 py-3 text-right tabular-nums sm:table-cell" },
         cell: ({ getValue }) => (
-          <span className="text-[var(--product-text-secondary)] tabular-nums">
+          <span className="text-product-text-secondary tabular-nums">
             {(getValue() ?? 0).toLocaleString()}
           </span>
         ),
@@ -455,7 +594,7 @@ export function AudienceTable({
             type="button"
             variant="ghost"
             size="sm"
-            className="-ml-2 gap-1 px-2 font-medium text-[var(--product-text-secondary)]"
+            className="-ml-2 gap-1 px-2 font-medium text-product-text-secondary"
             onClick={toggleSort}
             aria-label={sort === "joined_asc" ? "Sort by newest first" : "Sort by oldest first"}
           >
@@ -464,7 +603,7 @@ export function AudienceTable({
         ),
         meta: { className: "hidden px-4 py-3 sm:table-cell" },
         cell: ({ getValue }) => (
-          <span className="text-[var(--product-text-secondary)]" title={formatDate(getValue())}>
+          <span className="text-product-text-secondary" title={formatDate(getValue())}>
             {timeAgo(getValue())}
           </span>
         ),
@@ -472,8 +611,18 @@ export function AudienceTable({
       ...(flags.sendEmailsToSubscribers
         ? [
             columnHelper.accessor("verifiedAt", {
-              header: "Status",
-              meta: { className: "w-[58%] px-4 py-3 text-right sm:w-auto sm:text-left" },
+              header: () => (
+                <SortHeaderButton
+                  label="Status"
+                  active={sort === "status_desc" || sort === "status_asc"}
+                  direction={sort === "status_asc" ? "asc" : "desc"}
+                  actionLabel={
+                    sort === "status_desc" ? "Show needs confirmation first" : "Show verified first"
+                  }
+                  onToggle={() => toggleColumnSort("status")}
+                />
+              ),
+              meta: { className: "w-29/50 px-4 py-3 text-right sm:w-auto sm:text-left" },
               cell: ({ getValue }) => {
                 const verified = Boolean(getValue());
                 return (
@@ -488,14 +637,14 @@ export function AudienceTable({
         : []),
       columnHelper.display({
         id: "emailDelivery",
-        header: "Email",
+        header: "Confirmation",
         meta: { className: "px-4 py-3" },
         cell: ({ row }) => {
           const label = deliveryLabel(row.original);
           const failed = label === "Failed";
           return (
             <span
-              className={`inline-flex items-center gap-1.5 text-xs ${failed ? "text-[#a03932]" : "text-[var(--product-text-secondary)]"}`}
+              className={`inline-flex items-center gap-1.5 text-xs ${failed ? "text-product-danger-text" : "text-product-text-secondary"}`}
               title={`Confirmation email: ${label}`}
             >
               <HugeiconsIcon icon={Mail01Icon} size={15} aria-hidden="true" />
@@ -527,11 +676,13 @@ export function AudienceTable({
   const rows = table.getRowModel().rows;
 
   return (
-    <section className="product-ui product-audience" aria-labelledby="audience-title">
-      <header className="product-page-heading">
+    <section className="product-ui" aria-labelledby="audience-title">
+      <header className="mb-7 flex items-center justify-between gap-6">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div className="grid gap-2">
-            <h2 id="audience-title">Signups</h2>
+            <h2 id="audience-title" className="text-2xl!">
+              Signups
+            </h2>
             <p className="product-description">
               People who joined {waitlist.name || "this waitlist"}.
             </p>
@@ -553,7 +704,11 @@ export function AudienceTable({
             </div>
           )}
         </div>
-        <div className="product-audience-views" role="group" aria-label="Signup views">
+        <div
+          className="mt-6 flex flex-wrap gap-2 [&_button[aria-pressed=true]]:bg-product-bg-inset [&_button[aria-pressed=true]]:text-product-text-primary"
+          role="group"
+          aria-label="Signup views"
+        >
           <Button
             variant="ghost"
             aria-pressed={view === "subscribers"}
@@ -582,13 +737,13 @@ export function AudienceTable({
         />
       ) : (
         <>
-          <div className="product-audience-data" aria-busy={isUpdating}>
-            <div className="product-audience-toolbar">
+          <div className="min-w-0" aria-busy={isUpdating}>
+            <div className="mb-6 flex flex-wrap items-center justify-between gap-4 max-[640px]:items-stretch">
               <Label className="relative block w-full sm:max-w-sm">
                 <span className="sr-only">Search signups by email</span>
                 <HugeiconsIcon
                   icon={Search01Icon}
-                  className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-[var(--product-text-secondary)]"
+                  className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-product-text-secondary"
                   aria-hidden="true"
                 />
                 <Input
@@ -601,34 +756,20 @@ export function AudienceTable({
                   maxLength={120}
                 />
               </Label>
-              <div
-                className="product-audience-filters"
-                role="group"
-                aria-label="Filter signups by status"
-              >
-                {statuses.map((item) => (
-                  <Button
-                    key={item.value}
-                    variant="ghost"
-                    aria-pressed={status === item.value}
-                    onClick={() => changeStatus(item.value)}
-                  >
-                    {item.label}
-                  </Button>
-                ))}
-              </div>
-              <Button
-                variant="ghost"
-                aria-pressed={deliveryFilter === "failed"}
-                onClick={() => {
-                  setDeliveryFilter((value) => (value === "failed" ? "all" : "failed"));
-                  setCursors([null]);
-                  setPageIndex(0);
-                  setSelectedIds([]);
-                }}
-              >
-                Email failed
-              </Button>
+              <Select value={filter} onValueChange={changeFilter}>
+                <SelectTrigger className="w-52 max-[640px]:w-full" aria-label="Filter signups">
+                  <SelectValue>
+                    {FILTER_OPTIONS.find((option) => option.value === filter)?.label ?? filter}
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  {FILTER_OPTIONS.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             {selectedIds.length > 0 && (
               <div
@@ -636,12 +777,18 @@ export function AudienceTable({
                 role="group"
                 aria-label="Selected signups"
               >
-                <span>{selectedIds.length} selected on this page</span>
+                <span>
+                  {selectAll
+                    ? `All ${selectedIds.length.toLocaleString()} signups selected`
+                    : `${selectedIds.length} selected on this page`}
+                  {selectTruncated ? " (first 2,000)" : ""}
+                </span>
                 <Button
                   variant="outline"
                   disabled={
                     !canManage ||
                     retrying ||
+                    selectAll ||
                     selectedIds.length > 25 ||
                     !result.data.some(
                       (row) => selectedIds.includes(row.id) && retryableVerification(row),
@@ -657,11 +804,40 @@ export function AudienceTable({
                 >
                   {retrying ? "Retrying…" : "Retry failed confirmations"}
                 </Button>
-                <Button variant="ghost" onClick={() => setSelectedIds([])}>
+                {(selectAll || selectedIds.length > 25) && (
+                  <span className="text-product-text-secondary">
+                    Select up to 25 at a time to retry.
+                  </span>
+                )}
+                <Button
+                  variant="ghost"
+                  onClick={() => {
+                    setSelectedIds([]);
+                    setSelectAll(false);
+                    setSelectTruncated(false);
+                  }}
+                >
                   Clear selection
                 </Button>
               </div>
             )}
+            {!selectAll &&
+              selectedIds.length > 0 &&
+              selectedIds.length === result.data.length &&
+              result.total > result.data.length && (
+                <div className="flex flex-wrap items-center gap-3 px-4 pb-1 text-sm text-product-text-secondary">
+                  <span>All {result.data.length} on this page selected.</span>
+                  <Button
+                    variant="ghost"
+                    disabled={selecting || !canManage}
+                    onClick={selectAllMatching}
+                  >
+                    {selecting
+                      ? "Selecting…"
+                      : `Select all ${result.total.toLocaleString()} signups`}
+                  </Button>
+                </div>
+              )}
 
             {error && (
               <div
@@ -678,9 +854,9 @@ export function AudienceTable({
                 </Button>
               </div>
             )}
-            <div className="overflow-x-auto">
-              <Table className="w-full min-w-[48rem] table-fixed border-collapse text-left sm:table-auto">
-                <TableHeader className="text-[var(--product-text-secondary)]">
+            <div className="overflow-x-auto [&_td]:px-3 [&_td]:py-4.5 [&_td:first-child]:pl-0 [&_td:last-child]:pr-0 [&_th]:border-b [&_th]:px-3 [&_th]:text-caption [&_th:first-child]:pl-0 [&_th:last-child]:pr-0">
+              <Table className="w-full min-w-192 table-fixed border-collapse text-left sm:table-auto">
+                <TableHeader className="text-product-text-secondary">
                   {table.getHeaderGroups().map((headerGroup) => (
                     <TableRow key={headerGroup.id}>
                       {headerGroup.headers.map((header) => (
@@ -699,7 +875,7 @@ export function AudienceTable({
                   {rows.map((row) => (
                     <TableRow
                       key={row.original.id}
-                      className="product-audience-row cursor-pointer hover:bg-transparent"
+                      className="cursor-pointer hover:bg-transparent [&_button]:min-h-10 [&_button]:text-left [&_button]:focus-visible:outline-2 [&_button]:focus-visible:outline-offset-2 [&_button]:focus-visible:outline-product-focus"
                       onClick={() => {
                         setCopiedId(null);
                         setSheet({ type: "profile", row: row.original });
@@ -720,20 +896,18 @@ export function AudienceTable({
                       <TableCell colSpan={columns.length} className="px-4 py-16 text-center">
                         <HugeiconsIcon
                           icon={UserGroupIcon}
-                          className="mx-auto mb-3 text-[var(--product-text-secondary)]"
+                          className="mx-auto mb-3 text-product-text-secondary"
                           aria-hidden="true"
                         />
                         <p className="font-medium">{emptyTitle}</p>
-                        <p className="mt-1 text-[var(--product-text-secondary)]">
-                          {emptyDescription}
-                        </p>
+                        <p className="mt-1 text-product-text-secondary">{emptyDescription}</p>
                         {search || status !== "all" ? (
                           <Button
                             className="mt-4"
                             variant="outline"
                             onClick={() => {
                               setQuery("");
-                              setStatus("all");
+                              setFilter("all");
                             }}
                           >
                             Clear filters
@@ -753,25 +927,21 @@ export function AudienceTable({
                   {isUpdating && rows.length === 0 && (
                     <>
                       {[0, 1, 2, 3, 4].map((row) => (
-                        <TableRow
-                          className="product-subscriber-skeleton-row"
-                          aria-hidden="true"
-                          key={row}
-                        >
-                          <TableCell>
-                            <i />
+                        <TableRow aria-hidden="true" key={row}>
+                          <TableCell className="h-16">
+                            <i className="block h-3.5 w-4/5 rounded bg-product-bg-inset motion-safe:animate-pulse" />
                           </TableCell>
-                          <TableCell>
-                            <i />
+                          <TableCell className="h-16">
+                            <i className="block h-5.5 w-24 rounded-full bg-product-bg-inset motion-safe:animate-pulse" />
                           </TableCell>
-                          <TableCell className="hidden sm:table-cell">
-                            <i />
+                          <TableCell className="hidden h-16 sm:table-cell">
+                            <i className="block h-3.5 w-17/20 rounded bg-product-bg-inset motion-safe:animate-pulse" />
                           </TableCell>
-                          <TableCell className="hidden sm:table-cell">
-                            <i />
+                          <TableCell className="hidden h-16 sm:table-cell">
+                            <i className="block h-3.5 w-10 rounded bg-product-bg-inset motion-safe:animate-pulse" />
                           </TableCell>
-                          <TableCell className="hidden sm:table-cell">
-                            <i />
+                          <TableCell className="hidden h-16 sm:table-cell">
+                            <i className="block h-3.5 w-10 rounded bg-product-bg-inset motion-safe:animate-pulse" />
                           </TableCell>
                         </TableRow>
                       ))}
@@ -780,7 +950,7 @@ export function AudienceTable({
                 </TableBody>
               </Table>
             </div>
-            <footer className="product-audience-pagination">
+            <footer className="flex flex-wrap items-center justify-between gap-4 pt-6 text-caption text-product-text-secondary tabular-nums">
               <span aria-live="polite" aria-atomic="true">
                 {showingStart}–{showingEnd} of {result.total}
               </span>
@@ -790,6 +960,8 @@ export function AudienceTable({
                   disabled={pageIndex === 0 || isUpdating}
                   onClick={() => {
                     setSelectedIds([]);
+                    setSelectAll(false);
+                    setSelectTruncated(false);
                     setPageIndex((current) => Math.max(0, current - 1));
                   }}
                 >
@@ -797,13 +969,17 @@ export function AudienceTable({
                 </Button>
                 <Button
                   variant="outline"
-                  disabled={!result.nextCursor || isUpdating}
+                  disabled={!(isJoinedSort ? result.nextCursor : result.hasMore) || isUpdating}
                   onClick={() => {
                     setSelectedIds([]);
-                    setCursors((current) => [
-                      ...current.slice(0, pageIndex + 1),
-                      result.nextCursor,
-                    ]);
+                    setSelectAll(false);
+                    setSelectTruncated(false);
+                    if (isJoinedSort) {
+                      setCursors((current) => [
+                        ...current.slice(0, pageIndex + 1),
+                        result.nextCursor,
+                      ]);
+                    }
                     setPageIndex((current) => current + 1);
                   }}
                 >
@@ -829,21 +1005,21 @@ export function AudienceTable({
                   <div className="px-4 pb-4">
                     <dl className="grid gap-5 text-sm">
                       <div className="grid grid-cols-[104px_minmax(0,1fr)] gap-3">
-                        <dt className="text-[var(--product-text-secondary)]">Email</dt>
+                        <dt className="text-product-text-secondary">Email</dt>
                         <dd className="font-medium break-all">{profile.email}</dd>
                       </div>
                       {flags.sendEmailsToSubscribers && (
                         <div className="grid grid-cols-[104px_minmax(0,1fr)] gap-3">
-                          <dt className="text-[var(--product-text-secondary)]">Status</dt>
+                          <dt className="text-product-text-secondary">Status</dt>
                           <dd>{profileStatus}</dd>
                         </div>
                       )}
                       <div className="grid grid-cols-[104px_minmax(0,1fr)] gap-3">
-                        <dt className="text-[var(--product-text-secondary)]">Confirmation email</dt>
+                        <dt className="text-product-text-secondary">Confirmation email</dt>
                         <dd>
                           <p>{deliveryLabel(profile)}</p>
                           {profile.verificationDelivery?.issue && (
-                            <p className="text-xs text-[var(--product-text-secondary)]">
+                            <p className="text-xs text-product-text-secondary">
                               Issue:{" "}
                               {profile.verificationDelivery.issue
                                 .replaceAll("_", " ")
@@ -864,18 +1040,18 @@ export function AudienceTable({
                       </div>
                       {flags.showReferrals && (
                         <div className="grid grid-cols-[104px_minmax(0,1fr)] gap-3">
-                          <dt className="text-[var(--product-text-secondary)]">Position</dt>
+                          <dt className="text-product-text-secondary">Position</dt>
                           <dd className="tabular-nums">
                             {profile.position == null ? "—" : `#${profile.position}`}
                           </dd>
                         </div>
                       )}
                       <div className="grid grid-cols-[104px_minmax(0,1fr)] gap-3">
-                        <dt className="text-[var(--product-text-secondary)]">Joined</dt>
+                        <dt className="text-product-text-secondary">Joined</dt>
                         <dd title={formatDate(profile.createdAt)}>{timeAgo(profile.createdAt)}</dd>
                       </div>
                       <div className="grid grid-cols-[104px_minmax(0,1fr)] gap-3">
-                        <dt className="text-[var(--product-text-secondary)]">Location</dt>
+                        <dt className="text-product-text-secondary">Location</dt>
                         <dd>
                           {locationLabel(profile.city, profile.country) === "—"
                             ? "Not available"
@@ -883,28 +1059,49 @@ export function AudienceTable({
                         </dd>
                       </div>
                       <div className="grid grid-cols-[104px_minmax(0,1fr)] gap-3">
-                        <dt className="text-[var(--product-text-secondary)]">Device</dt>
+                        <dt className="text-product-text-secondary">Device</dt>
                         <dd title={profile.device || undefined}>
                           {deviceLabel(profile.deviceType, profile.device)}
                         </dd>
                       </div>
                       {flags.showReferrals && (
                         <div className="grid grid-cols-[104px_minmax(0,1fr)] gap-3">
-                          <dt className="text-[var(--product-text-secondary)]">Referrals</dt>
-                          <dd className="tabular-nums">{profile.referralCount}</dd>
+                          <dt className="text-product-text-secondary">Referrals</dt>
+                          <dd className="tabular-nums">{profile.referralCount ?? "—"}</dd>
                         </div>
                       )}
                       <div className="grid grid-cols-[104px_minmax(0,1fr)] gap-3">
-                        <dt className="text-[var(--product-text-secondary)]">Points</dt>
+                        <dt className="text-product-text-secondary">Points</dt>
                         <dd className="tabular-nums">{(profile.points ?? 0).toLocaleString()}</dd>
                       </div>
                       <div className="grid grid-cols-[104px_minmax(0,1fr)] gap-3">
-                        <dt className="text-[var(--product-text-secondary)]">Source</dt>
+                        <dt className="text-product-text-secondary">Source</dt>
                         <dd>{profile.utmSource || "Direct"}</dd>
                       </div>
+                      {flags.showReferrals && (
+                        <div className="grid grid-cols-[104px_minmax(0,1fr)] gap-3">
+                          <dt className="text-product-text-secondary">Referred by</dt>
+                          <dd className="min-w-0">
+                            {profile.referredBy?.email ? (
+                              <button
+                                type="button"
+                                title={profile.referredBy.email}
+                                onClick={() =>
+                                  setSheet({ type: "profile", row: profile.referredBy })
+                                }
+                                className="block w-full cursor-pointer truncate border-0 bg-transparent p-0 text-left text-product-text-primary underline underline-offset-4 hover:text-product-text-secondary"
+                              >
+                                {profile.referredBy.email}
+                              </button>
+                            ) : (
+                              "—"
+                            )}
+                          </dd>
+                        </div>
+                      )}
                       {profileLink && (
                         <div className="grid grid-cols-[104px_minmax(0,1fr)] items-center gap-3">
-                          <dt className="text-[var(--product-text-secondary)]">Referral link</dt>
+                          <dt className="text-product-text-secondary">Referral link</dt>
                           <dd className="flex min-w-0 items-center gap-1.5">
                             <span className="min-w-0 flex-1 truncate" title={profileLink}>
                               {profileLink}

@@ -150,7 +150,7 @@ export function ApiKeysClient() {
     }
   }
   return (
-    <div className="settings-api-keys" aria-busy={loading}>
+    <div className="grid gap-5" aria-busy={loading}>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <Link
           prefetch={false}
@@ -177,8 +177,8 @@ export function ApiKeysClient() {
             <p role="status" className="sr-only">
               Loading API keys…
             </p>
-            <div className="settings-api-key-skeleton" aria-hidden="true" />
-            <div className="settings-api-key-skeleton" aria-hidden="true" />
+            <div className="h-18 rounded-lg bg-product-bg-inset" aria-hidden="true" />
+            <div className="h-18 rounded-lg bg-product-bg-inset" aria-hidden="true" />
           </>
         ) : error ? (
           <div role="alert">
@@ -190,12 +190,15 @@ export function ApiKeysClient() {
         ) : (
           <>
             {!keys.length && (
-              <p className="product-help">
+              <p className="mb-4! text-sm leading-relaxed text-product-text-secondary">
                 No API keys yet. Create one for a waitlist to accept signups from your server.
               </p>
             )}
             {keys.map((key) => (
-              <article key={key.id} className="settings-api-key-row">
+              <article
+                key={key.id}
+                className="grid gap-2 py-4 [&>header]:flex [&>header]:items-center [&>header]:justify-between [&>header]:gap-3"
+              >
                 <header>
                   <strong className="text-sm">{key.name}</strong>
                   <Button
@@ -207,11 +210,13 @@ export function ApiKeysClient() {
                     <HugeiconsIcon icon={Delete02Icon} size={16} aria-hidden="true" />
                   </Button>
                 </header>
-                <p>{key.waitlist?.name || "Unlinked"} · Signup access</p>
+                <p className="m-0 text-caption text-product-text-secondary">
+                  {key.waitlist?.name || "Unlinked"} · Signup access
+                </p>
                 <code className="text-sm break-all">
                   {key.keyId ? `wl2_${key.keyId}_` : "Legacy key · "}••••••••••••••••
                 </code>
-                <p>
+                <p className="m-0 text-caption text-product-text-secondary">
                   {key.expiresAt
                     ? `Expires ${formatProductDate(key.expiresAt, { includeTime: false })}`
                     : "No expiry"}
@@ -219,7 +224,7 @@ export function ApiKeysClient() {
               </article>
             ))}
             {!available.length && (
-              <p className="product-help">
+              <p className="mb-4! text-sm leading-relaxed text-product-text-secondary">
                 {waitlists.length
                   ? "Each waitlist already has a key. Revoke a key before creating its replacement."
                   : "Create a waitlist before adding an API key."}
@@ -238,7 +243,7 @@ export function ApiKeysClient() {
             >
               {newKey ? "Save your API key" : "Create API key"}
             </h3>
-            <p className="product-help">
+            <p className="mb-4! text-sm leading-relaxed text-product-text-secondary">
               {newKey
                 ? "This secret is shown once. Keep it on your server."
                 : "A key only creates signups for its selected waitlist."}
@@ -246,7 +251,7 @@ export function ApiKeysClient() {
           </header>
           {newKey ? (
             <div className="space-y-4">
-              <div className="settings-api-key-secret">
+              <div className="flex items-center gap-2 [&_button]:min-h-10 [&_button]:min-w-10 [&_button]:shrink-0 [&_input]:w-full [&_input]:min-w-0 [&_input]:font-mono [&_input]:text-caption">
                 <Input
                   aria-label="New API key"
                   type={reveal ? "text" : "password"}
@@ -351,7 +356,7 @@ export function ApiKeysClient() {
           >
             Revoke {toRevoke.name}?
           </h3>
-          <p className="product-help">
+          <p className="mb-4! text-sm leading-relaxed text-product-text-secondary">
             Apps using this key will lose access immediately. Create a replacement after revoking.
           </p>
           <div className="flex flex-wrap gap-3">

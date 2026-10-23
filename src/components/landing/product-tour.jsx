@@ -9,7 +9,7 @@ import {
 import { HugeiconsIcon } from "@hugeicons/react";
 import { useEffect, useRef, useState } from "react";
 
-import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 const views = [
   {
     title: "Design",
@@ -43,6 +43,14 @@ const views = [
   },
 ];
 
+// Each walkthrough view carries its own accent and wash, the way the old
+// stylesheet swapped them through the data-theme attribute.
+const tourThemes = {
+  design: { accent: "text-lime-700", wash: "bg-lime-50", bar: "bg-lime-700" },
+  publish: { accent: "text-indigo-800", wash: "bg-indigo-50", bar: "bg-indigo-800" },
+  understand: { accent: "text-pink-800", wash: "bg-pink-50", bar: "bg-pink-800" },
+};
+
 export default function ProductTour() {
   const [selected, setSelected] = useState(0);
   const [playing, setPlaying] = useState(true);
@@ -55,6 +63,7 @@ export default function ProductTour() {
   const progressRef = useRef(null);
   const tabsRef = useRef([]);
   const view = views[selected];
+  const theme = tourThemes[view.media];
   const canPlay = playing && reducedMotion === false && visible && inView && !failed;
 
   useEffect(() => {
@@ -124,7 +133,7 @@ export default function ProductTour() {
 
   return (
     <div
-      className="wl-product-tour"
+      className="mt-9"
       data-theme={view.media}
       ref={rootRef}
       onMouseEnter={() => setPlaying(false)}
@@ -133,15 +142,15 @@ export default function ProductTour() {
         if (event.target.matches(":focus-visible")) setPlaying(false);
       }}
     >
-      <div className="wl-tour-toolbar">
+      <div className="flex items-center justify-between gap-4">
         <div
-          className="wl-tour-controls"
+          className="flex gap-2 max-sm:flex-1 max-sm:justify-between max-sm:gap-4"
           role="tablist"
           aria-label="Product walkthrough"
           onKeyDown={onKeyDown}
         >
           {views.map((item, index) => (
-            <Button
+            <button
               key={item.title}
               ref={(node) => {
                 tabsRef.current[index] = node;
@@ -156,33 +165,63 @@ export default function ProductTour() {
                 select(index);
                 if (event.detail > 0) setPlaying(true);
               }}
+              className={cn(
+                "relative inline-flex min-h-12 items-center justify-center gap-2.5 overflow-hidden rounded-md bg-transparent px-6 py-3 text-sm font-semibold text-product-text-secondary transition duration-120 hover:text-product-text-primary focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-neutral-900 active:scale-95",
+                index === selected && cn(theme.wash, theme.accent),
+              )}
             >
-              <HugeiconsIcon icon={item.icon} size={17} aria-hidden="true" />
+              <HugeiconsIcon
+                icon={item.icon}
+                size={17}
+                aria-hidden="true"
+                className={cn("shrink-0", tourThemes[item.media].accent)}
+              />
               {item.title}
-              <span className="wl-tour-progress" aria-hidden="true">
-                <i ref={index === selected ? progressRef : null} />
+              <span className="absolute bottom-0 left-0 h-0.5 w-full" aria-hidden="true">
+                <i
+                  ref={index === selected ? progressRef : null}
+                  className={cn(
+                    "block h-full w-full origin-left scale-x-0 transition-transform duration-200",
+                    tourThemes[item.media].bar,
+                  )}
+                />
               </span>
-            </Button>
+            </button>
           ))}
         </div>
       </div>
       <div
         id="product-view"
-        className="wl-tour-view"
+        className="mt-8 grid grid-cols-1 gap-6"
         role="tabpanel"
         aria-labelledby={`tour-tab-${view.media}`}
       >
-        <div className="wl-tour-copy" aria-live={playing ? "off" : "polite"}>
+        <div
+          className="flex items-center justify-between gap-6 max-md:block"
+          aria-live={playing ? "off" : "polite"}
+        >
           <div>
-            <h3>{view.heading}</h3>
-            <p>{view.copy}</p>
+            <h3 className="font-product-display text-3xl leading-tight font-semibold tracking-tighter">
+              {view.heading}
+            </h3>
+            <p className="mt-2.5 max-w-84 text-body text-product-text-secondary">{view.copy}</p>
           </div>
-          <a className="wl-text-link" href={view.href}>
+          <a
+            className="group inline-flex shrink-0 items-center gap-2.5 text-sm font-medium underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-neutral-900"
+            href={view.href}
+          >
             {view.link}
-            <HugeiconsIcon icon={ArrowUpRight01Icon} size={15} aria-hidden="true" />
+            <HugeiconsIcon
+              icon={ArrowUpRight01Icon}
+              size={15}
+              aria-hidden="true"
+              className="shrink-0 transition-transform duration-180 group-hover:translate-x-0.5"
+            />
           </a>
         </div>
-        <div className="wl-tour-media">
+        <div
+          className={cn("rounded-xl p-3 transition-colors duration-150 md:p-6 xl:p-9", theme.wash)}
+        >
           <video
             key={view.media}
             ref={videoRef}
@@ -190,6 +229,7 @@ export default function ProductTour() {
             playsInline
             preload={inView && reducedMotion === false ? "metadata" : "none"}
             aria-label={view.alt}
+            className="block aspect-video w-full rounded-lg bg-white object-contain"
             onTimeUpdate={(event) => {
               const video = event.currentTarget;
               if (progressRef.current && video.duration)
@@ -204,7 +244,7 @@ export default function ProductTour() {
           </video>
         </div>
         {failed ? (
-          <p className="wl-tour-media-error">
+          <p className="text-xs text-product-text-secondary">
             Playback is unavailable. Use the tabs to explore the product screens.
           </p>
         ) : null}

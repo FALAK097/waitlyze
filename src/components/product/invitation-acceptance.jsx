@@ -20,7 +20,7 @@ export function InvitationSignIn({ callbackURL }) {
     });
   }
   return (
-    <div className="product-invitation-actions">
+    <div className="grid justify-items-start gap-3">
       <Button type="button" onClick={signIn} disabled={pending}>
         {pending ? "Connecting…" : "Continue with Google"}
       </Button>
@@ -42,7 +42,7 @@ export function InvitationSwitchAccount() {
     });
   }
   return (
-    <div className="product-invitation-actions">
+    <div className="grid justify-items-start gap-3">
       <Button type="button" variant="outline" onClick={signOut} disabled={pending}>
         {pending ? "Signing out…" : "Switch account"}
       </Button>
@@ -56,7 +56,7 @@ export function InvitationAcceptButton({ token }) {
     if (state?.error) toast.error(state.error);
   }, [state]);
   return (
-    <form action={action} className="product-invitation-actions">
+    <form action={action} className="grid justify-items-start gap-3">
       <input type="hidden" name="token" value={token} />
       <Button type="submit" disabled={pending} aria-busy={pending}>
         {pending ? "Joining workspace…" : "Accept invitation"}
