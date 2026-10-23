@@ -159,9 +159,7 @@ export function ReferralReview({
                 {reviews.map((review) => (
                   <Fragment key={review.id}>
                     <TableRow>
-                    <TableCell className="font-medium break-all">
-                      {review.signUp.email}
-                    </TableCell>
+                      <TableCell className="font-medium break-all">{review.signUp.email}</TableCell>
                       <TableCell className="hidden max-w-44 truncate text-product-text-secondary sm:table-cell">
                         <span
                           className="block truncate"
