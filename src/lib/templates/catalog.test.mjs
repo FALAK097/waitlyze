@@ -35,3 +35,60 @@ test("accepts persisted Google Font family names", () => {
   assert.equal(parsed.brand.headingFont, "DM Sans");
   assert.equal(parsed.brand.bodyFont, "Source Serif 4");
 });
+
+test("templates look different from each other", () => {
+  const templates = listTemplates();
+  assert.ok(templates.length >= 10);
+
+  const accents = new Set(templates.map(({ snapshot }) => snapshot.brand.accentColor));
+  assert.ok(accents.size >= 8, `expected distinct accents, got ${accents.size}`);
+
+  const heroVariants = new Set(
+    templates.flatMap(({ snapshot }) =>
+      snapshot.sections.filter((s) => s.type === "hero").map((s) => s.variant),
+    ),
+  );
+  assert.ok(heroVariants.has("centered"), "expected a centered hero");
+  assert.ok(heroVariants.has("split"), "expected a split hero");
+
+  const mediaVariants = new Set(
+    templates.flatMap(({ snapshot }) =>
+      snapshot.sections.filter((s) => s.type === "media").map((s) => s.variant),
+    ),
+  );
+  for (const variant of ["browser", "phone", "wide"])
+    assert.ok(mediaVariants.has(variant), `expected a ${variant} media block`);
+
+  const seen = new Set();
+  for (const { snapshot } of templates)
+    for (const section of snapshot.sections) seen.add(`${section.type}:${section.variant}`);
+  for (const key of [
+    "navigation:default",
+    "logos:default",
+    "cta:default",
+    "referralRewards:default",
+    "signupCount:default",
+    "features:list",
+    "steps:timeline",
+    "testimonials:editorial",
+    "form:card",
+  ])
+    assert.ok(seen.has(key), `expected a ${key} block`);
+
+  const benefitHeadings = new Set(
+    templates.flatMap(({ snapshot }) =>
+      snapshot.sections.filter((s) => s.type === "features").map((s) => s.heading),
+    ),
+  );
+  const benefitCount = templates.flatMap(({ snapshot }) =>
+    snapshot.sections.filter((s) => s.type === "features"),
+  ).length;
+  assert.equal(benefitHeadings.size, benefitCount, "benefit blocks should not share copy");
+
+  const heroHeadings = new Set(
+    templates.flatMap(({ snapshot }) =>
+      snapshot.sections.filter((s) => s.type === "hero").map((s) => s.heading),
+    ),
+  );
+  assert.equal(heroHeadings.size, templates.length, "hero headlines should be unique");
+});

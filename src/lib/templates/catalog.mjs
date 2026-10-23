@@ -283,13 +283,10 @@ const hero = (id, heading, body, props = {}) =>
     { eyebrow: "EARLY ACCESS", heading, body, showForm: false, ...props },
     "split",
   );
-const benefits = (id, items) =>
-  makeSection(id, "features", 1, { heading: "Why join early", items }, "columns");
-const baseBenefits = [
-  { title: "See it first", body: "Get a first look before the public launch." },
-  { title: "Shape the product", body: "Tell us what matters while we are still building." },
-  { title: "Keep your place", body: "Early members receive priority access." },
-];
+const nav = (id, brand, links, buttonText) =>
+  makeSection(id, "navigation", 0, { brand, links, buttonText });
+const benefits = (id, heading, items, variant = "columns") =>
+  makeSection(id, "features", 1, { heading, items }, variant);
 
 const definitions = [
   {
@@ -297,6 +294,7 @@ const definitions = [
     name: "Simple form",
     description: "A focused one-screen signup with no extra sections.",
     category: "Start fast",
+    form: { buttonText: "Notify me", layout: "inline" },
     sections: [
       hero(
         "simple",
@@ -304,6 +302,7 @@ const definitions = [
         "Join the waitlist and be first to know when it is ready.",
         {
           showForm: true,
+          variant: "centered",
         },
       ),
     ],
@@ -311,34 +310,95 @@ const definitions = [
   {
     id: "saas",
     name: "SaaS beta",
-    description: "A clear product promise, benefits and questions.",
+    description: "A screenshot-led product page with proof and answers.",
     category: "Software",
+    brand: {
+      pageBackground: "#ffffff",
+      surfaceColor: "#f2f5ff",
+      textColor: "#101828",
+      mutedColor: "#5b6478",
+      accentColor: "#3b4bff",
+      buttonColor: "#101828",
+      buttonTextColor: "#ffffff",
+      inputBackground: "#ffffff",
+      inputBorder: "#d5dbe8",
+      inputTextColor: "#101828",
+      radius: "soft",
+    },
+    form: { buttonText: "Join the beta", layout: "inline" },
     sections: [
+      nav(
+        "saas",
+        "Northloop",
+        [
+          { label: "Product", href: "#" },
+          { label: "Method", href: "#" },
+          { label: "Pricing", href: "#" },
+        ],
+        "Join beta",
+      ),
       hero(
         "saas",
         "A calmer way to run your work.",
-        "One place for the work your team keeps rebuilding in spreadsheets.",
+        "One place for the work your team keeps rebuilding in spreadsheets. Invite-only until spring.",
       ),
-      benefits("saas", baseBenefits),
-      makeSection("saas", "steps", 2, {
-        heading: "From invite to impact",
+      makeSection(
+        "saas",
+        "media",
+        1,
+        {
+          heading: "See it before you sign up",
+          body: "A live look at the workspace your team will open every morning.",
+          imageUrl: "",
+          imageAlt: "",
+        },
+        "browser",
+      ),
+      makeSection("saas", "logos", 2, {
+        heading: "Powering modern teams",
+        items: ["Acme", "Lumen", "Hexlab", "Framely", "Osmo"],
+      }),
+      benefits("saas", "Why teams switch", [
+        {
+          title: "Cut the status meetings",
+          body: "Weekly updates write themselves from the work already done.",
+        },
+        {
+          title: "Find anything fast",
+          body: "Every doc, decision and file searchable in one place.",
+        },
+        {
+          title: "Roll out in a day",
+          body: "Import from spreadsheets and invite the team before lunch.",
+        },
+      ]),
+      makeSection("saas", "stats", 3, {
         items: [
-          { title: "Join", body: "Reserve your place with one email." },
-          { title: "Try", body: "Get invited in small, thoughtful cohorts." },
-          { title: "Shape", body: "Share feedback directly with the team." },
+          { value: "12 min", label: "median setup time" },
+          { value: "4.9/5", label: "beta tester rating" },
+          { value: "99.99%", label: "uptime guaranteed" },
         ],
       }),
-      form("saas", 3),
-      makeSection("saas", "faq", 4, {
+      form("saas", 4, {
+        heading: "Get your beta invite",
+        body: "Tell us where to send your invite. Founding teams lock early pricing.",
+        variant: "card",
+      }),
+      makeSection("saas", "faq", 5, {
         heading: "Before you join",
         items: [
           {
             question: "When does the beta open?",
-            answer: "We are inviting the first group soon and will email you before access opens.",
+            answer: "We invite new teams every Monday and email your invite the Friday before.",
           },
           {
             question: "Will it be free to try?",
-            answer: "Yes. Early members can explore the beta before choosing a plan.",
+            answer: "Yes. Every beta team gets three months free before choosing a plan.",
+          },
+          {
+            question: "Can we migrate our data?",
+            answer:
+              "Yes. Import boards, docs and files from spreadsheets or your current tool in minutes.",
           },
         ],
       }),
@@ -347,52 +407,109 @@ const definitions = [
   {
     id: "ai",
     name: "AI product",
-    description: "Lead with the job the product helps people complete.",
+    description: "A dark, demo-led page for an AI launch.",
     category: "Software",
     brand: {
       headingFont: "bricolage",
       bodyFont: "figtree",
-      pageBackground: "#f4f4ef",
-      accentColor: "#d8ff55",
+      pageBackground: "#0b0f0e",
+      surfaceColor: "#151c1a",
+      textColor: "#edf3ef",
+      mutedColor: "#9fb3a8",
+      accentColor: "#7df9c6",
+      buttonColor: "#7df9c6",
+      buttonTextColor: "#0b0f0e",
+      inputBackground: "#151c1a",
+      inputBorder: "#2e3b35",
+      inputTextColor: "#edf3ef",
+      radius: "round",
     },
+    form: { buttonText: "Get early access", layout: "stacked" },
     sections: [
       hero(
         "ai",
         "Do the thinking that matters. Delegate the rest.",
         "A focused assistant that turns the work around your work into clear next steps.",
+        {
+          eyebrow: "RESEARCH PREVIEW",
+          showForm: true,
+        },
       ),
       makeSection(
         "ai",
         "media",
         1,
         {
-          heading: "Your workflow, visible",
-          body: "Show a real product screenshot here when you are ready.",
+          heading: "Watch it work",
+          body: "Two minutes of a real workflow: inbox to action plan, no editing.",
           imageUrl: "",
           imageAlt: "",
         },
-        "browser",
+        "wide",
       ),
-      benefits("ai", baseBenefits),
-      form("ai", 3),
+      benefits(
+        "ai",
+        "Built for the overload",
+        [
+          {
+            title: "Triage the noise",
+            body: "It reads everything and hands you the three things that matter.",
+          },
+          {
+            title: "Draft the first pass",
+            body: "Replies, summaries and plans start at eighty percent done.",
+          },
+          {
+            title: "Keep you in charge",
+            body: "Nothing sends, books or deletes without your word.",
+          },
+        ],
+        "list",
+      ),
+      makeSection("ai", "stats", 2, {
+        items: [
+          { value: "40 hrs", label: "saved every month" },
+          { value: "12", label: "integrations at launch" },
+          { value: "100%", label: "your data stays yours" },
+        ],
+      }),
+      makeSection("ai", "cta", 3, {
+        heading: "Be first in when the preview opens",
+        body: "Cohorts open monthly. Waitlist members choose their start date.",
+        buttonText: "Claim access",
+      }),
     ],
   },
   {
     id: "mobile",
     name: "Mobile app",
-    description: "An app-first page with a product visual and concise benefits.",
+    description: "A playful launch page with a phone mock and tester love.",
     category: "Consumer",
     brand: {
-      headingFont: "figtree",
+      headingFont: "Baloo 2",
       bodyFont: "hanken",
-      pageBackground: "#f5f7fb",
-      accentColor: "#bdf02c",
+      pageBackground: "#fdf3e7",
+      surfaceColor: "#fffaf2",
+      textColor: "#2a1503",
+      mutedColor: "#8a6f52",
+      accentColor: "#ef4b0b",
+      buttonColor: "#ef4b0b",
+      buttonTextColor: "#ffffff",
+      inputBackground: "#fffaf2",
+      inputBorder: "#e7d2b2",
+      inputTextColor: "#2a1503",
+      radius: "pill",
     },
+    form: { buttonText: "Get early access", layout: "stacked" },
     sections: [
       hero(
         "mobile",
         "A better rhythm for every day.",
-        "A thoughtful new app designed to make the small things feel easier.",
+        "A thoughtful new app designed to make the small things feel easier. iOS and Android at launch.",
+        {
+          eyebrow: "COMING SOON",
+          variant: "centered",
+        },
       ),
       makeSection(
         "mobile",
@@ -400,129 +517,338 @@ const definitions = [
         1,
         {
           heading: "Made for the screen in your hand",
-          body: "Add an app screenshot or product preview.",
+          body: "Your lists, habits and reminders in one calm place.",
           imageUrl: "",
           imageAlt: "",
         },
         "phone",
       ),
-      benefits("mobile", baseBenefits),
-      form("mobile", 3),
-    ],
-  },
-  {
-    id: "creator",
-    name: "Creator or newsletter",
-    description: "Build anticipation around a point of view and regular updates.",
-    category: "Audience",
-    brand: {
-      headingFont: "archivo",
-      bodyFont: "figtree",
-      pageBackground: "#fbf8f0",
-      accentColor: "#f1ff9c",
-    },
-    sections: [
-      hero(
-        "creator",
-        "One useful idea, delivered well.",
-        "Field notes for people building thoughtful products and businesses.",
-      ),
+      makeSection("mobile", "stats", 2, {
+        items: [
+          { value: "120k", label: "on the early list" },
+          { value: "4.8", label: "average tester rating" },
+          { value: "32", label: "launch cities" },
+        ],
+      }),
       makeSection(
-        "creator",
+        "mobile",
         "testimonials",
-        1,
+        3,
         {
-          heading: "Why readers stay",
+          heading: "Loved by early testers",
           items: [
             {
-              quote: "The rare update I save and return to.",
-              name: "Early reader",
-              role: "Founder",
+              quote: "It replaced three apps on my home screen in a week.",
+              name: "Priya Nair",
+              role: "Beta tester",
+            },
+            {
+              quote: "The rare app my whole family actually opened daily.",
+              name: "Tomás Rivera",
+              role: "Beta tester",
             },
           ],
         },
         "editorial",
       ),
-      form("creator", 2, {
-        heading: "Read the next issue",
-        body: "Occasional, considered, and easy to leave.",
+      makeSection("mobile", "signupCount", 4, {
+        prefix: "Join",
+        suffix: "people already waiting",
       }),
-      makeSection("creator", "footer", 3, {
+      form("mobile", 5, {
+        heading: "Be first to download",
+        body: "One message on launch day, plus a founding-member badge in the app.",
+        variant: "card",
+      }),
+    ],
+  },
+  {
+    id: "creator",
+    name: "Creator or newsletter",
+    description: "An editorial signup page with reader proof and consent.",
+    category: "Audience",
+    brand: {
+      headingFont: "DM Serif Display",
+      bodyFont: "hanken",
+      pageBackground: "#faf5ea",
+      surfaceColor: "#fffdf7",
+      textColor: "#262015",
+      mutedColor: "#7c7261",
+      accentColor: "#9c2b4e",
+      buttonColor: "#262015",
+      buttonTextColor: "#faf5ea",
+      inputBackground: "#fffdf7",
+      inputBorder: "#ddd2ba",
+      inputTextColor: "#262015",
+      radius: "sharp",
+    },
+    form: {
+      buttonText: "Subscribe",
+      layout: "stacked",
+      requireConsent: true,
+      consentLabel: "Email me the weekly letter. Unsubscribe anytime.",
+    },
+    sections: [
+      hero(
+        "creator",
+        "One useful idea, delivered well.",
+        "Field notes for people building thoughtful products and businesses. Read by 8,000 founders.",
+        {
+          eyebrow: "A WEEKLY LETTER",
+          variant: "centered",
+        },
+      ),
+      benefits(
+        "creator",
+        "Inside every issue",
+        [
+          {
+            title: "One tactic",
+            body: "A growth or product tactic you can try the same day.",
+          },
+          {
+            title: "One teardown",
+            body: "A real landing page or funnel, taken apart line by line.",
+          },
+          {
+            title: "One question",
+            body: "Something worth arguing about with your co-founder.",
+          },
+        ],
+        "list",
+      ),
+      makeSection(
+        "creator",
+        "testimonials",
+        2,
+        {
+          heading: "Why readers stay",
+          items: [
+            {
+              quote: "The rare update I save and return to. It paid for itself in a month.",
+              name: "Maya Chen",
+              role: "Founder, Loopwork",
+            },
+            {
+              quote: "I forward almost every issue to my team.",
+              name: "Jonas Weber",
+              role: "Product lead",
+            },
+          ],
+        },
+        "editorial",
+      ),
+      form("creator", 3, {
+        heading: "Read the next issue",
+        body: "Occasional, considered, and easy to leave. Free forever.",
+        variant: "card",
+      }),
+      makeSection("creator", "footer", 4, {
         note: "Published independently. No noise, no rented attention.",
-        links: [],
+        links: [
+          { label: "Archive", href: "#" },
+          { label: "About", href: "#" },
+          { label: "RSS", href: "#" },
+        ],
       }),
     ],
   },
   {
     id: "community",
     name: "Community",
-    description: "Introduce the people, shared purpose and invitation.",
+    description: "An invite-only page with member proof and referral rewards.",
     category: "Audience",
+    brand: {
+      headingFont: "archivo",
+      bodyFont: "hanken",
+      pageBackground: "#efe8f7",
+      surfaceColor: "#f8f4fd",
+      textColor: "#241a33",
+      mutedColor: "#6f6490",
+      accentColor: "#6d28a8",
+      buttonColor: "#6d28a8",
+      buttonTextColor: "#ffffff",
+      inputBackground: "#f8f4fd",
+      inputBorder: "#d3c8ea",
+      inputTextColor: "#241a33",
+      radius: "round",
+    },
+    form: { buttonText: "Claim your invite", layout: "inline" },
     sections: [
       hero(
         "community",
         "Find the people building beside you.",
-        "A small, useful community for honest conversations and practical support.",
+        "A small, useful community for honest conversations and practical support. No pitching, no lurking.",
+        {
+          eyebrow: "INVITE ONLY",
+          showForm: true,
+        },
       ),
       makeSection("community", "stats", 1, {
         items: [
-          { value: "Small", label: "by design" },
-          { value: "Useful", label: "over noisy" },
-          { value: "Kind", label: "without posturing" },
+          { value: "2.4k", label: "members and counting" },
+          { value: "18", label: "cities with chapters" },
+          { value: "92%", label: "stay past month one" },
         ],
       }),
-      benefits("community", baseBenefits),
-      form("community", 3),
+      makeSection("community", "testimonials", 2, {
+        heading: "Member stories",
+        items: [
+          {
+            quote: "I found my co-founder in the introductions channel.",
+            name: "Amara Okafor",
+            role: "Member since 2024",
+          },
+          {
+            quote: "The feedback circle tore my landing page apart. Sales doubled.",
+            name: "Daniel Kim",
+            role: "Member since 2023",
+          },
+        ],
+      }),
+      makeSection("community", "referralRewards", 3, {
+        heading: "Bring a friend, both skip ahead",
+        items: [
+          { referrals: 1, reward: "Skip 500 places in line" },
+          { referrals: 3, reward: "Founding member badge" },
+          { referrals: 10, reward: "Lifetime free access" },
+        ],
+      }),
+      form("community", 4, {
+        heading: "Get your invitation",
+        body: "Tell us who you are building with. Invites go out weekly.",
+      }),
     ],
   },
   {
     id: "event",
     name: "Event or course",
-    description: "Set expectations and collect interest for a dated experience.",
+    description: "A bold agenda page that collects interest for a live date.",
     category: "Launch",
+    brand: {
+      headingFont: "Space Grotesk",
+      bodyFont: "figtree",
+      pageBackground: "#171310",
+      surfaceColor: "#231c14",
+      textColor: "#f5efe4",
+      mutedColor: "#b3a88f",
+      accentColor: "#ffb000",
+      buttonColor: "#ffb000",
+      buttonTextColor: "#171310",
+      inputBackground: "#231c14",
+      inputBorder: "#453a2c",
+      inputTextColor: "#f5efe4",
+      radius: "sharp",
+    },
+    form: { buttonText: "Save my seat", layout: "inline" },
     sections: [
+      nav(
+        "event",
+        "Ship It Live",
+        [
+          { label: "Schedule", href: "#" },
+          { label: "Speakers", href: "#" },
+          { label: "FAQ", href: "#" },
+        ],
+        "Save my seat",
+      ),
       hero(
         "event",
-        "Learn the thing by building it.",
-        "A focused live session for people who want practical progress, not another recording.",
+        "Learn pricing by building it.",
+        "A focused live session for people who want practical progress, not another recording. Small room, real work.",
+        {
+          eyebrow: "LIVE WORKSHOP · MARCH 14",
+          variant: "centered",
+        },
       ),
-      makeSection("event", "steps", 1, {
-        heading: "What the session covers",
+      makeSection(
+        "event",
+        "steps",
+        1,
+        {
+          heading: "The schedule",
+          items: [
+            {
+              title: "09:30 · Doors and coffee",
+              body: "Meet the room and pick the pricing problem you will solve.",
+            },
+            {
+              title: "10:00 · Frame the problem",
+              body: "Choose the offer and the customer it is really for.",
+            },
+            {
+              title: "11:30 · Build together",
+              body: "Draft tiers, anchors and guarantees with live feedback.",
+            },
+            {
+              title: "13:00 · Leave with a plan",
+              body: "Walk out with tested pricing and a rollout checklist.",
+            },
+          ],
+        },
+        "timeline",
+      ),
+      makeSection("event", "stats", 2, {
         items: [
-          { title: "Frame", body: "Choose the problem worth solving." },
-          { title: "Build", body: "Work through the core decisions together." },
-          { title: "Leave ready", body: "Take a clear plan into the next week." },
+          { value: "120", label: "seats per session" },
+          { value: "4 hrs", label: "live, no recordings" },
+          { value: "30", label: "pages of workbook" },
         ],
       }),
-      makeSection("event", "testimonials", 2, {
+      makeSection("event", "testimonials", 3, {
         heading: "From past sessions",
         items: [
           {
-            quote: "Specific, generous and immediately useful.",
-            name: "Past attendee",
-            role: "Product lead",
+            quote: "Specific, generous and immediately useful. Worth ten times the seat.",
+            name: "Lena Fischer",
+            role: "Past attendee",
+          },
+          {
+            quote: "I rewrote our pricing the same evening.",
+            name: "Ravi Menon",
+            role: "Past attendee",
           },
         ],
       }),
-      form("event", 3, { heading: "Get the first invitation" }),
+      makeSection("event", "signupCount", 4, {
+        prefix: "Join",
+        suffix: "people already registered",
+      }),
+      form("event", 5, {
+        heading: "Save my seat",
+        body: "One email when registration opens. No spam, no recordings.",
+      }),
     ],
   },
   {
     id: "commerce",
     name: "Pre-order",
-    description: "A visual product story with proof and reservation intent.",
+    description: "A slow-luxe product story with reservation intent.",
     category: "Commerce",
     brand: {
-      headingFont: "bricolage",
+      headingFont: "Fraunces",
       bodyFont: "hanken",
-      pageBackground: "#f6f1e8",
-      accentColor: "#d4ff65",
+      pageBackground: "#e9e2d2",
+      surfaceColor: "#f5f1e4",
+      textColor: "#1e1b14",
+      mutedColor: "#71664f",
+      accentColor: "#55663a",
+      buttonColor: "#1e1b14",
+      buttonTextColor: "#f5f1e4",
+      inputBackground: "#f5f1e4",
+      inputBorder: "#c9bd9e",
+      inputTextColor: "#1e1b14",
+      radius: "sharp",
     },
+    form: { buttonText: "Reserve my spot", layout: "inline" },
     sections: [
       hero(
         "commerce",
         "Made slowly. Ready soon.",
-        "A considered product for people who would rather buy one good thing.",
+        "A considered carry good for people who would rather buy one good thing. Numbered, guaranteed, repaired forever.",
+        {
+          eyebrow: "SMALL BATCH · SHIPS JUNE",
+        },
       ),
       makeSection(
         "commerce",
@@ -530,56 +856,126 @@ const definitions = [
         1,
         {
           heading: "The product, without the theatre",
-          body: "Replace this space with your clearest product image.",
+          body: "Full-grain leather, brass hardware, and stitching you can count.",
           imageUrl: "",
           imageAlt: "",
         },
-        "gallery",
+        "wide",
       ),
-      benefits("commerce", baseBenefits),
-      makeSection("commerce", "signupCount", 3, { prefix: "Join", suffix: "people waiting" }),
-      form("commerce", 4, { heading: "Reserve an early place" }),
+      benefits("commerce", "Why it costs what it costs", [
+        {
+          title: "Cut from full grain",
+          body: "One hide, one bag. No splitting, no bonded scraps.",
+        },
+        {
+          title: "Repaired forever",
+          body: "Send it back any time. We fix it and return it.",
+        },
+        {
+          title: "Numbered by hand",
+          body: "Each piece is stamped with its batch and number.",
+        },
+      ]),
+      makeSection("commerce", "signupCount", 3, {
+        prefix: "Join",
+        suffix: "people waiting for batch one",
+      }),
+      form("commerce", 4, {
+        heading: "Reserve an early place",
+        body: "A $1 deposit holds your place and locks batch-one pricing.",
+      }),
     ],
   },
   {
     id: "developer",
     name: "Developer tool",
-    description: "Explain the workflow, proof and early-access contract.",
+    description: "A docs-first page with the workflow, proof and access contract.",
     category: "Software",
     brand: {
-      headingFont: "archivo",
-      bodyFont: "hanken",
-      pageBackground: "#f5f6f1",
-      accentColor: "#c6fe1e",
+      headingFont: "IBM Plex Mono",
+      bodyFont: "Inter",
+      pageBackground: "#f4f4f5",
+      surfaceColor: "#ffffff",
+      textColor: "#101014",
+      mutedColor: "#63666f",
+      accentColor: "#101014",
+      buttonColor: "#101014",
+      buttonTextColor: "#ffffff",
+      inputBackground: "#ffffff",
+      inputBorder: "#d9dade",
+      inputTextColor: "#101014",
+      radius: "sharp",
     },
+    form: { buttonText: "Request access", layout: "inline" },
     sections: [
+      nav(
+        "developer",
+        "querybase",
+        [
+          { label: "Docs", href: "#" },
+          { label: "API", href: "#" },
+          { label: "Changelog", href: "#" },
+        ],
+        "Request access",
+      ),
       hero(
         "developer",
         "Less glue code. More product.",
-        "A developer tool for the repetitive edges between idea and production.",
+        "A developer tool for the repetitive edges between idea and production. Bring your stack; keep your workflow.",
+        {
+          eyebrow: "V0.9 · SOC 2 TYPE II",
+        },
       ),
+      makeSection("developer", "logos", 1, {
+        heading: "Built on open standards",
+        items: ["Postgres", "Redis", "S3", "OAuth", "Stripe"],
+      }),
       makeSection(
         "developer",
         "steps",
-        1,
+        2,
         {
           heading: "A smaller path to production",
           items: [
-            { title: "Connect", body: "Bring the stack you already use." },
-            { title: "Configure", body: "Keep the decisions explicit and versioned." },
+            {
+              title: "Connect",
+              body: "Bring the stack you already use. No agents on your machines.",
+            },
+            { title: "Configure", body: "Keep the decisions explicit and versioned in one file." },
             { title: "Ship", body: "Deploy without another bespoke integration." },
           ],
         },
         "timeline",
       ),
-      makeSection("developer", "stats", 2, {
+      makeSection("developer", "stats", 3, {
         items: [
           { value: "2 min", label: "to first request" },
           { value: "0", label: "new services to host" },
-          { value: "100%", label: "portable" },
+          { value: "100%", label: "portable, MIT-licensed core" },
         ],
       }),
-      form("developer", 3),
+      makeSection("developer", "faq", 4, {
+        heading: "Straight answers",
+        items: [
+          {
+            question: "Does it run in our VPC?",
+            answer: "Yes. The control plane is hosted, execution stays in your cloud account.",
+          },
+          {
+            question: "Which languages are supported?",
+            answer: "TypeScript, Python and Go clients ship today, with Rust in beta.",
+          },
+          {
+            question: "What does it cost during beta?",
+            answer:
+              "Free while in beta. Usage-based pricing starts at launch, and beta users keep 50% off.",
+          },
+        ],
+      }),
+      form("developer", 5, {
+        heading: "Request access",
+        body: "Invite-only while we harden the edges. Tell us your stack.",
+      }),
     ],
   },
   {
@@ -592,6 +988,9 @@ const definitions = [
         "blank",
         "Your launch starts here.",
         "Write one clear sentence about what you are building.",
+        {
+          variant: "centered",
+        },
       ),
       form("blank", 1),
     ],
@@ -603,23 +1002,24 @@ function deepFreeze(value) {
     if (child && typeof child === "object") deepFreeze(child);
   return Object.freeze(value);
 }
-const catalog = definitions.map(({ id, name, description, category, sections, brand = {} }) =>
-  deepFreeze({
-    id,
-    name,
-    description,
-    category,
-    snapshot: templateSnapshotSchema.parse({
-      schemaVersion: 2,
-      templateId: id,
-      templateVersion: 1,
-      brand: { ...defaultBrand, ...brand },
-      sections,
-      form: defaultForm,
-      statusPage: defaultStatusPage,
-      seo: defaultSeo,
+const catalog = definitions.map(
+  ({ id, name, description, category, sections, brand = {}, form: formOverride = {} }) =>
+    deepFreeze({
+      id,
+      name,
+      description,
+      category,
+      snapshot: templateSnapshotSchema.parse({
+        schemaVersion: 2,
+        templateId: id,
+        templateVersion: 1,
+        brand: { ...defaultBrand, ...brand },
+        sections,
+        form: { ...defaultForm, ...formOverride },
+        statusPage: defaultStatusPage,
+        seo: defaultSeo,
+      }),
     }),
-  }),
 );
 
 export const BLOCK_TYPES = [
@@ -719,7 +1119,14 @@ export function createSection(type, id = `block-${crypto.randomUUID()}`) {
       body: "Explain what you are building and who it helps.",
       showForm: false,
     },
-    features: { heading: "Why it matters", items: structuredClone(baseBenefits) },
+    features: {
+      heading: "Why it matters",
+      items: [
+        { title: "First benefit", body: "Say what this gives the visitor." },
+        { title: "Second benefit", body: "Say what changes for them." },
+        { title: "Third benefit", body: "Say why they should trust it." },
+      ],
+    },
     steps: {
       heading: "How it works",
       items: [
