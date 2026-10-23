@@ -33,9 +33,6 @@ const escapeAttribute = (value) =>
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;");
 
-const chip =
-  "rounded-full border border-product-border-subtle px-2 py-1 text-xs text-product-text-secondary";
-
 const sections = [
   { id: "checklist", label: "Publish checklist", icon: CloudUploadIcon },
   { id: "page", label: "Hosted page", icon: Link01Icon },
@@ -151,7 +148,6 @@ export function PublishAndShare({
   waitList,
   origin,
   readiness,
-  changes,
   onFix,
   onSeoChange,
   pageStatus,
@@ -235,40 +231,6 @@ export function PublishAndShare({
                 </p>
               )}
               <ReadinessList items={readiness.warnings} tone="warning" onFix={handleFix} />
-
-              {published && changes && (
-                <Section
-                  title="What changes when you publish"
-                  description={
-                    changes.changed
-                      ? "Your draft replaces the live revision for every surface."
-                      : "This draft matches the live revision."
-                  }
-                >
-                  {changes.changed ? (
-                    <ul className="m-0 flex list-none flex-wrap gap-2 p-0">
-                      {changes.added > 0 && <li className={chip}>{changes.added} block added</li>}
-                      {changes.removed > 0 && (
-                        <li className={chip}>{changes.removed} block removed</li>
-                      )}
-                      {changes.edited > 0 && (
-                        <li className={chip}>{changes.edited} block edited</li>
-                      )}
-                      {changes.templateChanged && <li className={chip}>Template changed</li>}
-                      {changes.brandChanged && <li className={chip}>Brand kit changed</li>}
-                      {changes.formChanged && <li className={chip}>Signup form changed</li>}
-                      {changes.statusChanged && <li className={chip}>Status page changed</li>}
-                      {changes.seoChanged && (
-                        <li className={chip}>Search and sharing metadata changed</li>
-                      )}
-                    </ul>
-                  ) : (
-                    <p className="m-0 text-sm leading-relaxed text-product-text-secondary">
-                      Nothing changed since the last publish.
-                    </p>
-                  )}
-                </Section>
-              )}
 
               {pageStatus && (
                 <Section
@@ -409,12 +371,14 @@ export function PublishAndShare({
                 <p className="m-0 text-sm leading-relaxed text-product-text-secondary">
                   No domain connected. Add one in settings when you want a branded address.
                 </p>
-                <Link
-                  className={buttonVariants({ variant: "outline", size: "sm" })}
-                  href={`/waitlists/${waitList.id}/settings?section=domain`}
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => router.push(`/waitlists/${waitList.id}/settings?section=domain`)}
                 >
                   Connect a domain
-                </Link>
+                </Button>
               </div>
             ))}
 

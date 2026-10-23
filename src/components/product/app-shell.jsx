@@ -295,7 +295,11 @@ export function AppShell({ children, user, avatar, workspaces, selectedWorkspace
           <AccountMenu user={user} avatar={avatar} />
         </div>
       </header>
-      <main id="product-content" tabIndex={-1} className="w-full px-4 pt-6 pb-16 sm:px-5 md:px-8">
+      <main
+        id="product-content"
+        tabIndex={-1}
+        className="mx-auto w-full max-w-288 px-8 pt-6 pb-16 max-[359px]:px-4 max-md:px-5"
+      >
         {children}
       </main>
     </div>

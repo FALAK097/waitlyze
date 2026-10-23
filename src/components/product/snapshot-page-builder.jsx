@@ -27,7 +27,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { assessPublishReadiness, summarizeChanges } from "@/lib/campaigns/publish-readiness.mjs";
+import { assessPublishReadiness } from "@/lib/campaigns/publish-readiness.mjs";
 import { brandContrastIssues } from "@/lib/color/contrast.mjs";
 import {
   BLOCK_TYPES,
@@ -797,10 +797,6 @@ export function SnapshotPageBuilder({
       }),
     [snapshot, waitList.publishedSnapshot, waitList.showReferrals],
   );
-  const changes = useMemo(
-    () => summarizeChanges(snapshot, waitList.publishedSnapshot),
-    [snapshot, waitList.publishedSnapshot],
-  );
   const goToFix = (fix) => {
     if (!fix) return;
     if (fix.surface === "referrals") {
@@ -1210,7 +1206,6 @@ export function SnapshotPageBuilder({
             waitList={waitList}
             origin={publicationOrigin}
             readiness={readiness}
-            changes={changes}
             onFix={goToFix}
             onSeoChange={(patch) => updateRoot("seo", patch)}
             pageStatus={
