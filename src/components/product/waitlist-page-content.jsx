@@ -10,6 +10,16 @@ import { cn } from "@/lib/utils";
 
 const radius = { sharp: "0px", soft: "10px", round: "18px", pill: "999px" };
 
+// Defense in depth for stored href values: only render safe link targets.
+// Anything else (e.g. javascript:) falls back to "#".
+function safeHref(value) {
+  if (typeof value !== "string") return "#";
+  const trimmed = value.trim();
+  if (!trimmed) return "#";
+  if (/^\s*(javascript|data|vbscript|file|blob):/i.test(trimmed)) return "#";
+  return trimmed;
+}
+
 const H1_CENTERED = {
   small: "text-3xl sm:text-4xl md:text-5xl",
   medium: "text-4xl sm:text-5xl md:text-6xl lg:text-7xl",
@@ -133,7 +143,7 @@ export function WaitlistPageContent({
                     {section.links.map((link) => (
                       <a
                         className="text-sm text-wl-muted no-underline"
-                        href={link.href}
+                        href={safeHref(link.href)}
                         key={`${link.label}-${link.href}`}
                       >
                         {link.label}
@@ -333,7 +343,10 @@ export function WaitlistPageContent({
                 );
               return (
                 <section className={cn(sectionClass, "py-20")} key={section.id}>
-                  <Heading className="mb-12 max-w-ch16 text-4xl leading-none md:text-5xl lg:text-6xl">
+                  <Heading
+                    className={cn("mb-12 max-w-ch16 leading-none", h2)}
+                    style={{ "--wl-h2": h2Px }}
+                  >
                     {section.heading}
                   </Heading>
                   <div
@@ -398,7 +411,10 @@ export function WaitlistPageContent({
                 );
               return (
                 <section className={cn(sectionClass, "py-20")} key={section.id}>
-                  <Heading className="mb-12 max-w-ch16 text-4xl leading-none md:text-5xl lg:text-6xl">
+                  <Heading
+                    className={cn("mb-12 max-w-ch16 leading-none", h2)}
+                    style={{ "--wl-h2": h2Px }}
+                  >
                     {section.heading}
                   </Heading>
                   <div
@@ -427,7 +443,10 @@ export function WaitlistPageContent({
             if (section.type === "faq")
               return (
                 <section className={cn(sectionClass, "py-20")} key={section.id}>
-                  <Heading className="mb-12 max-w-ch16 text-4xl leading-none md:text-5xl lg:text-6xl">
+                  <Heading
+                    className={cn("mb-12 max-w-ch16 leading-none", h2)}
+                    style={{ "--wl-h2": h2Px }}
+                  >
                     {section.heading}
                   </Heading>
                   <div className="ml-auto max-w-4xl">
@@ -524,7 +543,7 @@ export function WaitlistPageContent({
                   key={section.id}
                 >
                   <div className="md:grow-7 md:basis-0">
-                    <Heading className="mb-6 text-4xl leading-none md:text-5xl">
+                    <Heading className={cn("mb-6 leading-none", h2)} style={{ "--wl-h2": h2Px }}>
                       {section.heading}
                     </Heading>
                     {section.body && <p className="text-wl-muted">{section.body}</p>}
@@ -580,10 +599,7 @@ export function WaitlistPageContent({
                 >
                   <div className="md:grow-8 md:basis-0">
                     {section.heading && (
-                      <Heading
-                        className={cn("mb-5 leading-none md:text-5xl", h2)}
-                        style={{ "--wl-h2": h2Px }}
-                      >
+                      <Heading className={cn("mb-5 leading-none", h2)} style={{ "--wl-h2": h2Px }}>
                         {section.heading}
                       </Heading>
                     )}
@@ -608,7 +624,10 @@ export function WaitlistPageContent({
             if (section.type === "referralRewards")
               return (
                 <section className={cn(sectionClass, "py-20")} key={section.id}>
-                  <Heading className="mb-12 max-w-ch16 text-4xl leading-none md:text-5xl lg:text-6xl">
+                  <Heading
+                    className={cn("mb-12 max-w-ch16 leading-none", h2)}
+                    style={{ "--wl-h2": h2Px }}
+                  >
                     {section.heading}
                   </Heading>
                   <ol
@@ -670,7 +689,7 @@ export function WaitlistPageContent({
                     {section.links.map((link) => (
                       <a
                         className="text-wl-text"
-                        href={link.href}
+                        href={safeHref(link.href)}
                         key={`${link.label}-${link.href}`}
                       >
                         {link.label}
@@ -712,7 +731,7 @@ export function WaitlistPageContent({
           className="absolute right-5 bottom-5 z-10 inline-flex items-center gap-2 rounded-full border border-black/10 bg-white px-4 py-2 text-sm no-underline shadow-md"
           href={SITE_URL}
           target="_blank"
-          rel="noreferrer"
+          rel="noopener noreferrer"
         >
           <svg
             aria-hidden="true"

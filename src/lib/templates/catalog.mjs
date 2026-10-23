@@ -7,6 +7,16 @@ const blockId = z
   .min(3)
   .max(80)
   .regex(/^[a-z0-9-]+$/i);
+// Builder links render as public <a href> values. Reject active-content schemes
+// (javascript:, data:, vbscript:) at the trust boundary; rendering also
+// sanitizes stored values that predate this check.
+const href = z
+  .string()
+  .max(240)
+  .refine(
+    (value) => !/^\s*(javascript|data|vbscript|file|blob):/i.test(value),
+    "Links must start with #, /, or http(s).",
+  );
 const base = { id: blockId, visible: z.boolean(), variant: z.string().min(1).max(40) };
 const item = z.strictObject({ title: text(80), body: text(280) });
 
@@ -14,7 +24,7 @@ const navigation = z.strictObject({
   ...base,
   type: z.literal("navigation"),
   brand: text(80),
-  links: z.array(z.strictObject({ label: text(40), href: z.string().max(240) })).max(5),
+  links: z.array(z.strictObject({ label: text(40), href })).max(5),
   buttonText: text(40),
 });
 const heroSchema = z.strictObject({
@@ -113,7 +123,7 @@ const footer = z.strictObject({
   ...base,
   type: z.literal("footer"),
   note: text(220),
-  links: z.array(z.strictObject({ label: text(40), href: z.string().max(240) })).max(6),
+  links: z.array(z.strictObject({ label: text(40), href })).max(6),
 });
 
 export const sectionSchema = z.discriminatedUnion("type", [

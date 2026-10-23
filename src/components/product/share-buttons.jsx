@@ -251,7 +251,7 @@ export function ShareButtons({
             key={channel}
             href={href}
             target={channel === "email" ? undefined : "_blank"}
-            rel={channel === "email" ? undefined : "noreferrer"}
+            rel={channel === "email" ? undefined : "noopener noreferrer"}
             aria-label={`Share on ${channelLabel(channel)}`}
             title={`Share on ${channelLabel(channel)}`}
             onClick={() => onShare?.(channel)}

@@ -23,10 +23,12 @@ export function SignupForm(props) {
   );
 }
 
-function SignupFormInner({ slug, waitListId, showReferrals, formConfig, statusPage }) {
+function SignupFormInner({ slug, waitListId, showReferrals, formConfig, statusPage, brand }) {
   const emailId = useId();
   const referralId = useId();
   const resultTitleId = useId();
+  const headingPx = typeof brand?.headingSize === "number" ? brand.headingSize : null;
+  const bodyPx = typeof brand?.bodySize === "number" ? brand.bodySize : null;
   const searchParams = useSearchParams();
   const referralCode = searchParams.get("r");
   const [busy, setBusy] = useState(false);
@@ -67,7 +69,7 @@ function SignupFormInner({ slug, waitListId, showReferrals, formConfig, statusPa
       const code = data.signUp?.referralCode;
       const referralLink =
         showReferrals && code
-          ? `${window.location.origin}${slug ? `/w/${slug}` : "/"}?r=${code}`
+          ? `${window.location.origin}${slug ? `/w/${slug}` : "/"}?r=${encodeURIComponent(code)}`
           : null;
       const verified = data.signUp?.verified === true;
       const returning = data.signUp?.outcome === "returning";
@@ -122,31 +124,40 @@ function SignupFormInner({ slug, waitListId, showReferrals, formConfig, statusPa
     return (
       <section
         className={cn(
-          "w-full text-wl-text",
+          "grid w-full justify-items-center text-center text-wl-text",
+          bodyPx != null && "wl-type-body",
           statusPage.layout === "card" && "rounded-wl bg-wl-surface p-6 md:p-10",
         )}
+        style={bodyPx != null ? { "--wl-body": `${bodyPx}px` } : undefined}
         aria-labelledby={resultTitleId}
       >
         <StatusBadge pending={result.pending} iconStyle={statusPage.iconStyle} className="mb-4" />
-        <h2 className="mb-4 font-wl-heading text-3xl tracking-tight" id={resultTitleId}>
+        <h2
+          className={cn(
+            "my-4 max-w-ch14 font-wl-heading leading-none tracking-tight text-balance",
+            headingPx == null ? "text-3xl" : "wl-type-h1",
+          )}
+          style={headingPx == null ? undefined : { "--wl-h1": `${headingPx}px` }}
+          id={resultTitleId}
+        >
           {result.heading}
         </h2>
         {result.notice ? <p className="leading-relaxed text-wl-muted">{result.notice}</p> : null}
         {result.body ? <p className="leading-relaxed text-wl-muted">{result.body}</p> : null}
         {statusPage.showPosition && result.position != null ? (
-          <p className="flex justify-between border-y border-wl-text/15 py-4">
+          <p className="flex w-full max-w-md justify-between border-y border-wl-text/15 py-4">
             <span>Your position</span>
             <strong>#{result.position}</strong>
           </p>
         ) : null}
         {showReferrals && statusPage.showReferralCount ? (
-          <p className="flex justify-between border-y border-wl-text/15 py-4">
+          <p className="flex w-full max-w-md justify-between border-y border-wl-text/15 py-4">
             <span>Friends joined</span>
             <strong>{result.referralCount}</strong>
           </p>
         ) : null}
-        {statusPage.showReferralLink && result.referralLink ? (
-          <div className="mt-6 grid gap-2.5">
+        {showReferrals && statusPage.showReferralLink && result.referralLink ? (
+          <div className="mt-6 grid w-full max-w-md gap-2.5">
             <p className="m-0 text-sm text-wl-muted">{statusPage.shareMessage}</p>
             <label className="text-caption font-bold" htmlFor={referralId}>
               Your referral link

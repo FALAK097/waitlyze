@@ -89,6 +89,7 @@ export default async function PublicWaitlistPage({ params }) {
             showReferrals={page.waitList.showReferrals}
             formConfig={snapshot.form}
             statusPage={snapshot.statusPage}
+            brand={snapshot.brand}
           />
         )}
       />
