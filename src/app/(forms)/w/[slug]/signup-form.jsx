@@ -201,6 +201,7 @@ function SignupFormInner({ slug, waitListId, showReferrals, formConfig, statusPa
         <input
           className={cn(
             control,
+            formConfig.layout === "stacked" ? "h-13" : "h-12",
             "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-wl-accent",
           )}
           id={emailId}
@@ -212,7 +213,11 @@ function SignupFormInner({ slug, waitListId, showReferrals, formConfig, statusPa
           maxLength={320}
         />
         <button
-          className={cn(action, "cursor-pointer disabled:cursor-wait disabled:opacity-65")}
+          className={cn(
+            action,
+            formConfig.layout === "stacked" && "h-11",
+            "cursor-pointer disabled:cursor-wait disabled:opacity-65",
+          )}
           type="submit"
           disabled={busy}
         >

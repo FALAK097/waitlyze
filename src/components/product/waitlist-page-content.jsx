@@ -686,10 +686,20 @@ export function WaitlistSignupPreview({ form, brand }) {
       <div
         className={cn("flex gap-2 max-sm:flex-col", form.layout === "stacked" && "flex-col gap-3")}
       >
-        <span className="flex h-12 flex-1 items-center rounded-wl border border-wl-input-border bg-wl-input px-4 text-wl-muted">
+        <span
+          className={cn(
+            "flex flex-1 items-center rounded-wl border border-wl-input-border bg-wl-input px-4 text-wl-muted",
+            form.layout === "stacked" ? "h-13" : "h-12",
+          )}
+        >
           {form.placeholder}
         </span>
-        <span className="inline-flex h-12 items-center justify-center rounded-wl bg-wl-button px-5 font-bold text-wl-button-text">
+        <span
+          className={cn(
+            "inline-flex items-center justify-center rounded-wl bg-wl-button px-5 font-bold text-wl-button-text",
+            form.layout === "stacked" ? "h-11" : "h-12",
+          )}
+        >
           {form.buttonText}
         </span>
       </div>
