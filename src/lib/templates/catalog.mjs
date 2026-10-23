@@ -1,13 +1,6 @@
 import { z } from "zod";
 
-const text = (max, { optional = false } = {}) =>
-  optional
-    ? z.string().max(max)
-    : z
-        .string()
-        .min(1)
-        .max(max)
-        .refine((value) => value.trim().length > 0, "Enter some text.");
+const text = (max) => z.string().max(max);
 const hex = z.string().regex(/^#[0-9a-f]{6}$/i, "Choose a six-digit hex color.");
 const blockId = z
   .string()
@@ -22,12 +15,12 @@ const navigation = z.strictObject({
   type: z.literal("navigation"),
   brand: text(80),
   links: z.array(z.strictObject({ label: text(40), href: z.string().max(240) })).max(5),
-  buttonText: text(40, { optional: true }),
+  buttonText: text(40),
 });
 const heroSchema = z.strictObject({
   ...base,
   type: z.literal("hero"),
-  eyebrow: text(80, { optional: true }),
+  eyebrow: text(80),
   heading: text(140),
   body: text(700),
   showForm: z.boolean(),
@@ -47,7 +40,7 @@ const steps = z.strictObject({
 const logos = z.strictObject({
   ...base,
   type: z.literal("logos"),
-  heading: text(120, { optional: true }),
+  heading: text(120),
   items: z.array(text(50)).min(2).max(8),
 });
 const stats = z.strictObject({
@@ -63,9 +56,7 @@ const testimonials = z.strictObject({
   type: z.literal("testimonials"),
   heading: text(120),
   items: z
-    .array(
-      z.strictObject({ quote: text(360), name: text(80), role: text(100, { optional: true }) }),
-    )
+    .array(z.strictObject({ quote: text(360), name: text(80), role: text(100) }))
     .min(1)
     .max(6),
 });
@@ -82,21 +73,21 @@ const media = z.strictObject({
   ...base,
   type: z.literal("media"),
   heading: text(120),
-  body: text(360, { optional: true }),
+  body: text(360),
   imageUrl: z.string().max(500),
-  imageAlt: text(160, { optional: true }),
+  imageAlt: text(160),
 });
 const formBlock = z.strictObject({
   ...base,
   type: z.literal("form"),
-  heading: text(120, { optional: true }),
-  body: text(360, { optional: true }),
+  heading: text(120),
+  body: text(360),
 });
 const signupCount = z.strictObject({
   ...base,
   type: z.literal("signupCount"),
   prefix: text(80),
-  suffix: text(80, { optional: true }),
+  suffix: text(80),
 });
 const referralRewards = z.strictObject({
   ...base,
@@ -111,7 +102,7 @@ const cta = z.strictObject({
   ...base,
   type: z.literal("cta"),
   heading: text(120),
-  body: text(360, { optional: true }),
+  body: text(360),
   buttonText: text(40),
 });
 const footer = z.strictObject({
@@ -177,8 +168,8 @@ const statusPageSchema = z.strictObject({
   shareChannels: z.array(z.enum(["x", "linkedin", "whatsapp", "email"])).max(4),
 });
 const seoSchema = z.strictObject({
-  title: text(70, { optional: true }),
-  description: text(180, { optional: true }),
+  title: text(70),
+  description: text(180),
   image: z.string().max(500),
   indexable: z.boolean(),
 });

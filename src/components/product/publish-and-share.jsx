@@ -243,14 +243,18 @@ export function PublishAndShare({
 
           {section === "checklist" && (
             <>
-              {readiness.blockers.length > 0 ? (
-                <ReadinessList items={readiness.blockers} tone="blocker" onFix={handleFix} />
-              ) : (
+              {readiness.blockers.length === 0 && readiness.warnings.length === 0 ? (
                 <p className="m-0 text-sm leading-relaxed text-product-text-secondary">
                   This draft is ready to publish.
                 </p>
+              ) : (
+                <>
+                  {readiness.blockers.length > 0 && (
+                    <ReadinessList items={readiness.blockers} tone="blocker" onFix={handleFix} />
+                  )}
+                  <ReadinessList items={readiness.warnings} tone="warning" onFix={handleFix} />
+                </>
               )}
-              <ReadinessList items={readiness.warnings} tone="warning" onFix={handleFix} />
 
               {pageStatus && (
                 <Section

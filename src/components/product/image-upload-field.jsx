@@ -1,5 +1,7 @@
 "use client";
 
+import { Cancel01Icon } from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
 import { useId, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -70,11 +72,24 @@ export function ImageUploadField({ label, value, onChange, hint = "" }) {
         />
       </div>
       {value ? (
-        <img
-          alt=""
-          className="mt-1 aspect-1200/630 w-full rounded-lg border border-product-border-subtle object-cover"
-          src={value}
-        />
+        <div className="relative mt-1">
+          <img
+            alt=""
+            className="aspect-1200/630 w-full rounded-lg border border-product-border-subtle object-cover"
+            src={value}
+          />
+          <Button
+            type="button"
+            variant="outline"
+            size="icon-sm"
+            aria-label="Remove share image"
+            title="Remove image"
+            className="absolute top-2 right-2"
+            onClick={() => onChange("")}
+          >
+            <HugeiconsIcon icon={Cancel01Icon} aria-hidden="true" />
+          </Button>
+        </div>
       ) : null}
       {error ? (
         <p className="m-0 text-caption text-product-danger-text" role="alert">

@@ -82,6 +82,23 @@ export function assessPublishReadiness(snapshot, options = {}) {
       fix: { surface: "page", label: "Review the copy" },
     });
 
+  const emptyCopy = snapshot.sections.flatMap((section) => {
+    if (!section.visible) return [];
+    const name = section.type
+      .replace(/[A-Z]/g, (char) => ` ${char.toLowerCase()}`)
+      .replace(/^./, (char) => char.toUpperCase());
+    return ["heading", "body"]
+      .filter((field) => typeof section[field] === "string" && !section[field].trim())
+      .map((field) => `${name} ${field === "heading" ? "headline" : "description"}`);
+  });
+  if (emptyCopy.length > 0)
+    warnings.push({
+      id: "empty-copy",
+      title: `${emptyCopy.length} empty ${emptyCopy.length === 1 ? "field" : "fields"} in visible blocks`,
+      detail: `Nothing to read yet: ${emptyCopy.join(", ")}.`,
+      fix: { surface: "page", label: "Review the copy" },
+    });
+
   const hidden = snapshot.sections.filter((section) => !section.visible);
   if (hidden.length > 0)
     warnings.push({
