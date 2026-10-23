@@ -1005,6 +1005,25 @@
   font-size: 0.9rem;
   font-weight: 550;
 }
+.product-domain-connect-row {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.product-domain-connect-row input {
+  flex: 1 1 220px;
+  min-width: 0;
+}
+.product-domain-connect-row button {
+  flex: none;
+  height: auto;
+}
+.product-domain-connect-row input:focus-visible,
+.product-domain-connect-row button:focus-visible {
+  outline: 2px solid var(--product-focus);
+  outline-offset: 2px;
+}
 .product-custom-domain input {
   min-height: 44px;
   padding: 9px 12px;

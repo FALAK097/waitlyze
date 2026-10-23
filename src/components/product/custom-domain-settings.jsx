@@ -1,8 +1,8 @@
 "use client";
 
-import { Copy01Icon } from "@hugeicons/core-free-icons";
+import { Copy01Icon, Tick02Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -19,6 +19,11 @@ const labels = {
 };
 
 function RecordCopyButton({ text, label }) {
+  const [copied, setCopied] = useState(false);
+  const timer = useRef(null);
+
+  useEffect(() => () => clearTimeout(timer.current), []);
+
   return (
     <TooltipProvider delay={100}>
       <Tooltip>
@@ -34,16 +39,23 @@ function RecordCopyButton({ text, label }) {
                 try {
                   await navigator.clipboard.writeText(text);
                   toast.success("Copied to clipboard");
+                  setCopied(true);
+                  clearTimeout(timer.current);
+                  timer.current = setTimeout(() => setCopied(false), 1600);
                 } catch {
                   toast.error("Copy is unavailable. Select the text and copy it manually.");
                 }
               }}
             >
-              <HugeiconsIcon icon={Copy01Icon} className="h-3.5 w-3.5" aria-hidden="true" />
+              <HugeiconsIcon
+                icon={copied ? Tick02Icon : Copy01Icon}
+                className="h-3.5 w-3.5"
+                aria-hidden="true"
+              />
             </Button>
           }
         />
-        <TooltipContent side="top">Copy {label}</TooltipContent>
+        <TooltipContent side="top">{copied ? "Copied" : `Copy ${label}`}</TooltipContent>
       </Tooltip>
     </TooltipProvider>
   );
@@ -165,9 +177,10 @@ export function CustomDomainSettings({ waitListId, canManage, available }) {
           {available ? (
             <>
               <div className="product-field">
-                <Label>
-                  <span>Domain name</span>
+                <Label htmlFor="domain-name-input">Domain name</Label>
+                <div className="product-domain-connect-row">
                   <Input
+                    id="domain-name-input"
                     autoComplete="url"
                     value={hostname}
                     onChange={(event) => setHostname(event.target.value)}
@@ -175,11 +188,11 @@ export function CustomDomainSettings({ waitListId, canManage, available }) {
                     required
                     disabled={!canManage || busy}
                   />
-                </Label>
+                  <Button type="submit" disabled={!actionsEnabled || !hostname.trim()}>
+                    {busy ? "Connecting…" : "Connect domain"}
+                  </Button>
+                </div>
               </div>
-              <Button type="submit" disabled={!actionsEnabled || !hostname.trim()}>
-                {busy ? "Connecting…" : "Connect domain"}
-              </Button>
             </>
           ) : (
             <p className="product-help">

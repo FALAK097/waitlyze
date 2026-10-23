@@ -246,9 +246,6 @@
 .product-waitlist-settings-page .product-domain-actions {
   gap: 8px;
 }
-.product-waitlist-settings-page .product-custom-domain form > button {
-  justify-self: start;
-}
 
 /* Referral panel. */
 .product-waitlist-settings-page .product-referral-setting .product-announcement[role="alert"] {
