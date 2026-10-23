@@ -100,3 +100,36 @@ export function loadGoogleFont(value) {
   link.dataset.waitlyzeFont = family;
   document.head.append(link);
 }
+
+// Load a family's binaries before the caller commits it to the page, so the
+// preview doesn't flash fallback text across the whole canvas. Resolves
+// quickly on cache hits; never rejects. No-op for bundled legacy families.
+export async function ensureFontLoaded(value) {
+  if (typeof document === "undefined") return;
+  const family = resolveFontFamily(value);
+  if (!family || LEGACY_FONT_FAMILIES[value]) return;
+  try {
+    let link = document.querySelector(`link[data-waitlyze-font="${CSS.escape(family)}"]`);
+    if (!link) {
+      const href = googleFontsStylesheet([family]);
+      if (!href) return;
+      link = document.createElement("link");
+      link.href = href;
+      link.rel = "stylesheet";
+      link.dataset.waitlyzeFont = family;
+      const settled = new Promise((resolve) => {
+        link.addEventListener("load", resolve, { once: true });
+        link.addEventListener("error", resolve, { once: true });
+      });
+      document.head.append(link);
+      await Promise.race([settled, new Promise((resolve) => window.setTimeout(resolve, 2500))]);
+    }
+    loadedFonts.add(family);
+    if (document.fonts?.load) {
+      await document.fonts.load(`16px "${family.replaceAll('"', "")}"`);
+      await document.fonts.load(`700 16px "${family.replaceAll('"', "")}"`);
+    }
+  } catch {
+    // Preview still updates; worst case is a brief fallback flash.
+  }
+}

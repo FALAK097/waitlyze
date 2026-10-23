@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { googleFontsStylesheet, loadGoogleFont, resolveFontFamily } from "@/lib/google-fonts.mjs";
+import { ensureFontLoaded, googleFontsStylesheet, resolveFontFamily } from "@/lib/google-fonts.mjs";
 import { cn } from "@/lib/utils";
 
 const categories = ["all", "sans-serif", "serif", "display", "handwriting", "monospace"];
@@ -145,9 +145,11 @@ export function FontPicker({ label, value, onValueChange }) {
                     key={font.family}
                     type="button"
                     onClick={() => {
-                      loadGoogleFont(font.family);
-                      onValueChange(font.family);
+                      const family = font.family;
                       setOpen(false);
+                      // Preload the binaries first so the canvas keeps
+                      // rendering the old font until the new one is ready.
+                      void ensureFontLoaded(family).finally(() => onValueChange(family));
                     }}
                   >
                     <span className="flex size-4 shrink-0 items-center justify-center">

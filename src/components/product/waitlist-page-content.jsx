@@ -1,3 +1,5 @@
+import { ArrowDown01Icon } from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
 import Image from "next/image";
 
 import { ShareButtons } from "@/components/product/share-buttons";
@@ -6,6 +8,23 @@ import { SITE_URL } from "@/lib/site-metadata";
 import { cn } from "@/lib/utils";
 
 const radius = { sharp: "0px", soft: "10px", round: "18px", pill: "999px" };
+
+const H1_CENTERED = {
+  small: "text-3xl sm:text-4xl md:text-5xl",
+  medium: "text-4xl sm:text-5xl md:text-6xl lg:text-7xl",
+  large: "text-5xl sm:text-6xl md:text-7xl",
+};
+const H1_SPLIT = {
+  small: "text-3xl sm:text-4xl",
+  medium: "text-4xl sm:text-5xl lg:text-6xl",
+  large: "text-5xl sm:text-6xl",
+};
+const H2 = {
+  small: "text-2xl md:text-3xl",
+  medium: "text-4xl md:text-5xl lg:text-6xl",
+  large: "text-5xl md:text-6xl",
+};
+const BODY_TEXT = { small: "text-sm", medium: "", large: "text-lg" };
 function Heading({ level = 2, children, className, ...props }) {
   const Tag = `h${level}`;
   return (
@@ -31,6 +50,10 @@ export function WaitlistPageContent({
     (section) => section.type === "form" || (section.type === "hero" && section.showForm),
   );
   const mobile = previewViewport === "mobile";
+  const h1Centered = H1_CENTERED[snapshot.brand.headingSize] ?? H1_CENTERED.medium;
+  const h1Split = H1_SPLIT[snapshot.brand.headingSize] ?? H1_SPLIT.medium;
+  const h2 = H2[snapshot.brand.headingSize] ?? H2.medium;
+  const bodyText = BODY_TEXT[snapshot.brand.bodySize] ?? "";
   const hasVisibleNavigation = visible.some((section) => section.type === "navigation");
   const brandLogo = snapshot.brand.logo || null;
   const fontStylesheet = googleFontsStylesheet([
@@ -43,6 +66,7 @@ export function WaitlistPageContent({
     <div
       className={cn(
         "relative min-h-screen overflow-x-clip bg-wl-page px-6 font-wl-body text-wl-text",
+        bodyText,
         mobile && "min-h-203 px-4",
       )}
       data-preview-viewport={previewViewport}
@@ -123,7 +147,7 @@ export function WaitlistPageContent({
                         {section.eyebrow}
                       </p>
                     )}
-                    <h1 className="m-0 text-4xl leading-none font-bold break-words sm:text-5xl lg:text-6xl">
+                    <h1 className={cn("m-0 leading-none font-bold break-words", h1Split)}>
                       {section.heading}
                     </h1>
                     <p className="mt-7 max-w-3xl text-lg text-wl-muted">{section.body}</p>
@@ -187,7 +211,7 @@ export function WaitlistPageContent({
                         {section.eyebrow}
                       </p>
                     )}
-                    <h1 className="m-0 text-4xl leading-none font-bold break-words sm:text-5xl md:text-6xl lg:text-7xl">
+                    <h1 className={cn("m-0 leading-none font-bold break-words", h1Centered)}>
                       {section.heading}
                     </h1>
                     <p className="mx-auto mt-7 max-w-3xl text-lg text-wl-muted">{section.body}</p>
@@ -211,10 +235,25 @@ export function WaitlistPageContent({
                       {section.heading}
                     </p>
                   )}
-                  <div className="flex flex-wrap justify-center gap-x-11 gap-y-4 font-wl-heading font-bold text-wl-muted">
-                    {section.items.map((item) => (
-                      <span key={item}>{item}</span>
-                    ))}
+                  <div className="flex flex-wrap items-center justify-center gap-x-11 gap-y-4 font-wl-heading font-bold text-wl-muted">
+                    {section.items.map((raw, index) => {
+                      const item = typeof raw === "string" ? { label: raw, imageUrl: "" } : raw;
+                      const key = item.imageUrl || item.label || `logo-${index}`;
+                      return item.imageUrl ? (
+                        <span key={key} className="inline-flex h-8 items-center">
+                          <Image
+                            alt={item.label || "Partner logo"}
+                            className="h-8 w-auto max-w-44 object-contain"
+                            height={64}
+                            src={item.imageUrl}
+                            unoptimized
+                            width={256}
+                          />
+                        </span>
+                      ) : (
+                        <span key={key}>{item.label}</span>
+                      );
+                    })}
                   </div>
                 </section>
               );
@@ -222,7 +261,7 @@ export function WaitlistPageContent({
               if (section.variant === "timeline")
                 return (
                   <section className={cn(sectionClass, "py-20")} key={section.id}>
-                    <Heading className="mb-12 max-w-ch16 text-4xl leading-none md:text-5xl lg:text-6xl">
+                    <Heading className={cn("mb-12 max-w-ch16 leading-none", h2)}>
                       {section.heading}
                     </Heading>
                     <div className="relative grid gap-10">
@@ -246,7 +285,7 @@ export function WaitlistPageContent({
               if (section.variant === "list")
                 return (
                   <section className={cn(sectionClass, "py-20")} key={section.id}>
-                    <Heading className="mb-12 max-w-ch16 text-4xl leading-none md:text-5xl lg:text-6xl">
+                    <Heading className={cn("mb-12 max-w-ch16 leading-none", h2)}>
                       {section.heading}
                     </Heading>
                     <div className="grid gap-px bg-wl-text/15">
@@ -370,13 +409,21 @@ export function WaitlistPageContent({
                   <div className="ml-auto max-w-4xl">
                     {section.items.map((item) => (
                       <details
-                        className="border-t border-wl-text/20 last:border-b"
+                        className="group border-t border-wl-text/20 last:border-b"
                         key={item.question}
                       >
-                        <summary className="cursor-pointer py-5 pr-8 font-wl-heading text-lg font-bold">
-                          {item.question}
+                        <summary className="flex cursor-pointer list-none items-center justify-between gap-4 py-6 font-wl-heading text-xl font-bold [&::-webkit-details-marker]:hidden">
+                          <span>{item.question}</span>
+                          <span
+                            aria-hidden="true"
+                            className="flex size-9 shrink-0 items-center justify-center rounded-full border border-wl-text/20 transition-transform group-open:rotate-180"
+                          >
+                            <HugeiconsIcon icon={ArrowDown01Icon} size={17} />
+                          </span>
                         </summary>
-                        <p className="mt-2 mb-5 max-w-ch65 text-wl-muted">{item.answer}</p>
+                        <p className="mt-1 mb-6 max-w-ch65 text-base leading-relaxed text-wl-muted">
+                          {item.answer}
+                        </p>
                       </details>
                     ))}
                   </div>
@@ -411,9 +458,7 @@ export function WaitlistPageContent({
                     key={section.id}
                   >
                     <div className="max-w-2xl text-center">
-                      <Heading className="mb-6 text-4xl leading-none md:text-5xl">
-                        {section.heading}
-                      </Heading>
+                      <Heading className={cn("mb-6 leading-none", h2)}>{section.heading}</Heading>
                       {section.body && <p className="text-wl-muted">{section.body}</p>}
                     </div>
                     <div className="w-full max-w-70 overflow-hidden rounded-3xl border border-wl-text/15">
@@ -434,9 +479,7 @@ export function WaitlistPageContent({
                     key={section.id}
                   >
                     <div className="max-w-2xl text-center">
-                      <Heading className="mb-6 text-4xl leading-none md:text-5xl">
-                        {section.heading}
-                      </Heading>
+                      <Heading className={cn("mb-6 leading-none", h2)}>{section.heading}</Heading>
                       {section.body && <p className="text-wl-muted">{section.body}</p>}
                     </div>
                     {visual("aspect-video w-full rounded-wl", "100vw")}
@@ -483,7 +526,7 @@ export function WaitlistPageContent({
                     <div className="rounded-wl bg-wl-surface p-8 md:p-14">
                       <div className="mx-auto max-w-2xl text-center">
                         {section.heading && (
-                          <Heading className="mb-5 text-4xl leading-none text-balance md:text-5xl">
+                          <Heading className={cn("mb-5 leading-none text-balance", h2)}>
                             {section.heading}
                           </Heading>
                         )}
@@ -506,7 +549,7 @@ export function WaitlistPageContent({
                 >
                   <div className="md:grow-8 md:basis-0">
                     {section.heading && (
-                      <Heading className="mb-5 text-4xl leading-none md:text-5xl">
+                      <Heading className={cn("mb-5 leading-none md:text-5xl", h2)}>
                         {section.heading}
                       </Heading>
                     )}
@@ -564,9 +607,7 @@ export function WaitlistPageContent({
                   key={section.id}
                 >
                   <div>
-                    <Heading className="mb-4 text-4xl leading-none md:text-5xl">
-                      {section.heading}
-                    </Heading>
+                    <Heading className={cn("mb-4 leading-none", h2)}>{section.heading}</Heading>
                     {section.body && <p className="text-wl-muted">{section.body}</p>}
                   </div>
                   <a
@@ -690,17 +731,12 @@ export function WaitlistSignupPreview({ form, brand }) {
         <span
           className={cn(
             "flex flex-1 items-center rounded-wl border border-wl-input-border bg-wl-input px-4 text-wl-muted",
-            form.layout === "stacked" ? "h-13" : "h-12",
+            form.layout === "stacked" ? "h-14" : "h-12",
           )}
         >
           {form.placeholder}
         </span>
-        <span
-          className={cn(
-            "inline-flex items-center justify-center rounded-wl bg-wl-button px-5 font-bold text-wl-button-text",
-            form.layout === "stacked" ? "h-11" : "h-12",
-          )}
-        >
+        <span className="inline-flex h-12 items-center justify-center rounded-wl bg-wl-button px-5 font-bold text-wl-button-text">
           {form.buttonText}
         </span>
       </div>
@@ -718,13 +754,18 @@ export function StatusPagePreview({ snapshot, state = "confirmed", showReferrals
   const status = snapshot.statusPage;
   const pending = state === "pending";
   const returning = state === "returning";
+  const h1Centered = H1_CENTERED[snapshot.brand.headingSize] ?? H1_CENTERED.medium;
+  const bodyText = BODY_TEXT[snapshot.brand.bodySize] ?? "";
   const fontStylesheet = googleFontsStylesheet([
     snapshot.brand.headingFont,
     snapshot.brand.bodyFont,
   ]);
   return (
     <div
-      className="grid min-h-full items-center justify-items-center bg-wl-page px-6 py-20 text-center font-wl-body text-wl-text"
+      className={cn(
+        "grid min-h-full items-center justify-items-center bg-wl-page px-6 py-20 text-center font-wl-body text-wl-text",
+        bodyText,
+      )}
       style={{
         "--wl-page": snapshot.brand.pageBackground,
         "--wl-surface": snapshot.brand.surfaceColor,
@@ -752,7 +793,12 @@ export function StatusPagePreview({ snapshot, state = "confirmed", showReferrals
           {pending ? <path d="M3 6h18v12H3zM3 7l9 6 9-6" /> : <path d="m5 12 4 4L19 6" />}
         </svg>
       </p>
-      <h1 className="my-4 max-w-ch14 font-wl-heading text-4xl leading-none tracking-tight text-balance md:text-5xl">
+      <h1
+        className={cn(
+          "my-4 max-w-ch14 font-wl-heading leading-none tracking-tight text-balance",
+          h1Centered,
+        )}
+      >
         {pending ? status.pendingHeading : status.heading}
       </h1>
       <p className="max-w-xl leading-relaxed text-wl-muted">

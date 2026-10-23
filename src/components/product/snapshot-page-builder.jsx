@@ -242,6 +242,65 @@ function StringItems({ section, fields, update }) {
     </div>
   );
 }
+function LogoItems({ section, update }) {
+  const setItem = (index, next) =>
+    update({
+      ...section,
+      items: section.items.map((entry, itemIndex) => (itemIndex === index ? next : entry)),
+    });
+  return (
+    <div className="grid gap-5">
+      {section.items.map((raw, index) => {
+        const item = typeof raw === "string" ? { label: raw, imageUrl: "" } : raw;
+        return (
+          <div
+            className="grid gap-2.5 border-t border-product-border-subtle pt-4 [&>button]:justify-self-start [&>span]:text-micro [&>span]:text-product-text-secondary"
+            key={index}
+          >
+            <span>{index + 1}</span>
+            <Field
+              label="Name"
+              value={item.label}
+              onChange={(label) => setItem(index, { ...item, label })}
+            />
+            <ImageUploadField
+              label="Logo image"
+              hint="Optional. Shown instead of the name when set."
+              value={item.imageUrl}
+              onChange={(imageUrl) => setItem(index, { ...item, imageUrl })}
+              previewClassName="aspect-16/9 object-contain bg-product-bg-inset"
+            />
+            {section.items.length > 1 && (
+              <Button
+                variant="ghost"
+                size="sm"
+                type="button"
+                onClick={() =>
+                  update({
+                    ...section,
+                    items: section.items.filter((_, itemIndex) => itemIndex !== index),
+                  })
+                }
+              >
+                Remove
+              </Button>
+            )}
+          </div>
+        );
+      })}
+      {section.items.length < 8 && (
+        <Button
+          variant="outline"
+          size="sm"
+          type="button"
+          onClick={() => update({ ...section, items: [...section.items, "Company"] })}
+        >
+          Add item
+        </Button>
+      )}
+    </div>
+  );
+}
 function LinkItems({ section, update }) {
   return (
     <div className="grid gap-5">
@@ -356,11 +415,7 @@ function BlockInspector({ section, update, form, updateForm }) {
       {section.type === "logos" && (
         <>
           {field("heading", "Heading")}
-          <StringItems
-            section={section}
-            fields={[{ key: "value", label: "Name" }]}
-            update={update}
-          />
+          <LogoItems section={section} update={update} />
         </>
       )}
       {section.type === "stats" && (
@@ -1498,7 +1553,7 @@ export function SnapshotPageBuilder({
             />
           }
           title="After signup"
-          description="Edit both the pending confirmation and confirmed states."
+          description="Edit the pending, confirmed and returning-visitor states."
         >
           <div className="grid gap-4">
             <div
@@ -1709,6 +1764,28 @@ function DesignPanel({ brand, update }) {
         value={brand.bodyFont}
         onValueChange={(bodyFont) => update({ bodyFont })}
       />
+      <div className="grid gap-4 sm:grid-cols-2">
+        <SelectField
+          label="Heading size"
+          value={brand.headingSize || "medium"}
+          options={[
+            { id: "small", label: "Small" },
+            { id: "medium", label: "Medium" },
+            { id: "large", label: "Large" },
+          ]}
+          onChange={(headingSize) => update({ headingSize })}
+        />
+        <SelectField
+          label="Body size"
+          value={brand.bodySize || "medium"}
+          options={[
+            { id: "small", label: "Small" },
+            { id: "medium", label: "Medium" },
+            { id: "large", label: "Large" },
+          ]}
+          onChange={(bodySize) => update({ bodySize })}
+        />
+      </div>
       <div className="grid gap-1.5">
         <span className="text-sm font-medium">Corners</span>
         <div className="grid grid-cols-4 gap-1 rounded-lg bg-product-bg-inset p-1">

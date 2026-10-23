@@ -36,6 +36,23 @@ test("starter status pages offer all share channels", () => {
   );
 });
 
+test("brand type scale defaults to medium", () => {
+  const { brand } = snapshotTemplate("blank");
+  assert.equal(brand.headingSize, "medium");
+  assert.equal(brand.bodySize, "medium");
+});
+
+test("logos accept names, images, or a mix", () => {
+  const snapshot = snapshotTemplate("saas");
+  const section = snapshot.sections.find((item) => item.type === "logos");
+  section.items = [
+    "Acme",
+    { label: "Lumen", imageUrl: "" },
+    { label: "Hexlab", imageUrl: "https://example.com/hexlab.svg" },
+  ];
+  assert.equal(templateSnapshotSchema.safeParse(snapshot).success, true);
+});
+
 test("accepts persisted Google Font family names", () => {
   const snapshot = snapshotTemplate("simple");
   snapshot.brand.headingFont = "DM Sans";

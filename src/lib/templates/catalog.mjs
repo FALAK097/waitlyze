@@ -37,11 +37,15 @@ const steps = z.strictObject({
   heading: text(120),
   items: z.array(item).min(1).max(6),
 });
+const logoItem = z.union([
+  text(50),
+  z.strictObject({ label: text(50), imageUrl: z.string().max(500).default("") }),
+]);
 const logos = z.strictObject({
   ...base,
   type: z.literal("logos"),
   heading: text(120),
-  items: z.array(text(50)).min(2).max(8),
+  items: z.array(logoItem).min(2).max(8),
 });
 const stats = z.strictObject({
   ...base,
@@ -157,6 +161,8 @@ const brandSchema = z.strictObject({
   radius: z.enum(RADIUS_IDS),
   logo: z.string().max(500).default(""),
   showPoweredBy: z.boolean().default(true),
+  headingSize: z.enum(["small", "medium", "large"]).default("medium"),
+  bodySize: z.enum(["small", "medium", "large"]).default("medium"),
 });
 const statusPageSchema = z.strictObject({
   heading: text(120),
