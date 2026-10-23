@@ -683,7 +683,9 @@ export function WaitlistSignupPreview({ form, brand }) {
         <link href={fontStylesheet} rel="stylesheet" precedence="waitlyze-fonts" />
       ) : null}
       <span className="mb-2 block text-caption font-bold">{form.label}</span>
-      <div className={cn("flex gap-2 max-sm:flex-col", form.layout === "stacked" && "flex-col")}>
+      <div
+        className={cn("flex gap-2 max-sm:flex-col", form.layout === "stacked" && "flex-col gap-3")}
+      >
         <span className="flex h-12 flex-1 items-center rounded-wl border border-wl-input-border bg-wl-input px-4 text-wl-muted">
           {form.placeholder}
         </span>

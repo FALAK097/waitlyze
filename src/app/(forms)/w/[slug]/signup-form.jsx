@@ -192,7 +192,12 @@ function SignupFormInner({ slug, waitListId, showReferrals, formConfig, statusPa
       <label className="mb-2 block text-caption font-bold" htmlFor={emailId}>
         {formConfig.label}
       </label>
-      <div className={cn("flex gap-2", formConfig.layout === "stacked" && "flex-col")}>
+      <div
+        className={cn(
+          "flex gap-2 max-sm:flex-col",
+          formConfig.layout === "stacked" && "flex-col gap-3",
+        )}
+      >
         <input
           className={cn(
             control,
