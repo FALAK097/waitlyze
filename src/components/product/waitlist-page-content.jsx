@@ -10,8 +10,16 @@ import { cn } from "@/lib/utils";
 
 const radius = { sharp: "0px", soft: "10px", round: "18px", pill: "999px" };
 
-// Defense in depth for stored href values: only render safe link targets.
-// Anything else (e.g. javascript:) falls back to "#".
+// Defense in depth for stored image URLs: only render TLS, site-relative, or
+// inline data URLs. Anything else falls back to the text/placeholder treatment.
+function safeImageUrl(value) {
+  if (typeof value !== "string") return "";
+  const trimmed = value.trim();
+  if (!trimmed) return "";
+  if (/^(https:\/\/|data:image\/|\/)/i.test(trimmed)) return trimmed;
+  return "";
+}
+
 function safeHref(value) {
   if (typeof value !== "string") return "#";
   const trimmed = value.trim();
@@ -76,7 +84,7 @@ export function WaitlistPageContent({
   const bodyText = bodyPx == null ? (BODY_TEXT[snapshot.brand.bodySize] ?? "") : "wl-type-body";
   const bodyPxValue = bodyPx == null ? undefined : `${bodyPx}px`;
   const hasVisibleNavigation = visible.some((section) => section.type === "navigation");
-  const brandLogo = snapshot.brand.logo || null;
+  const brandLogo = safeImageUrl(snapshot.brand.logo) || null;
   const fontStylesheet = googleFontsStylesheet([
     snapshot.brand.headingFont,
     snapshot.brand.bodyFont,
@@ -266,14 +274,15 @@ export function WaitlistPageContent({
                   <div className="flex flex-wrap items-center justify-center gap-x-11 gap-y-4 font-wl-heading font-bold text-wl-muted">
                     {section.items.map((raw, index) => {
                       const item = typeof raw === "string" ? { label: raw, imageUrl: "" } : raw;
-                      const key = item.imageUrl || item.label || `logo-${index}`;
-                      return item.imageUrl ? (
+                      const logoSrc = safeImageUrl(item.imageUrl);
+                      const key = logoSrc || item.label || `logo-${index}`;
+                      return logoSrc ? (
                         <span key={key} className="inline-flex h-8 items-center">
                           <Image
                             alt={item.label || "Partner logo"}
                             className="h-8 w-auto max-w-44 object-contain"
                             height={64}
-                            src={item.imageUrl}
+                            src={logoSrc}
                             unoptimized
                             width={256}
                           />
@@ -473,6 +482,7 @@ export function WaitlistPageContent({
                 </section>
               );
             if (section.type === "media") {
+              const imageSrc = safeImageUrl(section.imageUrl);
               const visual = (frameClass, sizes) => (
                 <div
                   className={cn(
@@ -480,10 +490,10 @@ export function WaitlistPageContent({
                     frameClass,
                   )}
                 >
-                  {section.imageUrl ? (
+                  {imageSrc ? (
                     <Image
                       className="object-cover"
-                      src={section.imageUrl}
+                      src={imageSrc}
                       alt={section.imageAlt}
                       fill
                       sizes={sizes}

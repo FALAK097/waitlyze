@@ -2,6 +2,16 @@ import { z } from "zod";
 
 const text = (max) => z.string().max(max);
 const hex = z.string().regex(/^#[0-9a-f]{6}$/i, "Choose a six-digit hex color.");
+// Public pages render these URLs in <img> tags. Allow only TLS, site-relative,
+// or inline data URLs so a stored value can never downgrade the page to http
+// or smuggle an active-content scheme.
+const imageUrl = z
+  .string()
+  .max(500)
+  .trim()
+  .refine((value) => value === "" || /^(https:\/\/|data:image\/|\/)/i.test(value), {
+    message: "Use an https://, site-relative, or data:image URL.",
+  });
 const blockId = z
   .string()
   .min(3)
@@ -49,7 +59,7 @@ const steps = z.strictObject({
 });
 const logoItem = z.union([
   text(50),
-  z.strictObject({ label: text(50), imageUrl: z.string().max(500).default("") }),
+  z.strictObject({ label: text(50), imageUrl: imageUrl.default("") }),
 ]);
 const logos = z.strictObject({
   ...base,
@@ -88,7 +98,7 @@ const media = z.strictObject({
   type: z.literal("media"),
   heading: text(120),
   body: text(360),
-  imageUrl: z.string().max(500),
+  imageUrl,
   imageAlt: text(160),
 });
 const formBlock = z.strictObject({
@@ -144,7 +154,12 @@ export const sectionSchema = z.discriminatedUnion("type", [
 ]);
 
 export const RADIUS_IDS = ["sharp", "soft", "round", "pill"];
-const fontFamily = z.string().min(1).max(80);
+const fontFamily = z
+  .string()
+  .min(1)
+  .max(80)
+  .trim()
+  .regex(/^[\w -]+$/, "Use letters, numbers, spaces, or hyphens.");
 const headingPx = z.preprocess(
   (value) =>
     typeof value === "string" ? ({ small: 40, medium: 48, large: 60 }[value] ?? value) : value,
@@ -179,7 +194,7 @@ const brandSchema = z.strictObject({
   inputBorder: hex,
   inputTextColor: hex,
   radius: z.enum(RADIUS_IDS),
-  logo: z.string().max(500).default(""),
+  logo: imageUrl.default(""),
   showPoweredBy: z.boolean().default(true),
   headingSize: headingPx,
   bodySize: bodyPx,

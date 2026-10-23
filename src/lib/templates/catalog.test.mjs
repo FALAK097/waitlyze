@@ -72,6 +72,34 @@ test("logos accept names, images, or a mix", () => {
   assert.equal(templateSnapshotSchema.safeParse(snapshot).success, true);
 });
 
+test("image URLs must be https, site-relative, or data URIs", () => {
+  const snapshot = snapshotTemplate("saas");
+  const media = snapshot.sections.find((section) => section.type === "media");
+  for (const good of [
+    "https://example.com/a.png",
+    "/uploads/a.png",
+    "data:image/png;base64,xx",
+    "",
+  ]) {
+    media.imageUrl = good;
+    assert.equal(templateSnapshotSchema.safeParse(snapshot).success, true, good || "(empty)");
+  }
+  for (const bad of ["http://example.com/a.png", "javascript:alert(1)", "ftp://x/y.png"]) {
+    media.imageUrl = bad;
+    assert.equal(templateSnapshotSchema.safeParse(snapshot).success, false, bad);
+  }
+  snapshot.brand.logo = "http://example.com/logo.png";
+  assert.equal(templateSnapshotSchema.safeParse(snapshot).success, false);
+});
+
+test("font names are limited to safe characters", () => {
+  const snapshot = snapshotTemplate("simple");
+  snapshot.brand.headingFont = "Evil;Font";
+  assert.equal(templateSnapshotSchema.safeParse(snapshot).success, false);
+  snapshot.brand.headingFont = "DM Serif Display";
+  assert.equal(templateSnapshotSchema.safeParse(snapshot).success, true);
+});
+
 test("accepts persisted Google Font family names", () => {
   const snapshot = snapshotTemplate("simple");
   snapshot.brand.headingFont = "DM Sans";

@@ -900,6 +900,14 @@ export function AudienceTable({
                         <dt className="text-product-text-secondary">Source</dt>
                         <dd>{profile.utmSource || "Direct"}</dd>
                       </div>
+                      {flags.showReferrals && (
+                        <div className="grid grid-cols-[104px_minmax(0,1fr)] gap-3">
+                          <dt className="text-product-text-secondary">Referred by</dt>
+                          <dd className="truncate" title={profile.referredBy?.email || undefined}>
+                            {profile.referredBy?.email || "—"}
+                          </dd>
+                        </div>
+                      )}
                       {profileLink && (
                         <div className="grid grid-cols-[104px_minmax(0,1fr)] items-center gap-3">
                           <dt className="text-product-text-secondary">Referral link</dt>

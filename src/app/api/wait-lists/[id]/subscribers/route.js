@@ -208,6 +208,7 @@ export async function GET(request, { params }) {
             referralCode: true,
             utmSource: true,
             points: true,
+            referredBy: { select: { email: true } },
           },
           orderBy: [{ createdAt: direction }, { id: direction }],
           take: AUDIENCE_PAGE_SIZE + 1,
@@ -276,6 +277,8 @@ export async function POST(request, { params }) {
     if (columns.includes("city")) select.city = true;
     if (columns.includes("device")) select.device = true;
     if (columns.includes("points")) select.points = true;
+    if (columns.includes("referral_code")) select.referralCode = true;
+    if (columns.includes("referred_by")) select.referredBy = { select: { email: true } };
     const encoder = new TextEncoder();
     const body = new ReadableStream({
       async start(controller) {

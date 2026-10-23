@@ -53,6 +53,8 @@ export const EXPORT_COLUMNS = [
   { key: "device", label: "Device" },
   { key: "points", label: "Points" },
   { key: "referrals", label: "Referrals" },
+  { key: "referral_code", label: "Referral code" },
+  { key: "referred_by", label: "Referred by" },
   { key: "position", label: "Position" },
 ];
 
@@ -88,6 +90,8 @@ export function buildExportRow(subscriber, columns, extra = {}) {
     device: subscriber.device,
     points: subscriber.points ?? 0,
     referrals: extra.referralCount ?? 0,
+    referral_code: subscriber.referralCode ?? "",
+    referred_by: subscriber.referredBy?.email ?? "",
     position: extra.position ?? "",
   };
   return columns.map((key) => csvCell(values[key])).join(",");
