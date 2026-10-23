@@ -1,6 +1,15 @@
 "use client";
 
-import { Redo02Icon, Undo02Icon } from "@hugeicons/core-free-icons";
+import {
+  ArrowDown01Icon,
+  ArrowUp01Icon,
+  Copy01Icon,
+  Delete02Icon,
+  MonitorIcon,
+  Redo02Icon,
+  SmartphoneIcon,
+  Undo02Icon,
+} from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -635,23 +644,29 @@ export function SnapshotPageBuilder({
     setPanel("blocks");
     setAnnouncement(`${names[type]} block added.`);
   };
-  const removeBlock = () => {
-    if (!selected) return;
-    const sections = snapshot.sections.filter((section) => section.id !== selected.id);
+  const removeBlock = (target) => {
+    const id = typeof target === "string" ? target : selectedId;
+    const section = snapshot.sections.find((item) => item.id === id);
+    if (!section) return;
+    const sections = snapshot.sections.filter((item) => item.id !== id);
     if (applySnapshot({ ...snapshot, sections })) {
-      setSelectedId(sections[0]?.id);
-      setAnnouncement(`${names[selected.type]} block removed.`);
+      setSelectedId((current) =>
+        sections.some((item) => item.id === current) ? current : sections[0]?.id,
+      );
+      setAnnouncement(`${names[section.type]} block removed.`);
     }
   };
-  const duplicateBlock = () => {
-    if (!selected || snapshot.sections.length >= 24) return;
-    const copy = { ...clone(selected), id: `block-${crypto.randomUUID()}` };
-    const at = snapshot.sections.findIndex((section) => section.id === selected.id);
+  const duplicateBlock = (target) => {
+    const id = typeof target === "string" ? target : selectedId;
+    const section = snapshot.sections.find((item) => item.id === id);
+    if (!section || snapshot.sections.length >= 24) return;
+    const copy = { ...clone(section), id: `block-${crypto.randomUUID()}` };
+    const at = snapshot.sections.findIndex((item) => item.id === id);
     const sections = [...snapshot.sections];
     sections.splice(at + 1, 0, copy);
     applySnapshot({ ...snapshot, sections });
     setSelectedId(copy.id);
-    setAnnouncement(`${names[selected.type]} block duplicated.`);
+    setAnnouncement(`${names[section.type]} block duplicated.`);
   };
   const moveBlock = (index, direction) => {
     const target = index + direction;
@@ -661,6 +676,52 @@ export function SnapshotPageBuilder({
     applySnapshot({ ...snapshot, sections });
     setAnnouncement(
       `${names[sections[target].type]} block moved ${direction < 0 ? "up" : "down"}.`,
+    );
+  };
+  const renderBlockToolbar = (section) => {
+    const index = snapshot.sections.findIndex((item) => item.id === section.id);
+    const action =
+      "flex size-7 cursor-pointer items-center justify-center rounded-md border-0 bg-transparent text-white/70 transition-colors hover:bg-white/15 hover:text-white disabled:pointer-events-none disabled:opacity-30";
+    return (
+      <div className="absolute top-2 left-2 z-10 hidden items-center gap-0.5 rounded-lg bg-product-text-primary p-1 shadow-canvas group-focus-within:flex group-hover:flex group-data-[selected=true]:flex">
+        <span className="rounded-md bg-product-accent-solid px-2 py-1 text-micro font-bold text-product-text-primary">
+          {names[section.type]}
+        </span>
+        <button
+          type="button"
+          className={action}
+          aria-label="Move up"
+          disabled={index <= 0}
+          onClick={() => moveBlock(index, -1)}
+        >
+          <HugeiconsIcon icon={ArrowUp01Icon} size={14} aria-hidden="true" />
+        </button>
+        <button
+          type="button"
+          className={action}
+          aria-label="Move down"
+          disabled={index >= snapshot.sections.length - 1}
+          onClick={() => moveBlock(index, 1)}
+        >
+          <HugeiconsIcon icon={ArrowDown01Icon} size={14} aria-hidden="true" />
+        </button>
+        <button
+          type="button"
+          className={action}
+          aria-label="Duplicate"
+          onClick={() => duplicateBlock(section.id)}
+        >
+          <HugeiconsIcon icon={Copy01Icon} size={14} aria-hidden="true" />
+        </button>
+        <button
+          type="button"
+          className={action}
+          aria-label="Remove"
+          onClick={() => removeBlock(section.id)}
+        >
+          <HugeiconsIcon icon={Delete02Icon} size={14} aria-hidden="true" />
+        </button>
+      </div>
     );
   };
   const updateRoot = (key, value) =>
@@ -1039,14 +1100,20 @@ export function SnapshotPageBuilder({
                           disabled={index === 0}
                           onClick={() => moveBlock(index, -1)}
                         >
-                          ↑
+                          <HugeiconsIcon icon={ArrowUp01Icon} size={14} aria-hidden="true" />
                         </button>
                         <button
                           aria-label="Move down"
                           disabled={index === snapshot.sections.length - 1}
                           onClick={() => moveBlock(index, 1)}
                         >
-                          ↓
+                          <HugeiconsIcon icon={ArrowDown01Icon} size={14} aria-hidden="true" />
+                        </button>
+                        <button aria-label="Duplicate" onClick={() => duplicateBlock(section.id)}>
+                          <HugeiconsIcon icon={Copy01Icon} size={14} aria-hidden="true" />
+                        </button>
+                        <button aria-label="Remove" onClick={() => removeBlock(section.id)}>
+                          <HugeiconsIcon icon={Delete02Icon} size={14} aria-hidden="true" />
                         </button>
                       </div>
                     </div>
@@ -1098,22 +1165,40 @@ export function SnapshotPageBuilder({
             data-mobile-mode={mobileMode}
           >
             <div className="flex h-canvas-tools items-center justify-end text-caption text-product-text-secondary [&_button]:cursor-pointer [&_button]:rounded-md [&_button]:border-0 [&_button]:bg-transparent [&_button]:px-2.5 [&_button]:py-2 [&_button]:text-micro [&_button]:text-product-text-secondary [&_button[aria-pressed=true]]:bg-product-bg-surface [&_button[aria-pressed=true]]:text-product-text-primary [&_button[aria-pressed=true]]:shadow-pressed">
-              <div>
-                <button
-                  type="button"
-                  aria-pressed={previewViewport === "desktop"}
-                  onClick={() => setPreviewViewport("desktop")}
-                >
-                  Desktop
-                </button>
-                <button
-                  type="button"
-                  aria-pressed={previewViewport === "mobile"}
-                  onClick={() => setPreviewViewport("mobile")}
-                >
-                  Mobile
-                </button>
-              </div>
+              <TooltipProvider>
+                <div className="flex items-center gap-0.5">
+                  <Tooltip>
+                    <TooltipTrigger
+                      render={
+                        <button
+                          type="button"
+                          aria-label="Desktop preview"
+                          aria-pressed={previewViewport === "desktop"}
+                          onClick={() => setPreviewViewport("desktop")}
+                        />
+                      }
+                    >
+                      <HugeiconsIcon icon={MonitorIcon} size={18} aria-hidden="true" />
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom">Desktop</TooltipContent>
+                  </Tooltip>
+                  <Tooltip>
+                    <TooltipTrigger
+                      render={
+                        <button
+                          type="button"
+                          aria-label="Mobile preview"
+                          aria-pressed={previewViewport === "mobile"}
+                          onClick={() => setPreviewViewport("mobile")}
+                        />
+                      }
+                    >
+                      <HugeiconsIcon icon={SmartphoneIcon} size={18} aria-hidden="true" />
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom">Mobile</TooltipContent>
+                  </Tooltip>
+                </div>
+              </TooltipProvider>
             </div>
             <div
               className="max-w-canvas w-full canvas-zoom overflow-auto rounded-xl bg-white shadow-canvas data-[viewport=mobile]:mx-auto data-[viewport=mobile]:w-mobile-canvas data-[viewport=mobile]:max-w-full"
@@ -1125,6 +1210,13 @@ export function SnapshotPageBuilder({
                 name={waitList.name}
                 previewViewport={previewViewport}
                 renderSignupForm={() => <WaitlistSignupPreview form={snapshot.form} />}
+                interactive
+                selectedBlockId={selectedId}
+                onBlockSelect={(id) => {
+                  setSelectedId(id);
+                  setMobileEditorPanel("properties");
+                }}
+                renderBlockToolbar={renderBlockToolbar}
               />
             </div>
           </main>
