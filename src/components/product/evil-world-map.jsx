@@ -147,7 +147,7 @@ export function EvilWorldMap({ countries = [], metric = "visitors" }) {
 
   return (
     <div
-      className="relative aspect-2/1 w-full overflow-visible px-2.5 pt-1 pb-2.5 [&_.rsm-geography]:cursor-pointer [&_.rsm-geography]:outline-none [&_.rsm-geography:focus]:stroke-product-text-primary [&_.rsm-geography:focus]:stroke-1 [&_.rsm-geography:focus]:brightness-90 [&_.rsm-geography:hover]:stroke-product-text-primary [&_.rsm-geography:hover]:stroke-1 [&_.rsm-geography:hover]:brightness-90 [&_svg]:pointer-events-auto [&_svg]:block [&_svg]:h-full [&_svg]:w-full [&_svg]:overflow-visible"
+      className="relative aspect-2/1 min-h-72 w-full overflow-visible px-2.5 pt-1 pb-2.5 [&_.rsm-geography]:cursor-pointer [&_.rsm-geography]:outline-none [&_.rsm-geography:focus]:stroke-product-text-primary [&_.rsm-geography:focus]:stroke-1 [&_.rsm-geography:focus]:brightness-90 [&_.rsm-geography:hover]:stroke-product-text-primary [&_.rsm-geography:hover]:stroke-1 [&_.rsm-geography:hover]:brightness-90 [&_svg]:pointer-events-auto [&_svg]:block [&_svg]:h-full [&_svg]:w-full [&_svg]:overflow-visible"
       data-analytics-map=""
       ref={wrapRef}
       onPointerMove={show}

@@ -1,6 +1,10 @@
 "use client";
 
-import { CalendarIcon, ChartLineData01Icon } from "@hugeicons/core-free-icons";
+import {
+  CalendarIcon,
+  ChartLineData01Icon,
+  CircleQuestionMarkIcon,
+} from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { differenceInCalendarDays, format } from "date-fns";
 import dynamic from "next/dynamic";
@@ -20,6 +24,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
 const EvilAreaChart = dynamic(
@@ -171,10 +176,32 @@ function Comparison({ value }) {
   );
 }
 
-function Metric({ label, value, change, detail, badge }) {
+function Metric({ label, value, change, detail, badge, hint }) {
   return (
-    <div className={METRIC} title={detail}>
-      <dt className="truncate text-xs text-product-text-secondary">{label}</dt>
+    <div className={METRIC}>
+      <dt className="flex items-center gap-1 truncate text-xs text-product-text-secondary">
+        <span className="truncate">{label}</span>
+        {hint ? (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger
+                render={
+                  <button
+                    type="button"
+                    className="flex shrink-0 cursor-help items-center justify-center rounded-full border-0 bg-transparent p-0.5 text-product-text-secondary"
+                    aria-label={`About ${label}`}
+                  />
+                }
+              >
+                <HugeiconsIcon icon={CircleQuestionMarkIcon} size={13} aria-hidden="true" />
+              </TooltipTrigger>
+              <TooltipContent side="top" className="max-w-60 whitespace-normal">
+                {hint}
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        ) : null}
+      </dt>
       <dd className="mt-0.5 truncate font-product-display text-2xl leading-tight font-semibold tracking-tighter text-product-text-primary max-[600px]:text-xl">
         {value}
       </dd>
@@ -686,18 +713,21 @@ export function WaitlistAnalytics({ waitListId, emailsEnabled = false }) {
                 value={number.format(summary.visitors)}
                 change={summary.change?.visitors}
                 detail="Distinct stored browsers"
+                hint="Distinct browsers seen in this period. One person on two devices counts twice."
               />
               <Metric
                 label="Signups"
                 value={number.format(summary.signups)}
                 change={summary.change?.signups}
                 detail="People who joined"
+                hint="People who joined in this period, confirmed or not."
               />
               <Metric
                 label="Conversion"
                 value={conversion}
                 change={summary.change?.conversionRate}
                 detail="Visitors who signed up"
+                hint="Signups divided by visitors. The industry median for waitlists is about 11%."
                 badge={
                   summary.conversionRate == null ? null : (
                     <BenchmarkBadge
@@ -713,6 +743,7 @@ export function WaitlistAnalytics({ waitListId, emailsEnabled = false }) {
                 value={verification}
                 change={summary.change?.verificationRate}
                 detail={`${number.format(summary.verifiedSignups)} verified`}
+                hint="Share of signups who confirmed their email. The industry median is about 55%."
                 badge={
                   summary.verificationRate == null ? null : (
                     <BenchmarkBadge
@@ -727,12 +758,19 @@ export function WaitlistAnalytics({ waitListId, emailsEnabled = false }) {
                 label="Referrals"
                 value={number.format(referrals?.referred ?? 0)}
                 detail={referralShareLabel}
+                hint="Verified signups who joined through someone's referral link. Counts only while the referral is marked clear or approved."
               />
-              <Metric label="K-factor" value={kFactorValue} detail={kFactorDetail} />
+              <Metric
+                label="K-factor"
+                value={kFactorValue}
+                detail={kFactorDetail}
+                hint="Viral coefficient: average new signups generated per signup — invites sent times the share-to-join rate. Above 1.0 means self-sustaining growth."
+              />
               <Metric
                 label="Points awarded"
                 value={number.format(summary.pointsTotal)}
                 detail={`${number.format(summary.pointsSignup)} join · ${number.format(summary.pointsReferral)} referral`}
+                hint="Total points issued in this period. A verified signup earns 50 points and each verified referral earns the referrer 30."
               />
             </dl>
 
