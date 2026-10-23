@@ -7,6 +7,7 @@ import { useId, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
 async function uploadImage(file) {
@@ -88,17 +89,25 @@ export function ImageUploadField({
             )}
             src={value}
           />
-          <Button
-            type="button"
-            variant="outline"
-            size="icon-sm"
-            aria-label={`Remove ${label.toLowerCase()}`}
-            title="Remove image"
-            className="absolute top-2 right-2"
-            onClick={() => onChange("")}
-          >
-            <HugeiconsIcon icon={Cancel01Icon} aria-hidden="true" />
-          </Button>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger
+                render={
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon-sm"
+                    aria-label={`Remove ${label.toLowerCase()}`}
+                    className="absolute top-2 right-2"
+                    onClick={() => onChange("")}
+                  />
+                }
+              >
+                <HugeiconsIcon icon={Cancel01Icon} aria-hidden="true" />
+              </TooltipTrigger>
+              <TooltipContent side="left">Remove {label.toLowerCase()}</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </div>
       ) : null}
       {error ? (

@@ -129,8 +129,8 @@ export const sectionSchema = z.discriminatedUnion("type", [
   footer,
 ]);
 
-export const FONT_IDS = ["hanken", "manrope", "bricolage", "figtree", "archivo"];
 export const RADIUS_IDS = ["sharp", "soft", "round", "pill"];
+const fontFamily = z.string().min(1).max(80);
 export const templateFormSchema = z.strictObject({
   fields: z.tuple([z.literal("email")]),
   label: text(80),
@@ -142,8 +142,8 @@ export const templateFormSchema = z.strictObject({
   verification: z.boolean(),
 });
 const brandSchema = z.strictObject({
-  headingFont: z.enum(FONT_IDS),
-  bodyFont: z.enum(FONT_IDS),
+  headingFont: fontFamily,
+  bodyFont: fontFamily,
   pageBackground: hex,
   surfaceColor: hex,
   textColor: hex,

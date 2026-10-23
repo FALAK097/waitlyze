@@ -1,6 +1,22 @@
 "use client";
 
 import {
+  closestCenter,
+  DndContext,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import {
   Add01Icon,
   AlignLeftIcon,
   Analytics01Icon,
@@ -9,6 +25,7 @@ import {
   CheckListIcon,
   Copy01Icon,
   Delete02Icon,
+  DragDropIcon,
   FlowchartIcon,
   FormIcon,
   GiftIcon,
@@ -31,9 +48,9 @@ import { useRouter } from "next/navigation";
 import { parseAsStringLiteral, useQueryState } from "nuqs";
 import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 
+import { ColorPicker } from "@/components/reui/color-picker";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ColorPicker } from "@/components/ui/color-picker";
 import {
   Dialog,
   DialogClose,
@@ -41,6 +58,7 @@ import {
   DialogDescription,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { FontPicker } from "@/components/ui/font-picker";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -107,13 +125,6 @@ const blockGroups = BLOCK_TYPES.reduce((groups, block) => {
   return groups;
 }, {});
 const templates = listTemplates();
-const fonts = [
-  { id: "hanken", label: "Hanken Grotesk" },
-  { id: "manrope", label: "Manrope" },
-  { id: "bricolage", label: "Bricolage Grotesque" },
-  { id: "figtree", label: "Figtree" },
-  { id: "archivo", label: "Archivo" },
-];
 const itemDefaults = {
   features: { title: "A clear benefit", body: "Explain how it helps." },
   steps: { title: "Next step", body: "Explain what happens here." },
@@ -292,7 +303,7 @@ function LinkItems({ section, update }) {
     </div>
   );
 }
-function BlockInspector({ section, update, remove, duplicate }) {
+function BlockInspector({ section, update }) {
   if (!section)
     return (
       <div className={"px-5 py-8 text-caption leading-relaxed text-product-text-secondary"}>
@@ -309,12 +320,6 @@ function BlockInspector({ section, update, remove, duplicate }) {
   );
   return (
     <div className="grid gap-4 p-5">
-      <div className="pb-1.5">
-        <span className="text-micro font-bold tracking-widest text-product-text-secondary uppercase">
-          Block
-        </span>
-        <h3 className="mt-1 text-item">{names[section.type]}</h3>
-      </div>
       {section.type === "navigation" && (
         <>
           {field("brand", "Brand")}
@@ -445,13 +450,100 @@ function BlockInspector({ section, update, remove, duplicate }) {
           <LinkItems section={section} update={update} />
         </>
       )}
-      <div className="flex gap-2 pt-2">
-        <Button variant="outline" type="button" onClick={duplicate}>
-          Duplicate
-        </Button>
-        <Button variant="ghost" type="button" onClick={remove}>
-          Remove
-        </Button>
+    </div>
+  );
+}
+
+function SortableBlockRow({ section, selected, disabled, onSelect, onDuplicate, onRemove }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: section.id,
+    disabled,
+  });
+  return (
+    <div
+      className={cn(
+        "sortable-block-row group relative flex items-center gap-1 rounded-lg data-[selected=true]:bg-product-bg-inset",
+        isDragging && "z-10 bg-product-bg-surface opacity-80 shadow-md",
+      )}
+      data-selected={selected}
+      ref={setNodeRef}
+      style={{
+        "--sortable-transform": CSS.Transform.toString(transform),
+        "--sortable-transition": transition,
+      }}
+    >
+      <button
+        {...attributes}
+        {...listeners}
+        aria-label={`Drag ${names[section.type]} block`}
+        className="flex size-11 shrink-0 cursor-grab touch-none items-center justify-center rounded-md border-0 bg-transparent text-product-text-muted active:cursor-grabbing"
+        type="button"
+      >
+        <HugeiconsIcon icon={DragDropIcon} size={15} aria-hidden="true" />
+      </button>
+      <span className="flex size-7 shrink-0 items-center justify-center rounded-md text-product-text-muted group-data-[selected=true]:bg-product-bg-surface group-data-[selected=true]:text-product-text-primary">
+        <HugeiconsIcon icon={blockIcons[section.type]} size={15} aria-hidden="true" />
+      </span>
+      <button
+        aria-pressed={selected}
+        className="flex min-h-11 min-w-0 flex-1 cursor-pointer items-center border-0 bg-transparent px-1 py-2 text-left text-caption text-product-text-primary"
+        type="button"
+        onClick={onSelect}
+      >
+        <span className="truncate">{names[section.type]}</span>
+      </button>
+      <div className="hidden items-center pr-1 group-focus-within:flex group-hover:flex group-data-[selected=true]:flex [@media(hover:none)]:flex">
+        <button
+          aria-label="Duplicate"
+          className="flex size-7 cursor-pointer items-center justify-center border-0 bg-transparent text-product-text-secondary"
+          onClick={onDuplicate}
+        >
+          <HugeiconsIcon icon={Copy01Icon} size={14} aria-hidden="true" />
+        </button>
+        <button
+          aria-label="Remove"
+          className="flex size-7 cursor-pointer items-center justify-center border-0 bg-transparent text-product-text-secondary"
+          onClick={onRemove}
+        >
+          <HugeiconsIcon icon={Delete02Icon} size={14} aria-hidden="true" />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function TemplatePreview({ template }) {
+  const hero = template.snapshot.sections.find((section) => section.type === "hero");
+  const visibleBlocks = template.snapshot.sections.filter((section) => section.visible).slice(0, 4);
+  return (
+    <div
+      aria-hidden="true"
+      className="border-product-border flex aspect-video flex-col overflow-hidden rounded-lg border bg-(--template-bg) p-3 text-(--template-text)"
+      style={{
+        "--template-accent": template.snapshot.brand.accentColor,
+        "--template-bg": template.snapshot.brand.pageBackground,
+        "--template-text": template.snapshot.brand.textColor,
+      }}
+    >
+      <div className="flex items-center justify-between">
+        <span className="h-1.5 w-9 rounded-full bg-(--template-text) opacity-80" />
+        <span className="h-1.5 w-5 rounded-full bg-(--template-accent)" />
+      </div>
+      <div className="flex flex-1 flex-col justify-center gap-1.5 py-2">
+        <span className="max-w-32 truncate text-micro leading-none font-bold">
+          {hero?.heading || template.name}
+        </span>
+        <span className="h-1 w-20 rounded-full bg-(--template-text) opacity-25" />
+        <span className="h-1 w-14 rounded-full bg-(--template-text) opacity-15" />
+        <span className="mt-1 h-2.5 w-16 rounded-sm bg-(--template-accent)" />
+      </div>
+      <div className="flex gap-1">
+        {visibleBlocks.map((section) => (
+          <span
+            className="h-1 flex-1 rounded-full bg-(--template-text) opacity-15"
+            key={section.id}
+          />
+        ))}
       </div>
     </div>
   );
@@ -468,6 +560,10 @@ export function SnapshotPageBuilder({
   publicationOrigin,
 }) {
   const router = useRouter();
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
   const [snapshot, setSnapshot] = useState(waitList.templateSnapshot);
   const [version, setVersion] = useState(waitList.templateRevision);
   const [replacement, setReplacement] = useState(waitList.snapshotReplacement);
@@ -678,7 +774,10 @@ export function SnapshotPageBuilder({
       return;
     }
     const block = createSection(type);
-    applySnapshot({ ...snapshot, sections: [...snapshot.sections, block] });
+    const sections = [...snapshot.sections];
+    const selectedIndex = sections.findIndex((section) => section.id === selectedId);
+    sections.splice(selectedIndex < 0 ? sections.length : selectedIndex + 1, 0, block);
+    applySnapshot({ ...snapshot, sections });
     setSelectedId(block.id);
     setPanel("blocks");
     setAnnouncement(`${names[type]} block added.`);
@@ -716,6 +815,15 @@ export function SnapshotPageBuilder({
     setAnnouncement(
       `${names[sections[target].type]} block moved ${direction < 0 ? "up" : "down"}.`,
     );
+  };
+  const finishBlockDrag = ({ active, over }) => {
+    if (!over || active.id === over.id) return;
+    const from = snapshot.sections.findIndex((section) => section.id === active.id);
+    const to = snapshot.sections.findIndex((section) => section.id === over.id);
+    if (from < 0 || to < 0) return;
+    const sections = arrayMove(snapshot.sections, from, to);
+    if (applySnapshot({ ...snapshot, sections }))
+      setAnnouncement(`${names[sections[to].type]} block moved to position ${to + 1}.`);
   };
   const renderBlockToolbar = (section) => {
     const index = snapshot.sections.findIndex((item) => item.id === section.id);
@@ -871,21 +979,32 @@ export function SnapshotPageBuilder({
     }
   };
   const applyTemplate = (templateId) => {
+    const template = snapshotTemplate(templateId);
     const next = {
-      ...snapshotTemplate(templateId),
+      ...template,
+      brand: {
+        ...template.brand,
+        logo: snapshot.brand.logo,
+        showPoweredBy: snapshot.brand.showPoweredBy,
+      },
       form: snapshot.form,
       statusPage: snapshot.statusPage,
       seo: snapshot.seo,
     };
     if (applySnapshot(next)) setSelectedId(next.sections[0].id);
   };
-  // A template replaces the blocks and the brand kit, so an edited page asks
-  // first. The previous page stays in the undo history either way.
-  const starter = snapshotTemplate(snapshot.templateId);
-  const hasCustomContent = !equal(
-    { sections: snapshot.sections, brand: snapshot.brand },
-    { sections: starter.sections, brand: starter.brand },
-  );
+  const applyTemplateStyle = (templateId) => {
+    const template = templates.find((item) => item.id === templateId);
+    if (!template) return;
+    const brand = {
+      ...clone(template.snapshot.brand),
+      logo: snapshot.brand.logo,
+      showPoweredBy: snapshot.brand.showPoweredBy,
+    };
+    if (applySnapshot({ ...snapshot, brand })) {
+      setAnnouncement(`${template.name} style applied. Page content was preserved.`);
+    }
+  };
   const unchangedStarterCopy = findUnchangedStarterCopy(snapshot);
   const hasUpdates =
     waitList.status !== "PUBLISHED" || waitList.publishedTemplateRevision !== version;
@@ -930,9 +1049,9 @@ export function SnapshotPageBuilder({
           className="flex min-w-0 flex-1 gap-5.5 overflow-x-auto max-[760px]:basis-full"
         >
           {[
-            ["page", "Page"],
-            ["form", "Form"],
-            ["status", "Status"],
+            ["page", "Hosted page"],
+            ["form", "Signup form"],
+            ["status", "After signup"],
             ["publish", "Publish & share"],
           ].map(([id, label]) => (
             <button
@@ -1096,7 +1215,10 @@ export function SnapshotPageBuilder({
             ))}
           </div>
           <aside
-            className="w-library shrink-0 overflow-auto border-r border-product-border-subtle bg-product-bg-surface max-[1180px]:w-55 max-[680px]:w-full max-[680px]:border-r-0 max-[680px]:border-b max-[680px]:border-product-border-subtle max-[680px]:data-[mobile-mode=preview]:hidden max-[680px]:data-[mobile-panel=properties]:hidden"
+            className={cn(
+              "w-library shrink-0 overflow-auto border-r border-product-border-subtle bg-product-bg-surface max-[1180px]:w-55 max-[680px]:w-full max-[680px]:border-r-0 max-[680px]:border-b max-[680px]:border-product-border-subtle max-[680px]:data-[mobile-mode=preview]:hidden max-[680px]:data-[mobile-panel=properties]:hidden",
+              panel === "templates" && "no-scrollbar",
+            )}
             data-mobile-mode={mobileMode}
             data-mobile-panel={mobileEditorPanel}
           >
@@ -1118,46 +1240,32 @@ export function SnapshotPageBuilder({
             {panel === "blocks" && (
               <>
                 <div className="px-2.5 pt-1 pb-4">
-                  {snapshot.sections.map((section, index) => (
-                    <div
-                      className="group flex items-center gap-1 rounded-lg data-[selected=true]:bg-product-bg-inset [&>button]:min-w-0 [&>button]:flex-1 [&>button]:cursor-pointer [&>button]:items-center [&>button]:justify-between [&>button]:gap-2 [&>button]:border-0 [&>button]:bg-transparent [&>button]:px-2.5 [&>button]:py-3 [&>button]:text-left [&>button]:text-caption [&>button]:text-product-text-primary [&>div]:hidden [&>div]:pr-1 focus-within:[&>div]:flex hover:[&>div]:flex data-[selected=true]:[&>div]:flex [&>div>button]:size-7 [&>div>button]:cursor-pointer [&>div>button]:border-0 [&>div>button]:bg-transparent [&>div>button]:text-product-text-secondary [&>div>button:disabled]:opacity-25 [&>small]:text-micro [&>small]:text-product-text-muted [@media(hover:none)]:[&>div]:flex"
-                      data-selected={selectedId === section.id}
-                      key={section.id}
+                  <DndContext
+                    collisionDetection={closestCenter}
+                    sensors={sensors}
+                    onDragEnd={finishBlockDrag}
+                  >
+                    <SortableContext
+                      items={snapshot.sections.map((section) => section.id)}
+                      strategy={verticalListSortingStrategy}
                     >
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setSelectedId(section.id);
-                          setRightPanel("properties");
-                          setMobileEditorPanel("properties");
-                        }}
-                      >
-                        <span>{names[section.type]}</span>
-                      </button>
-                      <div>
-                        <button
-                          aria-label="Move up"
-                          disabled={index === 0}
-                          onClick={() => moveBlock(index, -1)}
-                        >
-                          <HugeiconsIcon icon={ArrowUp01Icon} size={14} aria-hidden="true" />
-                        </button>
-                        <button
-                          aria-label="Move down"
-                          disabled={index === snapshot.sections.length - 1}
-                          onClick={() => moveBlock(index, 1)}
-                        >
-                          <HugeiconsIcon icon={ArrowDown01Icon} size={14} aria-hidden="true" />
-                        </button>
-                        <button aria-label="Duplicate" onClick={() => duplicateBlock(section.id)}>
-                          <HugeiconsIcon icon={Copy01Icon} size={14} aria-hidden="true" />
-                        </button>
-                        <button aria-label="Remove" onClick={() => removeBlock(section.id)}>
-                          <HugeiconsIcon icon={Delete02Icon} size={14} aria-hidden="true" />
-                        </button>
-                      </div>
-                    </div>
-                  ))}
+                      {snapshot.sections.map((section) => (
+                        <SortableBlockRow
+                          disabled={!!conflict || !!replacement}
+                          key={section.id}
+                          section={section}
+                          selected={selectedId === section.id}
+                          onDuplicate={() => duplicateBlock(section.id)}
+                          onRemove={() => removeBlock(section.id)}
+                          onSelect={() => {
+                            setSelectedId(section.id);
+                            setRightPanel("properties");
+                            setMobileEditorPanel("properties");
+                          }}
+                        />
+                      ))}
+                    </SortableContext>
+                  </DndContext>
                 </div>
                 <div className="border-t border-product-border-subtle px-4 pt-3.5 pb-6">
                   <Button type="button" className="w-full" onClick={() => setAddOpen(true)}>
@@ -1166,73 +1274,98 @@ export function SnapshotPageBuilder({
                   </Button>
                 </div>
                 <Dialog open={addOpen} onOpenChange={setAddOpen}>
-                  <DialogContent className="max-h-screen overflow-auto">
+                  <DialogContent className="max-h-screen sm:max-w-3xl">
                     <DialogTitle>Add a block</DialogTitle>
                     <DialogDescription>
-                      New blocks land at the bottom of your page.
+                      New blocks are inserted after your current selection.
                     </DialogDescription>
-                    {Object.entries(blockGroups).map(([category, blocks]) => (
-                      <div className="grid gap-1.5" key={category}>
-                        <p className="text-micro font-bold tracking-widest text-product-text-secondary uppercase">
-                          {category}
-                        </p>
-                        <div className="grid gap-1.5 sm:grid-cols-2">
-                          {blocks.map((block) => (
-                            <button
-                              key={block.type}
-                              type="button"
-                              className="flex cursor-pointer items-start gap-2.5 rounded-lg border border-product-border-subtle bg-product-bg-surface p-2.5 text-left transition-colors hover:border-product-accent-solid"
-                              onClick={() => {
-                                addBlock(block.type);
-                                setAddOpen(false);
-                              }}
-                            >
-                              <HugeiconsIcon
-                                aria-hidden="true"
-                                className="mt-0.5 shrink-0 text-product-text-secondary"
-                                icon={blockIcons[block.type]}
-                                size={16}
-                              />
-                              <span className="grid gap-0.5">
-                                <span className="text-caption font-semibold text-product-text-primary">
-                                  {block.label}
+                    <div className="no-scrollbar grid gap-5 overflow-y-auto">
+                      {Object.entries(blockGroups).map(([category, blocks]) => (
+                        <div className="grid gap-1.5" key={category}>
+                          <p className="text-micro font-bold tracking-widest text-product-text-secondary uppercase">
+                            {category}
+                          </p>
+                          <div className="grid gap-1.5 sm:grid-cols-2">
+                            {blocks.map((block) => (
+                              <button
+                                key={block.type}
+                                type="button"
+                                className="flex cursor-pointer items-start gap-2.5 rounded-lg border border-product-border-subtle bg-product-bg-surface p-2.5 text-left transition-colors hover:border-product-accent-solid"
+                                onClick={() => {
+                                  addBlock(block.type);
+                                  setAddOpen(false);
+                                }}
+                              >
+                                <HugeiconsIcon
+                                  aria-hidden="true"
+                                  className="mt-0.5 shrink-0 text-product-text-secondary"
+                                  icon={blockIcons[block.type]}
+                                  size={16}
+                                />
+                                <span className="grid gap-0.5">
+                                  <span className="text-caption font-semibold text-product-text-primary">
+                                    {block.label}
+                                  </span>
+                                  <span className="text-micro leading-relaxed text-product-text-secondary">
+                                    {block.description}
+                                  </span>
                                 </span>
-                                <span className="text-micro leading-relaxed text-product-text-secondary">
-                                  {block.description}
-                                </span>
-                              </span>
-                            </button>
-                          ))}
+                              </button>
+                            ))}
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </DialogContent>
                 </Dialog>
               </>
             )}
             {panel === "templates" && (
-              <div className="grid px-4 pt-1 pb-6 [&_button]:grid [&_button]:cursor-pointer [&_button]:gap-1 [&_button]:border-0 [&_button]:border-b [&_button]:border-product-border-subtle [&_button]:bg-transparent [&_button]:py-3.5 [&_button]:text-left [&_button]:text-product-text-primary [&_span]:text-caption [&_span]:leading-relaxed [&_span]:text-product-text-secondary [&_strong]:text-caption">
+              <div className="grid gap-3 px-3 pt-1 pb-6">
+                <p className="px-1 text-micro leading-relaxed text-product-text-secondary">
+                  Use style keeps your blocks, signup form, after-signup states, SEO, logo, and
+                  powered-by preference. Replace page changes its blocks, copy, and visual style.
+                </p>
                 {templates.map((template) => (
-                  <button
-                    type="button"
+                  <div
+                    className="shadow-panel grid gap-2 rounded-xl border border-product-border-subtle bg-product-bg-surface p-2"
                     key={template.id}
-                    data-active={snapshot.templateId === template.id}
-                    onClick={() => {
-                      if (hasCustomContent && template.id !== snapshot.templateId)
-                        setPendingTemplate(template);
-                      else applyTemplate(template.id);
-                    }}
                   >
-                    <strong>
-                      {template.name}
-                      {snapshot.templateId === template.id && (
-                        <span className="ml-2 text-micro font-semibold tracking-widest text-product-success-text uppercase">
-                          Current
-                        </span>
-                      )}
-                    </strong>
-                    <span>{template.description}</span>
-                  </button>
+                    <TemplatePreview template={template} />
+                    <div className="grid gap-0.5 px-0.5">
+                      <strong className="text-caption text-product-text-primary">
+                        {template.name}
+                        {snapshot.templateId === template.id && (
+                          <span className="ml-2 text-micro font-semibold tracking-widest text-product-success-text uppercase">
+                            Current structure
+                          </span>
+                        )}
+                      </strong>
+                      <span className="text-micro leading-relaxed text-product-text-secondary">
+                        {template.description}
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-1.5">
+                      <Button
+                        className="h-8"
+                        size="sm"
+                        type="button"
+                        variant="outline"
+                        onClick={() => applyTemplateStyle(template.id)}
+                      >
+                        Use style
+                      </Button>
+                      <Button
+                        className="h-8"
+                        size="sm"
+                        type="button"
+                        variant="ghost"
+                        onClick={() => setPendingTemplate(template)}
+                      >
+                        Replace page
+                      </Button>
+                    </div>
+                  </div>
                 ))}
               </div>
             )}
@@ -1319,12 +1452,7 @@ export function SnapshotPageBuilder({
               ))}
             </div>
             {rightPanel === "properties" ? (
-              <BlockInspector
-                section={selected}
-                update={updateSection}
-                remove={removeBlock}
-                duplicate={duplicateBlock}
-              />
+              <BlockInspector section={selected} update={updateSection} />
             ) : (
               <DesignPanel brand={snapshot.brand} update={(value) => updateRoot("brand", value)} />
             )}
@@ -1339,7 +1467,7 @@ export function SnapshotPageBuilder({
           description="The same form is used wherever it appears on your page or embed."
         >
           <div className={"mx-auto w-full max-w-2xl p-15"}>
-            <WaitlistSignupPreview form={snapshot.form} />
+            <WaitlistSignupPreview brand={snapshot.brand} form={snapshot.form} />
           </div>
         </SurfaceLayout>
       )}
@@ -1416,7 +1544,7 @@ export function SnapshotPageBuilder({
           <DialogTitle>Replace the blocks on this page?</DialogTitle>
           <DialogDescription>
             {pendingTemplate
-              ? `${pendingTemplate.name} brings its own blocks and colours. Your current page is kept in the undo history, so you can go back to it.`
+              ? `${pendingTemplate.name} replaces your blocks, copy, and visual style. Signup settings, after-signup states, SEO, logo, and powered-by preference stay intact. Your current page is kept in undo history.`
               : ""}
           </DialogDescription>
           <div className="flex items-center justify-end gap-2">
@@ -1429,7 +1557,7 @@ export function SnapshotPageBuilder({
                 setPendingTemplate(null);
               }}
             >
-              Use this template
+              Replace page
             </Button>
           </div>
         </DialogContent>
@@ -1512,13 +1640,6 @@ function SurfaceLayout({ sidebar, title, description, children, mobileMode }) {
         className="w-78 shrink-0 overflow-auto border-r border-product-border-subtle bg-product-bg-surface max-[900px]:w-70 max-[680px]:w-full max-[680px]:border-r-0 max-[680px]:data-[mobile-mode=preview]:hidden"
         data-mobile-mode={mobileMode}
       >
-        <p
-          className={
-            "block text-micro font-bold tracking-widest text-product-text-secondary uppercase"
-          }
-        >
-          Settings
-        </p>
         {sidebar}
       </aside>
       <main
@@ -1559,17 +1680,15 @@ function DesignPanel({ brand, update }) {
           onCheckedChange={(checked) => update({ showPoweredBy: checked })}
         />
       </div>
-      <SelectField
+      <FontPicker
         label="Heading font"
         value={brand.headingFont}
-        options={fonts}
-        onChange={(headingFont) => update({ headingFont })}
+        onValueChange={(headingFont) => update({ headingFont })}
       />
-      <SelectField
+      <FontPicker
         label="Body font"
         value={brand.bodyFont}
-        options={fonts}
-        onChange={(bodyFont) => update({ bodyFont })}
+        onValueChange={(bodyFont) => update({ bodyFont })}
       />
       <div className="grid gap-1.5">
         <span className="text-sm font-medium">Corners</span>
@@ -1612,8 +1731,12 @@ function DesignPanel({ brand, update }) {
             <span>{label}</span>
             <ColorPicker
               aria-label={`${label} color`}
+              className="w-32"
+              format="hex"
               value={brand[key]}
-              onChange={(value) => update({ [key]: value })}
+              onValueChange={(value) => {
+                if (value) update({ [key]: value });
+              }}
             />
           </label>
         ))}

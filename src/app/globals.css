@@ -37,6 +37,11 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
+.sortable-block-row {
+  transform: var(--sortable-transform);
+  transition: var(--sortable-transition);
+}
+
 @layer base {
   :root {
     --product-neutral-50: hsl(210 5% 98%);
@@ -206,9 +211,9 @@
     --radius-product-panel: var(--product-radius-panel);
     --radius-product-dialog: var(--product-radius-dialog);
     /* Waitlyze brand, used by the "Powered by Waitlyze" badge on public pages. */
-    --color-waitlyze-mark: #c75338;
-    --color-waitlyze-ink: #302e29;
-    --color-waitlyze-muted: hsl(40 5% 45%);
+    --color-waitlyze-mark: #c6fe1e;
+    --color-waitlyze-ink: #00160d;
+    --color-waitlyze-muted: #5d6b60;
     /* Public page brand tokens, set per page from the published snapshot. */
     --color-wl-page: var(--wl-page);
     --color-wl-surface: var(--wl-surface);

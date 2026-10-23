@@ -26,3 +26,12 @@ test("rejects excessive blocks and edits that remove the last visible signup for
   }));
   assert.equal(templateSnapshotSchema.safeParse(snapshot).success, false);
 });
+
+test("accepts persisted Google Font family names", () => {
+  const snapshot = snapshotTemplate("simple");
+  snapshot.brand.headingFont = "DM Sans";
+  snapshot.brand.bodyFont = "Source Serif 4";
+  const parsed = templateSnapshotSchema.parse(snapshot);
+  assert.equal(parsed.brand.headingFont, "DM Sans");
+  assert.equal(parsed.brand.bodyFont, "Source Serif 4");
+});

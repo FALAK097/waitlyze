@@ -1,15 +1,9 @@
 import Image from "next/image";
 
+import { fontFamilyValue, googleFontsStylesheet } from "@/lib/google-fonts.mjs";
 import { SITE_URL } from "@/lib/site-metadata";
 import { cn } from "@/lib/utils";
 
-const font = {
-  hanken: "var(--wl-body)",
-  manrope: "var(--wl-display)",
-  bricolage: "var(--wl-bricolage)",
-  figtree: "var(--wl-figtree)",
-  archivo: "var(--wl-archivo)",
-};
 const radius = { sharp: "0px", soft: "10px", round: "18px", pill: "999px" };
 function Heading({ level = 2, children, className, ...props }) {
   const Tag = `h${level}`;
@@ -38,6 +32,10 @@ export function WaitlistPageContent({
   const mobile = previewViewport === "mobile";
   const hasVisibleNavigation = visible.some((section) => section.type === "navigation");
   const brandLogo = snapshot.brand.logo || null;
+  const fontStylesheet = googleFontsStylesheet([
+    snapshot.brand.headingFont,
+    snapshot.brand.bodyFont,
+  ]);
   const renderForm = (section) =>
     renderSignupForm?.(section, snapshot) ?? <WaitlistSignupPreview form={snapshot.form} />;
   return (
@@ -59,10 +57,13 @@ export function WaitlistPageContent({
         "--wl-input-border": snapshot.brand.inputBorder,
         "--wl-input-text": snapshot.brand.inputTextColor,
         "--wl-radius": radius[snapshot.brand.radius],
-        "--wl-heading-font": font[snapshot.brand.headingFont],
-        "--wl-body-font": font[snapshot.brand.bodyFont],
+        "--wl-heading-font": fontFamilyValue(snapshot.brand.headingFont),
+        "--wl-body-font": fontFamilyValue(snapshot.brand.bodyFont),
       }}
     >
+      {fontStylesheet ? (
+        <link href={fontStylesheet} rel="stylesheet" precedence="waitlyze-fonts" />
+      ) : null}
       <div className="mx-auto w-full max-w-7xl">
         {visible.map((section) => {
           const block = (() => {
@@ -443,14 +444,34 @@ export function WaitlistPageContent({
   );
 }
 
-export function WaitlistSignupPreview({ form }) {
+export function WaitlistSignupPreview({ form, brand }) {
+  const fontStylesheet = brand ? googleFontsStylesheet([brand.headingFont, brand.bodyFont]) : null;
   return (
     <div
-      className={cn("w-full text-wl-text", form.layout === "stacked" && "flex-col gap-2")}
+      className={cn("w-full text-wl-text", brand && "rounded-wl bg-wl-page p-8 font-wl-body")}
       aria-label="Signup form preview"
+      style={
+        brand
+          ? {
+              "--wl-page": brand.pageBackground,
+              "--wl-text": brand.textColor,
+              "--wl-muted": brand.mutedColor,
+              "--wl-button": brand.buttonColor,
+              "--wl-button-text": brand.buttonTextColor,
+              "--wl-input": brand.inputBackground,
+              "--wl-input-border": brand.inputBorder,
+              "--wl-radius": radius[brand.radius],
+              "--wl-heading-font": fontFamilyValue(brand.headingFont),
+              "--wl-body-font": fontFamilyValue(brand.bodyFont),
+            }
+          : undefined
+      }
     >
+      {fontStylesheet ? (
+        <link href={fontStylesheet} rel="stylesheet" precedence="waitlyze-fonts" />
+      ) : null}
       <span className="mb-2 block text-caption font-bold">{form.label}</span>
-      <div className="flex gap-2 max-sm:flex-col">
+      <div className={cn("flex gap-2 max-sm:flex-col", form.layout === "stacked" && "flex-col")}>
         <span className="flex h-12 flex-1 items-center rounded-wl border border-wl-input-border bg-wl-input px-4 text-wl-muted">
           {form.placeholder}
         </span>
@@ -472,6 +493,10 @@ export function StatusPagePreview({ snapshot, state = "confirmed" }) {
   const status = snapshot.statusPage;
   const pending = state === "pending";
   const returning = state === "returning";
+  const fontStylesheet = googleFontsStylesheet([
+    snapshot.brand.headingFont,
+    snapshot.brand.bodyFont,
+  ]);
   return (
     <div
       className="grid min-h-full items-center justify-items-center bg-wl-page px-6 py-20 text-center font-wl-body text-wl-text"
@@ -483,10 +508,13 @@ export function StatusPagePreview({ snapshot, state = "confirmed" }) {
         "--wl-button": snapshot.brand.buttonColor,
         "--wl-button-text": snapshot.brand.buttonTextColor,
         "--wl-radius": radius[snapshot.brand.radius],
-        "--wl-heading-font": font[snapshot.brand.headingFont],
-        "--wl-body-font": font[snapshot.brand.bodyFont],
+        "--wl-heading-font": fontFamilyValue(snapshot.brand.headingFont),
+        "--wl-body-font": fontFamilyValue(snapshot.brand.bodyFont),
       }}
     >
+      {fontStylesheet ? (
+        <link href={fontStylesheet} rel="stylesheet" precedence="waitlyze-fonts" />
+      ) : null}
       <p className="m-0 grid size-12 place-items-center rounded-full bg-wl-button text-wl-button-text">
         <svg
           viewBox="0 0 24 24"
