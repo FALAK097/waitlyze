@@ -50,6 +50,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { assessPublishReadiness } from "@/lib/campaigns/publish-readiness.mjs";
@@ -1540,8 +1541,24 @@ function SurfaceLayout({ sidebar, title, description, children, mobileMode }) {
   );
 }
 function DesignPanel({ brand, update }) {
+  const poweredById = useId();
   return (
     <div className={"grid gap-4 p-4"}>
+      <ImageUploadField
+        label="Logo"
+        hint="Shown instead of your brand name in the page header."
+        value={brand.logo ?? ""}
+        onChange={(logo) => update({ logo })}
+        previewClassName="aspect-16/9 object-contain bg-product-bg-inset"
+      />
+      <div className="flex items-center justify-between gap-3">
+        <Label htmlFor={poweredById}>Powered by Waitlyze</Label>
+        <Switch
+          checked={brand.showPoweredBy !== false}
+          id={poweredById}
+          onCheckedChange={(checked) => update({ showPoweredBy: checked })}
+        />
+      </div>
       <SelectField
         label="Heading font"
         value={brand.headingFont}

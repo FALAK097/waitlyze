@@ -1,5 +1,6 @@
 import Image from "next/image";
 
+import { SITE_URL } from "@/lib/site-metadata";
 import { cn } from "@/lib/utils";
 
 const font = {
@@ -35,12 +36,14 @@ export function WaitlistPageContent({
     (section) => section.type === "form" || (section.type === "hero" && section.showForm),
   );
   const mobile = previewViewport === "mobile";
+  const hasVisibleNavigation = visible.some((section) => section.type === "navigation");
+  const brandLogo = snapshot.brand.logo || null;
   const renderForm = (section) =>
     renderSignupForm?.(section, snapshot) ?? <WaitlistSignupPreview form={snapshot.form} />;
   return (
     <div
       className={cn(
-        "min-h-screen overflow-x-clip bg-wl-page px-6 font-wl-body text-wl-text",
+        "relative min-h-screen overflow-x-clip bg-wl-page px-6 font-wl-body text-wl-text",
         mobile && "min-h-203 px-4",
       )}
       data-preview-viewport={previewViewport}
@@ -75,7 +78,18 @@ export function WaitlistPageContent({
                   aria-label="Waitlist navigation"
                 >
                   <a href="#top" className="font-wl-heading font-bold text-wl-text no-underline">
-                    {section.brand || name}
+                    {brandLogo ? (
+                      <Image
+                        alt={section.brand || name}
+                        className="block h-8 w-auto max-w-44 object-contain"
+                        height={64}
+                        src={brandLogo}
+                        unoptimized
+                        width={256}
+                      />
+                    ) : (
+                      section.brand || name
+                    )}
                   </a>
                   <div className="flex max-w-full flex-wrap items-center justify-end gap-x-5 gap-y-3 max-sm:w-full max-sm:justify-start">
                     {section.links.map((link) => (
@@ -109,6 +123,16 @@ export function WaitlistPageContent({
                   key={section.id}
                 >
                   <div className="max-w-4xl">
+                    {!hasVisibleNavigation && brandLogo && (
+                      <Image
+                        alt={name}
+                        className="mx-auto mb-8 block h-14 w-auto max-w-64 object-contain"
+                        height={96}
+                        src={brandLogo}
+                        unoptimized
+                        width={384}
+                      />
+                    )}
                     {section.eyebrow && (
                       <p className="mb-6 text-xs font-bold tracking-widest text-wl-muted uppercase">
                         {section.eyebrow}
@@ -392,6 +416,29 @@ export function WaitlistPageContent({
           );
         })}
       </div>
+      {snapshot.brand.showPoweredBy !== false && (
+        <a
+          className="absolute right-5 bottom-5 z-10 inline-flex items-center gap-2 rounded-full border border-black/10 bg-white px-4 py-2 text-sm no-underline shadow-md"
+          href={SITE_URL}
+          target="_blank"
+          rel="noreferrer"
+        >
+          <svg
+            aria-hidden="true"
+            className="size-5 text-waitlyze-mark"
+            fill="none"
+            viewBox="0 0 64 64"
+          >
+            <g fill="currentColor" transform="skewX(-10) translate(6 0)">
+              <rect x="17" y="30" width="8" height="20" rx="3" />
+              <rect x="29" y="14" width="8" height="36" rx="3" />
+              <rect x="41" y="23" width="8" height="27" rx="3" />
+            </g>
+          </svg>
+          <span className="text-waitlyze-muted">Powered by</span>
+          <strong className="text-waitlyze-ink">Waitlyze</strong>
+        </a>
+      )}
     </div>
   );
 }

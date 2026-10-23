@@ -205,6 +205,10 @@
     --radius-product-control: var(--product-radius-control);
     --radius-product-panel: var(--product-radius-panel);
     --radius-product-dialog: var(--product-radius-dialog);
+    /* Waitlyze brand, used by the "Powered by Waitlyze" badge on public pages. */
+    --color-waitlyze-mark: #c75338;
+    --color-waitlyze-ink: #302e29;
+    --color-waitlyze-muted: hsl(40 5% 45%);
     /* Public page brand tokens, set per page from the published snapshot. */
     --color-wl-page: var(--wl-page);
     --color-wl-surface: var(--wl-surface);

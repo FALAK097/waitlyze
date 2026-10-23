@@ -7,6 +7,7 @@ import { useId, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { cn } from "@/lib/utils";
 
 async function uploadImage(file) {
   const formData = new FormData();
@@ -22,7 +23,13 @@ async function uploadImage(file) {
  * Image picker for the builder: upload a file, or paste a URL. Shows the
  * upload and failure states the founder needs to trust the result.
  */
-export function ImageUploadField({ label, value, onChange, hint = "" }) {
+export function ImageUploadField({
+  label,
+  value,
+  onChange,
+  hint = "",
+  previewClassName = "aspect-1200/630 object-cover",
+}) {
   const id = useId();
   const inputRef = useRef(null);
   const [uploading, setUploading] = useState(false);
@@ -75,14 +82,17 @@ export function ImageUploadField({ label, value, onChange, hint = "" }) {
         <div className="relative mt-1">
           <img
             alt=""
-            className="aspect-1200/630 w-full rounded-lg border border-product-border-subtle object-cover"
+            className={cn(
+              "w-full rounded-lg border border-product-border-subtle",
+              previewClassName,
+            )}
             src={value}
           />
           <Button
             type="button"
             variant="outline"
             size="icon-sm"
-            aria-label="Remove share image"
+            aria-label={`Remove ${label.toLowerCase()}`}
             title="Remove image"
             className="absolute top-2 right-2"
             onClick={() => onChange("")}

@@ -155,6 +155,8 @@ const brandSchema = z.strictObject({
   inputBorder: hex,
   inputTextColor: hex,
   radius: z.enum(RADIUS_IDS),
+  logo: z.string().max(500).default(""),
+  showPoweredBy: z.boolean().default(true),
 });
 const statusPageSchema = z.strictObject({
   heading: text(120),
