@@ -8,7 +8,6 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 const labels = {
@@ -175,25 +174,20 @@ export function CustomDomainSettings({ waitListId, canManage, available }) {
           }}
         >
           {available ? (
-            <>
-              <div className="product-field">
-                <Label htmlFor="domain-name-input">Domain name</Label>
-                <div className="product-domain-connect-row">
-                  <Input
-                    id="domain-name-input"
-                    autoComplete="url"
-                    value={hostname}
-                    onChange={(event) => setHostname(event.target.value)}
-                    placeholder="launch.example.com"
-                    required
-                    disabled={!canManage || busy}
-                  />
-                  <Button type="submit" disabled={!actionsEnabled || !hostname.trim()}>
-                    {busy ? "Connecting…" : "Connect domain"}
-                  </Button>
-                </div>
-              </div>
-            </>
+            <div className="product-domain-connect-row">
+              <Input
+                aria-label="Domain name"
+                autoComplete="url"
+                value={hostname}
+                onChange={(event) => setHostname(event.target.value)}
+                placeholder="launch.example.com"
+                required
+                disabled={!canManage || busy}
+              />
+              <Button type="submit" disabled={!actionsEnabled || !hostname.trim()}>
+                {busy ? "Connecting…" : "Connect domain"}
+              </Button>
+            </div>
           ) : (
             <p className="product-help">
               Custom domains are unavailable. Ask your administrator to finish domain setup.
