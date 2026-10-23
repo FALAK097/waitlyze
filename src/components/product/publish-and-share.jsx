@@ -109,36 +109,56 @@ function CopyButton({ value, label }) {
 
 function ReadinessList({ items, tone, onFix }) {
   if (!items.length) return null;
+  const isBlocker = tone === "blocker";
+  const cardClass = isBlocker
+    ? "flex flex-wrap items-start justify-between gap-4 rounded-lg bg-product-danger-bg px-3 py-2.5 text-product-danger-text transition hover:brightness-95"
+    : "flex flex-wrap items-start justify-between gap-4 rounded-lg bg-product-bg-inset px-3 py-2.5 transition hover:bg-product-border-subtle";
   return (
     <ul className="mt-3 grid list-none gap-2 p-0">
-      {items.map((item) => (
-        <li
-          key={item.id}
-          className={
-            tone === "blocker"
-              ? "flex flex-wrap items-start justify-between gap-4 rounded-lg bg-product-danger-bg px-3 py-2.5 text-product-danger-text"
-              : "flex flex-wrap items-start justify-between gap-4 rounded-lg bg-product-bg-inset px-3 py-2.5"
-          }
-        >
-          <div className="grid min-w-0 gap-1">
-            <strong className="text-sm font-semibold">{item.title}</strong>
-            <span
-              className={
-                tone === "blocker"
-                  ? "text-xs leading-relaxed text-inherit opacity-80"
-                  : "text-xs leading-relaxed text-product-text-secondary"
-              }
-            >
-              {item.detail}
+      {items.map((item) => {
+        const body = (
+          <>
+            <span className="grid min-w-0 gap-1 text-left">
+              <strong className="text-sm font-semibold">{item.title}</strong>
+              <span
+                className={
+                  isBlocker
+                    ? "text-xs leading-relaxed text-inherit opacity-80"
+                    : "text-xs leading-relaxed text-product-text-secondary"
+                }
+              >
+                {item.detail}
+              </span>
             </span>
-          </div>
-          {item.fix && onFix && (
-            <Button type="button" variant="ghost" size="sm" onClick={() => onFix(item.fix)}>
-              {item.fix.label}
-            </Button>
-          )}
-        </li>
-      ))}
+            {item.fix && onFix ? (
+              <span className="-my-1 -mr-1.5 self-center rounded-md px-2 py-1 text-xs font-medium group-hover:underline">
+                {item.fix.label}
+              </span>
+            ) : null}
+          </>
+        );
+        if (item.fix && onFix) {
+          return (
+            <li key={item.id}>
+              <button
+                type="button"
+                onClick={() => onFix(item.fix)}
+                className={cn(
+                  cardClass,
+                  "group w-full cursor-pointer text-left outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-product-focus",
+                )}
+              >
+                {body}
+              </button>
+            </li>
+          );
+        }
+        return (
+          <li key={item.id} className={cardClass}>
+            {body}
+          </li>
+        );
+      })}
     </ul>
   );
 }

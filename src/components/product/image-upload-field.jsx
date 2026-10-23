@@ -72,7 +72,7 @@ export function ImageUploadField({ label, value, onChange, hint = "" }) {
       {value ? (
         <img
           alt=""
-          className="mt-1 h-20 w-full rounded-lg border border-product-border-subtle object-cover"
+          className="mt-1 aspect-1200/630 w-full rounded-lg border border-product-border-subtle object-cover"
           src={value}
         />
       ) : null}
