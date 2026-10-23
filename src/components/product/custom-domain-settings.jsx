@@ -1,11 +1,14 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { Copy01Icon, Tick02Icon } from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 const labels = {
   NEEDS_DNS: "Ownership check pending",
@@ -14,12 +17,55 @@ const labels = {
   NEEDS_ATTENTION: "Needs attention",
 };
 
+function RecordCopyButton({ text, label }) {
+  const [copied, setCopied] = useState(false);
+  const timer = useRef(null);
+
+  useEffect(() => () => clearTimeout(timer.current), []);
+
+  return (
+    <TooltipProvider delay={100}>
+      <Tooltip>
+        <TooltipTrigger
+          render={
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-xs"
+              aria-label={`Copy DNS record ${label}`}
+              onClick={async () => {
+                try {
+                  await navigator.clipboard.writeText(text);
+                  toast.success("Copied to clipboard");
+                  setCopied(true);
+                  clearTimeout(timer.current);
+                  timer.current = setTimeout(() => setCopied(false), 1600);
+                } catch {
+                  toast.error("Copy is unavailable. Select the text and copy it manually.");
+                }
+              }}
+            >
+              <HugeiconsIcon
+                icon={copied ? Tick02Icon : Copy01Icon}
+                className="h-3.5 w-3.5"
+                aria-hidden="true"
+              />
+            </Button>
+          }
+        />
+        <TooltipContent side="top">{copied ? "Copied" : `Copy ${label}`}</TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
+}
+
 export function CustomDomainSettings({ waitListId, canManage, available }) {
   const [domain, setDomain] = useState(null);
   const [hostname, setHostname] = useState("");
   const [busy, setBusy] = useState(false);
   const [loadState, setLoadState] = useState("loading");
   const [loadError, setLoadError] = useState("");
+  const [removeOpen, setRemoveOpen] = useState(false);
 
   const refresh = useCallback(
     async (signal) => {
@@ -131,26 +177,20 @@ export function CustomDomainSettings({ waitListId, canManage, available }) {
           className="grid max-w-140 gap-4 [&_input]:min-h-11 [&_input]:rounded-lg [&_input]:border [&_input]:border-product-border-control [&_input]:bg-product-bg-surface [&_input]:px-3 [&_input]:py-2.25 [&_input]:text-sm"
         >
           {available ? (
-            <>
-              <div className="product-field text-sm">
-                <Label>
-                  <span>Domain name</span>
-                  <Input
-                    autoComplete="url"
-                    value={hostname}
-                    onChange={(event) => setHostname(event.target.value)}
-                    placeholder="launch.example.com"
-                    required
-                    disabled={!canManage || busy}
-                  />
-                </Label>
-              </div>
-              <div className="justify-self-start">
-                <Button type="submit" disabled={!actionsEnabled || !hostname.trim()}>
-                  {busy ? "Connecting…" : "Connect domain"}
-                </Button>
-              </div>
-            </>
+            <div className="flex flex-wrap items-stretch gap-2 [&_input]:min-w-55 [&_input]:flex-1">
+              <Input
+                aria-label="Domain name"
+                autoComplete="url"
+                value={hostname}
+                onChange={(event) => setHostname(event.target.value)}
+                placeholder="launch.example.com"
+                required
+                disabled={!canManage || busy}
+              />
+              <Button type="submit" disabled={!actionsEnabled || !hostname.trim()}>
+                {busy ? "Connecting…" : "Connect domain"}
+              </Button>
+            </div>
           ) : (
             <p className="mb-4! text-sm leading-relaxed text-product-text-secondary">
               Custom domains are unavailable. Ask your administrator to finish domain setup.
@@ -187,20 +227,22 @@ export function CustomDomainSettings({ waitListId, canManage, available }) {
                   type="button"
                   variant="ghost"
                   disabled={!actionsEnabled}
-                  onClick={() => {
-                    if (
-                      window.confirm(
-                        `Remove ${domain.hostname}? This disconnects the domain from your waitlist.`,
-                      )
-                    )
-                      call("DELETE");
-                  }}
+                  onClick={() => setRemoveOpen(true)}
                 >
                   Remove domain
                 </Button>
               </div>
             )}
           </header>
+          <ConfirmDialog
+            open={removeOpen}
+            onOpenChange={setRemoveOpen}
+            title={`Remove ${domain.hostname}?`}
+            description="This disconnects the domain from your waitlist. Subscribers keep using this waitlist's own URL."
+            confirmLabel="Remove domain"
+            pendingLabel="Removing…"
+            onConfirm={() => call("DELETE")}
+          />
           {domain.status !== "ACTIVE" && (
             <>
               <p className="mb-4! text-sm leading-relaxed text-product-text-secondary">
@@ -214,12 +256,16 @@ export function CustomDomainSettings({ waitListId, canManage, available }) {
                 >
                   <div className="flex gap-3">
                     <dt className="w-18 shrink-0 text-caption text-product-text-secondary">Type</dt>
-                    <dd className="m-0 min-w-0 flex-1 text-sm wrap-anywhere">{record.type}</dd>
+                    <dd className="m-0 min-w-0 flex-1 text-sm wrap-anywhere">
+                      <code>{record.type}</code>
+                      <RecordCopyButton text={record.type} label="type" />
+                    </dd>
                   </div>
                   <div className="flex gap-3">
                     <dt className="w-18 shrink-0 text-caption text-product-text-secondary">Name</dt>
                     <dd className="m-0 min-w-0 flex-1 text-sm wrap-anywhere">
                       <code>{record.domain || record.name}</code>
+                      <RecordCopyButton text={record.domain || record.name} label="name" />
                     </dd>
                   </div>
                   <div className="flex gap-3">
@@ -228,6 +274,7 @@ export function CustomDomainSettings({ waitListId, canManage, available }) {
                     </dt>
                     <dd className="m-0 min-w-0 flex-1 text-sm wrap-anywhere">
                       <code>{record.value}</code>
+                      <RecordCopyButton text={record.value} label="value" />
                     </dd>
                   </div>
                 </dl>

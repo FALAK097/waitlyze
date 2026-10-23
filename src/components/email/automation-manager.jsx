@@ -13,19 +13,9 @@ import {
   NumberFieldInput,
 } from "@/components/reui/number-field";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 import { EmailCanvas } from "./email-canvas";
-
-const statusBadge =
-  "inline-flex min-h-6 items-center rounded-full border border-product-border-subtle px-2 py-0.5 text-xs font-semibold whitespace-nowrap text-product-text-secondary";
-const statusBadgeTone = {
-  enabled: "border-product-success-text/34 text-product-success-text",
-  sent: "border-product-success-text/34 text-product-success-text",
-  failed: "border-product-danger-text/34 text-product-danger-text",
-  canceled: "bg-product-bg-inset",
-  skipped: "bg-product-bg-inset",
-};
 
 const scope = "min-w-0 bg-white text-product-text-primary";
 const notice =
@@ -252,28 +242,39 @@ export function AutomationManager({ waitListId, initialRecipes, deliveryReady })
                     <p className={paneMeta}>{timing}</p>
                   </div>
                   <div className={paneActions}>
-                    <span
-                      className={cn(
-                        statusBadge,
-                        statusBadgeTone[String(recipe.status).toLowerCase()],
-                      )}
-                    >
-                      {statusLabel(recipe.status)}
-                    </span>
-                    <Button
-                      type="button"
-                      variant={enabled ? "outline" : "default"}
-                      onClick={() => changeStatus(recipe)}
-                      disabled={busyId === recipe.id || (!enabled && (!deliveryReady || dirty))}
-                    >
-                      {busyId === recipe.id
-                        ? "Saving…"
-                        : enabled
-                          ? "Pause"
-                          : dirty
-                            ? "Save first"
-                            : "Enable"}
-                    </Button>
+                    <TooltipProvider delay={100}>
+                      <Tooltip>
+                        <TooltipTrigger
+                          render={
+                            <Button
+                              type="button"
+                              variant={enabled ? "outline" : "default"}
+                              onClick={() => changeStatus(recipe)}
+                              disabled={
+                                busyId === recipe.id || (!enabled && (!deliveryReady || dirty))
+                              }
+                            >
+                              {busyId === recipe.id
+                                ? "Saving…"
+                                : enabled
+                                  ? "Pause"
+                                  : dirty
+                                    ? "Save first"
+                                    : "Enable"}
+                            </Button>
+                          }
+                        />
+                        <TooltipContent side="bottom">
+                          {enabled
+                            ? "Sends automatically. Pause to stop until you resume it."
+                            : deliveryReady
+                              ? dirty
+                                ? "Save your changes first, then enable."
+                                : "Sends this email automatically to eligible subscribers."
+                              : "Set up email delivery first to enable this email."}
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
                   </div>
                 </header>
 

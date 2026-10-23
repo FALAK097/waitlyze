@@ -14,20 +14,9 @@ import {
 } from "@/app/actions/emails";
 import { Button } from "@/components/ui/button";
 import { formatProductDate } from "@/lib/product-date.mjs";
-import { cn } from "@/lib/utils";
 
 import { EmailCanvas } from "./email-canvas";
 import { EmailToolsNav } from "./email-tools-nav";
-
-const statusBadge =
-  "inline-flex min-h-6 items-center rounded-full border border-product-border-subtle px-2 py-0.5 text-xs font-semibold whitespace-nowrap text-product-text-secondary";
-const statusBadgeTone = {
-  enabled: "border-product-success-text/34 text-product-success-text",
-  sent: "border-product-success-text/34 text-product-success-text",
-  failed: "border-product-danger-text/34 text-product-danger-text",
-  canceled: "bg-product-bg-inset",
-  skipped: "bg-product-bg-inset",
-};
 
 const scope = "min-w-0 bg-white text-product-text-primary";
 const toolbar = "mb-6 flex justify-end gap-2.5";
@@ -338,16 +327,6 @@ export function BroadcastManager({ waitListId, initialBroadcasts, initialPreview
                 ) : null}
               </div>
               <div className={paneActions}>
-                {!editable && (
-                  <span
-                    className={cn(
-                      statusBadge,
-                      statusBadgeTone[String(selected.status).toLowerCase()],
-                    )}
-                  >
-                    {statusLabel(selected.status)}
-                  </span>
-                )}
                 {editable && (
                   <Button type="submit" variant="default" disabled={busy}>
                     {busyAction === "save" ? "Saving…" : "Save draft"}
