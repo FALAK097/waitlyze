@@ -303,7 +303,7 @@ function LinkItems({ section, update }) {
     </div>
   );
 }
-function BlockInspector({ section, update }) {
+function BlockInspector({ section, update, form, updateForm }) {
   if (!section)
     return (
       <div className={"px-5 py-8 text-caption leading-relaxed text-product-text-secondary"}>
@@ -450,6 +450,19 @@ function BlockInspector({ section, update }) {
           <LinkItems section={section} update={update} />
         </>
       )}
+      {(section.type === "form" || (section.type === "hero" && section.showForm)) && (
+        <div className="grid gap-4 border-t border-product-border-subtle pt-4">
+          <div className="grid gap-1">
+            <p className="text-micro font-bold tracking-widest text-product-text-secondary uppercase">
+              Signup form
+            </p>
+            <p className="text-micro leading-relaxed text-product-text-secondary">
+              The same form is used wherever it appears on your page or embed.
+            </p>
+          </div>
+          <FormPanel form={form} update={updateForm} />
+        </div>
+      )}
     </div>
   );
 }
@@ -569,7 +582,7 @@ export function SnapshotPageBuilder({
   const [replacement, setReplacement] = useState(waitList.snapshotReplacement);
   const [surface, setSurface] = useQueryState(
     "tab",
-    parseAsStringLiteral(["page", "form", "status", "publish"]).withDefault("page"),
+    parseAsStringLiteral(["page", "status", "publish"]).withDefault("page"),
   );
   const [panel, setPanel] = useState("blocks");
   const [rightPanel, setRightPanel] = useState("properties");
@@ -1050,7 +1063,6 @@ export function SnapshotPageBuilder({
         >
           {[
             ["page", "Hosted page"],
-            ["form", "Signup form"],
             ["status", "After signup"],
             ["publish", "Publish & share"],
           ].map(([id, label]) => (
@@ -1452,24 +1464,17 @@ export function SnapshotPageBuilder({
               ))}
             </div>
             {rightPanel === "properties" ? (
-              <BlockInspector section={selected} update={updateSection} />
+              <BlockInspector
+                section={selected}
+                update={updateSection}
+                form={snapshot.form}
+                updateForm={(value) => updateRoot("form", value)}
+              />
             ) : (
               <DesignPanel brand={snapshot.brand} update={(value) => updateRoot("brand", value)} />
             )}
           </aside>
         </div>
-      )}
-      {surface === "form" && (
-        <SurfaceLayout
-          mobileMode={mobileMode}
-          sidebar={<FormPanel form={snapshot.form} update={(value) => updateRoot("form", value)} />}
-          title="Signup form"
-          description="The same form is used wherever it appears on your page or embed."
-        >
-          <div className={"mx-auto w-full max-w-2xl p-15"}>
-            <WaitlistSignupPreview brand={snapshot.brand} form={snapshot.form} />
-          </div>
-        </SurfaceLayout>
       )}
       {surface === "status" && (
         <SurfaceLayout
@@ -1811,7 +1816,7 @@ function SelectField({ label, value, options, onChange }) {
 }
 function FormPanel({ form, update }) {
   return (
-    <div className={"grid gap-4 p-4"}>
+    <div className={"grid gap-4"}>
       <Field label="Field label" value={form.label} onChange={(label) => update({ label })} />
       <Field
         label="Placeholder"
