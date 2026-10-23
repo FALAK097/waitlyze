@@ -65,7 +65,7 @@ const waitlistCellLink =
   "inline-flex min-h-11 items-center whitespace-nowrap py-3 text-sm text-product-text-primary";
 
 const waitlistEmpty = [
-  "mx-auto grid w-full max-w-2xl justify-items-center rounded-xl border border-product-border-subtle bg-product-bg-surface px-5 py-16 text-center",
+  "mx-auto grid w-full max-w-2xl justify-items-center border-0 bg-transparent px-5 py-16 text-center",
   "[&_p]:max-w-100 [&_p]:text-balance [&_p]:text-sm [&_p]:text-product-text-secondary",
 ].join(" ");
 const WAITLIST_DATE_FORMAT = new Intl.DateTimeFormat(undefined, { dateStyle: "medium" });
