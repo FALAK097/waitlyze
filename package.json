@@ -12,7 +12,7 @@
     "format": "oxfmt",
     "format:check": "oxfmt --check",
     "check": "pnpm lint && pnpm format:check",
-    "test": "node --test src/lib/**/*.test.mjs",
+    "test": "node --test src/lib/*.test.mjs src/lib/**/*.test.mjs",
     "tegami": "node scripts/tegami.mts",
     "agentation": "agentation-mcp server",
     "vercel-build": "prisma generate && prisma migrate deploy && next build",

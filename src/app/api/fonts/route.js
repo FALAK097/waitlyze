@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 
 import { auth } from "@/lib/auth";
 import { env } from "@/lib/env.mjs";
+import { FALLBACK_FONTS } from "@/lib/google-fonts.mjs";
 
 const GOOGLE_FONTS_URL = "https://www.googleapis.com/webfonts/v1/webfonts";
 
@@ -10,7 +11,7 @@ export async function GET() {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   if (!env.GOOGLE_FONTS_API_KEY)
-    return NextResponse.json({ error: "Google Fonts is not configured." }, { status: 503 });
+    return NextResponse.json({ fonts: FALLBACK_FONTS, fallback: true });
 
   try {
     const response = await fetch(

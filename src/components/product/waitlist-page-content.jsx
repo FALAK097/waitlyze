@@ -142,7 +142,9 @@ export function WaitlistPageContent({
                   <section
                     className={cn(
                       sectionClass,
-                      "grid items-center gap-12 py-20 md:grid-cols-2 md:gap-16",
+                      mobile
+                        ? "grid grid-cols-1 items-center gap-12 py-20"
+                        : "grid items-center gap-12 py-20 md:grid-cols-2 md:gap-16",
                     )}
                     id="top"
                     key={section.id}
@@ -161,7 +163,9 @@ export function WaitlistPageContent({
                 <section
                   className={cn(
                     sectionClass,
-                    "grid min-h-190 items-center justify-items-center py-20 text-center max-sm:min-h-0 max-sm:py-16",
+                    mobile
+                      ? "grid min-h-0 items-center justify-items-center px-4 py-16 text-center"
+                      : "grid min-h-190 items-center justify-items-center py-20 text-center max-sm:min-h-0 max-sm:py-16",
                   )}
                   id="top"
                   key={section.id}
@@ -214,7 +218,31 @@ export function WaitlistPageContent({
                 </section>
               );
             if (section.type === "features" || section.type === "steps") {
-              if (section.variant === "list" || section.variant === "timeline")
+              if (section.variant === "timeline")
+                return (
+                  <section className={cn(sectionClass, "py-20")} key={section.id}>
+                    <Heading className="mb-12 max-w-ch16 text-4xl leading-none md:text-5xl lg:text-6xl">
+                      {section.heading}
+                    </Heading>
+                    <div className="relative grid gap-10">
+                      <div
+                        aria-hidden="true"
+                        className="absolute top-2 bottom-2 left-1 w-px bg-wl-text/20"
+                      />
+                      {section.items.map((item) => (
+                        <article className="relative pl-10" key={`${item.title}-${item.body}`}>
+                          <span
+                            aria-hidden="true"
+                            className="absolute top-1.5 left-0 size-2.5 rounded-full bg-wl-accent"
+                          />
+                          <h3 className="m-0 text-xl">{item.title}</h3>
+                          <p className="mt-2 mb-0 text-wl-muted">{item.body}</p>
+                        </article>
+                      ))}
+                    </div>
+                  </section>
+                );
+              if (section.variant === "list")
                 return (
                   <section className={cn(sectionClass, "py-20")} key={section.id}>
                     <Heading className="mb-12 max-w-ch16 text-4xl leading-none md:text-5xl lg:text-6xl">
@@ -223,7 +251,10 @@ export function WaitlistPageContent({
                     <div className="grid gap-px bg-wl-text/15">
                       {section.items.map((item, index) => (
                         <article
-                          className="flex flex-col gap-2 bg-wl-page py-7 md:flex-row md:items-baseline md:gap-10"
+                          className={cn(
+                            "flex flex-col gap-2 bg-wl-page py-7",
+                            !mobile && "md:flex-row md:items-baseline md:gap-10",
+                          )}
                           key={`${item.title}-${item.body}`}
                         >
                           <span className="shrink-0 font-wl-heading text-sm font-bold text-wl-muted tabular-nums md:w-16">
@@ -242,7 +273,9 @@ export function WaitlistPageContent({
                     {section.heading}
                   </Heading>
                   <div
-                    className={cn("grid gap-6 md:grid-cols-3 md:gap-12", mobile && "grid-cols-1")}
+                    className={
+                      mobile ? "grid grid-cols-1 gap-6" : "grid gap-6 md:grid-cols-3 md:gap-12"
+                    }
                   >
                     {section.items.map((item, index) => (
                       <article
@@ -265,7 +298,7 @@ export function WaitlistPageContent({
             if (section.type === "stats")
               return (
                 <section className={cn(sectionClass, "py-16")} key={section.id}>
-                  <div className="grid gap-px bg-wl-text/15 md:grid-cols-3">
+                  <div className={cn("grid gap-px bg-wl-text/15", !mobile && "md:grid-cols-3")}>
                     {section.items.map((item) => (
                       <div
                         className="grid gap-2 bg-wl-page p-9 text-center"
@@ -305,7 +338,9 @@ export function WaitlistPageContent({
                     {section.heading}
                   </Heading>
                   <div
-                    className={cn("grid gap-6 md:grid-cols-3 md:gap-12", mobile && "grid-cols-1")}
+                    className={
+                      mobile ? "grid grid-cols-1 gap-6" : "grid gap-6 md:grid-cols-3 md:gap-12"
+                    }
                   >
                     {section.items.map((item) => (
                       <figure
@@ -410,7 +445,9 @@ export function WaitlistPageContent({
                 <section
                   className={cn(
                     sectionClass,
-                    "flex flex-col items-center gap-10 py-20 md:flex-row md:gap-16",
+                    mobile
+                      ? "flex flex-col items-center gap-10 py-20"
+                      : "flex flex-col items-center gap-10 py-20 md:flex-row md:gap-16",
                   )}
                   key={section.id}
                 >
@@ -459,7 +496,9 @@ export function WaitlistPageContent({
                 <section
                   className={cn(
                     sectionClass,
-                    "flex flex-col items-start gap-9 py-20 md:flex-row md:gap-16",
+                    mobile
+                      ? "flex flex-col items-start gap-9 py-20"
+                      : "flex flex-col items-start gap-9 py-20 md:flex-row md:gap-16",
                   )}
                   id={section.id === firstForm?.id ? "signup" : undefined}
                   key={section.id}
@@ -494,7 +533,12 @@ export function WaitlistPageContent({
                   <Heading className="mb-12 max-w-ch16 text-4xl leading-none md:text-5xl lg:text-6xl">
                     {section.heading}
                   </Heading>
-                  <ol className="m-0 grid list-none gap-px bg-wl-text/15 p-0 md:grid-cols-3">
+                  <ol
+                    className={cn(
+                      "m-0 grid list-none gap-px bg-wl-text/15 p-0",
+                      !mobile && "md:grid-cols-3",
+                    )}
+                  >
                     {section.items.map((item) => (
                       <li className="bg-wl-page p-7" key={item.referrals}>
                         <strong className="block font-wl-heading text-3xl">{item.referrals}</strong>
@@ -512,7 +556,9 @@ export function WaitlistPageContent({
                 <section
                   className={cn(
                     sectionClass,
-                    "flex flex-col items-start justify-between gap-10 border-t border-wl-text/15 py-20 md:flex-row md:gap-10",
+                    mobile
+                      ? "flex flex-col items-start justify-between gap-10 border-t border-wl-text/15 py-20"
+                      : "flex flex-col items-start justify-between gap-10 border-t border-wl-text/15 py-20 md:flex-row md:gap-10",
                   )}
                   key={section.id}
                 >
@@ -535,7 +581,9 @@ export function WaitlistPageContent({
                 <footer
                   className={cn(
                     sectionClass,
-                    "flex min-h-28 flex-col items-start justify-center gap-6 border-t border-wl-text/15 text-sm md:flex-row md:items-center",
+                    mobile
+                      ? "flex min-h-28 flex-col items-start justify-center gap-6 border-t border-wl-text/15 text-sm"
+                      : "flex min-h-28 flex-col items-start justify-center gap-6 border-t border-wl-text/15 text-sm md:flex-row md:items-center",
                   )}
                   key={section.id}
                 >

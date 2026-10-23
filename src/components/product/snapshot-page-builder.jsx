@@ -613,12 +613,18 @@ export function SnapshotPageBuilder({
     conflictRef = useRef(null),
     inFlightRef = useRef(false),
     saveAgainRef = useRef(false);
+  const canvasRef = useRef(null);
+  const scrollRestoreRef = useRef(null);
   const key = `waitlyze:page:${waitList.id}`;
   useLayoutEffect(() => {
     snapshotRef.current = snapshot;
     versionRef.current = version;
     dirtyRef.current = dirty;
     conflictRef.current = conflict;
+    if (scrollRestoreRef.current != null && canvasRef.current) {
+      canvasRef.current.scrollTop = scrollRestoreRef.current;
+      scrollRestoreRef.current = null;
+    }
   }, [snapshot, version, dirty, conflict]);
   const applySnapshot = useCallback(
     (next) => {
@@ -993,6 +999,7 @@ export function SnapshotPageBuilder({
   };
   const applyTemplate = (templateId) => {
     const template = snapshotTemplate(templateId);
+    scrollRestoreRef.current = canvasRef.current?.scrollTop ?? null;
     const next = {
       ...template,
       brand: {
@@ -1009,6 +1016,7 @@ export function SnapshotPageBuilder({
   const applyTemplateStyle = (templateId) => {
     const template = templates.find((item) => item.id === templateId);
     if (!template) return;
+    scrollRestoreRef.current = canvasRef.current?.scrollTop ?? null;
     const brand = {
       ...clone(template.snapshot.brand),
       logo: snapshot.brand.logo,
@@ -1425,6 +1433,7 @@ export function SnapshotPageBuilder({
             <div
               className="max-w-canvas w-full canvas-zoom overflow-auto rounded-xl bg-white shadow-canvas data-[viewport=mobile]:mx-auto data-[viewport=mobile]:w-mobile-canvas data-[viewport=mobile]:max-w-full"
               data-viewport={previewViewport}
+              ref={canvasRef}
               style={{ "--canvas-zoom": previewViewport === "mobile" ? 0.85 : 0.72 }}
             >
               <WaitlistPageContent

@@ -38,6 +38,10 @@ export const draftInputSchema = z.strictObject({
       "event",
       "commerce",
       "developer",
+      "podcast",
+      "restaurant",
+      "fitness",
+      "nonprofit",
       "blank",
     ])
     .default("simple"),

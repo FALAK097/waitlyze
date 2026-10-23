@@ -38,10 +38,10 @@ test("accepts persisted Google Font family names", () => {
 
 test("templates look different from each other", () => {
   const templates = listTemplates();
-  assert.ok(templates.length >= 10);
+  assert.ok(templates.length >= 14);
 
   const accents = new Set(templates.map(({ snapshot }) => snapshot.brand.accentColor));
-  assert.ok(accents.size >= 8, `expected distinct accents, got ${accents.size}`);
+  assert.ok(accents.size >= 12, `expected distinct accents, got ${accents.size}`);
 
   const heroVariants = new Set(
     templates.flatMap(({ snapshot }) =>

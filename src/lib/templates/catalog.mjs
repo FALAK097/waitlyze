@@ -189,6 +189,10 @@ const v2SnapshotSchema = z
       "event",
       "commerce",
       "developer",
+      "podcast",
+      "restaurant",
+      "fitness",
+      "nonprofit",
       "blank",
     ]),
     templateVersion: z.number().int().positive(),
@@ -975,6 +979,362 @@ const definitions = [
       form("developer", 5, {
         heading: "Request access",
         body: "Invite-only while we harden the edges. Tell us your stack.",
+      }),
+    ],
+  },
+  {
+    id: "podcast",
+    name: "Podcast launch",
+    description: "A trailer-led page that turns listeners into subscribers.",
+    category: "Audience",
+    brand: {
+      headingFont: "Sora",
+      bodyFont: "Inter",
+      pageBackground: "#0e0e12",
+      surfaceColor: "#1a1a21",
+      textColor: "#f4f2f7",
+      mutedColor: "#a7a3b8",
+      accentColor: "#ff3b30",
+      buttonColor: "#ff3b30",
+      buttonTextColor: "#ffffff",
+      inputBackground: "#1a1a21",
+      inputBorder: "#3a3a46",
+      inputTextColor: "#f4f2f7",
+      radius: "round",
+    },
+    form: { buttonText: "Notify me", layout: "inline" },
+    sections: [
+      hero(
+        "podcast",
+        "Conversations worth queuing for.",
+        "Long, unhurried interviews with the people building the future. New episodes every Tuesday.",
+        {
+          eyebrow: "A NEW SHOW · EPISODE ZERO SOON",
+          variant: "centered",
+        },
+      ),
+      makeSection(
+        "podcast",
+        "media",
+        1,
+        {
+          heading: "Hear the trailer",
+          body: "Ninety seconds that explain why this show exists. Plug in.",
+          imageUrl: "",
+          imageAlt: "",
+        },
+        "wide",
+      ),
+      benefits(
+        "podcast",
+        "Every episode",
+        [
+          {
+            title: "One guest",
+            body: "Founders, researchers and misfits with something real to say.",
+          },
+          {
+            title: "One idea",
+            body: "A single question, followed until it breaks open.",
+          },
+          {
+            title: "One takeaway",
+            body: "What to try, read or steal before next Tuesday.",
+          },
+        ],
+        "list",
+      ),
+      makeSection(
+        "podcast",
+        "testimonials",
+        2,
+        {
+          heading: "Early listeners",
+          items: [
+            {
+              quote: "I finished the trailer and immediately sent it to three people.",
+              name: "Sam Okafor",
+              role: "Beta listener",
+            },
+            {
+              quote: "The rare interview show that lets answers breathe.",
+              name: "Elena Petrova",
+              role: "Beta listener",
+            },
+          ],
+        },
+        "editorial",
+      ),
+      makeSection("podcast", "signupCount", 3, {
+        prefix: "Join",
+        suffix: "listeners already queued",
+      }),
+      form("podcast", 4, {
+        heading: "Get episode zero",
+        body: "First episode lands in your inbox Tuesday. No spam, unsubscribe anytime.",
+      }),
+    ],
+  },
+  {
+    id: "restaurant",
+    name: "Restaurant opening",
+    description: "A seasonal opening page with tastings, seats and a list.",
+    category: "Local",
+    brand: {
+      headingFont: "DM Serif Display",
+      bodyFont: "hanken",
+      pageBackground: "#eef2e4",
+      surfaceColor: "#f8faf2",
+      textColor: "#1d2b1f",
+      mutedColor: "#66785f",
+      accentColor: "#b3541e",
+      buttonColor: "#1d2b1f",
+      buttonTextColor: "#f8faf2",
+      inputBackground: "#f8faf2",
+      inputBorder: "#cfd6bf",
+      inputTextColor: "#1d2b1f",
+      radius: "soft",
+    },
+    form: { buttonText: "Save my table", layout: "inline" },
+    sections: [
+      hero(
+        "restaurant",
+        "Fire, seasonality, and twelve seats.",
+        "A wood-fired neighborhood kitchen. Five courses, one seating, no substitutions and no regrets.",
+        {
+          eyebrow: "OPENING THIS FALL · MAPLE STREET",
+          variant: "centered",
+        },
+      ),
+      makeSection(
+        "restaurant",
+        "media",
+        1,
+        {
+          heading: "The room",
+          body: "Twelve seats around an open hearth. Dinner, up close.",
+          imageUrl: "",
+          imageAlt: "",
+        },
+        "browser",
+      ),
+      benefits(
+        "restaurant",
+        "The idea",
+        [
+          {
+            title: "Wood-fired",
+            body: "Everything touches oak fire before it touches the plate.",
+          },
+          {
+            title: "Eleven farms",
+            body: "The menu is whatever arrived that morning.",
+          },
+          {
+            title: "Natural wine",
+            body: "Low-intervention bottles, poured generously.",
+          },
+        ],
+        "list",
+      ),
+      makeSection("restaurant", "stats", 2, {
+        items: [
+          { value: "12", label: "seats a night" },
+          { value: "5", label: "courses, no choices" },
+          { value: "11", label: "farm partners" },
+        ],
+      }),
+      makeSection("restaurant", "testimonials", 3, {
+        heading: "From the tastings",
+        items: [
+          {
+            quote: "The best meal I've had outside San Sebastián.",
+            name: "Marta Vidal",
+            role: "Tasting guest",
+          },
+          {
+            quote: "We booked the opening month twice.",
+            name: "James Park",
+            role: "Tasting guest",
+          },
+        ],
+      }),
+      makeSection("restaurant", "signupCount", 4, {
+        prefix: "Join",
+        suffix: "neighbors on the list",
+      }),
+      form("restaurant", 5, {
+        heading: "Save my table",
+        body: "First seatings go to the list. One email when reservations open.",
+      }),
+    ],
+  },
+  {
+    id: "fitness",
+    name: "Fitness program",
+    description: "A high-energy cohort page with proof and a start date.",
+    category: "Consumer",
+    brand: {
+      headingFont: "Anton",
+      bodyFont: "Inter",
+      pageBackground: "#ffffff",
+      surfaceColor: "#f4f4f4",
+      textColor: "#111111",
+      mutedColor: "#616161",
+      accentColor: "#e11d2e",
+      buttonColor: "#111111",
+      buttonTextColor: "#ffffff",
+      inputBackground: "#ffffff",
+      inputBorder: "#d9d9d9",
+      inputTextColor: "#111111",
+      radius: "sharp",
+    },
+    form: { buttonText: "Claim my spot", layout: "inline" },
+    sections: [
+      hero(
+        "fitness",
+        "Stronger in 28 days.",
+        "Twenty minutes a day. No gym, no guesswork. Coaching, food rules and a group that notices.",
+        {
+          eyebrow: "COHORT 8 · 28 DAYS",
+          showForm: true,
+        },
+      ),
+      makeSection("fitness", "stats", 1, {
+        items: [
+          { value: "28", label: "days, start to finish" },
+          { value: "20 min", label: "a day, no gym" },
+          { value: "4.9", label: "average cohort rating" },
+        ],
+      }),
+      benefits("fitness", "Built for busy people", [
+        {
+          title: "Train anywhere",
+          body: "Bodyweight and one dumbbell. Living room approved.",
+        },
+        {
+          title: "Eat without math",
+          body: "Three rules, endless meals. No counting, no apps.",
+        },
+        {
+          title: "Recover on purpose",
+          body: "Sleep and steps tracked gently, never judged.",
+        },
+      ]),
+      makeSection("fitness", "testimonials", 2, {
+        heading: "Cohort 7 results",
+        items: [
+          {
+            quote: "Down 6 kilos and up three pull-ups. The group chat carried me.",
+            name: "Dana Cole",
+            role: "Cohort 7",
+          },
+          {
+            quote: "First program I finished in ten years of trying.",
+            name: "Marcus Reid",
+            role: "Cohort 7",
+          },
+        ],
+      }),
+      makeSection("fitness", "signupCount", 3, {
+        prefix: "Join",
+        suffix: "already in for Monday",
+      }),
+      form("fitness", 4, {
+        heading: "Start Monday",
+        body: "Cohort 8 begins Monday. Tell us where to send the plan.",
+      }),
+    ],
+  },
+  {
+    id: "nonprofit",
+    name: "Nonprofit cause",
+    description: "A community cause page with transparent impact and rewards.",
+    category: "Community",
+    brand: {
+      headingFont: "DM Serif Display",
+      bodyFont: "Inter",
+      pageBackground: "#e7f0f4",
+      surfaceColor: "#ffffff",
+      textColor: "#0d2733",
+      mutedColor: "#5b7a8a",
+      accentColor: "#0e7c8a",
+      buttonColor: "#0d2733",
+      buttonTextColor: "#ffffff",
+      inputBackground: "#ffffff",
+      inputBorder: "#c3d5de",
+      inputTextColor: "#0d2733",
+      radius: "soft",
+    },
+    form: { buttonText: "Join the planting", layout: "inline" },
+    sections: [
+      hero(
+        "nonprofit",
+        "One thousand trees for the east side.",
+        "We're planting a pocket forest with the people who live next to it. Funded by neighbors, planted by volunteers.",
+        {
+          eyebrow: "A COMMUNITY PROJECT",
+          variant: "centered",
+        },
+      ),
+      makeSection("nonprofit", "stats", 1, {
+        items: [
+          { value: "1,000", label: "trees to plant" },
+          { value: "42", label: "volunteers signed up" },
+          { value: "6", label: "blocks to green" },
+        ],
+      }),
+      benefits(
+        "nonprofit",
+        "Where the money goes",
+        [
+          {
+            title: "Saplings",
+            body: "Native oaks and maples from two local nurseries.",
+          },
+          {
+            title: "Watering",
+            body: "Two summers of care until roots take hold.",
+          },
+          {
+            title: "Stewardship",
+            body: "A paid local crew keeps the grove thriving.",
+          },
+        ],
+        "list",
+      ),
+      makeSection(
+        "nonprofit",
+        "testimonials",
+        2,
+        {
+          heading: "Neighbors",
+          items: [
+            {
+              quote: "My kids will climb these trees. That's the whole pitch.",
+              name: "Rosa Jimenez",
+              role: "Block captain",
+            },
+            {
+              quote: "Finally, a project that asks us before it starts.",
+              name: "David Chen",
+              role: "Volunteer",
+            },
+          ],
+        },
+        "editorial",
+      ),
+      makeSection("nonprofit", "referralRewards", 3, {
+        heading: "Grow it together",
+        items: [
+          { referrals: 1, reward: "Name a tree" },
+          { referrals: 5, reward: "Join planting day" },
+          { referrals: 20, reward: "Founders' grove plaque" },
+        ],
+      }),
+      form("nonprofit", 4, {
+        heading: "Plant with us",
+        body: "One email a month: planting days, progress photos, and where your tree went.",
       }),
     ],
   },
