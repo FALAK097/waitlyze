@@ -1757,49 +1757,27 @@ function SurfaceLayout({ sidebar, children, mobileMode }) {
     </div>
   );
 }
-function TypeSizeField({ label, value, onChange, customDefault, min = 12, max = 160 }) {
+function TypeSizeField({ label, value, defaultValue, onChange, min = 12, max = 160 }) {
   const id = useId();
-  if (typeof value === "number")
-    return (
-      <div className="grid gap-1.5">
-        <div className="flex items-center justify-between gap-2">
-          <Label htmlFor={id}>{label}</Label>
-          <button
-            type="button"
-            className="cursor-pointer border-0 bg-transparent p-0 text-micro font-semibold text-product-text-secondary underline underline-offset-4 hover:text-product-text-primary"
-            onClick={() => onChange("medium")}
-          >
-            Presets
-          </button>
-        </div>
-        <div className="flex items-center gap-2">
-          <Input
-            id={id}
-            type="number"
-            min={min}
-            max={max}
-            value={value}
-            onChange={(event) => {
-              const next = Number(event.target.value);
-              if (Number.isFinite(next)) onChange(Math.min(max, Math.max(min, Math.round(next))));
-            }}
-          />
-          <span className="text-micro text-product-text-secondary">px</span>
-        </div>
-      </div>
-    );
+  const shown = typeof value === "number" ? value : defaultValue;
   return (
-    <SelectField
-      label={label}
-      value={value}
-      options={[
-        { id: "small", label: "Small" },
-        { id: "medium", label: "Medium" },
-        { id: "large", label: "Large" },
-        { id: "custom", label: "Custom px…" },
-      ]}
-      onChange={(next) => onChange(next === "custom" ? customDefault : next)}
-    />
+    <div className="grid gap-1.5">
+      <Label htmlFor={id}>{label}</Label>
+      <div className="flex items-center gap-2">
+        <Input
+          id={id}
+          type="number"
+          min={min}
+          max={max}
+          value={shown}
+          onChange={(event) => {
+            const next = Number(event.target.value);
+            if (Number.isFinite(next)) onChange(Math.min(max, Math.max(min, Math.round(next))));
+          }}
+        />
+        <span className="text-micro text-product-text-secondary">px</span>
+      </div>
+    </div>
   );
 }
 function DesignPanel({ brand, update }) {
@@ -1834,14 +1812,14 @@ function DesignPanel({ brand, update }) {
       <div className="grid gap-4 sm:grid-cols-2">
         <TypeSizeField
           label="Heading size"
-          value={brand.headingSize || "medium"}
-          customDefault={48}
+          value={brand.headingSize}
+          defaultValue={48}
           onChange={(headingSize) => update({ headingSize })}
         />
         <TypeSizeField
           label="Body size"
-          value={brand.bodySize || "medium"}
-          customDefault={16}
+          value={brand.bodySize}
+          defaultValue={16}
           onChange={(bodySize) => update({ bodySize })}
         />
       </div>

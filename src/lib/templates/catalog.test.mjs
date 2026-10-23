@@ -27,12 +27,17 @@ test("rejects excessive blocks and edits that remove the last visible signup for
   assert.equal(templateSnapshotSchema.safeParse(snapshot).success, false);
 });
 
-test("brand type size accepts presets or pixels", () => {
+test("brand type size accepts pixels and migrates legacy presets", () => {
   const snapshot = snapshotTemplate("simple");
-  assert.equal(snapshot.brand.headingSize, "medium");
-  snapshot.brand.headingSize = 48;
+  assert.equal(snapshot.brand.headingSize, 48);
+  assert.equal(snapshot.brand.bodySize, 16);
+  snapshot.brand.headingSize = 64;
   snapshot.brand.bodySize = 18;
   assert.equal(templateSnapshotSchema.safeParse(snapshot).success, true);
+  snapshot.brand.headingSize = "large";
+  const migrated = templateSnapshotSchema.safeParse(snapshot);
+  assert.equal(migrated.success, true);
+  assert.equal(migrated.data.brand.headingSize, 60);
   snapshot.brand.headingSize = "gigantic";
   assert.equal(templateSnapshotSchema.safeParse(snapshot).success, false);
 });

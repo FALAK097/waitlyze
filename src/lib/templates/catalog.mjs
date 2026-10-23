@@ -135,9 +135,16 @@ export const sectionSchema = z.discriminatedUnion("type", [
 
 export const RADIUS_IDS = ["sharp", "soft", "round", "pill"];
 const fontFamily = z.string().min(1).max(80);
-const typeSize = z
-  .union([z.enum(["small", "medium", "large"]), z.number().min(12).max(160)])
-  .default("medium");
+const headingPx = z.preprocess(
+  (value) =>
+    typeof value === "string" ? ({ small: 40, medium: 48, large: 60 }[value] ?? value) : value,
+  z.number().min(12).max(160).default(48),
+);
+const bodyPx = z.preprocess(
+  (value) =>
+    typeof value === "string" ? ({ small: 14, medium: 16, large: 18 }[value] ?? value) : value,
+  z.number().min(12).max(160).default(16),
+);
 export const templateFormSchema = z.strictObject({
   fields: z.tuple([z.literal("email")]),
   label: text(80),
@@ -164,8 +171,8 @@ const brandSchema = z.strictObject({
   radius: z.enum(RADIUS_IDS),
   logo: z.string().max(500).default(""),
   showPoweredBy: z.boolean().default(true),
-  headingSize: typeSize,
-  bodySize: typeSize,
+  headingSize: headingPx,
+  bodySize: bodyPx,
 });
 const statusPageSchema = z.strictObject({
   heading: text(120),
@@ -252,6 +259,8 @@ const defaultBrand = {
   inputBorder: "#cbd2c7",
   inputTextColor: "#182018",
   radius: "soft",
+  headingSize: 48,
+  bodySize: 16,
 };
 const defaultForm = {
   fields: ["email"],

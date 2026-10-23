@@ -896,7 +896,7 @@ export function StatusPagePreview({ snapshot, state = "confirmed", showReferrals
               <span className="min-w-0 flex-1 text-left text-caption text-ellipsis whitespace-nowrap text-wl-muted">
                 {demoLink.replace(/^https?:\/\//, "")}
               </span>
-              <CopyButton text={demoLink} />
+              <CopyButton text={demoLink} iconOnly />
             </div>
             {status.shareChannels.length > 0 && (
               <ShareButtons
