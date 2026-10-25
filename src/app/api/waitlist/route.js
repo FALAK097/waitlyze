@@ -214,10 +214,17 @@ export async function POST(request) {
     const { device, deviceType } = await getDeviceInfo();
     const ip = getIpAddress(request);
     const geo = getGeoInfo(request);
+    if (body.marketingConsent !== undefined && typeof body.marketingConsent !== "boolean") {
+      return NextResponse.json(
+        { success: false, error: "Marketing consent must be a boolean" },
+        { status: 400 },
+      );
+    }
 
     let signupDataInput = {
       uniqueUserId,
       email: email.trim(),
+      marketingConsent: body.marketingConsent === true,
       device,
       deviceType,
       waitListId: waitlistId,
