@@ -73,6 +73,7 @@ function SignupFormInner({ slug, waitListId, showReferrals, formConfig, statusPa
           : null;
       const verified = data.signUp?.verified === true;
       const returning = data.signUp?.outcome === "returning";
+      const summary = data.signUp ?? {};
       setResult({
         heading: verified ? statusPage.heading : statusPage.pendingHeading,
         body: verified ? statusPage.body : statusPage.pendingBody,
@@ -82,10 +83,21 @@ function SignupFormInner({ slug, waitListId, showReferrals, formConfig, statusPa
           : verified
             ? null
             : `We sent a confirmation link to ${email}.`,
-        position: typeof rank === "number" ? rank : null,
+        position:
+          typeof summary.displayRank === "number"
+            ? summary.displayRank
+            : typeof rank === "number"
+              ? rank
+              : null,
         referralLink,
         referralCode: code ?? null,
         referralCount: data.signUp?.referralCount ?? 0,
+        points: typeof summary.points === "number" ? summary.points : 0,
+        nextReward: summary.nextReward ?? null,
+        hideCounts: summary.hideCounts === true,
+        showPoints: summary.showPoints !== false,
+        showProgress: summary.showProgress !== false,
+        verified,
       });
       setCopied(false);
       form.reset();
@@ -144,13 +156,29 @@ function SignupFormInner({ slug, waitListId, showReferrals, formConfig, statusPa
         </h2>
         {result.notice ? <p className="leading-relaxed text-wl-muted">{result.notice}</p> : null}
         {result.body ? <p className="leading-relaxed text-wl-muted">{result.body}</p> : null}
-        {statusPage.showPosition && result.position != null ? (
+        {statusPage.showPosition && !result.hideCounts && result.position != null ? (
           <p className="flex w-full max-w-md justify-between border-y border-wl-text/15 py-4">
             <span>Your position</span>
             <strong>#{result.position}</strong>
           </p>
         ) : null}
-        {showReferrals && statusPage.showReferralCount ? (
+        {result.verified && !result.hideCounts && result.showPoints ? (
+          <p className="flex w-full max-w-md justify-between border-y border-wl-text/15 py-4">
+            <span>Your points</span>
+            <strong>{result.points}</strong>
+          </p>
+        ) : null}
+        {result.verified &&
+        !result.hideCounts &&
+        result.showProgress &&
+        result.nextReward != null ? (
+          <p className="m-0 w-full max-w-md text-sm leading-relaxed text-wl-muted">
+            {result.nextReward.remaining} more referral
+            {result.nextReward.remaining === 1 ? "" : "s"} to unlock{" "}
+            <strong className="text-wl-text">{result.nextReward.reward}</strong>
+          </p>
+        ) : null}
+        {showReferrals && statusPage.showReferralCount && !result.hideCounts ? (
           <p className="flex w-full max-w-md justify-between border-y border-wl-text/15 py-4">
             <span>Friends joined</span>
             <strong>{result.referralCount}</strong>

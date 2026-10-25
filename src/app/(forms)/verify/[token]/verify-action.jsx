@@ -86,9 +86,24 @@ export function VerifyAction({ token, returnPath, waitlistName }) {
                 Copy link
               </button>
             </div>
-            {referral.position ? (
+            {referral.position && referral.hideCounts !== true ? (
               <p className="mt-3 text-sm text-product-text-secondary">
-                You’re <strong>#{referral.position}</strong> on {brand}.
+                You’re <strong>#{referral.displayPosition ?? referral.position}</strong> on {brand}.
+              </p>
+            ) : null}
+            {typeof referral.points === "number" &&
+            referral.showPoints !== false &&
+            referral.hideCounts !== true ? (
+              <p className="mt-3 text-sm text-product-text-secondary">
+                You’ve earned <strong>{referral.points} points</strong>.
+                {referral.showProgress !== false && referral.nextReward != null ? (
+                  <>
+                    {" "}
+                    {referral.nextReward.remaining} more referral
+                    {referral.nextReward.remaining === 1 ? "" : "s"} to unlock{" "}
+                    <strong>{referral.nextReward.reward}</strong>.
+                  </>
+                ) : null}
               </p>
             ) : null}
           </div>

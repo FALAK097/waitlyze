@@ -4,6 +4,7 @@ import { getCampaignPosition } from "@/lib/campaigns/referral-position.mjs";
 import { DuplicateSignupError, InvalidCampaignError } from "@/lib/campaigns/signups.mjs";
 import { dispatchVerificationNow } from "@/lib/email/dispatch-now.mjs";
 import prisma from "@/lib/prisma";
+import { summarizeSignupRewards } from "@/lib/referrals/rewards.mjs";
 import { consumePublicBudget, PublicRateLimitError } from "@/lib/security/public-rate-limit.mjs";
 import { createSignUp } from "@/services/sign-up";
 import { pickAttribution } from "@/utils/server/attribution.mjs";
@@ -25,6 +26,19 @@ const legacySignupResponse = (signUp, { includeReferralCode = false } = {}) => {
     referralCount: Array.isArray(signUp.referrals) ? signUp.referrals.length : 0,
   };
   if (includeReferralCode) response.referralCode = signUp.referralCode;
+  // Rewards progress rides along for the cockpit ("X more to unlock").
+  // displayRank applies the founder's position inflation; rank stays raw.
+  const summary = signUp.rewardSummary;
+  if (summary && typeof summary === "object") {
+    response.points = summary.points ?? 0;
+    response.displayRank = summary.displayPosition ?? signUp.rank ?? null;
+    response.nextReward = summary.nextReward ?? null;
+    response.unlockedRewards = summary.unlockedRewards ?? [];
+    response.spotsToAdvance = summary.spotsToAdvance ?? 0;
+    response.hideCounts = summary.hideCounts === true;
+    response.showPoints = summary.showPoints !== false;
+    response.showProgress = summary.showProgress !== false;
+  }
   return response;
 };
 
@@ -36,7 +50,7 @@ export const GET = async (req) => {
 
   const signUp = await prisma.signUp.findUnique({
     where: { id: signUpId, waitList: { status: "PUBLISHED" } },
-    select: { id: true, waitListId: true },
+    select: { id: true, waitListId: true, points: true },
   });
 
   if (!signUp) {
@@ -44,8 +58,9 @@ export const GET = async (req) => {
   }
 
   const rank = await getCampaignPosition(prisma, signUp.waitListId, signUp.id);
+  const rewardSummary = await summarizeSignupRewards(prisma, signUp.waitListId, signUp);
   return NextResponse.json(
-    { signUp: { ...signUp, rank } },
+    { signUp: { ...signUp, rank, rewardSummary } },
     { headers: { "Cache-Control": "private, no-store" } },
   );
 };

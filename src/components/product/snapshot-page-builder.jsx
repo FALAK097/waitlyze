@@ -1067,6 +1067,8 @@ export function SnapshotPageBuilder({
       form: snapshot.form,
       statusPage: snapshot.statusPage,
       seo: snapshot.seo,
+      // Template switches restyle the page but must never reset rewards config.
+      rewards: snapshot.rewards ?? template.rewards,
     };
     if (applySnapshot(next)) setSelectedId(next.sections[0].id);
   };
@@ -1497,6 +1499,7 @@ export function SnapshotPageBuilder({
                 snapshot={snapshot}
                 name={waitList.name}
                 previewViewport={previewViewport}
+                hideCounts={snapshot.rewards?.hideCounts === true}
                 renderSignupForm={() => <WaitlistSignupPreview form={snapshot.form} />}
                 interactive
                 selectedBlockId={selectedId}
@@ -1550,7 +1553,9 @@ export function SnapshotPageBuilder({
               status={snapshot.statusPage}
               showReferrals={waitList.showReferrals}
               waitListId={waitList.id}
+              rewards={snapshot.rewards}
               update={(value) => updateRoot("statusPage", value)}
+              updateRewards={(value) => updateRoot("rewards", value)}
             />
           }
         >
@@ -1716,6 +1721,7 @@ export function SnapshotPageBuilder({
               snapshot={snapshot}
               name={waitList.name}
               previewViewport="desktop"
+              hideCounts={snapshot.rewards?.hideCounts === true}
               renderSignupForm={() => <WaitlistSignupPreview form={snapshot.form} />}
             />
           </div>
@@ -1986,7 +1992,27 @@ function FormPanel({ form, update }) {
     </div>
   );
 }
-function StatusPanel({ status, update, showReferrals = true, waitListId }) {
+function StatusPanel({ status, update, showReferrals = true, waitListId, rewards, updateRewards }) {
+  // Drafts saved before rewards existed have no key yet: fall back to the
+  // zero-config defaults (same values the API resolves server-side).
+  const perks = {
+    pointsSignup: 50,
+    pointsReferral: 30,
+    pointsFollow: 5,
+    customEvents: [],
+    positionOffset: 0,
+    hideCounts: false,
+    showPoints: true,
+    showProgress: true,
+    ...rewards,
+  };
+  const setPerks = (patch) => updateRewards({ ...perks, ...patch });
+  const asPoints = (value) => {
+    if (value === "" || value == null) return 0;
+    const parsed = Math.trunc(Number(value));
+    if (!Number.isSafeInteger(parsed) || parsed < 0) return 0;
+    return Math.min(parsed, 100000);
+  };
   const referralNote = showReferrals ? null : (
     <p className="m-0 text-caption leading-relaxed text-product-text-secondary">
       Referral sharing is off for this waitlist, so the referral link and share buttons stay hidden.{" "}
@@ -2002,15 +2028,19 @@ function StatusPanel({ status, update, showReferrals = true, waitListId }) {
     !status.showPosition &&
     !status.showReferralLink &&
     !status.showReferralCount &&
-    (status.shareChannels ?? []).length === 0;
-  const applySimpleConfirmation = () =>
+    (status.shareChannels ?? []).length === 0 &&
+    !perks.showPoints &&
+    !perks.showProgress;
+  const applySimpleConfirmation = () => {
     update({
       showPosition: false,
       showReferralLink: false,
       showReferralCount: false,
       shareChannels: [],
     });
-  const applyReferralCockpit = () =>
+    setPerks({ showPoints: false, showProgress: false });
+  };
+  const applyReferralCockpit = () => {
     update({
       showPosition: true,
       showReferralLink: true,
@@ -2020,6 +2050,8 @@ function StatusPanel({ status, update, showReferrals = true, waitListId }) {
           ? status.shareChannels
           : ["x", "instagram", "linkedin", "whatsapp", "email"],
     });
+    setPerks({ showPoints: true, showProgress: true });
+  };
   return (
     <div className={"grid gap-4 p-4"}>
       <div>
@@ -2153,6 +2185,147 @@ function StatusPanel({ status, update, showReferrals = true, waitListId }) {
             }
           />
         ))}
+      </div>
+      <div className="grid gap-4 border-t border-product-border-subtle pt-4">
+        <div className="grid gap-1">
+          <span className="block text-micro font-bold tracking-widest text-product-text-secondary uppercase">
+            Points & rewards
+          </span>
+          <p className="m-0 text-caption leading-relaxed text-product-text-secondary">
+            Points accrue automatically from activation. Reward tiers come from the Referral rewards
+            blocks on your page.
+          </p>
+        </div>
+        <div className="grid gap-4 sm:grid-cols-3">
+          <Field
+            label="Per verified signup"
+            type="number"
+            value={perks.pointsSignup}
+            onChange={(value) => setPerks({ pointsSignup: asPoints(value) })}
+          />
+          <Field
+            label="Per referral"
+            type="number"
+            value={perks.pointsReferral}
+            onChange={(value) => setPerks({ pointsReferral: asPoints(value) })}
+          />
+          <Field
+            label="Per social follow"
+            type="number"
+            value={perks.pointsFollow}
+            onChange={(value) => setPerks({ pointsFollow: asPoints(value) })}
+          />
+        </div>
+        <Field
+          label="Position boost"
+          type="number"
+          value={perks.positionOffset}
+          onChange={(value) =>
+            setPerks({
+              positionOffset: Math.min(Math.max(asPoints(value), 0), 1000000),
+            })
+          }
+        />
+        <p className="-mt-2 text-caption leading-relaxed text-product-text-secondary">
+          Adds to every displayed position — e.g. 846 makes the first signup show #847.
+        </p>
+        <Toggle
+          label="Show points balance"
+          checked={perks.showPoints}
+          onChange={(showPoints) => setPerks({ showPoints })}
+        />
+        <Toggle
+          label="Show reward progress"
+          checked={perks.showProgress}
+          onChange={(showProgress) => setPerks({ showProgress })}
+        />
+        <Toggle
+          label="Stealth mode (hide all counts)"
+          hint="Hides positions, points, and headcounts on the public page. Best for private or B2B launches."
+          checked={perks.hideCounts}
+          onChange={(hideCounts) => setPerks({ hideCounts })}
+        />
+        <div className="grid gap-2.5">
+          <span className="block text-micro font-bold tracking-widest text-product-text-secondary uppercase">
+            Custom events
+          </span>
+          <p className="m-0 text-caption leading-relaxed text-product-text-secondary">
+            Off-site actions awarded through the API (survey, Discord join…). The event key goes in
+            the API call.
+          </p>
+          {(perks.customEvents ?? []).map((entry, index) => (
+            <div
+              className="grid gap-2.5 border-t border-product-border-subtle pt-4 [&>button]:justify-self-start"
+              key={`${entry.key}-${index}`}
+            >
+              <Field
+                label="Event key"
+                value={entry.key}
+                maxLength={40}
+                onChange={(key) =>
+                  setPerks({
+                    customEvents: perks.customEvents.map((item, itemIndex) =>
+                      itemIndex === index ? { ...item, key } : item,
+                    ),
+                  })
+                }
+              />
+              <Field
+                label="Label"
+                value={entry.label}
+                maxLength={80}
+                onChange={(label) =>
+                  setPerks({
+                    customEvents: perks.customEvents.map((item, itemIndex) =>
+                      itemIndex === index ? { ...item, label } : item,
+                    ),
+                  })
+                }
+              />
+              <Field
+                label="Points"
+                type="number"
+                value={entry.points}
+                onChange={(value) =>
+                  setPerks({
+                    customEvents: perks.customEvents.map((item, itemIndex) =>
+                      itemIndex === index ? { ...item, points: asPoints(value) } : item,
+                    ),
+                  })
+                }
+              />
+              <Button
+                variant="ghost"
+                size="sm"
+                type="button"
+                onClick={() =>
+                  setPerks({
+                    customEvents: perks.customEvents.filter((_, itemIndex) => itemIndex !== index),
+                  })
+                }
+              >
+                Remove
+              </Button>
+            </div>
+          ))}
+          {(perks.customEvents ?? []).length < 12 && (
+            <Button
+              variant="outline"
+              size="sm"
+              type="button"
+              onClick={() =>
+                setPerks({
+                  customEvents: [
+                    ...(perks.customEvents ?? []),
+                    { key: "survey", label: "Survey completed", points: 20 },
+                  ],
+                })
+              }
+            >
+              Add event
+            </Button>
+          )}
+        </div>
       </div>
     </div>
   );

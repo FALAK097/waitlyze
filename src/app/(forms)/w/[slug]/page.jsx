@@ -82,6 +82,7 @@ export default async function PublicWaitlistPage({ params }) {
         snapshot={page.snapshot}
         name={page.waitList.name}
         signupCount={page.waitList._count.signUps}
+        hideCounts={page.snapshot.rewards?.hideCounts === true}
         renderSignupForm={(_section, snapshot) => (
           <SignupForm
             slug={slug}

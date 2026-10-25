@@ -29,9 +29,13 @@ const RETRYABLE = new Set([408, 425, 429]);
 //   lives in the position query, not in this event.
 // - milestone.reached: data = { count, triggeringSignupId? } where count is
 //   one of 1/10/100/1000 and triggeringSignupId is the signup that tripped
-//   the count, when known. Milestones use a deterministic event id
-//   (milestone:{waitlistId}:{count}) so concurrent trips collapse to one
-//   delivery via skipDuplicates instead of double-firing.
+//   the count, when known. Reward-tier unlocks reuse this type with
+//   data = { count, reward, triggeringSignupId } where count is the crossed
+//   referral threshold and reward is the tier label. Milestones use a
+//   deterministic event id (milestone:{waitlistId}:{count}) so concurrent
+//   trips collapse to one delivery via skipDuplicates instead of
+//   double-firing; tier unlocks use reward-tier:{waitlistId}:{signup}:{count}
+//   so the two families never collide.
 export const WEBHOOK_EVENT_TYPES = Object.freeze([
   "signup.created",
   "signup.verified",

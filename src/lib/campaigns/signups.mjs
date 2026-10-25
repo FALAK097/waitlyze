@@ -7,17 +7,20 @@ import { maybeNotifySignupMilestone } from "../emails/founder-notifications.mjs"
 import { normalizeSignupEmail } from "../normalize-email.mjs";
 import {
   REFERRAL_CREDIT_STATUSES,
-  REFERRAL_POINTS,
-  SIGNUP_POINTS,
   awardPoints,
   isFarmSuspect,
   referralEventKey,
   signupEventKey,
 } from "../referrals/points.mjs";
+import {
+  checkRewardTierUnlocks,
+  getPublishedRewards,
+  summarizeSignupRewards,
+} from "../referrals/rewards.mjs";
 import { templateSnapshotSchema } from "../templates/catalog.mjs";
 import { enqueueWebhookEvent } from "../webhooks/delivery.mjs";
 import { MARKETING_CONSENT_COPY } from "./marketing-consent.mjs";
-import { getCampaignPosition } from "./referral-position.mjs";
+import { getCampaignPosition, getEligibleReferralCounts } from "./referral-position.mjs";
 import { findSignupByEmail } from "./signup-lookup.mjs";
 
 const normalizeEmail = normalizeSignupEmail;
@@ -30,12 +33,15 @@ async function recordVerifiedSignup(tx, signup, now) {
     signupId: signup.id,
     now,
   });
+  // Award amounts and tiers resolve from the published snapshot so draft edits
+  // never change payouts before they ship; unpublished lists accrue defaults.
+  const { rewards, tiers } = await getPublishedRewards(tx, signup.waitListId);
   if (!(await isFarmSuspect(tx, signup.ipAddress, now))) {
     await awardPoints(tx, {
       waitListId: signup.waitListId,
       signUpId: signup.id,
       kind: "SIGNUP_VERIFIED",
-      points: SIGNUP_POINTS,
+      points: rewards.pointsSignup,
       eventKey: signupEventKey(signup.id),
     });
     await tx.$queryRaw`SELECT "id" FROM "referrals" WHERE "signUpId" = ${signup.id} FOR UPDATE`;
@@ -48,7 +54,7 @@ async function recordVerifiedSignup(tx, signup, now) {
         waitListId: signup.waitListId,
         signUpId: referral.referredById,
         kind: "REFERRAL_CREDIT",
-        points: REFERRAL_POINTS,
+        points: rewards.pointsReferral,
         eventKey: referralEventKey(referral.id),
       });
       // Custom reward fulfillment hook: the inviter earned verified credit
@@ -58,6 +64,17 @@ async function recordVerifiedSignup(tx, signup, now) {
         eventType: "referral.completed",
         signupId: referral.referredById,
         extra: { referredSignupId: signup.id },
+        now,
+      });
+      // Tier unlocks are transactional with the credit that earned them.
+      const counts = await getEligibleReferralCounts(tx, signup.waitListId, [
+        referral.referredById,
+      ]);
+      await checkRewardTierUnlocks(tx, {
+        waitListId: signup.waitListId,
+        referrerId: referral.referredById,
+        verifiedReferrals: counts.get(referral.referredById) ?? 0,
+        tiers,
         now,
       });
     }
@@ -274,12 +291,21 @@ export async function createCampaignSignup(
   }
 
   const rank = await getCampaignPosition(db, input.waitListId, signUp.id);
+  // Rewards progress rides along with the rank so the cockpit and API can
+  // render points + "X more to unlock" without extra round trips. Best
+  // effort: a null summary never fails the signup response.
+  let rewardSummary = null;
+  try {
+    rewardSummary = await summarizeSignupRewards(db, input.waitListId, signUp);
+  } catch {
+    rewardSummary = null;
+  }
   // Idempotent retries and duplicate lookups return early above, so only a row
   // we actually created can move the milestone counters.
   if (signUp?.signupOutcome === "created") {
     after(() => maybeNotifySignupMilestone(db, input.waitListId, { signupId: signUp.id }));
   }
-  return { ...signUp, rank };
+  return { ...signUp, rank, rewardSummary };
 }
 
 export async function verifyCampaignSignup(db, token, { now = new Date() } = {}) {

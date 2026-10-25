@@ -1,9 +1,6 @@
-import {
-  REFERRAL_POINTS,
-  awardPoints,
-  isFarmSuspect,
-  referralEventKey,
-} from "../referrals/points.mjs";
+import { awardPoints, isFarmSuspect, referralEventKey } from "../referrals/points.mjs";
+import { checkRewardTierUnlocks, getPublishedRewards } from "../referrals/rewards.mjs";
+import { getEligibleReferralCounts } from "./referral-position.mjs";
 
 export async function resolveReferralReview(
   db,
@@ -37,7 +34,9 @@ export async function resolveReferralReview(
       throw new Error("This referral has already been reviewed or is unavailable.");
     // A newly approved referral credits the referrer once the invitee has
     // verified. Idempotent: re-resolving is impossible, and the event key
-    // guards double awards regardless.
+    // guards double awards regardless. Amounts resolve from the published
+    // snapshot (defaults when unpublished), and crossing a tier threshold
+    // here fires the same milestone unlock as the verify path.
     if (status === "APPROVED") {
       const referral = await tx.referral.findUnique({
         where: { id: referralId },
@@ -57,12 +56,20 @@ export async function resolveReferralReview(
         referral.signUp.verifiedAt &&
         !(await isFarmSuspect(tx, referral.signUp.ipAddress, verifiedAt))
       ) {
+        const { rewards, tiers } = await getPublishedRewards(tx, waitListId);
         await awardPoints(tx, {
           waitListId,
           signUpId: referral.referredById,
           kind: "REFERRAL_CREDIT",
-          points: REFERRAL_POINTS,
+          points: rewards.pointsReferral,
           eventKey: referralEventKey(referralId),
+        });
+        const counts = await getEligibleReferralCounts(tx, waitListId, [referral.referredById]);
+        await checkRewardTierUnlocks(tx, {
+          waitListId,
+          referrerId: referral.referredById,
+          verifiedReferrals: counts.get(referral.referredById) ?? 0,
+          tiers,
         });
       }
     }

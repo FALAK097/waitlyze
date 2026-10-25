@@ -8,6 +8,12 @@
 
 export const SIGNUP_POINTS = 50;
 export const REFERRAL_POINTS = 30;
+export const FOLLOW_POINTS = 5;
+
+// Networks the follow-claim endpoint accepts. Founder-configured follow URLs
+// ship with the Phase-3 cockpit; the award path stays zero-config so points
+// accrue from activation even before links are set.
+export const FOLLOW_NETWORKS = ["x", "instagram"];
 
 // Max signups from one IP in the trailing 24h before awards are skipped.
 export const POINTS_VELOCITY_LIMIT = 20;
@@ -21,6 +27,14 @@ export function signupEventKey(signUpId) {
 
 export function referralEventKey(referralId) {
   return `referral-credit:${referralId}`;
+}
+
+export function followEventKey(signUpId, network) {
+  return `follow-credited:${signUpId}:${network}`;
+}
+
+export function customEventKey(signUpId, event, key) {
+  return `custom-credit:${signUpId}:${event}:${key}`;
 }
 
 // Idempotent award: ON CONFLICT DO NOTHING keeps the transaction healthy

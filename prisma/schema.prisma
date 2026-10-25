@@ -503,6 +503,8 @@ model Referral {
 enum PointLedgerKind {
   SIGNUP_VERIFIED
   REFERRAL_CREDIT
+  SOCIAL_FOLLOW
+  CUSTOM
 }
 
 // Append-only points ledger. SignUp.points is the denormalized balance;
