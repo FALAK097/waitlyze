@@ -136,7 +136,15 @@ const itemDefaults = {
   referralRewards: { referrals: 5, reward: "Early access" },
 };
 
-function Field({ label, value, onChange, multiline = false, type = "text", maxLength }) {
+function Field({
+  label,
+  value,
+  onChange,
+  multiline = false,
+  type = "text",
+  maxLength,
+  placeholder = "",
+}) {
   const id = useId();
   return (
     <div className="grid gap-1.5 [&_input]:text-caption [&_label]:text-caption [&_label]:font-semibold [&_textarea]:text-caption">
@@ -146,6 +154,7 @@ function Field({ label, value, onChange, multiline = false, type = "text", maxLe
           id={id}
           value={value}
           maxLength={maxLength}
+          placeholder={placeholder}
           rows={3}
           onChange={(event) => onChange(event.target.value)}
         />
@@ -155,6 +164,7 @@ function Field({ label, value, onChange, multiline = false, type = "text", maxLe
           type={type}
           value={value}
           maxLength={maxLength}
+          placeholder={placeholder}
           onChange={(event) => onChange(event.target.value)}
         />
       )}
@@ -1943,6 +1953,17 @@ function SelectField({ label, value, options, onChange }) {
   );
 }
 function FormPanel({ form, update }) {
+  const listText = (entries) => (Array.isArray(entries) ? entries.join(", ") : "");
+  const splitList = (value) =>
+    value
+      .split(/[,;\n]/)
+      .map((entry) => entry.trim())
+      .filter(Boolean);
+  const customFields = Array.isArray(form.customFields) ? form.customFields : [];
+  const updateField = (id, patch) =>
+    update({
+      customFields: customFields.map((field) => (field.id === id ? { ...field, ...patch } : field)),
+    });
   return (
     <div className={"grid gap-4"}>
       <Field label="Field label" value={form.label} onChange={(label) => update({ label })} />
@@ -1979,10 +2000,165 @@ function FormPanel({ form, update }) {
         />
       )}
       <Toggle
-        label="Email verification"
-        checked={form.verification}
-        onChange={(verification) => update({ verification })}
+        label="Double opt-in (verify email before counting the signup)"
+        checked={(form.doubleOptIn ?? form.verification) !== false}
+        onChange={(doubleOptIn) => update({ doubleOptIn, verification: doubleOptIn })}
       />
+      <Field
+        label="Allowed email domains (comma-separated, empty = all)"
+        value={listText(form.allowedEmailDomains)}
+        placeholder="company.com, partner.org"
+        onChange={(value) => update({ allowedEmailDomains: splitList(value) })}
+      />
+      <Field
+        label="Blocked email domains (comma-separated)"
+        value={listText(form.blockedEmailDomains)}
+        placeholder="competitor.com"
+        onChange={(value) => update({ blockedEmailDomains: splitList(value) })}
+      />
+      <Field
+        label="Allowed countries (ISO codes, empty = all)"
+        value={listText(form.allowedCountries)}
+        placeholder="US, DE, IN"
+        onChange={(value) =>
+          update({ allowedCountries: splitList(value).map((code) => code.toUpperCase()) })
+        }
+      />
+      <Field
+        label="Blocked countries (ISO codes)"
+        value={listText(form.blockedCountries)}
+        placeholder="RU, CN"
+        onChange={(value) =>
+          update({ blockedCountries: splitList(value).map((code) => code.toUpperCase()) })
+        }
+      />
+      <Toggle
+        label="Collect phone number"
+        checked={form.collectPhone === true || form.requirePhone === true}
+        onChange={(collectPhone) =>
+          update(collectPhone ? { collectPhone } : { collectPhone, requirePhone: false })
+        }
+      />
+      {(form.collectPhone || form.requirePhone) && (
+        <Toggle
+          label="Require phone number"
+          checked={form.requirePhone === true}
+          onChange={(requirePhone) => update({ requirePhone })}
+        />
+      )}
+      <Toggle
+        label="Bot protection (Cloudflare Turnstile)"
+        checked={form.requireTurnstile === true}
+        onChange={(requireTurnstile) => update({ requireTurnstile })}
+      />
+      {form.requireTurnstile && (
+        <Field
+          label="Turnstile site key"
+          value={form.turnstileSiteKey ?? ""}
+          onChange={(turnstileSiteKey) => update({ turnstileSiteKey })}
+        />
+      )}
+      <div className="grid gap-3 border-t border-product-border-subtle pt-4">
+        <span className="block text-micro font-bold tracking-widest text-product-text-secondary uppercase">
+          Custom fields
+        </span>
+        {customFields.map((field) => (
+          <div
+            className="grid gap-2.5 rounded-lg border border-product-border-subtle p-3"
+            key={field.id}
+          >
+            <Field
+              label="Label"
+              value={field.label}
+              onChange={(label) => updateField(field.id, { label })}
+            />
+            <div className="grid gap-4 sm:grid-cols-2">
+              <SelectField
+                label="Type"
+                value={field.type}
+                options={[
+                  { id: "text", label: "Short text" },
+                  { id: "textarea", label: "Long text" },
+                  { id: "number", label: "Number" },
+                  { id: "select", label: "Dropdown" },
+                  { id: "checkbox", label: "Checkbox" },
+                ]}
+                onChange={(type) => updateField(field.id, { type })}
+              />
+              <Field
+                label="Placeholder"
+                value={field.placeholder ?? ""}
+                onChange={(placeholder) => updateField(field.id, { placeholder })}
+              />
+            </div>
+            {field.type === "select" && (
+              <Field
+                label="Options (comma-separated)"
+                value={(field.options ?? []).join(", ")}
+                onChange={(value) => updateField(field.id, { options: splitList(value) })}
+              />
+            )}
+            <Toggle
+              label="Required"
+              checked={field.required === true}
+              onChange={(required) => updateField(field.id, { required })}
+            />
+            <Button
+              variant="ghost"
+              size="sm"
+              type="button"
+              onClick={() =>
+                update({
+                  customFields: customFields.filter((entry) => entry.id !== field.id),
+                })
+              }
+            >
+              Remove
+            </Button>
+          </div>
+        ))}
+        {customFields.length < 10 && (
+          <Button
+            variant="outline"
+            size="sm"
+            type="button"
+            onClick={() =>
+              update({
+                customFields: [
+                  ...customFields,
+                  {
+                    id: `field-${crypto.randomUUID().slice(0, 8).toLowerCase()}`,
+                    label: "New question",
+                    type: "text",
+                    required: false,
+                    placeholder: "",
+                    options: [],
+                  },
+                ],
+              })
+            }
+          >
+            Add field
+          </Button>
+        )}
+      </div>
+      <div className="grid gap-4 border-t border-product-border-subtle pt-4">
+        <span className="block text-micro font-bold tracking-widest text-product-text-secondary uppercase">
+          After signup
+        </span>
+        <Field
+          label="Redirect URL (empty = stay on the thank-you screen)"
+          value={form.successRedirectUrl ?? ""}
+          placeholder="/thanks"
+          onChange={(successRedirectUrl) => update({ successRedirectUrl })}
+        />
+        <Field
+          label="Redirect host allowlist (for https:// URLs)"
+          value={listText(form.successRedirectAllowlist)}
+          placeholder="app.example.com"
+          onChange={(value) => update({ successRedirectAllowlist: splitList(value) })}
+        />
+      </div>
     </div>
   );
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
-import { Suspense, useId, useState } from "react";
+import { Suspense, useEffect, useId, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { ShareButtons } from "@/components/product/share-buttons";
@@ -23,6 +23,223 @@ export function SignupForm(props) {
   );
 }
 
+// Common country calling codes for the phone prefix picker. The server
+// revalidates the combined number as E.164, so this list is UX assistance,
+// not the trust boundary.
+const DIAL_CODES = [
+  ["+1", "United States / Canada"],
+  ["+7", "Russia / Kazakhstan"],
+  ["+20", "Egypt"],
+  ["+27", "South Africa"],
+  ["+30", "Greece"],
+  ["+31", "Netherlands"],
+  ["+32", "Belgium"],
+  ["+33", "France"],
+  ["+34", "Spain"],
+  ["+39", "Italy"],
+  ["+40", "Romania"],
+  ["+41", "Switzerland"],
+  ["+43", "Austria"],
+  ["+44", "United Kingdom"],
+  ["+45", "Denmark"],
+  ["+46", "Sweden"],
+  ["+47", "Norway"],
+  ["+48", "Poland"],
+  ["+49", "Germany"],
+  ["+51", "Peru"],
+  ["+52", "Mexico"],
+  ["+54", "Argentina"],
+  ["+55", "Brazil"],
+  ["+56", "Chile"],
+  ["+57", "Colombia"],
+  ["+60", "Malaysia"],
+  ["+61", "Australia"],
+  ["+62", "Indonesia"],
+  ["+63", "Philippines"],
+  ["+64", "New Zealand"],
+  ["+65", "Singapore"],
+  ["+66", "Thailand"],
+  ["+81", "Japan"],
+  ["+82", "South Korea"],
+  ["+84", "Vietnam"],
+  ["+86", "China"],
+  ["+90", "Turkey"],
+  ["+91", "India"],
+  ["+92", "Pakistan"],
+  ["+94", "Sri Lanka"],
+  ["+98", "Iran"],
+  ["+212", "Morocco"],
+  ["+213", "Algeria"],
+  ["+216", "Tunisia"],
+  ["+234", "Nigeria"],
+  ["+254", "Kenya"],
+  ["+351", "Portugal"],
+  ["+353", "Ireland"],
+  ["+354", "Iceland"],
+  ["+380", "Ukraine"],
+  ["+381", "Serbia"],
+  ["+385", "Croatia"],
+  ["+386", "Slovenia"],
+  ["+420", "Czechia"],
+  ["+421", "Slovakia"],
+  ["+971", "UAE"],
+  ["+972", "Israel"],
+  ["+973", "Bahrain"],
+  ["+974", "Qatar"],
+  ["+966", "Saudi Arabia"],
+  ["+965", "Kuwait"],
+  ["+968", "Oman"],
+];
+
+// Cloudflare Turnstile widget (explicit render). Reports the token up; the
+// server verifies it before any DB work. Renders nothing without a site key.
+function TurnstileWidget({ siteKey, onToken }) {
+  const containerRef = useRef(null);
+  const onTokenRef = useRef(onToken);
+  onTokenRef.current = onToken;
+  const [failed, setFailed] = useState(false);
+
+  useEffect(() => {
+    if (!siteKey) return;
+    let widgetId;
+    let cancelled = false;
+    const render = () => {
+      if (cancelled || !containerRef.current || typeof window === "undefined" || !window.turnstile)
+        return;
+      try {
+        widgetId = window.turnstile.render(containerRef.current, {
+          sitekey: siteKey,
+          callback: (token) => onTokenRef.current(token),
+          "expired-callback": () => onTokenRef.current(""),
+          "error-callback": () => setFailed(true),
+        });
+      } catch {
+        setFailed(true);
+      }
+    };
+    if (typeof window !== "undefined" && window.turnstile) {
+      render();
+    } else if (typeof document !== "undefined") {
+      let script = document.querySelector("script[data-turnstile]");
+      if (!script) {
+        script = document.createElement("script");
+        script.src = "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
+        script.async = true;
+        script.defer = true;
+        script.dataset.turnstile = "true";
+        document.head.appendChild(script);
+      }
+      script.addEventListener("load", render);
+      return () => {
+        cancelled = true;
+        script.removeEventListener("load", render);
+        try {
+          if (widgetId !== undefined) window.turnstile?.remove(widgetId);
+        } catch {
+          // Widget teardown is best-effort.
+        }
+      };
+    }
+    return () => {
+      cancelled = true;
+      try {
+        if (widgetId !== undefined) window.turnstile?.remove(widgetId);
+      } catch {
+        // Widget teardown is best-effort.
+      }
+    };
+  }, [siteKey]);
+
+  if (!siteKey || failed) return null;
+  return <div ref={containerRef} className="mt-3" />;
+}
+
+function combinePhone(dial, number) {
+  const digits = typeof number === "string" ? number.replace(/\D/g, "") : "";
+  if (!digits) return "";
+  const prefix = typeof dial === "string" && /^\+\d{1,4}$/.test(dial) ? dial : "";
+  return `${prefix}${digits}`;
+}
+
+function CustomFieldInput({ field, control }) {
+  const id = useId();
+  const name = `custom-${field.id}`;
+  const label = (
+    <label className="mb-2 block text-caption font-bold" htmlFor={id}>
+      {field.label}
+      {field.required ? " *" : ""}
+    </label>
+  );
+  if (field.type === "textarea") {
+    return (
+      <div className="mt-3">
+        {label}
+        <textarea
+          className={cn(control, "min-h-24 py-3")}
+          id={id}
+          name={name}
+          placeholder={field.placeholder || ""}
+          required={field.required === true}
+          maxLength={2000}
+        />
+      </div>
+    );
+  }
+  if (field.type === "select") {
+    return (
+      <div className="mt-3">
+        {label}
+        <select
+          className={cn(control, "w-full")}
+          id={id}
+          name={name}
+          required={field.required === true}
+          defaultValue=""
+        >
+          <option value="" disabled>
+            {field.placeholder || "Choose an option"}
+          </option>
+          {(Array.isArray(field.options) ? field.options : []).map((option) => (
+            <option value={option} key={option}>
+              {option}
+            </option>
+          ))}
+        </select>
+      </div>
+    );
+  }
+  if (field.type === "checkbox") {
+    return (
+      <label className="mt-3 flex items-start gap-2.5 text-caption leading-relaxed font-normal text-wl-muted">
+        <input
+          className="mt-px size-4 shrink-0 rounded border border-wl-input-border bg-wl-input"
+          id={id}
+          name={name}
+          type="checkbox"
+          value="on"
+          required={field.required === true}
+        />
+        <span>{field.label}</span>
+      </label>
+    );
+  }
+  return (
+    <div className="mt-3">
+      {label}
+      <input
+        className={cn(control, "w-full")}
+        id={id}
+        name={name}
+        type={field.type === "number" ? "number" : "text"}
+        inputMode={field.type === "number" ? "numeric" : undefined}
+        placeholder={field.placeholder || ""}
+        required={field.required === true}
+        maxLength={2000}
+      />
+    </div>
+  );
+}
+
 function SignupFormInner({ slug, waitListId, showReferrals, formConfig, statusPage, brand }) {
   const emailId = useId();
   const referralId = useId();
@@ -34,6 +251,14 @@ function SignupFormInner({ slug, waitListId, showReferrals, formConfig, statusPa
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState(null);
   const [copied, setCopied] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState("");
+
+  const collectPhone = formConfig.collectPhone === true || formConfig.requirePhone === true;
+  const customFields = Array.isArray(formConfig.customFields) ? formConfig.customFields : [];
+  const turnstileOn =
+    formConfig.requireTurnstile === true &&
+    typeof formConfig.turnstileSiteKey === "string" &&
+    formConfig.turnstileSiteKey.trim() !== "";
 
   async function submit(event) {
     event.preventDefault();
@@ -41,6 +266,16 @@ function SignupFormInner({ slug, waitListId, showReferrals, formConfig, statusPa
     const formData = new FormData(form);
     const email = formData.get("email");
     const marketingConsent = formData.get("marketingConsent") === "on";
+    const phone = collectPhone
+      ? combinePhone(formData.get("phoneDial"), formData.get("phone"))
+      : "";
+    const answers = customFields.map((field) => ({
+      id: field.id,
+      value:
+        field.type === "checkbox"
+          ? formData.get(`custom-${field.id}`) === "on"
+          : (formData.get(`custom-${field.id}`) ?? ""),
+    }));
     setBusy(true);
     try {
       let hypeSession = localStorage.getItem("hypeSession");
@@ -56,6 +291,9 @@ function SignupFormInner({ slug, waitListId, showReferrals, formConfig, statusPa
           marketingConsent,
           waitListId,
           hypeSession,
+          ...(phone ? { phone } : {}),
+          ...(answers.length > 0 ? { customFields: answers } : {}),
+          ...(turnstileOn && turnstileToken ? { turnstileToken } : {}),
           ...collectAttribution(),
           ...(showReferrals && referralCode && /^[A-Za-z0-9_-]{8,256}$/.test(referralCode)
             ? { referralId: referralCode }
@@ -63,8 +301,25 @@ function SignupFormInner({ slug, waitListId, showReferrals, formConfig, statusPa
         }),
       });
       const data = await response.json();
-      if (!response.ok) throw new Error(data.message || "Couldn't join the waitlist. Try again.");
+      if (!response.ok) {
+        if (typeof window !== "undefined" && window.turnstile) {
+          try {
+            window.turnstile.reset();
+          } catch {
+            // Reset is best-effort; the token simply expires.
+          }
+          setTurnstileToken("");
+        }
+        throw new Error(data.message || "Couldn't join the waitlist. Try again.");
+      }
 
+      // Server-vetted redirect only: the API echoes a redirect URL solely when
+      // the founder configured one that passes the allowlist. Never navigate
+      // to founder config or user input directly.
+      if (typeof data.signUp?.redirectUrl === "string" && data.signUp.redirectUrl) {
+        window.location.assign(data.signUp.redirectUrl);
+        return;
+      }
       const rank = data.signUp?.rank;
       const code = data.signUp?.referralCode;
       const referralLink =
@@ -225,6 +480,43 @@ function SignupFormInner({ slug, waitListId, showReferrals, formConfig, statusPa
           {busy ? "Joining…" : formConfig.buttonText}
         </button>
       </div>
+      {collectPhone && (
+        <div className="mt-3">
+          <label className="mb-2 block text-caption font-bold" htmlFor={`${emailId}-phone`}>
+            Phone number{formConfig.requirePhone ? " *" : ""}
+          </label>
+          <div className="flex gap-2">
+            <select
+              className={cn(control, "max-w-28 flex-none")}
+              name="phoneDial"
+              aria-label="Country calling code"
+              defaultValue="+1"
+            >
+              {DIAL_CODES.map(([code, country]) => (
+                <option value={code} key={code}>
+                  {code} {country}
+                </option>
+              ))}
+            </select>
+            <input
+              className={cn(control, "w-full")}
+              id={`${emailId}-phone`}
+              name="phone"
+              type="tel"
+              autoComplete="tel"
+              placeholder="415 555 2671"
+              required={formConfig.requirePhone === true}
+              maxLength={24}
+            />
+          </div>
+          <p className="mt-1 text-micro leading-relaxed text-wl-muted">
+            Include your country code — it is selected above.
+          </p>
+        </div>
+      )}
+      {customFields.map((field) => (
+        <CustomFieldInput field={field} control={control} key={field.id} />
+      ))}
       {formConfig.requireConsent && (
         <label className="mt-3 flex items-start gap-2.5 text-caption leading-relaxed font-normal text-wl-muted">
           <input
@@ -235,6 +527,9 @@ function SignupFormInner({ slug, waitListId, showReferrals, formConfig, statusPa
           />
           <span>{formConfig.consentLabel}</span>
         </label>
+      )}
+      {turnstileOn && (
+        <TurnstileWidget siteKey={formConfig.turnstileSiteKey.trim()} onToken={setTurnstileToken} />
       )}
     </form>
   );

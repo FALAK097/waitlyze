@@ -170,16 +170,94 @@ const bodyPx = z.preprocess(
     typeof value === "string" ? ({ small: 14, medium: 16, large: 18 }[value] ?? value) : value,
   z.number().min(12).max(160).default(16),
 );
-export const templateFormSchema = z.strictObject({
-  fields: z.tuple([z.literal("email")]),
+const customFieldSchema = z.strictObject({
+  id: z
+    .string()
+    .min(1)
+    .max(40)
+    .regex(/^[a-z0-9-]+$/i, "Use letters, numbers, or hyphens."),
   label: text(80),
-  placeholder: text(120),
-  buttonText: text(40),
-  layout: z.enum(["inline", "stacked"]),
-  requireConsent: z.boolean(),
-  consentLabel: text(240),
-  verification: z.boolean(),
+  type: z.enum(["text", "textarea", "number", "select", "checkbox"]),
+  required: z.boolean().default(false),
+  placeholder: text(120).default(""),
+  options: z.array(text(80)).max(20).default([]),
 });
+// Post-signup redirect target. Relative paths keep the visitor same-origin;
+// absolute URLs must be https. Host allowlisting against
+// successRedirectAllowlist happens at enforcement time, not here, so founders
+// can save the pair in either order.
+const redirectUrl = z
+  .string()
+  .max(500)
+  .default("")
+  .refine(
+    (value) => value === "" || /^\/(?!\/)/.test(value) || /^https:\/\/\S+\.\S+/i.test(value),
+    {
+      message: "Use a site-relative path (/thanks) or an https:// URL.",
+    },
+  );
+export const templateFormSchema = z
+  .strictObject({
+    fields: z.tuple([z.literal("email")]),
+    label: text(80),
+    placeholder: text(120),
+    buttonText: text(40),
+    layout: z.enum(["inline", "stacked"]),
+    requireConsent: z.boolean(),
+    consentLabel: text(240),
+    verification: z.boolean().default(true),
+    // Explicit double opt-in switch. The legacy `verification` toggle stays as
+    // a fallback for snapshots saved before this setting existed; a signup
+    // requires email confirmation only when BOTH are on, so every existing
+    // snapshot behaves exactly as before.
+    doubleOptIn: z.boolean().default(true),
+    // Per-form allow/block rules. Empty list = no restriction. Entries are
+    // normalized (trimmed, case-folded) at enforcement time.
+    allowedEmailDomains: z.array(z.string().trim().max(253)).max(50).default([]),
+    blockedEmailDomains: z.array(z.string().trim().max(253)).max(50).default([]),
+    allowedCountries: z.array(z.string().trim().max(8)).max(100).default([]),
+    blockedCountries: z.array(z.string().trim().max(8)).max(100).default([]),
+    // Turnstile bot protection. Off by default; when on, the public form
+    // renders the widget and the server verifies the token before any DB
+    // work. The secret stays server-side (TURNSTILE_SECRET_KEY env) — only
+    // the public site key lives in the snapshot.
+    requireTurnstile: z.boolean().default(false),
+    turnstileSiteKey: z.string().trim().max(200).default(""),
+    // Optional phone capture. Numbers must arrive in E.164 format (leading +
+    // plus country calling code); the server rejects anything else with a 400.
+    collectPhone: z.boolean().default(false),
+    requirePhone: z.boolean().default(false),
+    customFields: z.array(customFieldSchema).max(10).default([]),
+    // Redirect after a successful signup. Relative paths stay same-origin;
+    // absolute URLs must be https and host-allowlisted below. Empty = stay.
+    successRedirectUrl: redirectUrl,
+    successRedirectAllowlist: z.array(z.string().trim().max(253)).max(20).default([]),
+  })
+  .superRefine((form, ctx) => {
+    const ids = new Set();
+    form.customFields.forEach((field, index) => {
+      if (ids.has(field.id.toLowerCase()))
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Custom fields need unique ids.",
+          path: ["customFields", index, "id"],
+        });
+      ids.add(field.id.toLowerCase());
+      if (field.type === "select" && field.options.length === 0)
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: `“${field.label}” needs at least one option.`,
+          path: ["customFields", index, "options"],
+        });
+    });
+  });
+const hostOf = (value) => {
+  try {
+    return new URL(value).hostname;
+  } catch {
+    return "";
+  }
+};
 const brandSchema = z.strictObject({
   headingFont: fontFamily,
   bodyFont: fontFamily,
@@ -268,6 +346,24 @@ const v2SnapshotSchema = z
         });
       ids.add(section.id);
     });
+    if (value.form.requireTurnstile && !value.form.turnstileSiteKey.trim())
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Add your Turnstile site key before publishing with bot protection on.",
+        path: ["form", "turnstileSiteKey"],
+      });
+    if (/^https:\/\//i.test(value.form.successRedirectUrl)) {
+      const host = hostOf(value.form.successRedirectUrl);
+      const allowlisted = value.form.successRedirectAllowlist.some(
+        (entry) => host && host.toLowerCase() === entry.trim().toLowerCase(),
+      );
+      if (!allowlisted)
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Absolute redirect URLs need their host in the redirect allowlist.",
+          path: ["form", "successRedirectAllowlist"],
+        });
+    }
   });
 
 const defaultBrand = {
@@ -296,6 +392,18 @@ const defaultForm = {
   requireConsent: false,
   consentLabel: "Send me launch updates. I can unsubscribe anytime.",
   verification: true,
+  doubleOptIn: true,
+  allowedEmailDomains: [],
+  blockedEmailDomains: [],
+  allowedCountries: [],
+  blockedCountries: [],
+  requireTurnstile: false,
+  turnstileSiteKey: "",
+  collectPhone: false,
+  requirePhone: false,
+  customFields: [],
+  successRedirectUrl: "",
+  successRedirectAllowlist: [],
 };
 const defaultStatusPage = {
   heading: "You're on the list.",

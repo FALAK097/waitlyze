@@ -185,6 +185,8 @@ model SignUp {
   utmTerm         String?
   utmContent      String?
   points          Int         @default(0)
+  phone           String?
+  customFields    Json?
   waitListId      String
   impressionId    String?
   rank            Int?
