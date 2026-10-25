@@ -3,13 +3,14 @@ import { NextResponse } from "next/server";
 import { env } from "@/lib/env.mjs";
 import prisma from "@/lib/prisma";
 import { webhookAccess } from "@/lib/webhooks/access";
+import { WEBHOOK_EVENT_TYPES } from "@/lib/webhooks/delivery.mjs";
 import {
   createWebhookSecret,
   encryptSecret,
   validateWebhookUrl,
 } from "@/lib/webhooks/security.mjs";
 
-const EVENTS = new Set(["signup.created", "signup.verified"]);
+const EVENTS = new Set(WEBHOOK_EVENT_TYPES);
 const select = {
   id: true,
   name: true,

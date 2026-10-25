@@ -14,8 +14,9 @@ Work through the section that matches your symptom. Each fix links to the guide 
 </Accordion>
 <Accordion title="Signups and API access (401, 409, 429, 503)">
 - `401`: check the key exists, has not expired, has not been revoked, and `waitlistId` matches the key's linked waitlist. See [API keys](/docs/api-keys).
-- `409`: duplicate email versus non-accepting waitlist are different causes with the same code — read the message.
-- `429` or `503`: respect `Retry-After`; back off exponentially; do not retry in a tight loop.
+- `409`: duplicate email versus non-accepting waitlist are different causes with the same code — read the message. Duplicates include the existing `position`; key reuse (`Idempotency-Key was already used…`) needs a fresh key.
+- `404` on status lookup: the email never joined that waitlist.
+- `429` or `503`: respect `Retry-After`; back off exponentially; do not retry in a tight loop. Watch `X-RateLimit-Remaining` per key.
 - Dashboard `/api/v1/*` with a signup key always fails — those need a browser session. See [Signup API](/docs/api).
 </Accordion>
 <Accordion title="Hosted page, embed, and custom domain">
@@ -34,8 +35,9 @@ Work through the section that matches your symptom. Each fix links to the guide 
 </Accordion>
 <Accordion title="Webhooks: signatures and deliveries">
 - Verify HMAC-SHA256 over `timestamp + "." + canonicalJson(payload)`, not raw bytes. Check the 5-minute window and accept any valid `v1` during rotation. See [Webhooks](/docs/webhooks).
-- Deduplicate by `id` / `x-waitlyze-event-id` and return `2xx` only after durable acceptance.
+- Deduplicate by `id` / `x-waitlyze-event-id` and return `2xx` only after durable acceptance. Gate rewards on `referral.completed`, never on signup alone.
 - Use Recent deliveries for queue versus HTTP failures; send a test, pause/resume, rotate, or replay from waitlist settings.
+- Endpoints created before `referral.completed` / `milestone.reached` launched receive signup events only — add a new endpoint for all four.
 - If tests never arrive, confirm webhook encryption/dispatch is configured on the deployment.
 </Accordion>
 <Accordion title="Members, roles, and workspace">

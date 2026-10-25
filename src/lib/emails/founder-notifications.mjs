@@ -1,5 +1,6 @@
 import { renderBroadcastSummary, renderSignupMilestone } from "@/emails/render.jsx";
 import { env } from "@/lib/env.mjs";
+import { enqueueWebhookEvent } from "@/lib/webhooks/delivery.mjs";
 
 import { sendPlatformEmail } from "./platform.mjs";
 
@@ -47,7 +48,10 @@ async function notifyOwners(db, workspaceId, { subject, html, idempotencyKey }) 
 
 // Fires only on exact milestone counts. Races (two signups landing together)
 // resolve to the same idempotency key, so the provider collapses duplicates.
-export async function maybeNotifySignupMilestone(db, waitListId) {
+// Also enqueues a milestone.reached customer webhook so founders can drive
+// their own celebrations; webhook delivery is retried/replayable independently
+// of this best-effort owner email.
+export async function maybeNotifySignupMilestone(db, waitListId, { signupId } = {}) {
   try {
     const count = await db.signUp.count({ where: { waitListId } });
     if (!MILESTONE_COUNTS.has(count)) return false;
@@ -56,6 +60,15 @@ export async function maybeNotifySignupMilestone(db, waitListId) {
       select: { name: true, status: true, workspaceId: true, showReferrals: true },
     });
     if (!waitList || waitList.status !== "PUBLISHED") return false;
+    await enqueueWebhookEvent(db, {
+      waitListId,
+      eventType: "milestone.reached",
+      signupId: undefined,
+      extra: {
+        count,
+        ...(typeof signupId === "string" ? { triggeringSignupId: signupId } : {}),
+      },
+    });
     const waitlistName = waitList.name || "Your waitlist";
     const url = `${String(env.BETTER_AUTH_URL || "").replace(/\/$/, "")}/waitlists/${encodeURIComponent(waitListId)}/subscribers`;
     const html = await renderSignupMilestone({

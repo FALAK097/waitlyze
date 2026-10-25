@@ -13,9 +13,35 @@ const MAX_ATTEMPTS = 6;
 const MAX_RESPONSE_BYTES = 64 * 1024;
 const RETRYABLE = new Set([408, 425, 429]);
 
+// Single source of truth for customer-facing webhook event types. Dashboard
+// routes validate subscriptions against this set; delivery code enqueues one
+// of these types. Payload contract for every event:
+//
+//   { id, type, version: 1, occurredAt, waitlistId, data }
+//
+// - signup.created / signup.verified: data = { signupId }
+// - referral.completed: data = { signupId, referredSignupId } where signupId
+//   is the inviter who earned verified credit and referredSignupId is the
+//   invitee whose verification completed the referral. Build reward rules on
+//   top of this event; it fires only for CLEAR/unsuspecting referrals where
+//   both sides are verified.
+// - milestone.reached: data = { count, triggeringSignupId? } where count is
+//   one of 1/10/100/1000 and triggeringSignupId is the signup that tripped
+//   the count, when known.
+export const WEBHOOK_EVENT_TYPES = Object.freeze([
+  "signup.created",
+  "signup.verified",
+  "referral.completed",
+  "milestone.reached",
+]);
+
+export function isSupportedWebhookEvent(value) {
+  return WEBHOOK_EVENT_TYPES.includes(value);
+}
+
 export async function enqueueWebhookEvent(
   tx,
-  { waitListId, eventType, signupId, test = false, now = new Date() },
+  { waitListId, eventType, signupId, extra, test = false, now = new Date() },
 ) {
   const subscriptions = await tx.webhookSubscription.findMany({
     where: { waitListId, enabled: true, eventTypes: { has: eventType } },
@@ -29,7 +55,10 @@ export async function enqueueWebhookEvent(
     version: 1,
     occurredAt: now.toISOString(),
     waitlistId: waitListId,
-    data: test ? { test: true } : { signupId },
+    data:
+      test || signupId === undefined
+        ? { ...(test ? { test: true } : {}), ...extra }
+        : { signupId, ...extra },
   };
   await tx.webhookDelivery.createMany({
     data: subscriptions.map(({ id }) => ({

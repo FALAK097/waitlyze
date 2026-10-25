@@ -51,6 +51,15 @@ async function recordVerifiedSignup(tx, signup, now) {
         points: REFERRAL_POINTS,
         eventKey: referralEventKey(referral.id),
       });
+      // Custom reward fulfillment hook: the inviter earned verified credit
+      // because this signup verified. Receivers deduplicate by event id.
+      await enqueueWebhookEvent(tx, {
+        waitListId: signup.waitListId,
+        eventType: "referral.completed",
+        signupId: referral.referredById,
+        extra: { referredSignupId: signup.id },
+        now,
+      });
     }
   }
   await tx.outboxEvent.create({
@@ -268,7 +277,7 @@ export async function createCampaignSignup(
   // Idempotent retries and duplicate lookups return early above, so only a row
   // we actually created can move the milestone counters.
   if (signUp?.signupOutcome === "created") {
-    after(() => maybeNotifySignupMilestone(db, input.waitListId));
+    after(() => maybeNotifySignupMilestone(db, input.waitListId, { signupId: signUp.id }));
   }
   return { ...signUp, rank };
 }

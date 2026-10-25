@@ -32,6 +32,14 @@ Send a test email. Tests go to your Waitlyze account email. The connection becom
 
 Disconnecting falls back to the deployment sender immediately.
 
+## Per-waitlist sender identity (planned)
+
+Today one workspace shares one sender: every waitlist's verification, broadcast, and automation mail uses the workspace connection above. Per-waitlist sender identity — each waitlist with its own verified domain and sending-only key, falling back to the workspace sender — needs a data migration plus per-waitlist connect/test UI, so it is documented here as the contract rather than shipped half-built:
+
+- Resolution order will be waitlist sender → workspace sender → deployment default.
+- Connecting a waitlist sender will follow the same save-and-test-to-activate flow (status stays on the deployment sender until a test succeeds).
+- Until then, send multi-brand waitlists from separate workspaces if sender separation matters.
+
 ## Bounces, complaints, and suppression
 
 Signed Resend provider events update workspace suppression with recipient evidence. Bounced or complained addresses are excluded from future broadcasts and automations, including early webhook races where the complaint arrives before the send completes. This is automatic — you do not manage the suppression list by hand.

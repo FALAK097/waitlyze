@@ -2,9 +2,10 @@ import { NextResponse } from "next/server";
 
 import prisma from "@/lib/prisma";
 import { webhookAccess } from "@/lib/webhooks/access";
+import { WEBHOOK_EVENT_TYPES } from "@/lib/webhooks/delivery.mjs";
 import { validateWebhookUrl } from "@/lib/webhooks/security.mjs";
 
-const EVENTS = new Set(["signup.created", "signup.verified"]);
+const EVENTS = new Set(WEBHOOK_EVENT_TYPES);
 
 export async function PATCH(request, { params }) {
   const { id, subscriptionId } = await params;

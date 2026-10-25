@@ -40,6 +40,9 @@ const policies = {
     recipient: [3, DAY],
     authenticated: true,
   },
+  // Authenticated API-key status lookups (GET /api/waitlist). Separate from
+  // signup intake so polling a position never consumes the signup budget.
+  status: { global: [20000, HOUR], campaign: [5000, HOUR], client: [120, HOUR] },
 };
 
 /** Atomic PostgreSQL counters shared by all instances; failure never permits a send. */
