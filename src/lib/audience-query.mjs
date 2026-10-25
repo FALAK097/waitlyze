@@ -21,21 +21,58 @@ export function parseAudienceFilters(searchParams) {
   const status = searchParams.get("status") ?? "all";
   const sort = searchParams.get("sort") ?? "joined_desc";
   const delivery = searchParams.get("delivery") ?? "all";
+  const country = (searchParams.get("country") ?? "").trim();
+  const city = (searchParams.get("city") ?? "").trim();
+  const source = (searchParams.get("source") ?? "").trim();
+  const landing = (searchParams.get("landing") ?? "").trim();
+  const utm = (searchParams.get("utm") ?? "").trim();
+  const device = (searchParams.get("device") ?? "").trim();
   if (query.length > 120) return { error: "Search must be 120 characters or fewer." };
   if (!["all", "verified", "pending"].includes(status))
     return { error: "Invalid subscriber status." };
   if (!AUDIENCE_SORTS.includes(sort)) return { error: "Invalid sort order." };
   if (!["all", "failed"].includes(delivery)) return { error: "Invalid email filter." };
-  return { query, status, sort, delivery };
+  for (const [key, value] of [
+    ["country", country],
+    ["city", city],
+    ["source", source],
+    ["landing", landing],
+    ["utm", utm],
+    ["device", device],
+  ]) {
+    if (value.length > 80) return { error: `Invalid ${key} filter.` };
+  }
+  return { query, status, sort, delivery, country, city, source, landing, utm, device };
 }
 
 export function audienceWhere(waitListId, scope, filters) {
+  const contains = (value) => ({ contains: value, mode: "insensitive" });
+  const and = [];
+  if (filters.device)
+    and.push({
+      OR: [{ deviceType: contains(filters.device) }, { device: contains(filters.device) }],
+    });
+  if (filters.utm)
+    and.push({
+      OR: [
+        { utmMedium: contains(filters.utm) },
+        { utmCampaign: contains(filters.utm) },
+        { utmTerm: contains(filters.utm) },
+        { utmContent: contains(filters.utm) },
+        { referrer: contains(filters.utm) },
+      ],
+    });
   return {
     waitListId,
     waitList: scope,
     ...(filters.status === "verified" ? { verifiedAt: { not: null } } : {}),
     ...(filters.status === "pending" ? { verifiedAt: null } : {}),
-    ...(filters.query ? { email: { contains: filters.query, mode: "insensitive" } } : {}),
+    ...(filters.query ? { email: contains(filters.query) } : {}),
+    ...(filters.country ? { country: contains(filters.country) } : {}),
+    ...(filters.city ? { city: contains(filters.city) } : {}),
+    ...(filters.source ? { utmSource: contains(filters.source) } : {}),
+    ...(filters.landing ? { landingPage: contains(filters.landing) } : {}),
+    ...(and.length ? { AND: and } : {}),
   };
 }
 
@@ -139,7 +176,16 @@ export const EXPORT_COLUMNS = [
   { key: "joined", label: "Joined at" },
   { key: "country", label: "Country" },
   { key: "city", label: "City" },
+  { key: "timezone", label: "Timezone" },
   { key: "device", label: "Device" },
+  { key: "device_type", label: "Device type" },
+  { key: "source", label: "UTM source" },
+  { key: "utm_medium", label: "UTM medium" },
+  { key: "utm_campaign", label: "UTM campaign" },
+  { key: "utm_term", label: "UTM term" },
+  { key: "utm_content", label: "UTM content" },
+  { key: "landing_page", label: "Landing page" },
+  { key: "referrer", label: "Referring site" },
   { key: "points", label: "Points" },
   { key: "referrals", label: "Referrals" },
   { key: "referral_code", label: "Referral code" },
@@ -176,7 +222,16 @@ export function buildExportRow(subscriber, columns, extra = {}) {
     joined: subscriber.createdAt,
     country: subscriber.country,
     city: subscriber.city,
+    timezone: subscriber.timezone,
     device: subscriber.device,
+    device_type: subscriber.deviceType,
+    source: subscriber.utmSource,
+    utm_medium: subscriber.utmMedium,
+    utm_campaign: subscriber.utmCampaign,
+    utm_term: subscriber.utmTerm,
+    utm_content: subscriber.utmContent,
+    landing_page: subscriber.landingPage,
+    referrer: subscriber.referrer,
     points: subscriber.points ?? 0,
     referrals: extra.referralCount ?? 0,
     referral_code: subscriber.referralCode ?? "",

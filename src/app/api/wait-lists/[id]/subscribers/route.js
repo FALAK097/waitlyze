@@ -80,6 +80,19 @@ function failedVerificationWhere(waitListId, filters) {
       OR (${filters.status} = 'verified' AND "signup"."verifiedAt" IS NOT NULL)
       OR (${filters.status} = 'pending' AND "signup"."verifiedAt" IS NULL))
     AND (${filters.query} = '' OR "signup"."email" ILIKE ${`%${filters.query}%`})
+    AND (${filters.country} = '' OR "signup"."country" ILIKE ${`%${filters.country}%`})
+    AND (${filters.city} = '' OR "signup"."city" ILIKE ${`%${filters.city}%`})
+    AND (${filters.source} = '' OR "signup"."utmSource" ILIKE ${`%${filters.source}%`})
+    AND (${filters.landing} = '' OR "signup"."landingPage" ILIKE ${`%${filters.landing}%`})
+    AND (${filters.device} = ''
+      OR "signup"."deviceType" ILIKE ${`%${filters.device}%`}
+      OR "signup"."device" ILIKE ${`%${filters.device}%`})
+    AND (${filters.utm} = ''
+      OR "signup"."utmMedium" ILIKE ${`%${filters.utm}%`}
+      OR "signup"."utmCampaign" ILIKE ${`%${filters.utm}%`}
+      OR "signup"."utmTerm" ILIKE ${`%${filters.utm}%`}
+      OR "signup"."utmContent" ILIKE ${`%${filters.utm}%`}
+      OR "signup"."referrer" ILIKE ${`%${filters.utm}%`})
     AND EXISTS (
       SELECT 1
       FROM "outbox_events" AS "latest"
@@ -133,8 +146,11 @@ async function failedVerificationPage(waitListId, filters, cursor, take, offset 
     offset == null ? Prisma.sql`LIMIT ${take}` : Prisma.sql`LIMIT ${take} OFFSET ${offset}`;
   return prisma.$queryRaw`
     SELECT "signup"."id", "signup"."email", "signup"."createdAt", "signup"."verifiedAt",
-      "signup"."country", "signup"."city", "signup"."device", "signup"."deviceType",
-      "signup"."referralCode", "signup"."utmSource", "signup"."points"
+      "signup"."country", "signup"."city", "signup"."timezone",
+      "signup"."device", "signup"."deviceType",
+      "signup"."referralCode", "signup"."utmSource", "signup"."utmMedium",
+      "signup"."utmCampaign", "signup"."utmTerm", "signup"."utmContent",
+      "signup"."landingPage", "signup"."referrer", "signup"."points"
     FROM "sign_ups" AS "signup"
     WHERE ${where} ${after}
     ORDER BY
@@ -179,10 +195,17 @@ const ROW_SELECT = {
   verifiedAt: true,
   country: true,
   city: true,
+  timezone: true,
   device: true,
   deviceType: true,
   referralCode: true,
+  referrer: true,
+  landingPage: true,
   utmSource: true,
+  utmMedium: true,
+  utmCampaign: true,
+  utmTerm: true,
+  utmContent: true,
   points: true,
   referredBy: {
     select: {
@@ -381,7 +404,16 @@ export async function POST(request, { params }) {
     const select = { id: true, email: true, createdAt: true, verifiedAt: true };
     if (columns.includes("country")) select.country = true;
     if (columns.includes("city")) select.city = true;
+    if (columns.includes("timezone")) select.timezone = true;
     if (columns.includes("device")) select.device = true;
+    if (columns.includes("device_type")) select.deviceType = true;
+    if (columns.includes("source")) select.utmSource = true;
+    if (columns.includes("utm_medium")) select.utmMedium = true;
+    if (columns.includes("utm_campaign")) select.utmCampaign = true;
+    if (columns.includes("utm_term")) select.utmTerm = true;
+    if (columns.includes("utm_content")) select.utmContent = true;
+    if (columns.includes("landing_page")) select.landingPage = true;
+    if (columns.includes("referrer")) select.referrer = true;
     if (columns.includes("points")) select.points = true;
     if (columns.includes("referral_code")) select.referralCode = true;
     if (columns.includes("referred_by"))
