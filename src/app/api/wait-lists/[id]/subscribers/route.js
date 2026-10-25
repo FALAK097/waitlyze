@@ -177,6 +177,7 @@ const ROW_SELECT = {
   email: true,
   createdAt: true,
   verifiedAt: true,
+  pipelineStage: true,
   country: true,
   city: true,
   device: true,

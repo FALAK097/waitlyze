@@ -9,6 +9,7 @@ import {
   StatusTabs,
   WaitlistSearch,
 } from "@/components/product/waitlists-toolbar";
+import { WorkspaceOverview } from "@/components/product/workspace-overview";
 import {
   Table,
   TableBody,
@@ -17,6 +18,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { getWorkspaceOverview, normalizeOverviewReferral } from "@/lib/dashboard/overview.mjs";
 import prisma from "@/lib/prisma";
 import {
   normalizeWaitlistSearch,
@@ -287,15 +289,39 @@ async function WaitlistsResults({ userId, workspaceId, query, status, sort, requ
   );
 }
 
+async function WorkspaceOverviewLoader({ userId, workspaceId, referral, query, status, sort }) {
+  const overview = await getWorkspaceOverview(prisma, { userId, workspaceId, referral }).catch(
+    (error) => {
+      console.error("Workspace overview failed", error?.code || error?.name || "unknown error");
+      return null;
+    },
+  );
+  if (!overview) return null;
+  return <WorkspaceOverview overview={overview} query={query} status={status} sort={sort} />;
+}
+
 export default async function WaitlistsPage({ searchParams }) {
   const [{ user, workspace }, params] = await Promise.all([currentWorkspace(), searchParams]);
   const query = normalizeWaitlistSearch(params?.q);
   const status = normalizeWaitlistStatus(params?.status);
   const sort = normalizeWaitlistSort(params?.sort);
+  const referral = normalizeOverviewReferral(params?.ref);
   const requestedPage =
     typeof params?.page === "string" && /^\d+$/.test(params.page) ? Number(params.page) : 1;
   return (
     <section aria-label="Waitlists">
+      <Suspense
+        fallback={<ProductContentSkeleton label="Loading overview" variant="table" rows={3} />}
+      >
+        <WorkspaceOverviewLoader
+          userId={user.id}
+          workspaceId={workspace.id}
+          referral={referral}
+          query={query}
+          status={status}
+          sort={sort}
+        />
+      </Suspense>
       <div className="mb-5 flex flex-wrap items-center gap-x-4 gap-y-3 max-[760px]:items-stretch">
         <StatusTabs query={query} status={status} sort={sort} />
         <WaitlistSearch query={query} status={status} sort={sort} />

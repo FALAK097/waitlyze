@@ -11,9 +11,9 @@ function validTimeZone(timeZone) {
   }
 }
 
-function validDays(days) {
-  if (!Number.isInteger(days) || days < 1 || days > MAX_DAYS) {
-    throw new TypeError(`Choose a date range from 1 to ${MAX_DAYS} days.`);
+function validDays(days, maxDays = MAX_DAYS) {
+  if (!Number.isInteger(days) || days < 1 || days > maxDays) {
+    throw new TypeError(`Choose a date range from 1 to ${maxDays} days.`);
   }
   return days;
 }
@@ -123,11 +123,11 @@ function channelOf({ utmMedium, utmSource, referrer }) {
 /** Computes range metrics, breakdowns, referral totals, and K-factor for one waitlist. */
 export async function getWaitlistAnalytics(
   db,
-  { waitListId, days = 30, endDate = null, timeZone = "UTC", now = new Date() },
+  { waitListId, days = 30, endDate = null, timeZone = "UTC", now = new Date(), maxDays = MAX_DAYS },
 ) {
   if (typeof waitListId !== "string" || !waitListId)
     throw new TypeError("Waitlist ID is required.");
-  const rangeDays = validDays(days);
+  const rangeDays = validDays(days, maxDays);
   const zone = validTimeZone(timeZone);
   if (!(now instanceof Date) || Number.isNaN(now.valueOf()))
     throw new TypeError("Choose a valid end time.");

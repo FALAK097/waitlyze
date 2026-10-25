@@ -117,6 +117,10 @@ model WaitList {
   userId               String
   user                 User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   signUps              SignUp[]
+  // Renameable funnel pipeline stages (JSON array of {key,label}). Null means
+  // the workspace default (Waitlist → Invited → Joined → Converted). Keys stay
+  // fixed; founders may only rename labels. Feeds the Phase-8 launch flow.
+  pipelineStages       Json?
   impressions          Impression[]
   shareEvents          ShareEvent[]
   launchRehearsals     LaunchRehearsal[]
@@ -185,6 +189,9 @@ model SignUp {
   utmTerm         String?
   utmContent      String?
   points          Int         @default(0)
+  // Funnel pipeline stage. Defaults to WAITLIST so existing rows keep their
+  // behavior when the feature is untouched.
+  pipelineStage   String      @default("WAITLIST")
   waitListId      String
   impressionId    String?
   rank            Int?
@@ -207,6 +214,7 @@ model SignUp {
   @@unique([waitListId, emailNormalized])
   @@index([waitListId, uniqueUserId])
   @@index([waitListId, createdAt, id])
+  @@index([waitListId, pipelineStage])
   @@index([ipAddress, createdAt])
   @@map("sign_ups")
 }
@@ -700,6 +708,9 @@ model Workspace {
   integrations      WorkspaceIntegration[]
   customDomains     CustomDomain[]
   auditEvents     WorkspaceAuditEvent[]
+  // Billing plan. FREE workspaces see a capped analytics history window;
+  // paid plans see all-time history. Fresh-only: every workspace starts FREE.
+  plan            String            @default("FREE")
 
   @@map("workspaces")
 }

@@ -128,6 +128,7 @@ try {
           "20261019110000_resend_workspace_webhooks",
           "20261019120000_outbox_events_verification_index",
           "20261025090838_dashboard_bulk_consent_source",
+          "20261025000000_phase6_dashboard_pipeline",
         ]) {
           await db.query(await readFile(`prisma/migrations/${name}/migration.sql`, "utf8"));
         }

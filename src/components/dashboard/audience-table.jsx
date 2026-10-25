@@ -24,6 +24,7 @@ import { toast } from "sonner";
 import { importSignups } from "@/app/actions/audience-import";
 import { retryFailedVerification } from "@/app/actions/verification-delivery";
 import { ReferralReview } from "@/components/dashboard/referral-review";
+import { PipelineBoard } from "@/components/product/pipeline-board";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
@@ -826,10 +827,19 @@ export function AudienceTable({
             {initialReviews.filter((review) => review.reviewStatus === "NEEDS_REVIEW").length > 0 &&
               ` · ${initialReviews.filter((review) => review.reviewStatus === "NEEDS_REVIEW").length}`}
           </Button>
+          <Button
+            variant="ghost"
+            aria-pressed={view === "pipeline"}
+            onClick={() => setView("pipeline")}
+          >
+            Pipeline
+          </Button>
         </div>
       </header>
 
-      {view === "referrals" ? (
+      {view === "pipeline" ? (
+        <PipelineBoard waitListId={waitlist.id} canManage={canManage} />
+      ) : view === "referrals" ? (
         <ReferralReview
           waitListId={waitlist.id}
           initialReviews={initialReviews}
