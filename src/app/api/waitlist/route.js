@@ -225,6 +225,15 @@ export async function POST(request) {
     // view happened, so skip the impression. The P2002 guard covers the
     // hairline concurrent same-key double-submit where both pass createSignUp.
     if (signUp.signupOutcome !== "returning") {
+      // Link the signup to its page view, mirroring the browser funnel where
+      // the tracker row predates the join. Best-effort: intake must never
+      // fail because the linkage write did.
+      const linkImpression = async (impressionId) => {
+        if (signUp.impressionId || !impressionId) return;
+        await prisma.signUp
+          .update({ where: { id: signUp.id }, data: { impressionId } })
+          .catch(() => {});
+      };
       try {
         const impression = await prisma.impression.create({
           data: {
@@ -242,16 +251,19 @@ export async function POST(request) {
             ...pickAttribution(body),
           },
         });
-        // Link the signup to its page view, mirroring the browser funnel
-        // where the tracker row predates the join. Best-effort: intake must
-        // never fail because the linkage write did.
-        if (!signUp.impressionId) {
-          await prisma.signUp
-            .update({ where: { id: signUp.id }, data: { impressionId: impression.id } })
-            .catch(() => {});
-        }
+        await linkImpression(impression.id);
       } catch (error) {
         if (error?.code !== "P2002") throw error;
+        // A tracker row already exists for this browser (a real page view
+        // predates the API join): link to it instead of leaving
+        // impressionId null.
+        const existing = await prisma.impression
+          .findFirst({
+            where: { waitListId: waitlistId, uniqueUserId: signUp.uniqueUserId },
+            select: { id: true },
+          })
+          .catch(() => null);
+        await linkImpression(existing?.id);
       }
     }
 
