@@ -18,6 +18,7 @@ const transient = (error) =>
   error?.statusCode === 429 ||
   error?.statusCode >= 500 ||
   (error?.statusCode === 409 && error?.code === "concurrent_idempotent_requests") ||
+  (error?.name === "application_error" && error?.statusCode === null) ||
   error?.name === "TypeError";
 const normalizeEmail = (email) =>
   String(email || "")

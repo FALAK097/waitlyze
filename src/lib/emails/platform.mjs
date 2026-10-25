@@ -37,7 +37,13 @@ export async function sendPlatformEmail({
     },
     idempotencyKey ? { idempotencyKey } : undefined,
   );
-  if (error) throw new Error(`Platform email rejected: ${error.name || "provider error"}`);
+  if (error) {
+    throw Object.assign(new Error(`Platform email rejected: ${error.name || "provider error"}`), {
+      name: error.name || "Error",
+      statusCode: error.statusCode ?? null,
+      code: error.code ?? error.name ?? "PROVIDER_ERROR",
+    });
+  }
   return true;
 }
 
