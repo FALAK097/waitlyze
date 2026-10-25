@@ -16,6 +16,16 @@ import {
 } from "../referrals/points.mjs";
 import { templateSnapshotSchema } from "../templates/catalog.mjs";
 import { enqueueWebhookEvent } from "../webhooks/delivery.mjs";
+import {
+  checkCountryRules,
+  checkEmailDomainRules,
+  getPublishedFormConfig,
+  normalizePhoneNumber,
+  requiresDoubleOptIn,
+  resolveSuccessRedirect,
+  sanitizeCustomFieldAnswers,
+  validatePhoneNumber,
+} from "./form-rules.mjs";
 import { MARKETING_CONSENT_COPY } from "./marketing-consent.mjs";
 import { getCampaignPosition } from "./referral-position.mjs";
 import { findSignupByEmail } from "./signup-lookup.mjs";
@@ -86,6 +96,19 @@ export class InvalidCampaignError extends Error {
   }
 }
 
+// Normalized phone for storage, or null when collection is off / empty.
+function phoneForStorage(formConfig, phone) {
+  if (!formConfig?.collectPhone && !formConfig?.requirePhone) return null;
+  const value = normalizePhoneNumber(phone);
+  return value || null;
+}
+
+// Sanitized custom-field answers for storage (already validated above).
+function customFieldsForStorage(formConfig, customFields) {
+  const { answers } = sanitizeCustomFieldAnswers(formConfig, customFields);
+  return answers;
+}
+
 export async function createCampaignSignup(
   db,
   input,
@@ -123,21 +146,38 @@ export async function createCampaignSignup(
         FOR SHARE
       `;
       if (published.length === 0) throw new InvalidCampaignError();
-      const publication = published[0].publishedRevision
-        ? await tx.waitListPublicationRevision.findUnique({
-            where: {
-              waitListId_revision: {
-                waitListId: input.waitListId,
-                revision: published[0].publishedRevision,
-              },
-            },
-            select: { snapshot: true },
-          })
-        : null;
+      if (!published[0].publishedRevision) {
+        throw new TypeError("Published form configuration is invalid.");
+      }
+      const publication = await tx.waitListPublicationRevision.findUnique({
+        where: {
+          waitListId_revision: {
+            waitListId: input.waitListId,
+            revision: published[0].publishedRevision,
+          },
+        },
+        select: { snapshot: true },
+      });
       const publishedSnapshot = templateSnapshotSchema.safeParse(publication?.snapshot);
-      const requiresVerification = publishedSnapshot.success
-        ? publishedSnapshot.data.form.verification
-        : true;
+      if (!publishedSnapshot.success) {
+        throw new TypeError("Published form configuration is invalid.");
+      }
+      // Double opt-in (see requiresDoubleOptIn): confirmation is required only
+      // when the validated snapshot opts in.
+      const formConfig = publishedSnapshot.data.form;
+      const requiresVerification = requiresDoubleOptIn(formConfig);
+      // Per-form join rules. TypeError → 400 on every public caller, so the
+      // API-key path enforces the same gates as the browser form.
+      if (formConfig) {
+        const domainError = checkEmailDomainRules(formConfig, input.email);
+        if (domainError) throw new TypeError(domainError);
+        const countryError = checkCountryRules(formConfig, input.country);
+        if (countryError) throw new TypeError(countryError);
+        const phoneError = validatePhoneNumber(input.phone, formConfig);
+        if (phoneError) throw new TypeError(phoneError);
+        const fields = sanitizeCustomFieldAnswers(formConfig, input.customFields);
+        if (fields.error) throw new TypeError(fields.error);
+      }
 
       const existing = await findSignupByEmail(tx, input.waitListId, input.email, {
         referrals: true,
@@ -147,7 +187,11 @@ export async function createCampaignSignup(
         if (existing.uniqueUserId === input.uniqueUserId) {
           // Browser IDs and referral links are public identifiers, not consent credentials.
           // Idempotent signup retries must preserve prior opt-out/preferences.
-          return { ...existing, signupOutcome: "returning" };
+          return {
+            ...existing,
+            signupOutcome: "returning",
+            redirectUrl: resolveSuccessRedirect(formConfig),
+          };
         }
         throw new DuplicateSignupError();
       }
@@ -174,6 +218,8 @@ export async function createCampaignSignup(
           utmCampaign: input.utmCampaign || null,
           utmTerm: input.utmTerm || null,
           utmContent: input.utmContent || null,
+          phone: phoneForStorage(formConfig, input.phone),
+          customFields: customFieldsForStorage(formConfig, input.customFields),
           verifiedAt: requiresVerification ? null : now,
           ...(input.marketingConsent === true ? { marketingConsentAt: now } : {}),
         },
@@ -259,7 +305,12 @@ export async function createCampaignSignup(
         where: { id: createdSignup.id },
         include: { referrals: true, referredBy: true },
       });
-      return { ...created, verificationEventKey, signupOutcome: "created" };
+      return {
+        ...created,
+        verificationEventKey,
+        signupOutcome: "created",
+        redirectUrl: resolveSuccessRedirect(formConfig),
+      };
     });
   } catch (error) {
     if (error?.code !== "P2002") throw error;
@@ -268,7 +319,11 @@ export async function createCampaignSignup(
       referredBy: true,
     });
     if (committed?.uniqueUserId === input.uniqueUserId)
-      signUp = { ...committed, signupOutcome: "returning" };
+      signUp = {
+        ...committed,
+        signupOutcome: "returning",
+        redirectUrl: resolveSuccessRedirect(await getPublishedFormConfig(db, input.waitListId)),
+      };
     else if (committed) throw new DuplicateSignupError();
     else throw error;
   }
@@ -279,6 +334,9 @@ export async function createCampaignSignup(
   if (signUp?.signupOutcome === "created") {
     after(() => maybeNotifySignupMilestone(db, input.waitListId, { signupId: signUp.id }));
   }
+  // Server-vetted post-signup redirect (null = stay on the cockpit). The
+  // browser client navigates only to this value, never to founder config or
+  // user input directly, so the allowlist cannot be bypassed client-side.
   return { ...signUp, rank };
 }
 

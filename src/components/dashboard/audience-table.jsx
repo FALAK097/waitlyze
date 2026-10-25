@@ -342,12 +342,15 @@ export function AudienceTable({
     }
   }
 
-  function copyText(text, id) {
+  async function copyText(text, id) {
     setCopiedId(null);
-    navigator.clipboard?.writeText(text).then(
-      () => setCopiedId(id ?? null),
-      () => toast.error("Copy didn't work. Select the text manually."),
-    );
+    try {
+      if (!navigator.clipboard?.writeText) throw new Error("Clipboard access is unavailable.");
+      await navigator.clipboard.writeText(text);
+      setCopiedId(id ?? null);
+    } catch {
+      toast.error("Copy didn't work. Select the text manually.");
+    }
   }
 
   async function retryEmails(ids) {
@@ -614,6 +617,47 @@ export function AudienceTable({
           </span>
         ),
       }),
+      ...(waitlist.collectPhone
+        ? [
+            columnHelper.accessor("phone", {
+              header: "Phone",
+              meta: { className: "hidden min-w-40 px-4 py-3 sm:table-cell" },
+              cell: ({ row, getValue }) => {
+                const phone = getValue();
+                if (!phone) return <span className="text-product-text-secondary">—</span>;
+                const copyId = `${row.original.id}:phone`;
+                const copied = copiedId === copyId;
+                return (
+                  <span className="inline-flex max-w-full items-center gap-1">
+                    <span className="max-w-40 truncate font-medium tabular-nums" title={phone}>
+                      {phone}
+                    </span>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon-sm"
+                      className="shrink-0"
+                      aria-label={
+                        copied
+                          ? `Phone number copied for ${row.original.email}`
+                          : `Copy phone number for ${row.original.email}`
+                      }
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        copyText(phone, copyId);
+                      }}
+                    >
+                      <HugeiconsIcon icon={copied ? Tick01Icon : CopyIcon} aria-hidden="true" />
+                    </Button>
+                    <span className="sr-only" aria-live="polite" aria-atomic="true">
+                      {copied ? `Phone number for ${row.original.email} copied to clipboard.` : ""}
+                    </span>
+                  </span>
+                );
+              },
+            }),
+          ]
+        : []),
       columnHelper.accessor("country", {
         header: "Country",
         meta: { className: "hidden px-4 py-3 sm:table-cell" },
@@ -760,6 +804,7 @@ export function AudienceTable({
       columnHelper,
       flags.showReferrals,
       flags.sendEmailsToSubscribers,
+      waitlist.collectPhone,
       sort,
       copiedId,
       result.data,
@@ -1135,6 +1180,12 @@ export function AudienceTable({
                         <dt className="text-product-text-secondary">Email</dt>
                         <dd className="font-medium break-all">{profile.email}</dd>
                       </div>
+                      {profile.phone ? (
+                        <div className="grid grid-cols-[104px_minmax(0,1fr)] gap-3">
+                          <dt className="text-product-text-secondary">Phone</dt>
+                          <dd className="font-medium break-all tabular-nums">{profile.phone}</dd>
+                        </div>
+                      ) : null}
                       {flags.sendEmailsToSubscribers && (
                         <div className="grid grid-cols-[104px_minmax(0,1fr)] gap-3">
                           <dt className="text-product-text-secondary">Status</dt>
