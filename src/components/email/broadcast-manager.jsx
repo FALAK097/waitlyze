@@ -97,6 +97,19 @@ const escapeText = (text) =>
     /[&<>"']/g,
     (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char],
   );
+// Founder-facing zone label for the schedule picker, and a browser-local
+// wall-clock formatter so min/values line up with what datetime-local shows.
+const founderTimeZone = () => {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone || "your local time";
+  } catch {
+    return "your local time";
+  }
+};
+const toLocalInputValue = (date) => {
+  const at = new Date(date);
+  return new Date(at.getTime() - at.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+};
 const starterContent = (draft) =>
   draft.editorDocument ||
   `<p>${escapeText(draft.body || "Write your update…").replaceAll("\n", "<br>")}</p>`;
@@ -305,11 +318,19 @@ export function BroadcastManager({
     if (!selectedId || draftDirty || !previewFresh || !preview.count || !scheduleAt) return;
     setBusyAction("schedule");
     try {
+      // datetime-local carries no zone; interpret it in the founder's browser
+      // zone and send explicit UTC so the server never re-interprets the
+      // wall clock in its own timezone.
+      const at = new Date(scheduleAt);
+      if (!Number.isFinite(at.getTime())) {
+        notify("Pick a valid date and time to schedule.", true);
+        return;
+      }
       const result = await scheduleBroadcast({
         waitListId,
         broadcastId: selectedId,
         segment,
-        scheduledAt: scheduleAt,
+        scheduledAt: at.toISOString(),
         expectedRecipientCount: preview.count,
       });
       setReviewSchedule(false);
@@ -555,11 +576,12 @@ export function BroadcastManager({
                       <input
                         type="datetime-local"
                         className={testInput}
-                        aria-label="Scheduled send time"
+                        aria-label={`Scheduled send time (${founderTimeZone()})`}
                         value={scheduleAt}
-                        min={new Date(Date.now() + 5 * 60 * 1000).toISOString().slice(0, 16)}
+                        min={toLocalInputValue(Date.now() + 5 * 60 * 1000)}
                         onChange={(event) => setScheduleAt(event.target.value)}
                       />
+                      <span className={hint}>Times are in {founderTimeZone()}.</span>
                       <Button
                         type="button"
                         variant="default"

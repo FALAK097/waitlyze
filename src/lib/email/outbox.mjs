@@ -489,10 +489,15 @@ export async function dispatchPendingOutboxEvents(
   if (typeof send !== "function") throw new TypeError("A provider send function is required.");
   // Fan out due scheduled broadcasts before claiming send events, so a
   // scheduled send starts within one dispatcher tick of its scheduled time.
-  try {
-    await queueDueBroadcasts(db, now);
-  } catch (error) {
-    console.error("Scheduled broadcast sweep failed:", error?.message || "unknown error");
+  // Skipped for targeted dispatches (eventKeys): those run inline in
+  // user-facing requests (signup verification, offboard goodbyes) and must
+  // never absorb a broadcast fan-out in their latency path.
+  if (!eventKeys) {
+    try {
+      await queueDueBroadcasts(db, now);
+    } catch (error) {
+      console.error("Scheduled broadcast sweep failed:", error?.message || "unknown error");
+    }
   }
   const staleBefore = new Date(now.getTime() - STALE_LOCK_MS);
   const events = await db.outboxEvent.findMany({

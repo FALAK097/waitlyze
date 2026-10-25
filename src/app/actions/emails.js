@@ -981,6 +981,9 @@ export async function scheduleBroadcast({
   if (!env.OUTBOX_DISPATCH_SECRET || !env.RESEND_API_KEY)
     return { success: false, message: "Email delivery is not configured yet." };
   const seg = normalizeSegment(segment);
+  // Contract with the client: scheduledAt arrives as an explicit UTC ISO
+  // string (the picker wall clock is converted in the founder's browser
+  // zone), so parsing here is zone-unambiguous by construction.
   const when = new Date(scheduledAt);
   if (!Number.isFinite(when.getTime()) || when.getTime() <= Date.now())
     return { success: false, message: "Pick a future date and time to schedule." };

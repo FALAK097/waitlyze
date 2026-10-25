@@ -150,6 +150,10 @@ export async function queueDueBroadcasts(db, now = new Date()) {
           broadcastId: broadcast.id,
           segment: broadcast.segment,
           exact: false,
+          // Stamp the dispatcher's instant so events the sweep creates are
+          // claimable in the same tick — a fresh timestamp here would land
+          // milliseconds after the claim snapshot and slip a full tick.
+          now,
         });
       });
       queued++;
