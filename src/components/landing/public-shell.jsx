@@ -60,6 +60,13 @@ export default function PublicShell({ children }) {
               </Link>
               <Link
                 prefetch={false}
+                href="/templates"
+                className="inline-flex items-center gap-1.5 hover:text-product-success-text focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-neutral-900"
+              >
+                Templates
+              </Link>
+              <Link
+                prefetch={false}
                 href="/#faq"
                 className="inline-flex items-center gap-1.5 hover:text-product-success-text focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-neutral-900"
               >
