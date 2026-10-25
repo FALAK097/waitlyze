@@ -37,75 +37,126 @@
 - [x] Public loop: `/w/{slug}` serves snapshot lists as before, snapshot-less published lists via the classic form + referral loop (`/forms/{id}` unchanged).
 - [x] Detail tabs cut to five: Builder | Signups | Emails | Analytics | Settings (Overview → redirects to Builder; Referrals folded into Signups; route URLs unchanged).
 - [x] Signups v2: Email | Country | Position (referrals on) | Joined-ago | Status (emails on); row click opens a right sheet (details + referral link + copy); Import sheet (template CSV, validation, counts) + Export sheet (column picker); import creates unverified rows, no emails.
-- [ ] Bulk offboard/delete (deferred — destructive ops need their own design + live test).
+- [x] Bulk offboard/delete.
+  - PR #109 merged: transactional batch endpoint (offboard/resubscribe/delete, owner/admin, 1–1000 ids), goodbye-email queueing, 30s undo, typed-count delete confirm, referral edges severed + counted, audit events. Live-verified headless (offboard → undo toast, DB-checked).
 
-## 4. Phase 2 — Templates (acquisition + activation)
+## 4. Phase 2 — Templates (acquisition + activation) — MERGED Oct 2026 (PRs #110/#111; live-verified headless)
 
-- [ ] Promote the 4 hardcoded style presets into real named templates with previews (thumbnail + live demo page per template).
-- [ ] Ship a template gallery (aim 10+): SaaS, AI product, mobile app, creator/course, ecommerce drop, event, community, dev tool, game, newsletter — each with tuned copy placeholders, not just colors.
-- [ ] One-click apply from gallery during creation and from the Design tab; switching templates never loses content/settings.
-- [ ] Add Brand Kit per waitlist (logo, colors, fonts, favicon) applied across page + emails + OG cards.
-- [ ] Mobile-first pass on every template (most joins come from shared links on phones).
-- [ ] Public template gallery on the marketing site doubles as SEO/acquisition (each template = indexed page).
+- [x] Promote the 4 hardcoded style presets into real named templates with previews (thumbnail + live demo page per template).
+  - Covered by the gallery below: 14 named templates, each with a live demo page.
+- [x] Ship a template gallery (aim 10+): SaaS, AI product, mobile app, creator/course, ecommerce drop, event, community, dev tool, game, newsletter — each with tuned copy placeholders, not just colors.
+  - [x] Builder-side gallery: 14 named templates with previews, one-click apply, style-preserving "Use style" vs confirming "Replace page" (builder-v2, Oct 2026).
+  - [x] Public gallery shipped PR #110: `/templates` + `/templates/[id]` (SSG, canonical, unique title/desc, OG), sitemap entries, CTA into creation with preselected template.
+- [x] One-click apply from gallery during creation and from the Design tab; switching templates never loses content/settings.
+  - PR #110: `?template=` preselect in creation dialog (name/slug untouched); builder switch paths verified lossless.
+- [x] Add Brand Kit per waitlist (logo, colors, fonts, favicon) applied across page + emails + OG cards.
+  - [x] Builder brand kit: logo upload, colors, Google Fonts picker + px type scale, corners, contrast check.
+  - [x] PR #111: favicon upload (rate-limited path) + page icon, OG title/desc/image wired to head metadata, brand applied to list emails.
+- [x] Mobile-first pass on every template (most joins come from shared links on phones).
+  - PR #111: type clamp ≤640px, ≥44px targets, stacked-input floor fix; measured 0px overflow at 390px.
+- [x] Public template gallery on the marketing site doubles as SEO/acquisition (each template = indexed page).
+  - PR #110 (see above).
 
-## 5. Phase 3 — Public signup experience = referral cockpit (virality)
+## 5. Phase 3 — Public signup experience = referral cockpit (virality) — IMPLEMENTED (PR #107 merged; #112/#113/#128/#129 open)
 
-- [ ] Rebuild the post-join screen as a referral cockpit: position in line (`#214`), referrals count, progress to next reward ("1 more to unlock beta"), copyable personal link (`?r=` code).
-- [ ] 1-click share buttons: X, Facebook, LinkedIn, WhatsApp, Telegram, Reddit, Email — with prefilled copy + personal link (respect per-waitlist toggles).
-- [ ] Social-follow tasks on the cockpit (follow on X/IG → earns points when Phase 4 lands; UI ships here).
-- [ ] OG share cards per waitlist (title, description, image) so shared links look premium on socials.
-- [ ] Mini-leaderboard / neighborhood view ("#47 of 2,847 — 20 pts to #46") on the cockpit, privacy-masked by default (`b***@g***`).
-- [ ] Join form hardening: double opt-in option, per-form allow/block rules (domains, countries), CAPTCHA/Turnstile option, duplicate handling (return existing position instead of erroring).
-- [ ] Custom fields + phone capture with country validation; custom redirect-after-signup option.
+- [x] Rebuild the post-join screen as a referral cockpit: position in line (`#214`), referrals count, progress to next reward ("1 more to unlock beta"), copyable personal link (`?r=` code).
+  - [x] Builder + public result parity: position, referral count, copyable personal link, share buttons (X, Instagram, LinkedIn, WhatsApp, Email) honoring per-waitlist toggles, icon style + centered/card variants (builder-v2, Oct 2026). Additional cockpit work is implemented in open PR #113.
+  - PR #113 (open): masked mini-leaderboard/neighborhood + progress (`next_reward`, `spots_to_advance`) on cockpit/verify/API. PR #107 (merged) added the opt-in simple-confirmation preset; PR #128 (open) removes the redundant mode toggle and adds “no redirect or state change” after signup.
+- [x] 1-click share buttons: X, Facebook, LinkedIn, WhatsApp, Telegram, Reddit, Email — with prefilled copy + personal link (respect per-waitlist toggles).
+  - PR #113 (open): Facebook/Telegram/Reddit intents with encoded copy + personal link (8 channels total).
+- [x] Social-follow tasks on the cockpit (follow on X/IG → earns points once Phase 4 merges; UI ships here).
+  - PR #113 (open): follow links + no-points note; points earning is implemented in open PR #116.
+- [x] OG share cards per waitlist (title, description, image) so shared links look premium on socials.
+  - PR #111 (merged, page-level OG) + PR #113 (open: absolute images, `og:url`/siteName, summary_large_image).
+- [x] Mini-leaderboard / neighborhood view ("#47 of 2,847 — 20 pts to #46") on the cockpit, privacy-masked by default (`b***@g***`).
+  - PR #113 (open): rate-limited endpoint, server-side masking, own row = you.
+- [x] Join form hardening: double opt-in option, per-form allow/block rules (domains, countries), CAPTCHA/Turnstile option, duplicate handling (return existing position instead of erroring).
+  - PR #112 (open): cross-browser duplicates → 200 with position + link; `doubleOptIn`; domain/country allow-block. PR #129 (open) adds opt-in Turnstile, server-side Siteverify, and publish-time key pairing; redeploy after merge. The widget allowlist must include each form-serving hostname.
+- [x] Custom fields + phone capture with country validation; custom redirect-after-signup option.
+  - PR #112 (open): typed custom fields, E.164 phone + searchable dial-code picker, phone disclosure, allowlisted redirect (server-vetted echo). PR #128 (open) adds the no-post-submit-change behavior.
+- [ ] Popup capture + own-form wrap (competitor gap, Oct 2026): timer/link-triggered popup template and AnyForm-style mode making any existing site form viral after signup (props: KickoffLabs, LaunchList).
+- [ ] Advanced form fields (competitor gap): multi-step forms, conditional logic, rating/NPS + consent-checkbox field types (props: LaunchList 20 field types).
 
-## 6. Phase 4 — Referral system v2 (growth engine)
+## 6. Phase 4 — Referral system v2 (growth engine) — IMPLEMENTED (PR #108 merged; #116/#117/#125 open)
 
-- [ ] Move from raw referral counts to configurable **points**: defaults signup = 50, referral = 30, social-follow = 5, custom events via API (e.g. survey, Discord join); zero-config defaults so it works out of the box.
-- [ ] Tiered rewards/milestones ladder (refer 1 = move up X spots, 3 = beta access, 10 = founding member…) with "X more to unlock" progress everywhere.
-- [ ] Position inflation option (start at #847 to avoid empty-list shame) + hide-counts stealth mode for private/B2B launches.
-- [ ] Fraud basics: device fingerprint + IP velocity checks, Gmail dot/`+` normalization, 140+ disposable-domain list, silent mode (fake success, no points) with Standard/Strict toggle.
-- [ ] Standalone embeddable leaderboard widget (any site) + live counter widget ("2,418 waiting") served as embed or JSON.
-- [ ] Public API referral support: `POST /signup {email, referral_code}` → `{position, referral_code, referral_link}` + status lookup + `spots_to_advance` + idempotency keys (unblocks custom frontends and the "Handle Referral System" gap).
+- [x] Move from raw referral counts to configurable **points**: defaults signup = 50, referral = 30, social-follow = 5, custom events via API (e.g. survey, Discord join); zero-config defaults so it works out of the box.
+  - PR #116 (open): rewards config, idempotent ledger keys, published-snapshot amounts; live: 50+30 loop, replays converge.
+- [x] Tiered rewards/milestones ladder (refer 1 = move up X spots, 3 = beta access, 10 = founding member…) with "X more to unlock" progress everywhere.
+  - PR #116 (open): tiers from `referralRewards` blocks, `milestone.reached` on crossing, progress on cockpit/verify/API.
+- [x] Position inflation option (start at #847 to avoid empty-list shame) + hide-counts stealth mode for private/B2B launches.
+  - PR #116 (open): display-only offset + `counts_hidden` contract (verified live).
+- [x] Fraud basics: device fingerprint + IP velocity checks, Gmail dot/`+` normalization, 140+ disposable-domain list, silent mode (fake success, no points) with Standard/Strict toggle.
+  - PR #117 (open): gates, canonical Gmail, ~220-domain list, silent fakes byte-identical to real joins (live key-diff, zero rows).
+- [x] Standalone embeddable leaderboard widget (any site) + live counter widget ("2,418 waiting") served as embed or JSON.
+  - PR #117 (open): masked JSON + HTML snippets, `widget` budget, CDN cache headers (live-verified).
+- [x] Public API referral support: `POST /signup {email, referral_code}` → `{position, referral_code, referral_link}` + status lookup + `spots_to_advance` + idempotency keys (unblocks custom frontends and the "Handle Referral System" gap).
+  - PR #108 (merged): header auth, canonical contract, idempotency replays, GET lookup, per-key budgets + docs; PR #125 (open): `marketingConsent` passthrough (was silently dropped — consent automations never fired for API signups).
 - [ ] `milestone_reached` / `referral_completed` webhooks for custom reward fulfillment.
 
-## 7. Phase 5 — Geo / device / impression data (restore + expand)
+## 7. Phase 5 — Geo / device / impression data (restore + expand) — IMPLEMENTED IN OPEN PRs #118/#119 (live-verified headless; no historical backfill)
 
-- [ ] Guarantee capture on both funnels: page view → impression (ip, city, country, timezone, device, referrer, UTM) and join → signup (same + linkage to impression).
-- [ ] Backfill/verify city + timezone end-to-end (open item from the old list) including the Vercel-header vs GeoIP fallback path.
-- [ ] Capture landing page + referring site + UTM params per signup (hidden fields, zero founder effort).
-- [ ] Expose the data where it matters: signups table columns + filters, geo map + device breakdown in Analytics (Phase 6), CSV export includes all fields.
-- [ ] Bot filtering for impressions so stats stay honest.
+- [x] Guarantee capture on both funnels: page view → impression (ip, city, country, timezone, device, referrer, UTM) and join → signup (same + linkage to impression).
+  - PR #118 (open): embed-tracker gap + API attribution/mirroring fixed; P2002 back-link when a view predates the join (live exact-match proof).
+- [x] Verify city + timezone capture end-to-end, including the Vercel-header vs GeoIP fallback path.
+  - Capture verified forward-only (Vercel-decode + GeoIP fallback + derivation, all exercised live); no historical backfill was performed.
+- [x] Capture landing page + referring site + UTM params per signup (hidden fields, zero founder effort).
+  - PR #118 (open): first-touch sessionStorage snapshot on all funnels (live row proof).
+- [x] Expose the data where it matters: signups table columns + filters, geo map + device breakdown in Analytics (Phase 6), CSV export includes all fields.
+  - [x] Shipped evidence (builder-v2, Oct 2026): analytics geo map renders with empty state; subscriber drawer shows traffic Source plus Referred-by (click opens the referrer); CSV export includes referral_code/referred_by.
+  - [x] PR #119 (open): Source/Device columns, server-side Country/City/Source/Landing/UTM/Device filters, full drawer, 20-column CSV (live: `IN` → 2 rows, filtered export exact).
+- [x] Bot filtering for impressions so stats stay honest.
+  - PR #118 (open): fail-open heuristics, `filtered:true` + no row + no budget burn (Googlebot filtered, curl kept — live).
 
-## 8. Phase 6 — Analytics v2 (retention + upsell)
+## 8. Phase 6 — Analytics v2 (retention + upsell) — IMPLEMENTED IN OPEN PRs #120/#121 (live-verified headless)
 
-- [ ] Dedicated Analytics page per waitlist (open item from the old list): signups-over-time, views→signups conversion funnel, sources/referrers, geo map, devices/browsers, referral analytics (who-referred-whom, K-factor), email delivery per send.
-- [ ] Summary sentence + benchmarks ("conversion 14% vs median ~11%") so founders instantly know if they're healthy.
-- [ ] Replace all mock chart data with real queries; kill the commented-out placeholders.
-- [ ] Dashboard home rework: cross-waitlist overview (the "Improve the UI" item) + referral-data filters (the "filter referral data" item).
-- [ ] History windows by plan (e.g. free 28d → paid all-time) as a natural upgrade lever.
-- [ ] Funnel pipeline stages (Waitlist → Invited → Joined → Converted, renameable) feeding the launch-day flow in Phase 8.
+- [x] Dedicated Analytics page per waitlist (open item from the old list): signups-over-time, views→signups conversion funnel, sources/referrers, geo map, devices/browsers, referral analytics (who-referred-whom, K-factor), email delivery per send.
+  - PR #120: explicit Bklit-style funnel (Visited → Signed up → Verified, first-stage percentages and hover details), summary sentence + named medians, stat-value help, and stacked email-delivery visualization; all panels on bounded real queries (live synthetic-data screenshot, 12→8→6 funnel reconciles). PR is open.
+- [x] Summary sentence + benchmarks ("conversion 14% vs median ~11%") so founders instantly know if they're healthy.
+  - PR #120 (open; desktop and 390px screenshots captured with synthetic data).
+- [x] Replace all mock chart data with real queries; kill the commented-out placeholders.
+  - Verified: zero mock/sample/faker hits in analytics paths.
+- [x] Dashboard home rework: cross-waitlist overview (the "Improve the UI" item) + referral-data filters (the "filter referral data" item).
+  - PR #121 (open): WorkspaceOverview (totals, recent, per-list health, ref filters) — live screenshot.
+- [x] History windows by plan (e.g. free 28d → paid all-time) as a natural upgrade lever.
+  - PR #121 (open): server-side clamp + window metadata + honest free messaging (live: 90→28d, old row excluded).
+- [x] Funnel pipeline stages (Waitlist → Invited → Joined → Converted, renameable) feeding the launch-day flow in Phase 8.
+  - PR #121 (open): fixed keys, rename form, board + movers, manage-gated API (live: move persists, counts shift).
+- [ ] Page-level A/B testing (competitor gap): variant pages per waitlist with conversion-scored winner (props: KickoffLabs Premium+, Prefinery).
+- [ ] Post-signup conversion tracking (competitor gap): referral → customer journey + referral-revenue attribution, optional purchase-gated credit via Stripe (props: Viral Loops).
 
-## 9. Phase 7 — Email platform (biggest epic — split into 3)
+## 9. Phase 7 — Email platform (biggest epic — split into 3) — IMPLEMENTED IN OPEN PRs #122/#123/#124 (live-verified headless)
 
 ### 7a. Platform emails (us → our users) — audit first
 
-- [ ] List every occasion we must email founders: welcome, email verification, waitlist published, first signup, milestones (10/100/1000 signups), broadcast/invite summaries, billing + limits, re-engagement, changelog digests.
-- [ ] Template + tone audit: consistent brand, Reply-To set, plain-text fallbacks; verify sends are retried (outbox dispatcher exists — confirm coverage for all occasions).
+- [x] List every occasion we must email founders: welcome, email verification, waitlist published, first signup, milestones (10/100/1000 signups), broadcast/invite summaries, billing + limits, re-engagement, changelog digests.
+  - PR #122 (open) matrix: welcome / published (new) / first-signup + milestones / broadcast summaries implemented outbox-backed; verification n/a (social-only auth); invite-accepted/billing/re-engagement/changelog deferred + documented.
+- [x] Template + tone audit: consistent brand, Reply-To set, plain-text fallbacks; verify sends are retried (outbox dispatcher exists — confirm coverage for all occasions).
+  - PR #122 (open): text builders for all 6, `RESEND_REPLY_TO` default, deterministic keys, live Resend-header proof.
 
 ### 7b. Founder → their list (builder, automations, testing)
 
-- [ ] Rebuild the email builder: visual block editor (keep markdown as a mode, add HTML mode) with live preview + test-send + inbox previews.
-- [ ] Variables everywhere: `{{name}} {{position}} {{referral_link}} {{points}} {{rewards}}` with sensible fallback defaults.
-- [ ] Template set per waitlist: welcome, verification, referral-congrats (new), launch/invite (new), offboard (exists — add bulk offboard send, open item), broadcast/newsletter.
-- [ ] Automations v1: welcome series, referral nudge (joined but 0 referrals after N days), launch countdown, milestone-celebration to referrers; segment targeting (all / top referrers / unverified / inactive).
-- [ ] Broadcasts: send-now + schedule, per-send delivery report (delivered/bounced/spam/unsub).
-- [ ] Make creation + testing effortless: 1-click test send, seed preview data, spam-score hint, mobile preview.
+- [x] Rebuild the email builder: visual block editor (keep markdown as a mode, add HTML mode) with live preview + test-send + inbox previews.
+  - PR #123 (open): Write/HTML/Preview modes, 375px frame, spam hint, test sends (live screenshots).
+- [x] Variables everywhere: `{{name}} {{position}} {{referral_link}} {{points}} {{rewards}}` with sensible fallback defaults.
+  - PR #123 (open): canonical `variables.mjs`, escaped + fallbacks, snapshotted at queue time.
+- [x] Template set per waitlist: welcome, verification, referral-congrats (new), launch/invite (new), offboard (exists — add bulk offboard send, open item), broadcast/newsletter.
+  - PR #123 (open): referral-congrats + launch-invite added; bulk offboard send exists.
+- [x] Automations v1: welcome series, referral nudge (joined but 0 referrals after N days), launch countdown, milestone-celebration to referrers; segment targeting (all / top referrers / unverified / inactive).
+  - PR #123 (open): 5 recipes, server-side segments, full loop proven live (consent → verify → WELCOME run → step queued).
+- [x] Broadcasts: send-now + schedule, per-send delivery report (delivered/bounced/spam/unsub).
+  - PR #123 (open): scheduler sweep (latency-isolated per review), UTC-explicit scheduling, reconciling reports.
+- [x] Make creation + testing effortless: 1-click test send, seed preview data, spam-score hint, mobile preview.
+  - PR #123 (open; see builder shot).
+- [ ] Automation branching + A/B split step (competitor gap): waits, tags, stage-change and webhook steps plus split-test paths (props: LaunchList).
 
 ### 7c. BYOK + integrations (deliverability + distribution)
 
-- [ ] BYOK Resend: founder connects their own Resend account, we list their domains, they send through it (open item from the old list) — per-waitlist sender identity + custom sending domain.
-- [ ] More channels in order: webhooks (signed, retried, replayable logs) → Slack/Discord notifications → Zapier → Klaviyo/Mailchimp/Kit sync. REST API docs + guides for each.
-- [ ] API keys that work on all plans (great activation lever) with scopes + per-key rate limits.
+- [x] BYOK Resend: founder connects their own Resend account, we list their domains, they send through it (open item from the old list) — per-waitlist sender identity + custom sending domain.
+  - PR #124 (open): encrypted connect, domain list, waitlist→workspace→default resolution (fail-closed), test-to-activate (live: 401s, defaults, ciphertext-only storage).
+- [x] More channels in order: webhooks (signed, retried, replayable logs) → Slack/Discord notifications → Zapier → Klaviyo/Mailchimp/Kit sync. REST API docs + guides for each.
+  - PR #124 (open): Slack/Discord notifiers (allowlisted, test-to-activate); Zapier/ESP docs-only; email.* webhooks recorded gap.
+- [x] API keys that work on all plans (great activation lever) with scopes + per-key rate limits.
+  - PR #124 (open): zero plan gating found — docs-only; scopes + budgets intact.
 
 ## 10. Phase 8 — Growth & marketing surface (platform marketing POV)
 
@@ -126,6 +177,7 @@
 - [ ] Roles & teams (owner/admin/viewer), audit log for destructive actions.
 - [ ] Billing + plan limits wired to real usage (contacts held, emails sent, history windows, domains, seats) — overflow held, never silently deleted.
 - [ ] Docs + API reference + machine-readable integration guide so AI tools and developers integrate without support load.
+- [ ] MCP server for AI agents (competitor gap, concrete form of the above): Claude/ChatGPT/Cursor tools over the public API (props: LaunchList 35 tools, GetWaitlist).
 
 ## 12. Why this order (don't reorder without a reason)
 
@@ -140,3 +192,8 @@
 ## 13. Explicitly later (not in scope above)
 
 - [ ] Native mobile apps, white-label enterprise, multi-language UI (30+ translations), AI page builder, surveys engine, ad-pixel integrations, team SSO — revisit only when Phases 0–7 are shipped and measured.
+- [ ] Native reward fulfillment (competitor gap): coupon codes, Tremendous/Stripe payouts, auto-delivery — webhooks cover v1 (props: Viral Loops, EarlyParrot).
+- [ ] Giveaway/contest campaign mode + winner picker as a lightweight second campaign type; stay waitlist-first (props: KickoffLabs, UpViral).
+- [ ] Post-launch customer-referral mode wrapping existing SaaS/purchase flows via JS tags (props: EarlyParrot, Viral Loops, GrowSurf).
+- [ ] Per-campaign string localization, form + emails (competitor gap; full multi-language UI stays deferred) (props: LaunchList 17 languages, EarlyParrot 6).
+- [ ] Explicitly NOT copying (competitor research, Oct 2026): trial-only/no-free-tier gating; auto-upgrade on overage; per-new-lead billing (punishes virality — price by contacts held); Gleam-scale giveaway scope; AI builder as priority; complex lead scoring; Megaphone lesson = keep always-free export + referral-preserving import.
