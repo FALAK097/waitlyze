@@ -11,6 +11,7 @@ import { apiKeyRateLimitHeaders, consumeApiKeyBudget } from "@/lib/security/api-
 import { consumePublicBudget, PublicRateLimitError } from "@/lib/security/public-rate-limit.mjs";
 import { createSignUp } from "@/services/sign-up";
 import { validateApiKeyAndGetWaitlist } from "@/utils/api-key-auth";
+import { pickAttribution } from "@/utils/server/attribution.mjs";
 import { getDeviceInfo } from "@/utils/server/device";
 import { getGeoInfo, getIpAddress, getTimeZone } from "@/utils/server/geo";
 
@@ -202,6 +203,7 @@ export async function POST(request) {
       deviceType,
       waitListId: waitlistId,
       ipAddress: ip,
+      ...pickAttribution(body),
     };
 
     if (geo && (geo.city || geo.country || geo.timezone)) {
@@ -224,7 +226,7 @@ export async function POST(request) {
     // hairline concurrent same-key double-submit where both pass createSignUp.
     if (signUp.signupOutcome !== "returning") {
       try {
-        await prisma.impression.create({
+        const impression = await prisma.impression.create({
           data: {
             uniqueUserId: signUp.uniqueUserId,
             device,
@@ -232,12 +234,22 @@ export async function POST(request) {
             waitListId: waitlistId,
             ipAddress: ip,
             city: signupDataInput.city,
+            region: geo?.region,
             country: signupDataInput.country,
             latitude: signupDataInput.latitude,
             longitude: signupDataInput.longitude,
             timezone: signupDataInput.timezone,
+            ...pickAttribution(body),
           },
         });
+        // Link the signup to its page view, mirroring the browser funnel
+        // where the tracker row predates the join. Best-effort: intake must
+        // never fail because the linkage write did.
+        if (!signUp.impressionId) {
+          await prisma.signUp
+            .update({ where: { id: signUp.id }, data: { impressionId: impression.id } })
+            .catch(() => {});
+        }
       } catch (error) {
         if (error?.code !== "P2002") throw error;
       }
