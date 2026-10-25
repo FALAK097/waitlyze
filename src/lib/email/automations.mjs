@@ -1,3 +1,4 @@
+import { emailBrandFromSnapshot } from "./brand.mjs";
 import { interpolateEmail, subscriberEmailHtml, validateComposerContent } from "./composer.mjs";
 import { applyKnownProviderEvents } from "./suppression.mjs";
 import { createUnsubscribeToken } from "./unsubscribe.mjs";
@@ -438,6 +439,7 @@ export async function dispatchAutomationStep(db, event, payload, send, now, atte
             name: waitList.name || "Waitlist",
             content: interpolateEmail(config.renderedHtml, vars),
             unsubscribeUrl,
+            brand: emailBrandFromSnapshot(waitList.templateSnapshot),
           })
         : automationHtml({
             waitListName: waitList.name || "Waitlist",
