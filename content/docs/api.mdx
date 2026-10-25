@@ -101,6 +101,11 @@ curl --request POST 'https://waitlyze.falakgala.dev/api/waitlist' \
       required: false,
       description: "Required when Turnstile is enabled for the waitlist. The single-use token returned by the visitor's Cloudflare Turnstile widget.",
     },
+    marketingConsent: {
+      type: "boolean",
+      required: false,
+      description: "Record marketing consent for this signup (drives consent-gated automations). Defaults to false.",
+    },
   }}
 />
 
