@@ -50,6 +50,7 @@ export function UploadButton({ onSuccess, disabled }) {
         className="h-full w-full border-dotted border-black bg-white p-0 opacity-35 transition-all duration-300 ease-in-out hover:border-2 hover:opacity-55"
         variant="ghost"
         disabled={isUploading || disabled}
+        aria-label={isUploading ? "Uploading image" : "Upload image"}
         onClick={() => document.getElementById("file-input").click()}
       >
         {isUploading ? (
