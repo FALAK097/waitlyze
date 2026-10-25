@@ -4,6 +4,7 @@ import { after } from "next/server";
 
 import { createUnsubscribeToken, hashUnsubscribeToken } from "../email/unsubscribe.mjs";
 import { maybeNotifySignupMilestone } from "../emails/founder-notifications.mjs";
+import { FraudLimitError, evaluateSignupFraud, silentSignupShape } from "../fraud/gates.mjs";
 import { normalizeSignupEmail } from "../normalize-email.mjs";
 import {
   REFERRAL_CREDIT_STATUSES,
@@ -14,17 +15,64 @@ import {
 } from "../referrals/points.mjs";
 import {
   checkRewardTierUnlocks,
+  displayPosition,
   getPublishedRewards,
+  rewardProgress,
   summarizeSignupRewards,
 } from "../referrals/rewards.mjs";
 import { templateSnapshotSchema } from "../templates/catalog.mjs";
 import { enqueueWebhookEvent } from "../webhooks/delivery.mjs";
 import { MARKETING_CONSENT_COPY } from "./marketing-consent.mjs";
-import { getCampaignPosition, getEligibleReferralCounts } from "./referral-position.mjs";
+import {
+  getCampaignPosition,
+  getEligibleReferralCounts,
+  getSpotsForNewSignup,
+} from "./referral-position.mjs";
 import { findSignupByEmail } from "./signup-lookup.mjs";
 
 const normalizeEmail = normalizeSignupEmail;
 const tokenDigest = (token) => createHash("sha256").update(token).digest("hex");
+
+// Zero-value rewards block for silent-mode fakes: same keys as
+// summarizeSignupRewards (no structurally-missing-keys oracle), zero
+// progress, but the waitlist's real visibility flags and tier ladder so
+// `next_reward`/`counts_hidden` behave like a real fresh signup. Never
+// throws — a failure resolves to static zeros.
+async function silentRewardSummary(db, waitListId, rank) {
+  const zeros = {
+    points: 0,
+    referrals: 0,
+    position: typeof rank === "number" ? rank : null,
+    displayPosition: typeof rank === "number" ? rank : null,
+    spotsToAdvance: 0,
+    nextReward: null,
+    unlockedRewards: [],
+    tiersTotal: 0,
+    hideCounts: false,
+    showPoints: true,
+    showProgress: true,
+  };
+  try {
+    const [{ rewards, tiers }, spots] = await Promise.all([
+      getPublishedRewards(db, waitListId),
+      getSpotsForNewSignup(db, waitListId),
+    ]);
+    const progress = rewardProgress(tiers, 0);
+    return {
+      ...zeros,
+      displayPosition: displayPosition(rank, rewards) ?? zeros.displayPosition,
+      spotsToAdvance: spots,
+      nextReward: progress.next,
+      unlockedRewards: progress.unlocked,
+      tiersTotal: tiers.length,
+      hideCounts: rewards.hideCounts,
+      showPoints: rewards.showPoints,
+      showProgress: rewards.showProgress,
+    };
+  } catch {
+    return zeros;
+  }
+}
 
 async function recordVerifiedSignup(tx, signup, now) {
   await enqueueWebhookEvent(tx, {
@@ -103,6 +151,10 @@ export class InvalidCampaignError extends Error {
   }
 }
 
+// Re-exported so signup routes map the fraud verdict to HTTP without
+// importing the gate internals.
+export { FraudLimitError };
+
 export async function createCampaignSignup(
   db,
   input,
@@ -135,7 +187,7 @@ export async function createCampaignSignup(
       // Hold a share lock until the signup commits so a concurrent pause cannot
       // slip between the publication check and the subscriber insert.
       const published = await tx.$queryRaw`
-        SELECT "id", "showReferrals", "publishedRevision" FROM "wait_lists"
+        SELECT "id", "showReferrals", "publishedRevision", "fraudMode" FROM "wait_lists"
         WHERE "id" = ${input.waitListId} AND "status"::text = 'PUBLISHED'
         FOR SHARE
       `;
@@ -169,12 +221,45 @@ export async function createCampaignSignup(
         throw new DuplicateSignupError();
       }
 
+      // Fraud basics (additive, fail-open): IP velocity over the hard cap
+      // rejects with 429; device-fingerprint velocity goes silent — a fake
+      // success with nothing persisted (no row, no points, no webhooks, no
+      // email). Counting failures allow the signup through.
+      const fraud = await evaluateSignupFraud(tx, {
+        fraudMode: published[0].fraudMode,
+        ipAddress: input.ipAddress,
+        deviceFingerprint:
+          typeof input.deviceFingerprint === "string" && input.deviceFingerprint
+            ? input.deviceFingerprint
+            : null,
+        now,
+      });
+      if (fraud.action === "limit") throw new FraudLimitError();
+      if (fraud.action === "silent") {
+        const [{ count }] = await tx.$queryRaw`
+          SELECT COUNT(*)::bigint AS count FROM "sign_ups"
+          WHERE "waitListId" = ${input.waitListId}
+        `;
+        const rank = Number(count) + 1;
+        return silentSignupShape({
+          waitListId: input.waitListId,
+          email: input.email,
+          emailNormalized,
+          uniqueUserId: input.uniqueUserId,
+          rank: Number.isSafeInteger(rank) && rank > 0 ? rank : null,
+        });
+      }
+
       const createdSignup = await tx.signUp.create({
         data: {
           uniqueUserId: input.uniqueUserId,
           email: input.email.trim(),
           emailNormalized,
           waitListId: input.waitListId,
+          deviceFingerprint:
+            typeof input.deviceFingerprint === "string" && input.deviceFingerprint
+              ? input.deviceFingerprint.slice(0, 128)
+              : null,
           impressionId: input.impressionId || null,
           device: input.device || null,
           deviceType: input.deviceType || null,
@@ -292,17 +377,28 @@ export async function createCampaignSignup(
   }
 
   // Rank and rewards progress are independent reads: resolve them together
-  // so the signup response pays one round trip, not two.
-  const [rank, rewardSummary] = await Promise.all([
-    getCampaignPosition(db, input.waitListId, signUp.id),
-    // Rewards progress rides along with the rank so the cockpit and API can
-    // render points + "X more to unlock" without extra round trips. Best
-    // effort: a null summary never fails the signup response.
-    summarizeSignupRewards(db, input.waitListId, signUp).catch(() => null),
-  ]);
+  // so the signup response pays one round trip, not two. Silent-mode fakes
+  // skip the position query and get a zero-value block with the waitlist's
+  // real visibility flags (same keys as a real response —
+  // no structurally-missing-keys oracle).
+  let rank;
+  let rewardSummary = null;
+  if (signUp.silent) {
+    rank = signUp.rank;
+    rewardSummary = await silentRewardSummary(db, input.waitListId, signUp.rank);
+  } else {
+    [rank, rewardSummary] = await Promise.all([
+      getCampaignPosition(db, input.waitListId, signUp.id),
+      // Rewards progress rides along with the rank so the cockpit and API can
+      // render points + "X more to unlock" without extra round trips. Best
+      // effort: a null summary never fails the signup response.
+      summarizeSignupRewards(db, input.waitListId, signUp).catch(() => null),
+    ]);
+  }
   // Idempotent retries and duplicate lookups return early above, so only a row
-  // we actually created can move the milestone counters.
-  if (signUp?.signupOutcome === "created") {
+  // we actually created can move the milestone counters. Silent-mode fakes
+  // never touch counters, webhooks, or email.
+  if (signUp?.signupOutcome === "created" && !signUp.silent) {
     after(() => maybeNotifySignupMilestone(db, input.waitListId, { signupId: signUp.id }));
   }
   return { ...signUp, rank, rewardSummary };

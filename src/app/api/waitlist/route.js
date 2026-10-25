@@ -4,8 +4,13 @@ import { NextResponse } from "next/server";
 
 import { getCampaignPosition } from "@/lib/campaigns/referral-position.mjs";
 import { findSignupByEmail } from "@/lib/campaigns/signup-lookup.mjs";
-import { DuplicateSignupError, InvalidCampaignError } from "@/lib/campaigns/signups.mjs";
+import {
+  DuplicateSignupError,
+  FraudLimitError,
+  InvalidCampaignError,
+} from "@/lib/campaigns/signups.mjs";
 import { dispatchVerificationNow } from "@/lib/email/dispatch-now.mjs";
+import { fingerprintSignupDevice } from "@/lib/fraud/gates.mjs";
 import prisma from "@/lib/prisma";
 import { summarizeSignupRewards } from "@/lib/referrals/rewards.mjs";
 import { apiKeyRateLimitHeaders, consumeApiKeyBudget } from "@/lib/security/api-key-rate-limit.mjs";
@@ -220,6 +225,11 @@ export async function POST(request) {
       email: email.trim(),
       device,
       deviceType,
+      deviceFingerprint: fingerprintSignupDevice({
+        uniqueUserId,
+        userAgent: request.headers.get("user-agent"),
+        device,
+      }),
       waitListId: waitlistId,
       ipAddress: ip,
     };
@@ -237,7 +247,51 @@ export async function POST(request) {
     }
 
     const signUp = await createSignUp(signupDataInput, referralCode);
-    await dispatchVerificationNow(signUp.verificationEventKey);
+    // Silent-mode fraud verdict: same success shape, nothing persisted —
+    // no verification email, no impression, no points, no webhooks. The
+    // service attached a zero-value rewardSummary (real visibility flags,
+    // zero progress), so every key a real response carries is present —
+    // including counts_hidden for stealth launches, which the UI hides per
+    // the flag exactly like a real response.
+    if (signUp.silent) {
+      const sharing = await waitlistSharing(waitlistId);
+      const summary =
+        signUp.rewardSummary && typeof signUp.rewardSummary === "object"
+          ? signUp.rewardSummary
+          : null;
+      const fallback = {
+        displayPosition: signUp.rank ?? null,
+        points: 0,
+        referrals: 0,
+        nextReward: null,
+        unlockedRewards: [],
+        spotsToAdvance: 0,
+        hideCounts: false,
+      };
+      const s = summary ?? fallback;
+      return NextResponse.json(
+        {
+          success: true,
+          message: "Successfully joined the waitlist!",
+          data: {
+            rank: signUp.rank,
+            position: signUp.rank,
+            display_position: s.displayPosition ?? signUp.rank,
+            points: s.points,
+            referral_count: s.referrals,
+            next_reward: s.nextReward,
+            unlocked_rewards: s.unlockedRewards,
+            spots_to_advance: s.spotsToAdvance,
+            counts_hidden: s.hideCounts,
+            referral_code: signUp.referralCode || null,
+            referral_link: referralLink(sharing, signUp.referralCode),
+            verified: false,
+          },
+        },
+        { headers: budgetHeaders },
+      );
+    }
+    if (signUp.verificationEventKey) await dispatchVerificationNow(signUp.verificationEventKey);
 
     // Replays (same Idempotency-Key) return the original signup: no new page
     // view happened, so skip the impression. The P2002 guard covers the
@@ -275,6 +329,15 @@ export async function POST(request) {
     );
   } catch (error) {
     if (error instanceof PublicRateLimitError) return rateLimitResponse(error);
+    // Fraud IP-velocity gate: explicit 429 (fail-closed on clear abuse).
+    if (error instanceof FraudLimitError)
+      return NextResponse.json(
+        { success: false, message: error.message, error: error.message },
+        {
+          status: 429,
+          headers: { "Retry-After": String(error.retryAfterSeconds ?? 3600) },
+        },
+      );
     if (error instanceof DuplicateSignupError) {
       const lookupId = body?.waitlistId;
       const lookupEmail = typeof body?.email === "string" ? body.email.trim().toLowerCase() : null;

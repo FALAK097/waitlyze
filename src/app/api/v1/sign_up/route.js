@@ -1,8 +1,13 @@
 import { NextResponse } from "next/server";
 
 import { getCampaignPosition } from "@/lib/campaigns/referral-position.mjs";
-import { DuplicateSignupError, InvalidCampaignError } from "@/lib/campaigns/signups.mjs";
+import {
+  DuplicateSignupError,
+  FraudLimitError,
+  InvalidCampaignError,
+} from "@/lib/campaigns/signups.mjs";
 import { dispatchVerificationNow } from "@/lib/email/dispatch-now.mjs";
+import { fingerprintSignupDevice } from "@/lib/fraud/gates.mjs";
 import prisma from "@/lib/prisma";
 import { summarizeSignupRewards } from "@/lib/referrals/rewards.mjs";
 import { consumePublicBudget, PublicRateLimitError } from "@/lib/security/public-rate-limit.mjs";
@@ -116,6 +121,11 @@ export const POST = async (req) => {
       marketingConsent: body.marketingConsent === true,
       device,
       deviceType,
+      deviceFingerprint: fingerprintSignupDevice({
+        uniqueUserId: hypeSession,
+        userAgent: req.headers.get("user-agent"),
+        device,
+      }),
       waitListId: body.waitListId,
       ipAddress: ip,
       impressionId: impression?.id,
@@ -146,6 +156,15 @@ export const POST = async (req) => {
         { message: error.message, error: error.message },
         { status: error.status, headers: { "Retry-After": error.status === 429 ? "3600" : "60" } },
       );
+    // Fraud IP-velocity gate: explicit 429 (fail-closed on clear abuse).
+    // Fingerprint-velocity goes silent instead — the success shape above —
+    // so suspected bots get no tuning signal.
+    if (error instanceof FraudLimitError) {
+      return NextResponse.json(
+        { message: error.message, error: error.message },
+        { status: 429, headers: { "Retry-After": String(error.retryAfterSeconds ?? 3600) } },
+      );
+    }
     if (error instanceof DuplicateSignupError) {
       return NextResponse.json({ message: error.message }, { status: 403 });
     }

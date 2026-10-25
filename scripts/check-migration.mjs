@@ -130,6 +130,7 @@ try {
           "20261025090838_dashboard_bulk_consent_source",
           "20261025120000_phase4_ledger_social_follow",
           "20261025120001_phase4_ledger_custom",
+          "20261025140000_phase4_fraud_widgets",
         ]) {
           await db.query(await readFile(`prisma/migrations/${name}/migration.sql`, "utf8"));
         }

@@ -1,24 +1,15 @@
+import { findSignupByEmail } from "@/lib/campaigns/signup-lookup.mjs";
 import prisma from "@/lib/prisma";
 import { validateSignupEmail } from "@/utils/server/email-validation.mjs";
 
 const checkIfEmailExists = async (email, waitListId, uniqueUserId) => {
-  const normalizedEmail = typeof email === "string" ? email.trim().toLowerCase() : "";
-  const signUp = await prisma.signUp.findFirst({
-    where: {
-      waitListId,
-      OR: [
-        { emailNormalized: normalizedEmail },
-        { email: { equals: email.trim(), mode: "insensitive" } },
-      ],
-    },
-    select: { uniqueUserId: true, emailNormalized: true, email: true },
-  });
-  if (
-    signUp &&
-    signUp.uniqueUserId === uniqueUserId &&
-    (signUp.emailNormalized ?? signUp.email.trim().toLowerCase()) === normalizedEmail
-  )
-    return null;
+  // Canonical lookup: Gmail dots/plus-tags map to one identity (see
+  // normalize-email.mjs), including legacy rows stored pre-normalization.
+  // No include/select narrowing: findSignupByEmail forwards its fourth arg
+  // to Prisma `include` (relations only), and we need the scalar
+  // uniqueUserId to let idempotent retries through.
+  const signUp = await findSignupByEmail(prisma, waitListId, email);
+  if (signUp && signUp.uniqueUserId === uniqueUserId) return null;
   return signUp;
 };
 
