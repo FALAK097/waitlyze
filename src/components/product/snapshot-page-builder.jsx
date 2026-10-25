@@ -1651,70 +1651,86 @@ export function SnapshotPageBuilder({
           }
         >
           <div className="mx-auto w-full max-w-4xl">
-            <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-              <div
-                className="flex flex-wrap gap-1 [&_button]:cursor-pointer [&_button]:rounded-lg [&_button]:border-0 [&_button]:bg-transparent [&_button]:px-3 [&_button]:py-2 [&_button]:text-caption [&_button]:font-semibold [&_button]:text-product-text-secondary [&_button[aria-pressed=true]]:bg-product-bg-surface [&_button[aria-pressed=true]]:text-product-text-primary"
-                role="group"
-                aria-label="Preview state"
-              >
-                {[
-                  ["confirmed", "Confirmed"],
-                  ["pending", "Pending email"],
-                  ["returning", "Returning visitor"],
-                ]
-                  .filter(
-                    ([id]) =>
-                      (id !== "pending" || snapshot.form.verification) &&
-                      (id !== "returning" || waitList.showReferrals),
-                  )
-                  .map(([id, label]) => (
+            {snapshot.statusPage.postSignupBehavior === "no-change" ? (
+              <div className="grid min-h-140 w-full place-content-center gap-3 rounded-xl bg-white px-6 text-center shadow-surface">
+                <p className="m-0 text-micro font-bold tracking-widest text-product-text-secondary uppercase">
+                  Post-signup behavior
+                </p>
+                <h2 className="m-0 font-product-display text-3xl font-semibold tracking-tight text-product-text-primary">
+                  The form stays as-is
+                </h2>
+                <p className="m-0 max-w-lg text-sm leading-relaxed text-product-text-secondary">
+                  Visitors aren’t redirected or shown a confirmation or referral state after signup.
+                </p>
+              </div>
+            ) : (
+              <>
+                <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+                  <div
+                    className="flex flex-wrap gap-1 [&_button]:cursor-pointer [&_button]:rounded-lg [&_button]:border-0 [&_button]:bg-transparent [&_button]:px-3 [&_button]:py-2 [&_button]:text-caption [&_button]:font-semibold [&_button]:text-product-text-secondary [&_button[aria-pressed=true]]:bg-product-bg-surface [&_button[aria-pressed=true]]:text-product-text-primary"
+                    role="group"
+                    aria-label="Preview state"
+                  >
+                    {[
+                      ["confirmed", "Confirmed"],
+                      ["pending", "Pending email"],
+                      ["returning", "Returning visitor"],
+                    ]
+                      .filter(
+                        ([id]) =>
+                          (id !== "pending" || snapshot.form.verification) &&
+                          (id !== "returning" || waitList.showReferrals),
+                      )
+                      .map(([id, label]) => (
+                        <button
+                          key={id}
+                          type="button"
+                          aria-pressed={statusState === id}
+                          onClick={() => setStatusState(id)}
+                        >
+                          {label}
+                        </button>
+                      ))}
+                  </div>
+                  <div
+                    className="flex gap-1 [&_button]:flex [&_button]:size-9 [&_button]:cursor-pointer [&_button]:items-center [&_button]:justify-center [&_button]:rounded-lg [&_button]:border-0 [&_button]:bg-transparent [&_button]:text-product-text-secondary [&_button[aria-pressed=true]]:bg-product-bg-surface [&_button[aria-pressed=true]]:text-product-text-primary"
+                    role="group"
+                    aria-label="Preview viewport"
+                  >
                     <button
-                      key={id}
                       type="button"
-                      aria-pressed={statusState === id}
-                      onClick={() => setStatusState(id)}
+                      aria-label="Desktop preview"
+                      aria-pressed={statusViewport === "desktop"}
+                      onClick={() => setStatusViewport("desktop")}
                     >
-                      {label}
+                      <HugeiconsIcon icon={MonitorIcon} size={17} aria-hidden="true" />
                     </button>
-                  ))}
-              </div>
-              <div
-                className="flex gap-1 [&_button]:flex [&_button]:size-9 [&_button]:cursor-pointer [&_button]:items-center [&_button]:justify-center [&_button]:rounded-lg [&_button]:border-0 [&_button]:bg-transparent [&_button]:text-product-text-secondary [&_button[aria-pressed=true]]:bg-product-bg-surface [&_button[aria-pressed=true]]:text-product-text-primary"
-                role="group"
-                aria-label="Preview viewport"
-              >
-                <button
-                  type="button"
-                  aria-label="Desktop preview"
-                  aria-pressed={statusViewport === "desktop"}
-                  onClick={() => setStatusViewport("desktop")}
+                    <button
+                      type="button"
+                      aria-label="Mobile preview"
+                      aria-pressed={statusViewport === "mobile"}
+                      onClick={() => setStatusViewport("mobile")}
+                    >
+                      <HugeiconsIcon icon={SmartphoneIcon} size={17} aria-hidden="true" />
+                    </button>
+                  </div>
+                </div>
+                <div
+                  className={cn(
+                    "grid overflow-hidden rounded-xl bg-white shadow-surface",
+                    statusViewport === "mobile"
+                      ? "mx-auto min-h-160 w-full max-w-md"
+                      : "min-h-140 w-full",
+                  )}
                 >
-                  <HugeiconsIcon icon={MonitorIcon} size={17} aria-hidden="true" />
-                </button>
-                <button
-                  type="button"
-                  aria-label="Mobile preview"
-                  aria-pressed={statusViewport === "mobile"}
-                  onClick={() => setStatusViewport("mobile")}
-                >
-                  <HugeiconsIcon icon={SmartphoneIcon} size={17} aria-hidden="true" />
-                </button>
-              </div>
-            </div>
-            <div
-              className={cn(
-                "grid overflow-hidden rounded-xl bg-white shadow-surface",
-                statusViewport === "mobile"
-                  ? "mx-auto min-h-160 w-full max-w-md"
-                  : "min-h-140 w-full",
-              )}
-            >
-              <StatusPagePreview
-                snapshot={snapshot}
-                state={statusState}
-                showReferrals={waitList.showReferrals}
-              />
-            </div>
+                  <StatusPagePreview
+                    snapshot={snapshot}
+                    state={statusState}
+                    showReferrals={waitList.showReferrals}
+                  />
+                </div>
+              </>
+            )}
           </div>
         </SurfaceLayout>
       )}
@@ -2286,79 +2302,22 @@ function StatusPanel({
       </Link>
     </p>
   );
-  const isSimpleConfirmation =
-    !status.showPosition &&
-    !status.showReferralLink &&
-    !status.showReferralCount &&
-    (status.shareChannels ?? []).length === 0 &&
-    !perks.showPoints &&
-    !perks.showProgress;
-  // Presets patch statusPage and rewards in one snapshot update: two separate
-  // updateRoot calls would both build from the same rendered snapshot, so the
-  // second would discard the first's changes (and double the undo steps).
-  const applySimpleConfirmation = () => {
-    updateRoots({
-      statusPage: {
-        showPosition: false,
-        showReferralLink: false,
-        showReferralCount: false,
-        shareChannels: [],
-      },
-      rewards: { ...perks, showPoints: false, showProgress: false },
-    });
-  };
-  const applyReferralCockpit = () => {
-    updateRoots({
-      statusPage: {
-        showPosition: true,
-        showReferralLink: true,
-        showReferralCount: false,
-        shareChannels:
-          (status.shareChannels ?? []).length > 0
-            ? status.shareChannels
-            : ["x", "instagram", "linkedin", "whatsapp", "email"],
-      },
-      rewards: { ...perks, showPoints: true, showProgress: true },
-    });
-  };
   return (
     <div className={"grid gap-4 p-4"}>
-      <div>
-        <span
-          className={
-            "block text-micro font-bold tracking-widest text-product-text-secondary uppercase"
-          }
-        >
-          Confirmation style
-        </span>
-        <div
-          className="mt-2 grid grid-cols-2 gap-1 bg-product-bg-surface p-1 [&_button]:cursor-pointer [&_button]:rounded-lg [&_button]:border-0 [&_button]:bg-transparent [&_button]:px-3 [&_button]:py-2 [&_button]:text-caption [&_button]:font-semibold [&_button]:text-product-text-secondary [&_button[aria-pressed=true]]:bg-product-bg-inset [&_button[aria-pressed=true]]:text-product-text-primary"
-          role="group"
-          aria-label="Confirmation style"
-        >
-          <button
-            key="cockpit"
-            type="button"
-            aria-pressed={!isSimpleConfirmation}
-            onClick={applyReferralCockpit}
-          >
-            Referral cockpit
-          </button>
-          <button
-            key="simple"
-            type="button"
-            aria-pressed={isSimpleConfirmation}
-            onClick={applySimpleConfirmation}
-          >
-            Simple confirmation
-          </button>
-        </div>
-        <p className="mt-2 text-caption leading-relaxed text-product-text-secondary">
-          {isSimpleConfirmation
-            ? "Showing just the confirmation message — no position, referral link, or share buttons. Best for embeds on your own site or API-driven frontends."
-            : "Showing the referral cockpit after signup. Position, referral link, and share buttons appear only when enabled below."}
+      <SelectField
+        label="After a successful signup"
+        value={status.postSignupBehavior}
+        options={[
+          { id: "confirmation", label: "Show confirmation" },
+          { id: "no-change", label: "No redirect or state change" },
+        ]}
+        onChange={(postSignupBehavior) => update({ postSignupBehavior })}
+      />
+      {status.postSignupBehavior === "no-change" && (
+        <p className="m-0 text-caption leading-relaxed text-product-text-secondary">
+          No redirect or confirmation/referral state is shown. The signup is still recorded.
         </p>
-      </div>
+      )}
       <Field
         label="Confirmed heading"
         value={status.heading}
