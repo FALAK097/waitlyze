@@ -73,8 +73,9 @@ export const GET = async (req) => {
 };
 
 export const POST = async (req) => {
+  let body = null;
   try {
-    const body = await req.json();
+    body = await req.json();
     if (
       typeof body?.waitListId !== "string" ||
       !body.waitListId ||
@@ -169,8 +170,8 @@ export const POST = async (req) => {
       // Race path: the row committed between the pre-DB duplicate check and
       // the insert. Resolve like the validator does — position + link, 200.
       const resolved = await duplicateSignupResponse(
-        body.waitListId,
-        body.email,
+        body?.waitListId,
+        body?.email,
         body?.hypeSession,
       ).catch(() => null);
       if (resolved) return resolved;
