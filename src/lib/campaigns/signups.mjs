@@ -83,6 +83,7 @@ async function recordVerifiedSignup(tx, signup, now) {
       await checkRewardTierUnlocks(tx, {
         waitListId: signup.waitListId,
         referrerId: referral.referredById,
+        triggeringSignupId: signup.id,
         verifiedReferrals: counts.get(referral.referredById) ?? 0,
         tiers,
         now,

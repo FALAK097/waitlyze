@@ -41,7 +41,7 @@ function rateLimitResponse(error, extraHeaders) {
 export async function POST(request) {
   let body;
   try {
-    body = await request.json();
+    body = await request.json().catch(() => null);
     if (!body || typeof body !== "object")
       return NextResponse.json(
         { success: false, error: "Invalid points request" },

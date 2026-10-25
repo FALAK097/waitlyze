@@ -931,7 +931,7 @@ export function StatusPagePreview({ snapshot, state = "confirmed", showReferrals
             <strong className="text-wl-text">{nextTier.reward}</strong>
           </p>
         ) : null}
-        {returning && showReferrals && status.showReferralCount && (
+        {returning && showReferrals && status.showReferralCount && !rewards.hideCounts && (
           <div className="mt-4 flex w-full max-w-md justify-between border-y border-wl-text/15 py-4">
             <span>Friends joined</span>
             <strong className="text-xl">3</strong>

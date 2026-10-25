@@ -24,7 +24,7 @@ import { consumePublicBudget, PublicRateLimitError } from "@/lib/security/public
 const FOLLOW_CLAIM_COOLDOWN_MS = 5 * 60 * 1000;
 export async function POST(request) {
   try {
-    const body = await request.json();
+    const body = await request.json().catch(() => null);
     if (typeof body?.waitListId !== "string" || !body.waitListId || body.waitListId.length > 128)
       return NextResponse.json({ message: "A valid waitlist is required." }, { status: 400 });
     if (typeof body?.code !== "string" || !body.code || body.code.length > 256)

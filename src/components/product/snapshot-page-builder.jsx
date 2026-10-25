@@ -1636,6 +1636,17 @@ export function SnapshotPageBuilder({
               rewards={snapshot.rewards}
               update={(value) => updateRoot("statusPage", value)}
               updateRewards={(value) => updateRoot("rewards", value)}
+              updateRoots={(patch) =>
+                applySnapshot({
+                  ...snapshot,
+                  ...Object.fromEntries(
+                    Object.entries(patch).map(([key, value]) => [
+                      key,
+                      { ...snapshot[key], ...value },
+                    ]),
+                  ),
+                })
+              }
             />
           }
         >
@@ -2242,7 +2253,15 @@ function FormPanel({ form, update }) {
     </div>
   );
 }
-function StatusPanel({ status, update, showReferrals = true, waitListId, rewards, updateRewards }) {
+function StatusPanel({
+  status,
+  update,
+  showReferrals = true,
+  waitListId,
+  rewards,
+  updateRewards,
+  updateRoots,
+}) {
   // Drafts saved before rewards existed have no key yet: fall back to the
   // zero-config defaults (same values the API resolves server-side).
   const perks = {
@@ -2256,7 +2275,6 @@ function StatusPanel({ status, update, showReferrals = true, waitListId, rewards
     showProgress: true,
     ...rewards,
   };
-  const setPerks = (patch) => updateRewards({ ...perks, ...patch });
   const referralNote = showReferrals ? null : (
     <p className="m-0 text-caption leading-relaxed text-product-text-secondary">
       Referral sharing is off for this waitlist, so the referral link and share buttons stay hidden.{" "}
@@ -2275,26 +2293,33 @@ function StatusPanel({ status, update, showReferrals = true, waitListId, rewards
     (status.shareChannels ?? []).length === 0 &&
     !perks.showPoints &&
     !perks.showProgress;
+  // Presets patch statusPage and rewards in one snapshot update: two separate
+  // updateRoot calls would both build from the same rendered snapshot, so the
+  // second would discard the first's changes (and double the undo steps).
   const applySimpleConfirmation = () => {
-    update({
-      showPosition: false,
-      showReferralLink: false,
-      showReferralCount: false,
-      shareChannels: [],
+    updateRoots({
+      statusPage: {
+        showPosition: false,
+        showReferralLink: false,
+        showReferralCount: false,
+        shareChannels: [],
+      },
+      rewards: { ...perks, showPoints: false, showProgress: false },
     });
-    setPerks({ showPoints: false, showProgress: false });
   };
   const applyReferralCockpit = () => {
-    update({
-      showPosition: true,
-      showReferralLink: true,
-      showReferralCount: false,
-      shareChannels:
-        (status.shareChannels ?? []).length > 0
-          ? status.shareChannels
-          : ["x", "instagram", "linkedin", "whatsapp", "email"],
+    updateRoots({
+      statusPage: {
+        showPosition: true,
+        showReferralLink: true,
+        showReferralCount: false,
+        shareChannels:
+          (status.shareChannels ?? []).length > 0
+            ? status.shareChannels
+            : ["x", "instagram", "linkedin", "whatsapp", "email"],
+      },
+      rewards: { ...perks, showPoints: true, showProgress: true },
     });
-    setPerks({ showPoints: true, showProgress: true });
   };
   return (
     <div className={"grid gap-4 p-4"}>
@@ -2562,19 +2587,24 @@ function RewardsSection({ perks, updateRewards }) {
             variant="outline"
             size="sm"
             type="button"
-            onClick={() =>
+            onClick={() => {
+              // Distinct keys: normalizeRewardsConfig keeps one entry per key,
+              // so adding twice without renaming must not collide.
+              const keys = new Set((perks.customEvents ?? []).map((entry) => entry.key));
+              let key = "survey";
+              for (let n = 2; keys.has(key); n += 1) key = `survey-${n}`;
               setPerks({
                 customEvents: [
                   ...(perks.customEvents ?? []),
                   {
-                    key: "survey",
+                    key,
                     label: "Survey completed",
                     points: 20,
                     id: crypto.randomUUID(),
                   },
                 ],
-              })
-            }
+              });
+            }}
           >
             Add event
           </Button>

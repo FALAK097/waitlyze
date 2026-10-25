@@ -30,8 +30,10 @@ const RETRYABLE = new Set([408, 425, 429]);
 // - milestone.reached: data = { count, triggeringSignupId? } where count is
 //   one of 1/10/100/1000 and triggeringSignupId is the signup that tripped
 //   the count, when known. Reward-tier unlocks reuse this type with
-//   data = { count, reward, triggeringSignupId } where count is the crossed
-//   referral threshold and reward is the tier label. Milestones use a
+//   data = { signupId, count, reward, triggeringSignupId } where count is the
+//   crossed referral threshold, reward is the tier label, signupId is the
+//   referrer who earns the tier, and triggeringSignupId is the invitee whose
+//   verification crossed it. Milestones use a
 //   deterministic event id (milestone:{waitlistId}:{count}) so concurrent
 //   trips collapse to one delivery via skipDuplicates instead of
 //   double-firing; tier unlocks use reward-tier:{waitlistId}:{signup}:{count}

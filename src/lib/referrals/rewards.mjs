@@ -123,7 +123,7 @@ export async function getAdvancement(db, waitListId, signUpId) {
 // collide with the signup-count milestones (milestone:{waitlist}:{count}).
 export async function checkRewardTierUnlocks(
   tx,
-  { waitListId, referrerId, verifiedReferrals, tiers, now = new Date() },
+  { waitListId, referrerId, triggeringSignupId, verifiedReferrals, tiers, now = new Date() },
 ) {
   const list = Array.isArray(tiers) ? tiers : [];
   const count =
@@ -142,7 +142,9 @@ export async function checkRewardTierUnlocks(
         extra: {
           count: tier.referrals,
           reward: tier.reward,
-          triggeringSignupId: referrerId,
+          // The invitee whose verification crossed the threshold; `signupId`
+          // above stays the referrer who earns the tier.
+          triggeringSignupId,
         },
         now,
       })),
