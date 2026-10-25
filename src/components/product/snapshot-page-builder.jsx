@@ -1998,8 +1998,66 @@ function StatusPanel({ status, update, showReferrals = true, waitListId }) {
       </Link>
     </p>
   );
+  const isSimpleConfirmation =
+    !status.showPosition &&
+    !status.showReferralLink &&
+    !status.showReferralCount &&
+    (status.shareChannels ?? []).length === 0;
+  const applySimpleConfirmation = () =>
+    update({
+      showPosition: false,
+      showReferralLink: false,
+      showReferralCount: false,
+      shareChannels: [],
+    });
+  const applyReferralCockpit = () =>
+    update({
+      showPosition: true,
+      showReferralLink: true,
+      showReferralCount: false,
+      shareChannels:
+        (status.shareChannels ?? []).length > 0
+          ? status.shareChannels
+          : ["x", "instagram", "linkedin", "whatsapp", "email"],
+    });
   return (
     <div className={"grid gap-4 p-4"}>
+      <div>
+        <span
+          className={
+            "block text-micro font-bold tracking-widest text-product-text-secondary uppercase"
+          }
+        >
+          Confirmation style
+        </span>
+        <div
+          className="mt-2 grid grid-cols-2 gap-1 bg-product-bg-surface p-1 [&_button]:cursor-pointer [&_button]:rounded-lg [&_button]:border-0 [&_button]:bg-transparent [&_button]:px-3 [&_button]:py-2 [&_button]:text-caption [&_button]:font-semibold [&_button]:text-product-text-secondary [&_button[aria-pressed=true]]:bg-product-bg-inset [&_button[aria-pressed=true]]:text-product-text-primary"
+          role="group"
+          aria-label="Confirmation style"
+        >
+          <button
+            key="cockpit"
+            type="button"
+            aria-pressed={!isSimpleConfirmation}
+            onClick={applyReferralCockpit}
+          >
+            Referral cockpit
+          </button>
+          <button
+            key="simple"
+            type="button"
+            aria-pressed={isSimpleConfirmation}
+            onClick={applySimpleConfirmation}
+          >
+            Simple confirmation
+          </button>
+        </div>
+        <p className="mt-2 text-caption leading-relaxed text-product-text-secondary">
+          {isSimpleConfirmation
+            ? "Showing just the confirmation message — no position, referral link, or share buttons. Best for embeds on your own site or API-driven frontends."
+            : "Showing the referral cockpit after signup. Position, referral link, and share buttons appear only when enabled below."}
+        </p>
+      </div>
       <Field
         label="Confirmed heading"
         value={status.heading}
