@@ -30,13 +30,15 @@ export async function publishWaitlist(id, revision) {
     return { ok: false, message: "Reload the page and try again." };
   // First-publish detection: only a list that was never published notifies
   // its owners — re-publishes after an edit and resumes from PAUSED stay
-  // quiet on purpose.
-  const before = await prisma.waitList.findUnique({
-    where: { id },
-    select: { status: true, publishedRevision: true },
-  });
-  const firstPublish = Boolean(before) && !before.publishedRevision;
+  // quiet on purpose. Read inside the authenticated closure: no pre-auth row
+  // access, and still observed before the publish write.
+  let firstPublish = false;
   const outcome = await action(async (userId) => {
+    const before = await prisma.waitList.findUnique({
+      where: { id },
+      select: { status: true, publishedRevision: true },
+    });
+    firstPublish = Boolean(before) && !before.publishedRevision;
     const result = await publishCampaign(prisma, userId, undefined, id, revision);
     await recordWaitlistAuditEvent(prisma, {
       userId,
