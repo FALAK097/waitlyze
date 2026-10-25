@@ -2,7 +2,7 @@
 
 import { Image01Icon, Loading01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { useR2Upload } from "@/utils/r2-upload";
@@ -11,6 +11,7 @@ import { Button } from "./button";
 
 export function UploadButton({ onSuccess, disabled }) {
   const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef(null);
 
   const { startUpload } = useR2Upload("imageUploader", {
     onClientUploadComplete: (res) => {
@@ -51,7 +52,7 @@ export function UploadButton({ onSuccess, disabled }) {
         variant="ghost"
         disabled={isUploading || disabled}
         aria-label={isUploading ? "Uploading image" : "Upload image"}
-        onClick={() => document.getElementById("file-input").click()}
+        onClick={() => fileInputRef.current?.click()}
       >
         {isUploading ? (
           <HugeiconsIcon icon={Loading01Icon} className="h-12 w-12 animate-spin bg-primary" />
@@ -60,7 +61,7 @@ export function UploadButton({ onSuccess, disabled }) {
         )}
       </Button>
       <input
-        id="file-input"
+        ref={fileInputRef}
         type="file"
         accept="image/*"
         onChange={handleFileChange}
