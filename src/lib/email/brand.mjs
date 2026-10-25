@@ -25,7 +25,6 @@ export function emailBrandFromSnapshot(snapshot) {
   return {
     logo: safeLogo(brand.logo),
     linkColor: safeHex(brand.buttonColor),
-    headingFont: safeFont(brand.headingFont),
     bodyFont: safeFont(brand.bodyFont),
   };
 }

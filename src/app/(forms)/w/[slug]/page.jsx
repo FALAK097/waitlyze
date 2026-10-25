@@ -45,9 +45,11 @@ export async function generateMetadata({ params }) {
   // OG images and favicons render in third-party scrapers: only absolute TLS
   // or site-relative URLs (resolved against metadataBase). Anything else is
   // dropped rather than emitting a broken tag.
+  // Protocol-relative ("//evil.test/x.png") would inherit https and bypass
+  // the allowlist, so only absolute TLS or single-slash-relative URLs pass.
   const shareImage =
     typeof page.snapshot.seo.image === "string" &&
-    /^(https:\/\/|\/)/i.test(page.snapshot.seo.image.trim())
+    /^(https:\/\/|\/(?!\/))/i.test(page.snapshot.seo.image.trim())
       ? page.snapshot.seo.image.trim()
       : "";
   const favicon =
