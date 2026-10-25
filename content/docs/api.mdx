@@ -94,6 +94,11 @@ curl --request POST 'https://waitlyze.falakgala.dev/api/waitlist' \
       required: false,
       description: "An existing referral code for the same waitlist. Also accepted as referral_code. See Referrals.",
     },
+    marketingConsent: {
+      type: "boolean",
+      required: false,
+      description: "Record marketing consent for this signup (drives consent-gated automations). Defaults to false.",
+    },
   }}
 />
 
