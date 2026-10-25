@@ -125,15 +125,15 @@ export function sanitizeCustomFieldAnswers(form, raw) {
     answers.push({ id: field.id, label: field.label, value });
   }
   for (const field of fields) {
-    if (!field.required) continue;
     const answer = answers.find((item) => item.id.toLowerCase() === String(field.id).toLowerCase());
     const empty =
       !answer || (field.type === "checkbox" ? answer.value !== "yes" : answer.value === "");
-    if (empty) return { error: `“${field.label}” is required.`, answers: [] };
+    if (field.required && empty) return { error: `“${field.label}” is required.`, answers: [] };
+    if (empty) continue;
     if (field.type === "select" && !field.options.includes(answer.value)) {
       return { error: `Choose a valid option for “${field.label}”.`, answers: [] };
     }
-    if (field.type === "number" && answer.value !== "" && !/^-?\d+(\.\d+)?$/.test(answer.value)) {
+    if (field.type === "number" && !/^-?\d+(\.\d+)?$/.test(answer.value)) {
       return { error: `“${field.label}” must be a number.`, answers: [] };
     }
   }
@@ -163,6 +163,7 @@ export function pickCustomFields(body) {
 export function resolveSuccessRedirect(form) {
   const target = typeof form?.successRedirectUrl === "string" ? form.successRedirectUrl.trim() : "";
   if (!target) return null;
+  if (target.includes("\\")) return null;
   if (/^\/(?!\/)/.test(target)) return target.slice(0, 500);
   if (/^https:\/\//i.test(target)) {
     let host = "";

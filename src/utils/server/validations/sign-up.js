@@ -29,7 +29,10 @@ import { validateSignupEmail } from "@/utils/server/email-validation.mjs";
 // The payload deliberately omits uniqueUserId: no client consumes it, and it
 // doubles as a referral-attribution identifier, so there is no reason to hand
 // a probing browser someone else's stable identifier.
-export const duplicateSignupResponse = async (waitListId, email) => {
+// The referral code is only included when the probing browser matches the
+// signup's own browser (uniqueUserId equal) — otherwise the response is
+// position-only, so one browser can't harvest another signup's referral link.
+export const duplicateSignupResponse = async (waitListId, email, browserId = "") => {
   const existing =
     (await findSignupByEmail(prisma, waitListId, email, {
       referrals: true,
@@ -47,6 +50,8 @@ export const duplicateSignupResponse = async (waitListId, email) => {
   const rank = await getCampaignPosition(prisma, waitListId, existing.id);
   const referrals = Array.isArray(existing.referrals) ? existing.referrals : [];
   const redirectUrl = resolveSuccessRedirect(await getPublishedFormConfig(prisma, waitListId));
+  const sameBrowser =
+    typeof browserId === "string" && browserId !== "" && existing.uniqueUserId === browserId;
   return Response.json(
     {
       message: "You're already on this waitlist. Here are your current details.",
@@ -58,7 +63,7 @@ export const duplicateSignupResponse = async (waitListId, email) => {
         verified: !!existing.verifiedAt,
         outcome: "returning",
         referralCount: referrals.length,
-        referralCode: existing.referralCode,
+        ...(sameBrowser ? { referralCode: existing.referralCode } : {}),
         ...(redirectUrl ? { redirectUrl } : {}),
       },
     },
@@ -191,6 +196,6 @@ export const validateRequest = async (body, context = {}) => {
       (legacy.emailNormalized ?? legacy.email.trim().toLowerCase()) === normalizedEmail
     )
   ) {
-    return duplicateSignupResponse(body.waitListId, body.email);
+    return duplicateSignupResponse(body.waitListId, body.email, body.hypeSession);
   }
 };

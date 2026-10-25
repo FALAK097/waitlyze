@@ -230,8 +230,9 @@ function CustomFieldInput({ field, control }) {
         className={cn(control, "w-full")}
         id={id}
         name={name}
-        type={field.type === "number" ? "number" : "text"}
+        type="text"
         inputMode={field.type === "number" ? "numeric" : undefined}
+        pattern={field.type === "number" ? "-?[0-9]+(\\.[0-9]+)?" : undefined}
         placeholder={field.placeholder || ""}
         required={field.required === true}
         maxLength={2000}
@@ -475,7 +476,7 @@ function SignupFormInner({ slug, waitListId, showReferrals, formConfig, statusPa
         <button
           className={cn(action, "cursor-pointer disabled:cursor-wait disabled:opacity-65")}
           type="submit"
-          disabled={busy}
+          disabled={busy || (turnstileOn && !turnstileToken)}
         >
           {busy ? "Joining…" : formConfig.buttonText}
         </button>

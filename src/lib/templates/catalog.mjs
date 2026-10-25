@@ -195,7 +195,10 @@ const redirectUrl = z
     {
       message: "Use a site-relative path (/thanks) or an https:// URL.",
     },
-  );
+  )
+  .refine((value) => !value.includes("\\"), {
+    message: "Redirect URLs can't contain backslashes.",
+  });
 export const templateFormSchema = z
   .strictObject({
     fields: z.tuple([z.literal("email")]),

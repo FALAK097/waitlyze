@@ -153,7 +153,11 @@ export const POST = async (req) => {
     if (error instanceof DuplicateSignupError) {
       // Race path: the row committed between the pre-DB duplicate check and
       // the insert. Resolve like the validator does — position + link, 200.
-      const resolved = await duplicateSignupResponse(body.waitListId, body.email).catch(() => null);
+      const resolved = await duplicateSignupResponse(
+        body.waitListId,
+        body.email,
+        body?.hypeSession,
+      ).catch(() => null);
       if (resolved) return resolved;
       return NextResponse.json({ message: error.message }, { status: 403 });
     }

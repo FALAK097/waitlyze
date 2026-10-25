@@ -2050,6 +2050,11 @@ function FormPanel({ form, update }) {
         label="Bot protection (Cloudflare Turnstile)"
         checked={form.requireTurnstile === true}
         onChange={(requireTurnstile) => update({ requireTurnstile })}
+        hint={
+          form.requireTurnstile === true
+            ? "Signups fail while the server's TURNSTILE_SECRET_KEY is missing."
+            : ""
+        }
       />
       {form.requireTurnstile && (
         <Field
