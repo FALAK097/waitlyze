@@ -107,6 +107,9 @@ export async function POST(request) {
       });
     }
     const result = await prisma.$transaction(async (tx) => {
+      // All awaits below share the one transaction connection and must keep
+      // this order: fraud gate → award → read-back. Promise.all would still
+      // serialize on the shared connection and would break the ordering.
       if (await isFarmSuspect(tx, signup.ipAddress)) return { awarded: false };
       const award = await awardPoints(tx, {
         waitListId: signup.waitListId,

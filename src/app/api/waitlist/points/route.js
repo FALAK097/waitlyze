@@ -142,6 +142,9 @@ export async function POST(request) {
     if (typeof body.label === "string" && body.label.trim()) label = body.label.trim().slice(0, 80);
 
     const result = await prisma.$transaction(async (tx) => {
+      // All awaits below share the one transaction connection and must keep
+      // this order: fraud gate → award → read-back. Promise.all would still
+      // serialize on the shared connection and would break the ordering.
       if (await isFarmSuspect(tx, signup.ipAddress, new Date()))
         return { awarded: false, balance: signup.points ?? 0 };
       const award = await awardPoints(tx, {
