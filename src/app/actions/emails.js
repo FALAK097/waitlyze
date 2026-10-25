@@ -20,6 +20,7 @@ import {
 import { BROADCAST_SEGMENTS, normalizeSegment } from "@/lib/email/segments.mjs";
 import { seedPreviewVars } from "@/lib/email/variables.mjs";
 import { notifyBroadcastSummary } from "@/lib/emails/founder-notifications.mjs";
+import { emailStatusLabel } from "@/lib/emails/status-label.mjs";
 import { env } from "@/lib/env.mjs";
 import { resolveWorkspaceEmailSender } from "@/lib/integrations/email-sender.mjs";
 import prisma from "@/lib/prisma";
@@ -1069,21 +1070,6 @@ export async function cancelBroadcast({ waitListId, broadcastId }) {
   };
 }
 
-const runStatusLabel = (status) =>
-  ({
-    DRAFT: "Off",
-    ENABLED: "Enabled",
-    PAUSED: "Paused",
-    PENDING: "Scheduled",
-    PROCESSING: "Sending",
-    SENT: "Sent",
-    SCHEDULED: "Scheduled",
-    SKIPPED: "Skipped",
-    FAILED: "Needs attention",
-    CANCELED: "Canceled",
-    SENDING: "Sending",
-  })[status] || status;
-
 export async function listEmailRuns(waitListId) {
   const { campaign } = await requireCampaign(waitListId, "sendEmail");
   const [runs, broadcasts] = await Promise.all([
@@ -1127,7 +1113,7 @@ export async function listEmailRuns(waitListId) {
       kind: "Automation",
       title: automationTitle(run.recipe.type),
       recipient: maskEmail(run.signUp.email),
-      status: runStatusLabel(run.status),
+      status: emailStatusLabel(run.status),
       statusCode: run.status,
       reason: (run.skipReason || run.steps.find((step) => step.lastErrorCode)?.lastErrorCode || "")
         .toLowerCase()
@@ -1139,7 +1125,7 @@ export async function listEmailRuns(waitListId) {
       kind: "Broadcast",
       title: broadcast.name || broadcast.subject || "Untitled broadcast",
       recipient: `${broadcast.recipientCount} recipient${broadcast.recipientCount === 1 ? "" : "s"}`,
-      status: runStatusLabel(broadcast.status),
+      status: emailStatusLabel(broadcast.status),
       statusCode: broadcast.status,
       reason: "",
       at: (broadcast.sentAt || broadcast.updatedAt).toISOString(),

@@ -15,6 +15,7 @@ import {
 } from "@/components/reui/number-field";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { emailStatusLabel } from "@/lib/emails/status-label.mjs";
 
 import { EmailCanvas } from "./email-canvas";
 import {
@@ -64,18 +65,6 @@ const waitLabel = (minutes) =>
     : minutes % 60 === 0
       ? `${minutes / 60} ${minutes === 60 ? "hour" : "hours"} later`
       : `${minutes} minutes later`;
-const statusLabel = (status) =>
-  ({
-    DRAFT: "Off",
-    ENABLED: "Enabled",
-    PAUSED: "Paused",
-    PENDING: "Scheduled",
-    PROCESSING: "Sending",
-    SENT: "Sent",
-    SKIPPED: "Skipped",
-    FAILED: "Needs attention",
-    CANCELED: "Canceled",
-  })[status] || status;
 
 function AutomationNumberField({ label, value, min, max, disabled, onChange }) {
   return (
@@ -265,7 +254,7 @@ export function AutomationManager({ waitListId, waitListName, initialRecipes, de
               }}
             >
               <strong className={railItemTitle}>{item.title}</strong>
-              <span className={railItemMeta}>{statusLabel(item.status)}</span>
+              <span className={railItemMeta}>{emailStatusLabel(item.status)}</span>
             </button>
           ))}
         </nav>
@@ -448,7 +437,7 @@ export function AutomationManager({ waitListId, waitListName, initialRecipes, de
                   onSubmit={(event) => sendTest(event, recipe)}
                 >
                   <input
-                    className="h-9 w-45 min-w-0 rounded-product-control border border-product-border-control bg-white px-2.5 text-caption max-sm:w-auto max-sm:flex-1 max-sm:text-base"
+                    className="h-11 w-45 min-w-0 rounded-product-control border border-product-border-control bg-white px-2.5 text-caption max-sm:w-auto max-sm:flex-1 max-sm:text-base"
                     type="email"
                     placeholder="you@example.com"
                     required
@@ -460,6 +449,7 @@ export function AutomationManager({ waitListId, waitListName, initialRecipes, de
                   <Button
                     type="submit"
                     variant="outline"
+                    className="min-h-11"
                     disabled={busyId === recipe.id || hasUnsavedChanges(recipe)}
                   >
                     {busyId === recipe.id ? "Sending…" : "Send test"}
