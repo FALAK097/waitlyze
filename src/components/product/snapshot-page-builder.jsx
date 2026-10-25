@@ -135,8 +135,19 @@ const itemDefaults = {
   faq: { question: "What should people know?", answer: "Add a useful answer." },
   referralRewards: { referrals: 5, reward: "Early access" },
 };
+const identityListValue = (entry) => entry;
 
-function Field({ label, value, onChange, multiline = false, type = "text", maxLength }) {
+function Field({
+  label,
+  value,
+  onChange,
+  multiline = false,
+  type = "text",
+  maxLength,
+  placeholder = "",
+  onFocus,
+  onBlur,
+}) {
   const id = useId();
   return (
     <div className="grid gap-1.5 [&_input]:text-caption [&_label]:text-caption [&_label]:font-semibold [&_textarea]:text-caption">
@@ -146,8 +157,11 @@ function Field({ label, value, onChange, multiline = false, type = "text", maxLe
           id={id}
           value={value}
           maxLength={maxLength}
+          placeholder={placeholder}
           rows={3}
           onChange={(event) => onChange(event.target.value)}
+          onFocus={onFocus}
+          onBlur={onBlur}
         />
       ) : (
         <Input
@@ -155,10 +169,46 @@ function Field({ label, value, onChange, multiline = false, type = "text", maxLe
           type={type}
           value={value}
           maxLength={maxLength}
+          placeholder={placeholder}
           onChange={(event) => onChange(event.target.value)}
+          onFocus={onFocus}
+          onBlur={onBlur}
         />
       )}
     </div>
+  );
+}
+function ListField({ label, value, onChange, placeholder, normalize = identityListValue }) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState("");
+  const text = Array.isArray(value) ? value.join(", ") : "";
+  const parse = (raw) =>
+    raw
+      .split(/[,;\n]/)
+      .map((entry) => entry.trim())
+      .filter(Boolean)
+      .map(normalize);
+
+  return (
+    <Field
+      label={label}
+      value={editing ? draft : text}
+      placeholder={placeholder}
+      onFocus={() => {
+        setDraft(text);
+        setEditing(true);
+      }}
+      onChange={(raw) => {
+        setDraft(raw);
+        onChange(parse(raw));
+      }}
+      onBlur={(event) => {
+        const entries = parse(event.currentTarget.value);
+        setDraft(entries.join(", "));
+        setEditing(false);
+        onChange(entries);
+      }}
+    />
   );
 }
 function Toggle({ label, checked, onChange, disabled = false, hint = "" }) {
@@ -1557,70 +1607,86 @@ export function SnapshotPageBuilder({
           }
         >
           <div className="mx-auto w-full max-w-4xl">
-            <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-              <div
-                className="flex flex-wrap gap-1 [&_button]:cursor-pointer [&_button]:rounded-lg [&_button]:border-0 [&_button]:bg-transparent [&_button]:px-3 [&_button]:py-2 [&_button]:text-caption [&_button]:font-semibold [&_button]:text-product-text-secondary [&_button[aria-pressed=true]]:bg-product-bg-surface [&_button[aria-pressed=true]]:text-product-text-primary"
-                role="group"
-                aria-label="Preview state"
-              >
-                {[
-                  ["confirmed", "Confirmed"],
-                  ["pending", "Pending email"],
-                  ["returning", "Returning visitor"],
-                ]
-                  .filter(
-                    ([id]) =>
-                      (id !== "pending" || snapshot.form.verification) &&
-                      (id !== "returning" || waitList.showReferrals),
-                  )
-                  .map(([id, label]) => (
+            {snapshot.statusPage.postSignupBehavior === "no-change" ? (
+              <div className="grid min-h-140 w-full place-content-center gap-3 rounded-xl bg-white px-6 text-center shadow-surface">
+                <p className="m-0 text-micro font-bold tracking-widest text-product-text-secondary uppercase">
+                  Post-signup behavior
+                </p>
+                <h2 className="m-0 font-product-display text-3xl font-semibold tracking-tight text-product-text-primary">
+                  The form stays as-is
+                </h2>
+                <p className="m-0 max-w-lg text-sm leading-relaxed text-product-text-secondary">
+                  Visitors aren’t redirected or shown a confirmation or referral state after signup.
+                </p>
+              </div>
+            ) : (
+              <>
+                <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+                  <div
+                    className="flex flex-wrap gap-1 [&_button]:cursor-pointer [&_button]:rounded-lg [&_button]:border-0 [&_button]:bg-transparent [&_button]:px-3 [&_button]:py-2 [&_button]:text-caption [&_button]:font-semibold [&_button]:text-product-text-secondary [&_button[aria-pressed=true]]:bg-product-bg-surface [&_button[aria-pressed=true]]:text-product-text-primary"
+                    role="group"
+                    aria-label="Preview state"
+                  >
+                    {[
+                      ["confirmed", "Confirmed"],
+                      ["pending", "Pending email"],
+                      ["returning", "Returning visitor"],
+                    ]
+                      .filter(
+                        ([id]) =>
+                          (id !== "pending" || snapshot.form.verification) &&
+                          (id !== "returning" || waitList.showReferrals),
+                      )
+                      .map(([id, label]) => (
+                        <button
+                          key={id}
+                          type="button"
+                          aria-pressed={statusState === id}
+                          onClick={() => setStatusState(id)}
+                        >
+                          {label}
+                        </button>
+                      ))}
+                  </div>
+                  <div
+                    className="flex gap-1 [&_button]:flex [&_button]:size-9 [&_button]:cursor-pointer [&_button]:items-center [&_button]:justify-center [&_button]:rounded-lg [&_button]:border-0 [&_button]:bg-transparent [&_button]:text-product-text-secondary [&_button[aria-pressed=true]]:bg-product-bg-surface [&_button[aria-pressed=true]]:text-product-text-primary"
+                    role="group"
+                    aria-label="Preview viewport"
+                  >
                     <button
-                      key={id}
                       type="button"
-                      aria-pressed={statusState === id}
-                      onClick={() => setStatusState(id)}
+                      aria-label="Desktop preview"
+                      aria-pressed={statusViewport === "desktop"}
+                      onClick={() => setStatusViewport("desktop")}
                     >
-                      {label}
+                      <HugeiconsIcon icon={MonitorIcon} size={17} aria-hidden="true" />
                     </button>
-                  ))}
-              </div>
-              <div
-                className="flex gap-1 [&_button]:flex [&_button]:size-9 [&_button]:cursor-pointer [&_button]:items-center [&_button]:justify-center [&_button]:rounded-lg [&_button]:border-0 [&_button]:bg-transparent [&_button]:text-product-text-secondary [&_button[aria-pressed=true]]:bg-product-bg-surface [&_button[aria-pressed=true]]:text-product-text-primary"
-                role="group"
-                aria-label="Preview viewport"
-              >
-                <button
-                  type="button"
-                  aria-label="Desktop preview"
-                  aria-pressed={statusViewport === "desktop"}
-                  onClick={() => setStatusViewport("desktop")}
+                    <button
+                      type="button"
+                      aria-label="Mobile preview"
+                      aria-pressed={statusViewport === "mobile"}
+                      onClick={() => setStatusViewport("mobile")}
+                    >
+                      <HugeiconsIcon icon={SmartphoneIcon} size={17} aria-hidden="true" />
+                    </button>
+                  </div>
+                </div>
+                <div
+                  className={cn(
+                    "grid overflow-hidden rounded-xl bg-white shadow-surface",
+                    statusViewport === "mobile"
+                      ? "mx-auto min-h-160 w-full max-w-md"
+                      : "min-h-140 w-full",
+                  )}
                 >
-                  <HugeiconsIcon icon={MonitorIcon} size={17} aria-hidden="true" />
-                </button>
-                <button
-                  type="button"
-                  aria-label="Mobile preview"
-                  aria-pressed={statusViewport === "mobile"}
-                  onClick={() => setStatusViewport("mobile")}
-                >
-                  <HugeiconsIcon icon={SmartphoneIcon} size={17} aria-hidden="true" />
-                </button>
-              </div>
-            </div>
-            <div
-              className={cn(
-                "grid overflow-hidden rounded-xl bg-white shadow-surface",
-                statusViewport === "mobile"
-                  ? "mx-auto min-h-160 w-full max-w-md"
-                  : "min-h-140 w-full",
-              )}
-            >
-              <StatusPagePreview
-                snapshot={snapshot}
-                state={statusState}
-                showReferrals={waitList.showReferrals}
-              />
-            </div>
+                  <StatusPagePreview
+                    snapshot={snapshot}
+                    state={statusState}
+                    showReferrals={waitList.showReferrals}
+                  />
+                </div>
+              </>
+            )}
           </div>
         </SurfaceLayout>
       )}
@@ -1952,6 +2018,11 @@ function SelectField({ label, value, options, onChange }) {
   );
 }
 function FormPanel({ form, update }) {
+  const customFields = Array.isArray(form.customFields) ? form.customFields : [];
+  const updateField = (id, patch) =>
+    update({
+      customFields: customFields.map((field) => (field.id === id ? { ...field, ...patch } : field)),
+    });
   return (
     <div className={"grid gap-4"}>
       <Field label="Field label" value={form.label} onChange={(label) => update({ label })} />
@@ -1988,10 +2059,168 @@ function FormPanel({ form, update }) {
         />
       )}
       <Toggle
-        label="Email verification"
-        checked={form.verification}
-        onChange={(verification) => update({ verification })}
+        label="Double opt-in (verify email before counting the signup)"
+        checked={(form.doubleOptIn ?? true) && (form.verification ?? true)}
+        onChange={(doubleOptIn) => update({ doubleOptIn, verification: doubleOptIn })}
       />
+      <ListField
+        label="Allowed email domains (comma-separated, empty = all)"
+        value={form.allowedEmailDomains}
+        placeholder="company.com, partner.org"
+        onChange={(allowedEmailDomains) => update({ allowedEmailDomains })}
+      />
+      <ListField
+        label="Blocked email domains (comma-separated)"
+        value={form.blockedEmailDomains}
+        placeholder="competitor.com"
+        onChange={(blockedEmailDomains) => update({ blockedEmailDomains })}
+      />
+      <ListField
+        label="Allowed countries (ISO codes, empty = all)"
+        value={form.allowedCountries}
+        placeholder="US, DE, IN"
+        normalize={(code) => code.toUpperCase()}
+        onChange={(allowedCountries) => update({ allowedCountries })}
+      />
+      <ListField
+        label="Blocked countries (ISO codes)"
+        value={form.blockedCountries}
+        placeholder="RU, CN"
+        normalize={(code) => code.toUpperCase()}
+        onChange={(blockedCountries) => update({ blockedCountries })}
+      />
+      <Toggle
+        label="Collect phone number"
+        checked={form.collectPhone === true || form.requirePhone === true}
+        onChange={(collectPhone) =>
+          update(collectPhone ? { collectPhone } : { collectPhone, requirePhone: false })
+        }
+      />
+      {(form.collectPhone || form.requirePhone) && (
+        <Toggle
+          label="Require phone number"
+          checked={form.requirePhone === true}
+          onChange={(requirePhone) => update({ requirePhone })}
+        />
+      )}
+      <Toggle
+        label="Bot protection (Cloudflare Turnstile)"
+        checked={form.requireTurnstile === true}
+        onChange={(requireTurnstile) => update({ requireTurnstile })}
+        hint={
+          form.requireTurnstile === true
+            ? "Signups fail while the server's TURNSTILE_SECRET_KEY is missing."
+            : ""
+        }
+      />
+      {form.requireTurnstile && (
+        <Field
+          label="Turnstile site key (must match this server's widget)"
+          value={form.turnstileSiteKey ?? ""}
+          onChange={(turnstileSiteKey) => update({ turnstileSiteKey })}
+        />
+      )}
+      <div className="grid gap-3 border-t border-product-border-subtle pt-4">
+        <span className="block text-micro font-bold tracking-widest text-product-text-secondary uppercase">
+          Custom fields
+        </span>
+        {customFields.map((field) => (
+          <div
+            className="grid gap-2.5 rounded-lg border border-product-border-subtle p-3"
+            key={field.id}
+          >
+            <Field
+              label="Label"
+              value={field.label}
+              onChange={(label) => updateField(field.id, { label })}
+            />
+            <div className="grid gap-4 sm:grid-cols-2">
+              <SelectField
+                label="Type"
+                value={field.type}
+                options={[
+                  { id: "text", label: "Short text" },
+                  { id: "textarea", label: "Long text" },
+                  { id: "number", label: "Number" },
+                  { id: "select", label: "Dropdown" },
+                  { id: "checkbox", label: "Checkbox" },
+                ]}
+                onChange={(type) => updateField(field.id, { type })}
+              />
+              <Field
+                label="Placeholder"
+                value={field.placeholder ?? ""}
+                onChange={(placeholder) => updateField(field.id, { placeholder })}
+              />
+            </div>
+            {field.type === "select" && (
+              <ListField
+                label="Options (comma-separated)"
+                value={field.options}
+                onChange={(options) => updateField(field.id, { options })}
+              />
+            )}
+            <Toggle
+              label="Required"
+              checked={field.required === true}
+              onChange={(required) => updateField(field.id, { required })}
+            />
+            <Button
+              variant="ghost"
+              size="sm"
+              type="button"
+              onClick={() =>
+                update({
+                  customFields: customFields.filter((entry) => entry.id !== field.id),
+                })
+              }
+            >
+              Remove
+            </Button>
+          </div>
+        ))}
+        {customFields.length < 10 && (
+          <Button
+            variant="outline"
+            size="sm"
+            type="button"
+            onClick={() =>
+              update({
+                customFields: [
+                  ...customFields,
+                  {
+                    id: `field-${crypto.randomUUID().slice(0, 8).toLowerCase()}`,
+                    label: "New question",
+                    type: "text",
+                    required: false,
+                    placeholder: "",
+                    options: [],
+                  },
+                ],
+              })
+            }
+          >
+            Add field
+          </Button>
+        )}
+      </div>
+      <div className="grid gap-4 border-t border-product-border-subtle pt-4">
+        <span className="block text-micro font-bold tracking-widest text-product-text-secondary uppercase">
+          After signup
+        </span>
+        <Field
+          label="Redirect URL (empty = stay on the thank-you screen)"
+          value={form.successRedirectUrl ?? ""}
+          placeholder="/thanks"
+          onChange={(successRedirectUrl) => update({ successRedirectUrl })}
+        />
+        <ListField
+          label="Redirect host allowlist (for https:// URLs)"
+          value={form.successRedirectAllowlist}
+          placeholder="app.example.com"
+          onChange={(successRedirectAllowlist) => update({ successRedirectAllowlist })}
+        />
+      </div>
     </div>
   );
 }
@@ -2007,66 +2236,22 @@ function StatusPanel({ status, update, showReferrals = true, waitListId }) {
       </Link>
     </p>
   );
-  const isSimpleConfirmation =
-    !status.showPosition &&
-    !status.showReferralLink &&
-    !status.showReferralCount &&
-    (status.shareChannels ?? []).length === 0;
-  const applySimpleConfirmation = () =>
-    update({
-      showPosition: false,
-      showReferralLink: false,
-      showReferralCount: false,
-      shareChannels: [],
-    });
-  const applyReferralCockpit = () =>
-    update({
-      showPosition: true,
-      showReferralLink: true,
-      showReferralCount: false,
-      shareChannels:
-        (status.shareChannels ?? []).length > 0
-          ? status.shareChannels
-          : ["x", "instagram", "linkedin", "whatsapp", "email"],
-    });
   return (
     <div className={"grid gap-4 p-4"}>
-      <div>
-        <span
-          className={
-            "block text-micro font-bold tracking-widest text-product-text-secondary uppercase"
-          }
-        >
-          Confirmation style
-        </span>
-        <div
-          className="mt-2 grid grid-cols-2 gap-1 bg-product-bg-surface p-1 [&_button]:cursor-pointer [&_button]:rounded-lg [&_button]:border-0 [&_button]:bg-transparent [&_button]:px-3 [&_button]:py-2 [&_button]:text-caption [&_button]:font-semibold [&_button]:text-product-text-secondary [&_button[aria-pressed=true]]:bg-product-bg-inset [&_button[aria-pressed=true]]:text-product-text-primary"
-          role="group"
-          aria-label="Confirmation style"
-        >
-          <button
-            key="cockpit"
-            type="button"
-            aria-pressed={!isSimpleConfirmation}
-            onClick={applyReferralCockpit}
-          >
-            Referral cockpit
-          </button>
-          <button
-            key="simple"
-            type="button"
-            aria-pressed={isSimpleConfirmation}
-            onClick={applySimpleConfirmation}
-          >
-            Simple confirmation
-          </button>
-        </div>
-        <p className="mt-2 text-caption leading-relaxed text-product-text-secondary">
-          {isSimpleConfirmation
-            ? "Showing just the confirmation message — no position, referral link, or share buttons. Best for embeds on your own site or API-driven frontends."
-            : "Showing the referral cockpit after signup. Position, referral link, and share buttons appear only when enabled below."}
+      <SelectField
+        label="After a successful signup"
+        value={status.postSignupBehavior}
+        options={[
+          { id: "confirmation", label: "Show confirmation" },
+          { id: "no-change", label: "No redirect or state change" },
+        ]}
+        onChange={(postSignupBehavior) => update({ postSignupBehavior })}
+      />
+      {status.postSignupBehavior === "no-change" && (
+        <p className="m-0 text-caption leading-relaxed text-product-text-secondary">
+          No redirect or confirmation/referral state is shown. The signup is still recorded.
         </p>
-      </div>
+      )}
       <Field
         label="Confirmed heading"
         value={status.heading}
