@@ -172,6 +172,7 @@ export function subscriberCsvRow(subscriber) {
 
 export const EXPORT_COLUMNS = [
   { key: "email", label: "Email" },
+  { key: "phone", label: "Phone" },
   { key: "status", label: "Status" },
   { key: "joined", label: "Joined at" },
   { key: "country", label: "Country" },
@@ -193,7 +194,7 @@ export const EXPORT_COLUMNS = [
   { key: "position", label: "Position" },
 ];
 
-const EXPORT_DEFAULTS = ["email", "status", "joined"];
+const EXPORT_DEFAULTS = ["email", "phone", "status", "joined"];
 
 // Parses the `columns` export parameter into a validated key list.
 export function parseExportColumns(value) {
@@ -218,6 +219,7 @@ export function exportHeaderRow(columns) {
 export function buildExportRow(subscriber, columns, extra = {}) {
   const values = {
     email: subscriber.email,
+    phone: subscriber.phone ?? "",
     status: subscriber.verifiedAt ? "Verified" : "Needs confirmation",
     joined: subscriber.createdAt,
     country: subscriber.country,

@@ -220,9 +220,10 @@ export function ResendIntegration({ initialConnection, accountEmail, canManage, 
                     Your saved key stays encrypted and cannot be viewed or copied.
                   </p>
                 )}
-                <label className="product-field">
+                <label className="product-field" htmlFor="resend-sender-email">
                   <span>Sender email</span>
                   <Input
+                    id="resend-sender-email"
                     type="email"
                     autoComplete="email"
                     value={fromEmail}
@@ -232,9 +233,10 @@ export function ResendIntegration({ initialConnection, accountEmail, canManage, 
                     disabled={Boolean(busy)}
                   />
                 </label>
-                <label className="product-field">
+                <label className="product-field" htmlFor="resend-webhook-secret">
                   <span>Webhook signing secret</span>
                   <Input
+                    id="resend-webhook-secret"
                     type="password"
                     autoComplete="off"
                     spellCheck="false"
