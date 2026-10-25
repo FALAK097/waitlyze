@@ -191,25 +191,23 @@ export function resolveSuccessRedirect(form) {
   return null;
 }
 
-// Loads the published form config for pre-DB checks. Null when unpublished or
-// unparsable — callers treat null as "no extra rules" (createCampaignSignup
-// remains the enforcing authority inside the transaction).
+// Loads the published form config for pre-DB checks. Null only when unpublished;
+// a missing revision or invalid snapshot is an error so callers fail closed.
 export async function getPublishedFormConfig(db, waitListId) {
-  try {
-    const row = await db.waitList.findUnique({
-      where: { id: waitListId, status: "PUBLISHED" },
-      select: { publishedRevision: true },
-    });
-    if (!row?.publishedRevision) return null;
-    const publication = await db.waitListPublicationRevision.findUnique({
-      where: {
-        waitListId_revision: { waitListId, revision: row.publishedRevision },
-      },
-      select: { snapshot: true },
-    });
-    const parsed = templateSnapshotSchema.safeParse(publication?.snapshot);
-    return parsed.success ? parsed.data.form : null;
-  } catch {
-    return null;
-  }
+  const row = await db.waitList.findUnique({
+    where: { id: waitListId, status: "PUBLISHED" },
+    select: { publishedRevision: true },
+  });
+  if (!row) return null;
+  if (!row.publishedRevision) throw new Error("Published waitlist has no publication revision.");
+
+  const publication = await db.waitListPublicationRevision.findUnique({
+    where: {
+      waitListId_revision: { waitListId, revision: row.publishedRevision },
+    },
+    select: { snapshot: true },
+  });
+  const parsed = templateSnapshotSchema.safeParse(publication?.snapshot);
+  if (!parsed.success) throw new Error("Published waitlist has an invalid publication snapshot.");
+  return parsed.data.form;
 }

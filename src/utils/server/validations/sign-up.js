@@ -192,6 +192,7 @@ export const validateRequest = async (body, context = {}) => {
   if (
     legacy &&
     !(
+      existing &&
       legacy.uniqueUserId === body.hypeSession &&
       (legacy.emailNormalized ?? legacy.email.trim().toLowerCase()) === normalizedEmail
     )

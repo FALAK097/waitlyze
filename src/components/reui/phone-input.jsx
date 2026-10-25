@@ -44,16 +44,35 @@ function CountrySelect({ value, onChange, options, labels, className, ...rest })
         .filter(Boolean);
     return getCountries();
   }, [options]);
+  const countriesByDialFragment = useMemo(() => {
+    const matches = new Map();
+    for (const code of codes) {
+      const callingCode = getCountryCallingCode(code);
+      for (let start = 0; start < callingCode.length; start += 1) {
+        for (let end = start + 1; end <= callingCode.length; end += 1) {
+          const fragment = callingCode.slice(start, end);
+          let countries = matches.get(fragment);
+          if (!countries) {
+            countries = new Set();
+            matches.set(fragment, countries);
+          }
+          countries.add(code);
+        }
+      }
+    }
+    return matches;
+  }, [codes]);
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return codes;
     const digits = q.replace(/\D/g, "");
+    const dialMatches = digits ? countriesByDialFragment.get(digits) : null;
     return codes.filter((code) => {
       if (code.toLowerCase().includes(q)) return true;
-      if (digits && getCountryCallingCode(code).includes(digits)) return true;
+      if (dialMatches?.has(code)) return true;
       return countryLabel(code, labels).toLowerCase().includes(q);
     });
-  }, [codes, labels, query]);
+  }, [codes, countriesByDialFragment, labels, query]);
   const dial = value ? `+${getCountryCallingCode(value)}` : "+";
   return (
     <Popover open={open} onOpenChange={(next) => (setOpen(next), next || setQuery(""))}>

@@ -135,6 +135,7 @@ const itemDefaults = {
   faq: { question: "What should people know?", answer: "Add a useful answer." },
   referralRewards: { referrals: 5, reward: "Early access" },
 };
+const identityListValue = (entry) => entry;
 
 function Field({
   label,
@@ -144,6 +145,8 @@ function Field({
   type = "text",
   maxLength,
   placeholder = "",
+  onFocus,
+  onBlur,
 }) {
   const id = useId();
   return (
@@ -157,6 +160,8 @@ function Field({
           placeholder={placeholder}
           rows={3}
           onChange={(event) => onChange(event.target.value)}
+          onFocus={onFocus}
+          onBlur={onBlur}
         />
       ) : (
         <Input
@@ -166,9 +171,44 @@ function Field({
           maxLength={maxLength}
           placeholder={placeholder}
           onChange={(event) => onChange(event.target.value)}
+          onFocus={onFocus}
+          onBlur={onBlur}
         />
       )}
     </div>
+  );
+}
+function ListField({ label, value, onChange, placeholder, normalize = identityListValue }) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState("");
+  const text = Array.isArray(value) ? value.join(", ") : "";
+  const parse = (raw) =>
+    raw
+      .split(/[,;\n]/)
+      .map((entry) => entry.trim())
+      .filter(Boolean)
+      .map(normalize);
+
+  return (
+    <Field
+      label={label}
+      value={editing ? draft : text}
+      placeholder={placeholder}
+      onFocus={() => {
+        setDraft(text);
+        setEditing(true);
+      }}
+      onChange={(raw) => {
+        setDraft(raw);
+        onChange(parse(raw));
+      }}
+      onBlur={(event) => {
+        const entries = parse(event.currentTarget.value);
+        setDraft(entries.join(", "));
+        setEditing(false);
+        onChange(entries);
+      }}
+    />
   );
 }
 function Toggle({ label, checked, onChange, disabled = false, hint = "" }) {
@@ -1962,12 +2002,6 @@ function SelectField({ label, value, options, onChange }) {
   );
 }
 function FormPanel({ form, update }) {
-  const listText = (entries) => (Array.isArray(entries) ? entries.join(", ") : "");
-  const splitList = (value) =>
-    value
-      .split(/[,;\n]/)
-      .map((entry) => entry.trim())
-      .filter(Boolean);
   const customFields = Array.isArray(form.customFields) ? form.customFields : [];
   const updateField = (id, patch) =>
     update({
@@ -2013,33 +2047,31 @@ function FormPanel({ form, update }) {
         checked={(form.doubleOptIn ?? true) && (form.verification ?? true)}
         onChange={(doubleOptIn) => update({ doubleOptIn, verification: doubleOptIn })}
       />
-      <Field
+      <ListField
         label="Allowed email domains (comma-separated, empty = all)"
-        value={listText(form.allowedEmailDomains)}
+        value={form.allowedEmailDomains}
         placeholder="company.com, partner.org"
-        onChange={(value) => update({ allowedEmailDomains: splitList(value) })}
+        onChange={(allowedEmailDomains) => update({ allowedEmailDomains })}
       />
-      <Field
+      <ListField
         label="Blocked email domains (comma-separated)"
-        value={listText(form.blockedEmailDomains)}
+        value={form.blockedEmailDomains}
         placeholder="competitor.com"
-        onChange={(value) => update({ blockedEmailDomains: splitList(value) })}
+        onChange={(blockedEmailDomains) => update({ blockedEmailDomains })}
       />
-      <Field
+      <ListField
         label="Allowed countries (ISO codes, empty = all)"
-        value={listText(form.allowedCountries)}
+        value={form.allowedCountries}
         placeholder="US, DE, IN"
-        onChange={(value) =>
-          update({ allowedCountries: splitList(value).map((code) => code.toUpperCase()) })
-        }
+        normalize={(code) => code.toUpperCase()}
+        onChange={(allowedCountries) => update({ allowedCountries })}
       />
-      <Field
+      <ListField
         label="Blocked countries (ISO codes)"
-        value={listText(form.blockedCountries)}
+        value={form.blockedCountries}
         placeholder="RU, CN"
-        onChange={(value) =>
-          update({ blockedCountries: splitList(value).map((code) => code.toUpperCase()) })
-        }
+        normalize={(code) => code.toUpperCase()}
+        onChange={(blockedCountries) => update({ blockedCountries })}
       />
       <Toggle
         label="Collect phone number"
@@ -2106,10 +2138,10 @@ function FormPanel({ form, update }) {
               />
             </div>
             {field.type === "select" && (
-              <Field
+              <ListField
                 label="Options (comma-separated)"
-                value={(field.options ?? []).join(", ")}
-                onChange={(value) => updateField(field.id, { options: splitList(value) })}
+                value={field.options}
+                onChange={(options) => updateField(field.id, { options })}
               />
             )}
             <Toggle
@@ -2166,11 +2198,11 @@ function FormPanel({ form, update }) {
           placeholder="/thanks"
           onChange={(successRedirectUrl) => update({ successRedirectUrl })}
         />
-        <Field
+        <ListField
           label="Redirect host allowlist (for https:// URLs)"
-          value={listText(form.successRedirectAllowlist)}
+          value={form.successRedirectAllowlist}
           placeholder="app.example.com"
-          onChange={(value) => update({ successRedirectAllowlist: splitList(value) })}
+          onChange={(successRedirectAllowlist) => update({ successRedirectAllowlist })}
         />
       </div>
     </div>

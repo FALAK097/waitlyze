@@ -27,65 +27,112 @@ export function SignupForm(props) {
 // Cloudflare Turnstile widget (explicit render). Reports the token up; the
 // server verifies it before any DB work. Renders nothing without a site key.
 function TurnstileWidget({ siteKey, onToken }) {
+  const [attempt, setAttempt] = useState(0);
+  if (!siteKey) return null;
+  return (
+    <TurnstileAttempt
+      key={`${siteKey}:${attempt}`}
+      siteKey={siteKey}
+      onToken={onToken}
+      onRetry={() => setAttempt((current) => current + 1)}
+    />
+  );
+}
+
+function TurnstileAttempt({ siteKey, onToken, onRetry }) {
   const containerRef = useRef(null);
   const onTokenRef = useRef(onToken);
   useEffect(() => {
     onTokenRef.current = onToken;
   });
   const [failed, setFailed] = useState(false);
-
   useEffect(() => {
     if (!siteKey) return;
     let widgetId;
+    let script;
     let cancelled = false;
+    const removeWidget = () => {
+      try {
+        if (widgetId !== undefined) window.turnstile?.remove(widgetId);
+      } catch {
+        // Widget teardown is best-effort.
+      }
+      widgetId = undefined;
+    };
+    const fail = ({ removeScript = false } = {}) => {
+      if (cancelled) return;
+      removeWidget();
+      if (removeScript) script?.remove();
+      onTokenRef.current("");
+      setFailed(true);
+    };
+    const handleScriptError = () => fail({ removeScript: true });
     const render = () => {
-      if (cancelled || !containerRef.current || typeof window === "undefined" || !window.turnstile)
+      if (cancelled || !containerRef.current) return;
+      if (typeof window === "undefined" || !window.turnstile) {
+        fail({ removeScript: true });
         return;
+      }
       try {
         widgetId = window.turnstile.render(containerRef.current, {
           sitekey: siteKey,
-          callback: (token) => onTokenRef.current(token),
+          callback: (token) => {
+            setFailed(false);
+            onTokenRef.current(token);
+          },
           "expired-callback": () => onTokenRef.current(""),
-          "error-callback": () => setFailed(true),
+          "error-callback": () => fail(),
         });
       } catch {
-        setFailed(true);
+        fail();
       }
     };
     if (typeof window !== "undefined" && window.turnstile) {
       render();
     } else if (typeof document !== "undefined") {
-      let script = document.querySelector("script[data-turnstile]");
+      script = document.querySelector("script[data-turnstile]");
       if (!script) {
         script = document.createElement("script");
         script.src = "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
         script.async = true;
         script.defer = true;
         script.dataset.turnstile = "true";
-        document.head.appendChild(script);
       }
       script.addEventListener("load", render);
+      script.addEventListener("error", handleScriptError, { once: true });
+      if (!script.isConnected) document.head.appendChild(script);
       return () => {
         cancelled = true;
         script.removeEventListener("load", render);
-        try {
-          if (widgetId !== undefined) window.turnstile?.remove(widgetId);
-        } catch {
-          // Widget teardown is best-effort.
-        }
+        script.removeEventListener("error", handleScriptError);
+        removeWidget();
       };
     }
     return () => {
       cancelled = true;
-      try {
-        if (widgetId !== undefined) window.turnstile?.remove(widgetId);
-      } catch {
-        // Widget teardown is best-effort.
-      }
+      removeWidget();
     };
   }, [siteKey]);
 
-  if (!siteKey || failed) return null;
+  if (failed) {
+    return (
+      <div className="mt-3">
+        <p className="text-caption text-wl-muted" role="alert">
+          Verification couldn’t load. Check your connection or content blocker and try again.
+        </p>
+        <button
+          className="cursor-pointer text-caption font-bold text-wl-accent underline underline-offset-4"
+          type="button"
+          onClick={() => {
+            onTokenRef.current("");
+            onRetry();
+          }}
+        >
+          Retry verification
+        </button>
+      </div>
+    );
+  }
   return <div ref={containerRef} className="mt-3" />;
 }
 

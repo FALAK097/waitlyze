@@ -146,23 +146,26 @@ export async function createCampaignSignup(
         FOR SHARE
       `;
       if (published.length === 0) throw new InvalidCampaignError();
-      const publication = published[0].publishedRevision
-        ? await tx.waitListPublicationRevision.findUnique({
-            where: {
-              waitListId_revision: {
-                waitListId: input.waitListId,
-                revision: published[0].publishedRevision,
-              },
-            },
-            select: { snapshot: true },
-          })
-        : null;
+      if (!published[0].publishedRevision) {
+        throw new TypeError("Published form configuration is invalid.");
+      }
+      const publication = await tx.waitListPublicationRevision.findUnique({
+        where: {
+          waitListId_revision: {
+            waitListId: input.waitListId,
+            revision: published[0].publishedRevision,
+          },
+        },
+        select: { snapshot: true },
+      });
       const publishedSnapshot = templateSnapshotSchema.safeParse(publication?.snapshot);
+      if (!publishedSnapshot.success) {
+        throw new TypeError("Published form configuration is invalid.");
+      }
       // Double opt-in (see requiresDoubleOptIn): confirmation is required only
-      // when the snapshot opts in. Unparsable snapshots keep the legacy
-      // default of requiring verification.
-      const formConfig = publishedSnapshot.success ? publishedSnapshot.data.form : null;
-      const requiresVerification = formConfig ? requiresDoubleOptIn(formConfig) : true;
+      // when the validated snapshot opts in.
+      const formConfig = publishedSnapshot.data.form;
+      const requiresVerification = requiresDoubleOptIn(formConfig);
       // Per-form join rules. TypeError → 400 on every public caller, so the
       // API-key path enforces the same gates as the browser form.
       if (formConfig) {
