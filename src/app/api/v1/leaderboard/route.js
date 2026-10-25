@@ -2,23 +2,13 @@ import { NextResponse } from "next/server";
 
 import prisma from "@/lib/prisma";
 import { consumePublicBudget, PublicRateLimitError } from "@/lib/security/public-rate-limit.mjs";
+import { maskEmail } from "@/lib/widgets/mask.mjs";
 
 /**
  * Privacy-masked neighborhood view for the referral cockpit.
  * Never exposes raw emails: every address is masked server-side
  * (e.g. `b***@g***`) and only counts/positions leave this endpoint.
  */
-export function maskEmail(email) {
-  if (typeof email !== "string" || !email) return "***@***";
-  const at = email.indexOf("@");
-  const local = at > 0 ? email.slice(0, at) : email;
-  const domain = at > 0 ? email.slice(at + 1) : "";
-  const head = (value) => (value.length > 0 ? value[0] : "*");
-  if (!domain) return `${head(local)}***@***`;
-  const domainHead = domain.split(".")[0] || "*";
-  return `${head(local)}***@${head(domainHead)}***`;
-}
-
 const NEIGHBOR_RADIUS = 2;
 
 export async function GET(request) {

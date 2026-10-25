@@ -66,7 +66,7 @@ export async function generateMetadata({ params }) {
       description,
       images,
     },
-    twitter: { card: "summary_large_image", title, description, images },
+    twitter: { card: image ? "summary_large_image" : "summary", title, description, images },
   };
 }
 

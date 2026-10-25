@@ -42,7 +42,7 @@ export function SocialFollowTasks({ follows, className }) {
             href={follow.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-2.5 rounded-wl bg-wl-surface px-3 py-2 text-left text-caption font-bold text-wl-text transition-opacity hover:opacity-85"
+            className="flex min-h-11 items-center gap-2.5 rounded-wl bg-wl-surface px-3 py-2 text-left text-caption font-bold text-wl-text transition-opacity hover:opacity-85"
           >
             <ShareChannelIcon channel={follow.network} className="size-5" />
             <span className="min-w-0 flex-1 truncate">
