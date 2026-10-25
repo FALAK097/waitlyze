@@ -113,7 +113,7 @@ curl --request POST 'https://waitlyze.falakgala.dev/api/waitlist' \
 }
 ```
 
-`position` is the canonical queue position (`rank` is its legacy alias). `referral_code` is this signup's personal code and `referral_link` is the ready-to-share URL — render them in your confirmation UI when [referral sharing](/docs/referrals) is on. Both are `null`/`""` when sharing is disabled or the waitlist has no public slug. New signups start `verified: false` until they click the 24-hour confirmation link.
+`position` is the canonical queue position (`rank` is its legacy alias). `referral_code` is this signup's personal code and `referral_link` is the ready-to-share URL — render them in your confirmation UI when [referral sharing](/docs/referrals) is on. Both are `null`/`""` when sharing is disabled or the waitlist has no public slug. New signups start `verified: false` until they click the 24-hour confirmation link — except campaigns with verification turned off, which return `verified: true` immediately.
 
 Duplicate emails return `409` **with the existing position**, so a retry never loses state:
 
@@ -176,7 +176,7 @@ Unknown emails return `404`. Responses are `private, no-store` — do not cache 
 Two budgets protect intake; both surface `Retry-After` on `429`/`503`:
 
 - **Shared intake budget** — per campaign, client, and recipient windows (see [Troubleshooting](/docs/troubleshooting)).
-- **Per-key daily budget** (5,000 signups + lookups per key per day). Every `POST`/`GET` response carries `X-RateLimit-Limit`, `X-RateLimit-Remaining`, and `X-RateLimit-Reset` (Unix seconds). Graph them per key to spot a noisy integration before it caps.
+- **Per-key daily budget** (5,000 signups + lookups per key per day). Successful `POST` signups and `GET` lookups (hits and `404`s) carry `X-RateLimit-Limit`, `X-RateLimit-Remaining`, and `X-RateLimit-Reset` (Unix seconds); validation (`400`), auth (`401`), rate-limit (`429`/`503`), and server (`500`) errors — as well as `409` duplicate/key-reuse responses — do not. Graph remaining per key to spot a noisy integration before it caps.
 
 ## Next
 

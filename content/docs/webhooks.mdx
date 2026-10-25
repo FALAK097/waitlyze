@@ -45,8 +45,8 @@ Your deployment needs webhook encryption and dispatch configured before delivery
 | --- | --- | --- |
 | `signup.created` | Intake, before verification | `{ signupId }` |
 | `signup.verified` | After email confirmation | `{ signupId }` |
-| `referral.completed` | Inviter earns verified credit (both sides verified, review `CLEAR`/`APPROVED`) | `{ signupId }` = inviter, `{ referredSignupId }` = invitee. Gate reward fulfillment on this, never on signup alone. |
-| `milestone.reached` | Signup count hits 1, 10, 100, or 1000 | `{ count }` plus `triggeringSignupId` when known. |
+| `referral.completed` | Inviter earns credit when the invitee verifies and the referral is `CLEAR`/`APPROVED` (same gate as the points ledger) | `{ signupId }` = inviter, `{ referredSignupId }` = invitee. Gate reward fulfillment on this, never on signup alone. Queue-position counting additionally requires the inviter to be verified — that rule lives in the position engine, not in this event. |
+| `milestone.reached` | Signup count hits 1, 10, 100, or 1000 | `{ count }` plus `triggeringSignupId` when known. Concurrent trips of the same count collapse to a single delivery, so dedupe by event `id` as usual. |
 
 Subscriber emails are **never** included — fetch what you need via your own subscriber read path using `signupId`. Return `2xx` only after durably accepting the event. Deduplicate by event ID because retries redeliver the same `id`.
 
@@ -60,7 +60,7 @@ Subscriber emails are **never** included — fetch what you need via your own su
     type: {
       type: '"signup.created" | "signup.verified" | "referral.completed" | "milestone.reached"',
       required: true,
-      description: "signup.created fires on intake; signup.verified after email confirmation; referral.completed when the inviter earns verified credit; milestone.reached at 1/10/100/1000 signups.",
+      description: "signup.created fires on intake; signup.verified after email confirmation; referral.completed when the invitee verifies and the referral is CLEAR/APPROVED (same gate as the points ledger); milestone.reached at 1/10/100/1000 signups.",
     },
     version: {
       type: "number",

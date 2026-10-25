@@ -39,7 +39,7 @@ In Waitlist settings → **Referral sharing**, enable sharing ([Referrals](/docs
 
 - API responses include `referral_code` + `referral_link` for every signup.
 - Pass a friend's code as `referral_code` (API), `?r=CODE` (hosted page), or inherit it from your page URL (embed).
-- Credit counts only after **both** sides verify — gate rewards on the [`referral.completed` webhook](/docs/webhooks), never on signup alone.
+- Credit is awarded when the invitee verifies and the referral is `CLEAR`/`APPROVED` — gate rewards on the [`referral.completed` webhook](/docs/webhooks), never on signup alone. (Queue positions additionally require the inviter to be verified.)
 - Review flagged referrals in Subscribers → Referral review.
 
 ## 4. Serve it from your domain

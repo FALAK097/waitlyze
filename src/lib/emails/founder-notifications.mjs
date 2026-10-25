@@ -60,9 +60,13 @@ export async function maybeNotifySignupMilestone(db, waitListId, { signupId } = 
       select: { name: true, status: true, workspaceId: true, showReferrals: true },
     });
     if (!waitList || waitList.status !== "PUBLISHED") return false;
+    // Deterministic event id: concurrent trips of the same milestone count
+    // collapse to one delivery via skipDuplicates (first writer wins on
+    // triggeringSignupId), and receivers can dedupe on the event id too.
     await enqueueWebhookEvent(db, {
       waitListId,
       eventType: "milestone.reached",
+      eventId: `milestone:${waitListId}:${count}`,
       signupId: undefined,
       extra: {
         count,

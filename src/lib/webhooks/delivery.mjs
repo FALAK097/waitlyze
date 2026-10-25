@@ -21,13 +21,17 @@ const RETRYABLE = new Set([408, 425, 429]);
 //
 // - signup.created / signup.verified: data = { signupId }
 // - referral.completed: data = { signupId, referredSignupId } where signupId
-//   is the inviter who earned verified credit and referredSignupId is the
-//   invitee whose verification completed the referral. Build reward rules on
-//   top of this event; it fires only for CLEAR/unsuspecting referrals where
-//   both sides are verified.
+//   is the inviter who earned credit and referredSignupId is the invitee
+//   whose verification completed the referral. Build reward rules on top of
+//   this event; it fires under the same gate as the points ledger (invitee
+//   verified, review CLEAR/APPROVED, not farm-suspect). Queue-position
+//   counting additionally requires the inviter to be verified — that rule
+//   lives in the position query, not in this event.
 // - milestone.reached: data = { count, triggeringSignupId? } where count is
 //   one of 1/10/100/1000 and triggeringSignupId is the signup that tripped
-//   the count, when known.
+//   the count, when known. Milestones use a deterministic event id
+//   (milestone:{waitlistId}:{count}) so concurrent trips collapse to one
+//   delivery via skipDuplicates instead of double-firing.
 export const WEBHOOK_EVENT_TYPES = Object.freeze([
   "signup.created",
   "signup.verified",
@@ -41,16 +45,18 @@ export function isSupportedWebhookEvent(value) {
 
 export async function enqueueWebhookEvent(
   tx,
-  { waitListId, eventType, signupId, extra, test = false, now = new Date() },
+  { waitListId, eventType, signupId, extra, eventId, test = false, now = new Date() },
 ) {
   const subscriptions = await tx.webhookSubscription.findMany({
     where: { waitListId, enabled: true, eventTypes: { has: eventType } },
     select: { id: true },
   });
   if (!subscriptions.length) return 0;
-  const eventId = randomUUID();
+  // Random by default; callers with a natural idempotency key (milestones)
+  // pass a deterministic id so races collapse via skipDuplicates below.
+  const id = typeof eventId === "string" && eventId ? eventId : randomUUID();
   const payload = {
-    id: eventId,
+    id,
     type: eventType,
     version: 1,
     occurredAt: now.toISOString(),
@@ -61,10 +67,10 @@ export async function enqueueWebhookEvent(
         : { signupId, ...extra },
   };
   await tx.webhookDelivery.createMany({
-    data: subscriptions.map(({ id }) => ({
-      subscriptionId: id,
-      eventId,
-      eventKey: `${id}:${eventId}`,
+    data: subscriptions.map(({ id: subscriptionId }) => ({
+      subscriptionId,
+      eventId: id,
+      eventKey: `${subscriptionId}:${id}`,
       eventType,
       payload,
       availableAt: now,
