@@ -46,8 +46,14 @@ export async function awardPoints(tx, { waitListId, signUpId, kind, points, even
     skipDuplicates: true,
   });
   if (inserted.count !== 1) return { awarded: false };
-  await tx.signUp.update({ where: { id: signUpId }, data: { points: { increment: points } } });
-  return { awarded: true };
+  // Returning the balance from the same update removes the separate read-back
+  // inside callers' transactions.
+  const updated = await tx.signUp.update({
+    where: { id: signUpId },
+    data: { points: { increment: points } },
+    select: { points: true },
+  });
+  return { awarded: true, balance: updated.points };
 }
 
 export async function isFarmSuspect(tx, ipAddress, now = new Date()) {
