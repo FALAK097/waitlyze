@@ -77,7 +77,7 @@ curl --request POST 'https://waitlyze.falakgala.dev/api/waitlist' \
     apiKey: {
       type: "string",
       required: true,
-      description: "Secret for the linked waitlist. See API keys.",
+      description: "Secret for the linked waitlist. Send it in the body, or in x-api-key / Authorization: Bearer headers (required for status lookups). See API keys.",
     },
     waitlistId: {
       type: "string",
@@ -92,7 +92,7 @@ curl --request POST 'https://waitlyze.falakgala.dev/api/waitlist' \
     referralCode: {
       type: "string",
       required: false,
-      description: "An existing referral code for the same waitlist. See Referrals.",
+      description: "An existing referral code for the same waitlist. Also accepted as referral_code. See Referrals.",
     },
   }}
 />
@@ -100,14 +100,37 @@ curl --request POST 'https://waitlyze.falakgala.dev/api/waitlist' \
 ## Handle responses
 
 ```json title="Success response"
-{ "success": true, "message": "Successfully joined the waitlist!", "data": { "rank": 9 } }
+{
+  "success": true,
+  "message": "Successfully joined the waitlist!",
+  "data": {
+    "rank": 9,
+    "position": 9,
+    "referral_code": "7f3a…",
+    "referral_link": "https://waitlyze.falakgala.dev/w/your-slug?r=7f3a…",
+    "verified": false
+  }
+}
+```
+
+`position` is the canonical queue position (`rank` is its legacy alias). `referral_code` is this signup's personal code and `referral_link` is the ready-to-share URL — render them in your confirmation UI when [referral sharing](/docs/referrals) is on. Both are `null`/`""` when sharing is disabled or the waitlist has no public slug. New signups start `verified: false` until they click the 24-hour confirmation link — except campaigns with verification turned off, which return `verified: true` immediately.
+
+Duplicate emails return `409` **with the existing position**, so a retry never loses state:
+
+```json title="Duplicate response (409)"
+{
+  "success": false,
+  "error": "Email already registered for this waitlist",
+  "data": { "position": 9, "referral_code": "7f3a…", "referral_link": "https://…" }
+}
 ```
 
 | Status | Meaning | Fix |
 | --- | --- | --- |
 | `400` | Missing or invalid input | Validate email, IDs, and JSON shape. |
 | `401` | Bad key, expiry, or wrong linked waitlist | Check [API keys](/docs/api-keys) and `waitlistId`. |
-| `409` | Duplicate email, or not accepting signups | Distinguish duplicate from draft/paused state. |
+| `409` | Duplicate email, key reuse, or not accepting signups | Read `data.position` for duplicates; mint a new `Idempotency-Key` on reuse; distinguish state reasons. |
+| `404` | Status lookup found no signup | The email never joined this waitlist (lookup only). |
 | `429` | Rate limited | Wait for `Retry-After`; back off, do not loop. |
 | `503` | Rate-limit service unavailable | Retry after the provided interval. |
 | `500` | Temporary server failure | Retry with exponential backoff. |
@@ -118,9 +141,47 @@ New API signups follow the same [verification flow](/docs/signup-flow): they rec
 `/api/v1/api-keys` and `/api/v1/waitlists` are browser-session routes. A `waitlist:write` signup key cannot manage keys, list subscribers, or access them.
 </Callout>
 
+## Retry safely with Idempotency-Key
+
+Network failures leave you unsure whether a signup landed. Send a client-generated `Idempotency-Key` header (1–128 chars: `A-Z a-z 0-9 _ -`) and retry with the **same** key and body:
+
+```bash title="Idempotent signup"
+curl --request POST 'https://waitlyze.falakgala.dev/api/waitlist' \
+  --header 'Content-Type: application/json' \
+  --header 'Idempotency-Key: 01J9Z8QK7M5N3P2R4T6V8X0Z2C4' \
+  --data '{ "apiKey": "YOUR_SERVER_SIDE_API_KEY", "waitlistId": "YOUR_WAITLIST_ID", "email": "person@example.com" }'
+```
+
+- Replays return the original signup with `"idempotentReplay": true` in `data` — no duplicate is created.
+- Reusing a key with a **different** email returns `409` (`Idempotency-Key was already used…`). Mint a fresh key per distinct signup.
+- The key is also accepted alongside `x-api-key` / Bearer auth, keeping secrets out of the JSON body if you prefer.
+
+## Look up a signup's status
+
+`GET /api/waitlist?waitlistId=…&email=…` answers “where am I?” for custom frontends without consuming signup intake budget. The key travels in headers only — never in the query string:
+
+```bash title="Status lookup"
+curl 'https://waitlyze.falakgala.dev/api/waitlist?waitlistId=YOUR_WAITLIST_ID&email=person%40example.com' \
+  --header 'X-Api-Key: YOUR_SERVER_SIDE_API_KEY'
+```
+
+```json title="Status response"
+{ "success": true, "data": { "position": 9, "referral_code": "7f3a…", "referral_link": "https://…", "verified": true } }
+```
+
+Unknown emails return `404`. Responses are `private, no-store` — do not cache them in a CDN.
+
+## Rate limits
+
+Two budgets protect intake; both surface `Retry-After` on `429`/`503`:
+
+- **Shared intake budget** — per campaign, client, and recipient windows (see [Troubleshooting](/docs/troubleshooting)).
+- **Per-key daily budget** (5,000 signups + lookups per key per day). Successful `POST` signups and `GET` lookups (hits and `404`s) carry `X-RateLimit-Limit`, `X-RateLimit-Remaining`, and `X-RateLimit-Reset` (Unix seconds); validation (`400`), auth (`401`), rate-limit (`429`/`503`), and server (`500`) errors — as well as `409` duplicate/key-reuse responses — do not. Graph remaining per key to spot a noisy integration before it caps.
+
 ## Next
 
 <Cards>
+<Card title="Custom frontend guide" href="/docs/custom-frontend" description="Pair the API with embeds, referrals, domains, and email end-to-end." />
 <Card title="API keys" href="/docs/api-keys" description="Expiry, replacement, and revocation." />
 <Card title="Signup and verification" href="/docs/signup-flow" description="What happens after 200 OK." />
 <Card title="Troubleshooting" href="/docs/troubleshooting" description="Fix 401, 409, 429, and 503." />

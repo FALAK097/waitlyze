@@ -25,7 +25,7 @@ A code belongs to one waitlist. Passing another waitlist's code via API is rejec
 | --- | --- |
 | Hosted page | `?r=CODE` query parameter on the shared link. |
 | Embed | Forwarded from your page URL, like the hosted page. |
-| Signup API | `referralCode` field in the JSON body. See [Signup API](/docs/api). |
+| Signup API | `referralCode` (or `referral_code`) field in the JSON body. Responses return the new signup's own `referral_code` + `referral_link`. See [Signup API](/docs/api). |
 
 ## Verified credit rules
 
@@ -42,7 +42,7 @@ Open Subscribers → Referral review to approve or resolve flagged referrals. Th
 
 ## Queue position
 
-Position uses eligible campaign referrals plus signup ordering. It answers “where am I right now?” — not “what reward do I get?” Referrals do not automatically deliver rewards or unlock product access. Build your own reward rules on top of verified counts and [webhook events](/docs/webhooks).
+Position uses eligible campaign referrals plus signup ordering. It answers “where am I right now?” — not “what reward do I get?” Referrals do not automatically deliver rewards or unlock product access. Build your own reward rules on top of verified counts and [webhook events](/docs/webhooks) — specifically `referral.completed`, which fires when the inviter earns verified credit.
 
 ## Next
 

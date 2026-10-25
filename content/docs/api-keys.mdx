@@ -54,9 +54,13 @@ The UI creates `waitlist:write` keys: signup creation for the selected waitlist 
 | Allowed | Denied |
 | --- | --- |
 | `POST /api/waitlist` for the linked `waitlistId` | Listing subscribers or exports |
-| Passing `referralCode` for the same waitlist | Managing keys, pages, workspace, email, domains, webhooks |
+| `GET /api/waitlist` status lookup (position, referral link) | Managing keys, pages, workspace, email, domains, webhooks |
+| Passing `referralCode` / `referral_code` for the same waitlist |  |
+| `Idempotency-Key` replays of your own signups | Reusing one key across different emails (`409`) |
 
 Expired or revoked keys return `401`. A mismatched `waitlistId` (key for A, body says B) also returns `401`.
+
+Each key gets 5,000 requests per day across signups and status lookups, reported via `X-RateLimit-Limit` / `X-RateLimit-Remaining` / `X-RateLimit-Reset`. Prefer header auth (`x-api-key` or `Authorization: Bearer`) for `GET` lookups so the secret never lands in URLs or logs.
 
 ## Next
 

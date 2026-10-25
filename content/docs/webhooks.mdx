@@ -1,6 +1,6 @@
 ---
 title: Webhooks
-description: Receive signed signup.created and signup.verified events.
+description: Receive signed signup, referral, and milestone events.
 ---
 
 Webhooks stream signup activity to your stack in real time. Manage them in Waitlist settings → **Webhooks**. Owners and admins can manage; members can view.
@@ -10,7 +10,7 @@ Webhooks stream signup activity to your stack in real time. Manage them in Waitl
 <Steps>
 <Step>
 ### Add a public HTTPS URL
-Enter your receiver URL. Every endpoint receives both `signup.created` and `signup.verified` — there is nothing else to configure. Localhost and non-HTTPS URLs are rejected.
+Enter your receiver URL. New endpoints subscribe to all four events — signup, referral, and milestone — there is nothing else to configure. Localhost and non-HTTPS URLs are rejected.
 </Step>
 <Step>
 ### Copy the signing secret
@@ -22,6 +22,10 @@ Tests use `{ "test": true }` in `data` and never represent a real subscriber. Co
 </Step>
 </Steps>
 
+<Callout title="Existing endpoints need a re-add for new events">
+Endpoints created before `referral.completed` and `milestone.reached` launched stay subscribed to signup events only. Add a new endpoint (it gets all four events) and pause the old one once the new receiver is verified.
+</Callout>
+
 <Callout title="Dispatch must be configured">
 Your deployment needs webhook encryption and dispatch configured before delivery runs. If tests never arrive, check deployment config first, then endpoint status. See [Troubleshooting](/docs/troubleshooting). This repo ships a Cloudflare Worker cron for dispatch — see `workers/outbox-dispatch`.
 </Callout>
@@ -31,6 +35,18 @@ Your deployment needs webhook encryption and dispatch configured before delivery
 ```json title="Signup event"
 { "id": "EVENT_ID", "type": "signup.created", "version": 1, "occurredAt": "2026-10-11T00:00:00.000Z", "waitlistId": "WAITLIST_ID", "data": { "signupId": "SIGNUP_ID" } }
 ```
+
+```json title="Referral and milestone events"
+{ "id": "EVENT_ID", "type": "referral.completed", "version": 1, "occurredAt": "2026-10-25T00:00:00.000Z", "waitlistId": "WAITLIST_ID", "data": { "signupId": "INVITER_SIGNUP_ID", "referredSignupId": "INVITEE_SIGNUP_ID" } }
+{ "id": "EVENT_ID", "type": "milestone.reached", "version": 1, "occurredAt": "2026-10-25T00:00:00.000Z", "waitlistId": "WAITLIST_ID", "data": { "count": 100, "triggeringSignupId": "SIGNUP_ID" } }
+```
+
+| Event | When it fires | `data` shape |
+| --- | --- | --- |
+| `signup.created` | Intake, before verification | `{ signupId }` |
+| `signup.verified` | After email confirmation | `{ signupId }` |
+| `referral.completed` | Inviter earns credit when the invitee verifies and the referral is `CLEAR`/`APPROVED` (same gate as the points ledger) | `{ signupId }` = inviter, `{ referredSignupId }` = invitee. Gate reward fulfillment on this, never on signup alone. Queue-position counting additionally requires the inviter to be verified — that rule lives in the position engine, not in this event. |
+| `milestone.reached` | Signup count hits 1, 10, 100, or 1000 | `{ count }` plus `triggeringSignupId` when known. Concurrent trips of the same count collapse to a single delivery, so dedupe by event `id` as usual. |
 
 Subscriber emails are **never** included — fetch what you need via your own subscriber read path using `signupId`. Return `2xx` only after durably accepting the event. Deduplicate by event ID because retries redeliver the same `id`.
 
@@ -42,9 +58,9 @@ Subscriber emails are **never** included — fetch what you need via your own su
       description: "Unique event ID. Persist it to deduplicate retried deliveries.",
     },
     type: {
-      type: '"signup.created" | "signup.verified"',
+      type: '"signup.created" | "signup.verified" | "referral.completed" | "milestone.reached"',
       required: true,
-      description: "signup.created fires on intake; signup.verified fires after email confirmation.",
+      description: "signup.created fires on intake; signup.verified after email confirmation; referral.completed when the invitee verifies and the referral is CLEAR/APPROVED (same gate as the points ledger); milestone.reached at 1/10/100/1000 signups.",
     },
     version: {
       type: "number",
@@ -64,7 +80,7 @@ Subscriber emails are **never** included — fetch what you need via your own su
     "data.signupId": {
       type: "string",
       required: true,
-      description: "The signup record. Subscriber emails are never included. Test deliveries carry `{ test: true }` here instead.",
+      description: "The signup record (the inviter for referral.completed). Subscriber emails are never included. Test deliveries carry `{ test: true }` here instead. Milestone events carry `count` (+ optional `triggeringSignupId`) rather than a subject signup.",
     },
   }}
 />

@@ -2,9 +2,8 @@ import { NextResponse } from "next/server";
 
 import prisma from "@/lib/prisma";
 import { webhookAccess } from "@/lib/webhooks/access";
+import { WEBHOOK_EVENT_TYPES, isSupportedWebhookEvent } from "@/lib/webhooks/delivery.mjs";
 import { validateWebhookUrl } from "@/lib/webhooks/security.mjs";
-
-const EVENTS = new Set(["signup.created", "signup.verified"]);
 
 export async function PATCH(request, { params }) {
   const { id, subscriptionId } = await params;
@@ -28,8 +27,8 @@ export async function PATCH(request, { params }) {
       if (
         !Array.isArray(body.events) ||
         !body.events.length ||
-        body.events.length > EVENTS.size ||
-        body.events.some((event) => !EVENTS.has(event))
+        body.events.length > WEBHOOK_EVENT_TYPES.length ||
+        body.events.some((event) => !isSupportedWebhookEvent(event))
       )
         return NextResponse.json(
           { error: "Choose at least one supported event." },

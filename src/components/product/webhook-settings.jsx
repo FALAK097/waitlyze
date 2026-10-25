@@ -33,7 +33,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 
-const events = ["signup.created", "signup.verified"];
+const events = ["signup.created", "signup.verified", "referral.completed", "milestone.reached"];
 const MAX_ENDPOINTS = 5;
 const deliveryDateTime = new Intl.DateTimeFormat(undefined, {
   month: "short",
@@ -482,7 +482,7 @@ export function WebhookSettings({ waitListId, canManage = true }) {
                     id="webhook-endpoint-dialog-help"
                     className="mb-4! text-sm leading-relaxed text-product-text-secondary"
                   >
-                    Use a public HTTPS endpoint. Receives both signup.created and signup.verified.
+                    Use a public HTTPS endpoint. Receives signup, referral, and milestone events.
                     Payloads exclude subscriber email addresses.
                   </p>
                 </div>

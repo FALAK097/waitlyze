@@ -36,7 +36,7 @@ Email confirmation proves ownership. Broadcasts and automations additionally req
 | --- | --- | --- |
 | Hosted page | `/w/[slug]` | `?r=CODE` query parameter |
 | Embed widget | Your site + `/js/embed.js` | Forwarded from your page URL |
-| Server API | `POST /api/waitlist` with `apiKey`, `waitlistId`, `email` | Optional `referralCode` body field, same waitlist only |
+| Server API | `POST /api/waitlist` with `apiKey`, `waitlistId`, `email` | Optional `referralCode` / `referral_code` body field, same waitlist only; response carries the new `referral_code` + `referral_link`. `GET /api/waitlist` re-reads position later. |
 
 Duplicate emails return `409`. Non-accepting states (draft, paused) also return `409` with a state reason. Rate-limited clients must respect `Retry-After`. See [Signup API](/docs/api) and [Troubleshooting](/docs/troubleshooting).
 
