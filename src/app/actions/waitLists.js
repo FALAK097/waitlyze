@@ -7,17 +7,18 @@ import {
   RESERVED_WAITLIST_SLUGS,
 } from "@/lib/campaigns/create-draft.mjs";
 import prisma from "@/lib/prisma";
+import { isTemplateId } from "@/lib/templates/gallery.mjs";
 import { AUDIT_ACTIONS, recordAuditEvent } from "@/lib/workspaces/audit.mjs";
 import { currentWorkspace } from "@/lib/workspaces/current";
 
-export async function createWaitlistDraft({ name, publicSlug, creationKey }) {
+export async function createWaitlistDraft({ name, publicSlug, creationKey, templateId }) {
   const { user, workspace } = await currentWorkspace();
   try {
     const draft = await createDraft(prisma, user.id, workspace.id, {
       name,
       description: "",
       publicSlug,
-      templateId: "simple",
+      templateId: isTemplateId(templateId) ? templateId : "simple",
       creationKey,
     });
     await recordAuditEvent(prisma, {

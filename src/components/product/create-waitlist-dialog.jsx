@@ -16,6 +16,10 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { listTemplates } from "@/lib/templates/catalog.mjs";
+import { isTemplateId } from "@/lib/templates/gallery.mjs";
+
+const templateOptions = listTemplates();
 
 function normalizeSlugInput(value) {
   return value
@@ -31,12 +35,19 @@ function slugify(value) {
   return normalizeSlugInput(value).replace(/-+$/, "");
 }
 
-export function CreateWaitlistDialog({ initialOpen = false, first = false }) {
+export function CreateWaitlistDialog({
+  initialOpen = false,
+  first = false,
+  initialTemplateId = "simple",
+}) {
   const router = useRouter();
   const [open, setOpen] = useState(initialOpen);
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
   const [slugTouched, setSlugTouched] = useState(false);
+  const [templateId, setTemplateId] = useState(
+    isTemplateId(initialTemplateId) ? initialTemplateId : "simple",
+  );
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [slugStatus, setSlugStatus] = useState({ state: "idle", message: "" });
@@ -81,6 +92,7 @@ export function CreateWaitlistDialog({ initialOpen = false, first = false }) {
         name: name.trim(),
         publicSlug,
         creationKey,
+        templateId,
       });
       if (result?.ok) {
         setCreationKey(crypto.randomUUID());
@@ -192,6 +204,36 @@ export function CreateWaitlistDialog({ initialOpen = false, first = false }) {
                   {slugStatus.message}
                 </p>
               )}
+            </div>
+            <div className="grid gap-2 [&_label]:text-caption [&_label]:font-semibold">
+              <Label htmlFor="new-waitlist-template">Template</Label>
+              <select
+                id="new-waitlist-template"
+                value={templateId}
+                onChange={(event) => {
+                  if (isTemplateId(event.target.value)) setTemplateId(event.target.value);
+                }}
+                disabled={busy}
+                className="h-11 rounded-lg border border-product-border-subtle bg-product-bg-surface px-3 text-body text-product-text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-product-focus"
+              >
+                {templateOptions.map((template) => (
+                  <option key={template.id} value={template.id}>
+                    {template.name} — {template.description}
+                  </option>
+                ))}
+              </select>
+              <p className="text-caption text-product-text-secondary">
+                The new page starts from this template.{" "}
+                <a
+                  href="/templates"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline underline-offset-4"
+                >
+                  Browse the gallery
+                </a>
+                .
+              </p>
             </div>
             {error && (
               <p
