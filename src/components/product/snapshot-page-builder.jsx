@@ -2001,7 +2001,7 @@ function FormPanel({ form, update }) {
       )}
       <Toggle
         label="Double opt-in (verify email before counting the signup)"
-        checked={(form.doubleOptIn ?? form.verification) !== false}
+        checked={(form.doubleOptIn ?? true) && (form.verification ?? true)}
         onChange={(doubleOptIn) => update({ doubleOptIn, verification: doubleOptIn })}
       />
       <Field
@@ -2053,7 +2053,7 @@ function FormPanel({ form, update }) {
       />
       {form.requireTurnstile && (
         <Field
-          label="Turnstile site key"
+          label="Turnstile site key (must match this server's widget)"
           value={form.turnstileSiteKey ?? ""}
           onChange={(turnstileSiteKey) => update({ turnstileSiteKey })}
         />

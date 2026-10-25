@@ -25,6 +25,10 @@ import { validateSignupEmail } from "@/utils/server/email-validation.mjs";
 // the response reveals nothing beyond what the thank-you page would show its
 // owner (position, referral link), and (c) no cross-waitlist information
 // leaks: unknown emails fall through to normal creation.
+//
+// The payload deliberately omits uniqueUserId: no client consumes it, and it
+// doubles as a referral-attribution identifier, so there is no reason to hand
+// a probing browser someone else's stable identifier.
 export const duplicateSignupResponse = async (waitListId, email) => {
   const existing =
     (await findSignupByEmail(prisma, waitListId, email, {
@@ -49,7 +53,6 @@ export const duplicateSignupResponse = async (waitListId, email) => {
       signUp: {
         id: existing.id,
         email: existing.email,
-        uniqueUserId: existing.uniqueUserId,
         waitListId: existing.waitListId,
         rank,
         verified: !!existing.verifiedAt,

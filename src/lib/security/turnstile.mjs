@@ -11,6 +11,14 @@ export class TurnstileMisconfiguredError extends Error {
   }
 }
 
+// Public site key of the platform Turnstile widget, paired with
+// TURNSTILE_SECRET_KEY in the Cloudflare dashboard. Founders must paste this
+// exact key into their form: tokens minted by any other widget can never
+// verify against our secret, so a mismatched key would break all signups.
+export function getTurnstileSiteKey() {
+  return (process.env.TURNSTILE_SITE_KEY ?? "").trim();
+}
+
 export async function verifyTurnstileToken(token, { ip } = {}) {
   const secret = process.env.TURNSTILE_SECRET_KEY;
   if (!secret) throw new TurnstileMisconfiguredError();
