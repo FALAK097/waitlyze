@@ -192,6 +192,8 @@ model SignUp {
   // SHA-256 device digest (see lib/fraud/gates.mjs) for velocity checks.
   // Null for rows written before capture; those rows skip fingerprint gates.
   deviceFingerprint String?
+  phone           String?
+  customFields    Json?
   waitListId      String
   impressionId    String?
   rank            Int?

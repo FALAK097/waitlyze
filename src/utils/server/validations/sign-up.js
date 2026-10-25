@@ -1,6 +1,16 @@
+import {
+  checkCountryRules,
+  checkEmailDomainRules,
+  getPublishedFormConfig,
+  pickCustomFields,
+  resolveSuccessRedirect,
+  sanitizeCustomFieldAnswers,
+  validatePhoneNumber,
+} from "@/lib/campaigns/form-rules.mjs";
 import { getCampaignPosition } from "@/lib/campaigns/referral-position.mjs";
 import { findSignupByEmail } from "@/lib/campaigns/signup-lookup.mjs";
 import prisma from "@/lib/prisma";
+import { TurnstileMisconfiguredError, verifyTurnstileToken } from "@/lib/security/turnstile.mjs";
 import { validateSignupEmail } from "@/utils/server/email-validation.mjs";
 
 // Builds the "already signed up" success payload. Duplicates resolve to the
@@ -19,16 +29,14 @@ import { validateSignupEmail } from "@/utils/server/email-validation.mjs";
 // The payload deliberately omits uniqueUserId: no client consumes it, and it
 // doubles as a referral-attribution identifier, so there is no reason to hand
 // a probing browser someone else's stable identifier.
-//
-// Stream-B note: no success-redirect field here — the redirect feature lives
-// on the form-hardening branch, so this payload stays position + link.
-//
 // The referral code is only included when the probing browser matches the
 // signup's own browser (uniqueUserId equal) — otherwise the response is
 // position-only, so one browser can't harvest another signup's referral link.
 export const duplicateSignupResponse = async (waitListId, email, browserId = "") => {
-  // Canonical lookup first (Gmail dots/plus-tags map to one identity),
-  // then the legacy-null-email fallback below.
+  // Canonical lookup: Gmail dots/plus-tags map to one identity (see
+  // normalize-email.mjs). No include/select narrowing: findSignupByEmail
+  // forwards its fourth arg to Prisma `include` (relations only), and we
+  // need the scalar uniqueUserId to let idempotent retries through.
   const existing =
     (await findSignupByEmail(prisma, waitListId, email, {
       referrals: true,
@@ -45,6 +53,7 @@ export const duplicateSignupResponse = async (waitListId, email, browserId = "")
   if (!existing) return null;
   const rank = await getCampaignPosition(prisma, waitListId, existing.id);
   const referrals = Array.isArray(existing.referrals) ? existing.referrals : [];
+  const redirectUrl = resolveSuccessRedirect(await getPublishedFormConfig(prisma, waitListId));
   const sameBrowser =
     typeof browserId === "string" && browserId !== "" && existing.uniqueUserId === browserId;
   return Response.json(
@@ -59,13 +68,14 @@ export const duplicateSignupResponse = async (waitListId, email, browserId = "")
         outcome: "returning",
         referralCount: referrals.length,
         ...(sameBrowser ? { referralCode: existing.referralCode } : {}),
+        ...(redirectUrl ? { redirectUrl } : {}),
       },
     },
     { status: 200 },
   );
 };
 
-const checkIfRequestIsValid = async (body) => {
+const checkIfRequestIsValid = async (body, context = {}) => {
   if (
     !body ||
     typeof body !== "object" ||
@@ -118,17 +128,54 @@ const checkIfRequestIsValid = async (body) => {
       { status: 400 },
     );
   }
+  // Per-form join rules, enforced pre-DB so rejected signups never touch the
+  // signup transaction. createCampaignSignup re-checks the same rules inside
+  // the transaction as the authority for paths that skip this validator.
+  const form = await getPublishedFormConfig(prisma, body.waitListId);
+  if (form) {
+    const domainError = checkEmailDomainRules(form, body.email);
+    if (domainError) return Response.json({ message: domainError }, { status: 400 });
+    const countryError = checkCountryRules(form, context.country);
+    if (countryError) return Response.json({ message: countryError }, { status: 400 });
+    const phoneError = validatePhoneNumber(body.phone, form);
+    if (phoneError) return Response.json({ message: phoneError }, { status: 400 });
+    const fields = sanitizeCustomFieldAnswers(form, pickCustomFields(body));
+    if (fields.error) return Response.json({ message: fields.error }, { status: 400 });
+    if (form.requireTurnstile) {
+      if (typeof body.turnstileToken !== "string" || !body.turnstileToken) {
+        return Response.json(
+          { message: "Complete the verification challenge and try again." },
+          { status: 400 },
+        );
+      }
+      let verified = false;
+      try {
+        verified = await verifyTurnstileToken(body.turnstileToken, { ip: context.ip });
+      } catch (error) {
+        if (error instanceof TurnstileMisconfiguredError) {
+          console.error("Turnstile misconfigured for waitlist", body.waitListId);
+          return Response.json(
+            { message: "Signups are temporarily unavailable. Please try again later." },
+            { status: 500 },
+          );
+        }
+        throw error;
+      }
+      if (!verified) {
+        return Response.json(
+          { message: "Verification challenge failed. Please try again." },
+          { status: 400 },
+        );
+      }
+    }
+  }
 };
 
-export const validateRequest = async (body) => {
-  let validator = await checkIfRequestIsValid(body);
+export const validateRequest = async (body, context = {}) => {
+  let validator = await checkIfRequestIsValid(body, context);
   // If validator is not null, return the validator
   if (validator) return validator;
   const normalizedEmail = typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
-  // Canonical lookup: Gmail dots/plus-tags map to one identity (see
-  // normalize-email.mjs). No include/select narrowing: findSignupByEmail
-  // forwards its fourth arg to Prisma `include` (relations only), and we
-  // need the scalar uniqueUserId to let idempotent retries through.
   const existing = await findSignupByEmail(prisma, body.waitListId, body.email);
   // Legacy rows saved before email normalization carry a null
   // emailNormalized, which the indexed lookup above cannot see — fall back to
@@ -149,6 +196,7 @@ export const validateRequest = async (body) => {
   if (
     legacy &&
     !(
+      existing &&
       legacy.uniqueUserId === body.hypeSession &&
       (legacy.emailNormalized ?? legacy.email.trim().toLowerCase()) === normalizedEmail
     )

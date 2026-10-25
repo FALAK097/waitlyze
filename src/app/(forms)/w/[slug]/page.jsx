@@ -42,15 +42,39 @@ export async function generateMetadata({ params }) {
   const hero = page.snapshot.sections.find((section) => section.type === "hero");
   const title = page.snapshot.seo.title || page.waitList.name || hero?.heading || "Waitlist";
   const description = page.snapshot.seo.description || hero?.body || "";
+  // OG images and favicons render in third-party scrapers: only absolute TLS
+  // or site-relative URLs (resolved against metadataBase). Anything else is
+  // dropped rather than emitting a broken tag.
+  // Protocol-relative ("//evil.test/x.png") would inherit https and bypass
+  // the allowlist, so only absolute TLS or single-slash-relative URLs pass.
+  const shareImage =
+    typeof page.snapshot.seo.image === "string" &&
+    /^(https:\/\/|\/(?!\/))/i.test(page.snapshot.seo.image.trim())
+      ? page.snapshot.seo.image.trim()
+      : "";
+  const favicon =
+    typeof page.snapshot.brand.favicon === "string" &&
+    /^(https:\/\/|\/(?!\/)|data:image\/)/i.test(page.snapshot.brand.favicon.trim())
+      ? page.snapshot.brand.favicon.trim()
+      : "";
   return {
     title,
     description,
     robots: { index: page.snapshot.seo.indexable, follow: page.snapshot.seo.indexable },
     alternates: { canonical: `/w/${encodeURIComponent(slug)}` },
+    ...(favicon ? { icons: { icon: favicon } } : {}),
     openGraph: {
       title,
       description,
-      ...(page.snapshot.seo.image ? { images: [{ url: page.snapshot.seo.image }] } : {}),
+      type: "website",
+      url: `/w/${encodeURIComponent(slug)}`,
+      ...(shareImage ? { images: [{ url: shareImage }] } : {}),
+    },
+    twitter: {
+      card: shareImage ? "summary_large_image" : "summary",
+      title,
+      description,
+      ...(shareImage ? { images: [shareImage] } : {}),
     },
   };
 }

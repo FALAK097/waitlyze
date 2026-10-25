@@ -161,7 +161,7 @@ export function WaitlistPageContent({
                     ))}
                     {section.buttonText && (
                       <a
-                        className="rounded-wl bg-wl-button px-4 py-2.5 font-bold text-wl-button-text no-underline"
+                        className="inline-flex min-h-11 items-center justify-center rounded-wl bg-wl-button px-4 py-2.5 font-bold text-wl-button-text no-underline"
                         href="#signup"
                       >
                         {section.buttonText}
@@ -582,7 +582,7 @@ export function WaitlistPageContent({
                     id={section.id === firstForm?.id ? "signup" : undefined}
                     key={section.id}
                   >
-                    <div className="rounded-wl bg-wl-surface p-8 md:p-14">
+                    <div className="rounded-wl bg-wl-surface p-6 sm:p-8 md:p-14">
                       <div className="mx-auto max-w-2xl text-center">
                         {section.heading && (
                           <Heading
@@ -682,7 +682,7 @@ export function WaitlistPageContent({
                     {section.body && <p className="text-wl-muted">{section.body}</p>}
                   </div>
                   <a
-                    className="shrink-0 rounded-wl bg-wl-button px-4 py-2.5 font-bold text-wl-button-text no-underline"
+                    className="inline-flex min-h-11 shrink-0 items-center justify-center rounded-wl bg-wl-button px-4 py-2.5 font-bold text-wl-button-text no-underline"
                     href="#signup"
                   >
                     {section.buttonText}
@@ -801,8 +801,7 @@ export function WaitlistSignupPreview({ form, brand }) {
       >
         <span
           className={cn(
-            "flex flex-1 items-center rounded-wl border border-wl-input-border bg-wl-input px-4 text-wl-muted",
-            form.layout === "stacked" ? "h-14" : "h-12",
+            "flex h-12 min-h-12 flex-1 items-center rounded-wl border border-wl-input-border bg-wl-input px-4 text-wl-muted",
           )}
         >
           {form.placeholder}

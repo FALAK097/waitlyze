@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { pickCustomFields } from "@/lib/campaigns/form-rules.mjs";
 import { getCampaignPosition } from "@/lib/campaigns/referral-position.mjs";
 import {
   DuplicateSignupError,
@@ -15,7 +16,7 @@ import { createSignUp } from "@/services/sign-up";
 import { pickAttribution } from "@/utils/server/attribution.mjs";
 import { getDeviceInfo } from "@/utils/server/device";
 import { getGeoInfo, getIpAddress, getTimeZone } from "@/utils/server/geo";
-import { validateRequest, duplicateSignupResponse } from "@/utils/server/validations/sign-up";
+import { duplicateSignupResponse, validateRequest } from "@/utils/server/validations/sign-up";
 
 const legacySignupResponse = (signUp, { includeReferralCode = false } = {}) => {
   // This endpoint is public. Keep the legacy fields needed by its browser
@@ -44,6 +45,11 @@ const legacySignupResponse = (signUp, { includeReferralCode = false } = {}) => {
     response.showPoints = summary.showPoints !== false;
     response.showProgress = summary.showProgress !== false;
   }
+  // Server-vetted post-signup redirect. Only present when the founder
+  // configured one that passes the allowlist — the browser navigates here and
+  // nowhere else, so this can never become an open redirect.
+  if (typeof signUp.redirectUrl === "string" && signUp.redirectUrl)
+    response.redirectUrl = signUp.redirectUrl;
   return response;
 };
 
@@ -73,7 +79,7 @@ export const GET = async (req) => {
 };
 
 export const POST = async (req) => {
-  let body = null;
+  let body;
   try {
     body = await req.json();
     if (
@@ -93,15 +99,29 @@ export const POST = async (req) => {
       headers: req.headers,
       email: body.email,
     });
-    const validator = await validateRequest(body);
-    if (validator) return validator;
-    if (body.marketingConsent !== undefined && typeof body.marketingConsent !== "boolean") {
-      return NextResponse.json({ message: "Marketing consent must be a boolean" }, { status: 400 });
-    }
-
     const { device, deviceType } = await getDeviceInfo();
     const ip = getIpAddress(req);
     const geo = getGeoInfo(req);
+
+    // Cheap shape checks run before validateRequest so malformed values
+    // (including oversized tokens) never reach external verification.
+    if (body.marketingConsent !== undefined && typeof body.marketingConsent !== "boolean") {
+      return NextResponse.json({ message: "Marketing consent must be a boolean" }, { status: 400 });
+    }
+    if (body.phone !== undefined && (typeof body.phone !== "string" || body.phone.length > 32)) {
+      return NextResponse.json({ message: "Phone number is too long." }, { status: 400 });
+    }
+    if (
+      body.turnstileToken !== undefined &&
+      (typeof body.turnstileToken !== "string" || body.turnstileToken.length > 2048)
+    ) {
+      return NextResponse.json(
+        { message: "Verification challenge failed. Please try again." },
+        { status: 400 },
+      );
+    }
+    const validator = await validateRequest(body, { country: geo?.country, ip });
+    if (validator) return validator;
 
     const hypeSession = body.hypeSession;
 
@@ -130,6 +150,8 @@ export const POST = async (req) => {
       waitListId: body.waitListId,
       ipAddress: ip,
       impressionId: impression?.id,
+      phone: typeof body.phone === "string" ? body.phone.slice(0, 32) : undefined,
+      customFields: pickCustomFields(body),
       ...pickAttribution(body),
     };
 
@@ -170,8 +192,8 @@ export const POST = async (req) => {
       // Race path: the row committed between the pre-DB duplicate check and
       // the insert. Resolve like the validator does — position + link, 200.
       const resolved = await duplicateSignupResponse(
-        body?.waitListId,
-        body?.email,
+        body.waitListId,
+        body.email,
         body?.hypeSession,
       ).catch(() => null);
       if (resolved) return resolved;
