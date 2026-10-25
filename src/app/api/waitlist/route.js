@@ -219,20 +219,29 @@ export async function POST(request) {
     const signUp = await createSignUp(signupDataInput, referralCode);
     await dispatchVerificationNow(signUp.verificationEventKey);
 
-    await prisma.impression.create({
-      data: {
-        uniqueUserId: signUp.uniqueUserId,
-        device,
-        deviceType,
-        waitListId: waitlistId,
-        ipAddress: ip,
-        city: signupDataInput.city,
-        country: signupDataInput.country,
-        latitude: signupDataInput.latitude,
-        longitude: signupDataInput.longitude,
-        timezone: signupDataInput.timezone,
-      },
-    });
+    // Replays (same Idempotency-Key) return the original signup: no new page
+    // view happened, so skip the impression. The P2002 guard covers the
+    // hairline concurrent same-key double-submit where both pass createSignUp.
+    if (signUp.signupOutcome !== "returning") {
+      try {
+        await prisma.impression.create({
+          data: {
+            uniqueUserId: signUp.uniqueUserId,
+            device,
+            deviceType,
+            waitListId: waitlistId,
+            ipAddress: ip,
+            city: signupDataInput.city,
+            country: signupDataInput.country,
+            latitude: signupDataInput.latitude,
+            longitude: signupDataInput.longitude,
+            timezone: signupDataInput.timezone,
+          },
+        });
+      } catch (error) {
+        if (error?.code !== "P2002") throw error;
+      }
+    }
 
     return NextResponse.json(
       {
