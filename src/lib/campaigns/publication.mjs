@@ -1,4 +1,4 @@
-import { getTurnstileSiteKey } from "../security/turnstile.mjs";
+import { getTurnstileSiteKey, isTurnstileConfigured } from "../security/turnstile.mjs";
 import { templateSnapshotSchema } from "../templates/catalog.mjs";
 import { AccessError, campaignScope } from "../workspaces/service.mjs";
 
@@ -32,12 +32,12 @@ const assertTurnstilePairing = (snapshot) => {
       : templateSnapshotSchema.safeParse(snapshot);
   const form = parsed?.success === true ? parsed.data.form : parsed?.form;
   if (!form || form.requireTurnstile !== true) return;
-  const platformKey = getTurnstileSiteKey();
-  if (!platformKey) {
+  if (!isTurnstileConfigured()) {
     throw new PublicationConflict(
       "Bot protection is on, but Turnstile isn't set up on this server yet. Turn it off, or ask your admin to configure Turnstile first.",
     );
   }
+  const platformKey = getTurnstileSiteKey();
   if (typeof form.turnstileSiteKey !== "string" || form.turnstileSiteKey.trim() !== platformKey) {
     throw new PublicationConflict(
       "Bot protection is on, but the site key doesn't match this server's Turnstile widget. Paste the platform site key (ask your admin), or turn bot protection off.",

@@ -19,6 +19,12 @@ export function getTurnstileSiteKey() {
   return (process.env.TURNSTILE_SITE_KEY ?? "").trim();
 }
 
+// Both halves must be present: a matching site key with no secret would pass
+// the publish gate and then fail every signup verification at runtime.
+export function isTurnstileConfigured() {
+  return getTurnstileSiteKey() !== "" && (process.env.TURNSTILE_SECRET_KEY ?? "").trim() !== "";
+}
+
 export async function verifyTurnstileToken(token, { ip } = {}) {
   const secret = process.env.TURNSTILE_SECRET_KEY;
   if (!secret) throw new TurnstileMisconfiguredError();
