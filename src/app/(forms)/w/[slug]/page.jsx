@@ -54,7 +54,7 @@ export async function generateMetadata({ params }) {
       : "";
   const favicon =
     typeof page.snapshot.brand.favicon === "string" &&
-    /^(https:\/\/|\/|data:image\/)/i.test(page.snapshot.brand.favicon.trim())
+    /^(https:\/\/|\/(?!\/)|data:image\/)/i.test(page.snapshot.brand.favicon.trim())
       ? page.snapshot.brand.favicon.trim()
       : "";
   return {
