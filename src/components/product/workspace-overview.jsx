@@ -63,7 +63,7 @@ export function WorkspaceOverview({ overview, query, status, sort }) {
               prefetch={false}
               href={overviewHref({ query, status, sort, referral: value })}
               aria-pressed={overview.referral === value}
-              className={`inline-flex min-h-9 items-center rounded-lg px-2.5 py-1.5 text-xs font-medium no-underline ${
+              className={`inline-flex min-h-11 items-center rounded-lg px-2.5 py-1.5 text-xs font-medium no-underline ${
                 overview.referral === value
                   ? "bg-product-bg-inset text-product-text-primary"
                   : "text-product-text-secondary"
@@ -75,7 +75,7 @@ export function WorkspaceOverview({ overview, query, status, sort }) {
         </div>
       </div>
 
-      <div className={PANEL}>
+      <div className={`@container ${PANEL}`}>
         <dl className="m-0 grid grid-cols-3 @min-[33rem]:grid-cols-4 @min-[41.25rem]:grid-cols-5">
           <Stat label="Waitlists" value={formatCount(totals.waitlists)} />
           <Stat

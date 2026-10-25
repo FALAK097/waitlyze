@@ -31,48 +31,53 @@ export async function getWorkspaceOverview(db, { userId, workspaceId, referral =
   const scope = campaignScope(userId, "viewCampaign", workspaceId);
   const signupWhere = { waitList: scope, ...referralSignupWhere(filter) };
 
-  const [lists, signups, verified, referred, recent] = await Promise.all([
-    db.waitList.findMany({
-      where: scope,
-      select: {
-        id: true,
-        name: true,
-        status: true,
-        updatedAt: true,
-        _count: { select: { signUps: true, impressions: true } },
-      },
-      orderBy: [{ updatedAt: "desc" }, { id: "asc" }],
-      take: LIST_LIMIT,
-    }),
-    db.signUp.count({ where: signupWhere }),
-    db.signUp.count({ where: { ...signupWhere, verifiedAt: { not: null } } }),
-    db.signUp.count({
-      where: { waitList: scope, referredBy: { some: ELIGIBLE_REFERRAL } },
-    }),
-    db.signUp.findMany({
-      where: signupWhere,
-      select: {
-        id: true,
-        email: true,
-        createdAt: true,
-        verifiedAt: true,
-        waitListId: true,
-        waitList: { select: { name: true } },
-      },
-      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
-      take: RECENT_LIMIT,
-    }),
-  ]);
+  const [lists, signups, verified, referred, recent, waitlistTotal, allSignupsTotal, visitorTotal] =
+    await Promise.all([
+      db.waitList.findMany({
+        where: scope,
+        select: {
+          id: true,
+          name: true,
+          status: true,
+          updatedAt: true,
+          _count: { select: { signUps: true, impressions: true } },
+        },
+        orderBy: [{ updatedAt: "desc" }, { id: "asc" }],
+        take: LIST_LIMIT,
+      }),
+      db.signUp.count({ where: signupWhere }),
+      db.signUp.count({ where: { ...signupWhere, verifiedAt: { not: null } } }),
+      db.signUp.count({
+        where: { waitList: scope, referredBy: { some: ELIGIBLE_REFERRAL } },
+      }),
+      db.signUp.findMany({
+        where: signupWhere,
+        select: {
+          id: true,
+          email: true,
+          createdAt: true,
+          verifiedAt: true,
+          waitListId: true,
+          waitList: { select: { name: true } },
+        },
+        orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+        take: RECENT_LIMIT,
+      }),
+      // Headline totals must not inherit the LIST_LIMIT cap on the list query.
+      db.waitList.count({ where: scope }),
+      db.signUp.count({ where: { waitList: scope } }),
+      db.impression.count({ where: { waitList: scope } }),
+    ]);
 
   // Per-list health uses grouped aggregates so one round-trip covers the page.
   const health = await perListHealth(db, lists);
-  const visitors = lists.reduce((sum, list) => sum + list._count.impressions, 0);
-  const allSignups = lists.reduce((sum, list) => sum + list._count.signUps, 0);
+  const visitors = visitorTotal;
+  const allSignups = allSignupsTotal;
 
   return {
     referral: filter,
     totals: {
-      waitlists: lists.length,
+      waitlists: waitlistTotal,
       signups,
       verified,
       referred,

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import {
+  PIPELINE_STAGE_KEYS,
   normalizeStageKey,
   parsePipelineStages,
   resolvePipelineStages,
@@ -58,8 +59,12 @@ export async function POST(request, { params }) {
     await requireCampaign(id, "manageAudience");
     const body = await request.json().catch(() => null);
     const signupId = typeof body?.signupId === "string" ? body.signupId : "";
-    const stage = normalizeStageKey(body?.stage);
+    const stage = String(body?.stage || "")
+      .trim()
+      .toUpperCase();
     if (!signupId) return NextResponse.json({ error: "Choose a signup." }, { status: 400 });
+    if (!PIPELINE_STAGE_KEYS.includes(stage))
+      return NextResponse.json({ error: "Unknown pipeline stage." }, { status: 400 });
     const signup = await prisma.signUp.findFirst({
       where: { id: signupId, waitListId: id },
       select: { id: true },

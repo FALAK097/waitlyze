@@ -65,15 +65,9 @@ export function PipelineBoard({ waitListId, canManage = false }) {
       });
       const payload = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(payload.error || "Unable to move the signup.");
-      setStages((current) =>
-        current.map((entry) => {
-          const previous = recent.find((row) => row.id === signupId)?.stage;
-          if (entry.key === stage) return { ...entry, count: entry.count + 1 };
-          if (entry.key === previous) return { ...entry, count: Math.max(0, entry.count - 1) };
-          return entry;
-        }),
-      );
-      setRecent((current) => current.map((row) => (row.id === signupId ? { ...row, stage } : row)));
+      // Reconcile from the server: the closed-over `recent` goes stale across
+      // rapid moves, so refetch counts instead of adjusting them optimistically.
+      await load(new AbortController().signal);
       toast.success("Signup moved.");
     } catch (moveError) {
       toast.error(moveError.message || "Could not move the signup.");
@@ -220,7 +214,7 @@ export function PipelineBoard({ waitListId, canManage = false }) {
                   <label className="flex shrink-0 items-center gap-2">
                     <span className="sr-only">Move {row.email} to a stage</span>
                     <select
-                      className="min-h-9 cursor-pointer rounded-lg border border-product-border-control bg-product-bg-surface px-2 py-1.5 text-xs text-product-text-primary"
+                      className="min-h-11 cursor-pointer rounded-lg border border-product-border-control bg-product-bg-surface px-2 py-1.5 text-xs text-product-text-primary"
                       value={row.stage}
                       disabled={movingId === row.id}
                       onChange={(event) => moveSignup(row.id, event.target.value)}
