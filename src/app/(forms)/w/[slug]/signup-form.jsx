@@ -216,6 +216,132 @@ function CustomFieldInput({ field, control }) {
   );
 }
 
+function PhoneField({ idBase, formConfig, phone, onPhoneChange }) {
+  return (
+    <div className="mt-3">
+      <label className="mb-2 block text-caption font-bold" htmlFor={`${idBase}-phone`}>
+        Phone number{formConfig.requirePhone ? " *" : ""}
+      </label>
+      <PhoneInput
+        inputId={`${idBase}-phone`}
+        name="phone"
+        value={phone}
+        onChange={(next) => onPhoneChange(typeof next === "string" ? next : "")}
+        required={formConfig.requirePhone === true}
+        inputClassName={cn(
+          control,
+          "w-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-wl-accent",
+        )}
+        selectClassName={cn(
+          control,
+          "max-w-32 flex-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-wl-accent",
+        )}
+      />
+      <p className="mt-1 text-micro leading-relaxed text-wl-muted">
+        We only use this for launch updates.
+      </p>
+    </div>
+  );
+}
+
+function ConsentField({ formConfig }) {
+  return (
+    <label className="mt-3 flex items-start gap-2.5 text-caption leading-relaxed font-normal text-wl-muted">
+      <input
+        className="mt-px size-4 shrink-0 rounded border border-wl-input-border bg-wl-input"
+        name="marketingConsent"
+        type="checkbox"
+        value="on"
+      />
+      <span>{formConfig.consentLabel}</span>
+    </label>
+  );
+}
+
+function SignupResult({
+  result,
+  statusPage,
+  showReferrals,
+  brand,
+  resultTitleId,
+  referralId,
+  copied,
+  onCopyReferralLink,
+  onTrackShare,
+}) {
+  const headingPx = typeof brand?.headingSize === "number" ? brand.headingSize : null;
+  const bodyPx = typeof brand?.bodySize === "number" ? brand.bodySize : null;
+  return (
+    <section
+      className={cn(
+        "grid w-full justify-items-center text-center text-wl-text",
+        bodyPx != null && "wl-type-body",
+        statusPage.layout === "card" && "rounded-wl bg-wl-surface p-6 md:p-10",
+      )}
+      style={bodyPx != null ? { "--wl-body": `${bodyPx}px` } : undefined}
+      aria-labelledby={resultTitleId}
+    >
+      <StatusBadge pending={result.pending} iconStyle={statusPage.iconStyle} className="mb-4" />
+      <h2
+        className={cn(
+          "my-4 max-w-ch14 font-wl-heading leading-none tracking-tight text-balance",
+          headingPx == null ? "text-3xl" : "wl-type-h1",
+        )}
+        style={headingPx == null ? undefined : { "--wl-h1": `${headingPx}px` }}
+        id={resultTitleId}
+      >
+        {result.heading}
+      </h2>
+      {result.notice ? <p className="leading-relaxed text-wl-muted">{result.notice}</p> : null}
+      {result.body ? <p className="leading-relaxed text-wl-muted">{result.body}</p> : null}
+      {statusPage.showPosition && result.position != null ? (
+        <p className="flex w-full max-w-md justify-between border-y border-wl-text/15 py-4">
+          <span>Your position</span>
+          <strong>#{result.position}</strong>
+        </p>
+      ) : null}
+      {showReferrals && statusPage.showReferralCount ? (
+        <p className="flex w-full max-w-md justify-between border-y border-wl-text/15 py-4">
+          <span>Friends joined</span>
+          <strong>{result.referralCount}</strong>
+        </p>
+      ) : null}
+      {showReferrals && statusPage.showReferralLink && result.referralLink ? (
+        <div className="mt-6 grid w-full max-w-md gap-2.5">
+          <p className="m-0 text-sm text-wl-muted">{statusPage.shareMessage}</p>
+          <label className="text-caption font-bold" htmlFor={referralId}>
+            Your referral link
+          </label>
+          <div className="flex gap-2 max-sm:flex-col">
+            <input
+              className={cn(
+                control,
+                "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-wl-accent",
+              )}
+              id={referralId}
+              value={result.referralLink}
+              readOnly
+              onFocus={(event) => event.target.select()}
+            />
+            <button className={action} type="button" onClick={onCopyReferralLink}>
+              {copied ? "Copied" : "Copy"}
+            </button>
+          </div>
+          {statusPage.shareChannels.length > 0 && (
+            <ShareButtons
+              channels={statusPage.shareChannels}
+              message={`${statusPage.shareMessage} ${result.referralLink}`}
+              link={result.referralLink}
+              subject={statusPage.heading}
+              onShare={onTrackShare}
+            />
+          )}
+        </div>
+      ) : null}
+    </section>
+  );
+}
+
 function SignupFormInner({
   slug,
   waitListId,
@@ -228,8 +354,6 @@ function SignupFormInner({
   const emailId = useId();
   const referralId = useId();
   const resultTitleId = useId();
-  const headingPx = typeof brand?.headingSize === "number" ? brand.headingSize : null;
-  const bodyPx = typeof brand?.bodySize === "number" ? brand.bodySize : null;
   const searchParams = useSearchParams();
   const referralCode = searchParams.get("r");
   const [busy, setBusy] = useState(false);
@@ -370,73 +494,17 @@ function SignupFormInner({
 
   if (result) {
     return (
-      <section
-        className={cn(
-          "grid w-full justify-items-center text-center text-wl-text",
-          bodyPx != null && "wl-type-body",
-          statusPage.layout === "card" && "rounded-wl bg-wl-surface p-6 md:p-10",
-        )}
-        style={bodyPx != null ? { "--wl-body": `${bodyPx}px` } : undefined}
-        aria-labelledby={resultTitleId}
-      >
-        <StatusBadge pending={result.pending} iconStyle={statusPage.iconStyle} className="mb-4" />
-        <h2
-          className={cn(
-            "my-4 max-w-ch14 font-wl-heading leading-none tracking-tight text-balance",
-            headingPx == null ? "text-3xl" : "wl-type-h1",
-          )}
-          style={headingPx == null ? undefined : { "--wl-h1": `${headingPx}px` }}
-          id={resultTitleId}
-        >
-          {result.heading}
-        </h2>
-        {result.notice ? <p className="leading-relaxed text-wl-muted">{result.notice}</p> : null}
-        {result.body ? <p className="leading-relaxed text-wl-muted">{result.body}</p> : null}
-        {statusPage.showPosition && result.position != null ? (
-          <p className="flex w-full max-w-md justify-between border-y border-wl-text/15 py-4">
-            <span>Your position</span>
-            <strong>#{result.position}</strong>
-          </p>
-        ) : null}
-        {showReferrals && statusPage.showReferralCount ? (
-          <p className="flex w-full max-w-md justify-between border-y border-wl-text/15 py-4">
-            <span>Friends joined</span>
-            <strong>{result.referralCount}</strong>
-          </p>
-        ) : null}
-        {showReferrals && statusPage.showReferralLink && result.referralLink ? (
-          <div className="mt-6 grid w-full max-w-md gap-2.5">
-            <p className="m-0 text-sm text-wl-muted">{statusPage.shareMessage}</p>
-            <label className="text-caption font-bold" htmlFor={referralId}>
-              Your referral link
-            </label>
-            <div className="flex gap-2 max-sm:flex-col">
-              <input
-                className={cn(
-                  control,
-                  "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-wl-accent",
-                )}
-                id={referralId}
-                value={result.referralLink}
-                readOnly
-                onFocus={(event) => event.target.select()}
-              />
-              <button className={action} type="button" onClick={copyReferralLink}>
-                {copied ? "Copied" : "Copy"}
-              </button>
-            </div>
-            {statusPage.shareChannels.length > 0 && (
-              <ShareButtons
-                channels={statusPage.shareChannels}
-                message={`${statusPage.shareMessage} ${result.referralLink}`}
-                link={result.referralLink}
-                subject={statusPage.heading}
-                onShare={trackShare}
-              />
-            )}
-          </div>
-        ) : null}
-      </section>
+      <SignupResult
+        result={result}
+        statusPage={statusPage}
+        showReferrals={showReferrals}
+        brand={brand}
+        resultTitleId={resultTitleId}
+        referralId={referralId}
+        copied={copied}
+        onCopyReferralLink={copyReferralLink}
+        onTrackShare={trackShare}
+      />
     );
   }
 
@@ -473,44 +541,17 @@ function SignupFormInner({
         </button>
       </div>
       {collectPhone && (
-        <div className="mt-3">
-          <label className="mb-2 block text-caption font-bold" htmlFor={`${emailId}-phone`}>
-            Phone number{formConfig.requirePhone ? " *" : ""}
-          </label>
-          <PhoneInput
-            inputId={`${emailId}-phone`}
-            name="phone"
-            value={phone}
-            onChange={(next) => setPhone(typeof next === "string" ? next : "")}
-            required={formConfig.requirePhone === true}
-            inputClassName={cn(
-              control,
-              "w-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-wl-accent",
-            )}
-            selectClassName={cn(
-              control,
-              "max-w-32 flex-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-wl-accent",
-            )}
-          />
-          <p className="mt-1 text-micro leading-relaxed text-wl-muted">
-            We only use this for launch updates.
-          </p>
-        </div>
+        <PhoneField
+          idBase={emailId}
+          formConfig={formConfig}
+          phone={phone}
+          onPhoneChange={setPhone}
+        />
       )}
       {customFields.map((field) => (
         <CustomFieldInput field={field} control={control} key={field.id} />
       ))}
-      {formConfig.requireConsent && (
-        <label className="mt-3 flex items-start gap-2.5 text-caption leading-relaxed font-normal text-wl-muted">
-          <input
-            className="mt-px size-4 shrink-0 rounded border border-wl-input-border bg-wl-input"
-            name="marketingConsent"
-            type="checkbox"
-            value="on"
-          />
-          <span>{formConfig.consentLabel}</span>
-        </label>
-      )}
+      {formConfig.requireConsent && <ConsentField formConfig={formConfig} />}
       {turnstileOn && (
         <TurnstileWidget siteKey={turnstileSiteKeyResolved} onToken={setTurnstileToken} />
       )}
