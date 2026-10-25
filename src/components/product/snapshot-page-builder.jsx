@@ -2055,7 +2055,7 @@ function StatusPanel({ status, update, showReferrals = true, waitListId }) {
         <p className="mt-2 text-caption leading-relaxed text-product-text-secondary">
           {isSimpleConfirmation
             ? "Showing just the confirmation message — no position, referral link, or share buttons. Best for embeds on your own site or API-driven frontends."
-            : "Showing the full referral cockpit after signup — position, referral link, and share buttons that feed the loop."}
+            : "Showing the referral cockpit after signup. Position, referral link, and share buttons appear only when enabled below."}
         </p>
       </div>
       <Field
