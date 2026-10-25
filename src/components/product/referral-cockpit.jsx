@@ -1,30 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 
+import { socialFollowEntries } from "@/lib/referral-cockpit.mjs";
 import { cn } from "@/lib/utils";
+import { ReactQueryProvider } from "@/providers/query";
 
 import { ShareChannelIcon, channelLabel } from "./share-buttons";
-
-/** Keep founder-entered follow links to safe https destinations. */
-export function safeFollowUrl(value) {
-  if (typeof value !== "string") return null;
-  const trimmed = value.trim();
-  if (!trimmed) return null;
-  if (/^\s*(javascript|data|vbscript|file|blob):/i.test(trimmed)) return null;
-  if (/^https:\/\//i.test(trimmed)) return trimmed;
-  if (/^http:\/\//i.test(trimmed)) return trimmed.replace(/^http:\/\//i, "https://");
-  if (/^[A-Za-z0-9.-]+\.[A-Za-z]{2,}([/?#].*)?$/.test(trimmed)) return `https://${trimmed}`;
-  return null;
-}
-
-export function socialFollowEntries(statusPage) {
-  const follows = Array.isArray(statusPage?.socialFollows) ? statusPage.socialFollows : [];
-  return follows
-    .filter((entry) => entry && (entry.network === "x" || entry.network === "instagram"))
-    .map((entry) => ({ network: entry.network, url: safeFollowUrl(entry.url) }))
-    .filter((entry) => entry.url);
-}
 
 /**
  * Social-follow tasks. UI ships now; points for follows land with the
@@ -101,23 +83,19 @@ export function LeaderboardRows({ neighbors }) {
 }
 
 export function LeaderboardCard({ waitListId, code, className }) {
-  const [board, setBoard] = useState(null);
-  useEffect(() => {
-    if (!waitListId || !code) return;
-    let live = true;
-    fetch(
-      `/api/v1/leaderboard?waitListId=${encodeURIComponent(waitListId)}&code=${encodeURIComponent(code)}`,
-    )
-      .then((response) => (response.ok ? response.json() : null))
-      .then((data) => {
-        if (live && data && typeof data.position === "number") setBoard(data);
-        return null;
-      })
-      .catch(() => {});
-    return () => {
-      live = false;
-    };
-  }, [waitListId, code]);
+  const { data: board } = useQuery({
+    queryKey: ["public-leaderboard", waitListId, code],
+    enabled: Boolean(waitListId && code),
+    refetchOnWindowFocus: false,
+    retry: false,
+    queryFn: async ({ signal }) => {
+      const response = await fetch(
+        `/api/v1/leaderboard?waitListId=${encodeURIComponent(waitListId)}&code=${encodeURIComponent(code)}`,
+        { signal },
+      );
+      return response.ok ? response.json() : null;
+    },
+  });
   if (!board) return null;
   return (
     <div className={cn("grid w-full max-w-md gap-2.5", className)}>
@@ -141,7 +119,11 @@ export function ReferralCockpitExtras({ waitListId, code, statusPage, className 
   if (!showBoard && follows.length === 0) return null;
   return (
     <div className={cn("grid w-full max-w-md justify-items-center gap-6", className)}>
-      {showBoard ? <LeaderboardCard waitListId={waitListId} code={code} /> : null}
+      {showBoard ? (
+        <ReactQueryProvider>
+          <LeaderboardCard waitListId={waitListId} code={code} />
+        </ReactQueryProvider>
+      ) : null}
       <SocialFollowTasks follows={follows} />
     </div>
   );

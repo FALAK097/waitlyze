@@ -7,10 +7,10 @@ import {
   LeaderboardRows,
   LeaderboardSummary,
   SocialFollowTasks,
-  socialFollowEntries,
 } from "@/components/product/referral-cockpit";
 import { ShareButtons } from "@/components/product/share-buttons";
 import { fontFamilyValue, googleFontsStylesheet } from "@/lib/google-fonts.mjs";
+import { socialFollowEntries } from "@/lib/referral-cockpit.mjs";
 import { SITE_URL } from "@/lib/site-metadata";
 import { cn } from "@/lib/utils";
 
