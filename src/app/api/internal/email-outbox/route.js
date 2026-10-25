@@ -32,10 +32,16 @@ export async function POST(request) {
     },
     createClient: (apiKey) => new Resend(apiKey),
   });
-  const result = await dispatchPendingOutboxEvents(prisma, {
-    send: sendEmail,
-    sendPlatform: createPlatformSender(),
-  });
-  const webhooks = await dispatchPendingWebhooks(prisma);
-  return NextResponse.json({ ...result, webhooks });
+  // These drains use independent queues. Overlap them, but wait for both to
+  // settle before surfacing a failure so neither queue is left unobserved.
+  const [outboxResult, webhooksResult] = await Promise.allSettled([
+    dispatchPendingOutboxEvents(prisma, {
+      send: sendEmail,
+      sendPlatform: createPlatformSender(),
+    }),
+    dispatchPendingWebhooks(prisma),
+  ]);
+  if (outboxResult.status === "rejected") throw outboxResult.reason;
+  if (webhooksResult.status === "rejected") throw webhooksResult.reason;
+  return NextResponse.json({ ...outboxResult.value, webhooks: webhooksResult.value });
 }

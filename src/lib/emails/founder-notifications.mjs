@@ -88,23 +88,26 @@ async function notifyOwners(
 ) {
   const recipients = await workspaceOwners(db, workspaceId);
   if (!recipients.length) return { queued: 0, eventKeys: [] };
-  const eventKeys = [];
-  for (const to of recipients) {
-    try {
-      const eventKey = await enqueueFounderNotice(db, {
-        kind,
-        waitListId,
-        to,
-        subject,
-        html,
-        text,
-        idempotencyKey,
-      });
-      if (eventKey) eventKeys.push(eventKey);
-    } catch (error) {
-      console.error("Owner notice enqueue failed", error?.message || "unknown error");
-    }
-  }
+  // workspaceOwners caps this independent, idempotent fan-out at five owners.
+  const queuedKeys = await Promise.all(
+    recipients.map(async (to) => {
+      try {
+        return await enqueueFounderNotice(db, {
+          kind,
+          waitListId,
+          to,
+          subject,
+          html,
+          text,
+          idempotencyKey,
+        });
+      } catch (error) {
+        console.error("Owner notice enqueue failed", error?.message || "unknown error");
+        return null;
+      }
+    }),
+  );
+  const eventKeys = queuedKeys.filter(Boolean);
   return { queued: eventKeys.length, eventKeys };
 }
 
