@@ -75,29 +75,35 @@ export async function notifyChatChannels(db, waitListId, text) {
       secretTag: true,
     },
   });
-  let sent = 0;
-  for (const record of channels) {
-    try {
-      if (record.status !== "CONNECTED") continue;
+  // The schema allows only one channel per provider, so this fans out to at
+  // most two independent providers with no cross-channel ordering requirement.
+  const deliveries = await Promise.all(
+    channels.map(async (record) => {
+      if (record.status !== "CONNECTED") return false;
       const post = postByProvider[record.provider];
-      if (!post) continue;
-      await post(decryptIntegrationSecret(record), text);
-      sent++;
-      await db.waitlistNotificationChannel.update({
-        where: { id: record.id },
-        data: { lastTestedAt: new Date(), lastErrorCode: null },
-      });
-    } catch (error) {
-      await db.waitlistNotificationChannel
-        .update({
+      if (!post) return false;
+      let sent = false;
+      try {
+        await post(decryptIntegrationSecret(record), text);
+        sent = true;
+        await db.waitlistNotificationChannel.update({
           where: { id: record.id },
-          data: {
-            status: "NEEDS_ATTENTION",
-            lastErrorCode: error?.code || "DELIVERY_FAILED",
-          },
-        })
-        .catch(() => null);
-    }
-  }
-  return sent;
+          data: { lastTestedAt: new Date(), lastErrorCode: null },
+        });
+        return true;
+      } catch (error) {
+        await db.waitlistNotificationChannel
+          .update({
+            where: { id: record.id },
+            data: {
+              status: "NEEDS_ATTENTION",
+              lastErrorCode: error?.code || "DELIVERY_FAILED",
+            },
+          })
+          .catch(() => null);
+      }
+      return sent;
+    }),
+  );
+  return deliveries.filter(Boolean).length;
 }
