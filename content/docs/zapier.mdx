@@ -1,0 +1,36 @@
+---
+title: Zapier
+description: Push Waitlyze events into Zaps via webhooks.
+---
+
+There is no native Zapier app. The supported path is webhooks → Zapier's **Webhooks by Zapier** trigger, which covers the same events with no code on our side.
+
+## Recipe: new signup → your Zap
+
+<Steps>
+<Step>
+### Add a webhook endpoint in Waitlyze
+In waitlist settings → **Webhooks**, add your Zapier webhook URL and subscribe it to the events the Zap needs (`signup.created`, `signup.verified`, `referral.completed`, `milestone.reached`). Copy the signing secret.
+</Step>
+<Step>
+### Catch the hook in Zapier
+Create a Zap with a **Webhooks by Zapier → Catch Hook** trigger and paste the URL back in Waitlyze. Send a test from Waitlyze (`{ "test": true }` in `data`) and confirm the Zap fires.
+</Step>
+<Step>
+### Verify the signature in a Code step (recommended)
+Before acting on the payload, verify `x-waitlyze-signature` with the signing secret so only Waitlyze can trigger your Zap. Copy the verifier from [Webhooks](/docs/webhooks).
+</Step>
+<Step>
+### Look up the subscriber via the API
+Events carry `signupId`, never the email. Use a follow-up step against your own subscriber read path or the [Signup API](/docs/api) status lookup, then fan out to Sheets, Slack, your CRM, or wherever the Zap goes.
+</Step>
+</Steps>
+
+Tips: dedupe on the event `id` (retries redeliver), return success only after your Zap's side effects are durable, and keep one Zap per event type so failures stay isolated. Pause the Waitlyze endpoint while editing the Zap to avoid queueing noise.
+
+## Next
+
+<Cards>
+<Card title="Webhooks" href="/docs/webhooks" description="Events, payloads, and verification." />
+<Card title="Signup API" href="/docs/api" description="Look up the signup behind an event." />
+</Cards>

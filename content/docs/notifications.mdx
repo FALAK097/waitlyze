@@ -1,0 +1,36 @@
+---
+title: Slack and Discord notifications
+description: Get milestone pings in Slack or Discord per waitlist.
+---
+
+Milestone emails to workspace owners are easy to miss. Connect a Slack or Discord incoming webhook per waitlist and Waitlyze posts a short message there every time the list hits 1, 10, 100, or 1000 signups — the same moments that fire `milestone.reached` webhooks and owner emails.
+
+## Connect a channel
+
+<Steps>
+<Step>
+### Create the incoming webhook
+In Slack, add an incoming webhook for the channel that should hear the news. In Discord, open channel settings → Integrations → Webhooks → New Webhook and copy the URL.
+</Step>
+<Step>
+### Save the URL on the waitlist
+`PUT /api/wait-lists/[id]/notifications/slack` (or `/discord`) with `{ "webhookUrl": "https://…" }`. Only official Slack (`hooks.slack.com`) and Discord (`discord.com`, `discordapp.com`) hosts are accepted, and the URL is encrypted at rest — it is never returned by the API.
+</Step>
+<Step>
+### Send a test to activate
+`POST` to the same path. The channel becomes active only when the test message lands; until then nothing posts. `GET` shows status, `DELETE` removes the channel.
+</Step>
+</Steps>
+
+## Behavior
+
+- One channel per provider per waitlist (one Slack, one Discord).
+- Best-effort by design: a failing channel is marked as needing attention and skipped, but milestones, owner emails, and webhooks are never blocked by chat delivery.
+- Messages are plain text, currently milestone pings only. More notification types will reuse the same channels.
+
+## Next
+
+<Cards>
+<Card title="Webhooks" href="/docs/webhooks" description="The same milestones as signed events." />
+<Card title="Resend" href="/docs/resend" description="Owner emails that accompany the pings." />
+</Cards>

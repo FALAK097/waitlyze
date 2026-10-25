@@ -1,5 +1,6 @@
 import { renderBroadcastSummary, renderSignupMilestone } from "@/emails/render.jsx";
 import { env } from "@/lib/env.mjs";
+import { notifyChatChannels } from "@/lib/integrations/chat-notifiers.mjs";
 import { enqueueWebhookEvent } from "@/lib/webhooks/delivery.mjs";
 
 import { sendPlatformEmail } from "./platform.mjs";
@@ -74,6 +75,17 @@ export async function maybeNotifySignupMilestone(db, waitListId, { signupId } = 
       },
     });
     const waitlistName = waitList.name || "Your waitlist";
+    // Phase 7c: courtesy copy to connected Slack/Discord channels. Best
+    // effort — chat failures never block the owner email or the webhook.
+    try {
+      await notifyChatChannels(
+        db,
+        waitListId,
+        `${waitlistName} just hit ${count} signup${count === 1 ? "" : "s"}.`,
+      );
+    } catch (error) {
+      console.error("Chat milestone notice failed", error?.message || "unknown error");
+    }
     const url = `${String(env.BETTER_AUTH_URL || "").replace(/\/$/, "")}/waitlists/${encodeURIComponent(waitListId)}/subscribers`;
     const html = await renderSignupMilestone({
       waitlistName,
