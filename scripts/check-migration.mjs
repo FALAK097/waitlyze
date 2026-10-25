@@ -128,6 +128,7 @@ try {
           "20261019110000_resend_workspace_webhooks",
           "20261019120000_outbox_events_verification_index",
           "20261025090838_dashboard_bulk_consent_source",
+          "20261025095925_phase3_form_hardening",
           "20261025120000_phase4_ledger_social_follow",
           "20261025120001_phase4_ledger_custom",
         ]) {

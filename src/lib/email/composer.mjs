@@ -1,6 +1,7 @@
 import sanitizeHtml from "sanitize-html";
 
 import { escapeHtmlText, renderEmailMarkdown } from "../email-markdown.mjs";
+import { emailFontStack } from "./brand.mjs";
 
 const allowedTags = [
   "html",
@@ -112,11 +113,22 @@ export function interpolateEmail(value, variables) {
   );
 }
 
-export function subscriberEmailHtml({ name, content, previewText = "", unsubscribeUrl }) {
+export function subscriberEmailHtml({
+  name,
+  content,
+  previewText = "",
+  unsubscribeUrl,
+  brand = null,
+}) {
+  const logo = brand?.logo
+    ? `<img src="${escapeHtmlText(brand.logo)}" alt="" width="120" style="display:block;max-width:160px;height:auto;margin-bottom:12px">`
+    : "";
+  const font = emailFontStack(brand?.bodyFont);
+  const linkStyle = brand?.linkColor ? `<style>a{color:${brand.linkColor}}</style>` : "";
   const footer = `<table role="presentation" width="100%" style="border-top:1px solid #e5e9e4;margin-top:36px;padding-top:18px"><tr><td style="font:13px/21px Arial,sans-serif;color:#616b64"><strong style="color:#16271d">${escapeHtmlText(name)}</strong>${unsubscribeUrl ? `<br>You received this because you opted in to updates. <a href="${escapeHtmlText(unsubscribeUrl)}" style="color:#33543c">Unsubscribe</a>.` : ""}</td></tr></table>`;
   const body = content.includes("<body")
     ? content.replace(/<\/body\s*>/i, `${footer}</body>`)
-    : `<!doctype html><html lang="en"><body style="margin:0;background:#f7f8f5;color:#16271d;font:16px/1.6 Arial,sans-serif"><div style="max-width:600px;margin:0 auto;padding:36px 24px"><p style="font-size:13px;color:#617267">${escapeHtmlText(name)}</p>${content}${footer}</div></body></html>`;
+    : `<!doctype html><html lang="en"><body style="margin:0;background:#f7f8f5;color:#16271d;font:16px/1.6 ${font}"><div style="max-width:600px;margin:0 auto;padding:36px 24px">${linkStyle}${logo}<p style="font-size:13px;color:#617267">${escapeHtmlText(name)}</p>${content}${footer}</div></body></html>`;
   return previewText
     ? body.replace(
         /<body([^>]*)>/i,
