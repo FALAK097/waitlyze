@@ -6,6 +6,7 @@ import { Resend } from "resend";
 
 import { getCampaignPosition } from "@/lib/campaigns/referral-position.mjs";
 import { escapeHtmlText, renderEmailMarkdown } from "@/lib/email-markdown.mjs";
+import { emailBrandFromSnapshot } from "@/lib/email/brand.mjs";
 import {
   countEligibleRecipients,
   enqueueBroadcast,
@@ -232,7 +233,7 @@ export async function sendTestEmail({ waitListId, templateType, to }) {
     });
     const waitList = await prisma.waitList.findFirst({
       where: { id: waitListId, ...scope },
-      select: { name: true },
+      select: { name: true, templateSnapshot: true },
     });
     if (!waitList) return { success: false, message: "Waitlist not found" };
 
@@ -383,6 +384,7 @@ export async function sendTestEmail({ waitListId, templateType, to }) {
           name: waitList.name || "Your project",
           content: interpolateEmail(tpl.renderedHtml, vars),
           previewText,
+          brand: emailBrandFromSnapshot(waitList.templateSnapshot),
         })
       : null;
     const { error } = await new Resend(provider.apiKey).emails.send({
@@ -517,7 +519,7 @@ export async function sendAutomationTestEmail({ waitListId, recipeId, to }) {
 async function renderTemplate({ waitListId, enumType, varsOverride = {} }) {
   const waitList = await prisma.waitList.findUnique({
     where: { id: waitListId, status: "PUBLISHED" },
-    select: { id: true, name: true, sendEmailsToSubscribers: true },
+    select: { id: true, name: true, sendEmailsToSubscribers: true, templateSnapshot: true },
   });
   if (!waitList) return { error: "Waitlist not found" };
 
@@ -678,6 +680,7 @@ async function renderTemplate({ waitListId, enumType, varsOverride = {} }) {
           name: waitList.name || "Your project",
           content: interpolateEmail(tpl.renderedHtml, vars),
           previewText,
+          brand: emailBrandFromSnapshot(waitList.templateSnapshot),
         })
       : htmlBody,
     textBody: tpl.renderedText ? replaceVars(tpl.renderedText) : undefined,

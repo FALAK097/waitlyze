@@ -438,9 +438,10 @@ function InvitationForm({ workspaceId, canInviteAdmins, onComplete }) {
   return (
     <form action={action} className="grid gap-4.5 border-0 bg-transparent p-0">
       <input type="hidden" name="workspaceId" value={workspaceId} />
-      <label className="grid gap-2 text-sm font-medium">
+      <label className="grid gap-2 text-sm font-medium" htmlFor="team-invite-email">
         Email address
         <Input
+          id="team-invite-email"
           type="email"
           name="email"
           autoComplete="email"

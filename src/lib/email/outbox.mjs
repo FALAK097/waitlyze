@@ -3,6 +3,7 @@ import { createHash } from "node:crypto";
 import { renderSubscriberVerification } from "../../emails/render.jsx";
 import { notifyBroadcastSummary } from "../emails/founder-notifications.mjs";
 import { dispatchAutomationStep, processAutomationTrigger } from "./automations.mjs";
+import { emailBrandFromSnapshot } from "./brand.mjs";
 import { queueDueBroadcasts } from "./broadcast-queue.mjs";
 import { interpolateEmail, legacyEmailContent, subscriberEmailHtml } from "./composer.mjs";
 import { applyKnownProviderEvents } from "./suppression.mjs";
@@ -108,7 +109,15 @@ async function dispatchBroadcast(db, event, payload, send, now, attempt, result)
         signUp: true,
         broadcast: {
           include: {
-            waitList: { select: { id: true, name: true, status: true, workspaceId: true } },
+            waitList: {
+              select: {
+                id: true,
+                name: true,
+                status: true,
+                workspaceId: true,
+                templateSnapshot: true,
+              },
+            },
           },
         },
       },
@@ -197,6 +206,7 @@ async function dispatchBroadcast(db, event, payload, send, now, attempt, result)
             content: interpolateVarsHtml(broadcast.renderedHtml, vars),
             previewText,
             unsubscribeUrl,
+            brand: emailBrandFromSnapshot(waitList.templateSnapshot),
           })
         : broadcastHtml({
             campaignName: waitList.name || "Waitlist",

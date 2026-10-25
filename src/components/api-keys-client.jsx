@@ -279,9 +279,10 @@ export function ApiKeysClient() {
             </div>
           ) : (
             <form onSubmit={create} className="space-y-4">
-              <label className="product-field">
+              <label className="product-field" htmlFor="api-key-name">
                 <span>Name</span>
                 <Input
+                  id="api-key-name"
                   required
                   minLength={3}
                   maxLength={64}
