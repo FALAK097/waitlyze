@@ -253,6 +253,7 @@ model OutboxEvent {
 
 enum BroadcastStatus {
   DRAFT
+  SCHEDULED
   SENDING
   SENT
   CANCELED
@@ -308,6 +309,8 @@ model MarketingBroadcast {
   renderedText   String?
   status         BroadcastStatus @default(DRAFT)
   recipientCount Int             @default(0)
+  segment        String          @default("ALL")
+  scheduledAt    DateTime?
   createdAt      DateTime        @default(now())
   updatedAt      DateTime        @updatedAt
   sentAt         DateTime?
@@ -326,6 +329,7 @@ model BroadcastRecipient {
   email             String
   emailNormalized   String
   status            BroadcastRecipientStatus @default(PENDING)
+  vars              Json?
   providerMessageId String?
   lastErrorCode     String?
   deliveredAt       DateTime?
@@ -340,6 +344,8 @@ enum AutomationRecipeType {
   WELCOME
   REFERRAL_REMINDER
   REFERRAL_MILESTONE
+  WELCOME_FOLLOWUP
+  LAUNCH_COUNTDOWN
 }
 
 enum AutomationRecipeStatus {
@@ -582,6 +588,8 @@ model EmailTemplate {
 enum EmailTemplateType {
   SIGNUP
   OFFBOARDING
+  REFERRAL_CONGRATS
+  LAUNCH_INVITE
 }
 
 enum WebhookDeliveryStatus {

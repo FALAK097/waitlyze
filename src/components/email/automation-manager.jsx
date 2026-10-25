@@ -5,6 +5,7 @@ import { useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { saveAutomationRecipe, setAutomationStatus } from "@/app/actions/automations";
+import { sendAutomationTestEmail } from "@/app/actions/emails";
 import {
   NumberField,
   NumberFieldDecrement,
@@ -16,6 +17,12 @@ import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 import { EmailCanvas } from "./email-canvas";
+import {
+  EmailPreviewFrame,
+  SpamHintView,
+  VariableChips,
+  applySeedVars,
+} from "./email-composer-extras";
 
 const scope = "min-w-0 bg-white text-product-text-primary";
 const notice =
@@ -45,11 +52,6 @@ const numberButton = "text-product-text-secondary hover:bg-product-bg-inset";
 const canvasShell = "overflow-hidden rounded-lg border border-product-border-subtle bg-white";
 const metaBar =
   "flex flex-wrap items-center justify-between gap-3.5 max-sm:flex-col max-sm:items-stretch";
-const chips = "m-0 text-xs text-product-text-secondary";
-const chipCode =
-  "ml-1 rounded-sm bg-product-bg-inset px-1.5 py-0.5 font-product-mono text-micro text-product-text-primary";
-const chipCodeNext =
-  "ml-1.5 rounded-sm bg-product-bg-inset px-1.5 py-0.5 font-product-mono text-micro text-product-text-primary";
 const hint = "m-0 text-caption leading-normal text-product-text-secondary";
 const emptyPane = "max-w-107 py-1.5";
 const emptyPaneTitle = "m-0 mb-1.5! text-section";
@@ -96,7 +98,7 @@ function AutomationNumberField({ label, value, min, max, disabled, onChange }) {
   );
 }
 
-export function AutomationManager({ waitListId, initialRecipes, deliveryReady }) {
+export function AutomationManager({ waitListId, waitListName, initialRecipes, deliveryReady }) {
   const editorRef = useRef(null);
   const router = useRouter();
   const [recipes, setRecipes] = useState(() =>
@@ -104,6 +106,46 @@ export function AutomationManager({ waitListId, initialRecipes, deliveryReady })
   );
   const [busyId, setBusyId] = useState(null);
   const [activeRecipe, setActiveRecipe] = useState(initialRecipes[0]?.id || null);
+  const [checks, setChecks] = useState(null);
+  const [testTo, setTestTo] = useState("");
+
+  async function previewChecks(recipe) {
+    setBusyId(recipe.id);
+    try {
+      if (!editorRef.current?.editor) throw new Error("The message editor is still loading.");
+      const { html, text } = await editorRef.current.getEmail();
+      setChecks({
+        html: applySeedVars(JSON.parse(JSON.stringify(html)), waitListName),
+        text,
+      });
+    } catch (error) {
+      toast.error(error.message || "Couldn’t build the preview. Try again.");
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  async function sendTest(event, recipe) {
+    event.preventDefault();
+    if (hasUnsavedChanges(recipe)) {
+      toast.error("Save your changes before sending a test.");
+      return;
+    }
+    setBusyId(recipe.id);
+    try {
+      const result = await sendAutomationTestEmail({
+        waitListId,
+        recipeId: recipe.id,
+        to: testTo,
+      });
+      if (result.success) toast.success(`Test sent to ${testTo}.`);
+      else toast.error(result.message);
+    } catch (error) {
+      toast.error(error.message || "Couldn’t send the test. Try again.");
+    } finally {
+      setBusyId(null);
+    }
+  }
 
   function updateRecipe(recipeId, update) {
     setRecipes((items) =>
@@ -160,6 +202,7 @@ export function AutomationManager({ waitListId, initialRecipes, deliveryReady })
       );
       const result = await saveAutomationRecipe({ waitListId, recipeId: recipe.id, data });
       if (result.success) {
+        setChecks(null);
         updateRecipe(recipe.id, {
           config: result.config,
           savedConfig: result.config,
@@ -216,7 +259,10 @@ export function AutomationManager({ waitListId, initialRecipes, deliveryReady })
               className={railItem}
               aria-current={activeRecipe === item.id ? "true" : undefined}
               disabled={Boolean(busyId)}
-              onClick={() => setActiveRecipe(item.id)}
+              onClick={() => {
+                setActiveRecipe(item.id);
+                setChecks(null);
+              }}
             >
               <strong className={railItemTitle}>{item.title}</strong>
               <span className={railItemMeta}>{statusLabel(item.status)}</span>
@@ -229,11 +275,17 @@ export function AutomationManager({ waitListId, initialRecipes, deliveryReady })
             const delay = recipe.delayHours ?? hourValue(recipe.config.delayMinutes);
             const enabled = recipe.status === "ENABLED";
             const dirty = hasUnsavedChanges(recipe);
+            const milestoneCount = Number(recipe.milestoneCount ?? recipe.config.milestoneCount);
             const timing =
-              recipe.type === "REFERRAL_MILESTONE" &&
-              Number(recipe.milestoneCount ?? recipe.config.milestoneCount) > 0
-                ? `At ${recipe.milestoneCount ?? recipe.config.milestoneCount} verified referrals · ${waitLabel(Number.isFinite(delay) ? delay * 60 : 0)}`
-                : `${recipe.type === "WELCOME" ? "After confirmation" : "After confirmation, if they still have no referrals"} · ${waitLabel(Number.isFinite(delay) ? delay * 60 : 0)}`;
+              recipe.type === "REFERRAL_MILESTONE" && milestoneCount > 0
+                ? `At ${milestoneCount} verified referrals · ${waitLabel(Number.isFinite(delay) ? delay * 60 : 0)}`
+                : recipe.type === "REFERRAL_REMINDER"
+                  ? `After confirmation, if they still have no referrals · ${waitLabel(Number.isFinite(delay) ? delay * 60 : 0)}`
+                  : recipe.type === "WELCOME_FOLLOWUP"
+                    ? `Welcome series, second note after confirmation · ${waitLabel(Number.isFinite(delay) ? delay * 60 : 0)}`
+                    : recipe.type === "LAUNCH_COUNTDOWN"
+                      ? `After confirmation, ahead of launch · ${waitLabel(Number.isFinite(delay) ? delay * 60 : 0)}`
+                      : `After confirmation · ${waitLabel(Number.isFinite(delay) ? delay * 60 : 0)}`;
             return (
               <section className={pane} aria-label={recipe.title}>
                 <header className={paneHead}>
@@ -352,22 +404,67 @@ export function AutomationManager({ waitListId, initialRecipes, deliveryReady })
                 </div>
 
                 <div className={metaBar}>
-                  <p className={chips}>
-                    Personalize <code className={chipCode}>{"{{waitlist}}"}</code>
-                    <code className={chipCodeNext}>{"{{referral_link}}"}</code>
-                    {recipe.type === "REFERRAL_MILESTONE" ? (
-                      <code className={chipCodeNext}>{"{{referral_count}}"}</code>
-                    ) : null}
-                  </p>
-                  <Button
-                    type="button"
-                    variant="default"
-                    onClick={() => save(recipe)}
-                    disabled={busyId === recipe.id || !hasValidValues(recipe)}
-                  >
-                    {busyId === recipe.id ? "Saving…" : "Save changes"}
-                  </Button>
+                  <VariableChips
+                    keys={
+                      recipe.type === "REFERRAL_MILESTONE" || recipe.type === "REFERRAL_REMINDER"
+                        ? ["waitlist", "name", "referral_count", "referral_link", "points"]
+                        : ["waitlist", "name", "position", "points", "referral_link"]
+                    }
+                  />
+                  <div className={paneActions}>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => previewChecks(recipe)}
+                      disabled={busyId === recipe.id}
+                    >
+                      Preview & spam check
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="default"
+                      onClick={() => save(recipe)}
+                      disabled={busyId === recipe.id || !hasValidValues(recipe)}
+                    >
+                      {busyId === recipe.id ? "Saving…" : "Save changes"}
+                    </Button>
+                  </div>
                 </div>
+
+                {checks ? (
+                  <div className="flex flex-col gap-4">
+                    <EmailPreviewFrame html={checks.html} />
+                    <SpamHintView
+                      subject={recipe.config.subject}
+                      previewText=""
+                      text={checks.text}
+                      html={checks.html}
+                    />
+                  </div>
+                ) : null}
+
+                <form
+                  className="flex items-center gap-2"
+                  onSubmit={(event) => sendTest(event, recipe)}
+                >
+                  <input
+                    className="h-9 w-45 min-w-0 rounded-product-control border border-product-border-control bg-white px-2.5 text-caption max-sm:w-auto max-sm:flex-1 max-sm:text-base"
+                    type="email"
+                    placeholder="you@example.com"
+                    required
+                    maxLength={320}
+                    aria-label="Send a test to"
+                    value={testTo}
+                    onChange={(event) => setTestTo(event.target.value)}
+                  />
+                  <Button
+                    type="submit"
+                    variant="outline"
+                    disabled={busyId === recipe.id || hasUnsavedChanges(recipe)}
+                  >
+                    {busyId === recipe.id ? "Sending…" : "Send test"}
+                  </Button>
+                </form>
 
                 {recipe.type.startsWith("REFERRAL_") ? (
                   <p className={hint}>
