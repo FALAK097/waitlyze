@@ -81,31 +81,70 @@ async function bulkOffboard({ waitlist, user, ids, resubscribe, canEmail }) {
     const eligibleIds = eligible.map((row) => row.id);
     let eventKeys = [];
     let templateMissing = false;
+    let duplicateSkipped = 0;
+    let flippedIds = [];
     if (eligibleIds.length) {
-      await tx.signUp.updateMany({
-        where: { id: { in: eligibleIds }, waitListId: waitlist.id },
+      // State guard survives concurrent double-submit: racing writers
+      // serialize on row locks, the loser matches nothing and flips zero rows.
+      const updated = await tx.signUp.updateMany({
+        where: {
+          id: { in: eligibleIds },
+          waitListId: waitlist.id,
+          ...(resubscribe
+            ? { marketingUnsubscribedAt: { not: null } }
+            : { marketingUnsubscribedAt: null }),
+        },
         data: { marketingUnsubscribedAt: resubscribe ? null : now },
       });
-      await tx.marketingConsentEvent.createMany({
-        data: eligibleIds.map((signUpId) => ({
-          waitListId: waitlist.id,
-          signUpId,
-          action: resubscribe ? "OPTED_IN" : "OPTED_OUT",
-          source: "DASHBOARD_BULK",
-          consentText: resubscribe
-            ? `Bulk offboard undone by ${actorLabel(user)}`
-            : `Bulk offboard by ${actorLabel(user)}`,
-          createdAt: now,
-        })),
-      });
+      if (updated.count) {
+        // Re-read to learn exactly which rows this statement flipped — the
+        // count alone doesn't say which, and consent rows must describe only
+        // our own flips. Offboard matches on our write timestamp (a racing
+        // offboard carries a different one); resubscribe matches cleared rows.
+        const reread = await tx.signUp.findMany({
+          where: { id: { in: eligibleIds }, waitListId: waitlist.id },
+          select: { id: true, marketingUnsubscribedAt: true },
+        });
+        flippedIds = resubscribe
+          ? reread.filter((row) => !row.marketingUnsubscribedAt).map((row) => row.id)
+          : reread
+              .filter((row) => row.marketingUnsubscribedAt?.getTime() === now.getTime())
+              .map((row) => row.id);
+        await tx.marketingConsentEvent.createMany({
+          data: flippedIds.map((signUpId) => ({
+            waitListId: waitlist.id,
+            signUpId,
+            action: resubscribe ? "OPTED_IN" : "OPTED_OUT",
+            source: "DASHBOARD_BULK",
+            consentText: resubscribe
+              ? `Bulk offboard undone by ${actorLabel(user)}`
+              : `Bulk offboard by ${actorLabel(user)}`,
+            createdAt: now,
+          })),
+        });
+      }
+      // resubscribe is the dashboard undo path: callers must pass only ids
+      // flipped by the matching offboard (the UI reuses offboardedIds).
+      // Arbitrary ids would override explicit user opt-outs — someone who
+      // unsubscribed via their own link — so never expose this as a general
+      // "subscribe" action.
       if (resubscribe) {
+        if (!flippedIds.length) {
+          return {
+            matched: targets.length,
+            processedIds: flippedIds,
+            eventKeys,
+            templateMissing,
+            duplicateSkipped,
+          };
+        }
         // Undo cancels goodbye emails that never left the outbox. Rows the
         // dispatcher already claimed keep their terminal state.
         await tx.$executeRaw`
           UPDATE "outbox_events" SET "status" = 'FAILED', "processedAt" = ${now},
             "lockedAt" = NULL, "lastErrorCode" = 'OFFBOARD_UNDONE'
           WHERE "waitListId" = ${waitlist.id} AND "type" = ${OFFBOARD_EVENT}
-            AND "status" = 'PENDING' AND "payload"->>'signUpId' = ANY(${eligibleIds}::text[])`;
+            AND "status" = 'PENDING' AND "payload"->>'signUpId' = ANY(${flippedIds}::text[])`;
       } else if (canEmail) {
         const template = await tx.emailTemplate.findUnique({
           where: { waitListId_type: { waitListId: waitlist.id, type: "OFFBOARDING" } },
@@ -129,9 +168,12 @@ async function bulkOffboard({ waitlist, user, ids, resubscribe, canEmail }) {
           const alreadyQueued = new Set(
             pending.map((event) => event.payload?.signUpId).filter(Boolean),
           );
-          const freshIds = eligibleIds.filter((id) => !alreadyQueued.has(id));
+          const freshIds = flippedIds.filter((id) => !alreadyQueued.has(id));
           if (freshIds.length) {
-            await tx.outboxEvent.createMany({
+            // skipDuplicates also swallows terminal rows (a goodbye already
+            // sent or cancelled under this key, e.g. undo → re-offboard): the
+            // count below tells those apart from real inserts.
+            const created = await tx.outboxEvent.createMany({
               data: freshIds.map((signUpId) => ({
                 eventKey: `offboard:${waitlist.id}:${signUpId}`,
                 type: OFFBOARD_EVENT,
@@ -140,6 +182,7 @@ async function bulkOffboard({ waitlist, user, ids, resubscribe, canEmail }) {
               })),
               skipDuplicates: true,
             });
+            duplicateSkipped = freshIds.length - created.count;
           }
           const queued = await tx.outboxEvent.findMany({
             where: {
@@ -149,11 +192,17 @@ async function bulkOffboard({ waitlist, user, ids, resubscribe, canEmail }) {
             },
             select: { payload: true, eventKey: true },
           });
-          eventKeys = pendingOffboardKeys(queued, eligibleIds);
+          eventKeys = pendingOffboardKeys(queued, flippedIds);
         }
       }
     }
-    return { matched: targets.length, processedIds: eligibleIds, eventKeys, templateMissing };
+    return {
+      matched: targets.length,
+      processedIds: flippedIds,
+      eventKeys,
+      templateMissing,
+      duplicateSkipped,
+    };
   });
 }
 
@@ -224,6 +273,22 @@ export async function POST(request, { params }) {
       // Best-effort: the scheduler delivers whatever is still pending.
       await dispatchOffboardNow(outcome.eventKeys);
     }
+    const offboardCount = outcome.processedIds.length;
+    const queuedCount = outcome.eventKeys.length;
+    const dupCount = outcome.duplicateSkipped;
+    let emailNote;
+    if (outcome.templateMissing || !canEmail) {
+      emailNote = " (no goodbye email: template or delivery missing)";
+    } else if (queuedCount) {
+      emailNote =
+        ` (${queuedCount} goodbye email${queuedCount === 1 ? "" : "s"} queued` +
+        (dupCount ? `, ${dupCount} skipped as duplicate${dupCount === 1 ? "" : "s"}` : "") +
+        ")";
+    } else if (dupCount) {
+      emailNote = ` (no new goodbye emails: ${dupCount} already sent or cancelled for this selection)`;
+    } else {
+      emailNote = " (no goodbye emails queued)";
+    }
     await recordWaitlistAuditEvent(prisma, {
       userId: user.id,
       waitListId: waitlist.id,
@@ -232,20 +297,19 @@ export async function POST(request, { params }) {
         : AUDIT_ACTIONS.AUDIENCE_BULK_OFFBOARDED,
       resourceType: "audience",
       detail: resubscribe
-        ? `${actorLabel(user)} undid a bulk offboard for ${outcome.processedIds.length} signup${outcome.processedIds.length === 1 ? "" : "s"}`
-        : `${actorLabel(user)} offboarded ${outcome.processedIds.length} signup${outcome.processedIds.length === 1 ? "" : "s"}` +
-          (outcome.templateMissing || !canEmail
-            ? " (no goodbye email: template or delivery missing)"
-            : ` (${outcome.eventKeys.length} goodbye email${outcome.eventKeys.length === 1 ? "" : "s"} queued)`),
+        ? `${actorLabel(user)} undid a bulk offboard for ${offboardCount} signup${offboardCount === 1 ? "" : "s"}`
+        : `${actorLabel(user)} offboarded ${offboardCount} signup${offboardCount === 1 ? "" : "s"}` +
+          emailNote,
     });
     return NextResponse.json({
       ok: true,
       action,
       matched: outcome.matched,
-      processed: outcome.processedIds.length,
-      alreadyInState: outcome.matched - outcome.processedIds.length,
+      processed: offboardCount,
+      alreadyInState: outcome.matched - offboardCount,
       offboardedIds: resubscribe ? [] : outcome.processedIds,
-      emailsQueued: outcome.eventKeys.length,
+      emailsQueued: queuedCount,
+      duplicateSkipped: resubscribe ? 0 : dupCount,
       emailTemplateMissing: resubscribe ? false : outcome.templateMissing,
       deliveryConfigured: resubscribe ? undefined : canEmail,
     });

@@ -389,8 +389,10 @@ export function AudienceTable({
   async function undoBulkOffboard(ids) {
     try {
       const payload = await runBulkBatch("resubscribe", ids);
+      const skipped = payload.alreadyInState || 0;
       toast.success(
-        `Marketing updates restored for ${payload.processed.toLocaleString()} signup${payload.processed === 1 ? "" : "s"}.`,
+        `Marketing updates restored for ${payload.processed.toLocaleString()} signup${payload.processed === 1 ? "" : "s"}.` +
+          (skipped > 0 ? ` ${skipped} already subscribed — skipped.` : ""),
       );
       refreshAfterBulk();
     } catch (error) {
@@ -415,14 +417,28 @@ export function AudienceTable({
         if (!fresh.length) {
           toast.success("Everyone selected was already offboarded.");
         } else {
-          const emailNote =
-            payload.emailsQueued > 0
-              ? ` ${payload.emailsQueued.toLocaleString()} goodbye email${payload.emailsQueued === 1 ? " is" : "s are"} on the way.`
-              : payload.emailTemplateMissing
-                ? " No offboarding template exists, so no goodbye emails were sent."
-                : " Email delivery is not configured, so no goodbye emails were sent.";
+          const queued = payload.emailsQueued || 0;
+          const duplicates = payload.duplicateSkipped || 0;
+          const skipped = payload.alreadyInState || 0;
+          const skippedNote = skipped > 0 ? ` ${skipped} already offboarded — skipped.` : "";
+          let emailNote;
+          if (queued > 0) {
+            emailNote =
+              ` ${queued.toLocaleString()} goodbye email${queued === 1 ? " is" : "s are"} on the way.` +
+              (duplicates > 0
+                ? ` ${duplicates} skipped as duplicate${duplicates === 1 ? "" : "s"}.`
+                : "");
+          } else if (duplicates > 0) {
+            emailNote = " No new goodbye emails — already sent or cancelled for this selection.";
+          } else if (payload.emailTemplateMissing) {
+            emailNote = " No offboarding template exists, so no goodbye emails were sent.";
+          } else if (payload.deliveryConfigured === false) {
+            emailNote = " Email delivery is not configured, so no goodbye emails were sent.";
+          } else {
+            emailNote = " No goodbye emails were queued.";
+          }
           toast.success(
-            `Offboarded ${fresh.length.toLocaleString()} signup${fresh.length === 1 ? "" : "s"}.${emailNote}`,
+            `Offboarded ${fresh.length.toLocaleString()} signup${fresh.length === 1 ? "" : "s"}.${skippedNote}${emailNote}`,
             {
               action: { label: "Undo", onClick: () => undoBulkOffboard(fresh) },
               duration: 30_000,
@@ -1337,7 +1353,7 @@ export function AudienceTable({
               "Offboarding keeps every row — position, points, and referral history stay exactly as they are — " +
               "and stops marketing emails immediately. Confirmation and other transactional emails are unaffected. " +
               "Where an offboarding template exists, each newly offboarded signup gets one goodbye email. " +
-              "An Undo option appears for 30 seconds afterwards."
+              "An Undo option appears for 30 seconds afterwards and re-enables updates only for the signups just offboarded."
             }
             confirmLabel={`Offboard ${selectedIds.length.toLocaleString()} signup${selectedIds.length === 1 ? "" : "s"}`}
             pendingLabel="Offboarding…"
