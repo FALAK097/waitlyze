@@ -1,11 +1,13 @@
 import { NextResponse } from "next/server";
 
+import {
+  getPublishedFormConfig,
+  pickCustomFields,
+} from "@/lib/campaigns/form-rules.mjs";
 import { getCampaignPosition } from "@/lib/campaigns/referral-position.mjs";
 import { DuplicateSignupError, InvalidCampaignError } from "@/lib/campaigns/signups.mjs";
 import {
-  campaignRequiresTurnstile,
   TurnstileVerificationError,
-  verifyTurnstileToken,
 } from "@/lib/campaigns/turnstile.mjs";
 import { dispatchVerificationNow } from "@/lib/email/dispatch-now.mjs";
 import prisma from "@/lib/prisma";
@@ -14,7 +16,7 @@ import { createSignUp } from "@/services/sign-up";
 import { pickAttribution } from "@/utils/server/attribution.mjs";
 import { getDeviceInfo } from "@/utils/server/device";
 import { getGeoInfo, getIpAddress, getTimeZone } from "@/utils/server/geo";
-import { validateRequest } from "@/utils/server/validations/sign-up";
+import { duplicateSignupResponse, validateRequest } from "@/utils/server/validations/sign-up";
 
 const legacySignupResponse = (signUp, { includeReferralCode = false } = {}) => {
   // This endpoint is public. Keep the legacy fields needed by its browser
@@ -30,6 +32,11 @@ const legacySignupResponse = (signUp, { includeReferralCode = false } = {}) => {
     referralCount: Array.isArray(signUp.referrals) ? signUp.referrals.length : 0,
   };
   if (includeReferralCode) response.referralCode = signUp.referralCode;
+  // Server-vetted post-signup redirect. Only present when the founder
+  // configured one that passes the allowlist — the browser navigates here and
+  // nowhere else, so this can never become an open redirect.
+  if (typeof signUp.redirectUrl === "string" && signUp.redirectUrl)
+    response.redirectUrl = signUp.redirectUrl;
   return response;
 };
 
@@ -56,8 +63,9 @@ export const GET = async (req) => {
 };
 
 export const POST = async (req) => {
+  let body;
   try {
-    const body = await req.json();
+    body = await req.json();
     if (
       typeof body?.waitListId !== "string" ||
       !body.waitListId ||
@@ -75,23 +83,34 @@ export const POST = async (req) => {
       headers: req.headers,
       email: body.email,
     });
-    const validator = await validateRequest(body);
-    if (validator) return validator;
-    if (body.marketingConsent !== undefined && typeof body.marketingConsent !== "boolean") {
-      return NextResponse.json({ message: "Marketing consent must be a boolean" }, { status: 400 });
-    }
-    const requiresTurnstile = await campaignRequiresTurnstile(prisma, body.waitListId);
-    const turnstileVerified =
-      requiresTurnstile && (await verifyTurnstileToken(req, body["cf-turnstile-response"]));
-    if (requiresTurnstile && !turnstileVerified)
-      return NextResponse.json(
-        { message: "Complete the security check and try again." },
-        { status: 403 },
-      );
-
     const { device, deviceType } = await getDeviceInfo();
     const ip = getIpAddress(req);
     const geo = getGeoInfo(req);
+
+    // Cheap shape checks run before validateRequest so malformed values
+    // (including oversized tokens) never reach external verification.
+    if (body.marketingConsent !== undefined && typeof body.marketingConsent !== "boolean") {
+      return NextResponse.json({ message: "Marketing consent must be a boolean" }, { status: 400 });
+    }
+    if (body.phone !== undefined && (typeof body.phone !== "string" || body.phone.length > 32)) {
+      return NextResponse.json({ message: "Phone number is too long." }, { status: 400 });
+    }
+    if (
+      body.turnstileToken !== undefined &&
+      (typeof body.turnstileToken !== "string" || body.turnstileToken.length > 2048)
+    ) {
+      return NextResponse.json(
+        { message: "Verification challenge failed. Please try again." },
+        { status: 400 },
+      );
+    }
+    const validator = await validateRequest(body, { country: geo?.country, ip });
+    if (validator) return validator;
+
+    // validateRequest just verified the Turnstile token when the published
+    // form requires it, so record how this signup was protected downstream.
+    const formConfig = await getPublishedFormConfig(prisma, body.waitListId).catch(() => null);
+    const turnstileVerified = formConfig?.requireTurnstile === true;
 
     const hypeSession = body.hypeSession;
 
@@ -116,6 +135,8 @@ export const POST = async (req) => {
       waitListId: body.waitListId,
       ipAddress: ip,
       impressionId: impression?.id,
+      phone: typeof body.phone === "string" ? body.phone.slice(0, 32) : undefined,
+      customFields: pickCustomFields(body),
       ...pickAttribution(body),
     };
 
@@ -149,6 +170,14 @@ export const POST = async (req) => {
         { status: error.status, headers: { "Retry-After": error.status === 429 ? "3600" : "60" } },
       );
     if (error instanceof DuplicateSignupError) {
+      // Race path: the row committed between the pre-DB duplicate check and
+      // the insert. Resolve like the validator does — position + link, 200.
+      const resolved = await duplicateSignupResponse(
+        body.waitListId,
+        body.email,
+        body?.hypeSession,
+      ).catch(() => null);
+      if (resolved) return resolved;
       return NextResponse.json({ message: error.message }, { status: 403 });
     }
     if (error instanceof InvalidCampaignError) {
