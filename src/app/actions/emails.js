@@ -978,6 +978,8 @@ export async function scheduleBroadcast({
   scheduledAt,
   expectedRecipientCount,
 }) {
+  // Authenticate before checking delivery configuration so this early return
+  // cannot reveal server setup to an unauthenticated caller.
   const { campaign, user } = await requireCampaign(waitListId, "sendEmail");
   if (!env.OUTBOX_DISPATCH_SECRET || !env.RESEND_API_KEY)
     return { success: false, message: "Email delivery is not configured yet." };

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-import { seedPreviewVars, spamHint } from "@/lib/email/variables.mjs";
+import { spamHint } from "@/lib/email/variables.mjs";
 
 const chipsLine = "m-0 text-xs text-product-text-secondary";
 const chipCode =
@@ -20,16 +20,6 @@ export function VariableChips({ keys }) {
       ))}
     </p>
   );
-}
-
-// Client-side seed interpolation for editor previews. Mirrors the
-// server-side fallback rules with fixed sample data (Ada, #42…).
-export function applySeedVars(html, waitlistName) {
-  const vars = seedPreviewVars(waitlistName);
-  return String(html || "").replace(/\{\{\s*([a-z_]+)\s*\}\}/gi, (match, name) => {
-    const key = String(name).toLowerCase();
-    return Object.hasOwn(vars, key) ? String(vars[key] ?? "") : match;
-  });
 }
 
 const hintOk = "m-0 text-caption leading-normal text-product-text-secondary";

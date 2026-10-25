@@ -15,16 +15,12 @@ import {
   sendBroadcastTestEmail,
 } from "@/app/actions/emails";
 import { Button } from "@/components/ui/button";
+import { applySeedVars } from "@/lib/email/preview-vars.mjs";
 import { emailStatusLabel } from "@/lib/emails/status-label.mjs";
 import { formatProductDate } from "@/lib/product-date.mjs";
 
 import { EmailCanvas } from "./email-canvas";
-import {
-  EmailPreviewFrame,
-  SpamHintView,
-  VariableChips,
-  applySeedVars,
-} from "./email-composer-extras";
+import { EmailPreviewFrame, SpamHintView, VariableChips } from "./email-composer-extras";
 import { EmailToolsNav } from "./email-tools-nav";
 
 const scope = "min-w-0 bg-white text-product-text-primary";
@@ -208,14 +204,12 @@ export function BroadcastManager({
     try {
       if (!editorRef.current?.editor) throw new Error("The message editor is still loading.");
       const { html, text } = await editorRef.current.getEmail();
-      const payload = JSON.parse(
-        JSON.stringify({
-          ...data,
-          editorDocument: editorRef.current.getJSON(),
-          renderedHtml: html,
-          renderedText: text,
-        }),
-      );
+      const payload = structuredClone({
+        ...data,
+        editorDocument: editorRef.current.getJSON(),
+        renderedHtml: html,
+        renderedText: text,
+      });
       const result = await saveBroadcastDraft({
         waitListId,
         broadcastId: selectedId,
@@ -258,7 +252,7 @@ export function BroadcastManager({
       if (!editorRef.current?.editor) throw new Error("The message editor is still loading.");
       const { html, text } = await editorRef.current.getEmail();
       setDraftPreview({
-        html: applySeedVars(JSON.parse(JSON.stringify(html)), waitListName),
+        html: applySeedVars(html, waitListName),
         text,
       });
     } catch {
@@ -419,7 +413,7 @@ export function BroadcastManager({
         </nav>
 
         {selectedId ? (
-          <form className={pane} aria-label="Broadcast editor" onSubmit={saveDraft}>
+          <section className={pane} aria-label="Broadcast editor">
             <header className={paneHead}>
               <div>
                 <h2 className={paneTitle}>
@@ -435,7 +429,12 @@ export function BroadcastManager({
               </div>
               <div className={paneActions}>
                 {editable && (
-                  <Button type="submit" variant="default" disabled={busy}>
+                  <Button
+                    type="submit"
+                    form="broadcast-draft-form"
+                    variant="default"
+                    disabled={busy}
+                  >
                     {busyAction === "save" ? "Saving…" : "Save draft"}
                   </Button>
                 )}
@@ -444,38 +443,44 @@ export function BroadcastManager({
 
             {editable ? (
               <>
-                <div className={fieldCard}>
-                  <div className={fieldRow}>
-                    <input
-                      className={fieldInput}
-                      maxLength={120}
-                      aria-label="Internal name"
-                      placeholder="Name — only you see this"
-                      value={data.name || ""}
-                      onChange={(event) => edit("name", event.target.value)}
-                    />
+                <form
+                  id="broadcast-draft-form"
+                  className="flex flex-col gap-5"
+                  onSubmit={saveDraft}
+                >
+                  <div className={fieldCard}>
+                    <div className={fieldRow}>
+                      <input
+                        className={fieldInput}
+                        maxLength={120}
+                        aria-label="Internal name"
+                        placeholder="Name — only you see this"
+                        value={data.name || ""}
+                        onChange={(event) => edit("name", event.target.value)}
+                      />
+                    </div>
+                    <div className={fieldRow}>
+                      <input
+                        className={fieldInput}
+                        maxLength={160}
+                        aria-label="Subject"
+                        placeholder="Subject — what subscribers see in the inbox"
+                        value={data.subject || ""}
+                        onChange={(event) => edit("subject", event.target.value)}
+                      />
+                    </div>
+                    <div className={fieldRow}>
+                      <input
+                        className={fieldInput}
+                        maxLength={180}
+                        aria-label="Preview text"
+                        placeholder="Preview text — shown after the subject"
+                        value={data.previewText || ""}
+                        onChange={(event) => edit("previewText", event.target.value)}
+                      />
+                    </div>
                   </div>
-                  <div className={fieldRow}>
-                    <input
-                      className={fieldInput}
-                      maxLength={160}
-                      aria-label="Subject"
-                      placeholder="Subject — what subscribers see in the inbox"
-                      value={data.subject || ""}
-                      onChange={(event) => edit("subject", event.target.value)}
-                    />
-                  </div>
-                  <div className={fieldRow}>
-                    <input
-                      className={fieldInput}
-                      maxLength={180}
-                      aria-label="Preview text"
-                      placeholder="Preview text — shown after the subject"
-                      value={data.previewText || ""}
-                      onChange={(event) => edit("previewText", event.target.value)}
-                    />
-                  </div>
-                </div>
+                </form>
                 <div className={canvasShell}>
                   <EmailCanvas
                     key={selectedId}
@@ -757,7 +762,7 @@ export function BroadcastManager({
                 )}
               </div>
             ) : null}
-          </form>
+          </section>
         ) : (
           <div className={emptyPane}>
             <h2 className={emptyPaneTitle}>No broadcasts yet</h2>

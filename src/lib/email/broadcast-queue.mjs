@@ -92,6 +92,8 @@ export async function enqueueBroadcast(
   // Snapshot personal variables once, server-side, so every recipient's
   // {{name}} {{position}} {{referral_link}} {{points}} resolve at send time
   // without per-send rank scans.
+  // These reads share the interactive transaction's single connection, so
+  // Promise.all would still serialize the queries without reducing latency.
   const waitlist = await tx.waitList.findUnique({
     where: { id: waitListId },
     select: { name: true, publicSlug: true, showReferrals: true },

@@ -5,14 +5,10 @@ import { toast } from "sonner";
 
 import { upsertEmailTemplate, sendTestEmail } from "@/app/actions/emails";
 import { Button } from "@/components/ui/button";
+import { applySeedVars } from "@/lib/email/preview-vars.mjs";
 
 import { EmailCanvas } from "./email-canvas";
-import {
-  EmailPreviewFrame,
-  SpamHintView,
-  VariableChips,
-  applySeedVars,
-} from "./email-composer-extras";
+import { EmailPreviewFrame, SpamHintView, VariableChips } from "./email-composer-extras";
 
 const scope = "min-w-0 bg-white text-product-text-primary";
 const unsaved =
