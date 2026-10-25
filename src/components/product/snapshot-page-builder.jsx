@@ -1072,6 +1072,7 @@ export function SnapshotPageBuilder({
       brand: {
         ...template.brand,
         logo: snapshot.brand.logo,
+        favicon: snapshot.brand.favicon,
         showPoweredBy: snapshot.brand.showPoweredBy,
       },
       form: snapshot.form,
@@ -1087,6 +1088,7 @@ export function SnapshotPageBuilder({
     const brand = {
       ...clone(template.snapshot.brand),
       logo: snapshot.brand.logo,
+      favicon: snapshot.brand.favicon,
       showPoweredBy: snapshot.brand.showPoweredBy,
     };
     if (applySnapshot({ ...snapshot, brand })) {
@@ -1660,7 +1662,7 @@ export function SnapshotPageBuilder({
           <DialogTitle>Replace the blocks on this page?</DialogTitle>
           <DialogDescription>
             {pendingTemplate
-              ? `${pendingTemplate.name} replaces your blocks, copy, and visual style. Signup settings, after-signup states, SEO, logo, and powered-by preference stay intact. Your current page is kept in undo history.`
+              ? `${pendingTemplate.name} replaces your blocks, copy, and visual style. Signup settings, after-signup states, SEO, logo, favicon, and powered-by preference stay intact. Your current page is kept in undo history.`
               : ""}
           </DialogDescription>
           <div className="flex items-center justify-end gap-2">
@@ -1800,6 +1802,13 @@ function DesignPanel({ brand, update }) {
         value={brand.logo ?? ""}
         onChange={(logo) => update({ logo })}
         previewClassName="aspect-16/9 object-contain bg-product-bg-inset"
+      />
+      <ImageUploadField
+        label="Favicon"
+        hint="Browser-tab icon for the hosted page. Square PNG works best."
+        value={brand.favicon ?? ""}
+        onChange={(favicon) => update({ favicon })}
+        previewClassName="aspect-square object-contain bg-product-bg-inset"
       />
       <div className="flex items-center justify-between gap-3">
         <Label htmlFor={poweredById}>Powered by Waitlyze</Label>
