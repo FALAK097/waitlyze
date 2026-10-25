@@ -132,7 +132,7 @@ async function failedVerificationPage(waitListId, filters, cursor, take, offset 
   const paging =
     offset == null ? Prisma.sql`LIMIT ${take}` : Prisma.sql`LIMIT ${take} OFFSET ${offset}`;
   return prisma.$queryRaw`
-    SELECT "signup"."id", "signup"."email", "signup"."createdAt", "signup"."verifiedAt",
+    SELECT "signup"."id", "signup"."email", "signup"."phone", "signup"."createdAt", "signup"."verifiedAt",
       "signup"."country", "signup"."city", "signup"."device", "signup"."deviceType",
       "signup"."referralCode", "signup"."utmSource", "signup"."points"
     FROM "sign_ups" AS "signup"
@@ -175,6 +175,7 @@ async function failedVerificationCursor(waitListId, cursorId) {
 const ROW_SELECT = {
   id: true,
   email: true,
+  phone: true,
   createdAt: true,
   verifiedAt: true,
   pipelineStage: true,
@@ -191,6 +192,7 @@ const ROW_SELECT = {
         select: {
           id: true,
           email: true,
+          phone: true,
           verifiedAt: true,
           createdAt: true,
           country: true,
@@ -380,6 +382,7 @@ export async function POST(request, { params }) {
     const needReferrals = columns.includes("referrals");
     const needPosition = columns.includes("position") && access.showReferrals;
     const select = { id: true, email: true, createdAt: true, verifiedAt: true };
+    if (columns.includes("phone")) select.phone = true;
     if (columns.includes("country")) select.country = true;
     if (columns.includes("city")) select.city = true;
     if (columns.includes("device")) select.device = true;

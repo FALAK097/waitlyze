@@ -54,6 +54,18 @@
   font-size: var(--wl-body);
 }
 
+/* Mobile-first clamp: the founder's px type scale never overflows a phone
+   screen. Desktop keeps the exact px value. */
+@media (max-width: 40rem) {
+  .wl-type-h1 {
+    font-size: min(var(--wl-h1), 2.5rem);
+  }
+
+  .wl-type-h2 {
+    font-size: min(var(--wl-h2), 1.875rem);
+  }
+}
+
 @layer base {
   :root {
     --product-neutral-50: hsl(210 5% 98%);

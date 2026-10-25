@@ -174,7 +174,7 @@ export function CustomDomainSettings({ waitListId, canManage, available }) {
             event.preventDefault();
             call("POST", { hostname });
           }}
-          className="grid max-w-140 gap-4 [&_input]:min-h-11 [&_input]:rounded-lg [&_input]:border [&_input]:border-product-border-control [&_input]:bg-product-bg-surface [&_input]:px-3 [&_input]:py-2.25 [&_input]:text-sm"
+          className="grid max-w-140 gap-4 [&_input]:h-11 [&_input]:rounded-lg [&_input]:border [&_input]:border-product-border-control [&_input]:bg-product-bg-surface [&_input]:px-3 [&_input]:text-sm"
         >
           {available ? (
             <div className="flex flex-wrap items-stretch gap-2 [&_input]:min-w-55 [&_input]:flex-1">
@@ -187,7 +187,7 @@ export function CustomDomainSettings({ waitListId, canManage, available }) {
                 required
                 disabled={!canManage || busy}
               />
-              <Button type="submit" disabled={!actionsEnabled || !hostname.trim()}>
+              <Button type="submit" size="xl" disabled={!actionsEnabled || !hostname.trim()}>
                 {busy ? "Connecting…" : "Connect domain"}
               </Button>
             </div>

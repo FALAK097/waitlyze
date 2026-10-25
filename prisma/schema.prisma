@@ -192,6 +192,8 @@ model SignUp {
   // Funnel pipeline stage. Defaults to WAITLIST so existing rows keep their
   // behavior when the feature is untouched.
   pipelineStage   String      @default("WAITLIST")
+  phone           String?
+  customFields    Json?
   waitListId      String
   impressionId    String?
   rank            Int?
