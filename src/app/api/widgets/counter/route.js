@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import prisma from "@/lib/prisma";
+import { getPublishedRewards } from "@/lib/referrals/rewards.mjs";
 import { consumePublicBudget, PublicRateLimitError } from "@/lib/security/public-rate-limit.mjs";
 
 import {
@@ -33,11 +34,16 @@ export async function GET(request) {
       headers: request.headers,
     });
 
-    const waitList = await prisma.waitList.findUnique({
-      where: { id: waitlistId },
-      select: { id: true, name: true, status: true, publicSlug: true },
-    });
-    if (!waitList || waitList.status !== "PUBLISHED")
+    const [waitList, { rewards }] = await Promise.all([
+      prisma.waitList.findUnique({
+        where: { id: waitlistId },
+        select: { id: true, name: true, status: true, publicSlug: true },
+      }),
+      getPublishedRewards(prisma, waitlistId),
+    ]);
+    // Stealth mode hides all counts: answer exactly as if unpublished so the
+    // setting can't be probed through the widget.
+    if (!waitList || waitList.status !== "PUBLISHED" || rewards.hideCounts)
       return NextResponse.json({ message: "Counter not found." }, { status: 404 });
 
     const total = await prisma.signUp.count({ where: { waitListId: waitlistId } });

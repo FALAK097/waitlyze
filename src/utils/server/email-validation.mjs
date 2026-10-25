@@ -3,7 +3,9 @@
 
 // Practical curated list of known disposable/throwaway providers (200+).
 // Exact-domain matches only — subdomains and mainstream relays (Apple, Firefox)
-// stay allowed so legitimate signups never trip this gate.
+// stay allowed so legitimate signups never trip this gate. Pure aliasing
+// services (SimpleLogin and friends) forward to a real inbox, so they are
+// deliberately absent: blocking them only punishes privacy-conscious users.
 const DISPOSABLE_DOMAINS = new Set(
   [
     "0815.ru",
@@ -176,8 +178,6 @@ const DISPOSABLE_DOMAINS = new Set(
     "sharklasers.com",
     "shiftmail.com",
     "shitmail.me",
-    "simplelogin.com",
-    "slmail.me",
     "sneakemail.com",
     "spam4.me",
     "spambox.us",

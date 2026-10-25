@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import prisma from "@/lib/prisma";
+import { displayPosition, getPublishedRewards } from "@/lib/referrals/rewards.mjs";
 import { consumePublicBudget, PublicRateLimitError } from "@/lib/security/public-rate-limit.mjs";
 import { maskEmail } from "@/lib/widgets/mask.mjs";
 
@@ -37,11 +38,21 @@ export async function GET(request) {
       headers: request.headers,
     });
 
-    const waitList = await prisma.waitList.findUnique({
-      where: { id: waitlistId },
-      select: { id: true, name: true, status: true, showReferrals: true, publicSlug: true },
-    });
-    if (!waitList || waitList.status !== "PUBLISHED" || !waitList.showReferrals)
+    const [waitList, { rewards }] = await Promise.all([
+      prisma.waitList.findUnique({
+        where: { id: waitlistId },
+        select: { id: true, name: true, status: true, showReferrals: true, publicSlug: true },
+      }),
+      getPublishedRewards(prisma, waitlistId),
+    ]);
+    // Stealth mode hides all counts: answer exactly as if unpublished so the
+    // setting can't be probed through the widget.
+    if (
+      !waitList ||
+      waitList.status !== "PUBLISHED" ||
+      !waitList.showReferrals ||
+      rewards.hideCounts
+    )
       return NextResponse.json({ message: "Leaderboard not found." }, { status: 404 });
 
     // Verified-only scoring, same rules as the cockpit position query.
@@ -78,7 +89,7 @@ export async function GET(request) {
 
     const total = rows.length ? Number(rows[0].total) : 0;
     const entries = rows.map((row) => ({
-      position: Number(row.position),
+      position: displayPosition(Number(row.position), rewards),
       maskedEmail: maskEmail(row.email ?? ""),
       referrals: Number(row.score),
     }));

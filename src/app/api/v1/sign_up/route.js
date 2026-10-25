@@ -15,7 +15,7 @@ import { createSignUp } from "@/services/sign-up";
 import { pickAttribution } from "@/utils/server/attribution.mjs";
 import { getDeviceInfo } from "@/utils/server/device";
 import { getGeoInfo, getIpAddress, getTimeZone } from "@/utils/server/geo";
-import { validateRequest } from "@/utils/server/validations/sign-up";
+import { validateRequest, duplicateSignupResponse } from "@/utils/server/validations/sign-up";
 
 const legacySignupResponse = (signUp, { includeReferralCode = false } = {}) => {
   // This endpoint is public. Keep the legacy fields needed by its browser
@@ -166,6 +166,14 @@ export const POST = async (req) => {
       );
     }
     if (error instanceof DuplicateSignupError) {
+      // Race path: the row committed between the pre-DB duplicate check and
+      // the insert. Resolve like the validator does — position + link, 200.
+      const resolved = await duplicateSignupResponse(
+        body.waitListId,
+        body.email,
+        body?.hypeSession,
+      ).catch(() => null);
+      if (resolved) return resolved;
       return NextResponse.json({ message: error.message }, { status: 403 });
     }
     if (error instanceof InvalidCampaignError) {
