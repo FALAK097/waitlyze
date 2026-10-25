@@ -287,6 +287,7 @@ function SignupFormInner({ slug, waitListId, showReferrals, formConfig, statusPa
         }
         throw new Error(data.message || "Couldn't join the waitlist. Try again.");
       }
+      if (statusPage.postSignupBehavior === "no-change") return;
 
       // Server-vetted redirect only: the API echoes a redirect URL solely when
       // the founder configured one that passes the allowlist. Never navigate
