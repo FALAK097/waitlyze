@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -22,7 +22,9 @@ export function PipelineBoard({ waitListId, canManage = false }) {
   const [movingId, setMovingId] = useState(null);
   const [renaming, setRenaming] = useState(false);
   const [drafts, setDrafts] = useState({});
-  const [retryCount, setRetryCount] = useState(0);
+  const loadController = useRef(null);
+  const mutationInFlight = useRef(false);
+  const renameInFlight = useRef(false);
 
   const load = useCallback(
     async (signal) => {
@@ -33,8 +35,11 @@ export function PipelineBoard({ waitListId, canManage = false }) {
           signal,
           cache: "no-store",
         });
+        if (!response.ok) {
+          const payload = await response.json().catch(() => ({}));
+          throw new Error(payload.error || "Unable to load the pipeline.");
+        }
         const payload = await response.json();
-        if (!response.ok) throw new Error(payload.error || "Unable to load the pipeline.");
         if (signal.aborted) return;
         setStages(payload.stages);
         setRecent(payload.recent);
@@ -46,16 +51,27 @@ export function PipelineBoard({ waitListId, canManage = false }) {
         if (!signal.aborted) setLoading(false);
       }
     },
-    [waitListId, retryCount],
+    [waitListId],
   );
 
-  useEffect(() => {
+  const reload = useCallback(() => {
+    loadController.current?.abort();
     const controller = new AbortController();
-    load(controller.signal);
-    return () => controller.abort();
+    loadController.current = controller;
+    return load(controller.signal);
   }, [load]);
 
+  useEffect(() => {
+    reload();
+    return () => {
+      loadController.current?.abort();
+      loadController.current = null;
+    };
+  }, [reload]);
+
   async function moveSignup(signupId, stage) {
+    if (mutationInFlight.current) return;
+    mutationInFlight.current = true;
     setMovingId(signupId);
     try {
       const response = await fetch(`/api/wait-lists/${encodeURIComponent(waitListId)}/pipeline`, {
@@ -63,21 +79,26 @@ export function PipelineBoard({ waitListId, canManage = false }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ signupId, stage }),
       });
-      const payload = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(payload.error || "Unable to move the signup.");
+      if (!response.ok) {
+        const payload = await response.json().catch(() => ({}));
+        throw new Error(payload.error || "Unable to move the signup.");
+      }
       // Reconcile from the server: the closed-over `recent` goes stale across
       // rapid moves, so refetch counts instead of adjusting them optimistically.
-      await load(new AbortController().signal);
+      await reload();
       toast.success("Signup moved.");
     } catch (moveError) {
       toast.error(moveError.message || "Could not move the signup.");
     } finally {
+      mutationInFlight.current = false;
       setMovingId(null);
     }
   }
 
   async function renameStages(event) {
     event.preventDefault();
+    if (renameInFlight.current) return;
+    renameInFlight.current = true;
     setRenaming(true);
     try {
       const response = await fetch(`/api/wait-lists/${encodeURIComponent(waitListId)}/pipeline`, {
@@ -90,8 +111,10 @@ export function PipelineBoard({ waitListId, canManage = false }) {
           })),
         }),
       });
-      const payload = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(payload.error || "Unable to rename the stages.");
+      if (!response.ok) {
+        const payload = await response.json().catch(() => ({}));
+        throw new Error(payload.error || "Unable to rename the stages.");
+      }
       setStages((current) =>
         current.map((stage) => ({ ...stage, label: drafts[stage.key] ?? stage.label })),
       );
@@ -99,6 +122,7 @@ export function PipelineBoard({ waitListId, canManage = false }) {
     } catch (renameError) {
       toast.error(renameError.message || "Could not rename the stages.");
     } finally {
+      renameInFlight.current = false;
       setRenaming(false);
     }
   }
@@ -121,7 +145,7 @@ export function PipelineBoard({ waitListId, canManage = false }) {
         role="alert"
       >
         <p className="pb-3 font-medium text-product-text-primary">{error}</p>
-        <Button variant="outline" onClick={() => setRetryCount((count) => count + 1)}>
+        <Button variant="outline" onClick={reload}>
           Try again
         </Button>
       </div>
@@ -216,7 +240,7 @@ export function PipelineBoard({ waitListId, canManage = false }) {
                     <select
                       className="min-h-11 cursor-pointer rounded-lg border border-product-border-control bg-product-bg-surface px-2 py-1.5 text-xs text-product-text-primary"
                       value={row.stage}
-                      disabled={movingId === row.id}
+                      disabled={movingId !== null}
                       onChange={(event) => moveSignup(row.id, event.target.value)}
                       aria-label={`Move ${row.email} to a stage`}
                     >
