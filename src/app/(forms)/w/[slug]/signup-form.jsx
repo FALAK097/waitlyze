@@ -34,7 +34,6 @@ function SignupFormInner({
   turnstileSiteKey = "",
 }) {
   const emailId = useId();
-  const referralId = useId();
   const resultTitleId = useId();
   const turnstileContainer = useRef(null);
   const turnstileWidgetId = useRef(null);
@@ -160,99 +159,19 @@ function SignupFormInner({
     }
   }
 
-  /** Copies the personal referral link and records a share event only after the clipboard write succeeds. */
-  async function copyReferralLink() {
-    if (!result?.referralLink) return;
-    try {
-      await navigator.clipboard.writeText(result.referralLink);
-      fetch("/api/v1/shares", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ waitListId, code: result.referralCode ?? "" }),
-      }).catch(() => {});
-      setCopied(true);
-    } catch {
-      toast.error("Copy didn't work — long-press the link to copy it manually.");
-    }
-  }
-
-  function trackShare() {
-    fetch("/api/v1/shares", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ waitListId, code: result.referralCode ?? "" }),
-    }).catch(() => {});
-  }
-
   if (result) {
     return (
-      <section
-        className={cn(
-          "grid w-full justify-items-center text-center text-wl-text",
-          bodyPx != null && "wl-type-body",
-          statusPage.layout === "card" && "rounded-wl bg-wl-surface p-6 md:p-10",
-        )}
-        style={bodyPx != null ? { "--wl-body": `${bodyPx}px` } : undefined}
-        aria-labelledby={resultTitleId}
-      >
-        <StatusBadge pending={result.pending} iconStyle={statusPage.iconStyle} className="mb-4" />
-        <h2
-          className={cn(
-            "my-4 max-w-ch14 font-wl-heading leading-none tracking-tight text-balance",
-            headingPx == null ? "text-3xl" : "wl-type-h1",
-          )}
-          style={headingPx == null ? undefined : { "--wl-h1": `${headingPx}px` }}
-          id={resultTitleId}
-        >
-          {result.heading}
-        </h2>
-        {result.notice ? <p className="leading-relaxed text-wl-muted">{result.notice}</p> : null}
-        {result.body ? <p className="leading-relaxed text-wl-muted">{result.body}</p> : null}
-        {statusPage.showPosition && result.position != null ? (
-          <p className="flex w-full max-w-md justify-between border-y border-wl-text/15 py-4">
-            <span>Your position</span>
-            <strong>#{result.position}</strong>
-          </p>
-        ) : null}
-        {showReferrals && statusPage.showReferralCount ? (
-          <p className="flex w-full max-w-md justify-between border-y border-wl-text/15 py-4">
-            <span>Friends joined</span>
-            <strong>{result.referralCount}</strong>
-          </p>
-        ) : null}
-        {showReferrals && statusPage.showReferralLink && result.referralLink ? (
-          <div className="mt-6 grid w-full max-w-md gap-2.5">
-            <p className="m-0 text-sm text-wl-muted">{statusPage.shareMessage}</p>
-            <label className="text-caption font-bold" htmlFor={referralId}>
-              Your referral link
-            </label>
-            <div className="flex gap-2 max-sm:flex-col">
-              <input
-                className={cn(
-                  control,
-                  "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-wl-accent",
-                )}
-                id={referralId}
-                value={result.referralLink}
-                readOnly
-                onFocus={(event) => event.target.select()}
-              />
-              <button className={action} type="button" onClick={copyReferralLink}>
-                {copied ? "Copied" : "Copy"}
-              </button>
-            </div>
-            {statusPage.shareChannels.length > 0 && (
-              <ShareButtons
-                channels={statusPage.shareChannels}
-                message={`${statusPage.shareMessage} ${result.referralLink}`}
-                link={result.referralLink}
-                subject={statusPage.heading}
-                onShare={trackShare}
-              />
-            )}
-          </div>
-        ) : null}
-      </section>
+      <SignupResult
+        result={result}
+        statusPage={statusPage}
+        showReferrals={showReferrals}
+        waitListId={waitListId}
+        headingPx={headingPx}
+        bodyPx={bodyPx}
+        resultTitleId={resultTitleId}
+        copied={copied}
+        onCopy={() => setCopied(true)}
+      />
     );
   }
 
@@ -331,5 +250,113 @@ function SignupFormInner({
         )}
       </form>
     </>
+  );
+}
+
+/** Post-signup result: confirmation copy, position, referral link, and share buttons. */
+function SignupResult({
+  result,
+  statusPage,
+  showReferrals,
+  waitListId,
+  headingPx,
+  bodyPx,
+  resultTitleId,
+  copied,
+  onCopy,
+}) {
+  const referralId = useId();
+  /** Copies the personal referral link and records a share event only after the clipboard write succeeds. */
+  async function copyReferralLink() {
+    if (!result?.referralLink) return;
+    try {
+      await navigator.clipboard.writeText(result.referralLink);
+      fetch("/api/v1/shares", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ waitListId, code: result.referralCode ?? "" }),
+      }).catch(() => {});
+      onCopy();
+    } catch {
+      toast.error("Copy didn't work — long-press the link to copy it manually.");
+    }
+  }
+
+  function trackShare() {
+    fetch("/api/v1/shares", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ waitListId, code: result.referralCode ?? "" }),
+    }).catch(() => {});
+  }
+
+  return (
+    <section
+      className={cn(
+        "grid w-full justify-items-center text-center text-wl-text",
+        bodyPx != null && "wl-type-body",
+        statusPage.layout === "card" && "rounded-wl bg-wl-surface p-6 md:p-10",
+      )}
+      style={bodyPx != null ? { "--wl-body": `${bodyPx}px` } : undefined}
+      aria-labelledby={resultTitleId}
+    >
+      <StatusBadge pending={result.pending} iconStyle={statusPage.iconStyle} className="mb-4" />
+      <h2
+        className={cn(
+          "my-4 max-w-ch14 font-wl-heading leading-none tracking-tight text-balance",
+          headingPx == null ? "text-3xl" : "wl-type-h1",
+        )}
+        style={headingPx == null ? undefined : { "--wl-h1": `${headingPx}px` }}
+        id={resultTitleId}
+      >
+        {result.heading}
+      </h2>
+      {result.notice ? <p className="leading-relaxed text-wl-muted">{result.notice}</p> : null}
+      {result.body ? <p className="leading-relaxed text-wl-muted">{result.body}</p> : null}
+      {statusPage.showPosition && result.position != null ? (
+        <p className="flex w-full max-w-md justify-between border-y border-wl-text/15 py-4">
+          <span>Your position</span>
+          <strong>#{result.position}</strong>
+        </p>
+      ) : null}
+      {showReferrals && statusPage.showReferralCount ? (
+        <p className="flex w-full max-w-md justify-between border-y border-wl-text/15 py-4">
+          <span>Friends joined</span>
+          <strong>{result.referralCount}</strong>
+        </p>
+      ) : null}
+      {showReferrals && statusPage.showReferralLink && result.referralLink ? (
+        <div className="mt-6 grid w-full max-w-md gap-2.5">
+          <p className="m-0 text-sm text-wl-muted">{statusPage.shareMessage}</p>
+          <label className="text-caption font-bold" htmlFor={referralId}>
+            Your referral link
+          </label>
+          <div className="flex gap-2 max-sm:flex-col">
+            <input
+              className={cn(
+                control,
+                "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-wl-accent",
+              )}
+              id={referralId}
+              value={result.referralLink}
+              readOnly
+              onFocus={(event) => event.target.select()}
+            />
+            <button className={action} type="button" onClick={copyReferralLink}>
+              {copied ? "Copied" : "Copy"}
+            </button>
+          </div>
+          {statusPage.shareChannels.length > 0 && (
+            <ShareButtons
+              channels={statusPage.shareChannels}
+              message={`${statusPage.shareMessage} ${result.referralLink}`}
+              link={result.referralLink}
+              subject={statusPage.heading}
+              onShare={trackShare}
+            />
+          )}
+        </div>
+      ) : null}
+    </section>
   );
 }
