@@ -195,6 +195,7 @@ const brandSchema = z.strictObject({
   inputTextColor: hex,
   radius: z.enum(RADIUS_IDS),
   logo: imageUrl.default(""),
+  favicon: imageUrl.default(""),
   showPoweredBy: z.boolean().default(true),
   headingSize: headingPx,
   bodySize: bodyPx,
@@ -213,9 +214,12 @@ const statusPageSchema = z.strictObject({
   layout: z.enum(["centered", "card"]).default("centered"),
 });
 const seoSchema = z.strictObject({
-  title: text(70),
-  description: text(180),
-  image: z.string().max(500),
+  title: text(70).default(""),
+  description: text(180).default(""),
+  // Deliberately a plain string (not the imageUrl validator): old published
+  // snapshots may hold values that predate stricter checks, and strictObject
+  // parsing must keep accepting them. Rendering sanitizes before use.
+  image: z.string().max(500).default(""),
   indexable: z.boolean(),
 });
 
@@ -286,6 +290,7 @@ const defaultBrand = {
   radius: "soft",
   headingSize: 48,
   bodySize: 16,
+  favicon: "",
 };
 const defaultForm = {
   fields: ["email"],
