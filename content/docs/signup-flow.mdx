@@ -10,7 +10,7 @@ This is the visitor-side flow for hosted `/w/slug` pages, embeds, and server-sid
 <Steps>
 <Step>
 ### Submit an email
-The visitor enters a valid email (max 320 characters). Hosted and embed forms also capture an optional `?r=CODE` referral and forward UTM parameters.
+The visitor enters a valid email (max 320 characters). If Turnstile is enabled in the form builder, they must also complete its bot check. Hosted and embed forms capture an optional `?r=CODE` referral and forward UTM parameters.
 </Step>
 <Step>
 ### Confirm within 24 hours
@@ -36,7 +36,7 @@ Email confirmation proves ownership. Broadcasts and automations additionally req
 | --- | --- | --- |
 | Hosted page | `/w/[slug]` | `?r=CODE` query parameter |
 | Embed widget | Your site + `/js/embed.js` | Forwarded from your page URL |
-| Server API | `POST /api/waitlist` with `apiKey`, `waitlistId`, `email` | Optional `referralCode` / `referral_code` body field, same waitlist only; response carries the new `referral_code` + `referral_link`. `GET /api/waitlist` re-reads position later. |
+| Server API | `POST /api/waitlist` with `apiKey`, `waitlistId`, `email` | If Turnstile is enabled, include the single-use `cf-turnstile-response` token. Optional `referralCode` / `referral_code` is scoped to the same waitlist; response carries the new `referral_code` + `referral_link`. `GET /api/waitlist` re-reads position later. |
 
 Duplicate emails return `409`. Non-accepting states (draft, paused) also return `409` with a state reason. Rate-limited clients must respect `Retry-After`. See [Signup API](/docs/api) and [Troubleshooting](/docs/troubleshooting).
 

@@ -19,6 +19,7 @@ import { enqueueWebhookEvent } from "../webhooks/delivery.mjs";
 import { MARKETING_CONSENT_COPY } from "./marketing-consent.mjs";
 import { getCampaignPosition } from "./referral-position.mjs";
 import { findSignupByEmail } from "./signup-lookup.mjs";
+import { TurnstileVerificationError } from "./turnstile.mjs";
 
 const normalizeEmail = normalizeSignupEmail;
 const tokenDigest = (token) => createHash("sha256").update(token).digest("hex");
@@ -135,6 +136,10 @@ export async function createCampaignSignup(
           })
         : null;
       const publishedSnapshot = templateSnapshotSchema.safeParse(publication?.snapshot);
+      const requiresTurnstile =
+        !publishedSnapshot.success || publishedSnapshot.data.form.requireTurnstile;
+      if (requiresTurnstile && input.signupProtection !== "turnstile")
+        throw new TurnstileVerificationError();
       const requiresVerification = publishedSnapshot.success
         ? publishedSnapshot.data.form.verification
         : true;

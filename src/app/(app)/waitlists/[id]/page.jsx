@@ -7,6 +7,7 @@ import { publishWaitlist, pauseWaitlist, rollbackWaitlist } from "@/app/actions/
 import { ContentLayout } from "@/components/dashboard/content-layout";
 import { SnapshotPageBuilder } from "@/components/product/snapshot-page-builder";
 import { auth } from "@/lib/auth";
+import { env } from "@/lib/env.mjs";
 import prisma from "@/lib/prisma";
 import { SITE_URL } from "@/lib/site-metadata";
 import { snapshotTemplate, templateSnapshotSchema } from "@/lib/templates/catalog.mjs";
@@ -94,6 +95,9 @@ export default async function WaitListsEditPage(props) {
         pausePage={pauseWaitlist}
         rollbackPage={rollbackWaitlist}
         canPublish={canPublish}
+        turnstileConfigured={Boolean(
+          env.TURNSTILE_SITE_KEY?.trim() && env.TURNSTILE_SECRET_KEY?.trim(),
+        )}
         publicationOrigin={
           process.env.VERCEL_ENV === "preview" && process.env.VERCEL_URL
             ? `https://${process.env.VERCEL_URL}`

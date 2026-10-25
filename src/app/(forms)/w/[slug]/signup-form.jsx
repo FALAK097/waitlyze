@@ -1,7 +1,8 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
-import { Suspense, useId, useState } from "react";
+import Script from "next/script";
+import { Suspense, useCallback, useId, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { ShareButtons } from "@/components/product/share-buttons";
@@ -23,10 +24,20 @@ export function SignupForm(props) {
   );
 }
 
-function SignupFormInner({ slug, waitListId, showReferrals, formConfig, statusPage, brand }) {
+function SignupFormInner({
+  slug,
+  waitListId,
+  showReferrals,
+  formConfig,
+  statusPage,
+  brand,
+  turnstileSiteKey = "",
+}) {
   const emailId = useId();
   const referralId = useId();
   const resultTitleId = useId();
+  const turnstileContainer = useRef(null);
+  const turnstileWidgetId = useRef(null);
   const headingPx = typeof brand?.headingSize === "number" ? brand.headingSize : null;
   const bodyPx = typeof brand?.bodySize === "number" ? brand.bodySize : null;
   const searchParams = useSearchParams();
@@ -34,6 +45,43 @@ function SignupFormInner({ slug, waitListId, showReferrals, formConfig, statusPa
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState(null);
   const [copied, setCopied] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState("");
+  const [turnstileMessage, setTurnstileMessage] = useState(() =>
+    formConfig.requireTurnstile
+      ? turnstileSiteKey
+        ? "Complete the security check to enable signup."
+        : "Verification is unavailable right now. Please try again later."
+      : "",
+  );
+
+  const renderTurnstile = useCallback(() => {
+    if (!formConfig.requireTurnstile || !turnstileSiteKey || !turnstileContainer.current) return;
+    if (turnstileWidgetId.current !== null) return;
+    if (!window.turnstile) {
+      setTurnstileMessage("Verification is unavailable right now. Please try again later.");
+      return;
+    }
+    try {
+      turnstileWidgetId.current = window.turnstile.render(turnstileContainer.current, {
+        sitekey: turnstileSiteKey,
+        action: "signup",
+        callback: (token) => {
+          setTurnstileToken(token);
+          setTurnstileMessage("");
+        },
+        "expired-callback": () => {
+          setTurnstileToken("");
+          setTurnstileMessage("The security check expired. Please complete it again.");
+        },
+        "error-callback": () => {
+          setTurnstileToken("");
+          setTurnstileMessage("Verification is unavailable right now. Please try again later.");
+        },
+      });
+    } catch {
+      setTurnstileMessage("Verification is unavailable right now. Please try again later.");
+    }
+  }, [formConfig.requireTurnstile, turnstileSiteKey]);
 
   async function submit(event) {
     event.preventDefault();
@@ -41,6 +89,10 @@ function SignupFormInner({ slug, waitListId, showReferrals, formConfig, statusPa
     const formData = new FormData(form);
     const email = formData.get("email");
     const marketingConsent = formData.get("marketingConsent") === "on";
+    if (formConfig.requireTurnstile && !turnstileToken) {
+      toast.error("Complete the security check and try again.");
+      return;
+    }
     setBusy(true);
     try {
       let hypeSession = localStorage.getItem("hypeSession");
@@ -55,6 +107,7 @@ function SignupFormInner({ slug, waitListId, showReferrals, formConfig, statusPa
           email,
           marketingConsent,
           waitListId,
+          ...(formConfig.requireTurnstile ? { "cf-turnstile-response": turnstileToken } : {}),
           hypeSession,
           ...collectAttribution(),
           ...(showReferrals && referralCode && /^[A-Za-z0-9_-]{8,256}$/.test(referralCode)
@@ -92,6 +145,17 @@ function SignupFormInner({ slug, waitListId, showReferrals, formConfig, statusPa
     } catch (error) {
       toast.error(error.message || "Couldn't join the waitlist. Try again.");
     } finally {
+      if (formConfig.requireTurnstile) {
+        try {
+          if (turnstileWidgetId.current !== null && window.turnstile)
+            window.turnstile.reset(turnstileWidgetId.current);
+          setTurnstileToken("");
+          setTurnstileMessage("Complete the security check to enable signup.");
+        } catch {
+          setTurnstileToken("");
+          setTurnstileMessage("Verification is unavailable right now. Please try again later.");
+        }
+      }
       setBusy(false);
     }
   }
@@ -193,49 +257,79 @@ function SignupFormInner({ slug, waitListId, showReferrals, formConfig, statusPa
   }
 
   return (
-    <form className="w-full text-wl-text" onSubmit={submit}>
-      <label className="mb-2 block text-caption font-bold" htmlFor={emailId}>
-        {formConfig.label}
-      </label>
-      <div
-        className={cn(
-          "flex gap-2 max-sm:flex-col",
-          formConfig.layout === "stacked" && "flex-col gap-3",
-        )}
-      >
-        <input
-          className={cn(
-            control,
-            formConfig.layout === "stacked" && "h-14",
-            "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-wl-accent",
-          )}
-          id={emailId}
-          name="email"
-          type="email"
-          autoComplete="email"
-          placeholder={formConfig.placeholder}
-          required
-          maxLength={320}
+    <>
+      {formConfig.requireTurnstile && turnstileSiteKey ? (
+        <Script
+          src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit"
+          strategy="afterInteractive"
+          onReady={renderTurnstile}
+          onError={() =>
+            setTurnstileMessage("Verification is unavailable right now. Please try again later.")
+          }
         />
-        <button
-          className={cn(action, "cursor-pointer disabled:cursor-wait disabled:opacity-65")}
-          type="submit"
-          disabled={busy}
-        >
-          {busy ? "Joining…" : formConfig.buttonText}
-        </button>
-      </div>
-      {formConfig.requireConsent && (
-        <label className="mt-3 flex items-start gap-2.5 text-caption leading-relaxed font-normal text-wl-muted">
-          <input
-            className="mt-px size-4 shrink-0 rounded border border-wl-input-border bg-wl-input"
-            name="marketingConsent"
-            type="checkbox"
-            value="on"
-          />
-          <span>{formConfig.consentLabel}</span>
+      ) : null}
+      <form className="w-full min-w-0 text-wl-text" onSubmit={submit}>
+        <label className="mb-2 block text-caption font-bold" htmlFor={emailId}>
+          {formConfig.label}
         </label>
-      )}
-    </form>
+        <div
+          className={cn(
+            "flex min-w-0 gap-2 max-sm:flex-col",
+            formConfig.layout === "stacked" && "flex-col gap-3",
+          )}
+        >
+          <input
+            className={cn(
+              control,
+              formConfig.layout === "stacked" && "h-14",
+              "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-wl-accent",
+            )}
+            id={emailId}
+            name="email"
+            type="email"
+            autoComplete="email"
+            placeholder={formConfig.placeholder}
+            required
+            maxLength={320}
+          />
+          <button
+            className={cn(action, "cursor-pointer disabled:cursor-wait disabled:opacity-65")}
+            type="submit"
+            disabled={
+              busy || (formConfig.requireTurnstile && (!turnstileToken || !turnstileSiteKey))
+            }
+          >
+            {busy ? "Joining…" : formConfig.buttonText}
+          </button>
+        </div>
+        {formConfig.requireTurnstile && (
+          <>
+            {turnstileSiteKey ? (
+              <fieldset className="m-0 mt-4 max-w-full overflow-x-auto border-0 p-0">
+                <legend className="sr-only">Bot verification</legend>
+                <div ref={turnstileContainer} className="min-h-[65px] min-w-[300px]" />
+              </fieldset>
+            ) : null}
+            <output
+              className="mt-2 block text-caption leading-relaxed text-wl-muted"
+              aria-live="polite"
+            >
+              {turnstileMessage}
+            </output>
+          </>
+        )}
+        {formConfig.requireConsent && (
+          <label className="mt-3 flex items-start gap-2.5 text-caption leading-relaxed font-normal text-wl-muted">
+            <input
+              className="mt-px size-4 shrink-0 rounded border border-wl-input-border bg-wl-input"
+              name="marketingConsent"
+              type="checkbox"
+              value="on"
+            />
+            <span>{formConfig.consentLabel}</span>
+          </label>
+        )}
+      </form>
+    </>
   );
 }

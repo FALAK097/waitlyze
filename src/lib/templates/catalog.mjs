@@ -179,6 +179,7 @@ export const templateFormSchema = z.strictObject({
   requireConsent: z.boolean(),
   consentLabel: text(240),
   verification: z.boolean(),
+  requireTurnstile: z.boolean().default(false),
 });
 const brandSchema = z.strictObject({
   headingFont: fontFamily,
@@ -301,6 +302,7 @@ const defaultForm = {
   requireConsent: false,
   consentLabel: "Send me launch updates. I can unsubscribe anytime.",
   verification: true,
+  requireTurnstile: false,
 };
 const defaultStatusPage = {
   heading: "You're on the list.",

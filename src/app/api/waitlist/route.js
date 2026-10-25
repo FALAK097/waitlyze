@@ -5,6 +5,11 @@ import { NextResponse } from "next/server";
 import { getCampaignPosition } from "@/lib/campaigns/referral-position.mjs";
 import { findSignupByEmail } from "@/lib/campaigns/signup-lookup.mjs";
 import { DuplicateSignupError, InvalidCampaignError } from "@/lib/campaigns/signups.mjs";
+import {
+  campaignRequiresTurnstile,
+  TurnstileVerificationError,
+  verifyTurnstileToken,
+} from "@/lib/campaigns/turnstile.mjs";
 import { dispatchVerificationNow } from "@/lib/email/dispatch-now.mjs";
 import prisma from "@/lib/prisma";
 import { apiKeyRateLimitHeaders, consumeApiKeyBudget } from "@/lib/security/api-key-rate-limit.mjs";
@@ -191,6 +196,15 @@ export async function POST(request) {
     const budget = await consumeApiKeyBudget(prisma, apiKey);
     const budgetHeaders = apiKeyRateLimitHeaders(budget);
 
+    const requiresTurnstile = await campaignRequiresTurnstile(prisma, waitlistId);
+    const turnstileVerified =
+      requiresTurnstile && (await verifyTurnstileToken(request, body["cf-turnstile-response"]));
+    if (requiresTurnstile && !turnstileVerified)
+      return NextResponse.json(
+        { success: false, error: "Complete the security check and try again." },
+        { status: 403 },
+      );
+
     const { device, deviceType } = await getDeviceInfo();
     const ip = getIpAddress(request);
     const geo = getGeoInfo(request);
@@ -198,6 +212,7 @@ export async function POST(request) {
     let signupDataInput = {
       uniqueUserId,
       email: email.trim(),
+      signupProtection: turnstileVerified ? "turnstile" : "none",
       device,
       deviceType,
       waitListId: waitlistId,
@@ -255,6 +270,11 @@ export async function POST(request) {
     );
   } catch (error) {
     if (error instanceof PublicRateLimitError) return rateLimitResponse(error);
+    if (error instanceof TurnstileVerificationError)
+      return NextResponse.json(
+        { success: false, error: "Complete the security check and try again." },
+        { status: 403 },
+      );
     if (error instanceof DuplicateSignupError) {
       const lookupId = body?.waitlistId;
       const lookupEmail = typeof body?.email === "string" ? body.email.trim().toLowerCase() : null;

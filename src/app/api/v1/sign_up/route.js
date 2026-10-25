@@ -2,6 +2,11 @@ import { NextResponse } from "next/server";
 
 import { getCampaignPosition } from "@/lib/campaigns/referral-position.mjs";
 import { DuplicateSignupError, InvalidCampaignError } from "@/lib/campaigns/signups.mjs";
+import {
+  campaignRequiresTurnstile,
+  TurnstileVerificationError,
+  verifyTurnstileToken,
+} from "@/lib/campaigns/turnstile.mjs";
 import { dispatchVerificationNow } from "@/lib/email/dispatch-now.mjs";
 import prisma from "@/lib/prisma";
 import { consumePublicBudget, PublicRateLimitError } from "@/lib/security/public-rate-limit.mjs";
@@ -75,6 +80,14 @@ export const POST = async (req) => {
     if (body.marketingConsent !== undefined && typeof body.marketingConsent !== "boolean") {
       return NextResponse.json({ message: "Marketing consent must be a boolean" }, { status: 400 });
     }
+    const requiresTurnstile = await campaignRequiresTurnstile(prisma, body.waitListId);
+    const turnstileVerified =
+      requiresTurnstile && (await verifyTurnstileToken(req, body["cf-turnstile-response"]));
+    if (requiresTurnstile && !turnstileVerified)
+      return NextResponse.json(
+        { message: "Complete the security check and try again." },
+        { status: 403 },
+      );
 
     const { device, deviceType } = await getDeviceInfo();
     const ip = getIpAddress(req);
@@ -97,6 +110,7 @@ export const POST = async (req) => {
       uniqueUserId: hypeSession,
       email: body.email,
       marketingConsent: body.marketingConsent === true,
+      signupProtection: turnstileVerified ? "turnstile" : "none",
       device,
       deviceType,
       waitListId: body.waitListId,
@@ -124,6 +138,11 @@ export const POST = async (req) => {
       signUp: legacySignupResponse(signUp, { includeReferralCode: true }),
     });
   } catch (error) {
+    if (error instanceof TurnstileVerificationError)
+      return NextResponse.json(
+        { message: "Complete the security check and try again." },
+        { status: 403 },
+      );
     if (error instanceof PublicRateLimitError)
       return NextResponse.json(
         { message: error.message, error: error.message },

@@ -17,6 +17,8 @@ A key grants signup-write access to one waitlist. Store it in a server environme
 
 `POST /api/waitlist` accepts JSON. Authentication uses the `apiKey` body field. This endpoint does **not** use a Bearer header.
 
+If Turnstile is enabled for the waitlist in the form builder, include the visitor's `cf-turnstile-response` token. Waitlyze checks it with Cloudflare before creating the signup; missing, expired, replayed, or unverifiable tokens are rejected. Tokens are single-use. Browser forms should use the hosted page or embed so the verification widget is rendered for visitors.
+
 <Tabs items={['Node.js', 'Python', 'cURL']}>
 <Tab value="Node.js">
 ```js title="Server-side JavaScript"
@@ -93,6 +95,11 @@ curl --request POST 'https://waitlyze.falakgala.dev/api/waitlist' \
       type: "string",
       required: false,
       description: "An existing referral code for the same waitlist. Also accepted as referral_code. See Referrals.",
+    },
+    "cf-turnstile-response": {
+      type: "string",
+      required: false,
+      description: "Required when Turnstile is enabled for the waitlist. The single-use token returned by the visitor's Cloudflare Turnstile widget.",
     },
   }}
 />

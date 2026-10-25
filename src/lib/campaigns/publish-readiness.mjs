@@ -42,10 +42,10 @@ const referralContent = (snapshot) => {
  * Collects the reasons a publish is blocked or worth a second look.
  *
  * @param {object} snapshot draft experience document
- * @param {{ publishedSnapshot?: object|null, showReferrals?: boolean }} options
+ * @param {{ publishedSnapshot?: object|null, showReferrals?: boolean, turnstileConfigured?: boolean }} options
  */
 export function assessPublishReadiness(snapshot, options = {}) {
-  const { publishedSnapshot = null, showReferrals = true } = options;
+  const { publishedSnapshot = null, showReferrals = true, turnstileConfigured = false } = options;
   const blockers = [];
   const warnings = [];
 
@@ -69,6 +69,14 @@ export function assessPublishReadiness(snapshot, options = {}) {
       title: "No visible signup form",
       detail: "Add a signup block, or turn the form back on inside the hero.",
       fix: { surface: "page", panel: "blocks", label: "Add a signup block" },
+    });
+
+  if (snapshot.form?.requireTurnstile && !turnstileConfigured)
+    blockers.push({
+      id: "turnstile-not-configured",
+      title: "Turnstile needs configuration",
+      detail: "Set both TURNSTILE_SITE_KEY and TURNSTILE_SECRET_KEY for this deployment.",
+      fix: { surface: "publish", label: "Review publish settings" },
     });
 
   const starterCopy = findUnchangedStarterCopy(snapshot);

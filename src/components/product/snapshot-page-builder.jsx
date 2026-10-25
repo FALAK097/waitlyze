@@ -627,6 +627,7 @@ export function SnapshotPageBuilder({
   rollbackPage,
   canPublish,
   publicationOrigin,
+  turnstileConfigured,
 }) {
   const router = useRouter();
   const sensors = useSensors(
@@ -1093,8 +1094,9 @@ export function SnapshotPageBuilder({
       assessPublishReadiness(snapshot, {
         publishedSnapshot: waitList.publishedSnapshot,
         showReferrals: waitList.showReferrals,
+        turnstileConfigured,
       }),
-    [snapshot, waitList.publishedSnapshot, waitList.showReferrals],
+    [snapshot, waitList.publishedSnapshot, waitList.showReferrals, turnstileConfigured],
   );
   const goToFix = (fix) => {
     if (!fix) return;
@@ -1992,6 +1994,16 @@ function FormPanel({ form, update }) {
         checked={form.verification}
         onChange={(verification) => update({ verification })}
       />
+      <Toggle
+        label="Require Turnstile bot check"
+        checked={form.requireTurnstile}
+        onChange={(requireTurnstile) => update({ requireTurnstile })}
+      />
+      {form.requireTurnstile && (
+        <p className="m-0 text-caption leading-relaxed text-product-text-secondary">
+          Visitors must complete Cloudflare Turnstile before their signup is accepted.
+        </p>
+      )}
     </div>
   );
 }

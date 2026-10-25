@@ -1,5 +1,6 @@
 import { templateSnapshotSchema } from "../templates/catalog.mjs";
 import { AccessError, campaignScope } from "../workspaces/service.mjs";
+import { isTurnstileConfigured } from "./turnstile.mjs";
 
 export class PublicationConflict extends Error {
   constructor(message = "The page changed before this action completed.") {
@@ -25,6 +26,17 @@ const adminScope = (actorId, waitListId, workspaceId) => ({
   ...campaignScope(actorId, "publishCampaign", workspaceId),
 });
 
+function requireTurnstileConfiguration(snapshot) {
+  const parsed = templateSnapshotSchema.safeParse(snapshot);
+  const required =
+    (parsed.success && parsed.data.form.requireTurnstile) ||
+    snapshot?.form?.requireTurnstile === true;
+  if (required && !isTurnstileConfigured())
+    throw new PublicationConflict(
+      "Configure both TURNSTILE_SITE_KEY and TURNSTILE_SECRET_KEY before publishing this waitlist.",
+    );
+}
+
 export async function publishCampaign(db, actorId, workspaceId, waitListId, expectedRevision) {
   return db.$transaction(async (tx) => {
     const where = adminScope(actorId, waitListId, workspaceId);
@@ -41,6 +53,7 @@ export async function publishCampaign(db, actorId, workspaceId, waitListId, expe
     if (!page) throw new AccessError();
     if (page.templateRevision !== expectedRevision) throw new PublicationConflict();
     const snapshot = templateSnapshotSchema.parse(page.templateSnapshot);
+    requireTurnstileConfiguration(snapshot);
     if (page.status === "PUBLISHED" && page.publishedRevision) {
       const current = await tx.waitListPublicationRevision.findUnique({
         where: { waitListId_revision: { waitListId, revision: page.publishedRevision } },
@@ -114,6 +127,7 @@ export async function rollbackCampaign(db, actorId, workspaceId, waitListId) {
     });
     if (!previous)
       throw new PublicationConflict("There is no earlier published version to restore.");
+    requireTurnstileConfiguration(previous.snapshot);
     const restoreDraft = !sameSnapshot(page.templateSnapshot, previous.snapshot);
     const nextTemplateRevision = page.templateRevision + (restoreDraft ? 1 : 0);
     if (restoreDraft)

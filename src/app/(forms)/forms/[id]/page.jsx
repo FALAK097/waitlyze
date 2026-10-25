@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { cache } from "react";
 
 import { WaitlistPageContent } from "@/components/product/waitlist-page-content";
+import { env } from "@/lib/env.mjs";
 import prisma from "@/lib/prisma";
 import { templateSnapshotSchema } from "@/lib/templates/catalog.mjs";
 
@@ -131,6 +132,9 @@ export default async function WaitListsPreviewPage(props) {
                 showReferrals={structured.showReferrals}
                 formConfig={snapshot.form}
                 statusPage={snapshot.statusPage}
+                turnstileSiteKey={
+                  snapshot.form.requireTurnstile ? env.TURNSTILE_SITE_KEY?.trim() || "" : ""
+                }
               />
             )}
           />
