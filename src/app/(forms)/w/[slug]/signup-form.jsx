@@ -6,6 +6,7 @@ import { toast } from "sonner";
 
 import { ShareButtons } from "@/components/product/share-buttons";
 import { StatusBadge } from "@/components/product/waitlist-page-content";
+import { PhoneInput } from "@/components/reui/phone-input";
 import { cn } from "@/lib/utils";
 import { collectAttribution } from "@/utils/attribution";
 
@@ -23,80 +24,14 @@ export function SignupForm(props) {
   );
 }
 
-// Common country calling codes for the phone prefix picker. The server
-// revalidates the combined number as E.164, so this list is UX assistance,
-// not the trust boundary.
-const DIAL_CODES = [
-  ["+1", "United States / Canada"],
-  ["+7", "Russia / Kazakhstan"],
-  ["+20", "Egypt"],
-  ["+27", "South Africa"],
-  ["+30", "Greece"],
-  ["+31", "Netherlands"],
-  ["+32", "Belgium"],
-  ["+33", "France"],
-  ["+34", "Spain"],
-  ["+39", "Italy"],
-  ["+40", "Romania"],
-  ["+41", "Switzerland"],
-  ["+43", "Austria"],
-  ["+44", "United Kingdom"],
-  ["+45", "Denmark"],
-  ["+46", "Sweden"],
-  ["+47", "Norway"],
-  ["+48", "Poland"],
-  ["+49", "Germany"],
-  ["+51", "Peru"],
-  ["+52", "Mexico"],
-  ["+54", "Argentina"],
-  ["+55", "Brazil"],
-  ["+56", "Chile"],
-  ["+57", "Colombia"],
-  ["+60", "Malaysia"],
-  ["+61", "Australia"],
-  ["+62", "Indonesia"],
-  ["+63", "Philippines"],
-  ["+64", "New Zealand"],
-  ["+65", "Singapore"],
-  ["+66", "Thailand"],
-  ["+81", "Japan"],
-  ["+82", "South Korea"],
-  ["+84", "Vietnam"],
-  ["+86", "China"],
-  ["+90", "Turkey"],
-  ["+91", "India"],
-  ["+92", "Pakistan"],
-  ["+94", "Sri Lanka"],
-  ["+98", "Iran"],
-  ["+212", "Morocco"],
-  ["+213", "Algeria"],
-  ["+216", "Tunisia"],
-  ["+234", "Nigeria"],
-  ["+254", "Kenya"],
-  ["+351", "Portugal"],
-  ["+353", "Ireland"],
-  ["+354", "Iceland"],
-  ["+380", "Ukraine"],
-  ["+381", "Serbia"],
-  ["+385", "Croatia"],
-  ["+386", "Slovenia"],
-  ["+420", "Czechia"],
-  ["+421", "Slovakia"],
-  ["+971", "UAE"],
-  ["+972", "Israel"],
-  ["+973", "Bahrain"],
-  ["+974", "Qatar"],
-  ["+966", "Saudi Arabia"],
-  ["+965", "Kuwait"],
-  ["+968", "Oman"],
-];
-
 // Cloudflare Turnstile widget (explicit render). Reports the token up; the
 // server verifies it before any DB work. Renders nothing without a site key.
 function TurnstileWidget({ siteKey, onToken }) {
   const containerRef = useRef(null);
   const onTokenRef = useRef(onToken);
-  onTokenRef.current = onToken;
+  useEffect(() => {
+    onTokenRef.current = onToken;
+  });
   const [failed, setFailed] = useState(false);
 
   useEffect(() => {
@@ -152,13 +87,6 @@ function TurnstileWidget({ siteKey, onToken }) {
 
   if (!siteKey || failed) return null;
   return <div ref={containerRef} className="mt-3" />;
-}
-
-function combinePhone(dial, number) {
-  const digits = typeof number === "string" ? number.replace(/\D/g, "") : "";
-  if (!digits) return "";
-  const prefix = typeof dial === "string" && /^\+\d{1,4}$/.test(dial) ? dial : "";
-  return `${prefix}${digits}`;
 }
 
 function CustomFieldInput({ field, control }) {
@@ -253,6 +181,7 @@ function SignupFormInner({ slug, waitListId, showReferrals, formConfig, statusPa
   const [result, setResult] = useState(null);
   const [copied, setCopied] = useState(false);
   const [turnstileToken, setTurnstileToken] = useState("");
+  const [phone, setPhone] = useState("");
 
   const collectPhone = formConfig.collectPhone === true || formConfig.requirePhone === true;
   const customFields = Array.isArray(formConfig.customFields) ? formConfig.customFields : [];
@@ -267,9 +196,7 @@ function SignupFormInner({ slug, waitListId, showReferrals, formConfig, statusPa
     const formData = new FormData(form);
     const email = formData.get("email");
     const marketingConsent = formData.get("marketingConsent") === "on";
-    const phone = collectPhone
-      ? combinePhone(formData.get("phoneDial"), formData.get("phone"))
-      : "";
+    const phoneValue = collectPhone ? String(formData.get("phone") ?? "").trim() : "";
     const answers = customFields.map((field) => ({
       id: field.id,
       value:
@@ -292,7 +219,7 @@ function SignupFormInner({ slug, waitListId, showReferrals, formConfig, statusPa
           marketingConsent,
           waitListId,
           hypeSession,
-          ...(phone ? { phone } : {}),
+          ...(phoneValue ? { phone: phoneValue } : {}),
           ...(answers.length > 0 ? { customFields: answers } : {}),
           ...(turnstileOn && turnstileToken ? { turnstileToken } : {}),
           ...collectAttribution(),
@@ -345,6 +272,7 @@ function SignupFormInner({ slug, waitListId, showReferrals, formConfig, statusPa
       });
       setCopied(false);
       form.reset();
+      setPhone("");
     } catch (error) {
       toast.error(error.message || "Couldn't join the waitlist. Try again.");
     } finally {
@@ -486,32 +414,23 @@ function SignupFormInner({ slug, waitListId, showReferrals, formConfig, statusPa
           <label className="mb-2 block text-caption font-bold" htmlFor={`${emailId}-phone`}>
             Phone number{formConfig.requirePhone ? " *" : ""}
           </label>
-          <div className="flex gap-2">
-            <select
-              className={cn(control, "max-w-28 flex-none")}
-              name="phoneDial"
-              aria-label="Country calling code"
-              defaultValue="+1"
-            >
-              {DIAL_CODES.map(([code, country]) => (
-                <option value={code} key={code}>
-                  {code} {country}
-                </option>
-              ))}
-            </select>
-            <input
-              className={cn(control, "w-full")}
-              id={`${emailId}-phone`}
-              name="phone"
-              type="tel"
-              autoComplete="tel"
-              placeholder="415 555 2671"
-              required={formConfig.requirePhone === true}
-              maxLength={24}
-            />
-          </div>
+          <PhoneInput
+            inputId={`${emailId}-phone`}
+            name="phone"
+            value={phone}
+            onChange={(next) => setPhone(typeof next === "string" ? next : "")}
+            required={formConfig.requirePhone === true}
+            inputClassName={cn(
+              control,
+              "w-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-wl-accent",
+            )}
+            selectClassName={cn(
+              control,
+              "max-w-32 flex-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-wl-accent",
+            )}
+          />
           <p className="mt-1 text-micro leading-relaxed text-wl-muted">
-            Include your country code — it is selected above.
+            We only use this for launch updates.
           </p>
         </div>
       )}

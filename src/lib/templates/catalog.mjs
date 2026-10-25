@@ -198,6 +198,10 @@ const redirectUrl = z
   )
   .refine((value) => !value.includes("\\"), {
     message: "Redirect URLs can't contain backslashes.",
+  })
+  // oxlint-disable-next-line no-control-regex -- intentional: WHATWG URL parsing strips these chars, enabling open redirects; rejecting them is the security boundary
+  .refine((value) => !/[\u0000-\u0020]/.test(value), {
+    message: "Redirect URLs can't contain spaces or control characters.",
   });
 export const templateFormSchema = z
   .strictObject({
@@ -255,6 +259,20 @@ export const templateFormSchema = z
           path: ["customFields", index, "options"],
         });
     });
+    // Country allow/block lists normalize (and silently drop) anything that
+    // isn't a two-letter code — surface that here so a founder typing "USA"
+    // learns the list would otherwise end up empty (no restriction at all).
+    for (const key of ["allowedCountries", "blockedCountries"]) {
+      const codes = Array.isArray(form[key]) ? form[key] : [];
+      codes.forEach((code, codeIndex) => {
+        if (!/^[A-Za-z]{2}$/.test(code))
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: "Use two-letter ISO country codes, such as US or DE.",
+            path: [key, codeIndex],
+          });
+      });
+    }
   });
 const hostOf = (value) => {
   try {

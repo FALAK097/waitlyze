@@ -81,8 +81,8 @@ export const POST = async (req) => {
     const ip = getIpAddress(req);
     const geo = getGeoInfo(req);
 
-    const validator = await validateRequest(body, { country: geo?.country, ip });
-    if (validator) return validator;
+    // Cheap shape checks run before validateRequest so malformed values
+    // (including oversized tokens) never reach external verification.
     if (body.marketingConsent !== undefined && typeof body.marketingConsent !== "boolean") {
       return NextResponse.json({ message: "Marketing consent must be a boolean" }, { status: 400 });
     }
@@ -98,6 +98,8 @@ export const POST = async (req) => {
         { status: 400 },
       );
     }
+    const validator = await validateRequest(body, { country: geo?.country, ip });
+    if (validator) return validator;
 
     const hypeSession = body.hypeSession;
 

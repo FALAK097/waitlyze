@@ -26,10 +26,14 @@ export function requiresDoubleOptIn(form) {
 export function normalizeDomainList(entries) {
   if (!Array.isArray(entries)) return [];
   const out = [];
+  const seen = new Set();
   for (const entry of entries) {
     if (typeof entry !== "string") continue;
     const domain = entry.trim().toLowerCase().replace(/^@+/, "");
-    if (domain && domain.length <= 253 && !out.includes(domain)) out.push(domain);
+    if (domain && domain.length <= 253 && !seen.has(domain)) {
+      seen.add(domain);
+      out.push(domain);
+    }
   }
   return out;
 }
@@ -53,10 +57,14 @@ export function checkEmailDomainRules(form, email) {
 export function normalizeCountryList(entries) {
   if (!Array.isArray(entries)) return [];
   const out = [];
+  const seen = new Set();
   for (const entry of entries) {
     if (typeof entry !== "string") continue;
     const code = entry.trim().toUpperCase();
-    if (/^[A-Z]{2}$/.test(code) && !out.includes(code)) out.push(code);
+    if (/^[A-Z]{2}$/.test(code) && !seen.has(code)) {
+      seen.add(code);
+      out.push(code);
+    }
   }
   return out;
 }
@@ -164,6 +172,11 @@ export function resolveSuccessRedirect(form) {
   const target = typeof form?.successRedirectUrl === "string" ? form.successRedirectUrl.trim() : "";
   if (!target) return null;
   if (target.includes("\\")) return null;
+  // WHATWG URL parsing strips ASCII tabs/newlines and treats backslashes as
+  // slashes, so `/\evil.com` or embedded control characters would resolve
+  // off-origin in the browser. Reject them before the shape checks below.
+  // oxlint-disable-next-line no-control-regex -- intentional: WHATWG URL parsing strips these chars, enabling open redirects; rejecting them is the security boundary
+  if (/[\u0000-\u0020]/.test(target)) return null;
   if (/^\/(?!\/)/.test(target)) return target.slice(0, 500);
   if (/^https:\/\//i.test(target)) {
     let host = "";

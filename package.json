@@ -73,6 +73,7 @@
     "react-dom": "^19.3.0",
     "react-hook-form": "^7.89.0",
     "react-markdown": "^10.1.0",
+    "react-phone-number-input": "^3.4.18",
     "react-simple-maps": "^5.0.5",
     "react-spinners": "^0.17.1",
     "recharts": "^3.10.1",
