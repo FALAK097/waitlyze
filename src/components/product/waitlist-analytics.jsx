@@ -130,7 +130,7 @@ const MAX_RANGE_DAYS = 90;
 // them with fake precision.
 const CONVERSION_MEDIAN_PCT = 11;
 const VERIFICATION_MEDIAN_PCT = 55;
-const number = new Intl.NumberFormat();
+const number = new Intl.NumberFormat("en-US");
 const regionNames = new Intl.DisplayNames(["en"], { type: "region" });
 const rangeQueryOptions = {
   range: parseAsStringLiteral(["1", "7", "30", "90", "custom"]).withDefault("30"),
@@ -699,7 +699,9 @@ export function WaitlistAnalytics({ waitListId, emailsEnabled = false }) {
           </p>
           {summarySentence ? (
             <p className="pt-1 text-caption font-medium text-product-text-primary">
-              {summarySentence}
+              <a href="#waitlist-funnel" className="underline-offset-4 hover:underline">
+                {summarySentence}
+              </a>
             </p>
           ) : null}
         </div>
@@ -924,7 +926,11 @@ export function WaitlistAnalytics({ waitListId, emailsEnabled = false }) {
             )}
           </section>
 
-          <section className={DATA_PANEL} aria-labelledby="waitlist-funnel-title">
+          <section
+            id="waitlist-funnel"
+            className={DATA_PANEL}
+            aria-labelledby="waitlist-funnel-title"
+          >
             <header className="flex items-center justify-between gap-3 px-4 pt-4 pb-2">
               <h3 id="waitlist-funnel-title" className="text-sm font-semibold">
                 Funnel
@@ -957,7 +963,8 @@ export function WaitlistAnalytics({ waitListId, emailsEnabled = false }) {
                     <div className="h-2.5 overflow-hidden rounded-full bg-product-bg-inset">
                       <div
                         className="h-full w-(--funnel-w) rounded-full bg-foreground"
-                        aria-hidden="true"
+                        role="img"
+                        aria-label={`${step.label}: ${number.format(step.value)}${step.rate ? `, ${step.rate}` : ""}`}
                         style={{
                           "--funnel-w": `${Math.min((step.value / funnelScale) * 100, 100)}%`,
                         }}
