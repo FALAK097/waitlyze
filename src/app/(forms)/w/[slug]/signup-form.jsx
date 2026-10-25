@@ -64,6 +64,7 @@ function SignupFormInner({ slug, waitListId, showReferrals, formConfig, statusPa
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.message || "Couldn't join the waitlist. Try again.");
+      if (statusPage.postSignupBehavior === "no-change") return;
 
       const rank = data.signUp?.rank;
       const code = data.signUp?.referralCode;
