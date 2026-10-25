@@ -45,19 +45,25 @@ export async function generateMetadata({ params }) {
   const description = page.snapshot.seo.description || hero?.body || "";
   const path = `/w/${encodeURIComponent(slug)}`;
   // Scrapers need an absolute image URL. Resolve site-relative values against
-  // the canonical origin and drop inline data URLs that cards can't fetch.
+  // the canonical origin. Only absolute TLS or site-relative URLs pass:
+  // protocol-relative ("//evil.test/x.png") would inherit https and bypass the
+  // allowlist, and inline data URLs can't be fetched by cards — both dropped
+  // rather than emitting a broken tag.
   const rawImage = page.snapshot.seo.image?.trim() || "";
-  const image = /^https:\/\//i.test(rawImage)
-    ? rawImage
-    : rawImage.startsWith("/")
-      ? `${SITE_URL}${rawImage}`
-      : "";
+  const normalizedImage = /^(?:https:\/\/|\/(?!\/))/i.test(rawImage) ? rawImage : "";
+  const image = normalizedImage.startsWith("/") ? `${SITE_URL}${normalizedImage}` : normalizedImage;
   const images = image ? [{ url: image }] : [];
+  const favicon =
+    typeof page.snapshot.brand.favicon === "string" &&
+    /^(https:\/\/|\/(?!\/)|data:image\/)/i.test(page.snapshot.brand.favicon.trim())
+      ? page.snapshot.brand.favicon.trim()
+      : "";
   return {
     title,
     description,
     robots: { index: page.snapshot.seo.indexable, follow: page.snapshot.seo.indexable },
     alternates: { canonical: path },
+    ...(favicon ? { icons: { icon: favicon } } : {}),
     openGraph: {
       type: "website",
       siteName: page.waitList.name || "Waitlyze",
