@@ -3,6 +3,7 @@ import { cache } from "react";
 
 import { WaitlistPageContent } from "@/components/product/waitlist-page-content";
 import prisma from "@/lib/prisma";
+import { SITE_URL } from "@/lib/site-metadata";
 import { templateSnapshotSchema } from "@/lib/templates/catalog.mjs";
 
 import { ImpressionTracker } from "./impression-tracker";
@@ -42,16 +43,30 @@ export async function generateMetadata({ params }) {
   const hero = page.snapshot.sections.find((section) => section.type === "hero");
   const title = page.snapshot.seo.title || page.waitList.name || hero?.heading || "Waitlist";
   const description = page.snapshot.seo.description || hero?.body || "";
+  const path = `/w/${encodeURIComponent(slug)}`;
+  // Scrapers need an absolute image URL. Resolve site-relative values against
+  // the canonical origin and drop inline data URLs that cards can't fetch.
+  const rawImage = page.snapshot.seo.image?.trim() || "";
+  const image = /^https:\/\//i.test(rawImage)
+    ? rawImage
+    : rawImage.startsWith("/")
+      ? `${SITE_URL}${rawImage}`
+      : "";
+  const images = image ? [{ url: image }] : [];
   return {
     title,
     description,
     robots: { index: page.snapshot.seo.indexable, follow: page.snapshot.seo.indexable },
-    alternates: { canonical: `/w/${encodeURIComponent(slug)}` },
+    alternates: { canonical: path },
     openGraph: {
+      type: "website",
+      siteName: page.waitList.name || "Waitlyze",
+      url: path,
       title,
       description,
-      ...(page.snapshot.seo.image ? { images: [{ url: page.snapshot.seo.image }] } : {}),
+      images,
     },
+    twitter: { card: "summary_large_image", title, description, images },
   };
 }
 

@@ -4,6 +4,7 @@ import { useSearchParams } from "next/navigation";
 import { Suspense, useId, useState } from "react";
 import { toast } from "sonner";
 
+import { ReferralCockpitExtras } from "@/components/product/referral-cockpit";
 import { ShareButtons } from "@/components/product/share-buttons";
 import { StatusBadge } from "@/components/product/waitlist-page-content";
 import { cn } from "@/lib/utils";
@@ -186,6 +187,13 @@ function SignupFormInner({ slug, waitListId, showReferrals, formConfig, statusPa
                 onShare={trackShare}
               />
             )}
+            {result.referralCode ? (
+              <ReferralCockpitExtras
+                waitListId={waitListId}
+                code={result.referralCode}
+                statusPage={statusPage}
+              />
+            ) : null}
           </div>
         ) : null}
       </section>

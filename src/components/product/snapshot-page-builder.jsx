@@ -85,7 +85,7 @@ import { cn } from "@/lib/utils";
 
 import { ImageUploadField } from "./image-upload-field";
 import { PublishAndShare } from "./publish-and-share";
-import { ShareChannelIcon } from "./share-buttons";
+import { SHARE_CHANNELS, ShareChannelIcon } from "./share-buttons";
 import {
   StatusPagePreview,
   WaitlistPageContent,
@@ -136,7 +136,16 @@ const itemDefaults = {
   referralRewards: { referrals: 5, reward: "Early access" },
 };
 
-function Field({ label, value, onChange, multiline = false, type = "text", maxLength }) {
+function Field({
+  label,
+  value,
+  onChange,
+  multiline = false,
+  type = "text",
+  maxLength,
+  placeholder,
+  disabled = false,
+}) {
   const id = useId();
   return (
     <div className="grid gap-1.5 [&_input]:text-caption [&_label]:text-caption [&_label]:font-semibold [&_textarea]:text-caption">
@@ -146,6 +155,8 @@ function Field({ label, value, onChange, multiline = false, type = "text", maxLe
           id={id}
           value={value}
           maxLength={maxLength}
+          placeholder={placeholder}
+          disabled={disabled}
           rows={3}
           onChange={(event) => onChange(event.target.value)}
         />
@@ -155,6 +166,8 @@ function Field({ label, value, onChange, multiline = false, type = "text", maxLe
           type={type}
           value={value}
           maxLength={maxLength}
+          placeholder={placeholder}
+          disabled={disabled}
           onChange={(event) => onChange(event.target.value)}
         />
       )}
@@ -2020,6 +2033,16 @@ function StatusPanel({ status, update, showReferrals = true, waitListId }) {
           ? status.shareChannels
           : ["x", "instagram", "linkedin", "whatsapp", "email"],
     });
+  // Snapshots saved before the cockpit fields existed parse without them;
+  // fall back to the schema defaults so the builder never crashes.
+  const channels = Array.isArray(status.shareChannels) ? status.shareChannels : [];
+  const follows = Array.isArray(status.socialFollows) ? status.socialFollows : [];
+  const followUrl = (network) => follows.find((entry) => entry?.network === network)?.url ?? "";
+  const setFollowUrl = (network, url) => {
+    const next = follows.filter((entry) => entry?.network !== network);
+    if (url.trim()) next.push({ network, url: url.trim() });
+    update({ socialFollows: next });
+  };
   return (
     <div className={"grid gap-4 p-4"}>
       <div>
@@ -2118,6 +2141,12 @@ function StatusPanel({ status, update, showReferrals = true, waitListId }) {
         disabled={!showReferrals}
         onChange={(showReferralCount) => update({ showReferralCount })}
       />
+      <Toggle
+        label="Show leaderboard"
+        checked={status.showLeaderboard !== false}
+        disabled={!showReferrals}
+        onChange={(showLeaderboard) => update({ showLeaderboard })}
+      />
       <Field
         label="Share message"
         value={status.shareMessage}
@@ -2133,26 +2162,52 @@ function StatusPanel({ status, update, showReferrals = true, waitListId }) {
         >
           Share buttons
         </span>
-        {["x", "instagram", "linkedin", "whatsapp", "email"].map((channel) => (
+        {SHARE_CHANNELS.map(({ id: channel, label }) => (
           <Toggle
             key={channel}
             label={
               <span className="inline-flex items-center gap-2">
                 <ShareChannelIcon channel={channel} />
-                {channel === "x" ? "X" : channel[0].toUpperCase() + channel.slice(1)}
+                {label}
               </span>
             }
-            checked={status.shareChannels.includes(channel)}
+            checked={channels.includes(channel)}
             disabled={!showReferrals}
             onChange={(enabled) =>
               update({
                 shareChannels: enabled
-                  ? [...status.shareChannels, channel]
-                  : status.shareChannels.filter((item) => item !== channel),
+                  ? [...channels, channel]
+                  : channels.filter((item) => item !== channel),
               })
             }
           />
         ))}
+      </div>
+      <div className={"grid gap-4"}>
+        <span
+          className={
+            "block text-micro font-bold tracking-widest text-product-text-secondary uppercase"
+          }
+        >
+          Social follows
+        </span>
+        <p className="m-0 text-caption leading-relaxed text-product-text-secondary">
+          Shown as follow tasks on the referral cockpit. Follows earn points once rewards launch.
+        </p>
+        <Field
+          label="X profile URL"
+          value={followUrl("x")}
+          disabled={!showReferrals}
+          placeholder="https://x.com/yourhandle"
+          onChange={(url) => setFollowUrl("x", url)}
+        />
+        <Field
+          label="Instagram profile URL"
+          value={followUrl("instagram")}
+          disabled={!showReferrals}
+          placeholder="https://instagram.com/yourhandle"
+          onChange={(url) => setFollowUrl("instagram", url)}
+        />
       </div>
     </div>
   );

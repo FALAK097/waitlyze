@@ -208,7 +208,21 @@ const statusPageSchema = z.strictObject({
   showReferralLink: z.boolean(),
   showReferralCount: z.boolean(),
   shareMessage: text(280),
-  shareChannels: z.array(z.enum(["x", "instagram", "linkedin", "whatsapp", "email"])).max(5),
+  shareChannels: z
+    .array(
+      z.enum(["x", "instagram", "linkedin", "whatsapp", "email", "facebook", "telegram", "reddit"]),
+    )
+    .max(8),
+  showLeaderboard: z.boolean().default(true),
+  socialFollows: z
+    .array(
+      z.strictObject({
+        network: z.enum(["x", "instagram"]),
+        url: z.string().max(500).default(""),
+      }),
+    )
+    .max(2)
+    .default([]),
   iconStyle: z.enum(["filled", "soft"]).default("filled"),
   layout: z.enum(["centered", "card"]).default("centered"),
 });
