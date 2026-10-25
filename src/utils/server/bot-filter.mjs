@@ -14,7 +14,14 @@ const BOT_TOKENS = [
   "duckduckbot",
   "baiduspider",
   "yandexbot",
-  "sogou",
+  // Sogou crawlers spell out their spider identifiers; a bare "sogou" token
+  // would also match SogouMobileBrowser, a browser real people use.
+  "sogou web spider",
+  "sogou inst spider",
+  "sogou news spider",
+  "sogou orion spider",
+  "sogou push spider",
+  "sogou spider",
   "exabot",
   "facebot",
   "ia_archiver",
