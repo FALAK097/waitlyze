@@ -390,7 +390,6 @@ function SignupFormInner({ slug, waitListId, showReferrals, formConfig, statusPa
         <input
           className={cn(
             control,
-            formConfig.layout === "stacked" && "h-14",
             "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-wl-accent",
           )}
           id={emailId}

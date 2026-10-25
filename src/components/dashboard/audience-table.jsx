@@ -1135,6 +1135,12 @@ export function AudienceTable({
                         <dt className="text-product-text-secondary">Email</dt>
                         <dd className="font-medium break-all">{profile.email}</dd>
                       </div>
+                      {profile.phone ? (
+                        <div className="grid grid-cols-[104px_minmax(0,1fr)] gap-3">
+                          <dt className="text-product-text-secondary">Phone</dt>
+                          <dd className="font-medium break-all tabular-nums">{profile.phone}</dd>
+                        </div>
+                      ) : null}
                       {flags.sendEmailsToSubscribers && (
                         <div className="grid grid-cols-[104px_minmax(0,1fr)] gap-3">
                           <dt className="text-product-text-secondary">Status</dt>
