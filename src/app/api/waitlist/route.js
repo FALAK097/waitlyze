@@ -260,6 +260,7 @@ export async function POST(request) {
         const existing = await prisma.impression
           .findFirst({
             where: { waitListId: waitlistId, uniqueUserId: signUp.uniqueUserId },
+            orderBy: { createdAt: "desc" },
             select: { id: true },
           })
           .catch(() => null);
