@@ -10,6 +10,7 @@ import {
 } from "@/lib/integrations/chat-notifiers.mjs";
 import { decryptIntegrationSecret, encryptIntegrationSecret } from "@/lib/integrations/secrets.mjs";
 import prisma from "@/lib/prisma";
+import { consumePublicBudget, PublicRateLimitError } from "@/lib/security/public-rate-limit.mjs";
 import { webhookAccess } from "@/lib/webhooks/access";
 import { AUDIT_ACTIONS, recordWaitlistAuditEvent } from "@/lib/workspaces/audit.mjs";
 
@@ -113,6 +114,18 @@ export async function POST(request, { params }) {
   const provider = providerOf(channel);
   if (!provider)
     return NextResponse.json({ error: "Unknown notification channel." }, { status: 404 });
+  try {
+    const session = await auth.api.getSession({ headers: request.headers }).catch(() => null);
+    await consumePublicBudget(prisma, {
+      kind: "chatTest",
+      campaignId: id,
+      actorId: session?.user?.id,
+    });
+  } catch (error) {
+    if (error instanceof PublicRateLimitError)
+      return NextResponse.json({ error: error.message }, { status: error.status });
+    throw error;
+  }
   const record = await prisma.waitlistNotificationChannel.findUnique({
     where: { waitListId_provider: { waitListId: id, provider } },
   });

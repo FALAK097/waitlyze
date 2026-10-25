@@ -66,15 +66,19 @@ export async function notifyChatChannels(db, waitListId, text) {
   if (!waitListId || !text) return 0;
   const channels = await db.waitlistNotificationChannel.findMany({
     where: { waitListId, status: "CONNECTED" },
-    select: { id: true, provider: true },
+    select: {
+      id: true,
+      provider: true,
+      status: true,
+      secretCiphertext: true,
+      secretIv: true,
+      secretTag: true,
+    },
   });
   let sent = 0;
-  for (const channel of channels) {
+  for (const record of channels) {
     try {
-      const record = await db.waitlistNotificationChannel.findUnique({
-        where: { id: channel.id },
-      });
-      if (!record || record.status !== "CONNECTED") continue;
+      if (record.status !== "CONNECTED") continue;
       const post = postByProvider[record.provider];
       if (!post) continue;
       await post(decryptIntegrationSecret(record), text);
@@ -86,7 +90,7 @@ export async function notifyChatChannels(db, waitListId, text) {
     } catch (error) {
       await db.waitlistNotificationChannel
         .update({
-          where: { id: channel.id },
+          where: { id: record.id },
           data: {
             status: "NEEDS_ATTENTION",
             lastErrorCode: error?.code || "DELIVERY_FAILED",

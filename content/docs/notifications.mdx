@@ -14,7 +14,7 @@ In Slack, add an incoming webhook for the channel that should hear the news. In 
 </Step>
 <Step>
 ### Save the URL on the waitlist
-`PUT /api/wait-lists/[id]/notifications/slack` (or `/discord`) with `{ "webhookUrl": "https://…" }`. Only official Slack (`hooks.slack.com`) and Discord (`discord.com`, `discordapp.com`) hosts are accepted, and the URL is encrypted at rest — it is never returned by the API.
+`PUT /api/wait-lists/[id]/notifications/slack` (or `/discord`) with `{ "webhookUrl": "https://…" }`. Only official Slack (`hooks.slack.com`) and Discord (`discord.com`, `discordapp.com`, plus `ptb.discord.com` for the Discord public test build) hosts are accepted, and the URL is encrypted at rest — it is never returned by the API.
 </Step>
 <Step>
 ### Send a test to activate
