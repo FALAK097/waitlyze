@@ -795,8 +795,7 @@ export function WaitlistSignupPreview({ form, brand }) {
       >
         <span
           className={cn(
-            "flex min-h-12 flex-1 items-center rounded-wl border border-wl-input-border bg-wl-input px-4 text-wl-muted",
-            form.layout === "stacked" ? "h-14" : "h-12",
+            "flex h-12 min-h-12 flex-1 items-center rounded-wl border border-wl-input-border bg-wl-input px-4 text-wl-muted",
           )}
         >
           {form.placeholder}
