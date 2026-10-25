@@ -140,6 +140,9 @@ const footer = z.strictObject({
 // visible). The rewards ladder itself reuses the founder-editable
 // `referralRewards` content blocks as its single source of truth.
 const rewardCustomEvent = z.strictObject({
+  // Builder-local stable id for React keys (never sent to the API). Optional
+  // so snapshots saved before it existed still parse.
+  id: z.string().max(40).optional(),
   key: z
     .string()
     .min(1)

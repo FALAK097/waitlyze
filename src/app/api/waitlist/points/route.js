@@ -20,8 +20,9 @@ const MAX_POINTS = 100000;
 // Idempotent: retries reuse the ledger event key
 // (custom-credit:{signup}:{event}:{idempotencyKey or "once"}), so a safe
 // retry never double-pays. Only verified, non-farm-suspect signups earn.
-function resolveApiKey(request, body) {
-  if (typeof body?.apiKey === "string" && body.apiKey) return body.apiKey;
+// The API key travels in headers only. Body-carried keys are rejected: JSON
+// bodies end up in logs and error reports, and a secret there would leak.
+function resolveApiKey(request) {
   const headerKey = request.headers.get("x-api-key");
   if (headerKey && headerKey.trim()) return headerKey.trim();
   const bearer = request.headers.get("authorization");
@@ -46,11 +47,22 @@ export async function POST(request) {
         { success: false, error: "Invalid points request" },
         { status: 400 },
       );
-    const apiKey = resolveApiKey(request, body);
+    const apiKey = resolveApiKey(request);
     const { waitlistId, email, signupId, event } = body;
+    if (typeof body?.apiKey === "string" && body.apiKey)
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Pass the API key in the X-Api-Key or Authorization header, not the request body",
+        },
+        { status: 400 },
+      );
     if (!apiKey || typeof waitlistId !== "string" || !waitlistId || waitlistId.length > 128)
       return NextResponse.json(
-        { success: false, error: "apiKey and waitlistId are required" },
+        {
+          success: false,
+          error: "X-Api-Key (or Authorization) header and waitlistId are required",
+        },
         { status: 400 },
       );
     if (typeof event !== "string" || !EVENT_RE.test(event.trim()))
@@ -163,15 +175,4 @@ export async function POST(request) {
     console.error("Custom points award error:", error);
     return NextResponse.json({ success: false, error: "Internal server error" }, { status: 500 });
   }
-}
-
-export async function OPTIONS() {
-  return new NextResponse(null, {
-    status: 200,
-    headers: {
-      "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Methods": "POST, OPTIONS",
-      "Access-Control-Allow-Headers": "Content-Type, X-Api-Key, Authorization, Idempotency-Key",
-    },
-  });
 }

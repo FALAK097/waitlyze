@@ -57,8 +57,10 @@ export const GET = async (req) => {
     return NextResponse.json({ message: "Sign up not found" }, { status: 404 });
   }
 
-  const rank = await getCampaignPosition(prisma, signUp.waitListId, signUp.id);
-  const rewardSummary = await summarizeSignupRewards(prisma, signUp.waitListId, signUp);
+  const [rank, rewardSummary] = await Promise.all([
+    getCampaignPosition(prisma, signUp.waitListId, signUp.id),
+    summarizeSignupRewards(prisma, signUp.waitListId, signUp),
+  ]);
   return NextResponse.json(
     { signUp: { ...signUp, rank, rewardSummary } },
     { headers: { "Cache-Control": "private, no-store" } },

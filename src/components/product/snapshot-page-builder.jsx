@@ -161,6 +161,35 @@ function Field({ label, value, onChange, multiline = false, type = "text", maxLe
     </div>
   );
 }
+// Number input that lets founders clear the field while typing and commits a
+// clamped integer on blur, instead of snapping to 0 mid-edit.
+function PointsField({ label, value, onCommit, max = 100000 }) {
+  const id = useId();
+  const [text, setText] = useState(value == null ? "" : String(value));
+  useEffect(() => {
+    setText(value == null ? "" : String(value));
+  }, [value]);
+  const commit = () => {
+    if (text === "" || text == null) {
+      onCommit(0);
+      return;
+    }
+    const parsed = Math.trunc(Number(text));
+    onCommit(!Number.isSafeInteger(parsed) || parsed < 0 ? 0 : Math.min(parsed, max));
+  };
+  return (
+    <div className="grid gap-1.5 [&_input]:text-caption [&_label]:text-caption [&_label]:font-semibold">
+      <Label htmlFor={id}>{label}</Label>
+      <Input
+        id={id}
+        type="number"
+        value={text}
+        onChange={(event) => setText(event.target.value)}
+        onBlur={commit}
+      />
+    </div>
+  );
+}
 function Toggle({ label, checked, onChange, disabled = false, hint = "" }) {
   return (
     <label
@@ -2007,12 +2036,6 @@ function StatusPanel({ status, update, showReferrals = true, waitListId, rewards
     ...rewards,
   };
   const setPerks = (patch) => updateRewards({ ...perks, ...patch });
-  const asPoints = (value) => {
-    if (value === "" || value == null) return 0;
-    const parsed = Math.trunc(Number(value));
-    if (!Number.isSafeInteger(parsed) || parsed < 0) return 0;
-    return Math.min(parsed, 100000);
-  };
   const referralNote = showReferrals ? null : (
     <p className="m-0 text-caption leading-relaxed text-product-text-secondary">
       Referral sharing is off for this waitlist, so the referral link and share buttons stay hidden.{" "}
@@ -2197,34 +2220,27 @@ function StatusPanel({ status, update, showReferrals = true, waitListId, rewards
           </p>
         </div>
         <div className="grid gap-4 sm:grid-cols-3">
-          <Field
+          <PointsField
             label="Per verified signup"
-            type="number"
             value={perks.pointsSignup}
-            onChange={(value) => setPerks({ pointsSignup: asPoints(value) })}
+            onCommit={(pointsSignup) => setPerks({ pointsSignup })}
           />
-          <Field
+          <PointsField
             label="Per referral"
-            type="number"
             value={perks.pointsReferral}
-            onChange={(value) => setPerks({ pointsReferral: asPoints(value) })}
+            onCommit={(pointsReferral) => setPerks({ pointsReferral })}
           />
-          <Field
+          <PointsField
             label="Per social follow"
-            type="number"
             value={perks.pointsFollow}
-            onChange={(value) => setPerks({ pointsFollow: asPoints(value) })}
+            onCommit={(pointsFollow) => setPerks({ pointsFollow })}
           />
         </div>
-        <Field
+        <PointsField
           label="Position boost"
-          type="number"
           value={perks.positionOffset}
-          onChange={(value) =>
-            setPerks({
-              positionOffset: Math.min(Math.max(asPoints(value), 0), 1000000),
-            })
-          }
+          max={1000000}
+          onCommit={(positionOffset) => setPerks({ positionOffset })}
         />
         <p className="-mt-2 text-caption leading-relaxed text-product-text-secondary">
           Adds to every displayed position — e.g. 846 makes the first signup show #847.
@@ -2256,7 +2272,7 @@ function StatusPanel({ status, update, showReferrals = true, waitListId, rewards
           {(perks.customEvents ?? []).map((entry, index) => (
             <div
               className="grid gap-2.5 border-t border-product-border-subtle pt-4 [&>button]:justify-self-start"
-              key={`${entry.key}-${index}`}
+              key={entry.id ?? `event-${index}`}
             >
               <Field
                 label="Event key"
@@ -2282,14 +2298,13 @@ function StatusPanel({ status, update, showReferrals = true, waitListId, rewards
                   })
                 }
               />
-              <Field
+              <PointsField
                 label="Points"
-                type="number"
                 value={entry.points}
-                onChange={(value) =>
+                onCommit={(points) =>
                   setPerks({
                     customEvents: perks.customEvents.map((item, itemIndex) =>
-                      itemIndex === index ? { ...item, points: asPoints(value) } : item,
+                      itemIndex === index ? { ...item, points } : item,
                     ),
                   })
                 }
@@ -2317,7 +2332,12 @@ function StatusPanel({ status, update, showReferrals = true, waitListId, rewards
                 setPerks({
                   customEvents: [
                     ...(perks.customEvents ?? []),
-                    { key: "survey", label: "Survey completed", points: 20 },
+                    {
+                      key: "survey",
+                      label: "Survey completed",
+                      points: 20,
+                      id: crypto.randomUUID(),
+                    },
                   ],
                 })
               }

@@ -196,6 +196,7 @@ curl --request POST 'https://waitlyze.falakgala.dev/api/waitlist/points' \
 ```
 
 - `event` must be 1–40 chars (`a-z 0-9 -`). Unknown events return `400` unless you pass explicit `points` (0–100000) to override the configured default.
+- The API key travels in the `X-Api-Key` or `Authorization` header only; keys in the request body are rejected with `400`.
 - Only verified signups earn; unverified signups return `409` and farm-suspect signups return `awarded: false`. Retries with the same `idempotencyKey` return `awarded: false` without double-paying; omit it for once-per-signup-per-event semantics.
 
 ## Rate limits

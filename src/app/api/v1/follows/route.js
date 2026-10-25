@@ -17,6 +17,11 @@ import { consumePublicBudget, PublicRateLimitError } from "@/lib/security/public
 //
 // Only verified signups earn: pending and farm-suspect signups get a success
 // response with awarded:false so the UI stays quiet without leaking why.
+//
+// Claim cooldown: repeat claims inside the window get a 429 instead of
+// burning a transaction — the ledger row is the single source of truth, so
+// double-clicks and replays collapse here before any writes.
+const FOLLOW_CLAIM_COOLDOWN_MS = 5 * 60 * 1000;
 export async function POST(request) {
   try {
     const body = await request.json();
@@ -43,22 +48,64 @@ export async function POST(request) {
     });
     if (!signup)
       return NextResponse.json({ message: "A valid referral code is required." }, { status: 400 });
-    if (!signup.verifiedAt)
+    if (!signup.verifiedAt) {
+      // Founder-visible marker: unverified attempts carry an explicit flag
+      // (plus a structured server log with no PII) so founders can tell
+      // "not eligible yet" apart from a broken integration.
+      console.warn("Unverified follow claim", {
+        waitListId: body.waitListId,
+        signUpId: signup.id,
+        network: body.network,
+      });
       return NextResponse.json(
-        { awarded: false, message: "Verify your email before earning follow points." },
+        {
+          awarded: false,
+          unverified: true,
+          message: "Verify your email before earning follow points.",
+        },
         { status: 403 },
       );
+    }
     // Once founders configure follow links (Phase-3 cockpit), only the
     // configured networks pay out. Pre-config, any supported network pays so
     // points work out of the box. Reads the raw published snapshot so this
     // keeps working before the snapshot schema knows the key.
-    const { rewards } = await getPublishedRewards(prisma, body.waitListId);
-    const configured = await configuredFollowNetworks(prisma, body.waitListId);
+    const [{ rewards }, configured] = await Promise.all([
+      getPublishedRewards(prisma, body.waitListId),
+      configuredFollowNetworks(prisma, body.waitListId),
+    ]);
     if (configured && !configured.includes(body.network))
       return NextResponse.json(
         { message: "This waitlist doesn't offer that follow task." },
         { status: 400 },
       );
+    // Repeat claims collapse here: recent ones cool down with a 429, older
+    // ones answer quietly without burning a transaction (the ledger is the
+    // idempotency record either way).
+    const priorClaim = await prisma.pointLedger.findUnique({
+      where: { eventKey: followEventKey(signup.id, body.network) },
+      select: { createdAt: true },
+    });
+    if (priorClaim) {
+      if (Date.now() - priorClaim.createdAt.getTime() < FOLLOW_CLAIM_COOLDOWN_MS) {
+        const retryAfter = Math.max(
+          1,
+          Math.ceil(
+            (FOLLOW_CLAIM_COOLDOWN_MS - (Date.now() - priorClaim.createdAt.getTime())) / 1000,
+          ),
+        );
+        return NextResponse.json(
+          { awarded: false, message: "Follow already claimed. Try again later." },
+          { status: 429, headers: { "Retry-After": String(retryAfter) } },
+        );
+      }
+      return NextResponse.json({
+        awarded: false,
+        network: body.network,
+        points: 0,
+        balance: signup.points ?? 0,
+      });
+    }
     const result = await prisma.$transaction(async (tx) => {
       if (await isFarmSuspect(tx, signup.ipAddress)) return { awarded: false };
       const award = await awardPoints(tx, {

@@ -29,7 +29,15 @@ export function normalizeRewardsConfig(value) {
         typeof entry.label === "string" && entry.label.trim()
           ? entry.label.trim().slice(0, 80)
           : key;
-      customEvents.push({ key, label, points: clampInt(entry.points, { fallback: 0 }) });
+      // Preserve the builder-local stable id when present; harmless to the
+      // API, which matches events by key.
+      const stableId = typeof entry.id === "string" && entry.id ? entry.id.slice(0, 40) : "";
+      customEvents.push({
+        ...(stableId ? { id: stableId } : {}),
+        key,
+        label,
+        points: clampInt(entry.points, { fallback: 0 }),
+      });
     }
   }
   return {

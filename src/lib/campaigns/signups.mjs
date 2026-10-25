@@ -274,15 +274,16 @@ export async function createCampaignSignup(
 
       const created = await tx.signUp.findUnique({
         where: { id: createdSignup.id },
-        include: { referrals: true, referredBy: true },
+        // Minimal: callers only need the referral count, so fetch ids alone
+        // and skip the unused referrer relation.
+        include: { referrals: { select: { id: true } } },
       });
       return { ...created, verificationEventKey, signupOutcome: "created" };
     });
   } catch (error) {
     if (error?.code !== "P2002") throw error;
     const committed = await findSignupByEmail(db, input.waitListId, input.email, {
-      referrals: true,
-      referredBy: true,
+      referrals: { select: { id: true } },
     });
     if (committed?.uniqueUserId === input.uniqueUserId)
       signUp = { ...committed, signupOutcome: "returning" };
@@ -290,16 +291,15 @@ export async function createCampaignSignup(
     else throw error;
   }
 
-  const rank = await getCampaignPosition(db, input.waitListId, signUp.id);
-  // Rewards progress rides along with the rank so the cockpit and API can
-  // render points + "X more to unlock" without extra round trips. Best
-  // effort: a null summary never fails the signup response.
-  let rewardSummary = null;
-  try {
-    rewardSummary = await summarizeSignupRewards(db, input.waitListId, signUp);
-  } catch {
-    rewardSummary = null;
-  }
+  // Rank and rewards progress are independent reads: resolve them together
+  // so the signup response pays one round trip, not two.
+  const [rank, rewardSummary] = await Promise.all([
+    getCampaignPosition(db, input.waitListId, signUp.id),
+    // Rewards progress rides along with the rank so the cockpit and API can
+    // render points + "X more to unlock" without extra round trips. Best
+    // effort: a null summary never fails the signup response.
+    summarizeSignupRewards(db, input.waitListId, signUp).catch(() => null),
+  ]);
   // Idempotent retries and duplicate lookups return early above, so only a row
   // we actually created can move the milestone counters.
   if (signUp?.signupOutcome === "created") {
