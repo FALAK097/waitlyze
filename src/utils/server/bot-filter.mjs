@@ -25,7 +25,6 @@ const BOT_TOKENS = [
   "dotbot",
   "petalbot",
   "bytespider",
-  "bytedance",
   "tiktokspider",
   "applebot",
   "coccocbot",

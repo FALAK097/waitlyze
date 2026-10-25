@@ -63,7 +63,7 @@ export function collectAttribution(waitListId) {
     utmContent: trimTo(params.get("utm_content") || "", 256),
   };
   const stored = readStored(waitListId);
-  if (stored) return { ...live, ...stored };
+  if (stored) return stored;
   const snapshot = {};
   for (const field of FIELDS) {
     if (live[field] !== undefined) snapshot[field] = live[field];
