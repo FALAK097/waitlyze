@@ -25,6 +25,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { SIGNUP_POINTS, REFERRAL_POINTS } from "@/lib/referrals/points.mjs";
 import { cn } from "@/lib/utils";
 
 const EvilAreaChart = dynamic(
@@ -124,6 +125,11 @@ const rangePresets = [
   { label: "Last 90 days", days: "90" },
 ];
 const MAX_RANGE_DAYS = 90;
+// Rough in-product medians for orientation only. These are illustrative
+// constants, not measured benchmarks — keep them round and never present
+// them with fake precision.
+const CONVERSION_MEDIAN_PCT = 11;
+const VERIFICATION_MEDIAN_PCT = 55;
 const number = new Intl.NumberFormat();
 const regionNames = new Intl.DisplayNames(["en"], { type: "region" });
 const rangeQueryOptions = {
@@ -150,6 +156,11 @@ function parseIsoDate(value) {
   if (!value || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return null;
   const date = new Date(`${value}T00:00:00Z`);
   return Number.isNaN(date.valueOf()) ? null : date;
+}
+
+function stepRate(numerator, denominator) {
+  if (!denominator) return null;
+  return Math.round((numerator / denominator) * 10000) / 100;
 }
 
 function rangeLabel(range, from, to) {
@@ -642,6 +653,37 @@ export function WaitlistAnalytics({ waitListId, emailsEnabled = false }) {
     referrals?.top.map((row) => ({ label: row.label, visitors: 0, signups: row.signups })) ?? [];
   const referralShareLabel =
     referrals?.share == null ? "No signups yet" : `${referrals.share}% of signups`;
+  const summarySentence =
+    currentAnalytics && !noActivity && summary?.conversionRate != null
+      ? `${number.format(summary.signups)} signups from ${number.format(summary.visitors)} visitors — ${summary.conversionRate}% conversion vs a ~${CONVERSION_MEDIAN_PCT}% typical median.`
+      : null;
+  const funnelScale = summary
+    ? Math.max(summary.visitors, summary.signups, summary.verifiedSignups, 1)
+    : 1;
+  const funnelSignupRate = summary ? stepRate(summary.signups, summary.visitors) : null;
+  const funnelVerifiedRate = summary ? stepRate(summary.verifiedSignups, summary.signups) : null;
+  const funnelSteps = summary
+    ? [
+        {
+          label: "Visited",
+          value: summary.visitors,
+          detail: "Distinct stored browsers",
+          rate: null,
+        },
+        {
+          label: "Signed up",
+          value: summary.signups,
+          detail: `${number.format(summary.convertedVisitors)} linked to a tracked visit`,
+          rate: funnelSignupRate == null ? "—" : `${funnelSignupRate}% of visitors`,
+        },
+        {
+          label: "Verified",
+          value: summary.verifiedSignups,
+          detail: `${number.format(summary.signups - summary.verifiedSignups)} awaiting verification`,
+          rate: funnelVerifiedRate == null ? "—" : `${funnelVerifiedRate}% of signups`,
+        },
+      ]
+    : [];
 
   return (
     <section
@@ -655,6 +697,11 @@ export function WaitlistAnalytics({ waitListId, emailsEnabled = false }) {
           <p className="pt-1.25 text-caption text-product-text-secondary">
             Understand how people discover, join, and share this waitlist.
           </p>
+          {summarySentence ? (
+            <p className="pt-1 text-caption font-medium text-product-text-primary">
+              {summarySentence}
+            </p>
+          ) : null}
         </div>
         <div className="flex flex-wrap items-center gap-2 max-[600px]:justify-between">
           <RangePicker
@@ -732,8 +779,8 @@ export function WaitlistAnalytics({ waitListId, emailsEnabled = false }) {
                   summary.conversionRate == null ? null : (
                     <BenchmarkBadge
                       rate={summary.conversionRate}
-                      benchmark={11}
-                      note="Industry median conversion ≈ 11%"
+                      benchmark={CONVERSION_MEDIAN_PCT}
+                      note={`Industry median conversion ≈ ${CONVERSION_MEDIAN_PCT}%`}
                     />
                   )
                 }
@@ -748,8 +795,8 @@ export function WaitlistAnalytics({ waitListId, emailsEnabled = false }) {
                   summary.verificationRate == null ? null : (
                     <BenchmarkBadge
                       rate={summary.verificationRate}
-                      benchmark={55}
-                      note="Industry median verification ≈ 55%"
+                      benchmark={VERIFICATION_MEDIAN_PCT}
+                      note={`Industry median verification ≈ ${VERIFICATION_MEDIAN_PCT}%`}
                     />
                   )
                 }
@@ -770,7 +817,7 @@ export function WaitlistAnalytics({ waitListId, emailsEnabled = false }) {
                 label="Points awarded"
                 value={number.format(summary.pointsTotal)}
                 detail={`${number.format(summary.pointsSignup)} join · ${number.format(summary.pointsReferral)} referral`}
-                hint="Total points issued in this period. A verified signup earns 50 points and each verified referral earns the referrer 30."
+                hint={`Total points issued in this period. A verified signup earns ${SIGNUP_POINTS} points and each verified referral earns the referrer ${REFERRAL_POINTS}.`}
               />
             </dl>
 
@@ -875,6 +922,56 @@ export function WaitlistAnalytics({ waitListId, emailsEnabled = false }) {
                 </div>
               </>
             )}
+          </section>
+
+          <section className={DATA_PANEL} aria-labelledby="waitlist-funnel-title">
+            <header className="flex items-center justify-between gap-3 px-4 pt-4 pb-2">
+              <h3 id="waitlist-funnel-title" className="text-sm font-semibold">
+                Funnel
+              </h3>
+              <span className="text-micro font-medium text-product-text-secondary">
+                Views → joins → verified
+              </span>
+            </header>
+            {noActivity ? (
+              <p className="grid h-61.5 place-items-center border-t border-product-border-subtle p-6 text-center text-xs text-product-text-secondary">
+                No funnel data yet. Joins and verifications will appear here once visitors arrive.
+              </p>
+            ) : (
+              <ol className="grid gap-3 border-t border-product-border-subtle px-4 py-4">
+                {funnelSteps.map((step) => (
+                  <li key={step.label} className="grid gap-1">
+                    <div className="flex items-baseline justify-between gap-3 text-xs">
+                      <span className="font-medium text-product-text-primary">
+                        {step.label}{" "}
+                        <span className="font-semibold tabular-nums">
+                          {number.format(step.value)}
+                        </span>
+                      </span>
+                      {step.rate ? (
+                        <span className="shrink-0 text-product-text-secondary tabular-nums">
+                          {step.rate}
+                        </span>
+                      ) : null}
+                    </div>
+                    <div className="h-2.5 overflow-hidden rounded-full bg-product-bg-inset">
+                      <div
+                        className="h-full w-(--funnel-w) rounded-full bg-foreground"
+                        aria-hidden="true"
+                        style={{
+                          "--funnel-w": `${Math.min((step.value / funnelScale) * 100, 100)}%`,
+                        }}
+                      />
+                    </div>
+                    <p className="text-micro text-product-text-secondary">{step.detail}</p>
+                  </li>
+                ))}
+              </ol>
+            )}
+            <p className="px-4 pb-4 text-micro text-product-text-secondary">
+              Joins count every signup in the period; the linked subset joined through a stored page
+              visit. Direct and legacy signups without that link stay in totals only.
+            </p>
           </section>
 
           <div className="grid grid-cols-2 gap-4 max-[840px]:grid-cols-1">
