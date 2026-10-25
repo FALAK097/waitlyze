@@ -4,6 +4,7 @@ import { headers } from "next/headers";
 import sharp from "sharp";
 
 import { renderFeedbackEmail } from "@/emails/render.jsx";
+import { feedbackText } from "@/emails/text.mjs";
 import { auth } from "@/lib/auth";
 import { sendPlatformEmail } from "@/lib/emails/platform.mjs";
 import { checkRateLimit } from "@/lib/rate-limit";
@@ -80,26 +81,29 @@ export async function submitFeedback(previous, formData) {
     }
   }
 
-  const html = await renderFeedbackEmail({
+  const submittedAt = new Date().toLocaleString("en-IN", {
+    timeZone: "Asia/Kolkata",
+    dateStyle: "medium",
+    timeStyle: "short",
+  });
+  const emailProps = {
     name: session.user.name || "Waitlyze user",
     email: session.user.email,
     title,
     label,
     feedback,
     page,
-    submittedAt: new Date().toLocaleString("en-IN", {
-      timeZone: "Asia/Kolkata",
-      dateStyle: "medium",
-      timeStyle: "short",
-    }),
+    submittedAt,
     hasImage: Boolean(attachment),
-  });
+  };
+  const html = await renderFeedbackEmail(emailProps);
 
   try {
     await sendPlatformEmail({
       to: FEEDBACK_INBOX,
       subject: `[Waitlyze feedback] ${label}: ${title}`,
       html,
+      text: feedbackText(emailProps),
       replyTo: session.user.email,
       attachments: attachment ? [attachment] : undefined,
     });

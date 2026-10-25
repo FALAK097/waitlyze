@@ -6,6 +6,7 @@ import {
   publishCampaign,
   rollbackCampaign,
 } from "@/lib/campaigns/publication.mjs";
+import { notifyWaitlistPublished } from "@/lib/emails/founder-notifications.mjs";
 import prisma from "@/lib/prisma";
 import { AUDIT_ACTIONS, recordWaitlistAuditEvent } from "@/lib/workspaces/audit.mjs";
 import { sessionActor } from "@/lib/workspaces/authorize";
@@ -27,7 +28,15 @@ async function action(run, fallback) {
 export async function publishWaitlist(id, revision) {
   if (!Number.isSafeInteger(revision) || revision < 1)
     return { ok: false, message: "Reload the page and try again." };
-  return action(async (userId) => {
+  // First-publish detection: only a list that was never published notifies
+  // its owners — re-publishes after an edit and resumes from PAUSED stay
+  // quiet on purpose.
+  const before = await prisma.waitList.findUnique({
+    where: { id },
+    select: { status: true, publishedRevision: true },
+  });
+  const firstPublish = Boolean(before) && !before.publishedRevision;
+  const outcome = await action(async (userId) => {
     const result = await publishCampaign(prisma, userId, undefined, id, revision);
     await recordWaitlistAuditEvent(prisma, {
       userId,
@@ -37,6 +46,15 @@ export async function publishWaitlist(id, revision) {
     });
     return result;
   }, "Waitlist publish failed");
+  // Best-effort owner notice via the outbox; never affects the publish result.
+  if (outcome?.ok && firstPublish) {
+    try {
+      await notifyWaitlistPublished(prisma, id);
+    } catch (error) {
+      console.error("Published notice enqueue failed", error?.message || "unknown error");
+    }
+  }
+  return outcome;
 }
 export async function pauseWaitlist(id) {
   return action(async (userId) => {

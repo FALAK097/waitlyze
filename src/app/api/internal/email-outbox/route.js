@@ -4,6 +4,7 @@ import { NextResponse } from "next/server";
 import { Resend } from "resend";
 
 import { dispatchPendingOutboxEvents } from "@/lib/email/outbox.mjs";
+import { createPlatformSender } from "@/lib/emails/platform.mjs";
 import { env } from "@/lib/env.mjs";
 import { createWorkspaceResendSender } from "@/lib/integrations/resend-sender.mjs";
 import prisma from "@/lib/prisma";
@@ -33,6 +34,7 @@ export async function POST(request) {
   });
   const result = await dispatchPendingOutboxEvents(prisma, {
     send: sendEmail,
+    sendPlatform: createPlatformSender(),
   });
   const webhooks = await dispatchPendingWebhooks(prisma);
   return NextResponse.json({ ...result, webhooks });
