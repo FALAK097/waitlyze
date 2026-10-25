@@ -77,7 +77,6 @@ function CountrySelect({ value, onChange, options, labels, className, ...rest })
       </PopoverTrigger>
       <PopoverContent className="w-72 p-1.5" align="start" sideOffset={8}>
         <input
-          autoFocus
           value={query}
           onChange={(event) => setQuery(event.target.value)}
           placeholder="Search countries"
@@ -176,7 +175,6 @@ export function PhoneInput({
   return (
     <div className={cn("flex gap-2", className)}>
       <PhoneInputPrimitive
-        international
         defaultCountry={defaultCountry}
         value={value}
         defaultValue={defaultValue}

@@ -148,7 +148,7 @@ export const EXPORT_COLUMNS = [
   { key: "position", label: "Position" },
 ];
 
-const EXPORT_DEFAULTS = ["email", "status", "joined"];
+const EXPORT_DEFAULTS = ["email", "phone", "status", "joined"];
 
 // Parses the `columns` export parameter into a validated key list.
 export function parseExportColumns(value) {
