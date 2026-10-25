@@ -276,6 +276,7 @@ enum MarketingConsentAction {
 enum MarketingConsentSource {
   PUBLIC_SIGNUP
   PUBLIC_UNSUBSCRIBE
+  DASHBOARD_BULK
 }
 
 model MarketingConsentEvent {

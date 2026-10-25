@@ -26,6 +26,14 @@ import { retryFailedVerification } from "@/app/actions/verification-delivery";
 import { ReferralReview } from "@/components/dashboard/referral-review";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -156,6 +164,9 @@ export function AudienceTable({
   const deliveryFilter = filter === "failed" ? "failed" : "all";
   const [selectedIds, setSelectedIds] = useState([]);
   const [retrying, setRetrying] = useState(false);
+  const [bulkConfirm, setBulkConfirm] = useState(null);
+  const [bulkPending, setBulkPending] = useState(false);
+  const [deleteTyped, setDeleteTyped] = useState("");
   const [sort, setSort] = useState("joined_desc");
   const [selectAll, setSelectAll] = useState(false);
   const [selectTruncated, setSelectTruncated] = useState(false);
@@ -351,6 +362,96 @@ export function AudienceTable({
       toast.error(error.message || "Could not retry confirmation emails.");
     } finally {
       setRetrying(false);
+    }
+  }
+
+  async function runBulkBatch(action, ids) {
+    const response = await fetch(
+      `/api/wait-lists/${encodeURIComponent(waitlist.id)}/subscribers/batch`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action, ids }),
+      },
+    );
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(payload.error || "Unable to update signups.");
+    return payload;
+  }
+
+  function refreshAfterBulk() {
+    setSelectedIds([]);
+    setSelectAll(false);
+    setSelectTruncated(false);
+    setRetryCount((count) => count + 1);
+  }
+
+  async function undoBulkOffboard(ids) {
+    try {
+      const payload = await runBulkBatch("resubscribe", ids);
+      const skipped = payload.alreadyInState || 0;
+      toast.success(
+        `Marketing updates restored for ${payload.processed.toLocaleString()} signup${payload.processed === 1 ? "" : "s"}.` +
+          (skipped > 0 ? ` ${skipped} already subscribed — skipped.` : ""),
+      );
+      refreshAfterBulk();
+    } catch (error) {
+      toast.error(error.message || "Could not undo the offboard.");
+    }
+  }
+
+  async function runBulk(action) {
+    const ids = selectedIds;
+    setBulkPending(true);
+    try {
+      const payload = await runBulkBatch(action, ids);
+      if (action === "delete") {
+        toast.success(
+          `Deleted ${payload.deleted.toLocaleString()} signup${payload.deleted === 1 ? "" : "s"}. ` +
+            `${payload.referralsSevered.toLocaleString()} referral edge${payload.referralsSevered === 1 ? " was" : "s were"} severed.`,
+        );
+        setBulkConfirm(null);
+        setDeleteTyped("");
+      } else {
+        const fresh = payload.offboardedIds || [];
+        if (!fresh.length) {
+          toast.success("Everyone selected was already offboarded.");
+        } else {
+          const queued = payload.emailsQueued || 0;
+          const duplicates = payload.duplicateSkipped || 0;
+          const skipped = payload.alreadyInState || 0;
+          const skippedNote = skipped > 0 ? ` ${skipped} already offboarded — skipped.` : "";
+          let emailNote;
+          if (queued > 0) {
+            emailNote =
+              ` ${queued.toLocaleString()} goodbye email${queued === 1 ? " is" : "s are"} on the way.` +
+              (duplicates > 0
+                ? ` ${duplicates} skipped as duplicate${duplicates === 1 ? "" : "s"}.`
+                : "");
+          } else if (duplicates > 0) {
+            emailNote = " No new goodbye emails — already sent or cancelled for this selection.";
+          } else if (payload.emailTemplateMissing) {
+            emailNote = " No offboarding template exists, so no goodbye emails were sent.";
+          } else if (payload.deliveryConfigured === false) {
+            emailNote = " Email delivery is not configured, so no goodbye emails were sent.";
+          } else {
+            emailNote = " No goodbye emails were queued.";
+          }
+          toast.success(
+            `Offboarded ${fresh.length.toLocaleString()} signup${fresh.length === 1 ? "" : "s"}.${skippedNote}${emailNote}`,
+            {
+              action: { label: "Undo", onClick: () => undoBulkOffboard(fresh) },
+              duration: 30_000,
+            },
+          );
+        }
+        setBulkConfirm(null);
+      }
+      refreshAfterBulk();
+    } catch (error) {
+      toast.error(error.message || "Could not update the selected signups.");
+    } finally {
+      setBulkPending(false);
     }
   }
 
@@ -809,6 +910,32 @@ export function AudienceTable({
                     Select up to 25 at a time to retry.
                   </span>
                 )}
+                {canManage && (
+                  <>
+                    <Button
+                      variant="outline"
+                      disabled={bulkPending || selectedIds.length > 1000}
+                      onClick={() => setBulkConfirm("offboard")}
+                    >
+                      Offboard
+                    </Button>
+                    <Button
+                      variant="outline-destructive"
+                      disabled={bulkPending || selectedIds.length > 1000}
+                      onClick={() => {
+                        setDeleteTyped("");
+                        setBulkConfirm("delete");
+                      }}
+                    >
+                      Delete
+                    </Button>
+                  </>
+                )}
+                {selectedIds.length > 1000 && (
+                  <span className="text-product-text-secondary">
+                    Bulk actions handle up to 1,000 at a time — narrow the search or filter first.
+                  </span>
+                )}
                 <Button
                   variant="ghost"
                   onClick={() => {
@@ -1215,6 +1342,85 @@ export function AudienceTable({
               )}
             </SheetContent>
           </Sheet>
+
+          <ConfirmDialog
+            open={bulkConfirm === "offboard"}
+            onOpenChange={(open) => {
+              if (!open && !bulkPending) setBulkConfirm(null);
+            }}
+            title={`Offboard ${selectedIds.length.toLocaleString()} signup${selectedIds.length === 1 ? "" : "s"}?`}
+            description={
+              "Offboarding keeps every row — position, points, and referral history stay exactly as they are — " +
+              "and stops marketing emails immediately. Confirmation and other transactional emails are unaffected. " +
+              "Where an offboarding template exists, each newly offboarded signup gets one goodbye email. " +
+              "An Undo option appears for 30 seconds afterwards and re-enables updates only for the signups just offboarded."
+            }
+            confirmLabel={`Offboard ${selectedIds.length.toLocaleString()} signup${selectedIds.length === 1 ? "" : "s"}`}
+            pendingLabel="Offboarding…"
+            variant="outline"
+            onConfirm={() => runBulk("offboard")}
+          />
+
+          <Dialog
+            open={bulkConfirm === "delete"}
+            onOpenChange={(open) => {
+              if (!open && !bulkPending) {
+                setBulkConfirm(null);
+                setDeleteTyped("");
+              }
+            }}
+          >
+            <DialogContent className="sm:max-w-md">
+              <DialogTitle>
+                Delete {selectedIds.length.toLocaleString()} signup
+                {selectedIds.length === 1 ? "" : "s"}?
+              </DialogTitle>
+              <DialogDescription>
+                This permanently removes the selected rows. There is no undo.
+              </DialogDescription>
+              <ul className="list-disc space-y-1.5 pl-5 text-sm text-product-text-secondary">
+                <li>
+                  Verification history, broadcast records, and automation runs for these signups are
+                  removed with them.
+                </li>
+                <li>
+                  Referral edges vanish with the rows: signups referred by deleted members lose
+                  their “referred by” link and count as direct joins.
+                </li>
+                <li>
+                  Referrers keep points they already earned; the append-only points ledger retains
+                  its entries without pointing at anyone.
+                </li>
+              </ul>
+              <Label className="grid gap-2">
+                <span>
+                  Type <strong className="tabular-nums">{selectedIds.length}</strong> to confirm
+                </span>
+                <Input
+                  value={deleteTyped}
+                  onChange={(event) => setDeleteTyped(event.target.value)}
+                  inputMode="numeric"
+                  autoComplete="off"
+                  placeholder={String(selectedIds.length)}
+                  aria-label={`Type ${selectedIds.length} to confirm deletion`}
+                />
+              </Label>
+              <div className="product-actions">
+                <DialogClose render={<Button variant="outline" />} disabled={bulkPending}>
+                  Cancel
+                </DialogClose>
+                <Button
+                  variant="destructive"
+                  disabled={bulkPending || deleteTyped.trim() !== String(selectedIds.length)}
+                  onClick={() => runBulk("delete")}
+                >
+                  {bulkPending
+                    ? "Deleting…"
+                    : `Delete ${selectedIds.length.toLocaleString()} signup${selectedIds.length === 1 ? "" : "s"}`}
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
         </>
       )}
     </section>

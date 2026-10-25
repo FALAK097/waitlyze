@@ -3,7 +3,7 @@ import { createHash } from "node:crypto";
 import { renderSubscriberVerification } from "../../emails/render.jsx";
 import { notifyBroadcastSummary } from "../emails/founder-notifications.mjs";
 import { dispatchAutomationStep, processAutomationTrigger } from "./automations.mjs";
-import { subscriberEmailHtml } from "./composer.mjs";
+import { interpolateEmail, legacyEmailContent, subscriberEmailHtml } from "./composer.mjs";
 import { applyKnownProviderEvents } from "./suppression.mjs";
 import { createUnsubscribeToken } from "./unsubscribe.mjs";
 
@@ -274,6 +274,189 @@ async function dispatchBroadcast(db, event, payload, send, now, attempt, result)
   await finishBroadcastIfReady(db, broadcast.id, now);
 }
 
+function offboardVars({ waitList, signup }) {
+  const base = String(process.env.BETTER_AUTH_URL || "").replace(/\/$/, "");
+  const pageUrl = waitList.publicSlug ? `${base}/w/${waitList.publicSlug}` : "";
+  return {
+    waitlist: waitList.name || "Your Project",
+    waitlist_url: pageUrl,
+    email: signup.email,
+    reason: "You were removed from marketing updates for this waitlist.",
+    // Position is deliberately blank: per-recipient rank lookups each scan the
+    // whole list and do not scale inside bulk sends. The row (and its real
+    // position) is untouched by the offboard itself.
+    position: "",
+    referral_link:
+      pageUrl && waitList.showReferrals && signup.referralCode
+        ? `${pageUrl}?r=${signup.referralCode}`
+        : "",
+    referral_count: "",
+    rewards: "",
+    expiry_time: "",
+    feedback_link: "",
+    total_signups: "",
+  };
+}
+
+function replaceOffboardVars(text, vars) {
+  return String(text || "").replace(
+    /\{\{([^}]+)\}\}/g,
+    (_, key) => vars[String(key).trim().toLowerCase()] ?? "",
+  );
+}
+
+// Goodbye email for bulk offboard. Unlike broadcasts this send must go through
+// even though the recipient just unsubscribed — the unsubscribe is the reason
+// for the email. Suppression-list hits and missing rows/templates still skip.
+async function dispatchOffboard(db, event, send, now, attempt, result) {
+  const raw = event.payload && typeof event.payload === "object" ? event.payload : null;
+  const signUpId = raw?.signUpId;
+  const waitListId = event.waitListId || raw?.waitListId;
+  async function fail(code, counted) {
+    await db.outboxEvent.update({
+      where: { id: event.id },
+      data: {
+        status: "FAILED",
+        processedAt: now,
+        lockedAt: null,
+        payload: { signUpId, waitListId },
+        lastErrorCode: code,
+      },
+    });
+    result[counted]++;
+  }
+  if (typeof signUpId !== "string" || !signUpId) {
+    await fail("INVALID_OFFBOARD_EVENT", "failed");
+    return;
+  }
+  const [signup, waitList] = await Promise.all([
+    db.signUp.findUnique({
+      where: { id: signUpId },
+      select: { id: true, email: true, emailNormalized: true, referralCode: true },
+    }),
+    typeof waitListId === "string" && waitListId
+      ? db.waitList.findUnique({
+          where: { id: waitListId },
+          select: {
+            id: true,
+            name: true,
+            publicSlug: true,
+            showReferrals: true,
+            workspaceId: true,
+          },
+        })
+      : null,
+  ]);
+  if (!signup || !waitList) {
+    await fail("SIGNUP_NOT_SENDABLE", "skipped");
+    return;
+  }
+  const template = await db.emailTemplate.findUnique({
+    where: { waitListId_type: { waitListId: waitList.id, type: "OFFBOARDING" } },
+  });
+  if (!template) {
+    await fail("OFFBOARD_TEMPLATE_MISSING", "skipped");
+    return;
+  }
+  const suppressed =
+    waitList.workspaceId &&
+    (await db.emailSuppression.findUnique({
+      where: {
+        workspaceId_emailNormalized: {
+          workspaceId: waitList.workspaceId,
+          emailNormalized: normalizeEmail(signup.emailNormalized || signup.email),
+        },
+      },
+    }));
+  if (suppressed) {
+    await fail("RECIPIENT_SUPPRESSED", "skipped");
+    return;
+  }
+  const vars = offboardVars({ waitList, signup });
+  const subject = replaceOffboardVars(template.subject, vars);
+  const previewText = replaceOffboardVars(template.previewText, vars);
+  const html = template.renderedHtml
+    ? subscriberEmailHtml({
+        name: waitList.name || "Waitlist",
+        content: interpolateEmail(template.renderedHtml, vars),
+        previewText,
+      })
+    : subscriberEmailHtml({
+        name: waitList.name || "Waitlist",
+        content: legacyEmailContent({
+          header: replaceOffboardVars(template.header, vars),
+          subHeader: replaceOffboardVars(template.subHeader, vars),
+          mainBody: replaceOffboardVars(template.mainBody, vars),
+          subBody: replaceOffboardVars(template.subBody, vars),
+        }),
+        previewText,
+      });
+  const text = template.renderedText
+    ? replaceOffboardVars(template.renderedText, vars)
+    : replaceOffboardVars(template.mainBody, vars) || undefined;
+  try {
+    const response = await send({
+      to: signup.email,
+      subject,
+      html,
+      text,
+      idempotencyKey: event.eventKey,
+      workspaceId: waitList.workspaceId,
+    });
+    if (response?.error) throw response.error;
+    const providerMessageId = response?.data?.id || response?.id;
+    if (!providerMessageId)
+      throw Object.assign(new Error("Provider accepted no message id"), {
+        code: "MISSING_PROVIDER_ID",
+      });
+    await db.outboxEvent.update({
+      where: { id: event.id },
+      data: {
+        status: "DELIVERED",
+        providerMessageId,
+        processedAt: now,
+        lockedAt: null,
+        payload: { signUpId, waitListId: waitList.id },
+        lastErrorCode: null,
+      },
+    });
+    result.accepted++;
+    try {
+      await applyKnownProviderEvents(
+        db,
+        providerMessageId,
+        waitList.workspaceId,
+        signup.emailNormalized || signup.email,
+      );
+    } catch (error) {
+      console.error(
+        "Could not apply provider suppression event:",
+        error?.message || "unknown error",
+      );
+    }
+  } catch (error) {
+    const code =
+      String(error?.code || error?.name || "PROVIDER_ERROR")
+        .replace(/[^A-Za-z0-9_.-]/g, "")
+        .slice(0, 80) || "PROVIDER_ERROR";
+    const canRetry = transient(error) && attempt < MAX_ATTEMPTS;
+    const delay = Math.min(RETRY_BASE_MS * 2 ** Math.min(attempt - 1, 6), 60 * 60 * 1000);
+    await db.outboxEvent.update({
+      where: { id: event.id },
+      data: {
+        status: canRetry ? "PENDING" : "FAILED",
+        availableAt: canRetry ? new Date(now.getTime() + delay) : now,
+        processedAt: canRetry ? null : now,
+        lockedAt: null,
+        payload: canRetry ? event.payload : { signUpId, waitListId: waitList.id },
+        lastErrorCode: code,
+      },
+    });
+    if (canRetry) result.retried++;
+    else result.failed++;
+  }
+}
+
 function safePayload(payload) {
   if (
     !payload ||
@@ -347,6 +530,10 @@ export async function dispatchPendingOutboxEvents(
     }
     if (event.type === "MARKETING_AUTOMATION_STEP_REQUESTED") {
       await dispatchAutomationStep(db, event, event.payload, send, now, attempt, result);
+      continue;
+    }
+    if (event.type === "OFFBOARD_EMAIL_REQUESTED") {
+      await dispatchOffboard(db, event, send, now, attempt, result);
       continue;
     }
     if (event.type !== "SIGNUP_VERIFICATION_REQUESTED" || !payload) {

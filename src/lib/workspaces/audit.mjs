@@ -71,4 +71,7 @@ export const AUDIT_ACTIONS = Object.freeze({
   RESEND_CONNECTED: "resend.connected",
   RESEND_DISCONNECTED: "resend.disconnected",
   BROADCAST_SENT: "broadcast.sent",
+  AUDIENCE_BULK_OFFBOARDED: "audience.bulk_offboarded",
+  AUDIENCE_BULK_RESUBSCRIBED: "audience.bulk_resubscribed",
+  AUDIENCE_BULK_DELETED: "audience.bulk_deleted",
 });
