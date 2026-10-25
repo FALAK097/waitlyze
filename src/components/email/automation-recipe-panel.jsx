@@ -41,6 +41,34 @@ const waitLabel = (minutes) =>
       ? `${minutes / 60} ${minutes === 60 ? "hour" : "hours"} later`
       : `${minutes} minutes later`;
 
+// One-line summary under the recipe title. Mirrors the recipe-type chain:
+// milestone recipes need a positive count, otherwise the generic text applies.
+function recipeTiming(recipe) {
+  const delay = recipe.delayHours ?? hourValue(recipe.config.delayMinutes);
+  const minutes = Number.isFinite(delay) ? delay * 60 : 0;
+  const milestoneCount = Number(recipe.milestoneCount ?? recipe.config.milestoneCount);
+  if (recipe.type === "REFERRAL_MILESTONE" && milestoneCount > 0)
+    return `At ${milestoneCount} verified referrals · ${waitLabel(minutes)}`;
+  switch (recipe.type) {
+    case "REFERRAL_REMINDER":
+      return `After confirmation, if they still have no referrals · ${waitLabel(minutes)}`;
+    case "WELCOME_FOLLOWUP":
+      return `Welcome series, second note after confirmation · ${waitLabel(minutes)}`;
+    case "LAUNCH_COUNTDOWN":
+      return `After confirmation, ahead of launch · ${waitLabel(minutes)}`;
+    default:
+      return `After confirmation · ${waitLabel(minutes)}`;
+  }
+}
+
+function statusTooltipText({ enabled, deliveryReady, dirty }) {
+  if (enabled) return "Sends automatically. Pause to stop until you resume it.";
+  if (!deliveryReady) return "Set up email delivery first to enable this email.";
+  return dirty
+    ? "Save your changes first, then enable."
+    : "Sends this email automatically to eligible subscribers.";
+}
+
 function AutomationNumberField({ label, value, min, max, disabled, onChange }) {
   return (
     <NumberField
@@ -62,6 +90,70 @@ function AutomationNumberField({ label, value, min, max, disabled, onChange }) {
   );
 }
 
+function TimingFields({ recipe, delay, busy, onUpdateRecipe }) {
+  if (recipe.type !== "REFERRAL_MILESTONE") {
+    return (
+      <div className={fieldRow}>
+        <AutomationNumberField
+          label="Hours after confirmation"
+          value={delay}
+          min={0}
+          max={168}
+          disabled={busy}
+          onChange={(next) => onUpdateRecipe(recipe.id, { delayHours: next })}
+        />
+        <span className={fieldUnit}>hours after confirmation</span>
+      </div>
+    );
+  }
+  return (
+    <>
+      <div className={fieldRow}>
+        <AutomationNumberField
+          label="Verified referrals to celebrate"
+          value={recipe.milestoneCount ?? recipe.config.milestoneCount}
+          min={1}
+          max={100}
+          disabled={busy}
+          onChange={(next) => onUpdateRecipe(recipe.id, { milestoneCount: next })}
+        />
+        <span className={fieldUnit}>verified referrals</span>
+      </div>
+      <div className={fieldRow}>
+        <AutomationNumberField
+          label="Hours after the milestone"
+          value={delay}
+          min={0}
+          max={168}
+          disabled={busy}
+          onChange={(next) => onUpdateRecipe(recipe.id, { delayHours: next })}
+        />
+        <span className={fieldUnit}>hours after the milestone</span>
+      </div>
+    </>
+  );
+}
+
+function TestSendForm({ busy, dirty, testTo, onTestToChange, onSendTest, recipe }) {
+  return (
+    <form className="flex items-center gap-2" onSubmit={(event) => onSendTest(event, recipe)}>
+      <input
+        className="h-11 w-45 min-w-0 rounded-product-control border border-product-border-control bg-white px-2.5 text-caption max-sm:w-auto max-sm:flex-1 max-sm:text-base"
+        type="email"
+        placeholder="you@example.com"
+        required
+        maxLength={320}
+        aria-label="Send a test to"
+        value={testTo}
+        onChange={(event) => onTestToChange(event.target.value)}
+      />
+      <Button type="submit" variant="outline" className="min-h-11" disabled={busy || dirty}>
+        {busy ? "Sending…" : "Send test"}
+      </Button>
+    </form>
+  );
+}
+
 export function AutomationRecipePanel({
   recipe,
   checks,
@@ -80,17 +172,7 @@ export function AutomationRecipePanel({
 }) {
   const delay = recipe.delayHours ?? hourValue(recipe.config.delayMinutes);
   const enabled = recipe.status === "ENABLED";
-  const milestoneCount = Number(recipe.milestoneCount ?? recipe.config.milestoneCount);
-  const timing =
-    recipe.type === "REFERRAL_MILESTONE" && milestoneCount > 0
-      ? `At ${milestoneCount} verified referrals · ${waitLabel(Number.isFinite(delay) ? delay * 60 : 0)}`
-      : recipe.type === "REFERRAL_REMINDER"
-        ? `After confirmation, if they still have no referrals · ${waitLabel(Number.isFinite(delay) ? delay * 60 : 0)}`
-        : recipe.type === "WELCOME_FOLLOWUP"
-          ? `Welcome series, second note after confirmation · ${waitLabel(Number.isFinite(delay) ? delay * 60 : 0)}`
-          : recipe.type === "LAUNCH_COUNTDOWN"
-            ? `After confirmation, ahead of launch · ${waitLabel(Number.isFinite(delay) ? delay * 60 : 0)}`
-            : `After confirmation · ${waitLabel(Number.isFinite(delay) ? delay * 60 : 0)}`;
+  const timing = recipeTiming(recipe);
 
   return (
     <section className={pane} aria-label={recipe.title}>
@@ -115,13 +197,7 @@ export function AutomationRecipePanel({
                 }
               />
               <TooltipContent side="bottom">
-                {enabled
-                  ? "Sends automatically. Pause to stop until you resume it."
-                  : deliveryReady
-                    ? dirty
-                      ? "Save your changes first, then enable."
-                      : "Sends this email automatically to eligible subscribers."
-                    : "Set up email delivery first to enable this email."}
+                {statusTooltipText({ enabled, deliveryReady, dirty })}
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
@@ -129,44 +205,7 @@ export function AutomationRecipePanel({
       </header>
 
       <div className={fieldCard}>
-        {recipe.type !== "REFERRAL_MILESTONE" ? (
-          <div className={fieldRow}>
-            <AutomationNumberField
-              label="Hours after confirmation"
-              value={delay}
-              min={0}
-              max={168}
-              disabled={busy}
-              onChange={(next) => onUpdateRecipe(recipe.id, { delayHours: next })}
-            />
-            <span className={fieldUnit}>hours after confirmation</span>
-          </div>
-        ) : (
-          <>
-            <div className={fieldRow}>
-              <AutomationNumberField
-                label="Verified referrals to celebrate"
-                value={recipe.milestoneCount ?? recipe.config.milestoneCount}
-                min={1}
-                max={100}
-                disabled={busy}
-                onChange={(next) => onUpdateRecipe(recipe.id, { milestoneCount: next })}
-              />
-              <span className={fieldUnit}>verified referrals</span>
-            </div>
-            <div className={fieldRow}>
-              <AutomationNumberField
-                label="Hours after the milestone"
-                value={delay}
-                min={0}
-                max={168}
-                disabled={busy}
-                onChange={(next) => onUpdateRecipe(recipe.id, { delayHours: next })}
-              />
-              <span className={fieldUnit}>hours after the milestone</span>
-            </div>
-          </>
-        )}
+        <TimingFields recipe={recipe} delay={delay} busy={busy} onUpdateRecipe={onUpdateRecipe} />
         <div className={fieldRow}>
           <input
             className={fieldInput}
@@ -211,7 +250,7 @@ export function AutomationRecipePanel({
         />
         <div className={paneActions}>
           <Button type="button" variant="outline" onClick={onPreview} disabled={busy}>
-            Preview & spam check
+            Preview &amp; spam check
           </Button>
           <Button type="button" variant="default" onClick={onSave} disabled={busy || !validValues}>
             {busy ? "Saving…" : "Save changes"}
@@ -231,21 +270,14 @@ export function AutomationRecipePanel({
         </div>
       ) : null}
 
-      <form className="flex items-center gap-2" onSubmit={(event) => onSendTest(event, recipe)}>
-        <input
-          className="h-11 w-45 min-w-0 rounded-product-control border border-product-border-control bg-white px-2.5 text-caption max-sm:w-auto max-sm:flex-1 max-sm:text-base"
-          type="email"
-          placeholder="you@example.com"
-          required
-          maxLength={320}
-          aria-label="Send a test to"
-          value={testTo}
-          onChange={(event) => onTestToChange(event.target.value)}
-        />
-        <Button type="submit" variant="outline" className="min-h-11" disabled={busy || dirty}>
-          {busy ? "Sending…" : "Send test"}
-        </Button>
-      </form>
+      <TestSendForm
+        recipe={recipe}
+        busy={busy}
+        dirty={dirty}
+        testTo={testTo}
+        onTestToChange={onTestToChange}
+        onSendTest={onSendTest}
+      />
 
       {recipe.type.startsWith("REFERRAL_") ? (
         <p className={hint}>
