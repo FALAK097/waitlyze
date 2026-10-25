@@ -73,26 +73,28 @@ async function verificationDelivery(waitListId, signupIds) {
   return latest;
 }
 
+const escapeLike = (v) => String(v ?? "").replace(/[\\%_]/g, (m) => "\\" + m);
+
 function failedVerificationWhere(waitListId, filters) {
   return Prisma.sql`
     "signup"."waitListId" = ${waitListId}
     AND (${filters.status} = 'all'
       OR (${filters.status} = 'verified' AND "signup"."verifiedAt" IS NOT NULL)
       OR (${filters.status} = 'pending' AND "signup"."verifiedAt" IS NULL))
-    AND (${filters.query} = '' OR "signup"."email" ILIKE ${`%${filters.query}%`})
-    AND (${filters.country} = '' OR "signup"."country" ILIKE ${`%${filters.country}%`})
-    AND (${filters.city} = '' OR "signup"."city" ILIKE ${`%${filters.city}%`})
-    AND (${filters.source} = '' OR "signup"."utmSource" ILIKE ${`%${filters.source}%`})
-    AND (${filters.landing} = '' OR "signup"."landingPage" ILIKE ${`%${filters.landing}%`})
+    AND (${filters.query} = '' OR "signup"."email" ILIKE ${`%${escapeLike(filters.query)}%`} ESCAPE '\\')
+    AND (${filters.country} = '' OR "signup"."country" ILIKE ${`%${escapeLike(filters.country)}%`} ESCAPE '\\')
+    AND (${filters.city} = '' OR "signup"."city" ILIKE ${`%${escapeLike(filters.city)}%`} ESCAPE '\\')
+    AND (${filters.source} = '' OR "signup"."utmSource" ILIKE ${`%${escapeLike(filters.source)}%`} ESCAPE '\\')
+    AND (${filters.landing} = '' OR "signup"."landingPage" ILIKE ${`%${escapeLike(filters.landing)}%`} ESCAPE '\\')
     AND (${filters.device} = ''
-      OR "signup"."deviceType" ILIKE ${`%${filters.device}%`}
-      OR "signup"."device" ILIKE ${`%${filters.device}%`})
+      OR "signup"."deviceType" ILIKE ${`%${escapeLike(filters.device)}%`} ESCAPE '\\'
+      OR "signup"."device" ILIKE ${`%${escapeLike(filters.device)}%`} ESCAPE '\\')
     AND (${filters.utm} = ''
-      OR "signup"."utmMedium" ILIKE ${`%${filters.utm}%`}
-      OR "signup"."utmCampaign" ILIKE ${`%${filters.utm}%`}
-      OR "signup"."utmTerm" ILIKE ${`%${filters.utm}%`}
-      OR "signup"."utmContent" ILIKE ${`%${filters.utm}%`}
-      OR "signup"."referrer" ILIKE ${`%${filters.utm}%`})
+      OR "signup"."utmMedium" ILIKE ${`%${escapeLike(filters.utm)}%`} ESCAPE '\\'
+      OR "signup"."utmCampaign" ILIKE ${`%${escapeLike(filters.utm)}%`} ESCAPE '\\'
+      OR "signup"."utmTerm" ILIKE ${`%${escapeLike(filters.utm)}%`} ESCAPE '\\'
+      OR "signup"."utmContent" ILIKE ${`%${escapeLike(filters.utm)}%`} ESCAPE '\\'
+      OR "signup"."referrer" ILIKE ${`%${escapeLike(filters.utm)}%`} ESCAPE '\\')
     AND EXISTS (
       SELECT 1
       FROM "outbox_events" AS "latest"
