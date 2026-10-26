@@ -68,6 +68,7 @@ export async function resolveReferralReview(
         await checkRewardTierUnlocks(tx, {
           waitListId,
           referrerId: referral.referredById,
+          triggeringSignupId: referral.signUp.id,
           verifiedReferrals: counts.get(referral.referredById) ?? 0,
           tiers,
         });

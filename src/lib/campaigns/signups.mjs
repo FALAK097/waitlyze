@@ -131,6 +131,7 @@ async function recordVerifiedSignup(tx, signup, now) {
       await checkRewardTierUnlocks(tx, {
         waitListId: signup.waitListId,
         referrerId: referral.referredById,
+        triggeringSignupId: signup.id,
         verifiedReferrals: counts.get(referral.referredById) ?? 0,
         tiers,
         now,
@@ -456,9 +457,8 @@ export async function createCampaignSignup(
   if (signUp?.signupOutcome === "created" && !signUp.silent) {
     after(() => maybeNotifySignupMilestone(db, input.waitListId, { signupId: signUp.id }));
   }
-  // Server-vetted post-signup redirect (null = stay on the cockpit). The
-  // browser client navigates only to this value, never to founder config or
-  // user input directly, so the allowlist cannot be bypassed client-side.
+  // Server-vetted post-signup redirect rides on signUp itself (null = stay on
+  // the cockpit); rank and rewards progress spread onto the result.
   return { ...signUp, rank, rewardSummary };
 }
 

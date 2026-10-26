@@ -182,10 +182,9 @@ function Field({
 // clamped integer on blur, instead of snapping to 0 mid-edit.
 function PointsField({ label, value, onCommit, max = 100000 }) {
   const id = useId();
+  // Callers pass `key={value}` so React remounts and re-syncs the text state
+  // when the committed value changes, instead of resetting it from an effect.
   const [text, setText] = useState(value == null ? "" : String(value));
-  useEffect(() => {
-    setText(value == null ? "" : String(value));
-  }, [value]);
   const commit = () => {
     if (text === "" || text == null) {
       onCommit(0);
@@ -207,7 +206,6 @@ function PointsField({ label, value, onCommit, max = 100000 }) {
     </div>
   );
 }
-
 function ListField({ label, value, onChange, placeholder, normalize = identityListValue }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState("");
@@ -1638,6 +1636,17 @@ export function SnapshotPageBuilder({
               rewards={snapshot.rewards}
               update={(value) => updateRoot("statusPage", value)}
               updateRewards={(value) => updateRoot("rewards", value)}
+              updateRoots={(patch) =>
+                applySnapshot({
+                  ...snapshot,
+                  ...Object.fromEntries(
+                    Object.entries(patch).map(([key, value]) => [
+                      key,
+                      { ...snapshot[key], ...value },
+                    ]),
+                  ),
+                })
+              }
             />
           }
         >
@@ -2260,7 +2269,15 @@ function FormPanel({ form, update }) {
     </div>
   );
 }
-function StatusPanel({ status, update, showReferrals = true, waitListId, rewards, updateRewards }) {
+function StatusPanel({
+  status,
+  update,
+  showReferrals = true,
+  waitListId,
+  rewards,
+  updateRewards,
+  updateRoots,
+}) {
   // Drafts saved before rewards existed have no key yet: fall back to the
   // zero-config defaults (same values the API resolves server-side).
   const perks = {
@@ -2274,7 +2291,6 @@ function StatusPanel({ status, update, showReferrals = true, waitListId, rewards
     showProgress: true,
     ...rewards,
   };
-  const setPerks = (patch) => updateRewards({ ...perks, ...patch });
   const referralNote = showReferrals ? null : (
     <p className="m-0 text-caption leading-relaxed text-product-text-secondary">
       Referral sharing is off for this waitlist, so the referral link and share buttons stay hidden.{" "}
@@ -2398,143 +2414,160 @@ function StatusPanel({ status, update, showReferrals = true, waitListId, rewards
           />
         ))}
       </div>
-      <div className="grid gap-4 border-t border-product-border-subtle pt-4">
-        <div className="grid gap-1">
-          <span className="block text-micro font-bold tracking-widest text-product-text-secondary uppercase">
-            Points & rewards
-          </span>
-          <p className="m-0 text-caption leading-relaxed text-product-text-secondary">
-            Points accrue automatically from activation. Reward tiers come from the Referral rewards
-            blocks on your page.
-          </p>
-        </div>
-        <div className="grid gap-4 sm:grid-cols-3">
-          <PointsField
-            label="Per verified signup"
-            value={perks.pointsSignup}
-            onCommit={(pointsSignup) => setPerks({ pointsSignup })}
-          />
-          <PointsField
-            label="Per referral"
-            value={perks.pointsReferral}
-            onCommit={(pointsReferral) => setPerks({ pointsReferral })}
-          />
-          <PointsField
-            label="Per social follow"
-            value={perks.pointsFollow}
-            onCommit={(pointsFollow) => setPerks({ pointsFollow })}
-          />
-        </div>
-        <PointsField
-          label="Position boost"
-          value={perks.positionOffset}
-          max={1000000}
-          onCommit={(positionOffset) => setPerks({ positionOffset })}
-        />
-        <p className="-mt-2 text-caption leading-relaxed text-product-text-secondary">
-          Adds to every displayed position — e.g. 846 makes the first signup show #847.
+      <RewardsSection perks={perks} updateRewards={updateRewards} />
+    </div>
+  );
+}
+
+function RewardsSection({ perks, updateRewards }) {
+  const setPerks = (patch) => updateRewards({ ...perks, ...patch });
+  return (
+    <div className="grid gap-4 border-t border-product-border-subtle pt-4">
+      <div className="grid gap-1">
+        <span className="block text-micro font-bold tracking-widest text-product-text-secondary uppercase">
+          Points & rewards
+        </span>
+        <p className="m-0 text-caption leading-relaxed text-product-text-secondary">
+          Points accrue automatically from activation. Reward tiers come from the Referral rewards
+          blocks on your page.
         </p>
-        <Toggle
-          label="Show points balance"
-          checked={perks.showPoints}
-          onChange={(showPoints) => setPerks({ showPoints })}
+      </div>
+      <div className="grid gap-4 sm:grid-cols-3">
+        <PointsField
+          key={perks.pointsSignup}
+          label="Per verified signup"
+          value={perks.pointsSignup}
+          onCommit={(pointsSignup) => setPerks({ pointsSignup })}
         />
-        <Toggle
-          label="Show reward progress"
-          checked={perks.showProgress}
-          onChange={(showProgress) => setPerks({ showProgress })}
+        <PointsField
+          key={perks.pointsReferral}
+          label="Per referral"
+          value={perks.pointsReferral}
+          onCommit={(pointsReferral) => setPerks({ pointsReferral })}
         />
-        <Toggle
-          label="Stealth mode (hide all counts)"
-          hint="Hides positions, points, and headcounts on the public page. Best for private or B2B launches."
-          checked={perks.hideCounts}
-          onChange={(hideCounts) => setPerks({ hideCounts })}
+        <PointsField
+          key={perks.pointsFollow}
+          label="Per social follow"
+          value={perks.pointsFollow}
+          onCommit={(pointsFollow) => setPerks({ pointsFollow })}
         />
-        <div className="grid gap-2.5">
-          <span className="block text-micro font-bold tracking-widest text-product-text-secondary uppercase">
-            Custom events
-          </span>
-          <p className="m-0 text-caption leading-relaxed text-product-text-secondary">
-            Off-site actions awarded through the API (survey, Discord join…). The event key goes in
-            the API call.
-          </p>
-          {(perks.customEvents ?? []).map((entry, index) => (
-            <div
-              className="grid gap-2.5 border-t border-product-border-subtle pt-4 [&>button]:justify-self-start"
-              key={entry.id ?? `event-${index}`}
-            >
-              <Field
-                label="Event key"
-                value={entry.key}
-                maxLength={40}
-                onChange={(key) =>
-                  setPerks({
-                    customEvents: perks.customEvents.map((item, itemIndex) =>
-                      itemIndex === index ? { ...item, key } : item,
-                    ),
-                  })
-                }
-              />
-              <Field
-                label="Label"
-                value={entry.label}
-                maxLength={80}
-                onChange={(label) =>
-                  setPerks({
-                    customEvents: perks.customEvents.map((item, itemIndex) =>
-                      itemIndex === index ? { ...item, label } : item,
-                    ),
-                  })
-                }
-              />
-              <PointsField
-                label="Points"
-                value={entry.points}
-                onCommit={(points) =>
-                  setPerks({
-                    customEvents: perks.customEvents.map((item, itemIndex) =>
-                      itemIndex === index ? { ...item, points } : item,
-                    ),
-                  })
-                }
-              />
-              <Button
-                variant="ghost"
-                size="sm"
-                type="button"
-                onClick={() =>
-                  setPerks({
-                    customEvents: perks.customEvents.filter((_, itemIndex) => itemIndex !== index),
-                  })
-                }
-              >
-                Remove
-              </Button>
-            </div>
-          ))}
-          {(perks.customEvents ?? []).length < 12 && (
+      </div>
+      <PointsField
+        key={perks.positionOffset}
+        label="Position boost"
+        value={perks.positionOffset}
+        max={1000000}
+        onCommit={(positionOffset) => setPerks({ positionOffset })}
+      />
+      <p className="-mt-2 text-caption leading-relaxed text-product-text-secondary">
+        Adds to every displayed position — e.g. 846 makes the first signup show #847.
+      </p>
+      <Toggle
+        label="Show points balance"
+        checked={perks.showPoints}
+        onChange={(showPoints) => setPerks({ showPoints })}
+      />
+      <Toggle
+        label="Show reward progress"
+        checked={perks.showProgress}
+        onChange={(showProgress) => setPerks({ showProgress })}
+      />
+      <Toggle
+        label="Stealth mode (hide all counts)"
+        hint="Hides positions, points, and headcounts on the public page. Best for private or B2B launches."
+        checked={perks.hideCounts}
+        onChange={(hideCounts) => setPerks({ hideCounts })}
+      />
+      <div className="grid gap-2.5">
+        <span className="block text-micro font-bold tracking-widest text-product-text-secondary uppercase">
+          Custom events
+        </span>
+        <p className="m-0 text-caption leading-relaxed text-product-text-secondary">
+          Off-site actions awarded through the API (survey, Discord join…). The event key goes in
+          the API call.
+        </p>
+        {(perks.customEvents ?? []).map((entry, index) => (
+          <div
+            className="grid gap-2.5 border-t border-product-border-subtle pt-4 [&>button]:justify-self-start"
+            key={entry.id ?? `${entry.key}:${entry.label}:${entry.points}`}
+          >
+            <Field
+              label="Event key"
+              value={entry.key}
+              maxLength={40}
+              onChange={(key) =>
+                setPerks({
+                  customEvents: perks.customEvents.map((item, itemIndex) =>
+                    itemIndex === index ? { ...item, key } : item,
+                  ),
+                })
+              }
+            />
+            <Field
+              label="Label"
+              value={entry.label}
+              maxLength={80}
+              onChange={(label) =>
+                setPerks({
+                  customEvents: perks.customEvents.map((item, itemIndex) =>
+                    itemIndex === index ? { ...item, label } : item,
+                  ),
+                })
+              }
+            />
+            <PointsField
+              key={entry.points}
+              label="Points"
+              value={entry.points}
+              onCommit={(points) =>
+                setPerks({
+                  customEvents: perks.customEvents.map((item, itemIndex) =>
+                    itemIndex === index ? { ...item, points } : item,
+                  ),
+                })
+              }
+            />
             <Button
-              variant="outline"
+              variant="ghost"
               size="sm"
               type="button"
               onClick={() =>
                 setPerks({
-                  customEvents: [
-                    ...(perks.customEvents ?? []),
-                    {
-                      key: "survey",
-                      label: "Survey completed",
-                      points: 20,
-                      id: crypto.randomUUID(),
-                    },
-                  ],
+                  customEvents: perks.customEvents.filter((_, itemIndex) => itemIndex !== index),
                 })
               }
             >
-              Add event
+              Remove
             </Button>
-          )}
-        </div>
+          </div>
+        ))}
+        {(perks.customEvents ?? []).length < 12 && (
+          <Button
+            variant="outline"
+            size="sm"
+            type="button"
+            onClick={() => {
+              // Distinct keys: normalizeRewardsConfig keeps one entry per key,
+              // so adding twice without renaming must not collide.
+              const keys = new Set((perks.customEvents ?? []).map((entry) => entry.key));
+              let key = "survey";
+              for (let n = 2; keys.has(key); n += 1) key = `survey-${n}`;
+              setPerks({
+                customEvents: [
+                  ...(perks.customEvents ?? []),
+                  {
+                    key,
+                    label: "Survey completed",
+                    points: 20,
+                    id: crypto.randomUUID(),
+                  },
+                ],
+              });
+            }}
+          >
+            Add event
+          </Button>
+        )}
       </div>
     </div>
   );

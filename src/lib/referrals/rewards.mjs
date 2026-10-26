@@ -15,7 +15,7 @@
 // balance bump happens in the same transaction as the triggering event.
 
 import { templateSnapshotSchema } from "../templates/catalog.mjs";
-import { enqueueWebhookEvent } from "../webhooks/delivery.mjs";
+import { enqueueWebhookEventBatch } from "../webhooks/delivery.mjs";
 import {
   displayPosition,
   normalizeRewardsConfig,
@@ -123,29 +123,34 @@ export async function getAdvancement(db, waitListId, signUpId) {
 // collide with the signup-count milestones (milestone:{waitlist}:{count}).
 export async function checkRewardTierUnlocks(
   tx,
-  { waitListId, referrerId, verifiedReferrals, tiers, now = new Date() },
+  { waitListId, referrerId, triggeringSignupId, verifiedReferrals, tiers, now = new Date() },
 ) {
   const list = Array.isArray(tiers) ? tiers : [];
   const count =
     Number.isSafeInteger(verifiedReferrals) && verifiedReferrals >= 0 ? verifiedReferrals : 0;
-  let unlocked = 0;
-  for (const tier of list) {
-    if (!tier || !Number.isSafeInteger(tier.referrals) || tier.referrals > count) continue;
-    await enqueueWebhookEvent(tx, {
-      waitListId,
-      eventType: "milestone.reached",
-      signupId: referrerId,
-      eventId: `reward-tier:${waitListId}:${referrerId}:${tier.referrals}`,
-      extra: {
-        count: tier.referrals,
-        reward: tier.reward,
-        triggeringSignupId: referrerId,
-      },
-      now,
-    });
-    unlocked += 1;
+  const unlocked = list.filter(
+    (tier) => tier && Number.isSafeInteger(tier.referrals) && tier.referrals <= count,
+  );
+  if (unlocked.length > 0) {
+    await enqueueWebhookEventBatch(
+      tx,
+      unlocked.map((tier) => ({
+        waitListId,
+        eventType: "milestone.reached",
+        signupId: referrerId,
+        eventId: `reward-tier:${waitListId}:${referrerId}:${tier.referrals}`,
+        extra: {
+          count: tier.referrals,
+          reward: tier.reward,
+          // The invitee whose verification crossed the threshold; `signupId`
+          // above stays the referrer who earns the tier.
+          triggeringSignupId,
+        },
+        now,
+      })),
+    );
   }
-  return unlocked;
+  return unlocked.length;
 }
 
 // Canonical per-signup rewards payload for cockpit + API responses. Never

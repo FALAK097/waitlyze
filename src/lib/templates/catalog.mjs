@@ -376,8 +376,9 @@ const v2SnapshotSchema = z
     form: templateFormSchema,
     statusPage: statusPageSchema,
     seo: seoSchema,
-    // New key, not required: older snapshots parse with zero-config defaults.
-    rewards: rewardsSchema.default({}),
+    // New key, not required: older snapshots parse with zero-config defaults
+    // (prefault feeds `{}` through rewardsSchema so nested defaults apply).
+    rewards: rewardsSchema.prefault({}),
   })
   .superRefine((value, ctx) => {
     const visibleForms = value.sections.filter(
