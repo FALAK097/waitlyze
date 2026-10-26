@@ -22,7 +22,6 @@ import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/compone
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { cn } from "@/lib/utils";
 
 import { ImageUploadField } from "./image-upload-field";
 
@@ -140,16 +139,14 @@ function ReadinessList({ items, tone, onFix }) {
         if (item.fix && onFix) {
           return (
             <li key={item.id}>
-              <button
+              <Button
                 type="button"
                 onClick={() => onFix(item.fix)}
-                className={cn(
-                  cardClass,
-                  "group w-full cursor-pointer text-left outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-product-focus",
-                )}
+                variant={isBlocker ? "product-card-danger" : "product-card-muted"}
+                size="card"
               >
                 {body}
-              </button>
+              </Button>
             </li>
           );
         }
@@ -214,21 +211,17 @@ export function PublishAndShare({
             className="grid gap-1 max-[760px]:grid-cols-2 max-[760px]:gap-1.5"
           >
             {sections.map(({ id, label, icon }) => (
-              <button
+              <Button
                 key={id}
                 type="button"
                 aria-current={section === id ? "page" : undefined}
                 onClick={() => setSection(id)}
-                className={cn(
-                  "flex min-h-11 cursor-pointer items-center gap-3 rounded-lg px-3 py-2.5 text-item transition-colors duration-150 hover:bg-product-bg-inset max-[760px]:gap-2 max-[760px]:px-2.5",
-                  section === id
-                    ? "bg-product-bg-inset font-medium text-product-text-primary"
-                    : "text-product-text-secondary hover:text-product-text-primary",
-                )}
+                variant="product-ghost"
+                size="navigation-item"
               >
                 <HugeiconsIcon icon={icon} size={18} strokeWidth={1.5} aria-hidden="true" />
                 <span>{label}</span>
-              </button>
+              </Button>
             ))}
           </nav>
         </aside>
