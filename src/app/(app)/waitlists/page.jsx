@@ -73,7 +73,7 @@ const WAITLIST_DATE_FORMAT = new Intl.DateTimeFormat(undefined, { dateStyle: "me
 function WaitlistsTable({ waitlists, query, status, sort }) {
   return (
     <div className={waitlistTableWrap}>
-      <Table>
+      <Table scrollHint="Swipe or scroll to see all columns" scrollLabel="Waitlists">
         <caption className="sr-only">Your waitlists</caption>
         <TableHeader>
           <TableRow>
@@ -203,23 +203,33 @@ async function WaitlistsResults({ userId, workspaceId, query, status, sort, requ
       ...waitlistSearchWhere(query),
       ...waitlistStatusWhere(status),
     };
-    total = await prisma.waitList.count({ where });
+    // Count and page data are independent. Fetch them together for normal
+    // navigation, then retry only when the requested page needs clamping.
+    const initialPage =
+      Number.isSafeInteger(requestedPage) && requestedPage <= 1000 ? Math.max(1, requestedPage) : 1;
+    const findPage = (pageNumber) =>
+      prisma.waitList.findMany({
+        where,
+        select: {
+          id: true,
+          name: true,
+          description: true,
+          status: true,
+          updatedAt: true,
+          _count: { select: { signUps: true, impressions: true } },
+        },
+        orderBy: waitlistSortOrderBy(sort),
+        skip: (pageNumber - 1) * PAGE_SIZE,
+        take: PAGE_SIZE,
+      });
+    const [count, initialWaitlists] = await Promise.all([
+      prisma.waitList.count({ where }),
+      findPage(initialPage),
+    ]);
+    total = count;
     pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE));
     page = Math.min(Math.max(1, requestedPage), pageCount);
-    waitlists = await prisma.waitList.findMany({
-      where,
-      select: {
-        id: true,
-        name: true,
-        description: true,
-        status: true,
-        updatedAt: true,
-        _count: { select: { signUps: true, impressions: true } },
-      },
-      orderBy: waitlistSortOrderBy(sort),
-      skip: (page - 1) * PAGE_SIZE,
-      take: PAGE_SIZE,
-    });
+    waitlists = page === initialPage ? initialWaitlists : await findPage(page);
   } catch (error) {
     console.error("Waitlists query failed", error?.code || error?.name || "unknown error");
     return (

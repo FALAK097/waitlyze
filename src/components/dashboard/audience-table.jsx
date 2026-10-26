@@ -1175,7 +1175,11 @@ export function AudienceTable({
               </div>
             )}
             <div className="overflow-x-auto [&_td]:px-3 [&_td]:py-4.5 [&_td:first-child]:pl-0 [&_td:last-child]:pr-0 [&_th]:border-b [&_th]:px-3 [&_th]:text-caption [&_th:first-child]:pl-0 [&_th:last-child]:pr-0">
-              <Table className="w-full min-w-192 table-fixed border-collapse text-left sm:table-auto">
+              <Table
+                className="w-full min-w-192 table-fixed border-collapse text-left sm:table-auto"
+                scrollHint="Swipe or scroll to see all columns"
+                scrollLabel="Signups"
+              >
                 <TableHeader className="text-product-text-secondary">
                   {table.getHeaderGroups().map((headerGroup) => (
                     <TableRow key={headerGroup.id}>

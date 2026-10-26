@@ -246,7 +246,7 @@ export function AuditLog({ events }) {
           "max-[767px]:[&_th]:px-4 max-[767px]:[&_td]:px-4",
         ].join(" ")}
       >
-        <Table>
+        <Table scrollHint="Swipe or scroll to see all columns" scrollLabel="Audit log">
           <TableHeader>
             <TableRow>
               <TableHead scope="col">Time</TableHead>
