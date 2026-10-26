@@ -9,9 +9,9 @@ Use the Waitlyze API from your server when you need to create a signup, look up 
 
 | Method | Endpoint | Purpose | Guide |
 | --- | --- | --- | --- |
-| `POST` | `/api/waitlist` | Create a signup and return its position and referral details. | [Create signup](/docs/api/create-signup) |
-| `GET` | `/api/waitlist?waitlistId=…&email=…` | Look up a signup's current status. | [Look up signup](/docs/api/lookup-signup) |
-| `POST` | `/api/waitlist/points` | Award points for a configured off-site action. | [Award custom points](/docs/api/award-points) |
+| <span className="docs-http-method docs-http-method--post">POST</span> | `/api/waitlist` | Create a signup and return its position and referral details. | [Create signup](/docs/api/create-signup) |
+| <span className="docs-http-method docs-http-method--get">GET</span> | `/api/waitlist?waitlistId=…&email=…` | Look up a signup's current status. | [Look up signup](/docs/api/lookup-signup) |
+| <span className="docs-http-method docs-http-method--post">POST</span> | `/api/waitlist/points` | Award points for a configured off-site action. | [Award custom points](/docs/api/award-points) |
 
 All endpoints use the domain where your Waitlyze workspace is hosted. Keep requests server-side: API keys are secrets and must never be shipped in a browser bundle or public mobile app.
 

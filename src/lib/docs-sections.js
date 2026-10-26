@@ -104,6 +104,21 @@ function sectionPage(name, url, icon) {
   return { type: "page", name, url, ...(icon ? { icon } : {}) };
 }
 
+function apiEndpointPage(name, method, url) {
+  const methodClass =
+    method === "GET"
+      ? "docs-http-method docs-http-method--get"
+      : "docs-http-method docs-http-method--post";
+
+  return sectionPage(
+    createElement("span", { className: "inline-flex min-w-0 items-center gap-2" }, [
+      createElement("span", { key: "name", className: "min-w-0" }, name),
+      createElement("span", { key: "method", className: methodClass }, method),
+    ]),
+    url,
+  );
+}
+
 function integrationLogo(file) {
   return createElement("img", {
     src: `/integrations/${file}.svg`,
@@ -127,9 +142,9 @@ export function getDocsSectionTree(tree, section) {
           name: "Waitlist endpoints",
           defaultOpen: true,
           children: [
-            sectionPage("Create signup · POST", "/docs/api/create-signup"),
-            sectionPage("Look up signup · GET", "/docs/api/lookup-signup"),
-            sectionPage("Award custom points · POST", "/docs/api/award-points"),
+            apiEndpointPage("Create signup", "POST", "/docs/api/create-signup"),
+            apiEndpointPage("Look up signup", "GET", "/docs/api/lookup-signup"),
+            apiEndpointPage("Award custom points", "POST", "/docs/api/award-points"),
           ],
         },
         sectionPage("API keys", "/docs/api-keys"),
