@@ -50,8 +50,6 @@ export function SpamHintView({ subject, previewText, text, html }) {
 }
 
 const frameBar = "flex flex-wrap items-center gap-2";
-const frameTab =
-  "min-h-8.5 rounded-product-control border-product-border-control bg-white px-3 text-caption font-semibold text-product-text-primary hover:bg-white hover:text-product-text-primary aria-[pressed=true]:bg-product-bg-inset aria-[pressed=true]:hover:bg-product-bg-inset focus-visible:ring-0 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-product-success-text!";
 
 export function EmailPreviewFrame({
   html,
@@ -63,8 +61,8 @@ export function EmailPreviewFrame({
       <div className={frameBar}>
         <Button
           type="button"
-          variant="outline"
-          className={frameTab}
+          variant="product-toggle"
+          size="product-toggle"
           aria-pressed={!mobile}
           onClick={() => setMobile(false)}
         >
@@ -72,8 +70,8 @@ export function EmailPreviewFrame({
         </Button>
         <Button
           type="button"
-          variant="outline"
-          className={frameTab}
+          variant="product-toggle"
+          size="product-toggle"
           aria-pressed={mobile}
           onClick={() => setMobile(true)}
         >

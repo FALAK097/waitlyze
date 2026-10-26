@@ -18,6 +18,8 @@ const buttonVariants = cva(
           "rounded-none border-0 border-b-2 border-transparent bg-transparent font-normal text-product-text-secondary transition-colors hover:bg-transparent hover:text-product-text-primary active:not-aria-[haspopup]:translate-y-0 aria-[pressed=true]:border-product-accent-solid aria-[pressed=true]:font-semibold aria-[pressed=true]:text-product-text-primary",
         "product-ghost":
           "rounded-md border border-transparent bg-transparent text-product-text-secondary transition-colors hover:bg-product-bg-inset hover:text-product-text-primary focus-visible:ring-0 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-neutral-900 active:not-aria-[haspopup]:translate-y-0",
+        "product-toggle":
+          "rounded-product-control border border-product-border-control bg-white font-semibold text-product-text-primary transition-colors hover:bg-white hover:text-product-text-primary focus-visible:ring-0 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-product-success-text! active:not-aria-[haspopup]:translate-y-0 aria-[pressed=true]:bg-product-bg-inset aria-[pressed=true]:hover:bg-product-bg-inset",
         "table-sort":
           "bg-transparent text-inherit transition-colors hover:bg-transparent hover:text-product-text-primary active:not-aria-[haspopup]:translate-y-0",
         "outline-destructive":
@@ -34,6 +36,7 @@ const buttonVariants = cva(
         filter: "h-auto min-h-11 px-0 py-2.5 text-sm",
         "table-sort": "h-auto min-h-11 gap-1.5 px-1 text-sm",
         "icon-navigation": "h-10 w-10 p-0 max-sm:w-9",
+        "product-toggle": "h-auto min-h-8.5 px-3 text-caption",
         xs: "h-6 gap-1 rounded-[min(var(--radius-md),10px)] px-2 text-xs in-data-[slot=button-group]:rounded-lg has-data-[icon=inline-end]:pr-1.5 has-data-[icon=inline-start]:pl-1.5 [&_svg:not([class*='size-'])]:size-3",
         sm: "h-7 gap-1 rounded-[min(var(--radius-md),12px)] px-2.5 text-[0.8rem] in-data-[slot=button-group]:rounded-lg has-data-[icon=inline-end]:pr-1.5 has-data-[icon=inline-start]:pl-1.5 [&_svg:not([class*='size-'])]:size-3.5",
         lg: "h-9 gap-1.5 px-2.5 has-data-[icon=inline-end]:pr-2 has-data-[icon=inline-start]:pl-2",

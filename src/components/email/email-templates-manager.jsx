@@ -39,8 +39,6 @@ const testForm = "flex items-center gap-2";
 const testInput =
   "h-9 w-45 min-w-0 rounded-product-control border border-product-border-control bg-white px-2.5 text-caption max-sm:w-auto max-sm:flex-1 max-sm:text-base";
 const modeBar = "flex flex-wrap items-center gap-2";
-const modeTab =
-  "min-h-8.5 rounded-product-control border border-product-border-control bg-white px-3 text-caption font-semibold text-product-text-primary cursor-pointer aria-[pressed=true]:bg-product-bg-inset focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-product-success-text!";
 const htmlPane =
   "field-sizing-fixed min-h-105 w-full rounded-lg border border-product-border-subtle bg-white p-4 font-product-mono text-caption leading-relaxed";
 const hint = "m-0 text-caption leading-normal text-product-text-secondary";
@@ -258,30 +256,33 @@ export function EmailTemplatesManager({ waitListId, waitListName, initialTemplat
           </div>
           <fieldset className={modeBar}>
             <legend className="sr-only">Editor mode</legend>
-            <button
+            <Button
               type="button"
-              className={modeTab}
+              variant="product-toggle"
+              size="product-toggle"
               aria-pressed={mode === "write"}
               onClick={() => setMode("write")}
             >
               Write
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
-              className={modeTab}
+              variant="product-toggle"
+              size="product-toggle"
               aria-pressed={mode === "html"}
               onClick={enterHtmlMode}
             >
               HTML
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
-              className={modeTab}
+              variant="product-toggle"
+              size="product-toggle"
               aria-pressed={mode === "preview"}
               onClick={enterPreview}
             >
               Preview
-            </button>
+            </Button>
           </fieldset>
           {mode === "html" ? (
             <div className="flex flex-col gap-3">
