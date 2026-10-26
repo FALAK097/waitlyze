@@ -575,14 +575,16 @@ function RangePicker({ range, from, to, onChange }) {
     >
       <PopoverTrigger
         render={
-          <button
+          <Button
             type="button"
-            className="inline-flex min-h-10.5 cursor-pointer items-center gap-2 rounded-lg border border-product-border-subtle bg-product-bg-surface px-3.5 py-2 text-caption font-medium text-product-text-primary hover:bg-product-bg-inset [&_svg]:size-3.75! [&_svg]:shrink-0 [&_svg]:text-product-text-secondary"
+            variant="product-outline"
+            size="date-trigger"
+            className="[&_svg]:size-3.75!"
             aria-label={`Date range: ${rangeLabel(range, from, to)}`}
           >
             <HugeiconsIcon icon={CalendarIcon} aria-hidden="true" />
             {rangeLabel(range, from, to)}
-          </button>
+          </Button>
         }
       />
       <PopoverContent align="end" className={view === "calendar" ? "w-120" : "w-48"}>
@@ -621,13 +623,14 @@ function RangePicker({ range, from, to, onChange }) {
           ) : (
             <>
               <div className="flex items-center justify-between gap-2 px-2 pt-0.5 text-xs font-medium text-product-text-secondary">
-                <button
+                <Button
                   type="button"
-                  className="min-h-7 cursor-pointer rounded-md border-0 bg-transparent px-1 text-xs font-medium text-product-text-secondary hover:bg-product-bg-inset hover:text-product-text-primary"
+                  variant="product-ghost"
+                  size="date-back"
                   onClick={() => setView("presets")}
                 >
                   ← Presets
-                </button>
+                </Button>
                 <span>
                   {canApply
                     ? `${format(draft.from, "LLL d")} – ${format(draft.to, "LLL d, y")}`
@@ -658,21 +661,23 @@ function RangePicker({ range, from, to, onChange }) {
                   </label>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <button
+                  <Button
                     type="button"
-                    className="min-h-8 cursor-pointer rounded-lg border-0 bg-transparent px-2.5 py-1 text-xs font-medium text-product-text-secondary hover:not-disabled:bg-product-bg-inset hover:not-disabled:text-product-text-primary disabled:cursor-not-allowed disabled:opacity-45"
+                    variant="product-ghost"
+                    size="date-action"
                     onClick={() => setDraft(undefined)}
                   >
                     Clear
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     type="button"
-                    className="min-h-8 cursor-pointer rounded-lg border-0 bg-foreground px-2.5 py-1 text-xs font-medium text-background hover:not-disabled:bg-foreground hover:not-disabled:text-background hover:not-disabled:opacity-90 disabled:cursor-not-allowed disabled:opacity-45"
+                    variant="product-apply"
+                    size="date-action"
                     disabled={!canApply}
                     onClick={applyDraft}
                   >
                     Apply
-                  </button>
+                  </Button>
                 </div>
               </div>
             </>

@@ -26,6 +26,8 @@ const buttonVariants = cva(
           "rounded-product-control border border-product-border-control bg-white font-semibold text-product-text-primary transition-colors hover:bg-white hover:text-product-text-primary focus-visible:ring-0 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-product-success-text! active:not-aria-[haspopup]:translate-y-0 aria-[pressed=true]:bg-product-bg-inset aria-[pressed=true]:hover:bg-product-bg-inset",
         "product-outline":
           "border-product-border-subtle bg-product-bg-surface text-product-text-primary transition-colors hover:border-product-text-secondary hover:bg-product-bg-inset focus-visible:ring-0 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-neutral-900",
+        "product-apply":
+          "bg-foreground text-background hover:not-disabled:bg-foreground hover:not-disabled:text-background hover:not-disabled:opacity-90 disabled:cursor-not-allowed disabled:opacity-45",
         "product-pill":
           "rounded-full border-product-border-subtle bg-transparent text-product-text-secondary transition-colors hover:bg-product-bg-inset focus-visible:ring-2 focus-visible:ring-product-success-text focus-visible:outline-none focus-visible:ring-inset active:not-aria-[haspopup]:translate-y-0 aria-[pressed=true]:border-product-text-primary aria-[pressed=true]:text-product-text-primary",
         "product-option":
@@ -54,6 +56,11 @@ const buttonVariants = cva(
           "h-auto min-h-8.5 border-0 px-2.25 py-1.25 text-micro focus-visible:ring-2 focus-visible:ring-product-success-text focus-visible:outline-none focus-visible:ring-inset",
         "product-toggle": "h-auto min-h-8.5 px-3 text-caption",
         "menu-item": "h-auto min-h-9 w-full justify-start px-2.5 py-1.5 text-left text-caption",
+        "date-trigger":
+          "h-auto min-h-10.5 gap-2 px-3.5 py-2 text-caption [&_svg]:text-product-text-secondary",
+        "date-back":
+          "h-auto min-h-7 rounded-md px-1 text-xs font-medium text-product-text-secondary",
+        "date-action": "h-auto min-h-8 rounded-lg px-2.5 py-1 text-xs font-medium",
         "navigation-item":
           "h-auto min-h-11 w-full min-w-0 justify-start gap-3 px-3 py-2.5 text-item font-normal whitespace-normal aria-[current=page]:font-medium max-[760px]:gap-2 max-[760px]:px-2.5",
         card: "h-auto w-full flex-wrap items-start justify-between gap-4 rounded-lg border-0 px-3 py-2.5 text-left font-normal whitespace-normal",
