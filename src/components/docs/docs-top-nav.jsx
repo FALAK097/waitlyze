@@ -10,7 +10,7 @@ import { getDocsSection } from "@/lib/docs-sections";
 import { cn } from "@/lib/utils";
 
 const links = [
-  { label: "Documentation", href: "/docs", section: "docs" },
+  { label: "Documentation", href: "/docs", section: "documentation" },
   { label: "API Reference", href: "/docs/api/reference", section: "api" },
   { label: "Integrations", href: "/docs/integrations/overview", section: "integrations" },
   { label: "Changelog", href: "/docs/changelog", section: "changelog" },
@@ -35,7 +35,7 @@ export function DocsTopNav() {
         {NavTitle && <NavTitle />}
       </div>
       <nav
-        className="no-scrollbar flex min-w-0 items-stretch justify-center gap-2 overflow-x-auto max-md:flex-1 max-md:justify-start max-md:gap-1.5 md:gap-6 xl:gap-9"
+        className="no-scrollbar flex min-w-0 flex-1 items-stretch justify-start gap-1.5 overflow-x-auto md:gap-6 xl:gap-9"
         aria-label="Documentation sections"
       >
         {links.map(({ label, href, section }) => {
