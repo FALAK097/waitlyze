@@ -43,6 +43,7 @@ const buttonVariants = cva(
         dimension:
           "h-auto min-h-8.5 border-0 px-2.25 py-1.25 text-micro focus-visible:ring-2 focus-visible:ring-product-success-text focus-visible:outline-none focus-visible:ring-inset",
         "product-toggle": "h-auto min-h-8.5 px-3 text-caption",
+        "menu-item": "h-auto min-h-9 w-full justify-start px-2.5 py-1.5 text-left text-caption",
         "auth-provider": "h-auto min-h-12 gap-3 px-4 text-sm",
         xs: "h-6 gap-1 rounded-[min(var(--radius-md),10px)] px-2 text-xs in-data-[slot=button-group]:rounded-lg has-data-[icon=inline-end]:pr-1.5 has-data-[icon=inline-start]:pl-1.5 [&_svg:not([class*='size-'])]:size-3",
         sm: "h-7 gap-1 rounded-[min(var(--radius-md),12px)] px-2.5 text-[0.8rem] in-data-[slot=button-group]:rounded-lg has-data-[icon=inline-end]:pr-1.5 has-data-[icon=inline-start]:pl-1.5 [&_svg:not([class*='size-'])]:size-3.5",

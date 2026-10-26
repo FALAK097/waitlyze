@@ -22,7 +22,6 @@ import {
 } from "@/components/ui/table";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { SIGNUP_POINTS, REFERRAL_POINTS } from "@/lib/referrals/points.mjs";
-import { cn } from "@/lib/utils";
 
 const EvilAreaChart = dynamic(
   () => import("@/components/product/evil-area-chart").then((module) => module.EvilAreaChart),
@@ -595,14 +594,11 @@ function RangePicker({ range, from, to, onChange }) {
               aria-label="Date range presets"
             >
               {rangePresets.map((option) => (
-                <button
+                <Button
                   key={option.days}
                   type="button"
-                  className={cn(
-                    "min-h-9 cursor-pointer rounded-lg border-0 bg-transparent px-2.5 py-1.5 text-left text-caption font-medium text-product-text-secondary hover:bg-product-bg-inset",
-                    range === option.days &&
-                      "bg-product-bg-inset font-semibold text-product-text-primary",
-                  )}
+                  variant="product-ghost"
+                  size="menu-item"
                   aria-pressed={range === option.days}
                   onClick={() => {
                     onChange({ range: option.days, from: null, to: null });
@@ -610,16 +606,17 @@ function RangePicker({ range, from, to, onChange }) {
                   }}
                 >
                   {option.label}
-                </button>
+                </Button>
               ))}
-              <button
+              <Button
                 type="button"
-                className="min-h-9 cursor-pointer rounded-lg border-0 bg-transparent px-2.5 py-1.5 text-left text-caption font-medium text-product-text-secondary hover:bg-product-bg-inset"
+                variant="product-ghost"
+                size="menu-item"
                 aria-pressed={false}
                 onClick={openPicker}
               >
                 Custom…
-              </button>
+              </Button>
             </div>
           ) : (
             <>
