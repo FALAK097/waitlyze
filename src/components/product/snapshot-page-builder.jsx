@@ -708,6 +708,7 @@ export function SnapshotPageBuilder({
   rollbackPage,
   canPublish,
   publicationOrigin,
+  turnstileConfigured,
 }) {
   const router = useRouter();
   const sensors = useSensors(
@@ -1176,8 +1177,9 @@ export function SnapshotPageBuilder({
       assessPublishReadiness(snapshot, {
         publishedSnapshot: waitList.publishedSnapshot,
         showReferrals: waitList.showReferrals,
+        turnstileConfigured,
       }),
-    [snapshot, waitList.publishedSnapshot, waitList.showReferrals],
+    [snapshot, waitList.publishedSnapshot, waitList.showReferrals, turnstileConfigured],
   );
   const goToFix = (fix) => {
     if (!fix) return;

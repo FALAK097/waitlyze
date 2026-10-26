@@ -9,6 +9,11 @@ import {
   FraudLimitError,
   InvalidCampaignError,
 } from "@/lib/campaigns/signups.mjs";
+import {
+  campaignRequiresTurnstile,
+  TurnstileVerificationError,
+  verifyTurnstileToken,
+} from "@/lib/campaigns/turnstile.mjs";
 import { dispatchVerificationNow } from "@/lib/email/dispatch-now.mjs";
 import { fingerprintSignupDevice } from "@/lib/fraud/gates.mjs";
 import prisma from "@/lib/prisma";
@@ -217,6 +222,15 @@ export async function POST(request) {
     const budget = await consumeApiKeyBudget(prisma, apiKey);
     const budgetHeaders = apiKeyRateLimitHeaders(budget);
 
+    const requiresTurnstile = await campaignRequiresTurnstile(prisma, waitlistId);
+    const turnstileVerified =
+      requiresTurnstile && (await verifyTurnstileToken(request, body["cf-turnstile-response"]));
+    if (requiresTurnstile && !turnstileVerified)
+      return NextResponse.json(
+        { success: false, error: "Complete the security check and try again." },
+        { status: 403 },
+      );
+
     const { device, deviceType } = await getDeviceInfo();
     const ip = getIpAddress(request);
     const geo = getGeoInfo(request);
@@ -230,6 +244,7 @@ export async function POST(request) {
     let signupDataInput = {
       uniqueUserId,
       email: email.trim(),
+      signupProtection: turnstileVerified ? "turnstile" : "none",
       marketingConsent: body.marketingConsent === true,
       device,
       deviceType,
@@ -369,6 +384,11 @@ export async function POST(request) {
           status: 429,
           headers: { "Retry-After": String(error.retryAfterSeconds ?? 3600) },
         },
+      );
+    if (error instanceof TurnstileVerificationError)
+      return NextResponse.json(
+        { success: false, error: "Complete the security check and try again." },
+        { status: 403 },
       );
     if (error instanceof DuplicateSignupError) {
       const lookupId = body?.waitlistId;

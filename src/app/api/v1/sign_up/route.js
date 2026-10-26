@@ -1,12 +1,13 @@
 import { NextResponse } from "next/server";
 
-import { pickCustomFields } from "@/lib/campaigns/form-rules.mjs";
+import { getPublishedFormConfig, pickCustomFields } from "@/lib/campaigns/form-rules.mjs";
 import { getCampaignPosition } from "@/lib/campaigns/referral-position.mjs";
 import {
   DuplicateSignupError,
   FraudLimitError,
   InvalidCampaignError,
 } from "@/lib/campaigns/signups.mjs";
+import { TurnstileVerificationError } from "@/lib/campaigns/turnstile.mjs";
 import { dispatchVerificationNow } from "@/lib/email/dispatch-now.mjs";
 import { fingerprintSignupDevice } from "@/lib/fraud/gates.mjs";
 import prisma from "@/lib/prisma";
@@ -123,6 +124,11 @@ export const POST = async (req) => {
     const validator = await validateRequest(body, { country: geo?.country, ip });
     if (validator) return validator;
 
+    // validateRequest just verified the Turnstile token when the published
+    // form requires it, so record how this signup was protected downstream.
+    const formConfig = await getPublishedFormConfig(prisma, body.waitListId).catch(() => null);
+    const turnstileVerified = formConfig?.requireTurnstile === true;
+
     const hypeSession = body.hypeSession;
 
     if (!hypeSession) {
@@ -140,6 +146,7 @@ export const POST = async (req) => {
       uniqueUserId: hypeSession,
       email: body.email,
       marketingConsent: body.marketingConsent === true,
+      signupProtection: turnstileVerified ? "turnstile" : "none",
       device,
       deviceType,
       deviceFingerprint: fingerprintSignupDevice({
@@ -174,6 +181,11 @@ export const POST = async (req) => {
       signUp: legacySignupResponse(signUp, { includeReferralCode: true }),
     });
   } catch (error) {
+    if (error instanceof TurnstileVerificationError)
+      return NextResponse.json(
+        { message: "Complete the security check and try again." },
+        { status: 403 },
+      );
     if (error instanceof PublicRateLimitError)
       return NextResponse.json(
         { message: error.message, error: error.message },

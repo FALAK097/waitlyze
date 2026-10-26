@@ -39,6 +39,7 @@ import {
   getSpotsForNewSignup,
 } from "./referral-position.mjs";
 import { findSignupByEmail } from "./signup-lookup.mjs";
+import { TurnstileVerificationError } from "./turnstile.mjs";
 
 const normalizeEmail = normalizeSignupEmail;
 const tokenDigest = (token) => createHash("sha256").update(token).digest("hex");
@@ -235,7 +236,6 @@ export async function createCampaignSignup(
       // Double opt-in (see requiresDoubleOptIn): confirmation is required only
       // when the validated snapshot opts in.
       const formConfig = publishedSnapshot.data.form;
-      const requiresVerification = requiresDoubleOptIn(formConfig);
       // Per-form join rules. TypeError → 400 on every public caller, so the
       // API-key path enforces the same gates as the browser form.
       if (formConfig) {
@@ -248,6 +248,10 @@ export async function createCampaignSignup(
         const fields = sanitizeCustomFieldAnswers(formConfig, input.customFields);
         if (fields.error) throw new TypeError(fields.error);
       }
+      const requiresTurnstile = formConfig.requireTurnstile;
+      if (requiresTurnstile && input.signupProtection !== "turnstile")
+        throw new TurnstileVerificationError();
+      const requiresVerification = requiresDoubleOptIn(formConfig);
 
       const existing = await findSignupByEmail(tx, input.waitListId, input.email, {
         referrals: true,
