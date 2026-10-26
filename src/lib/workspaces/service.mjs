@@ -47,6 +47,10 @@ function roles(permission) {
   return permissions[permission];
 }
 
+export function workspaceRoleCan(permission, role) {
+  return roles(permission).includes(role);
+}
+
 // Put this predicate in the resource query itself, including nested reads/writes.
 // A legacy owner fallback applies only while workspaceId is null. Once linked,
 // membership is authoritative, even when a caller is the historical owner.

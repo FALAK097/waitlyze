@@ -7,8 +7,12 @@ import prisma from "@/lib/prisma";
 
 import { createWorkspaceService } from "./service.mjs";
 
+export const currentSession = cache(async () => {
+  return auth.api.getSession({ headers: await headers() });
+});
+
 export const currentWorkspace = cache(async () => {
-  const session = await auth.api.getSession({ headers: await headers() });
+  const session = await currentSession();
   if (!session?.user?.id) redirect("/");
   const service = createWorkspaceService(prisma);
   const personal = await service.ensurePersonal(session.user.id);

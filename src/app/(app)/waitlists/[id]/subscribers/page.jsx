@@ -1,29 +1,14 @@
-import { notFound } from "next/navigation";
-
 import { AudienceTable } from "@/components/dashboard/audience-table";
 import { loadReferralReviews } from "@/lib/campaigns/referral-review-read.mjs";
 import prisma from "@/lib/prisma";
 import { templateSnapshotSchema } from "@/lib/templates/catalog.mjs";
-import { currentWorkspace } from "@/lib/workspaces/current";
-import { campaignScope } from "@/lib/workspaces/service.mjs";
+import { requireCampaignPage } from "@/lib/workspaces/authorize";
 
 export const metadata = { title: "Signups" };
 
 export default async function SubscribersPage({ params }) {
-  const [{ id }, { user, workspace }] = await Promise.all([params, currentWorkspace()]);
-  const waitlist = await prisma.waitList.findFirst({
-    where: { id, ...campaignScope(user.id, "viewAudience", workspace.id) },
-    select: {
-      id: true,
-      name: true,
-      publicSlug: true,
-      showReferrals: true,
-      sendEmailsToSubscribers: true,
-      publishedRevision: true,
-      templateSnapshot: true,
-    },
-  });
-  if (!waitlist) notFound();
+  const { id } = await params;
+  const { campaign: waitlist, role } = await requireCampaignPage(id, "viewAudience");
   const [publication, reviewData] = await Promise.all([
     waitlist.publishedRevision
       ? prisma.waitListPublicationRevision.findUnique({
@@ -44,7 +29,7 @@ export default async function SubscribersPage({ params }) {
   // capture selected, while keeping historical numbers visible until publish.
   const collectPhone =
     snapshotCollectsPhone(draftSnapshot) || snapshotCollectsPhone(publishedSnapshot);
-  const canManage = ["OWNER", "ADMIN"].includes(workspace.members[0]?.role);
+  const canManage = ["OWNER", "ADMIN"].includes(role);
   return (
     <div className="mt-6">
       <AudienceTable
