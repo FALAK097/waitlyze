@@ -7,13 +7,16 @@ import { maybeNotifySignupMilestone } from "../emails/founder-notifications.mjs"
 import { normalizeSignupEmail } from "../normalize-email.mjs";
 import {
   REFERRAL_CREDIT_STATUSES,
-  REFERRAL_POINTS,
-  SIGNUP_POINTS,
   awardPoints,
   isFarmSuspect,
   referralEventKey,
   signupEventKey,
 } from "../referrals/points.mjs";
+import {
+  checkRewardTierUnlocks,
+  getPublishedRewards,
+  summarizeSignupRewards,
+} from "../referrals/rewards.mjs";
 import { templateSnapshotSchema } from "../templates/catalog.mjs";
 import { enqueueWebhookEvent } from "../webhooks/delivery.mjs";
 import {
@@ -27,7 +30,7 @@ import {
   validatePhoneNumber,
 } from "./form-rules.mjs";
 import { MARKETING_CONSENT_COPY } from "./marketing-consent.mjs";
-import { getCampaignPosition } from "./referral-position.mjs";
+import { getCampaignPosition, getEligibleReferralCounts } from "./referral-position.mjs";
 import { findSignupByEmail } from "./signup-lookup.mjs";
 
 const normalizeEmail = normalizeSignupEmail;
@@ -40,12 +43,15 @@ async function recordVerifiedSignup(tx, signup, now) {
     signupId: signup.id,
     now,
   });
+  // Award amounts and tiers resolve from the published snapshot so draft edits
+  // never change payouts before they ship; unpublished lists accrue defaults.
+  const { rewards, tiers } = await getPublishedRewards(tx, signup.waitListId);
   if (!(await isFarmSuspect(tx, signup.ipAddress, now))) {
     await awardPoints(tx, {
       waitListId: signup.waitListId,
       signUpId: signup.id,
       kind: "SIGNUP_VERIFIED",
-      points: SIGNUP_POINTS,
+      points: rewards.pointsSignup,
       eventKey: signupEventKey(signup.id),
     });
     await tx.$queryRaw`SELECT "id" FROM "referrals" WHERE "signUpId" = ${signup.id} FOR UPDATE`;
@@ -58,7 +64,7 @@ async function recordVerifiedSignup(tx, signup, now) {
         waitListId: signup.waitListId,
         signUpId: referral.referredById,
         kind: "REFERRAL_CREDIT",
-        points: REFERRAL_POINTS,
+        points: rewards.pointsReferral,
         eventKey: referralEventKey(referral.id),
       });
       // Custom reward fulfillment hook: the inviter earned verified credit
@@ -68,6 +74,18 @@ async function recordVerifiedSignup(tx, signup, now) {
         eventType: "referral.completed",
         signupId: referral.referredById,
         extra: { referredSignupId: signup.id },
+        now,
+      });
+      // Tier unlocks are transactional with the credit that earned them.
+      const counts = await getEligibleReferralCounts(tx, signup.waitListId, [
+        referral.referredById,
+      ]);
+      await checkRewardTierUnlocks(tx, {
+        waitListId: signup.waitListId,
+        referrerId: referral.referredById,
+        triggeringSignupId: signup.id,
+        verifiedReferrals: counts.get(referral.referredById) ?? 0,
+        tiers,
         now,
       });
     }
@@ -303,7 +321,9 @@ export async function createCampaignSignup(
 
       const created = await tx.signUp.findUnique({
         where: { id: createdSignup.id },
-        include: { referrals: true, referredBy: true },
+        // Minimal: callers only need the referral count, so fetch ids alone
+        // and skip the unused referrer relation.
+        include: { referrals: { select: { id: true } } },
       });
       return {
         ...created,
@@ -315,8 +335,7 @@ export async function createCampaignSignup(
   } catch (error) {
     if (error?.code !== "P2002") throw error;
     const committed = await findSignupByEmail(db, input.waitListId, input.email, {
-      referrals: true,
-      referredBy: true,
+      referrals: { select: { id: true } },
     });
     if (committed?.uniqueUserId === input.uniqueUserId)
       signUp = {
@@ -328,16 +347,23 @@ export async function createCampaignSignup(
     else throw error;
   }
 
-  const rank = await getCampaignPosition(db, input.waitListId, signUp.id);
+  // Rank and rewards progress are independent reads: resolve them together
+  // so the signup response pays one round trip, not two.
+  const [rank, rewardSummary] = await Promise.all([
+    getCampaignPosition(db, input.waitListId, signUp.id),
+    // Rewards progress rides along with the rank so the cockpit and API can
+    // render points + "X more to unlock" without extra round trips. Best
+    // effort: a null summary never fails the signup response.
+    summarizeSignupRewards(db, input.waitListId, signUp).catch(() => null),
+  ]);
   // Idempotent retries and duplicate lookups return early above, so only a row
   // we actually created can move the milestone counters.
   if (signUp?.signupOutcome === "created") {
     after(() => maybeNotifySignupMilestone(db, input.waitListId, { signupId: signUp.id }));
   }
-  // Server-vetted post-signup redirect (null = stay on the cockpit). The
-  // browser client navigates only to this value, never to founder config or
-  // user input directly, so the allowlist cannot be bypassed client-side.
-  return { ...signUp, rank };
+  // Server-vetted post-signup redirect rides on signUp itself (null = stay on
+  // the cockpit); rank and rewards progress spread onto the result.
+  return { ...signUp, rank, rewardSummary };
 }
 
 export async function verifyCampaignSignup(db, token, { now = new Date() } = {}) {

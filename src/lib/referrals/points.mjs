@@ -8,6 +8,12 @@
 
 export const SIGNUP_POINTS = 50;
 export const REFERRAL_POINTS = 30;
+export const FOLLOW_POINTS = 5;
+
+// Networks the follow-claim endpoint accepts. Founder-configured follow URLs
+// ship with the Phase-3 cockpit; the award path stays zero-config so points
+// accrue from activation even before links are set.
+export const FOLLOW_NETWORKS = ["x", "instagram"];
 
 // Max signups from one IP in the trailing 24h before awards are skipped.
 export const POINTS_VELOCITY_LIMIT = 20;
@@ -23,6 +29,14 @@ export function referralEventKey(referralId) {
   return `referral-credit:${referralId}`;
 }
 
+export function followEventKey(signUpId, network) {
+  return `follow-credited:${signUpId}:${network}`;
+}
+
+export function customEventKey(signUpId, event, key) {
+  return `custom-credit:${signUpId}:${event}:${key}`;
+}
+
 // Idempotent award: ON CONFLICT DO NOTHING keeps the transaction healthy
 // (a caught unique violation would abort it), and the balance bumps only
 // when the ledger row is actually new.
@@ -32,8 +46,14 @@ export async function awardPoints(tx, { waitListId, signUpId, kind, points, even
     skipDuplicates: true,
   });
   if (inserted.count !== 1) return { awarded: false };
-  await tx.signUp.update({ where: { id: signUpId }, data: { points: { increment: points } } });
-  return { awarded: true };
+  // Returning the balance from the same update removes the separate read-back
+  // inside callers' transactions.
+  const updated = await tx.signUp.update({
+    where: { id: signUpId },
+    data: { points: { increment: points } },
+    select: { points: true },
+  });
+  return { awarded: true, balance: updated.points };
 }
 
 export async function isFarmSuspect(tx, ipAddress, now = new Date()) {

@@ -5,6 +5,7 @@ import { NextResponse } from "next/server";
 import { getCampaignPosition } from "@/lib/campaigns/referral-position.mjs";
 import { verifyCampaignSignup } from "@/lib/campaigns/signups.mjs";
 import prisma from "@/lib/prisma";
+import { summarizeSignupRewards } from "@/lib/referrals/rewards.mjs";
 
 export const POST = async (req) => {
   let body;
@@ -31,6 +32,7 @@ export const POST = async (req) => {
         select: {
           id: true,
           referralCode: true,
+          points: true,
           waitList: { select: { id: true, name: true, publicSlug: true, showReferrals: true } },
         },
       },
@@ -38,14 +40,28 @@ export const POST = async (req) => {
   });
   const signUp = verification?.signUp;
   const campaign = signUp?.waitList;
-  const referral =
-    campaign?.showReferrals && campaign.publicSlug
-      ? {
-          waitListName: campaign.name || "the waitlist",
-          position: await getCampaignPosition(prisma, campaign.id, signUp.id),
-          path: `/w/${encodeURIComponent(campaign.publicSlug)}?r=${encodeURIComponent(signUp.referralCode)}`,
-        }
-      : null;
+  let referral = null;
+  if (campaign?.showReferrals && campaign.publicSlug) {
+    const [position, summary] = await Promise.all([
+      getCampaignPosition(prisma, campaign.id, signUp.id),
+      summarizeSignupRewards(prisma, campaign.id, {
+        id: signUp.id,
+        points: signUp.points ?? 0,
+      }),
+    ]);
+    referral = {
+      waitListName: campaign.name || "the waitlist",
+      position,
+      displayPosition: summary.displayPosition ?? position,
+      points: summary.points,
+      nextReward: summary.nextReward,
+      unlockedRewards: summary.unlockedRewards,
+      hideCounts: summary.hideCounts,
+      showPoints: summary.showPoints,
+      showProgress: summary.showProgress,
+      path: `/w/${encodeURIComponent(campaign.publicSlug)}?r=${encodeURIComponent(signUp.referralCode)}`,
+    };
+  }
   return NextResponse.json({
     message: "Email verified successfully.",
     ...(referral ? { referral } : {}),

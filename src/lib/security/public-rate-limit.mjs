@@ -52,6 +52,12 @@ const policies = {
   // Authenticated API-key status lookups (GET /api/waitlist). Separate from
   // signup intake so polling a position never consumes the signup budget.
   status: { global: [20000, HOUR], campaign: [5000, HOUR], client: [120, HOUR] },
+  // Self-reported social-follow claims (POST /api/v1/follows). Mirrors the
+  // share budget: cheap, client-bucketed, safe to expose publicly.
+  follow: { global: [10000, HOUR], campaign: [2000, HOUR], client: [60, HOUR] },
+  // Founder-authenticated custom point awards (POST /api/waitlist/points).
+  // Separate from signup intake so fulfillment traffic never starves joins.
+  points: { global: [20000, HOUR], campaign: [5000, HOUR], client: [120, HOUR] },
 };
 
 /** Atomic PostgreSQL counters shared by all instances; failure never permits a send. */

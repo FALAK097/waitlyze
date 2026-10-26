@@ -46,7 +46,7 @@ Your deployment needs webhook encryption and dispatch configured before delivery
 | `signup.created` | Intake, before verification | `{ signupId }` |
 | `signup.verified` | After email confirmation | `{ signupId }` |
 | `referral.completed` | Inviter earns credit when the invitee verifies and the referral is `CLEAR`/`APPROVED` (same gate as the points ledger) | `{ signupId }` = inviter, `{ referredSignupId }` = invitee. Gate reward fulfillment on this, never on signup alone. Queue-position counting additionally requires the inviter to be verified — that rule lives in the position engine, not in this event. |
-| `milestone.reached` | Signup count hits 1, 10, 100, or 1000 | `{ count }` plus `triggeringSignupId` when known. Concurrent trips of the same count collapse to a single delivery, so dedupe by event `id` as usual. |
+| `milestone.reached` | Signup count hits 1, 10, 100, or 1000 — or a referrer crosses a reward-tier threshold | `{ count }` plus `triggeringSignupId` when known. Tier unlocks add `{ reward }` (the tier label) and use event ids shaped `reward-tier:{waitlist}:{signup}:{count}`, so they never collide with count milestones; there `signupId` is the referrer who earns the tier and `triggeringSignupId` is the invitee whose verification crossed it. Concurrent trips of the same milestone collapse to a single delivery, so dedupe by event `id` as usual. |
 
 Subscriber emails are **never** included — fetch what you need via your own subscriber read path using `signupId`. Return `2xx` only after durably accepting the event. Deduplicate by event ID because retries redeliver the same `id`.
 
@@ -84,7 +84,7 @@ There are no `email.*` webhook events. Resend delivery signals (delivered, bounc
     "data.signupId": {
       type: "string",
       required: true,
-      description: "The signup record (the inviter for referral.completed). Subscriber emails are never included. Test deliveries carry `{ test: true }` here instead. Milestone events carry `count` (+ optional `triggeringSignupId`) rather than a subject signup.",
+      description: "The signup record (the inviter for referral.completed; the referrer for reward-tier milestone.reached). Subscriber emails are never included. Test deliveries carry `{ test: true }` here instead. Milestone events carry `count` (+ optional `triggeringSignupId`) rather than a subject signup.",
     },
   }}
 />
