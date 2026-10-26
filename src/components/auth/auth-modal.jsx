@@ -8,6 +8,7 @@ import { useRef, useState } from "react";
 import { toast } from "sonner";
 
 import Wordmark from "@/components/landing/wordmark";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -71,12 +72,14 @@ export function AuthModal({ open, onOpenChange, onCloseAutoFocus }) {
             </DialogDescription>
           </DialogHeader>
           <div>
-            <button
+            <Button
               type="button"
               onClick={handleGoogleSignIn}
               disabled={loading}
               aria-busy={loading}
-              className="mt-7 flex min-h-12 w-full items-center justify-center gap-3 rounded-md border border-product-border-subtle bg-product-bg-surface px-4 text-sm text-product-text-primary transition-colors hover:border-product-text-secondary hover:bg-product-bg-inset focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-neutral-900 disabled:cursor-wait disabled:opacity-65"
+              variant="product-outline"
+              size="auth-provider"
+              className="mt-7 w-full rounded-md disabled:cursor-wait disabled:opacity-65"
             >
               {loading ? (
                 <HugeiconsIcon icon={Loading02Icon} className="size-5 animate-spin" />
@@ -84,7 +87,7 @@ export function AuthModal({ open, onOpenChange, onCloseAutoFocus }) {
                 <Image src="/images/google.svg" alt="" width={20} height={20} unoptimized />
               )}
               {loading ? "Connecting to Google…" : "Continue with Google"}
-            </button>
+            </Button>
             <p className="mt-3.5 text-center text-xs text-product-text-secondary">
               Free to use. No credit card needed.
             </p>
