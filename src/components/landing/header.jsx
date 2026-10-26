@@ -30,7 +30,6 @@ export default function Header() {
     >
       <div className="mx-auto flex h-22 w-full max-w-7xl items-center justify-between gap-6 px-4 sm:px-5 md:h-18 md:px-8 lg:px-12">
         <Link
-          prefetch={false}
           href="/"
           aria-label="Waitlyze home"
           onClick={() => setOpen(false)}
@@ -41,7 +40,6 @@ export default function Header() {
         <nav aria-label="Main navigation" className="hidden items-center gap-8 md:flex">
           {links.map(([label, href]) => (
             <Link
-              prefetch={false}
               href={href}
               key={href}
               className="text-sm text-product-text-secondary transition-colors duration-150 hover:text-product-success-text focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-neutral-900"
@@ -61,7 +59,7 @@ export default function Header() {
             aria-expanded={open}
             aria-controls="wl-mobile-nav"
             onClick={() => setOpen(!open)}
-            className="hidden size-10 place-items-center rounded-md border border-transparent bg-transparent text-product-text-secondary transition-colors hover:bg-product-bg-inset hover:text-product-text-primary focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-neutral-900 max-sm:w-9 md:inline-grid"
+            className="inline-grid size-10 place-items-center rounded-md border border-transparent bg-transparent text-product-text-secondary transition-colors hover:bg-product-bg-inset hover:text-product-text-primary focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-neutral-900 max-sm:w-9 md:hidden"
           >
             {open ? (
               <HugeiconsIcon icon={Cancel01Icon} size={20} />
@@ -82,7 +80,6 @@ export default function Header() {
       >
         {links.map(([label, href]) => (
           <Link
-            prefetch={false}
             href={href}
             key={href}
             onClick={() => setOpen(false)}

@@ -144,7 +144,7 @@ export default function ProductTour() {
     >
       <div className="flex items-center justify-between gap-4">
         <div
-          className="flex gap-2 max-sm:flex-1 max-sm:justify-between max-sm:gap-4"
+          className="no-scrollbar flex max-w-full gap-2 overflow-x-auto max-sm:flex-1 max-sm:justify-between max-sm:gap-4"
           role="tablist"
           aria-label="Product walkthrough"
           onKeyDown={onKeyDown}
@@ -166,7 +166,7 @@ export default function ProductTour() {
                 if (event.detail > 0) setPlaying(true);
               }}
               className={cn(
-                "relative inline-flex min-h-12 items-center justify-center gap-2.5 overflow-hidden rounded-md bg-transparent px-6 py-3 text-sm font-semibold text-product-text-secondary transition duration-120 hover:text-product-text-primary focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-neutral-900 active:scale-95",
+                "relative inline-flex min-h-12 shrink-0 items-center justify-center gap-2.5 overflow-hidden rounded-md bg-transparent px-3 py-3 text-sm font-semibold text-product-text-secondary transition duration-120 hover:text-product-text-primary focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-neutral-900 active:scale-95 sm:px-6",
                 index === selected && cn(theme.wash, theme.accent),
               )}
             >

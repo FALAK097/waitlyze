@@ -42,7 +42,6 @@ export function WaitlistNav({ id, canSendEmail }) {
       >
         {tabs.map(([href, label]) => (
           <Link
-            prefetch={false}
             key={href}
             href={href}
             aria-current={isCurrent(href) ? "page" : undefined}

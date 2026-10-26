@@ -31,7 +31,7 @@ Send a test [Signup API](/docs/api) request with the new key and matching `waitl
 <Steps>
 <Step>
 ### Revoke the old key
-Revoke, then confirm you understand access loss. Revocation takes effect immediately — in-flight requests with the old key start failing with `401`.
+Revoke, then confirm you understand access loss. Revocation takes effect immediately - in-flight requests with the old key start failing with `401`.
 </Step>
 <Step>
 ### Create its replacement
@@ -49,7 +49,7 @@ With one active key per waitlist, revoke → create briefly interrupts integrati
 
 ## Scope and access
 
-API keys work on **all plans, including free** — there is no plan gate on creating, listing, or using keys. Every key carries the same scopes and the same per-key rate limit below regardless of plan.
+API keys work on **all plans, including free** - there is no plan gate on creating, listing, or using keys. Every key carries the same scopes and the same per-key rate limit below regardless of plan.
 
 The UI creates `waitlist:write` keys scoped to the selected waitlist. They can create signups, look up signup status, and award configured custom points. They cannot list subscribers, change pages, manage workspaces, or call dashboard-only `/api/v1` routes.
 

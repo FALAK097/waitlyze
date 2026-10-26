@@ -5,7 +5,7 @@ import { resolveEmailSender } from "@/lib/email/sender-resolution.mjs";
 // and a CONNECTED per-waitlist sender wins over the workspace connection;
 // omit it and resolution behaves exactly as before (workspace → default).
 // Every other sending path keeps calling without waitListId until the
-// follow-ups listed in sender-resolution.mjs land — that is intentional,
+// follow-ups listed in sender-resolution.mjs land - that is intentional,
 // not an oversight. Never cache a rejection (see below).
 export function createWorkspaceResendSender({
   db,

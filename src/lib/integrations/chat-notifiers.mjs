@@ -59,7 +59,7 @@ const postByProvider = { SLACK: postSlackMessage, DISCORD: postDiscordMessage };
 
 /**
  * Best-effort fan-out of a milestone line to every CONNECTED chat channel on
- * the waitlist. Failures mark the channel NEEDS_ATTENTION but never throw —
+ * the waitlist. Failures mark the channel NEEDS_ATTENTION but never throw -
  * callers treat chat as a courtesy copy, not a delivery guarantee.
  */
 export async function notifyChatChannels(db, waitListId, text) {

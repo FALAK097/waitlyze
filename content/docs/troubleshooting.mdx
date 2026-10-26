@@ -14,10 +14,10 @@ Work through the section that matches your symptom. Each fix links to the guide 
 </Accordion>
 <Accordion title="Signups and API access (401, 409, 429, 503)">
 - `401`: check the key exists, has not expired, has not been revoked, and `waitlistId` matches the key's linked waitlist. See [API keys](/docs/api-keys).
-- `409`: duplicate email versus non-accepting waitlist are different causes with the same code — read the message. Duplicates include the existing `position`; key reuse (`Idempotency-Key was already used…`) needs a fresh key.
+- `409`: duplicate email versus non-accepting waitlist are different causes with the same code - read the message. Duplicates include the existing `position`; key reuse (`Idempotency-Key was already used…`) needs a fresh key.
 - `404` on status lookup: the email never joined that waitlist.
 - `429` or `503`: respect `Retry-After`; back off exponentially; do not retry in a tight loop. Watch `X-RateLimit-Remaining` per key.
-- Dashboard `/api/v1/*` with a signup key always fails — those need a browser session. See [Signup API](/docs/api).
+- Dashboard `/api/v1/*` with a signup key always fails - those need a browser session. See [Signup API](/docs/api).
 </Accordion>
 <Accordion title="Hosted page, embed, and custom domain">
 - Use the copied published URL; draft edits must be published. See [Publishing](/docs/publishing).
@@ -26,25 +26,25 @@ Work through the section that matches your symptom. Each fix links to the guide 
 - Another tenant's ID returns `404` by design. Signed-out protected routes redirect to sign-in.
 </Accordion>
 <Accordion title="Verification, email, and consent">
-- Save the email template **before** sending a test — tests use saved content and are real emails. See [Email tools](/docs/email).
+- Save the email template **before** sending a test - tests use saved content and are real emails. See [Email tools](/docs/email).
 - Verification links expire after 24 hours. Unconfirmed subscribers never receive broadcasts or automations. See [Signup flow](/docs/signup-flow).
 - Broadcasts/automations need verified email **plus** marketing opt-in. Check unsubscribe and suppression in [Subscribers](/docs/subscribers).
 - Resend failures: check sending-only key, verified sender domain, and Active status after test. See [Resend](/docs/resend).
-- Dispatcher not configured means `OUTBOX_DISPATCH_SECRET` or the `/api/internal/email-outbox` scheduler is missing — mail queues but never sends.
+- Dispatcher not configured means `OUTBOX_DISPATCH_SECRET` or the `/api/internal/email-outbox` scheduler is missing - mail queues but never sends.
 - Bounces/complaints suppress future sends automatically via signed provider events.
 </Accordion>
 <Accordion title="Webhooks: signatures and deliveries">
 - Verify HMAC-SHA256 over `timestamp + "." + canonicalJson(payload)`, not raw bytes. Check the 5-minute window and accept any valid `v1` during rotation. See [Webhooks](/docs/webhooks).
 - Deduplicate by `id` / `x-waitlyze-event-id` and return `2xx` only after durable acceptance. Gate rewards on `referral.completed`, never on signup alone.
 - Use Recent deliveries for queue versus HTTP failures; send a test, pause/resume, rotate, or replay from waitlist settings.
-- Endpoints created before `referral.completed` / `milestone.reached` launched receive signup events only — add a new endpoint for all four.
+- Endpoints created before `referral.completed` / `milestone.reached` launched receive signup events only - add a new endpoint for all four.
 - If tests never arrive, confirm webhook encryption/dispatch is configured on the deployment.
 </Accordion>
 <Accordion title="Members, roles, and workspace">
 - Members cannot publish, send email, manage keys, or delete. Owners/admins can. See [Workspace](/docs/workspace).
 - Only owners can invite admins. The workspace caps at 50 pending invitations.
 - Invite creation failing usually means missing encryption config on the deployment.
-- Export (`/api/settings/export`) before deleting a workspace or waitlist — deletion has no undo.
+- Export (`/api/settings/export`) before deleting a workspace or waitlist - deletion has no undo.
 </Accordion>
 <Accordion title="Gather safe diagnostics">
 Include the page or endpoint, HTTP status, approximate timestamp (with time zone), and a relevant event or waitlist ID. For webhooks, include Recent deliveries response codes. For analytics, include range and time zone.

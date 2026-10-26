@@ -2017,7 +2017,7 @@ function ContrastPanel({ brand, update }) {
           <div>
             <strong>{issue.label}</strong>
             <span>
-              {issue.ratio.toFixed(2)}:1 — needs {issue.required}:1 or better.
+              {issue.ratio.toFixed(2)}:1 - needs {issue.required}:1 or better.
             </span>
           </div>
           <Button
@@ -2488,7 +2488,7 @@ function RewardsSection({ perks, updateRewards }) {
         onCommit={(positionOffset) => setPerks({ positionOffset })}
       />
       <p className="-mt-2 text-caption leading-relaxed text-product-text-secondary">
-        Adds to every displayed position — e.g. 846 makes the first signup show #847.
+        Adds to every displayed position - e.g. 846 makes the first signup show #847.
       </p>
       <Toggle
         label="Show points balance"

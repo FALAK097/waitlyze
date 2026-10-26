@@ -241,7 +241,6 @@ export function AppShell({ children, user, avatar, workspaces, selectedWorkspace
       <header className="border-b border-product-border-subtle bg-white">
         <div className="mx-auto flex min-h-18 max-w-288 items-center gap-4 px-8 py-3 max-[359px]:gap-2 max-[359px]:px-4 max-md:flex-wrap max-md:gap-3 max-md:px-5">
           <Link
-            prefetch={false}
             className="inline-flex min-h-11 min-w-11 shrink-0 items-center justify-start rounded-lg"
             href="/waitlists"
             aria-label="Waitlyze home"
@@ -258,7 +257,6 @@ export function AppShell({ children, user, avatar, workspaces, selectedWorkspace
             className="ms-auto flex items-center gap-2 max-md:order-4 max-md:ms-0 max-md:me-0 max-md:w-full max-md:justify-start"
           >
             <Link
-              prefetch={false}
               className={cn(
                 navLinkClass,
                 pathname.startsWith("/waitlists") &&
@@ -270,7 +268,6 @@ export function AppShell({ children, user, avatar, workspaces, selectedWorkspace
               Overview
             </Link>
             <Link
-              prefetch={false}
               className={cn(
                 navLinkClass,
                 pathname.startsWith("/settings") &&

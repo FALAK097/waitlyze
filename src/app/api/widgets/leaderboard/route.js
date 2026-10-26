@@ -14,7 +14,7 @@ import {
 } from "../_shared.mjs";
 
 // Standalone embeddable leaderboard: top referrers for any published
-// waitlist with referrals on. Masked emails only — raw addresses never leave
+// waitlist with referrals on. Masked emails only - raw addresses never leave
 // this endpoint. Serve as JSON (`?format=json`, default) or as an embeddable
 // HTML snippet (`?format=html`, iframe it anywhere).
 //

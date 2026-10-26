@@ -61,13 +61,13 @@ const kinds = [
     key: "referral-congrats",
     label: "Referral congrats",
     timing: "Sent by hand or broadcast",
-    note: "Celebrate a subscriber's referrals — pairs with the milestone automation.",
+    note: "Celebrate a subscriber's referrals - pairs with the milestone automation.",
   },
   {
     key: "launch-invite",
     label: "Launch invite",
     timing: "Sent by hand or broadcast",
-    note: "The doors are open — invite the list with their position and points.",
+    note: "The doors are open - invite the list with their position and points.",
   },
   {
     key: "offboarding",
@@ -251,7 +251,7 @@ export function EmailTemplatesManager({ waitListId, waitListName, initialTemplat
                 type="text"
                 maxLength={160}
                 aria-label="Subject"
-                placeholder="Subject — what subscribers see in the inbox"
+                placeholder="Subject - what subscribers see in the inbox"
                 value={template.subject}
                 onChange={(event) => edit("subject", event.target.value)}
               />
@@ -262,7 +262,7 @@ export function EmailTemplatesManager({ waitListId, waitListName, initialTemplat
                 type="text"
                 maxLength={180}
                 aria-label="Preview text"
-                placeholder="Preview text — shown after the subject"
+                placeholder="Preview text - shown after the subject"
                 value={template.previewText}
                 onChange={(event) => edit("previewText", event.target.value)}
               />
@@ -307,7 +307,7 @@ export function EmailTemplatesManager({ waitListId, waitListName, initialTemplat
               />
               <div className={metaBar}>
                 <p className={hint}>
-                  Raw HTML mode — apply it back to the visual editor, then save.
+                  Raw HTML mode - apply it back to the visual editor, then save.
                 </p>
                 <Button type="button" variant="default" onClick={applyHtmlToEditor}>
                   Apply to editor

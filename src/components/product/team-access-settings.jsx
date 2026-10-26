@@ -265,7 +265,7 @@ export function TeamAccessSettings({
                         Active
                       </span>
                     </TableCell>
-                    <TableCell>{member.createdAt ? formatDate(member.createdAt) : "—"}</TableCell>
+                    <TableCell>{member.createdAt ? formatDate(member.createdAt) : "-"}</TableCell>
                     <TableCell>
                       {canManage && !isSelf && (
                         <div className="flex flex-wrap gap-2">

@@ -47,7 +47,7 @@ const legacySignupResponse = (signUp, { includeReferralCode = false } = {}) => {
     response.showProgress = summary.showProgress !== false;
   }
   // Server-vetted post-signup redirect. Only present when the founder
-  // configured one that passes the allowlist — the browser navigates here and
+  // configured one that passes the allowlist - the browser navigates here and
   // nowhere else, so this can never become an open redirect.
   if (typeof signUp.redirectUrl === "string" && signUp.redirectUrl)
     response.redirectUrl = signUp.redirectUrl;
@@ -192,7 +192,7 @@ export const POST = async (req) => {
         { status: error.status, headers: { "Retry-After": error.status === 429 ? "3600" : "60" } },
       );
     // Fraud IP-velocity gate: explicit 429 (fail-closed on clear abuse).
-    // Fingerprint-velocity goes silent instead — the success shape above —
+    // Fingerprint-velocity goes silent instead - the success shape above -
     // so suspected bots get no tuning signal.
     if (error instanceof FraudLimitError) {
       return NextResponse.json(
@@ -202,7 +202,7 @@ export const POST = async (req) => {
     }
     if (error instanceof DuplicateSignupError) {
       // Race path: the row committed between the pre-DB duplicate check and
-      // the insert. Resolve like the validator does — position + link, 200.
+      // the insert. Resolve like the validator does - position + link, 200.
       const resolved = await duplicateSignupResponse(
         body.waitListId,
         body.email,

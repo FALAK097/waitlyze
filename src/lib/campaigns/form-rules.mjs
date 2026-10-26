@@ -2,7 +2,7 @@
 // allowlist, and the double opt-in effective flag. Pure helpers shared by the
 // pre-DB validator (validateRequest) and the signup transaction
 // (createCampaignSignup), so the API-key path gets the same enforcement.
-// Every default is "off" — lists empty, toggles false — preserving behavior
+// Every default is "off" - lists empty, toggles false - preserving behavior
 // for snapshots saved before these settings existed.
 
 import { getEmailDomain } from "@/utils/server/email-validation.mjs";
@@ -86,7 +86,7 @@ export function checkCountryRules(form, country) {
 }
 
 // E.164: explicit country calling code required (leading +), 8–15 digits.
-// That leading + is the "country validation" — numbers without a country code
+// That leading + is the "country validation" - numbers without a country code
 // never validate.
 export function normalizePhoneNumber(phone) {
   if (typeof phone !== "string") return "";
@@ -166,7 +166,7 @@ export function pickCustomFields(body) {
 
 // Redirect allowlist: relative paths are same-origin by construction and always
 // allowed; absolute URLs must be https AND host-allowlisted. Anything else
-// resolves to null (stay on the cockpit) — never an attacker URL, because the
+// resolves to null (stay on the cockpit) - never an attacker URL, because the
 // client only navigates to the server-vetted value echoed in the response.
 export function resolveSuccessRedirect(form) {
   const target = typeof form?.successRedirectUrl === "string" ? form.successRedirectUrl.trim() : "";

@@ -1,6 +1,6 @@
 # Waitlyze
 
-Waitlyze is a viral waitlist platform for founders and creators — launch page, referral loop, email automation, and analytics from a single list. Create a beautiful page in minutes, turn signups into referrers, and launch to a primed audience.
+Waitlyze is a viral waitlist platform for founders and creators - launch page, referral loop, email automation, and analytics from a single list. Create a beautiful page in minutes, turn signups into referrers, and launch to a primed audience.
 
 ## Features
 
@@ -47,7 +47,7 @@ Start the provided Postgres service:
 docker compose up -d db
 ```
 
-Set `DATABASE_URL` to your local database. Use a separate database for tests —
+Set `DATABASE_URL` to your local database. Use a separate database for tests -
 never point local development or migration reset commands at production.
 
 ```bash
@@ -87,4 +87,4 @@ Area-chart styling adapted from [Evil Charts](https://evilcharts.com) by Gurbind
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
+MIT - see [LICENSE](LICENSE).

@@ -298,7 +298,7 @@ function DeliverySummary({ selected }) {
       <div className={summary}>
         <div className={summaryRow}>
           <span className={summaryLabel}>Subject</span>
-          <strong className={summaryValue}>{selected.subject || "—"}</strong>
+          <strong className={summaryValue}>{selected.subject || "-"}</strong>
         </div>
         {selected.previewText ? (
           <div className={summaryRow}>
@@ -684,7 +684,7 @@ export function BroadcastManager({
                       : "Delivery summary"}
                 </h2>
                 {editable ? (
-                  <p className={paneMeta}>Draft — nothing is sent until you confirm.</p>
+                  <p className={paneMeta}>Draft - nothing is sent until you confirm.</p>
                 ) : null}
               </div>
               <div className={paneActions}>
@@ -714,7 +714,7 @@ export function BroadcastManager({
                         className={fieldInput}
                         maxLength={120}
                         aria-label="Internal name"
-                        placeholder="Name — only you see this"
+                        placeholder="Name - only you see this"
                         value={data.name || ""}
                         onChange={(event) => edit("name", event.target.value)}
                       />
@@ -724,7 +724,7 @@ export function BroadcastManager({
                         className={fieldInput}
                         maxLength={160}
                         aria-label="Subject"
-                        placeholder="Subject — what subscribers see in the inbox"
+                        placeholder="Subject - what subscribers see in the inbox"
                         value={data.subject || ""}
                         onChange={(event) => edit("subject", event.target.value)}
                       />
@@ -734,7 +734,7 @@ export function BroadcastManager({
                         className={fieldInput}
                         maxLength={180}
                         aria-label="Preview text"
-                        placeholder="Preview text — shown after the subject"
+                        placeholder="Preview text - shown after the subject"
                         value={data.previewText || ""}
                         onChange={(event) => edit("previewText", event.target.value)}
                       />

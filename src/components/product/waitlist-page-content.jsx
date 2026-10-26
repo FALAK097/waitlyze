@@ -419,7 +419,7 @@ export function WaitlistPageContent({
                           </blockquote>
                           <figcaption className="text-sm text-wl-muted">
                             <strong className="text-wl-text">{item.name}</strong>
-                            {item.role && <span> — {item.role}</span>}
+                            {item.role && <span> - {item.role}</span>}
                           </figcaption>
                         </figure>
                       ))}

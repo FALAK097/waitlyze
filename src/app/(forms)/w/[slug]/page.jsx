@@ -48,7 +48,7 @@ export async function generateMetadata({ params }) {
   // Scrapers need an absolute image URL. Resolve site-relative values against
   // the canonical origin. Only absolute TLS or site-relative URLs pass:
   // protocol-relative ("//evil.test/x.png") would inherit https and bypass the
-  // allowlist, and inline data URLs can't be fetched by cards — both dropped
+  // allowlist, and inline data URLs can't be fetched by cards - both dropped
   // rather than emitting a broken tag.
   const rawImage = page.snapshot.seo.image?.trim() || "";
   const normalizedImage = /^(?:https:\/\/|\/(?!\/))/i.test(rawImage) ? rawImage : "";

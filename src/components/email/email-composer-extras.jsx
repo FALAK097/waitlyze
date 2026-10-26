@@ -31,7 +31,7 @@ export function SpamHintView({ subject, previewText, text, html }) {
   if (!hint.issues.length)
     return (
       <p className={hintOk}>
-        Spam check: looks clean — subject length, caps, and trigger words all pass.
+        Spam check: looks clean - subject length, caps, and trigger words all pass.
       </p>
     );
   return (

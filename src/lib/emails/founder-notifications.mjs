@@ -18,17 +18,17 @@ import { enqueueWebhookEvent } from "@/lib/webhooks/delivery.mjs";
 // event and sent by the dispatcher through the platform sender (own verified
 // From + RESEND_REPLY_TO default, HTML + plain-text fallback, idempotency
 // keys, retries). Nothing here calls Resend directly, so a provider blip
-// delays a notice instead of dropping it — and enqueueing never blocks a
+// delays a notice instead of dropping it - and enqueueing never blocks a
 // signup, a publish, or a broadcast.
 //
 // Occasion matrix (Phase 7a audit):
-//   exists via outbox — account welcome, first signup, milestones
+//   exists via outbox - account welcome, first signup, milestones
 //     (10/100/1000), waitlist published, broadcast summaries,
 //     workspace invitations (sent directly: the invite flow needs a
 //     synchronous delivery verdict for its SEND_FAILED retry state).
-//   exists elsewhere — subscriber verification (founder→list path, 7b),
+//   exists elsewhere - subscriber verification (founder→list path, 7b),
 //     feedback-to-inbox (internal, user-visible errors, not retried).
-//   deferred — founder email verification (no password auth; social only),
+//   deferred - founder email verification (no password auth; social only),
 //     invitation-accepted notice, billing + plan limits (no billing yet,
 //     Phase 9), re-engagement + changelog digests (need product decisions).
 const MILESTONE_COUNTS = new Set([1, 10, 100, 1000]);
@@ -141,7 +141,7 @@ export async function maybeNotifySignupMilestone(db, waitListId, { signupId } = 
     });
     const waitlistName = waitList.name || "Your waitlist";
     // Phase 7c: courtesy copy to connected Slack/Discord channels. Best
-    // effort — chat failures never block the owner email or the webhook.
+    // effort - chat failures never block the owner email or the webhook.
     try {
       await notifyChatChannels(
         db,
@@ -205,10 +205,10 @@ export async function notifyBroadcastSummary(db, broadcastId) {
     const html = await renderBroadcastSummary(props);
     const subject =
       broadcast.status === "SENT"
-        ? `Broadcast finished — ${waitlistName}`
+        ? `Broadcast finished - ${waitlistName}`
         : broadcast.status === "CANCELED"
-          ? `Broadcast canceled — ${waitlistName}`
-          : `Broadcast needs attention — ${waitlistName}`;
+          ? `Broadcast canceled - ${waitlistName}`
+          : `Broadcast needs attention - ${waitlistName}`;
     const { queued } = await notifyOwners(db, broadcast.waitList?.workspaceId, {
       kind: "broadcast-summary",
       waitListId: broadcast.waitList?.id,
@@ -244,7 +244,7 @@ export async function notifyWaitlistPublished(db, waitListId) {
     const { queued } = await notifyOwners(db, waitList.workspaceId, {
       kind: "waitlist-published",
       waitListId,
-      subject: `${props.waitlistName} is live — share your page`,
+      subject: `${props.waitlistName} is live - share your page`,
       html,
       text: waitlistPublishedText(props),
       idempotencyKey: `waitlist-published:${waitListId}`,

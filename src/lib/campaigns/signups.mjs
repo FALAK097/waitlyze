@@ -48,7 +48,7 @@ const tokenDigest = (token) => createHash("sha256").update(token).digest("hex");
 // summarizeSignupRewards (no structurally-missing-keys oracle), zero
 // progress, but the waitlist's real visibility flags and tier ladder so
 // `next_reward`/`counts_hidden` behave like a real fresh signup. Never
-// throws — a failure resolves to static zeros.
+// throws - a failure resolves to static zeros.
 async function silentRewardSummary(db, waitListId, rank) {
   const zeros = {
     points: 0,
@@ -271,7 +271,7 @@ export async function createCampaignSignup(
       }
 
       // Fraud basics (additive, fail-open): IP velocity over the hard cap
-      // rejects with 429; device-fingerprint velocity goes silent — a fake
+      // rejects with 429; device-fingerprint velocity goes silent - a fake
       // success with nothing persisted (no row, no points, no webhooks, no
       // email). Counting failures allow the signup through.
       const fraud = await evaluateSignupFraud(tx, {
@@ -439,7 +439,7 @@ export async function createCampaignSignup(
   // Rank and rewards progress are independent reads: resolve them together
   // so the signup response pays one round trip, not two. Silent-mode fakes
   // skip the position query and get a zero-value block with the waitlist's
-  // real visibility flags (same keys as a real response —
+  // real visibility flags (same keys as a real response -
   // no structurally-missing-keys oracle).
   let rank;
   let rewardSummary = null;

@@ -87,7 +87,7 @@ export async function enqueueBroadcast(
     throw new Error(
       "The recipient list changed while queueing. Nothing was sent; refresh the preview.",
     );
-  if (!queued.count) throw new Error("Nothing was queued — the audience changed. Try again.");
+  if (!queued.count) throw new Error("Nothing was queued - the audience changed. Try again.");
 
   // Snapshot personal variables once, server-side, so every recipient's
   // {{name}} {{position}} {{referral_link}} {{points}} resolve at send time
@@ -158,7 +158,7 @@ export async function queueDueBroadcasts(db, now = new Date()) {
             segment: broadcast.segment,
             exact: false,
             // Stamp the dispatcher's instant so events the sweep creates are
-            // claimable in the same tick — a fresh timestamp here would land
+            // claimable in the same tick - a fresh timestamp here would land
             // milliseconds after the claim snapshot and slip a full tick.
             now,
           });

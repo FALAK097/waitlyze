@@ -304,12 +304,12 @@ export function AuditLog({ events }) {
                     ) : (
                       <span className="grid min-w-32 flex-1 gap-0.5">
                         <span className="block truncate text-caption text-product-text-secondary">
-                          —
+                          -
                         </span>
                       </span>
                     )}
                   </TableCell>
-                  <TableCell>{event.detail || "—"}</TableCell>
+                  <TableCell>{event.detail || "-"}</TableCell>
                   <TableCell>
                     {actor ? (
                       <span className="inline-flex min-w-0 items-center gap-2 text-product-text-primary">

@@ -13,7 +13,6 @@ export default function LegalDocument({ title, description, sections, children }
         className="mx-auto w-full max-w-7xl px-4 pt-12 pb-18 sm:px-5 md:px-8 lg:px-12"
       >
         <Link
-          prefetch={false}
           href="/"
           className="group inline-flex items-center gap-2.5 text-sm font-medium underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-neutral-900"
         >
@@ -62,14 +61,12 @@ export default function LegalDocument({ title, description, sections, children }
           aria-label="Related policies"
         >
           <Link
-            prefetch={false}
             href="/privacy"
             className="inline-flex items-center gap-2 hover:text-product-success-text focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-neutral-900"
           >
             Privacy policy <HugeiconsIcon icon={ArrowUpRight01Icon} size={15} aria-hidden="true" />
           </Link>
           <Link
-            prefetch={false}
             href="/terms"
             className="inline-flex items-center gap-2 hover:text-product-success-text focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-neutral-900"
           >

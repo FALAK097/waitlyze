@@ -39,14 +39,14 @@ export const AUTOMATION_DEFAULTS = {
     trigger: "SIGNUP_VERIFIED",
     delayMinutes: 4320,
     subject: "A quick tour of {{waitlist}}, {{name}}",
-    body: "Hi {{name}}, you’re #{{position}} on {{waitlist}} with {{points}} points. Your personal link is {{referral_link}} — every friend who joins moves you up.",
+    body: "Hi {{name}}, you’re #{{position}} on {{waitlist}} with {{points}} points. Your personal link is {{referral_link}} - every friend who joins moves you up.",
   },
   LAUNCH_COUNTDOWN: {
     title: "Launch countdown",
     description: "Build anticipation in the final days before launch.",
     trigger: "SIGNUP_VERIFIED",
     delayMinutes: 10080,
-    subject: "{{waitlist}} launches soon — you’re #{{position}}",
+    subject: "{{waitlist}} launches soon - you’re #{{position}}",
     body: "Hi {{name}}, launch day is close and you’re holding #{{position}} on {{waitlist}} with {{points}} points. Share {{referral_link}} to climb higher before we open the doors.",
   },
 };

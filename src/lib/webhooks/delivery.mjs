@@ -25,7 +25,7 @@ const RETRYABLE = new Set([408, 425, 429]);
 //   whose verification completed the referral. Build reward rules on top of
 //   this event; it fires under the same gate as the points ledger (invitee
 //   verified, review CLEAR/APPROVED, not farm-suspect). Queue-position
-//   counting additionally requires the inviter to be verified — that rule
+//   counting additionally requires the inviter to be verified - that rule
 //   lives in the position query, not in this event.
 // - milestone.reached: data = { count, triggeringSignupId? } where count is
 //   one of 1/10/100/1000 and triggeringSignupId is the signup that tripped

@@ -2,7 +2,7 @@
 
 ### The full campaign loop: cockpit, rewards, and cleaner growth signals
 
-Launches now have an end-to-end loop — share to grow, earn points, and watch a fair, well-attributed funnel — with email delivery that reaches the inbox. Abuse limits and verification keep the campaign honest without adding friction.
+Launches now have an end-to-end loop - share to grow, earn points, and watch a fair, well-attributed funnel - with email delivery that reaches the inbox. Abuse limits and verification keep the campaign honest without adding friction.
 
 #### Highlights
 
@@ -127,4 +127,4 @@ The first release brought the essential waitlist workflow into one place: create
 - **Create a waitlist quickly.** Set up a campaign and publish a signup page without building or hosting the form infrastructure yourself.
 - **Collect signups centrally.** Manage the people who join from one workspace instead of maintaining a separate list for each launch.
 - **Share a public signup page.** Give a campaign a destination that can be shared with an audience and used to collect interest before launch.
-- **Start with the core loop.** Publish the page, grow an audience, and manage signups together—the foundation for the page design, referral, analytics, and email capabilities that followed.
+- **Start with the core loop.** Publish the page, grow an audience, and manage signups together-the foundation for the page design, referral, analytics, and email capabilities that followed.

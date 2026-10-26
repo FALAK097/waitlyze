@@ -97,7 +97,7 @@ function WaitlistsTable({ waitlists, query, status, sort }) {
           {waitlists.map((waitlist) => {
             const visitors = waitlist._count.impressions;
             const signups = waitlist._count.signUps;
-            const conversion = visitors > 0 ? `${((signups / visitors) * 100).toFixed(1)}%` : "—";
+            const conversion = visitors > 0 ? `${((signups / visitors) * 100).toFixed(1)}%` : "-";
             return (
               <TableRow key={waitlist.id}>
                 <TableHead scope="row">

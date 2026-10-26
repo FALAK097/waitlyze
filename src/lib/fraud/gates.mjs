@@ -3,12 +3,12 @@
 // Additive gates evaluated inside the signup transaction, after the duplicate
 // check and before the insert. Verdicts:
 //
-//   allow  — proceed with the normal signup.
-//   limit  — clear abuse (IP velocity over the hard cap): the caller must
+//   allow  - proceed with the normal signup.
+//   limit  - clear abuse (IP velocity over the hard cap): the caller must
 //            answer 429. Fail-closed: bots churning one network get an
 //            explicit rejection, not a silent pass.
-//   silent — suspected farming (device fingerprint velocity): the caller must
-//            return the normal success shape WITHOUT persisting anything —
+//   silent - suspected farming (device fingerprint velocity): the caller must
+//            return the normal success shape WITHOUT persisting anything -
 //            no signup row, no points, no webhooks, no verification email.
 //            Fake ids/codes are deterministic hashes of the request identity
 //            so retries are consistent and reveal no validity oracle.
@@ -16,7 +16,7 @@
 // Reliability contract: infra errors (DB hiccups) fail OPEN to `allow` so a
 // wobbly database never blocks legitimate signups; only counted-over-limit
 // abuse fails closed. Gmail dot/+ normalization lives in
-// `normalize-email.mjs` (canonical form + lookup) — this module reuses it,
+// `normalize-email.mjs` (canonical form + lookup) - this module reuses it,
 // never forks it.
 
 import { createHash } from "node:crypto";
@@ -54,7 +54,7 @@ export function normalizeFraudMode(value) {
 }
 
 // Stable per-device identity from request-stable fields only. The raw
-// user-agent is hashed, never stored — the row keeps just this digest for
+// user-agent is hashed, never stored - the row keeps just this digest for
 // velocity counting. Returns null when there is nothing stable to hash, in
 // which case fingerprint gates are skipped (fail-open).
 export function fingerprintSignupDevice({ uniqueUserId, userAgent, device } = {}) {

@@ -423,7 +423,7 @@ function SignupFormInner({
   const customFields = Array.isArray(formConfig.customFields) ? formConfig.customFields : [];
   // Bot protection is opt-in per form. The site key normally comes from the
   // founder's saved form config; a dashboard renderer can inject the platform
-  // key instead — either source may drive the widget.
+  // key instead - either source may drive the widget.
   const turnstileSiteKeyResolved =
     typeof formConfig.turnstileSiteKey === "string" && formConfig.turnstileSiteKey.trim() !== ""
       ? formConfig.turnstileSiteKey.trim()
@@ -550,7 +550,7 @@ function SignupFormInner({
       }).catch(() => {});
       setCopied(true);
     } catch {
-      toast.error("Copy didn't work — long-press the link to copy it manually.");
+      toast.error("Copy didn't work - long-press the link to copy it manually.");
     }
   }
 

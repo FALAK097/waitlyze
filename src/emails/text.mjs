@@ -12,11 +12,11 @@ export function welcomeText({ name, url }) {
     `Create your first waitlist: ${url}`,
     "",
     "A good place to start:",
-    "01 Shape your page — add your launch details and make it yours.",
-    "02 Invite your first people — share one link wherever your community is.",
-    "03 Let interest grow — give new subscribers a personal link to pass along.",
+    "01 Shape your page - add your launch details and make it yours.",
+    "02 Invite your first people - share one link wherever your community is.",
+    "03 Let interest grow - give new subscribers a personal link to pass along.",
     "",
-    "Questions as you get started? Reply to this email — we're happy to help.",
+    "Questions as you get started? Reply to this email - we're happy to help.",
   ].join("\n");
 }
 
@@ -59,12 +59,12 @@ export function signupMilestoneText({ waitlistName, count, url, showReferrals = 
   if (first)
     lines.push(
       showReferrals
-        ? "Share your page to get there — your thank-you screen makes it easy for the first people to invite others."
-        : "Share your page to get there — invite more people to discover your launch.",
+        ? "Share your page to get there - your thank-you screen makes it easy for the first people to invite others."
+        : "Share your page to get there - invite more people to discover your launch.",
     );
   else if (nextMilestone)
     lines.push(`You’ll hear from us again at ${nextMilestone.toLocaleString("en-US")} signups.`);
-  else lines.push("Thanks for building with us — keep sharing your page.");
+  else lines.push("Thanks for building with us - keep sharing your page.");
   return lines.join("\n");
 }
 
@@ -94,7 +94,7 @@ export function broadcastSummaryText({
     allAccepted
       ? `Every opted-in subscriber on ${waitlistName} was accepted by the sender. Nothing else to do here.`
       : status === "SENT"
-        ? `"${subject}" finished sending. The addresses below were skipped or rejected — they won’t be retried.`
+        ? `"${subject}" finished sending. The addresses below were skipped or rejected - they won’t be retried.`
         : status === "CANCELED"
           ? `You stopped "${subject}" before it finished. Recipients already accepted by the sender may still receive it.`
           : `"${subject}" stopped before it could finish. Open the report to see which recipients failed and why.`,
@@ -114,17 +114,17 @@ export function waitlistPublishedText({ waitlistName, pageUrl, dashboardUrl }) {
   return [
     "You’re live.",
     "",
-    `${waitlistName} is published and ready to collect signups. Share the link below wherever your community is — every join feeds your referral loop.`,
+    `${waitlistName} is published and ready to collect signups. Share the link below wherever your community is - every join feeds your referral loop.`,
     "",
     `Your page: ${pageUrl}`,
     `Manage this waitlist: ${dashboardUrl}`,
     "",
     "A good place to start:",
-    "01 Share your link — post it where your early audience already hangs out.",
-    "02 Watch the first signups land — we’ll email you when the first person joins.",
-    "03 Keep the loop warm — broadcasts and automations turn interest into momentum.",
+    "01 Share your link - post it where your early audience already hangs out.",
+    "02 Watch the first signups land - we’ll email you when the first person joins.",
+    "03 Keep the loop warm - broadcasts and automations turn interest into momentum.",
     "",
-    "Questions about your launch? Reply to this email — we’re happy to help.",
+    "Questions about your launch? Reply to this email - we’re happy to help.",
   ].join("\n");
 }
 

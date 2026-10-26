@@ -16,6 +16,13 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { listTemplates } from "@/lib/templates/catalog.mjs";
 import { isTemplateId } from "@/lib/templates/gallery.mjs";
 
@@ -152,8 +159,10 @@ export function CreateWaitlistDialog({
             </div>
             <div className="grid gap-2 [&_label]:text-caption [&_label]:font-semibold">
               <Label htmlFor="new-waitlist-slug">Page address</Label>
-              <div className="flex min-h-11 items-center overflow-hidden rounded-lg bg-product-bg-inset pl-3 text-caption text-product-text-secondary focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-product-focus [&_input]:h-11 [&_input]:flex-1 [&_input]:border-0 [&_input]:bg-transparent [&_input]:pl-0.5 [&_input]:shadow-none [&_input]:outline-none">
-                <span className="shrink-0">waitlyze.falakgala.dev/w/</span>
+              <div className="flex min-h-11 items-center overflow-hidden rounded-lg bg-product-bg-inset pl-3 text-caption text-product-text-secondary focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-product-focus [&_input]:h-11 [&_input]:min-w-0 [&_input]:flex-1 [&_input]:border-0 [&_input]:bg-transparent [&_input]:pl-0.5 [&_input]:shadow-none [&_input]:outline-none">
+                <span className="shrink text-xs sm:shrink-0 sm:text-caption">
+                  waitlyze.falakgala.dev/w/
+                </span>
                 <Input
                   id="new-waitlist-slug"
                   autoComplete="off"
@@ -207,21 +216,24 @@ export function CreateWaitlistDialog({
             </div>
             <div className="grid gap-2 [&_label]:text-caption [&_label]:font-semibold">
               <Label htmlFor="new-waitlist-template">Template</Label>
-              <select
-                id="new-waitlist-template"
+              <Select
                 value={templateId}
-                onChange={(event) => {
-                  if (isTemplateId(event.target.value)) setTemplateId(event.target.value);
+                onValueChange={(value) => {
+                  if (isTemplateId(value)) setTemplateId(value);
                 }}
                 disabled={busy}
-                className="h-11 rounded-lg border border-product-border-subtle bg-product-bg-surface px-3 text-body text-product-text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-product-focus"
               >
-                {templateOptions.map((template) => (
-                  <option key={template.id} value={template.id}>
-                    {template.name} — {template.description}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger id="new-waitlist-template" className="h-11 w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent align="start">
+                  {templateOptions.map((template) => (
+                    <SelectItem key={template.id} value={template.id}>
+                      {template.name} - {template.description}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               <p className="text-caption text-product-text-secondary">
                 The new page starts from this template.{" "}
                 <a

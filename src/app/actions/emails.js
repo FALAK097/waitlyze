@@ -81,16 +81,16 @@ const DEFAULTS = {
     subBody: "Questions? Reply to this email.",
   },
   "referral-congrats": {
-    subject: "You did it, {{name}} — {{referral_count}} friends joined {{waitlist}}",
+    subject: "You did it, {{name}} - {{referral_count}} friends joined {{waitlist}}",
     previewText: "Your referrals are moving you up the list.",
     header: "You're climbing the list.",
     subHeader: "{{referral_count}} friends joined through you",
     mainBody:
-      "Hi {{name}},\n\n{{referral_count}} people have joined {{waitlist}} through your link — you're now #{{position}} with {{points}} points.\n\nKeep sharing your personal link: {{referral_link}}",
+      "Hi {{name}},\n\n{{referral_count}} people have joined {{waitlist}} through your link - you're now #{{position}} with {{points}} points.\n\nKeep sharing your personal link: {{referral_link}}",
     subBody: "Every referral moves you closer to launch-day rewards.",
   },
   "launch-invite": {
-    subject: "You're in, {{name}} — {{waitlist}} is live",
+    subject: "You're in, {{name}} - {{waitlist}} is live",
     previewText: "Claim your spot: your personal invite is inside.",
     header: "We're live.",
     subHeader: "Your invite to {{waitlist}}",
@@ -416,7 +416,7 @@ function validTestAddress(to) {
 }
 
 // 1-click test send for a broadcast draft: renders the saved draft with seed
-// preview data and delivers immediately (outside the outbox — tests never
+// preview data and delivers immediately (outside the outbox - tests never
 // touch real recipients or the delivery report).
 export async function sendBroadcastTestEmail({ waitListId, broadcastId, to }) {
   if (!validTestAddress(to))
@@ -851,7 +851,7 @@ export async function listBroadcasts(waitListId) {
   const metrics = new Map();
   for (const row of counts) metrics.set(`${row.broadcastId}:${row.status}`, row.count);
   // Delivery-report breakdown: bounced (provider failures), unsubscribed,
-  // spam/suppression-list hits, and other skips — reconciled from the same
+  // spam/suppression-list hits, and other skips - reconciled from the same
   // recipient rows the dispatcher wrote, so the report always adds up.
   const skippedByCode = new Map();
   for (const row of reasons)
@@ -1051,7 +1051,7 @@ export async function cancelBroadcast({ waitListId, broadcastId }) {
     if (!broadcast || (broadcast.status !== "SENDING" && broadcast.status !== "SCHEDULED"))
       return null;
     if (broadcast.status === "SCHEDULED") {
-      // Nothing fanned out yet — just unschedule back to a canceled draft.
+      // Nothing fanned out yet - just unschedule back to a canceled draft.
       await tx.marketingBroadcast.update({
         where: { id: broadcastId },
         data: { status: "CANCELED", scheduledAt: null },

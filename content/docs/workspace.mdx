@@ -46,7 +46,7 @@ Resend, revoke, or change roles from the same panel. Removals take effect immedi
 Invitation state moves through `PENDING` → accepted, or `SEND_FAILED` when mail could not be queued, or `EXPIRED` after the window. Every invite, resend, revoke, and role change writes an audit event.
 
 <Callout title="Secure invites need encryption configured">
-If member invites cannot be created, the deployment lacks `WEBHOOK_SECRET_ENCRYPTION_KEY`. Contact your administrator — this is a deployment setting, not a docs fix.
+If member invites cannot be created, the deployment lacks `WEBHOOK_SECRET_ENCRYPTION_KEY`. Contact your administrator - this is a deployment setting, not a docs fix.
 </Callout>
 
 ## Integrations
@@ -65,7 +65,7 @@ Where available, Settings supports `?section=audit` showing the newest 200 event
 ## Account export and workspace delete
 
 - **Account export** (`GET /api/settings/export`, signed in) downloads your profile, memberships, campaigns with templates and recipe versions, keys metadata (never plaintext), integrations status, domains, webhooks, and email templates. Use it before deleting anything.
-- **Delete workspace** (`?section=delete`, owners/admins only) permanently removes the workspace and everything in it. Export first — deletion has no undo. Personal workspaces warn before removal.
+- **Delete workspace** (`?section=delete`, owners/admins only) permanently removes the workspace and everything in it. Export first - deletion has no undo. Personal workspaces warn before removal.
 - **Delete waitlist** lives instead in Waitlist settings → Delete waitlist. Export its CSV first. See [Subscribers](/docs/subscribers).
 
 ## Next

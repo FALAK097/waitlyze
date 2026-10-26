@@ -49,10 +49,10 @@ export function LeaderboardSummary({ position, total, referralsToNext, className
       {referralsToNext > 0 ? (
         <span className="text-wl-muted">
           {" "}
-          — {referralsToNext} more referral{referralsToNext === 1 ? "" : "s"} to #{position - 1}
+          - {referralsToNext} more referral{referralsToNext === 1 ? "" : "s"} to #{position - 1}
         </span>
       ) : (
-        <span className="text-wl-muted"> — you lead the pack</span>
+        <span className="text-wl-muted"> - you lead the pack</span>
       )}
     </p>
   );

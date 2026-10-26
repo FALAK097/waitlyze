@@ -3,7 +3,7 @@
 // Conservative by design: only explicit crawler / headless-automation /
 // link-preview / uptime tokens match. A missing, empty, or unrecognized
 // User-Agent is treated as human (fail-open) so legitimate trackers and
-// uncommon browsers are never filtered. Used for impression rows only —
+// uncommon browsers are never filtered. Used for impression rows only -
 // signups require an email + verification, so they are never bot-filtered.
 
 const BOT_TOKENS = [

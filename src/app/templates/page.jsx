@@ -123,7 +123,7 @@ export default function TemplatesPage() {
             Start from a page that already works.
           </h1>
           <p className="mt-5 max-w-2xl text-base leading-normal text-product-text-secondary">
-            Fourteen templates for every kind of launch — SaaS betas, AI previews, newsletters,
+            Fourteen templates for every kind of launch - SaaS betas, AI previews, newsletters,
             events, pre-orders, and more. Pick one, make it yours, and publish when ready.
           </p>
           <div className="mt-8">

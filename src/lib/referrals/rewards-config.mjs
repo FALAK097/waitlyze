@@ -1,5 +1,5 @@
 // Pure rewards-config helpers (Phase 4, stream A). Client-safe: no node
-// imports, no database, no webhooks — the builder preview and public page
+// imports, no database, no webhooks - the builder preview and public page
 // import these directly. Transactional/query logic lives in rewards.mjs.
 
 import { FOLLOW_POINTS, REFERRAL_POINTS, SIGNUP_POINTS } from "./points.mjs";

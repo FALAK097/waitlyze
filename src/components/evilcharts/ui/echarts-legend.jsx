@@ -6,7 +6,7 @@ export function legendFillStyle(key, colorsCount) {
   return { background: indicatorBackground(key, colorsCount) };
 }
 
-// Punches out the centre with a mask-composite so only the "border" shows —
+// Punches out the centre with a mask-composite so only the "border" shows -
 // works with gradients and border-radius, unlike plain border-color.
 export function legendOutlineStyle(key, colorsCount) {
   const mask = {
@@ -64,7 +64,7 @@ export function LegendOverlay({
           (selectedKey === null || selectedKey === key) &&
           (hoveredKey === null || hoveredKey === key);
         return (
-          // No entrance here — the Recharts legend appears instantly, and a
+          // No entrance here - the Recharts legend appears instantly, and a
           // fade-in reads as disconnected from the canvas draw-in.
           isClickable ? (
             <button

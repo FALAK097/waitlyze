@@ -118,13 +118,13 @@ export function spamHint({ subject = "", previewText = "", text = "", html = "" 
   const body = `${subjectText}\n${bodyText}`;
 
   if (!String(previewText || "").trim())
-    issues.push("Add preview text — empty previews look bulk-sent in inboxes.");
+    issues.push("Add preview text - empty previews look bulk-sent in inboxes.");
   if (subjectText.length > 78)
-    issues.push("Subject is long — keep it under ~78 characters so it isn't clipped.");
+    issues.push("Subject is long - keep it under ~78 characters so it isn't clipped.");
   if (subjectText && subjectText === subjectText.toUpperCase() && /[A-Z]{4,}/.test(subjectText))
-    issues.push("Subject is all caps — inbox filters flag shouting.");
+    issues.push("Subject is all caps - inbox filters flag shouting.");
   const bangs = (subjectText.match(/!/g) || []).length;
-  if (bangs >= 2) issues.push("Subject has multiple exclamation marks — one is plenty.");
+  if (bangs >= 2) issues.push("Subject has multiple exclamation marks - one is plenty.");
   const spamWords = [
     "free money",
     "guaranteed",
@@ -142,9 +142,9 @@ export function spamHint({ subject = "", previewText = "", text = "", html = "" 
   const words = bodyText.split(/\s+/).filter(Boolean).length;
   const links = (String(html || "").match(/<a[\s>]/gi) || []).length;
   if (words > 0 && words < 30 && links > 3)
-    issues.push("Very short message with many links — filters read that as spammy.");
+    issues.push("Very short message with many links - filters read that as spammy.");
   if (words > 0 && words < 30 && !links)
-    issues.push("Very short message — add a sentence so it doesn't look like a probe.");
+    issues.push("Very short message - add a sentence so it doesn't look like a probe.");
 
   const level = issues.length === 0 ? "low" : issues.length <= 2 ? "medium" : "high";
   return { level, issues };

@@ -122,7 +122,7 @@ const rangePresets = [
 ];
 const MAX_RANGE_DAYS = 90;
 // Rough in-product medians for orientation only. These are illustrative
-// constants, not measured benchmarks — keep them round and never present
+// constants, not measured benchmarks - keep them round and never present
 // them with fake precision.
 const CONVERSION_MEDIAN_PCT = 11;
 const VERIFICATION_MEDIAN_PCT = 55;
@@ -222,7 +222,7 @@ function FunnelChart({ data, showValues = true, showPercentage = true, showLabel
 
       {data.map((stage, index) => {
         const percentage =
-          firstValue > 0 ? `${Math.round((stage.value / firstValue) * 100)}%` : "—";
+          firstValue > 0 ? `${Math.round((stage.value / firstValue) * 100)}%` : "-";
         const dimmed = hoveredIndex !== null && hoveredIndex !== index;
         const detail = stage.detail ? ` ${stage.detail}.` : "";
 
@@ -662,13 +662,13 @@ function RangePicker({ range, from, to, onChange }) {
                   <label className="grid gap-0.75 text-micro font-medium text-product-text-secondary">
                     <span>Start</span>
                     <output className="block min-w-30 rounded-lg border border-product-border-subtle bg-product-bg-surface px-2 py-1.25 text-xs text-product-text-primary tabular-nums">
-                      {draft?.from ? format(draft.from, "yyyy-MM-dd") : "—"}
+                      {draft?.from ? format(draft.from, "yyyy-MM-dd") : "-"}
                     </output>
                   </label>
                   <label className="grid gap-0.75 text-micro font-medium text-product-text-secondary">
                     <span>End</span>
                     <output className="block min-w-30 rounded-lg border border-product-border-subtle bg-product-bg-surface px-2 py-1.25 text-xs text-product-text-primary tabular-nums">
-                      {draft?.to ? format(draft.to, "yyyy-MM-dd") : "—"}
+                      {draft?.to ? format(draft.to, "yyyy-MM-dd") : "-"}
                     </output>
                   </label>
                 </div>
@@ -827,10 +827,10 @@ export function WaitlistAnalytics({ waitListId, emailsEnabled = false }) {
   const kFactor = currentAnalytics?.kFactor;
   const series = currentAnalytics?.series ?? [];
   const noActivity = summary && summary.visitors === 0 && summary.signups === 0;
-  const conversion = summary?.conversionRate == null ? "—" : `${summary.conversionRate}%`;
-  const verification = summary?.verificationRate == null ? "—" : `${summary.verificationRate}%`;
+  const conversion = summary?.conversionRate == null ? "-" : `${summary.conversionRate}%`;
+  const verification = summary?.verificationRate == null ? "-" : `${summary.verificationRate}%`;
   const kFactorValue =
-    kFactor?.value == null ? "—" : kFactor.value >= 0.01 ? kFactor.value.toFixed(2) : "<0.01";
+    kFactor?.value == null ? "-" : kFactor.value >= 0.01 ? kFactor.value.toFixed(2) : "<0.01";
   const invitesPerSignup = kFactor?.invitesPerSignup ?? 0;
   const invitesLabel =
     invitesPerSignup === 0
@@ -899,7 +899,7 @@ export function WaitlistAnalytics({ waitListId, emailsEnabled = false }) {
     referrals?.share == null ? "No signups yet" : `${referrals.share}% of signups`;
   const summarySentence =
     currentAnalytics && !noActivity && summary?.conversionRate != null
-      ? `${number.format(summary.signups)} signups from ${number.format(summary.visitors)} visitors — ${summary.conversionRate}% conversion vs a ~${CONVERSION_MEDIAN_PCT}% typical median.`
+      ? `${number.format(summary.signups)} signups from ${number.format(summary.visitors)} visitors - ${summary.conversionRate}% conversion vs a ~${CONVERSION_MEDIAN_PCT}% typical median.`
       : null;
   const funnelSteps = summary
     ? [
@@ -1049,7 +1049,7 @@ export function WaitlistAnalytics({ waitListId, emailsEnabled = false }) {
                 label="K-factor"
                 value={kFactorValue}
                 detail={kFactorDetail}
-                hint="Viral coefficient: average new signups generated per signup — invites sent times the share-to-join rate. Above 1.0 means self-sustaining growth."
+                hint="Viral coefficient: average new signups generated per signup - invites sent times the share-to-join rate. Above 1.0 means self-sustaining growth."
               />
               <Metric
                 label="Points awarded"
@@ -1370,7 +1370,7 @@ export function WaitlistAnalytics({ waitListId, emailsEnabled = false }) {
                                       day: "numeric",
                                       year: "numeric",
                                     })
-                                  : "—"}
+                                  : "-"}
                               </span>
                             </th>
                             <td>{number.format(email.total)}</td>

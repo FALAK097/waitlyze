@@ -211,7 +211,7 @@ export function AutomationRecipePanel({
             className={fieldInput}
             maxLength={160}
             aria-label="Subject"
-            placeholder="Subject — what subscribers see in the inbox"
+            placeholder="Subject - what subscribers see in the inbox"
             value={recipe.config.subject}
             disabled={busy}
             onChange={(event) =>

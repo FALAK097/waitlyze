@@ -39,7 +39,7 @@ export const getGeoInfo = (request) => {
 
     const headers = request.headers;
     const country = headers.get("x-vercel-ip-country");
-    // Vercel URL-encodes the city header ("San%20Francisco") — decode it so
+    // Vercel URL-encodes the city header ("San%20Francisco") - decode it so
     // stored cities stay human-readable. Fail-open: keep the raw value.
     const city = decodeHeader(headers.get("x-vercel-ip-city"));
     const region = decodeHeader(headers.get("x-vercel-ip-country-region"));

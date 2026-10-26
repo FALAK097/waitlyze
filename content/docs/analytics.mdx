@@ -3,7 +3,7 @@ title: Analytics
 description: Read visitors, signups, conversion, acquisition, audience, and email trends.
 ---
 
-The **Analytics** tab at `/waitlists/[id]/analytics` requires view access. It answers: are people visiting, signing up, verifying — where do they come from, and what do they use?
+The **Analytics** tab at `/waitlists/[id]/analytics` requires view access. It answers: are people visiting, signing up, verifying - where do they come from, and what do they use?
 
 ## Metrics at a glance
 
@@ -15,7 +15,7 @@ The **Analytics** tab at `/waitlists/[id]/analytics` requires view access. It an
 | Verification | Verified signups share | Change from the previous matching period |
 | Points awarded | Referral-engine points in range | Split into join vs referral credit |
 
-A `—` means the denominator is zero, not zero performance. When the previous period has no baseline, the comparison says so instead of showing an infinite increase.
+A `-` means the denominator is zero, not zero performance. When the previous period has no baseline, the comparison says so instead of showing an infinite increase.
 
 No activity shows an explicit empty state, not zeros pretending to be insight. If the query fails, you get the error with a **Try again** action.
 
@@ -30,9 +30,9 @@ No activity shows an explicit empty state, not zeros pretending to be insight. I
 
 The trend panel plots visitors and signups per day. Controls:
 
-- **Visitors / Signups** — focus the chart on one series (the other dims).
-- **Chart** — visitor area and signup bars with hover details.
-- **Table** — day-by-day numbers (visitors, signups, verified) with dates formatted in UTC for auditability.
+- **Visitors / Signups** - focus the chart on one series (the other dims).
+- **Chart** - visitor area and signup bars with hover details.
+- **Table** - day-by-day numbers (visitors, signups, verified) with dates formatted in UTC for auditability.
 
 Switching ranges reloads with a loading skeleton and a screen-reader update (“Updating analytics…”). The table view is the accessible source of truth when colors are ambiguous.
 
@@ -57,7 +57,7 @@ Recent sent broadcasts with delivered and failed counts per send. This section i
 
 - **High visitors, low conversion**: page or offer needs work. Check [Page builder](/docs/page-builder) and [Signup flow](/docs/signup-flow).
 - **High signups, low verification**: verification email or sender needs work. Check [Resend](/docs/resend) and delivery health in [Email tools](/docs/email).
-- **All traffic from one channel**: diversify acquisition — check Acquisition dimensions for where visitors actually come from.
+- **All traffic from one channel**: diversify acquisition - check Acquisition dimensions for where visitors actually come from.
 - **Mostly mobile, poor conversion**: inspect the landing page on a phone. Check [Page builder](/docs/page-builder).
 
 The waitlists list shows a simpler signups-per-visitor ratio per row; the detail page uses impression-linked conversion, so the two can differ slightly by design.
