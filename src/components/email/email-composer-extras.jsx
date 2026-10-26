@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 
+import { Button } from "@/components/ui/button";
 import { spamHint } from "@/lib/email/variables.mjs";
 
 const chipsLine = "m-0 text-xs text-product-text-secondary";
@@ -50,7 +51,7 @@ export function SpamHintView({ subject, previewText, text, html }) {
 
 const frameBar = "flex flex-wrap items-center gap-2";
 const frameTab =
-  "min-h-8.5 rounded-product-control border border-product-border-control bg-white px-3 text-caption font-semibold text-product-text-primary cursor-pointer aria-[pressed=true]:bg-product-bg-inset focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-product-success-text!";
+  "min-h-8.5 rounded-product-control border-product-border-control bg-white px-3 text-caption font-semibold text-product-text-primary hover:bg-white hover:text-product-text-primary aria-[pressed=true]:bg-product-bg-inset aria-[pressed=true]:hover:bg-product-bg-inset focus-visible:ring-0 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-product-success-text!";
 
 export function EmailPreviewFrame({
   html,
@@ -60,22 +61,24 @@ export function EmailPreviewFrame({
   return (
     <div className="flex flex-col gap-3">
       <div className={frameBar}>
-        <button
+        <Button
           type="button"
+          variant="outline"
           className={frameTab}
           aria-pressed={!mobile}
           onClick={() => setMobile(false)}
         >
           Desktop
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
+          variant="outline"
           className={frameTab}
           aria-pressed={mobile}
           onClick={() => setMobile(true)}
         >
           Mobile · 375px
-        </button>
+        </Button>
         <span className="text-caption text-product-text-secondary">{seedNote}</span>
       </div>
       <div
