@@ -3,8 +3,14 @@ import { HugeiconsIcon } from "@hugeicons/react";
 import Image from "next/image";
 
 import { CopyButton } from "@/components/product/copy-button";
+import {
+  LeaderboardRows,
+  LeaderboardSummary,
+  SocialFollowTasks,
+} from "@/components/product/referral-cockpit";
 import { ShareButtons } from "@/components/product/share-buttons";
 import { fontFamilyValue, googleFontsStylesheet } from "@/lib/google-fonts.mjs";
+import { socialFollowEntries } from "@/lib/referral-cockpit.mjs";
 import { normalizeRewardsConfig, readRewardTiers } from "@/lib/referrals/rewards-config.mjs";
 import { SITE_URL } from "@/lib/site-metadata";
 import { cn } from "@/lib/utils";
@@ -958,6 +964,24 @@ export function StatusPagePreview({ snapshot, state = "confirmed", showReferrals
                 link={demoLink}
                 subject={status.heading}
               />
+            )}
+            {showReferrals && !pending && status.showLeaderboard !== false && (
+              <div className="grid w-full max-w-md justify-items-center gap-2.5">
+                <p className="m-0 w-full text-left text-sm font-bold">Leaderboard</p>
+                <LeaderboardSummary position={47} total={2847} referralsToNext={1} />
+                <LeaderboardRows
+                  neighbors={[
+                    { position: 45, maskedEmail: "a***@g***", referrals: 12, you: false },
+                    { position: 46, maskedEmail: "j***@o***", referrals: 11, you: false },
+                    { position: 47, maskedEmail: "you", referrals: 10, you: true },
+                    { position: 48, maskedEmail: "s***@h***", referrals: 9, you: false },
+                    { position: 49, maskedEmail: "m***@y***", referrals: 9, you: false },
+                  ]}
+                />
+              </div>
+            )}
+            {showReferrals && !pending && (
+              <SocialFollowTasks follows={socialFollowEntries(status)} />
             )}
           </div>
         )}

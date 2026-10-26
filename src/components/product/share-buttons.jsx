@@ -10,6 +10,9 @@ export const SHARE_CHANNELS = [
   { id: "linkedin", label: "Linkedin" },
   { id: "whatsapp", label: "Whatsapp" },
   { id: "email", label: "Email" },
+  { id: "facebook", label: "Facebook" },
+  { id: "telegram", label: "Telegram" },
+  { id: "reddit", label: "Reddit" },
 ];
 
 export function channelLabel(channel) {
@@ -23,6 +26,12 @@ export function buildShareHref(channel, { message, link, subject }) {
   if (channel === "whatsapp") return `https://wa.me/?text=${encodeURIComponent(message)}`;
   if (channel === "email")
     return `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(message)}`;
+  if (channel === "facebook")
+    return `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(link)}&quote=${encodeURIComponent(message)}`;
+  if (channel === "telegram")
+    return `https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent(message)}`;
+  if (channel === "reddit")
+    return `https://www.reddit.com/submit?url=${encodeURIComponent(link)}&title=${encodeURIComponent(message)}`;
   return null;
 }
 
@@ -189,12 +198,58 @@ function EmailIcon({ className }) {
   );
 }
 
+function FacebookIcon({ className }) {
+  return (
+    <svg viewBox="0 0 256 256" className={className} aria-hidden="true">
+      <rect width="256" height="256" rx="56" fill="#1877F2" />
+      <path
+        fill="#fff"
+        d="M178.5 132.2l6.6-43.1h-41.4V61.1c0-12.5 6.1-24.7 25.8-24.7h20v-36.9l-34.6-.5c-38.4 0-63.3 23.3-63.3 65.2v32.9H50v43.1h41.6V232h51.9V132.2h35.5z"
+        transform="translate(12 12) scale(0.90625)"
+      />
+    </svg>
+  );
+}
+
+function TelegramIcon({ className }) {
+  return (
+    <svg viewBox="0 0 256 256" className={className} aria-hidden="true">
+      <rect width="256" height="256" rx="128" fill="#229ED9" />
+      <path
+        fill="#fff"
+        d="M59 125.7l139.4-53.7c6.5-2.4 12.1 1.6 10 11.8l-.1.8-23.6 111.4c-1.8 7.9-6.5 9.8-13.1 6.1l-36.3-26.7-17.5 16.8c-2 2-3.6 3.6-7.4 3.6l2.6-37.1 67.6-61c2.9-2.6-0.6-4-4.6-1.5l-83.5 52.6-36-11.2c-7.8-2.5-8-7.9 1.5-11.9z"
+      />
+    </svg>
+  );
+}
+
+function RedditIcon({ className }) {
+  return (
+    <svg viewBox="0 0 256 256" className={className} aria-hidden="true">
+      <rect width="256" height="256" rx="56" fill="#FF4500" />
+      <g fill="none" stroke="#fff" strokeWidth="10" strokeLinecap="round">
+        <ellipse cx="128" cy="156" rx="62" ry="40" fill="#FF4500" />
+        <circle cx="104" cy="150" r="2" fill="#fff" stroke="none" />
+        <circle cx="152" cy="150" r="2" fill="#fff" stroke="none" />
+        <path d="M104 172c6 6 15 9 24 9s18-3 24-9" />
+        <circle cx="66" cy="148" r="12" fill="#FF4500" />
+        <circle cx="190" cy="148" r="12" fill="#FF4500" />
+        <path d="M178 140l24-30 14 5" />
+        <circle cx="204" cy="112" r="7" fill="#fff" stroke="none" />
+      </g>
+    </svg>
+  );
+}
+
 const ICONS = {
   x: XIcon,
   instagram: InstagramIcon,
   linkedin: LinkedInIcon,
   whatsapp: WhatsAppIcon,
   email: EmailIcon,
+  facebook: FacebookIcon,
+  telegram: TelegramIcon,
+  reddit: RedditIcon,
 };
 
 export function ShareChannelIcon({ channel, className = "size-4" }) {
