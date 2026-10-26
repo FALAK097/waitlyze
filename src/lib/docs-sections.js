@@ -137,6 +137,7 @@ export function getDocsSectionTree(tree, section) {
       name: "API Reference",
       children: [
         sectionPage("API Reference", "/docs/api/reference"),
+        sectionPage("API keys", "/docs/api-keys"),
         {
           type: "folder",
           name: "Waitlist endpoints",
@@ -147,7 +148,6 @@ export function getDocsSectionTree(tree, section) {
             apiEndpointPage("Award custom points", "POST", "/docs/api/award-points"),
           ],
         },
-        sectionPage("API keys", "/docs/api-keys"),
         sectionPage("Custom frontend guide", "/docs/custom-frontend"),
       ],
     };
@@ -161,15 +161,10 @@ export function getDocsSectionTree(tree, section) {
       children: [
         sectionPage("Integrations", "/docs/integrations/overview"),
         sectionPage("Resend", "/docs/resend", integrationLogo("resend.svg")),
-        {
-          type: "separator",
-          name: "Notifications",
-        },
         sectionPage("Slack", "/docs/slack", integrationLogo("slack.svg")),
         sectionPage("Discord", "/docs/discord", integrationLogo("discord.svg")),
         sectionPage("Webhooks", "/docs/webhooks", integrationLogo("webhooks.svg")),
         sectionPage("Zapier", "/docs/zapier", integrationLogo("zapier.webp")),
-        sectionPage("Email provider sync", "/docs/esp-sync"),
       ],
     };
   }

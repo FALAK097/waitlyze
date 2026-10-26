@@ -107,10 +107,10 @@ test("API and integration sidebars are section-specific and have no duplicate se
 
   assert.deepEqual(pageUrls(apiTree.children), [
     "/docs/api/reference",
+    "/docs/api-keys",
     "/docs/api/create-signup",
     "/docs/api/lookup-signup",
     "/docs/api/award-points",
-    "/docs/api-keys",
     "/docs/custom-frontend",
   ]);
   assert.deepEqual(pageUrls(integrationsTree.children), [
@@ -120,10 +120,9 @@ test("API and integration sidebars are section-specific and have no duplicate se
     "/docs/discord",
     "/docs/webhooks",
     "/docs/zapier",
-    "/docs/esp-sync",
   ]);
   assert.deepEqual(separatorNames(apiTree.children), []);
-  assert.deepEqual(separatorNames(integrationsTree.children), ["notifications"]);
+  assert.deepEqual(separatorNames(integrationsTree.children), []);
   const endpointGroup = apiTree.children.find(
     (node) => node.type === "folder" && node.name === "Waitlist endpoints",
   );
@@ -142,7 +141,7 @@ test("API and integration sidebars are section-specific and have no duplicate se
     integrationsTree.children.some(
       (node) => node.type === "separator" && node.name === "Notifications",
     ),
-    true,
+    false,
   );
   assert.equal(pageUrls(integrationsTree.children).includes("/docs/notifications"), false);
 });
