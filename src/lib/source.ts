@@ -13,7 +13,7 @@ export const source = loader({
       slack: "/integrations/slack.svg",
       discord: "/integrations/discord.svg",
       webhooks: "/integrations/webhooks.svg",
-      zapier: "/integrations/webhooks.svg",
+      zapier: "/integrations/zapier.webp",
     }[icon];
     if (src) {
       return createElement("img", {

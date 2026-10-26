@@ -121,7 +121,7 @@ function apiEndpointPage(name, method, url) {
 
 function integrationLogo(file) {
   return createElement("img", {
-    src: `/integrations/${file}.svg`,
+    src: `/integrations/${file}`,
     alt: "",
     width: 16,
     height: 16,
@@ -160,15 +160,15 @@ export function getDocsSectionTree(tree, section) {
       name: "Integrations",
       children: [
         sectionPage("Integrations", "/docs/integrations/overview"),
-        sectionPage("Resend", "/docs/resend", integrationLogo("resend")),
+        sectionPage("Resend", "/docs/resend", integrationLogo("resend.svg")),
         {
           type: "separator",
           name: "Notifications",
         },
-        sectionPage("Slack", "/docs/slack", integrationLogo("slack")),
-        sectionPage("Discord", "/docs/discord", integrationLogo("discord")),
-        sectionPage("Webhooks", "/docs/webhooks", integrationLogo("webhooks")),
-        sectionPage("Zapier", "/docs/zapier", integrationLogo("webhooks")),
+        sectionPage("Slack", "/docs/slack", integrationLogo("slack.svg")),
+        sectionPage("Discord", "/docs/discord", integrationLogo("discord.svg")),
+        sectionPage("Webhooks", "/docs/webhooks", integrationLogo("webhooks.svg")),
+        sectionPage("Zapier", "/docs/zapier", integrationLogo("zapier.webp")),
         sectionPage("Email provider sync", "/docs/esp-sync"),
       ],
     };
