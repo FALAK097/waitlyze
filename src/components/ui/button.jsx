@@ -54,7 +54,7 @@ const buttonVariants = cva(
         "menu-item": "h-auto min-h-9 w-full justify-start px-2.5 py-1.5 text-left text-caption",
         "navigation-item":
           "h-auto min-h-11 w-full min-w-0 justify-start gap-3 px-3 py-2.5 text-item font-normal whitespace-normal aria-[current=page]:font-medium max-[760px]:gap-2 max-[760px]:px-2.5",
-        card: "h-auto w-full justify-between gap-4 rounded-lg border-0 px-3 py-2.5 text-left font-normal whitespace-normal",
+        card: "h-auto w-full flex-wrap items-start justify-between gap-4 rounded-lg border-0 px-3 py-2.5 text-left font-normal whitespace-normal",
         "auth-provider": "h-auto min-h-12 gap-3 px-4 text-sm",
         "font-category": "h-auto min-h-7 shrink-0 px-2.5 text-micro font-normal capitalize",
         "font-option":
