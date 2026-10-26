@@ -29,9 +29,15 @@ const RETRYABLE = new Set([408, 425, 429]);
 //   lives in the position query, not in this event.
 // - milestone.reached: data = { count, triggeringSignupId? } where count is
 //   one of 1/10/100/1000 and triggeringSignupId is the signup that tripped
-//   the count, when known. Milestones use a deterministic event id
-//   (milestone:{waitlistId}:{count}) so concurrent trips collapse to one
-//   delivery via skipDuplicates instead of double-firing.
+//   the count, when known. Reward-tier unlocks reuse this type with
+//   data = { signupId, count, reward, triggeringSignupId } where count is the
+//   crossed referral threshold, reward is the tier label, signupId is the
+//   referrer who earns the tier, and triggeringSignupId is the invitee whose
+//   verification crossed it. Milestones use a
+//   deterministic event id (milestone:{waitlistId}:{count}) so concurrent
+//   trips collapse to one delivery via skipDuplicates instead of
+//   double-firing; tier unlocks use reward-tier:{waitlistId}:{signup}:{count}
+//   so the two families never collide.
 export const WEBHOOK_EVENT_TYPES = Object.freeze([
   "signup.created",
   "signup.verified",
@@ -43,41 +49,67 @@ export function isSupportedWebhookEvent(value) {
   return WEBHOOK_EVENT_TYPES.includes(value);
 }
 
-export async function enqueueWebhookEvent(
-  tx,
-  { waitListId, eventType, signupId, extra, eventId, test = false, now = new Date() },
-) {
+function deliveryRows(subscriptions, event) {
+  const id = typeof event.eventId === "string" && event.eventId ? event.eventId : randomUUID();
+  const payload = {
+    id,
+    type: event.eventType,
+    version: 1,
+    occurredAt: event.now.toISOString(),
+    waitlistId: event.waitListId,
+    data:
+      event.test || event.signupId === undefined
+        ? { ...(event.test ? { test: true } : {}), ...event.extra }
+        : { signupId: event.signupId, ...event.extra },
+  };
+  return subscriptions.map(({ id: subscriptionId }) => ({
+    subscriptionId,
+    eventId: id,
+    eventKey: `${subscriptionId}:${id}`,
+    eventType: event.eventType,
+    payload,
+    availableAt: event.now,
+  }));
+}
+
+export async function enqueueWebhookEvent(tx, event) {
+  const normalized = { test: false, now: new Date(), ...event };
+  const subscriptions = await tx.webhookSubscription.findMany({
+    where: {
+      waitListId: normalized.waitListId,
+      enabled: true,
+      eventTypes: { has: normalized.eventType },
+    },
+    select: { id: true },
+  });
+  if (!subscriptions.length) return 0;
+  await tx.webhookDelivery.createMany({
+    data: deliveryRows(subscriptions, normalized),
+    skipDuplicates: true,
+  });
+  return subscriptions.length;
+}
+
+// Batch related events that share a waitlist and type. This keeps transaction
+// fan-out to one subscription read and one insert while preserving each
+// event's own idempotency key and payload.
+export async function enqueueWebhookEventBatch(tx, events) {
+  if (!Array.isArray(events) || events.length === 0) return 0;
+  const normalized = events.map((event) => ({ test: false, now: new Date(), ...event }));
+  const { waitListId, eventType } = normalized[0];
+  if (
+    normalized.some((event) => event.waitListId !== waitListId || event.eventType !== eventType)
+  ) {
+    throw new TypeError("Batched webhook events must share a waitlist and event type.");
+  }
   const subscriptions = await tx.webhookSubscription.findMany({
     where: { waitListId, enabled: true, eventTypes: { has: eventType } },
     select: { id: true },
   });
   if (!subscriptions.length) return 0;
-  // Random by default; callers with a natural idempotency key (milestones)
-  // pass a deterministic id so races collapse via skipDuplicates below.
-  const id = typeof eventId === "string" && eventId ? eventId : randomUUID();
-  const payload = {
-    id,
-    type: eventType,
-    version: 1,
-    occurredAt: now.toISOString(),
-    waitlistId: waitListId,
-    data:
-      test || signupId === undefined
-        ? { ...(test ? { test: true } : {}), ...extra }
-        : { signupId, ...extra },
-  };
-  await tx.webhookDelivery.createMany({
-    data: subscriptions.map(({ id: subscriptionId }) => ({
-      subscriptionId,
-      eventId: id,
-      eventKey: `${subscriptionId}:${id}`,
-      eventType,
-      payload,
-      availableAt: now,
-    })),
-    skipDuplicates: true,
-  });
-  return subscriptions.length;
+  const data = normalized.flatMap((event) => deliveryRows(subscriptions, event));
+  const result = await tx.webhookDelivery.createMany({ data, skipDuplicates: true });
+  return result.count;
 }
 
 function postPinned(url, addresses, body, headers) {

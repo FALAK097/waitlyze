@@ -19,6 +19,7 @@ export async function sendPlatformEmail({
   to,
   subject,
   html,
+  text,
   replyTo,
   idempotencyKey,
   attachments,
@@ -31,10 +32,27 @@ export async function sendPlatformEmail({
       subject,
       replyTo: replyTo || env.RESEND_REPLY_TO,
       html,
+      ...(text ? { text } : {}),
       ...(attachments?.length ? { attachments } : {}),
     },
     idempotencyKey ? { idempotencyKey } : undefined,
   );
-  if (error) throw new Error(`Platform email rejected: ${error.name || "provider error"}`);
+  if (error) {
+    throw Object.assign(new Error(`Platform email rejected: ${error.name || "provider error"}`), {
+      name: error.name || "Error",
+      statusCode: error.statusCode ?? null,
+      code: error.code ?? error.name ?? "PROVIDER_ERROR",
+    });
+  }
   return true;
+}
+
+// Dispatcher-compatible platform sender for the email outbox. Shares the
+// platform client (own verified sender + RESEND_REPLY_TO default) so founder
+// notices get the same retries and idempotency as subscriber mail. Extra
+// fields the outbox passes (workspaceId, headers) are ignored on purpose:
+// platform mail must never depend on a workspace's own provider.
+export function createPlatformSender() {
+  return async ({ to, subject, html, text, idempotencyKey }) =>
+    sendPlatformEmail({ to, subject, html, text, idempotencyKey });
 }

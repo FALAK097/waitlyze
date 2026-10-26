@@ -60,6 +60,35 @@ The embed uses a public waitlist ID and needs no secret. Keep [API keys](/docs/a
   }}
 />
 
+## Leaderboard & counter widgets
+
+Show social proof on any site — no API key needed. Both widgets serve JSON by default and an embeddable HTML snippet with `?format=html` (iframe it). Emails are always masked server-side (`b***@g***`); raw addresses never leave these endpoints. Responses are public-cacheable for 60 seconds (`s-maxage=60, stale-while-revalidate=300`) and share the `widget` rate-limit budget (`429` carries `Retry-After`).
+
+```html title="Leaderboard widget"
+<iframe
+  src="https://waitlyze.falakgala.dev/api/widgets/leaderboard?waitlistId=YOUR_WAITLIST_ID&format=html&limit=10"
+  width="100%"
+  height="420"
+  style="border:0"
+  loading="lazy"
+  title="Waitlist leaderboard"
+></iframe>
+```
+
+```html title="Live counter widget"
+<iframe
+  src="https://waitlyze.falakgala.dev/api/widgets/counter?waitlistId=YOUR_WAITLIST_ID&format=html"
+  width="100%"
+  height="180"
+  style="border:0"
+  loading="lazy"
+  title="Waitlist counter"
+></iframe>
+```
+
+- Leaderboard needs a **published** waitlist with referrals on (`404` otherwise); the counter needs only a published waitlist. `limit` is 1–50 (default 10).
+- Prefer JSON (`?format=json`) when rendering in your own components: `{ "total": 2418, "entries": [{ "position": 1, "maskedEmail": "b***@g***", "referrals": 12 }] }` and `{ "total": 2418 }`.
+
 ## Checklist before sharing
 
 - Status is `Published` and Overview says `Published page`, not `Publish your latest changes`.

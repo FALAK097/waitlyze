@@ -1,8 +1,7 @@
-/**
- * Privacy masking for public surfaces (leaderboard, share views).
- * Never exposes raw emails: every address is masked server-side
- * (e.g. `b***@g***`) and only counts/positions leave the endpoint.
- */
+// Shared email masking for every public widget/leaderboard surface.
+// Single source of truth: masked emails only (`b***@g***`) may leave the
+// server on unauthenticated endpoints. Raw addresses never do.
+
 export function maskEmail(email) {
   if (typeof email !== "string" || !email) return "***@***";
   const at = email.indexOf("@");
@@ -12,4 +11,13 @@ export function maskEmail(email) {
   if (!domain) return `${head(local)}***@***`;
   const domainHead = domain.split(".")[0] || "*";
   return `${head(local)}***@${head(domainHead)}***`;
+}
+
+// Minimal HTML escaper for widget HTML responses (masked values are safe
+// already, but defense in depth costs one function).
+export function escapeHtml(value) {
+  return String(value ?? "").replace(
+    /[&<>"']/g,
+    (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char],
+  );
 }

@@ -1,0 +1,36 @@
+---
+title: Email provider sync
+description: Mirror signups into Klaviyo, Mailchimp, or Kit via webhooks.
+---
+
+There is no native Klaviyo, Mailchimp, or Kit sync. Mirror verified signups into your ESP with webhooks plus that ESP's subscribe API — a few lines of glue in a function you own, no polling.
+
+## Pattern: verified signup → ESP list
+
+<Steps>
+<Step>
+### Subscribe to signup.verified
+Add a webhook endpoint for the waitlist subscribed to `signup.verified` (fire only on verified addresses — never sync `signup.created` into marketing lists or you will mail unconfirmed contacts). Verify signatures per [Webhooks](/docs/webhooks).
+</Step>
+<Step>
+### Resolve the subscriber
+`data.signupId` identifies the signup; the email is never in the payload. Fetch it from your subscriber store, then call your ESP's subscribe endpoint (Klaviyo Profiles, Mailchimp `lists/{id}/members`, Kit subscribers) with double opt-in enabled there if the list requires it.
+</Step>
+<Step>
+### Tag with waitlist context
+Pass the `waitlistId`, referral code, and position as ESP tags or custom properties so launch-day segments ("top 100 referrers", "joined before March") work without a backfill.
+</Step>
+<Step>
+### Handle removals both ways
+Offboards and suppression (bounces, complaints) live in Waitlyze automatically. If someone unsubscribes in the ESP, remove or suppress them on the waitlist too so a later broadcast does not re-add them.
+</Step>
+</Steps>
+
+Dedupe on the event `id`, process `referral.completed` if you award ESP-side perks for referrals, and keep the sync one-directional per list (Waitlyze → ESP) to avoid loops.
+
+## Next
+
+<Cards>
+<Card title="Webhooks" href="/docs/webhooks" description="Events and verification." />
+<Card title="Subscribers" href="/docs/subscribers" description="The signup behind an event." />
+</Cards>

@@ -4,6 +4,7 @@ import prisma from "@/lib/prisma";
 import { consumePublicBudget, PublicRateLimitError } from "@/lib/security/public-rate-limit.mjs";
 import { createImpression } from "@/services/impressions";
 import { pickAttribution } from "@/utils/server/attribution.mjs";
+import { isBotRequest } from "@/utils/server/bot-filter.mjs";
 import { getDeviceInfo } from "@/utils/server/device";
 import { getGeoInfo, getIpAddress, getTimeZone } from "@/utils/server/geo";
 import { validateRequest } from "@/utils/server/validations/impression";
@@ -13,6 +14,10 @@ export async function POST(request) {
     const body = await request.json();
     if (typeof body?.waitListId !== "string" || !body.waitListId || body.waitListId.length > 128)
       return NextResponse.json({ message: "A valid waitlist is required." }, { status: 400 });
+    // Bot page views are acknowledged but never stored, so conversion stats
+    // stay honest. Fail-open: only an explicit bot UA is filtered.
+    if (isBotRequest(request.headers))
+      return NextResponse.json({ filtered: true, waitListId: body.waitListId });
     await consumePublicBudget(prisma, {
       kind: "impression",
       campaignId: body.waitListId,

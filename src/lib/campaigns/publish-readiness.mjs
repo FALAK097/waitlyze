@@ -158,6 +158,27 @@ export function assessPublishReadiness(snapshot, options = {}) {
       fix: { surface: "status", label: "Pick share channels" },
     });
 
+  // Duplicate thresholds collapse in progress math (only the first reward at
+  // a threshold ever shows), so flag them before publish.
+  const tierThresholds = snapshot.sections.flatMap((section) =>
+    section && section.type === "referralRewards" && section.visible !== false
+      ? (Array.isArray(section.items) ? section.items : [])
+          .map((item) => Number(item?.referrals))
+          .filter((value) => Number.isSafeInteger(value) && value >= 1)
+      : [],
+  );
+  const duplicateThresholds = [
+    ...new Set(tierThresholds.filter((value, i) => tierThresholds.indexOf(value) !== i)),
+  ];
+  if (duplicateThresholds.length > 0)
+    warnings.push({
+      id: "duplicate-reward-tiers",
+      title: `Duplicate reward threshold${duplicateThresholds.length === 1 ? "" : "s"} (${duplicateThresholds.join(", ")})`,
+      detail:
+        "Two rewards share a referral count, so only the first is ever shown. Change one threshold.",
+      fix: { surface: "page", label: "Review reward tiers" },
+    });
+
   if (publishedSnapshot && visibleSignupForms(publishedSnapshot) === 0)
     warnings.push({
       id: "published-without-form",

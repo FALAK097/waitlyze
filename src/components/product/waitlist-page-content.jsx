@@ -11,6 +11,7 @@ import {
 import { ShareButtons } from "@/components/product/share-buttons";
 import { fontFamilyValue, googleFontsStylesheet } from "@/lib/google-fonts.mjs";
 import { socialFollowEntries } from "@/lib/referral-cockpit.mjs";
+import { normalizeRewardsConfig, readRewardTiers } from "@/lib/referrals/rewards-config.mjs";
 import { SITE_URL } from "@/lib/site-metadata";
 import { cn } from "@/lib/utils";
 
@@ -65,6 +66,7 @@ export function WaitlistPageContent({
   renderSignupForm,
   previewViewport,
   signupCount = 128,
+  hideCounts = false,
   interactive = false,
   selectedBlockId = null,
   onBlockSelect,
@@ -625,7 +627,10 @@ export function WaitlistPageContent({
                 </section>
               );
             }
-            if (section.type === "signupCount")
+            if (section.type === "signupCount") {
+              // Stealth mode (private/B2B launches) hides the headcount entirely
+              // instead of rendering a zero that invites questions.
+              if (hideCounts) return null;
               return (
                 <section className={cn(sectionClass, "py-12 text-center")} key={section.id}>
                   <p className="m-0 text-2xl md:text-3xl">
@@ -637,6 +642,7 @@ export function WaitlistPageContent({
                   </p>
                 </section>
               );
+            }
             if (section.type === "referralRewards")
               return (
                 <section className={cn(sectionClass, "py-20")} key={section.id}>
@@ -850,6 +856,12 @@ export function StatusPagePreview({ snapshot, state = "confirmed", showReferrals
   const pending = state === "pending";
   const returning = state === "returning";
   const card = status.layout === "card";
+  // Rewards config may predate the snapshot (old drafts): normalize to
+  // zero-config defaults so the preview never crashes on missing keys.
+  const rewards = normalizeRewardsConfig(snapshot.rewards);
+  const tiers = readRewardTiers(snapshot);
+  const nextTier = tiers.find((tier) => tier.referrals > 1) ?? tiers[0] ?? null;
+  const demoPosition = 128 + rewards.positionOffset;
   const demoLink = `${SITE_URL}/w/your-launch?r=friend`;
   const headingPx =
     typeof snapshot.brand.headingSize === "number" ? snapshot.brand.headingSize : null;
@@ -906,13 +918,26 @@ export function StatusPagePreview({ snapshot, state = "confirmed", showReferrals
         <p className="max-w-xl leading-relaxed text-wl-muted">
           {pending ? status.pendingBody : status.body}
         </p>
-        {status.showPosition && !pending && (
+        {status.showPosition && !pending && !rewards.hideCounts && (
           <div className="mt-8 flex w-full max-w-md justify-between border-y border-wl-text/15 py-4">
             <span>Your position</span>
-            <strong className="text-xl">#128</strong>
+            <strong className="text-xl">#{demoPosition}</strong>
           </div>
         )}
-        {returning && showReferrals && status.showReferralCount && (
+        {!pending && !rewards.hideCounts && rewards.showPoints && (
+          <div className="mt-4 flex w-full max-w-md justify-between border-y border-wl-text/15 py-4">
+            <span>Your points</span>
+            <strong className="text-xl">{rewards.pointsSignup + rewards.pointsReferral}</strong>
+          </div>
+        )}
+        {!pending && !rewards.hideCounts && rewards.showProgress && nextTier ? (
+          <p className="m-0 w-full max-w-md text-sm leading-relaxed text-wl-muted">
+            {Math.max(nextTier.referrals - 1, 1)} more referral
+            {nextTier.referrals - 1 === 1 ? "" : "s"} to unlock{" "}
+            <strong className="text-wl-text">{nextTier.reward}</strong>
+          </p>
+        ) : null}
+        {returning && showReferrals && status.showReferralCount && !rewards.hideCounts && (
           <div className="mt-4 flex w-full max-w-md justify-between border-y border-wl-text/15 py-4">
             <span>Friends joined</span>
             <strong className="text-xl">3</strong>

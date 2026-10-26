@@ -135,6 +135,32 @@ const footer = z.strictObject({
   note: text(220),
   links: z.array(z.strictObject({ label: text(40), href })).max(6),
 });
+// Phase-4 rewards engine (stream A): per-waitlist points + display settings.
+// Zero-config defaults preserve today's behavior (50/30/5, no offset, counts
+// visible). The rewards ladder itself reuses the founder-editable
+// `referralRewards` content blocks as its single source of truth.
+const rewardCustomEvent = z.strictObject({
+  // Builder-local stable id for React keys (never sent to the API). Optional
+  // so snapshots saved before it existed still parse.
+  id: z.string().max(40).optional(),
+  key: z
+    .string()
+    .min(1)
+    .max(40)
+    .regex(/^[a-z0-9-]+$/i, "Use letters, numbers, or hyphens."),
+  label: text(80),
+  points: z.number().int().min(0).max(100000),
+});
+const rewardsSchema = z.strictObject({
+  pointsSignup: z.number().int().min(0).max(100000).default(50),
+  pointsReferral: z.number().int().min(0).max(100000).default(30),
+  pointsFollow: z.number().int().min(0).max(100000).default(5),
+  customEvents: z.array(rewardCustomEvent).max(12).default([]),
+  positionOffset: z.number().int().min(0).max(1000000).default(0),
+  hideCounts: z.boolean().default(false),
+  showPoints: z.boolean().default(true),
+  showProgress: z.boolean().default(true),
+});
 
 export const sectionSchema = z.discriminatedUnion("type", [
   navigation,
@@ -364,6 +390,9 @@ const v2SnapshotSchema = z
     form: templateFormSchema,
     statusPage: statusPageSchema,
     seo: seoSchema,
+    // New key, not required: older snapshots parse with zero-config defaults
+    // (prefault feeds `{}` through rewardsSchema so nested defaults apply).
+    rewards: rewardsSchema.prefault({}),
   })
   .superRefine((value, ctx) => {
     const visibleForms = value.sections.filter(
