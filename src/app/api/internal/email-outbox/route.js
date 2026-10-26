@@ -4,6 +4,7 @@ import { NextResponse } from "next/server";
 import { Resend } from "resend";
 
 import { dispatchPendingOutboxEvents } from "@/lib/email/outbox.mjs";
+import { createPlatformSender } from "@/lib/emails/platform.mjs";
 import { env } from "@/lib/env.mjs";
 import { createWorkspaceResendSender } from "@/lib/integrations/resend-sender.mjs";
 import prisma from "@/lib/prisma";
@@ -31,9 +32,16 @@ export async function POST(request) {
     },
     createClient: (apiKey) => new Resend(apiKey),
   });
-  const result = await dispatchPendingOutboxEvents(prisma, {
-    send: sendEmail,
-  });
-  const webhooks = await dispatchPendingWebhooks(prisma);
-  return NextResponse.json({ ...result, webhooks });
+  // These drains use independent queues. Overlap them, but wait for both to
+  // settle before surfacing a failure so neither queue is left unobserved.
+  const [outboxResult, webhooksResult] = await Promise.allSettled([
+    dispatchPendingOutboxEvents(prisma, {
+      send: sendEmail,
+      sendPlatform: createPlatformSender(),
+    }),
+    dispatchPendingWebhooks(prisma),
+  ]);
+  if (outboxResult.status === "rejected") throw outboxResult.reason;
+  if (webhooksResult.status === "rejected") throw webhooksResult.reason;
+  return NextResponse.json({ ...outboxResult.value, webhooks: webhooksResult.value });
 }
