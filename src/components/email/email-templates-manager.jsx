@@ -324,18 +324,27 @@ export function EmailTemplatesManager({ waitListId, waitListName, initialTemplat
                 html={preview.html}
               />
             </div>
-          ) : (
-            <div className={canvasShell}>
-              <EmailCanvas
-                key={current}
-                editorRef={editorRef}
-                content={
-                  template.editorDocument || template.starterHtml || "<p>Write your message…</p>"
-                }
-                onChange={(value) => edit("editorDocument", value)}
-              />
-            </div>
-          )}
+          ) : null}
+          {/* The live editor stays mounted in every mode: `applyHtmlToEditor`
+              (setContent) and `save` → `exportMessage` both go through
+              `editorRef.current`, which would be null if we unmounted the
+              canvas for HTML/Preview modes. Hide it instead. */}
+          <div
+            className={
+              mode === "html" || (mode === "preview" && preview)
+                ? `${canvasShell} hidden`
+                : canvasShell
+            }
+          >
+            <EmailCanvas
+              key={current}
+              editorRef={editorRef}
+              content={
+                template.editorDocument || template.starterHtml || "<p>Write your message…</p>"
+              }
+              onChange={(value) => edit("editorDocument", value)}
+            />
+          </div>
           <div className={metaBar}>
             <VariableChips keys={VARIABLE_SETS[current] || VARIABLE_SETS.signup} />
             <form className={testForm} onSubmit={sendTest}>

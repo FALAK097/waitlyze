@@ -1043,14 +1043,14 @@ export async function cancelBroadcast({ waitListId, broadcastId }) {
       SELECT "id", "status"::text AS status FROM "marketing_broadcasts"
       WHERE "id" = ${broadcastId} AND "waitListId" = ${campaign.id} FOR UPDATE`;
     if (!broadcast || (broadcast.status !== "SENDING" && broadcast.status !== "SCHEDULED"))
-      return false;
+      return null;
     if (broadcast.status === "SCHEDULED") {
       // Nothing fanned out yet — just unschedule back to a canceled draft.
       await tx.marketingBroadcast.update({
         where: { id: broadcastId },
         data: { status: "CANCELED", scheduledAt: null },
       });
-      return true;
+      return "SCHEDULED";
     }
     await tx.$executeRaw`
       UPDATE "outbox_events" SET "status" = 'FAILED', "processedAt" = NOW(), "lockedAt" = NULL, "lastErrorCode" = 'BROADCAST_CANCELED'
@@ -1063,15 +1063,20 @@ export async function cancelBroadcast({ waitListId, broadcastId }) {
       where: { id: broadcastId },
       data: { status: "CANCELED" },
     });
-    return true;
+    return "SENDING";
   });
-  if (canceled) await notifyBroadcastSummary(prisma, broadcastId);
+  // Only SENDING fans out (unschedule does not send anything), so only that
+  // path deserves a delivery summary notification.
+  if (canceled === "SENDING") await notifyBroadcastSummary(prisma, broadcastId);
   revalidatePath(broadcastPath(waitListId));
   return {
-    success: canceled,
-    message: canceled
-      ? "Remaining queued emails were canceled."
-      : "This broadcast is no longer sending.",
+    success: Boolean(canceled),
+    message:
+      canceled === "SCHEDULED"
+        ? "Broadcast unscheduled."
+        : canceled
+          ? "Remaining queued emails were canceled."
+          : "This broadcast is no longer sending.",
   };
 }
 
