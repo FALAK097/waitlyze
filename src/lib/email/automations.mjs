@@ -1,5 +1,6 @@
-import { emailBrandFromSnapshot } from "./brand.mjs";
 import { getCampaignPosition } from "../campaigns/referral-position.mjs";
+import { emailBrandFromSnapshot } from "./brand.mjs";
+import { interpolateEmail, subscriberEmailHtml, validateComposerContent } from "./composer.mjs";
 import { applyKnownProviderEvents } from "./suppression.mjs";
 import { createUnsubscribeToken } from "./unsubscribe.mjs";
 import { interpolateVars, resolveSubscriberVars } from "./variables.mjs";

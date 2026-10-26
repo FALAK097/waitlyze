@@ -87,7 +87,9 @@ const VARIABLE_SETS = {
 export function EmailTemplatesManager({ waitListId, waitListName, initialTemplates }) {
   const [current, setCurrent] = useState("signup");
   const [drafts, setDrafts] = useState(initialTemplates);
-  const [saved, setSaved] = useState(initialTemplates);
+  // Last-saved copy, read only in handlers (never rendered): a ref avoids
+  // redrawing the whole manager on every save.
+  const savedRef = useRef(initialTemplates);
   const [dirty, setDirty] = useState(false);
   const [pending, setPending] = useState(null);
   const [busy, setBusy] = useState("");
@@ -114,7 +116,7 @@ export function EmailTemplatesManager({ waitListId, waitListName, initialTemplat
     setPreview(null);
   }
   function discard() {
-    setDrafts((items) => ({ ...items, [current]: saved[current] }));
+    setDrafts((items) => ({ ...items, [current]: savedRef.current[current] }));
     setDirty(false);
     setCurrent(pending);
     setPending(null);
@@ -144,7 +146,7 @@ export function EmailTemplatesManager({ waitListId, waitListName, initialTemplat
       if (!response.success) throw new Error(response.message);
       const savedTemplate = { ...template, ...response.template };
       setDrafts((items) => ({ ...items, [current]: savedTemplate }));
-      setSaved((items) => ({ ...items, [current]: savedTemplate }));
+      savedRef.current = { ...savedRef.current, [current]: savedTemplate };
       setDirty(false);
       setPreview(null);
       toast.success("Email saved.");

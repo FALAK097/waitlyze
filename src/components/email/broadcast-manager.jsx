@@ -102,6 +102,296 @@ const starterContent = (draft) =>
   draft.editorDocument ||
   `<p>${escapeText(draft.body || "Write your update…").replaceAll("\n", "<br>")}</p>`;
 
+function BroadcastRail({ broadcasts, selectedId, busy, onRequestSelection }) {
+  return (
+    <nav className={rail} aria-label="Broadcasts">
+      {broadcasts.length ? (
+        broadcasts.map((broadcast) => (
+          <button
+            key={broadcast.id}
+            type="button"
+            className={railItem}
+            aria-current={selectedId === broadcast.id ? "true" : undefined}
+            disabled={busy}
+            onClick={() => onRequestSelection(broadcast)}
+          >
+            <strong className={railItemTitle}>
+              {broadcast.name || broadcast.subject || "Untitled broadcast"}
+            </strong>
+            <span className={railItemMeta}>
+              {emailStatusLabel(broadcast.status, { draft: "Draft", sent: "Complete" })}
+              {broadcast.status !== "DRAFT" ? ` · ${broadcast.recipientCount} recipients` : ""}
+            </span>
+            <time dateTime={new Date(broadcast.updatedAt).toISOString()} className={railItemTime}>
+              {formatDate(broadcast.updatedAt)}
+            </time>
+          </button>
+        ))
+      ) : (
+        <p className={railEmpty}>No drafts yet.</p>
+      )}
+    </nav>
+  );
+}
+
+function DiscardBanner({ pendingSelection, onDiscard, onKeep }) {
+  return (
+    <div className={unsaved} role="alert">
+      <span className={unsavedText}>
+        Discard your unsaved changes to open “{pendingSelection.name}”?
+      </span>
+      <button type="button" className={unsavedGhost} onClick={onDiscard}>
+        Discard and open
+      </button>
+      <button type="button" className={unsavedSolid} onClick={onKeep}>
+        Keep editing
+      </button>
+    </div>
+  );
+}
+
+function RecipientsPanel({
+  segment,
+  segments,
+  segmentMeta,
+  preview,
+  previewFresh,
+  deliveryReady,
+  draftDirty,
+  busy,
+  busyAction,
+  onSegmentChange,
+  onRefreshPreview,
+}) {
+  return (
+    <div className={recipients}>
+      <label className={hint} htmlFor="broadcast-segment">
+        Segment
+      </label>
+      <select
+        id="broadcast-segment"
+        className={testInput}
+        value={segment}
+        disabled={busy}
+        onChange={(event) => onSegmentChange(event.target.value)}
+      >
+        {segments.map((item) => (
+          <option key={item.key} value={item.key}>
+            {item.label}
+          </option>
+        ))}
+      </select>
+      <span className={recipientsCount}>{preview.count} eligible</span>
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        onClick={onRefreshPreview}
+        disabled={busy || draftDirty}
+      >
+        {busyAction === "preview" ? "Checking…" : "Check recipients"}
+      </Button>
+      {draftDirty && !previewFresh ? <span className={hint}>Save to check recipients.</span> : null}
+      {!deliveryReady && previewFresh ? (
+        <span className={hint}>Email delivery needs setup before you can send.</span>
+      ) : null}
+      {segmentMeta?.description ? (
+        <p className={recipientsSamples}>{segmentMeta.description}</p>
+      ) : null}
+      {preview.samples.length ? (
+        <p className={recipientsSamples}>e.g. {preview.samples.join(", ")}</p>
+      ) : previewFresh ? (
+        <p className={recipientsSamples}>No eligible subscribers in this segment yet.</p>
+      ) : null}
+    </div>
+  );
+}
+
+function SendConfirmations({
+  data,
+  preview,
+  busy,
+  busyAction,
+  scheduleAt,
+  onScheduleAtChange,
+  reviewSend,
+  reviewSchedule,
+  onSend,
+  onSchedule,
+  onBack,
+  onStartSend,
+  onStartSchedule,
+}) {
+  if (reviewSend) {
+    return (
+      <div className={confirm} role="group" aria-label="Confirm broadcast send">
+        <p className={confirmText}>
+          Send “{data.subject}” to {preview.count} opted-in subscriber
+          {preview.count === 1 ? "" : "s"}? Delivery starts immediately.
+        </p>
+        <Button type="button" variant="default" onClick={onSend} disabled={busy}>
+          {busyAction === "send" ? "Queueing…" : `Send to ${preview.count}`}
+        </Button>
+        <Button type="button" variant="ghost" onClick={onBack} disabled={busy}>
+          Back
+        </Button>
+      </div>
+    );
+  }
+  if (reviewSchedule) {
+    return (
+      <div className={confirm} role="group" aria-label="Confirm broadcast schedule">
+        <p className={confirmText}>
+          Schedule “{data.subject}” for {preview.count} subscriber
+          {preview.count === 1 ? "" : "s"}? Eligibility is re-checked at send time.
+        </p>
+        <input
+          type="datetime-local"
+          className={testInput}
+          aria-label={`Scheduled send time (${founderTimeZone()})`}
+          value={scheduleAt}
+          min={toLocalInputValue(Date.now() + 5 * 60 * 1000)}
+          onChange={(event) => onScheduleAtChange(event.target.value)}
+        />
+        <span className={hint}>Times are in {founderTimeZone()}.</span>
+        <Button type="button" variant="default" onClick={onSchedule} disabled={busy || !scheduleAt}>
+          {busyAction === "schedule" ? "Scheduling…" : "Confirm schedule"}
+        </Button>
+        <Button type="button" variant="ghost" onClick={onBack} disabled={busy}>
+          Back
+        </Button>
+      </div>
+    );
+  }
+  return (
+    <div className={metaBar}>
+      <p className={hint}>Eligibility is checked again before each send.</p>
+      <div className={paneActions}>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={onStartSchedule}
+          disabled={busy || !data.subject?.trim() || !data.body?.trim()}
+        >
+          Schedule…
+        </Button>
+        <Button
+          type="button"
+          variant="default"
+          onClick={onStartSend}
+          disabled={busy || !data.subject?.trim() || !data.body?.trim()}
+        >
+          Review send
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+function DeliverySummary({ selected }) {
+  return (
+    <>
+      <div className={summary}>
+        <div className={summaryRow}>
+          <span className={summaryLabel}>Subject</span>
+          <strong className={summaryValue}>{selected.subject || "—"}</strong>
+        </div>
+        {selected.previewText ? (
+          <div className={summaryRow}>
+            <span className={summaryLabel}>Preview text</span>
+            <strong className={summaryValue}>{selected.previewText}</strong>
+          </div>
+        ) : null}
+        <div className={summaryRow}>
+          <span className={summaryLabel}>Recipients</span>
+          <strong className={summaryValue}>{selected.recipientCount}</strong>
+        </div>
+        {selected.segment && selected.segment !== "ALL" ? (
+          <div className={summaryRow}>
+            <span className={summaryLabel}>Segment</span>
+            <strong className={summaryValue}>{selected.segment}</strong>
+          </div>
+        ) : null}
+        {selected.scheduledAt ? (
+          <div className={summaryRow}>
+            <span className={summaryLabel}>Scheduled</span>
+            <strong className={summaryValue}>{formatDate(selected.scheduledAt)}</strong>
+          </div>
+        ) : null}
+        <div className={summaryRow}>
+          <span className={summaryLabel}>{selected.status === "SENT" ? "Sent" : "Updated"}</span>
+          <strong className={summaryValue}>
+            {formatDate(selected.sentAt || selected.updatedAt)}
+          </strong>
+        </div>
+      </div>
+      <p className={stats}>
+        {selected.deliveredCount || 0} delivered · {selected.failedCount || 0} bounced ·{" "}
+        {selected.unsubscribedCount || 0} unsubscribed · {selected.suppressedCount || 0} spam-report
+        suppressions · {selected.skippedOtherCount || 0} skipped · {selected.canceledCount || 0}{" "}
+        canceled
+      </p>
+      {selected.renderedHtml ? (
+        <iframe
+          className={sentMessage}
+          title="Sent email"
+          sandbox=""
+          srcDoc={selected.renderedHtml}
+        />
+      ) : (
+        <p className={`${hint} whitespace-pre-line`}>{selected.body}</p>
+      )}
+    </>
+  );
+}
+
+function CancelPanel({ selected, reviewCancel, busy, busyAction, onStop, onReviewCancel }) {
+  return (
+    <div className={confirm}>
+      {reviewCancel ? (
+        <>
+          <p className={confirmText}>
+            {selected.status === "SCHEDULED"
+              ? "Unschedule this broadcast? Nothing has been sent."
+              : "Cancel all emails that have not been handed to the provider?"}
+          </p>
+          <Button type="button" variant="outline" onClick={onStop} disabled={busy}>
+            {busyAction === "cancel"
+              ? "Canceling…"
+              : selected.status === "SCHEDULED"
+                ? "Confirm unschedule"
+                : "Confirm cancellation"}
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={() => onReviewCancel(false)}
+            disabled={busy}
+          >
+            {selected.status === "SCHEDULED" ? "Keep schedule" : "Keep sending"}
+          </Button>
+        </>
+      ) : (
+        <>
+          <p className={confirmText}>
+            {selected.status === "SCHEDULED"
+              ? `Scheduled${selected.scheduledAt ? ` for ${formatDate(selected.scheduledAt)}` : ""}. Eligibility is re-checked at send time.`
+              : "Emails already handed to the provider may still arrive."}
+          </p>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => onReviewCancel(true)}
+            disabled={busy}
+          >
+            {selected.status === "SCHEDULED" ? "Unschedule" : "Cancel remaining emails"}
+          </Button>
+        </>
+      )}
+    </div>
+  );
+}
+
 export function BroadcastManager({
   waitListId,
   waitListName,
@@ -364,53 +654,19 @@ export function BroadcastManager({
         </div>
       ) : null}
       {pendingSelection && (
-        <div className={unsaved} role="alert">
-          <span className={unsavedText}>
-            Discard your unsaved changes to open “{pendingSelection.name}”?
-          </span>
-          <button
-            type="button"
-            className={unsavedGhost}
-            onClick={() => selectBroadcast(pendingSelection)}
-          >
-            Discard and open
-          </button>
-          <button type="button" className={unsavedSolid} onClick={() => setPendingSelection(null)}>
-            Keep editing
-          </button>
-        </div>
+        <DiscardBanner
+          pendingSelection={pendingSelection}
+          onDiscard={() => selectBroadcast(pendingSelection)}
+          onKeep={() => setPendingSelection(null)}
+        />
       )}
       <div className={split}>
-        <nav className={rail} aria-label="Broadcasts">
-          {broadcasts.length ? (
-            broadcasts.map((broadcast) => (
-              <button
-                key={broadcast.id}
-                type="button"
-                className={railItem}
-                aria-current={selectedId === broadcast.id ? "true" : undefined}
-                disabled={busy}
-                onClick={() => requestSelection(broadcast)}
-              >
-                <strong className={railItemTitle}>
-                  {broadcast.name || broadcast.subject || "Untitled broadcast"}
-                </strong>
-                <span className={railItemMeta}>
-                  {emailStatusLabel(broadcast.status, { draft: "Draft", sent: "Complete" })}
-                  {broadcast.status !== "DRAFT" ? ` · ${broadcast.recipientCount} recipients` : ""}
-                </span>
-                <time
-                  dateTime={new Date(broadcast.updatedAt).toISOString()}
-                  className={railItemTime}
-                >
-                  {formatDate(broadcast.updatedAt)}
-                </time>
-              </button>
-            ))
-          ) : (
-            <p className={railEmpty}>No drafts yet.</p>
-          )}
-        </nav>
+        <BroadcastRail
+          broadcasts={broadcasts}
+          selectedId={selectedId}
+          busy={busy}
+          onRequestSelection={requestSelection}
+        />
 
         {selectedId ? (
           <section className={pane} aria-label="Broadcast editor">
@@ -490,135 +746,44 @@ export function BroadcastManager({
                   />
                 </div>
                 <div className={recipients}>
-                  <label className={hint} htmlFor="broadcast-segment">
-                    Segment
-                  </label>
-                  <select
-                    id="broadcast-segment"
-                    className={testInput}
-                    value={segment}
-                    disabled={busy}
-                    onChange={(event) => {
-                      setSegment(event.target.value);
+                  <RecipientsPanel
+                    segment={segment}
+                    segments={initialSegments || [{ key: "ALL", label: "Everyone opted in" }]}
+                    segmentMeta={segmentMeta}
+                    preview={preview}
+                    previewFresh={previewFresh}
+                    deliveryReady={deliveryReady}
+                    draftDirty={draftDirty}
+                    busy={busy}
+                    busyAction={busyAction}
+                    onSegmentChange={(next) => {
+                      setSegment(next);
                       setPreviewFresh(false);
                       setReviewSend(false);
                       setReviewSchedule(false);
                     }}
-                  >
-                    {(initialSegments || [{ key: "ALL", label: "Everyone opted in" }]).map(
-                      (item) => (
-                        <option key={item.key} value={item.key}>
-                          {item.label}
-                        </option>
-                      ),
-                    )}
-                  </select>
-                  <span className={recipientsCount}>{preview.count} eligible</span>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => refreshPreview()}
-                    disabled={busy || draftDirty}
-                  >
-                    {busyAction === "preview" ? "Checking…" : "Check recipients"}
-                  </Button>
-                  {draftDirty && !previewFresh ? (
-                    <span className={hint}>Save to check recipients.</span>
-                  ) : null}
-                  {!deliveryReady && previewFresh ? (
-                    <span className={hint}>Email delivery needs setup before you can send.</span>
-                  ) : null}
-                  {segmentMeta?.description ? (
-                    <p className={recipientsSamples}>{segmentMeta.description}</p>
-                  ) : null}
-                  {preview.samples.length ? (
-                    <p className={recipientsSamples}>e.g. {preview.samples.join(", ")}</p>
-                  ) : previewFresh ? (
-                    <p className={recipientsSamples}>
-                      No eligible subscribers in this segment yet.
-                    </p>
-                  ) : null}
+                    onRefreshPreview={() => refreshPreview()}
+                  />
                 </div>
                 {previewFresh && deliveryReady && !draftDirty && preview.count > 0 ? (
-                  reviewSend ? (
-                    <div className={confirm} role="group" aria-label="Confirm broadcast send">
-                      <p className={confirmText}>
-                        Send “{data.subject}” to {preview.count} opted-in subscriber
-                        {preview.count === 1 ? "" : "s"}? Delivery starts immediately.
-                      </p>
-                      <Button
-                        type="button"
-                        variant="default"
-                        onClick={sendBroadcast}
-                        disabled={busy}
-                      >
-                        {busyAction === "send" ? "Queueing…" : `Send to ${preview.count}`}
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        onClick={() => setReviewSend(false)}
-                        disabled={busy}
-                      >
-                        Back
-                      </Button>
-                    </div>
-                  ) : reviewSchedule ? (
-                    <div className={confirm} role="group" aria-label="Confirm broadcast schedule">
-                      <p className={confirmText}>
-                        Schedule “{data.subject}” for {preview.count} subscriber
-                        {preview.count === 1 ? "" : "s"}? Eligibility is re-checked at send time.
-                      </p>
-                      <input
-                        type="datetime-local"
-                        className={testInput}
-                        aria-label={`Scheduled send time (${founderTimeZone()})`}
-                        value={scheduleAt}
-                        min={toLocalInputValue(Date.now() + 5 * 60 * 1000)}
-                        onChange={(event) => setScheduleAt(event.target.value)}
-                      />
-                      <span className={hint}>Times are in {founderTimeZone()}.</span>
-                      <Button
-                        type="button"
-                        variant="default"
-                        onClick={scheduleSend}
-                        disabled={busy || !scheduleAt}
-                      >
-                        {busyAction === "schedule" ? "Scheduling…" : "Confirm schedule"}
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        onClick={() => setReviewSchedule(false)}
-                        disabled={busy}
-                      >
-                        Back
-                      </Button>
-                    </div>
-                  ) : (
-                    <div className={metaBar}>
-                      <p className={hint}>Eligibility is checked again before each send.</p>
-                      <div className={paneActions}>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          onClick={() => setReviewSchedule(true)}
-                          disabled={busy || !data.subject?.trim() || !data.body?.trim()}
-                        >
-                          Schedule…
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="default"
-                          onClick={() => setReviewSend(true)}
-                          disabled={busy || !data.subject?.trim() || !data.body?.trim()}
-                        >
-                          Review send
-                        </Button>
-                      </div>
-                    </div>
-                  )
+                  <SendConfirmations
+                    data={data}
+                    preview={preview}
+                    busy={busy}
+                    busyAction={busyAction}
+                    scheduleAt={scheduleAt}
+                    onScheduleAtChange={setScheduleAt}
+                    reviewSend={reviewSend}
+                    reviewSchedule={reviewSchedule}
+                    onSend={sendBroadcast}
+                    onSchedule={scheduleSend}
+                    onBack={() => {
+                      setReviewSend(false);
+                      setReviewSchedule(false);
+                    }}
+                    onStartSend={() => setReviewSend(true)}
+                    onStartSchedule={() => setReviewSchedule(true)}
+                  />
                 ) : null}
                 <div className={metaBar}>
                   <VariableChips
@@ -662,105 +827,18 @@ export function BroadcastManager({
                 </form>
               </>
             ) : (
-              <>
-                <div className={summary}>
-                  <div className={summaryRow}>
-                    <span className={summaryLabel}>Subject</span>
-                    <strong className={summaryValue}>{selected.subject || "—"}</strong>
-                  </div>
-                  {selected.previewText ? (
-                    <div className={summaryRow}>
-                      <span className={summaryLabel}>Preview text</span>
-                      <strong className={summaryValue}>{selected.previewText}</strong>
-                    </div>
-                  ) : null}
-                  <div className={summaryRow}>
-                    <span className={summaryLabel}>Recipients</span>
-                    <strong className={summaryValue}>{selected.recipientCount}</strong>
-                  </div>
-                  {selected.segment && selected.segment !== "ALL" ? (
-                    <div className={summaryRow}>
-                      <span className={summaryLabel}>Segment</span>
-                      <strong className={summaryValue}>{selected.segment}</strong>
-                    </div>
-                  ) : null}
-                  {selected.scheduledAt ? (
-                    <div className={summaryRow}>
-                      <span className={summaryLabel}>Scheduled</span>
-                      <strong className={summaryValue}>{formatDate(selected.scheduledAt)}</strong>
-                    </div>
-                  ) : null}
-                  <div className={summaryRow}>
-                    <span className={summaryLabel}>
-                      {selected.status === "SENT" ? "Sent" : "Updated"}
-                    </span>
-                    <strong className={summaryValue}>
-                      {formatDate(selected.sentAt || selected.updatedAt)}
-                    </strong>
-                  </div>
-                </div>
-                <p className={stats}>
-                  {selected.deliveredCount || 0} delivered · {selected.failedCount || 0} bounced ·{" "}
-                  {selected.unsubscribedCount || 0} unsubscribed · {selected.suppressedCount || 0}{" "}
-                  spam-report suppressions · {selected.skippedOtherCount || 0} skipped ·{" "}
-                  {selected.canceledCount || 0} canceled
-                </p>
-                {selected.renderedHtml ? (
-                  <iframe
-                    className={sentMessage}
-                    title="Sent email"
-                    sandbox=""
-                    srcDoc={selected.renderedHtml}
-                  />
-                ) : (
-                  <p className={`${hint} whitespace-pre-line`}>{selected.body}</p>
-                )}
-              </>
+              <DeliverySummary selected={selected} />
             )}
 
             {selected?.status === "SENDING" || selected?.status === "SCHEDULED" ? (
-              <div className={confirm}>
-                {reviewCancel ? (
-                  <>
-                    <p className={confirmText}>
-                      {selected.status === "SCHEDULED"
-                        ? "Unschedule this broadcast? Nothing has been sent."
-                        : "Cancel all emails that have not been handed to the provider?"}
-                    </p>
-                    <Button type="button" variant="outline" onClick={stopBroadcast} disabled={busy}>
-                      {busyAction === "cancel"
-                        ? "Canceling…"
-                        : selected.status === "SCHEDULED"
-                          ? "Confirm unschedule"
-                          : "Confirm cancellation"}
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      onClick={() => setReviewCancel(false)}
-                      disabled={busy}
-                    >
-                      {selected.status === "SCHEDULED" ? "Keep schedule" : "Keep sending"}
-                    </Button>
-                  </>
-                ) : (
-                  <>
-                    <p className={confirmText}>
-                      {selected.status === "SCHEDULED"
-                        ? `Scheduled${selected.scheduledAt ? ` for ${formatDate(selected.scheduledAt)}` : ""}. Eligibility is re-checked at send time.`
-                        : "Emails already handed to the provider may still arrive."}
-                    </p>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => setReviewCancel(true)}
-                      disabled={busy}
-                    >
-                      {selected.status === "SCHEDULED" ? "Unschedule" : "Cancel remaining emails"}
-                    </Button>
-                  </>
-                )}
-              </div>
+              <CancelPanel
+                selected={selected}
+                reviewCancel={reviewCancel}
+                busy={busy}
+                busyAction={busyAction}
+                onStop={stopBroadcast}
+                onReviewCancel={setReviewCancel}
+              />
             ) : null}
           </section>
         ) : (
