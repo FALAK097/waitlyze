@@ -25,6 +25,10 @@ const policies = {
   signup: { global: [5000, DAY], campaign: [1000, DAY], client: [20, HOUR], recipient: [3, DAY] },
   impression: { global: [20000, HOUR], campaign: [5000, HOUR], client: [120, HOUR] },
   share: { global: [10000, HOUR], campaign: [2000, HOUR], client: [60, HOUR] },
+  // Unauthenticated embed widgets (leaderboard + counter). Polled by third-
+  // party pages, so the per-client budget is roomier than interactive kinds;
+  // responses are also short-cacheable (s-maxage) to absorb embed traffic.
+  widget: { global: [20000, HOUR], campaign: [5000, HOUR], client: [240, HOUR] },
   welcome: { global: [1000, DAY], campaign: [250, DAY], client: [10, HOUR], recipient: [1, DAY] },
   testEmail: {
     global: [1000, DAY],

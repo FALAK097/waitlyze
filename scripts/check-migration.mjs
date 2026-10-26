@@ -131,8 +131,9 @@ try {
           "20261025090838_dashboard_bulk_consent_source",
           "20261025095925_phase3_form_hardening",
           "20261025120000_phase4_ledger_social_follow",
-          "20261025120001_phase4_ledger_custom",
           "20261025120000_phase7b_founder_emails",
+          "20261025120001_phase4_ledger_custom",
+          "20261025140000_phase4_fraud_widgets",
         ]) {
           await db.query(await readFile(`prisma/migrations/${name}/migration.sql`, "utf8"));
         }
