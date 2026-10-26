@@ -12,6 +12,8 @@ export const emailManagerRailMeta = "text-micro leading-normal text-product-text
 export const emailManagerRailTime = "text-micro text-product-text-secondary";
 export const emailManagerRailEmpty =
   "m-0 px-3 py-1 text-caption leading-relaxed text-product-text-secondary max-lg:px-1 max-lg:py-0";
+export const emailManagerTestAction =
+  "rounded-product-control border-transparent bg-product-bg-inset px-3.5 text-caption font-semibold text-product-text-primary hover:bg-product-bg-inset hover:text-product-text-primary disabled:cursor-not-allowed focus-visible:ring-0 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-product-success-text!";
 
 export function EmailManagerRailButton({ current, children, ...props }) {
   return (

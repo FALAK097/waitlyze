@@ -20,6 +20,7 @@ import {
   emailManagerRailTitle,
   emailManagerScope,
   emailManagerSplit,
+  emailManagerTestAction,
 } from "./email-manager-controls";
 
 const {
@@ -37,8 +38,6 @@ const {
 const testForm = "flex items-center gap-2";
 const testInput =
   "h-9 w-45 min-w-0 rounded-product-control border border-product-border-control bg-white px-2.5 text-caption max-sm:w-auto max-sm:flex-1 max-sm:text-base";
-const testButton =
-  "min-h-9 rounded-product-control border border-transparent bg-product-bg-inset px-3.5 text-caption font-semibold text-product-text-primary cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-product-success-text!";
 const modeBar = "flex flex-wrap items-center gap-2";
 const modeTab =
   "min-h-8.5 rounded-product-control border border-product-border-control bg-white px-3 text-caption font-semibold text-product-text-primary cursor-pointer aria-[pressed=true]:bg-product-bg-inset focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-product-success-text!";
@@ -348,9 +347,15 @@ export function EmailTemplatesManager({ waitListId, waitListName, initialTemplat
                 value={testTo}
                 onChange={(event) => setTestTo(event.target.value)}
               />
-              <button type="submit" className={testButton} disabled={Boolean(busy) || dirty}>
+              <Button
+                type="submit"
+                variant="secondary"
+                size="lg"
+                className={emailManagerTestAction}
+                disabled={Boolean(busy) || dirty}
+              >
                 {busy === "test" ? "Sending…" : "Send test"}
-              </button>
+              </Button>
             </form>
           </div>
         </section>

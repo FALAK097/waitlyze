@@ -40,6 +40,7 @@ import {
   emailManagerRailTitle,
   emailManagerScope,
   emailManagerSplit,
+  emailManagerTestAction,
 } from "./email-manager-controls";
 import { EmailToolsNav } from "./email-tools-nav";
 
@@ -73,8 +74,6 @@ const sentMessage = "block h-115 w-full rounded-product-control border-0 bg-whit
 const testForm = "flex items-center gap-2";
 const testInput =
   "h-11 w-45 min-w-0 rounded-product-control border border-product-border-control bg-white px-2.5 text-caption max-sm:w-auto max-sm:flex-1 max-sm:text-base";
-const testButton =
-  "min-h-11 rounded-product-control border border-transparent bg-product-bg-inset px-3.5 text-caption font-semibold text-product-text-primary cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-product-success-text!";
 const emptyPane = "max-w-107 py-1.5";
 const emptyPaneTitle = "m-0 mb-1.5! text-section";
 const emptyPaneBody = "m-0 mb-4.5! leading-relaxed text-product-text-secondary";
@@ -824,9 +823,15 @@ export function BroadcastManager({
                     value={testTo}
                     onChange={(event) => setTestTo(event.target.value)}
                   />
-                  <button type="submit" className={testButton} disabled={busy || draftDirty}>
+                  <Button
+                    type="submit"
+                    variant="secondary"
+                    size="xl"
+                    className={emailManagerTestAction}
+                    disabled={busy || draftDirty}
+                  >
                     {busyAction === "test" ? "Sending…" : "Send test"}
-                  </button>
+                  </Button>
                 </form>
               </>
             ) : (
