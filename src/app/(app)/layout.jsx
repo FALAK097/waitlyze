@@ -44,11 +44,11 @@ function AppShellControlsFallback() {
   return (
     <>
       <div
-        className="h-11 w-44 rounded-lg bg-product-bg-inset motion-safe:animate-pulse"
+        className="order-1 h-11 w-44 rounded-lg bg-product-bg-inset motion-safe:animate-pulse"
         aria-hidden="true"
       />
       <div
-        className="ms-auto size-11 rounded-full bg-product-bg-inset motion-safe:animate-pulse"
+        className="order-3 ms-auto size-11 rounded-full bg-product-bg-inset motion-safe:animate-pulse max-md:order-2"
         aria-hidden="true"
       />
     </>
