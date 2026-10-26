@@ -723,7 +723,6 @@ export async function listBroadcasts(waitListId) {
         body: true,
         editorDocument: true,
         renderedHtml: true,
-        renderedText: true,
         status: true,
         segment: true,
         scheduledAt: true,
