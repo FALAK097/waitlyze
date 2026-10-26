@@ -12,22 +12,16 @@ import { applySeedVars } from "@/lib/email/preview-vars.mjs";
 import { EmailCanvas } from "./email-canvas";
 import { EmailPreviewFrame, SpamHintView, VariableChips } from "./email-composer-extras";
 import { emailComposerStyles } from "./email-composer-styles.mjs";
+import {
+  EmailManagerRailButton,
+  EmailUnsavedNotice,
+  emailManagerRail,
+  emailManagerRailMeta,
+  emailManagerRailTitle,
+  emailManagerScope,
+  emailManagerSplit,
+} from "./email-manager-controls";
 
-const scope = "min-w-0 bg-white text-product-text-primary";
-const unsaved =
-  "mb-5.5 flex flex-wrap items-center gap-3 rounded-product-control bg-product-warning-bg px-4 py-3 text-caption";
-const unsavedText = "min-w-45 flex-1";
-const unsavedButton =
-  "min-h-8.5 rounded-product-control px-3 text-caption font-semibold text-product-text-primary cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-product-success-text!";
-const unsavedGhost = `${unsavedButton} border-0 bg-transparent`;
-const unsavedSolid = `${unsavedButton} border border-product-border-subtle bg-white`;
-const split = "flex flex-col gap-6 md:gap-8 xl:gap-10 lg:flex-row lg:items-start";
-const rail =
-  "flex w-full shrink-0 flex-col gap-1 self-start sticky top-22 max-lg:static max-lg:flex-row max-lg:flex-wrap max-lg:gap-1.5 lg:w-52";
-const railItem =
-  "flex w-full flex-col gap-0.75 rounded-product-control border-0 bg-transparent p-3 text-left cursor-pointer hover:bg-product-bg-inset aria-[current=true]:bg-product-bg-inset disabled:cursor-default disabled:opacity-60 max-lg:min-w-38 max-lg:flex-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-product-success-text!";
-const railItemTitle = "text-body font-semibold wrap-anywhere";
-const railItemMeta = "text-micro leading-normal text-product-text-secondary";
 const {
   pane,
   paneHead,
@@ -205,33 +199,26 @@ export function EmailTemplatesManager({ waitListId, waitListName, initialTemplat
   }
 
   return (
-    <div className={scope}>
+    <div className={emailManagerScope}>
       {pending && (
-        <div className={unsaved} role="alert">
-          <span className={unsavedText}>
-            Save this email before switching, or discard your edits.
-          </span>
-          <button type="button" className={unsavedGhost} onClick={() => setPending(null)}>
-            Keep editing
-          </button>
-          <button type="button" className={unsavedSolid} onClick={discard}>
-            Discard edits
-          </button>
-        </div>
+        <EmailUnsavedNotice
+          firstAction={{ label: "Keep editing", onClick: () => setPending(null) }}
+          secondAction={{ label: "Discard edits", onClick: discard, variant: "outline" }}
+        >
+          Save this email before switching, or discard your edits.
+        </EmailUnsavedNotice>
       )}
-      <div className={split}>
-        <nav className={rail} aria-label="Email templates">
+      <div className={emailManagerSplit}>
+        <nav className={emailManagerRail} aria-label="Email templates">
           {kinds.map((item) => (
-            <button
+            <EmailManagerRailButton
               key={item.key}
-              type="button"
-              className={railItem}
-              aria-current={current === item.key ? "true" : undefined}
+              current={current === item.key}
               onClick={() => select(item.key)}
             >
-              <strong className={railItemTitle}>{item.label}</strong>
-              <span className={railItemMeta}>{item.timing}</span>
-            </button>
+              <strong className={emailManagerRailTitle}>{item.label}</strong>
+              <span className={emailManagerRailMeta}>{item.timing}</span>
+            </EmailManagerRailButton>
           ))}
         </nav>
         <section className={pane} aria-label={`${kind.label} email`}>

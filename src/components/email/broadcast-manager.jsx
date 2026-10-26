@@ -30,27 +30,20 @@ import { formatProductDate } from "@/lib/product-date.mjs";
 import { EmailCanvas } from "./email-canvas";
 import { EmailPreviewFrame, SpamHintView, VariableChips } from "./email-composer-extras";
 import { emailComposerStyles } from "./email-composer-styles.mjs";
+import {
+  EmailManagerRailButton,
+  EmailUnsavedNotice,
+  emailManagerRail,
+  emailManagerRailEmpty,
+  emailManagerRailMeta,
+  emailManagerRailTime,
+  emailManagerRailTitle,
+  emailManagerScope,
+  emailManagerSplit,
+} from "./email-manager-controls";
 import { EmailToolsNav } from "./email-tools-nav";
 
-const scope = "min-w-0 bg-white text-product-text-primary";
 const toolbar = "mb-6 flex justify-end gap-2.5";
-const unsaved =
-  "mb-5.5 flex flex-wrap items-center gap-3 rounded-product-control bg-product-warning-bg px-4 py-3 text-caption";
-const unsavedText = "min-w-45 flex-1";
-const unsavedButton =
-  "min-h-8.5 rounded-product-control px-3 text-caption font-semibold text-product-text-primary cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-product-success-text!";
-const unsavedGhost = `${unsavedButton} border-0 bg-transparent`;
-const unsavedSolid = `${unsavedButton} border border-product-border-subtle bg-white`;
-const split = "flex flex-col gap-6 md:gap-8 xl:gap-10 lg:flex-row lg:items-start";
-const rail =
-  "flex w-full shrink-0 flex-col gap-1 self-start sticky top-22 max-lg:static max-lg:flex-row max-lg:flex-wrap max-lg:gap-1.5 lg:w-52";
-const railItem =
-  "flex w-full flex-col gap-0.75 rounded-product-control border-0 bg-transparent p-3 text-left cursor-pointer hover:bg-product-bg-inset aria-[current=true]:bg-product-bg-inset disabled:cursor-default disabled:opacity-60 max-lg:min-w-38 max-lg:flex-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-product-success-text!";
-const railItemTitle = "text-body font-semibold wrap-anywhere";
-const railItemMeta = "text-micro leading-normal text-product-text-secondary";
-const railItemTime = "text-micro text-product-text-secondary";
-const railEmpty =
-  "m-0 px-3 py-1 text-caption leading-relaxed text-product-text-secondary max-lg:px-1 max-lg:py-0";
 const {
   pane,
   paneHead,
@@ -112,31 +105,32 @@ const starterContent = (draft) =>
 
 function BroadcastRail({ broadcasts, selectedId, busy, onRequestSelection }) {
   return (
-    <nav className={rail} aria-label="Broadcasts">
+    <nav className={emailManagerRail} aria-label="Broadcasts">
       {broadcasts.length ? (
         broadcasts.map((broadcast) => (
-          <button
+          <EmailManagerRailButton
             key={broadcast.id}
-            type="button"
-            className={railItem}
-            aria-current={selectedId === broadcast.id ? "true" : undefined}
+            current={selectedId === broadcast.id}
             disabled={busy}
             onClick={() => onRequestSelection(broadcast)}
           >
-            <strong className={railItemTitle}>
+            <strong className={emailManagerRailTitle}>
               {broadcast.name || broadcast.subject || "Untitled broadcast"}
             </strong>
-            <span className={railItemMeta}>
+            <span className={emailManagerRailMeta}>
               {emailStatusLabel(broadcast.status, { draft: "Draft", sent: "Complete" })}
               {broadcast.status !== "DRAFT" ? ` · ${broadcast.recipientCount} recipients` : ""}
             </span>
-            <time dateTime={new Date(broadcast.updatedAt).toISOString()} className={railItemTime}>
+            <time
+              dateTime={new Date(broadcast.updatedAt).toISOString()}
+              className={emailManagerRailTime}
+            >
               {formatDate(broadcast.updatedAt)}
             </time>
-          </button>
+          </EmailManagerRailButton>
         ))
       ) : (
-        <p className={railEmpty}>No drafts yet.</p>
+        <p className={emailManagerRailEmpty}>No drafts yet.</p>
       )}
     </nav>
   );
@@ -144,17 +138,12 @@ function BroadcastRail({ broadcasts, selectedId, busy, onRequestSelection }) {
 
 function DiscardBanner({ pendingSelection, onDiscard, onKeep }) {
   return (
-    <div className={unsaved} role="alert">
-      <span className={unsavedText}>
-        Discard your unsaved changes to open “{pendingSelection.name}”?
-      </span>
-      <button type="button" className={unsavedGhost} onClick={onDiscard}>
-        Discard and open
-      </button>
-      <button type="button" className={unsavedSolid} onClick={onKeep}>
-        Keep editing
-      </button>
-    </div>
+    <EmailUnsavedNotice
+      firstAction={{ label: "Discard and open", onClick: onDiscard }}
+      secondAction={{ label: "Keep editing", onClick: onKeep, variant: "outline" }}
+    >
+      Discard your unsaved changes to open “{pendingSelection.name}”?
+    </EmailUnsavedNotice>
   );
 }
 
@@ -650,7 +639,7 @@ export function BroadcastManager({
   const segmentMeta = (initialSegments || []).find((item) => item.key === segment);
 
   return (
-    <div className={scope}>
+    <div className={emailManagerScope}>
       <EmailToolsNav waitListId={waitListId} current="broadcasts" />
       {broadcasts.length ? (
         <div className={toolbar}>
@@ -671,7 +660,7 @@ export function BroadcastManager({
           onKeep={() => setPendingSelection(null)}
         />
       )}
-      <div className={split}>
+      <div className={emailManagerSplit}>
         <BroadcastRail
           broadcasts={broadcasts}
           selectedId={selectedId}
