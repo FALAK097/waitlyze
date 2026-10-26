@@ -13,33 +13,22 @@ import {
   parseExportColumns,
   sortAudienceRows,
 } from "@/lib/audience-query.mjs";
-import { auth } from "@/lib/auth";
 import {
   getCampaignPositions,
   getEligibleReferralCounts,
 } from "@/lib/campaigns/referral-position.mjs";
 import prisma from "@/lib/prisma";
-import { currentWorkspace } from "@/lib/workspaces/current";
-import { campaignScope } from "@/lib/workspaces/service.mjs";
+import { campaignRouteAccess } from "@/lib/workspaces/campaign-route-access.mjs";
 
 async function getAccess(request, id) {
-  const session = await auth.api.getSession({ headers: request.headers });
-  if (!session?.user?.id)
-    return { response: NextResponse.json({ error: "Unauthorized" }, { status: 401 }) };
-  const { workspace } = await currentWorkspace();
-  if (!workspace) return { response: NextResponse.json({ error: "Not found" }, { status: 404 }) };
-  const scope = campaignScope(session.user.id, "viewAudience", workspace.id);
-  const waitlist = await prisma.waitList.findFirst({
-    where: { id, ...scope },
+  const access = await campaignRouteAccess({
+    request,
+    id,
+    permission: "viewAudience",
     select: { id: true, showReferrals: true, sendEmailsToSubscribers: true, publicSlug: true },
   });
-  if (!waitlist) return { response: NextResponse.json({ error: "Not found" }, { status: 404 }) };
-  return {
-    scope,
-    showReferrals: waitlist.showReferrals,
-    sendEmailsToSubscribers: waitlist.sendEmailsToSubscribers,
-    publicSlug: waitlist.publicSlug,
-  };
+  if (access.response) return access;
+  return { scope: access.scope, ...access.waitlist };
 }
 
 async function verificationDelivery(waitListId, signupIds) {

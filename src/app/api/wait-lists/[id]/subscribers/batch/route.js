@@ -1,13 +1,11 @@
 import { NextResponse } from "next/server";
 
-import { auth } from "@/lib/auth";
 import { dispatchOffboardNow } from "@/lib/email/dispatch-now.mjs";
 import { env } from "@/lib/env.mjs";
 import { resolveWorkspaceEmailSender } from "@/lib/integrations/email-sender.mjs";
 import prisma from "@/lib/prisma";
 import { AUDIT_ACTIONS, recordWaitlistAuditEvent } from "@/lib/workspaces/audit.mjs";
-import { currentWorkspace } from "@/lib/workspaces/current";
-import { campaignScope } from "@/lib/workspaces/service.mjs";
+import { campaignRouteAccess } from "@/lib/workspaces/campaign-route-access.mjs";
 
 const MAX_BATCH = 1000;
 const OFFBOARD_EVENT = "OFFBOARD_EMAIL_REQUESTED";
@@ -19,19 +17,14 @@ const OFFBOARD_EVENT = "OFFBOARD_EMAIL_REQUESTED";
 // Referrers keep points they already earned (the points ledger is append-only
 // and holds no identity, so its rows are retained without PII).
 async function getAccess(request, id) {
-  const session = await auth.api.getSession({ headers: request.headers });
-  if (!session?.user?.id)
-    return { response: NextResponse.json({ error: "Unauthorized" }, { status: 401 }) };
-  const { workspace, user } = await currentWorkspace();
-  if (!workspace) return { response: NextResponse.json({ error: "Not found" }, { status: 404 }) };
   // manageAudience is OWNER/ADMIN only - viewers and members cannot offboard
   // or delete, and a failed check reads as 404 so list existence never leaks.
-  const waitlist = await prisma.waitList.findFirst({
-    where: { id, ...campaignScope(session.user.id, "manageAudience", workspace.id) },
+  return campaignRouteAccess({
+    request,
+    id,
+    permission: "manageAudience",
     select: { id: true, name: true, workspaceId: true },
   });
-  if (!waitlist) return { response: NextResponse.json({ error: "Not found" }, { status: 404 }) };
-  return { waitlist, workspace, user: user || session.user };
 }
 
 function parseBody(body) {
