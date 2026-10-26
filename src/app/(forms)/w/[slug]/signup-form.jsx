@@ -267,7 +267,14 @@ function ResultStat({ label, value }) {
   );
 }
 
-function ReferralShareBlock({ statusPage, result, referralId, copied, onCopyReferralLink, onTrackShare }) {
+function ReferralShareBlock({
+  statusPage,
+  result,
+  referralId,
+  copied,
+  onCopyReferralLink,
+  onTrackShare,
+}) {
   return (
     <div className="mt-6 grid w-full max-w-md gap-2.5">
       <p className="m-0 text-sm text-wl-muted">{statusPage.shareMessage}</p>
@@ -345,7 +352,12 @@ function SignupResult({
       style={bodyPx != null ? { "--wl-body": `${bodyPx}px` } : undefined}
       aria-labelledby={resultTitleId}
     >
-      <ResultHeader result={result} statusPage={statusPage} brand={brand} resultTitleId={resultTitleId} />
+      <ResultHeader
+        result={result}
+        statusPage={statusPage}
+        brand={brand}
+        resultTitleId={resultTitleId}
+      />
       {statusPage.showPosition && result.position != null ? (
         <ResultStat label="Your position" value={`#${result.position}`} />
       ) : null}
