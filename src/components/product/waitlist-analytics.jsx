@@ -80,8 +80,6 @@ const BENCHMARK =
   "mt-1.25 inline-flex w-fit rounded-full bg-product-bg-inset px-2 py-0.5 text-micro font-semibold leading-normal tracking-wider text-product-text-secondary uppercase";
 const DIMENSIONS =
   "inline-flex max-w-full items-center gap-0.5 overflow-x-auto px-3 pb-2.5 no-scrollbar";
-const DIMENSION_BUTTON =
-  "min-h-8.5 shrink-0 cursor-pointer rounded-lg border-0 bg-transparent px-2.25 py-1.25 text-micro text-product-text-secondary hover:bg-product-bg-inset";
 const ANALYTICS_CHART =
   "w-full px-2.5 pb-2 pl-1 text-xs text-product-text-secondary [&>[data-chart]]:h-80 [&>[data-chart]]:w-full [&>[data-chart]]:aspect-auto";
 const DATA_PANEL = [
@@ -490,18 +488,16 @@ function DimensionPicker({ label, options, value, onChange }) {
   return (
     <div className={DIMENSIONS} role="group" aria-label={label}>
       {options.map((option) => (
-        <button
+        <Button
           key={option.value}
           type="button"
-          className={cn(
-            DIMENSION_BUTTON,
-            value === option.value && "bg-product-bg-inset font-medium text-product-text-primary",
-          )}
+          variant="product-ghost"
+          size="dimension"
           aria-pressed={value === option.value}
           onClick={() => onChange(option.value)}
         >
           {option.label}
-        </button>
+        </Button>
       ))}
     </div>
   );
