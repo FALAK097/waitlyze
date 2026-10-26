@@ -19,7 +19,11 @@ export default async function EmailsPage(props) {
   return (
     <ContentLayout title="Emails">
       <EmailToolsNav waitListId={waitList.id} current="templates" />
-      <EmailTemplatesManager waitListId={waitList.id} initialTemplates={templates} />
+      <EmailTemplatesManager
+        waitListId={waitList.id}
+        waitListName={waitList.name}
+        initialTemplates={templates}
+      />
     </ContentLayout>
   );
 }

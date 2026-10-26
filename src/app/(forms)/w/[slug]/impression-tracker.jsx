@@ -18,7 +18,7 @@ export function ImpressionTracker({ waitListId }) {
       fetch("/api/v1/impressions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ waitListId, hypeSession, ...collectAttribution() }),
+        body: JSON.stringify({ waitListId, hypeSession, ...collectAttribution(waitListId) }),
       }).catch(() => {});
     } catch {
       // Impressions are best-effort; never break the page.

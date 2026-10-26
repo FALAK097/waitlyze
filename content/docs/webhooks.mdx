@@ -50,6 +50,10 @@ Your deployment needs webhook encryption and dispatch configured before delivery
 
 Subscriber emails are **never** included — fetch what you need via your own subscriber read path using `signupId`. Return `2xx` only after durably accepting the event. Deduplicate by event ID because retries redeliver the same `id`.
 
+## Email events (coverage note)
+
+There are no `email.*` webhook events. Resend delivery signals (delivered, bounced, complained) feed the workspace suppression list automatically — bounced or complained addresses are excluded from future broadcasts and automations — and per-send delivery is visible in broadcast reports, but they are not fanned out as customer webhooks. That gap is recorded, not shipped: adding events like `broadcast.finished` or `email.bounced` needs new enqueue call sites in the broadcast pipeline, which is frozen while founder-email work lands. Until then, poll broadcast delivery reports or watch [Slack/Discord notifications](/docs/notifications) for milestone pings.
+
 <TypeTable
   type={{
     id: {
