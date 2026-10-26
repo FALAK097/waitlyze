@@ -2258,14 +2258,7 @@ function FormPanel({ form, update }) {
     </div>
   );
 }
-function StatusPanel({
-  status,
-  update,
-  showReferrals = true,
-  waitListId,
-  rewards,
-  updateRewards,
-}) {
+function StatusPanel({ status, update, showReferrals = true, waitListId, rewards, updateRewards }) {
   // Drafts saved before rewards existed have no key yet: fall back to the
   // zero-config defaults (same values the API resolves server-side).
   const perks = {
