@@ -103,7 +103,7 @@ function WorkspaceSwitcher({ workspaces, selected }) {
     }
   }
   return (
-    <div className="max-w-75 min-w-0 max-md:max-w-none max-md:flex-1 [&>button]:max-w-full [&>button]:gap-2 [&>button[data-popup-open]_svg:last-child]:rotate-180">
+    <div className="order-1 max-w-75 min-w-0 max-md:max-w-none max-md:flex-1 [&>button]:max-w-full [&>button]:gap-2 [&>button[data-popup-open]_svg:last-child]:rotate-180">
       <DropdownMenu>
         <DropdownMenuTrigger
           render={<Button variant="ghost" />}
@@ -168,7 +168,7 @@ function AccountMenu({ user, avatar }) {
     }
   }
   return (
-    <div className="ms-auto flex shrink-0 items-center gap-2">
+    <div className="order-3 ms-auto flex shrink-0 items-center gap-2 max-md:order-2">
       <TooltipProvider>
         <Tooltip>
           <TooltipTrigger
@@ -225,7 +225,16 @@ function AccountMenu({ user, avatar }) {
   );
 }
 
-export function AppShell({ children, user, avatar, workspaces, selectedWorkspace }) {
+export function AppShellControls({ user, avatar, workspaces, selectedWorkspace }) {
+  return (
+    <>
+      <WorkspaceSwitcher workspaces={workspaces} selected={selectedWorkspace} />
+      <AccountMenu user={user} avatar={avatar} />
+    </>
+  );
+}
+
+export function AppShell({ children, headerControls }) {
   const pathname = usePathname();
   const navLinkClass = cn(
     "inline-flex min-h-11 items-center justify-center rounded-lg px-3 py-2 text-sm text-product-text-secondary no-underline transition-colors duration-150 hover:bg-product-bg-inset hover:text-product-text-primary",
@@ -251,10 +260,10 @@ export function AppShell({ children, user, avatar, workspaces, selectedWorkspace
               <i className="block h-4.25 w-1.25 rounded-xs bg-product-accent-solid" />
             </span>
           </Link>
-          <WorkspaceSwitcher workspaces={workspaces} selected={selectedWorkspace} />
+          <div className="contents">{headerControls}</div>
           <nav
             aria-label="Main navigation"
-            className="ms-auto flex items-center gap-2 max-md:order-4 max-md:ms-0 max-md:me-0 max-md:w-full max-md:justify-start"
+            className="order-2 ms-auto flex items-center gap-2 max-md:order-4 max-md:ms-0 max-md:me-0 max-md:w-full max-md:justify-start"
           >
             <Link
               className={cn(
@@ -289,7 +298,6 @@ export function AppShell({ children, user, avatar, workspaces, selectedWorkspace
               <HugeiconsIcon icon={ArrowUpRight01Icon} size={14} aria-hidden="true" />
             </Link>
           </nav>
-          <AccountMenu user={user} avatar={avatar} />
         </div>
       </header>
       <main
