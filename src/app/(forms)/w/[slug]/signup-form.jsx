@@ -258,6 +258,50 @@ function ConsentField({ formConfig }) {
   );
 }
 
+function ResultStat({ label, value }) {
+  return (
+    <p className="flex w-full max-w-md justify-between border-y border-wl-text/15 py-4">
+      <span>{label}</span>
+      <strong>{value}</strong>
+    </p>
+  );
+}
+
+function ReferralShareBlock({ statusPage, result, referralId, copied, onCopyReferralLink, onTrackShare }) {
+  return (
+    <div className="mt-6 grid w-full max-w-md gap-2.5">
+      <p className="m-0 text-sm text-wl-muted">{statusPage.shareMessage}</p>
+      <label className="text-caption font-bold" htmlFor={referralId}>
+        Your referral link
+      </label>
+      <div className="flex gap-2 max-sm:flex-col">
+        <input
+          className={cn(
+            control,
+            "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-wl-accent",
+          )}
+          id={referralId}
+          value={result.referralLink}
+          readOnly
+          onFocus={(event) => event.target.select()}
+        />
+        <button className={action} type="button" onClick={onCopyReferralLink}>
+          {copied ? "Copied" : "Copy"}
+        </button>
+      </div>
+      {statusPage.shareChannels.length > 0 && (
+        <ShareButtons
+          channels={statusPage.shareChannels}
+          message={`${statusPage.shareMessage} ${result.referralLink}`}
+          link={result.referralLink}
+          subject={statusPage.heading}
+          onShare={onTrackShare}
+        />
+      )}
+    </div>
+  );
+}
+
 function SignupResult({
   result,
   statusPage,
@@ -295,48 +339,20 @@ function SignupResult({
       {result.notice ? <p className="leading-relaxed text-wl-muted">{result.notice}</p> : null}
       {result.body ? <p className="leading-relaxed text-wl-muted">{result.body}</p> : null}
       {statusPage.showPosition && result.position != null ? (
-        <p className="flex w-full max-w-md justify-between border-y border-wl-text/15 py-4">
-          <span>Your position</span>
-          <strong>#{result.position}</strong>
-        </p>
+        <ResultStat label="Your position" value={`#${result.position}`} />
       ) : null}
       {showReferrals && statusPage.showReferralCount ? (
-        <p className="flex w-full max-w-md justify-between border-y border-wl-text/15 py-4">
-          <span>Friends joined</span>
-          <strong>{result.referralCount}</strong>
-        </p>
+        <ResultStat label="Friends joined" value={String(result.referralCount)} />
       ) : null}
       {showReferrals && statusPage.showReferralLink && result.referralLink ? (
-        <div className="mt-6 grid w-full max-w-md gap-2.5">
-          <p className="m-0 text-sm text-wl-muted">{statusPage.shareMessage}</p>
-          <label className="text-caption font-bold" htmlFor={referralId}>
-            Your referral link
-          </label>
-          <div className="flex gap-2 max-sm:flex-col">
-            <input
-              className={cn(
-                control,
-                "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-wl-accent",
-              )}
-              id={referralId}
-              value={result.referralLink}
-              readOnly
-              onFocus={(event) => event.target.select()}
-            />
-            <button className={action} type="button" onClick={onCopyReferralLink}>
-              {copied ? "Copied" : "Copy"}
-            </button>
-          </div>
-          {statusPage.shareChannels.length > 0 && (
-            <ShareButtons
-              channels={statusPage.shareChannels}
-              message={`${statusPage.shareMessage} ${result.referralLink}`}
-              link={result.referralLink}
-              subject={statusPage.heading}
-              onShare={onTrackShare}
-            />
-          )}
-        </div>
+        <ReferralShareBlock
+          statusPage={statusPage}
+          result={result}
+          referralId={referralId}
+          copied={copied}
+          onCopyReferralLink={onCopyReferralLink}
+          onTrackShare={onTrackShare}
+        />
       ) : null}
     </section>
   );
