@@ -302,29 +302,10 @@ function ReferralShareBlock({ statusPage, result, referralId, copied, onCopyRefe
   );
 }
 
-function SignupResult({
-  result,
-  statusPage,
-  showReferrals,
-  brand,
-  resultTitleId,
-  referralId,
-  copied,
-  onCopyReferralLink,
-  onTrackShare,
-}) {
+function ResultHeader({ result, statusPage, brand, resultTitleId }) {
   const headingPx = typeof brand?.headingSize === "number" ? brand.headingSize : null;
-  const bodyPx = typeof brand?.bodySize === "number" ? brand.bodySize : null;
   return (
-    <section
-      className={cn(
-        "grid w-full justify-items-center text-center text-wl-text",
-        bodyPx != null && "wl-type-body",
-        statusPage.layout === "card" && "rounded-wl bg-wl-surface p-6 md:p-10",
-      )}
-      style={bodyPx != null ? { "--wl-body": `${bodyPx}px` } : undefined}
-      aria-labelledby={resultTitleId}
-    >
+    <>
       <StatusBadge pending={result.pending} iconStyle={statusPage.iconStyle} className="mb-4" />
       <h2
         className={cn(
@@ -338,6 +319,33 @@ function SignupResult({
       </h2>
       {result.notice ? <p className="leading-relaxed text-wl-muted">{result.notice}</p> : null}
       {result.body ? <p className="leading-relaxed text-wl-muted">{result.body}</p> : null}
+    </>
+  );
+}
+
+function SignupResult({
+  result,
+  statusPage,
+  showReferrals,
+  brand,
+  resultTitleId,
+  referralId,
+  copied,
+  onCopyReferralLink,
+  onTrackShare,
+}) {
+  const bodyPx = typeof brand?.bodySize === "number" ? brand.bodySize : null;
+  return (
+    <section
+      className={cn(
+        "grid w-full justify-items-center text-center text-wl-text",
+        bodyPx != null && "wl-type-body",
+        statusPage.layout === "card" && "rounded-wl bg-wl-surface p-6 md:p-10",
+      )}
+      style={bodyPx != null ? { "--wl-body": `${bodyPx}px` } : undefined}
+      aria-labelledby={resultTitleId}
+    >
+      <ResultHeader result={result} statusPage={statusPage} brand={brand} resultTitleId={resultTitleId} />
       {statusPage.showPosition && result.position != null ? (
         <ResultStat label="Your position" value={`#${result.position}`} />
       ) : null}
