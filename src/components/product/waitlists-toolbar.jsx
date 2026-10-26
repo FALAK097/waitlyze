@@ -10,6 +10,7 @@ import { HugeiconsIcon } from "@hugeicons/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
 
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { TableHead } from "@/components/ui/table";
@@ -75,14 +76,16 @@ export function WaitlistSearch({ query, status, sort }) {
         autoComplete="off"
       />
       {value && (
-        <button
+        <Button
           type="button"
-          className="absolute end-1 top-1/2 inline-flex size-8 -translate-y-1/2 cursor-pointer items-center justify-center rounded-md border-0 bg-transparent text-product-text-secondary hover:bg-product-bg-inset hover:text-product-text-primary"
+          variant="ghost"
+          size="icon"
+          className="absolute end-1 top-1/2 -translate-y-1/2"
           onClick={clear}
           aria-label="Clear search"
         >
           <HugeiconsIcon icon={Cancel01Icon} aria-hidden="true" />
-        </button>
+        </Button>
       )}
     </div>
   );
