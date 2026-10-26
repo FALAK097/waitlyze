@@ -250,6 +250,10 @@ function SendConfirmations({
           className={testInput}
           aria-label={`Scheduled send time (${founderTimeZone()})`}
           value={scheduleAt}
+          // The minimum is derived from the live clock at render time; it is
+          // intentionally different between the SSR pass and the browser, so
+          // React's hydration warning is suppressed.
+          suppressHydrationWarning
           min={toLocalInputValue(Date.now() + 5 * 60 * 1000)}
           onChange={(event) => onScheduleAtChange(event.target.value)}
         />

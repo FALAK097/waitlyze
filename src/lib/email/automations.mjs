@@ -456,13 +456,7 @@ export async function dispatchAutomationStep(db, event, payload, send, now, atte
     position,
     referralCount,
   });
-  // Back-compat: recipes saved before per-send positions used {{referral_link}}
-  // built without a slug; resolveSubscriberVars already covers the new shape.
-  vars.referral_link =
-    vars.referral_link ||
-    (waitList.publicSlug && signUp.referralCode
-      ? `${baseUrl}/w/${encodeURIComponent(waitList.publicSlug)}?r=${encodeURIComponent(signUp.referralCode)}`
-      : "");
+
   try {
     const response = await send({
       to: signUp.email,

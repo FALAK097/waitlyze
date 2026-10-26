@@ -150,10 +150,7 @@ async function dispatchBroadcast(db, event, payload, send, now, attempt, result)
     }));
   if (
     waitList.status !== "PUBLISHED" ||
-    // The UNVERIFIED segment is a verification nudge: recipients joined and
-    // opted in but haven't confirmed yet, so the verified check is lifted
-    // for that segment only. Every other gate still applies.
-    (broadcast.segment !== "UNVERIFIED" && !signUp.verifiedAt) ||
+    !signUp.verifiedAt ||
     !signUp.marketingConsentAt ||
     signUp.marketingUnsubscribedAt ||
     suppressed ||

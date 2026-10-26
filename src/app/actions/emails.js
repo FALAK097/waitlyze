@@ -947,14 +947,20 @@ export async function queueBroadcast({ waitListId, broadcastId, expectedRecipien
     return { success: false, message: "Email delivery is not configured yet." };
   const seg = normalizeSegment(segment);
   try {
-    const count = await prisma.$transaction(async (tx) =>
-      enqueueBroadcast(tx, {
-        waitListId: campaign.id,
-        broadcastId,
-        segment: seg,
-        expectedRecipientCount,
-        exact: true,
-      }),
+    // The recipient fan-out (bulk insert, variable snapshot, per-recipient
+    // updates) shares one connection inside this interactive transaction, so
+    // for large segments it legitimately takes longer than Prisma's default
+    // 5 s; allow 60 s before rolling back.
+    const count = await prisma.$transaction(
+      async (tx) =>
+        enqueueBroadcast(tx, {
+          waitListId: campaign.id,
+          broadcastId,
+          segment: seg,
+          expectedRecipientCount,
+          exact: true,
+        }),
+      { timeout: 60_000, maxWait: 10_000 },
     );
     revalidatePath(broadcastPath(waitListId));
     await recordWaitlistAuditEvent(prisma, {

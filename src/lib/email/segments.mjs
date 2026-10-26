@@ -10,10 +10,6 @@ export const BROADCAST_SEGMENTS = {
     label: "Top referrers",
     description: "Opted-in subscribers with at least one verified referral.",
   },
-  UNVERIFIED: {
-    label: "Unverified",
-    description: "Joined and opted in but hasn't confirmed yet — a nudge to verify.",
-  },
   INACTIVE: {
     label: "Inactive",
     description: "Opted in over 14 days ago with no verified referrals yet.",
@@ -36,8 +32,11 @@ const VERIFIED_REFERRAL_EXISTS = `EXISTS (
 // Static SQL predicates over the s (sign_ups) / w (wait_lists) aliases used
 // by the broadcast audience queries. The segment key is allow-listed above,
 // so these fragments contain no user input.
-export function segmentVerifiedPredicate(segment) {
-  return segment === "UNVERIFIED" ? `s."verifiedAt" IS NULL` : `s."verifiedAt" IS NOT NULL`;
+export function segmentVerifiedPredicate() {
+  // Every broadcast targets verified signups only: email verification is the
+  // confirm-your-address handshake, so unverified (possibly someone else's
+  // typed-in) addresses must never receive founder-written marketing email.
+  return `s."verifiedAt" IS NOT NULL`;
 }
 
 export function segmentExtraPredicate(segment) {

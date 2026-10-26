@@ -20,7 +20,7 @@ export function audienceScope(waitListId, segment) {
   return Prisma.sql`FROM "sign_ups" s JOIN "wait_lists" w ON w."id" = s."waitListId"
     WHERE s."waitListId" = ${waitListId}
       AND w."status"::text = 'PUBLISHED'
-      AND ${Prisma.raw(segmentVerifiedPredicate(seg))}
+      AND ${Prisma.raw(segmentVerifiedPredicate())}
       AND s."marketingConsentAt" IS NOT NULL
       AND s."marketingUnsubscribedAt" IS NULL
       AND COALESCE(s."emailNormalized", lower(btrim(s."email"))) <> ''
@@ -146,18 +146,25 @@ export async function queueDueBroadcasts(db, now = new Date()) {
   let queued = 0;
   for (const broadcast of due) {
     try {
-      await db.$transaction(async (tx) => {
-        await enqueueBroadcast(tx, {
-          waitListId: broadcast.waitListId,
-          broadcastId: broadcast.id,
-          segment: broadcast.segment,
-          exact: false,
-          // Stamp the dispatcher's instant so events the sweep creates are
-          // claimable in the same tick — a fresh timestamp here would land
-          // milliseconds after the claim snapshot and slip a full tick.
-          now,
-        });
-      });
+      // Same reason as the manual send path: the fan-out runs on one
+      // transaction connection and can exceed the 5 s default for large
+      // segments; allow 60 s so the scheduled send does not pathologically
+      // re-scan every tick.
+      await db.$transaction(
+        async (tx) => {
+          await enqueueBroadcast(tx, {
+            waitListId: broadcast.waitListId,
+            broadcastId: broadcast.id,
+            segment: broadcast.segment,
+            exact: false,
+            // Stamp the dispatcher's instant so events the sweep creates are
+            // claimable in the same tick — a fresh timestamp here would land
+            // milliseconds after the claim snapshot and slip a full tick.
+            now,
+          });
+        },
+        { timeout: 60_000, maxWait: 10_000 },
+      );
       queued++;
     } catch (error) {
       // Audience drift retries on the next tick; an empty segment fails the
