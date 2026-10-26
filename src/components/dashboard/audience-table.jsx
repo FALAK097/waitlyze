@@ -1467,16 +1467,17 @@ export function AudienceTable({
                           <dt className="text-product-text-secondary">Referred by</dt>
                           <dd className="min-w-0">
                             {profile.referredBy?.email ? (
-                              <button
+                              <Button
                                 type="button"
                                 title={profile.referredBy.email}
                                 onClick={() =>
                                   setSheet({ type: "profile", row: profile.referredBy })
                                 }
-                                className="block w-full cursor-pointer truncate border-0 bg-transparent p-0 text-left text-product-text-primary underline underline-offset-4 hover:text-product-text-secondary"
+                                variant="product-inline-link"
+                                size="inline-link"
                               >
-                                {profile.referredBy.email}
-                              </button>
+                                <span className="min-w-0 truncate">{profile.referredBy.email}</span>
+                              </Button>
                             ) : (
                               "-"
                             )}
