@@ -9,10 +9,12 @@ const AuthModalContext = createContext(null);
 
 export function AuthModalProvider({ children }) {
   const [open, setOpen] = useState(false);
+  const [hasOpened, setHasOpened] = useState(false);
   const triggerRef = useRef(null);
 
   const openAuthModal = useCallback(() => {
     triggerRef.current = document.activeElement;
+    setHasOpened(true);
     setOpen(true);
   }, []);
   const closeAuthModal = useCallback(() => setOpen(false), []);
@@ -24,14 +26,16 @@ export function AuthModalProvider({ children }) {
   return (
     <AuthModalContext.Provider value={value}>
       {children}
-      <AuthModal
-        open={open}
-        onOpenChange={setOpen}
-        onCloseAutoFocus={(event) => {
-          event.preventDefault();
-          if (triggerRef.current?.isConnected) triggerRef.current.focus();
-        }}
-      />
+      {hasOpened && (
+        <AuthModal
+          open={open}
+          onOpenChange={setOpen}
+          onCloseAutoFocus={(event) => {
+            event.preventDefault();
+            if (triggerRef.current?.isConnected) triggerRef.current.focus();
+          }}
+        />
+      )}
     </AuthModalContext.Provider>
   );
 }
