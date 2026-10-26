@@ -22,7 +22,7 @@ const createImpression = async ({ waitList }) => {
     body: JSON.stringify({
       waitListId: waitList.id,
       hypeSession: uniqueUserId,
-      ...collectAttribution(),
+      ...collectAttribution(waitList.id),
     }),
     headers: {
       "Content-Type": "application/json",

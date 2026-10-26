@@ -269,7 +269,7 @@ function SignupFormInner({ slug, waitListId, showReferrals, formConfig, statusPa
           ...(phoneValue ? { phone: phoneValue } : {}),
           ...(answers.length > 0 ? { customFields: answers } : {}),
           ...(turnstileOn && turnstileToken ? { turnstileToken } : {}),
-          ...collectAttribution(),
+          ...collectAttribution(waitListId),
           ...(showReferrals && referralCode && /^[A-Za-z0-9_-]{8,256}$/.test(referralCode)
             ? { referralId: referralCode }
             : {}),
