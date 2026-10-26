@@ -1,6 +1,6 @@
 "use client";
 
-import { CalendarIcon, ChartLineData01Icon } from "@hugeicons/core-free-icons";
+import { ArrowUpDownIcon, CalendarIcon, ChartLineData01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { differenceInCalendarDays, format } from "date-fns";
 import dynamic from "next/dynamic";
@@ -511,24 +511,16 @@ function PanelMetricSwitch({ metric, onChange }) {
   const next = metric === "visitors" ? "signups" : "visitors";
   const label = metric === "visitors" ? "Visitors" : "Signups";
   return (
-    <button
+    <Button
       type="button"
-      className="inline-flex min-h-7 cursor-pointer items-center gap-1 rounded-lg border-0 bg-transparent px-1.5 py-0.5 ps-2 text-micro font-medium text-product-text-secondary hover:bg-product-bg-inset hover:text-product-text-primary [&_svg]:opacity-70"
+      variant="product-ghost"
+      size="metric-switch"
       onClick={() => onChange(next)}
       aria-label={`Metric: ${label}. Switch to ${next}.`}
     >
       {label}
-      <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true" focusable="false">
-        <path
-          d="M3.5 5L6 2.5 8.5 5M8.5 7L6 9.5 3.5 7"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.4"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-      </svg>
-    </button>
+      <HugeiconsIcon icon={ArrowUpDownIcon} size={12} className="size-3" aria-hidden="true" />
+    </Button>
   );
 }
 
