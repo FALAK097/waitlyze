@@ -1,14 +1,9 @@
 import { NextResponse } from "next/server";
 
-import {
-  getPublishedFormConfig,
-  pickCustomFields,
-} from "@/lib/campaigns/form-rules.mjs";
+import { getPublishedFormConfig, pickCustomFields } from "@/lib/campaigns/form-rules.mjs";
 import { getCampaignPosition } from "@/lib/campaigns/referral-position.mjs";
 import { DuplicateSignupError, InvalidCampaignError } from "@/lib/campaigns/signups.mjs";
-import {
-  TurnstileVerificationError,
-} from "@/lib/campaigns/turnstile.mjs";
+import { TurnstileVerificationError } from "@/lib/campaigns/turnstile.mjs";
 import { dispatchVerificationNow } from "@/lib/email/dispatch-now.mjs";
 import prisma from "@/lib/prisma";
 import { consumePublicBudget, PublicRateLimitError } from "@/lib/security/public-rate-limit.mjs";
