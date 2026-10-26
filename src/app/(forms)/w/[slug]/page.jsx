@@ -4,6 +4,7 @@ import { cache } from "react";
 import { WaitlistPageContent } from "@/components/product/waitlist-page-content";
 import { env } from "@/lib/env.mjs";
 import prisma from "@/lib/prisma";
+import { SITE_URL } from "@/lib/site-metadata";
 import { templateSnapshotSchema } from "@/lib/templates/catalog.mjs";
 
 import { ImpressionTracker } from "./impression-tracker";
@@ -43,16 +44,16 @@ export async function generateMetadata({ params }) {
   const hero = page.snapshot.sections.find((section) => section.type === "hero");
   const title = page.snapshot.seo.title || page.waitList.name || hero?.heading || "Waitlist";
   const description = page.snapshot.seo.description || hero?.body || "";
-  // OG images and favicons render in third-party scrapers: only absolute TLS
-  // or site-relative URLs (resolved against metadataBase). Anything else is
-  // dropped rather than emitting a broken tag.
-  // Protocol-relative ("//evil.test/x.png") would inherit https and bypass
-  // the allowlist, so only absolute TLS or single-slash-relative URLs pass.
-  const shareImage =
-    typeof page.snapshot.seo.image === "string" &&
-    /^(https:\/\/|\/(?!\/))/i.test(page.snapshot.seo.image.trim())
-      ? page.snapshot.seo.image.trim()
-      : "";
+  const path = `/w/${encodeURIComponent(slug)}`;
+  // Scrapers need an absolute image URL. Resolve site-relative values against
+  // the canonical origin. Only absolute TLS or site-relative URLs pass:
+  // protocol-relative ("//evil.test/x.png") would inherit https and bypass the
+  // allowlist, and inline data URLs can't be fetched by cards — both dropped
+  // rather than emitting a broken tag.
+  const rawImage = page.snapshot.seo.image?.trim() || "";
+  const normalizedImage = /^(?:https:\/\/|\/(?!\/))/i.test(rawImage) ? rawImage : "";
+  const image = normalizedImage.startsWith("/") ? `${SITE_URL}${normalizedImage}` : normalizedImage;
+  const images = image ? [{ url: image }] : [];
   const favicon =
     typeof page.snapshot.brand.favicon === "string" &&
     /^(https:\/\/|\/(?!\/)|data:image\/)/i.test(page.snapshot.brand.favicon.trim())
@@ -62,21 +63,17 @@ export async function generateMetadata({ params }) {
     title,
     description,
     robots: { index: page.snapshot.seo.indexable, follow: page.snapshot.seo.indexable },
-    alternates: { canonical: `/w/${encodeURIComponent(slug)}` },
+    alternates: { canonical: path },
     ...(favicon ? { icons: { icon: favicon } } : {}),
     openGraph: {
-      title,
-      description,
       type: "website",
-      url: `/w/${encodeURIComponent(slug)}`,
-      ...(shareImage ? { images: [{ url: shareImage }] } : {}),
-    },
-    twitter: {
-      card: shareImage ? "summary_large_image" : "summary",
+      siteName: page.waitList.name || "Waitlyze",
+      url: path,
       title,
       description,
-      ...(shareImage ? { images: [shareImage] } : {}),
+      images,
     },
+    twitter: { card: image ? "summary_large_image" : "summary", title, description, images },
   };
 }
 
@@ -107,6 +104,7 @@ export default async function PublicWaitlistPage({ params }) {
         snapshot={page.snapshot}
         name={page.waitList.name}
         signupCount={page.waitList._count.signUps}
+        hideCounts={page.snapshot.rewards?.hideCounts === true}
         renderSignupForm={(_section, snapshot) => (
           <SignupForm
             slug={slug}

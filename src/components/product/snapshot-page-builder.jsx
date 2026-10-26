@@ -85,7 +85,7 @@ import { cn } from "@/lib/utils";
 
 import { ImageUploadField } from "./image-upload-field";
 import { PublishAndShare } from "./publish-and-share";
-import { ShareChannelIcon } from "./share-buttons";
+import { SHARE_CHANNELS, ShareChannelIcon } from "./share-buttons";
 import {
   StatusPagePreview,
   WaitlistPageContent,
@@ -145,6 +145,7 @@ function Field({
   type = "text",
   maxLength,
   placeholder = "",
+  disabled = false,
   onFocus,
   onBlur,
 }) {
@@ -158,6 +159,7 @@ function Field({
           value={value}
           maxLength={maxLength}
           placeholder={placeholder}
+          disabled={disabled}
           rows={3}
           onChange={(event) => onChange(event.target.value)}
           onFocus={onFocus}
@@ -170,11 +172,40 @@ function Field({
           value={value}
           maxLength={maxLength}
           placeholder={placeholder}
+          disabled={disabled}
           onChange={(event) => onChange(event.target.value)}
           onFocus={onFocus}
           onBlur={onBlur}
         />
       )}
+    </div>
+  );
+}
+// Number input that lets founders clear the field while typing and commits a
+// clamped integer on blur, instead of snapping to 0 mid-edit.
+function PointsField({ label, value, onCommit, max = 100000 }) {
+  const id = useId();
+  // Callers pass `key={value}` so React remounts and re-syncs the text state
+  // when the committed value changes, instead of resetting it from an effect.
+  const [text, setText] = useState(value == null ? "" : String(value));
+  const commit = () => {
+    if (text === "" || text == null) {
+      onCommit(0);
+      return;
+    }
+    const parsed = Math.trunc(Number(text));
+    onCommit(!Number.isSafeInteger(parsed) || parsed < 0 ? 0 : Math.min(parsed, max));
+  };
+  return (
+    <div className="grid gap-1.5 [&_input]:text-caption [&_label]:text-caption [&_label]:font-semibold">
+      <Label htmlFor={id}>{label}</Label>
+      <Input
+        id={id}
+        type="number"
+        value={text}
+        onChange={(event) => setText(event.target.value)}
+        onBlur={commit}
+      />
     </div>
   );
 }
@@ -1119,6 +1150,8 @@ export function SnapshotPageBuilder({
       form: snapshot.form,
       statusPage: snapshot.statusPage,
       seo: snapshot.seo,
+      // Template switches restyle the page but must never reset rewards config.
+      rewards: snapshot.rewards ?? template.rewards,
     };
     if (applySnapshot(next)) setSelectedId(next.sections[0].id);
   };
@@ -1551,6 +1584,7 @@ export function SnapshotPageBuilder({
                 snapshot={snapshot}
                 name={waitList.name}
                 previewViewport={previewViewport}
+                hideCounts={snapshot.rewards?.hideCounts === true}
                 renderSignupForm={() => <WaitlistSignupPreview form={snapshot.form} />}
                 interactive
                 selectedBlockId={selectedId}
@@ -1604,75 +1638,93 @@ export function SnapshotPageBuilder({
               status={snapshot.statusPage}
               showReferrals={waitList.showReferrals}
               waitListId={waitList.id}
+              rewards={snapshot.rewards}
               update={(value) => updateRoot("statusPage", value)}
+              updateRewards={(value) => updateRoot("rewards", value)}
             />
           }
         >
           <div className="mx-auto w-full max-w-4xl">
-            <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-              <div
-                className="flex flex-wrap gap-1 [&_button]:cursor-pointer [&_button]:rounded-lg [&_button]:border-0 [&_button]:bg-transparent [&_button]:px-3 [&_button]:py-2 [&_button]:text-caption [&_button]:font-semibold [&_button]:text-product-text-secondary [&_button[aria-pressed=true]]:bg-product-bg-surface [&_button[aria-pressed=true]]:text-product-text-primary"
-                role="group"
-                aria-label="Preview state"
-              >
-                {[
-                  ["confirmed", "Confirmed"],
-                  ["pending", "Pending email"],
-                  ["returning", "Returning visitor"],
-                ]
-                  .filter(
-                    ([id]) =>
-                      (id !== "pending" || snapshot.form.verification) &&
-                      (id !== "returning" || waitList.showReferrals),
-                  )
-                  .map(([id, label]) => (
+            {snapshot.statusPage.postSignupBehavior === "no-change" ? (
+              <div className="grid min-h-140 w-full place-content-center gap-3 rounded-xl bg-white px-6 text-center shadow-surface">
+                <p className="m-0 text-micro font-bold tracking-widest text-product-text-secondary uppercase">
+                  Post-signup behavior
+                </p>
+                <h2 className="m-0 font-product-display text-3xl font-semibold tracking-tight text-product-text-primary">
+                  The form stays as-is
+                </h2>
+                <p className="m-0 max-w-lg text-sm leading-relaxed text-product-text-secondary">
+                  Visitors aren’t redirected or shown a confirmation or referral state after signup.
+                </p>
+              </div>
+            ) : (
+              <>
+                <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+                  <div
+                    className="flex flex-wrap gap-1 [&_button]:cursor-pointer [&_button]:rounded-lg [&_button]:border-0 [&_button]:bg-transparent [&_button]:px-3 [&_button]:py-2 [&_button]:text-caption [&_button]:font-semibold [&_button]:text-product-text-secondary [&_button[aria-pressed=true]]:bg-product-bg-surface [&_button[aria-pressed=true]]:text-product-text-primary"
+                    role="group"
+                    aria-label="Preview state"
+                  >
+                    {[
+                      ["confirmed", "Confirmed"],
+                      ["pending", "Pending email"],
+                      ["returning", "Returning visitor"],
+                    ]
+                      .filter(
+                        ([id]) =>
+                          (id !== "pending" || snapshot.form.verification) &&
+                          (id !== "returning" || waitList.showReferrals),
+                      )
+                      .map(([id, label]) => (
+                        <button
+                          key={id}
+                          type="button"
+                          aria-pressed={statusState === id}
+                          onClick={() => setStatusState(id)}
+                        >
+                          {label}
+                        </button>
+                      ))}
+                  </div>
+                  <div
+                    className="flex gap-1 [&_button]:flex [&_button]:size-9 [&_button]:cursor-pointer [&_button]:items-center [&_button]:justify-center [&_button]:rounded-lg [&_button]:border-0 [&_button]:bg-transparent [&_button]:text-product-text-secondary [&_button[aria-pressed=true]]:bg-product-bg-surface [&_button[aria-pressed=true]]:text-product-text-primary"
+                    role="group"
+                    aria-label="Preview viewport"
+                  >
                     <button
-                      key={id}
                       type="button"
-                      aria-pressed={statusState === id}
-                      onClick={() => setStatusState(id)}
+                      aria-label="Desktop preview"
+                      aria-pressed={statusViewport === "desktop"}
+                      onClick={() => setStatusViewport("desktop")}
                     >
-                      {label}
+                      <HugeiconsIcon icon={MonitorIcon} size={17} aria-hidden="true" />
                     </button>
-                  ))}
-              </div>
-              <div
-                className="flex gap-1 [&_button]:flex [&_button]:size-9 [&_button]:cursor-pointer [&_button]:items-center [&_button]:justify-center [&_button]:rounded-lg [&_button]:border-0 [&_button]:bg-transparent [&_button]:text-product-text-secondary [&_button[aria-pressed=true]]:bg-product-bg-surface [&_button[aria-pressed=true]]:text-product-text-primary"
-                role="group"
-                aria-label="Preview viewport"
-              >
-                <button
-                  type="button"
-                  aria-label="Desktop preview"
-                  aria-pressed={statusViewport === "desktop"}
-                  onClick={() => setStatusViewport("desktop")}
+                    <button
+                      type="button"
+                      aria-label="Mobile preview"
+                      aria-pressed={statusViewport === "mobile"}
+                      onClick={() => setStatusViewport("mobile")}
+                    >
+                      <HugeiconsIcon icon={SmartphoneIcon} size={17} aria-hidden="true" />
+                    </button>
+                  </div>
+                </div>
+                <div
+                  className={cn(
+                    "grid overflow-hidden rounded-xl bg-white shadow-surface",
+                    statusViewport === "mobile"
+                      ? "mx-auto min-h-160 w-full max-w-md"
+                      : "min-h-140 w-full",
+                  )}
                 >
-                  <HugeiconsIcon icon={MonitorIcon} size={17} aria-hidden="true" />
-                </button>
-                <button
-                  type="button"
-                  aria-label="Mobile preview"
-                  aria-pressed={statusViewport === "mobile"}
-                  onClick={() => setStatusViewport("mobile")}
-                >
-                  <HugeiconsIcon icon={SmartphoneIcon} size={17} aria-hidden="true" />
-                </button>
-              </div>
-            </div>
-            <div
-              className={cn(
-                "grid overflow-hidden rounded-xl bg-white shadow-surface",
-                statusViewport === "mobile"
-                  ? "mx-auto min-h-160 w-full max-w-md"
-                  : "min-h-140 w-full",
-              )}
-            >
-              <StatusPagePreview
-                snapshot={snapshot}
-                state={statusState}
-                showReferrals={waitList.showReferrals}
-              />
-            </div>
+                  <StatusPagePreview
+                    snapshot={snapshot}
+                    state={statusState}
+                    showReferrals={waitList.showReferrals}
+                  />
+                </div>
+              </>
+            )}
           </div>
         </SurfaceLayout>
       )}
@@ -1770,6 +1822,7 @@ export function SnapshotPageBuilder({
               snapshot={snapshot}
               name={waitList.name}
               previewViewport="desktop"
+              hideCounts={snapshot.rewards?.hideCounts === true}
               renderSignupForm={() => <WaitlistSignupPreview form={snapshot.form} />}
             />
           </div>
@@ -2210,7 +2263,20 @@ function FormPanel({ form, update }) {
     </div>
   );
 }
-function StatusPanel({ status, update, showReferrals = true, waitListId }) {
+function StatusPanel({ status, update, showReferrals = true, waitListId, rewards, updateRewards }) {
+  // Drafts saved before rewards existed have no key yet: fall back to the
+  // zero-config defaults (same values the API resolves server-side).
+  const perks = {
+    pointsSignup: 50,
+    pointsReferral: 30,
+    pointsFollow: 5,
+    customEvents: [],
+    positionOffset: 0,
+    hideCounts: false,
+    showPoints: true,
+    showProgress: true,
+    ...rewards,
+  };
   const referralNote = showReferrals ? null : (
     <p className="m-0 text-caption leading-relaxed text-product-text-secondary">
       Referral sharing is off for this waitlist, so the referral link and share buttons stay hidden.{" "}
@@ -2222,66 +2288,32 @@ function StatusPanel({ status, update, showReferrals = true, waitListId }) {
       </Link>
     </p>
   );
-  const isSimpleConfirmation =
-    !status.showPosition &&
-    !status.showReferralLink &&
-    !status.showReferralCount &&
-    (status.shareChannels ?? []).length === 0;
-  const applySimpleConfirmation = () =>
-    update({
-      showPosition: false,
-      showReferralLink: false,
-      showReferralCount: false,
-      shareChannels: [],
-    });
-  const applyReferralCockpit = () =>
-    update({
-      showPosition: true,
-      showReferralLink: true,
-      showReferralCount: false,
-      shareChannels:
-        (status.shareChannels ?? []).length > 0
-          ? status.shareChannels
-          : ["x", "instagram", "linkedin", "whatsapp", "email"],
-    });
+  // Snapshots saved before the cockpit fields existed parse without them;
+  // fall back to the schema defaults so the builder never crashes.
+  const channels = Array.isArray(status.shareChannels) ? status.shareChannels : [];
+  const follows = Array.isArray(status.socialFollows) ? status.socialFollows : [];
+  const followUrl = (network) => follows.find((entry) => entry?.network === network)?.url ?? "";
+  const setFollowUrl = (network, url) => {
+    const next = follows.filter((entry) => entry?.network !== network);
+    if (url.trim()) next.push({ network, url: url.trim() });
+    update({ socialFollows: next });
+  };
   return (
     <div className={"grid gap-4 p-4"}>
-      <div>
-        <span
-          className={
-            "block text-micro font-bold tracking-widest text-product-text-secondary uppercase"
-          }
-        >
-          Confirmation style
-        </span>
-        <div
-          className="mt-2 grid grid-cols-2 gap-1 bg-product-bg-surface p-1 [&_button]:cursor-pointer [&_button]:rounded-lg [&_button]:border-0 [&_button]:bg-transparent [&_button]:px-3 [&_button]:py-2 [&_button]:text-caption [&_button]:font-semibold [&_button]:text-product-text-secondary [&_button[aria-pressed=true]]:bg-product-bg-inset [&_button[aria-pressed=true]]:text-product-text-primary"
-          role="group"
-          aria-label="Confirmation style"
-        >
-          <button
-            key="cockpit"
-            type="button"
-            aria-pressed={!isSimpleConfirmation}
-            onClick={applyReferralCockpit}
-          >
-            Referral cockpit
-          </button>
-          <button
-            key="simple"
-            type="button"
-            aria-pressed={isSimpleConfirmation}
-            onClick={applySimpleConfirmation}
-          >
-            Simple confirmation
-          </button>
-        </div>
-        <p className="mt-2 text-caption leading-relaxed text-product-text-secondary">
-          {isSimpleConfirmation
-            ? "Showing just the confirmation message — no position, referral link, or share buttons. Best for embeds on your own site or API-driven frontends."
-            : "Showing the referral cockpit after signup. Position, referral link, and share buttons appear only when enabled below."}
+      <SelectField
+        label="After a successful signup"
+        value={status.postSignupBehavior}
+        options={[
+          { id: "confirmation", label: "Show confirmation" },
+          { id: "no-change", label: "No redirect or state change" },
+        ]}
+        onChange={(postSignupBehavior) => update({ postSignupBehavior })}
+      />
+      {status.postSignupBehavior === "no-change" && (
+        <p className="m-0 text-caption leading-relaxed text-product-text-secondary">
+          No redirect or confirmation/referral state is shown. The signup is still recorded.
         </p>
-      </div>
+      )}
       <Field
         label="Confirmed heading"
         value={status.heading}
@@ -2342,6 +2374,12 @@ function StatusPanel({ status, update, showReferrals = true, waitListId }) {
         disabled={!showReferrals}
         onChange={(showReferralCount) => update({ showReferralCount })}
       />
+      <Toggle
+        label="Show leaderboard"
+        checked={status.showLeaderboard !== false}
+        disabled={!showReferrals}
+        onChange={(showLeaderboard) => update({ showLeaderboard })}
+      />
       <Field
         label="Share message"
         value={status.shareMessage}
@@ -2357,26 +2395,207 @@ function StatusPanel({ status, update, showReferrals = true, waitListId }) {
         >
           Share buttons
         </span>
-        {["x", "instagram", "linkedin", "whatsapp", "email"].map((channel) => (
+        {SHARE_CHANNELS.map(({ id: channel, label }) => (
           <Toggle
             key={channel}
             label={
               <span className="inline-flex items-center gap-2">
                 <ShareChannelIcon channel={channel} />
-                {channel === "x" ? "X" : channel[0].toUpperCase() + channel.slice(1)}
+                {label}
               </span>
             }
-            checked={status.shareChannels.includes(channel)}
+            checked={channels.includes(channel)}
             disabled={!showReferrals}
             onChange={(enabled) =>
               update({
                 shareChannels: enabled
-                  ? [...status.shareChannels, channel]
-                  : status.shareChannels.filter((item) => item !== channel),
+                  ? [...channels, channel]
+                  : channels.filter((item) => item !== channel),
               })
             }
           />
         ))}
+      </div>
+      <div className={"grid gap-4"}>
+        <span
+          className={
+            "block text-micro font-bold tracking-widest text-product-text-secondary uppercase"
+          }
+        >
+          Social follows
+        </span>
+        <p className="m-0 text-caption leading-relaxed text-product-text-secondary">
+          Shown as follow tasks on the referral cockpit. Follows earn points once rewards launch.
+        </p>
+        <Field
+          label="X profile URL"
+          value={followUrl("x")}
+          disabled={!showReferrals}
+          placeholder="https://x.com/yourhandle"
+          onChange={(url) => setFollowUrl("x", url)}
+        />
+        <Field
+          label="Instagram profile URL"
+          value={followUrl("instagram")}
+          disabled={!showReferrals}
+          placeholder="https://instagram.com/yourhandle"
+          onChange={(url) => setFollowUrl("instagram", url)}
+        />
+      </div>
+      <RewardsSection perks={perks} updateRewards={updateRewards} />
+    </div>
+  );
+}
+
+function RewardsSection({ perks, updateRewards }) {
+  const setPerks = (patch) => updateRewards({ ...perks, ...patch });
+  return (
+    <div className="grid gap-4 border-t border-product-border-subtle pt-4">
+      <div className="grid gap-1">
+        <span className="block text-micro font-bold tracking-widest text-product-text-secondary uppercase">
+          Points & rewards
+        </span>
+        <p className="m-0 text-caption leading-relaxed text-product-text-secondary">
+          Points accrue automatically from activation. Reward tiers come from the Referral rewards
+          blocks on your page.
+        </p>
+      </div>
+      <div className="grid gap-4 sm:grid-cols-3">
+        <PointsField
+          key={perks.pointsSignup}
+          label="Per verified signup"
+          value={perks.pointsSignup}
+          onCommit={(pointsSignup) => setPerks({ pointsSignup })}
+        />
+        <PointsField
+          key={perks.pointsReferral}
+          label="Per referral"
+          value={perks.pointsReferral}
+          onCommit={(pointsReferral) => setPerks({ pointsReferral })}
+        />
+        <PointsField
+          key={perks.pointsFollow}
+          label="Per social follow"
+          value={perks.pointsFollow}
+          onCommit={(pointsFollow) => setPerks({ pointsFollow })}
+        />
+      </div>
+      <PointsField
+        key={perks.positionOffset}
+        label="Position boost"
+        value={perks.positionOffset}
+        max={1000000}
+        onCommit={(positionOffset) => setPerks({ positionOffset })}
+      />
+      <p className="-mt-2 text-caption leading-relaxed text-product-text-secondary">
+        Adds to every displayed position — e.g. 846 makes the first signup show #847.
+      </p>
+      <Toggle
+        label="Show points balance"
+        checked={perks.showPoints}
+        onChange={(showPoints) => setPerks({ showPoints })}
+      />
+      <Toggle
+        label="Show reward progress"
+        checked={perks.showProgress}
+        onChange={(showProgress) => setPerks({ showProgress })}
+      />
+      <Toggle
+        label="Stealth mode (hide all counts)"
+        hint="Hides positions, points, and headcounts on the public page. Best for private or B2B launches."
+        checked={perks.hideCounts}
+        onChange={(hideCounts) => setPerks({ hideCounts })}
+      />
+      <div className="grid gap-2.5">
+        <span className="block text-micro font-bold tracking-widest text-product-text-secondary uppercase">
+          Custom events
+        </span>
+        <p className="m-0 text-caption leading-relaxed text-product-text-secondary">
+          Off-site actions awarded through the API (survey, Discord join…). The event key goes in
+          the API call.
+        </p>
+        {(perks.customEvents ?? []).map((entry, index) => (
+          <div
+            className="grid gap-2.5 border-t border-product-border-subtle pt-4 [&>button]:justify-self-start"
+            key={entry.id ?? `${entry.key}:${entry.label}:${entry.points}`}
+          >
+            <Field
+              label="Event key"
+              value={entry.key}
+              maxLength={40}
+              onChange={(key) =>
+                setPerks({
+                  customEvents: perks.customEvents.map((item, itemIndex) =>
+                    itemIndex === index ? { ...item, key } : item,
+                  ),
+                })
+              }
+            />
+            <Field
+              label="Label"
+              value={entry.label}
+              maxLength={80}
+              onChange={(label) =>
+                setPerks({
+                  customEvents: perks.customEvents.map((item, itemIndex) =>
+                    itemIndex === index ? { ...item, label } : item,
+                  ),
+                })
+              }
+            />
+            <PointsField
+              key={entry.points}
+              label="Points"
+              value={entry.points}
+              onCommit={(points) =>
+                setPerks({
+                  customEvents: perks.customEvents.map((item, itemIndex) =>
+                    itemIndex === index ? { ...item, points } : item,
+                  ),
+                })
+              }
+            />
+            <Button
+              variant="ghost"
+              size="sm"
+              type="button"
+              onClick={() =>
+                setPerks({
+                  customEvents: perks.customEvents.filter((_, itemIndex) => itemIndex !== index),
+                })
+              }
+            >
+              Remove
+            </Button>
+          </div>
+        ))}
+        {(perks.customEvents ?? []).length < 12 && (
+          <Button
+            variant="outline"
+            size="sm"
+            type="button"
+            onClick={() => {
+              // Distinct keys: normalizeRewardsConfig keeps one entry per key,
+              // so adding twice without renaming must not collide.
+              const keys = new Set((perks.customEvents ?? []).map((entry) => entry.key));
+              let key = "survey";
+              for (let n = 2; keys.has(key); n += 1) key = `survey-${n}`;
+              setPerks({
+                customEvents: [
+                  ...(perks.customEvents ?? []),
+                  {
+                    key,
+                    label: "Survey completed",
+                    points: 20,
+                    id: crypto.randomUUID(),
+                  },
+                ],
+              });
+            }}
+          >
+            Add event
+          </Button>
+        )}
       </div>
     </div>
   );

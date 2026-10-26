@@ -8,12 +8,20 @@ import { getCampaignPosition } from "@/lib/campaigns/referral-position.mjs";
 import { escapeHtmlText, renderEmailMarkdown } from "@/lib/email-markdown.mjs";
 import { emailBrandFromSnapshot } from "@/lib/email/brand.mjs";
 import {
+  countEligibleRecipients,
+  enqueueBroadcast,
+  sampleEligibleEmails,
+} from "@/lib/email/broadcast-queue.mjs";
+import {
   interpolateEmail,
   legacyEmailContent,
   subscriberEmailHtml,
   validateComposerContent,
 } from "@/lib/email/composer.mjs";
+import { BROADCAST_SEGMENTS, normalizeSegment } from "@/lib/email/segments.mjs";
+import { seedPreviewVars } from "@/lib/email/variables.mjs";
 import { notifyBroadcastSummary } from "@/lib/emails/founder-notifications.mjs";
+import { emailStatusLabel } from "@/lib/emails/status-label.mjs";
 import { env } from "@/lib/env.mjs";
 import { resolveWorkspaceEmailSender } from "@/lib/integrations/email-sender.mjs";
 import prisma from "@/lib/prisma";
@@ -42,6 +50,15 @@ async function senderForWaitlist(waitListId) {
 const TYPE_MAP = {
   signup: "SIGNUP",
   offboarding: "OFFBOARDING",
+  "referral-congrats": "REFERRAL_CONGRATS",
+  "launch-invite": "LAUNCH_INVITE",
+};
+
+const TYPE_KEY = {
+  SIGNUP: "signup",
+  OFFBOARDING: "offboarding",
+  REFERRAL_CONGRATS: "referral-congrats",
+  LAUNCH_INVITE: "launch-invite",
 };
 
 const DEFAULTS = {
@@ -61,6 +78,24 @@ const DEFAULTS = {
     subHeader: "{{waitlist}}",
     mainBody:
       "We're writing with an update about your place on {{waitlist}}. Add the next step and any dates here before sending.",
+    subBody: "Questions? Reply to this email.",
+  },
+  "referral-congrats": {
+    subject: "You did it, {{name}} — {{referral_count}} friends joined {{waitlist}}",
+    previewText: "Your referrals are moving you up the list.",
+    header: "You're climbing the list.",
+    subHeader: "{{referral_count}} friends joined through you",
+    mainBody:
+      "Hi {{name}},\n\n{{referral_count}} people have joined {{waitlist}} through your link — you're now #{{position}} with {{points}} points.\n\nKeep sharing your personal link: {{referral_link}}",
+    subBody: "Every referral moves you closer to launch-day rewards.",
+  },
+  "launch-invite": {
+    subject: "You're in, {{name}} — {{waitlist}} is live",
+    previewText: "Claim your spot: your personal invite is inside.",
+    header: "We're live.",
+    subHeader: "Your invite to {{waitlist}}",
+    mainBody:
+      "Hi {{name}},\n\n{{waitlist}} is officially live and you're #{{position}} in line with {{points}} points.\n\nGet started here: {{waitlist_url}}\n\nYour personal link still works for late friends: {{referral_link}}",
     subBody: "Questions? Reply to this email.",
   },
 };
@@ -97,13 +132,15 @@ export async function getOrCreateTemplates(waitListId) {
   return {
     signup: normalize(result.signup),
     offboarding: normalize(result.offboarding),
+    "referral-congrats": normalize(result["referral-congrats"]),
+    "launch-invite": normalize(result["launch-invite"]),
   };
 }
 
 function normalize(record) {
   return {
     id: record.id,
-    type: record.type === "SIGNUP" ? "signup" : "offboarding",
+    type: TYPE_KEY[record.type] || "signup",
     subject: record.subject,
     previewText: record.previewText,
     header: record.header,
@@ -212,16 +249,8 @@ export async function sendTestEmail({ waitListId, templateType, to }) {
     if (!tpl) return { success: false, message: "Template not found" };
 
     const vars = {
-      waitlist: waitList.name || "Your Project",
+      ...seedPreviewVars(waitList.name),
       waitlist_url: `https://waitlyze.falakgala.dev/forms/${waitListId}`,
-      position: "42",
-      referral_link: "https://example.com/ref/demo",
-      referral_count: "5",
-      rewards: "Early Access",
-      expiry_time: "24 hours",
-      reason: "No longer interested",
-      feedback_link: "https://example.com/feedback",
-      total_signups: "100",
     };
 
     const replaceVars = (text) =>
@@ -380,6 +409,111 @@ export async function sendTestEmail({ waitListId, templateType, to }) {
 
 function markdownToHtml(markdown) {
   return renderEmailMarkdown(markdown);
+}
+
+function validTestAddress(to) {
+  return typeof to === "string" && to.length <= 320 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to);
+}
+
+// 1-click test send for a broadcast draft: renders the saved draft with seed
+// preview data and delivers immediately (outside the outbox — tests never
+// touch real recipients or the delivery report).
+export async function sendBroadcastTestEmail({ waitListId, broadcastId, to }) {
+  if (!validTestAddress(to))
+    return { success: false, message: "Enter one valid test email address." };
+  if (!env.RESEND_API_KEY) return { success: false, message: "RESEND_API_KEY not configured" };
+  try {
+    const { user, campaign, scope } = await requireCampaign(waitListId, "sendEmail");
+    await consumePublicBudget(prisma, {
+      kind: "testEmail",
+      campaignId: campaign.workspaceId || campaign.id,
+      actorId: user.id,
+      email: to,
+    });
+    const waitList = await prisma.waitList.findFirst({
+      where: { id: waitListId, ...scope },
+      select: { name: true },
+    });
+    if (!waitList) return { success: false, message: "Waitlist not found" };
+    const broadcast = await prisma.marketingBroadcast.findFirst({
+      where: { id: broadcastId, waitListId, status: { in: ["DRAFT", "SCHEDULED"] } },
+    });
+    if (!broadcast) return { success: false, message: "Draft not found" };
+    const { interpolateVars, interpolateVarsHtml } = await import("@/lib/email/variables.mjs");
+    const vars = seedPreviewVars(waitList.name);
+    const provider = await senderForWaitlist(waitListId);
+    const { error } = await new Resend(provider.apiKey).emails.send({
+      from: provider.fromEmail,
+      to,
+      subject: `[Test] ${interpolateVars(broadcast.subject, vars)}`,
+      replyTo: provider.replyTo,
+      html: broadcast.renderedHtml
+        ? subscriberEmailHtml({
+            name: waitList.name || "Waitlist",
+            content: interpolateVarsHtml(broadcast.renderedHtml, vars),
+            previewText: interpolateVars(broadcast.previewText, vars),
+          })
+        : undefined,
+      text: broadcast.renderedText
+        ? interpolateVars(broadcast.renderedText, vars)
+        : interpolateVars(broadcast.body, vars),
+    });
+    if (error) return { success: false, message: `Resend error: ${error.name} ${error.message}` };
+    return { success: true, message: `Test sent to ${to}.` };
+  } catch (e) {
+    console.error(e);
+    return { success: false, message: "Failed to send email" };
+  }
+}
+
+// 1-click test send for an automation recipe: same seed-data rendering.
+export async function sendAutomationTestEmail({ waitListId, recipeId, to }) {
+  if (!validTestAddress(to))
+    return { success: false, message: "Enter one valid test email address." };
+  if (!env.RESEND_API_KEY) return { success: false, message: "RESEND_API_KEY not configured" };
+  try {
+    const { user, campaign, scope } = await requireCampaign(waitListId, "sendEmail");
+    await consumePublicBudget(prisma, {
+      kind: "testEmail",
+      campaignId: campaign.workspaceId || campaign.id,
+      actorId: user.id,
+      email: to,
+    });
+    const waitList = await prisma.waitList.findFirst({
+      where: { id: waitListId, ...scope },
+      select: { name: true },
+    });
+    if (!waitList) return { success: false, message: "Waitlist not found" };
+    const recipe = await prisma.automationRecipe.findFirst({
+      where: { id: recipeId, waitListId },
+      include: { versions: { orderBy: { version: "desc" }, take: 1 } },
+    });
+    if (!recipe?.versions[0]) return { success: false, message: "Recipe not found" };
+    const config = recipe.versions[0].config;
+    const { AUTOMATION_DEFAULTS } = await import("@/lib/email/automations.mjs");
+    const { interpolateVars, interpolateVarsHtml } = await import("@/lib/email/variables.mjs");
+    const vars = seedPreviewVars(waitList.name);
+    const title = AUTOMATION_DEFAULTS[recipe.type]?.title || recipe.type;
+    const provider = await senderForWaitlist(waitListId);
+    const { error } = await new Resend(provider.apiKey).emails.send({
+      from: provider.fromEmail,
+      to,
+      subject: `[Test: ${title}] ${interpolateVars(config.subject, vars)}`,
+      replyTo: provider.replyTo,
+      html: config.renderedHtml
+        ? subscriberEmailHtml({
+            name: waitList.name || "Waitlist",
+            content: interpolateVarsHtml(config.renderedHtml, vars),
+          })
+        : undefined,
+      text: interpolateVars(config.renderedText || config.body, vars),
+    });
+    if (error) return { success: false, message: `Resend error: ${error.name} ${error.message}` };
+    return { success: true, message: `Test sent to ${to}.` };
+  } catch (e) {
+    console.error(e);
+    return { success: false, message: "Failed to send email" };
+  }
 }
 
 async function renderTemplate({ waitListId, enumType, varsOverride = {} }) {
@@ -680,7 +814,7 @@ const broadcastInput = (input) => {
 
 export async function listBroadcasts(waitListId) {
   const { campaign } = await requireCampaign(waitListId, "sendEmail");
-  const [broadcasts, counts] = await Promise.all([
+  const [broadcasts, counts, reasons] = await Promise.all([
     prisma.marketingBroadcast.findMany({
       where: { waitListId: campaign.id },
       orderBy: { updatedAt: "desc" },
@@ -694,6 +828,8 @@ export async function listBroadcasts(waitListId) {
         renderedHtml: true,
         renderedText: true,
         status: true,
+        segment: true,
+        scheduledAt: true,
         recipientCount: true,
         createdAt: true,
         updatedAt: true,
@@ -705,15 +841,34 @@ export async function listBroadcasts(waitListId) {
       FROM "broadcast_recipients" r JOIN "marketing_broadcasts" b ON b."id" = r."broadcastId"
       WHERE b."waitListId" = ${campaign.id}
       GROUP BY r."broadcastId", r."status"`,
+    prisma.$queryRaw`
+      SELECT r."broadcastId", r."lastErrorCode" AS code, COUNT(*)::int AS count
+      FROM "broadcast_recipients" r JOIN "marketing_broadcasts" b ON b."id" = r."broadcastId"
+      WHERE b."waitListId" = ${campaign.id}
+        AND r."status" IN ('SKIPPED', 'FAILED')
+      GROUP BY r."broadcastId", r."lastErrorCode"`,
   ]);
   const metrics = new Map();
   for (const row of counts) metrics.set(`${row.broadcastId}:${row.status}`, row.count);
+  // Delivery-report breakdown: bounced (provider failures), unsubscribed,
+  // spam/suppression-list hits, and other skips — reconciled from the same
+  // recipient rows the dispatcher wrote, so the report always adds up.
+  const skippedByCode = new Map();
+  for (const row of reasons)
+    skippedByCode.set(`${row.broadcastId}:${row.code || "OTHER"}`, row.count);
+  const sumCodes = (id, codes) =>
+    codes.reduce((n, code) => n + (skippedByCode.get(`${id}:${code}`) || 0), 0);
   return broadcasts.map((broadcast) => ({
     ...broadcast,
     deliveredCount: metrics.get(`${broadcast.id}:DELIVERED`) || 0,
     failedCount: metrics.get(`${broadcast.id}:FAILED`) || 0,
     skippedCount: metrics.get(`${broadcast.id}:SKIPPED`) || 0,
     canceledCount: metrics.get(`${broadcast.id}:CANCELED`) || 0,
+    unsubscribedCount: sumCodes(broadcast.id, ["RECIPIENT_UNSUBSCRIBED"]),
+    suppressedCount: sumCodes(broadcast.id, ["RECIPIENT_SUPPRESSED"]),
+    skippedOtherCount:
+      (metrics.get(`${broadcast.id}:SKIPPED`) || 0) -
+      sumCodes(broadcast.id, ["RECIPIENT_UNSUBSCRIBED", "RECIPIENT_SUPPRESSED"]),
   }));
 }
 
@@ -763,116 +918,50 @@ export async function saveBroadcastDraft({ waitListId, broadcastId, data }) {
   return { success: true, message: "Draft saved." };
 }
 
-export async function getBroadcastRecipients(waitListId) {
+export async function getBroadcastRecipients(waitListId, segment = "ALL") {
   const { campaign } = await requireCampaign(waitListId, "sendEmail");
-  const [countRows, samples] = await Promise.all([
-    prisma.$queryRaw`
-      SELECT COUNT(*)::int AS count
-      FROM "sign_ups" s
-      JOIN "wait_lists" w ON w."id" = s."waitListId"
-      WHERE s."waitListId" = ${campaign.id}
-        AND w."status"::text = 'PUBLISHED'
-        AND s."verifiedAt" IS NOT NULL
-        AND s."marketingConsentAt" IS NOT NULL
-        AND s."marketingUnsubscribedAt" IS NULL
-        AND COALESCE(s."emailNormalized", lower(btrim(s."email"))) <> ''
-        AND NOT EXISTS (
-          SELECT 1 FROM "email_suppressions" suppression
-          WHERE suppression."workspaceId" = w."workspaceId"
-            AND suppression."emailNormalized" = COALESCE(s."emailNormalized", lower(btrim(s."email")))
-        )`,
-    prisma.$queryRaw`
-      SELECT s."email"
-      FROM "sign_ups" s
-      JOIN "wait_lists" w ON w."id" = s."waitListId"
-      WHERE s."waitListId" = ${campaign.id}
-        AND w."status"::text = 'PUBLISHED'
-        AND s."verifiedAt" IS NOT NULL
-        AND s."marketingConsentAt" IS NOT NULL
-        AND s."marketingUnsubscribedAt" IS NULL
-        AND COALESCE(s."emailNormalized", lower(btrim(s."email"))) <> ''
-        AND NOT EXISTS (
-          SELECT 1 FROM "email_suppressions" suppression
-          WHERE suppression."workspaceId" = w."workspaceId"
-            AND suppression."emailNormalized" = COALESCE(s."emailNormalized", lower(btrim(s."email")))
-        )
-      ORDER BY s."createdAt" ASC, s."id" ASC
-      LIMIT 5`,
+  const seg = normalizeSegment(segment);
+  const [count, rows] = await Promise.all([
+    countEligibleRecipients(prisma, campaign.id, seg),
+    sampleEligibleEmails(prisma, campaign.id, seg, 5),
   ]);
   return {
-    count: countRows[0]?.count ?? 0,
-    samples: samples.map(({ email }) => {
-      const [local, domain] = email.split("@");
-      return `${local.slice(0, 1)}•••@${domain || ""}`;
+    count,
+    segment: seg,
+    samples: rows.map(({ email }) => {
+      const [local, domain] = String(email).split("@");
+      return `${(local || "").slice(0, 1)}•••@${domain || ""}`;
     }),
   };
 }
 
-export async function queueBroadcast({ waitListId, broadcastId, expectedRecipientCount }) {
+export async function listBroadcastSegments() {
+  return Object.entries(BROADCAST_SEGMENTS).map(([key, meta]) => ({ key, ...meta }));
+}
+
+export async function queueBroadcast({ waitListId, broadcastId, expectedRecipientCount, segment }) {
   const { campaign, user } = await requireCampaign(waitListId, "sendEmail");
   if (!Number.isInteger(expectedRecipientCount) || expectedRecipientCount < 0)
     return { success: false, message: "Refresh the recipient preview before sending." };
   if (!env.OUTBOX_DISPATCH_SECRET || !env.RESEND_API_KEY)
     return { success: false, message: "Email delivery is not configured yet." };
+  const seg = normalizeSegment(segment);
   try {
-    const count = await prisma.$transaction(async (tx) => {
-      const [broadcast] = await tx.$queryRaw`
-        SELECT "id", "status"::text AS status, "subject", "body"
-        FROM "marketing_broadcasts"
-        WHERE "id" = ${broadcastId} AND "waitListId" = ${campaign.id}
-        FOR UPDATE`;
-      if (!broadcast || broadcast.status !== "DRAFT")
-        throw new Error("This broadcast is no longer a draft.");
-      if (!broadcast.subject.trim() || !broadcast.body.trim())
-        throw new Error("Add a subject and message before sending.");
-
-      const [preview] = await tx.$queryRaw`
-        SELECT COUNT(*)::int AS count
-        FROM "sign_ups" s JOIN "wait_lists" w ON w."id" = s."waitListId"
-        WHERE s."waitListId" = ${campaign.id} AND w."status"::text = 'PUBLISHED'
-          AND s."verifiedAt" IS NOT NULL AND s."marketingConsentAt" IS NOT NULL
-          AND s."marketingUnsubscribedAt" IS NULL
-          AND COALESCE(s."emailNormalized", lower(btrim(s."email"))) <> ''
-          AND NOT EXISTS (SELECT 1 FROM "email_suppressions" suppression
-            WHERE suppression."workspaceId" = w."workspaceId"
-              AND suppression."emailNormalized" = COALESCE(s."emailNormalized", lower(btrim(s."email"))))`;
-      if (preview.count !== expectedRecipientCount)
-        throw new Error("The recipient list changed. Refresh the preview and confirm again.");
-      if (!preview.count)
-        throw new Error("There are no verified subscribers who opted in to updates.");
-
-      const [queued] = await tx.$queryRaw`
-        WITH recipients AS (
-          INSERT INTO "broadcast_recipients" ("id", "broadcastId", "signUpId", "email", "emailNormalized", "status", "createdAt")
-          SELECT gen_random_uuid()::text, ${broadcastId}, s."id", s."email",
-            COALESCE(s."emailNormalized", lower(btrim(s."email"))), 'PENDING', NOW()
-          FROM "sign_ups" s JOIN "wait_lists" w ON w."id" = s."waitListId"
-          WHERE s."waitListId" = ${campaign.id} AND w."status"::text = 'PUBLISHED'
-            AND s."verifiedAt" IS NOT NULL AND s."marketingConsentAt" IS NOT NULL
-            AND s."marketingUnsubscribedAt" IS NULL
-            AND COALESCE(s."emailNormalized", lower(btrim(s."email"))) <> ''
-            AND NOT EXISTS (SELECT 1 FROM "email_suppressions" suppression
-              WHERE suppression."workspaceId" = w."workspaceId"
-                AND suppression."emailNormalized" = COALESCE(s."emailNormalized", lower(btrim(s."email"))))
-          RETURNING "id", "broadcastId"
-        ), events AS (
-          INSERT INTO "outbox_events" ("id", "eventKey", "type", "payload", "status", "attempts", "availableAt", "createdAt", "waitListId")
-          SELECT gen_random_uuid()::text, 'broadcast:' || recipients."broadcastId" || ':' || recipients."id",
-            'BROADCAST_EMAIL_REQUESTED', jsonb_build_object('broadcastId', recipients."broadcastId", 'recipientId', recipients."id"),
-            'PENDING', 0, NOW(), NOW(), ${campaign.id}
-          FROM recipients
-          RETURNING "id"
-        ) SELECT COUNT(*)::int AS count FROM recipients`;
-      if (queued.count !== expectedRecipientCount)
-        throw new Error(
-          "The recipient list changed while queueing. Nothing was sent; refresh the preview.",
-        );
-      await tx.marketingBroadcast.update({
-        where: { id: broadcastId },
-        data: { status: "SENDING", recipientCount: queued.count },
-      });
-      return queued.count;
-    });
+    // The recipient fan-out (bulk insert, variable snapshot, per-recipient
+    // updates) shares one connection inside this interactive transaction, so
+    // for large segments it legitimately takes longer than Prisma's default
+    // 5 s; allow 60 s before rolling back.
+    const count = await prisma.$transaction(
+      async (tx) =>
+        enqueueBroadcast(tx, {
+          waitListId: campaign.id,
+          broadcastId,
+          segment: seg,
+          expectedRecipientCount,
+          exact: true,
+        }),
+      { timeout: 60_000, maxWait: 10_000 },
+    );
     revalidatePath(broadcastPath(waitListId));
     await recordWaitlistAuditEvent(prisma, {
       userId: user.id,
@@ -880,7 +969,7 @@ export async function queueBroadcast({ waitListId, broadcastId, expectedRecipien
       action: AUDIT_ACTIONS.BROADCAST_SENT,
       resourceType: "broadcast",
       resourceId: broadcastId,
-      detail: `Queued for ${count} opted-in subscriber${count === 1 ? "" : "s"}`,
+      detail: `Queued for ${count} opted-in subscriber${count === 1 ? "" : "s"} (${seg})`,
     });
     return {
       success: true,
@@ -891,13 +980,84 @@ export async function queueBroadcast({ waitListId, broadcastId, expectedRecipien
   }
 }
 
+export async function scheduleBroadcast({
+  waitListId,
+  broadcastId,
+  segment,
+  scheduledAt,
+  expectedRecipientCount,
+}) {
+  // Authenticate before checking delivery configuration so this early return
+  // cannot reveal server setup to an unauthenticated caller.
+  const { campaign, user } = await requireCampaign(waitListId, "sendEmail");
+  if (!env.OUTBOX_DISPATCH_SECRET || !env.RESEND_API_KEY)
+    return { success: false, message: "Email delivery is not configured yet." };
+  const seg = normalizeSegment(segment);
+  // Contract with the client: scheduledAt arrives as an explicit UTC ISO
+  // string (the picker wall clock is converted in the founder's browser
+  // zone), so parsing here is zone-unambiguous by construction.
+  const when = new Date(scheduledAt);
+  if (!Number.isFinite(when.getTime()) || when.getTime() <= Date.now())
+    return { success: false, message: "Pick a future date and time to schedule." };
+  if (when.getTime() - Date.now() > 90 * 24 * 60 * 60 * 1000)
+    return { success: false, message: "Schedule up to 90 days ahead." };
+  if (!Number.isInteger(expectedRecipientCount) || expectedRecipientCount <= 0)
+    return { success: false, message: "Refresh the recipient preview before scheduling." };
+  try {
+    const count = await prisma.$transaction(async (tx) => {
+      const [broadcast] = await tx.$queryRaw`
+        SELECT "id", "status"::text AS status, "subject", "body"
+        FROM "marketing_broadcasts"
+        WHERE "id" = ${broadcastId} AND "waitListId" = ${campaign.id}
+        FOR UPDATE`;
+      if (!broadcast || broadcast.status !== "DRAFT")
+        throw new Error("Only drafts can be scheduled.");
+      if (!String(broadcast.subject || "").trim() || !String(broadcast.body || "").trim())
+        throw new Error("Add a subject and message before scheduling.");
+      const fresh = await countEligibleRecipients(tx, campaign.id, seg);
+      if (fresh !== expectedRecipientCount)
+        throw new Error("The recipient list changed. Refresh the preview and confirm again.");
+      if (!fresh) throw new Error("There are no eligible subscribers in this segment right now.");
+      await tx.marketingBroadcast.update({
+        where: { id: broadcastId },
+        data: { status: "SCHEDULED", segment: seg, scheduledAt: when },
+      });
+      return fresh;
+    });
+    revalidatePath(broadcastPath(waitListId));
+    await recordWaitlistAuditEvent(prisma, {
+      userId: user.id,
+      waitListId: campaign.id,
+      action: AUDIT_ACTIONS.BROADCAST_SENT,
+      resourceType: "broadcast",
+      resourceId: broadcastId,
+      detail: `Scheduled for ${count} subscriber${count === 1 ? "" : "s"} (${seg})`,
+    });
+    return {
+      success: true,
+      message: `Scheduled for ${count} subscriber${count === 1 ? "" : "s"}. Eligibility is re-checked at send time.`,
+    };
+  } catch (error) {
+    return { success: false, message: error.message || "Could not schedule this broadcast." };
+  }
+}
+
 export async function cancelBroadcast({ waitListId, broadcastId }) {
   const { campaign } = await requireCampaign(waitListId, "sendEmail");
   const canceled = await prisma.$transaction(async (tx) => {
     const [broadcast] = await tx.$queryRaw`
       SELECT "id", "status"::text AS status FROM "marketing_broadcasts"
       WHERE "id" = ${broadcastId} AND "waitListId" = ${campaign.id} FOR UPDATE`;
-    if (!broadcast || broadcast.status !== "SENDING") return false;
+    if (!broadcast || (broadcast.status !== "SENDING" && broadcast.status !== "SCHEDULED"))
+      return null;
+    if (broadcast.status === "SCHEDULED") {
+      // Nothing fanned out yet — just unschedule back to a canceled draft.
+      await tx.marketingBroadcast.update({
+        where: { id: broadcastId },
+        data: { status: "CANCELED", scheduledAt: null },
+      });
+      return "SCHEDULED";
+    }
     await tx.$executeRaw`
       UPDATE "outbox_events" SET "status" = 'FAILED', "processedAt" = NOW(), "lockedAt" = NULL, "lastErrorCode" = 'BROADCAST_CANCELED'
       WHERE "type" = 'BROADCAST_EMAIL_REQUESTED' AND "payload"->>'broadcastId' = ${broadcastId} AND "status" = 'PENDING'`;
@@ -909,31 +1069,22 @@ export async function cancelBroadcast({ waitListId, broadcastId }) {
       where: { id: broadcastId },
       data: { status: "CANCELED" },
     });
-    return true;
+    return "SENDING";
   });
-  if (canceled) await notifyBroadcastSummary(prisma, broadcastId);
+  // Only SENDING fans out (unschedule does not send anything), so only that
+  // path deserves a delivery summary notification.
+  if (canceled === "SENDING") await notifyBroadcastSummary(prisma, broadcastId);
   revalidatePath(broadcastPath(waitListId));
   return {
-    success: canceled,
-    message: canceled
-      ? "Remaining queued emails were canceled."
-      : "This broadcast is no longer sending.",
+    success: Boolean(canceled),
+    message:
+      canceled === "SCHEDULED"
+        ? "Broadcast unscheduled."
+        : canceled
+          ? "Remaining queued emails were canceled."
+          : "This broadcast is no longer sending.",
   };
 }
-
-const runStatusLabel = (status) =>
-  ({
-    DRAFT: "Off",
-    ENABLED: "Enabled",
-    PAUSED: "Paused",
-    PENDING: "Scheduled",
-    PROCESSING: "Sending",
-    SENT: "Sent",
-    SKIPPED: "Skipped",
-    FAILED: "Needs attention",
-    CANCELED: "Canceled",
-    SENDING: "Sending",
-  })[status] || status;
 
 export async function listEmailRuns(waitListId) {
   const { campaign } = await requireCampaign(waitListId, "sendEmail");
@@ -967,8 +1118,10 @@ export async function listEmailRuns(waitListId) {
   const automationTitle = (type) =>
     ({
       WELCOME: "Welcome after confirmation",
+      WELCOME_FOLLOWUP: "Welcome follow-up",
       REFERRAL_REMINDER: "Referral reminder",
       REFERRAL_MILESTONE: "Referral milestone",
+      LAUNCH_COUNTDOWN: "Launch countdown",
     })[type] || type;
   const items = [
     ...runs.map((run) => ({
@@ -976,7 +1129,7 @@ export async function listEmailRuns(waitListId) {
       kind: "Automation",
       title: automationTitle(run.recipe.type),
       recipient: maskEmail(run.signUp.email),
-      status: runStatusLabel(run.status),
+      status: emailStatusLabel(run.status),
       statusCode: run.status,
       reason: (run.skipReason || run.steps.find((step) => step.lastErrorCode)?.lastErrorCode || "")
         .toLowerCase()
@@ -988,7 +1141,7 @@ export async function listEmailRuns(waitListId) {
       kind: "Broadcast",
       title: broadcast.name || broadcast.subject || "Untitled broadcast",
       recipient: `${broadcast.recipientCount} recipient${broadcast.recipientCount === 1 ? "" : "s"}`,
-      status: runStatusLabel(broadcast.status),
+      status: emailStatusLabel(broadcast.status),
       statusCode: broadcast.status,
       reason: "",
       at: (broadcast.sentAt || broadcast.updatedAt).toISOString(),

@@ -6,6 +6,7 @@ import { env } from "@/lib/env.mjs";
 import prisma from "@/lib/prisma";
 import { templateSnapshotSchema } from "@/lib/templates/catalog.mjs";
 
+import { ImpressionTracker } from "../../w/[slug]/impression-tracker";
 import { SignupForm } from "../../w/[slug]/signup-form";
 import { EmbedResizeBridge } from "./embed-resize-bridge";
 
@@ -121,6 +122,7 @@ export default async function WaitListsPreviewPage(props) {
       return (
         <>
           <EmbedResizeBridge />
+          <ImpressionTracker waitListId={id} />
           <WaitlistPageContent
             snapshot={embedSnapshot}
             name={structured.name}

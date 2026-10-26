@@ -98,6 +98,51 @@ export async function getCampaignPositions(db, waitListId) {
   return positions;
 }
 
+// Spots a hypothetical fresh signup (0 referrals, joining now at the end of
+// the list) would need to pass the signup directly above them: the current
+// last row's score plus one, or 0 when the list is empty. Powers silent-mode
+// fraud responses so fakes carry the same `spots_to_advance` a real fresh
+// signup would (no structurally-missing-keys oracle). Scoring matches
+// getCampaignPosition exactly: verified-only, review-gated, same tiebreaks.
+export async function getSpotsForNewSignup(db, waitListId) {
+  if (typeof waitListId !== "string" || !waitListId) return 0;
+  const [row] = await db.$queryRaw`
+    WITH referral_scores AS (
+      SELECT referral."referredById" AS "referrerId", COUNT(*)::bigint AS score
+      FROM "referrals" AS referral
+      INNER JOIN "sign_ups" AS referred
+        ON referred."id" = referral."signUpId"
+      INNER JOIN "sign_ups" AS referrer
+        ON referrer."id" = referral."referredById"
+       AND referrer."waitListId" = referred."waitListId"
+      INNER JOIN "wait_lists" AS campaign
+        ON campaign."id" = referred."waitListId"
+       AND campaign."showReferrals" = true
+      WHERE referred."waitListId" = ${waitListId}
+        AND referred."verifiedAt" IS NOT NULL
+        AND referrer."verifiedAt" IS NOT NULL
+        AND referral."reviewStatus" IN ('CLEAR', 'APPROVED')
+        AND referral."referredById" IS NOT NULL
+        AND referral."referredById" <> referral."signUpId"
+      GROUP BY referral."referredById"
+    ), ranked AS (
+      SELECT signup."id", COALESCE(score.score, 0)::bigint AS score,
+        ROW_NUMBER() OVER (
+          ORDER BY COALESCE(score.score, 0) DESC, signup."createdAt" ASC, signup."id" ASC
+        ) AS position
+      FROM "sign_ups" AS signup
+      LEFT JOIN referral_scores AS score ON score."referrerId" = signup."id"
+      WHERE signup."waitListId" = ${waitListId}
+    )
+    SELECT score AS last_score FROM ranked
+    ORDER BY position DESC
+    LIMIT 1
+  `;
+  if (!row || row.last_score == null) return 0;
+  const spots = Number(row.last_score) + 1;
+  return Number.isSafeInteger(spots) ? Math.max(spots, 1) : 0;
+}
+
 export async function getEligibleReferralCounts(db, waitListId, signUpIds) {
   const ids = [...new Set((signUpIds ?? []).filter((id) => typeof id === "string" && id))];
   if (!waitListId || ids.length === 0) return new Map();

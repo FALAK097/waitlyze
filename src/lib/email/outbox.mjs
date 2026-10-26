@@ -4,9 +4,11 @@ import { renderSubscriberVerification } from "../../emails/render.jsx";
 import { notifyBroadcastSummary } from "../emails/founder-notifications.mjs";
 import { dispatchAutomationStep, processAutomationTrigger } from "./automations.mjs";
 import { emailBrandFromSnapshot } from "./brand.mjs";
+import { queueDueBroadcasts } from "./broadcast-queue.mjs";
 import { interpolateEmail, legacyEmailContent, subscriberEmailHtml } from "./composer.mjs";
 import { applyKnownProviderEvents } from "./suppression.mjs";
 import { createUnsubscribeToken } from "./unsubscribe.mjs";
+import { interpolateVars, interpolateVarsHtml, resolveSubscriberVars } from "./variables.mjs";
 
 const MAX_ATTEMPTS = 6;
 const STALE_LOCK_MS = 5 * 60 * 1000;
@@ -19,6 +21,7 @@ const transient = (error) =>
   error?.statusCode === 429 ||
   error?.statusCode >= 500 ||
   (error?.statusCode === 409 && error?.code === "concurrent_idempotent_requests") ||
+  (error?.name === "application_error" && error?.statusCode === null) ||
   error?.name === "TypeError";
 const normalizeEmail = (email) =>
   String(email || "")
@@ -182,26 +185,35 @@ async function dispatchBroadcast(db, event, payload, send, now, attempt, result)
 
   const token = createUnsubscribeToken(signUp.id, waitList.id);
   const unsubscribeUrl = `${String(process.env.BETTER_AUTH_URL || "").replace(/\/$/, "")}/api/email/unsubscribe?token=${encodeURIComponent(token)}`;
+  // Per-recipient variables were snapshotted server-side at queue time
+  // (position, referral link, points). Older rows without a snapshot fall
+  // back to name + waitlist derived live from the signup.
+  const snapshot = recipient.vars && typeof recipient.vars === "object" ? recipient.vars : null;
+  const vars = snapshot
+    ? { ...snapshot, waitlist: waitList.name || snapshot.waitlist || "the waitlist" }
+    : resolveSubscriberVars({ waitlist: waitList, signup: signUp });
+  const subject = interpolateVars(broadcast.subject, vars);
+  const previewText = interpolateVars(broadcast.previewText, vars);
   try {
     const response = await send({
       to: recipient.email,
-      subject: broadcast.subject,
+      subject,
       html: broadcast.renderedHtml
         ? subscriberEmailHtml({
             name: waitList.name || "Waitlist",
-            content: broadcast.renderedHtml,
-            previewText: broadcast.previewText,
+            content: interpolateVarsHtml(broadcast.renderedHtml, vars),
+            previewText,
             unsubscribeUrl,
             brand: emailBrandFromSnapshot(waitList.templateSnapshot),
           })
         : broadcastHtml({
             campaignName: waitList.name || "Waitlist",
-            previewText: broadcast.previewText,
-            body: broadcast.body,
+            previewText,
+            body: interpolateVars(broadcast.body, vars),
             unsubscribeUrl,
           }),
       text: broadcast.renderedText
-        ? `${broadcast.renderedText.trim()}\n\nUnsubscribe: ${unsubscribeUrl}`
+        ? `${interpolateVars(broadcast.renderedText, vars).trim()}\n\nUnsubscribe: ${unsubscribeUrl}`
         : undefined,
       headers: {
         "List-Unsubscribe": `<${unsubscribeUrl}>`,
@@ -478,11 +490,100 @@ function safePayload(payload) {
   return payload;
 }
 
+// Founder notice (us → our users) via the platform sender. No suppression or
+// eligibility checks: these recipients are workspace owners, not subscribers.
+// Retries mirror the subscriber paths; a missing platform sender requeues so
+// a misconfigured inline caller cannot strand a notice.
+async function dispatchFounderNotice(db, event, sendPlatform, now, attempt, result) {
+  const raw = event.payload && typeof event.payload === "object" ? event.payload : null;
+  const to = typeof raw?.to === "string" ? raw.to : "";
+  const subject = typeof raw?.subject === "string" ? raw.subject : "";
+  const html = typeof raw?.html === "string" ? raw.html : "";
+  const text = typeof raw?.text === "string" && raw.text ? raw.text : undefined;
+  const idempotencyKey = typeof raw?.idempotencyKey === "string" ? raw.idempotencyKey : undefined;
+  async function fail(code, counted) {
+    await db.outboxEvent.update({
+      where: { id: event.id },
+      data: {
+        status: "FAILED",
+        processedAt: now,
+        lockedAt: null,
+        lastErrorCode: code,
+      },
+    });
+    result[counted]++;
+  }
+  if (!to || !subject || !html) {
+    await fail("INVALID_FOUNDER_NOTICE", "failed");
+    return;
+  }
+  if (typeof sendPlatform !== "function") {
+    await db.outboxEvent.update({
+      where: { id: event.id },
+      data: {
+        status: "PENDING",
+        availableAt: new Date(now.getTime() + 60 * 1000),
+        lockedAt: null,
+        lastErrorCode: "PLATFORM_SENDER_UNAVAILABLE",
+      },
+    });
+    result.retried++;
+    return;
+  }
+  try {
+    const response = await sendPlatform({ to, subject, html, text, idempotencyKey });
+    if (response?.error) throw response.error;
+    const providerMessageId = response?.data?.id || response?.id;
+    await db.outboxEvent.update({
+      where: { id: event.id },
+      data: {
+        status: "DELIVERED",
+        ...(providerMessageId ? { providerMessageId } : {}),
+        processedAt: now,
+        lockedAt: null,
+        lastErrorCode: null,
+      },
+    });
+    result.accepted++;
+  } catch (error) {
+    const code =
+      String(error?.code || error?.name || "PROVIDER_ERROR")
+        .replace(/[^A-Za-z0-9_.-]/g, "")
+        .slice(0, 80) || "PROVIDER_ERROR";
+    const canRetry = transient(error) && attempt < MAX_ATTEMPTS;
+    const delay = Math.min(RETRY_BASE_MS * 2 ** Math.min(attempt - 1, 6), 60 * 60 * 1000);
+    await db.outboxEvent.update({
+      where: { id: event.id },
+      data: {
+        status: canRetry ? "PENDING" : "FAILED",
+        availableAt: canRetry ? new Date(now.getTime() + delay) : now,
+        processedAt: canRetry ? null : now,
+        lockedAt: null,
+        lastErrorCode: code,
+      },
+    });
+    if (canRetry) result.retried++;
+    else result.failed++;
+  }
+}
+
 export async function dispatchPendingOutboxEvents(
   db,
-  { send, now = new Date(), batchSize = 20, waitListId, eventKeys } = {},
+  { send, sendPlatform, now = new Date(), batchSize = 20, waitListId, eventKeys } = {},
 ) {
   if (typeof send !== "function") throw new TypeError("A provider send function is required.");
+  // Fan out due scheduled broadcasts before claiming send events, so a
+  // scheduled send starts within one dispatcher tick of its scheduled time.
+  // Skipped for targeted dispatches (eventKeys): those run inline in
+  // user-facing requests (signup verification, offboard goodbyes) and must
+  // never absorb a broadcast fan-out in their latency path.
+  if (!eventKeys) {
+    try {
+      await queueDueBroadcasts(db, now);
+    } catch (error) {
+      console.error("Scheduled broadcast sweep failed:", error?.message || "unknown error");
+    }
+  }
   const staleBefore = new Date(now.getTime() - STALE_LOCK_MS);
   const events = await db.outboxEvent.findMany({
     where: {
@@ -506,6 +607,10 @@ export async function dispatchPendingOutboxEvents(
     if (claimed.count !== 1) continue;
     const payload = safePayload(event.payload);
     const attempt = event.attempts + 1;
+    if (event.type === "FOUNDER_NOTICE_REQUESTED") {
+      await dispatchFounderNotice(db, event, sendPlatform, now, attempt, result);
+      continue;
+    }
     if (event.type === "BROADCAST_EMAIL_REQUESTED") {
       const broadcastPayload =
         event.payload && typeof event.payload === "object" ? event.payload : null;

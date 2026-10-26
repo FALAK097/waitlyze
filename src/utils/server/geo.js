@@ -1,6 +1,17 @@
 import ct from "countries-and-timezones";
 import geoip from "geoip-lite";
 
+// Vercel URL-encodes the city/region edge headers. Malformed input keeps its
+// raw value so a bad header never blanks stored geo data.
+const decodeHeader = (value) => {
+  if (!value) return value;
+  try {
+    return decodeURIComponent(value.replace(/\+/g, " "));
+  } catch {
+    return value;
+  }
+};
+
 export const getIpAddress = (request) => {
   const forwarded = request.headers.get("x-forwarded-for");
   if (forwarded) {
@@ -28,8 +39,10 @@ export const getGeoInfo = (request) => {
 
     const headers = request.headers;
     const country = headers.get("x-vercel-ip-country");
-    const city = headers.get("x-vercel-ip-city");
-    const region = headers.get("x-vercel-ip-country-region");
+    // Vercel URL-encodes the city header ("San%20Francisco") — decode it so
+    // stored cities stay human-readable. Fail-open: keep the raw value.
+    const city = decodeHeader(headers.get("x-vercel-ip-city"));
+    const region = decodeHeader(headers.get("x-vercel-ip-country-region"));
     const latitude = headers.get("x-vercel-ip-latitude");
     const longitude = headers.get("x-vercel-ip-longitude");
     const timezone = headers.get("x-vercel-ip-timezone");

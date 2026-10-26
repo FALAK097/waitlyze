@@ -2,8 +2,10 @@ import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 
 import { renderWelcomeEmail } from "@/emails/render.jsx";
+import { welcomeText } from "@/emails/text.mjs";
 
-import { sendPlatformEmail } from "./emails/platform.mjs";
+import { dispatchFounderNoticesNow } from "./email/dispatch-now.mjs";
+import { enqueueFounderNotice } from "./emails/founder-notifications.mjs";
 import { env } from "./env.mjs";
 import prisma from "./prisma";
 
@@ -41,18 +43,23 @@ export const auth = betterAuth({
   databaseHooks: {
     user: {
       create: {
-        // Best-effort product welcome email. A failure must never block or
-        // roll back account creation.
+        // Best-effort product welcome email, queued through the outbox so a
+        // provider blip delays it instead of dropping it. A failure must never
+        // block or roll back account creation.
         after: async (user) => {
           try {
+            if (!user?.email) return;
             const url = new URL("/waitlists", env.BETTER_AUTH_URL).toString();
-            const html = await renderWelcomeEmail({ name: user.name, url });
-            await sendPlatformEmail({
+            const props = { name: user.name, url };
+            const eventKey = await enqueueFounderNotice(prisma, {
+              kind: "welcome",
               to: user.email,
               subject: "Welcome to Waitlyze",
-              html,
+              html: await renderWelcomeEmail(props),
+              text: welcomeText(props),
               idempotencyKey: `welcome-${user.id}`,
             });
+            if (eventKey) await dispatchFounderNoticesNow([eventKey]);
           } catch (error) {
             console.error("Welcome email failed", error?.name || error?.message || "unknown error");
           }

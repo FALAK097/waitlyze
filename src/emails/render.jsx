@@ -4,6 +4,7 @@ import { BroadcastSummaryEmail } from "./templates/broadcast-summary";
 import { FeedbackEmail } from "./templates/feedback";
 import { SignupMilestoneEmail } from "./templates/signup-milestone";
 import { SubscriberVerificationEmail } from "./templates/subscriber-verification";
+import { WaitlistPublishedEmail } from "./templates/waitlist-published";
 import { WelcomeEmail } from "./templates/welcome";
 import { WorkspaceInvitationEmail } from "./templates/workspace-invitation";
 
@@ -69,4 +70,15 @@ export async function renderBroadcastSummary({
 /** Renders a feedback notification email for the Waitlyze team inbox. */
 export async function renderFeedbackEmail(props) {
   return render(<FeedbackEmail {...props} />);
+}
+
+/** Renders an owner notice when a waitlist is first published. */
+export async function renderWaitlistPublished({ waitlistName, pageUrl, dashboardUrl }) {
+  return render(
+    <WaitlistPublishedEmail
+      waitlistName={waitlistName}
+      pageUrl={pageUrl}
+      dashboardUrl={dashboardUrl}
+    />,
+  );
 }

@@ -25,6 +25,11 @@ const policies = {
   signup: { global: [5000, DAY], campaign: [1000, DAY], client: [20, HOUR], recipient: [3, DAY] },
   impression: { global: [20000, HOUR], campaign: [5000, HOUR], client: [120, HOUR] },
   share: { global: [10000, HOUR], campaign: [2000, HOUR], client: [60, HOUR] },
+  leaderboard: { global: [10000, HOUR], campaign: [2000, HOUR], client: [60, HOUR] },
+  // Unauthenticated embed widgets (leaderboard + counter). Polled by third-
+  // party pages, so the per-client budget is roomier than interactive kinds;
+  // responses are also short-cacheable (s-maxage) to absorb embed traffic.
+  widget: { global: [20000, HOUR], campaign: [5000, HOUR], client: [240, HOUR] },
   welcome: { global: [1000, DAY], campaign: [250, DAY], client: [10, HOUR], recipient: [1, DAY] },
   testEmail: {
     global: [1000, DAY],
@@ -40,9 +45,24 @@ const policies = {
     recipient: [3, DAY],
     authenticated: true,
   },
+  // Authenticated Slack/Discord channel tests (POST .../notifications/[channel]).
+  // Same budgets as testEmail, minus the email recipient (chat tests post to a
+  // saved webhook, not an address).
+  chatTest: {
+    global: [1000, DAY],
+    campaign: [100, DAY],
+    client: [20, HOUR],
+    authenticated: true,
+  },
   // Authenticated API-key status lookups (GET /api/waitlist). Separate from
   // signup intake so polling a position never consumes the signup budget.
   status: { global: [20000, HOUR], campaign: [5000, HOUR], client: [120, HOUR] },
+  // Self-reported social-follow claims (POST /api/v1/follows). Mirrors the
+  // share budget: cheap, client-bucketed, safe to expose publicly.
+  follow: { global: [10000, HOUR], campaign: [2000, HOUR], client: [60, HOUR] },
+  // Founder-authenticated custom point awards (POST /api/waitlist/points).
+  // Separate from signup intake so fulfillment traffic never starves joins.
+  points: { global: [20000, HOUR], campaign: [5000, HOUR], client: [120, HOUR] },
 };
 
 /** Atomic PostgreSQL counters shared by all instances; failure never permits a send. */

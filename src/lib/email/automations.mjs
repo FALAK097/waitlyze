@@ -1,7 +1,9 @@
+import { getCampaignPosition } from "../campaigns/referral-position.mjs";
 import { emailBrandFromSnapshot } from "./brand.mjs";
 import { interpolateEmail, subscriberEmailHtml, validateComposerContent } from "./composer.mjs";
 import { applyKnownProviderEvents } from "./suppression.mjs";
 import { createUnsubscribeToken } from "./unsubscribe.mjs";
+import { interpolateVars, resolveSubscriberVars } from "./variables.mjs";
 
 const EMAIL_STEP = "send_email";
 
@@ -30,6 +32,22 @@ export const AUTOMATION_DEFAULTS = {
     milestoneCount: 3,
     subject: "You helped {{waitlist}} grow",
     body: "You’ve brought {{referral_count}} people to {{waitlist}}. Thank you for sharing. Your personal link: {{referral_link}}",
+  },
+  WELCOME_FOLLOWUP: {
+    title: "Welcome follow-up",
+    description: "Second note in the welcome series for confirmed subscribers who opted in.",
+    trigger: "SIGNUP_VERIFIED",
+    delayMinutes: 4320,
+    subject: "A quick tour of {{waitlist}}, {{name}}",
+    body: "Hi {{name}}, you’re #{{position}} on {{waitlist}} with {{points}} points. Your personal link is {{referral_link}} — every friend who joins moves you up.",
+  },
+  LAUNCH_COUNTDOWN: {
+    title: "Launch countdown",
+    description: "Build anticipation in the final days before launch.",
+    trigger: "SIGNUP_VERIFIED",
+    delayMinutes: 10080,
+    subject: "{{waitlist}} launches soon — you’re #{{position}}",
+    body: "Hi {{name}}, launch day is close and you’re holding #{{position}} on {{waitlist}} with {{points}} points. Share {{referral_link}} to climb higher before we open the doors.",
   },
 };
 
@@ -174,7 +192,7 @@ export async function processAutomationTrigger(db, event, now = new Date()) {
     const enabled = new Map(recipes.map((recipe) => [recipe.type, recipe.id]));
 
     if (signup.marketingConsentAt && !signup.marketingUnsubscribedAt) {
-      for (const type of ["WELCOME", "REFERRAL_REMINDER"]) {
+      for (const type of ["WELCOME", "WELCOME_FOLLOWUP", "REFERRAL_REMINDER", "LAUNCH_COUNTDOWN"]) {
         const recipeId = enabled.get(type);
         const current = recipeId ? await getEnabledRecipeVersion(tx, recipeId, type) : null;
         if (!current) continue;
@@ -266,10 +284,7 @@ function escapeHtml(value) {
 }
 
 function fillCopy(value, vars) {
-  return String(value).replace(
-    /\{\{(waitlist|referral_count|referral_link)\}\}/g,
-    (_, key) => vars[key] ?? "",
-  );
+  return interpolateVars(value, vars);
 }
 
 function automationHtml({ waitListName, body, unsubscribeUrl }) {
@@ -420,14 +435,28 @@ export async function dispatchAutomationStep(db, event, payload, send, now, atte
   const unsubscribeToken = createUnsubscribeToken(signUp.id, waitList.id);
   const baseUrl = String(process.env.BETTER_AUTH_URL || "").replace(/\/$/, "");
   const unsubscribeUrl = `${baseUrl}/api/email/unsubscribe?token=${encodeURIComponent(unsubscribeToken)}`;
-  const vars = {
-    waitlist: waitList.name || "the waitlist",
-    referral_count: String(referralCount),
-    referral_link:
-      waitList.publicSlug && signUp.referralCode
-        ? `${baseUrl}/w/${encodeURIComponent(waitList.publicSlug)}?r=${encodeURIComponent(signUp.referralCode)}`
-        : "",
-  };
+  // Position and referral-link vars are resolved per subscriber at send time
+  // (server-side) so every automation carries personal data with fallbacks.
+  const position =
+    type === "REFERRAL_MILESTONE" || type === "WELCOME_FOLLOWUP" || type === "LAUNCH_COUNTDOWN"
+      ? await getCampaignPosition(db, waitList.id, signUp.id)
+      : null;
+  if (type !== "REFERRAL_REMINDER" && type !== "REFERRAL_MILESTONE") {
+    referralCount = await db.referral.count({
+      where: {
+        referredById: signUp.id,
+        reviewStatus: { in: ELIGIBLE_REFERRAL_STATUSES },
+        signUp: { is: { waitListId: waitList.id, verifiedAt: { not: null } } },
+      },
+    });
+  }
+  const vars = resolveSubscriberVars({
+    waitlist: waitList,
+    signup: signUp,
+    position,
+    referralCount,
+  });
+
   try {
     const response = await send({
       to: signUp.email,

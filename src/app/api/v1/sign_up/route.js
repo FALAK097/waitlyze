@@ -2,10 +2,16 @@ import { NextResponse } from "next/server";
 
 import { getPublishedFormConfig, pickCustomFields } from "@/lib/campaigns/form-rules.mjs";
 import { getCampaignPosition } from "@/lib/campaigns/referral-position.mjs";
-import { DuplicateSignupError, InvalidCampaignError } from "@/lib/campaigns/signups.mjs";
+import {
+  DuplicateSignupError,
+  FraudLimitError,
+  InvalidCampaignError,
+} from "@/lib/campaigns/signups.mjs";
 import { TurnstileVerificationError } from "@/lib/campaigns/turnstile.mjs";
 import { dispatchVerificationNow } from "@/lib/email/dispatch-now.mjs";
+import { fingerprintSignupDevice } from "@/lib/fraud/gates.mjs";
 import prisma from "@/lib/prisma";
+import { summarizeSignupRewards } from "@/lib/referrals/rewards.mjs";
 import { consumePublicBudget, PublicRateLimitError } from "@/lib/security/public-rate-limit.mjs";
 import { createSignUp } from "@/services/sign-up";
 import { pickAttribution } from "@/utils/server/attribution.mjs";
@@ -27,6 +33,19 @@ const legacySignupResponse = (signUp, { includeReferralCode = false } = {}) => {
     referralCount: Array.isArray(signUp.referrals) ? signUp.referrals.length : 0,
   };
   if (includeReferralCode) response.referralCode = signUp.referralCode;
+  // Rewards progress rides along for the cockpit ("X more to unlock").
+  // displayRank applies the founder's position inflation; rank stays raw.
+  const summary = signUp.rewardSummary;
+  if (summary && typeof summary === "object") {
+    response.points = summary.points ?? 0;
+    response.displayRank = summary.displayPosition ?? signUp.rank ?? null;
+    response.nextReward = summary.nextReward ?? null;
+    response.unlockedRewards = summary.unlockedRewards ?? [];
+    response.spotsToAdvance = summary.spotsToAdvance ?? 0;
+    response.hideCounts = summary.hideCounts === true;
+    response.showPoints = summary.showPoints !== false;
+    response.showProgress = summary.showProgress !== false;
+  }
   // Server-vetted post-signup redirect. Only present when the founder
   // configured one that passes the allowlist — the browser navigates here and
   // nowhere else, so this can never become an open redirect.
@@ -43,16 +62,19 @@ export const GET = async (req) => {
 
   const signUp = await prisma.signUp.findUnique({
     where: { id: signUpId, waitList: { status: "PUBLISHED" } },
-    select: { id: true, waitListId: true },
+    select: { id: true, waitListId: true, points: true },
   });
 
   if (!signUp) {
     return NextResponse.json({ message: "Sign up not found" }, { status: 404 });
   }
 
-  const rank = await getCampaignPosition(prisma, signUp.waitListId, signUp.id);
+  const [rank, rewardSummary] = await Promise.all([
+    getCampaignPosition(prisma, signUp.waitListId, signUp.id),
+    summarizeSignupRewards(prisma, signUp.waitListId, signUp),
+  ]);
   return NextResponse.json(
-    { signUp: { ...signUp, rank } },
+    { signUp: { ...signUp, rank, rewardSummary } },
     { headers: { "Cache-Control": "private, no-store" } },
   );
 };
@@ -127,6 +149,11 @@ export const POST = async (req) => {
       signupProtection: turnstileVerified ? "turnstile" : "none",
       device,
       deviceType,
+      deviceFingerprint: fingerprintSignupDevice({
+        uniqueUserId: hypeSession,
+        userAgent: req.headers.get("user-agent"),
+        device,
+      }),
       waitListId: body.waitListId,
       ipAddress: ip,
       impressionId: impression?.id,
@@ -164,6 +191,15 @@ export const POST = async (req) => {
         { message: error.message, error: error.message },
         { status: error.status, headers: { "Retry-After": error.status === 429 ? "3600" : "60" } },
       );
+    // Fraud IP-velocity gate: explicit 429 (fail-closed on clear abuse).
+    // Fingerprint-velocity goes silent instead — the success shape above —
+    // so suspected bots get no tuning signal.
+    if (error instanceof FraudLimitError) {
+      return NextResponse.json(
+        { message: error.message, error: error.message },
+        { status: 429, headers: { "Retry-After": String(error.retryAfterSeconds ?? 3600) } },
+      );
+    }
     if (error instanceof DuplicateSignupError) {
       // Race path: the row committed between the pre-DB duplicate check and
       // the insert. Resolve like the validator does — position + link, 200.

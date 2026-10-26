@@ -33,6 +33,10 @@ import { validateSignupEmail } from "@/utils/server/email-validation.mjs";
 // signup's own browser (uniqueUserId equal) — otherwise the response is
 // position-only, so one browser can't harvest another signup's referral link.
 export const duplicateSignupResponse = async (waitListId, email, browserId = "") => {
+  // Canonical lookup: Gmail dots/plus-tags map to one identity (see
+  // normalize-email.mjs). No include/select narrowing: findSignupByEmail
+  // forwards its fourth arg to Prisma `include` (relations only), and we
+  // need the scalar uniqueUserId to let idempotent retries through.
   const existing =
     (await findSignupByEmail(prisma, waitListId, email, {
       referrals: true,

@@ -118,6 +118,13 @@ curl --request POST 'https://waitlyze.falakgala.dev/api/waitlist' \
   "data": {
     "rank": 9,
     "position": 9,
+    "display_position": 9,
+    "points": 50,
+    "referral_count": 0,
+    "next_reward": { "referrals": 3, "reward": "Beta access", "remaining": 3 },
+    "unlocked_rewards": [],
+    "spots_to_advance": 2,
+    "counts_hidden": false,
     "referral_code": "7f3a…",
     "referral_link": "https://waitlyze.falakgala.dev/w/your-slug?r=7f3a…",
     "verified": false
@@ -126,6 +133,8 @@ curl --request POST 'https://waitlyze.falakgala.dev/api/waitlist' \
 ```
 
 `position` is the canonical queue position (`rank` is its legacy alias). `referral_code` is this signup's personal code and `referral_link` is the ready-to-share URL — render them in your confirmation UI when [referral sharing](/docs/referrals) is on. Both are `null`/`""` when sharing is disabled or the waitlist has no public slug. New signups start `verified: false` until they click the 24-hour confirmation link — except campaigns with verification turned off, which return `verified: true` immediately.
+
+Rewards progress rides along in the same payload: `points` is the signup's balance (50 per verified signup, 30 per completed referral by default — founders can retune both per waitlist), `referral_count` counts verified referrals only, and `next_reward` is the nearest locked tier as `{ referrals, reward, remaining }` (`null` when everything is unlocked). `spots_to_advance` is the verified referrals needed to take the spot above (`0` at the top) — render it as “N more to pass #8”. `display_position` applies the founder's position inflation (`position` stays raw); `counts_hidden` is `true` for stealth launches, where your UI should hide every number and show the link alone.
 
 Duplicate emails return `409` **with the existing position**, so a retry never loses state:
 
@@ -182,6 +191,25 @@ curl 'https://waitlyze.falakgala.dev/api/waitlist?waitlistId=YOUR_WAITLIST_ID&em
 ```
 
 Unknown emails return `404`. Responses are `private, no-store` — do not cache them in a CDN.
+
+## Award custom points
+
+`POST /api/waitlist/points` credits off-site actions the join flow never sees — a survey completed, a Discord joined. Configure named events with default points under Rewards in the builder, then call with your server-side key:
+
+```bash title="Custom point award"
+curl --request POST 'https://waitlyze.falakgala.dev/api/waitlist/points' \
+  --header 'Content-Type: application/json' \
+  --header 'X-Api-Key: YOUR_SERVER_SIDE_API_KEY' \
+  --data '{ "waitlistId": "YOUR_WAITLIST_ID", "email": "person@example.com", "event": "survey", "idempotencyKey": "srv-2026-001" }'
+```
+
+```json title="Award response"
+{ "success": true, "data": { "awarded": true, "event": "survey", "label": "Survey completed", "points": 20, "balance": 100 } }
+```
+
+- `event` must be 1–40 chars (`a-z 0-9 -`). Unknown events return `400` unless you pass explicit `points` (0–100000) to override the configured default.
+- The API key travels in the `X-Api-Key` or `Authorization` header only; keys in the request body are rejected with `400`.
+- Only verified signups earn; unverified signups return `409` and farm-suspect signups return `awarded: false`. Retries with the same `idempotencyKey` return `awarded: false` without double-paying; omit it for once-per-signup-per-event semantics.
 
 ## Rate limits
 

@@ -4,6 +4,7 @@ import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useId, useRef, useState } from "react";
 import { toast } from "sonner";
 
+import { ReferralCockpitExtras } from "@/components/product/referral-cockpit";
 import { ShareButtons } from "@/components/product/share-buttons";
 import { StatusBadge } from "@/components/product/waitlist-page-content";
 import { PhoneInput } from "@/components/reui/phone-input";
@@ -274,6 +275,7 @@ function ReferralShareBlock({
   copied,
   onCopyReferralLink,
   onTrackShare,
+  waitListId,
 }) {
   return (
     <div className="mt-6 grid w-full max-w-md gap-2.5">
@@ -305,6 +307,13 @@ function ReferralShareBlock({
           onShare={onTrackShare}
         />
       )}
+      {result.referralCode ? (
+        <ReferralCockpitExtras
+          waitListId={waitListId}
+          code={result.referralCode}
+          statusPage={statusPage}
+        />
+      ) : null}
     </div>
   );
 }
@@ -340,6 +349,7 @@ function SignupResult({
   copied,
   onCopyReferralLink,
   onTrackShare,
+  waitListId,
 }) {
   const bodyPx = typeof brand?.bodySize === "number" ? brand.bodySize : null;
   return (
@@ -358,10 +368,20 @@ function SignupResult({
         brand={brand}
         resultTitleId={resultTitleId}
       />
-      {statusPage.showPosition && result.position != null ? (
+      {statusPage.showPosition && !result.hideCounts && result.position != null ? (
         <ResultStat label="Your position" value={`#${result.position}`} />
       ) : null}
-      {showReferrals && statusPage.showReferralCount ? (
+      {result.verified && !result.hideCounts && result.showPoints ? (
+        <ResultStat label="Your points" value={String(result.points)} />
+      ) : null}
+      {result.verified && !result.hideCounts && result.showProgress && result.nextReward != null ? (
+        <p className="m-0 w-full max-w-md text-sm leading-relaxed text-wl-muted">
+          {result.nextReward.remaining} more referral
+          {result.nextReward.remaining === 1 ? "" : "s"} to unlock{" "}
+          <strong className="text-wl-text">{result.nextReward.reward}</strong>
+        </p>
+      ) : null}
+      {showReferrals && statusPage.showReferralCount && !result.hideCounts ? (
         <ResultStat label="Friends joined" value={String(result.referralCount)} />
       ) : null}
       {showReferrals && statusPage.showReferralLink && result.referralLink ? (
@@ -372,6 +392,7 @@ function SignupResult({
           copied={copied}
           onCopyReferralLink={onCopyReferralLink}
           onTrackShare={onTrackShare}
+          waitListId={waitListId}
         />
       ) : null}
     </section>
@@ -446,7 +467,7 @@ function SignupFormInner({
           ...(phoneValue ? { phone: phoneValue } : {}),
           ...(answers.length > 0 ? { customFields: answers } : {}),
           ...(turnstileOn && turnstileToken ? { turnstileToken } : {}),
-          ...collectAttribution(),
+          ...collectAttribution(waitListId),
           ...(showReferrals && referralCode && /^[A-Za-z0-9_-]{8,256}$/.test(referralCode)
             ? { referralId: referralCode }
             : {}),
@@ -464,6 +485,7 @@ function SignupFormInner({
         }
         throw new Error(data.message || "Couldn't join the waitlist. Try again.");
       }
+      if (statusPage.postSignupBehavior === "no-change") return;
 
       // Server-vetted redirect only: the API echoes a redirect URL solely when
       // the founder configured one that passes the allowlist. Never navigate
@@ -480,6 +502,7 @@ function SignupFormInner({
           : null;
       const verified = data.signUp?.verified === true;
       const returning = data.signUp?.outcome === "returning";
+      const summary = data.signUp ?? {};
       setResult({
         heading: verified ? statusPage.heading : statusPage.pendingHeading,
         body: verified ? statusPage.body : statusPage.pendingBody,
@@ -489,10 +512,21 @@ function SignupFormInner({
           : verified
             ? null
             : `We sent a confirmation link to ${email}.`,
-        position: typeof rank === "number" ? rank : null,
+        position:
+          typeof summary.displayRank === "number"
+            ? summary.displayRank
+            : typeof rank === "number"
+              ? rank
+              : null,
         referralLink,
         referralCode: code ?? null,
         referralCount: data.signUp?.referralCount ?? 0,
+        points: typeof summary.points === "number" ? summary.points : 0,
+        nextReward: summary.nextReward ?? null,
+        hideCounts: summary.hideCounts === true,
+        showPoints: summary.showPoints !== false,
+        showProgress: summary.showProgress !== false,
+        verified,
       });
       setCopied(false);
       form.reset();
@@ -540,6 +574,7 @@ function SignupFormInner({
         copied={copied}
         onCopyReferralLink={copyReferralLink}
         onTrackShare={trackShare}
+        waitListId={waitListId}
       />
     );
   }

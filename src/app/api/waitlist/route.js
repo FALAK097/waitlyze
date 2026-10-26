@@ -4,18 +4,25 @@ import { NextResponse } from "next/server";
 
 import { getCampaignPosition } from "@/lib/campaigns/referral-position.mjs";
 import { findSignupByEmail } from "@/lib/campaigns/signup-lookup.mjs";
-import { DuplicateSignupError, InvalidCampaignError } from "@/lib/campaigns/signups.mjs";
+import {
+  DuplicateSignupError,
+  FraudLimitError,
+  InvalidCampaignError,
+} from "@/lib/campaigns/signups.mjs";
 import {
   campaignRequiresTurnstile,
   TurnstileVerificationError,
   verifyTurnstileToken,
 } from "@/lib/campaigns/turnstile.mjs";
 import { dispatchVerificationNow } from "@/lib/email/dispatch-now.mjs";
+import { fingerprintSignupDevice } from "@/lib/fraud/gates.mjs";
 import prisma from "@/lib/prisma";
+import { summarizeSignupRewards } from "@/lib/referrals/rewards.mjs";
 import { apiKeyRateLimitHeaders, consumeApiKeyBudget } from "@/lib/security/api-key-rate-limit.mjs";
 import { consumePublicBudget, PublicRateLimitError } from "@/lib/security/public-rate-limit.mjs";
 import { createSignUp } from "@/services/sign-up";
 import { validateApiKeyAndGetWaitlist } from "@/utils/api-key-auth";
+import { pickAttribution } from "@/utils/server/attribution.mjs";
 import { getDeviceInfo } from "@/utils/server/device";
 import { getGeoInfo, getIpAddress, getTimeZone } from "@/utils/server/geo";
 
@@ -51,12 +58,31 @@ function referralLink(sharing, referralCode) {
 
 // Canonical per-signup payload: position answers "where am I?", referral_code
 // + referral_link power custom-frontend sharing UI. rank is the legacy alias.
+// Rewards progress rides along: points balance, referral_count (verified
+// only), display_position (founder inflation applied), next_reward
+// ("X more to unlock"), and spots_to_advance (verified referrals needed to
+// take the spot above, 0 at the top).
 async function signupData(waitlistId, signUp, { idempotentReplay = false } = {}) {
   const sharing = await waitlistSharing(waitlistId);
-  const position = await getCampaignPosition(prisma, waitlistId, signUp.id);
+  // The signup service already attached a summary on the POST path; the
+  // status-lookup path resolves it here. A null summary recomputes so the
+  // progress fields are never silently dropped.
+  const attached =
+    signUp.rewardSummary && typeof signUp.rewardSummary === "object" ? signUp.rewardSummary : null;
+  const [position, summary] = await Promise.all([
+    getCampaignPosition(prisma, waitlistId, signUp.id),
+    attached ?? summarizeSignupRewards(prisma, waitlistId, signUp),
+  ]);
   return {
     rank: position,
     position,
+    display_position: summary.displayPosition ?? position,
+    points: summary.points,
+    referral_count: summary.referrals,
+    next_reward: summary.nextReward,
+    unlocked_rewards: summary.unlockedRewards,
+    spots_to_advance: summary.spotsToAdvance,
+    counts_hidden: summary.hideCounts,
     referral_code: signUp.referralCode || null,
     referral_link: referralLink(sharing, signUp.referralCode),
     verified: Boolean(signUp.verifiedAt),
@@ -222,8 +248,14 @@ export async function POST(request) {
       marketingConsent: body.marketingConsent === true,
       device,
       deviceType,
+      deviceFingerprint: fingerprintSignupDevice({
+        uniqueUserId,
+        userAgent: request.headers.get("user-agent"),
+        device,
+      }),
       waitListId: waitlistId,
       ipAddress: ip,
+      ...pickAttribution(body),
     };
 
     if (geo && (geo.city || geo.country || geo.timezone)) {
@@ -239,14 +271,67 @@ export async function POST(request) {
     }
 
     const signUp = await createSignUp(signupDataInput, referralCode);
-    await dispatchVerificationNow(signUp.verificationEventKey);
+    // Silent-mode fraud verdict: same success shape, nothing persisted —
+    // no verification email, no impression, no points, no webhooks. The
+    // service attached a zero-value rewardSummary (real visibility flags,
+    // zero progress), so every key a real response carries is present —
+    // including counts_hidden for stealth launches, which the UI hides per
+    // the flag exactly like a real response.
+    if (signUp.silent) {
+      const sharing = await waitlistSharing(waitlistId);
+      const summary =
+        signUp.rewardSummary && typeof signUp.rewardSummary === "object"
+          ? signUp.rewardSummary
+          : null;
+      const fallback = {
+        displayPosition: signUp.rank ?? null,
+        points: 0,
+        referrals: 0,
+        nextReward: null,
+        unlockedRewards: [],
+        spotsToAdvance: 0,
+        hideCounts: false,
+      };
+      const s = summary ?? fallback;
+      return NextResponse.json(
+        {
+          success: true,
+          message: "Successfully joined the waitlist!",
+          data: {
+            rank: signUp.rank,
+            position: signUp.rank,
+            display_position: s.displayPosition ?? signUp.rank,
+            points: s.points,
+            referral_count: s.referrals,
+            next_reward: s.nextReward,
+            unlocked_rewards: s.unlockedRewards,
+            spots_to_advance: s.spotsToAdvance,
+            counts_hidden: s.hideCounts,
+            referral_code: signUp.referralCode || null,
+            referral_link: referralLink(sharing, signUp.referralCode),
+            verified: false,
+          },
+        },
+        { headers: budgetHeaders },
+      );
+    }
+    if (signUp.verificationEventKey) await dispatchVerificationNow(signUp.verificationEventKey);
 
     // Replays (same Idempotency-Key) return the original signup: no new page
     // view happened, so skip the impression. The P2002 guard covers the
     // hairline concurrent same-key double-submit where both pass createSignUp.
     if (signUp.signupOutcome !== "returning") {
+      // Link the signup to its page view, mirroring the browser funnel where
+      // the tracker row predates the join. Best-effort: intake must never
+      // fail because the linkage write did.
+      const linkImpression = async (impressionId) => {
+        if (signUp.impressionId || !impressionId) return;
+        await prisma.signUp
+          .update({ where: { id: signUp.id }, data: { impressionId } })
+          .catch(() => {});
+      };
       try {
-        await prisma.impression.create({
+        const impression = await prisma.impression.create({
           data: {
             uniqueUserId: signUp.uniqueUserId,
             device,
@@ -254,14 +339,28 @@ export async function POST(request) {
             waitListId: waitlistId,
             ipAddress: ip,
             city: signupDataInput.city,
+            region: geo?.region,
             country: signupDataInput.country,
             latitude: signupDataInput.latitude,
             longitude: signupDataInput.longitude,
             timezone: signupDataInput.timezone,
+            ...pickAttribution(body),
           },
         });
+        await linkImpression(impression.id);
       } catch (error) {
         if (error?.code !== "P2002") throw error;
+        // A tracker row already exists for this browser (a real page view
+        // predates the API join): link to it instead of leaving
+        // impressionId null.
+        const existing = await prisma.impression
+          .findFirst({
+            where: { waitListId: waitlistId, uniqueUserId: signUp.uniqueUserId },
+            orderBy: { createdAt: "desc" },
+            select: { id: true },
+          })
+          .catch(() => null);
+        await linkImpression(existing?.id);
       }
     }
 
@@ -277,6 +376,15 @@ export async function POST(request) {
     );
   } catch (error) {
     if (error instanceof PublicRateLimitError) return rateLimitResponse(error);
+    // Fraud IP-velocity gate: explicit 429 (fail-closed on clear abuse).
+    if (error instanceof FraudLimitError)
+      return NextResponse.json(
+        { success: false, message: error.message, error: error.message },
+        {
+          status: 429,
+          headers: { "Retry-After": String(error.retryAfterSeconds ?? 3600) },
+        },
+      );
     if (error instanceof TurnstileVerificationError)
       return NextResponse.json(
         { success: false, error: "Complete the security check and try again." },
@@ -294,7 +402,13 @@ export async function POST(request) {
                   emailNormalized: lookupEmail,
                 },
               },
-              select: { id: true, createdAt: true, referralCode: true, verifiedAt: true },
+              select: {
+                id: true,
+                createdAt: true,
+                referralCode: true,
+                verifiedAt: true,
+                points: true,
+              },
             })
           : null;
       const idempotencyKey = request.headers.get("idempotency-key");
