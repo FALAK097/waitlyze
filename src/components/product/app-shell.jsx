@@ -9,13 +9,13 @@ import {
   Tick01Icon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useActionState, useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { createWorkspace, selectWorkspace } from "@/app/actions/settings";
-import { FeedbackForm } from "@/components/product/feedback-form";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogClose, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import {
@@ -31,6 +31,10 @@ import { Separator } from "@/components/ui/separator";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { signOut } from "@/lib/auth-client";
 import { cn } from "@/lib/utils";
+
+const FeedbackForm = dynamic(() =>
+  import("@/components/product/feedback-form").then((module) => module.FeedbackForm),
+);
 
 function WorkspaceAvatar({ name }) {
   return (
@@ -220,7 +224,9 @@ function AccountMenu({ user, avatar }) {
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
-      <FeedbackForm user={user} open={feedbackOpen} onOpenChange={setFeedbackOpen} />
+      {feedbackOpen && (
+        <FeedbackForm user={user} open={feedbackOpen} onOpenChange={setFeedbackOpen} />
+      )}
     </div>
   );
 }
