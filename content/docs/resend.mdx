@@ -4,29 +4,32 @@ description: Connect your verified domain to send waitlist email.
 icon: resend
 ---
 
-Resend gives Waitlyze a verified sender for verification, broadcast, and automation mail. Without it, Waitlyze falls back to the deployment sender.
+Resend connects a verified sender to Waitlyze. A workspace connection is managed in **Settings → Integrations**; a waitlist can also have its own sender credentials on the sending paths that support waitlist-level resolution.
 
 ## Connect your sender
 
 <Steps>
 <Step>
-### Verify your domain in Resend
-In the Resend dashboard, add and verify your sending domain, then create a **sending-only** API key. See [Resend domain setup](https://resend.com/docs/dashboard/domains/introduction).
+### Verify your domain and create a key
+In Resend, add and verify your sending domain, then create a **sending-only** API key. See [Resend domain setup](https://resend.com/docs/dashboard/domains/introduction).
 </Step>
 <Step>
 ### Connect in Waitlyze
-Go to Settings → Integrations → **Resend → Connect**. This needs owner/admin permission. Enter the key and a sender email on your verified domain, then **Save**. The secret is encrypted and never returned to the browser — enter a replacement to change it.
+Go to Settings → Integrations → **Resend → Connect**. This needs owner/admin permission. Enter the key and a sender email on your verified domain, then **Save**. The key is encrypted and never returned to the browser — enter a replacement to change it.
 </Step>
 <Step>
-### Save and test to activate
-Send a test email. Tests go to your Waitlyze account email. The connection becomes **Active** only when the test succeeds; until then the deployment sender is used.
+### Add the Resend event webhook
+After saving, copy the webhook URL shown in the connection panel. Add it in Resend and subscribe to `email.bounced` and `email.complained`. Copy the signing secret Resend creates, return to Waitlyze, save it, then send a test email. The test goes to your Waitlyze account email.
 </Step>
 </Steps>
+
+The connection is ready only after the test succeeds. Until then the deployment sender is used. Keep the Resend event webhook configured so permanent bounces and complaints can update the workspace suppression list.
 
 ## If a test fails
 
 - Confirm the key is sending-only with send permission, not a full-access or expired key.
 - Confirm the sender address domain matches a verified Resend domain exactly.
+- Confirm the webhook signing secret is saved; the test action stays disabled until it is configured.
 - Correct the details, save, and test again.
 - Check [Email tools](/docs/email) delivery health for dispatcher versus sender errors.
 
@@ -38,18 +41,17 @@ Disconnecting falls back to the deployment sender immediately.
 
 ## Per-waitlist sender identity
 
-Each waitlist can send through its own Resend key and From address instead of sharing the workspace connection:
+Each waitlist can store its own Resend key and From address instead of inheriting the workspace connection. Manage it through the authenticated waitlist sender endpoints (these are session-protected settings routes, not public API-key endpoints): `GET` / `PUT` / `DELETE /api/wait-lists/[id]/email-sender`, plus `POST /api/wait-lists/[id]/email-sender/test`.
 
-- Resolution order is **waitlist sender → workspace sender → deployment default**.
-- Manage it per waitlist: `GET` / `PUT` / `DELETE /api/wait-lists/[id]/email-sender`, plus `POST /api/wait-lists/[id]/email-sender/test`. `GET` also returns the currently `resolved` sender (`source` + `fromEmail`) so you can see which level is active.
+- Resolution order is **connected waitlist sender → workspace sender → deployment default**. A waitlist sender in `NEEDS_TEST` stays dormant and falls back; `GET` also returns the currently `resolved` source and From address.
 - Save-and-test-to-activate, same as the workspace flow: the sender stays dormant until a test email succeeds, and deleting it falls back to the workspace sender immediately.
 - Fail-closed: a configured sender that breaks (bad key, undecryptable secret) surfaces a founder-facing error instead of silently reverting to the platform sender. Until a test succeeds — or after you delete the sender — the workspace sender applies as usual.
 
-One scoping note: the shared dispatcher resolves per-waitlist senders end-to-end today, but broadcast/automation/test sends still in flight elsewhere resolve at workspace scope until they pass their waitlist id through the seam. If sender separation matters for a launch now, keep that waitlist in its own workspace.
+This override is not used by every mail path yet. Broadcast, automation, and test-send paths still resolve at workspace scope because they do not pass the waitlist ID to sender resolution. The workspace Resend webhook is also the configured path for bounce/complaint suppression; waitlist-level keys do not create a separate callback or signing-secret slot.
 
 ## Bounces, complaints, and suppression
 
-Signed Resend provider events update workspace suppression with recipient evidence. Bounced or complained addresses are excluded from future broadcasts and automations, including early webhook races where the complaint arrives before the send completes. This is automatic — you do not manage the suppression list by hand.
+Signed `email.bounced` and `email.complained` events delivered to the workspace Resend webhook update workspace suppression with recipient evidence. Bounced or complained addresses are excluded from future broadcasts and automations, including early webhook races where the complaint arrives before the send completes. This is automatic — you do not manage the suppression list by hand.
 
 ## Next
 

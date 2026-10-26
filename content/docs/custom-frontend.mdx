@@ -48,9 +48,9 @@ Add `join.example.com` in Waitlist settings → **Custom domain** ([Custom domai
 
 ## 5. Send from your domain
 
-Connect [Resend](/docs/resend) (Settings → Integrations → Resend) so verification, broadcast, and automation mail arrives from your address instead of the deployment default. Until a test send succeeds the deployment sender is used — launch the custom frontend only after connection status reads **Active**, or your verification emails may land in spam and stall the double opt-in your positions depend on.
+Connect [Resend](/docs/resend) (Settings → Integrations → Resend) so waitlist email can use your verified sender. The workspace connection is the shared fallback for verification, broadcast, and automation email. Keep it **Active** before launch so verification messages can be delivered reliably.
 
-Today one workspace shares one sender. Per-waitlist sender identity (each waitlist with its own verified domain) is planned — the API contract will be a per-waitlist `fromEmail` override with workspace fallback; there is no per-waitlist sender to configure yet.
+Per-waitlist sender credentials are also supported through authenticated waitlist settings endpoints; see [Resend](/docs/resend#per-waitlist-sender-identity). They are not a complete override yet: broadcast, automation, and test-send paths still use the workspace sender because they do not pass a waitlist ID through sender resolution. Do not assume those paths use a waitlist-specific From address.
 
 ## Launch checklist
 
@@ -66,6 +66,7 @@ Today one workspace shares one sender. Per-waitlist sender identity (each waitli
 
 <Cards>
 <Card title="Signup API" href="/docs/api" description="Exact request contract, idempotency, and status codes." />
+<Card title="API Reference" href="/docs/api/reference" description="All supported public endpoints and their scope." />
 <Card title="Webhooks" href="/docs/webhooks" description="Stream signup, referral, and milestone events." />
 <Card title="Hosted pages and embeds" href="/docs/embed" description="The no-backend alternative." />
 <Card title="Resend" href="/docs/resend" description="Connect your sending domain." />

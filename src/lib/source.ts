@@ -8,9 +8,14 @@ export const source = loader({
   baseUrl: docsRoute,
   source: docs.toFumadocsSource(),
   icon: (icon) => {
-    if (icon === "resend") {
+    const src = {
+      resend: "/integrations/resend.svg",
+      slack: "/integrations/slack.svg",
+      discord: "/integrations/discord.svg",
+    }[icon];
+    if (src) {
       return createElement("img", {
-        src: "/integrations/resend.svg",
+        src,
         alt: "",
         width: 16,
         height: 16,

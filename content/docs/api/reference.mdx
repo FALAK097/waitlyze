@@ -1,0 +1,40 @@
+---
+title: API Reference
+description: Find the supported public endpoints for waitlist signups, status lookups, and custom reward points.
+---
+
+Use the Waitlyze API from your server when you need to create a signup, look up its status, or credit a configured off-site action. This reference covers the supported public API—not the session-protected endpoints used by the dashboard.
+
+## Supported endpoints
+
+| Method | Endpoint | Purpose | Guide |
+| --- | --- | --- | --- |
+| `POST` | `/api/waitlist` | Create a signup and return its position and referral details. | [Create signup](/docs/api/create-signup) |
+| `GET` | `/api/waitlist?waitlistId=…&email=…` | Look up a signup's current status. | [Look up signup](/docs/api/lookup-signup) |
+| `POST` | `/api/waitlist/points` | Award points for a configured off-site action. | [Award custom points](/docs/api/award-points) |
+
+All endpoints use the domain where your Waitlyze workspace is hosted. Keep requests server-side: API keys are secrets and must never be shipped in a browser bundle or public mobile app.
+
+## Authentication and scope
+
+Create a key in **Settings → Integrations → API keys** and link it to one waitlist. Send it in an `X-Api-Key` or `Authorization: Bearer` header. The signup endpoint also accepts the legacy `apiKey` JSON field; use a header whenever possible. The points endpoint accepts header authentication only.
+
+These keys are deliberately narrow: they can create signups, check signup status, and award custom points for their linked waitlist. They cannot manage a workspace, list subscribers, or call dashboard APIs. See [API keys](/docs/api-keys) for expiry, rotation, and rate limits.
+
+## Choose a connection pattern
+
+- Use the [hosted page or embed](/docs/embed) when you want Waitlyze to own the browser form without a backend integration.
+- Use the [Signup API](/docs/api) when your server needs to control the signup flow or return position and referral data to a custom frontend.
+- Use [webhooks](/docs/webhooks) when your system needs to react to signups, verification, referrals, or milestones. Most custom connections use the API for commands and webhooks for asynchronous updates.
+
+<Callout title="Dashboard routes are not public API endpoints">
+Routes under `/api/v1` and the settings endpoints used by the app require a signed-in session. A waitlist API key cannot use them. Only rely on the public endpoints listed on this page.
+</Callout>
+
+## Next
+
+<Cards>
+<Card title="Signup API" href="/docs/api" description="Requests, responses, idempotency, and rate limits." />
+<Card title="API keys" href="/docs/api-keys" description="Create and rotate a key scoped to one waitlist." />
+<Card title="Custom frontend guide" href="/docs/custom-frontend" description="Connect signups, referrals, and email end to end." />
+</Cards>

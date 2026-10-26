@@ -3,7 +3,7 @@ title: Zapier
 description: Push Waitlyze events into Zaps via webhooks.
 ---
 
-There is no native Zapier app. The supported path is webhooks → Zapier's **Webhooks by Zapier** trigger, which covers the same events with no code on our side.
+There is no native Waitlyze Zapier app. The supported path is a Waitlyze [webhook](/docs/webhooks) connected to Zapier's **Webhooks by Zapier** trigger. Treat this as a recipe built on signed event delivery, not a direct app connection.
 
 ## Recipe: new signup → your Zap
 
@@ -32,5 +32,6 @@ Tips: dedupe on the event `id` (retries redeliver), return success only after yo
 
 <Cards>
 <Card title="Webhooks" href="/docs/webhooks" description="Events, payloads, and verification." />
-<Card title="Signup API" href="/docs/api" description="Look up the signup behind an event." />
+<Card title="API Reference" href="/docs/api/reference" description="Look up a signup or award configured points." />
+<Card title="Integrations" href="/docs/integrations/overview" description="Compare supported connections and recipes." />
 </Cards>

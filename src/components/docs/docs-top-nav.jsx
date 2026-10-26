@@ -6,17 +6,15 @@ import { useDocsLayout } from "fumadocs-ui/layouts/docs";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
+import { getDocsSection } from "@/lib/docs-sections";
 import { cn } from "@/lib/utils";
 
 const links = [
   { label: "Documentation", href: "/docs", section: "docs" },
+  { label: "API Reference", href: "/docs/api/reference", section: "api" },
+  { label: "Integrations", href: "/docs/integrations/overview", section: "integrations" },
   { label: "Changelog", href: "/docs/changelog", section: "changelog" },
 ];
-
-function isActive(pathname, section) {
-  if (section === "changelog") return pathname === "/docs/changelog";
-  return pathname.startsWith("/docs") && pathname !== "/docs/changelog";
-}
 
 const actionClasses =
   "inline-flex size-9 items-center justify-center rounded-lg bg-transparent text-fd-muted-foreground hover:bg-fd-accent hover:text-fd-accent-foreground";
@@ -41,7 +39,7 @@ export function DocsTopNav() {
         aria-label="Documentation sections"
       >
         {links.map(({ label, href, section }) => {
-          const active = isActive(pathname, section);
+          const active = getDocsSection(pathname) === section;
           return (
             <Link
               key={href}
