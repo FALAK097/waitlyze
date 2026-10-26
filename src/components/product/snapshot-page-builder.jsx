@@ -1848,7 +1848,7 @@ export function SnapshotPageBuilder({
 
 function SurfaceLayout({ sidebar, children, mobileMode }) {
   return (
-    <div className="flex min-h-studio bg-product-bg-inset max-[680px]:flex-col">
+    <div className="flex h-studio min-h-studio overflow-hidden bg-product-bg-inset max-[1180px]:h-studio-compact max-[900px]:h-auto max-[900px]:min-h-0 max-[680px]:flex-col">
       <aside
         className="w-78 shrink-0 overflow-auto border-r border-product-border-subtle bg-product-bg-surface max-[900px]:w-70 max-[680px]:w-full max-[680px]:border-r-0 max-[680px]:data-[mobile-mode=preview]:hidden"
         data-mobile-mode={mobileMode}
@@ -1856,7 +1856,7 @@ function SurfaceLayout({ sidebar, children, mobileMode }) {
         {sidebar}
       </aside>
       <main
-        className="min-w-0 flex-1 p-10 max-[900px]:p-7 max-[680px]:p-3 max-[680px]:data-[mobile-mode=edit]:hidden"
+        className="min-h-0 min-w-0 flex-1 overflow-hidden p-10 max-[900px]:p-7 max-[680px]:p-3 max-[680px]:data-[mobile-mode=edit]:hidden"
         data-mobile-mode={mobileMode}
       >
         {children}
