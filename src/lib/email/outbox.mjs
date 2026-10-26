@@ -4,9 +4,11 @@ import { renderSubscriberVerification } from "../../emails/render.jsx";
 import { notifyBroadcastSummary } from "../emails/founder-notifications.mjs";
 import { dispatchAutomationStep, processAutomationTrigger } from "./automations.mjs";
 import { emailBrandFromSnapshot } from "./brand.mjs";
+import { queueDueBroadcasts } from "./broadcast-queue.mjs";
 import { interpolateEmail, legacyEmailContent, subscriberEmailHtml } from "./composer.mjs";
 import { applyKnownProviderEvents } from "./suppression.mjs";
 import { createUnsubscribeToken } from "./unsubscribe.mjs";
+import { interpolateVars, interpolateVarsHtml, resolveSubscriberVars } from "./variables.mjs";
 
 const MAX_ATTEMPTS = 6;
 const STALE_LOCK_MS = 5 * 60 * 1000;
@@ -183,26 +185,35 @@ async function dispatchBroadcast(db, event, payload, send, now, attempt, result)
 
   const token = createUnsubscribeToken(signUp.id, waitList.id);
   const unsubscribeUrl = `${String(process.env.BETTER_AUTH_URL || "").replace(/\/$/, "")}/api/email/unsubscribe?token=${encodeURIComponent(token)}`;
+  // Per-recipient variables were snapshotted server-side at queue time
+  // (position, referral link, points). Older rows without a snapshot fall
+  // back to name + waitlist derived live from the signup.
+  const snapshot = recipient.vars && typeof recipient.vars === "object" ? recipient.vars : null;
+  const vars = snapshot
+    ? { ...snapshot, waitlist: waitList.name || snapshot.waitlist || "the waitlist" }
+    : resolveSubscriberVars({ waitlist: waitList, signup: signUp });
+  const subject = interpolateVars(broadcast.subject, vars);
+  const previewText = interpolateVars(broadcast.previewText, vars);
   try {
     const response = await send({
       to: recipient.email,
-      subject: broadcast.subject,
+      subject,
       html: broadcast.renderedHtml
         ? subscriberEmailHtml({
             name: waitList.name || "Waitlist",
-            content: broadcast.renderedHtml,
-            previewText: broadcast.previewText,
+            content: interpolateVarsHtml(broadcast.renderedHtml, vars),
+            previewText,
             unsubscribeUrl,
             brand: emailBrandFromSnapshot(waitList.templateSnapshot),
           })
         : broadcastHtml({
             campaignName: waitList.name || "Waitlist",
-            previewText: broadcast.previewText,
-            body: broadcast.body,
+            previewText,
+            body: interpolateVars(broadcast.body, vars),
             unsubscribeUrl,
           }),
       text: broadcast.renderedText
-        ? `${broadcast.renderedText.trim()}\n\nUnsubscribe: ${unsubscribeUrl}`
+        ? `${interpolateVars(broadcast.renderedText, vars).trim()}\n\nUnsubscribe: ${unsubscribeUrl}`
         : undefined,
       headers: {
         "List-Unsubscribe": `<${unsubscribeUrl}>`,
@@ -561,6 +572,18 @@ export async function dispatchPendingOutboxEvents(
   { send, sendPlatform, now = new Date(), batchSize = 20, waitListId, eventKeys } = {},
 ) {
   if (typeof send !== "function") throw new TypeError("A provider send function is required.");
+  // Fan out due scheduled broadcasts before claiming send events, so a
+  // scheduled send starts within one dispatcher tick of its scheduled time.
+  // Skipped for targeted dispatches (eventKeys): those run inline in
+  // user-facing requests (signup verification, offboard goodbyes) and must
+  // never absorb a broadcast fan-out in their latency path.
+  if (!eventKeys) {
+    try {
+      await queueDueBroadcasts(db, now);
+    } catch (error) {
+      console.error("Scheduled broadcast sweep failed:", error?.message || "unknown error");
+    }
+  }
   const staleBefore = new Date(now.getTime() - STALE_LOCK_MS);
   const events = await db.outboxEvent.findMany({
     where: {

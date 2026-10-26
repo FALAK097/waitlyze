@@ -130,6 +130,7 @@ try {
           "20261025090000_phase7c_byok_chat",
           "20261025090838_dashboard_bulk_consent_source",
           "20261025095925_phase3_form_hardening",
+          "20261025120000_phase7b_founder_emails",
         ]) {
           await db.query(await readFile(`prisma/migrations/${name}/migration.sql`, "utf8"));
         }
