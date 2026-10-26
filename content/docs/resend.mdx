@@ -32,13 +32,20 @@ Send a test email. Tests go to your Waitlyze account email. The connection becom
 
 Disconnecting falls back to the deployment sender immediately.
 
-## Per-waitlist sender identity (planned)
+## List your Resend domains
 
-Today one workspace shares one sender: every waitlist's verification, broadcast, and automation mail uses the workspace connection above. Per-waitlist sender identity — each waitlist with its own verified domain and sending-only key, falling back to the workspace sender — needs a data migration plus per-waitlist connect/test UI, so it is documented here as the contract rather than shipped half-built:
+`GET /api/settings/integrations/resend/domains` returns the domains on your connected Resend account (`id`, `name`, `status`, `createdAt`) so you can confirm a domain is verified before using it as a sender. It reads the stored key in memory only — the key is never logged or returned.
 
-- Resolution order will be waitlist sender → workspace sender → deployment default.
-- Connecting a waitlist sender will follow the same save-and-test-to-activate flow (status stays on the deployment sender until a test succeeds).
-- Until then, send multi-brand waitlists from separate workspaces if sender separation matters.
+## Per-waitlist sender identity
+
+Each waitlist can send through its own Resend key and From address instead of sharing the workspace connection:
+
+- Resolution order is **waitlist sender → workspace sender → deployment default**.
+- Manage it per waitlist: `GET` / `PUT` / `DELETE /api/wait-lists/[id]/email-sender`, plus `POST /api/wait-lists/[id]/email-sender/test`. `GET` also returns the currently `resolved` sender (`source` + `fromEmail`) so you can see which level is active.
+- Save-and-test-to-activate, same as the workspace flow: the sender stays dormant until a test email succeeds, and deleting it falls back to the workspace sender immediately.
+- Fail-closed: a configured sender that breaks (bad key, undecryptable secret) surfaces a founder-facing error instead of silently reverting to the platform sender. Until a test succeeds — or after you delete the sender — the workspace sender applies as usual.
+
+One scoping note: the shared dispatcher resolves per-waitlist senders end-to-end today, but broadcast/automation/test sends still in flight elsewhere resolve at workspace scope until they pass their waitlist id through the seam. If sender separation matters for a launch now, keep that waitlist in its own workspace.
 
 ## Bounces, complaints, and suppression
 

@@ -22,6 +22,7 @@ export default async function AutomationsPage({ params }) {
       <EmailToolsNav waitListId={campaign.id} current="automations" />
       <AutomationManager
         waitListId={campaign.id}
+        waitListName={campaign.name}
         initialRecipes={data.recipes}
         deliveryReady={Boolean(env.OUTBOX_DISPATCH_SECRET && env.RESEND_API_KEY)}
       />

@@ -1,6 +1,7 @@
 import { Resend } from "resend";
 
 import { dispatchPendingOutboxEvents } from "@/lib/email/outbox.mjs";
+import { createPlatformSender } from "@/lib/emails/platform.mjs";
 import { env } from "@/lib/env.mjs";
 import { createWorkspaceResendSender } from "@/lib/integrations/resend-sender.mjs";
 import prisma from "@/lib/prisma";
@@ -23,6 +24,34 @@ export async function dispatchVerificationNow(eventKey) {
     await dispatchPendingOutboxEvents(prisma, { send: sendEmail, eventKeys: [eventKey] });
   } catch (error) {
     console.error("Verification email dispatch failed", error);
+  }
+}
+
+// Best-effort immediate send for founder notices queued by the auth hook and
+// similar latency-sensitive paths. Failures stay queued for the scheduler;
+// the triggering action always succeeds regardless.
+export async function dispatchFounderNoticesNow(eventKeys) {
+  const keys = [
+    ...new Set((eventKeys ?? []).filter((key) => typeof key === "string" && key)),
+  ].slice(0, 5);
+  if (!keys.length) return;
+  try {
+    await dispatchPendingOutboxEvents(prisma, {
+      send: createWorkspaceResendSender({
+        db: prisma,
+        defaults: {
+          apiKey: env.RESEND_API_KEY,
+          fromEmail: env.RESEND_FROM_EMAIL,
+          replyTo: env.RESEND_REPLY_TO,
+        },
+        createClient: (apiKey) => new Resend(apiKey),
+      }),
+      sendPlatform: createPlatformSender(),
+      eventKeys: keys,
+      batchSize: keys.length,
+    });
+  } catch (error) {
+    console.error("Founder notice dispatch failed", error);
   }
 }
 

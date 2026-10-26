@@ -40,6 +40,15 @@ const policies = {
     recipient: [3, DAY],
     authenticated: true,
   },
+  // Authenticated Slack/Discord channel tests (POST .../notifications/[channel]).
+  // Same budgets as testEmail, minus the email recipient (chat tests post to a
+  // saved webhook, not an address).
+  chatTest: {
+    global: [1000, DAY],
+    campaign: [100, DAY],
+    client: [20, HOUR],
+    authenticated: true,
+  },
   // Authenticated API-key status lookups (GET /api/waitlist). Separate from
   // signup intake so polling a position never consumes the signup budget.
   status: { global: [20000, HOUR], campaign: [5000, HOUR], client: [120, HOUR] },

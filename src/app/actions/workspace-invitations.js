@@ -7,6 +7,7 @@ import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 
 import { renderWorkspaceInvitation } from "@/emails/render.jsx";
+import { workspaceInvitationText } from "@/emails/text.mjs";
 import { auth } from "@/lib/auth";
 import { sendPlatformEmail } from "@/lib/emails/platform.mjs";
 import { env } from "@/lib/env.mjs";
@@ -55,16 +56,18 @@ async function sendInvitation(invitation, token, inviterName, workspaceName, act
   });
   const url = invitationUrl(token);
   const role = invitation.role === "ADMIN" ? "Admin" : "Member";
-  const html = await renderWorkspaceInvitation({
+  const props = {
     inviterName: inviterName || "A workspace admin",
     workspaceName,
     role,
     url,
-  });
+  };
+  const html = await renderWorkspaceInvitation(props);
   await sendPlatformEmail({
     to: invitation.emailNormalized,
     subject: `Join ${workspaceName.replace(/[\r\n]+/g, " ")} on Waitlyze`,
     html,
+    text: workspaceInvitationText(props),
     idempotencyKey: `workspace-invitation-${invitation.id}-${invitation.tokenHash.slice(0, 16)}`,
   });
 }
