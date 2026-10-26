@@ -49,6 +49,8 @@ With one active key per waitlist, revoke → create briefly interrupts integrati
 
 ## Scope and access
 
+API keys work on **all plans, including free** — there is no plan gate on creating, listing, or using keys. Every key carries the same scopes and the same per-key rate limit below regardless of plan.
+
 The UI creates `waitlist:write` keys: signup creation for the selected waitlist only. They cannot list subscribers, change pages, manage workspaces, or call dashboard-only `/api/v1` routes.
 
 | Allowed | Denied |

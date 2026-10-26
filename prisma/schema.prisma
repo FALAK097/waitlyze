@@ -128,6 +128,8 @@ model WaitList {
   automationRuns         AutomationRun[]
   webhookSubscriptions   WebhookSubscription[]
   customDomain           CustomDomain?
+  emailSender            WaitlistEmailSender?
+  notificationChannels   WaitlistNotificationChannel[]
 
   @@unique([workspaceId, creationKey])
   @@index([workspaceId, status])
@@ -823,6 +825,48 @@ model WorkspaceIntegration {
   @@unique([workspaceId, provider])
   @@index([workspaceId, status])
   @@map("workspace_integrations")
+}
+
+// Phase 7c BYOK: per-waitlist sender identity. A row here means this waitlist
+// sends through its own Resend key + From address instead of the workspace
+// connection. Secrets are AES-256-GCM encrypted; see sender-resolution.mjs
+// for the waitlist → workspace → deployment-default resolution order.
+model WaitlistEmailSender {
+  id               String    @id @default(cuid())
+  waitListId       String    @unique
+  status           String    @default("NEEDS_TEST")
+  secretCiphertext String
+  secretIv         String
+  secretTag        String
+  fromEmail        String
+  lastTestedAt     DateTime?
+  lastErrorCode    String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  waitList         WaitList  @relation(fields: [waitListId], references: [id], onDelete: Cascade)
+
+  @@map("waitlist_email_senders")
+}
+
+// Phase 7c: Slack/Discord milestone notifications per waitlist. The stored
+// secret is the incoming-webhook URL, encrypted like every other secret.
+model WaitlistNotificationChannel {
+  id               String    @id @default(cuid())
+  waitListId       String
+  provider         String
+  status           String    @default("NEEDS_TEST")
+  secretCiphertext String
+  secretIv         String
+  secretTag        String
+  lastTestedAt     DateTime?
+  lastErrorCode    String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  waitList         WaitList  @relation(fields: [waitListId], references: [id], onDelete: Cascade)
+
+  @@unique([waitListId, provider])
+  @@index([waitListId, status])
+  @@map("waitlist_notification_channels")
 }
 
 enum CustomDomainStatus {
