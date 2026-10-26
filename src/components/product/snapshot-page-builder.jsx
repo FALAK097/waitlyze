@@ -1218,15 +1218,16 @@ export function SnapshotPageBuilder({
             ["edit", "Edit"],
             ["preview", "Preview"],
           ].map(([id, label]) => (
-            <button
-              className="min-h-11 flex-1 rounded-lg border-0 bg-transparent px-4 text-caption font-semibold text-product-text-secondary aria-pressed:bg-product-bg-inset aria-pressed:text-product-text-primary"
+            <Button
               key={id}
               type="button"
+              variant="product-segment"
+              size="builder-mobile-segment"
               aria-pressed={mobileMode === id}
               onClick={() => setMobileMode(id)}
             >
               {label}
-            </button>
+            </Button>
           ))}
         </div>
       )}
@@ -1240,15 +1241,16 @@ export function SnapshotPageBuilder({
               ["structure", "Structure"],
               ["properties", "Block settings"],
             ].map(([id, label]) => (
-              <button
-                className="min-h-11 flex-1 rounded-lg border-0 bg-transparent px-3 text-caption font-semibold text-product-text-secondary aria-pressed:bg-product-bg-inset aria-pressed:text-product-text-primary"
+              <Button
                 key={id}
                 type="button"
+                variant="product-segment"
+                size="builder-mobile-segment"
                 aria-pressed={mobileEditorPanel === id}
                 onClick={() => setMobileEditorPanel(id)}
               >
                 {label}
-              </button>
+              </Button>
             ))}
           </div>
           <aside
@@ -1259,19 +1261,21 @@ export function SnapshotPageBuilder({
             data-mobile-mode={mobileMode}
             data-mobile-panel={mobileEditorPanel}
           >
-            <div className="sticky top-0 z-2 grid grid-cols-2 gap-1 bg-product-bg-surface p-2.5 [&_button]:min-h-9 [&_button]:cursor-pointer [&_button]:rounded-lg [&_button]:border-0 [&_button]:bg-transparent [&_button]:text-caption [&_button]:font-semibold [&_button]:text-product-text-secondary [&_button[aria-pressed=true]]:bg-product-bg-inset [&_button[aria-pressed=true]]:text-product-text-primary">
+            <div className="sticky top-0 z-2 grid grid-cols-2 gap-1 bg-product-bg-surface p-2.5">
               {[
                 ["blocks", "Blocks"],
                 ["templates", "Templates"],
               ].map(([id, label]) => (
-                <button
+                <Button
                   key={id}
                   type="button"
+                  variant="product-segment"
+                  size="builder-panel-segment"
                   aria-pressed={panel === id}
                   onClick={() => setPanel(id)}
                 >
                   {label}
-                </button>
+                </Button>
               ))}
             </div>
             {panel === "blocks" && (
@@ -1475,19 +1479,21 @@ export function SnapshotPageBuilder({
             data-mobile-mode={mobileMode}
             data-mobile-panel={mobileEditorPanel}
           >
-            <div className="sticky top-0 z-2 grid grid-cols-2 gap-1 bg-product-bg-surface p-2.5 [&_button]:min-h-9 [&_button]:cursor-pointer [&_button]:rounded-lg [&_button]:border-0 [&_button]:bg-transparent [&_button]:text-caption [&_button]:font-semibold [&_button]:text-product-text-secondary [&_button[aria-pressed=true]]:bg-product-bg-inset [&_button[aria-pressed=true]]:text-product-text-primary">
+            <div className="sticky top-0 z-2 grid grid-cols-2 gap-1 bg-product-bg-surface p-2.5">
               {[
                 ["properties", "Properties"],
                 ["design", "Design"],
               ].map(([id, label]) => (
-                <button
+                <Button
                   key={id}
                   type="button"
+                  variant="product-segment"
+                  size="builder-panel-segment"
                   aria-pressed={rightPanel === id}
                   onClick={() => setRightPanel(id)}
                 >
                   {label}
-                </button>
+                </Button>
               ))}
             </div>
             {rightPanel === "properties" ? (
@@ -1533,11 +1539,7 @@ export function SnapshotPageBuilder({
             ) : (
               <>
                 <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-                  <div
-                    className="flex flex-wrap gap-1 [&_button]:cursor-pointer [&_button]:rounded-lg [&_button]:border-0 [&_button]:bg-transparent [&_button]:px-3 [&_button]:py-2 [&_button]:text-caption [&_button]:font-semibold [&_button]:text-product-text-secondary [&_button[aria-pressed=true]]:bg-product-bg-surface [&_button[aria-pressed=true]]:text-product-text-primary"
-                    role="group"
-                    aria-label="Preview state"
-                  >
+                  <div className="flex flex-wrap gap-1" role="group" aria-label="Preview state">
                     {[
                       ["confirmed", "Confirmed"],
                       ["pending", "Pending email"],
@@ -1549,37 +1551,39 @@ export function SnapshotPageBuilder({
                           (id !== "returning" || waitList.showReferrals),
                       )
                       .map(([id, label]) => (
-                        <button
+                        <Button
                           key={id}
                           type="button"
+                          variant="product-segment-surface"
+                          size="preview-state"
                           aria-pressed={statusState === id}
                           onClick={() => setStatusState(id)}
                         >
                           {label}
-                        </button>
+                        </Button>
                       ))}
                   </div>
-                  <div
-                    className="flex gap-1 [&_button]:flex [&_button]:size-9 [&_button]:cursor-pointer [&_button]:items-center [&_button]:justify-center [&_button]:rounded-lg [&_button]:border-0 [&_button]:bg-transparent [&_button]:text-product-text-secondary [&_button[aria-pressed=true]]:bg-product-bg-surface [&_button[aria-pressed=true]]:text-product-text-primary"
-                    role="group"
-                    aria-label="Preview viewport"
-                  >
-                    <button
+                  <div className="flex gap-1" role="group" aria-label="Preview viewport">
+                    <Button
                       type="button"
                       aria-label="Desktop preview"
+                      variant="product-segment-surface"
+                      size="preview-viewport"
                       aria-pressed={statusViewport === "desktop"}
                       onClick={() => setStatusViewport("desktop")}
                     >
                       <HugeiconsIcon icon={MonitorIcon} size={17} aria-hidden="true" />
-                    </button>
-                    <button
+                    </Button>
+                    <Button
                       type="button"
                       aria-label="Mobile preview"
+                      variant="product-segment-surface"
+                      size="preview-viewport"
                       aria-pressed={statusViewport === "mobile"}
                       onClick={() => setStatusViewport("mobile")}
                     >
                       <HugeiconsIcon icon={SmartphoneIcon} size={17} aria-hidden="true" />
-                    </button>
+                    </Button>
                   </div>
                 </div>
                 <div

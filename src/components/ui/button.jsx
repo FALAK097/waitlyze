@@ -32,6 +32,10 @@ const buttonVariants = cva(
           "rounded-full border-product-border-subtle bg-transparent text-product-text-secondary transition-colors hover:bg-product-bg-inset focus-visible:ring-2 focus-visible:ring-product-success-text focus-visible:outline-none focus-visible:ring-inset active:not-aria-[haspopup]:translate-y-0 aria-[pressed=true]:border-product-text-primary aria-[pressed=true]:text-product-text-primary",
         "product-option":
           "border-0 bg-transparent text-product-text-primary transition-colors hover:bg-product-bg-inset focus-visible:ring-0 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-product-focus active:not-aria-[haspopup]:translate-y-0 aria-[pressed=true]:bg-product-bg-inset",
+        "product-segment":
+          "border-0 bg-transparent text-product-text-secondary transition-colors hover:bg-product-bg-inset hover:text-product-text-primary focus-visible:ring-0 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-product-focus active:not-aria-[haspopup]:translate-y-0 aria-[pressed=true]:bg-product-bg-inset aria-[pressed=true]:text-product-text-primary",
+        "product-segment-surface":
+          "border-0 bg-transparent text-product-text-secondary transition-colors hover:bg-product-bg-inset hover:text-product-text-primary focus-visible:ring-0 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-product-focus active:not-aria-[haspopup]:translate-y-0 aria-[pressed=true]:bg-product-bg-surface aria-[pressed=true]:text-product-text-primary",
         "product-inline-link":
           "border-0 bg-transparent font-normal text-product-text-primary underline underline-offset-4 transition-colors hover:bg-transparent hover:text-product-text-secondary focus-visible:ring-0 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-product-focus active:not-aria-[haspopup]:translate-y-0",
         "table-sort":
@@ -61,6 +65,13 @@ const buttonVariants = cva(
         "date-back":
           "h-auto min-h-7 rounded-md px-1 text-xs font-medium text-product-text-secondary",
         "date-action": "h-auto min-h-8 rounded-lg px-2.5 py-1 text-xs font-medium",
+        "builder-mobile-segment":
+          "h-auto min-h-11 min-w-0 flex-1 px-3 text-caption leading-tight font-semibold whitespace-normal",
+        "builder-panel-segment":
+          "h-auto min-h-11 w-full min-w-0 px-2 text-caption leading-tight font-semibold whitespace-normal",
+        "preview-state":
+          "h-auto min-h-11 min-w-0 shrink px-3 py-2 text-caption leading-tight font-semibold whitespace-normal",
+        "preview-viewport": "size-11 p-0 [&_svg]:size-[17px]",
         "navigation-item":
           "h-auto min-h-11 w-full min-w-0 justify-start gap-3 px-3 py-2.5 text-item font-normal whitespace-normal aria-[current=page]:font-medium max-[760px]:gap-2 max-[760px]:px-2.5",
         card: "h-auto w-full flex-wrap items-start justify-between gap-4 rounded-lg border-0 px-3 py-2.5 text-left font-normal whitespace-normal",
