@@ -8,6 +8,7 @@ import {
   NumberFieldInput,
 } from "@/components/reui/number-field";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 import { EmailCanvas } from "./email-canvas";
@@ -137,7 +138,7 @@ function TimingFields({ recipe, delay, busy, onUpdateRecipe }) {
 function TestSendForm({ busy, dirty, testTo, onTestToChange, onSendTest, recipe }) {
   return (
     <form className="flex items-center gap-2" onSubmit={(event) => onSendTest(event, recipe)}>
-      <input
+      <Input
         className="h-11 w-45 min-w-0 rounded-product-control border border-product-border-control bg-white px-2.5 text-caption max-sm:w-auto max-sm:flex-1 max-sm:text-base"
         type="email"
         placeholder="you@example.com"
@@ -207,7 +208,8 @@ export function AutomationRecipePanel({
       <div className={fieldCard}>
         <TimingFields recipe={recipe} delay={delay} busy={busy} onUpdateRecipe={onUpdateRecipe} />
         <div className={fieldRow}>
-          <input
+          <Input
+            type="text"
             className={fieldInput}
             maxLength={160}
             aria-label="Subject"

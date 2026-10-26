@@ -15,6 +15,14 @@ import {
   sendBroadcastTestEmail,
 } from "@/app/actions/emails";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { applySeedVars } from "@/lib/email/preview-vars.mjs";
 import { emailStatusLabel } from "@/lib/emails/status-label.mjs";
 import { formatProductDate } from "@/lib/product-date.mjs";
@@ -168,19 +176,18 @@ function RecipientsPanel({
       <label className={hint} htmlFor="broadcast-segment">
         Segment
       </label>
-      <select
-        id="broadcast-segment"
-        className={testInput}
-        value={segment}
-        disabled={busy}
-        onChange={(event) => onSegmentChange(event.target.value)}
-      >
-        {segments.map((item) => (
-          <option key={item.key} value={item.key}>
-            {item.label}
-          </option>
-        ))}
-      </select>
+      <Select value={segment} disabled={busy} onValueChange={onSegmentChange}>
+        <SelectTrigger id="broadcast-segment" className={testInput}>
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {segments.map((item) => (
+            <SelectItem key={item.key} value={item.key}>
+              {item.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
       <span className={recipientsCount}>{preview.count} eligible</span>
       <Button
         type="button"
@@ -245,7 +252,7 @@ function SendConfirmations({
           Schedule “{data.subject}” for {preview.count} subscriber
           {preview.count === 1 ? "" : "s"}? Eligibility is re-checked at send time.
         </p>
-        <input
+        <Input
           type="datetime-local"
           className={testInput}
           aria-label={`Scheduled send time (${founderTimeZone()})`}
@@ -710,7 +717,8 @@ export function BroadcastManager({
                 >
                   <div className={fieldCard}>
                     <div className={fieldRow}>
-                      <input
+                      <Input
+                        type="text"
                         className={fieldInput}
                         maxLength={120}
                         aria-label="Internal name"
@@ -720,7 +728,8 @@ export function BroadcastManager({
                       />
                     </div>
                     <div className={fieldRow}>
-                      <input
+                      <Input
+                        type="text"
                         className={fieldInput}
                         maxLength={160}
                         aria-label="Subject"
@@ -730,7 +739,8 @@ export function BroadcastManager({
                       />
                     </div>
                     <div className={fieldRow}>
-                      <input
+                      <Input
+                        type="text"
                         className={fieldInput}
                         maxLength={180}
                         aria-label="Preview text"
@@ -815,7 +825,7 @@ export function BroadcastManager({
                   </div>
                 ) : null}
                 <form className={testForm} onSubmit={sendTest}>
-                  <input
+                  <Input
                     className={testInput}
                     type="email"
                     placeholder="you@example.com"

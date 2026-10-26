@@ -5,6 +5,8 @@ import { toast } from "sonner";
 
 import { upsertEmailTemplate, sendTestEmail } from "@/app/actions/emails";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { applySeedVars } from "@/lib/email/preview-vars.mjs";
 
 import { EmailCanvas } from "./email-canvas";
@@ -47,7 +49,7 @@ const modeBar = "flex flex-wrap items-center gap-2";
 const modeTab =
   "min-h-8.5 rounded-product-control border border-product-border-control bg-white px-3 text-caption font-semibold text-product-text-primary cursor-pointer aria-[pressed=true]:bg-product-bg-inset focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-product-success-text!";
 const htmlPane =
-  "min-h-105 w-full rounded-lg border border-product-border-subtle bg-white p-4 font-product-mono text-caption leading-relaxed";
+  "field-sizing-fixed min-h-105 w-full rounded-lg border border-product-border-subtle bg-white p-4 font-product-mono text-caption leading-relaxed";
 const hint = "m-0 text-caption leading-normal text-product-text-secondary";
 
 const kinds = [
@@ -246,9 +248,9 @@ export function EmailTemplatesManager({ waitListId, waitListName, initialTemplat
           </header>
           <div className={fieldCard}>
             <div className={fieldRow}>
-              <input
-                className={fieldInput}
+              <Input
                 type="text"
+                className={fieldInput}
                 maxLength={160}
                 aria-label="Subject"
                 placeholder="Subject - what subscribers see in the inbox"
@@ -257,9 +259,9 @@ export function EmailTemplatesManager({ waitListId, waitListName, initialTemplat
               />
             </div>
             <div className={fieldRow}>
-              <input
-                className={fieldInput}
+              <Input
                 type="text"
+                className={fieldInput}
                 maxLength={180}
                 aria-label="Preview text"
                 placeholder="Preview text - shown after the subject"
@@ -297,7 +299,7 @@ export function EmailTemplatesManager({ waitListId, waitListName, initialTemplat
           </fieldset>
           {mode === "html" ? (
             <div className="flex flex-col gap-3">
-              <textarea
+              <Textarea
                 className={htmlPane}
                 aria-label="Email HTML source"
                 value={htmlDraft}
@@ -348,7 +350,7 @@ export function EmailTemplatesManager({ waitListId, waitListName, initialTemplat
           <div className={metaBar}>
             <VariableChips keys={VARIABLE_SETS[current] || VARIABLE_SETS.signup} />
             <form className={testForm} onSubmit={sendTest}>
-              <input
+              <Input
                 className={testInput}
                 id="subscriber-test-address"
                 type="email"
