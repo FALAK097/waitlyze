@@ -1636,17 +1636,6 @@ export function SnapshotPageBuilder({
               rewards={snapshot.rewards}
               update={(value) => updateRoot("statusPage", value)}
               updateRewards={(value) => updateRoot("rewards", value)}
-              updateRoots={(patch) =>
-                applySnapshot({
-                  ...snapshot,
-                  ...Object.fromEntries(
-                    Object.entries(patch).map(([key, value]) => [
-                      key,
-                      { ...snapshot[key], ...value },
-                    ]),
-                  ),
-                })
-              }
             />
           }
         >
@@ -2276,7 +2265,6 @@ function StatusPanel({
   waitListId,
   rewards,
   updateRewards,
-  updateRoots,
 }) {
   // Drafts saved before rewards existed have no key yet: fall back to the
   // zero-config defaults (same values the API resolves server-side).
