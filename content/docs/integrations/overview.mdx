@@ -1,0 +1,43 @@
+---
+title: Integrations
+description: Choose how Waitlyze connects to email, notifications, event receivers, and automation tools.
+---
+
+Connect the part of your launch workflow that needs to leave Waitlyze. Some connections are configured in workspace or waitlist settings; others are event-based recipes rather than native apps. Each guide calls out the setup path and its current limits.
+
+## Email delivery
+
+Use Resend to send waitlist email from a verified domain. The workspace connection is managed in **Settings → Integrations**; a waitlist can also have its own sender credentials on supported sending paths.
+
+<Cards>
+<Card className="waitlyze-integration-card" icon={<img src="/integrations/resend.svg" width={20} height={20} className="size-5 object-contain" alt="" />} title="Resend" href="/docs/resend" description="Connect a sender, configure bounce and complaint events, and understand workspace versus waitlist scope." />
+</Cards>
+
+## Notifications
+
+Slack and Discord receive a best-effort milestone message when a waitlist reaches a signup milestone. They are separate destinations; neither is a general-purpose event stream.
+
+<Cards>
+<Card className="waitlyze-integration-card" icon={<img src="/integrations/slack.svg" width={20} height={20} className="size-5 object-contain" alt="" />} title="Slack" href="/docs/slack" description="Send signup-milestone pings to a Slack channel." />
+<Card className="waitlyze-integration-card" icon={<img src="/integrations/discord.svg" width={20} height={20} className="size-5 object-contain" alt="" />} title="Discord" href="/docs/discord" description="Send signup-milestone pings to a Discord channel." />
+</Cards>
+
+## Event delivery
+
+Use Waitlyze webhooks when another system needs a signed, retryable event for signup, verification, referral, or milestone activity. The payload contains IDs rather than subscriber email addresses.
+
+<Cards>
+<Card className="waitlyze-integration-card" icon={<img src="/integrations/webhooks.svg" width={20} height={20} className="size-5 object-contain" alt="" />} title="Webhooks" href="/docs/webhooks" description="Create endpoints, verify signatures, and recover failed deliveries." />
+</Cards>
+
+## Automation recipes
+
+Zapier is not a native Waitlyze app. Connect it through **Webhooks by Zapier** with the Catch Raw Hook trigger, then use a Code step and the Waitlyze signing secret to verify each event's raw body and `x-waitlyze-signature` header before the Zap acts on it. Mirroring signups into an email provider (Klaviyo, Mailchimp, Kit) follows the same webhook-first pattern: consume `signup.verified` in a function you own and call the ESP's subscribe API.
+
+<Cards>
+<Card className="waitlyze-integration-card" icon={<img src="/integrations/zapier.webp" width={20} height={20} className="size-5 object-contain" alt="" />} title="Zapier" href="/docs/zapier" description="Send Waitlyze events to a Zap with Webhooks by Zapier." />
+</Cards>
+
+## API or webhook?
+
+Use the [API](/docs/api/reference) when your server needs to create a signup, retrieve its status, or award points. Use a [webhook](/docs/webhooks) when Waitlyze should tell your system that something happened. Slack and Discord are simple milestone notifications; Zapier is a recipe that consumes the same webhooks.

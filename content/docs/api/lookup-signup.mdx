@@ -1,0 +1,28 @@
+---
+title: Look up signup
+description: GET /api/waitlist — retrieve a signup's status and position.
+---
+
+Use the status lookup to show an existing subscriber their current position or referral link. It does not create a signup.
+
+## Request
+
+`GET /api/waitlist` requires `waitlistId` and `email` query parameters. Send the API key in a header only—never put a secret in the URL.
+
+```bash title="Look up signup status"
+curl --get "$WAITLYZE_URL/api/waitlist" \
+  --data-urlencode "waitlistId=YOUR_WAITLIST_ID" \
+  --data-urlencode "email=person@example.com" \
+  --header "X-Api-Key: $WAITLYZE_API_KEY"
+```
+
+The response includes `position`, `verified`, `referral_code`, and `referral_link` when available. Unknown emails return `404`. Responses are `private, no-store`; do not cache them in a CDN.
+
+## Access
+
+The key must belong to the requested waitlist. This lookup uses the same scoped key and daily budget as signup creation. See [API keys](/docs/api-keys) for scope and limits, or the [full API guide](/docs/api) for response details.
+
+<Cards>
+<Card title="Create signup" href="/docs/api/create-signup" description="Add a new subscriber from your server." />
+<Card title="Award custom points" href="/docs/api/award-points" description="Credit an off-site action for a verified signup." />
+</Cards>

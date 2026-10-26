@@ -848,6 +848,33 @@ body {
 .waitlyze-docs:has(.waitlyze-changelog-page) #nd-sidebar {
   display: none;
 }
+/* Provider marks sit directly on the card surface, without a second tile behind them. */
+.waitlyze-docs .waitlyze-integration-card > .not-prose {
+  margin-bottom: 0.5rem;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.waitlyze-docs .docs-http-method {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  border-radius: 0.25rem;
+  padding: 0.125rem 0.375rem;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.625rem;
+  font-weight: 700;
+  line-height: 1;
+}
+.waitlyze-docs .docs-http-method--get {
+  background: oklch(95% 0.035 145);
+  color: oklch(39% 0.1 145);
+}
+.waitlyze-docs .docs-http-method--post {
+  background: oklch(95% 0.03 250);
+  color: oklch(40% 0.1 250);
+}
 /* High-contrast callouts driven by the fumadocs --callout-color variable. */
 .waitlyze-docs div[style*="--callout-color"] {
   background: color-mix(in oklch, var(--callout-color) 7%, #fff);

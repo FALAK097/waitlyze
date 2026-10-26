@@ -1,0 +1,23 @@
+---
+title: Discord notifications
+description: Send signup-milestone notifications to a Discord channel.
+icon: discord
+---
+
+Waitlyze sends a short Discord message when a published waitlist reaches **1, 10, 100, or 1,000 signups**. This is a best-effort milestone notification, not a complete event feed.
+
+## Connect Discord
+
+1. In Discord, open **Channel settings → Integrations → Webhooks**, create a webhook, and copy its URL. Supported hosts are `discord.com`, `discordapp.com`, and `ptb.discord.com`.
+2. Save it for the waitlist with `PUT /api/wait-lists/{id}/notifications/discord` and JSON body `{ "webhookUrl": "https://discord.com/api/webhooks/…" }`.
+3. Send a test with `POST /api/wait-lists/{id}/notifications/discord`. The channel connects only if Discord accepts the test message.
+
+Use `GET` on the same path to check status or `DELETE` to disconnect.
+
+## Access and delivery
+
+The channel endpoint requires a signed-in Waitlyze session with waitlist-management access. It does not accept a signup API key. There is not yet a dedicated Discord settings form in the app.
+
+The webhook URL is encrypted and never returned by the endpoint. Each waitlist can connect one Discord channel. Messages contain only the waitlist name and milestone count; failures mark the channel as needing attention without blocking signups, owner email, or customer webhooks.
+
+For signed events, retries, and delivery history, use [Webhooks](/docs/webhooks). See [Notifications](/docs/notifications) for shared behavior and [Integrations](/docs/integrations/overview) for other connections.

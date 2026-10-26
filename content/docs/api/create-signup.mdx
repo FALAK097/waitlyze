@@ -1,0 +1,38 @@
+---
+title: Create signup
+description: POST /api/waitlist — create a waitlist signup from your server.
+---
+
+Create a signup when your own backend owns the form or signup flow.
+
+## Request
+
+`POST /api/waitlist` accepts JSON. Authenticate with `X-Api-Key` or `Authorization: Bearer`; the legacy `apiKey` body field is also accepted here, but headers are preferred.
+
+```bash title="Create a signup"
+curl --request POST "$WAITLYZE_URL/api/waitlist" \
+  --header "Content-Type: application/json" \
+  --header "X-Api-Key: $WAITLYZE_API_KEY" \
+  --header "Idempotency-Key: $REQUEST_ID" \
+  --data '{
+    "waitlistId": "YOUR_WAITLIST_ID",
+    "email": "person@example.com"
+  }'
+```
+
+`Idempotency-Key` is optional, but recommended for safe retries. Add `referralCode` to credit a referrer and `marketingConsent: true` only after the visitor has opted in. If Turnstile is enabled for the waitlist, include the visitor's `cf-turnstile-response` token.
+
+## Response
+
+A successful response includes the signup's position, verification state, referral link, and reward summary. A duplicate returns `409` with the existing signup position; an expired or mismatched key returns `401`. See the [full signup guide](/docs/api) for payload fields, examples, rate limits, and error handling.
+
+<Callout type="warn" title="Keep the key on your server">
+Waitlist API keys are secrets. Never expose one in browser code, a mobile bundle, or a public repository. For browser-only forms, use the [hosted page or embed](/docs/embed).
+</Callout>
+
+## Related endpoints
+
+<Cards>
+<Card title="Look up signup" href="/docs/api/lookup-signup" description="Read current position and verification status." />
+<Card title="Award custom points" href="/docs/api/award-points" description="Credit a configured off-site action." />
+</Cards>

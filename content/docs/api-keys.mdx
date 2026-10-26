@@ -3,7 +3,7 @@ title: API keys
 description: Create, store, replace, and revoke per-waitlist signup keys.
 ---
 
-API keys live in Settings → Integrations → **API keys**. Workspace owners and admins can create keys for waitlists they manage. Members cannot.
+API keys live in Settings → Integrations → **API keys**. Workspace owners and admins can create keys for waitlists they manage. Members cannot. The [API reference](/docs/api/reference) lists the public endpoints these keys can use.
 
 ## Create and store a key
 
@@ -51,22 +51,24 @@ With one active key per waitlist, revoke → create briefly interrupts integrati
 
 API keys work on **all plans, including free** — there is no plan gate on creating, listing, or using keys. Every key carries the same scopes and the same per-key rate limit below regardless of plan.
 
-The UI creates `waitlist:write` keys: signup creation for the selected waitlist only. They cannot list subscribers, change pages, manage workspaces, or call dashboard-only `/api/v1` routes.
+The UI creates `waitlist:write` keys scoped to the selected waitlist. They can create signups, look up signup status, and award configured custom points. They cannot list subscribers, change pages, manage workspaces, or call dashboard-only `/api/v1` routes.
 
 | Allowed | Denied |
 | --- | --- |
 | `POST /api/waitlist` for the linked `waitlistId` | Listing subscribers or exports |
 | `GET /api/waitlist` status lookup (position, referral link) | Managing keys, pages, workspace, email, domains, webhooks |
+| `POST /api/waitlist/points` for a verified signup on the linked waitlist | Accessing any other waitlist |
 | Passing `referralCode` / `referral_code` for the same waitlist |  |
 | `Idempotency-Key` replays of your own signups | Reusing one key across different emails (`409`) |
 
 Expired or revoked keys return `401`. A mismatched `waitlistId` (key for A, body says B) also returns `401`.
 
-Each key gets 5,000 requests per day across signups and status lookups, reported via `X-RateLimit-Limit` / `X-RateLimit-Remaining` / `X-RateLimit-Reset`. Prefer header auth (`x-api-key` or `Authorization: Bearer`) for `GET` lookups so the secret never lands in URLs or logs.
+Each key gets 5,000 requests per day across signups, status lookups, and point awards (all three endpoints share the same budget), reported via `X-RateLimit-Limit` / `X-RateLimit-Remaining` / `X-RateLimit-Reset`. Prefer header auth (`x-api-key` or `Authorization: Bearer`) for `GET` lookups so the secret never lands in URLs or logs.
 
 ## Next
 
 <Cards>
+<Card title="API Reference" href="/docs/api/reference" description="See every supported endpoint and authentication rule." />
 <Card title="Signup API" href="/docs/api" description="Exact request contract and status codes." />
 <Card title="Webhooks" href="/docs/webhooks" description="Stream accepted signups to your stack." />
 <Card title="Workspace and roles" href="/docs/workspace" description="Who can manage keys." />
