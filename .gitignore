@@ -2,6 +2,17 @@
 
 # dependencies
 /node_modules
+**/node_modules
+/tmp
+
+# local agent tooling (never committed)
+/.agents
+/.claude
+/.windsurf
+/.firecrawl
+/AGENTS.md
+/CLAUDE.md
+/skills-lock.json
 /.pnpm-store/
 /.pnp
 .pnp.js
@@ -48,6 +59,3 @@ next-env.d.ts
 
 # Temporary route materialized only during isolated browser builds
 /src/app/design-system/
-
-# Tegami publish lock (private app, versioning only)
-/.tegami/publish-lock.yaml

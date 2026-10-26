@@ -1,0 +1,11 @@
+{
+  "name": "waitlyze-outbox-dispatch",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Cron worker: drains the email outbox and pending webhook deliveries via the app's internal route.",
+  "type": "module",
+  "dependencies": {
+    "wrangler": "^4.152.0"
+  },
+  "packageManager": "pnpm@11.5.0"
+}

@@ -1,3 +1,17 @@
+## v0.10.0
+
+### The full campaign loop: cockpit, rewards, and cleaner growth signals
+
+Launches now have an end-to-end loop — share to grow, earn points, and watch a fair, well-attributed funnel — with email delivery that reaches the inbox. Abuse limits and verification keep the campaign honest without adding friction.
+
+#### Highlights
+
+- **Run the campaign from one place.** The referral cockpit lets teams control share channels, social follows, and campaign settings, with a masked leaderboard view that never exposes raw emails.
+- **Turn sharing into rewards.** Qualifying referrals now earn points from a transparent ledger, and subscribers see their position and progress toward the next reward tier.
+- **Keep the funnel honest.** IP-velocity fraud limits gate suspicious signup bursts, and each waitlist can opt in to Cloudflare Turnstile human verification.
+- **Attribute growth properly.** Signups break down by source, location, and device, with embeddable public widgets (leaderboard and counter) so momentum can be shown anywhere.
+- **Email that keeps launches moving.** A founder email builder with reusable templates and a retried delivery outbox, plus per-waitlist BYOK senders and Slack notifications.
+
 ## v0.9.0
 
 ### Analytics, with more signal

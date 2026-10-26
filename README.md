@@ -73,25 +73,13 @@ pnpm format        # format all files
 pnpm check         # lint + format check, as run in CI
 ```
 
-Install the recommended [Oxc VS Code extension](https://marketplace.visualstudio.com/items?itemName=oxc.oxc-vscode) for format-on-save and inline diagnostics.
-
 ## Releasing
 
-Release notes are managed with [Tegami](https://tegami.fuma-nama.dev). To describe a change, add a Markdown file to `.tegami/`:
+Releases are versioned manually. To cut a release:
 
-```md
----
-subject: Explain the update in a short phrase
-packages:
-  waitlyze: patch
----
-
-### Highlights
-
-Describe the customer-facing change here.
-```
-
-Run `pnpm tegami` locally to draft an entry. After it merges to `main`, the Tegami workflow opens a Version Packages pull request that updates `package.json` and `CHANGELOG.md`. Waitlyze is a private app, so it is versioned without publishing an npm package. The published history is rendered at `/docs/changelog`.
+1. Bump `version` in `package.json`.
+2. Add a new `## vX.Y.Z` entry to the top of `CHANGELOG.md`, following the format of the existing entries.
+3. Open a pull request. The published history is rendered at `/docs/changelog`.
 
 ## Attribution
 
