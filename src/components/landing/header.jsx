@@ -3,8 +3,9 @@
 import { ArrowUpRight01Icon, Cancel01Icon, Menu01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import Link from "next/link";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 import SignupButton from "./signup-button";
@@ -13,21 +14,24 @@ import Wordmark from "./wordmark";
 export default function Header() {
   const [open, setOpen] = useState(false);
   const menuRef = useRef(null);
+  useEffect(() => {
+    if (!open) return undefined;
+    function handleEscape(event) {
+      if (event.key === "Escape") {
+        setOpen(false);
+        menuRef.current?.focus();
+      }
+    }
+    window.addEventListener("keydown", handleEscape);
+    return () => window.removeEventListener("keydown", handleEscape);
+  }, [open]);
   const links = [
     ["How it works", "/#how-it-works"],
     ["Features", "/#features"],
     ["FAQ", "/#faq"],
   ];
   return (
-    <header
-      className="sticky top-0 z-40 bg-product-bg-surface"
-      onKeyDown={(event) => {
-        if (event.key === "Escape" && open) {
-          setOpen(false);
-          menuRef.current?.focus();
-        }
-      }}
-    >
+    <header className="sticky top-0 z-40 bg-product-bg-surface">
       <div className="mx-auto flex h-22 w-full max-w-7xl items-center justify-between gap-6 px-4 sm:px-5 md:h-18 md:px-8 lg:px-12">
         <Link
           href="/"
@@ -52,21 +56,23 @@ export default function Header() {
           <SignupButton compact className="max-sm:gap-2 max-sm:px-3 max-sm:py-2">
             Sign in
           </SignupButton>
-          <button
+          <Button
             ref={menuRef}
             type="button"
+            variant="product-ghost"
+            size="icon-navigation"
             aria-label={open ? "Close navigation" : "Open navigation"}
             aria-expanded={open}
             aria-controls="wl-mobile-nav"
             onClick={() => setOpen(!open)}
-            className="inline-grid size-10 place-items-center rounded-md border border-transparent bg-transparent text-product-text-secondary transition-colors hover:bg-product-bg-inset hover:text-product-text-primary focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-neutral-900 max-sm:w-9 md:hidden"
+            className="md:hidden"
           >
             {open ? (
               <HugeiconsIcon icon={Cancel01Icon} size={20} />
             ) : (
               <HugeiconsIcon icon={Menu01Icon} size={20} />
             )}
-          </button>
+          </Button>
         </div>
       </div>
       <nav
