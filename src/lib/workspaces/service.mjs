@@ -29,6 +29,14 @@ function actor(userId) {
   if (typeof userId !== "string" || !userId) throw new AccessError(401);
 }
 
+function isPersonalWorkspaceReady(workspace, legacyWaitlist) {
+  return (
+    workspace?.members[0]?.role === "OWNER" &&
+    workspace.name !== "Personal workspace" &&
+    !legacyWaitlist
+  );
+}
+
 // Personal workspaces are named after their owner so the switcher never shows
 // two identically named entries.
 export function personalWorkspaceName(name, email) {
@@ -78,6 +86,27 @@ export function createWorkspaceService(db) {
         },
         orderBy: [{ createdAt: "asc" }, { id: "asc" }],
       });
+    },
+    async currentContext(userId) {
+      actor(userId);
+      const [workspaces, legacyWaitlist] = await Promise.all([
+        this.list(userId),
+        db.waitList.findFirst({
+          where: { userId, workspaceId: null },
+          select: { id: true },
+        }),
+      ]);
+      const personal = workspaces.find((workspace) => workspace.personalOwnerId === userId);
+      if (isPersonalWorkspaceReady(personal, legacyWaitlist)) {
+        return {
+          personal: { id: personal.id, name: personal.name },
+          workspaces,
+        };
+      }
+
+      // Preserve the transactional initialization and legacy-row repair path.
+      const initializedPersonal = await this.ensurePersonal(userId, { skipFastPath: true });
+      return { personal: initializedPersonal, workspaces: await this.list(userId) };
     },
     async requireAccess(userId, workspaceId, permission) {
       actor(userId);
@@ -234,33 +263,30 @@ export function createWorkspaceService(db) {
       if (!campaign) throw new AccessError();
       return campaign;
     },
-    async ensurePersonal(userId) {
+    async ensurePersonal(userId, { skipFastPath = false } = {}) {
       actor(userId);
-      // Existing null-workspace campaigns are backfilled by the workspace
-      // migration, and every current create path persists a workspace ID.
-      // If legacy rows are still present, fall through and backfill them.
-      const [personal, legacyWaitlist] = await Promise.all([
-        db.workspace.findUnique({
-          where: { personalOwnerId: userId },
-          select: {
-            id: true,
-            name: true,
-            members: { where: { userId }, select: { role: true }, take: 1 },
-          },
-        }),
-        db.waitList.findFirst({
-          where: { userId, workspaceId: null },
-          select: { id: true },
-        }),
-      ]);
-      if (
-        personal &&
-        personal.members[0]?.role === "OWNER" &&
-        personal.name !== "Personal workspace" &&
-        !legacyWaitlist
-      ) {
-        const { id, name } = personal;
-        return { id, name };
+      if (!skipFastPath) {
+        // Existing null-workspace campaigns are backfilled by the workspace
+        // migration, and every current create path persists a workspace ID.
+        // If legacy rows are still present, fall through and backfill them.
+        const [personal, legacyWaitlist] = await Promise.all([
+          db.workspace.findUnique({
+            where: { personalOwnerId: userId },
+            select: {
+              id: true,
+              name: true,
+              members: { where: { userId }, select: { role: true }, take: 1 },
+            },
+          }),
+          db.waitList.findFirst({
+            where: { userId, workspaceId: null },
+            select: { id: true },
+          }),
+        ]);
+        if (isPersonalWorkspaceReady(personal, legacyWaitlist)) {
+          const { id, name } = personal;
+          return { id, name };
+        }
       }
 
       // Initialization and legacy backfill still use the serializable path;

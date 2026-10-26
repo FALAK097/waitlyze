@@ -15,9 +15,11 @@ export const currentWorkspace = cache(async () => {
   const session = await currentSession();
   if (!session?.user?.id) redirect("/");
   const service = createWorkspaceService(prisma);
-  const personal = await service.ensurePersonal(session.user.id);
-  const workspaces = await service.list(session.user.id);
-  const selectedId = (await cookies()).get("waitlyze-workspace")?.value;
+  const [{ personal, workspaces }, cookieStore] = await Promise.all([
+    service.currentContext(session.user.id),
+    cookies(),
+  ]);
+  const selectedId = cookieStore.get("waitlyze-workspace")?.value;
   const workspace =
     workspaces.find((item) => item.id === selectedId) ||
     workspaces.find((item) => item.id === personal.id);
