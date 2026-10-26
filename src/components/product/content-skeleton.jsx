@@ -3,6 +3,8 @@ const shape = "block rounded bg-product-bg-inset motion-safe:animate-pulse";
 const campaignBack = "flex h-6 items-center";
 const campaignHeading = "mt-2 mb-4 grid gap-2.5";
 const campaignNav = "flex gap-2 overflow-hidden border-b border-product-border-subtle";
+const createPanel =
+  "mx-auto grid w-full max-w-2xl justify-items-center gap-3 rounded-xl border border-product-border-subtle bg-product-bg-surface px-6 py-16 text-center";
 const pageHeading = "mt-3 mb-2 grid gap-2.5";
 const pagePanel =
   "grid grid-cols-3 gap-3.5 rounded-xl border border-product-border-subtle bg-product-bg-surface p-5 max-[600px]:grid-cols-2 max-[600px]:p-4";
@@ -28,7 +30,14 @@ export function ProductContentSkeleton({ label, variant = "detail", rows = 5 }) 
       </p>
       <div className="grid gap-3" aria-busy="true">
         <div className="grid gap-3" aria-hidden="true">
-          {variant === "campaign" ? (
+          {variant === "create" ? (
+            <div className={createPanel}>
+              <i className={`${shape} h-7.5 w-2/5`} />
+              <i className={`${shape} h-3.5 w-3/4`} />
+              <i className={`${shape} mt-2 h-11 w-36`} />
+              <i className={`${shape} mt-2 h-3 w-28`} />
+            </div>
+          ) : variant === "campaign" ? (
             <>
               <div className={campaignBack}>
                 <i className={`${shape} h-3 w-36`} />
