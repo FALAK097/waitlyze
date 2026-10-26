@@ -232,6 +232,35 @@ export function createWorkspaceService(db) {
     },
     async ensurePersonal(userId) {
       actor(userId);
+      // Existing null-workspace campaigns are backfilled by the workspace
+      // migration, and every current create path persists a workspace ID.
+      // If legacy rows are still present, fall through and backfill them.
+      const [personal, legacyWaitlist] = await Promise.all([
+        db.workspace.findUnique({
+          where: { personalOwnerId: userId },
+          select: {
+            id: true,
+            name: true,
+            members: { where: { userId }, select: { role: true }, take: 1 },
+          },
+        }),
+        db.waitList.findFirst({
+          where: { userId, workspaceId: null },
+          select: { id: true },
+        }),
+      ]);
+      if (
+        personal &&
+        personal.members[0]?.role === "OWNER" &&
+        personal.name !== "Personal workspace" &&
+        !legacyWaitlist
+      ) {
+        const { id, name } = personal;
+        return { id, name };
+      }
+
+      // Initialization and legacy backfill still use the serializable path;
+      // normal authenticated page loads avoid reopening that transaction.
       // Retry serialization/unique conflicts when login and a backfill race.
       for (let attempt = 0; attempt < 4; attempt++) {
         try {
