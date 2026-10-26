@@ -12,25 +12,25 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 
 import { EmailCanvas } from "./email-canvas";
 import { EmailPreviewFrame, SpamHintView, VariableChips } from "./email-composer-extras";
+import { emailComposerStyles } from "./email-composer-styles.mjs";
 
-const pane = "min-w-0 max-w-195 flex flex-col gap-5 lg:flex-1";
-const paneHead = "flex items-start justify-between gap-4 max-sm:flex-col max-sm:items-stretch";
-const paneTitle = "m-0 text-section font-semibold";
-const paneMeta = "m-0 text-caption leading-normal text-product-text-secondary";
-const paneActions = "flex shrink-0 flex-wrap items-center justify-end gap-2 max-sm:justify-start";
-const fieldCard = "overflow-hidden rounded-lg border border-product-border-subtle bg-white";
-const fieldRow =
-  "relative flex min-h-13 items-center gap-3 px-4 [&+&]:border-t border-product-border-subtle focus-within:bg-product-bg-inset focus-within:before:absolute focus-within:before:inset-y-0 focus-within:before:left-0 focus-within:before:w-0.5 focus-within:before:bg-product-success-text";
+const {
+  pane,
+  paneHead,
+  paneTitle,
+  paneMeta,
+  paneActions,
+  fieldCard,
+  fieldRow,
+  fieldInput,
+  canvasShell,
+  metaBar,
+} = emailComposerStyles;
 const fieldUnit = "shrink-0 text-xs text-product-text-secondary";
-const fieldInput =
-  "min-w-0 flex-1 border-0 bg-transparent py-3.5 text-body text-product-text-primary focus-visible:outline-none!";
 const numberField = "w-33 flex-none gap-0";
 const numberGroup = "h-8.5 rounded-product-control border-product-border-control bg-white";
 const numberInput = "tabular-nums";
 const numberButton = "text-product-text-secondary hover:bg-product-bg-inset";
-const canvasShell = "overflow-hidden rounded-lg border border-product-border-subtle bg-white";
-const metaBar =
-  "flex flex-wrap items-center justify-between gap-3.5 max-sm:flex-col max-sm:items-stretch";
 const hint = "m-0 text-caption leading-normal text-product-text-secondary";
 
 const hourValue = (minutes) => Number((minutes / 60).toFixed(2));

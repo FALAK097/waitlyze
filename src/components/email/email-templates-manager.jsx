@@ -9,6 +9,7 @@ import { applySeedVars } from "@/lib/email/preview-vars.mjs";
 
 import { EmailCanvas } from "./email-canvas";
 import { EmailPreviewFrame, SpamHintView, VariableChips } from "./email-composer-extras";
+import { emailComposerStyles } from "./email-composer-styles.mjs";
 
 const scope = "min-w-0 bg-white text-product-text-primary";
 const unsaved =
@@ -25,19 +26,18 @@ const railItem =
   "flex w-full flex-col gap-0.75 rounded-product-control border-0 bg-transparent p-3 text-left cursor-pointer hover:bg-product-bg-inset aria-[current=true]:bg-product-bg-inset disabled:cursor-default disabled:opacity-60 max-lg:min-w-38 max-lg:flex-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-product-success-text!";
 const railItemTitle = "text-body font-semibold wrap-anywhere";
 const railItemMeta = "text-micro leading-normal text-product-text-secondary";
-const pane = "min-w-0 max-w-195 flex flex-col gap-5 lg:flex-1";
-const paneHead = "flex items-start justify-between gap-4 max-sm:flex-col max-sm:items-stretch";
-const paneTitle = "m-0 text-section font-semibold";
-const paneMeta = "m-0 text-caption leading-normal text-product-text-secondary";
-const paneActions = "flex shrink-0 flex-wrap items-center justify-end gap-2 max-sm:justify-start";
-const fieldCard = "overflow-hidden rounded-lg border border-product-border-subtle bg-white";
-const fieldRow =
-  "relative flex min-h-13 items-center gap-3 px-4 [&+&]:border-t border-product-border-subtle focus-within:bg-product-bg-inset focus-within:before:absolute focus-within:before:inset-y-0 focus-within:before:left-0 focus-within:before:w-0.5 focus-within:before:bg-product-success-text";
-const fieldInput =
-  "min-w-0 flex-1 border-0 bg-transparent py-3.5 text-body text-product-text-primary focus-visible:outline-none!";
-const canvasShell = "overflow-hidden rounded-lg border border-product-border-subtle bg-white";
-const metaBar =
-  "flex flex-wrap items-center justify-between gap-3.5 max-sm:flex-col max-sm:items-stretch";
+const {
+  pane,
+  paneHead,
+  paneTitle,
+  paneMeta,
+  paneActions,
+  fieldCard,
+  fieldRow,
+  fieldInput,
+  canvasShell,
+  metaBar,
+} = emailComposerStyles;
 const testForm = "flex items-center gap-2";
 const testInput =
   "h-9 w-45 min-w-0 rounded-product-control border border-product-border-control bg-white px-2.5 text-caption max-sm:w-auto max-sm:flex-1 max-sm:text-base";
