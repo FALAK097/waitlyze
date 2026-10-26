@@ -27,15 +27,15 @@ Slack and Discord receive a best-effort milestone message when a waitlist reache
 Use Waitlyze webhooks when another system needs a signed, retryable event for signup, verification, referral, or milestone activity. The payload contains IDs rather than subscriber email addresses.
 
 <Cards>
-<Card title="Webhooks" href="/docs/webhooks" description="Create endpoints, verify signatures, and recover failed deliveries." />
+<Card className="waitlyze-integration-card" icon={<img src="/integrations/webhooks.svg" width={20} height={20} className="size-5 object-contain" alt="" />} title="Webhooks" href="/docs/webhooks" description="Create endpoints, verify signatures, and recover failed deliveries." />
 </Cards>
 
 ## Automation recipes
 
-Zapier is not a native Waitlyze app. Connect it through **Webhooks by Zapier** and use the Waitlyze signing secret to verify events before your Zap acts on them. Email-provider sync follows the same webhook-first pattern.
+Zapier is not a native Waitlyze app. Connect it through **Webhooks by Zapier** with the Catch Raw Hook trigger, then use a Code step and the Waitlyze signing secret to verify each event's raw body and `x-waitlyze-signature` header before the Zap acts on it. Email-provider sync follows the same webhook-first pattern.
 
 <Cards>
-<Card title="Zapier" href="/docs/zapier" description="Send Waitlyze events to a Zap with Webhooks by Zapier." />
+<Card className="waitlyze-integration-card" icon={<img src="/integrations/webhooks.svg" width={20} height={20} className="size-5 object-contain" alt="" />} title="Zapier" href="/docs/zapier" description="Send Waitlyze events to a Zap with Webhooks by Zapier." />
 <Card title="Email provider sync" href="/docs/esp-sync" description="Mirror verified signups into an ESP using its API and Waitlyze webhooks." />
 </Cards>
 

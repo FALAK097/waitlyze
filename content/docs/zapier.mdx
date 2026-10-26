@@ -1,6 +1,7 @@
 ---
 title: Zapier
 description: Push Waitlyze events into Zaps via webhooks.
+icon: zapier
 ---
 
 There is no native Waitlyze Zapier app. The supported path is a Waitlyze [webhook](/docs/webhooks) connected to Zapier's **Webhooks by Zapier** trigger. Treat this as a recipe built on signed event delivery, not a direct app connection.
@@ -14,11 +15,11 @@ In waitlist settings → **Webhooks**, add your Zapier webhook URL and subscribe
 </Step>
 <Step>
 ### Catch the hook in Zapier
-Create a Zap with a **Webhooks by Zapier → Catch Hook** trigger and paste the URL back in Waitlyze. Send a test from Waitlyze (`{ "test": true }` in `data`) and confirm the Zap fires.
+Create a Zap with a **Webhooks by Zapier → Catch Raw Hook** trigger and paste the URL back in Waitlyze. The raw variant preserves the exact request body and the `x-waitlyze-signature` header, both of which signature verification needs. Send a test from Waitlyze (`{ "test": true }` in `data`) and confirm the Zap fires.
 </Step>
 <Step>
 ### Verify the signature in a Code step (recommended)
-Before acting on the payload, verify `x-waitlyze-signature` with the signing secret so only Waitlyze can trigger your Zap. Copy the verifier from [Webhooks](/docs/webhooks).
+Before any later Zap action runs, verify the event in a Code step: pass the Catch Raw Hook's request body, the `x-waitlyze-signature` header value, and your signing secret to the verifier from [Webhooks](/docs/webhooks), and stop the Zap if verification fails.
 </Step>
 <Step>
 ### Look up the subscriber via the API

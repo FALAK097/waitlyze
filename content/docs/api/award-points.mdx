@@ -7,7 +7,7 @@ Award points when a verified subscriber completes an action Waitlyze cannot obse
 
 ## Request
 
-Configure the event key and default points under **Rewards** in the waitlist builder. Then call `POST /api/waitlist/points` with an API key in the `X-Api-Key` or `Authorization: Bearer` header. This endpoint does not accept a key in the JSON body.
+Call `POST /api/waitlist/points` with an API key in the `X-Api-Key` or `Authorization: Bearer` header. This endpoint does not accept a key in the JSON body. Configure the event key and default points under **Rewards** in the waitlist builder only when you want the waitlist's defaults; a request that supplies explicit `points` does not need a configured event.
 
 ```bash title="Award points for a completed survey"
 curl --request POST "$WAITLYZE_URL/api/waitlist/points" \
@@ -21,7 +21,7 @@ curl --request POST "$WAITLYZE_URL/api/waitlist/points" \
   }'
 ```
 
-Pass either `signupId` or `email`. `event` must match a configured key; an explicit `points` value can override its default. Reuse `idempotencyKey` for retries so an action is not credited twice.
+Pass either `signupId` or `email`. `event` is required, but it only needs to match a configured key when you omit `points`: an explicit `points` value can override a configured default or credit an event that is not configured at all. Reuse `idempotencyKey` for retries so an action is not credited twice.
 
 ## Eligibility and errors
 

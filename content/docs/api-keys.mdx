@@ -63,7 +63,7 @@ The UI creates `waitlist:write` keys scoped to the selected waitlist. They can c
 
 Expired or revoked keys return `401`. A mismatched `waitlistId` (key for A, body says B) also returns `401`.
 
-Each key gets 5,000 requests per day across signups and status lookups, reported via `X-RateLimit-Limit` / `X-RateLimit-Remaining` / `X-RateLimit-Reset`. Prefer header auth (`x-api-key` or `Authorization: Bearer`) for `GET` lookups so the secret never lands in URLs or logs.
+Each key gets 5,000 requests per day across signups, status lookups, and point awards (all three endpoints share the same budget), reported via `X-RateLimit-Limit` / `X-RateLimit-Remaining` / `X-RateLimit-Reset`. Prefer header auth (`x-api-key` or `Authorization: Bearer`) for `GET` lookups so the secret never lands in URLs or logs.
 
 ## Next
 

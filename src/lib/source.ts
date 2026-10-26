@@ -12,6 +12,8 @@ export const source = loader({
       resend: "/integrations/resend.svg",
       slack: "/integrations/slack.svg",
       discord: "/integrations/discord.svg",
+      webhooks: "/integrations/webhooks.svg",
+      zapier: "/integrations/webhooks.svg",
     }[icon];
     if (src) {
       return createElement("img", {

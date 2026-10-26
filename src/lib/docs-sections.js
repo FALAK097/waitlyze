@@ -167,8 +167,8 @@ export function getDocsSectionTree(tree, section) {
         },
         sectionPage("Slack", "/docs/slack", integrationLogo("slack")),
         sectionPage("Discord", "/docs/discord", integrationLogo("discord")),
-        sectionPage("Webhooks", "/docs/webhooks"),
-        sectionPage("Zapier", "/docs/zapier"),
+        sectionPage("Webhooks", "/docs/webhooks", integrationLogo("webhooks")),
+        sectionPage("Zapier", "/docs/zapier", integrationLogo("webhooks")),
         sectionPage("Email provider sync", "/docs/esp-sync"),
       ],
     };
