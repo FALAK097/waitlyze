@@ -1,5 +1,7 @@
 "use server";
 
+import console from "node:console";
+
 import prisma from "@/lib/prisma";
 import { sessionActor } from "@/lib/workspaces/authorize";
 import { campaignScope } from "@/lib/workspaces/service.mjs";
