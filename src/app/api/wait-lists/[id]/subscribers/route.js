@@ -128,6 +128,115 @@ function failedVerificationAfter(filters, cursor) {
   return Prisma.sql`AND ("signup"."createdAt" < ${cursor.createdAt} OR ("signup"."createdAt" = ${cursor.createdAt} AND "signup"."id" < ${cursor.id}))`;
 }
 
+function positionAudienceWhere(waitListId, filters) {
+  return Prisma.sql`
+    "signup"."waitListId" = ${waitListId}
+    AND (${filters.status} = 'all'
+      OR (${filters.status} = 'verified' AND "signup"."verifiedAt" IS NOT NULL)
+      OR (${filters.status} = 'pending' AND "signup"."verifiedAt" IS NULL))
+    AND (${filters.query} = '' OR "signup"."email" ILIKE ${`%${escapeLike(filters.query)}%`} ESCAPE '\\')
+    AND (${filters.country} = '' OR "signup"."country" ILIKE ${`%${escapeLike(filters.country)}%`} ESCAPE '\\')
+    AND (${filters.city} = '' OR "signup"."city" ILIKE ${`%${escapeLike(filters.city)}%`} ESCAPE '\\')
+    AND (${filters.source} = '' OR "signup"."utmSource" ILIKE ${`%${escapeLike(filters.source)}%`} ESCAPE '\\')
+    AND (${filters.landing} = '' OR "signup"."landingPage" ILIKE ${`%${escapeLike(filters.landing)}%`} ESCAPE '\\')
+    AND (${filters.device} = ''
+      OR "signup"."deviceType" ILIKE ${`%${escapeLike(filters.device)}%`} ESCAPE '\\'
+      OR "signup"."device" ILIKE ${`%${escapeLike(filters.device)}%`} ESCAPE '\\')
+    AND (${filters.utm} = ''
+      OR "signup"."utmMedium" ILIKE ${`%${escapeLike(filters.utm)}%`} ESCAPE '\\'
+      OR "signup"."utmCampaign" ILIKE ${`%${escapeLike(filters.utm)}%`} ESCAPE '\\'
+      OR "signup"."utmTerm" ILIKE ${`%${escapeLike(filters.utm)}%`} ESCAPE '\\'
+      OR "signup"."utmContent" ILIKE ${`%${escapeLike(filters.utm)}%`} ESCAPE '\\'
+      OR "signup"."referrer" ILIKE ${`%${escapeLike(filters.utm)}%`} ESCAPE '\\')
+  `;
+}
+
+async function rankedAudiencePage(waitListId, filters, pageIndex) {
+  const where = positionAudienceWhere(waitListId, filters);
+  return prisma.$queryRaw`
+    WITH referral_scores AS (
+      SELECT referral."referredById" AS "referrerId", COUNT(*)::bigint AS score
+      FROM "referrals" AS referral
+      INNER JOIN "sign_ups" AS referred ON referred."id" = referral."signUpId"
+      INNER JOIN "sign_ups" AS referrer
+        ON referrer."id" = referral."referredById"
+       AND referrer."waitListId" = referred."waitListId"
+      INNER JOIN "wait_lists" AS campaign
+        ON campaign."id" = referred."waitListId"
+       AND campaign."showReferrals" = true
+      WHERE referred."waitListId" = ${waitListId}
+        AND referred."verifiedAt" IS NOT NULL
+        AND referrer."verifiedAt" IS NOT NULL
+        AND referral."reviewStatus" IN ('CLEAR', 'APPROVED')
+        AND referral."referredById" IS NOT NULL
+        AND referral."referredById" <> referral."signUpId"
+      GROUP BY referral."referredById"
+    ), ranked AS (
+      SELECT signup."id", signup."createdAt",
+        ROW_NUMBER() OVER (
+          ORDER BY COALESCE(score.score, 0) DESC, signup."createdAt" ASC, signup."id" ASC
+        ) AS position
+      FROM "sign_ups" AS signup
+      LEFT JOIN referral_scores AS score ON score."referrerId" = signup."id"
+      WHERE signup."waitListId" = ${waitListId}
+    )
+    SELECT ranked."id", ranked.position
+    FROM ranked
+    INNER JOIN "sign_ups" AS signup ON signup."id" = ranked."id"
+    WHERE ${where}
+    ORDER BY
+      CASE WHEN ${filters.sort} = 'position_asc' THEN ranked.position END ASC,
+      CASE WHEN ${filters.sort} = 'position_desc' THEN ranked.position END DESC,
+      ranked."createdAt" ASC,
+      ranked."id" ASC
+    LIMIT ${AUDIENCE_PAGE_SIZE + 1}
+    OFFSET ${pageIndex * AUDIENCE_PAGE_SIZE}
+  `;
+}
+
+async function rankedFailedAudiencePage(waitListId, filters, pageIndex) {
+  const where = failedVerificationWhere(waitListId, filters);
+  return prisma.$queryRaw`
+    WITH referral_scores AS (
+      SELECT referral."referredById" AS "referrerId", COUNT(*)::bigint AS score
+      FROM "referrals" AS referral
+      INNER JOIN "sign_ups" AS referred ON referred."id" = referral."signUpId"
+      INNER JOIN "sign_ups" AS referrer
+        ON referrer."id" = referral."referredById"
+       AND referrer."waitListId" = referred."waitListId"
+      INNER JOIN "wait_lists" AS campaign
+        ON campaign."id" = referred."waitListId"
+       AND campaign."showReferrals" = true
+      WHERE referred."waitListId" = ${waitListId}
+        AND referred."verifiedAt" IS NOT NULL
+        AND referrer."verifiedAt" IS NOT NULL
+        AND referral."reviewStatus" IN ('CLEAR', 'APPROVED')
+        AND referral."referredById" IS NOT NULL
+        AND referral."referredById" <> referral."signUpId"
+      GROUP BY referral."referredById"
+    ), ranked AS (
+      SELECT signup."id", signup."createdAt",
+        ROW_NUMBER() OVER (
+          ORDER BY COALESCE(score.score, 0) DESC, signup."createdAt" ASC, signup."id" ASC
+        ) AS position
+      FROM "sign_ups" AS signup
+      LEFT JOIN referral_scores AS score ON score."referrerId" = signup."id"
+      WHERE signup."waitListId" = ${waitListId}
+    )
+    SELECT ranked."id", ranked.position
+    FROM ranked
+    INNER JOIN "sign_ups" AS signup ON signup."id" = ranked."id"
+    WHERE ${where}
+    ORDER BY
+      CASE WHEN ${filters.sort} = 'position_asc' THEN ranked.position END ASC,
+      CASE WHEN ${filters.sort} = 'position_desc' THEN ranked.position END DESC,
+      ranked."createdAt" ASC,
+      ranked."id" ASC
+    LIMIT ${AUDIENCE_PAGE_SIZE + 1}
+    OFFSET ${pageIndex * AUDIENCE_PAGE_SIZE}
+  `;
+}
+
 async function failedVerificationPage(waitListId, filters, cursor, take, offset = null) {
   const where = failedVerificationWhere(waitListId, filters);
   const after = offset == null ? failedVerificationAfter(filters, cursor) : Prisma.empty;
@@ -149,8 +258,10 @@ async function failedVerificationPage(waitListId, filters, cursor, take, offset 
       CASE WHEN ${filters.sort} = 'email_desc' THEN "signup"."email" END DESC,
       CASE WHEN ${filters.sort} = 'points_desc' THEN "signup"."points" END DESC,
       CASE WHEN ${filters.sort} = 'points_asc' THEN "signup"."points" END ASC,
-      CASE WHEN ${filters.sort} = 'status_desc' THEN "signup"."verifiedAt" END DESC NULLS LAST,
-      CASE WHEN ${filters.sort} = 'status_asc' THEN "signup"."verifiedAt" END ASC NULLS FIRST,
+      CASE WHEN ${filters.sort} = 'status_desc' THEN ("signup"."verifiedAt" IS NOT NULL) END DESC,
+      CASE WHEN ${filters.sort} = 'status_asc' THEN ("signup"."verifiedAt" IS NOT NULL) END ASC,
+      CASE WHEN ${filters.sort} IN ('position_asc', 'position_desc') THEN "signup"."createdAt" END ASC,
+      CASE WHEN ${filters.sort} IN ('position_asc', 'position_desc') THEN "signup"."id" END ASC,
       CASE WHEN ${filters.sort} = 'joined_asc' THEN "signup"."id" END ASC,
       CASE WHEN ${filters.sort} = 'joined_desc' THEN "signup"."id" END DESC,
       CASE WHEN ${filters.sort} NOT IN ('joined_asc', 'joined_desc') THEN "signup"."id" END ASC
@@ -222,10 +333,6 @@ const ROW_SELECT = {
 // "Select all" support: every matching id (capped), honoring the same filters
 // and workspace scope as the list itself.
 const ID_SELECT_LIMIT = 2000;
-// In-memory ranking window for the failed-delivery view, which has no score
-// column to order by. Delivery failures are rare; this bound only guards
-// against pathological volumes.
-const FAILED_SORT_WINDOW = 5000;
 
 export async function GET(request, { params }) {
   const { id } = await params;
@@ -260,10 +367,7 @@ export async function GET(request, { params }) {
       });
     }
 
-    const positions =
-      access.showReferrals && isPositionSort(filters.sort)
-        ? await getCampaignPositions(prisma, id)
-        : new Map();
+    let positions = new Map();
 
     let rows;
     let total;
@@ -310,17 +414,25 @@ export async function GET(request, { params }) {
     } else if (!failedOnly) {
       const where = audienceWhere(id, access.scope, filters);
       const [matches, count] = await Promise.all([
-        prisma.signUp.findMany({
-          where,
-          select: { id: true, createdAt: true },
-          orderBy: [{ id: "asc" }],
-        }),
+        access.showReferrals
+          ? rankedAudiencePage(id, filters, pageIndex)
+          : prisma.signUp.findMany({
+              where,
+              select: { id: true, createdAt: true },
+              orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+              skip: pageIndex * AUDIENCE_PAGE_SIZE,
+              take: AUDIENCE_PAGE_SIZE + 1,
+            }),
         prisma.signUp.count({ where }),
       ]);
       total = count;
-      const slice = sortAudienceRows(matches, filters.sort, positions).slice(
-        pageIndex * AUDIENCE_PAGE_SIZE,
-        pageIndex * AUDIENCE_PAGE_SIZE + AUDIENCE_PAGE_SIZE + 1,
+      const slice = access.showReferrals
+        ? matches.map((row) => ({ ...row, position: Number(row.position) }))
+        : matches;
+      positions = new Map(
+        slice
+          .filter((row) => Number.isSafeInteger(row.position) && row.position > 0)
+          .map((row) => [row.id, row.position]),
       );
       const fetched = await prisma.signUp.findMany({
         where: { id: { in: slice.map((row) => row.id) } },
@@ -329,12 +441,35 @@ export async function GET(request, { params }) {
       const byId = new Map(fetched.map((row) => [row.id, row]));
       rows = slice.map((row) => byId.get(row.id)).filter(Boolean);
     } else {
-      const pool = await failedVerificationPage(id, filters, null, FAILED_SORT_WINDOW);
-      total = await failedVerificationCount(id, filters);
-      rows = sortAudienceRows(pool, filters.sort, positions).slice(
-        pageIndex * AUDIENCE_PAGE_SIZE,
-        pageIndex * AUDIENCE_PAGE_SIZE + AUDIENCE_PAGE_SIZE + 1,
-      );
+      const [matches, count] = await Promise.all([
+        access.showReferrals && isPositionSort(filters.sort)
+          ? rankedFailedAudiencePage(id, filters, pageIndex)
+          : failedVerificationPage(
+              id,
+              filters,
+              null,
+              AUDIENCE_PAGE_SIZE + 1,
+              pageIndex * AUDIENCE_PAGE_SIZE,
+            ),
+        failedVerificationCount(id, filters),
+      ]);
+      total = count;
+      if (access.showReferrals && isPositionSort(filters.sort)) {
+        positions = new Map(
+          matches
+            .map((row) => ({ id: row.id, position: Number(row.position) }))
+            .filter((row) => Number.isSafeInteger(row.position) && row.position > 0)
+            .map((row) => [row.id, row.position]),
+        );
+        const fetched = await prisma.signUp.findMany({
+          where: { id: { in: matches.map((row) => row.id) } },
+          select: ROW_SELECT,
+        });
+        const byId = new Map(fetched.map((row) => [row.id, row]));
+        rows = matches.map((row) => byId.get(row.id)).filter(Boolean);
+      } else {
+        rows = matches;
+      }
     }
     const hasMore = rows.length > AUDIENCE_PAGE_SIZE;
     const pageRows = rows.slice(0, AUDIENCE_PAGE_SIZE);
