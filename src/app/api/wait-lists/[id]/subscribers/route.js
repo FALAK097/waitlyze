@@ -33,21 +33,19 @@ async function getAccess(request, id) {
 
 async function verificationDelivery(waitListId, signupIds) {
   if (!signupIds.length) return new Map();
-  const events = await prisma.outboxEvent.findMany({
-    where: {
-      waitListId,
-      type: "SIGNUP_VERIFICATION_REQUESTED",
-      OR: signupIds.map((id) => ({ payload: { path: ["signUpId"], equals: id } })),
-    },
-    orderBy: [{ createdAt: "desc" }, { id: "desc" }],
-    select: {
-      payload: true,
-      status: true,
-      lastErrorCode: true,
-      createdAt: true,
-      processedAt: true,
-    },
-  });
+  const events = await prisma.$queryRaw`
+    SELECT DISTINCT ON (event."payload"->>'signUpId')
+      event."payload",
+      event."status"::text AS status,
+      event."lastErrorCode",
+      event."createdAt",
+      event."processedAt"
+    FROM "outbox_events" AS event
+    WHERE event."waitListId" = ${waitListId}
+      AND event."type" = 'SIGNUP_VERIFICATION_REQUESTED'
+      AND event."payload"->>'signUpId' = ANY(${signupIds}::text[])
+    ORDER BY event."payload"->>'signUpId', event."createdAt" DESC, event."id" DESC
+  `;
   const latest = new Map();
   for (const event of events) {
     const signupId = event.payload?.signUpId;
@@ -263,7 +261,7 @@ export async function GET(request, { params }) {
     }
 
     const positions =
-      access.showReferrals && (isPositionSort(filters.sort) || !failedOnly)
+      access.showReferrals && isPositionSort(filters.sort)
         ? await getCampaignPositions(prisma, id)
         : new Map();
 
@@ -340,7 +338,7 @@ export async function GET(request, { params }) {
     }
     const hasMore = rows.length > AUDIENCE_PAGE_SIZE;
     const pageRows = rows.slice(0, AUDIENCE_PAGE_SIZE);
-    const [referralCounts, delivery] = await Promise.all([
+    const [referralCounts, delivery, pagePositions] = await Promise.all([
       access.showReferrals
         ? getEligibleReferralCounts(
             prisma,
@@ -352,13 +350,20 @@ export async function GET(request, { params }) {
         id,
         pageRows.map((row) => row.id),
       ),
+      access.showReferrals && !failedOnly && !isPositionSort(filters.sort)
+        ? getCampaignPositions(
+            prisma,
+            id,
+            pageRows.map((row) => row.id),
+          )
+        : positions,
     ]);
     const page = pageRows.map((row) => ({
       ...row,
       referredBy: row.referredBy?.[0]?.referredBy ?? null,
       verificationDelivery: delivery.get(row.id) ?? null,
       referralCount: referralCounts.get(row.id) ?? 0,
-      position: positions.get(row.id) ?? null,
+      position: pagePositions.get(row.id) ?? null,
     }));
     const flags = {
       showReferrals: access.showReferrals,
