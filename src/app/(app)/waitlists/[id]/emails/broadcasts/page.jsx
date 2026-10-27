@@ -19,7 +19,7 @@ export default async function BroadcastsPage({ params }) {
   const { id } = await params;
   const { campaign } = await requireCampaignPage(id, "sendEmail");
   if (!campaign) return notFound();
-  const { broadcasts, selectedBroadcast } = await listBroadcasts(campaign.id, {
+  const { broadcasts, selectedBroadcast, hasMore, nextCursor } = await listBroadcasts(campaign.id, {
     includeLatestContent: true,
   });
   const [initialPreview, initialSegments] = await Promise.all([
@@ -33,6 +33,8 @@ export default async function BroadcastsPage({ params }) {
         waitListName={campaign.name}
         initialBroadcasts={broadcasts}
         initialBroadcast={selectedBroadcast}
+        initialHasMore={hasMore}
+        initialCursor={nextCursor}
         initialPreview={initialPreview}
         initialSegments={initialSegments}
         deliveryReady={Boolean(env.OUTBOX_DISPATCH_SECRET && env.RESEND_API_KEY)}

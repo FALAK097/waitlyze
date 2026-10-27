@@ -328,7 +328,7 @@ model MarketingBroadcast {
   sentAt         DateTime?
   recipients     BroadcastRecipient[]
 
-  @@index([waitListId, updatedAt])
+  @@index([waitListId, updatedAt, id])
   @@map("marketing_broadcasts")
 }
 

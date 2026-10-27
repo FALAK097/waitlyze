@@ -103,7 +103,15 @@ const starterContent = (draft) =>
   draft.editorDocument ||
   `<p>${escapeText(draft.body || "Write your update…").replaceAll("\n", "<br>")}</p>`;
 
-function BroadcastRail({ broadcasts, selectedId, busy, onRequestSelection }) {
+function BroadcastRail({
+  broadcasts,
+  selectedId,
+  busy,
+  onRequestSelection,
+  hasMore,
+  loadingMore,
+  onLoadMore,
+}) {
   return (
     <nav className={emailManagerRail} aria-label="Broadcasts">
       {broadcasts.length ? (
@@ -132,6 +140,11 @@ function BroadcastRail({ broadcasts, selectedId, busy, onRequestSelection }) {
       ) : (
         <p className={emailManagerRailEmpty}>No drafts yet.</p>
       )}
+      {hasMore ? (
+        <EmailManagerRailButton disabled={busy || loadingMore} onClick={onLoadMore}>
+          {loadingMore ? "Loading older broadcasts…" : "Load older broadcasts"}
+        </EmailManagerRailButton>
+      ) : null}
     </nav>
   );
 }
@@ -397,12 +410,16 @@ export function BroadcastManager({
   waitListName,
   initialBroadcasts,
   initialBroadcast,
+  initialHasMore,
+  initialCursor,
   initialPreview,
   initialSegments,
   deliveryReady,
 }) {
   const router = useRouter();
   const [broadcasts, setBroadcasts] = useState(initialBroadcasts);
+  const [broadcastHasMore, setBroadcastHasMore] = useState(initialHasMore);
+  const [broadcastCursor, setBroadcastCursor] = useState(initialCursor);
   const initialSelection = initialBroadcast || initialBroadcasts[0] || null;
   const [selectedId, setSelectedId] = useState(initialSelection?.id || null);
   const [data, setData] = useState(initialSelection || emptyDraft());
@@ -473,11 +490,35 @@ export function BroadcastManager({
   }
 
   async function refreshBroadcasts(selected = selectedId) {
-    const { broadcasts: updated } = await listBroadcasts(waitListId);
-    setBroadcasts(updated);
+    const { broadcasts: updated, hasMore, nextCursor } = await listBroadcasts(waitListId);
+    setBroadcasts((current) => {
+      if (!selected || updated.some((item) => item.id === selected)) return updated;
+      const selectedItem = current.find((item) => item.id === selected);
+      return selectedItem ? [...updated, selectedItem] : updated;
+    });
+    setBroadcastHasMore(hasMore);
+    setBroadcastCursor(nextCursor);
     const active = updated.find((item) => item.id === selected);
     if (active) await selectBroadcast(active);
     router.refresh();
+  }
+
+  async function loadMoreBroadcasts() {
+    if (!broadcastHasMore || !broadcastCursor || busy) return;
+    setBusyAction("more");
+    try {
+      const page = await listBroadcasts(waitListId, { cursor: broadcastCursor });
+      setBroadcasts((current) => {
+        const knownIds = new Set(current.map((broadcast) => broadcast.id));
+        return [...current, ...page.broadcasts.filter((broadcast) => !knownIds.has(broadcast.id))];
+      });
+      setBroadcastHasMore(page.hasMore);
+      setBroadcastCursor(page.nextCursor);
+    } catch {
+      notify("Couldn’t load older broadcasts. Try again.", true);
+    } finally {
+      setBusyAction("");
+    }
   }
 
   async function createDraft() {
@@ -683,6 +724,9 @@ export function BroadcastManager({
           selectedId={selectedId}
           busy={busy}
           onRequestSelection={requestSelection}
+          hasMore={broadcastHasMore}
+          loadingMore={busyAction === "more"}
+          onLoadMore={loadMoreBroadcasts}
         />
 
         {selectedId ? (

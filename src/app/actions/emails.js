@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 import { Resend } from "resend";
 
+import { Prisma } from "@/generated/prisma/client";
 import { getCampaignPosition } from "@/lib/campaigns/referral-position.mjs";
 import {
   countEligibleRecipients,
@@ -350,12 +351,37 @@ const broadcastInput = (input) => {
   return value;
 };
 
-export async function listBroadcasts(waitListId, { includeLatestContent = false } = {}) {
+export async function listBroadcasts(
+  waitListId,
+  { includeLatestContent = false, cursor = null, pageSize = 25 } = {},
+) {
   const { campaign } = await requireCampaign(waitListId, "sendEmail");
-  const [broadcasts, selectedBroadcast, counts, reasons] = await Promise.all([
+  const take = Number.isInteger(pageSize) ? Math.min(Math.max(pageSize, 1), 50) : 25;
+  let pageCursor = null;
+  if (cursor != null) {
+    const cursorId = typeof cursor?.id === "string" ? cursor.id : "";
+    const updatedAt =
+      typeof cursor?.updatedAt === "string" ? new Date(cursor.updatedAt) : new Date(Number.NaN);
+    if (!cursorId || cursorId.length > 128 || Number.isNaN(updatedAt.valueOf()))
+      throw new TypeError("Choose a valid broadcast page cursor.");
+    pageCursor = { id: cursorId, updatedAt };
+  }
+
+  const [broadcastRows, selectedBroadcast] = await Promise.all([
     prisma.marketingBroadcast.findMany({
-      where: { waitListId: campaign.id },
+      where: {
+        waitListId: campaign.id,
+        ...(pageCursor
+          ? {
+              OR: [
+                { updatedAt: { lt: pageCursor.updatedAt } },
+                { updatedAt: pageCursor.updatedAt, id: { lt: pageCursor.id } },
+              ],
+            }
+          : {}),
+      },
       orderBy: [{ updatedAt: "desc" }, { id: "desc" }],
+      take: take + 1,
       select: {
         id: true,
         name: true,
@@ -387,26 +413,37 @@ export async function listBroadcasts(waitListId, { includeLatestContent = false 
           },
         })
       : Promise.resolve(null),
-    prisma.$queryRaw`
-      SELECT r."broadcastId", r."status"::text AS status, COUNT(*)::int AS count
-      FROM "broadcast_recipients" r JOIN "marketing_broadcasts" b ON b."id" = r."broadcastId"
-      WHERE b."waitListId" = ${campaign.id}
-      GROUP BY r."broadcastId", r."status"`,
-    prisma.$queryRaw`
-      SELECT r."broadcastId", r."lastErrorCode" AS code, COUNT(*)::int AS count
-      FROM "broadcast_recipients" r JOIN "marketing_broadcasts" b ON b."id" = r."broadcastId"
-      WHERE b."waitListId" = ${campaign.id}
-        AND r."status" IN ('SKIPPED', 'FAILED')
-      GROUP BY r."broadcastId", r."lastErrorCode"`,
   ]);
+  const hasMore = broadcastRows.length > take;
+  const broadcasts = broadcastRows.slice(0, take);
+  const broadcastIds = broadcasts.map((broadcast) => broadcast.id);
+  const deliveryMetrics =
+    broadcastIds.length > 0
+      ? await prisma.$queryRaw`
+          SELECT r."broadcastId", 'status'::text AS kind,
+                 r."status"::text AS key, COUNT(*)::int AS count
+          FROM "broadcast_recipients" r
+          WHERE r."broadcastId" IN (${Prisma.join(broadcastIds)})
+          GROUP BY r."broadcastId", r."status"
+          UNION ALL
+          SELECT r."broadcastId", 'reason'::text AS kind,
+                 COALESCE(r."lastErrorCode", 'OTHER') AS key, COUNT(*)::int AS count
+          FROM "broadcast_recipients" r
+          WHERE r."broadcastId" IN (${Prisma.join(broadcastIds)})
+            AND r."status" IN ('SKIPPED', 'FAILED')
+          GROUP BY r."broadcastId", r."lastErrorCode"
+        `
+      : [];
+  const lastBroadcast = broadcasts.at(-1);
   const metrics = new Map();
-  for (const row of counts) metrics.set(`${row.broadcastId}:${row.status}`, row.count);
+  const skippedByCode = new Map();
   // Delivery-report breakdown: bounced (provider failures), unsubscribed,
   // spam/suppression-list hits, and other skips - reconciled from the same
   // recipient rows the dispatcher wrote, so the report always adds up.
-  const skippedByCode = new Map();
-  for (const row of reasons)
-    skippedByCode.set(`${row.broadcastId}:${row.code || "OTHER"}`, row.count);
+  for (const row of deliveryMetrics) {
+    if (row.kind === "reason") skippedByCode.set(`${row.broadcastId}:${row.key}`, row.count);
+    else metrics.set(`${row.broadcastId}:${row.key}`, row.count);
+  }
   const sumCodes = (id, codes) =>
     codes.reduce((n, code) => n + (skippedByCode.get(`${id}:${code}`) || 0), 0);
   return {
@@ -423,6 +460,11 @@ export async function listBroadcasts(waitListId, { includeLatestContent = false 
         sumCodes(broadcast.id, ["RECIPIENT_UNSUBSCRIBED", "RECIPIENT_SUPPRESSED"]),
     })),
     selectedBroadcast,
+    hasMore,
+    nextCursor:
+      hasMore && lastBroadcast
+        ? { id: lastBroadcast.id, updatedAt: lastBroadcast.updatedAt.toISOString() }
+        : null,
   };
 }
 
