@@ -3,6 +3,11 @@
 import { EvilAreaChart } from "@/components/product/waitlist-analytics-visualizations";
 
 const startDate = new Date("2026-01-01T00:00:00Z");
+const dateFormatter = new Intl.DateTimeFormat("en", {
+  month: "short",
+  day: "numeric",
+  timeZone: "UTC",
+});
 
 function makeSeries(length, mode = "typical") {
   return Array.from({ length }, (_, index) => {
@@ -46,11 +51,7 @@ const scenarios = [
 ];
 
 function formatDate(value) {
-  return new Intl.DateTimeFormat("en", {
-    month: "short",
-    day: "numeric",
-    timeZone: "UTC",
-  }).format(new Date(`${value}T12:00:00Z`));
+  return dateFormatter.format(new Date(`${value}T12:00:00Z`));
 }
 
 export default function AnalyticsChartBreakHarness() {
