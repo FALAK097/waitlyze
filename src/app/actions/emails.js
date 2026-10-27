@@ -310,8 +310,9 @@ export async function sendAutomationTestEmail({ waitListId, recipeId, to }) {
       });
       if (!recipe?.versions[0]) return { error: "Recipe not found" };
       const config = recipe.versions[0].config;
-      const { AUTOMATION_DEFAULTS } = await import("@/lib/email/automations.mjs");
-      const { interpolateVars, interpolateVarsHtml } = await import("@/lib/email/variables.mjs");
+      const [{ AUTOMATION_DEFAULTS }, { interpolateVars, interpolateVarsHtml }] = await Promise.all(
+        [import("@/lib/email/automations.mjs"), import("@/lib/email/variables.mjs")],
+      );
       const vars = seedPreviewVars(waitList.name);
       const title = AUTOMATION_DEFAULTS[recipe.type]?.title || recipe.type;
       return {
