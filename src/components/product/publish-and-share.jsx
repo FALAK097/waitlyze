@@ -22,6 +22,7 @@ import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/compone
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { useCopyToClipboard } from "@/hooks/use-copy-to-clipboard";
 
 import { ImageUploadField } from "./image-upload-field";
 
@@ -87,19 +88,16 @@ function Section({ title, description, children, action }) {
 }
 
 function CopyButton({ value, label }) {
-  const [copied, setCopied] = useState(false);
-  async function copy() {
-    try {
-      await navigator.clipboard.writeText(value);
-      setCopied(true);
+  const { copied, copy } = useCopyToClipboard();
+  async function copyValue() {
+    if (await copy(value)) {
       toast.success(`${label} copied.`);
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
+    } else {
       toast.error("Copy is unavailable. Select the text and copy it manually.");
     }
   }
   return (
-    <Button type="button" variant="outline" size="sm" onClick={() => void copy()}>
+    <Button type="button" variant="outline" size="sm" onClick={() => void copyValue()}>
       <HugeiconsIcon icon={copied ? Tick01Icon : Copy01Icon} aria-hidden="true" /> Copy{" "}
       {label.toLowerCase()}
     </Button>

@@ -2,9 +2,9 @@
 
 import { Copy01Icon, Tick01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import { useCopyToClipboard } from "@/hooks/use-copy-to-clipboard";
 import { cn } from "@/lib/utils";
 
 export function CopyButton({
@@ -14,22 +14,12 @@ export function CopyButton({
   doneLabel = "Copied",
   iconOnly = false,
 }) {
-  const [copied, setCopied] = useState(false);
-
-  async function copy() {
-    try {
-      await navigator.clipboard.writeText(text);
-      setCopied(true);
-      window.setTimeout(() => setCopied(false), 2000);
-    } catch {
-      /* clipboard unavailable */
-    }
-  }
+  const { copied, copy } = useCopyToClipboard();
 
   return (
     <Button
       type="button"
-      onClick={copy}
+      onClick={() => void copy(text)}
       aria-label={copied ? doneLabel : idleLabel}
       title={copied ? doneLabel : idleLabel}
       variant={iconOnly ? "public-copy-icon" : "public-copy"}

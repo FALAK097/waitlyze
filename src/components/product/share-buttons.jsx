@@ -1,8 +1,9 @@
 "use client";
 
-import { useId, useState } from "react";
+import { useId } from "react";
 
 import { Button } from "@/components/ui/button";
+import { useCopyToClipboard } from "@/hooks/use-copy-to-clipboard";
 import { cn } from "@/lib/utils";
 
 export const SHARE_CHANNELS = [
@@ -268,18 +269,11 @@ export function ShareButtons({
   className,
   iconClassName = "size-10",
 }) {
-  const [copied, setCopied] = useState(false);
+  const { copied, copy } = useCopyToClipboard();
 
   async function copyLink() {
     if (!link) return;
-    try {
-      await navigator.clipboard.writeText(link);
-      setCopied(true);
-      onShare?.("instagram");
-      window.setTimeout(() => setCopied(false), 2000);
-    } catch {
-      /* clipboard unavailable */
-    }
+    if (await copy(link)) onShare?.("instagram");
   }
 
   return (
