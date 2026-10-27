@@ -350,20 +350,17 @@ const broadcastInput = (input) => {
   return value;
 };
 
-export async function listBroadcasts(waitListId) {
+export async function listBroadcasts(waitListId, { includeLatestContent = false } = {}) {
   const { campaign } = await requireCampaign(waitListId, "sendEmail");
-  const [broadcasts, counts, reasons] = await Promise.all([
+  const [broadcasts, selectedBroadcast, counts, reasons] = await Promise.all([
     prisma.marketingBroadcast.findMany({
       where: { waitListId: campaign.id },
-      orderBy: { updatedAt: "desc" },
+      orderBy: [{ updatedAt: "desc" }, { id: "desc" }],
       select: {
         id: true,
         name: true,
         subject: true,
         previewText: true,
-        body: true,
-        editorDocument: true,
-        renderedHtml: true,
         status: true,
         segment: true,
         scheduledAt: true,
@@ -373,6 +370,23 @@ export async function listBroadcasts(waitListId) {
         sentAt: true,
       },
     }),
+    includeLatestContent
+      ? prisma.marketingBroadcast.findFirst({
+          where: { waitListId: campaign.id },
+          orderBy: [{ updatedAt: "desc" }, { id: "desc" }],
+          select: {
+            id: true,
+            name: true,
+            subject: true,
+            previewText: true,
+            body: true,
+            editorDocument: true,
+            renderedHtml: true,
+            status: true,
+            segment: true,
+          },
+        })
+      : Promise.resolve(null),
     prisma.$queryRaw`
       SELECT r."broadcastId", r."status"::text AS status, COUNT(*)::int AS count
       FROM "broadcast_recipients" r JOIN "marketing_broadcasts" b ON b."id" = r."broadcastId"
@@ -395,18 +409,46 @@ export async function listBroadcasts(waitListId) {
     skippedByCode.set(`${row.broadcastId}:${row.code || "OTHER"}`, row.count);
   const sumCodes = (id, codes) =>
     codes.reduce((n, code) => n + (skippedByCode.get(`${id}:${code}`) || 0), 0);
-  return broadcasts.map((broadcast) => ({
-    ...broadcast,
-    deliveredCount: metrics.get(`${broadcast.id}:DELIVERED`) || 0,
-    failedCount: metrics.get(`${broadcast.id}:FAILED`) || 0,
-    skippedCount: metrics.get(`${broadcast.id}:SKIPPED`) || 0,
-    canceledCount: metrics.get(`${broadcast.id}:CANCELED`) || 0,
-    unsubscribedCount: sumCodes(broadcast.id, ["RECIPIENT_UNSUBSCRIBED"]),
-    suppressedCount: sumCodes(broadcast.id, ["RECIPIENT_SUPPRESSED"]),
-    skippedOtherCount:
-      (metrics.get(`${broadcast.id}:SKIPPED`) || 0) -
-      sumCodes(broadcast.id, ["RECIPIENT_UNSUBSCRIBED", "RECIPIENT_SUPPRESSED"]),
-  }));
+  return {
+    broadcasts: broadcasts.map((broadcast) => ({
+      ...broadcast,
+      deliveredCount: metrics.get(`${broadcast.id}:DELIVERED`) || 0,
+      failedCount: metrics.get(`${broadcast.id}:FAILED`) || 0,
+      skippedCount: metrics.get(`${broadcast.id}:SKIPPED`) || 0,
+      canceledCount: metrics.get(`${broadcast.id}:CANCELED`) || 0,
+      unsubscribedCount: sumCodes(broadcast.id, ["RECIPIENT_UNSUBSCRIBED"]),
+      suppressedCount: sumCodes(broadcast.id, ["RECIPIENT_SUPPRESSED"]),
+      skippedOtherCount:
+        (metrics.get(`${broadcast.id}:SKIPPED`) || 0) -
+        sumCodes(broadcast.id, ["RECIPIENT_UNSUBSCRIBED", "RECIPIENT_SUPPRESSED"]),
+    })),
+    selectedBroadcast,
+  };
+}
+
+export async function getBroadcastContent(waitListId, broadcastId) {
+  if (
+    typeof waitListId !== "string" ||
+    !waitListId ||
+    typeof broadcastId !== "string" ||
+    !broadcastId
+  )
+    return null;
+  const { campaign } = await requireCampaign(waitListId, "sendEmail");
+  return prisma.marketingBroadcast.findFirst({
+    where: { id: broadcastId, waitListId: campaign.id },
+    select: {
+      id: true,
+      name: true,
+      subject: true,
+      previewText: true,
+      body: true,
+      editorDocument: true,
+      renderedHtml: true,
+      status: true,
+      segment: true,
+    },
+  });
 }
 
 export async function createBroadcastDraft(waitListId) {

@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import {
   cancelBroadcast,
   createBroadcastDraft,
+  getBroadcastContent,
   getBroadcastRecipients,
   listBroadcasts,
   queueBroadcast,
@@ -395,16 +396,18 @@ export function BroadcastManager({
   waitListId,
   waitListName,
   initialBroadcasts,
+  initialBroadcast,
   initialPreview,
   initialSegments,
   deliveryReady,
 }) {
   const router = useRouter();
   const [broadcasts, setBroadcasts] = useState(initialBroadcasts);
-  const [selectedId, setSelectedId] = useState(initialBroadcasts[0]?.id || null);
-  const [data, setData] = useState(initialBroadcasts[0] || emptyDraft());
+  const initialSelection = initialBroadcast || initialBroadcasts[0] || null;
+  const [selectedId, setSelectedId] = useState(initialSelection?.id || null);
+  const [data, setData] = useState(initialSelection || emptyDraft());
   const [preview, setPreview] = useState(initialPreview);
-  const [segment, setSegment] = useState(initialBroadcasts[0]?.segment || "ALL");
+  const [segment, setSegment] = useState(initialSelection?.segment || "ALL");
   const [previewFresh, setPreviewFresh] = useState(false);
   const [reviewSend, setReviewSend] = useState(false);
   const [scheduleAt, setScheduleAt] = useState("");
@@ -433,32 +436,47 @@ export function BroadcastManager({
     setReviewSend(false);
   }
 
-  function selectBroadcast(broadcast) {
-    setDraftDirty(false);
-    setReviewCancel(false);
-    setPendingSelection(null);
-    setSelectedId(broadcast.id);
-    setSegment(broadcast.segment || "ALL");
-    setDraftPreview(null);
-    setReviewSchedule(false);
-    setScheduleAt("");
-    setData({
-      name: broadcast.name,
-      subject: broadcast.subject,
-      previewText: broadcast.previewText,
-      body: broadcast.body,
-      editorDocument: broadcast.editorDocument,
-      renderedHtml: broadcast.renderedHtml,
-    });
-    setPreviewFresh(false);
-    setReviewSend(false);
+  async function selectBroadcast(broadcast) {
+    setBusyAction("select");
+    try {
+      const content =
+        typeof broadcast.body === "string"
+          ? broadcast
+          : await getBroadcastContent(waitListId, broadcast.id);
+      if (!content) {
+        notify("Couldn’t load this broadcast. Try again.", true);
+        return;
+      }
+      setDraftDirty(false);
+      setReviewCancel(false);
+      setPendingSelection(null);
+      setSelectedId(broadcast.id);
+      setSegment(content.segment || "ALL");
+      setDraftPreview(null);
+      setReviewSchedule(false);
+      setScheduleAt("");
+      setData({
+        name: content.name,
+        subject: content.subject,
+        previewText: content.previewText,
+        body: content.body,
+        editorDocument: content.editorDocument,
+        renderedHtml: content.renderedHtml,
+      });
+      setPreviewFresh(false);
+      setReviewSend(false);
+    } catch {
+      notify("Couldn’t load this broadcast. Try again.", true);
+    } finally {
+      setBusyAction("");
+    }
   }
 
   async function refreshBroadcasts(selected = selectedId) {
-    const updated = await listBroadcasts(waitListId);
+    const { broadcasts: updated } = await listBroadcasts(waitListId);
     setBroadcasts(updated);
     const active = updated.find((item) => item.id === selected);
-    if (active) selectBroadcast(active);
+    if (active) await selectBroadcast(active);
     router.refresh();
   }
 
