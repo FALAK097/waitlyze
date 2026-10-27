@@ -85,17 +85,19 @@ export function normalizeAutomationConfig(type, input) {
 }
 
 export async function ensureAutomationRecipes(db, waitListId) {
-  for (const [type, defaults] of Object.entries(AUTOMATION_DEFAULTS)) {
-    await db.automationRecipe.upsert({
-      where: { waitListId_type: { waitListId, type } },
-      update: {},
-      create: {
-        waitListId,
-        type,
-        versions: { create: { version: 1, config: normalizeAutomationConfig(type, defaults) } },
-      },
-    });
-  }
+  await Promise.all(
+    Object.entries(AUTOMATION_DEFAULTS).map(([type, defaults]) =>
+      db.automationRecipe.upsert({
+        where: { waitListId_type: { waitListId, type } },
+        update: {},
+        create: {
+          waitListId,
+          type,
+          versions: { create: { version: 1, config: normalizeAutomationConfig(type, defaults) } },
+        },
+      }),
+    ),
+  );
 }
 
 async function createRun(tx, { recipe, version, waitListId, signUpId, triggerKey, config, now }) {
