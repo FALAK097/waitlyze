@@ -1,4 +1,49 @@
 const MAX_DAYS = 90;
+const ANALYTICS_GROUPING_SET = Object.freeze({
+  channel: 63,
+  campaign: 479,
+  referrer: 447,
+  source: 383,
+  country: 495,
+  region: 487,
+  city: 491,
+  deviceType: 509,
+  device: 510,
+});
+const ANALYTICS_GROUP_FIELDS = Object.freeze({
+  channel: ["utmMedium", "utmSource", "referrer"],
+  campaign: ["utmCampaign"],
+  referrer: ["referrer"],
+  source: ["utmSource"],
+  country: ["country"],
+  region: ["region", "country"],
+  city: ["city", "country"],
+  deviceType: ["deviceType"],
+  device: ["device"],
+});
+const ANALYTICS_GROUP_BY_ID = new Map(
+  Object.entries(ANALYTICS_GROUPING_SET).map(([name, id]) => [id, name]),
+);
+
+function selectAnalyticsGroups(aggregateRows) {
+  const groupedRows = Object.fromEntries(
+    Object.keys(ANALYTICS_GROUP_FIELDS).map((group) => [group, []]),
+  );
+  for (const row of aggregateRows) {
+    const group = ANALYTICS_GROUP_BY_ID.get(row.groupingSet);
+    const fields = ANALYTICS_GROUP_FIELDS[group];
+    if (!fields) throw new Error("Unexpected analytics grouping set.");
+    for (const field of Object.keys(row)) {
+      if (field !== "groupingSet" && field !== "count" && !fields.includes(field))
+        delete row[field];
+    }
+    row._count = { _all: number(row.count) };
+    delete row.groupingSet;
+    delete row.count;
+    groupedRows[group].push(row);
+  }
+  return groupedRows;
+}
 
 function validTimeZone(timeZone) {
   if (typeof timeZone !== "string" || timeZone.length > 64)
@@ -348,96 +393,64 @@ export async function getWaitlistAnalytics(
   const startUtc = first?.start_utc instanceof Date ? first.start_utc : new Date(first?.start_utc);
   const endUtc = first?.end_utc instanceof Date ? first.end_utc : new Date(first?.end_utc);
   const inRange = { gte: startUtc, lt: endUtc };
-  const countedSignupWhere = {
-    waitListId,
-    createdAt: inRange,
-    referredBy: { none: { reviewStatus: { in: ["NEEDS_REVIEW", "EXCLUDED"] } } },
-  };
-
   const [
-    channelGroups,
-    campaignGroups,
-    referrerGroups,
-    sourceGroups,
-    countryGroups,
-    regionGroups,
-    cityGroups,
-    deviceGroups,
-    userAgentGroups,
-    signupChannelGroups,
-    signupCampaignGroups,
-    signupReferrerGroups,
-    signupSourceGroups,
-    signupCountryGroups,
-    signupCityGroups,
-    signupDeviceGroups,
-    signupUserAgentGroups,
+    impressionAggregateRows,
+    signupAggregateRows,
     broadcasts,
     topReferrerRows,
     shareCount,
     linkVisitCount,
   ] = await Promise.all([
-    db.impression.groupBy({
-      by: ["utmMedium", "utmSource", "referrer"],
-      _count: { _all: true },
-      where: { waitListId, createdAt: inRange },
-    }),
-    db.impression.groupBy({
-      by: ["utmCampaign"],
-      _count: { _all: true },
-      where: { waitListId, createdAt: inRange },
-    }),
-    db.impression.groupBy({
-      by: ["referrer"],
-      _count: { _all: true },
-      where: { waitListId, createdAt: inRange },
-    }),
-    db.impression.groupBy({
-      by: ["utmSource"],
-      _count: { _all: true },
-      where: { waitListId, createdAt: inRange },
-    }),
-    db.impression.groupBy({
-      by: ["country"],
-      _count: { _all: true },
-      where: { waitListId, createdAt: inRange },
-    }),
-    db.impression.groupBy({
-      by: ["region", "country"],
-      _count: { _all: true },
-      where: { waitListId, createdAt: inRange },
-    }),
-    db.impression.groupBy({
-      by: ["city", "country"],
-      _count: { _all: true },
-      where: { waitListId, createdAt: inRange },
-    }),
-    db.impression.groupBy({
-      by: ["deviceType"],
-      _count: { _all: true },
-      where: { waitListId, createdAt: inRange },
-    }),
-    db.impression.groupBy({
-      by: ["device"],
-      _count: { _all: true },
-      where: { waitListId, createdAt: inRange },
-    }),
-    db.signUp.groupBy({
-      by: ["utmMedium", "utmSource", "referrer"],
-      _count: { _all: true },
-      where: countedSignupWhere,
-    }),
-    db.signUp.groupBy({ by: ["utmCampaign"], _count: { _all: true }, where: countedSignupWhere }),
-    db.signUp.groupBy({ by: ["referrer"], _count: { _all: true }, where: countedSignupWhere }),
-    db.signUp.groupBy({ by: ["utmSource"], _count: { _all: true }, where: countedSignupWhere }),
-    db.signUp.groupBy({ by: ["country"], _count: { _all: true }, where: countedSignupWhere }),
-    db.signUp.groupBy({
-      by: ["city", "country"],
-      _count: { _all: true },
-      where: countedSignupWhere,
-    }),
-    db.signUp.groupBy({ by: ["deviceType"], _count: { _all: true }, where: countedSignupWhere }),
-    db.signUp.groupBy({ by: ["device"], _count: { _all: true }, where: countedSignupWhere }),
+    db.$queryRaw`
+      SELECT GROUPING(
+               "utmMedium", "utmSource", "referrer", "utmCampaign", "country",
+               "region", "city", "deviceType", "device"
+             )::int AS "groupingSet",
+             "utmMedium", "utmSource", "referrer", "utmCampaign", "country",
+             "region", "city", "deviceType", "device", COUNT(*) AS "count"
+      FROM "impressions"
+      WHERE "waitListId" = ${waitListId}::text
+        AND "createdAt" >= ${startUtc}::timestamptz
+        AND "createdAt" < ${endUtc}::timestamptz
+      GROUP BY GROUPING SETS (
+        ("utmMedium", "utmSource", "referrer"),
+        ("utmCampaign"),
+        ("referrer"),
+        ("utmSource"),
+        ("country"),
+        ("region", "country"),
+        ("city", "country"),
+        ("deviceType"),
+        ("device")
+      )
+    `,
+    db.$queryRaw`
+      SELECT GROUPING(
+               "utmMedium", "utmSource", "referrer", "utmCampaign", "country",
+               "region", "city", "deviceType", "device"
+             )::int AS "groupingSet",
+             "utmMedium", "utmSource", "referrer", "utmCampaign", "country",
+             "region", "city", "deviceType", "device", COUNT(*) AS "count"
+      FROM "sign_ups" AS signup
+      WHERE signup."waitListId" = ${waitListId}::text
+        AND signup."createdAt" >= ${startUtc}::timestamptz
+        AND signup."createdAt" < ${endUtc}::timestamptz
+        AND NOT EXISTS (
+          SELECT 1 FROM "referrals" AS held_referral
+          WHERE held_referral."signUpId" = signup."id"
+            AND held_referral."reviewStatus" IN ('NEEDS_REVIEW', 'EXCLUDED')
+        )
+      GROUP BY GROUPING SETS (
+        ("utmMedium", "utmSource", "referrer"),
+        ("utmCampaign"),
+        ("referrer"),
+        ("utmSource"),
+        ("country"),
+        ("city", "country"),
+        ("deviceType"),
+        ("device")
+      )
+    `,
     db.marketingBroadcast.findMany({
       where: { waitListId, status: "SENT", sentAt: inRange },
       select: { id: true, name: true, sentAt: true },
@@ -479,6 +492,28 @@ export async function getWaitlistAnalytics(
       })
     : [];
 
+  const {
+    channel: channelGroups,
+    campaign: campaignGroups,
+    referrer: referrerGroups,
+    source: sourceGroups,
+    country: countryGroups,
+    region: regionGroups,
+    city: cityGroups,
+    deviceType: deviceGroups,
+    device: userAgentGroups,
+  } = selectAnalyticsGroups(impressionAggregateRows);
+  const {
+    channel: signupChannelGroups,
+    campaign: signupCampaignGroups,
+    referrer: signupReferrerGroups,
+    source: signupSourceGroups,
+    country: signupCountryGroups,
+    city: signupCityGroups,
+    deviceType: signupDeviceGroups,
+    device: signupUserAgentGroups,
+  } = selectAnalyticsGroups(signupAggregateRows);
+
   const rankCounts = (groups, label) => {
     const merged = new Map();
     for (const group of groups) {
@@ -487,27 +522,28 @@ export async function getWaitlistAnalytics(
     }
     return merged;
   };
-  const rank = (visitorGroups, signupGroups, label, limit = 5) => {
+  const rank = (visitorGroups, signupDimensionGroups, label, limit = 5) => {
     const visitorCounts = rankCounts(visitorGroups, label);
-    const signupCounts = rankCounts(signupGroups, label);
+    const signupCounts = rankCounts(signupDimensionGroups, label);
     const labels = new Set([...visitorCounts.keys(), ...signupCounts.keys()]);
     const visitorTotal = Array.from(visitorCounts.values()).reduce((sum, value) => sum + value, 0);
     const signupTotal = Array.from(signupCounts.values()).reduce((sum, value) => sum + value, 0);
-    const rows = Array.from(labels, (rowLabel) => {
-      const visitors = visitorCounts.get(rowLabel) ?? 0;
-      const signups = signupCounts.get(rowLabel) ?? 0;
+    const rankedRows = Array.from(labels, (rowLabel) => {
+      const visitorCount = visitorCounts.get(rowLabel) ?? 0;
+      const signupCount = signupCounts.get(rowLabel) ?? 0;
       return {
         label: rowLabel,
-        visitors,
-        signups,
-        visitorsShare: visitorTotal === 0 ? 0 : Math.round((visitors / visitorTotal) * 1000) / 10,
-        signupsShare: signupTotal === 0 ? 0 : Math.round((signups / signupTotal) * 1000) / 10,
+        visitors: visitorCount,
+        signups: signupCount,
+        visitorsShare:
+          visitorTotal === 0 ? 0 : Math.round((visitorCount / visitorTotal) * 1000) / 10,
+        signupsShare: signupTotal === 0 ? 0 : Math.round((signupCount / signupTotal) * 1000) / 10,
       };
     });
-    const byVisitors = [...rows]
+    const byVisitors = [...rankedRows]
       .sort((a, b) => b.visitors - a.visitors || b.signups - a.signups)
       .slice(0, limit);
-    const bySignups = [...rows]
+    const bySignups = [...rankedRows]
       .sort((a, b) => b.signups - a.signups || b.visitors - a.visitors)
       .slice(0, limit);
     return Array.from(
