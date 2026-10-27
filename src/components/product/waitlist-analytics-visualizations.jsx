@@ -5,9 +5,9 @@ import { EvilBarRows } from "@/components/product/evil-bar-chart";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
-export const number = new Intl.NumberFormat("en-US");
+import { number } from "./waitlist-analytics-formatters";
 
-export const EvilAreaChart = dynamic(
+const LazyEvilAreaChart = dynamic(
   () => import("@/components/product/evil-area-chart").then((module) => module.EvilAreaChart),
   {
     loading: () => (
@@ -19,7 +19,7 @@ export const EvilAreaChart = dynamic(
     ),
   },
 );
-export const EvilPieChart = dynamic(
+const LazyEvilPieChart = dynamic(
   () => import("@/components/product/evil-pie-chart").then((module) => module.EvilPieChart),
   {
     loading: () => (
@@ -31,7 +31,7 @@ export const EvilPieChart = dynamic(
     ),
   },
 );
-export const EvilWorldMap = dynamic(
+const LazyEvilWorldMap = dynamic(
   () => import("@/components/product/evil-world-map").then((module) => module.EvilWorldMap),
   {
     loading: () => (
@@ -43,6 +43,18 @@ export const EvilWorldMap = dynamic(
     ),
   },
 );
+
+export function EvilAreaChart(props) {
+  return <LazyEvilAreaChart {...props} />;
+}
+
+export function EvilPieChart(props) {
+  return <LazyEvilPieChart {...props} />;
+}
+
+export function EvilWorldMap(props) {
+  return <LazyEvilWorldMap {...props} />;
+}
 
 const FUNNEL_WIDTH = 900;
 const FUNNEL_HEIGHT = 200;

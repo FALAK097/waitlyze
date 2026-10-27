@@ -22,6 +22,7 @@ import {
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { SIGNUP_POINTS, REFERRAL_POINTS } from "@/lib/referrals/points.mjs";
 
+import { number } from "./waitlist-analytics-formatters";
 import {
   EmailDeliveryChart,
   EvilAreaChart,
@@ -29,7 +30,6 @@ import {
   EvilWorldMap,
   FunnelChart,
   RankedBars,
-  number,
 } from "./waitlist-analytics-visualizations";
 
 const COMPARISON =
