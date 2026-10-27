@@ -54,6 +54,8 @@ const buttonVariants = cva(
           "border-0 bg-transparent font-normal text-product-text-primary underline underline-offset-4 transition-colors hover:bg-transparent hover:text-product-text-secondary focus-visible:ring-0 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-product-focus active:not-aria-[haspopup]:translate-y-0",
         "table-sort":
           "bg-transparent text-inherit transition-colors hover:bg-transparent hover:text-product-text-primary active:not-aria-[haspopup]:translate-y-0",
+        "metric-hint":
+          "cursor-help rounded-sm border-0 bg-transparent text-product-text-primary transition-none hover:bg-transparent hover:text-product-text-primary focus-visible:ring-0 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-product-focus active:not-aria-[haspopup]:translate-y-0",
         "outline-destructive":
           "border-border bg-background text-destructive hover:bg-destructive/10 hover:text-destructive aria-expanded:bg-destructive/10 aria-expanded:text-destructive dark:border-input dark:bg-input/30 dark:hover:bg-destructive/20",
         "ghost-destructive":
@@ -70,6 +72,8 @@ const buttonVariants = cva(
         "icon-navigation": "h-10 w-10 rounded-md p-0 max-sm:w-9",
         "metric-switch":
           "h-auto min-h-7 gap-1 rounded-lg px-1.5 py-0.5 ps-2 text-micro [&_svg]:opacity-70",
+        "metric-hint":
+          "h-auto min-h-11 min-w-11 p-0 text-2xl leading-tight font-semibold tracking-tighter max-[600px]:text-xl",
         dimension:
           "h-auto min-h-8.5 border-0 px-2.25 py-1.25 text-micro focus-visible:ring-2 focus-visible:ring-product-success-text focus-visible:outline-none focus-visible:ring-inset",
         "product-toggle": "h-auto min-h-8.5 px-3 text-caption",

@@ -439,9 +439,10 @@ function Metric({ label, value, change, detail, badge, hint }) {
             <Tooltip>
               <TooltipTrigger
                 render={
-                  <button
+                  <Button
                     type="button"
-                    className="cursor-help rounded-sm border-0 bg-transparent p-0 text-left"
+                    variant="metric-hint"
+                    size="metric-hint"
                     aria-label={`More about ${label}: ${value}`}
                   />
                 }
