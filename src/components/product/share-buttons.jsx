@@ -2,6 +2,7 @@
 
 import { useId, useState } from "react";
 
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 export const SHARE_CHANNELS = [
@@ -288,16 +289,17 @@ export function ShareButtons({
         if (!Icon) return null;
         if (channel === "instagram")
           return (
-            <button
+            <Button
               type="button"
               key={channel}
               aria-label={copied ? "Link copied" : "Copy link for Instagram"}
               title={copied ? "Copied" : "Copy link for Instagram"}
               onClick={copyLink}
-              className="cursor-pointer border-0 bg-transparent p-0 transition-opacity hover:opacity-85"
+              variant="public-share-icon"
+              size="public-share-icon"
             >
               <Icon className={iconClassName} />
-            </button>
+            </Button>
           );
         const href = buildShareHref(channel, { message, link, subject });
         if (!href) return null;

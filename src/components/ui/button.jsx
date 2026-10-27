@@ -60,6 +60,8 @@ const buttonVariants = cva(
           "rounded-full border-0 bg-wl-button/10 text-wl-button transition-opacity hover:bg-wl-button/10 hover:opacity-80 focus-visible:ring-2 focus-visible:ring-wl-button/50 focus-visible:outline-none",
         "public-copy":
           "rounded-wl border-0 bg-wl-button text-wl-button-text transition-opacity hover:bg-wl-button hover:opacity-80 focus-visible:ring-2 focus-visible:ring-wl-button/50 focus-visible:outline-none",
+        "public-share-icon":
+          "rounded-full border-0 bg-transparent text-inherit transition-opacity hover:bg-transparent hover:opacity-85 focus-visible:ring-2 focus-visible:ring-wl-button/50 focus-visible:outline-none",
         "outline-destructive":
           "border-border bg-background text-destructive hover:bg-destructive/10 hover:text-destructive aria-expanded:bg-destructive/10 aria-expanded:text-destructive dark:border-input dark:bg-input/30 dark:hover:bg-destructive/20",
         "ghost-destructive":
@@ -129,6 +131,7 @@ const buttonVariants = cva(
         "icon-touch": "size-7 [@media(hover:none)]:size-11",
         "public-copy-icon": "size-8 p-0 [@media(hover:none)]:size-11",
         "public-copy": "h-auto min-h-11 gap-1.5 px-3 py-2 text-caption font-bold",
+        "public-share-icon": "size-11 p-0",
         "icon-lg": "size-9",
       },
     },
