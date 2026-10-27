@@ -203,6 +203,176 @@ function LinkItems({ section, update }) {
   );
 }
 
+function SectionField({ section, update, field, label, multiline = false }) {
+  return (
+    <Field
+      label={label}
+      multiline={multiline}
+      value={section[field] ?? ""}
+      onChange={(value) => update({ ...section, [field]: value })}
+    />
+  );
+}
+
+const ITEM_FIELDS = {
+  features: [
+    { key: "title", label: "Title" },
+    { key: "body", label: "Description", multiline: true },
+  ],
+  steps: [
+    { key: "title", label: "Title" },
+    { key: "body", label: "Description", multiline: true },
+  ],
+  stats: [
+    { key: "value", label: "Value" },
+    { key: "label", label: "Label" },
+  ],
+  testimonials: [
+    { key: "quote", label: "Quote", multiline: true },
+    { key: "name", label: "Name" },
+    { key: "role", label: "Role" },
+  ],
+  faq: [
+    { key: "question", label: "Question" },
+    { key: "answer", label: "Answer", multiline: true },
+  ],
+  referralRewards: [
+    { key: "referrals", label: "Referrals", type: "number" },
+    { key: "reward", label: "Reward" },
+  ],
+};
+
+function ItemBlockEditor({ section, update, includeHeading = true }) {
+  return (
+    <>
+      {includeHeading ? (
+        <SectionField section={section} update={update} field="heading" label="Heading" />
+      ) : null}
+      <StringItems section={section} fields={ITEM_FIELDS[section.type]} update={update} />
+    </>
+  );
+}
+
+function NavigationEditor({ section, update }) {
+  return (
+    <>
+      <SectionField section={section} update={update} field="brand" label="Brand" />
+      <SectionField section={section} update={update} field="buttonText" label="Button" />
+      <LinkItems section={section} update={update} />
+    </>
+  );
+}
+
+function HeroEditor({ section, update }) {
+  return (
+    <>
+      <SectionField section={section} update={update} field="eyebrow" label="Eyebrow" />
+      <SectionField section={section} update={update} field="heading" label="Headline" />
+      <SectionField section={section} update={update} field="body" label="Description" multiline />
+      <Toggle
+        label="Show signup form"
+        checked={section.showForm}
+        onChange={(showForm) => update({ ...section, showForm })}
+      />
+    </>
+  );
+}
+
+function LogoEditor({ section, update }) {
+  return (
+    <>
+      <SectionField section={section} update={update} field="heading" label="Heading" />
+      <LogoItems section={section} update={update} />
+    </>
+  );
+}
+
+function MediaEditor({ section, update }) {
+  return (
+    <>
+      <SectionField section={section} update={update} field="heading" label="Heading" />
+      <SectionField section={section} update={update} field="body" label="Description" multiline />
+      <ImageUploadField
+        label="Image"
+        value={section.imageUrl}
+        onChange={(imageUrl) => update({ ...section, imageUrl })}
+        hint="PNG, JPEG, or WebP up to 4MB."
+      />
+      <SectionField section={section} update={update} field="imageAlt" label="Image description" />
+    </>
+  );
+}
+
+function FormEditor({ section, update }) {
+  return (
+    <>
+      <SectionField section={section} update={update} field="heading" label="Heading" />
+      <SectionField section={section} update={update} field="body" label="Description" multiline />
+    </>
+  );
+}
+
+function SignupCountEditor({ section, update }) {
+  return (
+    <>
+      <SectionField section={section} update={update} field="prefix" label="Before number" />
+      <SectionField section={section} update={update} field="suffix" label="After number" />
+    </>
+  );
+}
+
+function CtaEditor({ section, update }) {
+  return (
+    <>
+      <SectionField section={section} update={update} field="heading" label="Heading" />
+      <SectionField section={section} update={update} field="body" label="Description" multiline />
+      <SectionField section={section} update={update} field="buttonText" label="Button" />
+    </>
+  );
+}
+
+function FooterEditor({ section, update }) {
+  return (
+    <>
+      <SectionField section={section} update={update} field="note" label="Footer note" multiline />
+      <LinkItems section={section} update={update} />
+    </>
+  );
+}
+
+function SignupFormSettings({ form, updateForm }) {
+  return (
+    <div className="grid gap-4 border-t border-product-border-subtle pt-4">
+      <div className="grid gap-1">
+        <p className="text-micro font-bold tracking-widest text-product-text-secondary uppercase">
+          Signup form
+        </p>
+        <p className="text-micro leading-relaxed text-product-text-secondary">
+          The same form is used wherever it appears on your page or embed.
+        </p>
+      </div>
+      <FormPanel form={form} update={updateForm} />
+    </div>
+  );
+}
+
+const BLOCK_EDITORS = {
+  navigation: NavigationEditor,
+  hero: HeroEditor,
+  features: ItemBlockEditor,
+  steps: ItemBlockEditor,
+  logos: LogoEditor,
+  stats: ItemBlockEditor,
+  testimonials: ItemBlockEditor,
+  faq: ItemBlockEditor,
+  media: MediaEditor,
+  form: FormEditor,
+  signupCount: SignupCountEditor,
+  referralRewards: ItemBlockEditor,
+  cta: CtaEditor,
+  footer: FooterEditor,
+};
+
 export function BlockInspector({ section, update, form, updateForm }) {
   if (!section)
     return (
@@ -210,155 +380,14 @@ export function BlockInspector({ section, update, form, updateForm }) {
         <p>Click a block in the preview or the list to edit it.</p>
       </div>
     );
-  const field = (key, label, multiline = false) => (
-    <Field
-      label={label}
-      multiline={multiline}
-      value={section[key] ?? ""}
-      onChange={(value) => update({ ...section, [key]: value })}
-    />
-  );
+
+  const Editor = BLOCK_EDITORS[section.type];
+  const showFormSettings = section.type === "form" || (section.type === "hero" && section.showForm);
+
   return (
     <div className="grid gap-4 p-5">
-      {section.type === "navigation" && (
-        <>
-          {field("brand", "Brand")}
-          {field("buttonText", "Button")}
-          <LinkItems section={section} update={update} />
-        </>
-      )}
-      {section.type === "hero" && (
-        <>
-          {field("eyebrow", "Eyebrow")}
-          {field("heading", "Headline")}
-          {field("body", "Description", true)}
-          <Toggle
-            label="Show signup form"
-            checked={section.showForm}
-            onChange={(showForm) => update({ ...section, showForm })}
-          />
-        </>
-      )}
-      {["features", "steps"].includes(section.type) && (
-        <>
-          {field("heading", "Heading")}
-          <StringItems
-            section={section}
-            fields={[
-              { key: "title", label: "Title" },
-              { key: "body", label: "Description", multiline: true },
-            ]}
-            update={update}
-          />
-        </>
-      )}
-      {section.type === "logos" && (
-        <>
-          {field("heading", "Heading")}
-          <LogoItems section={section} update={update} />
-        </>
-      )}
-      {section.type === "stats" && (
-        <StringItems
-          section={section}
-          fields={[
-            { key: "value", label: "Value" },
-            { key: "label", label: "Label" },
-          ]}
-          update={update}
-        />
-      )}
-      {section.type === "testimonials" && (
-        <>
-          {field("heading", "Heading")}
-          <StringItems
-            section={section}
-            fields={[
-              { key: "quote", label: "Quote", multiline: true },
-              { key: "name", label: "Name" },
-              { key: "role", label: "Role" },
-            ]}
-            update={update}
-          />
-        </>
-      )}
-      {section.type === "faq" && (
-        <>
-          {field("heading", "Heading")}
-          <StringItems
-            section={section}
-            fields={[
-              { key: "question", label: "Question" },
-              { key: "answer", label: "Answer", multiline: true },
-            ]}
-            update={update}
-          />
-        </>
-      )}
-      {section.type === "media" && (
-        <>
-          {field("heading", "Heading")}
-          {field("body", "Description", true)}
-          <ImageUploadField
-            label="Image"
-            value={section.imageUrl}
-            onChange={(imageUrl) => update({ ...section, imageUrl })}
-            hint="PNG, JPEG, or WebP up to 4MB."
-          />
-          {field("imageAlt", "Image description")}
-        </>
-      )}
-      {section.type === "form" && (
-        <>
-          {field("heading", "Heading")}
-          {field("body", "Description", true)}
-        </>
-      )}
-      {section.type === "signupCount" && (
-        <>
-          {field("prefix", "Before number")}
-          {field("suffix", "After number")}
-        </>
-      )}
-      {section.type === "referralRewards" && (
-        <>
-          {field("heading", "Heading")}
-          <StringItems
-            section={section}
-            fields={[
-              { key: "referrals", label: "Referrals", type: "number" },
-              { key: "reward", label: "Reward" },
-            ]}
-            update={update}
-          />
-        </>
-      )}
-      {section.type === "cta" && (
-        <>
-          {field("heading", "Heading")}
-          {field("body", "Description", true)}
-          {field("buttonText", "Button")}
-        </>
-      )}
-      {section.type === "footer" && (
-        <>
-          {field("note", "Footer note", true)}
-          <LinkItems section={section} update={update} />
-        </>
-      )}
-      {(section.type === "form" || (section.type === "hero" && section.showForm)) && (
-        <div className="grid gap-4 border-t border-product-border-subtle pt-4">
-          <div className="grid gap-1">
-            <p className="text-micro font-bold tracking-widest text-product-text-secondary uppercase">
-              Signup form
-            </p>
-            <p className="text-micro leading-relaxed text-product-text-secondary">
-              The same form is used wherever it appears on your page or embed.
-            </p>
-          </div>
-          <FormPanel form={form} update={updateForm} />
-        </div>
-      )}
+      {Editor ? <Editor section={section} update={update} /> : null}
+      {showFormSettings ? <SignupFormSettings form={form} updateForm={updateForm} /> : null}
     </div>
   );
 }
