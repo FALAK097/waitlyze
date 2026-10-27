@@ -489,15 +489,16 @@ function SortableBlockRow({ section, selected, disabled, onSelect, onDuplicate, 
         "--sortable-transition": transition,
       }}
     >
-      <button
+      <Button
         {...attributes}
         {...listeners}
         aria-label={`Drag ${names[section.type]} block`}
-        className="flex size-11 shrink-0 cursor-grab touch-none items-center justify-center rounded-md border-0 bg-transparent text-product-text-muted active:cursor-grabbing"
+        size="builder-drag-handle"
         type="button"
+        variant="builder-drag-handle"
       >
         <HugeiconsIcon icon={DragDropIcon} size={15} aria-hidden="true" />
-      </button>
+      </Button>
       <span className="flex size-7 shrink-0 items-center justify-center rounded-md text-product-text-muted group-data-[selected=true]:bg-product-bg-surface group-data-[selected=true]:text-product-text-primary">
         <HugeiconsIcon icon={blockIcons[section.type]} size={15} aria-hidden="true" />
       </span>

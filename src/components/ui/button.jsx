@@ -22,6 +22,8 @@ const buttonVariants = cva(
           "border border-transparent bg-transparent text-product-text-secondary transition-colors hover:bg-product-bg-inset hover:text-product-text-primary focus-visible:ring-0 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-neutral-900 active:not-aria-[haspopup]:translate-y-0 aria-[current=page]:bg-product-bg-inset aria-[current=page]:text-product-text-primary aria-[pressed=true]:bg-product-bg-inset aria-[pressed=true]:font-medium aria-[pressed=true]:text-product-text-primary",
         "builder-toolbar":
           "border-0 bg-transparent text-white/70 transition-colors hover:bg-white/15 hover:text-white focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:outline-none disabled:opacity-30",
+        "builder-drag-handle":
+          "cursor-grab border-0 bg-transparent text-product-text-muted transition-colors hover:bg-transparent focus-visible:ring-0 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-product-focus active:cursor-grabbing active:not-aria-[haspopup]:translate-y-0",
         "product-card-danger": `${productCardBase} bg-product-danger-bg text-product-danger-text hover:brightness-95`,
         "product-card-muted": `${productCardBase} bg-product-bg-inset hover:bg-product-border-subtle`,
         "product-toggle":
@@ -91,6 +93,7 @@ const buttonVariants = cva(
         "builder-selection":
           "h-auto min-h-11 min-w-0 flex-1 justify-start rounded-md px-1 py-2 text-caption",
         "builder-toolbar": "size-11 rounded-md p-0",
+        "builder-drag-handle": "size-11 shrink-0 touch-none rounded-md p-0",
         "navigation-item":
           "h-auto min-h-11 w-full min-w-0 justify-start gap-3 px-3 py-2.5 text-item font-normal whitespace-normal aria-[current=page]:font-medium max-[760px]:gap-2 max-[760px]:px-2.5",
         card: "h-auto w-full flex-wrap items-start justify-between gap-4 rounded-lg border-0 px-3 py-2.5 text-left font-normal whitespace-normal",
