@@ -11,15 +11,15 @@ const ANALYTICS_GROUPING_SET = Object.freeze({
   device: 510,
 });
 const ANALYTICS_GROUP_FIELDS = Object.freeze({
-  channel: ["utmMedium", "utmSource", "referrer"],
-  campaign: ["utmCampaign"],
-  referrer: ["referrer"],
-  source: ["utmSource"],
-  country: ["country"],
-  region: ["region", "country"],
-  city: ["city", "country"],
-  deviceType: ["deviceType"],
-  device: ["device"],
+  channel: new Set(["utmMedium", "utmSource", "referrer"]),
+  campaign: new Set(["utmCampaign"]),
+  referrer: new Set(["referrer"]),
+  source: new Set(["utmSource"]),
+  country: new Set(["country"]),
+  region: new Set(["region", "country"]),
+  city: new Set(["city", "country"]),
+  deviceType: new Set(["deviceType"]),
+  device: new Set(["device"]),
 });
 const ANALYTICS_GROUP_BY_ID = new Map(
   Object.entries(ANALYTICS_GROUPING_SET).map(([name, id]) => [id, name]),
@@ -34,8 +34,7 @@ function selectAnalyticsGroups(aggregateRows) {
     const fields = ANALYTICS_GROUP_FIELDS[group];
     if (!fields) throw new Error("Unexpected analytics grouping set.");
     for (const field of Object.keys(row)) {
-      if (field !== "groupingSet" && field !== "count" && !fields.includes(field))
-        delete row[field];
+      if (field !== "groupingSet" && field !== "count" && !fields.has(field)) delete row[field];
     }
     row._count = { _all: number(row.count) };
     delete row.groupingSet;

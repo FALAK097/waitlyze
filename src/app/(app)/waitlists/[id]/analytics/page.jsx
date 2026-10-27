@@ -7,6 +7,10 @@ export default async function AnalyticsPage({ params }) {
   const { id } = await params;
   const { campaign: waitlist } = await requireCampaignPage(id, "viewCampaign");
   return (
-    <WaitlistAnalytics waitListId={waitlist.id} emailsEnabled={waitlist.sendEmailsToSubscribers} />
+    <WaitlistAnalytics
+      key={waitlist.id}
+      waitListId={waitlist.id}
+      emailsEnabled={waitlist.sendEmailsToSubscribers}
+    />
   );
 }

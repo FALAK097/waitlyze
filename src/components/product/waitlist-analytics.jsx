@@ -492,7 +492,10 @@ export function WaitlistAnalytics({ waitListId, emailsEnabled = false }) {
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || "Could not load analytics.");
       if (!signal.aborted)
-        setAnalytics({ ...result, requestKey: { days: requestDays, end: requestEnd ?? null } });
+        setAnalytics({
+          ...result,
+          requestKey: { waitListId, days: requestDays, end: requestEnd ?? null },
+        });
     } catch (cause) {
       if (cause.name !== "AbortError") setError(cause.message || "Could not load analytics.");
     } finally {
@@ -512,6 +515,7 @@ export function WaitlistAnalytics({ waitListId, emailsEnabled = false }) {
 
   const rangeMatches = (result) =>
     result?.requestKey &&
+    result.requestKey.waitListId === waitListId &&
     result.requestKey.days === requestDays &&
     result.requestKey.end === (requestEnd ?? null);
   const currentAnalytics = analytics && rangeMatches(analytics) ? analytics : null;
