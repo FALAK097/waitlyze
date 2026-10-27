@@ -163,8 +163,9 @@ export async function getWaitlistAnalytics(
             AND held_referral."reviewStatus" IN ('NEEDS_REVIEW', 'EXCLUDED')
         )
     ), visitor_daily AS (
+      -- The waitlist/user unique index makes row counts equal distinct visitors.
       SELECT (impression."createdAt" AT TIME ZONE 'UTC' AT TIME ZONE bounds.time_zone)::date AS local_date,
-             COUNT(DISTINCT impression."uniqueUserId")::int AS visitors
+             COUNT(*)::int AS visitors
       FROM "impressions" AS impression
       CROSS JOIN bounds
       WHERE impression."waitListId" = bounds.wait_list_id
@@ -237,7 +238,7 @@ export async function getWaitlistAnalytics(
         AND ledger."createdAt" < bounds.end_utc
     ), period_summary AS (
       SELECT
-        (SELECT COUNT(DISTINCT impression."uniqueUserId")::int
+        (SELECT COUNT(*)::int
          FROM "impressions" AS impression CROSS JOIN bounds
          WHERE impression."waitListId" = bounds.wait_list_id
            AND impression."uniqueUserId" <> ''
@@ -267,7 +268,7 @@ export async function getWaitlistAnalytics(
            AND impression."uniqueUserId" <> '') AS converted_visitors
     ), previous_summary AS (
       SELECT
-        (SELECT COUNT(DISTINCT impression."uniqueUserId")::int
+        (SELECT COUNT(*)::int
          FROM "impressions" AS impression CROSS JOIN bounds
          WHERE impression."waitListId" = bounds.wait_list_id
            AND impression."uniqueUserId" <> ''
