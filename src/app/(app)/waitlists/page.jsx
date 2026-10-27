@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { after } from "next/server";
 import { Suspense } from "react";
 
 import { ProductContentSkeleton } from "@/components/product/content-skeleton";
@@ -18,7 +19,11 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import prisma from "@/lib/prisma";
-import { createServerPerformanceContext, withServerPhase } from "@/lib/server-performance.mjs";
+import {
+  createServerPerformanceContext,
+  logElapsedServerPhase,
+  withServerPhase,
+} from "@/lib/server-performance.mjs";
 import {
   normalizeWaitlistSearch,
   normalizeWaitlistStatus,
@@ -203,6 +208,7 @@ async function WaitlistsResults(props) {
         ...props,
         markDegraded: () => {
           outcome = "degraded";
+          props.performanceContext.outcome = "degraded";
         },
       }),
     () => outcome,
@@ -341,6 +347,9 @@ async function renderWaitlistsResults({
 
 export default async function WaitlistsPage({ searchParams }) {
   const performanceContext = createServerPerformanceContext("/waitlists");
+  after(() => {
+    logElapsedServerPhase(performanceContext, "response-total", performanceContext.startedAt);
+  });
   const [{ user, workspace }, params] = await Promise.all([
     withServerPhase(performanceContext, "workspace-context", currentWorkspace),
     searchParams,
