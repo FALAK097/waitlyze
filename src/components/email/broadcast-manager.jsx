@@ -419,7 +419,7 @@ export function BroadcastManager({
   const router = useRouter();
   const [broadcasts, setBroadcasts] = useState(initialBroadcasts);
   const [broadcastHasMore, setBroadcastHasMore] = useState(initialHasMore);
-  const [broadcastCursor, setBroadcastCursor] = useState(initialCursor);
+  const broadcastCursorRef = useRef(initialCursor);
   const initialSelection = initialBroadcast || initialBroadcasts[0] || null;
   const [selectedId, setSelectedId] = useState(initialSelection?.id || null);
   const [data, setData] = useState(initialSelection || emptyDraft());
@@ -497,23 +497,24 @@ export function BroadcastManager({
       return selectedItem ? [...updated, selectedItem] : updated;
     });
     setBroadcastHasMore(hasMore);
-    setBroadcastCursor(nextCursor);
+    broadcastCursorRef.current = nextCursor;
     const active = updated.find((item) => item.id === selected);
     if (active) await selectBroadcast(active);
     router.refresh();
   }
 
   async function loadMoreBroadcasts() {
-    if (!broadcastHasMore || !broadcastCursor || busy) return;
+    const cursor = broadcastCursorRef.current;
+    if (!broadcastHasMore || !cursor || busy) return;
     setBusyAction("more");
     try {
-      const page = await listBroadcasts(waitListId, { cursor: broadcastCursor });
+      const page = await listBroadcasts(waitListId, { cursor });
       setBroadcasts((current) => {
         const knownIds = new Set(current.map((broadcast) => broadcast.id));
         return [...current, ...page.broadcasts.filter((broadcast) => !knownIds.has(broadcast.id))];
       });
       setBroadcastHasMore(page.hasMore);
-      setBroadcastCursor(page.nextCursor);
+      broadcastCursorRef.current = page.nextCursor;
     } catch {
       notify("Couldn’t load older broadcasts. Try again.", true);
     } finally {
@@ -682,7 +683,7 @@ export function BroadcastManager({
     setBusyAction("cancel");
     try {
       const result = await cancelBroadcast({ waitListId, broadcastId: selectedId });
-      await refreshBroadcasts(selectedId);
+      if (result.success) await refreshBroadcasts(selectedId);
       notify(result.message, !result.success);
     } catch {
       notify("Couldn’t cancel the remaining emails. Refresh and check delivery status.", true);
