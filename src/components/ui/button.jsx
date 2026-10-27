@@ -38,6 +38,10 @@ const buttonVariants = cva(
           "border-0 bg-transparent text-product-text-secondary transition-colors hover:bg-product-bg-inset hover:text-product-text-primary focus-visible:ring-0 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-product-focus active:not-aria-[haspopup]:translate-y-0 aria-[pressed=true]:bg-product-bg-inset aria-[pressed=true]:text-product-text-primary",
         "product-segment-surface":
           "border-0 bg-transparent text-product-text-secondary transition-colors hover:bg-product-bg-inset hover:text-product-text-primary focus-visible:ring-0 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-product-focus active:not-aria-[haspopup]:translate-y-0 aria-[pressed=true]:bg-product-bg-surface aria-[pressed=true]:text-product-text-primary",
+        "builder-block":
+          "rounded-lg border-product-border-subtle bg-product-bg-surface text-product-text-primary transition-colors hover:border-product-accent-solid focus-visible:ring-0 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-900",
+        "builder-radius":
+          "border-0 bg-transparent text-micro text-product-text-secondary transition-colors hover:bg-product-bg-inset focus-visible:ring-0 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-product-focus aria-[pressed=true]:bg-product-bg-surface aria-[pressed=true]:text-product-text-primary aria-[pressed=true]:shadow-pressed",
         "product-inline-link":
           "border-0 bg-transparent font-normal text-product-text-primary underline underline-offset-4 transition-colors hover:bg-transparent hover:text-product-text-secondary focus-visible:ring-0 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-product-focus active:not-aria-[haspopup]:translate-y-0",
         "table-sort":
@@ -74,6 +78,10 @@ const buttonVariants = cva(
         "preview-state":
           "h-auto min-h-11 min-w-0 shrink px-3 py-2 text-caption leading-tight font-semibold whitespace-normal",
         "preview-viewport": "size-11 p-0 [&_svg]:size-[17px]",
+        "builder-block":
+          "h-auto min-h-16 w-full justify-start gap-2.5 px-2.5 py-2.5 text-left font-normal whitespace-normal",
+        "builder-radius":
+          "h-auto min-h-17 w-full flex-col items-center justify-center gap-1.5 rounded-md px-1 py-2 whitespace-normal",
         "builder-selection":
           "h-auto min-h-11 min-w-0 flex-1 justify-start rounded-md px-1 py-2 text-caption",
         "builder-toolbar": "size-11 rounded-md p-0",

@@ -22,30 +22,12 @@ import { seedPreviewVars } from "@/lib/email/variables.mjs";
 import { notifyBroadcastSummary } from "@/lib/emails/founder-notifications.mjs";
 import { emailStatusLabel } from "@/lib/emails/status-label.mjs";
 import { emailTemplateType, normalizeEmailTemplate } from "@/lib/emails/templates.mjs";
+import { deliverTestEmail, senderForWaitlist } from "@/lib/emails/test-delivery.mjs";
 import { env } from "@/lib/env.mjs";
-import { resolveWorkspaceEmailSender } from "@/lib/integrations/email-sender.mjs";
 import prisma from "@/lib/prisma";
 import { consumePublicBudget, PublicRateLimitError } from "@/lib/security/public-rate-limit.mjs";
 import { AUDIT_ACTIONS, recordWaitlistAuditEvent } from "@/lib/workspaces/audit.mjs";
 import { requireCampaign } from "@/lib/workspaces/authorize";
-
-const platformSender = {
-  apiKey: env.RESEND_API_KEY,
-  fromEmail: env.RESEND_FROM_EMAIL,
-  replyTo: env.RESEND_REPLY_TO,
-};
-
-// Subscriber and template email prefers the workspace's connected provider so it
-// sends from the customer's own verified domain; the platform sender is the
-// fallback so delivery never silently stops.
-async function senderForWaitlist(waitListId) {
-  const waitlist = await prisma.waitList.findUnique({
-    where: { id: waitListId },
-    select: { workspaceId: true },
-  });
-  const provider = await resolveWorkspaceEmailSender(prisma, waitlist?.workspaceId, null);
-  return provider || platformSender;
-}
 
 export async function upsertEmailTemplate({ waitListId, templateType, data }) {
   const enumType = emailTemplateType(templateType);
@@ -111,56 +93,37 @@ export async function upsertEmailTemplate({ waitListId, templateType, data }) {
 }
 
 export async function sendTestEmail({ waitListId, templateType, to }) {
-  if (typeof to !== "string" || to.length > 320 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to))
-    return { success: false, message: "Enter one valid test email address." };
-  if (!env.RESEND_API_KEY) {
-    return { success: false, message: "RESEND_API_KEY not configured" };
-  }
-
-  const enumType = emailTemplateType(templateType);
-  if (!enumType) return { success: false, message: "Invalid template type" };
-
-  try {
-    const { user, campaign, scope } = await requireCampaign(waitListId, "sendEmail");
-    await consumePublicBudget(prisma, {
-      kind: "testEmail",
-      campaignId: campaign.workspaceId || campaign.id,
-      actorId: user.id,
-      email: to,
-    });
-    const waitList = await prisma.waitList.findFirst({
-      where: { id: waitListId, ...scope },
-      select: { name: true, templateSnapshot: true },
-    });
-    if (!waitList) return { success: false, message: "Waitlist not found" };
-
-    const tpl = await prisma.emailTemplate.findUnique({
-      where: {
-        waitListId_type: {
-          waitListId,
-          type: enumType,
+  let enumType;
+  return deliverTestEmail({
+    waitListId,
+    to,
+    waitlistSelect: { name: true, templateSnapshot: true },
+    validate: () => {
+      enumType = emailTemplateType(templateType);
+      return enumType ? null : "Invalid template type";
+    },
+    prepareEmail: async ({ waitList, scope }) => {
+      const tpl = await prisma.emailTemplate.findUnique({
+        where: {
+          waitListId_type: { waitListId, type: enumType },
+          waitList: scope,
         },
-        waitList: scope,
-      },
-    });
-    if (!tpl) return { success: false, message: "Template not found" };
+      });
+      if (!tpl) return { error: "Template not found" };
 
-    const vars = {
-      ...seedPreviewVars(waitList.name),
-      waitlist_url: `https://waitlyze.falakgala.dev/forms/${waitListId}`,
-    };
-
-    const replaceVars = (text) =>
-      text.replace(/\{\{([^}]+)\}\}/g, (_, k) => vars[k.trim()] ?? `{{${k}}}`);
-
-    const subject = replaceVars(tpl.subject);
-    const previewText = replaceVars(tpl.previewText);
-    const header = markdownToHtml(replaceVars(tpl.header));
-    const subHeader = markdownToHtml(replaceVars(tpl.subHeader));
-    const mainBody = markdownToHtml(replaceVars(tpl.mainBody));
-    const subBody = markdownToHtml(replaceVars(tpl.subBody));
-
-    const htmlBody = `<!DOCTYPE html>
+      const vars = {
+        ...seedPreviewVars(waitList.name),
+        waitlist_url: `https://waitlyze.falakgala.dev/forms/${waitListId}`,
+      };
+      const replaceVars = (text) =>
+        text.replace(/\{\{([^}]+)\}\}/g, (_, key) => vars[key.trim()] ?? `{{${key}}}`);
+      const subject = replaceVars(tpl.subject);
+      const previewText = replaceVars(tpl.previewText);
+      const header = markdownToHtml(replaceVars(tpl.header));
+      const subHeader = markdownToHtml(replaceVars(tpl.subHeader));
+      const mainBody = markdownToHtml(replaceVars(tpl.mainBody));
+      const subBody = markdownToHtml(replaceVars(tpl.subBody));
+      const html = `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8" />
@@ -274,143 +237,98 @@ export async function sendTestEmail({ waitListId, templateType, to }) {
   </div>
 </body>
 </html>`;
+      const richHtml = tpl.renderedHtml
+        ? subscriberEmailHtml({
+            name: waitList.name || "Your project",
+            content: interpolateEmail(tpl.renderedHtml, vars),
+            previewText,
+            brand: emailBrandFromSnapshot(waitList.templateSnapshot),
+          })
+        : null;
 
-    const provider = await senderForWaitlist(waitListId);
-    const richHtml = tpl.renderedHtml
-      ? subscriberEmailHtml({
-          name: waitList.name || "Your project",
-          content: interpolateEmail(tpl.renderedHtml, vars),
-          previewText,
-          brand: emailBrandFromSnapshot(waitList.templateSnapshot),
-        })
-      : null;
-    const { error } = await new Resend(provider.apiKey).emails.send({
-      from: provider.fromEmail,
-      to,
-      subject,
-      replyTo: provider.replyTo,
-      html: richHtml || htmlBody,
-      text: tpl.renderedText ? replaceVars(tpl.renderedText) : undefined,
-    });
-
-    if (error) {
-      return { success: false, message: `Resend error: ${error.name} ${error.message}` };
-    }
-
-    return { success: true, message: "Test email sent" };
-  } catch (e) {
-    console.error(e);
-    return { success: false, message: "Failed to send email" };
-  }
+      return {
+        email: {
+          subject,
+          html: richHtml || html,
+          text: tpl.renderedText ? replaceVars(tpl.renderedText) : undefined,
+        },
+      };
+    },
+    successMessage: () => "Test email sent",
+  });
 }
 
 function markdownToHtml(markdown) {
   return renderEmailMarkdown(markdown);
 }
 
-function validTestAddress(to) {
-  return typeof to === "string" && to.length <= 320 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to);
-}
-
 // 1-click test send for a broadcast draft: renders the saved draft with seed
 // preview data and delivers immediately (outside the outbox - tests never
 // touch real recipients or the delivery report).
 export async function sendBroadcastTestEmail({ waitListId, broadcastId, to }) {
-  if (!validTestAddress(to))
-    return { success: false, message: "Enter one valid test email address." };
-  if (!env.RESEND_API_KEY) return { success: false, message: "RESEND_API_KEY not configured" };
-  try {
-    const { user, campaign, scope } = await requireCampaign(waitListId, "sendEmail");
-    await consumePublicBudget(prisma, {
-      kind: "testEmail",
-      campaignId: campaign.workspaceId || campaign.id,
-      actorId: user.id,
-      email: to,
-    });
-    const waitList = await prisma.waitList.findFirst({
-      where: { id: waitListId, ...scope },
-      select: { name: true },
-    });
-    if (!waitList) return { success: false, message: "Waitlist not found" };
-    const broadcast = await prisma.marketingBroadcast.findFirst({
-      where: { id: broadcastId, waitListId, status: { in: ["DRAFT", "SCHEDULED"] } },
-    });
-    if (!broadcast) return { success: false, message: "Draft not found" };
-    const { interpolateVars, interpolateVarsHtml } = await import("@/lib/email/variables.mjs");
-    const vars = seedPreviewVars(waitList.name);
-    const provider = await senderForWaitlist(waitListId);
-    const { error } = await new Resend(provider.apiKey).emails.send({
-      from: provider.fromEmail,
-      to,
-      subject: `[Test] ${interpolateVars(broadcast.subject, vars)}`,
-      replyTo: provider.replyTo,
-      html: broadcast.renderedHtml
-        ? subscriberEmailHtml({
-            name: waitList.name || "Waitlist",
-            content: interpolateVarsHtml(broadcast.renderedHtml, vars),
-            previewText: interpolateVars(broadcast.previewText, vars),
-          })
-        : undefined,
-      text: broadcast.renderedText
-        ? interpolateVars(broadcast.renderedText, vars)
-        : interpolateVars(broadcast.body, vars),
-    });
-    if (error) return { success: false, message: `Resend error: ${error.name} ${error.message}` };
-    return { success: true, message: `Test sent to ${to}.` };
-  } catch (e) {
-    console.error(e);
-    return { success: false, message: "Failed to send email" };
-  }
+  return deliverTestEmail({
+    waitListId,
+    to,
+    waitlistSelect: { name: true },
+    prepareEmail: async ({ waitList }) => {
+      const broadcast = await prisma.marketingBroadcast.findFirst({
+        where: { id: broadcastId, waitListId, status: { in: ["DRAFT", "SCHEDULED"] } },
+      });
+      if (!broadcast) return { error: "Draft not found" };
+      const { interpolateVars, interpolateVarsHtml } = await import("@/lib/email/variables.mjs");
+      const vars = seedPreviewVars(waitList.name);
+      return {
+        email: {
+          subject: `[Test] ${interpolateVars(broadcast.subject, vars)}`,
+          html: broadcast.renderedHtml
+            ? subscriberEmailHtml({
+                name: waitList.name || "Waitlist",
+                content: interpolateVarsHtml(broadcast.renderedHtml, vars),
+                previewText: interpolateVars(broadcast.previewText, vars),
+              })
+            : undefined,
+          text: broadcast.renderedText
+            ? interpolateVars(broadcast.renderedText, vars)
+            : interpolateVars(broadcast.body, vars),
+        },
+      };
+    },
+    successMessage: (recipient) => `Test sent to ${recipient}.`,
+  });
 }
 
 // 1-click test send for an automation recipe: same seed-data rendering.
 export async function sendAutomationTestEmail({ waitListId, recipeId, to }) {
-  if (!validTestAddress(to))
-    return { success: false, message: "Enter one valid test email address." };
-  if (!env.RESEND_API_KEY) return { success: false, message: "RESEND_API_KEY not configured" };
-  try {
-    const { user, campaign, scope } = await requireCampaign(waitListId, "sendEmail");
-    await consumePublicBudget(prisma, {
-      kind: "testEmail",
-      campaignId: campaign.workspaceId || campaign.id,
-      actorId: user.id,
-      email: to,
-    });
-    const waitList = await prisma.waitList.findFirst({
-      where: { id: waitListId, ...scope },
-      select: { name: true },
-    });
-    if (!waitList) return { success: false, message: "Waitlist not found" };
-    const recipe = await prisma.automationRecipe.findFirst({
-      where: { id: recipeId, waitListId },
-      include: { versions: { orderBy: { version: "desc" }, take: 1 } },
-    });
-    if (!recipe?.versions[0]) return { success: false, message: "Recipe not found" };
-    const config = recipe.versions[0].config;
-    const { AUTOMATION_DEFAULTS } = await import("@/lib/email/automations.mjs");
-    const { interpolateVars, interpolateVarsHtml } = await import("@/lib/email/variables.mjs");
-    const vars = seedPreviewVars(waitList.name);
-    const title = AUTOMATION_DEFAULTS[recipe.type]?.title || recipe.type;
-    const provider = await senderForWaitlist(waitListId);
-    const { error } = await new Resend(provider.apiKey).emails.send({
-      from: provider.fromEmail,
-      to,
-      subject: `[Test: ${title}] ${interpolateVars(config.subject, vars)}`,
-      replyTo: provider.replyTo,
-      html: config.renderedHtml
-        ? subscriberEmailHtml({
-            name: waitList.name || "Waitlist",
-            content: interpolateVarsHtml(config.renderedHtml, vars),
-          })
-        : undefined,
-      text: interpolateVars(config.renderedText || config.body, vars),
-    });
-    if (error) return { success: false, message: `Resend error: ${error.name} ${error.message}` };
-    return { success: true, message: `Test sent to ${to}.` };
-  } catch (e) {
-    console.error(e);
-    return { success: false, message: "Failed to send email" };
-  }
+  return deliverTestEmail({
+    waitListId,
+    to,
+    waitlistSelect: { name: true },
+    prepareEmail: async ({ waitList }) => {
+      const recipe = await prisma.automationRecipe.findFirst({
+        where: { id: recipeId, waitListId },
+        include: { versions: { orderBy: { version: "desc" }, take: 1 } },
+      });
+      if (!recipe?.versions[0]) return { error: "Recipe not found" };
+      const config = recipe.versions[0].config;
+      const { AUTOMATION_DEFAULTS } = await import("@/lib/email/automations.mjs");
+      const { interpolateVars, interpolateVarsHtml } = await import("@/lib/email/variables.mjs");
+      const vars = seedPreviewVars(waitList.name);
+      const title = AUTOMATION_DEFAULTS[recipe.type]?.title || recipe.type;
+      return {
+        email: {
+          subject: `[Test: ${title}] ${interpolateVars(config.subject, vars)}`,
+          html: config.renderedHtml
+            ? subscriberEmailHtml({
+                name: waitList.name || "Waitlist",
+                content: interpolateVarsHtml(config.renderedHtml, vars),
+              })
+            : undefined,
+          text: interpolateVars(config.renderedText || config.body, vars),
+        },
+      };
+    },
+    successMessage: (recipient) => `Test sent to ${recipient}.`,
+  });
 }
 
 async function renderTemplate({ waitListId, enumType, varsOverride = {} }) {
@@ -648,7 +566,7 @@ export async function sendSignupEmail({ waitListId, to }) {
 
   try {
     const provider = await senderForWaitlist(waitListId);
-    const { error } = await new Resend(provider.apiKey).emails.send(
+    const { error: sendError } = await new Resend(provider.apiKey).emails.send(
       {
         from: provider.fromEmail,
         to,
@@ -659,8 +577,8 @@ export async function sendSignupEmail({ waitListId, to }) {
       },
       { idempotencyKey: `signup-welcome:${signUp.id}` },
     );
-    if (error) {
-      console.error("Resend send error:", error);
+    if (sendError) {
+      console.error("Resend send error:", sendError);
       return generic;
     }
 

@@ -1095,18 +1095,16 @@ export function SnapshotPageBuilder({
             ["status", "After signup"],
             ["publish", "Publish & share"],
           ].map(([id, label]) => (
-            <button
+            <Button
               key={id}
               type="button"
-              aria-current={surface === id ? "page" : undefined}
+              aria-pressed={surface === id}
               onClick={() => void setSurface(id)}
-              className={cn(
-                "inline-block min-h-10 shrink-0 cursor-pointer border-b-2 border-transparent py-2 font-medium text-product-text-secondary transition-colors hover:text-product-text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-product-success-text! motion-reduce:transition-none",
-                surface === id && "border-product-accent-solid text-product-text-primary",
-              )}
+              variant="filter"
+              size="filter"
             >
               {label}
-            </button>
+            </Button>
           ))}
         </nav>
         <div className="flex flex-1 items-center justify-end gap-1 max-[760px]:order-2 max-[760px]:w-full max-[760px]:justify-start max-[760px]:overflow-x-auto [&>*]:shrink-0">
@@ -1332,10 +1330,11 @@ export function SnapshotPageBuilder({
                           </p>
                           <div className="grid gap-1.5 sm:grid-cols-2">
                             {blocks.map((block) => (
-                              <button
+                              <Button
                                 key={block.type}
                                 type="button"
-                                className="flex cursor-pointer items-start gap-2.5 rounded-lg border border-product-border-subtle bg-product-bg-surface p-2.5 text-left transition-colors hover:border-product-accent-solid"
+                                variant="builder-block"
+                                size="builder-block"
                                 onClick={() => {
                                   addBlock(block.type);
                                   setAddOpen(false);
@@ -1355,7 +1354,7 @@ export function SnapshotPageBuilder({
                                     {block.description}
                                   </span>
                                 </span>
-                              </button>
+                              </Button>
                             ))}
                           </div>
                         </div>
@@ -1419,16 +1418,18 @@ export function SnapshotPageBuilder({
             className="min-w-0 flex-1 overflow-auto px-7 pt-0 pb-9 max-[680px]:px-3 max-[680px]:data-[mobile-mode=edit]:hidden"
             data-mobile-mode={mobileMode}
           >
-            <div className="flex h-canvas-tools items-center justify-end text-caption text-product-text-secondary [&_button]:cursor-pointer [&_button]:rounded-md [&_button]:border-0 [&_button]:bg-transparent [&_button]:px-2.5 [&_button]:py-2 [&_button]:text-micro [&_button]:text-product-text-secondary [&_button[aria-pressed=true]]:bg-product-bg-surface [&_button[aria-pressed=true]]:text-product-text-primary [&_button[aria-pressed=true]]:shadow-pressed">
+            <div className="flex h-canvas-tools items-center justify-end text-caption text-product-text-secondary">
               <TooltipProvider>
                 <div className="flex items-center gap-0.5">
                   <Tooltip>
                     <TooltipTrigger
                       render={
-                        <button
+                        <Button
                           type="button"
                           aria-label="Desktop preview"
                           aria-pressed={previewViewport === "desktop"}
+                          variant="product-segment-surface"
+                          size="preview-viewport"
                           onClick={() => setPreviewViewport("desktop")}
                         />
                       }
@@ -1440,10 +1441,12 @@ export function SnapshotPageBuilder({
                   <Tooltip>
                     <TooltipTrigger
                       render={
-                        <button
+                        <Button
                           type="button"
                           aria-label="Mobile preview"
                           aria-pressed={previewViewport === "mobile"}
+                          variant="product-segment-surface"
+                          size="preview-viewport"
                           onClick={() => setPreviewViewport("mobile")}
                         />
                       }
@@ -1827,18 +1830,19 @@ function DesignPanel({ brand, update }) {
             { id: "round", label: "Round", shape: "rounded-xl" },
             { id: "pill", label: "Pill", shape: "rounded-full" },
           ].map((option) => (
-            <button
+            <Button
               key={option.id}
               type="button"
               aria-pressed={brand.radius === option.id}
-              className="flex min-h-17 cursor-pointer flex-col items-center justify-center gap-1.5 rounded-md border-0 bg-transparent px-1 py-2 text-micro text-product-text-secondary aria-pressed:bg-product-bg-surface aria-pressed:text-product-text-primary aria-pressed:shadow-pressed"
+              variant="builder-radius"
+              size="builder-radius"
               onClick={() => update({ radius: option.id })}
             >
               <span
                 className={cn("block size-5 border border-product-text-secondary", option.shape)}
               />
               {option.label}
-            </button>
+            </Button>
           ))}
         </div>
       </div>
