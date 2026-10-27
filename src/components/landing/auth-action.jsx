@@ -5,6 +5,7 @@ import { HugeiconsIcon } from "@hugeicons/react";
 import Link from "next/link";
 
 import { useAuthModal } from "@/components/auth/auth-modal-provider";
+import { Button } from "@/components/ui/button";
 import { useSession } from "@/lib/auth-client";
 import { cn } from "@/lib/utils";
 
@@ -36,7 +37,14 @@ export default function AuthAction({
       />
     </Link>
   ) : (
-    <button type="button" className={classes} disabled={isPending} onClick={openAuthModal}>
+    <Button
+      type="button"
+      variant={compact ? "product-auth-outline" : "product-accent"}
+      size={compact ? "product-action-compact" : "product-action"}
+      className={cn("group", className)}
+      disabled={isPending}
+      onClick={openAuthModal}
+    >
       {children}
       <HugeiconsIcon
         icon={ArrowUpRight01Icon}
@@ -44,6 +52,6 @@ export default function AuthAction({
         aria-hidden="true"
         className={iconClasses}
       />
-    </button>
+    </Button>
   );
 }

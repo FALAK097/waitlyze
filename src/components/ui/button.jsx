@@ -30,6 +30,10 @@ const buttonVariants = cva(
           "border-product-border-subtle bg-product-bg-surface text-product-text-primary transition-colors hover:border-product-text-secondary hover:bg-product-bg-inset focus-visible:ring-0 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-neutral-900",
         "product-apply":
           "bg-foreground text-background hover:not-disabled:bg-foreground hover:not-disabled:text-background hover:not-disabled:opacity-90 disabled:cursor-not-allowed disabled:opacity-45",
+        "product-accent":
+          "border-product-text-primary bg-product-accent-solid text-product-text-primary hover:border-product-text-primary hover:bg-product-accent-hover disabled:cursor-wait disabled:opacity-65",
+        "product-auth-outline":
+          "border-product-border-subtle bg-product-bg-surface text-product-text-primary transition-colors hover:border-product-text-secondary focus-visible:ring-0 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-neutral-900 disabled:cursor-wait disabled:opacity-65",
         "product-pill":
           "rounded-full border-product-border-subtle bg-transparent text-product-text-secondary transition-colors hover:bg-product-bg-inset focus-visible:ring-2 focus-visible:ring-product-success-text focus-visible:outline-none focus-visible:ring-inset active:not-aria-[haspopup]:translate-y-0 aria-[pressed=true]:border-product-text-primary aria-[pressed=true]:text-product-text-primary",
         "product-option":
@@ -98,6 +102,10 @@ const buttonVariants = cva(
         sm: "h-7 gap-1 rounded-[min(var(--radius-md),12px)] px-2.5 text-[0.8rem] in-data-[slot=button-group]:rounded-lg has-data-[icon=inline-end]:pr-1.5 has-data-[icon=inline-start]:pl-1.5 [&_svg:not([class*='size-'])]:size-3.5",
         lg: "h-9 gap-1.5 px-2.5 has-data-[icon=inline-end]:pr-2 has-data-[icon=inline-start]:pl-2",
         xl: "h-11 gap-2 px-5",
+        "product-action":
+          "h-auto min-h-13 gap-5 rounded-md px-6 py-3 text-body leading-tight font-semibold",
+        "product-action-compact":
+          "h-auto min-h-10 gap-6 rounded-md px-4 py-2 text-caption font-semibold",
         icon: "size-8",
         "icon-xs":
           "size-6 rounded-[min(var(--radius-md),10px)] in-data-[slot=button-group]:rounded-lg [&_svg:not([class*='size-'])]:size-3",

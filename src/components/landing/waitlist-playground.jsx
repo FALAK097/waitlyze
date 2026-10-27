@@ -1,5 +1,7 @@
 "use client";
 
+import { Button } from "@/components/ui/button";
+
 export default function WaitlistPlayground() {
   return (
     <div className="w-full max-w-2xl scroll-mt-28" id="preview">
@@ -38,12 +40,9 @@ export default function WaitlistPlayground() {
                 autoComplete="off"
                 className="h-11 w-full rounded-lg border border-product-border-subtle bg-white px-3 py-2.5 text-sm text-product-text-primary placeholder:text-product-text-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-900"
               />
-              <button
-                type="submit"
-                className="min-h-11 w-full rounded-lg border border-product-text-primary bg-product-accent-solid px-3 py-2.5 text-sm font-semibold text-product-text-primary transition duration-160 hover:brightness-95 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-neutral-900 active:translate-y-px"
-              >
+              <Button type="submit" variant="product-accent" size="xl" className="w-full">
                 Join the waitlist
-              </button>
+              </Button>
             </form>
             <p className="mt-2.5 mb-0 text-center text-xs leading-normal text-product-text-secondary">
               Demo form · No email is collected or sent.
