@@ -228,10 +228,13 @@ function FunnelChart({ data, showValues = true, showPercentage = true, showLabel
             <Tooltip>
               <TooltipTrigger
                 render={
-                  <button
+                  <Button
                     type="button"
                     aria-label={`${stage.label}: ${number.format(stage.value)}, ${percentage} of visitors.${detail}`}
-                    className="analytics-funnel__stage group absolute top-0 grid h-full cursor-help border-0 bg-transparent p-0 text-center transition-opacity duration-150"
+                    data-analytics-funnel-stage
+                    variant="analytics-funnel-trigger"
+                    size="analytics-funnel-trigger"
+                    className="group"
                     onBlur={() => setHoveredIndex(null)}
                     onFocus={() => setHoveredIndex(index)}
                     onPointerEnter={() => setHoveredIndex(index)}
