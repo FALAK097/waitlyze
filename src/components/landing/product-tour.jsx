@@ -9,6 +9,7 @@ import {
 import { HugeiconsIcon } from "@hugeicons/react";
 import { useEffect, useRef, useState } from "react";
 
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 const views = [
   {
@@ -150,8 +151,10 @@ export default function ProductTour() {
           onKeyDown={onKeyDown}
         >
           {views.map((item, index) => (
-            <button
+            <Button
               key={item.title}
+              variant="product-tour-tab"
+              size="product-tour-tab"
               ref={(node) => {
                 tabsRef.current[index] = node;
               }}
@@ -165,10 +168,7 @@ export default function ProductTour() {
                 select(index);
                 if (event.detail > 0) setPlaying(true);
               }}
-              className={cn(
-                "relative inline-flex min-h-12 shrink-0 items-center justify-center gap-2.5 overflow-hidden rounded-md bg-transparent px-3 py-3 text-sm font-semibold text-product-text-secondary transition duration-120 hover:text-product-text-primary focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-neutral-900 active:scale-95 sm:px-6",
-                index === selected && cn(theme.wash, theme.accent),
-              )}
+              className={cn(index === selected && cn(theme.wash, theme.accent))}
             >
               <HugeiconsIcon
                 icon={item.icon}
@@ -186,7 +186,7 @@ export default function ProductTour() {
                   )}
                 />
               </span>
-            </button>
+            </Button>
           ))}
         </div>
       </div>
