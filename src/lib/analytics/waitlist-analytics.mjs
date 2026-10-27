@@ -2,15 +2,16 @@ import { URL } from "node:url";
 
 const MAX_DAYS = 90;
 const ANALYTICS_GROUPING_SET = Object.freeze({
-  channel: 63,
-  campaign: 479,
-  referrer: 447,
-  source: 383,
-  country: 495,
-  region: 487,
-  city: 491,
-  deviceType: 509,
-  device: 510,
+  channel: 31,
+  campaign: 239,
+  referrer: 223,
+  source: 191,
+  country: 247,
+  region: 243,
+  city: 245,
+  deviceType: 254,
+  browser: 512,
+  operatingSystem: 513,
 });
 const ANALYTICS_GROUP_FIELDS = Object.freeze({
   channel: new Set(["utmMedium", "utmSource", "referrer"]),
@@ -22,6 +23,8 @@ const ANALYTICS_GROUP_FIELDS = Object.freeze({
   city: new Set(["city", "country"]),
   deviceType: new Set(["deviceType"]),
   device: new Set(["device"]),
+  browser: new Set(["device"]),
+  operatingSystem: new Set(["device"]),
 });
 const ANALYTICS_GROUP_BY_ID = new Map(
   Object.entries(ANALYTICS_GROUPING_SET).map(([name, id]) => [id, name]),
@@ -88,32 +91,6 @@ const percentChange = (current, previous) => {
 function prettifyDevice(deviceType) {
   if (!deviceType) return "Unknown";
   return deviceType.charAt(0).toUpperCase() + deviceType.slice(1);
-}
-
-function browserOf(userAgent) {
-  const agent = String(userAgent || "");
-  if (/Instagram/i.test(agent)) return "Instagram";
-  if (/FBAN|FBAV/i.test(agent)) return "Facebook";
-  if (/LinkedInApp/i.test(agent)) return "LinkedIn";
-  if (/SamsungBrowser/i.test(agent)) return "Samsung Internet";
-  if (/Edg(?:A|iOS)?\//i.test(agent)) return "Edge";
-  if (/OPR\/|Opera/i.test(agent)) return "Opera";
-  if (/Firefox\/|FxiOS\//i.test(agent)) return "Firefox";
-  if (/CriOS\/|Chrome\//i.test(agent)) return "Chrome";
-  if (/Safari\//i.test(agent)) return "Safari";
-  return agent && agent !== "unknown" ? "Other" : "Unknown";
-}
-
-function operatingSystemOf(userAgent) {
-  const agent = String(userAgent || "");
-  if (/Windows NT/i.test(agent)) return "Windows";
-  if (/iPad/i.test(agent)) return "iPadOS";
-  if (/iPhone|iPod/i.test(agent)) return "iOS";
-  if (/Android/i.test(agent)) return "Android";
-  if (/CrOS/i.test(agent)) return "ChromeOS";
-  if (/Macintosh|Mac OS X/i.test(agent)) return "macOS";
-  if (/Linux/i.test(agent)) return "Linux";
-  return agent && agent !== "unknown" ? "Other" : "Unknown";
 }
 
 function hostMatches(host, domain) {
@@ -417,41 +394,77 @@ export async function getWaitlistAnalytics(
     linkVisitCount,
   ] = await Promise.all([
     db.$queryRaw`
-      WITH grouped AS (
-      SELECT GROUPING(
+      WITH source AS (
+        SELECT impression."utmMedium", impression."utmSource", impression."referrer",
+               impression."utmCampaign", impression."country", impression."region",
+               impression."city", impression."deviceType",
+               CASE
+                 WHEN impression."device" ~* 'Instagram' THEN 'Instagram'
+                 WHEN impression."device" ~* 'FBAN|FBAV' THEN 'Facebook'
+                 WHEN impression."device" ~* 'LinkedInApp' THEN 'LinkedIn'
+                 WHEN impression."device" ~* 'SamsungBrowser' THEN 'Samsung Internet'
+                 WHEN impression."device" ~* 'Edg(A|iOS)?/' THEN 'Edge'
+                 WHEN impression."device" ~* 'OPR/|Opera' THEN 'Opera'
+                 WHEN impression."device" ~* 'Firefox/|FxiOS/' THEN 'Firefox'
+                 WHEN impression."device" ~* 'CriOS/|Chrome/' THEN 'Chrome'
+                 WHEN impression."device" ~* 'Safari/' THEN 'Safari'
+                 WHEN COALESCE(impression."device", '') <> '' AND impression."device" <> 'unknown' THEN 'Other'
+                 ELSE 'Unknown'
+               END AS "browser",
+               CASE
+                 WHEN impression."device" ~* 'Windows NT' THEN 'Windows'
+                 WHEN impression."device" ~* 'iPad' THEN 'iPadOS'
+                 WHEN impression."device" ~* 'iPhone|iPod' THEN 'iOS'
+                 WHEN impression."device" ~* 'Android' THEN 'Android'
+                 WHEN impression."device" ~* 'CrOS' THEN 'ChromeOS'
+                 WHEN impression."device" ~* 'Macintosh|Mac OS X' THEN 'macOS'
+                 WHEN impression."device" ~* 'Linux' THEN 'Linux'
+                 WHEN COALESCE(impression."device", '') <> '' AND impression."device" <> 'unknown' THEN 'Other'
+                 ELSE 'Unknown'
+               END AS "operatingSystem"
+        FROM "impressions" AS impression
+        WHERE impression."waitListId" = ${waitListId}::text
+          AND impression."createdAt" >= ${startUtc}::timestamptz
+          AND impression."createdAt" < ${endUtc}::timestamptz
+      ), grouped AS (
+        SELECT CASE
+                 WHEN GROUPING("browser") = 0 THEN 512
+                 WHEN GROUPING("operatingSystem") = 0 THEN 513
+                 ELSE GROUPING("utmMedium", "utmSource", "referrer", "utmCampaign", "country", "region", "city", "deviceType")::int
+               END AS "groupingSet",
                "utmMedium", "utmSource", "referrer", "utmCampaign", "country",
-               "region", "city", "deviceType", "device"
-             )::int AS "groupingSet",
-             "utmMedium", "utmSource", "referrer", "utmCampaign", "country",
-             "region", "city", "deviceType", "device", COUNT(*) AS "count"
-      FROM "impressions"
-      WHERE "waitListId" = ${waitListId}::text
-        AND "createdAt" >= ${startUtc}::timestamptz
-        AND "createdAt" < ${endUtc}::timestamptz
-      GROUP BY GROUPING SETS (
-        ("utmMedium", "utmSource", "referrer"),
-        ("utmCampaign"),
-        ("referrer"),
-        ("utmSource"),
-        ("country"),
-        ("region", "country"),
-        ("city", "country"),
-        ("deviceType"),
-        ("device")
-      )
+               "region", "city", "deviceType",
+               CASE
+                 WHEN GROUPING("browser") = 0 THEN "browser"
+                 WHEN GROUPING("operatingSystem") = 0 THEN "operatingSystem"
+               END AS "device",
+               COUNT(*) AS "count"
+        FROM source
+        GROUP BY GROUPING SETS (
+          ("utmMedium", "utmSource", "referrer"),
+          ("utmCampaign"),
+          ("referrer"),
+          ("utmSource"),
+          ("country"),
+          ("region", "country"),
+          ("city", "country"),
+          ("deviceType"),
+          ("browser"),
+          ("operatingSystem")
+        )
       ), normalized AS (
         SELECT "groupingSet",
                CASE "groupingSet"
-                 WHEN 479 THEN COALESCE(NULLIF("utmCampaign", ''), 'No campaign')
-                 WHEN 383 THEN COALESCE(NULLIF("utmSource", ''), 'No source')
-                 WHEN 495 THEN COALESCE(NULLIF("country", ''), 'Unknown')
-                 WHEN 487 THEN concat_ws(', ', COALESCE(NULLIF("region", ''), 'Unknown region'), NULLIF("country", ''))
-                 WHEN 491 THEN concat_ws(', ', COALESCE(NULLIF("city", ''), 'Unknown city'), NULLIF("country", ''))
-                 WHEN 509 THEN CASE WHEN COALESCE("deviceType", '') = '' THEN 'Unknown' ELSE upper(left("deviceType", 1)) || substr("deviceType", 2) END
+                 WHEN 239 THEN COALESCE(NULLIF("utmCampaign", ''), 'No campaign')
+                 WHEN 191 THEN COALESCE(NULLIF("utmSource", ''), 'No source')
+                 WHEN 247 THEN COALESCE(NULLIF("country", ''), 'Unknown')
+                 WHEN 243 THEN concat_ws(', ', COALESCE(NULLIF("region", ''), 'Unknown region'), NULLIF("country", ''))
+                 WHEN 245 THEN concat_ws(', ', COALESCE(NULLIF("city", ''), 'Unknown city'), NULLIF("country", ''))
+                 WHEN 254 THEN CASE WHEN COALESCE("deviceType", '') = '' THEN 'Unknown' ELSE upper(left("deviceType", 1)) || substr("deviceType", 2) END
                END AS "displayLabel",
                SUM("count") AS "count"
         FROM grouped
-        WHERE "groupingSet" IN (479, 383, 495, 487, 491, 509)
+        WHERE "groupingSet" IN (239, 191, 247, 243, 245, 254)
         GROUP BY "groupingSet", 2
       ), ranked AS (
         SELECT normalized.*,
@@ -461,53 +474,96 @@ export async function getWaitlistAnalytics(
       )
       SELECT grouped.*, NULL::text AS "displayLabel", NULL::int AS "dimensionTotal"
       FROM grouped
-      WHERE "groupingSet" NOT IN (479, 383, 495, 487, 491, 509)
+      WHERE "groupingSet" NOT IN (239, 191, 247, 243, 245, 254, 512, 513)
       UNION ALL
       SELECT ranked."groupingSet", NULL::text, NULL::text, NULL::text, NULL::text,
-             NULL::text, NULL::text, NULL::text, NULL::text,
+             NULL::text, NULL::text, NULL::text, NULL::text, NULL::text,
              ranked."count", ranked."displayLabel", ranked."dimensionTotal"
       FROM ranked
-      WHERE ranked."rowNumber" <= CASE ranked."groupingSet" WHEN 509 THEN 8 WHEN 495 THEN 250 ELSE 5 END
+      WHERE ranked."rowNumber" <= CASE ranked."groupingSet" WHEN 254 THEN 8 WHEN 247 THEN 250 ELSE 5 END
+      UNION ALL
+      SELECT grouped."groupingSet", NULL::text, NULL::text, NULL::text, NULL::text,
+             NULL::text, NULL::text, NULL::text, grouped."device",
+             grouped."count", NULL::text AS "displayLabel",
+             SUM(grouped."count") OVER (PARTITION BY grouped."groupingSet") AS "dimensionTotal"
+      FROM grouped
+      WHERE grouped."groupingSet" IN (512, 513)
     `,
     db.$queryRaw`
-      WITH grouped AS (
-      SELECT GROUPING(
+      WITH source AS (
+        SELECT signup."utmMedium", signup."utmSource", signup."referrer",
+               signup."utmCampaign", signup."country", signup."region",
+               signup."city", signup."deviceType",
+               CASE
+                 WHEN signup."device" ~* 'Instagram' THEN 'Instagram'
+                 WHEN signup."device" ~* 'FBAN|FBAV' THEN 'Facebook'
+                 WHEN signup."device" ~* 'LinkedInApp' THEN 'LinkedIn'
+                 WHEN signup."device" ~* 'SamsungBrowser' THEN 'Samsung Internet'
+                 WHEN signup."device" ~* 'Edg(A|iOS)?/' THEN 'Edge'
+                 WHEN signup."device" ~* 'OPR/|Opera' THEN 'Opera'
+                 WHEN signup."device" ~* 'Firefox/|FxiOS/' THEN 'Firefox'
+                 WHEN signup."device" ~* 'CriOS/|Chrome/' THEN 'Chrome'
+                 WHEN signup."device" ~* 'Safari/' THEN 'Safari'
+                 WHEN COALESCE(signup."device", '') <> '' AND signup."device" <> 'unknown' THEN 'Other'
+                 ELSE 'Unknown'
+               END AS "browser",
+               CASE
+                 WHEN signup."device" ~* 'Windows NT' THEN 'Windows'
+                 WHEN signup."device" ~* 'iPad' THEN 'iPadOS'
+                 WHEN signup."device" ~* 'iPhone|iPod' THEN 'iOS'
+                 WHEN signup."device" ~* 'Android' THEN 'Android'
+                 WHEN signup."device" ~* 'CrOS' THEN 'ChromeOS'
+                 WHEN signup."device" ~* 'Macintosh|Mac OS X' THEN 'macOS'
+                 WHEN signup."device" ~* 'Linux' THEN 'Linux'
+                 WHEN COALESCE(signup."device", '') <> '' AND signup."device" <> 'unknown' THEN 'Other'
+                 ELSE 'Unknown'
+               END AS "operatingSystem"
+        FROM "sign_ups" AS signup
+        WHERE signup."waitListId" = ${waitListId}::text
+          AND signup."createdAt" >= ${startUtc}::timestamptz
+          AND signup."createdAt" < ${endUtc}::timestamptz
+          AND NOT EXISTS (
+            SELECT 1 FROM "referrals" AS held_referral
+            WHERE held_referral."signUpId" = signup."id"
+              AND held_referral."reviewStatus" IN ('NEEDS_REVIEW', 'EXCLUDED')
+          )
+      ), grouped AS (
+        SELECT CASE
+                 WHEN GROUPING("browser") = 0 THEN 512
+                 WHEN GROUPING("operatingSystem") = 0 THEN 513
+                 ELSE GROUPING("utmMedium", "utmSource", "referrer", "utmCampaign", "country", "region", "city", "deviceType")::int
+               END AS "groupingSet",
                "utmMedium", "utmSource", "referrer", "utmCampaign", "country",
-               "region", "city", "deviceType", "device"
-             )::int AS "groupingSet",
-             "utmMedium", "utmSource", "referrer", "utmCampaign", "country",
-             "region", "city", "deviceType", "device", COUNT(*) AS "count"
-      FROM "sign_ups" AS signup
-      WHERE signup."waitListId" = ${waitListId}::text
-        AND signup."createdAt" >= ${startUtc}::timestamptz
-        AND signup."createdAt" < ${endUtc}::timestamptz
-        AND NOT EXISTS (
-          SELECT 1 FROM "referrals" AS held_referral
-          WHERE held_referral."signUpId" = signup."id"
-            AND held_referral."reviewStatus" IN ('NEEDS_REVIEW', 'EXCLUDED')
+               "region", "city", "deviceType",
+               CASE
+                 WHEN GROUPING("browser") = 0 THEN "browser"
+                 WHEN GROUPING("operatingSystem") = 0 THEN "operatingSystem"
+               END AS "device",
+               COUNT(*) AS "count"
+        FROM source
+        GROUP BY GROUPING SETS (
+          ("utmMedium", "utmSource", "referrer"),
+          ("utmCampaign"),
+          ("referrer"),
+          ("utmSource"),
+          ("country"),
+          ("city", "country"),
+          ("deviceType"),
+          ("browser"),
+          ("operatingSystem")
         )
-      GROUP BY GROUPING SETS (
-        ("utmMedium", "utmSource", "referrer"),
-        ("utmCampaign"),
-        ("referrer"),
-        ("utmSource"),
-        ("country"),
-        ("city", "country"),
-        ("deviceType"),
-        ("device")
-      )
       ), normalized AS (
         SELECT "groupingSet",
                CASE "groupingSet"
-                 WHEN 479 THEN COALESCE(NULLIF("utmCampaign", ''), 'No campaign')
-                 WHEN 383 THEN COALESCE(NULLIF("utmSource", ''), 'No source')
-                 WHEN 495 THEN COALESCE(NULLIF("country", ''), 'Unknown')
-                 WHEN 491 THEN concat_ws(', ', COALESCE(NULLIF("city", ''), 'Unknown city'), NULLIF("country", ''))
-                 WHEN 509 THEN CASE WHEN COALESCE("deviceType", '') = '' THEN 'Unknown' ELSE upper(left("deviceType", 1)) || substr("deviceType", 2) END
+                 WHEN 239 THEN COALESCE(NULLIF("utmCampaign", ''), 'No campaign')
+                 WHEN 191 THEN COALESCE(NULLIF("utmSource", ''), 'No source')
+                 WHEN 247 THEN COALESCE(NULLIF("country", ''), 'Unknown')
+                 WHEN 245 THEN concat_ws(', ', COALESCE(NULLIF("city", ''), 'Unknown city'), NULLIF("country", ''))
+                 WHEN 254 THEN CASE WHEN COALESCE("deviceType", '') = '' THEN 'Unknown' ELSE upper(left("deviceType", 1)) || substr("deviceType", 2) END
                END AS "displayLabel",
                SUM("count") AS "count"
         FROM grouped
-        WHERE "groupingSet" IN (479, 383, 495, 491, 509)
+        WHERE "groupingSet" IN (239, 191, 247, 245, 254)
         GROUP BY "groupingSet", 2
       ), ranked AS (
         SELECT normalized.*,
@@ -517,13 +573,20 @@ export async function getWaitlistAnalytics(
       )
       SELECT grouped.*, NULL::text AS "displayLabel", NULL::int AS "dimensionTotal"
       FROM grouped
-      WHERE "groupingSet" NOT IN (479, 383, 495, 491, 509)
+      WHERE "groupingSet" NOT IN (239, 191, 247, 245, 254, 512, 513)
       UNION ALL
       SELECT ranked."groupingSet", NULL::text, NULL::text, NULL::text, NULL::text,
              NULL::text, NULL::text, NULL::text, NULL::text,
              ranked."count", ranked."displayLabel", ranked."dimensionTotal"
       FROM ranked
-      WHERE ranked."rowNumber" <= CASE ranked."groupingSet" WHEN 509 THEN 8 ELSE 5 END
+      WHERE ranked."rowNumber" <= CASE ranked."groupingSet" WHEN 254 THEN 8 ELSE 5 END
+      UNION ALL
+      SELECT grouped."groupingSet", NULL::text, NULL::text, NULL::text, NULL::text,
+             NULL::text, NULL::text, NULL::text, grouped."device",
+             grouped."count", NULL::text AS "displayLabel",
+             SUM(grouped."count") OVER (PARTITION BY grouped."groupingSet") AS "dimensionTotal"
+      FROM grouped
+      WHERE grouped."groupingSet" IN (512, 513)
     `,
     db.marketingBroadcast.findMany({
       where: { waitListId, status: "SENT", sentAt: inRange },
@@ -575,7 +638,8 @@ export async function getWaitlistAnalytics(
     region: regionGroups,
     city: cityGroups,
     deviceType: deviceGroups,
-    device: userAgentGroups,
+    browser: browserGroups,
+    operatingSystem: operatingSystemGroups,
   } = selectAnalyticsGroups(impressionAggregateRows);
   const {
     channel: signupChannelGroups,
@@ -585,7 +649,8 @@ export async function getWaitlistAnalytics(
     country: signupCountryGroups,
     city: signupCityGroups,
     deviceType: signupDeviceGroups,
-    device: signupUserAgentGroups,
+    browser: signupBrowserGroups,
+    operatingSystem: signupOperatingSystemGroups,
   } = selectAnalyticsGroups(signupAggregateRows);
 
   const rankCounts = (groups, label) => {
@@ -750,11 +815,11 @@ export async function getWaitlistAnalytics(
       ),
     },
     technology: {
-      browsers: rank(userAgentGroups, signupUserAgentGroups, (group) => browserOf(group.device), 8),
+      browsers: rank(browserGroups, signupBrowserGroups, (group) => group.device, 8),
       operatingSystems: rank(
-        userAgentGroups,
-        signupUserAgentGroups,
-        (group) => operatingSystemOf(group.device),
+        operatingSystemGroups,
+        signupOperatingSystemGroups,
+        (group) => group.device,
         8,
       ),
       devices: rank(
