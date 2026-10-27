@@ -59,6 +59,7 @@ const REVEAL_DURATION = 1000; // intro draw-in length, in milliseconds
 // are honored via a per-datum `animationDelay`.
 const BAR_GROW_DURATION = 500; // per-bar grow-in length, in milliseconds
 const BAR_STAGGER = 50; // delay between consecutive bars in the reveal, in milliseconds
+const BAR_STAGGER_WINDOW = 450; // cap the full-series reveal delay for long time ranges
 // NOTE: the LINE intro runs ECharts' RAW default entrance - lines trace in
 // left-to-right. Custom easing/direction was tried and abandoned for the line:
 // ECharts hardcodes the line-entrance clip to linear and ignores animationEasing
@@ -444,6 +445,7 @@ function seriesLabel(config, key) {
 function barStaggerDelay(type, index, count) {
   if (type === "none" || count <= 0) return 0;
   const last = count - 1;
+  const stagger = Math.min(BAR_STAGGER, BAR_STAGGER_WINDOW / Math.max(last, 1));
   const center = last / 2;
   let step;
   switch (type) {
@@ -459,7 +461,7 @@ function barStaggerDelay(type, index, count) {
     default: // left-to-right
       step = index;
   }
-  return step * BAR_STAGGER;
+  return step * stagger;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
