@@ -501,29 +501,37 @@ function SortableBlockRow({ section, selected, disabled, onSelect, onDuplicate, 
       <span className="flex size-7 shrink-0 items-center justify-center rounded-md text-product-text-muted group-data-[selected=true]:bg-product-bg-surface group-data-[selected=true]:text-product-text-primary">
         <HugeiconsIcon icon={blockIcons[section.type]} size={15} aria-hidden="true" />
       </span>
-      <button
+      <Button
         aria-pressed={selected}
-        className="flex min-h-11 min-w-0 flex-1 cursor-pointer items-center border-0 bg-transparent px-1 py-2 text-left text-caption text-product-text-primary"
+        className="text-left"
+        size="builder-selection"
         type="button"
+        variant="product-option"
         onClick={onSelect}
       >
         <span className="truncate">{names[section.type]}</span>
-      </button>
+      </Button>
       <div className="hidden items-center pr-1 group-focus-within:flex group-hover:flex group-data-[selected=true]:flex [@media(hover:none)]:flex">
-        <button
+        <Button
           aria-label="Duplicate"
-          className="flex size-7 cursor-pointer items-center justify-center border-0 bg-transparent text-product-text-secondary"
+          className="size-11"
+          size="icon-lg"
+          type="button"
+          variant="product-ghost"
           onClick={onDuplicate}
         >
           <HugeiconsIcon icon={Copy01Icon} size={14} aria-hidden="true" />
-        </button>
-        <button
+        </Button>
+        <Button
           aria-label="Remove"
-          className="flex size-7 cursor-pointer items-center justify-center border-0 bg-transparent text-product-text-secondary"
+          className="size-11"
+          size="icon-lg"
+          type="button"
+          variant="product-ghost"
           onClick={onRemove}
         >
           <HugeiconsIcon icon={Delete02Icon} size={14} aria-hidden="true" />
-        </button>
+        </Button>
       </div>
     </div>
   );
@@ -852,47 +860,49 @@ export function SnapshotPageBuilder({
   };
   const renderBlockToolbar = (section) => {
     const index = snapshot.sections.findIndex((item) => item.id === section.id);
-    const action =
-      "flex size-7 cursor-pointer items-center justify-center rounded-md border-0 bg-transparent text-white/70 transition-colors hover:bg-white/15 hover:text-white disabled:pointer-events-none disabled:opacity-30";
     return (
       <div className="absolute top-2 left-2 z-10 hidden items-center gap-0.5 rounded-lg bg-product-text-primary p-1 shadow-canvas group-focus-within:flex group-hover:flex group-data-[selected=true]:flex">
         <span className="rounded-md bg-product-accent-solid px-2 py-1 text-micro font-bold text-product-text-primary">
           {names[section.type]}
         </span>
-        <button
+        <Button
           type="button"
-          className={action}
+          size="builder-toolbar"
+          variant="builder-toolbar"
           aria-label="Move up"
           disabled={index <= 0}
           onClick={() => moveBlock(index, -1)}
         >
           <HugeiconsIcon icon={ArrowUp01Icon} size={14} aria-hidden="true" />
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
-          className={action}
+          size="builder-toolbar"
+          variant="builder-toolbar"
           aria-label="Move down"
           disabled={index >= snapshot.sections.length - 1}
           onClick={() => moveBlock(index, 1)}
         >
           <HugeiconsIcon icon={ArrowDown01Icon} size={14} aria-hidden="true" />
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
-          className={action}
+          size="builder-toolbar"
+          variant="builder-toolbar"
           aria-label="Duplicate"
           onClick={() => duplicateBlock(section.id)}
         >
           <HugeiconsIcon icon={Copy01Icon} size={14} aria-hidden="true" />
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
-          className={action}
+          size="builder-toolbar"
+          variant="builder-toolbar"
           aria-label="Remove"
           onClick={() => removeBlock(section.id)}
         >
           <HugeiconsIcon icon={Delete02Icon} size={14} aria-hidden="true" />
-        </button>
+        </Button>
       </div>
     );
   };

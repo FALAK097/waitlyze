@@ -20,6 +20,8 @@ const buttonVariants = cva(
           "rounded-none border-0 border-b-2 border-transparent bg-transparent font-normal text-product-text-secondary transition-colors hover:bg-transparent hover:text-product-text-primary active:not-aria-[haspopup]:translate-y-0 aria-[pressed=true]:border-product-accent-solid aria-[pressed=true]:font-semibold aria-[pressed=true]:text-product-text-primary",
         "product-ghost":
           "border border-transparent bg-transparent text-product-text-secondary transition-colors hover:bg-product-bg-inset hover:text-product-text-primary focus-visible:ring-0 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-neutral-900 active:not-aria-[haspopup]:translate-y-0 aria-[current=page]:bg-product-bg-inset aria-[current=page]:text-product-text-primary aria-[pressed=true]:bg-product-bg-inset aria-[pressed=true]:font-medium aria-[pressed=true]:text-product-text-primary",
+        "builder-toolbar":
+          "border-0 bg-transparent text-white/70 transition-colors hover:bg-white/15 hover:text-white focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:outline-none disabled:opacity-30",
         "product-card-danger": `${productCardBase} bg-product-danger-bg text-product-danger-text hover:brightness-95`,
         "product-card-muted": `${productCardBase} bg-product-bg-inset hover:bg-product-border-subtle`,
         "product-toggle":
@@ -72,6 +74,9 @@ const buttonVariants = cva(
         "preview-state":
           "h-auto min-h-11 min-w-0 shrink px-3 py-2 text-caption leading-tight font-semibold whitespace-normal",
         "preview-viewport": "size-11 p-0 [&_svg]:size-[17px]",
+        "builder-selection":
+          "h-auto min-h-11 min-w-0 flex-1 justify-start rounded-md px-1 py-2 text-caption",
+        "builder-toolbar": "size-11 rounded-md p-0",
         "navigation-item":
           "h-auto min-h-11 w-full min-w-0 justify-start gap-3 px-3 py-2.5 text-item font-normal whitespace-normal aria-[current=page]:font-medium max-[760px]:gap-2 max-[760px]:px-2.5",
         card: "h-auto w-full flex-wrap items-start justify-between gap-4 rounded-lg border-0 px-3 py-2.5 text-left font-normal whitespace-normal",
