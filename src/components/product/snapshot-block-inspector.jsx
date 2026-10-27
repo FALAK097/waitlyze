@@ -1,3 +1,5 @@
+import { useId, useMemo, useState } from "react";
+
 import { Button } from "@/components/ui/button";
 
 import { ImageUploadField } from "./image-upload-field";
@@ -14,13 +16,60 @@ const itemDefaults = {
   referralRewards: { referrals: 5, reward: "Early access" },
 };
 
+function useStableItemKeys(sectionId, itemCount) {
+  const prefix = useId();
+  const [identity, setIdentity] = useState(() => ({
+    sectionId,
+    itemCount,
+    keys: Array.from(
+      { length: itemCount },
+      (_, index) => `${prefix}-${sectionId}-${itemCount}-${index}`,
+    ),
+    nextKey: itemCount,
+  }));
+  const fallback = useMemo(
+    () => ({
+      sectionId,
+      itemCount,
+      keys: Array.from(
+        { length: itemCount },
+        (_, index) => `${prefix}-${sectionId}-${itemCount}-${index}`,
+      ),
+      nextKey: itemCount,
+    }),
+    [itemCount, prefix, sectionId],
+  );
+  const activeIdentity =
+    identity.sectionId === sectionId && identity.itemCount === itemCount ? identity : fallback;
+
+  return {
+    keys: activeIdentity.keys,
+    add() {
+      setIdentity({
+        ...activeIdentity,
+        keys: [...activeIdentity.keys, `${prefix}-${sectionId}-${activeIdentity.nextKey}`],
+        itemCount: itemCount + 1,
+        nextKey: activeIdentity.nextKey + 1,
+      });
+    },
+    remove(index) {
+      setIdentity({
+        ...activeIdentity,
+        keys: activeIdentity.keys.filter((_, itemIndex) => itemIndex !== index),
+        itemCount: itemCount - 1,
+      });
+    },
+  };
+}
+
 function StringItems({ section, fields, update }) {
+  const itemKeys = useStableItemKeys(section.id, section.items.length);
   return (
     <div className="grid gap-5">
       {section.items.map((item, index) => (
         <div
           className="grid gap-2.5 border-t border-product-border-subtle pt-4 [&>button]:justify-self-start [&>span]:text-micro [&>span]:text-product-text-muted"
-          key={index}
+          key={itemKeys.keys[index]}
         >
           <span>{index + 1}</span>
           {fields.map(({ key, label, multiline, type = "text" }) => (
@@ -49,12 +98,13 @@ function StringItems({ section, fields, update }) {
               variant="ghost"
               size="sm"
               type="button"
-              onClick={() =>
+              onClick={() => {
+                itemKeys.remove(index);
                 update({
                   ...section,
                   items: section.items.filter((_, itemIndex) => itemIndex !== index),
-                })
-              }
+                });
+              }}
             >
               Remove
             </Button>
@@ -66,12 +116,13 @@ function StringItems({ section, fields, update }) {
           variant="outline"
           size="sm"
           type="button"
-          onClick={() =>
+          onClick={() => {
+            itemKeys.add();
             update({
               ...section,
               items: [...section.items, structuredClone(itemDefaults[section.type])],
-            })
-          }
+            });
+          }}
         >
           Add item
         </Button>
@@ -81,6 +132,7 @@ function StringItems({ section, fields, update }) {
 }
 
 function LogoItems({ section, update }) {
+  const itemKeys = useStableItemKeys(section.id, section.items.length);
   const setItem = (index, next) =>
     update({
       ...section,
@@ -93,7 +145,7 @@ function LogoItems({ section, update }) {
         return (
           <div
             className="grid gap-2.5 border-t border-product-border-subtle pt-4 [&>button]:justify-self-start [&>span]:text-micro [&>span]:text-product-text-secondary"
-            key={index}
+            key={itemKeys.keys[index]}
           >
             <span>{index + 1}</span>
             <Field
@@ -113,12 +165,13 @@ function LogoItems({ section, update }) {
                 variant="ghost"
                 size="sm"
                 type="button"
-                onClick={() =>
+                onClick={() => {
+                  itemKeys.remove(index);
                   update({
                     ...section,
                     items: section.items.filter((_, itemIndex) => itemIndex !== index),
-                  })
-                }
+                  });
+                }}
               >
                 Remove
               </Button>
@@ -131,7 +184,10 @@ function LogoItems({ section, update }) {
           variant="outline"
           size="sm"
           type="button"
-          onClick={() => update({ ...section, items: [...section.items, "Company"] })}
+          onClick={() => {
+            itemKeys.add();
+            update({ ...section, items: [...section.items, "Company"] });
+          }}
         >
           Add item
         </Button>
@@ -141,12 +197,13 @@ function LogoItems({ section, update }) {
 }
 
 function LinkItems({ section, update }) {
+  const itemKeys = useStableItemKeys(section.id, section.links.length);
   return (
     <div className="grid gap-5">
       {section.links.map((link, index) => (
         <div
           className="grid gap-2.5 border-t border-product-border-subtle pt-4 [&>button]:justify-self-start"
-          key={index}
+          key={itemKeys.keys[index]}
         >
           <Field
             label="Label"
@@ -176,12 +233,13 @@ function LinkItems({ section, update }) {
             variant="ghost"
             size="sm"
             type="button"
-            onClick={() =>
+            onClick={() => {
+              itemKeys.remove(index);
               update({
                 ...section,
                 links: section.links.filter((_, itemIndex) => itemIndex !== index),
-              })
-            }
+              });
+            }}
           >
             Remove
           </Button>
@@ -192,9 +250,10 @@ function LinkItems({ section, update }) {
           variant="outline"
           size="sm"
           type="button"
-          onClick={() =>
-            update({ ...section, links: [...section.links, { label: "Link", href: "#" }] })
-          }
+          onClick={() => {
+            itemKeys.add();
+            update({ ...section, links: [...section.links, { label: "Link", href: "#" }] });
+          }}
         >
           Add link
         </Button>
