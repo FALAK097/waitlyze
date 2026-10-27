@@ -801,10 +801,12 @@ export function AudienceTable({
               <Tooltip>
                 <TooltipTrigger
                   render={
-                    <button
+                    <Button
                       type="button"
-                      className="flex size-6 cursor-help items-center justify-center rounded-full border-0 bg-transparent p-0 text-product-text-secondary"
+                      className="cursor-help rounded-full text-product-text-secondary"
                       aria-label="How points work"
+                      size="icon-touch"
+                      variant="product-option"
                     />
                   }
                 >
