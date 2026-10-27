@@ -9,11 +9,13 @@ import { ShareButtons } from "@/components/product/share-buttons";
 import { StatusBadge } from "@/components/product/waitlist-page-content";
 import { PhoneInput } from "@/components/reui/phone-input";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { collectAttribution } from "@/utils/attribution";
 
 const control =
-  "h-12 min-h-12 min-w-0 flex-1 rounded-wl border border-wl-input-border bg-wl-input px-4 text-wl-input-text";
+  "h-12 min-h-12 min-w-0 flex-1 rounded-wl border border-wl-input-border bg-wl-input px-4 text-wl-input-text focus-visible:ring-0 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-wl-accent";
 
 /** Waitlist signup form: validates input, submits the signup, and shows the referral result. */
 export function SignupForm(props) {
@@ -150,7 +152,7 @@ function CustomFieldInput({ field, controlClass }) {
     return (
       <div className="mt-3">
         {label}
-        <textarea
+        <Textarea
           className={cn(controlClass, "min-h-24 py-3")}
           id={id}
           name={name}
@@ -202,7 +204,7 @@ function CustomFieldInput({ field, controlClass }) {
   return (
     <div className="mt-3">
       {label}
-      <input
+      <Input
         className={cn(controlClass, "w-full")}
         id={id}
         name={name}
@@ -284,11 +286,8 @@ function ReferralShareBlock({
         Your referral link
       </label>
       <div className="flex gap-2 max-sm:flex-col">
-        <input
-          className={cn(
-            control,
-            "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-wl-accent",
-          )}
+        <Input
+          className={control}
           id={referralId}
           value={result.referralLink}
           readOnly
@@ -595,11 +594,8 @@ function SignupFormInner({
           formConfig.layout === "stacked" && "flex-col gap-3",
         )}
       >
-        <input
-          className={cn(
-            control,
-            "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-wl-accent",
-          )}
+        <Input
+          className={control}
           id={emailId}
           name="email"
           type="email"
