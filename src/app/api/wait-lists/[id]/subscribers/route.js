@@ -1,3 +1,8 @@
+import console from "node:console";
+import { ReadableStream } from "node:stream/web";
+import { URL } from "node:url";
+import { TextEncoder } from "node:util";
+
 import { NextResponse } from "next/server";
 
 import { Prisma } from "@/generated/prisma/client";
@@ -555,113 +560,126 @@ export async function POST(request, { params }) {
     const joinedSort = isJoinedSort(filters.sort);
     const positionSort = isPositionSort(filters.sort);
     const encoder = new TextEncoder();
-    const body = new ReadableStream({
-      async start(controller) {
-        try {
-          controller.enqueue(encoder.encode(`${exportHeaderRow(columns)}\r\n`));
-          const positions =
-            access.showReferrals && (needPosition || positionSort)
-              ? await getCampaignPositions(prisma, id)
-              : new Map();
-          const streamRow = async (row, counts) => {
-            controller.enqueue(
-              encoder.encode(
-                `${buildExportRow(row, columns, { referralCount: counts.get(row.id) ?? 0, position: positions.get(row.id) ?? "" })}\r\n`,
-              ),
-            );
-          };
-          const enrichAndStream = async (rows) => {
-            const counts = needReferrals
-              ? await getEligibleReferralCounts(
-                  prisma,
-                  id,
-                  rows.map((row) => row.id),
-                )
-              : new Map();
-            for (const row of rows) await streamRow(row, counts);
-          };
-          if (!failedOnly && !positionSort) {
-            const orderBy = joinedSort
-              ? [{ createdAt: direction }, { id: direction }]
-              : audienceOrderBy(filters.sort);
-            let cursor;
-            let skipped = 0;
-            while (true) {
-              const rows = joinedSort
-                ? await prisma.signUp.findMany({
-                    where,
-                    select,
-                    orderBy,
-                    take: 500,
-                    ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
-                  })
-                : await prisma.signUp.findMany({
-                    where,
-                    select,
-                    orderBy,
-                    take: 500,
-                    skip: skipped,
-                  });
-              await enrichAndStream(rows);
-              if (rows.length < 500) break;
-              if (joinedSort) cursor = rows.at(-1).id;
-              else skipped += rows.length;
-            }
-          } else if (!failedOnly) {
-            // Position ranking has no database ordering: snapshot the ordered ids,
-            // then chunk-fetch rows and stream them in rank order.
-            const matches = await prisma.signUp.findMany({
-              where,
-              select: { id: true, createdAt: true },
-              orderBy: [{ id: "asc" }],
-            });
-            const ordered = sortAudienceRows(matches, filters.sort, positions);
-            for (let index = 0; index < ordered.length; index += 500) {
-              const chunk = ordered.slice(index, index + 500);
-              const rows = await prisma.signUp.findMany({
-                where: { id: { in: chunk.map((row) => row.id) } },
+    async function* generateCsv() {
+      yield `${exportHeaderRow(columns)}\r\n`;
+
+      const positions =
+        access.showReferrals && (needPosition || positionSort)
+          ? await getCampaignPositions(prisma, id)
+          : new Map();
+      const enrichAndStream = async function* (rows) {
+        const ids = rows.map((row) => row.id);
+        const counts = needReferrals ? await getEligibleReferralCounts(prisma, id, ids) : new Map();
+        for (const row of rows) {
+          yield `${buildExportRow(row, columns, { referralCount: counts.get(row.id) ?? 0, position: positions.get(row.id) ?? "" })}\r\n`;
+        }
+      };
+
+      if (!failedOnly && !positionSort) {
+        const orderBy = joinedSort
+          ? [{ createdAt: direction }, { id: direction }]
+          : audienceOrderBy(filters.sort);
+        let cursor;
+        let skipped = 0;
+        while (true) {
+          const rows = joinedSort
+            ? await prisma.signUp.findMany({
+                where,
                 select,
+                orderBy,
+                take: 500,
+                ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+              })
+            : await prisma.signUp.findMany({
+                where,
+                select,
+                orderBy,
+                take: 500,
+                skip: skipped,
               });
-              const byId = new Map(rows.map((row) => [row.id, row]));
-              await enrichAndStream(chunk.map((ref) => byId.get(ref.id)).filter(Boolean));
+          for await (const row of enrichAndStream(rows)) yield row;
+          if (rows.length < 500) break;
+          if (joinedSort) cursor = rows.at(-1).id;
+          else skipped += rows.length;
+        }
+      } else if (!failedOnly) {
+        // Position ranking has no database ordering: snapshot the ordered ids,
+        // then chunk-fetch rows and stream them in rank order.
+        const matches = await prisma.signUp.findMany({
+          where,
+          select: { id: true, createdAt: true },
+          orderBy: [{ id: "asc" }],
+        });
+        const ordered = sortAudienceRows(matches, filters.sort, positions);
+        for (let index = 0; index < ordered.length; index += 500) {
+          const chunk = ordered.slice(index, index + 500);
+          const rows = await prisma.signUp.findMany({
+            where: { id: { in: chunk.map((row) => row.id) } },
+            select,
+          });
+          const byId = new Map(rows.map((row) => [row.id, row]));
+          const orderedRows = chunk.map((ref) => byId.get(ref.id)).filter(Boolean);
+          for await (const row of enrichAndStream(orderedRows)) yield row;
+        }
+      } else if (joinedSort) {
+        let failedCursor;
+        while (true) {
+          const rows = await failedVerificationPage(id, filters, failedCursor, 500);
+          for await (const row of enrichAndStream(rows)) yield row;
+          if (rows.length < 500) break;
+          failedCursor = { id: rows.at(-1).id, createdAt: rows.at(-1).createdAt };
+        }
+      } else if (!positionSort) {
+        let skipped = 0;
+        while (true) {
+          const rows = await failedVerificationPage(id, filters, null, 500, skipped);
+          for await (const row of enrichAndStream(rows)) yield row;
+          if (rows.length < 500) break;
+          skipped += rows.length;
+        }
+      } else {
+        // Failed rows have no score column, so collect the matching rows to
+        // apply the in-memory position comparator before streaming.
+        const collected = [];
+        let failedCursor;
+        while (true) {
+          const batch = await failedVerificationPage(id, filters, failedCursor, 2000);
+          collected.push(...batch);
+          if (batch.length < 2000) break;
+          failedCursor = { id: batch.at(-1).id, createdAt: batch.at(-1).createdAt };
+        }
+        const orderedRows = sortAudienceRows(collected, filters.sort, positions);
+        for await (const row of enrichAndStream(orderedRows)) yield row;
+      }
+    }
+
+    const csvRows = generateCsv();
+    const body = new ReadableStream({
+      async pull(controller) {
+        try {
+          const chunks = [];
+          let chunkLength = 0;
+          while (chunkLength < 16_384) {
+            const { done, value } = await csvRows.next();
+            if (done) {
+              if (chunks.length) controller.enqueue(encoder.encode(chunks.join("")));
+              controller.close();
+              return;
             }
-          } else if (joinedSort) {
-            let failedCursor;
-            while (true) {
-              const rows = await failedVerificationPage(id, filters, failedCursor, 500);
-              await enrichAndStream(rows);
-              if (rows.length < 500) break;
-              failedCursor = { id: rows.at(-1).id, createdAt: rows.at(-1).createdAt };
-            }
-          } else if (!positionSort) {
-            let skipped = 0;
-            while (true) {
-              const rows = await failedVerificationPage(id, filters, null, 500, skipped);
-              await enrichAndStream(rows);
-              if (rows.length < 500) break;
-              skipped += rows.length;
-            }
-          } else {
-            // Failed rows have no score column: collect the bounded failure set,
-            // rank it in memory, then stream.
-            const collected = [];
-            let failedCursor;
-            while (true) {
-              const batch = await failedVerificationPage(id, filters, failedCursor, 2000);
-              collected.push(...batch);
-              if (batch.length < 2000) break;
-              failedCursor = { id: batch.at(-1).id, createdAt: batch.at(-1).createdAt };
-            }
-            await enrichAndStream(sortAudienceRows(collected, filters.sort, positions));
+            chunks.push(value);
+            chunkLength += value.length;
           }
-          controller.close();
+          controller.enqueue(encoder.encode(chunks.join("")));
         } catch (error) {
           console.error("Error exporting audience:", error);
           controller.error(error);
         }
       },
+      async cancel() {
+        await csvRows.return();
+      },
     });
-    return new Response(body, {
+    return new NextResponse(body, {
       headers: {
         "Content-Type": "text/csv; charset=utf-8",
         "Content-Disposition": "attachment; filename=subscribers.csv",
