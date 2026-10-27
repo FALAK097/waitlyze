@@ -1,3 +1,4 @@
+import { Button } from "@/components/ui/button";
 import { hashUnsubscribeToken } from "@/lib/email/unsubscribe.mjs";
 import prisma from "@/lib/prisma";
 
@@ -45,12 +46,9 @@ export default async function UnsubscribePage({ params, searchParams }) {
         {subscriber && !done ? (
           <form action="/api/email/unsubscribe" method="post">
             <input type="hidden" name="token" value={token} />
-            <button
-              type="submit"
-              className="min-h-11 rounded-lg border border-product-text-secondary bg-product-accent-solid px-4 text-sm font-medium text-product-accent-label transition-colors hover:bg-product-accent-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-900"
-            >
+            <Button type="submit" size="xl" variant="product-accent">
               Unsubscribe from updates
-            </button>
+            </Button>
           </form>
         ) : null}
       </section>

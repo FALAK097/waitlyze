@@ -3,6 +3,9 @@
 import { useState } from "react";
 import { toast } from "sonner";
 
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+
 export function VerifyAction({ token, returnPath, waitlistName }) {
   const [state, setState] = useState("ready");
   const [referral, setReferral] = useState(null);
@@ -38,9 +41,6 @@ export function VerifyAction({ token, returnPath, waitlistName }) {
     }
   }
 
-  const actionClasses =
-    "inline-flex min-h-11 items-center justify-center rounded-lg border border-product-accent-solid bg-product-accent-solid px-5 text-sm font-semibold text-product-text-primary transition-colors hover:bg-product-accent-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-product-focus disabled:cursor-wait disabled:opacity-70";
-
   return (
     <main
       className="grid min-h-svh place-items-center bg-product-bg-page p-6 text-product-text-primary"
@@ -60,31 +60,34 @@ export function VerifyAction({ token, returnPath, waitlistName }) {
             : `Confirm this address to secure your place on ${brand}.`}
         </p>
         {state === "ready" || state === "loading" ? (
-          <button
+          <Button
             type="button"
-            className={actionClasses}
+            size="xl"
+            variant="product-accent"
             onClick={verify}
             disabled={state === "loading"}
           >
             {state === "loading" ? "Confirming…" : "Confirm email"}
-          </button>
+          </Button>
         ) : null}
         {referralUrl ? (
           <div className="mt-6 border-t border-product-border-subtle pt-5">
             <div className="flex gap-2 max-sm:flex-col">
-              <input
+              <Input
                 value={referralUrl}
                 readOnly
                 aria-label="Your referral link"
-                className="h-11 min-w-0 flex-1 rounded-lg border border-product-border-control bg-product-bg-surface px-3 text-caption text-product-text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-product-focus"
+                className="h-11 min-w-0 flex-1 rounded-lg border-product-border-control bg-product-bg-surface px-3 text-caption text-product-text-primary focus-visible:ring-0 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-product-focus"
               />
-              <button
+              <Button
                 type="button"
-                className={`${actionClasses} shrink-0 max-sm:w-full`}
+                className="shrink-0 max-sm:w-full"
+                size="xl"
+                variant="product-accent"
                 onClick={copyReferralLink}
               >
                 Copy link
-              </button>
+              </Button>
             </div>
             {referral.position && referral.hideCounts !== true ? (
               <p className="mt-3 text-sm text-product-text-secondary">
