@@ -211,7 +211,10 @@ export async function getWaitlistAnalytics(
     ), signup_base AS (
       SELECT signup.*
       FROM "sign_ups" AS signup
-      WHERE signup."waitListId" = ${waitListId}::text
+      CROSS JOIN bounds
+      WHERE signup."waitListId" = bounds.wait_list_id
+        AND signup."createdAt" >= bounds.previous_start_utc
+        AND signup."createdAt" < bounds.end_utc
         AND NOT EXISTS (
           SELECT 1 FROM "referrals" AS held_referral
           WHERE held_referral."signUpId" = signup."id"
