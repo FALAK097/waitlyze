@@ -1,16 +1,28 @@
-import { NextResponse } from "next/server";
+import { after, NextResponse } from "next/server";
 
 import { getWaitlistAnalytics } from "@/lib/analytics/waitlist-analytics.mjs";
 import prisma from "@/lib/prisma";
+import {
+  createServerPerformanceContext,
+  logElapsedServerPhase,
+  withServerPhase,
+} from "@/lib/server-performance.mjs";
 import { requireCampaign } from "@/lib/workspaces/authorize";
 import { AccessError } from "@/lib/workspaces/service.mjs";
 
 const datePattern = /^\d{4}-\d{2}-\d{2}$/;
 
 export async function GET(request, { params }) {
+  const performanceContext = createServerPerformanceContext("/api/wait-lists/[id]/analytics");
+  after(() => {
+    logElapsedServerPhase(performanceContext, "response-total", performanceContext.startedAt);
+  });
+
   try {
     const { id } = await params;
-    await requireCampaign(id, "viewCampaign");
+    await withServerPhase(performanceContext, "campaign-access", () =>
+      requireCampaign(id, "viewCampaign"),
+    );
     const { searchParams } = new URL(request.url);
     const requestedDays = Number(searchParams.get("days") ?? 30);
     if (!Number.isInteger(requestedDays) || requestedDays < 1 || requestedDays > 90) {
@@ -29,14 +41,17 @@ export async function GET(request, { params }) {
       return NextResponse.json({ error: "Choose a valid end date." }, { status: 400 });
     }
     const timeZone = searchParams.get("timeZone") || "UTC";
-    const analytics = await getWaitlistAnalytics(prisma, {
-      waitListId: id,
-      days: requestedDays,
-      endDate,
-      timeZone,
-    });
+    const analytics = await withServerPhase(performanceContext, "analytics-data", () =>
+      getWaitlistAnalytics(prisma, {
+        waitListId: id,
+        days: requestedDays,
+        endDate,
+        timeZone,
+      }),
+    );
     return NextResponse.json(analytics, { headers: { "Cache-Control": "private, no-store" } });
   } catch (error) {
+    performanceContext.outcome = "error";
     if (error instanceof AccessError) {
       return NextResponse.json({ error: error.message }, { status: error.status });
     }
