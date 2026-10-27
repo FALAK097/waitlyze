@@ -9,6 +9,7 @@ import { ShareButtons } from "@/components/product/share-buttons";
 import { StatusBadge } from "@/components/product/waitlist-page-content";
 import { PhoneInput } from "@/components/reui/phone-input";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
@@ -16,6 +17,8 @@ import { collectAttribution } from "@/utils/attribution";
 
 const control =
   "h-12 min-h-12 min-w-0 flex-1 rounded-wl border border-wl-input-border bg-wl-input px-4 text-wl-input-text focus-visible:ring-0 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-wl-accent";
+const checkboxControl =
+  "mt-px size-4 rounded-[4px] border-wl-input-border bg-wl-input text-wl-button-text data-checked:border-wl-accent data-checked:bg-wl-accent focus-visible:ring-0 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-wl-accent";
 
 /** Waitlist signup form: validates input, submits the signup, and shows the referral result. */
 export function SignupForm(props) {
@@ -189,11 +192,10 @@ function CustomFieldInput({ field, controlClass }) {
   if (field.type === "checkbox") {
     return (
       <label className="mt-3 flex items-start gap-2.5 text-caption leading-relaxed font-normal text-wl-muted">
-        <input
-          className="mt-px size-4 shrink-0 rounded border border-wl-input-border bg-wl-input"
+        <Checkbox
+          className={checkboxControl}
           id={id}
           name={name}
-          type="checkbox"
           value="on"
           required={field.required === true}
         />
@@ -250,12 +252,7 @@ function PhoneField({ idBase, formConfig, phone, onPhoneChange }) {
 function ConsentField({ formConfig }) {
   return (
     <label className="mt-3 flex items-start gap-2.5 text-caption leading-relaxed font-normal text-wl-muted">
-      <input
-        className="mt-px size-4 shrink-0 rounded border border-wl-input-border bg-wl-input"
-        name="marketingConsent"
-        type="checkbox"
-        value="on"
-      />
+      <Checkbox className={checkboxControl} name="marketingConsent" value="on" />
       <span>{formConfig.consentLabel}</span>
     </label>
   );
