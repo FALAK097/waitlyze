@@ -34,11 +34,22 @@ function selectAnalyticsGroups(aggregateRows) {
     const fields = ANALYTICS_GROUP_FIELDS[group];
     if (!fields) throw new Error("Unexpected analytics grouping set.");
     for (const field of Object.keys(row)) {
-      if (field !== "groupingSet" && field !== "count" && !fields.has(field)) delete row[field];
+      if (
+        field !== "groupingSet" &&
+        field !== "count" &&
+        field !== "displayLabel" &&
+        field !== "dimensionTotal" &&
+        !fields.has(field)
+      )
+        delete row[field];
     }
     row._count = { _all: number(row.count) };
+    if (row.displayLabel != null) row._label = row.displayLabel;
+    if (row.dimensionTotal != null) row._total = number(row.dimensionTotal);
     delete row.groupingSet;
     delete row.count;
+    delete row.displayLabel;
+    delete row.dimensionTotal;
     groupedRows[group].push(row);
   }
   return groupedRows;
@@ -401,6 +412,7 @@ export async function getWaitlistAnalytics(
     linkVisitCount,
   ] = await Promise.all([
     db.$queryRaw`
+      WITH grouped AS (
       SELECT GROUPING(
                "utmMedium", "utmSource", "referrer", "utmCampaign", "country",
                "region", "city", "deviceType", "device"
@@ -422,8 +434,38 @@ export async function getWaitlistAnalytics(
         ("deviceType"),
         ("device")
       )
+      ), normalized AS (
+        SELECT "groupingSet",
+               CASE "groupingSet"
+                 WHEN 479 THEN COALESCE(NULLIF("utmCampaign", ''), 'No campaign')
+                 WHEN 383 THEN COALESCE(NULLIF("utmSource", ''), 'No source')
+                 WHEN 495 THEN COALESCE(NULLIF("country", ''), 'Unknown')
+                 WHEN 487 THEN concat_ws(', ', COALESCE(NULLIF("region", ''), 'Unknown region'), NULLIF("country", ''))
+                 WHEN 491 THEN concat_ws(', ', COALESCE(NULLIF("city", ''), 'Unknown city'), NULLIF("country", ''))
+                 WHEN 509 THEN CASE WHEN COALESCE("deviceType", '') = '' THEN 'Unknown' ELSE upper(left("deviceType", 1)) || substr("deviceType", 2) END
+               END AS "displayLabel",
+               SUM("count") AS "count"
+        FROM grouped
+        WHERE "groupingSet" IN (479, 383, 495, 487, 491, 509)
+        GROUP BY "groupingSet", 2
+      ), ranked AS (
+        SELECT normalized.*,
+               SUM("count") OVER (PARTITION BY "groupingSet") AS "dimensionTotal",
+               ROW_NUMBER() OVER (PARTITION BY "groupingSet" ORDER BY "count" DESC, "displayLabel" COLLATE "C" ASC) AS "rowNumber"
+        FROM normalized
+      )
+      SELECT grouped.*, NULL::text AS "displayLabel", NULL::int AS "dimensionTotal"
+      FROM grouped
+      WHERE "groupingSet" NOT IN (479, 383, 495, 487, 491, 509)
+      UNION ALL
+      SELECT ranked."groupingSet", NULL::text, NULL::text, NULL::text, NULL::text,
+             NULL::text, NULL::text, NULL::text, NULL::text,
+             ranked."count", ranked."displayLabel", ranked."dimensionTotal"
+      FROM ranked
+      WHERE ranked."rowNumber" <= CASE ranked."groupingSet" WHEN 509 THEN 8 WHEN 495 THEN 250 ELSE 5 END
     `,
     db.$queryRaw`
+      WITH grouped AS (
       SELECT GROUPING(
                "utmMedium", "utmSource", "referrer", "utmCampaign", "country",
                "region", "city", "deviceType", "device"
@@ -449,6 +491,34 @@ export async function getWaitlistAnalytics(
         ("deviceType"),
         ("device")
       )
+      ), normalized AS (
+        SELECT "groupingSet",
+               CASE "groupingSet"
+                 WHEN 479 THEN COALESCE(NULLIF("utmCampaign", ''), 'No campaign')
+                 WHEN 383 THEN COALESCE(NULLIF("utmSource", ''), 'No source')
+                 WHEN 495 THEN COALESCE(NULLIF("country", ''), 'Unknown')
+                 WHEN 491 THEN concat_ws(', ', COALESCE(NULLIF("city", ''), 'Unknown city'), NULLIF("country", ''))
+                 WHEN 509 THEN CASE WHEN COALESCE("deviceType", '') = '' THEN 'Unknown' ELSE upper(left("deviceType", 1)) || substr("deviceType", 2) END
+               END AS "displayLabel",
+               SUM("count") AS "count"
+        FROM grouped
+        WHERE "groupingSet" IN (479, 383, 495, 491, 509)
+        GROUP BY "groupingSet", 2
+      ), ranked AS (
+        SELECT normalized.*,
+               SUM("count") OVER (PARTITION BY "groupingSet") AS "dimensionTotal",
+               ROW_NUMBER() OVER (PARTITION BY "groupingSet" ORDER BY "count" DESC, "displayLabel" COLLATE "C" ASC) AS "rowNumber"
+        FROM normalized
+      )
+      SELECT grouped.*, NULL::text AS "displayLabel", NULL::int AS "dimensionTotal"
+      FROM grouped
+      WHERE "groupingSet" NOT IN (479, 383, 495, 491, 509)
+      UNION ALL
+      SELECT ranked."groupingSet", NULL::text, NULL::text, NULL::text, NULL::text,
+             NULL::text, NULL::text, NULL::text, NULL::text,
+             ranked."count", ranked."displayLabel", ranked."dimensionTotal"
+      FROM ranked
+      WHERE ranked."rowNumber" <= CASE ranked."groupingSet" WHEN 509 THEN 8 ELSE 5 END
     `,
     db.marketingBroadcast.findMany({
       where: { waitListId, status: "SENT", sentAt: inRange },
@@ -516,7 +586,7 @@ export async function getWaitlistAnalytics(
   const rankCounts = (groups, label) => {
     const merged = new Map();
     for (const group of groups) {
-      const key = label(group);
+      const key = group._label ?? label(group);
       merged.set(key, (merged.get(key) ?? 0) + group._count._all);
     }
     return merged;
@@ -525,8 +595,23 @@ export async function getWaitlistAnalytics(
     const visitorCounts = rankCounts(visitorGroups, label);
     const signupCounts = rankCounts(signupDimensionGroups, label);
     const labels = new Set([...visitorCounts.keys(), ...signupCounts.keys()]);
-    const visitorTotal = Array.from(visitorCounts.values()).reduce((sum, value) => sum + value, 0);
-    const signupTotal = Array.from(signupCounts.values()).reduce((sum, value) => sum + value, 0);
+    const visitorTotal =
+      visitorGroups[0]?._total ??
+      Array.from(visitorCounts.values()).reduce((sum, value) => sum + value, 0);
+    const signupTotal =
+      signupDimensionGroups[0]?._total ??
+      Array.from(signupCounts.values()).reduce((sum, value) => sum + value, 0);
+    const sqlBounded = visitorGroups.some((group) => group._label != null);
+    const compareLabels = (left, right) => {
+      const leftCodePoints = Array.from(left, (character) => character.codePointAt(0));
+      const rightCodePoints = Array.from(right, (character) => character.codePointAt(0));
+      const length = Math.min(leftCodePoints.length, rightCodePoints.length);
+      for (let index = 0; index < length; index += 1) {
+        if (leftCodePoints[index] !== rightCodePoints[index])
+          return leftCodePoints[index] - rightCodePoints[index];
+      }
+      return leftCodePoints.length - rightCodePoints.length;
+    };
     const rankedRows = Array.from(labels, (rowLabel) => {
       const visitorCount = visitorCounts.get(rowLabel) ?? 0;
       const signupCount = signupCounts.get(rowLabel) ?? 0;
@@ -540,11 +625,23 @@ export async function getWaitlistAnalytics(
       };
     });
     const byVisitors = [...rankedRows]
-      .sort((a, b) => b.visitors - a.visitors || b.signups - a.signups)
+      // SQL uses label ASC for deterministic ties; preserve that tie-only clarification here.
+      .sort(
+        (a, b) =>
+          b.visitors - a.visitors ||
+          (sqlBounded ? compareLabels(a.label, b.label) : b.signups - a.signups),
+      )
       .slice(0, limit);
-    const bySignups = [...rankedRows]
-      .sort((a, b) => b.signups - a.signups || b.visitors - a.visitors)
-      .slice(0, limit);
+    const bySignups =
+      signupTotal === 0
+        ? byVisitors
+        : [...rankedRows]
+            .sort(
+              (a, b) =>
+                b.signups - a.signups ||
+                (sqlBounded ? compareLabels(a.label, b.label) : b.visitors - a.visitors),
+            )
+            .slice(0, limit);
     return Array.from(
       new Map([...byVisitors, ...bySignups].map((row) => [row.label, row])).values(),
     );
