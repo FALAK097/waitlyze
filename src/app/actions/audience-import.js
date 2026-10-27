@@ -12,6 +12,20 @@ const MAX_ROWS = 5000;
 const MAX_BYTES = 2 * 1024 * 1024;
 const REFERRAL_CODE_FORMAT = /^[A-Za-z0-9_-]{4,64}$/;
 
+async function queryInChunks(values, size, query) {
+  const chunks = [];
+  for (let index = 0; index < values.length; index += size) {
+    chunks.push(values.slice(index, index + size));
+  }
+
+  const results = [];
+  for (let index = 0; index < chunks.length; index += 4) {
+    const batch = await Promise.all(chunks.slice(index, index + 4).map(query));
+    results.push(...batch.flat());
+  }
+  return results;
+}
+
 const truthy = (value) =>
   ["true", "1", "yes", "verified"].includes(
     String(value ?? "")
@@ -185,18 +199,44 @@ export async function importSignups(waitListId, formData) {
     let referralsLinked = 0;
     const linkable = fresh.filter((row) => row.referredBy);
     if (linkable.length > 0) {
-      const created = await prisma.signUp.findMany({
-        where: { waitListId, emailNormalized: { in: fresh.map((row) => row.emailNormalized) } },
-        select: { id: true, emailNormalized: true, referralCode: true },
-      });
+      const created = [];
+      const createdEmails = [...new Set(fresh.map((row) => row.emailNormalized))];
+      created.push(
+        ...(await queryInChunks(createdEmails, 500, (emailChunk) =>
+          prisma.signUp.findMany({
+            where: {
+              waitListId,
+              waitList: scope,
+              emailNormalized: { in: emailChunk },
+            },
+            select: { id: true, emailNormalized: true, referralCode: true },
+          }),
+        )),
+      );
       const byEmail = new Map(created.map((row) => [row.emailNormalized, row]));
       const byCode = new Map(created.map((row) => [row.referralCode, row]));
-      const slots = await prisma.signUp.findMany({
-        where: { waitListId, waitList: scope },
-        select: { id: true, emailNormalized: true, referralCode: true },
+
+      // Resolve against only the addresses and codes present in this bounded
+      // CSV, rather than materializing every signup in the campaign.
+      const lookupKeys = [...new Set(linkable.map((row) => row.referredBy.trim()).filter(Boolean))];
+      const matchingRows = await queryInChunks(lookupKeys, 400, (keyChunk) => {
+        const emailForms = [...new Set(keyChunk.flatMap((key) => emailLookupForms(key)))];
+        const referralCodes = keyChunk.filter((key) => REFERRAL_CODE_FORMAT.test(key));
+        return prisma.signUp.findMany({
+          where: {
+            waitListId,
+            waitList: scope,
+            OR: [
+              ...(emailForms.length ? [{ emailNormalized: { in: emailForms } }] : []),
+              ...(referralCodes.length ? [{ referralCode: { in: referralCodes } }] : []),
+            ],
+          },
+          select: { id: true, emailNormalized: true, referralCode: true },
+        });
       });
-      for (const row of slots) {
-        if (!byEmail.has(row.emailNormalized)) byEmail.set(row.emailNormalized, row);
+      for (const row of matchingRows) {
+        if (row.emailNormalized && !byEmail.has(row.emailNormalized))
+          byEmail.set(row.emailNormalized, row);
         if (row.referralCode && !byCode.has(row.referralCode)) byCode.set(row.referralCode, row);
       }
       const links = [];
