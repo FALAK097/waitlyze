@@ -1,6 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 export default function WaitlistPlayground() {
   return (
@@ -32,13 +33,12 @@ export default function WaitlistPlayground() {
               <label className="sr-only" htmlFor="preview-example-email">
                 Example email address
               </label>
-              <input
+              <Input
                 id="preview-example-email"
-                aria-label="Example email address"
                 type="email"
                 placeholder="you@example.com"
                 autoComplete="off"
-                className="h-11 w-full rounded-lg border border-product-border-subtle bg-white px-3 py-2.5 text-sm text-product-text-primary placeholder:text-product-text-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-900"
+                className="h-11 w-full rounded-lg border border-product-border-subtle bg-white px-3 py-2.5 text-sm text-product-text-primary placeholder:text-product-text-muted focus-visible:ring-0 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-900"
               />
               <Button type="submit" variant="product-accent" size="xl" className="w-full">
                 Join the waitlist
