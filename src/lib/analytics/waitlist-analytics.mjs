@@ -333,6 +333,7 @@ export async function getWaitlistAnalytics(
   const startUtc = first?.start_utc instanceof Date ? first.start_utc : new Date(first?.start_utc);
   const endUtc = first?.end_utc instanceof Date ? first.end_utc : new Date(first?.end_utc);
   const inRange = { gte: startUtc, lt: endUtc };
+  // Keep canonical channel/referrer groups complete until legacy raw groups can be merged below.
   const [
     impressionAggregateRows,
     signupAggregateRows,
@@ -465,8 +466,14 @@ export async function getWaitlistAnalytics(
              NULL::text, NULL::text,
              ranked."count", ranked."displayLabel", ranked."dimensionTotal"
       FROM ranked
-      WHERE ranked."rowNumber" <= CASE ranked."groupingSet" WHEN 254 THEN 8 WHEN 247 THEN 250 WHEN 30 THEN 8 WHEN 222 THEN 5 ELSE 5 END
-        AND ranked."displayLabel" IS NOT NULL
+      WHERE ranked."displayLabel" IS NOT NULL
+        AND (
+          (
+            ranked."groupingSet" IN (30, 222)
+            AND EXISTS (SELECT 1 FROM grouped AS legacy WHERE legacy."groupingSet" = 31)
+          )
+          OR ranked."rowNumber" <= CASE ranked."groupingSet" WHEN 254 THEN 8 WHEN 247 THEN 250 WHEN 30 THEN 8 WHEN 222 THEN 5 ELSE 5 END
+        )
       UNION ALL
       SELECT grouped."groupingSet", NULL::text, NULL::text, NULL::text, NULL::text,
              NULL::text, NULL::text, NULL::text, NULL::text, NULL::text, NULL::text,
@@ -602,8 +609,14 @@ export async function getWaitlistAnalytics(
              NULL::text, NULL::text, NULL::text,
              ranked."count", ranked."displayLabel", ranked."dimensionTotal"
       FROM ranked
-      WHERE ranked."rowNumber" <= CASE ranked."groupingSet" WHEN 254 THEN 8 WHEN 30 THEN 8 WHEN 222 THEN 5 ELSE 5 END
-        AND ranked."displayLabel" IS NOT NULL
+      WHERE ranked."displayLabel" IS NOT NULL
+        AND (
+          (
+            ranked."groupingSet" IN (30, 222)
+            AND EXISTS (SELECT 1 FROM grouped AS legacy WHERE legacy."groupingSet" = 31)
+          )
+          OR ranked."rowNumber" <= CASE ranked."groupingSet" WHEN 254 THEN 8 WHEN 30 THEN 8 WHEN 222 THEN 5 ELSE 5 END
+        )
       UNION ALL
       SELECT grouped."groupingSet", NULL::text, NULL::text, NULL::text, NULL::text,
              NULL::text, NULL::text, NULL::text, NULL::text, NULL::text,
