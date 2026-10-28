@@ -16,7 +16,8 @@
     "agentation": "agentation-mcp server",
     "vercel-build": "prisma generate && prisma migrate deploy && next build",
     "email": "email dev --dir src/emails/templates --port 3001",
-    "doctor": "react-doctor"
+    "doctor": "react-doctor",
+    "analytics:backfill-attribution": "node --env-file-if-exists=.env scripts/backfill-analytics-attribution.mjs"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1145.0",

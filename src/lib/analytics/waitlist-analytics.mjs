@@ -1,10 +1,12 @@
-import { URL } from "node:url";
+import { getCanonicalAttribution } from "@/utils/server/attribution.mjs";
 
 const MAX_DAYS = 90;
 const ANALYTICS_GROUPING_SET = Object.freeze({
   channel: 31,
+  canonicalChannel: 30,
   campaign: 239,
   referrer: 223,
+  canonicalReferrer: 222,
   source: 191,
   country: 247,
   region: 243,
@@ -14,9 +16,9 @@ const ANALYTICS_GROUPING_SET = Object.freeze({
   operatingSystem: 513,
 });
 const ANALYTICS_GROUP_FIELDS = Object.freeze({
-  channel: new Set(["utmMedium", "utmSource", "referrer"]),
+  channel: new Set(["utmMedium", "utmSource", "referrer", "attributionChannel"]),
   campaign: new Set(["utmCampaign"]),
-  referrer: new Set(["referrer"]),
+  referrer: new Set(["referrer", "referrerHost"]),
   source: new Set(["utmSource"]),
   country: new Set(["country"]),
   region: new Set(["region", "country"]),
@@ -27,7 +29,10 @@ const ANALYTICS_GROUP_FIELDS = Object.freeze({
   operatingSystem: new Set(["device"]),
 });
 const ANALYTICS_GROUP_BY_ID = new Map(
-  Object.entries(ANALYTICS_GROUPING_SET).map(([name, id]) => [id, name]),
+  Object.entries(ANALYTICS_GROUPING_SET).map(([name, id]) => [
+    id,
+    name === "canonicalChannel" ? "channel" : name === "canonicalReferrer" ? "referrer" : name,
+  ]),
 );
 
 function selectAnalyticsGroups(aggregateRows) {
@@ -93,65 +98,8 @@ function prettifyDevice(deviceType) {
   return deviceType.charAt(0).toUpperCase() + deviceType.slice(1);
 }
 
-function hostMatches(host, domain) {
-  return host === domain || host.endsWith(`.${domain}`);
-}
-
-const SOCIAL_HOSTS = [
-  "twitter.com",
-  "x.com",
-  "t.co",
-  "reddit.com",
-  "linkedin.com",
-  "facebook.com",
-  "instagram.com",
-  "tiktok.com",
-  "youtube.com",
-];
-const SEARCH_HOST_PATTERN =
-  /(^|\.)(google|bing|yahoo|duckduckgo|baidu|yandex|brave)(\.[a-z]{2,3})?\.[a-z]{2,}$/;
-const SOCIAL_SOURCES = new Set([
-  "twitter",
-  "x",
-  "x.com",
-  "t.co",
-  "reddit",
-  "linkedin",
-  "facebook",
-  "instagram",
-  "tiktok",
-  "youtube",
-]);
-
-function channelOf({ utmMedium, utmSource, referrer }) {
-  const medium = String(utmMedium || "")
-    .trim()
-    .toLowerCase()
-    .replace(/[\s-]+/g, "_");
-  const source = String(utmSource || "")
-    .trim()
-    .toLowerCase();
-  let host = "";
-  try {
-    host = referrer ? new URL(referrer).hostname.replace(/^www\./, "").toLowerCase() : "";
-  } catch {
-    host = "";
-  }
-
-  if (["cpc", "ppc", "paid_search", "paidsearch", "sem"].includes(medium)) return "Paid search";
-  if (["paid_social", "paidsocial", "social_paid"].includes(medium)) return "Paid social";
-  if (["email", "newsletter"].includes(medium)) return "Email";
-  if (["affiliate", "partner"].includes(medium)) return "Affiliate";
-  if (["display", "banner", "cpm", "programmatic"].includes(medium)) return "Display";
-  if (["social", "social_network", "social_media", "organic_social"].includes(medium))
-    return "Organic social";
-  if (["organic", "organic_search", "seo"].includes(medium)) return "Organic search";
-  if (SOCIAL_SOURCES.has(source) || SOCIAL_HOSTS.some((domain) => hostMatches(host, domain)))
-    return "Organic social";
-  if (SEARCH_HOST_PATTERN.test(host)) return "Organic search";
-  if (host) return "Referral";
-  if (medium || source) return "Other";
-  return "Direct";
+function channelOf(attribution) {
+  return attribution.attributionChannel ?? getCanonicalAttribution(attribution).attributionChannel;
 }
 
 /** Computes range metrics, breakdowns, referral totals, and K-factor for one waitlist. */
@@ -396,6 +344,7 @@ export async function getWaitlistAnalytics(
     db.$queryRaw`
       WITH source AS (
         SELECT impression."utmMedium", impression."utmSource", impression."referrer",
+               impression."attributionChannel", impression."referrerHost",
                impression."utmCampaign", impression."country", impression."region",
                impression."city", impression."deviceType",
                CASE
@@ -430,10 +379,16 @@ export async function getWaitlistAnalytics(
         SELECT CASE
                  WHEN GROUPING("browser") = 0 THEN 512
                  WHEN GROUPING("operatingSystem") = 0 THEN 513
-                 ELSE GROUPING("utmMedium", "utmSource", "referrer", "utmCampaign", "country", "region", "city", "deviceType")::int
+                 WHEN GROUPING("utmCampaign") = 0 THEN 239
+                 WHEN GROUPING("utmSource") = 0 THEN 191
+                 WHEN GROUPING("country") = 0 AND GROUPING("region") = 1 AND GROUPING("city") = 1 THEN 247
+                 WHEN GROUPING("region") = 0 AND GROUPING("city") = 1 THEN 243
+                 WHEN GROUPING("city") = 0 THEN 245
+                 WHEN GROUPING("deviceType") = 0 THEN 254
                END AS "groupingSet",
-               "utmMedium", "utmSource", "referrer", "utmCampaign", "country",
-               "region", "city", "deviceType",
+               NULL::text AS "utmMedium", "utmSource", NULL::text AS "referrer", "utmCampaign", "country",
+               "region", "city", "deviceType", NULL::text AS "attributionChannel",
+               NULL::text AS "referrerHost",
                CASE
                  WHEN GROUPING("browser") = 0 THEN "browser"
                  WHEN GROUPING("operatingSystem") = 0 THEN "operatingSystem"
@@ -441,9 +396,7 @@ export async function getWaitlistAnalytics(
                COUNT(*) AS "count"
         FROM source
         GROUP BY GROUPING SETS (
-          ("utmMedium", "utmSource", "referrer"),
           ("utmCampaign"),
-          ("referrer"),
           ("utmSource"),
           ("country"),
           ("region", "country"),
@@ -452,9 +405,39 @@ export async function getWaitlistAnalytics(
           ("browser"),
           ("operatingSystem")
         )
+        UNION ALL
+        SELECT 31, "utmMedium", "utmSource", "referrer", NULL::text, NULL::text,
+               NULL::text, NULL::text, NULL::text, NULL::text, NULL::text, NULL::text,
+               COUNT(*)
+        FROM source
+        WHERE "attributionChannel" IS NULL
+        GROUP BY "utmMedium", "utmSource", "referrer"
+        UNION ALL
+        SELECT 223, NULL::text, NULL::text, "referrer", NULL::text, NULL::text,
+               NULL::text, NULL::text, NULL::text, NULL::text, NULL::text, NULL::text,
+               COUNT(*)
+        FROM source
+        WHERE "attributionChannel" IS NULL
+        GROUP BY "referrer"
+        UNION ALL
+        SELECT 30, NULL::text, NULL::text, NULL::text, NULL::text, NULL::text,
+               NULL::text, NULL::text, NULL::text, "attributionChannel", NULL::text,
+               NULL::text, COUNT(*)
+        FROM source
+        WHERE "attributionChannel" IS NOT NULL
+        GROUP BY "attributionChannel"
+        UNION ALL
+        SELECT 222, NULL::text, NULL::text, NULL::text, NULL::text, NULL::text,
+               NULL::text, NULL::text, NULL::text, NULL::text, "referrerHost",
+               NULL::text, COUNT(*)
+        FROM source
+        WHERE "attributionChannel" IS NOT NULL
+        GROUP BY "referrerHost"
       ), normalized AS (
         SELECT "groupingSet",
                CASE "groupingSet"
+                 WHEN 30 THEN "attributionChannel"
+                 WHEN 222 THEN COALESCE(NULLIF("referrerHost", ''), 'Direct')
                  WHEN 239 THEN COALESCE(NULLIF("utmCampaign", ''), 'No campaign')
                  WHEN 191 THEN COALESCE(NULLIF("utmSource", ''), 'No source')
                  WHEN 247 THEN COALESCE(NULLIF("country", ''), 'Unknown')
@@ -464,7 +447,7 @@ export async function getWaitlistAnalytics(
                END AS "displayLabel",
                SUM("count") AS "count"
         FROM grouped
-        WHERE "groupingSet" IN (239, 191, 247, 243, 245, 254)
+        WHERE "groupingSet" IN (30, 222, 239, 191, 247, 243, 245, 254)
         GROUP BY "groupingSet", 2
       ), ranked AS (
         SELECT normalized.*,
@@ -474,16 +457,20 @@ export async function getWaitlistAnalytics(
       )
       SELECT grouped.*, NULL::text AS "displayLabel", NULL::int AS "dimensionTotal"
       FROM grouped
-      WHERE "groupingSet" NOT IN (239, 191, 247, 243, 245, 254, 512, 513)
+      WHERE "groupingSet" NOT IN (30, 222, 239, 191, 247, 243, 245, 254, 512, 513)
+        AND ("groupingSet" NOT IN (31, 223) OR "attributionChannel" IS NULL)
       UNION ALL
       SELECT ranked."groupingSet", NULL::text, NULL::text, NULL::text, NULL::text,
              NULL::text, NULL::text, NULL::text, NULL::text, NULL::text,
+             NULL::text, NULL::text,
              ranked."count", ranked."displayLabel", ranked."dimensionTotal"
       FROM ranked
-      WHERE ranked."rowNumber" <= CASE ranked."groupingSet" WHEN 254 THEN 8 WHEN 247 THEN 250 ELSE 5 END
+      WHERE ranked."rowNumber" <= CASE ranked."groupingSet" WHEN 254 THEN 8 WHEN 247 THEN 250 WHEN 30 THEN 8 WHEN 222 THEN 5 ELSE 5 END
+        AND ranked."displayLabel" IS NOT NULL
       UNION ALL
       SELECT grouped."groupingSet", NULL::text, NULL::text, NULL::text, NULL::text,
-             NULL::text, NULL::text, NULL::text, grouped."device",
+             NULL::text, NULL::text, NULL::text, NULL::text, NULL::text, NULL::text,
+             grouped."device",
              grouped."count", NULL::text AS "displayLabel",
              SUM(grouped."count") OVER (PARTITION BY grouped."groupingSet") AS "dimensionTotal"
       FROM grouped
@@ -492,6 +479,7 @@ export async function getWaitlistAnalytics(
     db.$queryRaw`
       WITH source AS (
         SELECT signup."utmMedium", signup."utmSource", signup."referrer",
+               signup."attributionChannel", signup."referrerHost",
                signup."utmCampaign", signup."country", signup."region",
                signup."city", signup."deviceType",
                CASE
@@ -531,10 +519,15 @@ export async function getWaitlistAnalytics(
         SELECT CASE
                  WHEN GROUPING("browser") = 0 THEN 512
                  WHEN GROUPING("operatingSystem") = 0 THEN 513
-                 ELSE GROUPING("utmMedium", "utmSource", "referrer", "utmCampaign", "country", "region", "city", "deviceType")::int
+                 WHEN GROUPING("utmCampaign") = 0 THEN 239
+                 WHEN GROUPING("utmSource") = 0 THEN 191
+                 WHEN GROUPING("country") = 0 AND GROUPING("city") = 1 THEN 247
+                 WHEN GROUPING("city") = 0 THEN 245
+                 WHEN GROUPING("deviceType") = 0 THEN 254
                END AS "groupingSet",
-               "utmMedium", "utmSource", "referrer", "utmCampaign", "country",
-               "region", "city", "deviceType",
+               NULL::text AS "utmMedium", "utmSource", NULL::text AS "referrer", "utmCampaign", "country",
+               NULL::text AS "region", "city", "deviceType", NULL::text AS "attributionChannel",
+               NULL::text AS "referrerHost",
                CASE
                  WHEN GROUPING("browser") = 0 THEN "browser"
                  WHEN GROUPING("operatingSystem") = 0 THEN "operatingSystem"
@@ -542,9 +535,7 @@ export async function getWaitlistAnalytics(
                COUNT(*) AS "count"
         FROM source
         GROUP BY GROUPING SETS (
-          ("utmMedium", "utmSource", "referrer"),
           ("utmCampaign"),
-          ("referrer"),
           ("utmSource"),
           ("country"),
           ("city", "country"),
@@ -552,9 +543,39 @@ export async function getWaitlistAnalytics(
           ("browser"),
           ("operatingSystem")
         )
+        UNION ALL
+        SELECT 31, "utmMedium", "utmSource", "referrer", NULL::text, NULL::text,
+               NULL::text, NULL::text, NULL::text, NULL::text, NULL::text, NULL::text,
+               COUNT(*)
+        FROM source
+        WHERE "attributionChannel" IS NULL
+        GROUP BY "utmMedium", "utmSource", "referrer"
+        UNION ALL
+        SELECT 223, NULL::text, NULL::text, "referrer", NULL::text, NULL::text,
+               NULL::text, NULL::text, NULL::text, NULL::text, NULL::text, NULL::text,
+               COUNT(*)
+        FROM source
+        WHERE "attributionChannel" IS NULL
+        GROUP BY "referrer"
+        UNION ALL
+        SELECT 30, NULL::text, NULL::text, NULL::text, NULL::text, NULL::text,
+               NULL::text, NULL::text, NULL::text, "attributionChannel", NULL::text,
+               NULL::text, COUNT(*)
+        FROM source
+        WHERE "attributionChannel" IS NOT NULL
+        GROUP BY "attributionChannel"
+        UNION ALL
+        SELECT 222, NULL::text, NULL::text, NULL::text, NULL::text, NULL::text,
+               NULL::text, NULL::text, NULL::text, NULL::text, "referrerHost",
+               NULL::text, COUNT(*)
+        FROM source
+        WHERE "attributionChannel" IS NOT NULL
+        GROUP BY "referrerHost"
       ), normalized AS (
         SELECT "groupingSet",
                CASE "groupingSet"
+                 WHEN 30 THEN "attributionChannel"
+                 WHEN 222 THEN COALESCE(NULLIF("referrerHost", ''), 'Direct')
                  WHEN 239 THEN COALESCE(NULLIF("utmCampaign", ''), 'No campaign')
                  WHEN 191 THEN COALESCE(NULLIF("utmSource", ''), 'No source')
                  WHEN 247 THEN COALESCE(NULLIF("country", ''), 'Unknown')
@@ -563,7 +584,7 @@ export async function getWaitlistAnalytics(
                END AS "displayLabel",
                SUM("count") AS "count"
         FROM grouped
-        WHERE "groupingSet" IN (239, 191, 247, 245, 254)
+        WHERE "groupingSet" IN (30, 222, 239, 191, 247, 245, 254)
         GROUP BY "groupingSet", 2
       ), ranked AS (
         SELECT normalized.*,
@@ -573,16 +594,20 @@ export async function getWaitlistAnalytics(
       )
       SELECT grouped.*, NULL::text AS "displayLabel", NULL::int AS "dimensionTotal"
       FROM grouped
-      WHERE "groupingSet" NOT IN (239, 191, 247, 245, 254, 512, 513)
+      WHERE "groupingSet" NOT IN (30, 222, 239, 191, 247, 245, 254, 512, 513)
+        AND ("groupingSet" NOT IN (31, 223) OR "attributionChannel" IS NULL)
       UNION ALL
       SELECT ranked."groupingSet", NULL::text, NULL::text, NULL::text, NULL::text,
              NULL::text, NULL::text, NULL::text, NULL::text,
+             NULL::text, NULL::text, NULL::text,
              ranked."count", ranked."displayLabel", ranked."dimensionTotal"
       FROM ranked
-      WHERE ranked."rowNumber" <= CASE ranked."groupingSet" WHEN 254 THEN 8 ELSE 5 END
+      WHERE ranked."rowNumber" <= CASE ranked."groupingSet" WHEN 254 THEN 8 WHEN 30 THEN 8 WHEN 222 THEN 5 ELSE 5 END
+        AND ranked."displayLabel" IS NOT NULL
       UNION ALL
       SELECT grouped."groupingSet", NULL::text, NULL::text, NULL::text, NULL::text,
-             NULL::text, NULL::text, NULL::text, grouped."device",
+             NULL::text, NULL::text, NULL::text, NULL::text, NULL::text,
+             NULL::text, grouped."device",
              grouped."count", NULL::text AS "displayLabel",
              SUM(grouped."count") OVER (PARTITION BY grouped."groupingSet") AS "dimensionTotal"
       FROM grouped
@@ -665,12 +690,13 @@ export async function getWaitlistAnalytics(
     const visitorCounts = rankCounts(visitorGroups, label);
     const signupCounts = rankCounts(signupDimensionGroups, label);
     const labels = new Set([...visitorCounts.keys(), ...signupCounts.keys()]);
-    const visitorTotal =
-      visitorGroups[0]?._total ??
-      Array.from(visitorCounts.values()).reduce((sum, value) => sum + value, 0);
-    const signupTotal =
-      signupDimensionGroups[0]?._total ??
-      Array.from(signupCounts.values()).reduce((sum, value) => sum + value, 0);
+    const dimensionTotal = (groups) =>
+      (groups.find((group) => group._total != null)?._total ?? 0) +
+      groups
+        .filter((group) => group._total == null)
+        .reduce((sum, group) => sum + group._count._all, 0);
+    const visitorTotal = dimensionTotal(visitorGroups);
+    const signupTotal = dimensionTotal(signupDimensionGroups);
     const sqlBounded = visitorGroups.some((group) => group._label != null);
     const compareLabels = (left, right) => {
       const leftCodePoints = Array.from(left, (character) => character.codePointAt(0));
@@ -716,15 +742,8 @@ export async function getWaitlistAnalytics(
       new Map([...byVisitors, ...bySignups].map((row) => [row.label, row])).values(),
     );
   };
-  const hostOf = (referrer) => {
-    if (!referrer) return "Direct";
-    try {
-      const host = new URL(referrer).hostname.replace(/^www\./, "");
-      return host || "Direct";
-    } catch {
-      return "Direct";
-    }
-  };
+  const hostOf = (attribution) =>
+    attribution.referrerHost ?? getCanonicalAttribution(attribution).referrerHost ?? "Direct";
 
   const toIsoDate = (value) => {
     if (!value) return null;
@@ -796,7 +815,7 @@ export async function getWaitlistAnalytics(
         signupCampaignGroups,
         (group) => group.utmCampaign || "No campaign",
       ),
-      referrers: rank(referrerGroups, signupReferrerGroups, (group) => hostOf(group.referrer)),
+      referrers: rank(referrerGroups, signupReferrerGroups, hostOf),
       sources: rank(sourceGroups, signupSourceGroups, (group) => group.utmSource || "No source"),
     },
     geo: {

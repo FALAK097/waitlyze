@@ -1,4 +1,5 @@
 import prisma from "@/lib/prisma";
+import { getCanonicalAttribution } from "@/utils/server/attribution.mjs";
 
 export const createImpression = async (data) => {
   const waitList = await prisma.waitList.findUnique({
@@ -29,6 +30,7 @@ export const createImpression = async (data) => {
     const impression = await prisma.impression.create({
       data: {
         ...finalData,
+        ...getCanonicalAttribution(data),
         waitList: {
           connect: { id: data.waitListId },
         },

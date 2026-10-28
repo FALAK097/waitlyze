@@ -9,6 +9,7 @@ import prisma from "@/lib/prisma";
 import { campaignScope } from "@/lib/workspaces/service.mjs";
 
 const MAX_PAGE_SIZE = 500;
+const STREAM_BATCH_SIZE = 500;
 
 function parsePageSize(searchParams) {
   if (!searchParams.has("limit")) return null;
@@ -45,6 +46,78 @@ function encodeCursor(signup) {
   return Buffer.from(
     JSON.stringify({ id: signup.id, createdAt: signup.createdAt.toISOString() }),
   ).toString("base64url");
+}
+
+function cursorWhere(signup) {
+  return {
+    OR: [
+      { createdAt: { gt: signup.createdAt } },
+      { createdAt: signup.createdAt, id: { gt: signup.id } },
+    ],
+  };
+}
+
+function createSignupJsonStream({ firstPage, scope, waitListId }) {
+  const encoder = new TextEncoder();
+  let page = firstPage;
+  let pageIndex = 0;
+  let firstRow = true;
+  let closed = false;
+
+  return new ReadableStream({
+    start(controller) {
+      controller.enqueue(encoder.encode('{"success":true,"data":['));
+    },
+    async pull(controller) {
+      if (closed) return;
+
+      try {
+        if (pageIndex >= page.length) {
+          if (page.length < STREAM_BATCH_SIZE) {
+            closed = true;
+            controller.enqueue(encoder.encode("]}"));
+            controller.close();
+            return;
+          }
+
+          const lastSignup = page.at(-1);
+          page = await prisma.signUp.findMany({
+            where: {
+              waitListId,
+              waitList: scope,
+              ...cursorWhere(lastSignup),
+            },
+            select: { id: true, email: true, createdAt: true },
+            orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+            take: STREAM_BATCH_SIZE,
+          });
+          pageIndex = 0;
+
+          if (closed) return;
+          if (page.length === 0) {
+            closed = true;
+            controller.enqueue(encoder.encode("]}"));
+            controller.close();
+            return;
+          }
+        }
+
+        const rows = page.slice(pageIndex).map((row) => JSON.stringify(row));
+        pageIndex = page.length;
+        controller.enqueue(encoder.encode(`${firstRow ? "" : ","}${rows.join(",")}`));
+        firstRow = false;
+      } catch (error) {
+        console.error("Error streaming signups:", error);
+        if (!closed) {
+          closed = true;
+          controller.error(new Error("Failed to stream signup data"));
+        }
+      }
+    },
+    cancel() {
+      closed = true;
+    },
+  });
 }
 
 export async function GET(request) {
@@ -86,14 +159,23 @@ export async function GET(request) {
     if (!campaign)
       return NextResponse.json({ success: false, error: "Not found" }, { status: 404 });
 
-    const paginationWhere = cursor
-      ? {
-          OR: [
-            { createdAt: { gt: cursor.createdAt } },
-            { createdAt: cursor.createdAt, id: { gt: cursor.id } },
-          ],
-        }
-      : {};
+    if (pageSize === null) {
+      const firstPage = await prisma.signUp.findMany({
+        where: { waitListId, waitList: scope },
+        select: { id: true, email: true, createdAt: true },
+        orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+        take: STREAM_BATCH_SIZE,
+      });
+
+      return new Response(createSignupJsonStream({ firstPage, scope, waitListId }), {
+        headers: {
+          "Cache-Control": "private, no-store",
+          "Content-Type": "application/json; charset=utf-8",
+        },
+      });
+    }
+
+    const paginationWhere = cursor ? cursorWhere(cursor) : {};
     const signups = await prisma.signUp.findMany({
       where: {
         waitListId: waitListId,
@@ -105,7 +187,7 @@ export async function GET(request) {
         email: true,
         createdAt: true,
       },
-      orderBy: pageSize ? [{ createdAt: "asc" }, { id: "asc" }] : { createdAt: "asc" },
+      orderBy: [{ createdAt: "asc" }, { id: "asc" }],
       ...(pageSize ? { take: pageSize + 1 } : {}),
     });
 

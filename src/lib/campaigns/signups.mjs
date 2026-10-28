@@ -2,6 +2,7 @@ import { createHash, randomBytes } from "node:crypto";
 
 import { after } from "next/server";
 
+import { getCanonicalAttribution } from "../../utils/server/attribution.mjs";
 import { createUnsubscribeToken, hashUnsubscribeToken } from "../email/unsubscribe.mjs";
 import { maybeNotifySignupMilestone } from "../emails/founder-notifications.mjs";
 import { FraudLimitError, evaluateSignupFraud, silentSignupShape } from "../fraud/gates.mjs";
@@ -319,6 +320,7 @@ export async function createCampaignSignup(
           latitude: input.latitude || null,
           longitude: input.longitude || null,
           referrer: input.referrer || null,
+          ...getCanonicalAttribution(input),
           landingPage: input.landingPage || null,
           utmSource: input.utmSource || null,
           utmMedium: input.utmMedium || null,
