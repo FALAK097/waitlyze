@@ -26,12 +26,13 @@ const emptyPaneTitle = "m-0 mb-1.5! text-section";
 const emptyPaneBody = "m-0 mb-4.5! leading-relaxed text-product-text-secondary";
 
 const hourValue = (minutes) => Number((minutes / 60).toFixed(2));
+const EMPTY_TEMPLATES = {};
 
 export function AutomationManager({
   waitListId,
   waitListName,
   initialRecipes,
-  initialTemplates = {},
+  initialTemplates = EMPTY_TEMPLATES,
   deliveryReady,
 }) {
   const editorRef = useRef(null);

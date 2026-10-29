@@ -37,6 +37,7 @@ const unsavedText = "min-w-45 flex-1";
 const unsavedButton =
   "min-h-8.5 rounded-product-control px-3 text-caption font-semibold text-product-text-primary cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-product-success-text!";
 const unsavedGhost = `${unsavedButton} border-0 bg-transparent`;
+const EMPTY_TEMPLATES = {};
 const unsavedSolid = `${unsavedButton} border border-product-border-subtle bg-white`;
 const split = "flex flex-col gap-6 md:gap-8 xl:gap-10 lg:flex-row lg:items-start";
 const rail =
@@ -408,7 +409,7 @@ export function BroadcastManager({
   initialBroadcasts,
   initialPreview,
   initialSegments,
-  initialTemplates = {},
+  initialTemplates = EMPTY_TEMPLATES,
   deliveryReady,
 }) {
   const router = useRouter();

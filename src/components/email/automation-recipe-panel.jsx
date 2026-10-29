@@ -40,6 +40,7 @@ const canvasShell = "overflow-hidden rounded-lg border border-product-border-sub
 const metaBar =
   "flex flex-wrap items-center justify-between gap-3.5 max-sm:flex-col max-sm:items-stretch";
 const hint = "m-0 text-caption leading-normal text-product-text-secondary";
+const EMPTY_TEMPLATES = {};
 
 const hourValue = (minutes) => Number((minutes / 60).toFixed(2));
 const waitLabel = (minutes) =>
@@ -164,7 +165,7 @@ function TestSendForm({ busy, dirty, testTo, onTestToChange, onSendTest, recipe 
 
 export function AutomationRecipePanel({
   recipe,
-  templates = {},
+  templates = EMPTY_TEMPLATES,
   checks,
   busy,
   deliveryReady,
