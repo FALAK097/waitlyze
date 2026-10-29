@@ -127,10 +127,95 @@ function failedVerificationWhere(waitListId, filters) {
 
 function failedVerificationAfter(filters, cursor) {
   if (!cursor) return Prisma.empty;
-  if (filters.sort === "joined_asc") {
+  if (filters.sort === "joined_asc" || isPositionSort(filters.sort)) {
     return Prisma.sql`AND ("signup"."createdAt" > ${cursor.createdAt} OR ("signup"."createdAt" = ${cursor.createdAt} AND "signup"."id" > ${cursor.id}))`;
   }
-  return Prisma.sql`AND ("signup"."createdAt" < ${cursor.createdAt} OR ("signup"."createdAt" = ${cursor.createdAt} AND "signup"."id" < ${cursor.id}))`;
+  if (filters.sort === "joined_desc") {
+    return Prisma.sql`AND ("signup"."createdAt" < ${cursor.createdAt} OR ("signup"."createdAt" = ${cursor.createdAt} AND "signup"."id" < ${cursor.id}))`;
+  }
+  if (filters.sort === "email_asc") {
+    return Prisma.sql`AND ("signup"."email" > ${cursor.email} OR ("signup"."email" = ${cursor.email} AND "signup"."id" > ${cursor.id}))`;
+  }
+  if (filters.sort === "email_desc") {
+    return Prisma.sql`AND ("signup"."email" < ${cursor.email} OR ("signup"."email" = ${cursor.email} AND "signup"."id" > ${cursor.id}))`;
+  }
+  if (filters.sort === "points_asc") {
+    return Prisma.sql`AND ("signup"."points" > ${cursor.points} OR ("signup"."points" = ${cursor.points} AND "signup"."id" > ${cursor.id}))`;
+  }
+  if (filters.sort === "points_desc") {
+    return Prisma.sql`AND ("signup"."points" < ${cursor.points} OR ("signup"."points" = ${cursor.points} AND "signup"."id" > ${cursor.id}))`;
+  }
+  if (filters.sort === "status_desc") {
+    return cursor.verifiedAt
+      ? Prisma.sql`AND ("signup"."verifiedAt" IS NULL OR ("signup"."verifiedAt" IS NOT NULL AND "signup"."id" > ${cursor.id}))`
+      : Prisma.sql`AND "signup"."verifiedAt" IS NULL AND "signup"."id" > ${cursor.id}`;
+  }
+  if (filters.sort === "status_asc") {
+    return cursor.verifiedAt
+      ? Prisma.sql`AND "signup"."verifiedAt" IS NOT NULL AND "signup"."id" > ${cursor.id}`
+      : Prisma.sql`AND ("signup"."verifiedAt" IS NOT NULL OR ("signup"."verifiedAt" IS NULL AND "signup"."id" > ${cursor.id}))`;
+  }
+  return Prisma.empty;
+}
+
+function audienceExportAfter(sort, cursor) {
+  if (!cursor) return {};
+  if (sort === "joined_asc") {
+    return {
+      OR: [
+        { createdAt: { gt: cursor.createdAt } },
+        { createdAt: cursor.createdAt, id: { gt: cursor.id } },
+      ],
+    };
+  }
+  if (sort === "joined_desc") {
+    return {
+      OR: [
+        { createdAt: { lt: cursor.createdAt } },
+        { createdAt: cursor.createdAt, id: { lt: cursor.id } },
+      ],
+    };
+  }
+  if (sort === "email_asc" || sort === "email_desc") {
+    return {
+      OR: [
+        { email: { [sort === "email_asc" ? "gt" : "lt"]: cursor.email } },
+        { email: cursor.email, id: { gt: cursor.id } },
+      ],
+    };
+  }
+  if (sort === "points_asc" || sort === "points_desc") {
+    return {
+      OR: [
+        { points: { [sort === "points_asc" ? "gt" : "lt"]: cursor.points } },
+        { points: cursor.points, id: { gt: cursor.id } },
+      ],
+    };
+  }
+  if (sort === "status_desc") {
+    return cursor.verifiedAt
+      ? {
+          OR: [
+            { verifiedAt: { lt: cursor.verifiedAt } },
+            { verifiedAt: null },
+            { verifiedAt: cursor.verifiedAt, id: { gt: cursor.id } },
+          ],
+        }
+      : { verifiedAt: null, id: { gt: cursor.id } };
+  }
+  if (sort === "status_asc") {
+    return cursor.verifiedAt
+      ? {
+          OR: [
+            { verifiedAt: { gt: cursor.verifiedAt } },
+            { verifiedAt: cursor.verifiedAt, id: { gt: cursor.id } },
+          ],
+        }
+      : {
+          OR: [{ verifiedAt: null, id: { gt: cursor.id } }, { verifiedAt: { not: null } }],
+        };
+  }
+  return {};
 }
 
 function positionAudienceWhere(waitListId, filters) {
@@ -553,7 +638,7 @@ export async function POST(request, { params }) {
     if (columns.includes("utm_content")) select.utmContent = true;
     if (columns.includes("landing_page")) select.landingPage = true;
     if (columns.includes("referrer")) select.referrer = true;
-    if (columns.includes("points")) select.points = true;
+    if (columns.includes("points") || filters.sort.startsWith("points_")) select.points = true;
     if (columns.includes("referral_code")) select.referralCode = true;
     if (columns.includes("referred_by"))
       select.referredBy = { select: { referredBy: { select: { email: true } } } };
@@ -580,27 +665,16 @@ export async function POST(request, { params }) {
           ? [{ createdAt: direction }, { id: direction }]
           : audienceOrderBy(filters.sort);
         let cursor;
-        let skipped = 0;
         while (true) {
-          const rows = joinedSort
-            ? await prisma.signUp.findMany({
-                where,
-                select,
-                orderBy,
-                take: 500,
-                ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
-              })
-            : await prisma.signUp.findMany({
-                where,
-                select,
-                orderBy,
-                take: 500,
-                skip: skipped,
-              });
+          const rows = await prisma.signUp.findMany({
+            where: cursor ? { AND: [where, audienceExportAfter(filters.sort, cursor)] } : where,
+            select,
+            orderBy,
+            take: 500,
+          });
           for await (const row of enrichAndStream(rows)) yield row;
           if (rows.length < 500) break;
-          if (joinedSort) cursor = rows.at(-1).id;
-          else skipped += rows.length;
+          cursor = rows.at(-1);
         }
       } else if (!failedOnly) {
         // Position ranking has no database ordering: snapshot the ordered ids,
@@ -630,12 +704,12 @@ export async function POST(request, { params }) {
           failedCursor = { id: rows.at(-1).id, createdAt: rows.at(-1).createdAt };
         }
       } else if (!positionSort) {
-        let skipped = 0;
+        let failedCursor;
         while (true) {
-          const rows = await failedVerificationPage(id, filters, null, 500, skipped);
+          const rows = await failedVerificationPage(id, filters, failedCursor, 500);
           for await (const row of enrichAndStream(rows)) yield row;
           if (rows.length < 500) break;
-          skipped += rows.length;
+          failedCursor = rows.at(-1);
         }
       } else {
         // Failed rows have no score column, so collect the matching rows to
