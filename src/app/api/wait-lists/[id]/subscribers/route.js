@@ -127,7 +127,7 @@ function failedVerificationWhere(waitListId, filters) {
 
 function failedVerificationAfter(filters, cursor) {
   if (!cursor) return Prisma.empty;
-  if (filters.sort === "joined_asc" || isPositionSort(filters.sort)) {
+  if (filters.sort === "joined_asc") {
     return Prisma.sql`AND ("signup"."createdAt" > ${cursor.createdAt} OR ("signup"."createdAt" = ${cursor.createdAt} AND "signup"."id" > ${cursor.id}))`;
   }
   if (filters.sort === "joined_desc") {

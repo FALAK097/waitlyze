@@ -487,7 +487,7 @@ export async function getWaitlistAnalytics(
       WITH source AS (
         SELECT signup."utmMedium", signup."utmSource", signup."referrer",
                signup."attributionChannel", signup."referrerHost",
-               signup."utmCampaign", signup."country", signup."region",
+               signup."utmCampaign", signup."country",
                signup."city", signup."deviceType",
                CASE
                  WHEN signup."device" ~* 'Instagram' THEN 'Instagram'
