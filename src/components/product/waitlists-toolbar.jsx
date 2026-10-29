@@ -58,7 +58,7 @@ export function WaitlistSearch({ query, status, sort }) {
   }
   return (
     <div
-      className="relative ms-auto max-w-90 min-w-0 min-w-55 shrink-1 grow-0 basis-90 max-[767px]:ms-0 max-[767px]:max-w-none max-[767px]:min-w-0 max-[767px]:grow max-[767px]:basis-auto [&_input]:w-full [&_input]:pr-10"
+      className="relative ms-auto max-w-90 min-w-0 min-w-55 shrink-1 grow-0 basis-90 max-[767px]:ms-0 max-[767px]:max-w-none max-[767px]:min-w-0 max-[767px]:grow max-[767px]:basis-0 [&_input]:w-full [&_input]:pr-10"
       role="search"
       aria-busy={isPending}
     >

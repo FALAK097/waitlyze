@@ -61,7 +61,7 @@ export default function Header() {
             aria-expanded={open}
             aria-controls="wl-mobile-nav"
             onClick={() => setOpen(!open)}
-            className="hidden size-10 place-items-center rounded-md border border-transparent bg-transparent text-product-text-secondary transition-colors hover:bg-product-bg-inset hover:text-product-text-primary focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-neutral-900 max-sm:w-9 md:inline-grid"
+            className="hidden size-10 place-items-center rounded-md border border-transparent bg-transparent text-product-text-secondary transition-colors hover:bg-product-bg-inset hover:text-product-text-primary focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-neutral-900 max-md:inline-grid max-sm:w-9 md:hidden"
           >
             {open ? (
               <HugeiconsIcon icon={Cancel01Icon} size={20} />
