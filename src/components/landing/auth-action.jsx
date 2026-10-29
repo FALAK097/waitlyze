@@ -22,7 +22,7 @@ export default function AuthAction({
   const classes = cn(
     "group col-start-1 row-start-1 inline-flex min-h-13 items-center justify-center gap-5 rounded-md border border-product-border-subtle bg-product-bg-surface px-6 py-3 text-body leading-tight font-semibold whitespace-nowrap text-product-text-primary transition duration-160 hover:border-product-text-secondary focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-neutral-900 active:translate-y-px disabled:cursor-wait disabled:opacity-65",
     compact
-      ? "min-h-10 gap-6 px-4 py-2 text-caption"
+      ? "min-h-10 gap-6 px-4 py-2 text-sm leading-5"
       : "border-product-text-primary bg-product-accent-solid text-product-text-primary hover:border-product-text-primary hover:bg-product-accent-hover",
     className,
   );
