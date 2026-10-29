@@ -805,22 +805,32 @@ export function WaitlistSignupPreview({ form, brand }) {
       ) : null}
       {hasExtraFields ? (
         <div className="grid gap-3">
-          <label className="grid gap-1 text-caption font-semibold">
-            {form.label}
-            <span className="flex h-12 items-center rounded-wl border border-wl-input-border bg-wl-input px-4 font-normal text-wl-muted">
-              {form.placeholder}
-            </span>
-          </label>
+          <div>
+            <span className="mb-2 block text-caption font-bold">{form.label}</span>
+            <div
+              className={cn(
+                "flex gap-2 max-sm:flex-col",
+                form.layout === "stacked" && "flex-col gap-3",
+              )}
+            >
+              <span className="flex h-12 min-h-12 flex-1 items-center rounded-wl border border-wl-input-border bg-wl-input px-4 text-wl-muted">
+                {form.placeholder}
+              </span>
+              <span className="inline-flex h-12 items-center justify-center rounded-wl bg-wl-button px-5 font-bold text-wl-button-text">
+                {form.buttonText}
+              </span>
+            </div>
+          </div>
           {(form.collectPhone || form.requirePhone) && (
-            <label className="grid gap-1 text-caption font-semibold">
+            <div className="grid gap-1 text-caption font-semibold">
               Phone number{form.requirePhone ? " *" : ""}
               <span className="flex h-12 items-center rounded-wl border border-wl-input-border bg-wl-input px-4 font-normal text-wl-muted">
                 +1 (555) 000-0000
               </span>
-            </label>
+            </div>
           )}
           {customFields.map((field) => (
-            <label className="grid gap-1 text-caption font-semibold" key={field.id}>
+            <div className="grid gap-1 text-caption font-semibold" key={field.id}>
               {field.label || "Custom field"}
               {field.required ? " *" : ""}
               {field.type === "checkbox" ? (
@@ -834,18 +844,15 @@ export function WaitlistSignupPreview({ form, brand }) {
                 </span>
               ) : field.type === "select" ? (
                 <span className="flex h-12 items-center rounded-wl border border-wl-input-border bg-wl-input px-4 font-normal text-wl-muted">
-                  {field.options?.[0] || field.placeholder || "Choose an option"}
+                  {field.placeholder || "Choose an option"}
                 </span>
               ) : (
                 <span className="flex h-12 items-center rounded-wl border border-wl-input-border bg-wl-input px-4 font-normal text-wl-muted">
                   {field.placeholder || (field.type === "number" ? "0" : "Your answer")}
                 </span>
               )}
-            </label>
+            </div>
           ))}
-          <span className="inline-flex h-12 items-center justify-center rounded-wl bg-wl-button px-5 font-bold text-wl-button-text">
-            {form.buttonText}
-          </span>
         </div>
       ) : (
         <>

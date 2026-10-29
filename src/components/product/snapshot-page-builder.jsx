@@ -2109,23 +2109,35 @@ function HttpsInputField({ label, value, placeholder, disabled, onChange }) {
 }
 function RedirectUrlField({ value, onChange }) {
   const id = useId();
-  const isExternal = /^https:\/\//i.test(value || "");
-  const shown = isExternal ? value.replace(/^https:\/\//i, "") : value || "";
+  const [draft, setDraft] = useState(value || "");
+  const isPath = draft.startsWith("/");
+  const showHttpsPrefix = !isPath && Boolean(draft.trim());
+  const shown = /^https?:\/\//i.test(draft) ? draft.replace(/^https?:\/\//i, "") : draft;
+  function commit() {
+    const next = draft.trim();
+    const normalized =
+      next.startsWith("/") || !next ? next : `https://${next.replace(/^https?:\/\//i, "")}`;
+    setDraft(normalized);
+    onChange(normalized);
+  }
   return (
     <div className="grid gap-1.5">
       <Label htmlFor={id}>Redirect URL (empty = stay on the thank-you screen)</Label>
       <InputGroup className="h-10">
-        {isExternal && <InputGroupAddon>https://</InputGroupAddon>}
+        {showHttpsPrefix && <InputGroupAddon>https://</InputGroupAddon>}
         <InputGroupInput
           id={id}
           autoComplete="url"
           placeholder="/thanks or example.com/thanks"
           value={shown}
-          onChange={(event) => {
-            const next = event.target.value.trim();
-            onChange(
-              next.startsWith("/") || !next ? next : `https://${next.replace(/^https?:\/\//i, "")}`,
-            );
+          onChange={(event) => setDraft(event.target.value)}
+          onBlur={commit}
+          onKeyDown={(event) => {
+            if (event.key === "Enter") {
+              event.preventDefault();
+              commit();
+              event.currentTarget.blur();
+            }
           }}
         />
       </InputGroup>
@@ -2360,21 +2372,23 @@ function StatusPanel({
   };
   return (
     <div className={"grid gap-4 p-4"}>
-      <div className="grid gap-4 border-b border-product-border-subtle pb-4">
-        <span className="block text-micro font-bold tracking-widest text-product-text-secondary uppercase">
-          After-signup redirect
-        </span>
-        <RedirectUrlField
-          value={form.successRedirectUrl ?? ""}
-          onChange={(successRedirectUrl) => updateForm({ successRedirectUrl })}
-        />
-        <ListField
-          label="Allowed redirect hosts (comma-separated)"
-          value={form.successRedirectAllowlist}
-          placeholder="app.example.com"
-          onChange={(successRedirectAllowlist) => updateForm({ successRedirectAllowlist })}
-        />
-      </div>
+      {status.postSignupBehavior !== "no-change" && (
+        <div className="grid gap-4 border-b border-product-border-subtle pb-4">
+          <span className="block text-micro font-bold tracking-widest text-product-text-secondary uppercase">
+            After-signup redirect
+          </span>
+          <RedirectUrlField
+            value={form.successRedirectUrl ?? ""}
+            onChange={(successRedirectUrl) => updateForm({ successRedirectUrl })}
+          />
+          <ListField
+            label="Allowed redirect hosts (comma-separated)"
+            value={form.successRedirectAllowlist}
+            placeholder="app.example.com"
+            onChange={(successRedirectAllowlist) => updateForm({ successRedirectAllowlist })}
+          />
+        </div>
+      )}
       <SelectField
         label="After a successful signup"
         value={status.postSignupBehavior}
@@ -2587,8 +2601,10 @@ function RewardsSection({ perks, updateRewards }) {
         </span>
         <p className="m-0 text-caption leading-relaxed text-product-text-secondary">
           Reward verified signups for off-site actions (such as a completed survey or Discord join).
-          After the action, call <code>POST /api/waitlist/points</code> with this event key as{" "}
-          <code>event</code> and your API key in the <code>X-Api-Key</code> header. Omit
+          After the action, call <code>POST /api/waitlist/points</code> with <code>waitlistId</code>
+          , this event key as <code>event</code>, and either <code>email</code> or{" "}
+          <code>signupId</code> in the body. Send your API key in the <code>X-Api-Key</code> header.
+          Omit
           <code> points</code> to award the configured amount; it adds to the signup’s points
           balance, shown on the public referral/status page when points are enabled. Reuse an
           <code> idempotencyKey</code> for safe retries.

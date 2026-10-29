@@ -31,7 +31,8 @@ export function CountryMultiSelect({
 }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
-  const selected = Array.isArray(value) ? value : [];
+  const selected = Array.isArray(value) ? value.map((code) => String(code).toUpperCase()) : [];
+  const selectedSet = new Set(selected);
   const countries = useMemo(
     () =>
       getCountries()
@@ -91,7 +92,7 @@ export function CountryMultiSelect({
             <div className="max-h-64 overflow-y-auto">
               {countries.length ? (
                 countries.map(({ code, name }) => {
-                  const checked = selected.includes(code);
+                  const checked = selectedSet.has(code);
                   return (
                     <button
                       key={code}

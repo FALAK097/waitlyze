@@ -472,7 +472,8 @@ export function WebhookSettings({ waitListId, canManage = true }) {
                     <InputGroupAddon>https://</InputGroupAddon>
                     <InputGroupInput
                       id="webhook-endpoint-url"
-                      type="url"
+                      type="text"
+                      inputMode="url"
                       value={url.replace(/^https?:\/\//i, "")}
                       onChange={(event) =>
                         setUrl(
