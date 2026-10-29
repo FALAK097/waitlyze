@@ -8,7 +8,12 @@ import { Button } from "@/components/ui/button";
 import { applySeedVars } from "@/lib/email/preview-vars.mjs";
 
 import { EmailCanvas } from "./email-canvas";
-import { EmailPreviewFrame, SpamHintView, VariableChips } from "./email-composer-extras";
+import {
+  EmailPreviewFrame,
+  HtmlSourceEditor,
+  SpamHintView,
+  VariableChips,
+} from "./email-composer-extras";
 
 const scope = "min-w-0 bg-white text-product-text-primary";
 const unsaved =
@@ -46,8 +51,6 @@ const testButton =
 const modeBar = "flex flex-wrap items-center gap-2";
 const modeTab =
   "min-h-8.5 rounded-product-control border border-product-border-control bg-white px-3 text-caption font-semibold text-product-text-primary cursor-pointer aria-[pressed=true]:bg-product-bg-inset focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-product-success-text!";
-const htmlPane =
-  "min-h-105 w-full rounded-lg border border-product-border-subtle bg-white p-4 font-product-mono text-caption leading-relaxed";
 const hint = "m-0 text-caption leading-normal text-product-text-secondary";
 
 const kinds = [
@@ -297,14 +300,7 @@ export function EmailTemplatesManager({ waitListId, waitListName, initialTemplat
           </fieldset>
           {mode === "html" ? (
             <div className="flex flex-col gap-3">
-              <textarea
-                className={htmlPane}
-                aria-label="Email HTML source"
-                value={htmlDraft}
-                rows={18}
-                spellCheck={false}
-                onChange={(event) => setHtmlDraft(event.target.value)}
-              />
+              <HtmlSourceEditor value={htmlDraft} onChange={setHtmlDraft} />
               <div className={metaBar}>
                 <p className={hint}>
                   Raw HTML mode — apply it back to the visual editor, then save.

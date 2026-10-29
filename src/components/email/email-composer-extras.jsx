@@ -52,6 +52,54 @@ const frameBar = "flex flex-wrap items-center gap-2";
 const frameTab =
   "min-h-8.5 rounded-product-control border border-product-border-control bg-white px-3 text-caption font-semibold text-product-text-primary cursor-pointer aria-[pressed=true]:bg-product-bg-inset focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-product-success-text!";
 
+const htmlToken = "text-product-success-text";
+
+function highlightHtml(source) {
+  const occurrences = new Map();
+  return source.split(/(<\/?[\w:-]+|\s+[\w:-]+(?=\s*=)|=|"[^"]*"|'[^']*'|\/?>)/g).map((part) => {
+    if (!part) return null;
+    const isTag = /^<\/?[\w:-]+|^\/>?$/.test(part);
+    const isAttribute = /^\s+[\w:-]+$/.test(part);
+    const isValue = /^(?:"[^"]*"|'[^']*')$/.test(part);
+    const occurrence = occurrences.get(part) || 0;
+    occurrences.set(part, occurrence + 1);
+    return (
+      <span
+        key={`${part}-${occurrence}`}
+        className={
+          isTag || isAttribute ? htmlToken : isValue ? "text-product-warning-text" : undefined
+        }
+      >
+        {part}
+      </span>
+    );
+  });
+}
+
+export function HtmlSourceEditor({ value, onChange, label = "Email HTML source" }) {
+  return (
+    <div className="relative min-h-105 overflow-hidden rounded-lg border border-product-border-subtle bg-white font-product-mono text-caption leading-relaxed">
+      <pre
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 m-0 overflow-auto p-4 break-words whitespace-pre-wrap text-product-text-primary"
+      >
+        {highlightHtml(value)}
+        {"\n"}
+      </pre>
+      <textarea
+        className="relative min-h-105 w-full resize-y bg-transparent p-4 break-words whitespace-pre-wrap text-transparent caret-product-text-primary selection:bg-product-success-bg focus-visible:outline-2 focus-visible:outline-product-success-text [&::-webkit-scrollbar]:hidden"
+        aria-label={label}
+        value={value}
+        spellCheck={false}
+        autoCapitalize="off"
+        autoCorrect="off"
+        onChange={(event) => onChange(event.target.value)}
+        style={{ WebkitTextFillColor: "transparent" }}
+      />
+    </div>
+  );
+}
+
 export function EmailPreviewFrame({
   html,
   seedNote = "Preview uses sample data (Ada, #42, 230 pts).",

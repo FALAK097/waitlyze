@@ -77,6 +77,7 @@ export function AutomationManager({ waitListId, waitListName, initialRecipes, de
   }
 
   function updateRecipe(recipeId, update) {
+    setChecks(null);
     setRecipes((items) =>
       items.map((recipe) => (recipe.id === recipeId ? { ...recipe, ...update } : recipe)),
     );

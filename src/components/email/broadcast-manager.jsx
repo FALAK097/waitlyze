@@ -798,9 +798,9 @@ export function BroadcastManager({
                     variant="outline"
                     size="sm"
                     onClick={previewDraft}
-                    disabled={busy || draftDirty}
+                    disabled={busy}
                   >
-                    {busyAction === "draft-preview" ? "Building…" : "Preview & spam check"}
+                    {busyAction === "draft-preview" ? "Building…" : "Build preview & spam check"}
                   </Button>
                 </div>
                 {draftPreview ? (
