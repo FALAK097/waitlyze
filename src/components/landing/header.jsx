@@ -28,7 +28,7 @@ export default function Header() {
         }
       }}
     >
-      <div className="mx-auto flex h-22 w-full max-w-7xl items-center justify-between gap-6 px-4 sm:px-5 md:h-18 md:px-8 lg:px-12">
+      <div className="mx-auto flex h-18 w-full max-w-7xl items-center justify-between gap-3 px-4 sm:gap-6 sm:px-5 lg:h-18 lg:px-8 xl:px-12">
         <Link
           prefetch={false}
           href="/"
@@ -38,7 +38,7 @@ export default function Header() {
         >
           <Wordmark />
         </Link>
-        <nav aria-label="Main navigation" className="hidden items-center gap-8 md:flex">
+        <nav aria-label="Main navigation" className="hidden items-center gap-6 lg:flex xl:gap-8">
           {links.map(([label, href]) => (
             <Link
               prefetch={false}
@@ -50,7 +50,7 @@ export default function Header() {
             </Link>
           ))}
         </nav>
-        <div className="flex items-center gap-3 md:gap-1">
+        <div className="flex shrink-0 items-center gap-2 lg:gap-1">
           <SignupButton compact className="max-sm:gap-2 max-sm:px-3 max-sm:py-2">
             Sign in
           </SignupButton>
@@ -61,7 +61,7 @@ export default function Header() {
             aria-expanded={open}
             aria-controls="wl-mobile-nav"
             onClick={() => setOpen(!open)}
-            className="hidden size-10 place-items-center rounded-md border border-transparent bg-transparent text-product-text-secondary transition-colors hover:bg-product-bg-inset hover:text-product-text-primary focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-neutral-900 max-md:inline-grid max-sm:w-9 md:hidden"
+            className="grid size-10 shrink-0 place-items-center rounded-md border border-transparent bg-transparent text-product-text-secondary transition-colors hover:bg-product-bg-inset hover:text-product-text-primary focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-neutral-900 max-sm:size-9 lg:hidden"
           >
             {open ? (
               <HugeiconsIcon icon={Cancel01Icon} size={20} />
@@ -74,7 +74,7 @@ export default function Header() {
       <nav
         id="wl-mobile-nav"
         className={cn(
-          "grid gap-1 border-t border-product-border-subtle px-5 pt-2 pb-5 md:hidden",
+          "grid gap-1 border-t border-product-border-subtle px-5 pt-2 pb-5 lg:hidden",
           !open && "hidden",
         )}
         aria-label="Mobile navigation"
