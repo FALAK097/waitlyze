@@ -16,12 +16,12 @@ import {
   isPositionSort,
   parseAudienceFilters,
   parseExportColumns,
-  sortAudienceRows,
 } from "@/lib/audience-query.mjs";
 import {
   getCampaignPositions,
   getEligibleReferralCounts,
 } from "@/lib/campaigns/referral-position.mjs";
+import { streamRankedPositions } from "@/lib/postgres-cursor.mjs";
 import prisma from "@/lib/prisma";
 import { campaignRouteAccess } from "@/lib/workspaces/campaign-route-access.mjs";
 
@@ -327,6 +327,50 @@ async function rankedFailedAudiencePage(waitListId, filters, pageIndex) {
   `;
 }
 
+// Position sort has no stable database ORDER BY (rank is a window function), so
+// exporting it via OFFSET over a recomputed ROW_NUMBER lets ranks shift between
+// pages. Instead we open a server-side cursor over this exact ranked set: the
+// snapshot is pinned at DECLARE and batches stream in fixed rank order.
+// `whereBuilder` selects the regular audience vs the failed-delivery subset;
+// ranks stay global either way, matching getCampaignPositions.
+function rankedPositionCursorSql(waitListId, filters, whereBuilder) {
+  const where = whereBuilder(waitListId, filters);
+  const direction = filters.sort === "position_desc" ? Prisma.raw("DESC") : Prisma.raw("ASC");
+  return Prisma.sql`
+    WITH referral_scores AS (
+      SELECT referral."referredById" AS "referrerId", COUNT(*)::bigint AS score
+      FROM "referrals" AS referral
+      INNER JOIN "sign_ups" AS referred ON referred."id" = referral."signUpId"
+      INNER JOIN "sign_ups" AS referrer
+        ON referrer."id" = referral."referredById"
+       AND referrer."waitListId" = referred."waitListId"
+      INNER JOIN "wait_lists" AS campaign
+        ON campaign."id" = referred."waitListId"
+       AND campaign."showReferrals" = true
+      WHERE referred."waitListId" = ${waitListId}
+        AND referred."verifiedAt" IS NOT NULL
+        AND referrer."verifiedAt" IS NOT NULL
+        AND referral."reviewStatus" IN ('CLEAR', 'APPROVED')
+        AND referral."referredById" IS NOT NULL
+        AND referral."referredById" <> referral."signUpId"
+      GROUP BY referral."referredById"
+    ), ranked AS (
+      SELECT signup."id", signup."createdAt",
+        ROW_NUMBER() OVER (
+          ORDER BY COALESCE(score.score, 0) DESC, signup."createdAt" ASC, signup."id" ASC
+        ) AS position
+      FROM "sign_ups" AS signup
+      LEFT JOIN referral_scores AS score ON score."referrerId" = signup."id"
+      WHERE signup."waitListId" = ${waitListId}
+    )
+    SELECT ranked."id", ranked.position
+    FROM ranked
+    INNER JOIN "sign_ups" AS signup ON signup."id" = ranked."id"
+    WHERE ${where}
+    ORDER BY ranked.position ${direction}
+  `;
+}
+
 async function failedVerificationPage(waitListId, filters, cursor, take, offset = null) {
   const where = failedVerificationWhere(waitListId, filters);
   const after = offset == null ? failedVerificationAfter(filters, cursor) : Prisma.empty;
@@ -616,6 +660,11 @@ export async function POST(request, { params }) {
     const url = new URL(request.url);
     const filters = parseAudienceFilters(url.searchParams);
     if (filters.error) return NextResponse.json({ error: filters.error }, { status: 400 });
+    // Rank positions only exist when the campaign shows referrals. The list
+    // endpoint ignores a position sort otherwise and returns join order, so
+    // normalize the same way here: a hand-crafted ?sort=position_desc export
+    // must still match the rows and order shown in the table.
+    if (isPositionSort(filters.sort) && !access.showReferrals) filters.sort = "joined_asc";
     const columns = parseExportColumns(url.searchParams.get("columns"));
     if (!columns)
       return NextResponse.json({ error: "Select at least one export column." }, { status: 400 });
@@ -648,15 +697,41 @@ export async function POST(request, { params }) {
     async function* generateCsv() {
       yield `${exportHeaderRow(columns)}\r\n`;
 
+      // Position-sort rows carry their rank from the cursor below, so the global
+      // positions map is only needed when the position column is exported under
+      // some other sort order.
       const positions =
-        access.showReferrals && (needPosition || positionSort)
-          ? await getCampaignPositions(prisma, id)
-          : new Map();
+        needPosition && !positionSort ? await getCampaignPositions(prisma, id) : new Map();
       const enrichAndStream = async function* (rows) {
         const ids = rows.map((row) => row.id);
         const counts = needReferrals ? await getEligibleReferralCounts(prisma, id, ids) : new Map();
         for (const row of rows) {
-          yield `${buildExportRow(row, columns, { referralCount: counts.get(row.id) ?? 0, position: positions.get(row.id) ?? "" })}\r\n`;
+          const position = row.position ?? positions.get(row.id) ?? "";
+          yield `${buildExportRow(row, columns, { referralCount: counts.get(row.id) ?? 0, position })}\r\n`;
+        }
+      };
+
+      // Stream a position sort in exact rank order. The server-side cursor pins
+      // the ranked snapshot so order cannot shift between batches; we then fetch
+      // full rows for each bounded id batch (reusing the dynamic `select`) and
+      // reorder them to match the cursor, the same id-then-fields pattern the
+      // list endpoint uses, but batched so memory stays flat.
+      const streamPositionCursor = async function* (whereBuilder) {
+        const cursorSql = rankedPositionCursorSql(id, filters, whereBuilder);
+        for await (const batch of streamRankedPositions(cursorSql)) {
+          const orderedRefs = batch.map((row) => ({ id: row.id, position: Number(row.position) }));
+          const rows = await prisma.signUp.findMany({
+            where: { id: { in: orderedRefs.map((ref) => ref.id) } },
+            select,
+          });
+          const byId = new Map(rows.map((row) => [row.id, row]));
+          const orderedRows = orderedRefs
+            .map((ref) => {
+              const row = byId.get(ref.id);
+              return row ? { ...row, position: ref.position } : null;
+            })
+            .filter(Boolean);
+          for await (const row of enrichAndStream(orderedRows)) yield row;
         }
       };
 
@@ -677,24 +752,8 @@ export async function POST(request, { params }) {
           cursor = rows.at(-1);
         }
       } else if (!failedOnly) {
-        // Position ranking has no database ordering: snapshot the ordered ids,
-        // then chunk-fetch rows and stream them in rank order.
-        const matches = await prisma.signUp.findMany({
-          where,
-          select: { id: true, createdAt: true },
-          orderBy: [{ id: "asc" }],
-        });
-        const ordered = sortAudienceRows(matches, filters.sort, positions);
-        for (let index = 0; index < ordered.length; index += 500) {
-          const chunk = ordered.slice(index, index + 500);
-          const rows = await prisma.signUp.findMany({
-            where: { id: { in: chunk.map((row) => row.id) } },
-            select,
-          });
-          const byId = new Map(rows.map((row) => [row.id, row]));
-          const orderedRows = chunk.map((ref) => byId.get(ref.id)).filter(Boolean);
-          for await (const row of enrichAndStream(orderedRows)) yield row;
-        }
+        // Regular position sort: stream ids in fixed rank order from the cursor.
+        for await (const row of streamPositionCursor(positionAudienceWhere)) yield row;
       } else if (joinedSort) {
         let failedCursor;
         while (true) {
@@ -712,18 +771,9 @@ export async function POST(request, { params }) {
           failedCursor = rows.at(-1);
         }
       } else {
-        // Failed rows have no score column, so collect the matching rows to
-        // apply the in-memory position comparator before streaming.
-        const collected = [];
-        let failedCursor;
-        while (true) {
-          const batch = await failedVerificationPage(id, filters, failedCursor, 2000);
-          collected.push(...batch);
-          if (batch.length < 2000) break;
-          failedCursor = { id: batch.at(-1).id, createdAt: batch.at(-1).createdAt };
-        }
-        const orderedRows = sortAudienceRows(collected, filters.sort, positions);
-        for await (const row of enrichAndStream(orderedRows)) yield row;
+        // Failed position sort: same cursor, but the failed-delivery predicate
+        // selects the subset. Ranks stay global, matching the list endpoint.
+        for await (const row of streamPositionCursor(failedVerificationWhere)) yield row;
       }
     }
 
