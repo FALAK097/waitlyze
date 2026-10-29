@@ -1,5 +1,7 @@
 "use client";
 
+import { MonitorIcon, SmartphoneIcon } from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
 import { useState } from "react";
 
 import { spamHint } from "@/lib/email/variables.mjs";
@@ -103,8 +105,15 @@ export function HtmlSourceEditor({ value, onChange, label = "Email HTML source" 
 export function EmailPreviewFrame({
   html,
   seedNote = "Preview uses sample data (Ada, #42, 230 pts).",
+  viewport: controlledViewport,
+  onViewportChange,
 }) {
-  const [mobile, setMobile] = useState(false);
+  const [localMobile, setLocalMobile] = useState(false);
+  const mobile = controlledViewport ? controlledViewport === "mobile" : localMobile;
+  const setMobile = (value) => {
+    setLocalMobile(value);
+    onViewportChange?.(value ? "mobile" : "desktop");
+  };
   return (
     <div className="flex flex-col gap-3">
       <div className={frameBar}>
@@ -114,7 +123,8 @@ export function EmailPreviewFrame({
           aria-pressed={!mobile}
           onClick={() => setMobile(false)}
         >
-          Desktop
+          <HugeiconsIcon icon={MonitorIcon} size={16} aria-hidden="true" />
+          <span className="sr-only">Desktop</span>
         </button>
         <button
           type="button"
@@ -122,7 +132,8 @@ export function EmailPreviewFrame({
           aria-pressed={mobile}
           onClick={() => setMobile(true)}
         >
-          Mobile · 375px
+          <HugeiconsIcon icon={SmartphoneIcon} size={16} aria-hidden="true" />
+          <span className="sr-only">Mobile preview, 375 pixels wide</span>
         </button>
         <span className="text-caption text-product-text-secondary">{seedNote}</span>
       </div>

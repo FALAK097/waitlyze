@@ -20,7 +20,13 @@ import { emailStatusLabel } from "@/lib/emails/status-label.mjs";
 import { formatProductDate } from "@/lib/product-date.mjs";
 
 import { EmailCanvas } from "./email-canvas";
-import { EmailPreviewFrame, SpamHintView, VariableChips } from "./email-composer-extras";
+import {
+  EmailPreviewFrame,
+  HtmlSourceEditor,
+  SpamHintView,
+  VariableChips,
+} from "./email-composer-extras";
+import { EmailComposerModeBar } from "./email-composer-mode-bar";
 import { EmailToolsNav } from "./email-tools-nav";
 
 const scope = "min-w-0 bg-white text-product-text-primary";
@@ -402,6 +408,7 @@ export function BroadcastManager({
   initialBroadcasts,
   initialPreview,
   initialSegments,
+  initialTemplates = {},
   deliveryReady,
 }) {
   const router = useRouter();
@@ -420,6 +427,10 @@ export function BroadcastManager({
   const [reviewCancel, setReviewCancel] = useState(false);
   const [pendingSelection, setPendingSelection] = useState(null);
   const [draftPreview, setDraftPreview] = useState(null);
+  const [editorMode, setEditorMode] = useState("visual");
+  const [editorHtml, setEditorHtml] = useState("");
+  const [previewViewport, setPreviewViewport] = useState("desktop");
+  const [templateChoice, setTemplateChoice] = useState("");
   const [testTo, setTestTo] = useState("");
   const editorRef = useRef(null);
 
@@ -554,6 +565,38 @@ export function BroadcastManager({
     } finally {
       setBusyAction("");
     }
+  }
+
+  async function changeEditorMode(mode) {
+    if (mode === "html") {
+      try {
+        if (!editorRef.current?.editor) throw new Error("The message editor is still loading.");
+        const { html } = await editorRef.current.getEmail();
+        setEditorHtml(html);
+      } catch {
+        notify("The message editor is still loading.", true);
+        return;
+      }
+    }
+    setEditorMode(mode);
+  }
+
+  function applyEditorHtml() {
+    editorRef.current?.editor?.commands?.setContent(editorHtml || "<p></p>");
+    setEditorMode("visual");
+  }
+
+  function applySavedTemplate() {
+    const template = initialTemplates[templateChoice];
+    if (!template || !selectedId || !editable) return;
+    const content =
+      template.editorDocument || template.renderedHtml || template.starterHtml || "<p></p>";
+    editorRef.current?.editor?.commands?.setContent(content);
+    const document = editorRef.current?.getJSON?.() || content;
+    edit("subject", template.subject || "");
+    edit("previewText", template.previewText || "");
+    edit("editorDocument", document);
+    setTemplateChoice("");
   }
 
   async function sendTest(event) {
@@ -703,6 +746,49 @@ export function BroadcastManager({
 
             {editable ? (
               <>
+                <section aria-label="Start composing" className="grid gap-3">
+                  <div>
+                    <p className="m-0 text-micro font-bold tracking-widest text-product-text-secondary uppercase">
+                      1 · Compose
+                    </p>
+                    <p className="m-0 mt-1 text-caption text-product-text-secondary">
+                      Write the update, then save it before checking recipients.
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <label className="sr-only" htmlFor="broadcast-template-select">
+                      Start from a saved email template
+                    </label>
+                    <select
+                      id="broadcast-template-select"
+                      className="min-h-9 min-w-52 rounded-product-control border border-product-border-control bg-white px-3 text-caption"
+                      value={templateChoice}
+                      onChange={(event) => setTemplateChoice(event.target.value)}
+                      disabled={busy}
+                    >
+                      <option value="">Start from a saved template…</option>
+                      {Object.entries(initialTemplates).map(([key, template]) => (
+                        <option key={key} value={key}>
+                          {template.type || key}
+                        </option>
+                      ))}
+                    </select>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      disabled={!templateChoice || busy}
+                      onClick={applySavedTemplate}
+                    >
+                      Use template
+                    </Button>
+                  </div>
+                </section>
+                <EmailComposerModeBar
+                  mode={editorMode}
+                  setMode={changeEditorMode}
+                  viewport={previewViewport}
+                  setViewport={setPreviewViewport}
+                />
                 <form
                   id="broadcast-draft-form"
                   className="flex flex-col gap-5"
@@ -741,7 +827,20 @@ export function BroadcastManager({
                     </div>
                   </div>
                 </form>
-                <div className={canvasShell}>
+                {editorMode === "html" ? (
+                  <div className="flex flex-col gap-3">
+                    <HtmlSourceEditor value={editorHtml} onChange={setEditorHtml} />
+                    <div className={metaBar}>
+                      <p className="m-0 text-caption text-product-text-secondary">
+                        Apply the HTML to the visual editor before saving.
+                      </p>
+                      <Button type="button" variant="default" onClick={applyEditorHtml}>
+                        Apply HTML
+                      </Button>
+                    </div>
+                  </div>
+                ) : null}
+                <div className={canvasShell} hidden={editorMode === "html"}>
                   <EmailCanvas
                     key={selectedId}
                     editorRef={editorRef}
@@ -749,7 +848,10 @@ export function BroadcastManager({
                     onChange={(document) => edit("editorDocument", document)}
                   />
                 </div>
-                <div className={recipients}>
+                <div className="grid gap-2">
+                  <p className="m-0 text-micro font-bold tracking-widest text-product-text-secondary uppercase">
+                    2 · Choose recipients
+                  </p>
                   <RecipientsPanel
                     segment={segment}
                     segments={initialSegments || [{ key: "ALL", label: "Everyone opted in" }]}
@@ -805,7 +907,11 @@ export function BroadcastManager({
                 </div>
                 {draftPreview ? (
                   <div className="flex flex-col gap-4">
-                    <EmailPreviewFrame html={draftPreview.html} />
+                    <EmailPreviewFrame
+                      html={draftPreview.html}
+                      viewport={previewViewport}
+                      onViewportChange={setPreviewViewport}
+                    />
                     <SpamHintView
                       subject={data.subject}
                       previewText={data.previewText}

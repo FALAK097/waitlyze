@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+
 import {
   NumberField,
   NumberFieldDecrement,
@@ -11,7 +13,13 @@ import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 import { EmailCanvas } from "./email-canvas";
-import { EmailPreviewFrame, SpamHintView, VariableChips } from "./email-composer-extras";
+import {
+  EmailPreviewFrame,
+  HtmlSourceEditor,
+  SpamHintView,
+  VariableChips,
+} from "./email-composer-extras";
+import { EmailComposerModeBar } from "./email-composer-mode-bar";
 
 const pane = "min-w-0 max-w-195 flex flex-col gap-5 lg:flex-1";
 const paneHead = "flex items-start justify-between gap-4 max-sm:flex-col max-sm:items-stretch";
@@ -156,6 +164,7 @@ function TestSendForm({ busy, dirty, testTo, onTestToChange, onSendTest, recipe 
 
 export function AutomationRecipePanel({
   recipe,
+  templates = {},
   checks,
   busy,
   deliveryReady,
@@ -173,6 +182,40 @@ export function AutomationRecipePanel({
   const delay = recipe.delayHours ?? hourValue(recipe.config.delayMinutes);
   const enabled = recipe.status === "ENABLED";
   const timing = recipeTiming(recipe);
+  const [mode, setMode] = useState("visual");
+  const [htmlDraft, setHtmlDraft] = useState("");
+  const [viewport, setViewport] = useState("desktop");
+  const [templateChoice, setTemplateChoice] = useState("");
+
+  function applyTemplate() {
+    const template = templates[templateChoice];
+    if (!template) return;
+    const content =
+      template.editorDocument || template.renderedHtml || template.starterHtml || "<p></p>";
+    editorRef.current?.editor?.commands?.setContent(content);
+    const document = editorRef.current?.getJSON?.() || content;
+    onUpdateRecipe(recipe.id, {
+      config: { ...recipe.config, subject: template.subject, editorDocument: document },
+    });
+    setTemplateChoice("");
+  }
+
+  async function changeMode(nextMode) {
+    if (nextMode === "html") {
+      try {
+        if (!editorRef.current?.editor) throw new Error("The editor is still loading.");
+        const { html } = await editorRef.current.getEmail();
+        setHtmlDraft(html);
+      } catch {
+        return;
+      }
+    }
+    setMode(nextMode);
+  }
+  function applyHtml() {
+    editorRef.current?.editor?.commands?.setContent(htmlDraft || "<p></p>");
+    setMode("visual");
+  }
 
   return (
     <section className={pane} aria-label={recipe.title}>
@@ -223,7 +266,52 @@ export function AutomationRecipePanel({
         </div>
       </div>
 
-      <div className={canvasShell}>
+      <div className="flex flex-wrap items-center gap-2">
+        <label className="sr-only" htmlFor={`automation-template-${recipe.id}`}>
+          Start from a saved email template
+        </label>
+        <select
+          id={`automation-template-${recipe.id}`}
+          className="min-h-9 min-w-52 rounded-product-control border border-product-border-control bg-white px-3 text-caption"
+          value={templateChoice}
+          onChange={(event) => setTemplateChoice(event.target.value)}
+          disabled={busy}
+        >
+          <option value="">Start from a saved template…</option>
+          {Object.entries(templates).map(([key, template]) => (
+            <option key={key} value={key}>
+              {template.type || key}
+            </option>
+          ))}
+        </select>
+        <Button
+          type="button"
+          variant="outline"
+          disabled={!templateChoice || busy}
+          onClick={applyTemplate}
+        >
+          Use template
+        </Button>
+      </div>
+
+      <EmailComposerModeBar
+        mode={mode}
+        setMode={changeMode}
+        viewport={viewport}
+        setViewport={setViewport}
+      />
+      {mode === "html" ? (
+        <div className="flex flex-col gap-3">
+          <HtmlSourceEditor value={htmlDraft} onChange={setHtmlDraft} />
+          <div className={metaBar}>
+            <p className={hint}>Paste or edit HTML, then apply it to the visual editor.</p>
+            <Button type="button" variant="default" onClick={applyHtml}>
+              Apply HTML
+            </Button>
+          </div>
+        </div>
+      ) : null}
+      <div className={canvasShell} hidden={mode === "html"}>
         <EmailCanvas
           key={recipe.id}
           editorRef={editorRef}
@@ -260,7 +348,11 @@ export function AutomationRecipePanel({
 
       {checks ? (
         <div className="flex flex-col gap-4">
-          <EmailPreviewFrame html={checks.html} />
+          <EmailPreviewFrame
+            html={checks.html}
+            viewport={viewport}
+            onViewportChange={setViewport}
+          />
           <SpamHintView
             subject={recipe.config.subject}
             previewText=""

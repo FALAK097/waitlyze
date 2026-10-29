@@ -14,6 +14,7 @@ import {
   SpamHintView,
   VariableChips,
 } from "./email-composer-extras";
+import { EmailComposerModeBar } from "./email-composer-mode-bar";
 
 const scope = "min-w-0 bg-white text-product-text-primary";
 const unsaved =
@@ -48,9 +49,6 @@ const testInput =
   "h-9 w-45 min-w-0 rounded-product-control border border-product-border-control bg-white px-2.5 text-caption max-sm:w-auto max-sm:flex-1 max-sm:text-base";
 const testButton =
   "min-h-9 rounded-product-control border border-transparent bg-product-bg-inset px-3.5 text-caption font-semibold text-product-text-primary cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-product-success-text!";
-const modeBar = "flex flex-wrap items-center gap-2";
-const modeTab =
-  "min-h-8.5 rounded-product-control border border-product-border-control bg-white px-3 text-caption font-semibold text-product-text-primary cursor-pointer aria-[pressed=true]:bg-product-bg-inset focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-product-success-text!";
 const hint = "m-0 text-caption leading-normal text-product-text-secondary";
 
 const kinds = [
@@ -100,6 +98,7 @@ export function EmailTemplatesManager({ waitListId, waitListName, initialTemplat
   const [mode, setMode] = useState("write");
   const [htmlDraft, setHtmlDraft] = useState("");
   const [preview, setPreview] = useState(null);
+  const [viewport, setViewport] = useState("desktop");
   const editorRef = useRef(null);
   const template = drafts[current];
   const kind = kinds.find((item) => item.key === current);
@@ -185,7 +184,7 @@ export function EmailTemplatesManager({ waitListId, waitListName, initialTemplat
         html: applySeedVars(content.renderedHtml, waitListName),
         text: content.renderedText,
       });
-      setMode("preview");
+      setMode("write");
     } catch (error) {
       toast.error(error.message || "The editor is still loading.");
     }
@@ -271,33 +270,17 @@ export function EmailTemplatesManager({ waitListId, waitListName, initialTemplat
               />
             </div>
           </div>
-          <fieldset className={modeBar}>
-            <legend className="sr-only">Editor mode</legend>
-            <button
-              type="button"
-              className={modeTab}
-              aria-pressed={mode === "write"}
-              onClick={() => setMode("write")}
-            >
-              Write
-            </button>
-            <button
-              type="button"
-              className={modeTab}
-              aria-pressed={mode === "html"}
-              onClick={enterHtmlMode}
-            >
-              HTML
-            </button>
-            <button
-              type="button"
-              className={modeTab}
-              aria-pressed={mode === "preview"}
-              onClick={enterPreview}
-            >
-              Preview
-            </button>
-          </fieldset>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <EmailComposerModeBar
+              mode={mode === "html" ? "html" : "visual"}
+              setMode={(next) => (next === "html" ? enterHtmlMode() : setMode("write"))}
+              viewport={viewport}
+              setViewport={setViewport}
+            />
+            <Button type="button" variant="outline" onClick={enterPreview}>
+              Preview email
+            </Button>
+          </div>
           {mode === "html" ? (
             <div className="flex flex-col gap-3">
               <HtmlSourceEditor value={htmlDraft} onChange={setHtmlDraft} />
@@ -310,9 +293,14 @@ export function EmailTemplatesManager({ waitListId, waitListName, initialTemplat
                 </Button>
               </div>
             </div>
-          ) : mode === "preview" && preview ? (
+          ) : null}
+          {preview ? (
             <div className="flex flex-col gap-4">
-              <EmailPreviewFrame html={preview.html} />
+              <EmailPreviewFrame
+                html={preview.html}
+                viewport={viewport}
+                onViewportChange={setViewport}
+              />
               <SpamHintView
                 subject={template.subject}
                 previewText={template.previewText}
@@ -325,13 +313,7 @@ export function EmailTemplatesManager({ waitListId, waitListName, initialTemplat
               (setContent) and `save` → `exportMessage` both go through
               `editorRef.current`, which would be null if we unmounted the
               canvas for HTML/Preview modes. Hide it instead. */}
-          <div
-            className={
-              mode === "html" || (mode === "preview" && preview)
-                ? `${canvasShell} hidden`
-                : canvasShell
-            }
-          >
+          <div className={mode === "html" ? `${canvasShell} hidden` : canvasShell}>
             <EmailCanvas
               key={current}
               editorRef={editorRef}

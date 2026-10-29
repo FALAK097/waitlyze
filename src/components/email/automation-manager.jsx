@@ -27,7 +27,13 @@ const emptyPaneBody = "m-0 mb-4.5! leading-relaxed text-product-text-secondary";
 
 const hourValue = (minutes) => Number((minutes / 60).toFixed(2));
 
-export function AutomationManager({ waitListId, waitListName, initialRecipes, deliveryReady }) {
+export function AutomationManager({
+  waitListId,
+  waitListName,
+  initialRecipes,
+  initialTemplates = {},
+  deliveryReady,
+}) {
   const editorRef = useRef(null);
   const router = useRouter();
   const [recipes, setRecipes] = useState(() =>
@@ -201,6 +207,7 @@ export function AutomationManager({ waitListId, waitListName, initialRecipes, de
         {recipe ? (
           <AutomationRecipePanel
             recipe={recipe}
+            templates={initialTemplates}
             checks={checks}
             busy={busyId === recipe.id}
             deliveryReady={deliveryReady}

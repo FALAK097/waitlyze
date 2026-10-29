@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 
 import {
   getBroadcastRecipients,
+  getOrCreateTemplates,
   listBroadcasts,
   listBroadcastSegments,
 } from "@/app/actions/emails";
@@ -20,9 +21,10 @@ export default async function BroadcastsPage({ params }) {
   const { campaign } = await requireCampaignPage(id, "sendEmail");
   if (!campaign) return notFound();
   const broadcasts = await listBroadcasts(campaign.id);
-  const [initialPreview, initialSegments] = await Promise.all([
+  const [initialPreview, initialSegments, templates] = await Promise.all([
     getBroadcastRecipients(campaign.id, broadcasts?.[0]?.segment || "ALL"),
     listBroadcastSegments(),
+    getOrCreateTemplates(campaign.id),
   ]);
   return (
     <ContentLayout title="Broadcasts">
@@ -32,6 +34,7 @@ export default async function BroadcastsPage({ params }) {
         initialBroadcasts={broadcasts}
         initialPreview={initialPreview}
         initialSegments={initialSegments}
+        initialTemplates={templates}
         deliveryReady={Boolean(env.OUTBOX_DISPATCH_SECRET && env.RESEND_API_KEY)}
       />
     </ContentLayout>
