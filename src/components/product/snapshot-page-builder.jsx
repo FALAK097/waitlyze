@@ -2586,8 +2586,12 @@ function RewardsSection({ perks, updateRewards }) {
           Custom events
         </span>
         <p className="m-0 text-caption leading-relaxed text-product-text-secondary">
-          Off-site actions awarded through the API (survey, Discord join…). The event key goes in
-          the API call.
+          Reward verified signups for off-site actions (such as a completed survey or Discord join).
+          After the action, call <code>POST /api/waitlist/points</code> with this event key as{" "}
+          <code>event</code> and your API key in the <code>X-Api-Key</code> header. Omit
+          <code> points</code> to award the configured amount; it adds to the signup’s points
+          balance, shown on the public referral/status page when points are enabled. Reuse an
+          <code> idempotencyKey</code> for safe retries.
         </p>
         {(perks.customEvents ?? []).map((entry, index) => (
           <div
