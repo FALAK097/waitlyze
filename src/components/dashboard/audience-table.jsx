@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  Cancel01Icon,
   CopyIcon,
   CircleQuestionMarkIcon,
   Download01Icon,
@@ -35,6 +36,12 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupButton,
+  InputGroupInput,
+} from "@/components/ui/input-group";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -915,23 +922,36 @@ export function AudienceTable({
         <>
           <div className="min-w-0" aria-busy={isUpdating}>
             <div className="mb-6 flex flex-wrap items-center justify-between gap-4 max-[640px]:items-stretch">
-              <Label className="relative block w-full sm:max-w-sm">
-                <span className="sr-only">Search signups by email</span>
-                <HugeiconsIcon
-                  icon={Search01Icon}
-                  className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-product-text-secondary"
-                  aria-hidden="true"
-                />
-                <Input
-                  className="pl-10"
-                  type="search"
-                  autoComplete="off"
-                  value={query}
-                  onChange={(event) => setQuery(event.target.value)}
-                  placeholder="Search by email"
-                  maxLength={120}
-                />
-              </Label>
+              <div className="w-full sm:max-w-sm" role="search">
+                <Label className="sr-only" htmlFor="audience-search">
+                  Search signups by email
+                </Label>
+                <InputGroup className="h-10">
+                  <InputGroupAddon>
+                    <HugeiconsIcon icon={Search01Icon} size={16} aria-hidden="true" />
+                  </InputGroupAddon>
+                  <InputGroupInput
+                    id="audience-search"
+                    type="search"
+                    autoComplete="off"
+                    value={query}
+                    onChange={(event) => setQuery(event.target.value)}
+                    placeholder="Search by email"
+                    maxLength={120}
+                  />
+                  {query && (
+                    <InputGroupAddon align="inline-end">
+                      <InputGroupButton
+                        size="icon-xs"
+                        aria-label="Clear search"
+                        onClick={() => setQuery("")}
+                      >
+                        <HugeiconsIcon icon={Cancel01Icon} size={15} aria-hidden="true" />
+                      </InputGroupButton>
+                    </InputGroupAddon>
+                  )}
+                </InputGroup>
+              </div>
               <Select value={filter} onValueChange={changeFilter}>
                 <SelectTrigger className="w-52 max-[640px]:w-full" aria-label="Filter signups">
                   <SelectValue>
@@ -1130,21 +1150,21 @@ export function AudienceTable({
                     <>
                       {[0, 1, 2, 3, 4].map((row) => (
                         <TableRow aria-hidden="true" key={row}>
-                          <TableCell className="h-16">
-                            <i className="block h-3.5 w-4/5 rounded bg-product-bg-inset motion-safe:animate-pulse" />
-                          </TableCell>
-                          <TableCell className="h-16">
-                            <i className="block h-5.5 w-24 rounded-full bg-product-bg-inset motion-safe:animate-pulse" />
-                          </TableCell>
-                          <TableCell className="hidden h-16 sm:table-cell">
-                            <i className="block h-3.5 w-17/20 rounded bg-product-bg-inset motion-safe:animate-pulse" />
-                          </TableCell>
-                          <TableCell className="hidden h-16 sm:table-cell">
-                            <i className="block h-3.5 w-10 rounded bg-product-bg-inset motion-safe:animate-pulse" />
-                          </TableCell>
-                          <TableCell className="hidden h-16 sm:table-cell">
-                            <i className="block h-3.5 w-10 rounded bg-product-bg-inset motion-safe:animate-pulse" />
-                          </TableCell>
+                          {columns.map((column, colIdx) => (
+                            <TableCell className="h-14" key={column.id || colIdx}>
+                              <i
+                                className={
+                                  colIdx === 0
+                                    ? "block size-4 rounded bg-product-bg-inset motion-safe:animate-pulse"
+                                    : colIdx === 1
+                                      ? "block h-4 w-44 rounded bg-product-bg-inset motion-safe:animate-pulse"
+                                      : colIdx === 2
+                                        ? "block h-5.5 w-20 rounded-full bg-product-bg-inset motion-safe:animate-pulse"
+                                        : "block h-3.5 w-14 rounded bg-product-bg-inset motion-safe:animate-pulse"
+                                }
+                              />
+                            </TableCell>
+                          ))}
                         </TableRow>
                       ))}
                     </>

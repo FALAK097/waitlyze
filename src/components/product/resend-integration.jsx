@@ -8,6 +8,12 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupButton,
+  InputGroupInput,
+} from "@/components/ui/input-group";
+import {
   Sheet,
   SheetTrigger,
   SheetContent,
@@ -154,66 +160,72 @@ export function ResendIntegration({ initialConnection, accountEmail, canManage, 
               </p>
             </div>
             {webhookUrl && (
-              <div className="grid gap-2 rounded-lg border border-product-bg-inset bg-product-bg-inset px-4 py-3.5">
+              <div className="grid gap-2.5 rounded-lg border border-product-bg-inset bg-product-bg-inset px-4 py-3.5 [&_input]:font-mono [&_input]:text-caption">
                 <p className="m-0 text-caption leading-relaxed text-product-text-secondary">
                   <strong className="text-product-text-primary">Webhook endpoint</strong> — add this
                   URL in your Resend account and subscribe to <code>email.bounced</code> and{" "}
                   <code>email.complained</code>. Copy the signing secret Resend shows you and save
                   it below.
                 </p>
-                <p className="m-0 text-caption leading-relaxed break-all text-product-text-secondary select-all">
-                  {webhookUrl}
-                </p>
-                {canManage && (
-                  <Button type="button" variant="outline" onClick={copyWebhookUrl}>
-                    Copy webhook URL
-                  </Button>
-                )}
+                <InputGroup className="h-10">
+                  <InputGroupInput aria-label="Webhook URL" readOnly value={webhookUrl} />
+                  {canManage && (
+                    <InputGroupAddon align="inline-end">
+                      <InputGroupButton
+                        size="icon-xs"
+                        aria-label="Copy webhook URL"
+                        onClick={copyWebhookUrl}
+                      >
+                        <HugeiconsIcon icon={Copy01Icon} size={16} aria-hidden="true" />
+                      </InputGroupButton>
+                    </InputGroupAddon>
+                  )}
+                </InputGroup>
               </div>
             )}
             {canManage ? (
               <form onSubmit={save} className="grid gap-3.5 [&>button]:justify-self-start">
-                <label className="product-field" htmlFor="resend-api-key">
-                  <span>Sending API key</span>
-                </label>
-                <div className="min-w-0 [&_input]:min-w-0 [&_input]:font-mono [&_input]:text-caption">
-                  <Input
-                    id="resend-api-key"
-                    type={revealed ? "text" : "password"}
-                    autoComplete="new-password"
-                    spellCheck="false"
-                    value={apiKey}
-                    onChange={(event) => setApiKey(event.target.value)}
-                    placeholder={connection ? "Saved key · enter a replacement" : "re_…"}
-                    required={!connection}
-                    maxLength={512}
-                    disabled={Boolean(busy)}
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    aria-label={revealed ? "Hide API key" : "Show API key"}
-                    aria-pressed={revealed}
-                    onClick={() => setRevealed(!revealed)}
-                    disabled={!apiKey || Boolean(busy)}
-                  >
-                    {revealed ? (
-                      <HugeiconsIcon icon={ViewOffIcon} size={18} />
-                    ) : (
-                      <HugeiconsIcon icon={ViewIcon} size={18} />
-                    )}
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    aria-label="Copy entered API key"
-                    disabled={!apiKey || Boolean(busy)}
-                    onClick={copy}
-                  >
-                    <HugeiconsIcon icon={Copy01Icon} size={18} />
-                  </Button>
+                <div className="product-field [&_input]:font-mono [&_input]:text-caption">
+                  <label htmlFor="resend-api-key">
+                    <span>Sending API key</span>
+                  </label>
+                  <InputGroup className="h-10">
+                    <InputGroupInput
+                      id="resend-api-key"
+                      type={revealed ? "text" : "password"}
+                      autoComplete="new-password"
+                      spellCheck="false"
+                      value={apiKey}
+                      onChange={(event) => setApiKey(event.target.value)}
+                      placeholder={connection ? "Saved key · enter a replacement" : "re_…"}
+                      required={!connection}
+                      maxLength={512}
+                      disabled={Boolean(busy)}
+                    />
+                    <InputGroupAddon align="inline-end">
+                      <InputGroupButton
+                        size="icon-xs"
+                        aria-label={revealed ? "Hide API key" : "Show API key"}
+                        aria-pressed={revealed}
+                        onClick={() => setRevealed(!revealed)}
+                        disabled={!apiKey || Boolean(busy)}
+                      >
+                        {revealed ? (
+                          <HugeiconsIcon icon={ViewOffIcon} size={16} aria-hidden="true" />
+                        ) : (
+                          <HugeiconsIcon icon={ViewIcon} size={16} aria-hidden="true" />
+                        )}
+                      </InputGroupButton>
+                      <InputGroupButton
+                        size="icon-xs"
+                        aria-label="Copy entered API key"
+                        disabled={!apiKey || Boolean(busy)}
+                        onClick={copy}
+                      >
+                        <HugeiconsIcon icon={Copy01Icon} size={16} aria-hidden="true" />
+                      </InputGroupButton>
+                    </InputGroupAddon>
+                  </InputGroup>
                 </div>
                 {connection && (
                   <p className="mb-4! text-sm leading-relaxed text-product-text-secondary">

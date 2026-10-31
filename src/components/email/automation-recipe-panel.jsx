@@ -169,6 +169,7 @@ export function AutomationRecipePanel({
   onTestToChange,
   onUpdateRecipe,
   onPreview,
+  onClearPreview,
   onSave,
   onChangeStatus,
   onSendTest,
@@ -196,6 +197,7 @@ export function AutomationRecipePanel({
   }
 
   async function changeMode(nextMode) {
+    onClearPreview?.();
     if (nextMode === "html") {
       try {
         if (!editorRef.current?.editor) throw new Error("The editor is still loading.");
@@ -212,9 +214,14 @@ export function AutomationRecipePanel({
     setMode(nextMode);
   }
   function applyHtml() {
+    onClearPreview?.();
     editorRef.current?.editor?.commands?.setContent(htmlDraft || "<p></p>");
     setHtmlBaseline(htmlDraft);
     setMode("visual");
+  }
+  function handlePreview() {
+    setMode("visual");
+    onPreview();
   }
 
   return (
@@ -274,12 +281,12 @@ export function AutomationRecipePanel({
           value={templateChoice}
           onValueChange={setTemplateChoice}
           templates={templates}
-          disabled={busy || mode === "html"}
+          disabled={busy || mode === "html" || Boolean(checks)}
         />
         <Button
           type="button"
           variant="outline"
-          disabled={!templateChoice || busy || mode === "html"}
+          disabled={!templateChoice || busy || mode === "html" || Boolean(checks)}
           onClick={applyTemplate}
         >
           Use template
@@ -287,8 +294,11 @@ export function AutomationRecipePanel({
       </div>
 
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <EmailComposerModeBar mode={mode} setMode={changeMode} />
-        <Button type="button" variant="outline" onClick={onPreview} disabled={busy}>
+        <EmailComposerModeBar
+          mode={checks ? "preview" : mode === "html" ? "html" : "visual"}
+          setMode={changeMode}
+        />
+        <Button type="button" variant="outline" onClick={handlePreview} disabled={busy}>
           Preview email
         </Button>
       </div>
@@ -303,7 +313,16 @@ export function AutomationRecipePanel({
           </div>
         </div>
       ) : null}
-      <div className={canvasShell} hidden={mode === "html"}>
+      {checks ? (
+        <EmailPreviewResult
+          html={checks.html}
+          text={checks.text}
+          subject={recipe.config.subject}
+          viewport={viewport}
+          onViewportChange={setViewport}
+        />
+      ) : null}
+      <div className={mode === "html" || checks ? `${canvasShell} hidden` : canvasShell}>
         <EmailCanvas
           key={recipe.id}
           editorRef={editorRef}
@@ -319,16 +338,6 @@ export function AutomationRecipePanel({
           editable={!busy}
         />
       </div>
-
-      {checks ? (
-        <EmailPreviewResult
-          html={checks.html}
-          text={checks.text}
-          subject={recipe.config.subject}
-          viewport={viewport}
-          onViewportChange={setViewport}
-        />
-      ) : null}
 
       <div className={metaBar}>
         <VariableChips

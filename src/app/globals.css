@@ -372,13 +372,13 @@ body {
     outline: 2px solid var(--product-green-700);
     outline-offset: -2px;
   }
-}
-.product-ui svg:not([role="presentation"]) {
-  width: 1rem;
-  height: 1rem;
-  stroke-width: 1.5px;
-  flex-shrink: 0;
-  pointer-events: none;
+  .product-ui svg:not([role="presentation"]) {
+    width: 1rem;
+    height: 1rem;
+    stroke-width: 1.5px;
+    flex-shrink: 0;
+    pointer-events: none;
+  }
 }
 .product-ui [data-chart] svg,
 .product-ui [data-analytics-map] > svg {

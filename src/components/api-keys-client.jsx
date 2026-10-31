@@ -14,6 +14,12 @@ import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupButton,
+  InputGroupInput,
+} from "@/components/ui/input-group";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -250,31 +256,32 @@ export function ApiKeysClient() {
             </p>
           </header>
           {newKey ? (
-            <div className="space-y-4">
-              <div className="flex items-center gap-2 [&_button]:min-h-10 [&_button]:min-w-10 [&_button]:shrink-0 [&_input]:w-full [&_input]:min-w-0 [&_input]:font-mono [&_input]:text-caption">
-                <Input
+            <div className="space-y-4 [&_input]:font-mono [&_input]:text-caption">
+              <InputGroup className="h-10">
+                <InputGroupInput
                   aria-label="New API key"
                   type={reveal ? "text" : "password"}
                   value={newKey.apiKey}
                   readOnly
                 />
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  aria-label={reveal ? "Hide new API key" : "Show new API key"}
-                  aria-pressed={reveal}
-                  onClick={() => setReveal(!reveal)}
-                >
-                  {reveal ? (
-                    <HugeiconsIcon icon={ViewOffIcon} size={16} />
-                  ) : (
-                    <HugeiconsIcon icon={ViewIcon} size={16} />
-                  )}
-                </Button>
-                <Button variant="ghost" size="icon" aria-label="Copy new API key" onClick={copy}>
-                  <HugeiconsIcon icon={Copy01Icon} size={16} />
-                </Button>
-              </div>
+                <InputGroupAddon align="inline-end">
+                  <InputGroupButton
+                    size="icon-xs"
+                    aria-label={reveal ? "Hide new API key" : "Show new API key"}
+                    aria-pressed={reveal}
+                    onClick={() => setReveal(!reveal)}
+                  >
+                    {reveal ? (
+                      <HugeiconsIcon icon={ViewOffIcon} size={16} aria-hidden="true" />
+                    ) : (
+                      <HugeiconsIcon icon={ViewIcon} size={16} aria-hidden="true" />
+                    )}
+                  </InputGroupButton>
+                  <InputGroupButton size="icon-xs" aria-label="Copy new API key" onClick={copy}>
+                    <HugeiconsIcon icon={Copy01Icon} size={16} aria-hidden="true" />
+                  </InputGroupButton>
+                </InputGroupAddon>
+              </InputGroup>
               <Button onClick={() => changeCreate(false)}>Done</Button>
             </div>
           ) : (

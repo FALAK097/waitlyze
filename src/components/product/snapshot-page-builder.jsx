@@ -185,7 +185,7 @@ function Field({
 }
 // Number input that lets founders clear the field while typing and commits a
 // clamped integer on blur, instead of snapping to 0 mid-edit.
-function PointsField({ label, value, onCommit, max = 100000 }) {
+function PointsField({ label, value, onCommit, max = 100000, unit }) {
   const id = useId();
   // Callers pass `key={value}` so React remounts and re-syncs the text state
   // when the committed value changes, instead of resetting it from an effect.
@@ -201,13 +201,26 @@ function PointsField({ label, value, onCommit, max = 100000 }) {
   return (
     <div className="grid gap-1.5 [&_input]:text-caption [&_label]:text-caption [&_label]:font-semibold">
       <Label htmlFor={id}>{label}</Label>
-      <Input
-        id={id}
-        type="number"
-        value={text}
-        onChange={(event) => setText(event.target.value)}
-        onBlur={commit}
-      />
+      {unit ? (
+        <InputGroup className="h-10">
+          <InputGroupInput
+            id={id}
+            type="number"
+            value={text}
+            onChange={(event) => setText(event.target.value)}
+            onBlur={commit}
+          />
+          <InputGroupAddon align="inline-end">{unit}</InputGroupAddon>
+        </InputGroup>
+      ) : (
+        <Input
+          id={id}
+          type="number"
+          value={text}
+          onChange={(event) => setText(event.target.value)}
+          onBlur={commit}
+        />
+      )}
     </div>
   );
 }
@@ -258,30 +271,29 @@ function Toggle({ label, checked, onChange, disabled = false, hint = "" }) {
         disabled={disabled}
         onCheckedChange={(value) => onChange(value === true)}
       />
-      <span>{label}</span>
-      {hint && (
-        <TooltipProvider>
+      {hint ? (
+        <TooltipProvider delay={150}>
           <Tooltip>
             <TooltipTrigger
               render={
-                <button
-                  type="button"
-                  aria-label={`${typeof label === "string" ? label : "Setting"} information`}
-                  className="grid size-6 shrink-0 place-items-center rounded-full border-0 bg-transparent text-product-text-muted hover:bg-product-bg-inset hover:text-product-text-primary"
-                  onClick={(event) => {
-                    event.preventDefault();
-                    event.stopPropagation();
-                  }}
-                />
+                <span className="inline-flex cursor-pointer items-center gap-1.5">
+                  <span>{label}</span>
+                  <span
+                    aria-hidden="true"
+                    className="grid size-5 shrink-0 place-items-center rounded-full text-product-text-muted hover:bg-product-bg-inset hover:text-product-text-primary"
+                  >
+                    <HugeiconsIcon icon={HelpCircleIcon} size={15} aria-hidden="true" />
+                  </span>
+                </span>
               }
-            >
-              <HugeiconsIcon icon={HelpCircleIcon} size={15} aria-hidden="true" />
-            </TooltipTrigger>
+            />
             <TooltipContent side="top" className="max-w-64 text-center">
               {hint}
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
+      ) : (
+        <span>{label}</span>
       )}
     </label>
   );
@@ -1751,7 +1763,7 @@ export function SnapshotPageBuilder({
                 </div>
                 <div
                   className={cn(
-                    "no-scrollbar grid overflow-y-auto rounded-xl bg-white shadow-surface",
+                    "grid overflow-y-auto rounded-xl bg-white shadow-surface",
                     statusViewport === "mobile" ? "mx-auto h-160 w-full max-w-md" : "h-140 w-full",
                   )}
                 >
@@ -1908,8 +1920,8 @@ function TypeSizeField({ label, value, defaultValue, onChange, min = 12, max = 1
   return (
     <div className="grid gap-1.5">
       <Label htmlFor={id}>{label}</Label>
-      <div className="flex items-center gap-2">
-        <Input
+      <InputGroup className="h-10">
+        <InputGroupInput
           id={id}
           type="number"
           min={min}
@@ -1920,8 +1932,8 @@ function TypeSizeField({ label, value, defaultValue, onChange, min = 12, max = 1
             if (Number.isFinite(next)) onChange(Math.min(max, Math.max(min, Math.round(next))));
           }}
         />
-        <span className="text-micro text-product-text-secondary">px</span>
-      </div>
+        <InputGroupAddon align="inline-end">px</InputGroupAddon>
+      </InputGroup>
     </div>
   );
 }
@@ -2518,7 +2530,7 @@ function StatusPanel({
             key={channel}
             label={
               <span className="inline-flex items-center gap-2">
-                <ShareChannelIcon channel={channel} className="size-7!" />
+                <ShareChannelIcon channel={channel} className="size-5" />
                 {label}
               </span>
             }
@@ -2583,18 +2595,21 @@ function RewardsSection({ perks, updateRewards }) {
           key={perks.pointsSignup}
           label="Per verified signup"
           value={perks.pointsSignup}
+          unit="pts"
           onCommit={(pointsSignup) => setPerks({ pointsSignup })}
         />
         <PointsField
           key={perks.pointsReferral}
           label="Per referral"
           value={perks.pointsReferral}
+          unit="pts"
           onCommit={(pointsReferral) => setPerks({ pointsReferral })}
         />
         <PointsField
           key={perks.pointsFollow}
           label="Per social follow"
           value={perks.pointsFollow}
+          unit="pts"
           onCommit={(pointsFollow) => setPerks({ pointsFollow })}
         />
       </div>
@@ -2672,6 +2687,7 @@ function RewardsSection({ perks, updateRewards }) {
               key={entry.points}
               label="Points"
               value={entry.points}
+              unit="pts"
               onCommit={(points) =>
                 setPerks({
                   customEvents: perks.customEvents.map((item, itemIndex) =>

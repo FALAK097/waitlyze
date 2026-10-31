@@ -225,6 +225,7 @@ export function AutomationManager({
             onTestToChange={setTestTo}
             onUpdateRecipe={updateRecipe}
             onPreview={() => previewChecks(recipe)}
+            onClearPreview={() => setChecks(null)}
             onSave={() => save(recipe)}
             onChangeStatus={() => changeStatus(recipe)}
             onSendTest={sendTest}

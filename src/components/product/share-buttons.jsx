@@ -39,10 +39,11 @@ export function buildShareHref(channel, { message, link, subject }) {
 
 function XIcon({ className }) {
   return (
-    <svg viewBox="-60 -60 1320 1347" className={className} aria-hidden="true">
-      <rect x="-60" y="-60" width="1320" height="1347" rx="300" fill="#000" />
+    <svg viewBox="0 0 256 256" className={className} aria-hidden="true">
+      <rect width="256" height="256" rx="56" fill="#000" />
       <path
         fill="#fff"
+        transform="translate(52 50) scale(0.1266)"
         d="M714.163 519.284 1160.89 0h-105.86L667.137 450.887 357.328 0H0l468.492 681.821L0 1226.37h105.866l409.625-476.152 327.181 476.152H1200L714.137 519.284h.026ZM569.165 687.828l-47.468-67.894-377.686-540.24h162.604l304.797 435.991 47.468 67.894 396.2 566.721H892.476L569.165 687.854v-.026Z"
       />
     </svg>
@@ -178,7 +179,7 @@ function EmailIcon({ className }) {
   return (
     <HugeiconsIcon
       icon={Mail01Icon}
-      className={cn(className, "text-product-text-secondary")}
+      className={cn("text-product-text-secondary", className)}
       aria-hidden="true"
     />
   );
@@ -191,7 +192,7 @@ function FacebookIcon({ className }) {
       <path
         fill="#fff"
         d="M178.5 132.2l6.6-43.1h-41.4V61.1c0-12.5 6.1-24.7 25.8-24.7h20v-36.9l-34.6-.5c-38.4 0-63.3 23.3-63.3 65.2v32.9H50v43.1h41.6V232h51.9V132.2h35.5z"
-        transform="translate(12 12) scale(0.90625)"
+        transform="translate(22 30) scale(0.84)"
       />
     </svg>
   );
@@ -245,7 +246,7 @@ const ICONS = {
   reddit: RedditIcon,
 };
 
-export function ShareChannelIcon({ channel, className = "size-6!" }) {
+export function ShareChannelIcon({ channel, className = "size-5" }) {
   const Icon = ICONS[channel];
   if (!Icon) return null;
   return <Icon className={className} />;
@@ -258,7 +259,7 @@ export function ShareButtons({
   subject,
   onShare,
   className,
-  iconClassName = "size-10!",
+  iconClassName = "size-8",
 }) {
   const [copied, setCopied] = useState(false);
 
@@ -275,7 +276,7 @@ export function ShareButtons({
   }
 
   return (
-    <div className={cn("flex flex-wrap items-center gap-2.5", className)}>
+    <div className={cn("flex flex-wrap items-center gap-2", className)}>
       {channels.map((channel) => {
         const Icon = ICONS[channel];
         if (!Icon) return null;
@@ -287,7 +288,7 @@ export function ShareButtons({
               aria-label={copied ? "Link copied" : "Copy link for Instagram"}
               title={copied ? "Copied" : "Copy link for Instagram"}
               onClick={copyLink}
-              className="grid min-h-11 min-w-11 cursor-pointer place-items-center border-0 bg-transparent p-0 transition-opacity hover:opacity-85"
+              className="grid min-h-10 min-w-10 cursor-pointer place-items-center border-0 bg-transparent p-0 transition-opacity hover:opacity-85"
             >
               <Icon className={iconClassName} />
             </button>
@@ -303,7 +304,7 @@ export function ShareButtons({
             aria-label={`Share on ${channelLabel(channel)}`}
             title={`Share on ${channelLabel(channel)}`}
             onClick={() => onShare?.(channel)}
-            className="grid min-h-11 min-w-11 place-items-center transition-opacity hover:opacity-85"
+            className="grid min-h-10 min-w-10 place-items-center transition-opacity hover:opacity-85"
           >
             <Icon className={iconClassName} />
           </a>

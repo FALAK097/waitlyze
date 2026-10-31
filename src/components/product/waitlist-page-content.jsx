@@ -823,9 +823,26 @@ export function WaitlistSignupPreview({ form, brand }) {
           </div>
           {(form.collectPhone || form.requirePhone) && (
             <div className="grid gap-1 text-caption font-semibold">
-              Phone number{form.requirePhone ? " *" : ""}
-              <span className="flex h-12 items-center rounded-wl border border-wl-input-border bg-wl-input px-4 font-normal text-wl-muted">
-                +1 (555) 000-0000
+              <span>
+                Phone number{form.requirePhone ? " *" : ""}
+                {!form.requirePhone && (
+                  <span className="font-normal text-wl-muted"> (optional)</span>
+                )}
+              </span>
+              <div className="flex gap-2">
+                <span className="inline-flex h-12 shrink-0 items-center gap-1.5 rounded-wl border border-wl-input-border bg-wl-input px-3 font-normal text-wl-input-text">
+                  <span aria-hidden="true">🇺🇸</span>
+                  <span>+1</span>
+                  <span aria-hidden="true" className="text-micro text-wl-muted">
+                    ▾
+                  </span>
+                </span>
+                <span className="flex h-12 min-w-0 flex-1 items-center rounded-wl border border-wl-input-border bg-wl-input px-4 font-normal text-wl-muted">
+                  415 555 2671
+                </span>
+              </div>
+              <span className="text-micro font-normal text-wl-muted">
+                We only use this for launch updates.
               </span>
             </div>
           )}

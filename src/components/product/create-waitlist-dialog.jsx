@@ -121,14 +121,14 @@ export function CreateWaitlistDialog({
         {first ? "Create your first waitlist" : "New waitlist"}
       </DialogTrigger>
       <DialogContent className="sm:max-w-lg" showCloseButton={!busy}>
-        <div className="grid gap-6">
-          <div className="[&_[data-slot=dialog-description]]:max-w-ch55 grid gap-1.5 pr-8 [&_[data-slot=dialog-description]]:leading-relaxed [&_[data-slot=dialog-title]]:text-xl [&_[data-slot=dialog-title]]:tracking-tight">
+        <div className="grid min-w-0 gap-6 p-2">
+          <div className="[&_[data-slot=dialog-description]]:max-w-ch55 grid min-w-0 gap-1.5 pr-8 [&_[data-slot=dialog-description]]:leading-relaxed [&_[data-slot=dialog-title]]:text-xl [&_[data-slot=dialog-title]]:tracking-tight">
             <DialogTitle>Create a waitlist</DialogTitle>
             <DialogDescription>
               Choose a name and page address. You can customize it before publishing.
             </DialogDescription>
           </div>
-          <form className="grid gap-5" onSubmit={submit}>
+          <form className="grid min-w-0 gap-5" onSubmit={submit}>
             <div className="grid gap-2 [&_input]:h-11 [&_input]:text-body [&_label]:text-caption [&_label]:font-semibold">
               <Label htmlFor="new-waitlist-name">Waitlist name</Label>
               <Input
