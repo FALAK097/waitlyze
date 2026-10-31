@@ -2110,9 +2110,6 @@ function HttpsInputField({ label, value, placeholder, disabled, onChange }) {
 function RedirectUrlField({ value, onChange }) {
   const id = useId();
   const [draft, setDraft] = useState(value || "");
-  useEffect(() => {
-    setDraft(value || "");
-  }, [value]);
   const dirty = draft !== (value || "");
   useEffect(() => {
     if (!dirty) return;
@@ -2391,6 +2388,7 @@ function StatusPanel({
             After-signup redirect
           </span>
           <RedirectUrlField
+            key={form.successRedirectUrl ?? ""}
             value={form.successRedirectUrl ?? ""}
             onChange={(successRedirectUrl) => updateForm({ successRedirectUrl })}
           />
