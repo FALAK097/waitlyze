@@ -99,7 +99,7 @@ export function syncBrushOverlay(chart, store, params) {
     els.grips[i + 3].setStyle({ fill: gripFill });
   });
 
-  // Range label pills straddle the frame's bottom line — an overlay, so they
+  // Range label pills straddle the frame's bottom line - an overlay, so they
   // occupy no layout space; half the pill sits above the line, half below. Each
   // pill grows INWARD from its handle with a small inset, like the Recharts
   // labels, instead of hanging past the frame edge.
@@ -123,7 +123,7 @@ export function syncBrushOverlay(chart, store, params) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// dataZoom slider — the transparent drag layer laid over the mini chart. Fully
+// dataZoom slider - the transparent drag layer laid over the mini chart. Fully
 // chart-agnostic: the visible frame/handles/labels are the graphic overlays
 // above; this provides interaction only. Both zoom entries target only the MAIN
 // x-axis (index 0), so the mini chart never filters itself. The per-chart
@@ -142,23 +142,23 @@ export function buildBrushDataZoom(params) {
       right: 8,
       bottom: brushBottom,
       height: brushHeight,
-      // Carry the live range through every rebuild — a notMerge push
+      // Carry the live range through every rebuild - a notMerge push
       // without start/end would reset the zoom to the full extent.
       start: brushRange.start,
       end: brushRange.end,
       brushSelect: false,
       // Range labels are overlay pills below the frame (see
-      // syncBrushOverlay) — the native detail text renders INSIDE the
+      // syncBrushOverlay) - the native detail text renders INSIDE the
       // track, which is not the evil-brush look.
       showDetail: false,
       backgroundColor: "transparent",
-      // The visible frame is the graphic overlay riding the selection —
+      // The visible frame is the graphic overlay riding the selection -
       // the component's own static border stays hidden.
       borderColor: "transparent",
       fillerColor,
       dataBackground: { lineStyle: { opacity: 0 }, areaStyle: { opacity: 0 } },
       selectedDataBackground: { lineStyle: { opacity: 0 }, areaStyle: { opacity: 0 } },
-      // Interaction only — the visible pills are graphic overlays (see
+      // Interaction only - the visible pills are graphic overlays (see
       // syncBrushOverlay). Kept generous for an easy grab target.
       handleIcon: "path://M -3 -5 L -3 5 A 3 3 0 0 0 3 5 L 3 -5 A 3 3 0 0 0 -3 -5 Z",
       handleSize: "35%",

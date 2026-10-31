@@ -29,7 +29,7 @@ export async function publishWaitlist(id, revision) {
   if (!Number.isSafeInteger(revision) || revision < 1)
     return { ok: false, message: "Reload the page and try again." };
   // First-publish detection: only a list that was never published notifies
-  // its owners — re-publishes after an edit and resumes from PAUSED stay
+  // its owners - re-publishes after an edit and resumes from PAUSED stay
   // quiet on purpose. Read inside the authenticated closure: no pre-auth row
   // access, and still observed before the publish write.
   let firstPublish = false;

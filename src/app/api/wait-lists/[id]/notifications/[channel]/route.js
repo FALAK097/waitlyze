@@ -31,7 +31,7 @@ function providerOf(channel) {
 
 // Slack/Discord milestone notifications per waitlist. POST sends a live test
 // message through the saved webhook and activates the channel only on
-// success — same save-and-test-to-activate contract as email senders.
+// success - same save-and-test-to-activate contract as email senders.
 export async function GET(request, { params }) {
   const { id, channel } = await params;
   const access = await webhookAccess(request, id, "viewCampaign");

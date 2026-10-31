@@ -26,7 +26,6 @@ export default function PublicShell({ children }) {
           <div className="relative grid grid-cols-2 gap-5 md:grid-cols-4 md:gap-10">
             <div className="col-span-2">
               <Link
-                prefetch={false}
                 href="/"
                 aria-label="Waitlyze home"
                 className="focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-neutral-900"
@@ -45,42 +44,36 @@ export default function PublicShell({ children }) {
                 Explore
               </span>
               <Link
-                prefetch={false}
                 href="/#how-it-works"
                 className="inline-flex items-center gap-1.5 hover:text-product-success-text focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-neutral-900"
               >
                 How it works
               </Link>
               <Link
-                prefetch={false}
                 href="/#features"
                 className="inline-flex items-center gap-1.5 hover:text-product-success-text focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-neutral-900"
               >
                 Features
               </Link>
               <Link
-                prefetch={false}
                 href="/templates"
                 className="inline-flex items-center gap-1.5 hover:text-product-success-text focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-neutral-900"
               >
                 Templates
               </Link>
               <Link
-                prefetch={false}
                 href="/#faq"
                 className="inline-flex items-center gap-1.5 hover:text-product-success-text focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-neutral-900"
               >
                 FAQs
               </Link>
               <Link
-                prefetch={false}
                 href="/docs/changelog"
                 className="inline-flex items-center gap-1.5 hover:text-product-success-text focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-neutral-900"
               >
                 Changelog
               </Link>
               <Link
-                prefetch={false}
                 href="/docs"
                 className="inline-flex items-center gap-1.5 hover:text-product-success-text focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-neutral-900"
               >
@@ -95,14 +88,12 @@ export default function PublicShell({ children }) {
                 Good to know
               </span>
               <Link
-                prefetch={false}
                 href="/privacy"
                 className="inline-flex items-center gap-1.5 hover:text-product-success-text focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-neutral-900"
               >
                 Privacy policy
               </Link>
               <Link
-                prefetch={false}
                 href="/terms"
                 className="inline-flex items-center gap-1.5 hover:text-product-success-text focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-neutral-900"
               >

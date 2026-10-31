@@ -3,7 +3,7 @@ title: Signup API
 description: Accept signups from your server with a scoped API key.
 ---
 
-Use this endpoint when you collect emails on your own backend and want Waitlyze to own verification, referrals, and storage. Browsers should use the [hosted page or embed](/docs/embed) instead — never expose an API key client-side.
+Use this endpoint when you collect emails on your own backend and want Waitlyze to own verification, referrals, and storage. Browsers should use the [hosted page or embed](/docs/embed) instead - never expose an API key client-side.
 
 See the [API Reference](/docs/api/reference) for the complete list of supported public endpoints and the boundary between public API keys and dashboard sessions.
 
@@ -134,9 +134,9 @@ curl --request POST 'https://waitlyze.falakgala.dev/api/waitlist' \
 }
 ```
 
-`position` is the canonical queue position (`rank` is its legacy alias). `referral_code` is this signup's personal code and `referral_link` is the ready-to-share URL — render them in your confirmation UI when [referral sharing](/docs/referrals) is on. Both are `null`/`""` when sharing is disabled or the waitlist has no public slug. New signups start `verified: false` until they click the 24-hour confirmation link — except campaigns with verification turned off, which return `verified: true` immediately.
+`position` is the canonical queue position (`rank` is its legacy alias). `referral_code` is this signup's personal code and `referral_link` is the ready-to-share URL - render them in your confirmation UI when [referral sharing](/docs/referrals) is on. Both are `null`/`""` when sharing is disabled or the waitlist has no public slug. New signups start `verified: false` until they click the 24-hour confirmation link - except campaigns with verification turned off, which return `verified: true` immediately.
 
-Rewards progress rides along in the same payload: `points` is the signup's balance (50 per verified signup, 30 per completed referral by default — founders can retune both per waitlist), `referral_count` counts verified referrals only, and `next_reward` is the nearest locked tier as `{ referrals, reward, remaining }` (`null` when everything is unlocked). `spots_to_advance` is the verified referrals needed to take the spot above (`0` at the top) — render it as “N more to pass #8”. `display_position` applies the founder's position inflation (`position` stays raw); `counts_hidden` is `true` for stealth launches, where your UI should hide every number and show the link alone.
+Rewards progress rides along in the same payload: `points` is the signup's balance (50 per verified signup, 30 per completed referral by default - founders can retune both per waitlist), `referral_count` counts verified referrals only, and `next_reward` is the nearest locked tier as `{ referrals, reward, remaining }` (`null` when everything is unlocked). `spots_to_advance` is the verified referrals needed to take the spot above (`0` at the top) - render it as “N more to pass #8”. `display_position` applies the founder's position inflation (`position` stays raw); `counts_hidden` is `true` for stealth launches, where your UI should hide every number and show the link alone.
 
 Duplicate emails return `409` **with the existing position**, so a retry never loses state:
 
@@ -175,13 +175,13 @@ curl --request POST 'https://waitlyze.falakgala.dev/api/waitlist' \
   --data '{ "apiKey": "YOUR_SERVER_SIDE_API_KEY", "waitlistId": "YOUR_WAITLIST_ID", "email": "person@example.com" }'
 ```
 
-- Replays return the original signup with `"idempotentReplay": true` in `data` — no duplicate is created.
+- Replays return the original signup with `"idempotentReplay": true` in `data` - no duplicate is created.
 - Reusing a key with a **different** email returns `409` (`Idempotency-Key was already used…`). Mint a fresh key per distinct signup.
 - The key is also accepted alongside `x-api-key` / Bearer auth, keeping secrets out of the JSON body if you prefer.
 
 ## Look up a signup's status
 
-`GET /api/waitlist?waitlistId=…&email=…` answers “where am I?” for custom frontends without consuming signup intake budget. The key travels in headers only — never in the query string:
+`GET /api/waitlist?waitlistId=…&email=…` answers “where am I?” for custom frontends without consuming signup intake budget. The key travels in headers only - never in the query string:
 
 ```bash title="Status lookup"
 curl 'https://waitlyze.falakgala.dev/api/waitlist?waitlistId=YOUR_WAITLIST_ID&email=person%40example.com' \
@@ -192,11 +192,11 @@ curl 'https://waitlyze.falakgala.dev/api/waitlist?waitlistId=YOUR_WAITLIST_ID&em
 { "success": true, "data": { "position": 9, "referral_code": "7f3a…", "referral_link": "https://…", "verified": true } }
 ```
 
-Unknown emails return `404`. Responses are `private, no-store` — do not cache them in a CDN.
+Unknown emails return `404`. Responses are `private, no-store` - do not cache them in a CDN.
 
 ## Award custom points
 
-`POST /api/waitlist/points` credits off-site actions the join flow never sees — a survey completed, a Discord joined. Configure named events with default points under Rewards in the builder, then call with your server-side key:
+`POST /api/waitlist/points` credits off-site actions the join flow never sees - a survey completed, a Discord joined. Configure named events with default points under Rewards in the builder, then call with your server-side key:
 
 ```bash title="Custom point award"
 curl --request POST 'https://waitlyze.falakgala.dev/api/waitlist/points' \
@@ -217,8 +217,8 @@ curl --request POST 'https://waitlyze.falakgala.dev/api/waitlist/points' \
 
 Two budgets protect intake; both surface `Retry-After` on `429`/`503`:
 
-- **Shared intake budget** — per campaign, client, and recipient windows (see [Troubleshooting](/docs/troubleshooting)).
-- **Per-key daily budget** (5,000 signups + lookups per key per day). Successful `POST` signups and `GET` lookups (hits and `404`s) carry `X-RateLimit-Limit`, `X-RateLimit-Remaining`, and `X-RateLimit-Reset` (Unix seconds); validation (`400`), auth (`401`), rate-limit (`429`/`503`), and server (`500`) errors — as well as `409` duplicate/key-reuse responses — do not. Graph remaining per key to spot a noisy integration before it caps.
+- **Shared intake budget** - per campaign, client, and recipient windows (see [Troubleshooting](/docs/troubleshooting)).
+- **Per-key daily budget** (5,000 signups + lookups per key per day). Successful `POST` signups and `GET` lookups (hits and `404`s) carry `X-RateLimit-Limit`, `X-RateLimit-Remaining`, and `X-RateLimit-Reset` (Unix seconds); validation (`400`), auth (`401`), rate-limit (`429`/`503`), and server (`500`) errors - as well as `409` duplicate/key-reuse responses - do not. Graph remaining per key to spot a noisy integration before it caps.
 
 ## Next
 

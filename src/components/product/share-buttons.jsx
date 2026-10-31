@@ -2,8 +2,10 @@
 
 import { Mail01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { useId, useState } from "react";
+import { useId } from "react";
 
+import { Button } from "@/components/ui/button";
+import { useCopyToClipboard } from "@/hooks/use-copy-to-clipboard";
 import { cn } from "@/lib/utils";
 
 export const SHARE_CHANNELS = [
@@ -261,18 +263,11 @@ export function ShareButtons({
   className,
   iconClassName = "size-8",
 }) {
-  const [copied, setCopied] = useState(false);
+  const { copied, copy } = useCopyToClipboard();
 
   async function copyLink() {
     if (!link) return;
-    try {
-      await navigator.clipboard.writeText(link);
-      setCopied(true);
-      onShare?.("instagram");
-      window.setTimeout(() => setCopied(false), 2000);
-    } catch {
-      /* clipboard unavailable */
-    }
+    if (await copy(link)) onShare?.("instagram");
   }
 
   return (
@@ -282,16 +277,17 @@ export function ShareButtons({
         if (!Icon) return null;
         if (channel === "instagram")
           return (
-            <button
+            <Button
               type="button"
               key={channel}
               aria-label={copied ? "Link copied" : "Copy link for Instagram"}
               title={copied ? "Copied" : "Copy link for Instagram"}
               onClick={copyLink}
-              className="grid min-h-10 min-w-10 cursor-pointer place-items-center border-0 bg-transparent p-0 transition-opacity hover:opacity-85"
+              variant="public-share-icon"
+              size="public-share-icon"
             >
               <Icon className={iconClassName} />
-            </button>
+            </Button>
           );
         const href = buildShareHref(channel, { message, link, subject });
         if (!href) return null;

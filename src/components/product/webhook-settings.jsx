@@ -280,7 +280,7 @@ export function WebhookSettings({ waitListId, canManage = true }) {
                       <td>
                         {row.lastDeliveredAt
                           ? deliveryDateTime.format(new Date(row.lastDeliveredAt))
-                          : "—"}
+                          : "-"}
                       </td>
                       <td>
                         <DropdownMenu>

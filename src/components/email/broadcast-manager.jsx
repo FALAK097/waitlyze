@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import {
   cancelBroadcast,
   createBroadcastDraft,
+  getBroadcastContent,
   getBroadcastRecipients,
   listBroadcasts,
   queueBroadcast,
@@ -15,6 +16,7 @@ import {
   sendBroadcastTestEmail,
 } from "@/app/actions/emails";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -34,39 +36,34 @@ import {
   VariableChips,
 } from "./email-composer-extras";
 import { EmailComposerModeBar } from "./email-composer-mode-bar";
+import { emailComposerStyles } from "./email-composer-styles.mjs";
+import {
+  EmailManagerRailButton,
+  EmailUnsavedNotice,
+  emailManagerRail,
+  emailManagerRailEmpty,
+  emailManagerRailMeta,
+  emailManagerRailTime,
+  emailManagerRailTitle,
+  emailManagerScope,
+  emailManagerSplit,
+} from "./email-manager-controls";
 import { EmailToolsNav } from "./email-tools-nav";
 import { SavedTemplateSelect } from "./saved-template-select";
 
-const scope = "min-w-0 bg-white text-product-text-primary";
-const unsaved =
-  "mb-5.5 flex flex-wrap items-center gap-3 rounded-product-control bg-product-warning-bg px-4 py-3 text-caption";
-const unsavedText = "min-w-45 flex-1";
-const unsavedButton =
-  "min-h-8.5 rounded-product-control px-3 text-caption font-semibold text-product-text-primary cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-product-success-text!";
-const unsavedGhost = `${unsavedButton} border-0 bg-transparent`;
+const {
+  pane,
+  paneHead,
+  paneTitle,
+  paneMeta,
+  paneActions,
+  fieldCard,
+  fieldRow,
+  fieldInput,
+  canvasShell,
+  metaBar,
+} = emailComposerStyles;
 const EMPTY_TEMPLATES = {};
-const unsavedSolid = `${unsavedButton} border border-product-border-subtle bg-white`;
-const split = "flex flex-col gap-6 md:gap-8 xl:gap-10 lg:flex-row lg:items-start";
-const rail =
-  "flex w-full shrink-0 flex-col gap-1 self-start sticky top-22 max-lg:static max-lg:flex-row max-lg:flex-wrap max-lg:gap-1.5 lg:w-52";
-const railItem =
-  "flex w-full flex-col gap-0.75 rounded-product-control border-0 bg-transparent p-3 text-left cursor-pointer hover:bg-product-bg-inset aria-[current=true]:bg-product-bg-inset disabled:cursor-default disabled:opacity-60 max-lg:min-w-38 max-lg:flex-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-product-success-text!";
-const railItemTitle = "text-body font-semibold wrap-anywhere";
-const railItemMeta = "text-micro leading-normal text-product-text-secondary";
-const railItemTime = "text-micro text-product-text-secondary";
-const railEmpty =
-  "m-0 px-3 py-1 text-caption leading-relaxed text-product-text-secondary max-lg:px-1 max-lg:py-0";
-const pane = "min-w-0 max-w-195 flex flex-col gap-5 lg:flex-1";
-const paneHead = "flex items-start justify-between gap-4 max-sm:flex-col max-sm:items-stretch";
-const paneTitle = "m-0 text-section font-semibold";
-const paneMeta = "m-0 text-caption leading-normal text-product-text-secondary";
-const paneActions = "flex shrink-0 flex-wrap items-center justify-end gap-2 max-sm:justify-start";
-const fieldCard = "overflow-hidden rounded-lg border border-product-border-subtle bg-white";
-const fieldRow =
-  "relative flex min-h-13 items-center gap-3 px-4 [&+&]:border-t border-product-border-subtle focus-within:bg-product-bg-inset focus-within:before:absolute focus-within:before:inset-y-0 focus-within:before:left-0 focus-within:before:w-0.5 focus-within:before:bg-product-success-text";
-const fieldInput =
-  "min-w-0 flex-1 border-0 bg-transparent py-3.5 text-body text-product-text-primary focus-visible:outline-none!";
-const canvasShell = "overflow-hidden rounded-lg border border-product-border-subtle bg-white";
 const recipientsCard = "grid gap-3.5 rounded-lg border border-product-border-subtle bg-white p-4";
 const recipientsTop = "flex flex-wrap items-center justify-between gap-3";
 const recipientsControls = "flex flex-wrap items-center gap-2.5";
@@ -77,8 +74,6 @@ const hint = "m-0 text-caption leading-normal text-product-text-secondary";
 const confirm =
   "flex flex-wrap items-center gap-2.5 rounded-lg border border-product-border-subtle bg-product-bg-inset px-4 py-3.5 text-body";
 const confirmText = "m-0 min-w-50 flex-1";
-const metaBar =
-  "flex flex-wrap items-center justify-between gap-3.5 max-sm:flex-col max-sm:items-stretch";
 const summary = "overflow-hidden rounded-lg border border-product-border-subtle bg-white";
 const summaryRow =
   "flex min-h-11.5 items-baseline gap-3 px-4 py-3 [&+&]:border-t border-product-border-subtle";
@@ -117,51 +112,60 @@ const starterContent = (draft) =>
   draft.editorDocument ||
   `<p>${escapeText(draft.body || "Write your update…").replaceAll("\n", "<br>")}</p>`;
 
-function BroadcastRail({ broadcasts, selectedId, busy, onRequestSelection }) {
+function BroadcastRail({
+  broadcasts,
+  selectedId,
+  busy,
+  onRequestSelection,
+  hasMore,
+  loadingMore,
+  onLoadMore,
+}) {
   return (
-    <nav className={rail} aria-label="Broadcasts">
+    <nav className={emailManagerRail} aria-label="Broadcasts">
       {broadcasts.length ? (
         broadcasts.map((broadcast) => (
-          <button
+          <EmailManagerRailButton
             key={broadcast.id}
-            type="button"
-            className={railItem}
-            aria-current={selectedId === broadcast.id ? "true" : undefined}
+            current={selectedId === broadcast.id}
             disabled={busy}
             onClick={() => onRequestSelection(broadcast)}
           >
-            <strong className={railItemTitle}>
+            <strong className={emailManagerRailTitle}>
               {broadcast.name || broadcast.subject || "Untitled broadcast"}
             </strong>
-            <span className={railItemMeta}>
+            <span className={emailManagerRailMeta}>
               {emailStatusLabel(broadcast.status, { draft: "Draft", sent: "Complete" })}
               {broadcast.status !== "DRAFT" ? ` · ${broadcast.recipientCount} recipients` : ""}
             </span>
-            <time dateTime={new Date(broadcast.updatedAt).toISOString()} className={railItemTime}>
+            <time
+              dateTime={new Date(broadcast.updatedAt).toISOString()}
+              className={emailManagerRailTime}
+            >
               {formatDate(broadcast.updatedAt)}
             </time>
-          </button>
+          </EmailManagerRailButton>
         ))
       ) : (
-        <p className={railEmpty}>No drafts yet.</p>
+        <p className={emailManagerRailEmpty}>No drafts yet.</p>
       )}
+      {hasMore ? (
+        <EmailManagerRailButton disabled={busy || loadingMore} onClick={onLoadMore}>
+          {loadingMore ? "Loading older broadcasts…" : "Load older broadcasts"}
+        </EmailManagerRailButton>
+      ) : null}
     </nav>
   );
 }
 
 function DiscardBanner({ pendingSelection, onDiscard, onKeep }) {
   return (
-    <div className={unsaved} role="alert">
-      <span className={unsavedText}>
-        Discard your unsaved changes to open “{pendingSelection.name}”?
-      </span>
-      <button type="button" className={unsavedGhost} onClick={onDiscard}>
-        Discard and open
-      </button>
-      <button type="button" className={unsavedSolid} onClick={onKeep}>
-        Keep editing
-      </button>
-    </div>
+    <EmailUnsavedNotice
+      firstAction={{ label: "Discard and open", onClick: onDiscard }}
+      secondAction={{ label: "Keep editing", onClick: onKeep, variant: "outline" }}
+    >
+      Discard your unsaved changes to open “{pendingSelection.name}”?
+    </EmailUnsavedNotice>
   );
 }
 
@@ -283,7 +287,7 @@ function SendConfirmations({
           Schedule “{data.subject}” for {preview.count} subscriber
           {preview.count === 1 ? "" : "s"}? Eligibility is re-checked at send time.
         </p>
-        <input
+        <Input
           type="datetime-local"
           className={testInput}
           aria-label={`Scheduled send time (${founderTimeZone()})`}
@@ -336,7 +340,7 @@ function DeliverySummary({ selected }) {
       <div className={summary}>
         <div className={summaryRow}>
           <span className={summaryLabel}>Subject</span>
-          <strong className={summaryValue}>{selected.subject || "—"}</strong>
+          <strong className={summaryValue}>{selected.subject || "-"}</strong>
         </div>
         {selected.previewText ? (
           <div className={summaryRow}>
@@ -438,25 +442,27 @@ export function BroadcastManager({
   waitListId,
   waitListName,
   initialBroadcasts,
-  initialBroadcastId,
+  initialBroadcast,
+  initialHasMore,
+  initialCursor,
   initialPreview,
   initialSegments,
   initialTemplates = EMPTY_TEMPLATES,
   deliveryReady,
 }) {
   const router = useRouter();
-  const initialSelectedBroadcast =
-    initialBroadcasts.find((broadcast) => broadcast.id === initialBroadcastId) ||
-    initialBroadcasts[0];
+  const initialSelection = initialBroadcast || initialBroadcasts[0] || null;
   const [broadcasts, setBroadcasts] = useState(initialBroadcasts);
-  const [selectedId, setSelectedId] = useState(initialSelectedBroadcast?.id || null);
-  const [data, setData] = useState(initialSelectedBroadcast || emptyDraft());
+  const [broadcastHasMore, setBroadcastHasMore] = useState(initialHasMore);
+  const broadcastCursorRef = useRef(initialCursor);
+  const [selectedId, setSelectedId] = useState(initialSelection?.id || null);
+  const [data, setData] = useState(initialSelection || emptyDraft());
   const [preview, setPreview] = useState(initialPreview);
   const [previewScope, setPreviewScope] = useState(() => ({
-    broadcastId: initialSelectedBroadcast?.id || null,
-    segment: initialSelectedBroadcast?.segment || "ALL",
+    broadcastId: initialSelection?.id || null,
+    segment: initialSelection?.segment || "ALL",
   }));
-  const [segment, setSegment] = useState(initialSelectedBroadcast?.segment || "ALL");
+  const [segment, setSegment] = useState(initialSelection?.segment || "ALL");
   const [previewFresh, setPreviewFresh] = useState(false);
   const [reviewSend, setReviewSend] = useState(false);
   const [scheduleAt, setScheduleAt] = useState("");
@@ -481,7 +487,7 @@ export function BroadcastManager({
   }
   function requestSelection(broadcast) {
     if (draftDirty && broadcast.id !== selectedId) setPendingSelection(broadcast);
-    else selectBroadcast(broadcast);
+    else void selectBroadcast(broadcast);
   }
   function edit(field, value) {
     setData((current) => ({ ...current, [field]: value }));
@@ -490,39 +496,79 @@ export function BroadcastManager({
     setReviewSend(false);
   }
 
-  function selectBroadcast(broadcast) {
-    if (broadcast.id !== selectedId) {
-      setEditorMode("visual");
-      setEditorHtml("");
-      htmlSourceBaseline.current = "";
-      setTemplateChoice("");
+  async function selectBroadcast(broadcast) {
+    setBusyAction("select");
+    try {
+      const content =
+        typeof broadcast.body === "string"
+          ? broadcast
+          : await getBroadcastContent(waitListId, broadcast.id);
+      if (!content) {
+        notify("Couldn’t load this broadcast. Try again.", true);
+        return;
+      }
+      if (broadcast.id !== selectedId) {
+        setEditorMode("visual");
+        setEditorHtml("");
+        htmlSourceBaseline.current = "";
+        setTemplateChoice("");
+      }
+      setDraftDirty(false);
+      setReviewCancel(false);
+      setPendingSelection(null);
+      setSelectedId(broadcast.id);
+      setSegment(content.segment || "ALL");
+      setDraftPreview(null);
+      setReviewSchedule(false);
+      setScheduleAt("");
+      setData({
+        name: content.name,
+        subject: content.subject,
+        previewText: content.previewText,
+        body: content.body,
+        editorDocument: content.editorDocument,
+        renderedHtml: content.renderedHtml,
+      });
+      setPreviewFresh(false);
+      setReviewSend(false);
+    } catch {
+      notify("Couldn’t load this broadcast. Try again.", true);
+    } finally {
+      setBusyAction("");
     }
-    setDraftDirty(false);
-    setReviewCancel(false);
-    setPendingSelection(null);
-    setSelectedId(broadcast.id);
-    setSegment(broadcast.segment || "ALL");
-    setDraftPreview(null);
-    setReviewSchedule(false);
-    setScheduleAt("");
-    setData({
-      name: broadcast.name,
-      subject: broadcast.subject,
-      previewText: broadcast.previewText,
-      body: broadcast.body,
-      editorDocument: broadcast.editorDocument,
-      renderedHtml: broadcast.renderedHtml,
-    });
-    setPreviewFresh(false);
-    setReviewSend(false);
   }
 
   async function refreshBroadcasts(selected = selectedId) {
-    const updated = await listBroadcasts(waitListId);
-    setBroadcasts(updated);
+    const { broadcasts: updated, hasMore, nextCursor } = await listBroadcasts(waitListId);
+    setBroadcasts((current) => {
+      if (!selected || updated.some((item) => item.id === selected)) return updated;
+      const selectedItem = current.find((item) => item.id === selected);
+      return selectedItem ? [...updated, selectedItem] : updated;
+    });
+    setBroadcastHasMore(hasMore);
+    broadcastCursorRef.current = nextCursor;
     const active = updated.find((item) => item.id === selected);
-    if (active) selectBroadcast(active);
+    if (active) await selectBroadcast(active);
     router.refresh();
+  }
+
+  async function loadMoreBroadcasts() {
+    const cursor = broadcastCursorRef.current;
+    if (!broadcastHasMore || !cursor || busy) return;
+    setBusyAction("more");
+    try {
+      const page = await listBroadcasts(waitListId, { cursor });
+      setBroadcasts((current) => {
+        const knownIds = new Set(current.map((broadcast) => broadcast.id));
+        return [...current, ...page.broadcasts.filter((broadcast) => !knownIds.has(broadcast.id))];
+      });
+      setBroadcastHasMore(page.hasMore);
+      broadcastCursorRef.current = page.nextCursor;
+    } catch {
+      notify("Couldn’t load older broadcasts. Try again.", true);
+    } finally {
+      setBusyAction("");
+    }
   }
 
   async function createDraft() {
@@ -735,7 +781,7 @@ export function BroadcastManager({
     setBusyAction("cancel");
     try {
       const result = await cancelBroadcast({ waitListId, broadcastId: selectedId });
-      await refreshBroadcasts(selectedId);
+      if (result.success) await refreshBroadcasts(selectedId);
       notify(result.message, !result.success);
     } catch {
       notify("Couldn’t cancel the remaining emails. Refresh and check delivery status.", true);
@@ -750,7 +796,7 @@ export function BroadcastManager({
   const segmentMeta = (initialSegments || []).find((item) => item.key === segment);
 
   return (
-    <div className={scope}>
+    <div className={emailManagerScope}>
       <EmailToolsNav
         waitListId={waitListId}
         current="broadcasts"
@@ -768,16 +814,19 @@ export function BroadcastManager({
       {pendingSelection && (
         <DiscardBanner
           pendingSelection={pendingSelection}
-          onDiscard={() => selectBroadcast(pendingSelection)}
+          onDiscard={() => void selectBroadcast(pendingSelection)}
           onKeep={() => setPendingSelection(null)}
         />
       )}
-      <div className={split}>
+      <div className={emailManagerSplit}>
         <BroadcastRail
           broadcasts={broadcasts}
           selectedId={selectedId}
           busy={busy}
           onRequestSelection={requestSelection}
+          hasMore={broadcastHasMore}
+          loadingMore={busyAction === "more"}
+          onLoadMore={loadMoreBroadcasts}
         />
 
         {selectedId ? (
@@ -792,7 +841,7 @@ export function BroadcastManager({
                       : "Delivery summary"}
                 </h2>
                 {editable ? (
-                  <p className={paneMeta}>Draft — nothing is sent until you confirm.</p>
+                  <p className={paneMeta}>Draft - nothing is sent until you confirm.</p>
                 ) : null}
               </div>
               <div className={paneActions}>
@@ -843,31 +892,34 @@ export function BroadcastManager({
                   >
                     <div className={fieldCard}>
                       <div className={fieldRow}>
-                        <input
+                        <Input
+                          type="text"
                           className={fieldInput}
                           maxLength={120}
                           aria-label="Internal name"
-                          placeholder="Name — only you see this"
+                          placeholder="Name - only you see this"
                           value={data.name || ""}
                           onChange={(event) => edit("name", event.target.value)}
                         />
                       </div>
                       <div className={fieldRow}>
-                        <input
+                        <Input
+                          type="text"
                           className={fieldInput}
                           maxLength={160}
                           aria-label="Subject"
-                          placeholder="Subject — what subscribers see in the inbox"
+                          placeholder="Subject - what subscribers see in the inbox"
                           value={data.subject || ""}
                           onChange={(event) => edit("subject", event.target.value)}
                         />
                       </div>
                       <div className={fieldRow}>
-                        <input
+                        <Input
+                          type="text"
                           className={fieldInput}
                           maxLength={180}
                           aria-label="Preview text"
-                          placeholder="Preview text — shown after the subject"
+                          placeholder="Preview text - shown after the subject"
                           value={data.previewText || ""}
                           onChange={(event) => edit("previewText", event.target.value)}
                         />

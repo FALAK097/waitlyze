@@ -2,7 +2,7 @@ const DOMAINS_URL = "https://api.resend.com/domains";
 
 /**
  * Lists the domains on the founder's own Resend account (BYOK). The API key
- * is only ever sent to Resend over HTTPS — it is never logged, persisted,
+ * is only ever sent to Resend over HTTPS - it is never logged, persisted,
  * or included in any error surfaced to the browser.
  */
 export async function listResendDomains(apiKey, { fetchFn = fetch } = {}) {

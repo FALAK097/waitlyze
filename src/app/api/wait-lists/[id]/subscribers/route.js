@@ -1,4 +1,10 @@
+import console from "node:console";
+import { ReadableStream } from "node:stream/web";
+import { URL } from "node:url";
+import { TextEncoder } from "node:util";
+
 import { NextResponse } from "next/server";
+import pg from "pg";
 
 import { Prisma } from "@/generated/prisma/client";
 import {
@@ -11,54 +17,40 @@ import {
   isPositionSort,
   parseAudienceFilters,
   parseExportColumns,
-  sortAudienceRows,
 } from "@/lib/audience-query.mjs";
-import { auth } from "@/lib/auth";
 import {
   getCampaignPositions,
   getEligibleReferralCounts,
 } from "@/lib/campaigns/referral-position.mjs";
 import prisma from "@/lib/prisma";
-import { currentWorkspace } from "@/lib/workspaces/current";
-import { campaignScope } from "@/lib/workspaces/service.mjs";
+import { campaignRouteAccess } from "@/lib/workspaces/campaign-route-access.mjs";
 
 async function getAccess(request, id) {
-  const session = await auth.api.getSession({ headers: request.headers });
-  if (!session?.user?.id)
-    return { response: NextResponse.json({ error: "Unauthorized" }, { status: 401 }) };
-  const { workspace } = await currentWorkspace();
-  if (!workspace) return { response: NextResponse.json({ error: "Not found" }, { status: 404 }) };
-  const scope = campaignScope(session.user.id, "viewAudience", workspace.id);
-  const waitlist = await prisma.waitList.findFirst({
-    where: { id, ...scope },
+  const access = await campaignRouteAccess({
+    request,
+    id,
+    permission: "viewAudience",
     select: { id: true, showReferrals: true, sendEmailsToSubscribers: true, publicSlug: true },
   });
-  if (!waitlist) return { response: NextResponse.json({ error: "Not found" }, { status: 404 }) };
-  return {
-    scope,
-    showReferrals: waitlist.showReferrals,
-    sendEmailsToSubscribers: waitlist.sendEmailsToSubscribers,
-    publicSlug: waitlist.publicSlug,
-  };
+  if (access.response) return access;
+  return { scope: access.scope, ...access.waitlist };
 }
 
 async function verificationDelivery(waitListId, signupIds) {
   if (!signupIds.length) return new Map();
-  const events = await prisma.outboxEvent.findMany({
-    where: {
-      waitListId,
-      type: "SIGNUP_VERIFICATION_REQUESTED",
-      OR: signupIds.map((id) => ({ payload: { path: ["signUpId"], equals: id } })),
-    },
-    orderBy: [{ createdAt: "desc" }, { id: "desc" }],
-    select: {
-      payload: true,
-      status: true,
-      lastErrorCode: true,
-      createdAt: true,
-      processedAt: true,
-    },
-  });
+  const events = await prisma.$queryRaw`
+    SELECT DISTINCT ON (event."payload"->>'signUpId')
+      event."payload",
+      event."status"::text AS status,
+      event."lastErrorCode",
+      event."createdAt",
+      event."processedAt"
+    FROM "outbox_events" AS event
+    WHERE event."waitListId" = ${waitListId}
+      AND event."type" = 'SIGNUP_VERIFICATION_REQUESTED'
+      AND event."payload"->>'signUpId' = ANY(${signupIds}::text[])
+    ORDER BY event."payload"->>'signUpId', event."createdAt" DESC, event."id" DESC
+  `;
   const latest = new Map();
   for (const event of events) {
     const signupId = event.payload?.signUpId;
@@ -137,7 +129,289 @@ function failedVerificationAfter(filters, cursor) {
   if (filters.sort === "joined_asc") {
     return Prisma.sql`AND ("signup"."createdAt" > ${cursor.createdAt} OR ("signup"."createdAt" = ${cursor.createdAt} AND "signup"."id" > ${cursor.id}))`;
   }
-  return Prisma.sql`AND ("signup"."createdAt" < ${cursor.createdAt} OR ("signup"."createdAt" = ${cursor.createdAt} AND "signup"."id" < ${cursor.id}))`;
+  if (filters.sort === "joined_desc") {
+    return Prisma.sql`AND ("signup"."createdAt" < ${cursor.createdAt} OR ("signup"."createdAt" = ${cursor.createdAt} AND "signup"."id" < ${cursor.id}))`;
+  }
+  if (filters.sort === "email_asc") {
+    return Prisma.sql`AND ("signup"."email" > ${cursor.email} OR ("signup"."email" = ${cursor.email} AND "signup"."id" > ${cursor.id}))`;
+  }
+  if (filters.sort === "email_desc") {
+    return Prisma.sql`AND ("signup"."email" < ${cursor.email} OR ("signup"."email" = ${cursor.email} AND "signup"."id" > ${cursor.id}))`;
+  }
+  if (filters.sort === "points_asc") {
+    return Prisma.sql`AND ("signup"."points" > ${cursor.points} OR ("signup"."points" = ${cursor.points} AND "signup"."id" > ${cursor.id}))`;
+  }
+  if (filters.sort === "points_desc") {
+    return Prisma.sql`AND ("signup"."points" < ${cursor.points} OR ("signup"."points" = ${cursor.points} AND "signup"."id" > ${cursor.id}))`;
+  }
+  if (filters.sort === "status_desc") {
+    return cursor.verifiedAt
+      ? Prisma.sql`AND ("signup"."verifiedAt" IS NULL OR ("signup"."verifiedAt" IS NOT NULL AND "signup"."id" > ${cursor.id}))`
+      : Prisma.sql`AND "signup"."verifiedAt" IS NULL AND "signup"."id" > ${cursor.id}`;
+  }
+  if (filters.sort === "status_asc") {
+    return cursor.verifiedAt
+      ? Prisma.sql`AND "signup"."verifiedAt" IS NOT NULL AND "signup"."id" > ${cursor.id}`
+      : Prisma.sql`AND ("signup"."verifiedAt" IS NOT NULL OR ("signup"."verifiedAt" IS NULL AND "signup"."id" > ${cursor.id}))`;
+  }
+  return Prisma.empty;
+}
+
+function audienceExportAfter(sort, cursor) {
+  if (!cursor) return {};
+  if (sort === "joined_asc") {
+    return {
+      OR: [
+        { createdAt: { gt: cursor.createdAt } },
+        { createdAt: cursor.createdAt, id: { gt: cursor.id } },
+      ],
+    };
+  }
+  if (sort === "joined_desc") {
+    return {
+      OR: [
+        { createdAt: { lt: cursor.createdAt } },
+        { createdAt: cursor.createdAt, id: { lt: cursor.id } },
+      ],
+    };
+  }
+  if (sort === "email_asc" || sort === "email_desc") {
+    return {
+      OR: [
+        { email: { [sort === "email_asc" ? "gt" : "lt"]: cursor.email } },
+        { email: cursor.email, id: { gt: cursor.id } },
+      ],
+    };
+  }
+  if (sort === "points_asc" || sort === "points_desc") {
+    return {
+      OR: [
+        { points: { [sort === "points_asc" ? "gt" : "lt"]: cursor.points } },
+        { points: cursor.points, id: { gt: cursor.id } },
+      ],
+    };
+  }
+  if (sort === "status_desc") {
+    return cursor.verifiedAt
+      ? {
+          OR: [
+            { verifiedAt: { lt: cursor.verifiedAt } },
+            { verifiedAt: null },
+            { verifiedAt: cursor.verifiedAt, id: { gt: cursor.id } },
+          ],
+        }
+      : { verifiedAt: null, id: { gt: cursor.id } };
+  }
+  if (sort === "status_asc") {
+    return cursor.verifiedAt
+      ? {
+          OR: [
+            { verifiedAt: { gt: cursor.verifiedAt } },
+            { verifiedAt: cursor.verifiedAt, id: { gt: cursor.id } },
+          ],
+        }
+      : {
+          OR: [{ verifiedAt: null, id: { gt: cursor.id } }, { verifiedAt: { not: null } }],
+        };
+  }
+  return {};
+}
+
+function positionAudienceWhere(waitListId, filters) {
+  return Prisma.sql`
+    "signup"."waitListId" = ${waitListId}
+    AND (${filters.status} = 'all'
+      OR (${filters.status} = 'verified' AND "signup"."verifiedAt" IS NOT NULL)
+      OR (${filters.status} = 'pending' AND "signup"."verifiedAt" IS NULL))
+    AND (${filters.query} = '' OR "signup"."email" ILIKE ${`%${escapeLike(filters.query)}%`} ESCAPE '\\')
+    AND (${filters.country} = '' OR "signup"."country" ILIKE ${`%${escapeLike(filters.country)}%`} ESCAPE '\\')
+    AND (${filters.city} = '' OR "signup"."city" ILIKE ${`%${escapeLike(filters.city)}%`} ESCAPE '\\')
+    AND (${filters.source} = '' OR "signup"."utmSource" ILIKE ${`%${escapeLike(filters.source)}%`} ESCAPE '\\')
+    AND (${filters.landing} = '' OR "signup"."landingPage" ILIKE ${`%${escapeLike(filters.landing)}%`} ESCAPE '\\')
+    AND (${filters.device} = ''
+      OR "signup"."deviceType" ILIKE ${`%${escapeLike(filters.device)}%`} ESCAPE '\\'
+      OR "signup"."device" ILIKE ${`%${escapeLike(filters.device)}%`} ESCAPE '\\')
+    AND (${filters.utm} = ''
+      OR "signup"."utmMedium" ILIKE ${`%${escapeLike(filters.utm)}%`} ESCAPE '\\'
+      OR "signup"."utmCampaign" ILIKE ${`%${escapeLike(filters.utm)}%`} ESCAPE '\\'
+      OR "signup"."utmTerm" ILIKE ${`%${escapeLike(filters.utm)}%`} ESCAPE '\\'
+      OR "signup"."utmContent" ILIKE ${`%${escapeLike(filters.utm)}%`} ESCAPE '\\'
+      OR "signup"."referrer" ILIKE ${`%${escapeLike(filters.utm)}%`} ESCAPE '\\')
+  `;
+}
+
+async function rankedAudiencePage(waitListId, filters, pageIndex) {
+  const where = positionAudienceWhere(waitListId, filters);
+  return prisma.$queryRaw`
+    WITH referral_scores AS (
+      SELECT referral."referredById" AS "referrerId", COUNT(*)::bigint AS score
+      FROM "referrals" AS referral
+      INNER JOIN "sign_ups" AS referred ON referred."id" = referral."signUpId"
+      INNER JOIN "sign_ups" AS referrer
+        ON referrer."id" = referral."referredById"
+       AND referrer."waitListId" = referred."waitListId"
+      INNER JOIN "wait_lists" AS campaign
+        ON campaign."id" = referred."waitListId"
+       AND campaign."showReferrals" = true
+      WHERE referred."waitListId" = ${waitListId}
+        AND referred."verifiedAt" IS NOT NULL
+        AND referrer."verifiedAt" IS NOT NULL
+        AND referral."reviewStatus" IN ('CLEAR', 'APPROVED')
+        AND referral."referredById" IS NOT NULL
+        AND referral."referredById" <> referral."signUpId"
+      GROUP BY referral."referredById"
+    ), ranked AS (
+      SELECT signup."id", signup."createdAt",
+        ROW_NUMBER() OVER (
+          ORDER BY COALESCE(score.score, 0) DESC, signup."createdAt" ASC, signup."id" ASC
+        ) AS position
+      FROM "sign_ups" AS signup
+      LEFT JOIN referral_scores AS score ON score."referrerId" = signup."id"
+      WHERE signup."waitListId" = ${waitListId}
+    )
+    SELECT ranked."id", ranked.position
+    FROM ranked
+    INNER JOIN "sign_ups" AS signup ON signup."id" = ranked."id"
+    WHERE ${where}
+    ORDER BY
+      CASE WHEN ${filters.sort} = 'position_asc' THEN ranked.position END ASC,
+      CASE WHEN ${filters.sort} = 'position_desc' THEN ranked.position END DESC,
+      ranked."createdAt" ASC,
+      ranked."id" ASC
+    LIMIT ${AUDIENCE_PAGE_SIZE + 1}
+    OFFSET ${pageIndex * AUDIENCE_PAGE_SIZE}
+  `;
+}
+
+async function rankedFailedAudiencePage(waitListId, filters, pageIndex) {
+  const where = failedVerificationWhere(waitListId, filters);
+  return prisma.$queryRaw`
+    WITH referral_scores AS (
+      SELECT referral."referredById" AS "referrerId", COUNT(*)::bigint AS score
+      FROM "referrals" AS referral
+      INNER JOIN "sign_ups" AS referred ON referred."id" = referral."signUpId"
+      INNER JOIN "sign_ups" AS referrer
+        ON referrer."id" = referral."referredById"
+       AND referrer."waitListId" = referred."waitListId"
+      INNER JOIN "wait_lists" AS campaign
+        ON campaign."id" = referred."waitListId"
+       AND campaign."showReferrals" = true
+      WHERE referred."waitListId" = ${waitListId}
+        AND referred."verifiedAt" IS NOT NULL
+        AND referrer."verifiedAt" IS NOT NULL
+        AND referral."reviewStatus" IN ('CLEAR', 'APPROVED')
+        AND referral."referredById" IS NOT NULL
+        AND referral."referredById" <> referral."signUpId"
+      GROUP BY referral."referredById"
+    ), ranked AS (
+      SELECT signup."id", signup."createdAt",
+        ROW_NUMBER() OVER (
+          ORDER BY COALESCE(score.score, 0) DESC, signup."createdAt" ASC, signup."id" ASC
+        ) AS position
+      FROM "sign_ups" AS signup
+      LEFT JOIN referral_scores AS score ON score."referrerId" = signup."id"
+      WHERE signup."waitListId" = ${waitListId}
+    )
+    SELECT ranked."id", ranked.position
+    FROM ranked
+    INNER JOIN "sign_ups" AS signup ON signup."id" = ranked."id"
+    WHERE ${where}
+    ORDER BY
+      CASE WHEN ${filters.sort} = 'position_asc' THEN ranked.position END ASC,
+      CASE WHEN ${filters.sort} = 'position_desc' THEN ranked.position END DESC,
+      ranked."createdAt" ASC,
+      ranked."id" ASC
+    LIMIT ${AUDIENCE_PAGE_SIZE + 1}
+    OFFSET ${pageIndex * AUDIENCE_PAGE_SIZE}
+  `;
+}
+
+// Position sort has no stable database ORDER BY (rank is a window function), so
+// exporting it via OFFSET over a recomputed ROW_NUMBER lets ranks shift between
+// pages. Instead we open a server-side cursor over this exact ranked set: the
+// snapshot is pinned at DECLARE and batches stream in fixed rank order.
+// `whereBuilder` selects the regular audience vs the failed-delivery subset;
+// ranks stay global either way, matching getCampaignPositions.
+function rankedPositionCursorSql(waitListId, filters, whereBuilder) {
+  const where = whereBuilder(waitListId, filters);
+  const direction = filters.sort === "position_desc" ? Prisma.raw("DESC") : Prisma.raw("ASC");
+  return Prisma.sql`
+    WITH referral_scores AS (
+      SELECT referral."referredById" AS "referrerId", COUNT(*)::bigint AS score
+      FROM "referrals" AS referral
+      INNER JOIN "sign_ups" AS referred ON referred."id" = referral."signUpId"
+      INNER JOIN "sign_ups" AS referrer
+        ON referrer."id" = referral."referredById"
+       AND referrer."waitListId" = referred."waitListId"
+      INNER JOIN "wait_lists" AS campaign
+        ON campaign."id" = referred."waitListId"
+       AND campaign."showReferrals" = true
+      WHERE referred."waitListId" = ${waitListId}
+        AND referred."verifiedAt" IS NOT NULL
+        AND referrer."verifiedAt" IS NOT NULL
+        AND referral."reviewStatus" IN ('CLEAR', 'APPROVED')
+        AND referral."referredById" IS NOT NULL
+        AND referral."referredById" <> referral."signUpId"
+      GROUP BY referral."referredById"
+    ), ranked AS (
+      SELECT signup."id", signup."createdAt",
+        ROW_NUMBER() OVER (
+          ORDER BY COALESCE(score.score, 0) DESC, signup."createdAt" ASC, signup."id" ASC
+        ) AS position
+      FROM "sign_ups" AS signup
+      LEFT JOIN referral_scores AS score ON score."referrerId" = signup."id"
+      WHERE signup."waitListId" = ${waitListId}
+    )
+    SELECT ranked."id", ranked.position
+    FROM ranked
+    INNER JOIN "sign_ups" AS signup ON signup."id" = ranked."id"
+    WHERE ${where}
+    ORDER BY ranked.position ${direction}
+  `;
+}
+
+// Position export needs one pinned database snapshot across FETCH batches.
+// Keep cursor lifecycle local to this server route rather than exposing a
+// reusable low-level database helper elsewhere in the application.
+function toPgParams(sql) {
+  let index = 0;
+  const text = sql.sql.replace(/\?/g, () => `$${++index}`);
+  if (index !== sql.values.length) {
+    throw new Error(
+      `PostgreSQL cursor query has ${index} placeholders but ${sql.values.length} values`,
+    );
+  }
+  return { text, values: sql.values };
+}
+
+async function* streamRankedPositions(sql, { batchSize = 500 } = {}) {
+  if (!Number.isInteger(batchSize) || batchSize < 1 || batchSize > 5000) {
+    throw new RangeError("batchSize must be an integer between 1 and 5000");
+  }
+  const name = `waitlyze_rank_${Math.random().toString(36).slice(2, 10)}`;
+  const client = new pg.Client({ connectionString: process.env.DATABASE_URL });
+  let connected = false;
+  let declared = false;
+  try {
+    await client.connect();
+    connected = true;
+    await client.query("BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY");
+    const { text, values } = toPgParams(sql);
+    await client.query(`DECLARE ${name} NO SCROLL CURSOR FOR ${text}`, values);
+    declared = true;
+    while (true) {
+      const { rows } = await client.query(`FETCH FORWARD ${batchSize} FROM ${name}`);
+      if (rows.length === 0) break;
+      yield rows;
+      if (rows.length < batchSize) break;
+    }
+  } finally {
+    if (connected) {
+      if (declared) await client.query(`CLOSE ${name}`).catch(() => {});
+      await client.query("ROLLBACK").catch(() => {});
+      await client.end().catch(() => {});
+    }
+  }
 }
 
 async function failedVerificationPage(waitListId, filters, cursor, take, offset = null) {
@@ -161,8 +435,10 @@ async function failedVerificationPage(waitListId, filters, cursor, take, offset 
       CASE WHEN ${filters.sort} = 'email_desc' THEN "signup"."email" END DESC,
       CASE WHEN ${filters.sort} = 'points_desc' THEN "signup"."points" END DESC,
       CASE WHEN ${filters.sort} = 'points_asc' THEN "signup"."points" END ASC,
-      CASE WHEN ${filters.sort} = 'status_desc' THEN "signup"."verifiedAt" END DESC NULLS LAST,
-      CASE WHEN ${filters.sort} = 'status_asc' THEN "signup"."verifiedAt" END ASC NULLS FIRST,
+      CASE WHEN ${filters.sort} = 'status_desc' THEN ("signup"."verifiedAt" IS NOT NULL) END DESC,
+      CASE WHEN ${filters.sort} = 'status_asc' THEN ("signup"."verifiedAt" IS NOT NULL) END ASC,
+      CASE WHEN ${filters.sort} IN ('position_asc', 'position_desc') THEN "signup"."createdAt" END ASC,
+      CASE WHEN ${filters.sort} IN ('position_asc', 'position_desc') THEN "signup"."id" END ASC,
       CASE WHEN ${filters.sort} = 'joined_asc' THEN "signup"."id" END ASC,
       CASE WHEN ${filters.sort} = 'joined_desc' THEN "signup"."id" END DESC,
       CASE WHEN ${filters.sort} NOT IN ('joined_asc', 'joined_desc') THEN "signup"."id" END ASC
@@ -234,10 +510,6 @@ const ROW_SELECT = {
 // "Select all" support: every matching id (capped), honoring the same filters
 // and workspace scope as the list itself.
 const ID_SELECT_LIMIT = 2000;
-// In-memory ranking window for the failed-delivery view, which has no score
-// column to order by. Delivery failures are rare; this bound only guards
-// against pathological volumes.
-const FAILED_SORT_WINDOW = 5000;
 
 export async function GET(request, { params }) {
   const { id } = await params;
@@ -272,10 +544,7 @@ export async function GET(request, { params }) {
       });
     }
 
-    const positions =
-      access.showReferrals && (isPositionSort(filters.sort) || !failedOnly)
-        ? await getCampaignPositions(prisma, id)
-        : new Map();
+    let positions = new Map();
 
     let rows;
     let total;
@@ -322,17 +591,25 @@ export async function GET(request, { params }) {
     } else if (!failedOnly) {
       const where = audienceWhere(id, access.scope, filters);
       const [matches, count] = await Promise.all([
-        prisma.signUp.findMany({
-          where,
-          select: { id: true, createdAt: true },
-          orderBy: [{ id: "asc" }],
-        }),
+        access.showReferrals
+          ? rankedAudiencePage(id, filters, pageIndex)
+          : prisma.signUp.findMany({
+              where,
+              select: { id: true, createdAt: true },
+              orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+              skip: pageIndex * AUDIENCE_PAGE_SIZE,
+              take: AUDIENCE_PAGE_SIZE + 1,
+            }),
         prisma.signUp.count({ where }),
       ]);
       total = count;
-      const slice = sortAudienceRows(matches, filters.sort, positions).slice(
-        pageIndex * AUDIENCE_PAGE_SIZE,
-        pageIndex * AUDIENCE_PAGE_SIZE + AUDIENCE_PAGE_SIZE + 1,
+      const slice = access.showReferrals
+        ? matches.map((row) => ({ ...row, position: Number(row.position) }))
+        : matches;
+      positions = new Map(
+        slice
+          .filter((row) => Number.isSafeInteger(row.position) && row.position > 0)
+          .map((row) => [row.id, row.position]),
       );
       const fetched = await prisma.signUp.findMany({
         where: { id: { in: slice.map((row) => row.id) } },
@@ -341,16 +618,39 @@ export async function GET(request, { params }) {
       const byId = new Map(fetched.map((row) => [row.id, row]));
       rows = slice.map((row) => byId.get(row.id)).filter(Boolean);
     } else {
-      const pool = await failedVerificationPage(id, filters, null, FAILED_SORT_WINDOW);
-      total = await failedVerificationCount(id, filters);
-      rows = sortAudienceRows(pool, filters.sort, positions).slice(
-        pageIndex * AUDIENCE_PAGE_SIZE,
-        pageIndex * AUDIENCE_PAGE_SIZE + AUDIENCE_PAGE_SIZE + 1,
-      );
+      const [matches, count] = await Promise.all([
+        access.showReferrals && isPositionSort(filters.sort)
+          ? rankedFailedAudiencePage(id, filters, pageIndex)
+          : failedVerificationPage(
+              id,
+              filters,
+              null,
+              AUDIENCE_PAGE_SIZE + 1,
+              pageIndex * AUDIENCE_PAGE_SIZE,
+            ),
+        failedVerificationCount(id, filters),
+      ]);
+      total = count;
+      if (access.showReferrals && isPositionSort(filters.sort)) {
+        positions = new Map(
+          matches
+            .map((row) => ({ id: row.id, position: Number(row.position) }))
+            .filter((row) => Number.isSafeInteger(row.position) && row.position > 0)
+            .map((row) => [row.id, row.position]),
+        );
+        const fetched = await prisma.signUp.findMany({
+          where: { id: { in: matches.map((row) => row.id) } },
+          select: ROW_SELECT,
+        });
+        const byId = new Map(fetched.map((row) => [row.id, row]));
+        rows = matches.map((row) => byId.get(row.id)).filter(Boolean);
+      } else {
+        rows = matches;
+      }
     }
     const hasMore = rows.length > AUDIENCE_PAGE_SIZE;
     const pageRows = rows.slice(0, AUDIENCE_PAGE_SIZE);
-    const [referralCounts, delivery] = await Promise.all([
+    const [referralCounts, delivery, pagePositions] = await Promise.all([
       access.showReferrals
         ? getEligibleReferralCounts(
             prisma,
@@ -362,13 +662,20 @@ export async function GET(request, { params }) {
         id,
         pageRows.map((row) => row.id),
       ),
+      access.showReferrals && !failedOnly && !isPositionSort(filters.sort)
+        ? getCampaignPositions(
+            prisma,
+            id,
+            pageRows.map((row) => row.id),
+          )
+        : positions,
     ]);
     const page = pageRows.map((row) => ({
       ...row,
       referredBy: row.referredBy?.[0]?.referredBy ?? null,
       verificationDelivery: delivery.get(row.id) ?? null,
       referralCount: referralCounts.get(row.id) ?? 0,
-      position: positions.get(row.id) ?? null,
+      position: pagePositions.get(row.id) ?? null,
     }));
     const flags = {
       showReferrals: access.showReferrals,
@@ -396,6 +703,11 @@ export async function POST(request, { params }) {
     const url = new URL(request.url);
     const filters = parseAudienceFilters(url.searchParams);
     if (filters.error) return NextResponse.json({ error: filters.error }, { status: 400 });
+    // Rank positions only exist when the campaign shows referrals. The list
+    // endpoint ignores a position sort otherwise and returns join order, so
+    // normalize the same way here: a hand-crafted ?sort=position_desc export
+    // must still match the rows and order shown in the table.
+    if (isPositionSort(filters.sort) && !access.showReferrals) filters.sort = "joined_asc";
     const columns = parseExportColumns(url.searchParams.get("columns"));
     if (!columns)
       return NextResponse.json({ error: "Select at least one export column." }, { status: 400 });
@@ -418,120 +730,123 @@ export async function POST(request, { params }) {
     if (columns.includes("utm_content")) select.utmContent = true;
     if (columns.includes("landing_page")) select.landingPage = true;
     if (columns.includes("referrer")) select.referrer = true;
-    if (columns.includes("points")) select.points = true;
+    if (columns.includes("points") || filters.sort.startsWith("points_")) select.points = true;
     if (columns.includes("referral_code")) select.referralCode = true;
     if (columns.includes("referred_by"))
       select.referredBy = { select: { referredBy: { select: { email: true } } } };
     const joinedSort = isJoinedSort(filters.sort);
     const positionSort = isPositionSort(filters.sort);
     const encoder = new TextEncoder();
+    async function* generateCsv() {
+      yield `${exportHeaderRow(columns)}\r\n`;
+
+      // Position-sort rows carry their rank from the cursor below, so the global
+      // positions map is only needed when the position column is exported under
+      // some other sort order.
+      const positions =
+        needPosition && !positionSort ? await getCampaignPositions(prisma, id) : new Map();
+      const enrichAndStream = async function* (rows) {
+        const ids = rows.map((row) => row.id);
+        const counts = needReferrals ? await getEligibleReferralCounts(prisma, id, ids) : new Map();
+        for (const row of rows) {
+          const position = row.position ?? positions.get(row.id) ?? "";
+          yield `${buildExportRow(row, columns, { referralCount: counts.get(row.id) ?? 0, position })}\r\n`;
+        }
+      };
+
+      // Stream a position sort in exact rank order. The server-side cursor pins
+      // the ranked snapshot so order cannot shift between batches; we then fetch
+      // full rows for each bounded id batch (reusing the dynamic `select`) and
+      // reorder them to match the cursor, the same id-then-fields pattern the
+      // list endpoint uses, but batched so memory stays flat.
+      const streamPositionCursor = async function* (whereBuilder) {
+        const cursorSql = rankedPositionCursorSql(id, filters, whereBuilder);
+        for await (const batch of streamRankedPositions(cursorSql)) {
+          const orderedRefs = batch.map((row) => ({ id: row.id, position: Number(row.position) }));
+          const rows = await prisma.signUp.findMany({
+            where: { id: { in: orderedRefs.map((ref) => ref.id) } },
+            select,
+          });
+          const byId = new Map(rows.map((row) => [row.id, row]));
+          const orderedRows = orderedRefs
+            .map((ref) => {
+              const row = byId.get(ref.id);
+              return row ? { ...row, position: ref.position } : null;
+            })
+            .filter(Boolean);
+          for await (const row of enrichAndStream(orderedRows)) yield row;
+        }
+      };
+
+      if (!failedOnly && !positionSort) {
+        const orderBy = joinedSort
+          ? [{ createdAt: direction }, { id: direction }]
+          : audienceOrderBy(filters.sort);
+        let cursor;
+        while (true) {
+          const rows = await prisma.signUp.findMany({
+            where: cursor ? { AND: [where, audienceExportAfter(filters.sort, cursor)] } : where,
+            select,
+            orderBy,
+            take: 500,
+          });
+          for await (const row of enrichAndStream(rows)) yield row;
+          if (rows.length < 500) break;
+          cursor = rows.at(-1);
+        }
+      } else if (!failedOnly) {
+        // Regular position sort: stream ids in fixed rank order from the cursor.
+        for await (const row of streamPositionCursor(positionAudienceWhere)) yield row;
+      } else if (joinedSort) {
+        let failedCursor;
+        while (true) {
+          const rows = await failedVerificationPage(id, filters, failedCursor, 500);
+          for await (const row of enrichAndStream(rows)) yield row;
+          if (rows.length < 500) break;
+          failedCursor = { id: rows.at(-1).id, createdAt: rows.at(-1).createdAt };
+        }
+      } else if (!positionSort) {
+        let failedCursor;
+        while (true) {
+          const rows = await failedVerificationPage(id, filters, failedCursor, 500);
+          for await (const row of enrichAndStream(rows)) yield row;
+          if (rows.length < 500) break;
+          failedCursor = rows.at(-1);
+        }
+      } else {
+        // Failed position sort: same cursor, but the failed-delivery predicate
+        // selects the subset. Ranks stay global, matching the list endpoint.
+        for await (const row of streamPositionCursor(failedVerificationWhere)) yield row;
+      }
+    }
+
+    const csvRows = generateCsv();
     const body = new ReadableStream({
-      async start(controller) {
+      async pull(controller) {
         try {
-          controller.enqueue(encoder.encode(`${exportHeaderRow(columns)}\r\n`));
-          const positions =
-            access.showReferrals && (needPosition || positionSort)
-              ? await getCampaignPositions(prisma, id)
-              : new Map();
-          const streamRow = async (row, counts) => {
-            controller.enqueue(
-              encoder.encode(
-                `${buildExportRow(row, columns, { referralCount: counts.get(row.id) ?? 0, position: positions.get(row.id) ?? "" })}\r\n`,
-              ),
-            );
-          };
-          const enrichAndStream = async (rows) => {
-            const counts = needReferrals
-              ? await getEligibleReferralCounts(
-                  prisma,
-                  id,
-                  rows.map((row) => row.id),
-                )
-              : new Map();
-            for (const row of rows) await streamRow(row, counts);
-          };
-          if (!failedOnly && !positionSort) {
-            const orderBy = joinedSort
-              ? [{ createdAt: direction }, { id: direction }]
-              : audienceOrderBy(filters.sort);
-            let cursor;
-            let skipped = 0;
-            while (true) {
-              const rows = joinedSort
-                ? await prisma.signUp.findMany({
-                    where,
-                    select,
-                    orderBy,
-                    take: 500,
-                    ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
-                  })
-                : await prisma.signUp.findMany({
-                    where,
-                    select,
-                    orderBy,
-                    take: 500,
-                    skip: skipped,
-                  });
-              await enrichAndStream(rows);
-              if (rows.length < 500) break;
-              if (joinedSort) cursor = rows.at(-1).id;
-              else skipped += rows.length;
+          const chunks = [];
+          let chunkLength = 0;
+          while (chunkLength < 16_384) {
+            const { done, value } = await csvRows.next();
+            if (done) {
+              if (chunks.length) controller.enqueue(encoder.encode(chunks.join("")));
+              controller.close();
+              return;
             }
-          } else if (!failedOnly) {
-            // Position ranking has no database ordering: snapshot the ordered ids,
-            // then chunk-fetch rows and stream them in rank order.
-            const matches = await prisma.signUp.findMany({
-              where,
-              select: { id: true, createdAt: true },
-              orderBy: [{ id: "asc" }],
-            });
-            const ordered = sortAudienceRows(matches, filters.sort, positions);
-            for (let index = 0; index < ordered.length; index += 500) {
-              const chunk = ordered.slice(index, index + 500);
-              const rows = await prisma.signUp.findMany({
-                where: { id: { in: chunk.map((row) => row.id) } },
-                select,
-              });
-              const byId = new Map(rows.map((row) => [row.id, row]));
-              await enrichAndStream(chunk.map((ref) => byId.get(ref.id)).filter(Boolean));
-            }
-          } else if (joinedSort) {
-            let failedCursor;
-            while (true) {
-              const rows = await failedVerificationPage(id, filters, failedCursor, 500);
-              await enrichAndStream(rows);
-              if (rows.length < 500) break;
-              failedCursor = { id: rows.at(-1).id, createdAt: rows.at(-1).createdAt };
-            }
-          } else if (!positionSort) {
-            let skipped = 0;
-            while (true) {
-              const rows = await failedVerificationPage(id, filters, null, 500, skipped);
-              await enrichAndStream(rows);
-              if (rows.length < 500) break;
-              skipped += rows.length;
-            }
-          } else {
-            // Failed rows have no score column: collect the bounded failure set,
-            // rank it in memory, then stream.
-            const collected = [];
-            let failedCursor;
-            while (true) {
-              const batch = await failedVerificationPage(id, filters, failedCursor, 2000);
-              collected.push(...batch);
-              if (batch.length < 2000) break;
-              failedCursor = { id: batch.at(-1).id, createdAt: batch.at(-1).createdAt };
-            }
-            await enrichAndStream(sortAudienceRows(collected, filters.sort, positions));
+            chunks.push(value);
+            chunkLength += value.length;
           }
-          controller.close();
+          controller.enqueue(encoder.encode(chunks.join("")));
         } catch (error) {
           console.error("Error exporting audience:", error);
           controller.error(error);
         }
       },
+      async cancel() {
+        await csvRows.return();
+      },
     });
-    return new Response(body, {
+    return new NextResponse(body, {
       headers: {
         "Content-Type": "text/csv; charset=utf-8",
         "Content-Disposition": "attachment; filename=subscribers.csv",

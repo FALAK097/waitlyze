@@ -34,7 +34,7 @@ async function resolveWaitlistSender(db, waitListId) {
 }
 
 /**
- * Phase 7c BYOK sender resolution — the single seam every sending path
+ * Phase 7c BYOK sender resolution - the single seam every sending path
  * should adopt. Order: per-waitlist sender → workspace connection →
  * deployment default. A broken sender fails closed
  * (throws SENDER_NEEDS_ATTENTION) instead of falling back; a NEEDS_TEST
@@ -44,7 +44,7 @@ async function resolveWaitlistSender(db, waitListId) {
  * sending paths so they resolve per-waitlist instead of per-workspace.
  * Still workspace-scoped today:
  * - src/lib/email/outbox.mjs (broadcast + offboard sends; waitList.id is
- *   in scope at both send() call sites — pass waitListId through)
+ *   in scope at both send() call sites - pass waitListId through)
  * - src/lib/email/dispatch-now.mjs
  * - src/app/actions/emails.js (test sends; resolveWorkspaceEmailSender
  *   call should become resolveEmailSender with the waitlist id)

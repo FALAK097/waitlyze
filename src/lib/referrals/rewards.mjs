@@ -33,7 +33,7 @@ export {
 };
 
 // Published snapshot is the source of truth for public behavior: draft edits
-// must not change award amounts before they ship. Never throws — any failure
+// must not change award amounts before they ship. Never throws - any failure
 // (unpublished list, legacy snapshot-less page, unreadable record) resolves
 // to zero-config defaults so points keep accruing.
 export async function getPublishedRewards(db, waitListId) {

@@ -1,7 +1,6 @@
 import { ArrowUpRight01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import Link from "next/link";
-import { notFound } from "next/navigation";
 
 import { CustomDomainSettings } from "@/components/product/custom-domain-settings";
 import { DeleteWaitlist } from "@/components/product/delete-waitlist";
@@ -10,9 +9,7 @@ import { WaitlistSettingsNavigation } from "@/components/product/waitlist-settin
 import { WebhookSettings } from "@/components/product/webhook-settings";
 import { Button } from "@/components/ui/button";
 import { env } from "@/lib/env.mjs";
-import prisma from "@/lib/prisma";
-import { currentWorkspace } from "@/lib/workspaces/current";
-import { campaignScope } from "@/lib/workspaces/service.mjs";
+import { requireCampaignPage } from "@/lib/workspaces/authorize";
 
 export const metadata = { title: "Waitlist settings" };
 
@@ -93,18 +90,10 @@ function SelectedWaitlistSettings({ section, waitlist, canManage, domainAvailabl
 }
 
 export default async function WaitlistSettings({ params, searchParams }) {
-  const [{ id }, query, { user, workspace }] = await Promise.all([
-    params,
-    searchParams,
-    currentWorkspace(),
-  ]);
+  const [{ id }, query] = await Promise.all([params, searchParams]);
   const section = VALID_SECTIONS.has(query?.section) ? query.section : "referral";
-  const waitlist = await prisma.waitList.findFirst({
-    where: { id, ...campaignScope(user.id, "viewCampaign", workspace.id) },
-    select: { id: true, name: true, showReferrals: true },
-  });
-  if (!waitlist) notFound();
-  const canManage = ["OWNER", "ADMIN"].includes(workspace.members[0]?.role);
+  const { campaign: waitlist, role } = await requireCampaignPage(id, "viewCampaign");
+  const canManage = ["OWNER", "ADMIN"].includes(role);
   const domainAvailable = Boolean(env.VERCEL_TOKEN && env.VERCEL_PROJECT_ID && env.APP_ROOT_DOMAIN);
   return (
     <div className="mx-auto w-full max-w-280">

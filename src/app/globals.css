@@ -399,14 +399,11 @@ body {
   width: calc(100% - 1.5rem);
   height: calc(100% - 5rem);
 }
-.product-ui .analytics-funnel__stage {
+.product-ui [data-analytics-funnel-stage] {
   left: var(--funnel-stage-left);
   width: var(--funnel-stage-width);
   opacity: var(--funnel-stage-opacity);
   grid-template-rows: 2.5rem minmax(0, 1fr) 2.5rem;
-}
-.product-ui .analytics-funnel__stage:focus-visible {
-  outline: none;
 }
 .product-ui .analytics-email-bar__segment {
   width: var(--email-bar-width);

@@ -18,7 +18,7 @@ import { validateSignupEmail } from "@/utils/server/email-validation.mjs";
 // in the exact shape of a fresh signup with outcome "returning" so browser
 // clients render the cockpit identically.
 //
-// Anti-enumeration note: this is deliberately a membership oracle — probing an
+// Anti-enumeration note: this is deliberately a membership oracle - probing an
 // email reveals whether it joined this waitlist. That is the documented
 // trade-off for the "return my position" UX. It stays sane because (a) the
 // route applies per-email/IP public rate limiting before reaching here, (b)
@@ -30,7 +30,7 @@ import { validateSignupEmail } from "@/utils/server/email-validation.mjs";
 // doubles as a referral-attribution identifier, so there is no reason to hand
 // a probing browser someone else's stable identifier.
 // The referral code is only included when the probing browser matches the
-// signup's own browser (uniqueUserId equal) — otherwise the response is
+// signup's own browser (uniqueUserId equal) - otherwise the response is
 // position-only, so one browser can't harvest another signup's referral link.
 export const duplicateSignupResponse = async (waitListId, email, browserId = "") => {
   // Canonical lookup: Gmail dots/plus-tags map to one identity (see
@@ -178,7 +178,7 @@ export const validateRequest = async (body, context = {}) => {
   const normalizedEmail = typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
   const existing = await findSignupByEmail(prisma, body.waitListId, body.email);
   // Legacy rows saved before email normalization carry a null
-  // emailNormalized, which the indexed lookup above cannot see — fall back to
+  // emailNormalized, which the indexed lookup above cannot see - fall back to
   // a raw case-insensitive match so those addresses still resolve instead of
   // erroring or doubling.
   const legacy =

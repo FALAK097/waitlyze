@@ -13,7 +13,7 @@ export function proxy(req) {
     hostname.endsWith(".vercel.app");
   const isAppHost = appRoot && (hostname === appRoot || hostname.endsWith(`.${appRoot}`));
   const { pathname } = req.nextUrl;
-  // Never rewrite file requests on custom hosts — serve public/ assets and
+  // Never rewrite file requests on custom hosts - serve public/ assets and
   // robots/favicon normally instead of the /domain HTML document.
   const isFileRequest = /\.[a-z0-9]+$/i.test(pathname);
   if (

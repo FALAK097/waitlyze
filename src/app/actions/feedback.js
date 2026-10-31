@@ -111,5 +111,5 @@ export async function submitFeedback(previous, formData) {
     return { error: "Couldn't send your feedback right now. Try again in a moment." };
   }
 
-  return { success: "Thanks — your feedback is on its way." };
+  return { success: "Thanks - your feedback is on its way." };
 }

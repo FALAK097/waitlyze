@@ -3,11 +3,11 @@ title: Custom frontend guide
 description: Ship your own signup UI on the Signup API, embeds, referrals, domains, and email.
 ---
 
-This guide wires the whole public surface together: a form you own, Waitlyze-owned verification and storage, referral sharing, your domain, and your sender. Follow it in order — each step assumes the previous one works.
+This guide wires the whole public surface together: a form you own, Waitlyze-owned verification and storage, referral sharing, your domain, and your sender. Follow it in order - each step assumes the previous one works.
 
 ## 1. Collect signups with the API
 
-Build any form (React, plain HTML, mobile app backend) and POST from **your server** with a [Signup API](/docs/api) key. Never ship the key to the browser — proxy through your backend.
+Build any form (React, plain HTML, mobile app backend) and POST from **your server** with a [Signup API](/docs/api) key. Never ship the key to the browser - proxy through your backend.
 
 ```js title="Your backend → Waitlyze"
 const response = await fetch("https://waitlyze.falakgala.dev/api/waitlist", {
@@ -27,11 +27,11 @@ const { data } = await response.json();
 // data.position, data.referral_code, data.referral_link → render confirmation UI
 ```
 
-Show `data.position` (“You're #9 in line”) and, when present, `data.referral_link` with a copy button. On `409`, read `data.position` — the email already joined, so show its place instead of an error wall. Poll `GET /api/waitlist?waitlistId=…&email=…` for a “check my spot” box.
+Show `data.position` (“You're #9 in line”) and, when present, `data.referral_link` with a copy button. On `409`, read `data.position` - the email already joined, so show its place instead of an error wall. Poll `GET /api/waitlist?waitlistId=…&email=…` for a “check my spot” box.
 
 ## 2. When to use the embed instead
 
-If you do **not** need custom logic, skip the API: paste the [embed snippet](/docs/embed) (`data-key-id` is a public waitlist ID, no secret). The embed forwards `?r=CODE` and UTM parameters automatically, sizes itself, and needs no backend. Many teams combine both — embed for the marketing site, API for in-product or mobile flows — because both feed the same waitlist, position engine, and referral graph.
+If you do **not** need custom logic, skip the API: paste the [embed snippet](/docs/embed) (`data-key-id` is a public waitlist ID, no secret). The embed forwards `?r=CODE` and UTM parameters automatically, sizes itself, and needs no backend. Many teams combine both - embed for the marketing site, API for in-product or mobile flows - because both feed the same waitlist, position engine, and referral graph.
 
 ## 3. Turn on referrals
 
@@ -39,12 +39,12 @@ In Waitlist settings → **Referral sharing**, enable sharing ([Referrals](/docs
 
 - API responses include `referral_code` + `referral_link` for every signup.
 - Pass a friend's code as `referral_code` (API), `?r=CODE` (hosted page), or inherit it from your page URL (embed).
-- Credit is awarded when the invitee verifies and the referral is `CLEAR`/`APPROVED` — gate rewards on the [`referral.completed` webhook](/docs/webhooks), never on signup alone. (Queue positions additionally require the inviter to be verified.)
+- Credit is awarded when the invitee verifies and the referral is `CLEAR`/`APPROVED` - gate rewards on the [`referral.completed` webhook](/docs/webhooks), never on signup alone. (Queue positions additionally require the inviter to be verified.)
 - Review flagged referrals in Subscribers → Referral review.
 
 ## 4. Serve it from your domain
 
-Add `join.example.com` in Waitlist settings → **Custom domain** ([Custom domains](/docs/domains)). It serves the same published revision as the hosted `/w/slug` page, so your API-built confirmation screens can link to a first-party URL. `referral_link` values in API responses still point at the Waitlyze hosted URL — rewrite the origin to your domain when rendering if you prefer (`/w/slug?r=CODE` path shape is identical).
+Add `join.example.com` in Waitlist settings → **Custom domain** ([Custom domains](/docs/domains)). It serves the same published revision as the hosted `/w/slug` page, so your API-built confirmation screens can link to a first-party URL. `referral_link` values in API responses still point at the Waitlyze hosted URL - rewrite the origin to your domain when rendering if you prefer (`/w/slug?r=CODE` path shape is identical).
 
 ## 5. Send from your domain
 

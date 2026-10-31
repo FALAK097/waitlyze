@@ -83,7 +83,7 @@ function formatDate(date) {
 
 function timeAgo(value) {
   const then = new Date(value).getTime();
-  if (Number.isNaN(then)) return "—";
+  if (Number.isNaN(then)) return "-";
   const seconds = Math.max(0, Math.floor((Date.now() - then) / 1000));
   if (seconds < 60) return "Just now";
   const minutes = Math.floor(seconds / 60);
@@ -104,7 +104,7 @@ function countryFlag(code) {
 
 function locationLabel(city, country) {
   const place = [city, country].filter(Boolean).join(", ");
-  if (!place) return "—";
+  if (!place) return "-";
   const flag = countryFlag(country);
   return flag ? `${flag} ${place}` : place;
 }
@@ -403,7 +403,7 @@ export function AudienceTable({
       const skipped = payload.alreadyInState || 0;
       toast.success(
         `Marketing updates restored for ${payload.processed.toLocaleString()} signup${payload.processed === 1 ? "" : "s"}.` +
-          (skipped > 0 ? ` ${skipped} already subscribed — skipped.` : ""),
+          (skipped > 0 ? ` ${skipped} already subscribed - skipped.` : ""),
       );
       refreshAfterBulk();
     } catch (error) {
@@ -431,7 +431,7 @@ export function AudienceTable({
           const queued = payload.emailsQueued || 0;
           const duplicates = payload.duplicateSkipped || 0;
           const skipped = payload.alreadyInState || 0;
-          const skippedNote = skipped > 0 ? ` ${skipped} already offboarded — skipped.` : "";
+          const skippedNote = skipped > 0 ? ` ${skipped} already offboarded - skipped.` : "";
           let emailNote;
           if (queued > 0) {
             emailNote =
@@ -440,7 +440,7 @@ export function AudienceTable({
                 ? ` ${duplicates} skipped as duplicate${duplicates === 1 ? "" : "s"}.`
                 : "");
           } else if (duplicates > 0) {
-            emailNote = " No new goodbye emails — already sent or cancelled for this selection.";
+            emailNote = " No new goodbye emails - already sent or cancelled for this selection.";
           } else if (payload.emailTemplateMissing) {
             emailNote = " No offboarding template exists, so no goodbye emails were sent.";
           } else if (payload.deliveryConfigured === false) {
@@ -636,7 +636,7 @@ export function AudienceTable({
               meta: { className: "hidden min-w-40 px-4 py-3 sm:table-cell" },
               cell: ({ row, getValue }) => {
                 const phone = getValue();
-                if (!phone) return <span className="text-product-text-secondary">—</span>;
+                if (!phone) return <span className="text-product-text-secondary">-</span>;
                 const copyId = `${row.original.id}:phone`;
                 const copied = copiedId === copyId;
                 return (
@@ -704,7 +704,7 @@ export function AudienceTable({
             title={row.original.device || undefined}
           >
             {deviceLabel(row.original.deviceType, row.original.device) === "Not available"
-              ? "—"
+              ? "-"
               : deviceLabel(row.original.deviceType, row.original.device)}
           </span>
         ),
@@ -728,7 +728,7 @@ export function AudienceTable({
               meta: { className: "hidden px-4 py-3 sm:table-cell" },
               cell: ({ getValue }) => (
                 <span className="text-product-text-secondary">
-                  {getValue() == null ? "—" : `#${getValue()}`}
+                  {getValue() == null ? "-" : `#${getValue()}`}
                 </span>
               ),
             }),
@@ -750,10 +750,12 @@ export function AudienceTable({
               <Tooltip>
                 <TooltipTrigger
                   render={
-                    <button
+                    <Button
                       type="button"
-                      className="flex size-6 cursor-help items-center justify-center rounded-full border-0 bg-transparent p-0 text-product-text-secondary"
+                      className="cursor-help rounded-full text-product-text-secondary"
                       aria-label="How points work"
+                      size="icon-touch"
+                      variant="product-option"
                     />
                   }
                 >
@@ -1060,7 +1062,7 @@ export function AudienceTable({
                 )}
                 {selectedIds.length > 1000 && (
                   <span className="text-product-text-secondary">
-                    Bulk actions handle up to 1,000 at a time — narrow the search or filter first.
+                    Bulk actions handle up to 1,000 at a time - narrow the search or filter first.
                   </span>
                 )}
               </div>
@@ -1082,7 +1084,11 @@ export function AudienceTable({
               </div>
             )}
             <div className="overflow-x-auto [&_td]:px-3 [&_td]:py-4.5 [&_td:first-child]:pl-0 [&_td:last-child]:pr-0 [&_th]:border-b [&_th]:px-3 [&_th]:text-caption [&_th:first-child]:pl-0 [&_th:last-child]:pr-0">
-              <Table className="w-full min-w-192 table-fixed border-collapse text-left sm:table-auto">
+              <Table
+                className="w-full min-w-192 table-fixed border-collapse text-left sm:table-auto"
+                scrollHint="Swipe or scroll to see all columns"
+                scrollLabel="Signups"
+              >
                 <TableHeader className="text-product-text-secondary">
                   {table.getHeaderGroups().map((headerGroup) => (
                     <TableRow key={headerGroup.id}>
@@ -1278,7 +1284,7 @@ export function AudienceTable({
                         <div className="grid grid-cols-[104px_minmax(0,1fr)] gap-3">
                           <dt className="text-product-text-secondary">Position</dt>
                           <dd className="tabular-nums">
-                            {profile.position == null ? "—" : `#${profile.position}`}
+                            {profile.position == null ? "-" : `#${profile.position}`}
                           </dd>
                         </div>
                       )}
@@ -1289,7 +1295,7 @@ export function AudienceTable({
                       <div className="grid grid-cols-[104px_minmax(0,1fr)] gap-3">
                         <dt className="text-product-text-secondary">Location</dt>
                         <dd>
-                          {locationLabel(profile.city, profile.country) === "—"
+                          {locationLabel(profile.city, profile.country) === "-"
                             ? "Not available"
                             : locationLabel(profile.city, profile.country)}
                         </dd>
@@ -1303,7 +1309,7 @@ export function AudienceTable({
                       {flags.showReferrals && (
                         <div className="grid grid-cols-[104px_minmax(0,1fr)] gap-3">
                           <dt className="text-product-text-secondary">Referrals</dt>
-                          <dd className="tabular-nums">{profile.referralCount ?? "—"}</dd>
+                          <dd className="tabular-nums">{profile.referralCount ?? "-"}</dd>
                         </div>
                       )}
                       <div className="grid grid-cols-[104px_minmax(0,1fr)] gap-3">
@@ -1338,7 +1344,7 @@ export function AudienceTable({
                           {profile.landingPage ? (
                             <span title={profile.landingPage}>{profile.landingPage}</span>
                           ) : (
-                            "—"
+                            "-"
                           )}
                         </dd>
                       </div>
@@ -1348,7 +1354,7 @@ export function AudienceTable({
                           {profile.referrer ? (
                             <span title={profile.referrer}>{profile.referrer}</span>
                           ) : (
-                            "—"
+                            "-"
                           )}
                         </dd>
                       </div>
@@ -1363,18 +1369,19 @@ export function AudienceTable({
                           <dt className="text-product-text-secondary">Referred by</dt>
                           <dd className="min-w-0">
                             {profile.referredBy?.email ? (
-                              <button
+                              <Button
                                 type="button"
                                 title={profile.referredBy.email}
                                 onClick={() =>
                                   setSheet({ type: "profile", row: profile.referredBy })
                                 }
-                                className="block w-full cursor-pointer truncate border-0 bg-transparent p-0 text-left text-product-text-primary underline underline-offset-4 hover:text-product-text-secondary"
+                                variant="product-inline-link"
+                                size="inline-link"
                               >
-                                {profile.referredBy.email}
-                              </button>
+                                <span className="min-w-0 truncate">{profile.referredBy.email}</span>
+                              </Button>
                             ) : (
-                              "—"
+                              "-"
                             )}
                           </dd>
                         </div>
@@ -1503,7 +1510,7 @@ export function AudienceTable({
             }}
             title={`Offboard ${selectedIds.length.toLocaleString()} signup${selectedIds.length === 1 ? "" : "s"}?`}
             description={
-              "Offboarding keeps every row — position, points, and referral history stay exactly as they are — " +
+              "Offboarding keeps every row - position, points, and referral history stay exactly as they are - " +
               "and stops marketing emails immediately. Confirmation and other transactional emails are unaffected. " +
               "Where an offboarding template exists, each newly offboarded signup gets one goodbye email. " +
               "An Undo option appears for 30 seconds afterwards and re-enables updates only for the signups just offboarded."

@@ -1,9 +1,8 @@
 "use client";
 
-import { CalendarIcon, ChartLineData01Icon } from "@hugeicons/core-free-icons";
+import { ArrowUpDownIcon, CalendarIcon, ChartLineData01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { differenceInCalendarDays, format } from "date-fns";
-import dynamic from "next/dynamic";
 import Link from "next/link";
 import { parseAsString, parseAsStringLiteral, useQueryStates } from "nuqs";
 import { useEffect, useEffectEvent, useMemo, useState } from "react";
@@ -22,44 +21,16 @@ import {
 } from "@/components/ui/table";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { SIGNUP_POINTS, REFERRAL_POINTS } from "@/lib/referrals/points.mjs";
-import { cn } from "@/lib/utils";
 
-const EvilAreaChart = dynamic(
-  () => import("@/components/product/evil-area-chart").then((module) => module.EvilAreaChart),
-  {
-    loading: () => (
-      <div
-        className="flex min-h-70 items-end gap-3 px-5 py-6"
-        role="status"
-        aria-label="Loading activity chart"
-      />
-    ),
-  },
-);
-const EvilPieChart = dynamic(
-  () => import("@/components/product/evil-pie-chart").then((module) => module.EvilPieChart),
-  {
-    loading: () => (
-      <div
-        className="grid h-61.5 place-items-center border-t border-product-border-subtle p-6 text-center text-xs text-product-text-secondary"
-        role="status"
-        aria-label="Loading channel chart"
-      />
-    ),
-  },
-);
-const EvilWorldMap = dynamic(
-  () => import("@/components/product/evil-world-map").then((module) => module.EvilWorldMap),
-  {
-    loading: () => (
-      <div
-        className="grid h-61.5 place-items-center border-t border-product-border-subtle p-6 text-center text-xs text-product-text-secondary"
-        role="status"
-        aria-label="Loading visitor map"
-      />
-    ),
-  },
-);
+import { number } from "./waitlist-analytics-formatters";
+import {
+  EmailDeliveryChart,
+  EvilAreaChart,
+  EvilPieChart,
+  EvilWorldMap,
+  FunnelChart,
+  RankedBars,
+} from "./waitlist-analytics-visualizations";
 
 const COMPARISON =
   "flex min-w-0 items-center gap-1 pt-0.75 text-micro font-medium leading-snug text-product-text-secondary";
@@ -80,8 +51,6 @@ const BENCHMARK =
   "mt-1.25 inline-flex w-fit rounded-full bg-product-bg-inset px-2 py-0.5 text-micro font-semibold leading-normal tracking-wider text-product-text-secondary uppercase";
 const DIMENSIONS =
   "inline-flex max-w-full items-center gap-0.5 overflow-x-auto px-3 pb-2.5 no-scrollbar";
-const DIMENSION_BUTTON =
-  "min-h-8.5 shrink-0 cursor-pointer rounded-lg border-0 bg-transparent px-2.25 py-1.25 text-micro text-product-text-secondary hover:bg-product-bg-inset";
 const ANALYTICS_CHART =
   "w-full px-2.5 pb-2 pl-1 text-xs text-product-text-secondary [&>[data-chart]]:h-80 [&>[data-chart]]:w-full [&>[data-chart]]:aspect-auto";
 const DATA_PANEL = [
@@ -122,11 +91,10 @@ const rangePresets = [
 ];
 const MAX_RANGE_DAYS = 90;
 // Rough in-product medians for orientation only. These are illustrative
-// constants, not measured benchmarks — keep them round and never present
+// constants, not measured benchmarks - keep them round and never present
 // them with fake precision.
 const CONVERSION_MEDIAN_PCT = 11;
 const VERIFICATION_MEDIAN_PCT = 55;
-const number = new Intl.NumberFormat("en-US");
 const regionNames = new Intl.DisplayNames(["en"], { type: "region" });
 const rangeQueryOptions = {
   range: parseAsStringLiteral(["1", "7", "30", "90", "custom"]).withDefault("30"),
@@ -152,257 +120,6 @@ function parseIsoDate(value) {
   if (!value || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return null;
   const date = new Date(`${value}T00:00:00Z`);
   return Number.isNaN(date.valueOf()) ? null : date;
-}
-
-const FUNNEL_WIDTH = 900;
-const FUNNEL_HEIGHT = 200;
-const FUNNEL_GAP = 8;
-
-function funnelSegmentPath(normStart, normEnd, width, scale) {
-  const center = FUNNEL_HEIGHT / 2;
-  const startHeight = normStart * FUNNEL_HEIGHT * 0.44 * scale;
-  const endHeight = normEnd * FUNNEL_HEIGHT * 0.44 * scale;
-  const control = width * 0.55;
-
-  return [
-    `M 0 ${center - startHeight}`,
-    `C ${control} ${center - startHeight}, ${width - control} ${center - endHeight}, ${width} ${center - endHeight}`,
-    `L ${width} ${center + endHeight}`,
-    `C ${width - control} ${center + endHeight}, ${control} ${center + startHeight}, 0 ${center + startHeight}`,
-    "Z",
-  ].join(" ");
-}
-
-function FunnelChart({ data, showValues = true, showPercentage = true, showLabels = true }) {
-  const [hoveredIndex, setHoveredIndex] = useState(null);
-  if (!data.length) return null;
-
-  const firstValue = data[0]?.value ?? 0;
-  const scaleValue = Math.max(firstValue, ...data.map((stage) => stage.value), 1);
-  const norms = data.map((stage) => Math.max(stage.value, 0) / scaleValue);
-  const segmentWidth = (FUNNEL_WIDTH - FUNNEL_GAP * (data.length - 1)) / data.length;
-  const layerScales = [1, 0.65, 0.3];
-  const layerFills = ["#e8eee9", "#bdcec2", "#668675"];
-
-  return (
-    <div className="analytics-funnel relative mt-1 w-full overflow-visible px-3 pt-1 pb-2">
-      <svg
-        aria-hidden="true"
-        className="analytics-funnel__svg pointer-events-none"
-        data-analytics-chart
-        preserveAspectRatio="none"
-        role="presentation"
-        viewBox={`0 0 ${FUNNEL_WIDTH} ${FUNNEL_HEIGHT}`}
-      >
-        {data.map((stage, index) => {
-          const normStart = norms[index] ?? 0;
-          const normEnd = norms[Math.min(index + 1, data.length - 1)] ?? normStart;
-          const x = (segmentWidth + FUNNEL_GAP) * index;
-          const dimmed = hoveredIndex !== null && hoveredIndex !== index;
-
-          return (
-            <g
-              key={stage.label}
-              className="transition-opacity duration-150"
-              opacity={dimmed ? 0.42 : 1}
-              transform={`translate(${x}, 0)`}
-            >
-              {layerScales.map((layerScale, layerIndex) => (
-                <path
-                  key={`ring-${layerScale}`}
-                  d={funnelSegmentPath(normStart, normEnd, segmentWidth, layerScale)}
-                  fill={layerFills[layerIndex]}
-                />
-              ))}
-            </g>
-          );
-        })}
-      </svg>
-
-      {data.map((stage, index) => {
-        const percentage =
-          firstValue > 0 ? `${Math.round((stage.value / firstValue) * 100)}%` : "—";
-        const dimmed = hoveredIndex !== null && hoveredIndex !== index;
-        const detail = stage.detail ? ` ${stage.detail}.` : "";
-
-        return (
-          <TooltipProvider key={stage.label} delay={100}>
-            <Tooltip>
-              <TooltipTrigger
-                render={
-                  <button
-                    type="button"
-                    aria-label={`${stage.label}: ${number.format(stage.value)}, ${percentage} of visitors.${detail}`}
-                    className="analytics-funnel__stage group absolute top-0 grid h-full cursor-pointer border-0 bg-transparent p-0 text-center transition-opacity duration-150"
-                    onBlur={() => setHoveredIndex(null)}
-                    onFocus={() => setHoveredIndex(index)}
-                    onPointerEnter={() => setHoveredIndex(index)}
-                    onPointerLeave={() => setHoveredIndex(null)}
-                    style={{
-                      "--funnel-stage-left": `${(index / data.length) * 100}%`,
-                      "--funnel-stage-width": `${100 / data.length}%`,
-                      "--funnel-stage-opacity": dimmed ? 0.62 : 1,
-                    }}
-                  />
-                }
-              >
-                {showValues ? (
-                  <span className="grid place-items-center text-xs leading-none font-semibold text-product-text-primary tabular-nums">
-                    {number.format(stage.value)}
-                  </span>
-                ) : null}
-                {showPercentage ? (
-                  <span className="grid place-items-center">
-                    <span className="rounded-full border border-product-border-control bg-white px-2.5 py-1 text-micro leading-none font-semibold text-product-text-primary tabular-nums group-focus-visible:ring-2 group-focus-visible:ring-product-focus group-focus-visible:ring-offset-2">
-                      {percentage}
-                    </span>
-                  </span>
-                ) : null}
-                {showLabels ? (
-                  <span className="grid place-items-center px-1 text-center text-xs leading-tight font-medium text-product-text-primary">
-                    {stage.label}
-                  </span>
-                ) : null}
-              </TooltipTrigger>
-              <TooltipContent side="top" className="max-w-60 whitespace-normal">
-                <span className="grid gap-1">
-                  <strong>{stage.label}</strong>
-                  <span>
-                    {number.format(stage.value)} · {percentage} of visitors
-                  </span>
-                  {stage.detail ? <span>{stage.detail}</span> : null}
-                </span>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        );
-      })}
-    </div>
-  );
-}
-
-function EmailDeliveryChart({ emails }) {
-  const totals = emails.reduce(
-    (result, email) => ({
-      total: result.total + email.total,
-      delivered: result.delivered + email.delivered,
-      failed: result.failed + email.failed,
-    }),
-    { total: 0, delivered: 0, failed: 0 },
-  );
-  const inProgress = Math.max(totals.total - totals.delivered - totals.failed, 0);
-
-  return (
-    <>
-      <dl className="grid grid-cols-3 border-y border-product-border-subtle">
-        {[
-          { label: "Delivered", value: totals.delivered, tone: "text-product-success-text" },
-          { label: "Failed", value: totals.failed, tone: "text-product-danger-text" },
-          { label: "In progress", value: inProgress, tone: "text-product-text-secondary" },
-        ].map((item) => (
-          <div
-            key={item.label}
-            className="grid gap-0.5 px-4 py-3 first:border-0 [&+div]:border-s [&+div]:border-product-border-subtle"
-          >
-            <dt className="text-micro text-product-text-secondary">{item.label}</dt>
-            <dd className={`text-sm font-semibold tabular-nums ${item.tone}`}>
-              {number.format(item.value)}
-            </dd>
-          </div>
-        ))}
-      </dl>
-
-      <div className="grid gap-4 px-4 pt-4 pb-5">
-        <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
-          <h4 className="text-xs font-semibold text-product-text-primary">Delivery by broadcast</h4>
-          <ul className="flex flex-wrap items-center gap-x-3 gap-y-1 text-micro text-product-text-secondary">
-            <li className="inline-flex items-center gap-1.5">
-              <span aria-hidden="true" className="size-2 rounded-full bg-product-success-text" />
-              Delivered
-            </li>
-            <li className="inline-flex items-center gap-1.5">
-              <span aria-hidden="true" className="size-2 rounded-full bg-product-danger-text" />
-              Failed
-            </li>
-            <li className="inline-flex items-center gap-1.5">
-              <span aria-hidden="true" className="bg-product-neutral-300 size-2 rounded-full" />
-              In progress
-            </li>
-          </ul>
-        </div>
-
-        <ol className="grid gap-4">
-          {emails.map((email) => {
-            const delivered = Math.max(email.delivered, 0);
-            const failed = Math.max(email.failed, 0);
-            const total = Math.max(email.total, 0);
-            const barTotal = Math.max(total, delivered + failed, 1);
-            const remaining = Math.max(barTotal - delivered - failed, 0);
-            const pending = Math.max(total - delivered - failed, 0);
-            const date = email.sentAt
-              ? formatDate(email.sentAt.slice(0, 10), {
-                  month: "short",
-                  day: "numeric",
-                  year: "numeric",
-                })
-              : "Date unavailable";
-
-            return (
-              <li key={email.id} className="grid min-w-0 gap-2">
-                <div className="flex min-w-0 items-baseline justify-between gap-3 text-xs">
-                  <span className="min-w-0 truncate font-medium text-product-text-primary">
-                    {email.name}
-                  </span>
-                  <span className="shrink-0 text-micro text-product-text-secondary">{date}</span>
-                </div>
-                <div
-                  aria-hidden="true"
-                  className="flex h-3 overflow-hidden rounded-full bg-product-bg-inset"
-                >
-                  <span
-                    className="analytics-email-bar__segment h-full bg-product-success-text"
-                    style={{ "--email-bar-width": `${(delivered / barTotal) * 100}%` }}
-                  />
-                  <span
-                    className="analytics-email-bar__segment h-full bg-product-danger-text"
-                    style={{ "--email-bar-width": `${(failed / barTotal) * 100}%` }}
-                  />
-                  {remaining > 0 ? (
-                    <span
-                      className="analytics-email-bar__segment bg-product-neutral-300 h-full"
-                      style={{ "--email-bar-width": `${(remaining / barTotal) * 100}%` }}
-                    />
-                  ) : null}
-                </div>
-                <div className="flex flex-wrap gap-x-4 gap-y-1 text-micro text-product-text-secondary">
-                  <span>
-                    <strong className="font-semibold text-product-success-text">
-                      {number.format(delivered)}
-                    </strong>{" "}
-                    delivered
-                  </span>
-                  <span>
-                    <strong className="font-semibold text-product-danger-text">
-                      {number.format(failed)}
-                    </strong>{" "}
-                    failed
-                  </span>
-                  {pending > 0 ? (
-                    <span>
-                      <strong className="font-semibold text-product-text-primary">
-                        {number.format(pending)}
-                      </strong>{" "}
-                      in progress
-                    </span>
-                  ) : null}
-                </div>
-              </li>
-            );
-          })}
-        </ol>
-      </div>
-    </>
-  );
 }
 
 function rangeLabel(range, from, to) {
@@ -441,9 +158,10 @@ function Metric({ label, value, change, detail, badge, hint }) {
             <Tooltip>
               <TooltipTrigger
                 render={
-                  <button
+                  <Button
                     type="button"
-                    className="cursor-help rounded-sm border-0 bg-transparent p-0 text-left"
+                    variant="metric-hint"
+                    size="metric-hint"
                     aria-label={`More about ${label}: ${value}`}
                   />
                 }
@@ -489,18 +207,16 @@ function DimensionPicker({ label, options, value, onChange }) {
   return (
     <div className={DIMENSIONS} role="group" aria-label={label}>
       {options.map((option) => (
-        <button
+        <Button
           key={option.value}
           type="button"
-          className={cn(
-            DIMENSION_BUTTON,
-            value === option.value && "bg-product-bg-inset font-medium text-product-text-primary",
-          )}
+          variant="product-ghost"
+          size="dimension"
           aria-pressed={value === option.value}
           onClick={() => onChange(option.value)}
         >
           {option.label}
-        </button>
+        </Button>
       ))}
     </div>
   );
@@ -510,24 +226,16 @@ function PanelMetricSwitch({ metric, onChange }) {
   const next = metric === "visitors" ? "signups" : "visitors";
   const label = metric === "visitors" ? "Visitors" : "Signups";
   return (
-    <button
+    <Button
       type="button"
-      className="inline-flex min-h-7 cursor-pointer items-center gap-1 rounded-lg border-0 bg-transparent px-1.5 py-0.5 ps-2 text-micro font-medium text-product-text-secondary hover:bg-product-bg-inset hover:text-product-text-primary [&_svg]:opacity-70"
+      variant="product-ghost"
+      size="metric-switch"
       onClick={() => onChange(next)}
       aria-label={`Metric: ${label}. Switch to ${next}.`}
     >
       {label}
-      <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true" focusable="false">
-        <path
-          d="M3.5 5L6 2.5 8.5 5M8.5 7L6 9.5 3.5 7"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.4"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-      </svg>
-    </button>
+      <HugeiconsIcon icon={ArrowUpDownIcon} size={12} className="size-3" aria-hidden="true" />
+    </Button>
   );
 }
 
@@ -587,14 +295,16 @@ function RangePicker({ range, from, to, onChange }) {
     >
       <PopoverTrigger
         render={
-          <button
+          <Button
             type="button"
-            className="inline-flex min-h-10.5 cursor-pointer items-center gap-2 rounded-lg border border-product-border-subtle bg-product-bg-surface px-3.5 py-2 text-caption font-medium text-product-text-primary hover:bg-product-bg-inset [&_svg]:size-3.75! [&_svg]:shrink-0 [&_svg]:text-product-text-secondary"
+            variant="product-outline"
+            size="date-trigger"
+            className="[&_svg]:size-3.75!"
             aria-label={`Date range: ${rangeLabel(range, from, to)}`}
           >
             <HugeiconsIcon icon={CalendarIcon} aria-hidden="true" />
             {rangeLabel(range, from, to)}
-          </button>
+          </Button>
         }
       />
       <PopoverContent align="end" className={view === "calendar" ? "w-120" : "w-48"}>
@@ -606,14 +316,11 @@ function RangePicker({ range, from, to, onChange }) {
               aria-label="Date range presets"
             >
               {rangePresets.map((option) => (
-                <button
+                <Button
                   key={option.days}
                   type="button"
-                  className={cn(
-                    "min-h-9 cursor-pointer rounded-lg border-0 bg-transparent px-2.5 py-1.5 text-left text-caption font-medium text-product-text-secondary hover:bg-product-bg-inset",
-                    range === option.days &&
-                      "bg-product-bg-inset font-semibold text-product-text-primary",
-                  )}
+                  variant="product-ghost"
+                  size="menu-item"
                   aria-pressed={range === option.days}
                   onClick={() => {
                     onChange({ range: option.days, from: null, to: null });
@@ -621,27 +328,29 @@ function RangePicker({ range, from, to, onChange }) {
                   }}
                 >
                   {option.label}
-                </button>
+                </Button>
               ))}
-              <button
+              <Button
                 type="button"
-                className="min-h-9 cursor-pointer rounded-lg border-0 bg-transparent px-2.5 py-1.5 text-left text-caption font-medium text-product-text-secondary hover:bg-product-bg-inset"
+                variant="product-ghost"
+                size="menu-item"
                 aria-pressed={false}
                 onClick={openPicker}
               >
                 Custom…
-              </button>
+              </Button>
             </div>
           ) : (
             <>
               <div className="flex items-center justify-between gap-2 px-2 pt-0.5 text-xs font-medium text-product-text-secondary">
-                <button
+                <Button
                   type="button"
-                  className="min-h-7 cursor-pointer rounded-md border-0 bg-transparent px-1 text-xs font-medium text-product-text-secondary hover:bg-product-bg-inset hover:text-product-text-primary"
+                  variant="product-ghost"
+                  size="date-back"
                   onClick={() => setView("presets")}
                 >
                   ← Presets
-                </button>
+                </Button>
                 <span>
                   {canApply
                     ? `${format(draft.from, "LLL d")} – ${format(draft.to, "LLL d, y")}`
@@ -661,32 +370,34 @@ function RangePicker({ range, from, to, onChange }) {
                   <label className="grid gap-0.75 text-micro font-medium text-product-text-secondary">
                     <span>Start</span>
                     <output className="block min-w-30 rounded-lg border border-product-border-subtle bg-product-bg-surface px-2 py-1.25 text-xs text-product-text-primary tabular-nums">
-                      {draft?.from ? format(draft.from, "yyyy-MM-dd") : "—"}
+                      {draft?.from ? format(draft.from, "yyyy-MM-dd") : "-"}
                     </output>
                   </label>
                   <label className="grid gap-0.75 text-micro font-medium text-product-text-secondary">
                     <span>End</span>
                     <output className="block min-w-30 rounded-lg border border-product-border-subtle bg-product-bg-surface px-2 py-1.25 text-xs text-product-text-primary tabular-nums">
-                      {draft?.to ? format(draft.to, "yyyy-MM-dd") : "—"}
+                      {draft?.to ? format(draft.to, "yyyy-MM-dd") : "-"}
                     </output>
                   </label>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <button
+                  <Button
                     type="button"
-                    className="min-h-8 cursor-pointer rounded-lg border-0 bg-transparent px-2.5 py-1 text-xs font-medium text-product-text-secondary hover:not-disabled:bg-product-bg-inset hover:not-disabled:text-product-text-primary disabled:cursor-not-allowed disabled:opacity-45"
+                    variant="product-ghost"
+                    size="date-action"
                     onClick={() => setDraft(undefined)}
                   >
                     Clear
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     type="button"
-                    className="min-h-8 cursor-pointer rounded-lg border-0 bg-foreground px-2.5 py-1 text-xs font-medium text-background hover:not-disabled:bg-foreground hover:not-disabled:text-background hover:not-disabled:opacity-90 disabled:cursor-not-allowed disabled:opacity-45"
+                    variant="product-apply"
+                    size="date-action"
                     disabled={!canApply}
                     onClick={applyDraft}
                   >
                     Apply
-                  </button>
+                  </Button>
                 </div>
               </div>
             </>
@@ -701,23 +412,6 @@ function addDaysSafe(date, days) {
   const next = new Date(date);
   next.setDate(next.getDate() + days);
   return next;
-}
-
-function RankedBars({ rows, empty, kind, metric = "visitors", limit = 5 }) {
-  if (!rows.length)
-    return (
-      <p className="grid h-61.5 place-items-center border-t border-product-border-subtle p-6 text-center text-xs text-product-text-secondary">
-        {empty}
-      </p>
-    );
-  const sorted = [...rows]
-    .sort((a, b) => {
-      const avalue = metric === "signups" ? a.signups : a.visitors;
-      const bvalue = metric === "signups" ? b.signups : b.visitors;
-      return bvalue - avalue || b.visitors - a.visitors || b.signups - a.signups;
-    })
-    .slice(0, limit);
-  return <EvilBarRows rows={sorted} kind={kind} metric={metric} />;
 }
 
 export function AnalyticsSkeleton() {
@@ -831,7 +525,10 @@ export function WaitlistAnalytics({ waitListId, emailsEnabled = false }) {
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || "Could not load analytics.");
       if (!signal.aborted)
-        setAnalytics({ ...result, requestKey: { days: requestDays, end: requestEnd ?? null } });
+        setAnalytics({
+          ...result,
+          requestKey: { waitListId, days: requestDays, end: requestEnd ?? null },
+        });
     } catch (cause) {
       if (cause.name !== "AbortError") setError(cause.message || "Could not load analytics.");
     } finally {
@@ -851,6 +548,7 @@ export function WaitlistAnalytics({ waitListId, emailsEnabled = false }) {
 
   const rangeMatches = (result) =>
     result?.requestKey &&
+    result.requestKey.waitListId === waitListId &&
     result.requestKey.days === requestDays &&
     result.requestKey.end === (requestEnd ?? null);
   const currentAnalytics = analytics && rangeMatches(analytics) ? analytics : null;
@@ -859,10 +557,10 @@ export function WaitlistAnalytics({ waitListId, emailsEnabled = false }) {
   const kFactor = currentAnalytics?.kFactor;
   const series = currentAnalytics?.series ?? [];
   const noActivity = summary && summary.visitors === 0 && summary.signups === 0;
-  const conversion = summary?.conversionRate == null ? "—" : `${summary.conversionRate}%`;
-  const verification = summary?.verificationRate == null ? "—" : `${summary.verificationRate}%`;
+  const conversion = summary?.conversionRate == null ? "-" : `${summary.conversionRate}%`;
+  const verification = summary?.verificationRate == null ? "-" : `${summary.verificationRate}%`;
   const kFactorValue =
-    kFactor?.value == null ? "—" : kFactor.value >= 0.01 ? kFactor.value.toFixed(2) : "<0.01";
+    kFactor?.value == null ? "-" : kFactor.value >= 0.01 ? kFactor.value.toFixed(2) : "<0.01";
   const invitesPerSignup = kFactor?.invitesPerSignup ?? 0;
   const invitesLabel =
     invitesPerSignup === 0
@@ -931,7 +629,7 @@ export function WaitlistAnalytics({ waitListId, emailsEnabled = false }) {
     referrals?.share == null ? "No signups yet" : `${referrals.share}% of signups`;
   const summarySentence =
     currentAnalytics && !noActivity && summary?.conversionRate != null
-      ? `${number.format(summary.signups)} signups from ${number.format(summary.visitors)} visitors — ${summary.conversionRate}% conversion vs a ~${CONVERSION_MEDIAN_PCT}% typical median.`
+      ? `${number.format(summary.signups)} signups from ${number.format(summary.visitors)} visitors - ${summary.conversionRate}% conversion vs a ~${CONVERSION_MEDIAN_PCT}% typical median.`
       : null;
   const funnelSteps = summary
     ? [
@@ -1081,7 +779,7 @@ export function WaitlistAnalytics({ waitListId, emailsEnabled = false }) {
                 label="K-factor"
                 value={kFactorValue}
                 detail={kFactorDetail}
-                hint="Viral coefficient: average new signups generated per signup — invites sent times the share-to-join rate. Above 1.0 means self-sustaining growth."
+                hint="Viral coefficient: average new signups generated per signup - invites sent times the share-to-join rate. Above 1.0 means self-sustaining growth."
               />
               <Metric
                 label="Points awarded"
@@ -1374,7 +1072,7 @@ export function WaitlistAnalytics({ waitListId, emailsEnabled = false }) {
               </p>
               {currentAnalytics.emails.length ? (
                 <>
-                  <EmailDeliveryChart emails={currentAnalytics.emails} />
+                  <EmailDeliveryChart emails={currentAnalytics.emails} formatDate={formatDate} />
                   <div className={ANALYTICS_TABLE_WRAP}>
                     <table className={ANALYTICS_TABLE}>
                       <caption className="sr-only">Broadcast delivery outcomes by send</caption>
@@ -1399,7 +1097,7 @@ export function WaitlistAnalytics({ waitListId, emailsEnabled = false }) {
                                       day: "numeric",
                                       year: "numeric",
                                     })
-                                  : "—"}
+                                  : "-"}
                               </span>
                             </th>
                             <td>{number.format(email.total)}</td>

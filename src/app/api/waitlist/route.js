@@ -98,7 +98,7 @@ function rateLimitResponse(error, extraHeaders) {
   );
 }
 
-// GET /api/waitlist?waitlistId=...&email=... — status lookup for custom
+// GET /api/waitlist?waitlistId=...&email=... - status lookup for custom
 // frontends ("where am I?") without consuming signup intake budget. The API
 // key travels in x-api-key / Authorization headers only.
 export async function GET(request) {
@@ -192,7 +192,7 @@ export async function POST(request) {
       );
     // Optional client-generated idempotency key. Replays reuse a deterministic
     // identity, so the service layer returns the original signup instead of a
-    // duplicate — safe to retry on timeouts and 5xx.
+    // duplicate - safe to retry on timeouts and 5xx.
     const idempotencyKey = request.headers.get("idempotency-key");
     let uniqueUserId = crypto.randomUUID();
     if (idempotencyKey !== null) {
@@ -271,10 +271,10 @@ export async function POST(request) {
     }
 
     const signUp = await createSignUp(signupDataInput, referralCode);
-    // Silent-mode fraud verdict: same success shape, nothing persisted —
+    // Silent-mode fraud verdict: same success shape, nothing persisted -
     // no verification email, no impression, no points, no webhooks. The
     // service attached a zero-value rewardSummary (real visibility flags,
-    // zero progress), so every key a real response carries is present —
+    // zero progress), so every key a real response carries is present -
     // including counts_hidden for stealth launches, which the UI hides per
     // the flag exactly like a real response.
     if (signUp.silent) {

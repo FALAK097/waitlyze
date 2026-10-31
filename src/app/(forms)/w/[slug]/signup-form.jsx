@@ -11,13 +11,17 @@ import { ReferralCockpitExtras } from "@/components/product/referral-cockpit";
 import { ShareButtons } from "@/components/product/share-buttons";
 import { StatusBadge } from "@/components/product/waitlist-page-content";
 import { PhoneInput } from "@/components/reui/phone-input";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { collectAttribution } from "@/utils/attribution";
 
 const control =
-  "h-12 min-h-12 min-w-0 flex-1 rounded-wl border border-wl-input-border bg-wl-input px-4 text-wl-input-text";
-const action =
-  "inline-flex h-12 items-center justify-center rounded-wl bg-wl-button px-5 font-bold whitespace-nowrap text-wl-button-text focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-wl-accent";
+  "h-12 min-h-12 min-w-0 flex-1 rounded-wl border border-wl-input-border bg-wl-input px-4 text-wl-input-text focus-visible:ring-0 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-wl-accent";
+const checkboxControl =
+  "mt-px size-4 rounded-[4px] border-wl-input-border bg-wl-input text-wl-button-text data-checked:border-wl-accent data-checked:bg-wl-accent focus-visible:ring-0 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-wl-accent";
 
 /** Waitlist signup form: validates input, submits the signup, and shows the referral result. */
 export function SignupForm(props) {
@@ -124,16 +128,17 @@ function TurnstileAttempt({ siteKey, onToken, onRetry }) {
         <p className="text-caption text-wl-muted" role="alert">
           Verification couldn’t load. Check your connection or content blocker and try again.
         </p>
-        <button
-          className="cursor-pointer text-caption font-bold text-wl-accent underline underline-offset-4"
+        <Button
           type="button"
+          variant="public-link-action"
+          size="public-link-action"
           onClick={() => {
             onTokenRef.current("");
             onRetry();
           }}
         >
           Retry verification
-        </button>
+        </Button>
       </div>
     );
   }
@@ -217,7 +222,7 @@ function CustomSelectField({ id, name, label, field, brand }) {
   );
 }
 
-function CustomFieldInput({ field, brand }) {
+function CustomFieldInput({ field, brand, controlClass = control }) {
   const id = useId();
   const name = `custom-${field.id}`;
   const label = (
@@ -230,8 +235,8 @@ function CustomFieldInput({ field, brand }) {
     return (
       <div className="mt-3">
         {label}
-        <textarea
-          className={cn(control, "min-h-24 py-3")}
+        <Textarea
+          className={cn(controlClass, "min-h-24 py-3")}
           id={id}
           name={name}
           placeholder={field.placeholder || ""}
@@ -247,11 +252,10 @@ function CustomFieldInput({ field, brand }) {
   if (field.type === "checkbox") {
     return (
       <label className="mt-3 flex items-start gap-2.5 text-caption leading-relaxed font-normal text-wl-muted">
-        <input
-          className="mt-px size-4 shrink-0 rounded border border-wl-input-border bg-wl-input"
+        <Checkbox
+          className={checkboxControl}
           id={id}
           name={name}
-          type="checkbox"
           value="on"
           required={field.required === true}
         />
@@ -262,8 +266,8 @@ function CustomFieldInput({ field, brand }) {
   return (
     <div className="mt-3">
       {label}
-      <input
-        className={cn(control, "w-full")}
+      <Input
+        className={cn(controlClass, "w-full")}
         id={id}
         name={name}
         type="text"
@@ -308,12 +312,7 @@ function PhoneField({ idBase, formConfig, phone, onPhoneChange }) {
 function ConsentField({ formConfig }) {
   return (
     <label className="mt-3 flex items-start gap-2.5 text-caption leading-relaxed font-normal text-wl-muted">
-      <input
-        className="mt-px size-4 shrink-0 rounded border border-wl-input-border bg-wl-input"
-        name="marketingConsent"
-        type="checkbox"
-        value="on"
-      />
+      <Checkbox className={checkboxControl} name="marketingConsent" value="on" />
       <span>{formConfig.consentLabel}</span>
     </label>
   );
@@ -344,19 +343,21 @@ function ReferralShareBlock({
         Your referral link
       </label>
       <div className="flex gap-2 max-sm:flex-col">
-        <input
-          className={cn(
-            control,
-            "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-wl-accent",
-          )}
+        <Input
+          className={control}
           id={referralId}
           value={result.referralLink}
           readOnly
           onFocus={(event) => event.target.select()}
         />
-        <button className={action} type="button" onClick={onCopyReferralLink}>
+        <Button
+          variant="public-action"
+          size="public-action"
+          type="button"
+          onClick={onCopyReferralLink}
+        >
           {copied ? "Copied" : "Copy"}
-        </button>
+        </Button>
       </div>
       {statusPage.shareChannels.length > 0 && (
         <ShareButtons
@@ -625,7 +626,7 @@ function SignupFormInner({
       }).catch(() => {});
       setCopied(true);
     } catch {
-      toast.error("Copy didn't work — long-press the link to copy it manually.");
+      toast.error("Copy didn't work - long-press the link to copy it manually.");
     }
   }
 
@@ -665,11 +666,8 @@ function SignupFormInner({
           formConfig.layout === "stacked" && "flex-col gap-3",
         )}
       >
-        <input
-          className={cn(
-            control,
-            "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-wl-accent",
-          )}
+        <Input
+          className={control}
           id={emailId}
           name="email"
           type="email"
@@ -678,13 +676,14 @@ function SignupFormInner({
           required
           maxLength={320}
         />
-        <button
-          className={cn(action, "cursor-pointer disabled:cursor-wait disabled:opacity-65")}
+        <Button
           type="submit"
+          variant="public-action"
+          size="public-action"
           disabled={busy || (turnstileOn && !turnstileToken)}
         >
           {busy ? "Joining…" : formConfig.buttonText}
-        </button>
+        </Button>
       </div>
       {collectPhone && (
         <PhoneField
@@ -695,7 +694,12 @@ function SignupFormInner({
         />
       )}
       {customFields.map((field) => (
-        <CustomFieldInput field={field} brand={brand} key={`${field.id}:${resetKey}`} />
+        <CustomFieldInput
+          field={field}
+          brand={brand}
+          controlClass={control}
+          key={`${field.id}:${resetKey}`}
+        />
       ))}
       {formConfig.requireConsent && <ConsentField formConfig={formConfig} />}
       {turnstileOn && (

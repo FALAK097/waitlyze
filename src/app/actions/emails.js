@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 import { Resend } from "resend";
 
+import { Prisma } from "@/generated/prisma/client";
 import { getCampaignPosition } from "@/lib/campaigns/referral-position.mjs";
 import { escapeHtmlText, renderEmailMarkdown } from "@/lib/email-markdown.mjs";
 import { emailBrandFromSnapshot } from "@/lib/email/brand.mjs";
@@ -14,7 +15,6 @@ import {
 } from "@/lib/email/broadcast-queue.mjs";
 import {
   interpolateEmail,
-  legacyEmailContent,
   subscriberEmailHtml,
   validateComposerContent,
 } from "@/lib/email/composer.mjs";
@@ -22,148 +22,154 @@ import { BROADCAST_SEGMENTS, normalizeSegment } from "@/lib/email/segments.mjs";
 import { seedPreviewVars } from "@/lib/email/variables.mjs";
 import { notifyBroadcastSummary } from "@/lib/emails/founder-notifications.mjs";
 import { emailStatusLabel } from "@/lib/emails/status-label.mjs";
+import { emailTemplateType, normalizeEmailTemplate } from "@/lib/emails/templates.mjs";
+import { deliverTestEmail, senderForWaitlist } from "@/lib/emails/test-delivery.mjs";
 import { env } from "@/lib/env.mjs";
-import { resolveWorkspaceEmailSender } from "@/lib/integrations/email-sender.mjs";
 import prisma from "@/lib/prisma";
 import { consumePublicBudget, PublicRateLimitError } from "@/lib/security/public-rate-limit.mjs";
 import { AUDIT_ACTIONS, recordWaitlistAuditEvent } from "@/lib/workspaces/audit.mjs";
 import { requireCampaign } from "@/lib/workspaces/authorize";
 
-const platformSender = {
-  apiKey: env.RESEND_API_KEY,
-  fromEmail: env.RESEND_FROM_EMAIL,
-  replyTo: env.RESEND_REPLY_TO,
-};
-
-// Subscriber and template email prefers the workspace's connected provider so it
-// sends from the customer's own verified domain; the platform sender is the
-// fallback so delivery never silently stops.
-async function senderForWaitlist(waitListId) {
-  const waitlist = await prisma.waitList.findUnique({
-    where: { id: waitListId },
-    select: { workspaceId: true },
-  });
-  const provider = await resolveWorkspaceEmailSender(prisma, waitlist?.workspaceId, null);
-  return provider || platformSender;
-}
-
-const TYPE_MAP = {
-  signup: "SIGNUP",
-  offboarding: "OFFBOARDING",
-  "referral-congrats": "REFERRAL_CONGRATS",
-  "launch-invite": "LAUNCH_INVITE",
-};
-
-const TYPE_KEY = {
-  SIGNUP: "signup",
-  OFFBOARDING: "offboarding",
-  REFERRAL_CONGRATS: "referral-congrats",
-  LAUNCH_INVITE: "launch-invite",
-};
-
-const DEFAULTS = {
-  signup: {
-    subject: "You're on the {{waitlist}} list",
-    previewText: "Your place is confirmed. Here's your personal link.",
-    header: "You're on the list.",
-    subHeader: "Welcome to {{waitlist}}",
-    mainBody:
-      "Thanks for joining {{waitlist}}. You're currently #{{position}} in line.\n\nInvite a friend with your personal link: {{referral_link}}",
-    subBody: "We'll be in touch when there's news.",
-  },
-  offboarding: {
-    subject: "A note from {{waitlist}}",
-    previewText: "An update about your place on the waitlist.",
-    header: "A note about your place",
-    subHeader: "{{waitlist}}",
-    mainBody:
-      "We're writing with an update about your place on {{waitlist}}. Add the next step and any dates here before sending.",
-    subBody: "Questions? Reply to this email.",
-  },
-  "referral-congrats": {
-    subject: "You did it, {{name}} — {{referral_count}} friends joined {{waitlist}}",
-    previewText: "Your referrals are moving you up the list.",
-    header: "You're climbing the list.",
-    subHeader: "{{referral_count}} friends joined through you",
-    mainBody:
-      "Hi {{name}},\n\n{{referral_count}} people have joined {{waitlist}} through your link — you're now #{{position}} with {{points}} points.\n\nKeep sharing your personal link: {{referral_link}}",
-    subBody: "Every referral moves you closer to launch-day rewards.",
-  },
-  "launch-invite": {
-    subject: "You're in, {{name}} — {{waitlist}} is live",
-    previewText: "Claim your spot: your personal invite is inside.",
-    header: "We're live.",
-    subHeader: "Your invite to {{waitlist}}",
-    mainBody:
-      "Hi {{name}},\n\n{{waitlist}} is officially live and you're #{{position}} in line with {{points}} points.\n\nGet started here: {{waitlist_url}}\n\nYour personal link still works for late friends: {{referral_link}}",
-    subBody: "Questions? Reply to this email.",
-  },
-};
-
-export async function getOrCreateTemplates(waitListId) {
-  const { scope } = await requireCampaign(waitListId, "sendEmail");
-  const records = await prisma.emailTemplate.findMany({
-    where: { waitListId, waitList: scope },
-  });
-
-  const byType = {};
-  records.forEach((r) => {
-    byType[r.type] = r;
-  });
-
-  const result = {};
-
-  for (const key of Object.keys(TYPE_MAP)) {
-    const enumType = TYPE_MAP[key];
-    if (byType[enumType]) {
-      result[key] = byType[enumType];
-      continue;
+function renderLegacyTemplateEmail({ template, waitList, variables }) {
+  const replaceVars = (text) =>
+    text.replace(/\{\{([^}]+)\}\}/g, (_, key) => variables[key.trim()] ?? `{{${key}}}`);
+  const subject = replaceVars(template.subject);
+  const previewText = replaceVars(template.previewText);
+  const header = renderEmailMarkdown(replaceVars(template.header));
+  const subHeader = renderEmailMarkdown(replaceVars(template.subHeader));
+  const mainBody = renderEmailMarkdown(replaceVars(template.mainBody));
+  const subBody = renderEmailMarkdown(replaceVars(template.subBody));
+  const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>${escapeHtmlText(subject)}</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      line-height: 1.6;
+      color: #333;
+      padding: 0;
+      margin: 0;
+      background-color: #f7f7f7;
     }
-    try {
-      result[key] = await prisma.emailTemplate.create({
-        data: {
-          waitList: { connect: { id: waitListId, ...scope } },
-          type: enumType,
-          ...DEFAULTS[key],
-        },
-      });
-    } catch (error) {
-      // Two first loads can race on @@unique([waitListId, type]); reuse the
-      // template the other request just created.
-      if (error?.code !== "P2002") throw error;
-      result[key] = await prisma.emailTemplate.findUnique({
-        where: { waitListId_type: { waitListId, type: enumType } },
-      });
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 30px 20px;
     }
-  }
+    .email-body {
+      background-color: #ffffff;
+      border-radius: 8px;
+      padding: 30px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    .header {
+      font-size: 20px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: #111827;
+    }
+    .subheader {
+      font-size: 16px;
+      color: #6b7280;
+      margin-bottom: 24px;
+    }
+    .content {
+      font-size: 14px;
+      margin-bottom: 24px;
+    }
+    .footer {
+      font-size: 12px;
+      color: #6b7280;
+      margin-bottom: 24px;
+    }
+    .divider {
+      border-top: 1px solid #e5e7eb;
+      margin: 24px 0;
+    }
+    .email-footer {
+      font-size: 12px;
+      color: #9ca3af;
+      text-align: center;
+      margin-top: 24px;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 0;
+      color: #111827;
+    }
+    h1 { font-size: 22px; }
+    h2 { font-size: 20px; }
+    h3 { font-size: 18px; }
+    h4 { font-size: 16px; }
+    a {
+      color: #2563eb;
+      text-decoration: underline;
+    }
+    p {
+      margin-top: 0;
+    }
+    code {
+      font-family: monospace;
+      background-color: #f3f4f6;
+      padding: 2px 4px;
+      border-radius: 3px;
+    }
+    pre {
+      background-color: #f3f4f6;
+      padding: 12px;
+      border-radius: 6px;
+      overflow-x: auto;
+    }
+    blockquote {
+      border-left: 4px solid #e5e7eb;
+      margin-left: 0;
+      padding-left: 12px;
+      color: #6b7280;
+    }
+    ul, ol {
+      padding-left: 24px;
+    }
+    img {
+      max-width: 100%;
+      height: auto;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="email-body">
+      <div class="header">${header}</div>
+      <div class="subheader">${subHeader}</div>
+      <div class="content">${mainBody}</div>
+      <div class="footer">${subBody}</div>
+      <div class="divider"></div>
+      <div class="email-footer">
+        Need help? Reply to this email • © ${new Date().getFullYear()} ${escapeHtmlText(waitList.name || "This waitlist")}
+      </div>
+    </div>
+  </div>
+</body>
+</html>`;
+  const richHtml = template.renderedHtml
+    ? subscriberEmailHtml({
+        name: waitList.name || "Your project",
+        content: interpolateEmail(template.renderedHtml, variables),
+        previewText,
+        brand: emailBrandFromSnapshot(waitList.templateSnapshot),
+      })
+    : null;
 
   return {
-    signup: normalize(result.signup),
-    offboarding: normalize(result.offboarding),
-    "referral-congrats": normalize(result["referral-congrats"]),
-    "launch-invite": normalize(result["launch-invite"]),
-  };
-}
-
-function normalize(record) {
-  return {
-    id: record.id,
-    type: TYPE_KEY[record.type] || "signup",
-    subject: record.subject,
-    previewText: record.previewText,
-    header: record.header,
-    subHeader: record.subHeader,
-    mainBody: record.mainBody,
-    subBody: record.subBody,
-    editorDocument: record.editorDocument,
-    renderedHtml: record.renderedHtml,
-    renderedText: record.renderedText,
-    starterHtml: record.editorDocument ? null : legacyEmailContent(record),
+    subject,
+    html: richHtml || html,
+    text: template.renderedText ? replaceVars(template.renderedText) : undefined,
   };
 }
 
 export async function upsertEmailTemplate({ waitListId, templateType, data }) {
-  const enumType = TYPE_MAP[templateType];
+  const enumType = emailTemplateType(templateType);
   if (!enumType) return { success: false, message: "Invalid template type" };
 
   try {
@@ -207,7 +213,11 @@ export async function upsertEmailTemplate({ waitListId, templateType, data }) {
       },
     });
 
-    return { success: true, message: "Template saved", template: normalize(updated) };
+    return {
+      success: true,
+      message: "Template saved",
+      template: normalizeEmailTemplate(updated),
+    };
   } catch (e) {
     console.error(e);
     return {
@@ -222,306 +232,102 @@ export async function upsertEmailTemplate({ waitListId, templateType, data }) {
 }
 
 export async function sendTestEmail({ waitListId, templateType, to }) {
-  if (typeof to !== "string" || to.length > 320 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to))
-    return { success: false, message: "Enter one valid test email address." };
-  if (!env.RESEND_API_KEY) {
-    return { success: false, message: "RESEND_API_KEY not configured" };
-  }
-
-  const enumType = TYPE_MAP[templateType];
-  if (!enumType) return { success: false, message: "Invalid template type" };
-
-  try {
-    const { user, campaign, scope } = await requireCampaign(waitListId, "sendEmail");
-    await consumePublicBudget(prisma, {
-      kind: "testEmail",
-      campaignId: campaign.workspaceId || campaign.id,
-      actorId: user.id,
-      email: to,
-    });
-    const waitList = await prisma.waitList.findFirst({
-      where: { id: waitListId, ...scope },
-      select: { name: true, templateSnapshot: true },
-    });
-    if (!waitList) return { success: false, message: "Waitlist not found" };
-
-    const tpl = await prisma.emailTemplate.findUnique({
-      where: {
-        waitListId_type: {
-          waitListId,
-          type: enumType,
+  let enumType;
+  return deliverTestEmail({
+    waitListId,
+    to,
+    waitlistSelect: { name: true, templateSnapshot: true },
+    validate: () => {
+      enumType = emailTemplateType(templateType);
+      return enumType ? null : "Invalid template type";
+    },
+    prepareEmail: async ({ waitList, scope }) => {
+      const tpl = await prisma.emailTemplate.findUnique({
+        where: {
+          waitListId_type: { waitListId, type: enumType },
+          waitList: scope,
         },
-        waitList: scope,
-      },
-    });
-    if (!tpl) return { success: false, message: "Template not found" };
+      });
+      if (!tpl) return { error: "Template not found" };
 
-    const vars = {
-      ...seedPreviewVars(waitList.name),
-      waitlist_url: `https://waitlyze.falakgala.dev/forms/${waitListId}`,
-    };
-
-    const replaceVars = (text) =>
-      text.replace(/\{\{([^}]+)\}\}/g, (_, k) => vars[k.trim()] ?? `{{${k}}}`);
-
-    const subject = replaceVars(tpl.subject);
-    const previewText = replaceVars(tpl.previewText);
-    const header = markdownToHtml(replaceVars(tpl.header));
-    const subHeader = markdownToHtml(replaceVars(tpl.subHeader));
-    const mainBody = markdownToHtml(replaceVars(tpl.mainBody));
-    const subBody = markdownToHtml(replaceVars(tpl.subBody));
-
-    const htmlBody = `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>${escapeHtmlText(subject)}</title>
-  <style>
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-      line-height: 1.6;
-      color: #333;
-      padding: 0;
-      margin: 0;
-      background-color: #f7f7f7;
-    }
-    .container {
-      max-width: 600px;
-      margin: 0 auto;
-      padding: 30px 20px;
-    }
-    .email-body {
-      background-color: #ffffff;
-      border-radius: 8px;
-      padding: 30px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-    }
-    .header {
-      font-size: 20px;
-      font-weight: 600;
-      margin-bottom: 8px;
-      color: #111827;
-    }
-    .subheader {
-      font-size: 16px;
-      color: #6b7280;
-      margin-bottom: 24px;
-    }
-    .content {
-      font-size: 14px;
-      margin-bottom: 24px;
-    }
-    .footer {
-      font-size: 12px;
-      color: #6b7280;
-      margin-bottom: 24px;
-    }
-    .divider {
-      border-top: 1px solid #e5e7eb;
-      margin: 24px 0;
-    }
-    .email-footer {
-      font-size: 12px;
-      color: #9ca3af;
-      text-align: center;
-      margin-top: 24px;
-    }
-    /* Markdown styles */
-    h1, h2, h3, h4, h5, h6 {
-      margin-top: 0;
-      color: #111827;
-    }
-    h1 { font-size: 22px; }
-    h2 { font-size: 20px; }
-    h3 { font-size: 18px; }
-    h4 { font-size: 16px; }
-    a {
-      color: #2563eb;
-      text-decoration: underline;
-    }
-    p {
-      margin-top: 0;
-    }
-    code {
-      font-family: monospace;
-      background-color: #f3f4f6;
-      padding: 2px 4px;
-      border-radius: 3px;
-    }
-    pre {
-      background-color: #f3f4f6;
-      padding: 12px;
-      border-radius: 6px;
-      overflow-x: auto;
-    }
-    blockquote {
-      border-left: 4px solid #e5e7eb;
-      margin-left: 0;
-      padding-left: 12px;
-      color: #6b7280;
-    }
-    ul, ol {
-      padding-left: 24px;
-    }
-    img {
-      max-width: 100%;
-      height: auto;
-    }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <div class="email-body">
-      <div class="header">${header}</div>
-      <div class="subheader">${subHeader}</div>
-      <div class="content">${mainBody}</div>
-      <div class="footer">${subBody}</div>
-      <div class="divider"></div>
-      <div class="email-footer">
-        Need help? Reply to this email • © ${new Date().getFullYear()} ${escapeHtmlText(waitList.name || "This waitlist")}
-      </div>
-    </div>
-  </div>
-</body>
-</html>`;
-
-    const provider = await senderForWaitlist(waitListId);
-    const richHtml = tpl.renderedHtml
-      ? subscriberEmailHtml({
-          name: waitList.name || "Your project",
-          content: interpolateEmail(tpl.renderedHtml, vars),
-          previewText,
-          brand: emailBrandFromSnapshot(waitList.templateSnapshot),
-        })
-      : null;
-    const { error } = await new Resend(provider.apiKey).emails.send({
-      from: provider.fromEmail,
-      to,
-      subject,
-      replyTo: provider.replyTo,
-      html: richHtml || htmlBody,
-      text: tpl.renderedText ? replaceVars(tpl.renderedText) : undefined,
-    });
-
-    if (error) {
-      return { success: false, message: `Resend error: ${error.name} ${error.message}` };
-    }
-
-    return { success: true, message: "Test email sent" };
-  } catch (e) {
-    console.error(e);
-    return { success: false, message: "Failed to send email" };
-  }
-}
-
-function markdownToHtml(markdown) {
-  return renderEmailMarkdown(markdown);
-}
-
-function validTestAddress(to) {
-  return typeof to === "string" && to.length <= 320 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to);
+      const vars = {
+        ...seedPreviewVars(waitList.name),
+        waitlist_url: `https://waitlyze.falakgala.dev/forms/${waitListId}`,
+      };
+      return { email: renderLegacyTemplateEmail({ template: tpl, waitList, variables: vars }) };
+    },
+    successMessage: () => "Test email sent",
+  });
 }
 
 // 1-click test send for a broadcast draft: renders the saved draft with seed
-// preview data and delivers immediately (outside the outbox — tests never
+// preview data and delivers immediately (outside the outbox - tests never
 // touch real recipients or the delivery report).
 export async function sendBroadcastTestEmail({ waitListId, broadcastId, to }) {
-  if (!validTestAddress(to))
-    return { success: false, message: "Enter one valid test email address." };
-  if (!env.RESEND_API_KEY) return { success: false, message: "RESEND_API_KEY not configured" };
-  try {
-    const { user, campaign, scope } = await requireCampaign(waitListId, "sendEmail");
-    await consumePublicBudget(prisma, {
-      kind: "testEmail",
-      campaignId: campaign.workspaceId || campaign.id,
-      actorId: user.id,
-      email: to,
-    });
-    const waitList = await prisma.waitList.findFirst({
-      where: { id: waitListId, ...scope },
-      select: { name: true },
-    });
-    if (!waitList) return { success: false, message: "Waitlist not found" };
-    const broadcast = await prisma.marketingBroadcast.findFirst({
-      where: { id: broadcastId, waitListId, status: { in: ["DRAFT", "SCHEDULED"] } },
-    });
-    if (!broadcast) return { success: false, message: "Draft not found" };
-    const { interpolateVars, interpolateVarsHtml } = await import("@/lib/email/variables.mjs");
-    const vars = seedPreviewVars(waitList.name);
-    const provider = await senderForWaitlist(waitListId);
-    const { error } = await new Resend(provider.apiKey).emails.send({
-      from: provider.fromEmail,
-      to,
-      subject: `[Test] ${interpolateVars(broadcast.subject, vars)}`,
-      replyTo: provider.replyTo,
-      html: broadcast.renderedHtml
-        ? subscriberEmailHtml({
-            name: waitList.name || "Waitlist",
-            content: interpolateVarsHtml(broadcast.renderedHtml, vars),
-            previewText: interpolateVars(broadcast.previewText, vars),
-          })
-        : undefined,
-      text: broadcast.renderedText
-        ? interpolateVars(broadcast.renderedText, vars)
-        : interpolateVars(broadcast.body, vars),
-    });
-    if (error) return { success: false, message: `Resend error: ${error.name} ${error.message}` };
-    return { success: true, message: `Test sent to ${to}.` };
-  } catch (e) {
-    console.error(e);
-    return { success: false, message: "Failed to send email" };
-  }
+  return deliverTestEmail({
+    waitListId,
+    to,
+    waitlistSelect: { name: true },
+    prepareEmail: async ({ waitList }) => {
+      const broadcast = await prisma.marketingBroadcast.findFirst({
+        where: { id: broadcastId, waitListId, status: { in: ["DRAFT", "SCHEDULED"] } },
+      });
+      if (!broadcast) return { error: "Draft not found" };
+      const { interpolateVars, interpolateVarsHtml } = await import("@/lib/email/variables.mjs");
+      const vars = seedPreviewVars(waitList.name);
+      return {
+        email: {
+          subject: `[Test] ${interpolateVars(broadcast.subject, vars)}`,
+          html: broadcast.renderedHtml
+            ? subscriberEmailHtml({
+                name: waitList.name || "Waitlist",
+                content: interpolateVarsHtml(broadcast.renderedHtml, vars),
+                previewText: interpolateVars(broadcast.previewText, vars),
+              })
+            : undefined,
+          text: broadcast.renderedText
+            ? interpolateVars(broadcast.renderedText, vars)
+            : interpolateVars(broadcast.body, vars),
+        },
+      };
+    },
+    successMessage: (recipient) => `Test sent to ${recipient}.`,
+  });
 }
 
 // 1-click test send for an automation recipe: same seed-data rendering.
 export async function sendAutomationTestEmail({ waitListId, recipeId, to }) {
-  if (!validTestAddress(to))
-    return { success: false, message: "Enter one valid test email address." };
-  if (!env.RESEND_API_KEY) return { success: false, message: "RESEND_API_KEY not configured" };
-  try {
-    const { user, campaign, scope } = await requireCampaign(waitListId, "sendEmail");
-    await consumePublicBudget(prisma, {
-      kind: "testEmail",
-      campaignId: campaign.workspaceId || campaign.id,
-      actorId: user.id,
-      email: to,
-    });
-    const waitList = await prisma.waitList.findFirst({
-      where: { id: waitListId, ...scope },
-      select: { name: true },
-    });
-    if (!waitList) return { success: false, message: "Waitlist not found" };
-    const recipe = await prisma.automationRecipe.findFirst({
-      where: { id: recipeId, waitListId },
-      include: { versions: { orderBy: { version: "desc" }, take: 1 } },
-    });
-    if (!recipe?.versions[0]) return { success: false, message: "Recipe not found" };
-    const config = recipe.versions[0].config;
-    const { AUTOMATION_DEFAULTS } = await import("@/lib/email/automations.mjs");
-    const { interpolateVars, interpolateVarsHtml } = await import("@/lib/email/variables.mjs");
-    const vars = seedPreviewVars(waitList.name);
-    const title = AUTOMATION_DEFAULTS[recipe.type]?.title || recipe.type;
-    const provider = await senderForWaitlist(waitListId);
-    const { error } = await new Resend(provider.apiKey).emails.send({
-      from: provider.fromEmail,
-      to,
-      subject: `[Test: ${title}] ${interpolateVars(config.subject, vars)}`,
-      replyTo: provider.replyTo,
-      html: config.renderedHtml
-        ? subscriberEmailHtml({
-            name: waitList.name || "Waitlist",
-            content: interpolateVarsHtml(config.renderedHtml, vars),
-          })
-        : undefined,
-      text: interpolateVars(config.renderedText || config.body, vars),
-    });
-    if (error) return { success: false, message: `Resend error: ${error.name} ${error.message}` };
-    return { success: true, message: `Test sent to ${to}.` };
-  } catch (e) {
-    console.error(e);
-    return { success: false, message: "Failed to send email" };
-  }
+  return deliverTestEmail({
+    waitListId,
+    to,
+    waitlistSelect: { name: true },
+    prepareEmail: async ({ waitList }) => {
+      const recipe = await prisma.automationRecipe.findFirst({
+        where: { id: recipeId, waitListId },
+        include: { versions: { orderBy: { version: "desc" }, take: 1 } },
+      });
+      if (!recipe?.versions[0]) return { error: "Recipe not found" };
+      const config = recipe.versions[0].config;
+      const [{ AUTOMATION_DEFAULTS }, { interpolateVars, interpolateVarsHtml }] = await Promise.all(
+        [import("@/lib/email/automations.mjs"), import("@/lib/email/variables.mjs")],
+      );
+      const vars = seedPreviewVars(waitList.name);
+      const title = AUTOMATION_DEFAULTS[recipe.type]?.title || recipe.type;
+      return {
+        email: {
+          subject: `[Test: ${title}] ${interpolateVars(config.subject, vars)}`,
+          html: config.renderedHtml
+            ? subscriberEmailHtml({
+                name: waitList.name || "Waitlist",
+                content: interpolateVarsHtml(config.renderedHtml, vars),
+              })
+            : undefined,
+          text: interpolateVars(config.renderedText || config.body, vars),
+        },
+      };
+    },
+    successMessage: (recipient) => `Test sent to ${recipient}.`,
+  });
 }
 
 async function renderTemplate({ waitListId, enumType, varsOverride = {} }) {
@@ -554,144 +360,12 @@ async function renderTemplate({ waitListId, enumType, varsOverride = {} }) {
     total_signups: "",
   };
   const vars = { ...baseVars, ...varsOverride };
-
-  const replaceVars = (text) =>
-    text.replace(/\{\{([^}]+)\}\}/g, (_, k) => vars[k.trim()] ?? `{{${k}}}`);
-
-  const subject = replaceVars(tpl.subject);
-  const previewText = replaceVars(tpl.previewText);
-  const header = markdownToHtml(replaceVars(tpl.header));
-  const subHeader = markdownToHtml(replaceVars(tpl.subHeader));
-  const mainBody = markdownToHtml(replaceVars(tpl.mainBody));
-  const subBody = markdownToHtml(replaceVars(tpl.subBody));
-
-  const htmlBody = `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>${escapeHtmlText(subject)}</title>
-  <style>
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-      line-height: 1.6;
-      color: #333;
-      padding: 0;
-      margin: 0;
-      background-color: #f7f7f7;
-    }
-    .container {
-      max-width: 600px;
-      margin: 0 auto;
-      padding: 30px 20px;
-    }
-    .email-body {
-      background-color: #ffffff;
-      border-radius: 8px;
-      padding: 30px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-    }
-    .header {
-      font-size: 20px;
-      font-weight: 600;
-      margin-bottom: 8px;
-      color: #111827;
-    }
-    .subheader {
-      font-size: 16px;
-      color: #6b7280;
-      margin-bottom: 24px;
-    }
-    .content {
-      font-size: 14px;
-      margin-bottom: 24px;
-    }
-    .footer {
-      font-size: 12px;
-      color: #6b7280;
-      margin-bottom: 24px;
-    }
-    .divider {
-      border-top: 1px solid #e5e7eb;
-      margin: 24px 0;
-    }
-    .email-footer {
-      font-size: 12px;
-      color: #9ca3af;
-      text-align: center;
-      margin-top: 24px;
-    }
-    /* Markdown styles */
-    h1, h2, h3, h4, h5, h6 {
-      margin-top: 0;
-      color: #111827;
-    }
-    h1 { font-size: 22px; }
-    h2 { font-size: 20px; }
-    h3 { font-size: 18px; }
-    h4 { font-size: 16px; }
-    a {
-      color: #2563eb;
-      text-decoration: underline;
-    }
-    p {
-      margin-top: 0;
-    }
-    code {
-      font-family: monospace;
-      background-color: #f3f4f6;
-      padding: 2px 4px;
-      border-radius: 3px;
-    }
-    pre {
-      background-color: #f3f4f6;
-      padding: 12px;
-      border-radius: 6px;
-      overflow-x: auto;
-    }
-    blockquote {
-      border-left: 4px solid #e5e7eb;
-      margin-left: 0;
-      padding-left: 12px;
-      color: #6b7280;
-    }
-    ul, ol {
-      padding-left: 24px;
-    }
-    img {
-      max-width: 100%;
-      height: auto;
-    }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <div class="email-body">
-      <div class="header">${header}</div>
-      <div class="subheader">${subHeader}</div>
-      <div class="content">${mainBody}</div>
-      <div class="footer">${subBody}</div>
-      <div class="divider"></div>
-      <div class="email-footer">
-        Need help? Reply to this email • © ${new Date().getFullYear()} ${escapeHtmlText(waitList.name || "This waitlist")}
-      </div>
-    </div>
-  </div>
-</body>
-</html>`;
-
+  const email = renderLegacyTemplateEmail({ template: tpl, waitList, variables: vars });
   return {
     waitList,
-    subject,
-    htmlBody: tpl.renderedHtml
-      ? subscriberEmailHtml({
-          name: waitList.name || "Your project",
-          content: interpolateEmail(tpl.renderedHtml, vars),
-          previewText,
-          brand: emailBrandFromSnapshot(waitList.templateSnapshot),
-        })
-      : htmlBody,
-    textBody: tpl.renderedText ? replaceVars(tpl.renderedText) : undefined,
+    subject: email.subject,
+    htmlBody: email.html,
+    textBody: email.text,
   };
 }
 
@@ -759,7 +433,7 @@ export async function sendSignupEmail({ waitListId, to }) {
 
   try {
     const provider = await senderForWaitlist(waitListId);
-    const { error } = await new Resend(provider.apiKey).emails.send(
+    const { error: sendError } = await new Resend(provider.apiKey).emails.send(
       {
         from: provider.fromEmail,
         to,
@@ -770,8 +444,8 @@ export async function sendSignupEmail({ waitListId, to }) {
       },
       { idempotencyKey: `signup-welcome:${signUp.id}` },
     );
-    if (error) {
-      console.error("Resend send error:", error);
+    if (sendError) {
+      console.error("Resend send error:", sendError);
       return generic;
     }
 
@@ -820,21 +494,42 @@ const broadcastInput = (input) => {
   return value;
 };
 
-export async function listBroadcasts(waitListId) {
+export async function listBroadcasts(
+  waitListId,
+  { includeLatestContent = false, selectedBroadcastId = null, cursor = null, pageSize = 25 } = {},
+) {
   const { campaign } = await requireCampaign(waitListId, "sendEmail");
-  const [broadcasts, counts, reasons] = await Promise.all([
+  const take = Number.isInteger(pageSize) ? Math.min(Math.max(pageSize, 1), 50) : 25;
+  let pageCursor = null;
+  if (cursor != null) {
+    const cursorId = typeof cursor?.id === "string" ? cursor.id : "";
+    const updatedAt =
+      typeof cursor?.updatedAt === "string" ? new Date(cursor.updatedAt) : new Date(Number.NaN);
+    if (!cursorId || cursorId.length > 128 || Number.isNaN(updatedAt.valueOf()))
+      throw new TypeError("Choose a valid broadcast page cursor.");
+    pageCursor = { id: cursorId, updatedAt };
+  }
+
+  const [broadcastRows, selectedBroadcast] = await Promise.all([
     prisma.marketingBroadcast.findMany({
-      where: { waitListId: campaign.id },
-      orderBy: { updatedAt: "desc" },
+      where: {
+        waitListId: campaign.id,
+        ...(pageCursor
+          ? {
+              OR: [
+                { updatedAt: { lt: pageCursor.updatedAt } },
+                { updatedAt: pageCursor.updatedAt, id: { lt: pageCursor.id } },
+              ],
+            }
+          : {}),
+      },
+      orderBy: [{ updatedAt: "desc" }, { id: "desc" }],
+      take: take + 1,
       select: {
         id: true,
         name: true,
         subject: true,
         previewText: true,
-        body: true,
-        editorDocument: true,
-        renderedHtml: true,
-        renderedText: true,
         status: true,
         segment: true,
         scheduledAt: true,
@@ -844,40 +539,111 @@ export async function listBroadcasts(waitListId) {
         sentAt: true,
       },
     }),
-    prisma.$queryRaw`
-      SELECT r."broadcastId", r."status"::text AS status, COUNT(*)::int AS count
-      FROM "broadcast_recipients" r JOIN "marketing_broadcasts" b ON b."id" = r."broadcastId"
-      WHERE b."waitListId" = ${campaign.id}
-      GROUP BY r."broadcastId", r."status"`,
-    prisma.$queryRaw`
-      SELECT r."broadcastId", r."lastErrorCode" AS code, COUNT(*)::int AS count
-      FROM "broadcast_recipients" r JOIN "marketing_broadcasts" b ON b."id" = r."broadcastId"
-      WHERE b."waitListId" = ${campaign.id}
-        AND r."status" IN ('SKIPPED', 'FAILED')
-      GROUP BY r."broadcastId", r."lastErrorCode"`,
+    includeLatestContent
+      ? (async () => {
+          const select = {
+            id: true,
+            name: true,
+            subject: true,
+            previewText: true,
+            body: true,
+            editorDocument: true,
+            renderedHtml: true,
+            status: true,
+            segment: true,
+          };
+          if (typeof selectedBroadcastId === "string" && selectedBroadcastId) {
+            const matched = await prisma.marketingBroadcast.findFirst({
+              where: { id: selectedBroadcastId, waitListId: campaign.id },
+              select,
+            });
+            if (matched) return matched;
+          }
+          return prisma.marketingBroadcast.findFirst({
+            where: { waitListId: campaign.id },
+            orderBy: [{ updatedAt: "desc" }, { id: "desc" }],
+            select,
+          });
+        })()
+      : Promise.resolve(null),
   ]);
+  const hasMore = broadcastRows.length > take;
+  const broadcasts = broadcastRows.slice(0, take);
+  const broadcastIds = broadcasts.map((broadcast) => broadcast.id);
+  const deliveryMetrics =
+    broadcastIds.length > 0
+      ? await prisma.$queryRaw`
+          SELECT r."broadcastId", 'status'::text AS kind,
+                 r."status"::text AS key, COUNT(*)::int AS count
+          FROM "broadcast_recipients" r
+          WHERE r."broadcastId" IN (${Prisma.join(broadcastIds)})
+          GROUP BY r."broadcastId", r."status"
+          UNION ALL
+          SELECT r."broadcastId", 'reason'::text AS kind,
+                 COALESCE(r."lastErrorCode", 'OTHER') AS key, COUNT(*)::int AS count
+          FROM "broadcast_recipients" r
+          WHERE r."broadcastId" IN (${Prisma.join(broadcastIds)})
+            AND r."status" IN ('SKIPPED', 'FAILED')
+          GROUP BY r."broadcastId", r."lastErrorCode"
+        `
+      : [];
+  const lastBroadcast = broadcasts.at(-1);
   const metrics = new Map();
-  for (const row of counts) metrics.set(`${row.broadcastId}:${row.status}`, row.count);
-  // Delivery-report breakdown: bounced (provider failures), unsubscribed,
-  // spam/suppression-list hits, and other skips — reconciled from the same
-  // recipient rows the dispatcher wrote, so the report always adds up.
   const skippedByCode = new Map();
-  for (const row of reasons)
-    skippedByCode.set(`${row.broadcastId}:${row.code || "OTHER"}`, row.count);
+  // Delivery-report breakdown: bounced (provider failures), unsubscribed,
+  // spam/suppression-list hits, and other skips - reconciled from the same
+  // recipient rows the dispatcher wrote, so the report always adds up.
+  for (const row of deliveryMetrics) {
+    if (row.kind === "reason") skippedByCode.set(`${row.broadcastId}:${row.key}`, row.count);
+    else metrics.set(`${row.broadcastId}:${row.key}`, row.count);
+  }
   const sumCodes = (id, codes) =>
     codes.reduce((n, code) => n + (skippedByCode.get(`${id}:${code}`) || 0), 0);
-  return broadcasts.map((broadcast) => ({
-    ...broadcast,
-    deliveredCount: metrics.get(`${broadcast.id}:DELIVERED`) || 0,
-    failedCount: metrics.get(`${broadcast.id}:FAILED`) || 0,
-    skippedCount: metrics.get(`${broadcast.id}:SKIPPED`) || 0,
-    canceledCount: metrics.get(`${broadcast.id}:CANCELED`) || 0,
-    unsubscribedCount: sumCodes(broadcast.id, ["RECIPIENT_UNSUBSCRIBED"]),
-    suppressedCount: sumCodes(broadcast.id, ["RECIPIENT_SUPPRESSED"]),
-    skippedOtherCount:
-      (metrics.get(`${broadcast.id}:SKIPPED`) || 0) -
-      sumCodes(broadcast.id, ["RECIPIENT_UNSUBSCRIBED", "RECIPIENT_SUPPRESSED"]),
-  }));
+  return {
+    broadcasts: broadcasts.map((broadcast) => ({
+      ...broadcast,
+      deliveredCount: metrics.get(`${broadcast.id}:DELIVERED`) || 0,
+      failedCount: metrics.get(`${broadcast.id}:FAILED`) || 0,
+      skippedCount: metrics.get(`${broadcast.id}:SKIPPED`) || 0,
+      canceledCount: metrics.get(`${broadcast.id}:CANCELED`) || 0,
+      unsubscribedCount: sumCodes(broadcast.id, ["RECIPIENT_UNSUBSCRIBED"]),
+      suppressedCount: sumCodes(broadcast.id, ["RECIPIENT_SUPPRESSED"]),
+      skippedOtherCount:
+        (metrics.get(`${broadcast.id}:SKIPPED`) || 0) -
+        sumCodes(broadcast.id, ["RECIPIENT_UNSUBSCRIBED", "RECIPIENT_SUPPRESSED"]),
+    })),
+    selectedBroadcast,
+    hasMore,
+    nextCursor:
+      hasMore && lastBroadcast
+        ? { id: lastBroadcast.id, updatedAt: lastBroadcast.updatedAt.toISOString() }
+        : null,
+  };
+}
+
+export async function getBroadcastContent(waitListId, broadcastId) {
+  if (
+    typeof waitListId !== "string" ||
+    !waitListId ||
+    typeof broadcastId !== "string" ||
+    !broadcastId
+  )
+    return null;
+  const { campaign } = await requireCampaign(waitListId, "sendEmail");
+  return prisma.marketingBroadcast.findFirst({
+    where: { id: broadcastId, waitListId: campaign.id },
+    select: {
+      id: true,
+      name: true,
+      subject: true,
+      previewText: true,
+      body: true,
+      editorDocument: true,
+      renderedHtml: true,
+      status: true,
+      segment: true,
+    },
+  });
 }
 
 export async function createBroadcastDraft(waitListId) {
@@ -1059,7 +825,7 @@ export async function cancelBroadcast({ waitListId, broadcastId }) {
     if (!broadcast || (broadcast.status !== "SENDING" && broadcast.status !== "SCHEDULED"))
       return null;
     if (broadcast.status === "SCHEDULED") {
-      // Nothing fanned out yet — just unschedule back to a canceled draft.
+      // Nothing fanned out yet - just unschedule back to a canceled draft.
       await tx.marketingBroadcast.update({
         where: { id: broadcastId },
         data: { status: "CANCELED", scheduledAt: null },

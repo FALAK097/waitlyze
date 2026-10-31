@@ -1,13 +1,13 @@
 ---
 title: Look up signup
-description: GET /api/waitlist — retrieve a signup's status and position.
+description: GET /api/waitlist - retrieve a signup's status and position.
 ---
 
 Use the status lookup to show an existing subscriber their current position or referral link. It does not create a signup.
 
 ## Request
 
-`GET /api/waitlist` requires `waitlistId` and `email` query parameters. Send the API key in a header only—never put a secret in the URL.
+`GET /api/waitlist` requires `waitlistId` and `email` query parameters. Send the API key in a header only-never put a secret in the URL.
 
 ```bash title="Look up signup status"
 curl --get "$WAITLYZE_URL/api/waitlist" \

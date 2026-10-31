@@ -23,7 +23,7 @@ export default function SignupButton({
         className={cn(
           "group pointer-events-none invisible col-start-1 row-start-1 inline-flex min-h-13 items-center justify-center gap-5 rounded-md border border-product-border-subtle bg-product-bg-surface px-6 py-3 text-body leading-tight font-semibold whitespace-nowrap text-product-text-primary",
           compact
-            ? "min-h-10 gap-6 px-4 py-2 text-caption"
+            ? "min-h-10 gap-6 px-4 py-2 text-sm leading-5"
             : "border-product-text-primary bg-product-accent-solid text-product-text-primary",
           className,
         )}

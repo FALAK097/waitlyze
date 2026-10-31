@@ -3,13 +3,13 @@ import { EmailLayout, FallbackLink, Muted, NextSteps, Paragraph, PrimaryLink } f
 export function WaitlistPublishedEmail({ waitlistName, pageUrl, dashboardUrl }) {
   return (
     <EmailLayout
-      preview={`${waitlistName} is live — share your page.`}
+      preview={`${waitlistName} is live - share your page.`}
       heading="You’re live."
       footer="You’re receiving this because you own a workspace on Waitlyze."
     >
       <Paragraph>
         <strong>{waitlistName}</strong> is published and ready to collect signups. Share the link
-        below wherever your community is — every join feeds your referral loop.
+        below wherever your community is - every join feeds your referral loop.
       </Paragraph>
       <PrimaryLink href={pageUrl}>Open your live page</PrimaryLink>
       <NextSteps

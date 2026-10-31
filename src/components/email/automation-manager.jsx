@@ -10,17 +10,17 @@ import { applySeedVars } from "@/lib/email/preview-vars.mjs";
 import { emailStatusLabel } from "@/lib/emails/status-label.mjs";
 
 import { AutomationRecipePanel } from "./automation-recipe-panel";
+import {
+  EmailManagerRailButton,
+  emailManagerRail,
+  emailManagerRailMeta,
+  emailManagerRailTitle,
+  emailManagerScope,
+  emailManagerSplit,
+} from "./email-manager-controls";
 
-const scope = "min-w-0 bg-white text-product-text-primary";
 const notice =
   "m-0 rounded-lg bg-product-bg-inset px-3.5 py-2.75 text-caption leading-relaxed text-product-text-primary";
-const split = "flex flex-col gap-6 md:gap-8 xl:gap-10 lg:flex-row lg:items-start";
-const rail =
-  "flex w-full shrink-0 flex-col gap-1 self-start sticky top-22 max-lg:static max-lg:flex-row max-lg:flex-wrap max-lg:gap-1.5 lg:w-52";
-const railItem =
-  "flex w-full flex-col gap-0.75 rounded-product-control border-0 bg-transparent p-3 text-left cursor-pointer hover:bg-product-bg-inset aria-[current=true]:bg-product-bg-inset disabled:cursor-default disabled:opacity-60 max-lg:min-w-38 max-lg:flex-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-product-success-text!";
-const railItemTitle = "text-body font-semibold wrap-anywhere";
-const railItemMeta = "text-micro leading-normal text-product-text-secondary";
 const emptyPane = "max-w-107 py-1.5";
 const emptyPaneTitle = "m-0 mb-1.5! text-section";
 const emptyPaneBody = "m-0 mb-4.5! leading-relaxed text-product-text-secondary";
@@ -190,30 +190,28 @@ export function AutomationManager({
   const recipe = recipes.find((item) => item.id === activeRecipe);
 
   return (
-    <div className={scope}>
+    <div className={emailManagerScope}>
       {!deliveryReady ? (
         <p className={notice}>
           Email delivery needs setup before a recipe can be enabled. Saved recipes stay off until
           then.
         </p>
       ) : null}
-      <div className={split}>
-        <nav className={rail} aria-label="Automations">
+      <div className={emailManagerSplit}>
+        <nav className={emailManagerRail} aria-label="Automations">
           {recipes.map((item) => (
-            <button
+            <EmailManagerRailButton
               key={item.id}
-              type="button"
-              className={railItem}
-              aria-current={activeRecipe === item.id ? "true" : undefined}
+              current={activeRecipe === item.id}
               disabled={Boolean(busyId)}
               onClick={() => {
                 setSelectedRecipe(item.id);
                 setChecks(null);
               }}
             >
-              <strong className={railItemTitle}>{item.title}</strong>
-              <span className={railItemMeta}>{emailStatusLabel(item.status)}</span>
-            </button>
+              <strong className={emailManagerRailTitle}>{item.title}</strong>
+              <span className={emailManagerRailMeta}>{emailStatusLabel(item.status)}</span>
+            </EmailManagerRailButton>
           ))}
         </nav>
 

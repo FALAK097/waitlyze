@@ -19,7 +19,7 @@ import { consumePublicBudget, PublicRateLimitError } from "@/lib/security/public
 // response with awarded:false so the UI stays quiet without leaking why.
 //
 // Claim cooldown: repeat claims inside the window get a 429 instead of
-// burning a transaction — the ledger row is the single source of truth, so
+// burning a transaction - the ledger row is the single source of truth, so
 // double-clicks and replays collapse here before any writes.
 const FOLLOW_CLAIM_COOLDOWN_MS = 5 * 60 * 1000;
 export async function POST(request) {

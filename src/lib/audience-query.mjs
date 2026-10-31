@@ -85,7 +85,8 @@ export function isPositionSort(sort) {
 }
 
 // Prisma orderBy for every list sort except joined (cursor-paginated) and
-// position (ranked in memory from the full positions map).
+// position (ranked by the window-function pages, or streamed via the
+// server-side cursor in exports).
 export function audienceOrderBy(sort) {
   switch (sort) {
     case "email_asc":
@@ -102,53 +103,6 @@ export function audienceOrderBy(sort) {
       return [{ verifiedAt: { sort: "asc", nulls: "first" } }, { id: "asc" }];
     default:
       return [{ createdAt: "desc" }, { id: "desc" }];
-  }
-}
-
-// Comparator for rows already carrying a position (leaders first on asc).
-// In-memory ordering for sorts the database cannot express (position rank)
-// and for the failed-delivery view. Null/undefined positions sort last.
-export function sortAudienceRows(rows, sort, positions = new Map()) {
-  const withPosition = rows.map((row) => ({
-    ...row,
-    position: positions.get(row.id) ?? row.position ?? null,
-  }));
-  const byId = (a, b) => (a.id < b.id ? -1 : 1);
-  switch (sort) {
-    case "email_asc":
-      return withPosition.sort((a, b) =>
-        a.email < b.email ? -1 : a.email > b.email ? 1 : byId(a, b),
-      );
-    case "email_desc":
-      return withPosition.sort((a, b) =>
-        a.email > b.email ? -1 : a.email < b.email ? 1 : byId(a, b),
-      );
-    case "points_desc":
-      return withPosition.sort((a, b) => b.points - a.points || byId(a, b));
-    case "points_asc":
-      return withPosition.sort((a, b) => a.points - b.points || byId(a, b));
-    case "status_desc":
-      return withPosition.sort(
-        (a, b) => Number(Boolean(b.verifiedAt)) - Number(Boolean(a.verifiedAt)) || byId(a, b),
-      );
-    case "status_asc":
-      return withPosition.sort(
-        (a, b) => Number(Boolean(a.verifiedAt)) - Number(Boolean(b.verifiedAt)) || byId(a, b),
-      );
-    case "position_asc":
-    case "position_desc": {
-      const sign = sort === "position_desc" ? -1 : 1;
-      return withPosition.sort((a, b) => {
-        const pa = a.position == null ? Number.MAX_SAFE_INTEGER : a.position;
-        const pb = b.position == null ? Number.MAX_SAFE_INTEGER : b.position;
-        if (pa !== pb) return (pa - pb) * sign;
-        if (a.createdAt < b.createdAt) return -1;
-        if (a.createdAt > b.createdAt) return 1;
-        return byId(a, b);
-      });
-    }
-    default:
-      return rows;
   }
 }
 

@@ -48,7 +48,7 @@ export function WaitlistRowActions({ id, name }) {
       <Button
         type="button"
         variant="ghost-destructive"
-        size="icon-sm"
+        size="icon-touch"
         aria-label={`Delete ${displayName}`}
         onClick={() => {
           setConfirmation("");

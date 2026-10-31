@@ -1,7 +1,7 @@
-import { getOrCreateTemplates } from "@/app/actions/emails";
 import { ContentLayout } from "@/components/dashboard/content-layout";
 import { EmailTemplatesManager } from "@/components/email/email-templates-manager";
 import { EmailToolsNav } from "@/components/email/email-tools-nav";
+import { getOrCreateTemplatesForCampaign } from "@/lib/emails/templates.mjs";
 import { requireCampaignPage } from "@/lib/workspaces/authorize";
 
 export const metadata = {
@@ -13,8 +13,8 @@ export default async function EmailsPage(props) {
   const params = await props.params;
   const { id } = params;
 
-  const { campaign: waitList } = await requireCampaignPage(id, "sendEmail");
-  const templates = await getOrCreateTemplates(waitList.id);
+  const { campaign: waitList, scope } = await requireCampaignPage(id, "sendEmail");
+  const templates = await getOrCreateTemplatesForCampaign(waitList.id, scope);
 
   return (
     <ContentLayout title="Emails">

@@ -272,7 +272,7 @@ export function AuditLog({ events }) {
           "max-[767px]:[&_th]:px-4 max-[767px]:[&_td]:px-4",
         ].join(" ")}
       >
-        <Table>
+        <Table scrollHint="Swipe or scroll to see all columns" scrollLabel="Audit log">
           <TableHeader>
             <TableRow>
               <TableHead scope="col">Time</TableHead>
@@ -330,12 +330,12 @@ export function AuditLog({ events }) {
                     ) : (
                       <span className="grid min-w-32 flex-1 gap-0.5">
                         <span className="block truncate text-caption text-product-text-secondary">
-                          —
+                          -
                         </span>
                       </span>
                     )}
                   </TableCell>
-                  <TableCell>{event.detail || "—"}</TableCell>
+                  <TableCell>{event.detail || "-"}</TableCell>
                   <TableCell>
                     {actor ? (
                       <span className="inline-flex min-w-0 items-center gap-2 text-product-text-primary">

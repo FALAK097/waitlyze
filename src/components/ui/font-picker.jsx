@@ -9,7 +9,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { ensureFontLoaded, googleFontsStylesheet, resolveFontFamily } from "@/lib/google-fonts.mjs";
-import { cn } from "@/lib/utils";
 
 const categories = ["all", "sans-serif", "serif", "display", "handwriting", "monospace"];
 
@@ -103,15 +102,16 @@ export function FontPicker({ label, value, onValueChange }) {
             />
             <div className="flex gap-1 overflow-x-auto pb-0.5">
               {categories.map((item) => (
-                <button
+                <Button
                   aria-pressed={category === item}
-                  className="min-h-7 shrink-0 cursor-pointer rounded-full border border-product-border-subtle bg-transparent px-2.5 text-micro text-product-text-secondary capitalize aria-pressed:border-product-text-primary aria-pressed:text-product-text-primary"
+                  variant="product-pill"
+                  size="font-category"
                   key={item}
                   type="button"
                   onClick={() => setCategory(item)}
                 >
                   {item === "all" ? "All" : item}
-                </button>
+                </Button>
               ))}
             </div>
           </div>
@@ -136,12 +136,10 @@ export function FontPicker({ label, value, onValueChange }) {
             ) : null}
             {state === "ready"
               ? matches.map((font) => (
-                  <button
+                  <Button
                     aria-pressed={selected === font.family}
-                    className={cn(
-                      "flex w-full cursor-pointer items-center gap-2 rounded-md border-0 bg-transparent px-2.5 py-2 text-left hover:bg-product-bg-inset focus-visible:outline-2 focus-visible:outline-product-focus",
-                      selected === font.family && "bg-product-bg-inset",
-                    )}
+                    variant="product-option"
+                    size="font-option"
                     key={font.family}
                     type="button"
                     onClick={() => {
@@ -154,14 +152,19 @@ export function FontPicker({ label, value, onValueChange }) {
                   >
                     <span className="flex size-4 shrink-0 items-center justify-center">
                       {selected === font.family ? (
-                        <HugeiconsIcon icon={Tick02Icon} size={14} aria-hidden="true" />
+                        <HugeiconsIcon
+                          icon={Tick02Icon}
+                          size={14}
+                          className="size-3.5"
+                          aria-hidden="true"
+                        />
                       ) : null}
                     </span>
                     <span className="grid min-w-0 gap-0.5">
                       <span className="truncate text-caption font-medium">{font.family}</span>
                       <FontPreview family={font.family} />
                     </span>
-                  </button>
+                  </Button>
                 ))
               : null}
           </div>

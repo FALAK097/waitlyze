@@ -328,7 +328,7 @@ function replaceOffboardVars(text, vars) {
 }
 
 // Goodbye email for bulk offboard. Unlike broadcasts this send must go through
-// even though the recipient just unsubscribed — the unsubscribe is the reason
+// even though the recipient just unsubscribed - the unsubscribe is the reason
 // for the email. Suppression-list hits and missing rows/templates still skip.
 async function dispatchOffboard(db, event, send, now, attempt, result) {
   const raw = event.payload && typeof event.payload === "object" ? event.payload : null;

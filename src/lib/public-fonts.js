@@ -14,7 +14,18 @@ const bricolage = Bricolage_Grotesque({
   subsets: ["latin"],
   display: "swap",
   variable: "--wl-bricolage",
+  preload: false,
 });
-const figtree = Figtree({ subsets: ["latin"], display: "swap", variable: "--wl-figtree" });
-const archivo = Archivo({ subsets: ["latin"], display: "swap", variable: "--wl-archivo" });
+const figtree = Figtree({
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--wl-figtree",
+  preload: false,
+});
+const archivo = Archivo({
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--wl-archivo",
+  preload: false,
+});
 export const publicFontClasses = `${body.variable} ${display.variable} ${bricolage.variable} ${figtree.variable} ${archivo.variable}`;

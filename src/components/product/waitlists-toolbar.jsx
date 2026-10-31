@@ -11,6 +11,7 @@ import { HugeiconsIcon } from "@hugeicons/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
 
+import { Button } from "@/components/ui/button";
 import {
   InputGroup,
   InputGroupAddon,
@@ -102,19 +103,16 @@ export function StatusTabs({ query, status, sort }) {
       aria-busy={isPending}
     >
       {WAITLIST_STATUS_FILTERS.map((filter) => (
-        <button
+        <Button
           key={filter.value || "all"}
           type="button"
-          className={cn(
-            "inline-flex min-h-11 min-w-0 items-center justify-center border-0 border-b-2 border-transparent bg-transparent px-2 py-2.5 text-sm text-product-text-secondary hover:text-product-text-primary sm:px-3",
-            status === filter.value &&
-              "border-product-accent-solid font-semibold text-product-text-primary",
-          )}
+          variant="filter"
+          size="filter"
           onClick={() => replace({ query, status: filter.value, sort })}
-          aria-current={status === filter.value ? "page" : undefined}
+          aria-pressed={status === filter.value}
         >
           {filter.label}
-        </button>
+        </Button>
       ))}
     </div>
   );
@@ -131,9 +129,10 @@ export function SortableHeading({ column, label, query, status, sort }) {
   const accessibleColumn = column === "subscribers" ? "subscriber count" : "name";
   return (
     <TableHead scope="col" aria-sort={active ? sortLabel : undefined}>
-      <button
+      <Button
         type="button"
-        className="inline-flex min-h-11 cursor-pointer items-center gap-1.5 border-0 bg-transparent px-1 whitespace-nowrap text-inherit hover:text-product-text-primary"
+        variant="table-sort"
+        size="table-sort"
         onClick={() => replace({ query, status, sort: nextSort })}
         aria-label={`Sort by ${accessibleColumn}${active ? `, currently ${sortLabel}` : ""}`}
       >
@@ -155,7 +154,7 @@ export function SortableHeading({ column, label, query, status, sort }) {
             <HugeiconsIcon icon={ArrowUpDownIcon} />
           )}
         </span>
-      </button>
+      </Button>
     </TableHead>
   );
 }

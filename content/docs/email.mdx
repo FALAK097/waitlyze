@@ -36,7 +36,7 @@ The Templates header shows pending/failed counts for the latest 5 verification e
 A saved template alone does not send mail. You need a configured sender ([Resend](/docs/resend) or deployment default) **and** a running outbox dispatcher (`OUTBOX_DISPATCH_SECRET` plus an authenticated scheduler calling `/api/internal/email-outbox`). Without the scheduler, mail queues but never leaves.
 </Callout>
 
-## Consent and suppression — read once
+## Consent and suppression - read once
 
 <Callout type="warn" title="Verification does not mean marketing consent">
 Broadcasts and automations require **both** verified email **and** explicit marketing opt-in. Unsubscribe and workspace suppressions (bounces/complaints from provider webhooks, including early races) are checked again right before delivery.

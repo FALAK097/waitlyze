@@ -26,7 +26,7 @@ export function WelcomeEmail({ name, url }) {
           },
         ]}
       />
-      <Muted>Questions as you get started? Reply to this email — we’re happy to help.</Muted>
+      <Muted>Questions as you get started? Reply to this email - we’re happy to help.</Muted>
     </EmailLayout>
   );
 }

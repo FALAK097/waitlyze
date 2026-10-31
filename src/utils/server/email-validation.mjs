@@ -2,7 +2,7 @@
 // Runs before any DB work so junk never reaches the signup transaction.
 
 // Practical curated list of known disposable/throwaway providers (200+).
-// Exact-domain matches only — subdomains and mainstream relays (Apple, Firefox)
+// Exact-domain matches only - subdomains and mainstream relays (Apple, Firefox)
 // stay allowed so legitimate signups never trip this gate. Pure aliasing
 // services (SimpleLogin and friends) forward to a real inbox, so they are
 // deliberately absent: blocking them only punishes privacy-conscious users.

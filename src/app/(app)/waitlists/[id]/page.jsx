@@ -1,57 +1,19 @@
-import { headers } from "next/headers";
-import { notFound, redirect } from "next/navigation";
-import { cache } from "react";
-
 import { replaceInvalidDraftPage, saveDraftPage } from "@/app/actions/draft-snapshot";
 import { publishWaitlist, pauseWaitlist, rollbackWaitlist } from "@/app/actions/publication";
 import { ContentLayout } from "@/components/dashboard/content-layout";
 import { SnapshotPageBuilder } from "@/components/product/snapshot-page-builder";
-import { auth } from "@/lib/auth";
 import { env } from "@/lib/env.mjs";
 import prisma from "@/lib/prisma";
 import { SITE_URL } from "@/lib/site-metadata";
 import { snapshotTemplate, templateSnapshotSchema } from "@/lib/templates/catalog.mjs";
 import { requireCampaignPage } from "@/lib/workspaces/authorize";
 
-const getUser = cache(async (id) => {
-  return await prisma.user.findUnique({
-    where: { id },
-  });
-});
-
 export const metadata = { title: "Builder" };
 
 export default async function WaitListsEditPage(props) {
-  const params = await props.params;
-  const { id } = params;
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
-
-  if (!id || !session) {
-    redirect("/");
-  }
-
-  const user = await getUser(session.user.id);
-
-  if (!user) {
-    return notFound();
-  }
-
-  const { campaign: waitList } = await requireCampaignPage(id, "editCampaign");
-
-  if (!waitList) {
-    return notFound();
-  }
-  const publicationMember = waitList.workspaceId
-    ? await prisma.workspaceMember.findUnique({
-        where: { workspaceId_userId: { workspaceId: waitList.workspaceId, userId: user.id } },
-        select: { role: true },
-      })
-    : null;
-  const canPublish = publicationMember
-    ? ["OWNER", "ADMIN"].includes(publicationMember.role)
-    : waitList.userId === user.id;
+  const { id } = await props.params;
+  const { campaign: waitList, role } = await requireCampaignPage(id, "editCampaign");
+  const canPublish = ["OWNER", "ADMIN"].includes(role);
 
   const parsedSnapshot = templateSnapshotSchema.safeParse(waitList.templateSnapshot);
   const templateSnapshot = parsedSnapshot.success

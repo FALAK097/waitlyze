@@ -194,7 +194,7 @@ export function TeamAccessSettings({
             "max-[767px]:[&_td]:px-4 max-[767px]:[&_td]:py-3.5",
           ].join(" ")}
         >
-          <Table>
+          <Table scrollHint="Swipe or scroll to see all columns" scrollLabel="Workspace members">
             <TableHeader>
               <TableRow>
                 <TableHead scope="col">User</TableHead>
@@ -265,7 +265,7 @@ export function TeamAccessSettings({
                         Active
                       </span>
                     </TableCell>
-                    <TableCell>{member.createdAt ? formatDate(member.createdAt) : "—"}</TableCell>
+                    <TableCell>{member.createdAt ? formatDate(member.createdAt) : "-"}</TableCell>
                     <TableCell>
                       {canManage && !isSelf && (
                         <div className="flex flex-wrap gap-2">

@@ -21,7 +21,7 @@ export const tooltipVariantClass = {
   "frosted-glass": "bg-background/50 backdrop-blur-md",
 };
 
-// The standard series indicator swatch — a rounded square filled with the
+// The standard series indicator swatch - a rounded square filled with the
 // series' solid var or multi-stop gradient (indicatorBackground). A chart drops
 // this into a tooltipRow's `indicatorHtml`.
 export function tooltipIndicatorHtml(key, colorsCount) {
@@ -41,8 +41,8 @@ export function tooltipRow({ indicatorHtml, labelText, valueText, dimmed }) {
         </div>`;
 }
 
-// The outer tooltip surface — border, padding, shadow, roundness + variant
-// classes — wrapping the axis label and the composed rows.
+// The outer tooltip surface - border, padding, shadow, roundness + variant
+// classes - wrapping the axis label and the composed rows.
 export function tooltipShell({ label, body, roundness, variant }) {
   return `<div class="grid min-w-32 items-start gap-1.5 border border-border/50 px-2.5 py-1.5 text-xs shadow-xl ${roundnessClass[roundness]} ${tooltipVariantClass[variant]}">
       <div class="font-medium text-foreground">${escapeHtml(label)}</div>

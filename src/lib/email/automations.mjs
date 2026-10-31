@@ -39,14 +39,14 @@ export const AUTOMATION_DEFAULTS = {
     trigger: "SIGNUP_VERIFIED",
     delayMinutes: 4320,
     subject: "A quick tour of {{waitlist}}, {{name}}",
-    body: "Hi {{name}}, you’re #{{position}} on {{waitlist}} with {{points}} points. Your personal link is {{referral_link}} — every friend who joins moves you up.",
+    body: "Hi {{name}}, you’re #{{position}} on {{waitlist}} with {{points}} points. Your personal link is {{referral_link}} - every friend who joins moves you up.",
   },
   LAUNCH_COUNTDOWN: {
     title: "Launch countdown",
     description: "Build anticipation in the final days before launch.",
     trigger: "SIGNUP_VERIFIED",
     delayMinutes: 10080,
-    subject: "{{waitlist}} launches soon — you’re #{{position}}",
+    subject: "{{waitlist}} launches soon - you’re #{{position}}",
     body: "Hi {{name}}, launch day is close and you’re holding #{{position}} on {{waitlist}} with {{points}} points. Share {{referral_link}} to climb higher before we open the doors.",
   },
 };
@@ -85,17 +85,19 @@ export function normalizeAutomationConfig(type, input) {
 }
 
 export async function ensureAutomationRecipes(db, waitListId) {
-  for (const [type, defaults] of Object.entries(AUTOMATION_DEFAULTS)) {
-    await db.automationRecipe.upsert({
-      where: { waitListId_type: { waitListId, type } },
-      update: {},
-      create: {
-        waitListId,
-        type,
-        versions: { create: { version: 1, config: normalizeAutomationConfig(type, defaults) } },
-      },
-    });
-  }
+  await Promise.all(
+    Object.entries(AUTOMATION_DEFAULTS).map(([type, defaults]) =>
+      db.automationRecipe.upsert({
+        where: { waitListId_type: { waitListId, type } },
+        update: {},
+        create: {
+          waitListId,
+          type,
+          versions: { create: { version: 1, config: normalizeAutomationConfig(type, defaults) } },
+        },
+      }),
+    ),
+  );
 }
 
 async function createRun(tx, { recipe, version, waitListId, signUpId, triggerKey, config, now }) {

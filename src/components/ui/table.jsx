@@ -2,9 +2,22 @@
 import * as React from "react";
 
 import { cn } from "@/lib/utils";
-function Table({ className, ...props }) {
+function Table({ className, scrollHint, scrollLabel = "Scrollable table", ...props }) {
+  const scrollHintId = React.useId();
   return (
-    <div data-slot="table-container" className="relative w-full overflow-x-auto">
+    <div
+      data-slot="table-container"
+      className="relative w-full overflow-x-auto focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+      tabIndex={scrollHint ? 0 : undefined}
+      role={scrollHint ? "region" : undefined}
+      aria-label={scrollHint ? scrollLabel : undefined}
+      aria-describedby={scrollHint ? scrollHintId : undefined}
+    >
+      {scrollHint && (
+        <p id={scrollHintId} className="mb-2 px-3 text-sm text-product-text-secondary md:sr-only">
+          {scrollHint}. Keyboard users can focus the table and use the arrow keys.
+        </p>
+      )}
       <table
         data-slot="table"
         className={cn("w-full caption-bottom text-sm", className)}

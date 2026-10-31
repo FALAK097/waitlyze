@@ -1,12 +1,14 @@
 "use client";
 import { getColorsCount, indicatorBackground } from "@/components/evilcharts/ui/echarts-chart";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 export function legendFillStyle(key, colorsCount) {
   if (colorsCount <= 1) return { backgroundColor: `var(--color-${key}-0)` };
   return { background: indicatorBackground(key, colorsCount) };
 }
 
-// Punches out the centre with a mask-composite so only the "border" shows —
+// Punches out the centre with a mask-composite so only the "border" shows -
 // works with gradients and border-radius, unlike plain border-color.
 export function legendOutlineStyle(key, colorsCount) {
   const mask = {
@@ -64,19 +66,21 @@ export function LegendOverlay({
           (selectedKey === null || selectedKey === key) &&
           (hoveredKey === null || hoveredKey === key);
         return (
-          // No entrance here — the Recharts legend appears instantly, and a
+          // No entrance here - the Recharts legend appears instantly, and a
           // fade-in reads as disconnected from the canvas draw-in.
           isClickable ? (
-            <button
+            <Button
               key={key}
               type="button"
+              variant="product-option"
+              size="filter"
               aria-pressed={selectedKey === key}
-              className={`flex cursor-pointer items-center gap-1.5 transition-opacity ${!isSelected ? "opacity-30" : ""}`}
+              className={cn("gap-1.5 px-1.5 transition-opacity", !isSelected && "opacity-30")}
               onClick={() => onToggle(key)}
             >
               <LegendIndicator variant={variant} dataKey={key} colorsCount={colorsCount} />
               {item?.label}
-            </button>
+            </Button>
           ) : (
             <div
               key={key}

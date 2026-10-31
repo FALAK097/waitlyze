@@ -28,7 +28,7 @@ export function dotItemStyle(variant, paint, background) {
       // Background-filled core with a thin colored ring (Recharts r3 / sw1).
       return { color: background, borderColor: paint, borderWidth: 1 };
     case "ping": {
-      // Solid core wrapped in a wide, translucent same-color ring — a static
+      // Solid core wrapped in a wide, translucent same-color ring - a static
       // "ping". The ring is the symbol's BORDER (a stroke ~1.25× the core
       // radius), which fills out to a soft halo disc; a genuinely large symbol
       // would silently fail to render on a category-axis line, so we stroke a
@@ -45,7 +45,7 @@ export function dotItemStyle(variant, paint, background) {
 
 // Sizes mirror the Recharts markers: default r3, border r6 (mostly halo), and
 // colored-border r3+ring. Flattening these to one size makes the hover ring read
-// LARGER than a haloed resting dot — the opposite of the Recharts twin.
+// LARGER than a haloed resting dot - the opposite of the Recharts twin.
 export const DOT_SIZES = {
   none: 0,
   default: 6,
@@ -59,8 +59,8 @@ export function dotStyle(variant, paint, background) {
 }
 
 // The color the horizontal series gradient shows at position t ∈ [0, 1]. ECharts
-// paints a gradient itemStyle relative to each symbol's own bounding box — a full
-// rainbow inside every dot — while the Recharts dots clip a chart-wide gradient,
+// paints a gradient itemStyle relative to each symbol's own bounding box - a full
+// rainbow inside every dot - while the Recharts dots clip a chart-wide gradient,
 // so each takes the gradient's color at its x-position. Sampling reproduces that.
 export function sampleGradient(slots, t) {
   if (slots.length <= 1) return slots[0] ?? "rgba(120, 120, 120, 1)";

@@ -50,9 +50,7 @@ import { parseAsStringLiteral, useQueryState } from "nuqs";
 import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 
 import { ColorPicker } from "@/components/reui/color-picker";
-import { CountryMultiSelect } from "@/components/reui/country-multi-select";
 import { Button, buttonVariants } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogClose,
@@ -61,18 +59,9 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { FontPicker } from "@/components/ui/font-picker";
-import { Input } from "@/components/ui/input";
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Textarea } from "@/components/ui/textarea";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { assessPublishReadiness } from "@/lib/campaigns/publish-readiness.mjs";
 import { brandContrastIssues } from "@/lib/color/contrast.mjs";
@@ -88,7 +77,9 @@ import { cn } from "@/lib/utils";
 
 import { ImageUploadField } from "./image-upload-field";
 import { PublishAndShare } from "./publish-and-share";
-import { SHARE_CHANNELS, ShareChannelIcon } from "./share-buttons";
+import { BlockInspector } from "./snapshot-block-inspector";
+import { Toggle } from "./snapshot-editor-fields";
+import { SnapshotStatusEditor } from "./snapshot-status-editor";
 import {
   StatusPagePreview,
   WaitlistPageContent,
@@ -129,516 +120,6 @@ const blockGroups = BLOCK_TYPES.reduce((groups, block) => {
   return groups;
 }, {});
 const templates = listTemplates();
-const itemDefaults = {
-  features: { title: "A clear benefit", body: "Explain how it helps." },
-  steps: { title: "Next step", body: "Explain what happens here." },
-  logos: "Company",
-  stats: { value: "100+", label: "people waiting" },
-  testimonials: { quote: "Add an honest quote.", name: "Customer name", role: "Role" },
-  faq: { question: "What should people know?", answer: "Add a useful answer." },
-  referralRewards: { referrals: 5, reward: "Early access" },
-};
-const identityListValue = (entry) => entry;
-
-function Field({
-  label,
-  value,
-  onChange,
-  multiline = false,
-  type = "text",
-  maxLength,
-  placeholder = "",
-  disabled = false,
-  onFocus,
-  onBlur,
-}) {
-  const id = useId();
-  return (
-    <div className="grid gap-1.5 [&_input]:text-caption [&_label]:text-caption [&_label]:font-semibold [&_textarea]:text-caption">
-      <Label htmlFor={id}>{label}</Label>
-      {multiline ? (
-        <Textarea
-          id={id}
-          value={value}
-          maxLength={maxLength}
-          placeholder={placeholder}
-          disabled={disabled}
-          rows={3}
-          onChange={(event) => onChange(event.target.value)}
-          onFocus={onFocus}
-          onBlur={onBlur}
-        />
-      ) : (
-        <Input
-          id={id}
-          type={type}
-          value={value}
-          maxLength={maxLength}
-          placeholder={placeholder}
-          disabled={disabled}
-          onChange={(event) => onChange(event.target.value)}
-          onFocus={onFocus}
-          onBlur={onBlur}
-        />
-      )}
-    </div>
-  );
-}
-// Number input that lets founders clear the field while typing and commits a
-// clamped integer on blur, instead of snapping to 0 mid-edit.
-function PointsField({ label, value, onCommit, max = 100000, unit }) {
-  const id = useId();
-  // Callers pass `key={value}` so React remounts and re-syncs the text state
-  // when the committed value changes, instead of resetting it from an effect.
-  const [text, setText] = useState(value == null ? "" : String(value));
-  const commit = () => {
-    if (text === "" || text == null) {
-      onCommit(0);
-      return;
-    }
-    const parsed = Math.trunc(Number(text));
-    onCommit(!Number.isSafeInteger(parsed) || parsed < 0 ? 0 : Math.min(parsed, max));
-  };
-  return (
-    <div className="grid gap-1.5 [&_input]:text-caption [&_label]:text-caption [&_label]:font-semibold">
-      <Label htmlFor={id}>{label}</Label>
-      {unit ? (
-        <InputGroup className="h-10">
-          <InputGroupInput
-            id={id}
-            type="number"
-            value={text}
-            onChange={(event) => setText(event.target.value)}
-            onBlur={commit}
-          />
-          <InputGroupAddon align="inline-end">{unit}</InputGroupAddon>
-        </InputGroup>
-      ) : (
-        <Input
-          id={id}
-          type="number"
-          value={text}
-          onChange={(event) => setText(event.target.value)}
-          onBlur={commit}
-        />
-      )}
-    </div>
-  );
-}
-function ListField({ label, value, onChange, placeholder, normalize = identityListValue }) {
-  const [editing, setEditing] = useState(false);
-  const [draft, setDraft] = useState("");
-  const text = Array.isArray(value) ? value.join(", ") : "";
-  const parse = (raw) =>
-    raw
-      .split(/[,;\n]/)
-      .map((entry) => entry.trim())
-      .filter(Boolean)
-      .map(normalize);
-
-  return (
-    <Field
-      label={label}
-      value={editing ? draft : text}
-      placeholder={placeholder}
-      onFocus={() => {
-        setDraft(text);
-        setEditing(true);
-      }}
-      onChange={(raw) => {
-        setDraft(raw);
-        onChange(parse(raw));
-      }}
-      onBlur={(event) => {
-        const entries = parse(event.currentTarget.value);
-        setDraft(entries.join(", "));
-        setEditing(false);
-        onChange(entries);
-      }}
-    />
-  );
-}
-function Toggle({ label, checked, onChange, disabled = false, hint = "" }) {
-  return (
-    <label
-      className={
-        disabled
-          ? "flex items-center gap-2 text-caption font-medium text-product-text-muted"
-          : "flex items-center gap-2 text-caption font-medium"
-      }
-    >
-      <Checkbox
-        checked={checked}
-        disabled={disabled}
-        onCheckedChange={(value) => onChange(value === true)}
-      />
-      {hint ? (
-        <span className="inline-flex items-center gap-1.5">
-          <span>{label}</span>
-          <TooltipProvider delay={150}>
-            <Tooltip>
-              <TooltipTrigger
-                render={
-                  <button
-                    type="button"
-                    aria-label={`${label} information`}
-                    className="grid size-5 shrink-0 cursor-pointer place-items-center rounded-full border-0 bg-transparent p-0 text-product-text-muted hover:bg-product-bg-inset hover:text-product-text-primary"
-                  >
-                    <HugeiconsIcon icon={HelpCircleIcon} size={15} aria-hidden="true" />
-                  </button>
-                }
-              />
-              <TooltipContent side="top" className="max-w-64 text-center">
-                {hint}
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        </span>
-      ) : (
-        <span>{label}</span>
-      )}
-    </label>
-  );
-}
-function StringItems({ section, fields, update }) {
-  return (
-    <div className="grid gap-5">
-      {section.items.map((item, index) => (
-        <div
-          className="grid gap-2.5 border-t border-product-border-subtle pt-4 [&>button]:justify-self-start [&>span]:text-micro [&>span]:text-product-text-muted"
-          key={index}
-        >
-          <span>{index + 1}</span>
-          {fields.map(({ key, label, multiline, type = "text" }) => (
-            <Field
-              key={key}
-              label={label}
-              type={type}
-              multiline={multiline}
-              value={typeof item === "string" ? item : item[key]}
-              onChange={(value) =>
-                update({
-                  ...section,
-                  items: section.items.map((entry, itemIndex) =>
-                    itemIndex === index
-                      ? typeof entry === "string"
-                        ? value
-                        : { ...entry, [key]: type === "number" ? Number(value) : value }
-                      : entry,
-                  ),
-                })
-              }
-            />
-          ))}
-          {section.items.length > 1 && (
-            <Button
-              variant="ghost"
-              size="sm"
-              type="button"
-              onClick={() =>
-                update({
-                  ...section,
-                  items: section.items.filter((_, itemIndex) => itemIndex !== index),
-                })
-              }
-            >
-              Remove
-            </Button>
-          )}
-        </div>
-      ))}
-      {section.items.length < 8 && (
-        <Button
-          variant="outline"
-          size="sm"
-          type="button"
-          onClick={() =>
-            update({ ...section, items: [...section.items, clone(itemDefaults[section.type])] })
-          }
-        >
-          Add item
-        </Button>
-      )}
-    </div>
-  );
-}
-function LogoItems({ section, update }) {
-  const setItem = (index, next) =>
-    update({
-      ...section,
-      items: section.items.map((entry, itemIndex) => (itemIndex === index ? next : entry)),
-    });
-  return (
-    <div className="grid gap-5">
-      {section.items.map((raw, index) => {
-        const item = typeof raw === "string" ? { label: raw, imageUrl: "" } : raw;
-        return (
-          <div
-            className="grid gap-2.5 border-t border-product-border-subtle pt-4 [&>button]:justify-self-start [&>span]:text-micro [&>span]:text-product-text-secondary"
-            key={index}
-          >
-            <span>{index + 1}</span>
-            <Field
-              label="Name"
-              value={item.label}
-              onChange={(label) => setItem(index, { ...item, label })}
-            />
-            <ImageUploadField
-              label="Logo image"
-              hint="Optional. Shown instead of the name when set."
-              value={item.imageUrl}
-              onChange={(imageUrl) => setItem(index, { ...item, imageUrl })}
-              previewClassName="aspect-16/9 object-contain bg-product-bg-inset"
-            />
-            {section.items.length > 1 && (
-              <Button
-                variant="ghost"
-                size="sm"
-                type="button"
-                onClick={() =>
-                  update({
-                    ...section,
-                    items: section.items.filter((_, itemIndex) => itemIndex !== index),
-                  })
-                }
-              >
-                Remove
-              </Button>
-            )}
-          </div>
-        );
-      })}
-      {section.items.length < 8 && (
-        <Button
-          variant="outline"
-          size="sm"
-          type="button"
-          onClick={() => update({ ...section, items: [...section.items, "Company"] })}
-        >
-          Add item
-        </Button>
-      )}
-    </div>
-  );
-}
-function LinkItems({ section, update }) {
-  return (
-    <div className="grid gap-5">
-      {section.links.map((link, index) => (
-        <div
-          className="grid gap-2.5 border-t border-product-border-subtle pt-4 [&>button]:justify-self-start"
-          key={index}
-        >
-          <Field
-            label="Label"
-            value={link.label}
-            onChange={(label) =>
-              update({
-                ...section,
-                links: section.links.map((entry, itemIndex) =>
-                  itemIndex === index ? { ...entry, label } : entry,
-                ),
-              })
-            }
-          />
-          <Field
-            label="Link"
-            value={link.href}
-            onChange={(href) =>
-              update({
-                ...section,
-                links: section.links.map((entry, itemIndex) =>
-                  itemIndex === index ? { ...entry, href } : entry,
-                ),
-              })
-            }
-          />
-          <Button
-            variant="ghost"
-            size="sm"
-            type="button"
-            onClick={() =>
-              update({
-                ...section,
-                links: section.links.filter((_, itemIndex) => itemIndex !== index),
-              })
-            }
-          >
-            Remove
-          </Button>
-        </div>
-      ))}
-      {section.links.length < 5 && (
-        <Button
-          variant="outline"
-          size="sm"
-          type="button"
-          onClick={() =>
-            update({ ...section, links: [...section.links, { label: "Link", href: "#" }] })
-          }
-        >
-          Add link
-        </Button>
-      )}
-    </div>
-  );
-}
-function BlockInspector({ section, update, form, updateForm }) {
-  if (!section)
-    return (
-      <div className={"px-5 py-8 text-caption leading-relaxed text-product-text-secondary"}>
-        <p>Click a block in the preview or the list to edit it.</p>
-      </div>
-    );
-  const field = (key, label, multiline = false) => (
-    <Field
-      label={label}
-      multiline={multiline}
-      value={section[key] ?? ""}
-      onChange={(value) => update({ ...section, [key]: value })}
-    />
-  );
-  return (
-    <div className="grid gap-4 p-5">
-      {section.type === "navigation" && (
-        <>
-          {field("brand", "Brand")}
-          {field("buttonText", "Button")}
-          <LinkItems section={section} update={update} />
-        </>
-      )}
-      {section.type === "hero" && (
-        <>
-          {field("eyebrow", "Eyebrow")}
-          {field("heading", "Headline")}
-          {field("body", "Description", true)}
-          <Toggle
-            label="Show signup form"
-            checked={section.showForm}
-            onChange={(showForm) => update({ ...section, showForm })}
-          />
-        </>
-      )}
-      {["features", "steps"].includes(section.type) && (
-        <>
-          {field("heading", "Heading")}
-          <StringItems
-            section={section}
-            fields={[
-              { key: "title", label: "Title" },
-              { key: "body", label: "Description", multiline: true },
-            ]}
-            update={update}
-          />
-        </>
-      )}
-      {section.type === "logos" && (
-        <>
-          {field("heading", "Heading")}
-          <LogoItems section={section} update={update} />
-        </>
-      )}
-      {section.type === "stats" && (
-        <StringItems
-          section={section}
-          fields={[
-            { key: "value", label: "Value" },
-            { key: "label", label: "Label" },
-          ]}
-          update={update}
-        />
-      )}
-      {section.type === "testimonials" && (
-        <>
-          {field("heading", "Heading")}
-          <StringItems
-            section={section}
-            fields={[
-              { key: "quote", label: "Quote", multiline: true },
-              { key: "name", label: "Name" },
-              { key: "role", label: "Role" },
-            ]}
-            update={update}
-          />
-        </>
-      )}
-      {section.type === "faq" && (
-        <>
-          {field("heading", "Heading")}
-          <StringItems
-            section={section}
-            fields={[
-              { key: "question", label: "Question" },
-              { key: "answer", label: "Answer", multiline: true },
-            ]}
-            update={update}
-          />
-        </>
-      )}
-      {section.type === "media" && (
-        <>
-          {field("heading", "Heading")}
-          {field("body", "Description", true)}
-          <ImageUploadField
-            label="Image"
-            value={section.imageUrl}
-            onChange={(imageUrl) => update({ ...section, imageUrl })}
-            hint="PNG, JPEG, or WebP up to 4MB."
-          />
-          {field("imageAlt", "Image description")}
-        </>
-      )}
-      {section.type === "form" && (
-        <>
-          {field("heading", "Heading")}
-          {field("body", "Description", true)}
-        </>
-      )}
-      {section.type === "signupCount" && (
-        <>
-          {field("prefix", "Before number")}
-          {field("suffix", "After number")}
-        </>
-      )}
-      {section.type === "referralRewards" && (
-        <>
-          {field("heading", "Heading")}
-          <StringItems
-            section={section}
-            fields={[
-              { key: "referrals", label: "Referrals", type: "number" },
-              { key: "reward", label: "Reward" },
-            ]}
-            update={update}
-          />
-        </>
-      )}
-      {section.type === "cta" && (
-        <>
-          {field("heading", "Heading")}
-          {field("body", "Description", true)}
-          {field("buttonText", "Button")}
-        </>
-      )}
-      {section.type === "footer" && (
-        <>
-          {field("note", "Footer note", true)}
-          <LinkItems section={section} update={update} />
-        </>
-      )}
-      {(section.type === "form" || (section.type === "hero" && section.showForm)) && (
-        <div className="grid gap-4 border-t border-product-border-subtle pt-4">
-          <div className="grid gap-1">
-            <p className="text-micro font-bold tracking-widest text-product-text-secondary uppercase">
-              Signup form
-            </p>
-          </div>
-          <FormPanel form={form} update={updateForm} />
-        </div>
-      )}
-    </div>
-  );
-}
 
 function SortableBlockRow({ section, selected, disabled, onSelect, onDuplicate, onRemove }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
@@ -658,41 +139,50 @@ function SortableBlockRow({ section, selected, disabled, onSelect, onDuplicate, 
         "--sortable-transition": transition,
       }}
     >
-      <button
+      <Button
         {...attributes}
         {...listeners}
         aria-label={`Drag ${names[section.type]} block`}
-        className="flex size-11 shrink-0 cursor-grab touch-none items-center justify-center rounded-md border-0 bg-transparent text-product-text-muted active:cursor-grabbing"
+        size="builder-drag-handle"
         type="button"
+        variant="builder-drag-handle"
       >
         <HugeiconsIcon icon={DragDropIcon} size={15} aria-hidden="true" />
-      </button>
+      </Button>
       <span className="flex size-7 shrink-0 items-center justify-center rounded-md text-product-text-muted group-data-[selected=true]:bg-product-bg-surface group-data-[selected=true]:text-product-text-primary">
         <HugeiconsIcon icon={blockIcons[section.type]} size={15} aria-hidden="true" />
       </span>
-      <button
+      <Button
         aria-pressed={selected}
-        className="flex min-h-11 min-w-0 flex-1 cursor-pointer items-center border-0 bg-transparent px-1 py-2 text-left text-caption text-product-text-primary"
+        className="text-left"
+        size="builder-selection"
         type="button"
+        variant="product-option"
         onClick={onSelect}
       >
         <span className="truncate">{names[section.type]}</span>
-      </button>
+      </Button>
       <div className="hidden items-center pr-1 group-focus-within:flex group-hover:flex group-data-[selected=true]:flex [@media(hover:none)]:flex">
-        <button
+        <Button
           aria-label="Duplicate"
-          className="flex size-7 cursor-pointer items-center justify-center border-0 bg-transparent text-product-text-secondary"
+          className="size-11"
+          size="icon-lg"
+          type="button"
+          variant="product-ghost"
           onClick={onDuplicate}
         >
           <HugeiconsIcon icon={Copy01Icon} size={14} aria-hidden="true" />
-        </button>
-        <button
+        </Button>
+        <Button
           aria-label="Remove"
-          className="flex size-7 cursor-pointer items-center justify-center border-0 bg-transparent text-product-text-secondary"
+          className="size-11"
+          size="icon-lg"
+          type="button"
+          variant="product-ghost"
           onClick={onRemove}
         >
           <HugeiconsIcon icon={Delete02Icon} size={14} aria-hidden="true" />
-        </button>
+        </Button>
       </div>
     </div>
   );
@@ -790,7 +280,7 @@ export function SnapshotPageBuilder({
     saveAgainRef = useRef(false);
   const canvasRef = useRef(null);
   const scrollRestoreRef = useRef(null);
-  const key = `waitlyze:page:${waitList.id}`;
+  const storageKey = `waitlyze:page:${waitList.id}`;
   useLayoutEffect(() => {
     snapshotRef.current = snapshot;
     versionRef.current = version;
@@ -805,9 +295,9 @@ export function SnapshotPageBuilder({
     (next) => {
       const parsed = templateSnapshotSchema.safeParse(next);
       if (!parsed.success) {
-        const issue =
-          parsed.error.issues.find((issue) => issue.code === "custom") || parsed.error.issues[0];
-        setError(issue?.message || "Review the page content.");
+        const firstIssue =
+          parsed.error.issues.find((item) => item.code === "custom") || parsed.error.issues[0];
+        setError(firstIssue?.message || "Review the page content.");
         return false;
       }
       if (equal(snapshotRef.current, next)) return true;
@@ -824,7 +314,7 @@ export function SnapshotPageBuilder({
       setError("");
       try {
         sessionStorage.setItem(
-          key,
+          storageKey,
           JSON.stringify({ revision: versionRef.current, snapshot: next }),
         );
       } catch {
@@ -834,7 +324,7 @@ export function SnapshotPageBuilder({
       }
       return true;
     },
-    [key],
+    [storageKey],
   );
   const flush = useCallback(async () => {
     if (replacement || !dirtyRef.current || conflictRef.current) return;
@@ -871,7 +361,7 @@ export function SnapshotPageBuilder({
       setError("");
       try {
         sessionStorage.setItem(
-          key,
+          storageKey,
           JSON.stringify({ revision: result.revision, snapshot: snapshotRef.current }),
         );
       } catch {
@@ -888,10 +378,10 @@ export function SnapshotPageBuilder({
         window.setTimeout(() => void flush(), 0);
       }
     }
-  }, [key, replacement, saveDraftPage, waitList.id]);
+  }, [storageKey, replacement, saveDraftPage, waitList.id]);
   useEffect(() => {
     try {
-      const stored = JSON.parse(sessionStorage.getItem(key) || "null");
+      const stored = JSON.parse(sessionStorage.getItem(storageKey) || "null");
       const parsed = templateSnapshotSchema.safeParse(stored?.snapshot);
       if (
         stored &&
@@ -911,12 +401,17 @@ export function SnapshotPageBuilder({
       setError("The last saved version is loaded; a browser recovery copy could not be read.");
     }
     setHydrated(true);
-  }, [key, waitList.templateRevision, waitList.templateSnapshot, waitList.snapshotReplacement]);
+  }, [
+    storageKey,
+    waitList.templateRevision,
+    waitList.templateSnapshot,
+    waitList.snapshotReplacement,
+  ]);
   useEffect(() => {
     if (replacement || !hydrated || !dirty || conflict) return;
     const timer = window.setTimeout(() => void flush(), 700);
     return () => window.clearTimeout(timer);
-  }, [snapshot, dirty, conflict, hydrated, flush, replacement]);
+  }, [dirty, conflict, hydrated, flush, replacement]);
   const undo = () => {
     const previous = undoStack.current.pop();
     if (!previous) return;
@@ -1021,52 +516,54 @@ export function SnapshotPageBuilder({
   };
   const renderBlockToolbar = (section) => {
     const index = snapshot.sections.findIndex((item) => item.id === section.id);
-    const action =
-      "flex size-7 cursor-pointer items-center justify-center rounded-md border-0 bg-transparent text-white/70 transition-colors hover:bg-white/15 hover:text-white disabled:pointer-events-none disabled:opacity-30";
     return (
       <div className="absolute top-2 left-2 z-10 hidden items-center gap-0.5 rounded-lg bg-product-text-primary p-1 shadow-canvas group-focus-within:flex group-hover:flex group-data-[selected=true]:flex">
         <span className="rounded-md bg-product-accent-solid px-2 py-1 text-micro font-bold text-product-text-primary">
           {names[section.type]}
         </span>
-        <button
+        <Button
           type="button"
-          className={action}
+          size="builder-toolbar"
+          variant="builder-toolbar"
           aria-label="Move up"
           disabled={index <= 0}
           onClick={() => moveBlock(index, -1)}
         >
           <HugeiconsIcon icon={ArrowUp01Icon} size={14} aria-hidden="true" />
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
-          className={action}
+          size="builder-toolbar"
+          variant="builder-toolbar"
           aria-label="Move down"
           disabled={index >= snapshot.sections.length - 1}
           onClick={() => moveBlock(index, 1)}
         >
           <HugeiconsIcon icon={ArrowDown01Icon} size={14} aria-hidden="true" />
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
-          className={action}
+          size="builder-toolbar"
+          variant="builder-toolbar"
           aria-label="Duplicate"
           onClick={() => duplicateBlock(section.id)}
         >
           <HugeiconsIcon icon={Copy01Icon} size={14} aria-hidden="true" />
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
-          className={action}
+          size="builder-toolbar"
+          variant="builder-toolbar"
           aria-label="Remove"
           onClick={() => removeBlock(section.id)}
         >
           <HugeiconsIcon icon={Delete02Icon} size={14} aria-hidden="true" />
-        </button>
+        </Button>
       </div>
     );
   };
-  const updateRoot = (key, value) =>
-    applySnapshot({ ...snapshot, [key]: { ...snapshot[key], ...value } });
+  const updateRoot = (rootKey, value) =>
+    applySnapshot({ ...snapshot, [rootKey]: { ...snapshot[rootKey], ...value } });
   const onKeyDown = (event) => {
     if (
       !(event.metaKey || event.ctrlKey) ||
@@ -1119,7 +616,7 @@ export function SnapshotPageBuilder({
         dirtyRef.current = false;
         try {
           sessionStorage.setItem(
-            key,
+            storageKey,
             JSON.stringify({ revision: result.templateRevision, snapshot: restored }),
           );
         } catch {
@@ -1159,7 +656,7 @@ export function SnapshotPageBuilder({
       setError("");
       try {
         sessionStorage.setItem(
-          key,
+          storageKey,
           JSON.stringify({ revision: result.revision, snapshot: snapshotRef.current }),
         );
       } catch {
@@ -1254,18 +751,16 @@ export function SnapshotPageBuilder({
             ["status", "After signup"],
             ["publish", "Publish & share"],
           ].map(([id, label]) => (
-            <button
+            <Button
               key={id}
               type="button"
-              aria-current={surface === id ? "page" : undefined}
+              aria-pressed={surface === id}
               onClick={() => void setSurface(id)}
-              className={cn(
-                "inline-block min-h-10 shrink-0 cursor-pointer border-b-2 border-transparent py-2 font-medium text-product-text-secondary transition-colors hover:text-product-text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-product-success-text! motion-reduce:transition-none",
-                surface === id && "border-product-accent-solid text-product-text-primary",
-              )}
+              variant="filter"
+              size="filter"
             >
               {label}
-            </button>
+            </Button>
           ))}
         </nav>
         <div className="flex flex-1 items-center justify-end gap-1 max-[760px]:order-2 max-[760px]:w-full max-[760px]:justify-start max-[760px]:overflow-x-auto [&>*]:shrink-0">
@@ -1382,15 +877,16 @@ export function SnapshotPageBuilder({
             ["edit", "Edit"],
             ["preview", "Preview"],
           ].map(([id, label]) => (
-            <button
-              className="min-h-11 flex-1 rounded-lg border-0 bg-transparent px-4 text-caption font-semibold text-product-text-secondary aria-pressed:bg-product-bg-inset aria-pressed:text-product-text-primary"
+            <Button
               key={id}
               type="button"
+              variant="product-segment"
+              size="builder-mobile-segment"
               aria-pressed={mobileMode === id}
               onClick={() => setMobileMode(id)}
             >
               {label}
-            </button>
+            </Button>
           ))}
         </div>
       )}
@@ -1404,15 +900,16 @@ export function SnapshotPageBuilder({
               ["structure", "Structure"],
               ["properties", "Block settings"],
             ].map(([id, label]) => (
-              <button
-                className="min-h-11 flex-1 rounded-lg border-0 bg-transparent px-3 text-caption font-semibold text-product-text-secondary aria-pressed:bg-product-bg-inset aria-pressed:text-product-text-primary"
+              <Button
                 key={id}
                 type="button"
+                variant="product-segment"
+                size="builder-mobile-segment"
                 aria-pressed={mobileEditorPanel === id}
                 onClick={() => setMobileEditorPanel(id)}
               >
                 {label}
-              </button>
+              </Button>
             ))}
           </div>
           <aside
@@ -1423,19 +920,21 @@ export function SnapshotPageBuilder({
             data-mobile-mode={mobileMode}
             data-mobile-panel={mobileEditorPanel}
           >
-            <div className="sticky top-0 z-2 grid grid-cols-2 gap-1 bg-product-bg-surface p-2.5 [&_button]:min-h-9 [&_button]:cursor-pointer [&_button]:rounded-lg [&_button]:border-0 [&_button]:bg-transparent [&_button]:text-caption [&_button]:font-semibold [&_button]:text-product-text-secondary [&_button[aria-pressed=true]]:bg-product-bg-inset [&_button[aria-pressed=true]]:text-product-text-primary">
+            <div className="sticky top-0 z-2 grid grid-cols-2 gap-1 bg-product-bg-surface p-2.5">
               {[
                 ["blocks", "Blocks"],
                 ["templates", "Templates"],
               ].map(([id, label]) => (
-                <button
+                <Button
                   key={id}
                   type="button"
+                  variant="product-segment"
+                  size="builder-panel-segment"
                   aria-pressed={panel === id}
                   onClick={() => setPanel(id)}
                 >
                   {label}
-                </button>
+                </Button>
               ))}
             </div>
             {panel === "blocks" && (
@@ -1488,10 +987,11 @@ export function SnapshotPageBuilder({
                           </p>
                           <div className="grid gap-1.5 sm:grid-cols-2">
                             {blocks.map((block) => (
-                              <button
+                              <Button
                                 key={block.type}
                                 type="button"
-                                className="flex cursor-pointer items-start gap-2.5 rounded-lg border border-product-border-subtle bg-product-bg-surface p-2.5 text-left transition-colors hover:border-product-accent-solid"
+                                variant="builder-block"
+                                size="builder-block"
                                 onClick={() => {
                                   addBlock(block.type);
                                   setAddOpen(false);
@@ -1511,7 +1011,7 @@ export function SnapshotPageBuilder({
                                     {block.description}
                                   </span>
                                 </span>
-                              </button>
+                              </Button>
                             ))}
                           </div>
                         </div>
@@ -1575,16 +1075,18 @@ export function SnapshotPageBuilder({
             className="min-w-0 flex-1 overflow-auto px-7 pt-0 pb-9 max-[680px]:px-3 max-[680px]:data-[mobile-mode=edit]:hidden"
             data-mobile-mode={mobileMode}
           >
-            <div className="flex h-canvas-tools items-center justify-end text-caption text-product-text-secondary [&_button]:cursor-pointer [&_button]:rounded-md [&_button]:border-0 [&_button]:bg-transparent [&_button]:px-2.5 [&_button]:py-2 [&_button]:text-micro [&_button]:text-product-text-secondary [&_button[aria-pressed=true]]:bg-product-bg-surface [&_button[aria-pressed=true]]:text-product-text-primary [&_button[aria-pressed=true]]:shadow-pressed">
+            <div className="flex h-canvas-tools items-center justify-end text-caption text-product-text-secondary">
               <TooltipProvider>
                 <div className="flex items-center gap-0.5">
                   <Tooltip>
                     <TooltipTrigger
                       render={
-                        <button
+                        <Button
                           type="button"
                           aria-label="Desktop preview"
                           aria-pressed={previewViewport === "desktop"}
+                          variant="product-segment-surface"
+                          size="preview-viewport"
                           onClick={() => setPreviewViewport("desktop")}
                         />
                       }
@@ -1596,10 +1098,12 @@ export function SnapshotPageBuilder({
                   <Tooltip>
                     <TooltipTrigger
                       render={
-                        <button
+                        <Button
                           type="button"
                           aria-label="Mobile preview"
                           aria-pressed={previewViewport === "mobile"}
+                          variant="product-segment-surface"
+                          size="preview-viewport"
                           onClick={() => setPreviewViewport("mobile")}
                         />
                       }
@@ -1639,19 +1143,21 @@ export function SnapshotPageBuilder({
             data-mobile-mode={mobileMode}
             data-mobile-panel={mobileEditorPanel}
           >
-            <div className="sticky top-0 z-2 grid grid-cols-2 gap-1 bg-product-bg-surface p-2.5 [&_button]:min-h-9 [&_button]:cursor-pointer [&_button]:rounded-lg [&_button]:border-0 [&_button]:bg-transparent [&_button]:text-caption [&_button]:font-semibold [&_button]:text-product-text-secondary [&_button[aria-pressed=true]]:bg-product-bg-inset [&_button[aria-pressed=true]]:text-product-text-primary">
+            <div className="sticky top-0 z-2 grid grid-cols-2 gap-1 bg-product-bg-surface p-2.5">
               {[
                 ["properties", "Properties"],
                 ["design", "Design"],
               ].map(([id, label]) => (
-                <button
+                <Button
                   key={id}
                   type="button"
+                  variant="product-segment"
+                  size="builder-panel-segment"
                   aria-pressed={rightPanel === id}
                   onClick={() => setRightPanel(id)}
                 >
                   {label}
-                </button>
+                </Button>
               ))}
             </div>
             {rightPanel === "properties" ? (
@@ -1671,15 +1177,15 @@ export function SnapshotPageBuilder({
         <SurfaceLayout
           mobileMode={mobileMode}
           sidebar={
-            <StatusPanel
+            <SnapshotStatusEditor
               status={snapshot.statusPage}
               form={snapshot.form}
               updateForm={(value) => updateRoot("form", value)}
               showReferrals={waitList.showReferrals}
               waitListId={waitList.id}
               rewards={snapshot.rewards}
-              update={(value) => updateRoot("statusPage", value)}
-              updateRewards={(value) => updateRoot("rewards", value)}
+              onStatusChange={(value) => updateRoot("statusPage", value)}
+              onRewardsChange={(value) => updateRoot("rewards", value)}
             />
           }
         >
@@ -1699,11 +1205,7 @@ export function SnapshotPageBuilder({
             ) : (
               <>
                 <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-                  <div
-                    className="flex flex-wrap gap-1 [&_button]:cursor-pointer [&_button]:rounded-lg [&_button]:border-0 [&_button]:bg-transparent [&_button]:px-3 [&_button]:py-2 [&_button]:text-caption [&_button]:font-semibold [&_button]:text-product-text-secondary [&_button[aria-pressed=true]]:bg-product-bg-surface [&_button[aria-pressed=true]]:text-product-text-primary"
-                    role="group"
-                    aria-label="Preview state"
-                  >
+                  <div className="flex flex-wrap gap-1" role="group" aria-label="Preview state">
                     {[
                       ["confirmed", "Confirmed"],
                       ["pending", "Pending email"],
@@ -1715,28 +1217,28 @@ export function SnapshotPageBuilder({
                           (id !== "returning" || waitList.showReferrals),
                       )
                       .map(([id, label]) => (
-                        <button
+                        <Button
                           key={id}
                           type="button"
+                          variant="product-segment-surface"
+                          size="preview-state"
                           aria-pressed={statusState === id}
                           onClick={() => setStatusState(id)}
                         >
                           {label}
-                        </button>
+                        </Button>
                       ))}
                   </div>
                   <TooltipProvider>
-                    <div
-                      className="flex gap-1 [&_button]:flex [&_button]:size-9 [&_button]:cursor-pointer [&_button]:items-center [&_button]:justify-center [&_button]:rounded-lg [&_button]:border-0 [&_button]:bg-transparent [&_button]:text-product-text-secondary [&_button[aria-pressed=true]]:bg-product-bg-surface [&_button[aria-pressed=true]]:text-product-text-primary"
-                      role="group"
-                      aria-label="Preview viewport"
-                    >
+                    <div className="flex gap-1" role="group" aria-label="Preview viewport">
                       <Tooltip>
                         <TooltipTrigger
                           render={
-                            <button
+                            <Button
                               type="button"
                               aria-label="Desktop preview"
+                              variant="product-segment-surface"
+                              size="preview-viewport"
                               aria-pressed={statusViewport === "desktop"}
                               onClick={() => setStatusViewport("desktop")}
                             />
@@ -1749,9 +1251,11 @@ export function SnapshotPageBuilder({
                       <Tooltip>
                         <TooltipTrigger
                           render={
-                            <button
+                            <Button
                               type="button"
                               aria-label="Mobile preview"
+                              variant="product-segment-surface"
+                              size="preview-viewport"
                               aria-pressed={statusViewport === "mobile"}
                               onClick={() => setStatusViewport("mobile")}
                             />
@@ -2000,18 +1504,19 @@ function DesignPanel({ brand, update }) {
             { id: "round", label: "Round", shape: "rounded-xl" },
             { id: "pill", label: "Pill", shape: "rounded-full" },
           ].map((option) => (
-            <button
+            <Button
               key={option.id}
               type="button"
               aria-pressed={brand.radius === option.id}
-              className="flex min-h-17 cursor-pointer flex-col items-center justify-center gap-1.5 rounded-md border-0 bg-transparent px-1 py-2 text-micro text-product-text-secondary aria-pressed:bg-product-bg-surface aria-pressed:text-product-text-primary aria-pressed:shadow-pressed"
+              variant="builder-radius"
+              size="builder-radius"
               onClick={() => update({ radius: option.id })}
             >
               <span
                 className={cn("block size-5 border border-product-text-secondary", option.shape)}
               />
               {option.label}
-            </button>
+            </Button>
           ))}
         </div>
       </div>
@@ -2071,7 +1576,7 @@ function ContrastPanel({ brand, update }) {
           <div>
             <strong>{issue.label}</strong>
             <span>
-              {issue.ratio.toFixed(2)}:1 — needs {issue.required}:1 or better.
+              {issue.ratio.toFixed(2)}:1 - needs {issue.required}:1 or better.
             </span>
           </div>
           <Button
@@ -2087,699 +1592,6 @@ function ContrastPanel({ brand, update }) {
       <p className={"m-0 text-micro leading-relaxed text-product-text-muted"}>
         The suggested colour keeps your background and changes the text to stay legible.
       </p>
-    </div>
-  );
-}
-function SelectField({ label, value, options, onChange }) {
-  const id = useId();
-  return (
-    <div className={"grid gap-1.5"}>
-      <Label htmlFor={id}>{label}</Label>
-      <Select value={value} onValueChange={onChange}>
-        <SelectTrigger id={id} className="w-full min-w-0">
-          <SelectValue>{options.find((option) => option.id === value)?.label ?? value}</SelectValue>
-        </SelectTrigger>
-        <SelectContent
-          align="start"
-          alignItemWithTrigger={false}
-          className="w-max max-w-80 min-w-64"
-        >
-          {options.map((option) => (
-            <SelectItem value={option.id} key={option.id}>
-              {option.label}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-    </div>
-  );
-}
-function HttpsInputField({ label, value, placeholder, disabled, onChange }) {
-  const id = useId();
-  const normalized = (value || "").replace(/^https?:\/\//i, "");
-  return (
-    <div className="grid gap-1.5">
-      <Label htmlFor={id}>{label}</Label>
-      <InputGroup className="h-10">
-        <InputGroupAddon>https://</InputGroupAddon>
-        <InputGroupInput
-          id={id}
-          autoCapitalize="none"
-          autoComplete="url"
-          disabled={disabled}
-          placeholder={placeholder}
-          value={normalized}
-          onChange={(event) =>
-            onChange(
-              event.target.value.trim()
-                ? `https://${event.target.value.replace(/^https?:\/\//i, "")}`
-                : "",
-            )
-          }
-        />
-      </InputGroup>
-    </div>
-  );
-}
-function RedirectUrlField({ value, onChange }) {
-  const id = useId();
-  const [draft, setDraft] = useState(value || "");
-  const dirty = draft !== (value || "");
-  useEffect(() => {
-    if (!dirty) return;
-    const warnBeforeUnload = (event) => {
-      event.preventDefault();
-      event.returnValue = "";
-    };
-    window.addEventListener("beforeunload", warnBeforeUnload);
-    return () => window.removeEventListener("beforeunload", warnBeforeUnload);
-  }, [dirty]);
-  const isPath = draft.startsWith("/");
-  const showHttpsPrefix = !isPath && Boolean(draft.trim());
-  const shown = /^https?:\/\//i.test(draft) ? draft.replace(/^https?:\/\//i, "") : draft;
-  function commit() {
-    const next = draft.trim();
-    const normalized =
-      next.startsWith("/") || !next ? next : `https://${next.replace(/^https?:\/\//i, "")}`;
-    setDraft(normalized);
-    onChange(normalized);
-  }
-  return (
-    <div className="grid gap-1.5">
-      <div className="inline-flex items-center gap-1.5">
-        <Label htmlFor={id}>Redirect URL (optional)</Label>
-        <TooltipProvider delay={150}>
-          <Tooltip>
-            <TooltipTrigger
-              render={
-                <button
-                  type="button"
-                  aria-label="Redirect URL information"
-                  className="grid size-5 shrink-0 cursor-pointer place-items-center rounded-full border-0 bg-transparent p-0 text-product-text-muted hover:bg-product-bg-inset hover:text-product-text-primary"
-                >
-                  <HugeiconsIcon icon={HelpCircleIcon} size={15} aria-hidden="true" />
-                </button>
-              }
-            />
-            <TooltipContent side="top" className="max-w-64 text-center">
-              Send visitors to a site path like /thanks or an HTTPS URL after signup. Leave empty to
-              stay on the confirmation screen.
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-      </div>
-      <InputGroup className="h-10">
-        {showHttpsPrefix && <InputGroupAddon>https://</InputGroupAddon>}
-        <InputGroupInput
-          id={id}
-          autoComplete="url"
-          placeholder="/thanks or example.com/thanks"
-          value={shown}
-          onChange={(event) => setDraft(event.target.value)}
-          onBlur={commit}
-          onKeyDown={(event) => {
-            if (event.key === "Enter") {
-              event.preventDefault();
-              commit();
-              event.currentTarget.blur();
-            }
-          }}
-        />
-      </InputGroup>
-    </div>
-  );
-}
-function FormPanel({ form, update }) {
-  const customFields = Array.isArray(form.customFields) ? form.customFields : [];
-  const updateField = (id, patch) =>
-    update({
-      customFields: customFields.map((field) => (field.id === id ? { ...field, ...patch } : field)),
-    });
-  return (
-    <div className={"grid gap-4"}>
-      <Field label="Field label" value={form.label} onChange={(label) => update({ label })} />
-      <Field
-        label="Placeholder"
-        value={form.placeholder}
-        onChange={(placeholder) => update({ placeholder })}
-      />
-      <Field
-        label="Button"
-        value={form.buttonText}
-        onChange={(buttonText) => update({ buttonText })}
-      />
-      <SelectField
-        label="Layout"
-        value={form.layout}
-        options={[
-          { id: "inline", label: "Inline" },
-          { id: "stacked", label: "Stacked" },
-        ]}
-        onChange={(layout) => update({ layout })}
-      />
-      <Toggle
-        label="Require marketing consent"
-        checked={form.requireConsent}
-        onChange={(requireConsent) => update({ requireConsent })}
-      />
-      {form.requireConsent && (
-        <Field
-          label="Consent copy"
-          value={form.consentLabel}
-          multiline
-          onChange={(consentLabel) => update({ consentLabel })}
-        />
-      )}
-      <Toggle
-        label="Double opt-in (verify email before counting the signup)"
-        checked={(form.doubleOptIn ?? true) && (form.verification ?? true)}
-        onChange={(doubleOptIn) => update({ doubleOptIn, verification: doubleOptIn })}
-      />
-      <ListField
-        label="Allowed email domains (comma-separated, empty = all)"
-        value={form.allowedEmailDomains}
-        placeholder="company.com, partner.org"
-        onChange={(allowedEmailDomains) => update({ allowedEmailDomains })}
-      />
-      <ListField
-        label="Blocked email domains (comma-separated)"
-        value={form.blockedEmailDomains}
-        placeholder="competitor.com"
-        onChange={(blockedEmailDomains) => update({ blockedEmailDomains })}
-      />
-      <CountryMultiSelect
-        label="Allowed countries (empty = all)"
-        value={form.allowedCountries}
-        onChange={(allowedCountries) => update({ allowedCountries })}
-      />
-      <CountryMultiSelect
-        label="Blocked countries"
-        value={form.blockedCountries}
-        onChange={(blockedCountries) => update({ blockedCountries })}
-      />
-      <Toggle
-        label="Collect phone number"
-        checked={form.collectPhone === true || form.requirePhone === true}
-        onChange={(collectPhone) =>
-          update(collectPhone ? { collectPhone } : { collectPhone, requirePhone: false })
-        }
-      />
-      {(form.collectPhone || form.requirePhone) && (
-        <Toggle
-          label="Require phone number"
-          checked={form.requirePhone === true}
-          onChange={(requirePhone) => update({ requirePhone })}
-        />
-      )}
-      <Toggle
-        label="Bot protection (Cloudflare Turnstile)"
-        checked={form.requireTurnstile === true}
-        onChange={(requireTurnstile) => update({ requireTurnstile })}
-      />
-      <div className="grid gap-4 border-t border-product-border-subtle pt-4">
-        <div className="flex items-center justify-between gap-2">
-          <span className="block text-micro font-bold tracking-widest text-product-text-secondary uppercase">
-            Custom fields
-          </span>
-          {customFields.length < 10 && (
-            <Button
-              variant="outline"
-              size="sm"
-              type="button"
-              onClick={() =>
-                update({
-                  customFields: [
-                    ...customFields,
-                    {
-                      id: `field-${crypto.randomUUID().slice(0, 8).toLowerCase()}`,
-                      label: "New question",
-                      type: "text",
-                      required: false,
-                      placeholder: "",
-                      options: [],
-                    },
-                  ],
-                })
-              }
-            >
-              <HugeiconsIcon icon={Add01Icon} size={14} aria-hidden="true" />
-              Add field
-            </Button>
-          )}
-        </div>
-        {customFields.map((field, index) => (
-          <div
-            className="grid gap-3 [&+&]:border-t [&+&]:border-product-border-subtle [&+&]:pt-4"
-            key={field.id}
-          >
-            <div className="flex items-center justify-between gap-2">
-              <span className="text-micro font-semibold text-product-text-secondary">
-                Field {index + 1}
-              </span>
-              <div className="flex items-center gap-3">
-                <Toggle
-                  label="Required"
-                  checked={field.required === true}
-                  onChange={(required) => updateField(field.id, { required })}
-                />
-                <Button
-                  variant="ghost"
-                  size="icon-sm"
-                  type="button"
-                  aria-label={`Remove ${field.label || `field ${index + 1}`}`}
-                  onClick={() =>
-                    update({
-                      customFields: customFields.filter((entry) => entry.id !== field.id),
-                    })
-                  }
-                >
-                  <HugeiconsIcon icon={Delete02Icon} size={15} aria-hidden="true" />
-                </Button>
-              </div>
-            </div>
-            <Field
-              label="Label"
-              value={field.label}
-              onChange={(label) => updateField(field.id, { label })}
-            />
-            <SelectField
-              label="Type"
-              value={field.type}
-              options={[
-                { id: "text", label: "Short text" },
-                { id: "textarea", label: "Long text" },
-                { id: "number", label: "Number" },
-                { id: "select", label: "Dropdown" },
-                { id: "checkbox", label: "Checkbox" },
-              ]}
-              onChange={(type) =>
-                updateField(
-                  field.id,
-                  type === "select" && (!Array.isArray(field.options) || field.options.length === 0)
-                    ? { type, options: ["Option 1", "Option 2"] }
-                    : { type },
-                )
-              }
-            />
-            {field.type !== "checkbox" && (
-              <Field
-                label="Placeholder"
-                value={field.placeholder ?? ""}
-                onChange={(placeholder) => updateField(field.id, { placeholder })}
-              />
-            )}
-            {field.type === "select" && (
-              <ListField
-                label="Options (comma-separated)"
-                value={field.options}
-                placeholder="Option 1, Option 2"
-                onChange={(options) =>
-                  updateField(field.id, {
-                    options: options.length > 0 ? options : ["Option 1"],
-                  })
-                }
-              />
-            )}
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-function StatusPanel({
-  status,
-  update,
-  form,
-  updateForm,
-  showReferrals = true,
-  waitListId,
-  rewards,
-  updateRewards,
-}) {
-  // Drafts saved before rewards existed have no key yet: fall back to the
-  // zero-config defaults (same values the API resolves server-side).
-  const perks = {
-    pointsSignup: 50,
-    pointsReferral: 30,
-    pointsFollow: 5,
-    customEvents: [],
-    positionOffset: 0,
-    hideCounts: false,
-    showPoints: true,
-    showProgress: true,
-    ...rewards,
-  };
-  const referralNote = showReferrals ? null : (
-    <p className="m-0 text-caption leading-relaxed text-product-text-secondary">
-      Referral sharing is off for this waitlist, so the referral link and share buttons stay hidden.{" "}
-      <Link
-        className="underline underline-offset-4"
-        href={`/waitlists/${waitListId}/settings?section=referral`}
-      >
-        Turn referrals on
-      </Link>
-    </p>
-  );
-  // Snapshots saved before the cockpit fields existed parse without them;
-  // fall back to the schema defaults so the builder never crashes.
-  const channels = Array.isArray(status.shareChannels) ? status.shareChannels : [];
-  const follows = Array.isArray(status.socialFollows) ? status.socialFollows : [];
-  const followUrl = (network) => follows.find((entry) => entry?.network === network)?.url ?? "";
-  const setFollowUrl = (network, url) => {
-    const next = follows.filter((entry) => entry?.network !== network);
-    if (url.trim()) next.push({ network, url: url.trim() });
-    update({ socialFollows: next });
-  };
-  return (
-    <div className="grid gap-4 p-4">
-      <SelectField
-        label="After a successful signup"
-        value={status.postSignupBehavior}
-        options={[
-          { id: "confirmation", label: "Show confirmation" },
-          { id: "no-change", label: "No redirect or state change" },
-        ]}
-        onChange={(postSignupBehavior) => update({ postSignupBehavior })}
-      />
-      {status.postSignupBehavior !== "no-change" && (
-        <RedirectUrlField
-          key={form.successRedirectUrl ?? ""}
-          value={form.successRedirectUrl ?? ""}
-          onChange={(successRedirectUrl) => {
-            let host = "";
-            if (/^https:\/\//i.test(successRedirectUrl)) {
-              try {
-                host = new URL(successRedirectUrl).hostname.toLowerCase();
-              } catch {
-                host = "";
-              }
-            }
-            updateForm({
-              successRedirectUrl,
-              successRedirectAllowlist: host ? [host] : [],
-            });
-          }}
-        />
-      )}
-      <div className="grid gap-4 border-t border-product-border-subtle pt-4">
-        <span className="block text-micro font-bold tracking-widest text-product-text-secondary uppercase">
-          Confirmation screen
-        </span>
-        <Field
-          label="Confirmed heading"
-          value={status.heading}
-          onChange={(heading) => update({ heading })}
-        />
-        <Field
-          label="Confirmed message"
-          value={status.body}
-          multiline
-          onChange={(body) => update({ body })}
-        />
-        <Field
-          label="Pending heading"
-          value={status.pendingHeading}
-          onChange={(pendingHeading) => update({ pendingHeading })}
-        />
-        <Field
-          label="Pending message"
-          value={status.pendingBody}
-          multiline
-          onChange={(pendingBody) => update({ pendingBody })}
-        />
-        <div className="grid grid-cols-2 gap-3">
-          <SelectField
-            label="Icon style"
-            value={status.iconStyle || "filled"}
-            options={[
-              { id: "filled", label: "Filled" },
-              { id: "soft", label: "Soft" },
-            ]}
-            onChange={(iconStyle) => update({ iconStyle })}
-          />
-          <SelectField
-            label="Layout"
-            value={status.layout || "centered"}
-            options={[
-              { id: "centered", label: "Centered" },
-              { id: "card", label: "Card" },
-            ]}
-            onChange={(layout) => update({ layout })}
-          />
-        </div>
-        <Toggle
-          label="Show position"
-          checked={status.showPosition}
-          onChange={(showPosition) => update({ showPosition })}
-        />
-      </div>
-      <div className="grid gap-3.5 border-t border-product-border-subtle pt-4">
-        <span className="block text-micro font-bold tracking-widest text-product-text-secondary uppercase">
-          Referrals & sharing
-        </span>
-        {referralNote}
-        <Toggle
-          label="Show referral link"
-          checked={status.showReferralLink}
-          disabled={!showReferrals}
-          onChange={(showReferralLink) => update({ showReferralLink })}
-        />
-        <Toggle
-          label="Show referral count"
-          checked={status.showReferralCount}
-          disabled={!showReferrals}
-          onChange={(showReferralCount) => update({ showReferralCount })}
-        />
-        <Toggle
-          label="Show leaderboard"
-          checked={status.showLeaderboard !== false}
-          disabled={!showReferrals}
-          onChange={(showLeaderboard) => update({ showLeaderboard })}
-        />
-        <Field
-          label="Share message"
-          value={status.shareMessage}
-          multiline
-          disabled={!showReferrals}
-          onChange={(shareMessage) => update({ shareMessage })}
-        />
-        <div className="grid gap-2.5 pt-1">
-          <span className="block text-micro font-bold tracking-widest text-product-text-secondary uppercase">
-            Share buttons
-          </span>
-          <div className="grid grid-cols-2 gap-2.5">
-            {SHARE_CHANNELS.map(({ id: channel, label }) => (
-              <Toggle
-                key={channel}
-                label={
-                  <span className="inline-flex items-center gap-2">
-                    <ShareChannelIcon channel={channel} className="size-4" />
-                    {label}
-                  </span>
-                }
-                checked={channels.includes(channel)}
-                disabled={!showReferrals}
-                onChange={(enabled) =>
-                  update({
-                    shareChannels: enabled
-                      ? [...channels, channel]
-                      : channels.filter((item) => item !== channel),
-                  })
-                }
-              />
-            ))}
-          </div>
-        </div>
-      </div>
-      <div className="grid gap-3.5 border-t border-product-border-subtle pt-4">
-        <span className="block text-micro font-bold tracking-widest text-product-text-secondary uppercase">
-          Social follows
-        </span>
-        <HttpsInputField
-          label="X profile URL"
-          value={followUrl("x")}
-          disabled={!showReferrals}
-          placeholder="x.com/yourhandle"
-          onChange={(url) => setFollowUrl("x", url)}
-        />
-        <HttpsInputField
-          label="Instagram profile URL"
-          value={followUrl("instagram")}
-          disabled={!showReferrals}
-          placeholder="instagram.com/yourhandle"
-          onChange={(url) => setFollowUrl("instagram", url)}
-        />
-      </div>
-      <RewardsSection perks={perks} updateRewards={updateRewards} />
-    </div>
-  );
-}
-
-function RewardsSection({ perks, updateRewards }) {
-  const setPerks = (patch) => updateRewards({ ...perks, ...patch });
-  return (
-    <div className="grid gap-4 border-t border-product-border-subtle pt-4">
-      <span className="block text-micro font-bold tracking-widest text-product-text-secondary uppercase">
-        Points & rewards
-      </span>
-      <div className="grid grid-cols-2 gap-3">
-        <PointsField
-          key={perks.pointsSignup}
-          label="Per signup"
-          value={perks.pointsSignup}
-          unit="pts"
-          onCommit={(pointsSignup) => setPerks({ pointsSignup })}
-        />
-        <PointsField
-          key={perks.pointsReferral}
-          label="Per referral"
-          value={perks.pointsReferral}
-          unit="pts"
-          onCommit={(pointsReferral) => setPerks({ pointsReferral })}
-        />
-        <PointsField
-          key={perks.pointsFollow}
-          label="Per follow"
-          value={perks.pointsFollow}
-          unit="pts"
-          onCommit={(pointsFollow) => setPerks({ pointsFollow })}
-        />
-        <PointsField
-          key={perks.positionOffset}
-          label="Position boost"
-          value={perks.positionOffset}
-          max={1000000}
-          onCommit={(positionOffset) => setPerks({ positionOffset })}
-        />
-      </div>
-      <Toggle
-        label="Show points balance"
-        checked={perks.showPoints}
-        onChange={(showPoints) => setPerks({ showPoints })}
-      />
-      <Toggle
-        label="Show reward progress"
-        checked={perks.showProgress}
-        onChange={(showProgress) => setPerks({ showProgress })}
-      />
-      <Toggle
-        label="Stealth Mode"
-        hint="Hides positions, points, and headcounts on the public page. Best for private or B2B launches."
-        checked={perks.hideCounts}
-        onChange={(hideCounts) => setPerks({ hideCounts })}
-      />
-      <div className="grid gap-3.5 border-t border-product-border-subtle pt-4">
-        <div className="flex items-center justify-between gap-2">
-          <span className="block text-micro font-bold tracking-widest text-product-text-secondary uppercase">
-            Custom events
-          </span>
-          {(perks.customEvents ?? []).length < 12 && (
-            <Button
-              variant="outline"
-              size="sm"
-              type="button"
-              onClick={() => {
-                // Distinct keys: normalizeRewardsConfig keeps one entry per key,
-                // so adding twice without renaming must not collide.
-                const keys = new Set((perks.customEvents ?? []).map((entry) => entry.key));
-                let key = "survey";
-                for (let n = 2; keys.has(key); n += 1) key = `survey-${n}`;
-                setPerks({
-                  customEvents: [
-                    ...(perks.customEvents ?? []),
-                    {
-                      key,
-                      label: "Survey completed",
-                      points: 20,
-                      id: crypto.randomUUID(),
-                    },
-                  ],
-                });
-              }}
-            >
-              <HugeiconsIcon icon={Add01Icon} size={14} aria-hidden="true" />
-              Add event
-            </Button>
-          )}
-        </div>
-        <p className="m-0 max-w-prose text-caption leading-relaxed text-product-text-secondary">
-          Award points for off-site actions via the{" "}
-          <Link
-            className="inline-flex items-center gap-0.5 font-medium text-product-text-primary underline underline-offset-2"
-            href="/docs/api/award-points"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Points API
-            <HugeiconsIcon icon={ArrowUpRight01Icon} size={13} aria-hidden="true" />
-          </Link>
-          .
-        </p>
-        {(perks.customEvents ?? []).map((entry, index) => (
-          <div
-            className="grid gap-3 [&+&]:border-t [&+&]:border-product-border-subtle [&+&]:pt-4"
-            key={entry.id ?? `${entry.key}:${entry.label}:${entry.points}`}
-          >
-            <div className="flex items-center justify-between gap-2">
-              <span className="text-micro font-semibold text-product-text-secondary">
-                Event {index + 1}
-              </span>
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                type="button"
-                aria-label={`Remove ${entry.label || `event ${index + 1}`}`}
-                onClick={() =>
-                  setPerks({
-                    customEvents: perks.customEvents.filter((_, itemIndex) => itemIndex !== index),
-                  })
-                }
-              >
-                <HugeiconsIcon icon={Delete02Icon} size={15} aria-hidden="true" />
-              </Button>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <Field
-                label="Event key"
-                value={entry.key}
-                maxLength={40}
-                onChange={(key) =>
-                  setPerks({
-                    customEvents: perks.customEvents.map((item, itemIndex) =>
-                      itemIndex === index ? { ...item, key } : item,
-                    ),
-                  })
-                }
-              />
-              <PointsField
-                key={entry.points}
-                label="Points"
-                value={entry.points}
-                unit="pts"
-                onCommit={(points) =>
-                  setPerks({
-                    customEvents: perks.customEvents.map((item, itemIndex) =>
-                      itemIndex === index ? { ...item, points } : item,
-                    ),
-                  })
-                }
-              />
-            </div>
-            <Field
-              label="Label"
-              value={entry.label}
-              maxLength={80}
-              onChange={(label) =>
-                setPerks({
-                  customEvents: perks.customEvents.map((item, itemIndex) =>
-                    itemIndex === index ? { ...item, label } : item,
-                  ),
-                })
-              }
-            />
-          </div>
-        ))}
-      </div>
     </div>
   );
 }

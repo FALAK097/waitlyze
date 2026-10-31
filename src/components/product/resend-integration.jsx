@@ -162,7 +162,7 @@ export function ResendIntegration({ initialConnection, accountEmail, canManage, 
             {webhookUrl && (
               <div className="grid gap-2.5 rounded-lg border border-product-bg-inset bg-product-bg-inset px-4 py-3.5 [&_input]:font-mono [&_input]:text-caption">
                 <p className="m-0 text-caption leading-relaxed text-product-text-secondary">
-                  <strong className="text-product-text-primary">Webhook endpoint</strong> — add this
+                  <strong className="text-product-text-primary">Webhook endpoint</strong> - add this
                   URL in your Resend account and subscribe to <code>email.bounced</code> and{" "}
                   <code>email.complained</code>. Copy the signing secret Resend shows you and save
                   it below.

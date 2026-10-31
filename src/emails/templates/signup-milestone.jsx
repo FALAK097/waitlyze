@@ -44,11 +44,11 @@ export function SignupMilestoneEmail({ waitlistName, count, url, showReferrals =
       <Muted>
         {first
           ? showReferrals
-            ? "Share your page to get there — your thank-you screen makes it easy for the first people to invite others."
-            : "Share your page to get there — invite more people to discover your launch."
+            ? "Share your page to get there - your thank-you screen makes it easy for the first people to invite others."
+            : "Share your page to get there - invite more people to discover your launch."
           : nextMilestone
             ? `You’ll hear from us again at ${nextMilestone.toLocaleString("en-US")} signups.`
-            : "Thanks for building with us — keep sharing your page."}
+            : "Thanks for building with us - keep sharing your page."}
       </Muted>
       <FallbackLink href={url} />
     </EmailLayout>

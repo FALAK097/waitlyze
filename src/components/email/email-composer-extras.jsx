@@ -4,6 +4,8 @@ import { MonitorIcon, SmartphoneIcon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { useRef, useState } from "react";
 
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { spamHint } from "@/lib/email/variables.mjs";
 
@@ -34,7 +36,7 @@ export function SpamHintView({ subject, previewText, text, html }) {
   if (!hint.issues.length)
     return (
       <p className={hintOk}>
-        Spam check: looks clean — subject length, caps, and trigger words all pass.
+        Spam check: looks clean - subject length, caps, and trigger words all pass.
       </p>
     );
   return (
@@ -52,8 +54,7 @@ export function SpamHintView({ subject, previewText, text, html }) {
 }
 
 const frameBar = "flex flex-wrap items-center justify-between gap-3";
-const viewportGroup =
-  "flex gap-1 [&_button]:flex [&_button]:size-9 [&_button]:cursor-pointer [&_button]:items-center [&_button]:justify-center [&_button]:rounded-lg [&_button]:border-0 [&_button]:bg-transparent [&_button]:text-product-text-secondary [&_button[aria-pressed=true]]:bg-product-bg-surface [&_button[aria-pressed=true]]:text-product-text-primary";
+const viewportGroup = "flex gap-1";
 
 const htmlToken = "text-product-success-text";
 
@@ -130,8 +131,10 @@ export function EmailPreviewFrame({
             <Tooltip>
               <TooltipTrigger
                 render={
-                  <button
+                  <Button
                     type="button"
+                    variant="product-segment-surface"
+                    size="preview-viewport"
                     aria-label="Desktop preview"
                     aria-pressed={!mobile}
                     onClick={() => setMobile(false)}
@@ -145,8 +148,10 @@ export function EmailPreviewFrame({
             <Tooltip>
               <TooltipTrigger
                 render={
-                  <button
+                  <Button
                     type="button"
+                    variant="product-segment-surface"
+                    size="preview-viewport"
                     aria-label="Mobile preview"
                     aria-pressed={mobile}
                     onClick={() => setMobile(true)}
@@ -197,13 +202,11 @@ export function EmailPreviewResult({
 const testForm = "flex min-w-0 items-center gap-2 max-sm:w-full";
 const testInput =
   "h-9 w-45 min-w-0 rounded-product-control border border-product-border-control bg-white px-2.5 text-caption max-sm:w-auto max-sm:flex-1 max-sm:text-base";
-const testButton =
-  "min-h-9 rounded-product-control border border-transparent bg-product-bg-inset px-3.5 text-caption font-semibold text-product-text-primary cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-product-success-text!";
 
 export function EmailTestSendForm({ id, value, onChange, onSubmit, busy, disabled = false }) {
   return (
     <form className={testForm} onSubmit={onSubmit}>
-      <input
+      <Input
         className={testInput}
         id={id}
         type="email"
@@ -214,9 +217,9 @@ export function EmailTestSendForm({ id, value, onChange, onSubmit, busy, disable
         value={value}
         onChange={(event) => onChange(event.target.value)}
       />
-      <button type="submit" className={testButton} disabled={busy || disabled}>
+      <Button type="submit" variant="product-soft" size="sm" disabled={busy || disabled}>
         {busy ? "Sending…" : "Send test"}
-      </button>
+      </Button>
     </form>
   );
 }

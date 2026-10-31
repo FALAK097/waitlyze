@@ -28,7 +28,6 @@ export function WaitlistSettingsNavigation({ waitlistId, section = "referral" })
     <nav aria-label="Waitlist settings sections" className={settingsNavClass}>
       {sections.map(({ id, label, icon, danger }) => (
         <Link
-          prefetch={false}
           key={id}
           href={`/waitlists/${waitlistId}/settings?section=${id}`}
           aria-current={section === id ? "page" : undefined}

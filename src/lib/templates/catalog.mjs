@@ -252,7 +252,7 @@ export const templateFormSchema = z
     blockedCountries: z.array(z.string().trim().max(8)).max(100).default([]),
     // Turnstile bot protection. Off by default; when on, the public form
     // renders the widget and the server verifies the token before any DB
-    // work. The secret stays server-side (TURNSTILE_SECRET_KEY env) — only
+    // work. The secret stays server-side (TURNSTILE_SECRET_KEY env) - only
     // the public site key is injected from TURNSTILE_SITE_KEY when rendering
     // the hosted form, keeping environment-specific config out of drafts.
     requireTurnstile: z.boolean().default(false),
@@ -285,7 +285,7 @@ export const templateFormSchema = z
         });
     });
     // Country allow/block lists normalize (and silently drop) anything that
-    // isn't a two-letter code — surface that here so a founder typing "USA"
+    // isn't a two-letter code - surface that here so a founder typing "USA"
     // learns the list would otherwise end up empty (no restriction at all).
     for (const key of ["allowedCountries", "blockedCountries"]) {
       const codes = Array.isArray(form[key]) ? form[key] : [];

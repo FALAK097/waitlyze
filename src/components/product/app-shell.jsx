@@ -9,13 +9,13 @@ import {
   Tick01Icon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useActionState, useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { createWorkspace, selectWorkspace } from "@/app/actions/settings";
-import { FeedbackForm } from "@/components/product/feedback-form";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogClose, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import {
@@ -31,6 +31,10 @@ import { Separator } from "@/components/ui/separator";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { signOut } from "@/lib/auth-client";
 import { cn } from "@/lib/utils";
+
+const FeedbackForm = dynamic(() =>
+  import("@/components/product/feedback-form").then((module) => module.FeedbackForm),
+);
 
 function WorkspaceAvatar({ name }) {
   return (
@@ -103,7 +107,7 @@ function WorkspaceSwitcher({ workspaces, selected }) {
     }
   }
   return (
-    <div className="max-w-75 min-w-0 max-md:max-w-none max-md:flex-1 [&>button]:max-w-full [&>button]:gap-2 [&>button[data-popup-open]_svg:last-child]:rotate-180">
+    <div className="order-1 max-w-75 min-w-0 max-md:max-w-none max-md:flex-1 [&>button]:max-w-full [&>button]:gap-2 [&>button[data-popup-open]_svg:last-child]:rotate-180">
       <DropdownMenu>
         <DropdownMenuTrigger
           render={<Button variant="ghost" />}
@@ -168,7 +172,7 @@ function AccountMenu({ user, avatar }) {
     }
   }
   return (
-    <div className="ms-auto flex shrink-0 items-center gap-2">
+    <div className="order-3 ms-auto flex shrink-0 items-center gap-2 max-md:order-2">
       <TooltipProvider>
         <Tooltip>
           <TooltipTrigger
@@ -219,12 +223,23 @@ function AccountMenu({ user, avatar }) {
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
-      <FeedbackForm user={user} open={feedbackOpen} onOpenChange={setFeedbackOpen} />
+      {feedbackOpen && (
+        <FeedbackForm user={user} open={feedbackOpen} onOpenChange={setFeedbackOpen} />
+      )}
     </div>
   );
 }
 
-export function AppShell({ children, user, avatar, workspaces, selectedWorkspace }) {
+export function AppShellControls({ user, avatar, workspaces, selectedWorkspace }) {
+  return (
+    <>
+      <WorkspaceSwitcher workspaces={workspaces} selected={selectedWorkspace} />
+      <AccountMenu user={user} avatar={avatar} />
+    </>
+  );
+}
+
+export function AppShell({ children, headerControls }) {
   const pathname = usePathname();
   const navLinkClass = cn(
     "inline-flex min-h-11 min-w-0 flex-1 items-center justify-center rounded-lg px-3 py-2 text-sm whitespace-nowrap text-product-text-secondary no-underline transition-colors duration-150 hover:bg-product-bg-inset hover:text-product-text-primary md:flex-none",
@@ -240,7 +255,6 @@ export function AppShell({ children, user, avatar, workspaces, selectedWorkspace
       <header className="border-b border-product-border-subtle bg-white">
         <div className="mx-auto flex min-h-18 max-w-288 items-center gap-4 px-8 py-3 max-[359px]:gap-2 max-[359px]:px-4 max-md:flex-wrap max-md:gap-3 max-md:px-5">
           <Link
-            prefetch={false}
             className="inline-flex min-h-11 min-w-11 shrink-0 items-center justify-start rounded-lg"
             href="/waitlists"
             aria-label="Waitlyze home"
@@ -251,13 +265,12 @@ export function AppShell({ children, user, avatar, workspaces, selectedWorkspace
               <i className="block h-4.25 w-1.25 rounded-xs bg-product-accent-solid" />
             </span>
           </Link>
-          <WorkspaceSwitcher workspaces={workspaces} selected={selectedWorkspace} />
+          <div className="contents">{headerControls}</div>
           <nav
             aria-label="Main navigation"
-            className="ms-auto flex min-w-0 items-center gap-2 max-md:order-4 max-md:ms-0 max-md:me-0 max-md:w-full max-md:justify-between max-md:gap-1"
+            className="order-2 ms-auto flex min-w-0 items-center gap-2 max-md:order-4 max-md:ms-0 max-md:me-0 max-md:w-full max-md:justify-between max-md:gap-1"
           >
             <Link
-              prefetch={false}
               className={cn(
                 navLinkClass,
                 pathname.startsWith("/waitlists") &&
@@ -269,7 +282,6 @@ export function AppShell({ children, user, avatar, workspaces, selectedWorkspace
               Overview
             </Link>
             <Link
-              prefetch={false}
               className={cn(
                 navLinkClass,
                 pathname.startsWith("/settings") &&
@@ -291,7 +303,6 @@ export function AppShell({ children, user, avatar, workspaces, selectedWorkspace
               <HugeiconsIcon icon={ArrowUpRight01Icon} size={14} aria-hidden="true" />
             </Link>
           </nav>
-          <AccountMenu user={user} avatar={avatar} />
         </div>
       </header>
       <main

@@ -1,4 +1,4 @@
-// Dev-only seed: realistic email-section demo data for one waitlist —
+// Dev-only seed: realistic email-section demo data for one waitlist -
 // subscribers in every eligibility bucket, broadcasts in DRAFT / SENDING /
 // SENT / CANCELED with mixed recipient statuses, automation runs in
 // SENT / SKIPPED / FAILED / scheduled states, and referral edges so the
@@ -356,7 +356,7 @@ try {
       ],
     },
     {
-      name: "Ideas — do not send",
+      name: "Ideas - do not send",
       subject: "",
       previewText: "",
       status: "DRAFT",

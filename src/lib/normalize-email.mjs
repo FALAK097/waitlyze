@@ -1,5 +1,5 @@
 // Canonical email form used for waitlist signup dedupe and fraud checks.
-// Gmail (and Googlemail) ignore dots and plus-tags — normalize them so
+// Gmail (and Googlemail) ignore dots and plus-tags - normalize them so
 // john.doe+promo@gmail.com and johndoe@gmail.com map to one identity.
 // Every other provider keeps trim + lowercase only.
 

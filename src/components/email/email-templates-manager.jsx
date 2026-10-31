@@ -5,6 +5,7 @@ import { toast } from "sonner";
 
 import { upsertEmailTemplate, sendTestEmail } from "@/app/actions/emails";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { applySeedVars } from "@/lib/email/preview-vars.mjs";
 
 import { EmailCanvas } from "./email-canvas";
@@ -15,35 +16,29 @@ import {
   VariableChips,
 } from "./email-composer-extras";
 import { EmailComposerModeBar } from "./email-composer-mode-bar";
+import { emailComposerStyles } from "./email-composer-styles.mjs";
+import {
+  EmailManagerRailButton,
+  EmailUnsavedNotice,
+  emailManagerRail,
+  emailManagerRailMeta,
+  emailManagerRailTitle,
+  emailManagerScope,
+  emailManagerSplit,
+} from "./email-manager-controls";
 
-const scope = "min-w-0 bg-white text-product-text-primary";
-const unsaved =
-  "mb-5.5 flex flex-wrap items-center gap-3 rounded-product-control bg-product-warning-bg px-4 py-3 text-caption";
-const unsavedText = "min-w-45 flex-1";
-const unsavedButton =
-  "min-h-8.5 rounded-product-control px-3 text-caption font-semibold text-product-text-primary cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-product-success-text!";
-const unsavedGhost = `${unsavedButton} border-0 bg-transparent`;
-const unsavedSolid = `${unsavedButton} border border-product-border-subtle bg-white`;
-const split = "flex flex-col gap-6 md:gap-8 xl:gap-10 lg:flex-row lg:items-start";
-const rail =
-  "flex w-full shrink-0 flex-col gap-1 self-start sticky top-22 max-lg:static max-lg:flex-row max-lg:flex-wrap max-lg:gap-1.5 lg:w-52";
-const railItem =
-  "flex w-full flex-col gap-0.75 rounded-product-control border-0 bg-transparent p-3 text-left cursor-pointer hover:bg-product-bg-inset aria-[current=true]:bg-product-bg-inset disabled:cursor-default disabled:opacity-60 max-lg:min-w-38 max-lg:flex-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-product-success-text!";
-const railItemTitle = "text-body font-semibold wrap-anywhere";
-const railItemMeta = "text-micro leading-normal text-product-text-secondary";
-const pane = "min-w-0 max-w-195 flex flex-col gap-5 lg:flex-1";
-const paneHead = "flex items-start justify-between gap-4 max-sm:flex-col max-sm:items-stretch";
-const paneTitle = "m-0 text-section font-semibold";
-const paneMeta = "m-0 text-caption leading-normal text-product-text-secondary";
-const paneActions = "flex shrink-0 flex-wrap items-center justify-end gap-2 max-sm:justify-start";
-const fieldCard = "overflow-hidden rounded-lg border border-product-border-subtle bg-white";
-const fieldRow =
-  "relative flex min-h-13 items-center gap-3 px-4 [&+&]:border-t border-product-border-subtle focus-within:bg-product-bg-inset focus-within:before:absolute focus-within:before:inset-y-0 focus-within:before:left-0 focus-within:before:w-0.5 focus-within:before:bg-product-success-text";
-const fieldInput =
-  "min-w-0 flex-1 border-0 bg-transparent py-3.5 text-body text-product-text-primary focus-visible:outline-none!";
-const canvasShell = "overflow-hidden rounded-lg border border-product-border-subtle bg-white";
-const metaBar =
-  "flex flex-wrap items-center justify-between gap-3.5 max-sm:flex-col max-sm:items-stretch";
+const {
+  pane,
+  paneHead,
+  paneTitle,
+  paneMeta,
+  paneActions,
+  fieldCard,
+  fieldRow,
+  fieldInput,
+  canvasShell,
+  metaBar,
+} = emailComposerStyles;
 const hint = "m-0 text-caption leading-normal text-product-text-secondary";
 
 const kinds = [
@@ -57,13 +52,13 @@ const kinds = [
     key: "referral-congrats",
     label: "Referral congrats",
     timing: "Sent by hand or broadcast",
-    note: "Celebrate a subscriber's referrals — pairs with the milestone automation.",
+    note: "Celebrate a subscriber's referrals - pairs with the milestone automation.",
   },
   {
     key: "launch-invite",
     label: "Launch invite",
     timing: "Sent by hand or broadcast",
-    note: "The doors are open — invite the list with their position and points.",
+    note: "The doors are open - invite the list with their position and points.",
   },
   {
     key: "offboarding",
@@ -154,6 +149,7 @@ export function EmailTemplatesManager({ waitListId, waitListName, initialTemplat
     }
   }
   async function enterHtmlMode() {
+    if (mode === "html") return;
     try {
       const content = await exportMessage();
       setHtmlDraft(content.renderedHtml);
@@ -201,33 +197,26 @@ export function EmailTemplatesManager({ waitListId, waitListName, initialTemplat
   }
 
   return (
-    <div className={scope}>
+    <div className={emailManagerScope}>
       {pending && (
-        <div className={unsaved} role="alert">
-          <span className={unsavedText}>
-            Save this email before switching, or discard your edits.
-          </span>
-          <button type="button" className={unsavedGhost} onClick={() => setPending(null)}>
-            Keep editing
-          </button>
-          <button type="button" className={unsavedSolid} onClick={discard}>
-            Discard edits
-          </button>
-        </div>
+        <EmailUnsavedNotice
+          firstAction={{ label: "Keep editing", onClick: () => setPending(null) }}
+          secondAction={{ label: "Discard edits", onClick: discard, variant: "outline" }}
+        >
+          Save this email before switching, or discard your edits.
+        </EmailUnsavedNotice>
       )}
-      <div className={split}>
-        <nav className={rail} aria-label="Email templates">
+      <div className={emailManagerSplit}>
+        <nav className={emailManagerRail} aria-label="Email templates">
           {kinds.map((item) => (
-            <button
+            <EmailManagerRailButton
               key={item.key}
-              type="button"
-              className={railItem}
-              aria-current={current === item.key ? "true" : undefined}
+              current={current === item.key}
               onClick={() => select(item.key)}
             >
-              <strong className={railItemTitle}>{item.label}</strong>
-              <span className={railItemMeta}>{item.timing}</span>
-            </button>
+              <strong className={emailManagerRailTitle}>{item.label}</strong>
+              <span className={emailManagerRailMeta}>{item.timing}</span>
+            </EmailManagerRailButton>
           ))}
         </nav>
         <section className={pane} aria-label={`${kind.label} email`}>
@@ -244,23 +233,23 @@ export function EmailTemplatesManager({ waitListId, waitListName, initialTemplat
           </header>
           <div className={fieldCard}>
             <div className={fieldRow}>
-              <input
-                className={fieldInput}
+              <Input
                 type="text"
+                className={fieldInput}
                 maxLength={160}
                 aria-label="Subject"
-                placeholder="Subject — what subscribers see in the inbox"
+                placeholder="Subject - what subscribers see in the inbox"
                 value={template.subject}
                 onChange={(event) => edit("subject", event.target.value)}
               />
             </div>
             <div className={fieldRow}>
-              <input
-                className={fieldInput}
+              <Input
                 type="text"
+                className={fieldInput}
                 maxLength={180}
                 aria-label="Preview text"
-                placeholder="Preview text — shown after the subject"
+                placeholder="Preview text - shown after the subject"
                 value={template.previewText}
                 onChange={(event) => edit("previewText", event.target.value)}
               />
@@ -284,7 +273,7 @@ export function EmailTemplatesManager({ waitListId, waitListName, initialTemplat
               <HtmlSourceEditor value={htmlDraft} onChange={setHtmlDraft} />
               <div className={metaBar}>
                 <p className={hint}>
-                  Raw HTML mode — apply it back to the visual editor, then save.
+                  Raw HTML mode - apply it back to the visual editor, then save.
                 </p>
                 <Button type="button" variant="default" onClick={applyHtmlToEditor}>
                   Apply to editor

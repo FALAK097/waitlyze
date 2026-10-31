@@ -59,9 +59,14 @@ export async function getCampaignPosition(db, waitListId, signUpId) {
 }
 
 // Batch companion to getCampaignPosition: 1-based positions for every signup
-// of a waitlist in a single query, using the same verified-only scoring.
-export async function getCampaignPositions(db, waitListId) {
+// of a waitlist in a single query, using the same verified-only scoring. When
+// IDs are provided, ranks remain global and only returned rows are restricted.
+export async function getCampaignPositions(db, waitListId, signUpIds = null) {
   if (typeof waitListId !== "string" || !waitListId) return new Map();
+  const ids = Array.isArray(signUpIds)
+    ? [...new Set(signUpIds.filter((id) => typeof id === "string" && id))]
+    : null;
+  if (ids?.length === 0) return new Map();
   const rows = await db.$queryRaw`
     WITH referral_scores AS (
       SELECT referral."referredById" AS "referrerId", COUNT(*)::bigint AS score
@@ -81,14 +86,18 @@ export async function getCampaignPositions(db, waitListId) {
         AND referral."referredById" IS NOT NULL
         AND referral."referredById" <> referral."signUpId"
       GROUP BY referral."referredById"
+    ), ranked AS (
+      SELECT signup."id",
+        ROW_NUMBER() OVER (
+          ORDER BY COALESCE(score.score, 0) DESC, signup."createdAt" ASC, signup."id" ASC
+        ) AS position
+      FROM "sign_ups" AS signup
+      LEFT JOIN referral_scores AS score ON score."referrerId" = signup."id"
+      WHERE signup."waitListId" = ${waitListId}
     )
-    SELECT signup."id",
-      ROW_NUMBER() OVER (
-        ORDER BY COALESCE(score.score, 0) DESC, signup."createdAt" ASC, signup."id" ASC
-      ) AS position
-    FROM "sign_ups" AS signup
-    LEFT JOIN referral_scores AS score ON score."referrerId" = signup."id"
-    WHERE signup."waitListId" = ${waitListId}
+    SELECT ranked."id", ranked.position
+    FROM ranked
+    WHERE ${ids === null}::boolean OR ranked."id" = ANY(${ids ?? []}::text[])
   `;
   const positions = new Map();
   for (const row of rows) {

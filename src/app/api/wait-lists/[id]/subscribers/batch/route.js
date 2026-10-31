@@ -1,37 +1,30 @@
 import { NextResponse } from "next/server";
 
-import { auth } from "@/lib/auth";
 import { dispatchOffboardNow } from "@/lib/email/dispatch-now.mjs";
 import { env } from "@/lib/env.mjs";
 import { resolveWorkspaceEmailSender } from "@/lib/integrations/email-sender.mjs";
 import prisma from "@/lib/prisma";
 import { AUDIT_ACTIONS, recordWaitlistAuditEvent } from "@/lib/workspaces/audit.mjs";
-import { currentWorkspace } from "@/lib/workspaces/current";
-import { campaignScope } from "@/lib/workspaces/service.mjs";
+import { campaignRouteAccess } from "@/lib/workspaces/campaign-route-access.mjs";
 
 const MAX_BATCH = 1000;
 const OFFBOARD_EVENT = "OFFBOARD_EMAIL_REQUESTED";
 
 // Bulk offboard keeps every row (position, points, and referral history are
 // untouched) and only stops marketing email. Bulk delete is a hard delete:
-// the rows — and, via schema cascades, their referral edges, verification
-// records, broadcast recipients, and automation runs — are removed for good.
+// the rows - and, via schema cascades, their referral edges, verification
+// records, broadcast recipients, and automation runs - are removed for good.
 // Referrers keep points they already earned (the points ledger is append-only
 // and holds no identity, so its rows are retained without PII).
 async function getAccess(request, id) {
-  const session = await auth.api.getSession({ headers: request.headers });
-  if (!session?.user?.id)
-    return { response: NextResponse.json({ error: "Unauthorized" }, { status: 401 }) };
-  const { workspace, user } = await currentWorkspace();
-  if (!workspace) return { response: NextResponse.json({ error: "Not found" }, { status: 404 }) };
-  // manageAudience is OWNER/ADMIN only — viewers and members cannot offboard
+  // manageAudience is OWNER/ADMIN only - viewers and members cannot offboard
   // or delete, and a failed check reads as 404 so list existence never leaks.
-  const waitlist = await prisma.waitList.findFirst({
-    where: { id, ...campaignScope(session.user.id, "manageAudience", workspace.id) },
+  return campaignRouteAccess({
+    request,
+    id,
+    permission: "manageAudience",
     select: { id: true, name: true, workspaceId: true },
   });
-  if (!waitlist) return { response: NextResponse.json({ error: "Not found" }, { status: 404 }) };
-  return { waitlist, workspace, user: user || session.user };
 }
 
 function parseBody(body) {
@@ -60,7 +53,7 @@ function actorLabel(user) {
 }
 
 // Offboard payloads are plain { signUpId } objects, so pending-event matching
-// filters in JS — Prisma JSON path filters only support single-value equals.
+// filters in JS - Prisma JSON path filters only support single-value equals.
 function pendingOffboardKeys(events, signUpIds) {
   const wanted = new Set(signUpIds);
   return events
@@ -97,7 +90,7 @@ async function bulkOffboard({ waitlist, user, ids, resubscribe, canEmail }) {
         data: { marketingUnsubscribedAt: resubscribe ? null : now },
       });
       if (updated.count) {
-        // Re-read to learn exactly which rows this statement flipped — the
+        // Re-read to learn exactly which rows this statement flipped - the
         // count alone doesn't say which, and consent rows must describe only
         // our own flips. Offboard matches on our write timestamp (a racing
         // offboard carries a different one); resubscribe matches cleared rows.
@@ -125,8 +118,8 @@ async function bulkOffboard({ waitlist, user, ids, resubscribe, canEmail }) {
       }
       // resubscribe is the dashboard undo path: callers must pass only ids
       // flipped by the matching offboard (the UI reuses offboardedIds).
-      // Arbitrary ids would override explicit user opt-outs — someone who
-      // unsubscribed via their own link — so never expose this as a general
+      // Arbitrary ids would override explicit user opt-outs - someone who
+      // unsubscribed via their own link - so never expose this as a general
       // "subscribe" action.
       if (resubscribe) {
         if (!flippedIds.length) {
@@ -215,7 +208,7 @@ async function bulkDelete({ waitlist, ids }) {
     if (!targets.length) return { deleted: 0, referralsSevered: 0, sample: [] };
     const targetIds = targets.map((row) => row.id);
     // Referral edges vanish with the rows (both sides cascade), so count them
-    // up front — the response and audit log must say exactly what was severed.
+    // up front - the response and audit log must say exactly what was severed.
     const referralsSevered = await tx.referral.count({
       where: {
         OR: [{ signUpId: { in: targetIds } }, { referredById: { in: targetIds } }],

@@ -44,7 +44,6 @@ export function SettingsSectionNavigation({ section = "profile" }) {
     <nav aria-label="Settings sections" className={settingsNavClass}>
       {sections.map(({ id, label, icon }) => (
         <Link
-          prefetch={false}
           key={id}
           href={`/settings?section=${id}`}
           aria-current={section === id ? "page" : undefined}

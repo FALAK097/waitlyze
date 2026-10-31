@@ -1,4 +1,59 @@
 const MAX_DAYS = 90;
+const ANALYTICS_GROUPING_SET = Object.freeze({
+  channel: 63,
+  campaign: 479,
+  referrer: 447,
+  source: 383,
+  country: 495,
+  region: 487,
+  city: 491,
+  deviceType: 509,
+  device: 510,
+});
+const ANALYTICS_GROUP_FIELDS = Object.freeze({
+  channel: new Set(["utmMedium", "utmSource", "referrer"]),
+  campaign: new Set(["utmCampaign"]),
+  referrer: new Set(["referrer"]),
+  source: new Set(["utmSource"]),
+  country: new Set(["country"]),
+  region: new Set(["region", "country"]),
+  city: new Set(["city", "country"]),
+  deviceType: new Set(["deviceType"]),
+  device: new Set(["device"]),
+});
+const ANALYTICS_GROUP_BY_ID = new Map(
+  Object.entries(ANALYTICS_GROUPING_SET).map(([name, id]) => [id, name]),
+);
+
+function selectAnalyticsGroups(aggregateRows) {
+  const groupedRows = Object.fromEntries(
+    Object.keys(ANALYTICS_GROUP_FIELDS).map((group) => [group, []]),
+  );
+  for (const row of aggregateRows) {
+    const group = ANALYTICS_GROUP_BY_ID.get(row.groupingSet);
+    const fields = ANALYTICS_GROUP_FIELDS[group];
+    if (!fields) throw new Error("Unexpected analytics grouping set.");
+    for (const field of Object.keys(row)) {
+      if (
+        field !== "groupingSet" &&
+        field !== "count" &&
+        field !== "displayLabel" &&
+        field !== "dimensionTotal" &&
+        !fields.has(field)
+      )
+        delete row[field];
+    }
+    row._count = { _all: number(row.count) };
+    if (row.displayLabel != null) row._label = row.displayLabel;
+    if (row.dimensionTotal != null) row._total = number(row.dimensionTotal);
+    delete row.groupingSet;
+    delete row.count;
+    delete row.displayLabel;
+    delete row.dimensionTotal;
+    groupedRows[group].push(row);
+  }
+  return groupedRows;
+}
 
 function validTimeZone(timeZone) {
   if (typeof timeZone !== "string" || timeZone.length > 64)
@@ -163,8 +218,9 @@ export async function getWaitlistAnalytics(
             AND held_referral."reviewStatus" IN ('NEEDS_REVIEW', 'EXCLUDED')
         )
     ), visitor_daily AS (
+      -- The waitlist/user unique index makes row counts equal distinct visitors.
       SELECT (impression."createdAt" AT TIME ZONE 'UTC' AT TIME ZONE bounds.time_zone)::date AS local_date,
-             COUNT(DISTINCT impression."uniqueUserId")::int AS visitors
+             COUNT(*)::int AS visitors
       FROM "impressions" AS impression
       CROSS JOIN bounds
       WHERE impression."waitListId" = bounds.wait_list_id
@@ -237,7 +293,7 @@ export async function getWaitlistAnalytics(
         AND ledger."createdAt" < bounds.end_utc
     ), period_summary AS (
       SELECT
-        (SELECT COUNT(DISTINCT impression."uniqueUserId")::int
+        (SELECT COUNT(*)::int
          FROM "impressions" AS impression CROSS JOIN bounds
          WHERE impression."waitListId" = bounds.wait_list_id
            AND impression."uniqueUserId" <> ''
@@ -267,7 +323,7 @@ export async function getWaitlistAnalytics(
            AND impression."uniqueUserId" <> '') AS converted_visitors
     ), previous_summary AS (
       SELECT
-        (SELECT COUNT(DISTINCT impression."uniqueUserId")::int
+        (SELECT COUNT(*)::int
          FROM "impressions" AS impression CROSS JOIN bounds
          WHERE impression."waitListId" = bounds.wait_list_id
            AND impression."uniqueUserId" <> ''
@@ -347,96 +403,123 @@ export async function getWaitlistAnalytics(
   const startUtc = first?.start_utc instanceof Date ? first.start_utc : new Date(first?.start_utc);
   const endUtc = first?.end_utc instanceof Date ? first.end_utc : new Date(first?.end_utc);
   const inRange = { gte: startUtc, lt: endUtc };
-  const countedSignupWhere = {
-    waitListId,
-    createdAt: inRange,
-    referredBy: { none: { reviewStatus: { in: ["NEEDS_REVIEW", "EXCLUDED"] } } },
-  };
-
   const [
-    channelGroups,
-    campaignGroups,
-    referrerGroups,
-    sourceGroups,
-    countryGroups,
-    regionGroups,
-    cityGroups,
-    deviceGroups,
-    userAgentGroups,
-    signupChannelGroups,
-    signupCampaignGroups,
-    signupReferrerGroups,
-    signupSourceGroups,
-    signupCountryGroups,
-    signupCityGroups,
-    signupDeviceGroups,
-    signupUserAgentGroups,
+    impressionAggregateRows,
+    signupAggregateRows,
     broadcasts,
     topReferrerRows,
     shareCount,
     linkVisitCount,
   ] = await Promise.all([
-    db.impression.groupBy({
-      by: ["utmMedium", "utmSource", "referrer"],
-      _count: { _all: true },
-      where: { waitListId, createdAt: inRange },
-    }),
-    db.impression.groupBy({
-      by: ["utmCampaign"],
-      _count: { _all: true },
-      where: { waitListId, createdAt: inRange },
-    }),
-    db.impression.groupBy({
-      by: ["referrer"],
-      _count: { _all: true },
-      where: { waitListId, createdAt: inRange },
-    }),
-    db.impression.groupBy({
-      by: ["utmSource"],
-      _count: { _all: true },
-      where: { waitListId, createdAt: inRange },
-    }),
-    db.impression.groupBy({
-      by: ["country"],
-      _count: { _all: true },
-      where: { waitListId, createdAt: inRange },
-    }),
-    db.impression.groupBy({
-      by: ["region", "country"],
-      _count: { _all: true },
-      where: { waitListId, createdAt: inRange },
-    }),
-    db.impression.groupBy({
-      by: ["city", "country"],
-      _count: { _all: true },
-      where: { waitListId, createdAt: inRange },
-    }),
-    db.impression.groupBy({
-      by: ["deviceType"],
-      _count: { _all: true },
-      where: { waitListId, createdAt: inRange },
-    }),
-    db.impression.groupBy({
-      by: ["device"],
-      _count: { _all: true },
-      where: { waitListId, createdAt: inRange },
-    }),
-    db.signUp.groupBy({
-      by: ["utmMedium", "utmSource", "referrer"],
-      _count: { _all: true },
-      where: countedSignupWhere,
-    }),
-    db.signUp.groupBy({ by: ["utmCampaign"], _count: { _all: true }, where: countedSignupWhere }),
-    db.signUp.groupBy({ by: ["referrer"], _count: { _all: true }, where: countedSignupWhere }),
-    db.signUp.groupBy({ by: ["utmSource"], _count: { _all: true }, where: countedSignupWhere }),
-    db.signUp.groupBy({ by: ["country"], _count: { _all: true }, where: countedSignupWhere }),
-    db.signUp.groupBy({
-      by: ["city", "country"],
-      _count: { _all: true },
-      where: countedSignupWhere,
-    }),
-    db.signUp.groupBy({ by: ["deviceType"], _count: { _all: true }, where: countedSignupWhere }),
-    db.signUp.groupBy({ by: ["device"], _count: { _all: true }, where: countedSignupWhere }),
+    db.$queryRaw`
+      WITH grouped AS (
+      SELECT GROUPING(
+               "utmMedium", "utmSource", "referrer", "utmCampaign", "country",
+               "region", "city", "deviceType", "device"
+             )::int AS "groupingSet",
+             "utmMedium", "utmSource", "referrer", "utmCampaign", "country",
+             "region", "city", "deviceType", "device", COUNT(*) AS "count"
+      FROM "impressions"
+      WHERE "waitListId" = ${waitListId}::text
+        AND "createdAt" >= ${startUtc}::timestamptz
+        AND "createdAt" < ${endUtc}::timestamptz
+      GROUP BY GROUPING SETS (
+        ("utmMedium", "utmSource", "referrer"),
+        ("utmCampaign"),
+        ("referrer"),
+        ("utmSource"),
+        ("country"),
+        ("region", "country"),
+        ("city", "country"),
+        ("deviceType"),
+        ("device")
+      )
+      ), normalized AS (
+        SELECT "groupingSet",
+               CASE "groupingSet"
+                 WHEN 479 THEN COALESCE(NULLIF("utmCampaign", ''), 'No campaign')
+                 WHEN 383 THEN COALESCE(NULLIF("utmSource", ''), 'No source')
+                 WHEN 495 THEN COALESCE(NULLIF("country", ''), 'Unknown')
+                 WHEN 487 THEN concat_ws(', ', COALESCE(NULLIF("region", ''), 'Unknown region'), NULLIF("country", ''))
+                 WHEN 491 THEN concat_ws(', ', COALESCE(NULLIF("city", ''), 'Unknown city'), NULLIF("country", ''))
+                 WHEN 509 THEN CASE WHEN COALESCE("deviceType", '') = '' THEN 'Unknown' ELSE upper(left("deviceType", 1)) || substr("deviceType", 2) END
+               END AS "displayLabel",
+               SUM("count") AS "count"
+        FROM grouped
+        WHERE "groupingSet" IN (479, 383, 495, 487, 491, 509)
+        GROUP BY "groupingSet", 2
+      ), ranked AS (
+        SELECT normalized.*,
+               SUM("count") OVER (PARTITION BY "groupingSet") AS "dimensionTotal",
+               ROW_NUMBER() OVER (PARTITION BY "groupingSet" ORDER BY "count" DESC, "displayLabel" COLLATE "C" ASC) AS "rowNumber"
+        FROM normalized
+      )
+      SELECT grouped.*, NULL::text AS "displayLabel", NULL::int AS "dimensionTotal"
+      FROM grouped
+      WHERE "groupingSet" NOT IN (479, 383, 495, 487, 491, 509)
+      UNION ALL
+      SELECT ranked."groupingSet", NULL::text, NULL::text, NULL::text, NULL::text,
+             NULL::text, NULL::text, NULL::text, NULL::text,
+             ranked."count", ranked."displayLabel", ranked."dimensionTotal"
+      FROM ranked
+      WHERE ranked."rowNumber" <= CASE ranked."groupingSet" WHEN 509 THEN 8 WHEN 495 THEN 250 ELSE 5 END
+    `,
+    db.$queryRaw`
+      WITH grouped AS (
+      SELECT GROUPING(
+               "utmMedium", "utmSource", "referrer", "utmCampaign", "country",
+               "region", "city", "deviceType", "device"
+             )::int AS "groupingSet",
+             "utmMedium", "utmSource", "referrer", "utmCampaign", "country",
+             "region", "city", "deviceType", "device", COUNT(*) AS "count"
+      FROM "sign_ups" AS signup
+      WHERE signup."waitListId" = ${waitListId}::text
+        AND signup."createdAt" >= ${startUtc}::timestamptz
+        AND signup."createdAt" < ${endUtc}::timestamptz
+        AND NOT EXISTS (
+          SELECT 1 FROM "referrals" AS held_referral
+          WHERE held_referral."signUpId" = signup."id"
+            AND held_referral."reviewStatus" IN ('NEEDS_REVIEW', 'EXCLUDED')
+        )
+      GROUP BY GROUPING SETS (
+        ("utmMedium", "utmSource", "referrer"),
+        ("utmCampaign"),
+        ("referrer"),
+        ("utmSource"),
+        ("country"),
+        ("city", "country"),
+        ("deviceType"),
+        ("device")
+      )
+      ), normalized AS (
+        SELECT "groupingSet",
+               CASE "groupingSet"
+                 WHEN 479 THEN COALESCE(NULLIF("utmCampaign", ''), 'No campaign')
+                 WHEN 383 THEN COALESCE(NULLIF("utmSource", ''), 'No source')
+                 WHEN 495 THEN COALESCE(NULLIF("country", ''), 'Unknown')
+                 WHEN 491 THEN concat_ws(', ', COALESCE(NULLIF("city", ''), 'Unknown city'), NULLIF("country", ''))
+                 WHEN 509 THEN CASE WHEN COALESCE("deviceType", '') = '' THEN 'Unknown' ELSE upper(left("deviceType", 1)) || substr("deviceType", 2) END
+               END AS "displayLabel",
+               SUM("count") AS "count"
+        FROM grouped
+        WHERE "groupingSet" IN (479, 383, 495, 491, 509)
+        GROUP BY "groupingSet", 2
+      ), ranked AS (
+        SELECT normalized.*,
+               SUM("count") OVER (PARTITION BY "groupingSet") AS "dimensionTotal",
+               ROW_NUMBER() OVER (PARTITION BY "groupingSet" ORDER BY "count" DESC, "displayLabel" COLLATE "C" ASC) AS "rowNumber"
+        FROM normalized
+      )
+      SELECT grouped.*, NULL::text AS "displayLabel", NULL::int AS "dimensionTotal"
+      FROM grouped
+      WHERE "groupingSet" NOT IN (479, 383, 495, 491, 509)
+      UNION ALL
+      SELECT ranked."groupingSet", NULL::text, NULL::text, NULL::text, NULL::text,
+             NULL::text, NULL::text, NULL::text, NULL::text,
+             ranked."count", ranked."displayLabel", ranked."dimensionTotal"
+      FROM ranked
+      WHERE ranked."rowNumber" <= CASE ranked."groupingSet" WHEN 509 THEN 8 ELSE 5 END
+    `,
     db.marketingBroadcast.findMany({
       where: { waitListId, status: "SENT", sentAt: inRange },
       select: { id: true, name: true, sentAt: true },
@@ -478,37 +561,87 @@ export async function getWaitlistAnalytics(
       })
     : [];
 
+  const {
+    channel: channelGroups,
+    campaign: campaignGroups,
+    referrer: referrerGroups,
+    source: sourceGroups,
+    country: countryGroups,
+    region: regionGroups,
+    city: cityGroups,
+    deviceType: deviceGroups,
+    device: userAgentGroups,
+  } = selectAnalyticsGroups(impressionAggregateRows);
+  const {
+    channel: signupChannelGroups,
+    campaign: signupCampaignGroups,
+    referrer: signupReferrerGroups,
+    source: signupSourceGroups,
+    country: signupCountryGroups,
+    city: signupCityGroups,
+    deviceType: signupDeviceGroups,
+    device: signupUserAgentGroups,
+  } = selectAnalyticsGroups(signupAggregateRows);
+
   const rankCounts = (groups, label) => {
     const merged = new Map();
     for (const group of groups) {
-      const key = label(group);
+      const key = group._label ?? label(group);
       merged.set(key, (merged.get(key) ?? 0) + group._count._all);
     }
     return merged;
   };
-  const rank = (visitorGroups, signupGroups, label, limit = 5) => {
+  const rank = (visitorGroups, signupDimensionGroups, label, limit = 5) => {
     const visitorCounts = rankCounts(visitorGroups, label);
-    const signupCounts = rankCounts(signupGroups, label);
+    const signupCounts = rankCounts(signupDimensionGroups, label);
     const labels = new Set([...visitorCounts.keys(), ...signupCounts.keys()]);
-    const visitorTotal = Array.from(visitorCounts.values()).reduce((sum, value) => sum + value, 0);
-    const signupTotal = Array.from(signupCounts.values()).reduce((sum, value) => sum + value, 0);
-    const rows = Array.from(labels, (rowLabel) => {
-      const visitors = visitorCounts.get(rowLabel) ?? 0;
-      const signups = signupCounts.get(rowLabel) ?? 0;
+    const visitorTotal =
+      visitorGroups[0]?._total ??
+      Array.from(visitorCounts.values()).reduce((sum, value) => sum + value, 0);
+    const signupTotal =
+      signupDimensionGroups[0]?._total ??
+      Array.from(signupCounts.values()).reduce((sum, value) => sum + value, 0);
+    const sqlBounded = visitorGroups.some((group) => group._label != null);
+    const compareLabels = (left, right) => {
+      const leftCodePoints = Array.from(left, (character) => character.codePointAt(0));
+      const rightCodePoints = Array.from(right, (character) => character.codePointAt(0));
+      const length = Math.min(leftCodePoints.length, rightCodePoints.length);
+      for (let index = 0; index < length; index += 1) {
+        if (leftCodePoints[index] !== rightCodePoints[index])
+          return leftCodePoints[index] - rightCodePoints[index];
+      }
+      return leftCodePoints.length - rightCodePoints.length;
+    };
+    const rankedRows = Array.from(labels, (rowLabel) => {
+      const visitorCount = visitorCounts.get(rowLabel) ?? 0;
+      const signupCount = signupCounts.get(rowLabel) ?? 0;
       return {
         label: rowLabel,
-        visitors,
-        signups,
-        visitorsShare: visitorTotal === 0 ? 0 : Math.round((visitors / visitorTotal) * 1000) / 10,
-        signupsShare: signupTotal === 0 ? 0 : Math.round((signups / signupTotal) * 1000) / 10,
+        visitors: visitorCount,
+        signups: signupCount,
+        visitorsShare:
+          visitorTotal === 0 ? 0 : Math.round((visitorCount / visitorTotal) * 1000) / 10,
+        signupsShare: signupTotal === 0 ? 0 : Math.round((signupCount / signupTotal) * 1000) / 10,
       };
     });
-    const byVisitors = [...rows]
-      .sort((a, b) => b.visitors - a.visitors || b.signups - a.signups)
+    const byVisitors = [...rankedRows]
+      // SQL uses label ASC for deterministic ties; preserve that tie-only clarification here.
+      .sort(
+        (a, b) =>
+          b.visitors - a.visitors ||
+          (sqlBounded ? compareLabels(a.label, b.label) : b.signups - a.signups),
+      )
       .slice(0, limit);
-    const bySignups = [...rows]
-      .sort((a, b) => b.signups - a.signups || b.visitors - a.visitors)
-      .slice(0, limit);
+    const bySignups =
+      signupTotal === 0
+        ? byVisitors
+        : [...rankedRows]
+            .sort(
+              (a, b) =>
+                b.signups - a.signups ||
+                (sqlBounded ? compareLabels(a.label, b.label) : b.visitors - a.visitors),
+            )
+            .slice(0, limit);
     return Array.from(
       new Map([...byVisitors, ...bySignups].map((row) => [row.label, row])).values(),
     );

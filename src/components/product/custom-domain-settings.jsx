@@ -2,13 +2,14 @@
 
 import { Copy01Icon, Tick02Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { useCopyToClipboard } from "@/hooks/use-copy-to-clipboard";
 
 const labels = {
   NEEDS_DNS: "Ownership check pending",
@@ -18,10 +19,7 @@ const labels = {
 };
 
 function RecordCopyButton({ text, label }) {
-  const [copied, setCopied] = useState(false);
-  const timer = useRef(null);
-
-  useEffect(() => () => clearTimeout(timer.current), []);
+  const { copied, copy } = useCopyToClipboard({ resetAfter: 1600 });
 
   return (
     <TooltipProvider delay={100}>
@@ -34,13 +32,9 @@ function RecordCopyButton({ text, label }) {
               size="icon-xs"
               aria-label={`Copy DNS record ${label}`}
               onClick={async () => {
-                try {
-                  await navigator.clipboard.writeText(text);
+                if (await copy(text)) {
                   toast.success("Copied to clipboard");
-                  setCopied(true);
-                  clearTimeout(timer.current);
-                  timer.current = setTimeout(() => setCopied(false), 1600);
-                } catch {
+                } else {
                   toast.error("Copy is unavailable. Select the text and copy it manually.");
                 }
               }}
