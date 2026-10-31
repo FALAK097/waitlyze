@@ -860,9 +860,19 @@ export function WaitlistSignupPreview({ form, brand }) {
                   {field.placeholder || "Your answer"}
                 </span>
               ) : field.type === "select" ? (
-                <span className="flex h-12 items-center rounded-wl border border-wl-input-border bg-wl-input px-4 font-normal text-wl-muted">
-                  {field.placeholder || "Choose an option"}
-                </span>
+                <div className="grid gap-1">
+                  <span className="flex h-12 items-center justify-between rounded-wl border border-wl-input-border bg-wl-input px-4 font-normal text-wl-muted">
+                    <span>{field.placeholder || "Choose an option"}</span>
+                    <span aria-hidden="true" className="text-micro text-wl-muted">
+                      ▾
+                    </span>
+                  </span>
+                  {Array.isArray(field.options) && field.options.length > 0 && (
+                    <span className="text-micro font-normal text-wl-muted">
+                      Options: {field.options.join(" · ")}
+                    </span>
+                  )}
+                </div>
               ) : (
                 <span className="flex h-12 items-center rounded-wl border border-wl-input-border bg-wl-input px-4 font-normal text-wl-muted">
                   {field.placeholder || (field.type === "number" ? "0" : "Your answer")}

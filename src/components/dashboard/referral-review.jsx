@@ -134,23 +134,19 @@ export function ReferralReview({
         </div>
       ) : (
         <>
-          <div className="overflow-x-auto [&_td]:px-4 [&_td]:py-4.5 [&_td:first-child]:pl-0 [&_td:last-child]:pr-0 [&_th]:border-b [&_th]:px-4 [&_th]:text-caption [&_th:first-child]:pl-0 [&_th:last-child]:pr-0">
+          <div className="overflow-x-auto [&_td]:px-3 [&_td]:py-4.5 [&_td:first-child]:pl-0 [&_td:last-child]:pr-0 [&_th]:border-b [&_th]:px-3 [&_th]:text-caption [&_th:first-child]:pl-0 [&_th:last-child]:pr-0">
             <Table className="w-full min-w-192 table-fixed border-collapse text-left sm:table-auto">
               <TableHeader className="text-product-text-secondary">
                 <TableRow>
-                  <TableHead scope="col" className="font-medium">
-                    Email
-                  </TableHead>
-                  <TableHead scope="col" className="hidden font-medium sm:table-cell">
+                  <TableHead scope="col">Email</TableHead>
+                  <TableHead scope="col" className="hidden sm:table-cell">
                     Referred by
                   </TableHead>
-                  <TableHead scope="col" className="hidden font-medium sm:table-cell">
+                  <TableHead scope="col" className="hidden sm:table-cell">
                     Joined
                   </TableHead>
-                  <TableHead scope="col" className="font-medium">
-                    Status
-                  </TableHead>
-                  <TableHead scope="col" className="text-right font-medium">
+                  <TableHead scope="col">Status</TableHead>
+                  <TableHead scope="col" className="text-right">
                     <span className="sr-only">Actions</span>
                   </TableHead>
                 </TableRow>
@@ -159,26 +155,40 @@ export function ReferralReview({
                 {reviews.map((review) => (
                   <Fragment key={review.id}>
                     <TableRow>
-                      <TableCell className="font-medium break-all">{review.signUp.email}</TableCell>
-                      <TableCell className="hidden max-w-44 truncate text-product-text-secondary sm:table-cell">
+                      <TableCell>
+                        <span className="font-medium break-all">{review.signUp.email}</span>
+                      </TableCell>
+                      <TableCell className="hidden max-w-44 sm:table-cell">
                         <span
-                          className="block truncate"
+                          className="block truncate text-product-text-secondary"
                           title={review.referredBy?.email || undefined}
                         >
                           {review.referredBy?.email || "Referrer unavailable"}
                         </span>
                       </TableCell>
-                      <TableCell className="hidden whitespace-nowrap text-product-text-secondary sm:table-cell">
-                        <span title={formatDate(review.signUp.createdAt)}>
+                      <TableCell className="hidden whitespace-nowrap sm:table-cell">
+                        <span
+                          className="text-product-text-secondary tabular-nums"
+                          title={formatDate(review.signUp.createdAt)}
+                        >
                           {formatDate(review.signUp.createdAt)}
                         </span>
                       </TableCell>
-                      <TableCell>{statusPill(review.reviewStatus)}</TableCell>
+                      <TableCell>
+                        <div className="grid gap-0.5">
+                          <div>{statusPill(review.reviewStatus)}</div>
+                          {review.resolution ? (
+                            <span className="text-micro text-product-text-secondary">
+                              {review.resolution}
+                            </span>
+                          ) : null}
+                        </div>
+                      </TableCell>
                       <TableCell className="text-right">
                         {review.reviewStatus === "NEEDS_REVIEW" && canManage ? (
                           <Button
                             type="button"
-                            variant={expandedId === review.id ? "secondary" : "outline"}
+                            variant="outline"
                             size="sm"
                             aria-expanded={expandedId === review.id}
                             onClick={() =>
@@ -193,58 +203,75 @@ export function ReferralReview({
                     {expandedId === review.id &&
                     review.reviewStatus === "NEEDS_REVIEW" &&
                     canManage ? (
-                      <TableRow>
-                        <TableCell colSpan={5} className="bg-product-bg-inset">
-                          <div className="grid max-w-130 gap-2 py-2">
-                            <p className="m-0 text-sm leading-relaxed text-product-text-secondary">
-                              {reasonText[review.reviewReason] ||
-                                "This referral needs a manual eligibility decision."}
-                            </p>
-                            <Label htmlFor={`review-note-${review.id}`}>Decision note</Label>
-                            <Textarea
-                              id={`review-note-${review.id}`}
-                              aria-invalid={Boolean(errors[review.id])}
-                              aria-describedby={`review-note-hint-${review.id}`}
-                              minLength={8}
-                              maxLength={240}
-                              value={notes[review.id] || ""}
-                              onChange={(event) =>
-                                setNotes((current) => ({
-                                  ...current,
-                                  [review.id]: event.target.value,
-                                }))
-                              }
-                              rows={2}
-                              placeholder="Explain your decision"
-                              className="max-[640px]:text-base"
-                            />
-                            <p
-                              id={`review-note-hint-${review.id}`}
-                              className="m-0 text-sm leading-relaxed text-product-text-secondary"
-                            >
-                              Use 8–240 characters.
-                            </p>
-                            {errors[review.id] ? (
-                              <p className="m-0 text-sm text-product-danger-text" role="alert">
-                                {errors[review.id]}
+                      <TableRow className="hover:bg-transparent">
+                        <TableCell colSpan={5}>
+                          <div className="grid max-w-xl gap-4 rounded-xl border border-product-border-subtle bg-white p-5">
+                            <div className="grid gap-1">
+                              <span className="text-micro font-bold tracking-widest text-product-text-secondary uppercase">
+                                Flagged reason
+                              </span>
+                              <p className="m-0 text-caption leading-relaxed text-product-text-primary">
+                                {reasonText[review.reviewReason] ||
+                                  "This referral needs a manual eligibility decision."}
                               </p>
-                            ) : null}
-                            <div className="flex flex-wrap justify-end gap-2 [&_button]:min-h-11">
+                            </div>
+                            <div className="grid gap-1.5">
+                              <div className="flex items-center justify-between gap-2">
+                                <Label htmlFor={`review-note-${review.id}`}>Decision note</Label>
+                                <span
+                                  id={`review-note-hint-${review.id}`}
+                                  className="text-micro text-product-text-secondary"
+                                >
+                                  8–240 characters
+                                </span>
+                              </div>
+                              <Textarea
+                                id={`review-note-${review.id}`}
+                                aria-invalid={Boolean(errors[review.id])}
+                                aria-describedby={`review-note-hint-${review.id}`}
+                                minLength={8}
+                                maxLength={240}
+                                value={notes[review.id] || ""}
+                                onChange={(event) =>
+                                  setNotes((current) => ({
+                                    ...current,
+                                    [review.id]: event.target.value,
+                                  }))
+                                }
+                                rows={2}
+                                placeholder="Explain why you are approving or excluding this referral…"
+                              />
+                              {errors[review.id] ? (
+                                <p
+                                  className="m-0 text-caption text-product-danger-text"
+                                  role="alert"
+                                >
+                                  {errors[review.id]}
+                                </p>
+                              ) : null}
+                            </div>
+                            <div className="flex flex-wrap items-center justify-end gap-2 pt-1">
                               <Button
+                                type="button"
                                 variant="ghost"
+                                size="sm"
                                 disabled={Boolean(pendingId)}
                                 onClick={() => setExpandedId(null)}
                               >
                                 Cancel
                               </Button>
                               <Button
+                                type="button"
                                 variant="outline"
+                                size="sm"
                                 disabled={Boolean(pendingId)}
                                 onClick={() => resolve(review, "EXCLUDED")}
                               >
                                 Exclude
                               </Button>
                               <Button
+                                type="button"
+                                size="sm"
                                 disabled={Boolean(pendingId)}
                                 onClick={() => resolve(review, "APPROVED")}
                               >

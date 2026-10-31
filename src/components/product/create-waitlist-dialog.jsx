@@ -213,7 +213,7 @@ export function CreateWaitlistDialog({
                 {error}
               </p>
             )}
-            <div className="flex justify-end border-t border-product-border-subtle pt-4">
+            <div className="flex justify-end pt-2">
               <Button
                 type="submit"
                 size="lg"

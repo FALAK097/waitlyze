@@ -22,6 +22,7 @@ import {
   Analytics01Icon,
   ArrowDown01Icon,
   ArrowUp01Icon,
+  ArrowUpRight01Icon,
   CheckListIcon,
   Copy01Icon,
   Delete02Icon,
@@ -1318,6 +1319,7 @@ export function SnapshotPageBuilder({
               rel="noopener noreferrer"
             >
               View live
+              <HugeiconsIcon icon={ArrowUpRight01Icon} size={14} aria-hidden="true" />
             </Link>
           )}
           {canPublish && hasUpdates && (
@@ -2273,11 +2275,6 @@ function FormPanel({ form, update }) {
         label="Bot protection (Cloudflare Turnstile)"
         checked={form.requireTurnstile === true}
         onChange={(requireTurnstile) => update({ requireTurnstile })}
-        hint={
-          form.requireTurnstile === true
-            ? "Uses the Turnstile keys configured for this deployment."
-            : ""
-        }
       />
       <div className="grid gap-3 border-t border-product-border-subtle pt-4">
         <span className="block text-micro font-bold tracking-widest text-product-text-secondary uppercase">
@@ -2304,7 +2301,15 @@ function FormPanel({ form, update }) {
                   { id: "select", label: "Dropdown" },
                   { id: "checkbox", label: "Checkbox" },
                 ]}
-                onChange={(type) => updateField(field.id, { type })}
+                onChange={(type) =>
+                  updateField(
+                    field.id,
+                    type === "select" &&
+                      (!Array.isArray(field.options) || field.options.length === 0)
+                      ? { type, options: ["Option 1", "Option 2"] }
+                      : { type },
+                  )
+                }
               />
               <Field
                 label="Placeholder"
@@ -2316,7 +2321,12 @@ function FormPanel({ form, update }) {
               <ListField
                 label="Options (comma-separated)"
                 value={field.options}
-                onChange={(options) => updateField(field.id, { options })}
+                placeholder="Option 1, Option 2"
+                onChange={(options) =>
+                  updateField(field.id, {
+                    options: options.length > 0 ? options : ["Option 1"],
+                  })
+                }
               />
             )}
             <Toggle

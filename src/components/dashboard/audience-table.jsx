@@ -1031,16 +1031,6 @@ export function AudienceTable({
                     Bulk actions handle up to 1,000 at a time — narrow the search or filter first.
                   </span>
                 )}
-                <Button
-                  variant="ghost"
-                  onClick={() => {
-                    setSelectedIds([]);
-                    setSelectAll(false);
-                    setSelectTruncated(false);
-                  }}
-                >
-                  Clear selection
-                </Button>
               </div>
             )}
             {!selectAll &&
