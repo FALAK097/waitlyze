@@ -8,12 +8,17 @@ import { ReactQueryProvider } from "@/providers/query";
 
 import { ShareChannelIcon, channelLabel } from "./share-buttons";
 
-/**
- * Social-follow tasks. UI ships now; points for follows land with the
- * rewards engine, so this component never touches points logic.
- */
-export function SocialFollowTasks({ follows, className }) {
+/** Social-follow tasks displayed on the referral cockpit. */
+export function SocialFollowTasks({ follows, waitListId, code, className }) {
   if (!follows?.length) return null;
+  function claimFollow(network) {
+    if (!waitListId || !code) return;
+    fetch("/api/v1/follows", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ waitListId, code, network }),
+    }).catch(() => {});
+  }
   return (
     <div className={cn("grid w-full max-w-md gap-2.5", className)}>
       <p className="m-0 text-sm font-bold">Follow along</p>
@@ -24,6 +29,7 @@ export function SocialFollowTasks({ follows, className }) {
             href={follow.url}
             target="_blank"
             rel="noopener noreferrer"
+            onClick={() => claimFollow(follow.network)}
             className="flex min-h-11 items-center gap-2.5 rounded-wl bg-wl-surface px-3 py-2 text-left text-caption font-bold text-wl-text transition-opacity hover:opacity-85"
           >
             <ShareChannelIcon channel={follow.network} className="size-5" />
@@ -33,9 +39,6 @@ export function SocialFollowTasks({ follows, className }) {
           </a>
         ))}
       </div>
-      <p className="m-0 text-caption leading-relaxed text-wl-muted">
-        Follows earn points once rewards launch.
-      </p>
     </div>
   );
 }
@@ -124,7 +127,7 @@ export function ReferralCockpitExtras({ waitListId, code, statusPage, className 
           <LeaderboardCard waitListId={waitListId} code={code} />
         </ReactQueryProvider>
       ) : null}
-      <SocialFollowTasks follows={follows} />
+      <SocialFollowTasks follows={follows} waitListId={waitListId} code={code} />
     </div>
   );
 }
