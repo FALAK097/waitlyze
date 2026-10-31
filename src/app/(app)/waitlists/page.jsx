@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { after } from "next/server";
 import { Suspense } from "react";
 
 import { ProductContentSkeleton } from "@/components/product/content-skeleton";
@@ -19,11 +18,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import prisma from "@/lib/prisma";
-import {
-  createServerPerformanceContext,
-  logElapsedServerPhase,
-  withServerPhase,
-} from "@/lib/server-performance.mjs";
 import {
   normalizeWaitlistSearch,
   normalizeWaitlistStatus,
@@ -199,32 +193,10 @@ function WaitlistsEmptyState({ query, status, sort, hasFilters }) {
 }
 
 async function WaitlistsResults(props) {
-  let outcome = "success";
-  return withServerPhase(
-    props.performanceContext,
-    "waitlist-segment",
-    () =>
-      renderWaitlistsResults({
-        ...props,
-        markDegraded: () => {
-          outcome = "degraded";
-          props.performanceContext.outcome = "degraded";
-        },
-      }),
-    () => outcome,
-  );
+  return renderWaitlistsResults(props);
 }
 
-async function renderWaitlistsResults({
-  performanceContext,
-  markDegraded,
-  userId,
-  workspaceId,
-  query,
-  status,
-  sort,
-  requestedPage,
-}) {
+async function renderWaitlistsResults({ userId, workspaceId, query, status, sort, requestedPage }) {
   let total;
   let page;
   let pageCount;
@@ -240,46 +212,30 @@ async function renderWaitlistsResults({
     const initialPage =
       Number.isSafeInteger(requestedPage) && requestedPage <= 1000 ? Math.max(1, requestedPage) : 1;
     const findPage = (pageNumber) =>
-      withServerPhase(performanceContext, "waitlist-page-query", () =>
-        prisma.waitList.findMany({
-          where,
-          select: {
-            id: true,
-            name: true,
-            description: true,
-            status: true,
-            updatedAt: true,
-            _count: { select: { signUps: true, impressions: true } },
-          },
-          orderBy: waitlistSortOrderBy(sort),
-          skip: (pageNumber - 1) * PAGE_SIZE,
-          take: PAGE_SIZE,
-        }),
-      );
-    const [count, initialWaitlists] = await withServerPhase(
-      performanceContext,
-      "waitlist-data",
-      () =>
-        Promise.all([
-          withServerPhase(performanceContext, "waitlist-count-query", () =>
-            prisma.waitList.count({ where }),
-          ),
-          findPage(initialPage),
-        ]),
-    );
+      prisma.waitList.findMany({
+        where,
+        select: {
+          id: true,
+          name: true,
+          description: true,
+          status: true,
+          updatedAt: true,
+          _count: { select: { signUps: true, impressions: true } },
+        },
+        orderBy: waitlistSortOrderBy(sort),
+        skip: (pageNumber - 1) * PAGE_SIZE,
+        take: PAGE_SIZE,
+      });
+    const [count, initialWaitlists] = await Promise.all([
+      prisma.waitList.count({ where }),
+      findPage(initialPage),
+    ]);
     total = count;
     pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE));
     page = Math.min(Math.max(1, requestedPage), pageCount);
     waitlists = page === initialPage ? initialWaitlists : await findPage(page);
   } catch (error) {
-    markDegraded();
-    console.error(
-      JSON.stringify({
-        event: "waitlyze.waitlists_query_error",
-        requestId: performanceContext.requestId,
-        errorCode: error?.code || error?.name || "unknown",
-      }),
-    );
+    console.error("Error loading waitlists:", error);
     return (
       <div
         className="rounded-xl border border-product-border-subtle bg-product-bg-surface px-6 py-16 text-center"
@@ -346,14 +302,7 @@ async function renderWaitlistsResults({
 }
 
 export default async function WaitlistsPage({ searchParams }) {
-  const performanceContext = createServerPerformanceContext("/waitlists");
-  after(() => {
-    logElapsedServerPhase(performanceContext, "response-total", performanceContext.startedAt);
-  });
-  const [{ user, workspace }, params] = await Promise.all([
-    withServerPhase(performanceContext, "workspace-context", currentWorkspace),
-    searchParams,
-  ]);
+  const [{ user, workspace }, params] = await Promise.all([currentWorkspace(), searchParams]);
   const query = normalizeWaitlistSearch(params?.q);
   const status = normalizeWaitlistStatus(params?.status);
   const sort = normalizeWaitlistSort(params?.sort);
@@ -372,7 +321,6 @@ export default async function WaitlistsPage({ searchParams }) {
         fallback={<ProductContentSkeleton label="Loading waitlists" variant="table" rows={5} />}
       >
         <WaitlistsResults
-          performanceContext={performanceContext}
           userId={user.id}
           workspaceId={workspace.id}
           query={query}

@@ -1,25 +1,9 @@
-import { after } from "next/server";
-
 import { WaitlistNav } from "@/components/product/waitlist-nav";
-import {
-  createServerPerformanceContext,
-  logElapsedServerPhase,
-  withServerPhase,
-} from "@/lib/server-performance.mjs";
 import { requireCampaignPage } from "@/lib/workspaces/authorize";
 
 export default async function WaitlistLayout({ children, params }) {
-  const performanceContext = createServerPerformanceContext("/waitlists/[id]");
-  after(() => {
-    logElapsedServerPhase(performanceContext, "response-total", performanceContext.startedAt);
-  });
-
   const { id } = await params;
-  const { campaign, role } = await withServerPhase(
-    performanceContext,
-    "campaign-layout-access",
-    () => requireCampaignPage(id, "viewCampaign"),
-  );
+  const { campaign, role } = await requireCampaignPage(id, "viewCampaign");
   const canSendEmail = ["OWNER", "ADMIN"].includes(role);
   return (
     <section className="product-waitlist-detail">

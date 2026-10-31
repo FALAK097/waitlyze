@@ -4,6 +4,7 @@ import { URL } from "node:url";
 import { TextEncoder } from "node:util";
 
 import { NextResponse } from "next/server";
+import pg from "pg";
 
 import { Prisma } from "@/generated/prisma/client";
 import {
@@ -21,7 +22,6 @@ import {
   getCampaignPositions,
   getEligibleReferralCounts,
 } from "@/lib/campaigns/referral-position.mjs";
-import { streamRankedPositions } from "@/lib/postgres-cursor.mjs";
 import prisma from "@/lib/prisma";
 import { campaignRouteAccess } from "@/lib/workspaces/campaign-route-access.mjs";
 
@@ -369,6 +369,50 @@ function rankedPositionCursorSql(waitListId, filters, whereBuilder) {
     WHERE ${where}
     ORDER BY ranked.position ${direction}
   `;
+}
+
+// Position export needs one pinned database snapshot across FETCH batches.
+// Keep cursor lifecycle local to this server route rather than exposing a
+// reusable low-level database helper elsewhere in the application.
+function toPgParams(sql) {
+  let index = 0;
+  const text = sql.sql.replace(/\?/g, () => `$${++index}`);
+  if (index !== sql.values.length) {
+    throw new Error(
+      `PostgreSQL cursor query has ${index} placeholders but ${sql.values.length} values`,
+    );
+  }
+  return { text, values: sql.values };
+}
+
+async function* streamRankedPositions(sql, { batchSize = 500 } = {}) {
+  if (!Number.isInteger(batchSize) || batchSize < 1 || batchSize > 5000) {
+    throw new RangeError("batchSize must be an integer between 1 and 5000");
+  }
+  const name = `waitlyze_rank_${Math.random().toString(36).slice(2, 10)}`;
+  const client = new pg.Client({ connectionString: process.env.DATABASE_URL });
+  let connected = false;
+  let declared = false;
+  try {
+    await client.connect();
+    connected = true;
+    await client.query("BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY");
+    const { text, values } = toPgParams(sql);
+    await client.query(`DECLARE ${name} NO SCROLL CURSOR FOR ${text}`, values);
+    declared = true;
+    while (true) {
+      const { rows } = await client.query(`FETCH FORWARD ${batchSize} FROM ${name}`);
+      if (rows.length === 0) break;
+      yield rows;
+      if (rows.length < batchSize) break;
+    }
+  } finally {
+    if (connected) {
+      if (declared) await client.query(`CLOSE ${name}`).catch(() => {});
+      await client.query("ROLLBACK").catch(() => {});
+      await client.end().catch(() => {});
+    }
+  }
 }
 
 async function failedVerificationPage(waitListId, filters, cursor, take, offset = null) {

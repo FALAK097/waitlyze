@@ -22,7 +22,7 @@ import { apiKeyRateLimitHeaders, consumeApiKeyBudget } from "@/lib/security/api-
 import { consumePublicBudget, PublicRateLimitError } from "@/lib/security/public-rate-limit.mjs";
 import { createSignUp } from "@/services/sign-up";
 import { validateApiKeyAndGetWaitlist } from "@/utils/api-key-auth";
-import { getCanonicalAttribution, pickAttribution } from "@/utils/server/attribution.mjs";
+import { pickAttribution } from "@/utils/server/attribution.mjs";
 import { getDeviceInfo } from "@/utils/server/device";
 import { getGeoInfo, getIpAddress, getTimeZone } from "@/utils/server/geo";
 
@@ -345,7 +345,6 @@ export async function POST(request) {
             longitude: signupDataInput.longitude,
             timezone: signupDataInput.timezone,
             ...pickAttribution(body),
-            ...getCanonicalAttribution(body),
           },
         });
         await linkImpression(impression.id);

@@ -6,7 +6,6 @@ import { emailLookupForms, normalizeSignupEmail } from "@/lib/normalize-email.mj
 import prisma from "@/lib/prisma";
 import { requireCampaign } from "@/lib/workspaces/authorize";
 import { AccessError } from "@/lib/workspaces/service.mjs";
-import { getCanonicalAttribution } from "@/utils/server/attribution.mjs";
 import { validateSignupEmail } from "@/utils/server/email-validation.mjs";
 
 const MAX_ROWS = 5000;
@@ -186,7 +185,6 @@ export async function importSignups(waitListId, formData) {
         emailNormalized: row.emailNormalized,
         uniqueUserId: `import:${stamp}:${index + offset}`,
         waitListId,
-        ...getCanonicalAttribution(),
         country: row.country,
         points: row.points,
         ...(row.referralCode ? { referralCode: row.referralCode } : {}),

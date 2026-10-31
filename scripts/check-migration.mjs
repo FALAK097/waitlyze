@@ -135,7 +135,6 @@ try {
           "20261025120001_phase4_ledger_custom",
           "20261025140000_phase4_fraud_widgets",
           "20261027110000_broadcast_history_cursor_index",
-          "20261027120000_canonical_attribution_fields",
         ]) {
           await db.query(await readFile(`prisma/migrations/${name}/migration.sql`, "utf8"));
         }

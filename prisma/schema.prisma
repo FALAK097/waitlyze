@@ -183,10 +183,8 @@ model SignUp {
   ipAddress       String?
   latitude        String?
   longitude       String?
-  referrer           String?
-  attributionChannel String?
-  referrerHost       String?
-  landingPage        String?
+  referrer        String?
+  landingPage     String?
   utmSource       String?
   utmMedium       String?
   utmCampaign     String?
@@ -473,10 +471,8 @@ model Impression {
   ipAddress    String?
   latitude     String?
   longitude    String?
-  referrer           String?
-  attributionChannel String?
-  referrerHost       String?
-  landingPage        String?
+  referrer     String?
+  landingPage  String?
   utmSource    String?
   utmMedium    String?
   utmCampaign  String?
