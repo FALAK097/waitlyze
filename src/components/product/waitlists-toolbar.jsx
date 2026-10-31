@@ -5,13 +5,19 @@ import {
   ArrowUp01Icon,
   ArrowUpDownIcon,
   Cancel01Icon,
+  Search01Icon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
 
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupButton,
+  InputGroupInput,
+} from "@/components/ui/input-group";
 import { Label } from "@/components/ui/label";
 import { TableHead } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
@@ -58,35 +64,31 @@ export function WaitlistSearch({ query, status, sort }) {
     replace({ query: "", status, sort });
   }
   return (
-    <div
-      className="relative ms-auto max-w-90 min-w-0 min-w-55 shrink-1 grow-0 basis-90 max-[767px]:ms-0 max-[767px]:max-w-none max-[767px]:min-w-0 max-[767px]:grow max-[767px]:basis-auto [&_input]:w-full [&_input]:pr-10"
-      role="search"
-      aria-busy={isPending}
-    >
+    <div className="w-full min-w-0 sm:max-w-80" role="search" aria-busy={isPending}>
       <Label className="sr-only" htmlFor="waitlist-search">
         Search waitlists by name
       </Label>
-      <Input
-        id="waitlist-search"
-        type="search"
-        maxLength={WAITLIST_SEARCH_LIMIT}
-        value={value}
-        onChange={(event) => schedule(event.target.value)}
-        placeholder="Search by name"
-        autoComplete="off"
-      />
-      {value && (
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          className="absolute end-1 top-1/2 -translate-y-1/2"
-          onClick={clear}
-          aria-label="Clear search"
-        >
-          <HugeiconsIcon icon={Cancel01Icon} aria-hidden="true" />
-        </Button>
-      )}
+      <InputGroup className="h-10">
+        <InputGroupAddon>
+          <HugeiconsIcon icon={Search01Icon} size={16} aria-hidden="true" />
+        </InputGroupAddon>
+        <InputGroupInput
+          id="waitlist-search"
+          type="search"
+          maxLength={WAITLIST_SEARCH_LIMIT}
+          value={value}
+          onChange={(event) => schedule(event.target.value)}
+          placeholder="Search by name"
+          autoComplete="off"
+        />
+        {value && (
+          <InputGroupAddon align="inline-end">
+            <InputGroupButton size="icon-xs" onClick={clear} aria-label="Clear search">
+              <HugeiconsIcon icon={Cancel01Icon} size={15} aria-hidden="true" />
+            </InputGroupButton>
+          </InputGroupAddon>
+        )}
+      </InputGroup>
     </div>
   );
 }
@@ -95,7 +97,7 @@ export function StatusTabs({ query, status, sort }) {
   const [replace, isPending] = useReplaceParams();
   return (
     <div
-      className="mb-8 flex flex-wrap gap-5 max-[767px]:basis-full"
+      className="grid min-w-0 grid-cols-4 items-center gap-1"
       role="group"
       aria-label="Filter waitlists by status"
       aria-busy={isPending}

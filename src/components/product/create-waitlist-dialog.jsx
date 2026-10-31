@@ -15,18 +15,9 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { listTemplates } from "@/lib/templates/catalog.mjs";
 import { isTemplateId } from "@/lib/templates/gallery.mjs";
-
-const templateOptions = listTemplates();
 
 function normalizeSlugInput(value) {
   return value
@@ -52,9 +43,7 @@ export function CreateWaitlistDialog({
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
   const [slugTouched, setSlugTouched] = useState(false);
-  const [templateId, setTemplateId] = useState(
-    isTemplateId(initialTemplateId) ? initialTemplateId : "simple",
-  );
+  const templateId = isTemplateId(initialTemplateId) ? initialTemplateId : "simple";
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [slugStatus, setSlugStatus] = useState({ state: "idle", message: "" });
@@ -132,14 +121,14 @@ export function CreateWaitlistDialog({
         {first ? "Create your first waitlist" : "New waitlist"}
       </DialogTrigger>
       <DialogContent className="sm:max-w-lg" showCloseButton={!busy}>
-        <div className="grid gap-7 p-3">
-          <div className="grid gap-2 pr-8 [&_[data-slot=dialog-description]]:max-w-ch65 [&_[data-slot=dialog-description]]:leading-relaxed [&_[data-slot=dialog-title]]:text-xl [&_[data-slot=dialog-title]]:tracking-tight">
-            <DialogTitle>Start a waitlist</DialogTitle>
+        <div className="grid min-w-0 gap-6 p-2">
+          <div className="[&_[data-slot=dialog-description]]:max-w-ch55 grid min-w-0 gap-1.5 pr-8 [&_[data-slot=dialog-description]]:leading-relaxed [&_[data-slot=dialog-title]]:text-xl [&_[data-slot=dialog-title]]:tracking-tight">
+            <DialogTitle>Create a waitlist</DialogTitle>
             <DialogDescription>
-              Name it now. The page stays private until you publish.
+              Choose a name and page address. You can customize it before publishing.
             </DialogDescription>
           </div>
-          <form className="grid gap-6" onSubmit={submit}>
+          <form className="grid min-w-0 gap-5" onSubmit={submit}>
             <div className="grid gap-2 [&_input]:h-11 [&_input]:text-body [&_label]:text-caption [&_label]:font-semibold">
               <Label htmlFor="new-waitlist-name">Waitlist name</Label>
               <Input
@@ -159,11 +148,11 @@ export function CreateWaitlistDialog({
             </div>
             <div className="grid gap-2 [&_label]:text-caption [&_label]:font-semibold">
               <Label htmlFor="new-waitlist-slug">Page address</Label>
-              <div className="flex min-h-11 items-center overflow-hidden rounded-lg bg-product-bg-inset pl-3 text-caption text-product-text-secondary focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-product-focus [&_input]:h-11 [&_input]:min-w-0 [&_input]:flex-1 [&_input]:border-0 [&_input]:bg-transparent [&_input]:pl-0.5 [&_input]:shadow-none [&_input]:outline-none">
-                <span className="shrink text-xs sm:shrink-0 sm:text-caption">
+              <InputGroup className="h-11">
+                <InputGroupAddon className="shrink-0 whitespace-nowrap">
                   waitlyze.falakgala.dev/w/
-                </span>
-                <Input
+                </InputGroupAddon>
+                <InputGroupInput
                   id="new-waitlist-slug"
                   autoComplete="off"
                   maxLength={48}
@@ -191,8 +180,9 @@ export function CreateWaitlistDialog({
                           : undefined
                   }
                   aria-invalid={!!error || slugStatus.state === "taken"}
+                  className="min-w-0"
                 />
-              </div>
+              </InputGroup>
               {slugHint && (
                 <p id="new-waitlist-slug-hint" className="text-caption text-product-text-secondary">
                   {slugHint}
@@ -214,49 +204,16 @@ export function CreateWaitlistDialog({
                 </p>
               )}
             </div>
-            <div className="grid gap-2 [&_label]:text-caption [&_label]:font-semibold">
-              <Label htmlFor="new-waitlist-template">Template</Label>
-              <Select
-                value={templateId}
-                onValueChange={(value) => {
-                  if (isTemplateId(value)) setTemplateId(value);
-                }}
-                disabled={busy}
-              >
-                <SelectTrigger id="new-waitlist-template" className="h-11 w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent align="start">
-                  {templateOptions.map((template) => (
-                    <SelectItem key={template.id} value={template.id}>
-                      {template.name} - {template.description}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <p className="text-caption text-product-text-secondary">
-                The new page starts from this template.{" "}
-                <a
-                  href="/templates"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="underline underline-offset-4"
-                >
-                  Browse the gallery
-                </a>
-                .
-              </p>
-            </div>
             {error && (
               <p
-                className="-mt-2 text-caption leading-relaxed text-product-danger-text"
+                className="-mt-1 text-caption leading-relaxed text-product-danger-text"
                 id="new-waitlist-error"
                 role="alert"
               >
                 {error}
               </p>
             )}
-            <div className="flex justify-end pt-0.5">
+            <div className="flex justify-end pt-2">
               <Button
                 type="submit"
                 size="lg"

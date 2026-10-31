@@ -7,7 +7,7 @@ import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
-import { Input } from "@/components/ui/input";
+import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useCopyToClipboard } from "@/hooks/use-copy-to-clipboard";
 
@@ -168,19 +168,22 @@ export function CustomDomainSettings({ waitListId, canManage, available }) {
             event.preventDefault();
             call("POST", { hostname });
           }}
-          className="grid max-w-140 gap-4 [&_input]:h-11 [&_input]:rounded-lg [&_input]:border [&_input]:border-product-border-control [&_input]:bg-product-bg-surface [&_input]:px-3 [&_input]:text-sm"
+          className="grid max-w-140 gap-4"
         >
           {available ? (
-            <div className="flex flex-wrap items-stretch gap-2 [&_input]:min-w-55 [&_input]:flex-1">
-              <Input
-                aria-label="Domain name"
-                autoComplete="url"
-                value={hostname}
-                onChange={(event) => setHostname(event.target.value)}
-                placeholder="launch.example.com"
-                required
-                disabled={!canManage || busy}
-              />
+            <div className="flex flex-wrap items-stretch gap-2">
+              <InputGroup className="h-11 min-w-55 flex-1">
+                <InputGroupAddon>https://</InputGroupAddon>
+                <InputGroupInput
+                  aria-label="Domain name"
+                  autoComplete="url"
+                  value={hostname}
+                  onChange={(event) => setHostname(event.target.value.replace(/^https?:\/\//i, ""))}
+                  placeholder="launch.example.com"
+                  required
+                  disabled={!canManage || busy}
+                />
+              </InputGroup>
               <Button type="submit" size="xl" disabled={!actionsEnabled || !hostname.trim()}>
                 {busy ? "Connecting…" : "Connect domain"}
               </Button>

@@ -22,6 +22,7 @@ import {
   Analytics01Icon,
   ArrowDown01Icon,
   ArrowUp01Icon,
+  ArrowUpRight01Icon,
   CheckListIcon,
   Copy01Icon,
   Delete02Icon,
@@ -58,7 +59,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { FontPicker } from "@/components/ui/font-picker";
-import { Input } from "@/components/ui/input";
+import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -119,6 +120,7 @@ const blockGroups = BLOCK_TYPES.reduce((groups, block) => {
   return groups;
 }, {});
 const templates = listTemplates();
+
 function SortableBlockRow({ section, selected, disabled, onSelect, onDuplicate, onRemove }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: section.id,
@@ -808,6 +810,7 @@ export function SnapshotPageBuilder({
               rel="noopener noreferrer"
             >
               View live
+              <HugeiconsIcon icon={ArrowUpRight01Icon} size={14} aria-hidden="true" />
             </Link>
           )}
           {canPublish && hasUpdates && (
@@ -1171,6 +1174,8 @@ export function SnapshotPageBuilder({
           sidebar={
             <SnapshotStatusEditor
               status={snapshot.statusPage}
+              form={snapshot.form}
+              updateForm={(value) => updateRoot("form", value)}
               showReferrals={waitList.showReferrals}
               waitListId={waitList.id}
               rewards={snapshot.rewards}
@@ -1219,36 +1224,51 @@ export function SnapshotPageBuilder({
                         </Button>
                       ))}
                   </div>
-                  <div className="flex gap-1" role="group" aria-label="Preview viewport">
-                    <Button
-                      type="button"
-                      aria-label="Desktop preview"
-                      variant="product-segment-surface"
-                      size="preview-viewport"
-                      aria-pressed={statusViewport === "desktop"}
-                      onClick={() => setStatusViewport("desktop")}
-                    >
-                      <HugeiconsIcon icon={MonitorIcon} size={17} aria-hidden="true" />
-                    </Button>
-                    <Button
-                      type="button"
-                      aria-label="Mobile preview"
-                      variant="product-segment-surface"
-                      size="preview-viewport"
-                      aria-pressed={statusViewport === "mobile"}
-                      onClick={() => setStatusViewport("mobile")}
-                    >
-                      <HugeiconsIcon icon={SmartphoneIcon} size={17} aria-hidden="true" />
-                    </Button>
-                  </div>
+                  <TooltipProvider>
+                    <div className="flex gap-1" role="group" aria-label="Preview viewport">
+                      <Tooltip>
+                        <TooltipTrigger
+                          render={
+                            <Button
+                              type="button"
+                              aria-label="Desktop preview"
+                              variant="product-segment-surface"
+                              size="preview-viewport"
+                              aria-pressed={statusViewport === "desktop"}
+                              onClick={() => setStatusViewport("desktop")}
+                            />
+                          }
+                        >
+                          <HugeiconsIcon icon={MonitorIcon} size={17} aria-hidden="true" />
+                        </TooltipTrigger>
+                        <TooltipContent side="bottom">Desktop</TooltipContent>
+                      </Tooltip>
+                      <Tooltip>
+                        <TooltipTrigger
+                          render={
+                            <Button
+                              type="button"
+                              aria-label="Mobile preview"
+                              variant="product-segment-surface"
+                              size="preview-viewport"
+                              aria-pressed={statusViewport === "mobile"}
+                              onClick={() => setStatusViewport("mobile")}
+                            />
+                          }
+                        >
+                          <HugeiconsIcon icon={SmartphoneIcon} size={17} aria-hidden="true" />
+                        </TooltipTrigger>
+                        <TooltipContent side="bottom">Mobile</TooltipContent>
+                      </Tooltip>
+                    </div>
+                  </TooltipProvider>
                 </div>
                 <div
                   className={cn(
-                    "grid overflow-hidden rounded-xl bg-white shadow-surface",
-                    statusViewport === "mobile"
-                      ? "mx-auto min-h-160 w-full max-w-md"
-                      : "min-h-140 w-full",
+                    "overflow-y-auto rounded-xl bg-(--wl-page) shadow-surface",
+                    statusViewport === "mobile" ? "mx-auto h-160 w-full max-w-md" : "h-140 w-full",
                   )}
+                  style={{ "--wl-page": snapshot.brand.pageBackground }}
                 >
                   <StatusPagePreview
                     snapshot={snapshot}
@@ -1389,7 +1409,7 @@ function SurfaceLayout({ sidebar, children, mobileMode }) {
         {sidebar}
       </aside>
       <main
-        className="min-h-0 min-w-0 flex-1 overflow-hidden p-10 max-[900px]:p-7 max-[680px]:p-3 max-[680px]:data-[mobile-mode=edit]:hidden"
+        className="min-h-0 min-w-0 flex-1 overflow-y-auto p-10 max-[900px]:p-7 max-[680px]:p-3 max-[680px]:data-[mobile-mode=edit]:hidden"
         data-mobile-mode={mobileMode}
       >
         {children}
@@ -1403,8 +1423,8 @@ function TypeSizeField({ label, value, defaultValue, onChange, min = 12, max = 1
   return (
     <div className="grid gap-1.5">
       <Label htmlFor={id}>{label}</Label>
-      <div className="flex items-center gap-2">
-        <Input
+      <InputGroup className="h-10">
+        <InputGroupInput
           id={id}
           type="number"
           min={min}
@@ -1415,8 +1435,8 @@ function TypeSizeField({ label, value, defaultValue, onChange, min = 12, max = 1
             if (Number.isFinite(next)) onChange(Math.min(max, Math.max(min, Math.round(next))));
           }}
         />
-        <span className="text-micro text-product-text-secondary">px</span>
-      </div>
+        <InputGroupAddon align="inline-end">px</InputGroupAddon>
+      </InputGroup>
     </div>
   );
 }

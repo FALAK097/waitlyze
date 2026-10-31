@@ -32,7 +32,7 @@ export default function Header() {
   ];
   return (
     <header className="sticky top-0 z-40 bg-product-bg-surface">
-      <div className="mx-auto flex h-22 w-full max-w-7xl items-center justify-between gap-6 px-4 sm:px-5 md:h-18 md:px-8 lg:px-12">
+      <div className="mx-auto flex h-18 w-full max-w-7xl items-center justify-between gap-3 px-4 sm:gap-6 sm:px-5 lg:h-18 lg:px-8 xl:px-12">
         <Link
           href="/"
           aria-label="Waitlyze home"
@@ -41,7 +41,7 @@ export default function Header() {
         >
           <Wordmark />
         </Link>
-        <nav aria-label="Main navigation" className="hidden items-center gap-8 md:flex">
+        <nav aria-label="Main navigation" className="hidden items-center gap-6 md:flex xl:gap-8">
           {links.map(([label, href]) => (
             <Link
               href={href}
@@ -52,7 +52,7 @@ export default function Header() {
             </Link>
           ))}
         </nav>
-        <div className="flex items-center gap-3 md:gap-1">
+        <div className="flex shrink-0 items-center gap-2 md:gap-1">
           <SignupButton compact className="max-sm:gap-2 max-sm:px-3 max-sm:py-2">
             Sign in
           </SignupButton>

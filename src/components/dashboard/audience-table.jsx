@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  Cancel01Icon,
   CopyIcon,
   CircleQuestionMarkIcon,
   Download01Icon,
@@ -18,7 +19,7 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { importSignups } from "@/app/actions/audience-import";
@@ -35,6 +36,12 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupButton,
+  InputGroupInput,
+} from "@/components/ui/input-group";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -158,22 +165,6 @@ export function AudienceTable({
   const [query, setQuery] = useState("");
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("all");
-  const [rawGeoFilters, setRawGeoFilters] = useState({
-    country: "",
-    city: "",
-    source: "",
-    landing: "",
-    utm: "",
-    device: "",
-  });
-  const [geoFilters, setGeoFilters] = useState({
-    country: "",
-    city: "",
-    source: "",
-    landing: "",
-    utm: "",
-    device: "",
-  });
   // Single source of truth for the table filter. status/delivery are derived
   // together so the dropdown selection can never disagree with the query.
   const status = filter === "failed" ? "all" : filter;
@@ -201,6 +192,7 @@ export function AudienceTable({
   );
   const [importing, setImporting] = useState(false);
   const [copiedId, setCopiedId] = useState(null);
+  const searchInputRef = useRef(null);
 
   const flags = result.flags || {
     showReferrals: waitlist.showReferrals,
@@ -219,35 +211,6 @@ export function AudienceTable({
     }, 250);
     return () => clearTimeout(timeout);
   }, [query]);
-
-  useEffect(() => {
-    const timeout = setTimeout(() => {
-      const next = {
-        country: rawGeoFilters.country.trim(),
-        city: rawGeoFilters.city.trim(),
-        source: rawGeoFilters.source.trim(),
-        landing: rawGeoFilters.landing.trim(),
-        utm: rawGeoFilters.utm.trim(),
-        device: rawGeoFilters.device.trim(),
-      };
-      setGeoFilters((current) =>
-        current.country === next.country &&
-        current.city === next.city &&
-        current.source === next.source &&
-        current.landing === next.landing &&
-        current.utm === next.utm &&
-        current.device === next.device
-          ? current
-          : next,
-      );
-      setCursors([null]);
-      setPageIndex(0);
-      setSelectedIds([]);
-      setSelectAll(false);
-      setSelectTruncated(false);
-    }, 300);
-    return () => clearTimeout(timeout);
-  }, [rawGeoFilters]);
 
   function resetList() {
     setCursors([null]);
@@ -287,9 +250,6 @@ export function AudienceTable({
       setError("");
       const params = new URLSearchParams({ status, sort, delivery: deliveryFilter });
       if (search) params.set("q", search);
-      for (const [key, value] of Object.entries(geoFilters)) {
-        if (value) params.set(key, value);
-      }
       params.set("page", String(pageIndex));
       if (isJoinedSort && cursors[pageIndex]) params.set("cursor", cursors[pageIndex]);
       try {
@@ -301,9 +261,7 @@ export function AudienceTable({
         if (signal.aborted) return;
         if (!response.ok) throw new Error(payload.error || "Unable to load signups.");
         setResult(payload);
-        setLoadedCriteria(
-          `${status}\u0000${search}\u0000${sort}\u0000${deliveryFilter}\u0000${JSON.stringify(geoFilters)}`,
-        );
+        setLoadedCriteria(`${status}\u0000${search}\u0000${sort}\u0000${deliveryFilter}`);
       } catch (loadError) {
         if (loadError.name !== "AbortError") {
           setError("Unable to refresh signups.");
@@ -316,7 +274,6 @@ export function AudienceTable({
     [
       cursors,
       deliveryFilter,
-      geoFilters,
       isJoinedSort,
       pageIndex,
       retryCount,
@@ -343,9 +300,6 @@ export function AudienceTable({
         columns: exportColumns.join(","),
       });
       if (search) params.set("q", search);
-      for (const [key, value] of Object.entries(geoFilters)) {
-        if (value) params.set(key, value);
-      }
       const response = await fetch(
         `/api/wait-lists/${encodeURIComponent(waitlist.id)}/subscribers?${params}`,
         { method: "POST" },
@@ -413,7 +367,7 @@ export function AudienceTable({
       const result = await retryFailedVerification({ waitListId: waitlist.id, signupIds: ids });
       if (!result.ok) throw new Error(result.message);
       toast.success(result.message);
-      setSelectedIds([]);
+      if (!selectAll) setSelectedIds([]);
       setRetryCount((count) => count + 1);
     } catch (error) {
       toast.error(error.message || "Could not retry confirmation emails.");
@@ -517,9 +471,6 @@ export function AudienceTable({
     try {
       const params = new URLSearchParams({ status, sort, delivery: deliveryFilter });
       if (search) params.set("q", search);
-      for (const [key, value] of Object.entries(geoFilters)) {
-        if (value) params.set(key, value);
-      }
       params.set("select", "ids");
       const response = await fetch(
         `/api/wait-lists/${encodeURIComponent(waitlist.id)}/subscribers?${params}`,
@@ -543,22 +494,26 @@ export function AudienceTable({
     if (email.status === "DELIVERED") return "Accepted by sender";
     if (email.status === "PENDING" || email.status === "PROCESSING") return "Sending";
     if (email.issue === "RECIPIENT_SUPPRESSED") return "Not sent · suppressed";
-    if (email.issue === "SIGNUP_NOT_SENDABLE")
-      return deliveryFilter === "failed"
-        ? "Failed · needs a fresh link"
-        : "Not sent · no longer eligible";
+    if (email.issue === "SIGNUP_NOT_SENDABLE") return "Failed · needs a fresh link";
     return "Failed";
   }
 
   function retryableVerification(row) {
     const email = row.verificationDelivery;
-    return (
-      !row.verifiedAt &&
+    return Boolean(
       email?.status === "FAILED" &&
       email.issue !== "RECIPIENT_SUPPRESSED" &&
-      (email.issue !== "SIGNUP_NOT_SENDABLE" || deliveryFilter === "failed")
+      (email.issue !== "SIGNUP_NOT_SENDABLE" || deliveryFilter === "failed"),
     );
   }
+
+  const retryableSelectedIds = useMemo(
+    () =>
+      result.data
+        .filter((row) => selectedIds.includes(row.id) && retryableVerification(row))
+        .map((row) => row.id),
+    [result.data, selectedIds],
+  );
 
   const showingStart = result.total === 0 ? 0 : pageIndex * PAGE_SIZE + 1;
   const showingEnd = Math.min((pageIndex + 1) * PAGE_SIZE, result.total);
@@ -575,29 +530,23 @@ export function AudienceTable({
       ? `${window.location.origin}/w/${flags.publicSlug}?r=${profile.referralCode}`
       : null;
   const requestedSearch = query.trim();
-  const geoFiltersChanging = Object.keys(geoFilters).some(
-    (key) => rawGeoFilters[key].trim() !== geoFilters[key],
-  );
   const criteriaChanging =
     requestedSearch !== search ||
-    geoFiltersChanging ||
-    loadedCriteria !==
-      `${status}\u0000${search}\u0000${sort}\u0000${deliveryFilter}\u0000${JSON.stringify(geoFilters)}`;
+    loadedCriteria !== `${status}\u0000${search}\u0000${sort}\u0000${deliveryFilter}`;
   const isUpdating = loading || (criteriaChanging && !error);
   const loadedFilters = loadedCriteria?.split("\u0000") || [];
-  const hasGeoFilters = Object.values(geoFilters).some(Boolean);
   const appliedCriteriaLabel = loadedCriteria
     ? `${loadedFilters[1] ? `“${loadedFilters[1]}” · ` : ""}${
         loadedFilters[3] === "failed"
           ? "Email failed"
           : FILTER_OPTIONS.find((option) => option.value === loadedFilters[0])?.label ||
             "All signups"
-      }${loadedFilters[4] && loadedFilters[4] !== JSON.stringify({ country: "", city: "", source: "", landing: "", utm: "", device: "" }) ? " · filtered" : ""}`
+      }`
     : "the initial signup list";
   const emptyTitle =
     deliveryFilter === "failed"
       ? "No failed confirmation emails"
-      : search || hasGeoFilters
+      : search
         ? "No signups match these filters"
         : status === "verified"
           ? "No verified signups yet"
@@ -605,7 +554,7 @@ export function AudienceTable({
             ? "No signups need confirmation"
             : "No signups yet";
   const emptyDescription =
-    search || hasGeoFilters || status !== "all" || deliveryFilter !== "all"
+    search || status !== "all" || deliveryFilter !== "all"
       ? "Try a different search or filter."
       : "Publish and share your waitlist page to invite the first signups.";
 
@@ -980,23 +929,40 @@ export function AudienceTable({
         <>
           <div className="min-w-0" aria-busy={isUpdating}>
             <div className="mb-6 flex flex-wrap items-center justify-between gap-4 max-[640px]:items-stretch">
-              <Label className="relative block w-full sm:max-w-sm">
-                <span className="sr-only">Search signups by email</span>
-                <HugeiconsIcon
-                  icon={Search01Icon}
-                  className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-product-text-secondary"
-                  aria-hidden="true"
-                />
-                <Input
-                  className="pl-10"
-                  type="search"
-                  autoComplete="off"
-                  value={query}
-                  onChange={(event) => setQuery(event.target.value)}
-                  placeholder="Search by email"
-                  maxLength={120}
-                />
-              </Label>
+              <search className="w-full sm:max-w-sm">
+                <Label className="sr-only" htmlFor="audience-search">
+                  Search signups by email
+                </Label>
+                <InputGroup className="h-10">
+                  <InputGroupAddon>
+                    <HugeiconsIcon icon={Search01Icon} size={16} aria-hidden="true" />
+                  </InputGroupAddon>
+                  <InputGroupInput
+                    ref={searchInputRef}
+                    id="audience-search"
+                    type="search"
+                    autoComplete="off"
+                    value={query}
+                    onChange={(event) => setQuery(event.target.value)}
+                    placeholder="Search by email"
+                    maxLength={120}
+                  />
+                  {query && (
+                    <InputGroupAddon align="inline-end">
+                      <InputGroupButton
+                        size="icon-xs"
+                        aria-label="Clear search"
+                        onClick={() => {
+                          setQuery("");
+                          searchInputRef.current?.focus();
+                        }}
+                      >
+                        <HugeiconsIcon icon={Cancel01Icon} size={15} aria-hidden="true" />
+                      </InputGroupButton>
+                    </InputGroupAddon>
+                  )}
+                </InputGroup>
+              </search>
               <Select value={filter} onValueChange={changeFilter}>
                 <SelectTrigger className="w-52 max-[640px]:w-full" aria-label="Filter signups">
                   <SelectValue>
@@ -1012,61 +978,6 @@ export function AudienceTable({
                 </SelectContent>
               </Select>
             </div>
-            <div
-              className="mb-6 flex flex-wrap items-center gap-2"
-              role="group"
-              aria-label="Filter signups by location, source, and device"
-            >
-              {[
-                { key: "country", label: "Country", placeholder: "Country", width: "w-32" },
-                { key: "city", label: "City", placeholder: "City", width: "w-32" },
-                { key: "source", label: "UTM source", placeholder: "Source", width: "w-32" },
-                { key: "landing", label: "Landing page", placeholder: "Landing", width: "w-40" },
-                {
-                  key: "utm",
-                  label: "UTM campaign, medium, term, or referrer",
-                  placeholder: "Campaign / UTM",
-                  width: "w-40",
-                },
-                { key: "device", label: "Device", placeholder: "Device", width: "w-32" },
-              ].map(({ key, label, placeholder, width }) => (
-                <Label key={key} className={`block ${width} max-[640px]:w-full max-[640px]:flex-1`}>
-                  <span className="sr-only">{label}</span>
-                  <Input
-                    type="search"
-                    autoComplete="off"
-                    value={rawGeoFilters[key]}
-                    onChange={(event) =>
-                      setRawGeoFilters((current) => ({ ...current, [key]: event.target.value }))
-                    }
-                    placeholder={placeholder}
-                    maxLength={80}
-                    aria-label={label}
-                  />
-                </Label>
-              ))}
-              {hasGeoFilters && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => {
-                    const empty = {
-                      country: "",
-                      city: "",
-                      source: "",
-                      landing: "",
-                      utm: "",
-                      device: "",
-                    };
-                    setRawGeoFilters(empty);
-                    setGeoFilters(empty);
-                    resetList();
-                  }}
-                >
-                  Clear
-                </Button>
-              )}
-            </div>
             {selectedIds.length > 0 && (
               <div
                 className="flex flex-wrap items-center gap-3 px-4 py-3 text-sm"
@@ -1079,41 +990,64 @@ export function AudienceTable({
                     : `${selectedIds.length} selected on this page`}
                   {selectTruncated ? " (first 2,000)" : ""}
                 </span>
+                {!selectAll &&
+                  selectedIds.length === result.data.length &&
+                  result.total > result.data.length && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      disabled={selecting || !canManage}
+                      onClick={selectAllMatching}
+                    >
+                      {selecting
+                        ? "Selecting…"
+                        : `Select all ${result.total.toLocaleString()} signups`}
+                    </Button>
+                  )}
                 <Button
                   variant="outline"
                   disabled={
                     !canManage ||
                     retrying ||
                     selectAll ||
-                    selectedIds.length > 25 ||
-                    !result.data.some(
-                      (row) => selectedIds.includes(row.id) && retryableVerification(row),
-                    )
+                    retryableSelectedIds.length === 0 ||
+                    retryableSelectedIds.length > 25
                   }
-                  onClick={() =>
-                    retryEmails(
-                      result.data
-                        .filter((row) => selectedIds.includes(row.id) && retryableVerification(row))
-                        .map((row) => row.id),
-                    )
-                  }
+                  onClick={() => retryEmails(retryableSelectedIds)}
                 >
                   {retrying ? "Retrying…" : "Retry failed confirmations"}
                 </Button>
-                {(selectAll || selectedIds.length > 25) && (
+                {selectAll && retryableSelectedIds.length > 0 && (
                   <span className="text-product-text-secondary">
-                    Select up to 25 at a time to retry.
+                    Retry failed confirmations applies to the current page.
+                  </span>
+                )}
+                {retryableSelectedIds.length > 25 && (
+                  <span className="text-product-text-secondary">
+                    Select up to 25 failed confirmations at a time to retry.
                   </span>
                 )}
                 {canManage && (
                   <>
-                    <Button
-                      variant="outline"
-                      disabled={bulkPending || selectedIds.length > 1000}
-                      onClick={() => setBulkConfirm("offboard")}
-                    >
-                      Offboard
-                    </Button>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger
+                          render={
+                            <Button
+                              variant="outline"
+                              disabled={bulkPending || selectedIds.length > 1000}
+                              onClick={() => setBulkConfirm("offboard")}
+                            />
+                          }
+                        >
+                          Offboard
+                        </TooltipTrigger>
+                        <TooltipContent side="bottom" className="max-w-64">
+                          Stops marketing and broadcast emails while keeping their signup row,
+                          position, points, and referral history intact.
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
                     <Button
                       variant="outline-destructive"
                       disabled={bulkPending || selectedIds.length > 1000}
@@ -1131,35 +1065,8 @@ export function AudienceTable({
                     Bulk actions handle up to 1,000 at a time - narrow the search or filter first.
                   </span>
                 )}
-                <Button
-                  variant="ghost"
-                  onClick={() => {
-                    setSelectedIds([]);
-                    setSelectAll(false);
-                    setSelectTruncated(false);
-                  }}
-                >
-                  Clear selection
-                </Button>
               </div>
             )}
-            {!selectAll &&
-              selectedIds.length > 0 &&
-              selectedIds.length === result.data.length &&
-              result.total > result.data.length && (
-                <div className="flex flex-wrap items-center gap-3 px-4 pb-1 text-sm text-product-text-secondary">
-                  <span>All {result.data.length} on this page selected.</span>
-                  <Button
-                    variant="ghost"
-                    disabled={selecting || !canManage}
-                    onClick={selectAllMatching}
-                  >
-                    {selecting
-                      ? "Selecting…"
-                      : `Select all ${result.total.toLocaleString()} signups`}
-                  </Button>
-                </div>
-              )}
 
             {error && (
               <div
@@ -1227,23 +1134,13 @@ export function AudienceTable({
                         />
                         <p className="font-medium">{emptyTitle}</p>
                         <p className="mt-1 text-product-text-secondary">{emptyDescription}</p>
-                        {search || status !== "all" || hasGeoFilters ? (
+                        {search || status !== "all" ? (
                           <Button
                             className="mt-4"
                             variant="outline"
                             onClick={() => {
-                              const empty = {
-                                country: "",
-                                city: "",
-                                source: "",
-                                landing: "",
-                                utm: "",
-                                device: "",
-                              };
                               setQuery("");
                               setFilter("all");
-                              setRawGeoFilters(empty);
-                              setGeoFilters(empty);
                             }}
                           >
                             Clear filters
@@ -1264,21 +1161,24 @@ export function AudienceTable({
                     <>
                       {[0, 1, 2, 3, 4].map((row) => (
                         <TableRow aria-hidden="true" key={row}>
-                          <TableCell className="h-16">
-                            <i className="block h-3.5 w-4/5 rounded bg-product-bg-inset motion-safe:animate-pulse" />
-                          </TableCell>
-                          <TableCell className="h-16">
-                            <i className="block h-5.5 w-24 rounded-full bg-product-bg-inset motion-safe:animate-pulse" />
-                          </TableCell>
-                          <TableCell className="hidden h-16 sm:table-cell">
-                            <i className="block h-3.5 w-17/20 rounded bg-product-bg-inset motion-safe:animate-pulse" />
-                          </TableCell>
-                          <TableCell className="hidden h-16 sm:table-cell">
-                            <i className="block h-3.5 w-10 rounded bg-product-bg-inset motion-safe:animate-pulse" />
-                          </TableCell>
-                          <TableCell className="hidden h-16 sm:table-cell">
-                            <i className="block h-3.5 w-10 rounded bg-product-bg-inset motion-safe:animate-pulse" />
-                          </TableCell>
+                          {columns.map((column, colIdx) => (
+                            <TableCell
+                              className={`h-14 ${column.meta?.className || ""}`}
+                              key={column.id || colIdx}
+                            >
+                              <i
+                                className={
+                                  colIdx === 0
+                                    ? "block size-4 rounded bg-product-bg-inset motion-safe:animate-pulse"
+                                    : colIdx === 1
+                                      ? "block h-4 w-44 rounded bg-product-bg-inset motion-safe:animate-pulse"
+                                      : colIdx === 2
+                                        ? "block h-5.5 w-20 rounded-full bg-product-bg-inset motion-safe:animate-pulse"
+                                        : "block h-3.5 w-14 rounded bg-product-bg-inset motion-safe:animate-pulse"
+                                }
+                              />
+                            </TableCell>
+                          ))}
                         </TableRow>
                       ))}
                     </>

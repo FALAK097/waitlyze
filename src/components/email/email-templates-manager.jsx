@@ -6,11 +6,16 @@ import { toast } from "sonner";
 import { upsertEmailTemplate, sendTestEmail } from "@/app/actions/emails";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { applySeedVars } from "@/lib/email/preview-vars.mjs";
 
 import { EmailCanvas } from "./email-canvas";
-import { EmailPreviewFrame, SpamHintView, VariableChips } from "./email-composer-extras";
+import {
+  EmailPreviewResult,
+  EmailTestSendForm,
+  HtmlSourceEditor,
+  VariableChips,
+} from "./email-composer-extras";
+import { EmailComposerModeBar } from "./email-composer-mode-bar";
 import { emailComposerStyles } from "./email-composer-styles.mjs";
 import {
   EmailManagerRailButton,
@@ -20,7 +25,6 @@ import {
   emailManagerRailTitle,
   emailManagerScope,
   emailManagerSplit,
-  emailManagerTestAction,
 } from "./email-manager-controls";
 
 const {
@@ -35,12 +39,6 @@ const {
   canvasShell,
   metaBar,
 } = emailComposerStyles;
-const testForm = "flex items-center gap-2";
-const testInput =
-  "h-9 w-45 min-w-0 rounded-product-control border border-product-border-control bg-white px-2.5 text-caption max-sm:w-auto max-sm:flex-1 max-sm:text-base";
-const modeBar = "flex flex-wrap items-center gap-2";
-const htmlPane =
-  "field-sizing-fixed min-h-105 w-full rounded-lg border border-product-border-subtle bg-white p-4 font-product-mono text-caption leading-relaxed";
 const hint = "m-0 text-caption leading-normal text-product-text-secondary";
 
 const kinds = [
@@ -90,6 +88,7 @@ export function EmailTemplatesManager({ waitListId, waitListName, initialTemplat
   const [mode, setMode] = useState("write");
   const [htmlDraft, setHtmlDraft] = useState("");
   const [preview, setPreview] = useState(null);
+  const [viewport, setViewport] = useState("desktop");
   const editorRef = useRef(null);
   const template = drafts[current];
   const kind = kinds.find((item) => item.key === current);
@@ -150,9 +149,11 @@ export function EmailTemplatesManager({ waitListId, waitListName, initialTemplat
     }
   }
   async function enterHtmlMode() {
+    if (mode === "html") return;
     try {
       const content = await exportMessage();
       setHtmlDraft(content.renderedHtml);
+      setPreview(null);
       setMode("html");
     } catch (error) {
       toast.error(error.message || "The editor is still loading.");
@@ -175,7 +176,7 @@ export function EmailTemplatesManager({ waitListId, waitListName, initialTemplat
         html: applySeedVars(content.renderedHtml, waitListName),
         text: content.renderedText,
       });
-      setMode("preview");
+      setMode("write");
     } catch (error) {
       toast.error(error.message || "The editor is still loading.");
     }
@@ -254,46 +255,22 @@ export function EmailTemplatesManager({ waitListId, waitListName, initialTemplat
               />
             </div>
           </div>
-          <fieldset className={modeBar}>
-            <legend className="sr-only">Editor mode</legend>
-            <Button
-              type="button"
-              variant="product-toggle"
-              size="product-toggle"
-              aria-pressed={mode === "write"}
-              onClick={() => setMode("write")}
-            >
-              Write
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <EmailComposerModeBar
+              mode={preview ? "preview" : mode === "html" ? "html" : "visual"}
+              setMode={(next) => {
+                if (next === "html") return enterHtmlMode();
+                setPreview(null);
+                setMode("write");
+              }}
+            />
+            <Button type="button" variant="outline" onClick={enterPreview}>
+              Preview email
             </Button>
-            <Button
-              type="button"
-              variant="product-toggle"
-              size="product-toggle"
-              aria-pressed={mode === "html"}
-              onClick={enterHtmlMode}
-            >
-              HTML
-            </Button>
-            <Button
-              type="button"
-              variant="product-toggle"
-              size="product-toggle"
-              aria-pressed={mode === "preview"}
-              onClick={enterPreview}
-            >
-              Preview
-            </Button>
-          </fieldset>
+          </div>
           {mode === "html" ? (
             <div className="flex flex-col gap-3">
-              <Textarea
-                className={htmlPane}
-                aria-label="Email HTML source"
-                value={htmlDraft}
-                rows={18}
-                spellCheck={false}
-                onChange={(event) => setHtmlDraft(event.target.value)}
-              />
+              <HtmlSourceEditor value={htmlDraft} onChange={setHtmlDraft} />
               <div className={metaBar}>
                 <p className={hint}>
                   Raw HTML mode - apply it back to the visual editor, then save.
@@ -303,28 +280,22 @@ export function EmailTemplatesManager({ waitListId, waitListName, initialTemplat
                 </Button>
               </div>
             </div>
-          ) : mode === "preview" && preview ? (
-            <div className="flex flex-col gap-4">
-              <EmailPreviewFrame html={preview.html} />
-              <SpamHintView
-                subject={template.subject}
-                previewText={template.previewText}
-                text={preview.text}
-                html={preview.html}
-              />
-            </div>
+          ) : null}
+          {preview ? (
+            <EmailPreviewResult
+              html={preview.html}
+              text={preview.text}
+              subject={template.subject}
+              previewText={template.previewText}
+              viewport={viewport}
+              onViewportChange={setViewport}
+            />
           ) : null}
           {/* The live editor stays mounted in every mode: `applyHtmlToEditor`
               (setContent) and `save` → `exportMessage` both go through
               `editorRef.current`, which would be null if we unmounted the
               canvas for HTML/Preview modes. Hide it instead. */}
-          <div
-            className={
-              mode === "html" || (mode === "preview" && preview)
-                ? `${canvasShell} hidden`
-                : canvasShell
-            }
-          >
+          <div className={mode === "html" || preview ? `${canvasShell} hidden` : canvasShell}>
             <EmailCanvas
               key={current}
               editorRef={editorRef}
@@ -336,28 +307,14 @@ export function EmailTemplatesManager({ waitListId, waitListName, initialTemplat
           </div>
           <div className={metaBar}>
             <VariableChips keys={VARIABLE_SETS[current] || VARIABLE_SETS.signup} />
-            <form className={testForm} onSubmit={sendTest}>
-              <Input
-                className={testInput}
-                id="subscriber-test-address"
-                type="email"
-                placeholder="you@example.com"
-                required
-                maxLength={320}
-                aria-label="Send a test to"
-                value={testTo}
-                onChange={(event) => setTestTo(event.target.value)}
-              />
-              <Button
-                type="submit"
-                variant="secondary"
-                size="lg"
-                className={emailManagerTestAction}
-                disabled={Boolean(busy) || dirty}
-              >
-                {busy === "test" ? "Sending…" : "Send test"}
-              </Button>
-            </form>
+            <EmailTestSendForm
+              id="subscriber-test-address"
+              value={testTo}
+              onChange={setTestTo}
+              onSubmit={sendTest}
+              busy={busy === "test"}
+              disabled={dirty}
+            />
           </div>
         </section>
       </div>

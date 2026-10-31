@@ -1,12 +1,23 @@
+import { Add01Icon, ArrowUpRight01Icon, Delete02Icon } from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
 import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
 
 import { SHARE_CHANNELS, ShareChannelIcon } from "./share-buttons";
-import { Field, PointsField, SelectField, Toggle } from "./snapshot-editor-fields";
+import {
+  Field,
+  HttpsInputField,
+  PointsField,
+  RedirectUrlField,
+  SelectField,
+  Toggle,
+} from "./snapshot-editor-fields";
 
 export function SnapshotStatusEditor({
   status,
+  form,
+  updateForm,
   rewards,
   showReferrals = true,
   waitListId,
@@ -48,7 +59,7 @@ export function SnapshotStatusEditor({
     onStatusChange({ socialFollows: next });
   };
   return (
-    <div className={"grid gap-4 p-4"}>
+    <div className="grid gap-4 p-4">
       <SelectField
         label="After a successful signup"
         value={status.postSignupBehavior}
@@ -58,136 +69,152 @@ export function SnapshotStatusEditor({
         ]}
         onChange={(postSignupBehavior) => onStatusChange({ postSignupBehavior })}
       />
-      {status.postSignupBehavior === "no-change" && (
-        <p className="m-0 text-caption leading-relaxed text-product-text-secondary">
-          No redirect or confirmation/referral state is shown. The signup is still recorded.
-        </p>
+      {status.postSignupBehavior !== "no-change" && (
+        <RedirectUrlField
+          key={form.successRedirectUrl ?? ""}
+          value={form.successRedirectUrl ?? ""}
+          onChange={(successRedirectUrl) => {
+            let host = "";
+            if (/^https:\/\//i.test(successRedirectUrl)) {
+              try {
+                host = new URL(successRedirectUrl).hostname.toLowerCase();
+              } catch {
+                host = "";
+              }
+            }
+            updateForm({
+              successRedirectUrl,
+              successRedirectAllowlist: host ? [host] : [],
+            });
+          }}
+        />
       )}
-      <Field
-        label="Confirmed heading"
-        value={status.heading}
-        onChange={(heading) => onStatusChange({ heading })}
-      />
-      <Field
-        label="Confirmed message"
-        value={status.body}
-        multiline
-        onChange={(body) => onStatusChange({ body })}
-      />
-      <Field
-        label="Pending heading"
-        value={status.pendingHeading}
-        onChange={(pendingHeading) => onStatusChange({ pendingHeading })}
-      />
-      <Field
-        label="Pending message"
-        value={status.pendingBody}
-        multiline
-        onChange={(pendingBody) => onStatusChange({ pendingBody })}
-      />
-      <div className="grid gap-4 sm:grid-cols-2">
-        <SelectField
-          label="Icon style"
-          value={status.iconStyle || "filled"}
-          options={[
-            { id: "filled", label: "Filled" },
-            { id: "soft", label: "Soft" },
-          ]}
-          onChange={(iconStyle) => onStatusChange({ iconStyle })}
-        />
-        <SelectField
-          label="Layout"
-          value={status.layout || "centered"}
-          options={[
-            { id: "centered", label: "Centered" },
-            { id: "card", label: "Card" },
-          ]}
-          onChange={(layout) => onStatusChange({ layout })}
-        />
-      </div>
-      <Toggle
-        label="Show position"
-        checked={status.showPosition}
-        onChange={(showPosition) => onStatusChange({ showPosition })}
-      />
-      {referralNote}
-      <Toggle
-        label="Show referral link"
-        checked={status.showReferralLink}
-        disabled={!showReferrals}
-        onChange={(showReferralLink) => onStatusChange({ showReferralLink })}
-      />
-      <Toggle
-        label="Show referral count"
-        checked={status.showReferralCount}
-        disabled={!showReferrals}
-        onChange={(showReferralCount) => onStatusChange({ showReferralCount })}
-      />
-      <Toggle
-        label="Show leaderboard"
-        checked={status.showLeaderboard !== false}
-        disabled={!showReferrals}
-        onChange={(showLeaderboard) => onStatusChange({ showLeaderboard })}
-      />
-      <Field
-        label="Share message"
-        value={status.shareMessage}
-        multiline
-        disabled={!showReferrals}
-        onChange={(shareMessage) => onStatusChange({ shareMessage })}
-      />
-      <div className={"grid gap-5"}>
-        <span
-          className={
-            "block text-micro font-bold tracking-widest text-product-text-secondary uppercase"
-          }
-        >
-          Share buttons
+      <div className="grid gap-4 border-t border-product-border-subtle pt-4">
+        <span className="block text-micro font-bold tracking-widest text-product-text-secondary uppercase">
+          Confirmation screen
         </span>
-        {SHARE_CHANNELS.map(({ id: channel, label }) => (
-          <Toggle
-            key={channel}
-            label={
-              <span className="inline-flex items-center gap-2">
-                <ShareChannelIcon channel={channel} />
-                {label}
-              </span>
-            }
-            checked={channels.includes(channel)}
-            disabled={!showReferrals}
-            onChange={(enabled) =>
-              onStatusChange({
-                shareChannels: enabled
-                  ? [...channels, channel]
-                  : channels.filter((item) => item !== channel),
-              })
-            }
+        <Field
+          label="Confirmed heading"
+          value={status.heading}
+          onChange={(heading) => onStatusChange({ heading })}
+        />
+        <Field
+          label="Confirmed message"
+          value={status.body}
+          multiline
+          onChange={(body) => onStatusChange({ body })}
+        />
+        <Field
+          label="Pending heading"
+          value={status.pendingHeading}
+          onChange={(pendingHeading) => onStatusChange({ pendingHeading })}
+        />
+        <Field
+          label="Pending message"
+          value={status.pendingBody}
+          multiline
+          onChange={(pendingBody) => onStatusChange({ pendingBody })}
+        />
+        <div className="grid grid-cols-2 gap-3">
+          <SelectField
+            label="Icon style"
+            value={status.iconStyle || "filled"}
+            options={[
+              { id: "filled", label: "Filled" },
+              { id: "soft", label: "Soft" },
+            ]}
+            onChange={(iconStyle) => onStatusChange({ iconStyle })}
           />
-        ))}
+          <SelectField
+            label="Layout"
+            value={status.layout || "centered"}
+            options={[
+              { id: "centered", label: "Centered" },
+              { id: "card", label: "Card" },
+            ]}
+            onChange={(layout) => onStatusChange({ layout })}
+          />
+        </div>
+        <Toggle
+          label="Show position"
+          checked={status.showPosition}
+          onChange={(showPosition) => onStatusChange({ showPosition })}
+        />
       </div>
-      <div className={"grid gap-4"}>
-        <span
-          className={
-            "block text-micro font-bold tracking-widest text-product-text-secondary uppercase"
-          }
-        >
+      <div className="grid gap-3.5 border-t border-product-border-subtle pt-4">
+        <span className="block text-micro font-bold tracking-widest text-product-text-secondary uppercase">
+          Referrals & sharing
+        </span>
+        {referralNote}
+        <Toggle
+          label="Show referral link"
+          checked={status.showReferralLink}
+          disabled={!showReferrals}
+          onChange={(showReferralLink) => onStatusChange({ showReferralLink })}
+        />
+        <Toggle
+          label="Show referral count"
+          checked={status.showReferralCount}
+          disabled={!showReferrals}
+          onChange={(showReferralCount) => onStatusChange({ showReferralCount })}
+        />
+        <Toggle
+          label="Show leaderboard"
+          checked={status.showLeaderboard !== false}
+          disabled={!showReferrals}
+          onChange={(showLeaderboard) => onStatusChange({ showLeaderboard })}
+        />
+        <Field
+          label="Share message"
+          value={status.shareMessage}
+          multiline
+          disabled={!showReferrals}
+          onChange={(shareMessage) => onStatusChange({ shareMessage })}
+        />
+        <div className="grid gap-2.5 pt-1">
+          <span className="block text-micro font-bold tracking-widest text-product-text-secondary uppercase">
+            Share buttons
+          </span>
+          <div className="grid grid-cols-2 gap-2.5">
+            {SHARE_CHANNELS.map(({ id: channel, label }) => (
+              <Toggle
+                key={channel}
+                label={
+                  <span className="inline-flex items-center gap-2">
+                    <ShareChannelIcon channel={channel} className="size-4" />
+                    {label}
+                  </span>
+                }
+                checked={channels.includes(channel)}
+                disabled={!showReferrals}
+                onChange={(enabled) =>
+                  onStatusChange({
+                    shareChannels: enabled
+                      ? [...channels, channel]
+                      : channels.filter((item) => item !== channel),
+                  })
+                }
+              />
+            ))}
+          </div>
+        </div>
+      </div>
+      <div className="grid gap-3.5 border-t border-product-border-subtle pt-4">
+        <span className="block text-micro font-bold tracking-widest text-product-text-secondary uppercase">
           Social follows
         </span>
-        <p className="m-0 text-caption leading-relaxed text-product-text-secondary">
-          Shown as follow tasks on the referral cockpit. Follows earn points once rewards launch.
-        </p>
-        <Field
+        <HttpsInputField
           label="X profile URL"
           value={followUrl("x")}
           disabled={!showReferrals}
-          placeholder="https://x.com/yourhandle"
+          placeholder="x.com/yourhandle"
           onChange={(url) => setFollowUrl("x", url)}
         />
-        <Field
+        <HttpsInputField
           label="Instagram profile URL"
           value={followUrl("instagram")}
           disabled={!showReferrals}
-          placeholder="https://instagram.com/yourhandle"
+          placeholder="instagram.com/yourhandle"
           onChange={(url) => setFollowUrl("instagram", url)}
         />
       </div>
@@ -200,45 +227,39 @@ function RewardsSection({ perks, onRewardsChange }) {
   const setPerks = (patch) => onRewardsChange({ ...perks, ...patch });
   return (
     <div className="grid gap-4 border-t border-product-border-subtle pt-4">
-      <div className="grid gap-1">
-        <span className="block text-micro font-bold tracking-widest text-product-text-secondary uppercase">
-          Points & rewards
-        </span>
-        <p className="m-0 text-caption leading-relaxed text-product-text-secondary">
-          Points accrue automatically from activation. Reward tiers come from the Referral rewards
-          blocks on your page.
-        </p>
-      </div>
-      <div className="grid gap-4 sm:grid-cols-3">
+      <span className="block text-micro font-bold tracking-widest text-product-text-secondary uppercase">
+        Points & rewards
+      </span>
+      <div className="grid grid-cols-2 gap-3">
         <PointsField
           key={perks.pointsSignup}
-          label="Per verified signup"
+          label="Per signup"
           value={perks.pointsSignup}
+          unit="pts"
           onCommit={(pointsSignup) => setPerks({ pointsSignup })}
         />
         <PointsField
           key={perks.pointsReferral}
           label="Per referral"
           value={perks.pointsReferral}
+          unit="pts"
           onCommit={(pointsReferral) => setPerks({ pointsReferral })}
         />
         <PointsField
           key={perks.pointsFollow}
-          label="Per social follow"
+          label="Per follow"
           value={perks.pointsFollow}
+          unit="pts"
           onCommit={(pointsFollow) => setPerks({ pointsFollow })}
         />
+        <PointsField
+          key={perks.positionOffset}
+          label="Position boost"
+          value={perks.positionOffset}
+          max={1000000}
+          onCommit={(positionOffset) => setPerks({ positionOffset })}
+        />
       </div>
-      <PointsField
-        key={perks.positionOffset}
-        label="Position boost"
-        value={perks.positionOffset}
-        max={1000000}
-        onCommit={(positionOffset) => setPerks({ positionOffset })}
-      />
-      <p className="-mt-2 text-caption leading-relaxed text-product-text-secondary">
-        Adds to every displayed position - e.g. 846 makes the first signup show #847.
-      </p>
       <Toggle
         label="Show points balance"
         checked={perks.showPoints}
@@ -250,36 +271,108 @@ function RewardsSection({ perks, onRewardsChange }) {
         onChange={(showProgress) => setPerks({ showProgress })}
       />
       <Toggle
-        label="Stealth mode (hide all counts)"
+        label="Stealth Mode"
         hint="Hides positions, points, and headcounts on the public page. Best for private or B2B launches."
         checked={perks.hideCounts}
         onChange={(hideCounts) => setPerks({ hideCounts })}
       />
-      <div className="grid gap-2.5">
-        <span className="block text-micro font-bold tracking-widest text-product-text-secondary uppercase">
-          Custom events
-        </span>
-        <p className="m-0 text-caption leading-relaxed text-product-text-secondary">
-          Off-site actions awarded through the API (survey, Discord join…). The event key goes in
-          the API call.
+      <div className="grid gap-3.5 border-t border-product-border-subtle pt-4">
+        <div className="flex items-center justify-between gap-2">
+          <span className="block text-micro font-bold tracking-widest text-product-text-secondary uppercase">
+            Custom events
+          </span>
+          {(perks.customEvents ?? []).length < 12 && (
+            <Button
+              variant="outline"
+              size="sm"
+              type="button"
+              onClick={() => {
+                // Distinct keys: normalizeRewardsConfig keeps one entry per key,
+                // so adding twice without renaming must not collide.
+                const keys = new Set((perks.customEvents ?? []).map((entry) => entry.key));
+                let key = "survey";
+                for (let n = 2; keys.has(key); n += 1) key = `survey-${n}`;
+                setPerks({
+                  customEvents: [
+                    ...(perks.customEvents ?? []),
+                    {
+                      key,
+                      label: "Survey completed",
+                      points: 20,
+                      id: crypto.randomUUID(),
+                    },
+                  ],
+                });
+              }}
+            >
+              <HugeiconsIcon icon={Add01Icon} size={14} aria-hidden="true" />
+              Add event
+            </Button>
+          )}
+        </div>
+        <p className="m-0 max-w-prose text-caption leading-relaxed text-product-text-secondary">
+          Award points for off-site actions via the{" "}
+          <Link
+            className="inline-flex items-center gap-0.5 font-medium text-product-text-primary underline underline-offset-2"
+            href="/docs/api/award-points"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Points API
+            <HugeiconsIcon icon={ArrowUpRight01Icon} size={13} aria-hidden="true" />
+          </Link>
+          .
         </p>
         {(perks.customEvents ?? []).map((entry, index) => (
           <div
-            className="grid gap-2.5 border-t border-product-border-subtle pt-4 [&>button]:justify-self-start"
+            className="grid gap-3 [&+&]:border-t [&+&]:border-product-border-subtle [&+&]:pt-4"
             key={entry.id ?? `${entry.key}:${entry.label}:${entry.points}`}
           >
-            <Field
-              label="Event key"
-              value={entry.key}
-              maxLength={40}
-              onChange={(key) =>
-                setPerks({
-                  customEvents: perks.customEvents.map((item, itemIndex) =>
-                    itemIndex === index ? { ...item, key } : item,
-                  ),
-                })
-              }
-            />
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-micro font-semibold text-product-text-secondary">
+                Event {index + 1}
+              </span>
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                type="button"
+                aria-label={`Remove ${entry.label || `event ${index + 1}`}`}
+                onClick={() =>
+                  setPerks({
+                    customEvents: perks.customEvents.filter((_, itemIndex) => itemIndex !== index),
+                  })
+                }
+              >
+                <HugeiconsIcon icon={Delete02Icon} size={15} aria-hidden="true" />
+              </Button>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <Field
+                label="Event key"
+                value={entry.key}
+                maxLength={40}
+                onChange={(key) =>
+                  setPerks({
+                    customEvents: perks.customEvents.map((item, itemIndex) =>
+                      itemIndex === index ? { ...item, key } : item,
+                    ),
+                  })
+                }
+              />
+              <PointsField
+                key={entry.points}
+                label="Points"
+                value={entry.points}
+                unit="pts"
+                onCommit={(points) =>
+                  setPerks({
+                    customEvents: perks.customEvents.map((item, itemIndex) =>
+                      itemIndex === index ? { ...item, points } : item,
+                    ),
+                  })
+                }
+              />
+            </div>
             <Field
               label="Label"
               value={entry.label}
@@ -292,59 +385,8 @@ function RewardsSection({ perks, onRewardsChange }) {
                 })
               }
             />
-            <PointsField
-              key={entry.points}
-              label="Points"
-              value={entry.points}
-              onCommit={(points) =>
-                setPerks({
-                  customEvents: perks.customEvents.map((item, itemIndex) =>
-                    itemIndex === index ? { ...item, points } : item,
-                  ),
-                })
-              }
-            />
-            <Button
-              variant="ghost"
-              size="sm"
-              type="button"
-              onClick={() =>
-                setPerks({
-                  customEvents: perks.customEvents.filter((_, itemIndex) => itemIndex !== index),
-                })
-              }
-            >
-              Remove
-            </Button>
           </div>
         ))}
-        {(perks.customEvents ?? []).length < 12 && (
-          <Button
-            variant="outline"
-            size="sm"
-            type="button"
-            onClick={() => {
-              // Distinct keys: normalizeRewardsConfig keeps one entry per key,
-              // so adding twice without renaming must not collide.
-              const keys = new Set((perks.customEvents ?? []).map((entry) => entry.key));
-              let key = "survey";
-              for (let n = 2; keys.has(key); n += 1) key = `survey-${n}`;
-              setPerks({
-                customEvents: [
-                  ...(perks.customEvents ?? []),
-                  {
-                    key,
-                    label: "Survey completed",
-                    points: 20,
-                    id: crypto.randomUUID(),
-                  },
-                ],
-              });
-            }}
-          >
-            Add event
-          </Button>
-        )}
       </div>
     </div>
   );

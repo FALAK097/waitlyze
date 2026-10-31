@@ -29,7 +29,13 @@ import { emailStatusLabel } from "@/lib/emails/status-label.mjs";
 import { formatProductDate } from "@/lib/product-date.mjs";
 
 import { EmailCanvas } from "./email-canvas";
-import { EmailPreviewFrame, SpamHintView, VariableChips } from "./email-composer-extras";
+import {
+  EmailPreviewResult,
+  EmailTestSendForm,
+  HtmlSourceEditor,
+  VariableChips,
+} from "./email-composer-extras";
+import { EmailComposerModeBar } from "./email-composer-mode-bar";
 import { emailComposerStyles } from "./email-composer-styles.mjs";
 import {
   EmailManagerRailButton,
@@ -41,11 +47,10 @@ import {
   emailManagerRailTitle,
   emailManagerScope,
   emailManagerSplit,
-  emailManagerTestAction,
 } from "./email-manager-controls";
 import { EmailToolsNav } from "./email-tools-nav";
+import { SavedTemplateSelect } from "./saved-template-select";
 
-const toolbar = "mb-6 flex justify-end gap-2.5";
 const {
   pane,
   paneHead,
@@ -58,9 +63,13 @@ const {
   canvasShell,
   metaBar,
 } = emailComposerStyles;
-const recipients = "flex flex-wrap items-center gap-x-3 gap-y-2.5 text-body";
-const recipientsCount = "font-semibold";
-const recipientsSamples = "m-0 basis-full text-xs text-product-text-secondary wrap-anywhere";
+const EMPTY_TEMPLATES = {};
+const recipientsCard = "grid gap-3.5 rounded-lg border border-product-border-subtle bg-white p-4";
+const recipientsTop = "flex flex-wrap items-center justify-between gap-3";
+const recipientsControls = "flex flex-wrap items-center gap-2.5";
+const recipientsCount =
+  "inline-flex items-center rounded-full bg-product-bg-inset px-2.5 py-1 text-caption font-semibold text-product-text-primary tabular-nums";
+const recipientsSamples = "m-0 text-xs text-product-text-secondary wrap-anywhere";
 const hint = "m-0 text-caption leading-normal text-product-text-secondary";
 const confirm =
   "flex flex-wrap items-center gap-2.5 rounded-lg border border-product-border-subtle bg-product-bg-inset px-4 py-3.5 text-body";
@@ -72,9 +81,9 @@ const summaryLabel = "w-27 shrink-0 text-xs text-product-text-secondary";
 const summaryValue = "min-w-0 flex-1 text-body font-medium wrap-anywhere";
 const stats = "m-0 text-caption text-product-text-secondary";
 const sentMessage = "block h-115 w-full rounded-product-control border-0 bg-white";
-const testForm = "flex items-center gap-2";
 const testInput =
   "h-11 w-45 min-w-0 rounded-product-control border border-product-border-control bg-white px-2.5 text-caption max-sm:w-auto max-sm:flex-1 max-sm:text-base";
+const stepLabel = "m-0 text-micro font-bold tracking-widest text-product-text-secondary uppercase";
 const emptyPane = "max-w-107 py-1.5";
 const emptyPaneTitle = "m-0 mb-1.5! text-section";
 const emptyPaneBody = "m-0 mb-4.5! leading-relaxed text-product-text-secondary";
@@ -166,6 +175,7 @@ function RecipientsPanel({
   segmentMeta,
   preview,
   previewFresh,
+  previewMatchesSelection,
   deliveryReady,
   draftDirty,
   busy,
@@ -173,44 +183,67 @@ function RecipientsPanel({
   onSegmentChange,
   onRefreshPreview,
 }) {
+  const showPreview = Boolean(previewMatchesSelection);
+  const hasDetails =
+    Boolean(segmentMeta?.description) ||
+    (showPreview && preview.samples.length > 0) ||
+    previewFresh ||
+    (!deliveryReady && previewFresh);
   return (
-    <div className={recipients}>
-      <label className={hint} htmlFor="broadcast-segment">
-        Segment
-      </label>
-      <Select value={segment} disabled={busy} onValueChange={onSegmentChange}>
-        <SelectTrigger id="broadcast-segment" className={testInput}>
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          {segments.map((item) => (
-            <SelectItem key={item.key} value={item.key}>
-              {item.label}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-      <span className={recipientsCount}>{preview.count} eligible</span>
-      <Button
-        type="button"
-        variant="outline"
-        size="sm"
-        onClick={onRefreshPreview}
-        disabled={busy || draftDirty}
-      >
-        {busyAction === "preview" ? "Checking…" : "Check recipients"}
-      </Button>
-      {draftDirty && !previewFresh ? <span className={hint}>Save to check recipients.</span> : null}
-      {!deliveryReady && previewFresh ? (
-        <span className={hint}>Email delivery needs setup before you can send.</span>
-      ) : null}
-      {segmentMeta?.description ? (
-        <p className={recipientsSamples}>{segmentMeta.description}</p>
-      ) : null}
-      {preview.samples.length ? (
-        <p className={recipientsSamples}>e.g. {preview.samples.join(", ")}</p>
-      ) : previewFresh ? (
-        <p className={recipientsSamples}>No eligible subscribers in this segment yet.</p>
+    <div className={recipientsCard}>
+      <div className={recipientsTop}>
+        <div className={recipientsControls}>
+          <label
+            className="text-caption font-medium text-product-text-secondary"
+            htmlFor="broadcast-segment"
+          >
+            Segment
+          </label>
+          <Select value={segment} onValueChange={onSegmentChange} disabled={busy}>
+            <SelectTrigger id="broadcast-segment" className="w-52">
+              <SelectValue>
+                {segments.find((item) => item.key === segment)?.label ?? segment}
+              </SelectValue>
+            </SelectTrigger>
+            <SelectContent align="start">
+              {segments.map((item) => (
+                <SelectItem key={item.key} value={item.key}>
+                  {item.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {showPreview ? <span className={recipientsCount}>{preview.count} eligible</span> : null}
+        </div>
+        <div className={recipientsControls}>
+          {draftDirty && !previewFresh ? (
+            <span className={hint}>Save draft to check recipients.</span>
+          ) : null}
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onRefreshPreview}
+            disabled={busy || draftDirty}
+          >
+            {busyAction === "preview" ? "Checking…" : "Check recipients"}
+          </Button>
+        </div>
+      </div>
+      {hasDetails ? (
+        <div className="grid gap-1 border-t border-product-border-subtle pt-3">
+          {segmentMeta?.description ? <p className={hint}>{segmentMeta.description}</p> : null}
+          {showPreview && preview.samples.length ? (
+            <p className={recipientsSamples}>
+              <span className="font-medium text-product-text-primary">Sample recipients:</span>{" "}
+              {preview.samples.join(", ")}
+            </p>
+          ) : previewFresh ? (
+            <p className={hint}>No eligible subscribers in this segment yet.</p>
+          ) : null}
+          {!deliveryReady && previewFresh ? (
+            <p className={hint}>Email delivery needs setup before you can send.</p>
+          ) : null}
+        </div>
       ) : null}
     </div>
   );
@@ -414,16 +447,21 @@ export function BroadcastManager({
   initialCursor,
   initialPreview,
   initialSegments,
+  initialTemplates = EMPTY_TEMPLATES,
   deliveryReady,
 }) {
   const router = useRouter();
+  const initialSelection = initialBroadcast || initialBroadcasts[0] || null;
   const [broadcasts, setBroadcasts] = useState(initialBroadcasts);
   const [broadcastHasMore, setBroadcastHasMore] = useState(initialHasMore);
   const broadcastCursorRef = useRef(initialCursor);
-  const initialSelection = initialBroadcast || initialBroadcasts[0] || null;
   const [selectedId, setSelectedId] = useState(initialSelection?.id || null);
   const [data, setData] = useState(initialSelection || emptyDraft());
   const [preview, setPreview] = useState(initialPreview);
+  const [previewScope, setPreviewScope] = useState(() => ({
+    broadcastId: initialSelection?.id || null,
+    segment: initialSelection?.segment || "ALL",
+  }));
   const [segment, setSegment] = useState(initialSelection?.segment || "ALL");
   const [previewFresh, setPreviewFresh] = useState(false);
   const [reviewSend, setReviewSend] = useState(false);
@@ -435,8 +473,13 @@ export function BroadcastManager({
   const [reviewCancel, setReviewCancel] = useState(false);
   const [pendingSelection, setPendingSelection] = useState(null);
   const [draftPreview, setDraftPreview] = useState(null);
+  const [editorMode, setEditorMode] = useState("visual");
+  const [editorHtml, setEditorHtml] = useState("");
+  const [previewViewport, setPreviewViewport] = useState("desktop");
+  const [templateChoice, setTemplateChoice] = useState("");
   const [testTo, setTestTo] = useState("");
   const editorRef = useRef(null);
+  const htmlSourceBaseline = useRef("");
 
   function notify(text, failure = false) {
     if (failure) toast.error(text);
@@ -444,7 +487,7 @@ export function BroadcastManager({
   }
   function requestSelection(broadcast) {
     if (draftDirty && broadcast.id !== selectedId) setPendingSelection(broadcast);
-    else selectBroadcast(broadcast);
+    else void selectBroadcast(broadcast);
   }
   function edit(field, value) {
     setData((current) => ({ ...current, [field]: value }));
@@ -463,6 +506,12 @@ export function BroadcastManager({
       if (!content) {
         notify("Couldn’t load this broadcast. Try again.", true);
         return;
+      }
+      if (broadcast.id !== selectedId) {
+        setEditorMode("visual");
+        setEditorHtml("");
+        htmlSourceBaseline.current = "";
+        setTemplateChoice("");
       }
       setDraftDirty(false);
       setReviewCancel(false);
@@ -528,6 +577,10 @@ export function BroadcastManager({
       const draft = await createBroadcastDraft(waitListId);
       setBroadcasts((items) => [draft, ...items]);
       setSelectedId(draft.id);
+      setEditorMode("visual");
+      setEditorHtml("");
+      htmlSourceBaseline.current = "";
+      setTemplateChoice("");
       setData({
         name: draft.name,
         subject: draft.subject,
@@ -549,6 +602,10 @@ export function BroadcastManager({
   async function saveDraft(event) {
     event.preventDefault();
     if (!selectedId || (data.status && data.status !== "DRAFT")) return;
+    if (editorMode === "html" && editorHtml !== htmlSourceBaseline.current) {
+      notify("Apply your HTML changes to the visual editor before saving.", true);
+      return;
+    }
     setBusyAction("save");
     try {
       if (!editorRef.current?.editor) throw new Error("The message editor is still loading.");
@@ -581,6 +638,7 @@ export function BroadcastManager({
     try {
       const nextPreview = await getBroadcastRecipients(waitListId, nextSegment);
       setPreview(nextPreview);
+      setPreviewScope({ broadcastId: selectedId, segment: nextSegment });
       setSegment(nextSegment);
       setPreviewFresh(true);
       setReviewSend(false);
@@ -609,6 +667,46 @@ export function BroadcastManager({
     } finally {
       setBusyAction("");
     }
+  }
+
+  async function changeEditorMode(mode) {
+    setDraftPreview(null);
+    if (mode === "html" && editorMode === "html") return;
+    if (mode === "html") {
+      try {
+        if (!editorRef.current?.editor) throw new Error("The message editor is still loading.");
+        const { html } = await editorRef.current.getEmail();
+        setEditorHtml(html);
+        htmlSourceBaseline.current = html;
+      } catch {
+        notify("The message editor is still loading.", true);
+        return;
+      }
+    } else if (editorMode === "html" && editorHtml !== htmlSourceBaseline.current) {
+      applyEditorHtml();
+      return;
+    }
+    setEditorMode(mode);
+  }
+
+  function applyEditorHtml() {
+    setDraftPreview(null);
+    editorRef.current?.editor?.commands?.setContent(editorHtml || "<p></p>");
+    htmlSourceBaseline.current = editorHtml;
+    setEditorMode("visual");
+  }
+
+  function applySavedTemplate() {
+    const template = initialTemplates[templateChoice];
+    if (!template || !selectedId || !editable) return;
+    const content =
+      template.editorDocument || template.renderedHtml || template.starterHtml || "<p></p>";
+    editorRef.current?.editor?.commands?.setContent(content);
+    const document = editorRef.current?.getJSON?.() || content;
+    edit("subject", template.subject || "");
+    edit("previewText", template.previewText || "");
+    edit("editorDocument", document);
+    setTemplateChoice("");
   }
 
   async function sendTest(event) {
@@ -699,9 +797,10 @@ export function BroadcastManager({
 
   return (
     <div className={emailManagerScope}>
-      <EmailToolsNav waitListId={waitListId} current="broadcasts" />
-      {broadcasts.length ? (
-        <div className={toolbar}>
+      <EmailToolsNav
+        waitListId={waitListId}
+        current="broadcasts"
+        action={
           <Button
             type="button"
             onClick={createDraft}
@@ -710,12 +809,12 @@ export function BroadcastManager({
           >
             {busyAction === "create" ? "Creating…" : "New broadcast"}
           </Button>
-        </div>
-      ) : null}
+        }
+      />
       {pendingSelection && (
         <DiscardBanner
           pendingSelection={pendingSelection}
-          onDiscard={() => selectBroadcast(pendingSelection)}
+          onDiscard={() => void selectBroadcast(pendingSelection)}
           onKeep={() => setPendingSelection(null)}
         />
       )}
@@ -761,62 +860,155 @@ export function BroadcastManager({
 
             {editable ? (
               <>
-                <form
-                  id="broadcast-draft-form"
-                  className="flex flex-col gap-5"
-                  onSubmit={saveDraft}
-                >
-                  <div className={fieldCard}>
-                    <div className={fieldRow}>
-                      <Input
-                        type="text"
-                        className={fieldInput}
-                        maxLength={120}
-                        aria-label="Internal name"
-                        placeholder="Name - only you see this"
-                        value={data.name || ""}
-                        onChange={(event) => edit("name", event.target.value)}
-                      />
-                    </div>
-                    <div className={fieldRow}>
-                      <Input
-                        type="text"
-                        className={fieldInput}
-                        maxLength={160}
-                        aria-label="Subject"
-                        placeholder="Subject - what subscribers see in the inbox"
-                        value={data.subject || ""}
-                        onChange={(event) => edit("subject", event.target.value)}
-                      />
-                    </div>
-                    <div className={fieldRow}>
-                      <Input
-                        type="text"
-                        className={fieldInput}
-                        maxLength={180}
-                        aria-label="Preview text"
-                        placeholder="Preview text - shown after the subject"
-                        value={data.previewText || ""}
-                        onChange={(event) => edit("previewText", event.target.value)}
-                      />
-                    </div>
+                <section aria-label="Start composing" className="grid gap-4">
+                  <div>
+                    <p className={stepLabel}>1 · Compose</p>
+                    <p className="m-0 mt-1 text-caption text-product-text-secondary">
+                      Write the update, then save it before checking recipients.
+                    </p>
                   </div>
-                </form>
-                <div className={canvasShell}>
-                  <EmailCanvas
-                    key={selectedId}
-                    editorRef={editorRef}
-                    content={starterContent(data)}
-                    onChange={(document) => edit("editorDocument", document)}
-                  />
-                </div>
-                <div className={recipients}>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <SavedTemplateSelect
+                      value={templateChoice}
+                      onValueChange={setTemplateChoice}
+                      templates={initialTemplates}
+                      disabled={busy || editorMode === "html" || Boolean(draftPreview)}
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      disabled={
+                        !templateChoice || busy || editorMode === "html" || Boolean(draftPreview)
+                      }
+                      onClick={applySavedTemplate}
+                    >
+                      Use template
+                    </Button>
+                  </div>
+                  <form
+                    id="broadcast-draft-form"
+                    className="flex flex-col gap-5"
+                    onSubmit={saveDraft}
+                  >
+                    <div className={fieldCard}>
+                      <div className={fieldRow}>
+                        <Input
+                          type="text"
+                          className={fieldInput}
+                          maxLength={120}
+                          aria-label="Internal name"
+                          placeholder="Name - only you see this"
+                          value={data.name || ""}
+                          onChange={(event) => edit("name", event.target.value)}
+                        />
+                      </div>
+                      <div className={fieldRow}>
+                        <Input
+                          type="text"
+                          className={fieldInput}
+                          maxLength={160}
+                          aria-label="Subject"
+                          placeholder="Subject - what subscribers see in the inbox"
+                          value={data.subject || ""}
+                          onChange={(event) => edit("subject", event.target.value)}
+                        />
+                      </div>
+                      <div className={fieldRow}>
+                        <Input
+                          type="text"
+                          className={fieldInput}
+                          maxLength={180}
+                          aria-label="Preview text"
+                          placeholder="Preview text - shown after the subject"
+                          value={data.previewText || ""}
+                          onChange={(event) => edit("previewText", event.target.value)}
+                        />
+                      </div>
+                    </div>
+                  </form>
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <EmailComposerModeBar
+                      mode={draftPreview ? "preview" : editorMode === "html" ? "html" : "visual"}
+                      setMode={changeEditorMode}
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={previewDraft}
+                      disabled={
+                        busy || (editorMode === "html" && editorHtml !== htmlSourceBaseline.current)
+                      }
+                    >
+                      {busyAction === "draft-preview" ? "Building…" : "Preview email"}
+                    </Button>
+                  </div>
+                  {editorMode === "html" ? (
+                    <div className="flex flex-col gap-3">
+                      <HtmlSourceEditor
+                        value={editorHtml}
+                        onChange={(html) => {
+                          setEditorHtml(html);
+                          setDraftDirty(true);
+                        }}
+                      />
+                      <div className={metaBar}>
+                        <p className="m-0 text-caption text-product-text-secondary">
+                          Apply the HTML to the visual editor before saving.
+                        </p>
+                        <Button type="button" variant="default" onClick={applyEditorHtml}>
+                          Apply HTML
+                        </Button>
+                      </div>
+                    </div>
+                  ) : null}
+                  {draftPreview ? (
+                    <EmailPreviewResult
+                      html={draftPreview.html}
+                      text={draftPreview.text}
+                      subject={data.subject}
+                      previewText={data.previewText}
+                      viewport={previewViewport}
+                      onViewportChange={setPreviewViewport}
+                    />
+                  ) : null}
+                  <div
+                    className={
+                      editorMode === "html" || draftPreview ? `${canvasShell} hidden` : canvasShell
+                    }
+                  >
+                    <EmailCanvas
+                      key={selectedId}
+                      editorRef={editorRef}
+                      content={starterContent(data)}
+                      onChange={(document) => edit("editorDocument", document)}
+                    />
+                  </div>
+                  <div className={metaBar}>
+                    <VariableChips
+                      keys={["name", "position", "referral_link", "points", "rewards"]}
+                    />
+                    <EmailTestSendForm
+                      id="broadcast-test-address"
+                      value={testTo}
+                      onChange={setTestTo}
+                      onSubmit={sendTest}
+                      busy={busyAction === "test"}
+                      disabled={draftDirty || busy}
+                    />
+                  </div>
+                </section>
+
+                <section aria-label="Choose recipients" className="grid gap-3">
+                  <p className={stepLabel}>2 · Choose recipients</p>
                   <RecipientsPanel
                     segment={segment}
                     segments={initialSegments || [{ key: "ALL", label: "Everyone opted in" }]}
                     segmentMeta={segmentMeta}
                     preview={preview}
                     previewFresh={previewFresh}
+                    previewMatchesSelection={
+                      previewScope.broadcastId === selectedId && previewScope.segment === segment
+                    }
                     deliveryReady={deliveryReady}
                     draftDirty={draftDirty}
                     busy={busy}
@@ -829,73 +1021,27 @@ export function BroadcastManager({
                     }}
                     onRefreshPreview={() => refreshPreview()}
                   />
-                </div>
-                {previewFresh && deliveryReady && !draftDirty && preview.count > 0 ? (
-                  <SendConfirmations
-                    data={data}
-                    preview={preview}
-                    busy={busy}
-                    busyAction={busyAction}
-                    scheduleAt={scheduleAt}
-                    onScheduleAtChange={setScheduleAt}
-                    reviewSend={reviewSend}
-                    reviewSchedule={reviewSchedule}
-                    onSend={sendBroadcast}
-                    onSchedule={scheduleSend}
-                    onBack={() => {
-                      setReviewSend(false);
-                      setReviewSchedule(false);
-                    }}
-                    onStartSend={() => setReviewSend(true)}
-                    onStartSchedule={() => setReviewSchedule(true)}
-                  />
-                ) : null}
-                <div className={metaBar}>
-                  <VariableChips
-                    keys={["name", "position", "referral_link", "points", "rewards"]}
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={previewDraft}
-                    disabled={busy || draftDirty}
-                  >
-                    {busyAction === "draft-preview" ? "Building…" : "Preview & spam check"}
-                  </Button>
-                </div>
-                {draftPreview ? (
-                  <div className="flex flex-col gap-4">
-                    <EmailPreviewFrame html={draftPreview.html} />
-                    <SpamHintView
-                      subject={data.subject}
-                      previewText={data.previewText}
-                      text={draftPreview.text}
-                      html={draftPreview.html}
+                  {previewFresh && deliveryReady && !draftDirty && preview.count > 0 ? (
+                    <SendConfirmations
+                      data={data}
+                      preview={preview}
+                      busy={busy}
+                      busyAction={busyAction}
+                      scheduleAt={scheduleAt}
+                      onScheduleAtChange={setScheduleAt}
+                      reviewSend={reviewSend}
+                      reviewSchedule={reviewSchedule}
+                      onSend={sendBroadcast}
+                      onSchedule={scheduleSend}
+                      onBack={() => {
+                        setReviewSend(false);
+                        setReviewSchedule(false);
+                      }}
+                      onStartSend={() => setReviewSend(true)}
+                      onStartSchedule={() => setReviewSchedule(true)}
                     />
-                  </div>
-                ) : null}
-                <form className={testForm} onSubmit={sendTest}>
-                  <Input
-                    className={testInput}
-                    type="email"
-                    placeholder="you@example.com"
-                    required
-                    maxLength={320}
-                    aria-label="Send a test to"
-                    value={testTo}
-                    onChange={(event) => setTestTo(event.target.value)}
-                  />
-                  <Button
-                    type="submit"
-                    variant="secondary"
-                    size="xl"
-                    className={emailManagerTestAction}
-                    disabled={busy || draftDirty}
-                  >
-                    {busyAction === "test" ? "Sending…" : "Send test"}
-                  </Button>
-                </form>
+                  ) : null}
+                </section>
               </>
             ) : (
               <DeliverySummary selected={selected} />
@@ -918,9 +1064,6 @@ export function BroadcastManager({
             <p className={emptyPaneBody}>
               Write one update, check who is eligible, then confirm to send it.
             </p>
-            <Button type="button" variant="default" onClick={createDraft} disabled={busy}>
-              {busyAction === "create" ? "Creating…" : "New broadcast"}
-            </Button>
           </div>
         )}
       </div>

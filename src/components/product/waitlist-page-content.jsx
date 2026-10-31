@@ -775,8 +775,108 @@ export function WaitlistPageContent({
   );
 }
 
+function SignupPreviewEmailRow({ form }) {
+  return (
+    <div>
+      <span className="mb-2 block text-caption font-bold">{form.label}</span>
+      <div
+        className={cn("flex gap-2 max-sm:flex-col", form.layout === "stacked" && "flex-col gap-3")}
+      >
+        <span className="flex h-12 min-h-12 flex-1 items-center rounded-wl border border-wl-input-border bg-wl-input px-4 text-wl-muted">
+          {form.placeholder}
+        </span>
+        <span className="inline-flex h-12 items-center justify-center rounded-wl bg-wl-button px-5 font-bold text-wl-button-text">
+          {form.buttonText}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function SignupPreviewPhoneField({ requirePhone }) {
+  return (
+    <div className="grid gap-1 text-caption font-semibold">
+      <span>
+        Phone number{requirePhone ? " *" : ""}
+        {!requirePhone && <span className="font-normal text-wl-muted"> (optional)</span>}
+      </span>
+      <div className="flex gap-2">
+        <span className="inline-flex h-12 shrink-0 items-center gap-1.5 rounded-wl border border-wl-input-border bg-wl-input px-3 font-normal text-wl-input-text">
+          <span aria-hidden="true">🇺🇸</span>
+          <span>+1</span>
+          <HugeiconsIcon
+            icon={ArrowDown01Icon}
+            size={14}
+            aria-hidden="true"
+            className="text-wl-muted"
+          />
+        </span>
+        <span className="flex h-12 min-w-0 flex-1 items-center rounded-wl border border-wl-input-border bg-wl-input px-4 font-normal text-wl-muted">
+          415 555 2671
+        </span>
+      </div>
+      <span className="text-micro font-normal text-wl-muted">
+        We only use this for launch updates.
+      </span>
+    </div>
+  );
+}
+
+function SignupPreviewFieldControl({ field }) {
+  if (field.type === "checkbox") {
+    return (
+      <span className="flex min-h-11 items-center gap-2 font-normal text-wl-muted">
+        <span className="size-4 rounded border border-wl-input-border bg-wl-input" />
+        {field.label || "Yes"}
+        {field.required ? " *" : ""}
+      </span>
+    );
+  }
+  if (field.type === "textarea") {
+    return (
+      <span className="flex min-h-20 items-start rounded-wl border border-wl-input-border bg-wl-input px-4 py-3 font-normal text-wl-muted">
+        {field.placeholder || "Your answer"}
+      </span>
+    );
+  }
+  if (field.type === "select") {
+    return (
+      <span className="flex h-12 items-center justify-between gap-2 rounded-wl border border-wl-input-border bg-wl-input px-4 font-normal text-wl-muted">
+        <span className="min-w-0 flex-1 truncate">{field.placeholder || "Choose an option"}</span>
+        <HugeiconsIcon
+          icon={ArrowDown01Icon}
+          size={14}
+          aria-hidden="true"
+          className="shrink-0 text-wl-muted"
+        />
+      </span>
+    );
+  }
+  const fallback = field.type === "number" ? "0" : "Your answer";
+  return (
+    <span className="flex h-12 items-center rounded-wl border border-wl-input-border bg-wl-input px-4 font-normal text-wl-muted">
+      {field.placeholder || fallback}
+    </span>
+  );
+}
+
+function SignupPreviewCustomField({ field }) {
+  const title =
+    field.type === "checkbox"
+      ? null
+      : `${field.label || "Custom field"}${field.required ? " *" : ""}`;
+  return (
+    <div className="grid gap-1 text-caption font-semibold">
+      {title}
+      <SignupPreviewFieldControl field={field} />
+    </div>
+  );
+}
+
 export function WaitlistSignupPreview({ form, brand }) {
   const fontStylesheet = brand ? googleFontsStylesheet([brand.headingFont, brand.bodyFont]) : null;
+  const customFields = Array.isArray(form.customFields) ? form.customFields : [];
+  const showPhone = Boolean(form.collectPhone || form.requirePhone);
   return (
     <div
       className={cn("w-full text-wl-text", brand && "rounded-wl bg-wl-page p-8 font-wl-body")}
@@ -801,27 +901,19 @@ export function WaitlistSignupPreview({ form, brand }) {
       {fontStylesheet ? (
         <link href={fontStylesheet} rel="stylesheet" precedence="waitlyze-fonts" />
       ) : null}
-      <span className="mb-2 block text-caption font-bold">{form.label}</span>
-      <div
-        className={cn("flex gap-2 max-sm:flex-col", form.layout === "stacked" && "flex-col gap-3")}
-      >
-        <span
-          className={cn(
-            "flex h-12 min-h-12 flex-1 items-center rounded-wl border border-wl-input-border bg-wl-input px-4 text-wl-muted",
-          )}
-        >
-          {form.placeholder}
-        </span>
-        <span className="inline-flex h-12 items-center justify-center rounded-wl bg-wl-button px-5 font-bold text-wl-button-text">
-          {form.buttonText}
-        </span>
+      <div className="grid gap-3">
+        <SignupPreviewEmailRow form={form} />
+        {showPhone ? <SignupPreviewPhoneField requirePhone={form.requirePhone} /> : null}
+        {customFields.map((field) => (
+          <SignupPreviewCustomField key={field.id} field={field} />
+        ))}
       </div>
-      {form.requireConsent && (
+      {form.requireConsent ? (
         <div className="mt-3 flex items-start gap-2.5 text-caption leading-relaxed font-normal text-wl-muted">
           <span className="mt-px size-4 shrink-0 rounded border border-wl-input-border bg-wl-input" />
           <span>{form.consentLabel}</span>
         </div>
-      )}
+      ) : null}
     </div>
   );
 }
@@ -944,14 +1036,9 @@ export function StatusPagePreview({ snapshot, state = "confirmed", showReferrals
           </div>
         )}
         {showReferrals && status.showReferralLink && !pending && (
-          <div className="mt-8 grid w-full max-w-md gap-2.5">
+          <div className="mt-8 grid w-full max-w-md gap-3">
             <p className="m-0 text-sm text-wl-muted">{status.shareMessage}</p>
-            <div
-              className={cn(
-                "flex items-center gap-2 overflow-hidden rounded-wl py-2 pr-2 pl-3",
-                card ? "border border-wl-text/10 bg-wl-page" : "bg-wl-surface",
-              )}
-            >
+            <div className="flex items-center gap-2 overflow-hidden rounded-wl border border-wl-text/15 bg-transparent py-2 pr-2 pl-3">
               <span className="min-w-0 flex-1 text-left text-caption text-ellipsis whitespace-nowrap text-wl-muted">
                 {demoLink.replace(/^https?:\/\//, "")}
               </span>
@@ -966,8 +1053,8 @@ export function StatusPagePreview({ snapshot, state = "confirmed", showReferrals
               />
             )}
             {showReferrals && !pending && status.showLeaderboard !== false && (
-              <div className="grid w-full max-w-md justify-items-center gap-2.5">
-                <p className="m-0 w-full text-left text-sm font-bold">Leaderboard</p>
+              <div className="mt-3 grid w-full max-w-md justify-items-center gap-3 border-t border-wl-text/15 pt-6">
+                <p className="m-0 text-sm font-bold">Leaderboard</p>
                 <LeaderboardSummary position={47} total={2847} referralsToNext={1} />
                 <LeaderboardRows
                   neighbors={[
@@ -981,7 +1068,7 @@ export function StatusPagePreview({ snapshot, state = "confirmed", showReferrals
               </div>
             )}
             {showReferrals && !pending && (
-              <SocialFollowTasks follows={socialFollowEntries(status)} />
+              <SocialFollowTasks follows={socialFollowEntries(status)} className="mt-3" />
             )}
           </div>
         )}

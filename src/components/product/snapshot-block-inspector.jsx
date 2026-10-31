@@ -406,9 +406,6 @@ function SignupFormSettings({ form, updateForm }) {
         <p className="text-micro font-bold tracking-widest text-product-text-secondary uppercase">
           Signup form
         </p>
-        <p className="text-micro leading-relaxed text-product-text-secondary">
-          The same form is used wherever it appears on your page or embed.
-        </p>
       </div>
       <FormPanel form={form} update={updateForm} />
     </div>

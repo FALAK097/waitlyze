@@ -26,15 +26,34 @@ const emptyPaneTitle = "m-0 mb-1.5! text-section";
 const emptyPaneBody = "m-0 mb-4.5! leading-relaxed text-product-text-secondary";
 
 const hourValue = (minutes) => Number((minutes / 60).toFixed(2));
+const EMPTY_TEMPLATES = {};
 
-export function AutomationManager({ waitListId, waitListName, initialRecipes, deliveryReady }) {
+export function AutomationManager({
+  waitListId,
+  waitListName,
+  initialRecipes,
+  initialRecipeId,
+  initialTemplates = EMPTY_TEMPLATES,
+  deliveryReady,
+}) {
   const editorRef = useRef(null);
   const router = useRouter();
   const [recipes, setRecipes] = useState(() =>
     initialRecipes.map((recipe) => ({ ...recipe, savedConfig: recipe.config })),
   );
   const [busyId, setBusyId] = useState(null);
-  const [activeRecipe, setActiveRecipe] = useState(initialRecipes[0]?.id || null);
+  const [selectedRecipe, setSelectedRecipe] = useState(null);
+  const [prevInitialRecipeId, setPrevInitialRecipeId] = useState(initialRecipeId);
+  if (initialRecipeId !== prevInitialRecipeId) {
+    setPrevInitialRecipeId(initialRecipeId);
+    setSelectedRecipe(null);
+  }
+  const activeRecipe =
+    selectedRecipe ??
+    (recipes.some((recipe) => recipe.id === initialRecipeId)
+      ? initialRecipeId
+      : recipes[0]?.id || null);
+  const [htmlDrafts, setHtmlDrafts] = useState({});
   const [checks, setChecks] = useState(null);
   const [testTo, setTestTo] = useState("");
 
@@ -77,6 +96,7 @@ export function AutomationManager({ waitListId, waitListName, initialRecipes, de
   }
 
   function updateRecipe(recipeId, update) {
+    setChecks(null);
     setRecipes((items) =>
       items.map((recipe) => (recipe.id === recipeId ? { ...recipe, ...update } : recipe)),
     );
@@ -185,7 +205,7 @@ export function AutomationManager({ waitListId, waitListName, initialRecipes, de
               current={activeRecipe === item.id}
               disabled={Boolean(busyId)}
               onClick={() => {
-                setActiveRecipe(item.id);
+                setSelectedRecipe(item.id);
                 setChecks(null);
               }}
             >
@@ -197,7 +217,9 @@ export function AutomationManager({ waitListId, waitListName, initialRecipes, de
 
         {recipe ? (
           <AutomationRecipePanel
+            key={recipe.id}
             recipe={recipe}
+            templates={initialTemplates}
             checks={checks}
             busy={busyId === recipe.id}
             deliveryReady={deliveryReady}
@@ -205,9 +227,14 @@ export function AutomationManager({ waitListId, waitListName, initialRecipes, de
             validValues={hasValidValues(recipe)}
             editorRef={editorRef}
             testTo={testTo}
+            initialHtmlState={htmlDrafts[recipe.id]}
+            onHtmlStateChange={(nextState) =>
+              setHtmlDrafts((current) => ({ ...current, [recipe.id]: nextState }))
+            }
             onTestToChange={setTestTo}
             onUpdateRecipe={updateRecipe}
             onPreview={() => previewChecks(recipe)}
+            onClearPreview={() => setChecks(null)}
             onSave={() => save(recipe)}
             onChangeStatus={() => changeStatus(recipe)}
             onSendTest={sendTest}

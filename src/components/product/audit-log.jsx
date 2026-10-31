@@ -4,9 +4,11 @@ import {
   ArrowLeft01Icon,
   ArrowRight01Icon,
   Calendar01Icon,
+  Cancel01Icon,
   Download01Icon,
   FilterHorizontalIcon,
   RefreshIcon,
+  Search01Icon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { useRouter } from "next/navigation";
@@ -14,7 +16,12 @@ import { useMemo, useState } from "react";
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupButton,
+  InputGroupInput,
+} from "@/components/ui/input-group";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -195,18 +202,37 @@ export function AuditLog({ events }) {
           <Label className="sr-only" htmlFor="audit-search">
             Search audit events
           </Label>
-          <Input
-            id="audit-search"
-            type="search"
-            value={query}
-            onChange={(event) => {
-              setQuery(event.target.value);
-              setPage(1);
-            }}
-            placeholder="Search people and resources"
-            autoComplete="off"
-            maxLength={120}
-          />
+          <InputGroup className="h-10">
+            <InputGroupAddon>
+              <HugeiconsIcon icon={Search01Icon} size={16} aria-hidden="true" />
+            </InputGroupAddon>
+            <InputGroupInput
+              id="audit-search"
+              type="search"
+              value={query}
+              onChange={(event) => {
+                setQuery(event.target.value);
+                setPage(1);
+              }}
+              placeholder="Search people and resources"
+              autoComplete="off"
+              maxLength={120}
+            />
+            {query && (
+              <InputGroupAddon align="inline-end">
+                <InputGroupButton
+                  size="icon-xs"
+                  aria-label="Clear search"
+                  onClick={() => {
+                    setQuery("");
+                    setPage(1);
+                  }}
+                >
+                  <HugeiconsIcon icon={Cancel01Icon} size={15} aria-hidden="true" />
+                </InputGroupButton>
+              </InputGroupAddon>
+            )}
+          </InputGroup>
         </div>
         <Select
           value={actionFilter}

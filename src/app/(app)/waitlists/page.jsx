@@ -310,11 +310,13 @@ export default async function WaitlistsPage({ searchParams }) {
     typeof params?.page === "string" && /^\d+$/.test(params.page) ? Number(params.page) : 1;
   return (
     <section aria-label="Waitlists">
-      <div className="mb-5 flex flex-wrap items-center gap-x-4 gap-y-3 max-[760px]:items-stretch">
+      <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
         <StatusTabs query={query} status={status} sort={sort} />
-        <WaitlistSearch query={query} status={status} sort={sort} />
-        <div className="shrink-0">
-          <CreateWaitlistDialog />
+        <div className="flex min-w-0 flex-1 items-center justify-end gap-3 sm:flex-initial">
+          <WaitlistSearch query={query} status={status} sort={sort} />
+          <div className="shrink-0">
+            <CreateWaitlistDialog />
+          </div>
         </div>
       </div>
       <Suspense

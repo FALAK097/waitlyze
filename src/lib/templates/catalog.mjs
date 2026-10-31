@@ -253,9 +253,8 @@ export const templateFormSchema = z
     // Turnstile bot protection. Off by default; when on, the public form
     // renders the widget and the server verifies the token before any DB
     // work. The secret stays server-side (TURNSTILE_SECRET_KEY env) - only
-    // the public site key lives in the snapshot. The key must equal
-    // TURNSTILE_SITE_KEY (the widget paired with the secret); publish and
-    // rollback block mismatches so a bad key can never break signups.
+    // the public site key is injected from TURNSTILE_SITE_KEY when rendering
+    // the hosted form, keeping environment-specific config out of drafts.
     requireTurnstile: z.boolean().default(false),
     turnstileSiteKey: z.string().trim().max(200).default(""),
     // Optional phone capture. Numbers must arrive in E.164 format (leading +
@@ -417,12 +416,6 @@ const v2SnapshotSchema = z
         });
       ids.add(section.id);
     });
-    if (value.form.requireTurnstile && !value.form.turnstileSiteKey.trim())
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "Add your Turnstile site key before publishing with bot protection on.",
-        path: ["form", "turnstileSiteKey"],
-      });
     if (/^https:\/\//i.test(value.form.successRedirectUrl)) {
       const host = hostOf(value.form.successRedirectUrl);
       const allowlisted = value.form.successRedirectAllowlist.some(

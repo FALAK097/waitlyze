@@ -496,7 +496,7 @@ const broadcastInput = (input) => {
 
 export async function listBroadcasts(
   waitListId,
-  { includeLatestContent = false, cursor = null, pageSize = 25 } = {},
+  { includeLatestContent = false, selectedBroadcastId = null, cursor = null, pageSize = 25 } = {},
 ) {
   const { campaign } = await requireCampaign(waitListId, "sendEmail");
   const take = Number.isInteger(pageSize) ? Math.min(Math.max(pageSize, 1), 50) : 25;
@@ -540,10 +540,8 @@ export async function listBroadcasts(
       },
     }),
     includeLatestContent
-      ? prisma.marketingBroadcast.findFirst({
-          where: { waitListId: campaign.id },
-          orderBy: [{ updatedAt: "desc" }, { id: "desc" }],
-          select: {
+      ? (async () => {
+          const select = {
             id: true,
             name: true,
             subject: true,
@@ -553,8 +551,20 @@ export async function listBroadcasts(
             renderedHtml: true,
             status: true,
             segment: true,
-          },
-        })
+          };
+          if (typeof selectedBroadcastId === "string" && selectedBroadcastId) {
+            const matched = await prisma.marketingBroadcast.findFirst({
+              where: { id: selectedBroadcastId, waitListId: campaign.id },
+              select,
+            });
+            if (matched) return matched;
+          }
+          return prisma.marketingBroadcast.findFirst({
+            where: { waitListId: campaign.id },
+            orderBy: [{ updatedAt: "desc" }, { id: "desc" }],
+            select,
+          });
+        })()
       : Promise.resolve(null),
   ]);
   const hasMore = broadcastRows.length > take;
@@ -858,7 +868,7 @@ export async function listEmailRuns(waitListId) {
       orderBy: { createdAt: "desc" },
       take: 100,
       include: {
-        recipe: { select: { type: true } },
+        recipe: { select: { id: true, type: true } },
         signUp: { select: { email: true } },
         steps: { select: { status: true, lastErrorCode: true } },
       },
@@ -890,6 +900,7 @@ export async function listEmailRuns(waitListId) {
   const items = [
     ...runs.map((run) => ({
       id: `run-${run.id}`,
+      targetId: run.recipe.id,
       kind: "Automation",
       title: automationTitle(run.recipe.type),
       recipient: maskEmail(run.signUp.email),
@@ -902,6 +913,7 @@ export async function listEmailRuns(waitListId) {
     })),
     ...broadcasts.map((broadcast) => ({
       id: `bc-${broadcast.id}`,
+      targetId: broadcast.id,
       kind: "Broadcast",
       title: broadcast.name || broadcast.subject || "Untitled broadcast",
       recipient: `${broadcast.recipientCount} recipient${broadcast.recipientCount === 1 ? "" : "s"}`,

@@ -1,5 +1,7 @@
 "use client";
 
+import { Mail01Icon } from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
 import { useId } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -39,10 +41,11 @@ export function buildShareHref(channel, { message, link, subject }) {
 
 function XIcon({ className }) {
   return (
-    <svg viewBox="-60 -60 1320 1347" className={className} aria-hidden="true">
-      <rect x="-60" y="-60" width="1320" height="1347" rx="300" fill="#000" />
+    <svg viewBox="0 0 256 256" className={className} aria-hidden="true">
+      <rect width="256" height="256" rx="56" fill="#000" />
       <path
         fill="#fff"
+        transform="translate(52 50) scale(0.1266)"
         d="M714.163 519.284 1160.89 0h-105.86L667.137 450.887 357.328 0H0l468.492 681.821L0 1226.37h105.866l409.625-476.152 327.181 476.152H1200L714.137 519.284h.026ZM569.165 687.828l-47.468-67.894-377.686-540.24h162.604l304.797 435.991 47.468 67.894 396.2 566.721H892.476L569.165 687.854v-.026Z"
       />
     </svg>
@@ -176,27 +179,11 @@ function LinkedInIcon({ className }) {
 
 function EmailIcon({ className }) {
   return (
-    <svg viewBox="0 0 256 256" className={className} aria-hidden="true">
-      <rect width="256" height="256" rx="56" fill="#26262b" />
-      <rect
-        x="56"
-        y="86"
-        width="144"
-        height="84"
-        rx="12"
-        fill="none"
-        stroke="#fff"
-        strokeWidth="14"
-      />
-      <path
-        d="M64 98l64 42 64-42"
-        fill="none"
-        stroke="#fff"
-        strokeWidth="14"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
+    <HugeiconsIcon
+      icon={Mail01Icon}
+      className={cn("text-product-text-secondary", className)}
+      aria-hidden="true"
+    />
   );
 }
 
@@ -207,7 +194,7 @@ function FacebookIcon({ className }) {
       <path
         fill="#fff"
         d="M178.5 132.2l6.6-43.1h-41.4V61.1c0-12.5 6.1-24.7 25.8-24.7h20v-36.9l-34.6-.5c-38.4 0-63.3 23.3-63.3 65.2v32.9H50v43.1h41.6V232h51.9V132.2h35.5z"
-        transform="translate(12 12) scale(0.90625)"
+        transform="translate(22 30) scale(0.84)"
       />
     </svg>
   );
@@ -228,17 +215,24 @@ function TelegramIcon({ className }) {
 function RedditIcon({ className }) {
   return (
     <svg viewBox="0 0 256 256" className={className} aria-hidden="true">
-      <rect width="256" height="256" rx="56" fill="#FF4500" />
-      <g fill="none" stroke="#fff" strokeWidth="10" strokeLinecap="round">
-        <ellipse cx="128" cy="156" rx="62" ry="40" fill="#FF4500" />
-        <circle cx="104" cy="150" r="2" fill="#fff" stroke="none" />
-        <circle cx="152" cy="150" r="2" fill="#fff" stroke="none" />
-        <path d="M104 172c6 6 15 9 24 9s18-3 24-9" />
-        <circle cx="66" cy="148" r="12" fill="#FF4500" />
-        <circle cx="190" cy="148" r="12" fill="#FF4500" />
-        <path d="M178 140l24-30 14 5" />
-        <circle cx="204" cy="112" r="7" fill="#fff" stroke="none" />
-      </g>
+      <path
+        fill="#FF4500"
+        d="M128 0C57.3 0 0 57.3 0 128c0 35.4 14.3 67.4 37.5 90.5l-24.4 24.4c-4.8 4.8-1.4 13.1 5.4 13.1H128c70.7 0 128-57.3 128-128S198.7 0 128 0Z"
+      />
+      <circle cx="55.4" cy="123.7" r="29.9" fill="#fff" />
+      <circle cx="200.6" cy="123.7" r="29.9" fill="#fff" />
+      <ellipse cx="128.1" cy="149.3" rx="85.3" ry="64" fill="#fff" />
+      <circle cx="88" cy="141.5" r="15.5" fill="#842123" />
+      <circle cx="168.2" cy="141.5" r="15.5" fill="#842123" />
+      <path
+        d="M96 170c8.5 14.5 19.2 21.8 32.1 21.8 12.8 0 23.5-7.3 32-21.8-9.7-2.5-20.4-3.8-32-3.8S105.7 167.5 96 170Z"
+        fill="#172E35"
+      />
+      <path
+        d="M127.8 88c-2.5 0-4.6-1.1-4.6-2.7 0-19 15.4-34.4 34.4-34.4 2.5 0 4.6 2.1 4.6 4.6s-2.1 4.6-4.6 4.6c-13.9 0-25.2 11.3-25.2 25.2 0 1.7-2.1 2.7-4.6 2.7Z"
+        fill="#172E35"
+      />
+      <circle cx="174.8" cy="55.5" r="21.2" fill="#fff" stroke="#172E35" strokeWidth="7" />
     </svg>
   );
 }
@@ -254,7 +248,7 @@ const ICONS = {
   reddit: RedditIcon,
 };
 
-export function ShareChannelIcon({ channel, className = "size-4" }) {
+export function ShareChannelIcon({ channel, className = "size-5" }) {
   const Icon = ICONS[channel];
   if (!Icon) return null;
   return <Icon className={className} />;
@@ -267,7 +261,7 @@ export function ShareButtons({
   subject,
   onShare,
   className,
-  iconClassName = "size-10",
+  iconClassName = "size-8",
 }) {
   const { copied, copy } = useCopyToClipboard();
 
@@ -277,7 +271,7 @@ export function ShareButtons({
   }
 
   return (
-    <div className={cn("flex flex-wrap items-center gap-2.5", className)}>
+    <div className={cn("flex flex-wrap items-center justify-center gap-2", className)}>
       {channels.map((channel) => {
         const Icon = ICONS[channel];
         if (!Icon) return null;
@@ -306,7 +300,7 @@ export function ShareButtons({
             aria-label={`Share on ${channelLabel(channel)}`}
             title={`Share on ${channelLabel(channel)}`}
             onClick={() => onShare?.(channel)}
-            className="transition-opacity hover:opacity-85"
+            className="grid min-h-10 min-w-10 place-items-center transition-opacity hover:opacity-85"
           >
             <Icon className={iconClassName} />
           </a>

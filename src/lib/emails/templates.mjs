@@ -93,14 +93,23 @@ export async function getOrCreateTemplatesForCampaign(waitListId, scope) {
   const created = await Promise.all(
     missing.map(async (key) => {
       const enumType = TYPE_MAP[key];
-      const record = await prisma.emailTemplate.create({
-        data: {
-          waitList: { connect: { id: waitListId, ...scope } },
-          type: enumType,
-          ...DEFAULTS[key],
-        },
-      });
-      return [key, record];
+      try {
+        const record = await prisma.emailTemplate.create({
+          data: {
+            waitList: { connect: { id: waitListId, ...scope } },
+            type: enumType,
+            ...DEFAULTS[key],
+          },
+        });
+        return [key, record];
+      } catch (err) {
+        if (err?.code !== "P2002") throw err;
+        const record = await prisma.emailTemplate.findFirst({
+          where: { waitListId, type: enumType, waitList: scope },
+        });
+        if (!record) throw err;
+        return [key, record];
+      }
     }),
   );
   Object.assign(result, Object.fromEntries(created));
