@@ -280,7 +280,7 @@ export function SnapshotPageBuilder({
     saveAgainRef = useRef(false);
   const canvasRef = useRef(null);
   const scrollRestoreRef = useRef(null);
-  const key = `waitlyze:page:${waitList.id}`;
+  const storageKey = `waitlyze:page:${waitList.id}`;
   useLayoutEffect(() => {
     snapshotRef.current = snapshot;
     versionRef.current = version;
@@ -295,9 +295,9 @@ export function SnapshotPageBuilder({
     (next) => {
       const parsed = templateSnapshotSchema.safeParse(next);
       if (!parsed.success) {
-        const issue =
-          parsed.error.issues.find((issue) => issue.code === "custom") || parsed.error.issues[0];
-        setError(issue?.message || "Review the page content.");
+        const firstIssue =
+          parsed.error.issues.find((item) => item.code === "custom") || parsed.error.issues[0];
+        setError(firstIssue?.message || "Review the page content.");
         return false;
       }
       if (equal(snapshotRef.current, next)) return true;
@@ -314,7 +314,7 @@ export function SnapshotPageBuilder({
       setError("");
       try {
         sessionStorage.setItem(
-          key,
+          storageKey,
           JSON.stringify({ revision: versionRef.current, snapshot: next }),
         );
       } catch {
@@ -324,7 +324,7 @@ export function SnapshotPageBuilder({
       }
       return true;
     },
-    [key],
+    [storageKey],
   );
   const flush = useCallback(async () => {
     if (replacement || !dirtyRef.current || conflictRef.current) return;
@@ -361,7 +361,7 @@ export function SnapshotPageBuilder({
       setError("");
       try {
         sessionStorage.setItem(
-          key,
+          storageKey,
           JSON.stringify({ revision: result.revision, snapshot: snapshotRef.current }),
         );
       } catch {
@@ -378,10 +378,10 @@ export function SnapshotPageBuilder({
         window.setTimeout(() => void flush(), 0);
       }
     }
-  }, [key, replacement, saveDraftPage, waitList.id]);
+  }, [storageKey, replacement, saveDraftPage, waitList.id]);
   useEffect(() => {
     try {
-      const stored = JSON.parse(sessionStorage.getItem(key) || "null");
+      const stored = JSON.parse(sessionStorage.getItem(storageKey) || "null");
       const parsed = templateSnapshotSchema.safeParse(stored?.snapshot);
       if (
         stored &&
@@ -401,12 +401,17 @@ export function SnapshotPageBuilder({
       setError("The last saved version is loaded; a browser recovery copy could not be read.");
     }
     setHydrated(true);
-  }, [key, waitList.templateRevision, waitList.templateSnapshot, waitList.snapshotReplacement]);
+  }, [
+    storageKey,
+    waitList.templateRevision,
+    waitList.templateSnapshot,
+    waitList.snapshotReplacement,
+  ]);
   useEffect(() => {
     if (replacement || !hydrated || !dirty || conflict) return;
     const timer = window.setTimeout(() => void flush(), 700);
     return () => window.clearTimeout(timer);
-  }, [snapshot, dirty, conflict, hydrated, flush, replacement]);
+  }, [dirty, conflict, hydrated, flush, replacement]);
   const undo = () => {
     const previous = undoStack.current.pop();
     if (!previous) return;
@@ -557,8 +562,8 @@ export function SnapshotPageBuilder({
       </div>
     );
   };
-  const updateRoot = (key, value) =>
-    applySnapshot({ ...snapshot, [key]: { ...snapshot[key], ...value } });
+  const updateRoot = (rootKey, value) =>
+    applySnapshot({ ...snapshot, [rootKey]: { ...snapshot[rootKey], ...value } });
   const onKeyDown = (event) => {
     if (
       !(event.metaKey || event.ctrlKey) ||
@@ -611,7 +616,7 @@ export function SnapshotPageBuilder({
         dirtyRef.current = false;
         try {
           sessionStorage.setItem(
-            key,
+            storageKey,
             JSON.stringify({ revision: result.templateRevision, snapshot: restored }),
           );
         } catch {
@@ -651,7 +656,7 @@ export function SnapshotPageBuilder({
       setError("");
       try {
         sessionStorage.setItem(
-          key,
+          storageKey,
           JSON.stringify({ revision: result.revision, snapshot: snapshotRef.current }),
         );
       } catch {
