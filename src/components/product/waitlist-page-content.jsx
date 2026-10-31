@@ -804,9 +804,12 @@ function SignupPreviewPhoneField({ requirePhone }) {
         <span className="inline-flex h-12 shrink-0 items-center gap-1.5 rounded-wl border border-wl-input-border bg-wl-input px-3 font-normal text-wl-input-text">
           <span aria-hidden="true">🇺🇸</span>
           <span>+1</span>
-          <span aria-hidden="true" className="text-micro text-wl-muted">
-            ▾
-          </span>
+          <HugeiconsIcon
+            icon={ArrowDown01Icon}
+            size={14}
+            aria-hidden="true"
+            className="text-wl-muted"
+          />
         </span>
         <span className="flex h-12 min-w-0 flex-1 items-center rounded-wl border border-wl-input-border bg-wl-input px-4 font-normal text-wl-muted">
           415 555 2671
@@ -820,7 +823,6 @@ function SignupPreviewPhoneField({ requirePhone }) {
 }
 
 function SignupPreviewCustomField({ field }) {
-  const options = Array.isArray(field.options) ? field.options : [];
   return (
     <div className="grid gap-1 text-caption font-semibold">
       {field.label || "Custom field"}
@@ -835,19 +837,15 @@ function SignupPreviewCustomField({ field }) {
           {field.placeholder || "Your answer"}
         </span>
       ) : field.type === "select" ? (
-        <div className="grid gap-1">
-          <span className="flex h-12 items-center justify-between rounded-wl border border-wl-input-border bg-wl-input px-4 font-normal text-wl-muted">
-            <span>{field.placeholder || "Choose an option"}</span>
-            <span aria-hidden="true" className="text-micro text-wl-muted">
-              ▾
-            </span>
-          </span>
-          {options.length > 0 ? (
-            <span className="text-micro font-normal text-wl-muted">
-              Options: {options.join(" · ")}
-            </span>
-          ) : null}
-        </div>
+        <span className="flex h-12 items-center justify-between gap-2 rounded-wl border border-wl-input-border bg-wl-input px-4 font-normal text-wl-muted">
+          <span className="min-w-0 flex-1 truncate">{field.placeholder || "Choose an option"}</span>
+          <HugeiconsIcon
+            icon={ArrowDown01Icon}
+            size={14}
+            aria-hidden="true"
+            className="shrink-0 text-wl-muted"
+          />
+        </span>
       ) : (
         <span className="flex h-12 items-center rounded-wl border border-wl-input-border bg-wl-input px-4 font-normal text-wl-muted">
           {field.placeholder || (field.type === "number" ? "0" : "Your answer")}

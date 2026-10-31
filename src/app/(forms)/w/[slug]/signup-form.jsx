@@ -1,5 +1,7 @@
 "use client";
 
+import { ArrowDown01Icon, Tick01Icon } from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useId, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -8,6 +10,7 @@ import { ReferralCockpitExtras } from "@/components/product/referral-cockpit";
 import { ShareButtons } from "@/components/product/share-buttons";
 import { StatusBadge } from "@/components/product/waitlist-page-content";
 import { PhoneInput } from "@/components/reui/phone-input";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { collectAttribution } from "@/utils/attribution";
 
@@ -137,6 +140,72 @@ function TurnstileAttempt({ siteKey, onToken, onRetry }) {
   return <div ref={containerRef} className="mt-3" />;
 }
 
+function CustomSelectField({ id, name, label, field, control }) {
+  const [open, setOpen] = useState(false);
+  const [selected, setSelected] = useState("");
+  const options = Array.isArray(field.options) ? field.options : [];
+  const placeholder = field.placeholder || "Choose an option";
+  return (
+    <div className="mt-3">
+      {label}
+      <input type="hidden" name={name} value={selected} />
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger
+          id={id}
+          type="button"
+          aria-required={field.required === true}
+          className={cn(
+            control,
+            "flex w-full cursor-pointer items-center justify-between gap-2 text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-wl-accent",
+            !selected && "text-wl-muted",
+          )}
+        >
+          <span className="min-w-0 flex-1 truncate">{selected || placeholder}</span>
+          <HugeiconsIcon
+            icon={ArrowDown01Icon}
+            size={14}
+            aria-hidden="true"
+            className={cn(
+              "shrink-0 text-wl-muted transition-transform duration-150",
+              open && "rotate-180",
+            )}
+          />
+        </PopoverTrigger>
+        <PopoverContent className="w-(--anchor-width) p-1.5" align="start" sideOffset={6}>
+          <div
+            role="listbox"
+            aria-label={field.label || "Options"}
+            className="max-h-60 overflow-y-auto"
+          >
+            {options.map((option) => {
+              const active = option === selected;
+              return (
+                <button
+                  key={option}
+                  type="button"
+                  role="option"
+                  aria-selected={active}
+                  onClick={() => {
+                    setSelected(option);
+                    setOpen(false);
+                  }}
+                  className={cn(
+                    "flex w-full cursor-pointer items-center justify-between gap-2 rounded-md border-0 bg-transparent px-2.5 py-2 text-left text-sm hover:bg-product-bg-inset focus-visible:outline-2 focus-visible:outline-wl-accent",
+                    active && "bg-product-bg-inset font-semibold",
+                  )}
+                >
+                  <span className="min-w-0 flex-1 truncate">{option}</span>
+                  {active ? <HugeiconsIcon icon={Tick01Icon} size={14} aria-hidden="true" /> : null}
+                </button>
+              );
+            })}
+          </div>
+        </PopoverContent>
+      </Popover>
+    </div>
+  );
+}
+
 function CustomFieldInput({ field, control }) {
   const id = useId();
   const name = `custom-${field.id}`;
@@ -162,27 +231,7 @@ function CustomFieldInput({ field, control }) {
     );
   }
   if (field.type === "select") {
-    return (
-      <div className="mt-3">
-        {label}
-        <select
-          className={cn(control, "w-full")}
-          id={id}
-          name={name}
-          required={field.required === true}
-          defaultValue=""
-        >
-          <option value="" disabled>
-            {field.placeholder || "Choose an option"}
-          </option>
-          {(Array.isArray(field.options) ? field.options : []).map((option) => (
-            <option value={option} key={option}>
-              {option}
-            </option>
-          ))}
-        </select>
-      </div>
-    );
+    return <CustomSelectField id={id} name={name} label={label} field={field} control={control} />;
   }
   if (field.type === "checkbox") {
     return (
@@ -418,6 +467,7 @@ function SignupFormInner({
   const [copied, setCopied] = useState(false);
   const [turnstileToken, setTurnstileToken] = useState("");
   const [phone, setPhone] = useState("");
+  const [resetKey, setResetKey] = useState(0);
 
   const collectPhone = formConfig.collectPhone === true || formConfig.requirePhone === true;
   const customFields = Array.isArray(formConfig.customFields) ? formConfig.customFields : [];
@@ -442,6 +492,16 @@ function SignupFormInner({
           ? formData.get(`custom-${field.id}`) === "on"
           : (formData.get(`custom-${field.id}`) ?? ""),
     }));
+    const missingRequiredSelect = customFields.find(
+      (field) =>
+        field.type === "select" &&
+        field.required === true &&
+        !String(formData.get(`custom-${field.id}`) ?? "").trim(),
+    );
+    if (missingRequiredSelect) {
+      toast.error(`Please select an option for “${missingRequiredSelect.label}”.`);
+      return;
+    }
     // Opt-in protection requires a completed challenge before we even start.
     if (turnstileOn && !turnstileToken) {
       toast.error("Complete the security check and try again.");
@@ -483,7 +543,13 @@ function SignupFormInner({
         }
         throw new Error(data.message || "Couldn't join the waitlist. Try again.");
       }
-      if (statusPage.postSignupBehavior === "no-change") return;
+      if (statusPage.postSignupBehavior === "no-change") {
+        form.reset();
+        setPhone("");
+        setResetKey((current) => current + 1);
+        toast.success("You're on the waitlist.");
+        return;
+      }
 
       // Server-vetted redirect only: the API echoes a redirect URL solely when
       // the founder configured one that passes the allowlist. Never navigate
@@ -618,7 +684,7 @@ function SignupFormInner({
         />
       )}
       {customFields.map((field) => (
-        <CustomFieldInput field={field} control={control} key={field.id} />
+        <CustomFieldInput field={field} control={control} key={`${field.id}:${resetKey}`} />
       ))}
       {formConfig.requireConsent && <ConsentField formConfig={formConfig} />}
       {turnstileOn && (
