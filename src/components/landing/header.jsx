@@ -38,7 +38,7 @@ export default function Header() {
         >
           <Wordmark />
         </Link>
-        <nav aria-label="Main navigation" className="hidden items-center gap-6 lg:flex xl:gap-8">
+        <nav aria-label="Main navigation" className="hidden items-center gap-6 md:flex xl:gap-8">
           {links.map(([label, href]) => (
             <Link
               prefetch={false}
@@ -50,7 +50,7 @@ export default function Header() {
             </Link>
           ))}
         </nav>
-        <div className="flex shrink-0 items-center gap-2 lg:gap-1">
+        <div className="flex shrink-0 items-center gap-2 md:gap-1">
           <SignupButton compact className="max-sm:gap-2 max-sm:px-3 max-sm:py-2">
             Sign in
           </SignupButton>
@@ -61,7 +61,7 @@ export default function Header() {
             aria-expanded={open}
             aria-controls="wl-mobile-nav"
             onClick={() => setOpen(!open)}
-            className="grid size-10 shrink-0 place-items-center rounded-md border border-transparent bg-transparent text-product-text-secondary transition-colors hover:bg-product-bg-inset hover:text-product-text-primary focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-neutral-900 max-sm:size-9 lg:hidden"
+            className="grid size-10 shrink-0 place-items-center rounded-md border border-transparent bg-transparent text-product-text-secondary transition-colors hover:bg-product-bg-inset hover:text-product-text-primary focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-neutral-900 max-sm:size-9 md:hidden"
           >
             {open ? (
               <HugeiconsIcon icon={Cancel01Icon} size={20} />
@@ -74,7 +74,7 @@ export default function Header() {
       <nav
         id="wl-mobile-nav"
         className={cn(
-          "grid gap-1 border-t border-product-border-subtle px-5 pt-2 pb-5 lg:hidden",
+          "grid gap-1 border-t border-product-border-subtle px-5 pt-2 pb-5 md:hidden",
           !open && "hidden",
         )}
         aria-label="Mobile navigation"
