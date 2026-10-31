@@ -17,8 +17,7 @@ export const metadata = {
 };
 
 export default async function BroadcastsPage({ params, searchParams }) {
-  const { id } = await params;
-  const { broadcast: requestedBroadcastId } = await searchParams;
+  const [{ id }, { broadcast: requestedBroadcastId }] = await Promise.all([params, searchParams]);
   const { campaign } = await requireCampaignPage(id, "sendEmail");
   if (!campaign) return notFound();
   const broadcasts = await listBroadcasts(campaign.id);

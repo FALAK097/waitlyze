@@ -14,8 +14,7 @@ export const metadata = {
 };
 
 export default async function AutomationsPage({ params, searchParams }) {
-  const { id } = await params;
-  const { recipe: requestedRecipeId } = await searchParams;
+  const [{ id }, { recipe: requestedRecipeId }] = await Promise.all([params, searchParams]);
   const { campaign } = await requireCampaignPage(id, "sendEmail");
   if (!campaign) return notFound();
   const [data, templates] = await Promise.all([
