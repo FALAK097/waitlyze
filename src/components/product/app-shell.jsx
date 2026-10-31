@@ -298,7 +298,7 @@ export function AppShell({ children, user, avatar, workspaces, selectedWorkspace
       <main
         id="product-content"
         tabIndex={-1}
-        className="mx-auto w-full max-w-288 px-8 pt-6 pb-16 max-[359px]:px-4 max-md:px-5"
+        className="mx-auto w-full max-w-288 px-8 pt-6 pb-28 max-[359px]:px-4 max-md:px-5"
       >
         {children}
       </main>

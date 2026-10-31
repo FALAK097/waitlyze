@@ -80,7 +80,7 @@ function highlightHtml(source) {
 
 export function HtmlSourceEditor({ value, onChange, label = "Email HTML source" }) {
   return (
-    <div className="relative min-h-105 overflow-hidden rounded-lg border border-product-border-subtle bg-white font-product-mono text-caption leading-relaxed">
+    <div className="relative min-h-72 overflow-hidden rounded-lg border border-product-border-subtle bg-white font-product-mono text-caption leading-relaxed max-sm:min-h-64">
       <pre
         aria-hidden="true"
         className="pointer-events-none absolute inset-0 m-0 overflow-auto p-4 break-words whitespace-pre-wrap text-product-text-primary"
@@ -89,7 +89,7 @@ export function HtmlSourceEditor({ value, onChange, label = "Email HTML source" 
         {"\n"}
       </pre>
       <textarea
-        className="relative min-h-105 w-full resize-y bg-transparent p-4 break-words whitespace-pre-wrap text-transparent caret-product-text-primary selection:bg-product-success-bg focus-visible:outline-2 focus-visible:outline-product-success-text [&::-webkit-scrollbar]:hidden"
+        className="relative min-h-72 w-full resize-y bg-transparent p-4 break-words whitespace-pre-wrap text-transparent caret-product-text-primary selection:bg-product-success-bg focus-visible:outline-2 focus-visible:outline-product-success-text max-sm:min-h-64 [&::-webkit-scrollbar]:hidden"
         aria-label={label}
         value={value}
         spellCheck={false}
@@ -109,6 +109,7 @@ export function EmailPreviewFrame({
   onViewportChange,
 }) {
   const [localMobile, setLocalMobile] = useState(false);
+  const controlled = controlledViewport !== undefined;
   const mobile = controlledViewport ? controlledViewport === "mobile" : localMobile;
   const setMobile = (value) => {
     setLocalMobile(value);
@@ -117,24 +118,28 @@ export function EmailPreviewFrame({
   return (
     <div className="flex flex-col gap-3">
       <div className={frameBar}>
-        <button
-          type="button"
-          className={frameTab}
-          aria-pressed={!mobile}
-          onClick={() => setMobile(false)}
-        >
-          <HugeiconsIcon icon={MonitorIcon} size={16} aria-hidden="true" />
-          <span className="sr-only">Desktop</span>
-        </button>
-        <button
-          type="button"
-          className={frameTab}
-          aria-pressed={mobile}
-          onClick={() => setMobile(true)}
-        >
-          <HugeiconsIcon icon={SmartphoneIcon} size={16} aria-hidden="true" />
-          <span className="sr-only">Mobile preview, 375 pixels wide</span>
-        </button>
+        {!controlled && (
+          <>
+            <button
+              type="button"
+              className={frameTab}
+              aria-pressed={!mobile}
+              onClick={() => setMobile(false)}
+            >
+              <HugeiconsIcon icon={MonitorIcon} size={16} aria-hidden="true" />
+              <span className="sr-only">Desktop</span>
+            </button>
+            <button
+              type="button"
+              className={frameTab}
+              aria-pressed={mobile}
+              onClick={() => setMobile(true)}
+            >
+              <HugeiconsIcon icon={SmartphoneIcon} size={16} aria-hidden="true" />
+              <span className="sr-only">Mobile preview, 375 pixels wide</span>
+            </button>
+          </>
+        )}
         <span className="text-caption text-product-text-secondary">{seedNote}</span>
       </div>
       <div
@@ -145,7 +150,7 @@ export function EmailPreviewFrame({
           title={mobile ? "Mobile email preview" : "Desktop email preview"}
           sandbox=""
           srcDoc={html}
-          className="block h-130 w-full border-0"
+          className="block h-96 w-full border-0 max-sm:h-88"
         />
       </div>
     </div>

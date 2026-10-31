@@ -17,7 +17,7 @@ const editorTheme = {
 };
 
 const canvas =
-  "min-h-105 py-5.5 px-7 pb-7.5 max-sm:p-4.5 [&_.tiptap]:min-h-90 [&_.tiptap]:text-body [&_.tiptap]:leading-relaxed [&_.tiptap_p]:mb-4";
+  "min-h-72 px-7 py-5.5 max-sm:min-h-64 max-sm:p-4.5 [&_.tiptap]:min-h-60 [&_.tiptap]:text-body [&_.tiptap]:leading-relaxed [&_.tiptap_p]:mb-4 max-sm:[&_.tiptap]:min-h-52";
 
 async function uploadEditorImage(file) {
   const formData = new FormData();

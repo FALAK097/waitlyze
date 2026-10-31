@@ -30,7 +30,6 @@ import { EmailComposerModeBar } from "./email-composer-mode-bar";
 import { EmailToolsNav } from "./email-tools-nav";
 
 const scope = "min-w-0 bg-white text-product-text-primary";
-const toolbar = "mb-6 flex justify-end gap-2.5";
 const unsaved =
   "mb-5.5 flex flex-wrap items-center gap-3 rounded-product-control bg-product-warning-bg px-4 py-3 text-caption";
 const unsavedText = "min-w-45 flex-1";
@@ -688,9 +687,10 @@ export function BroadcastManager({
 
   return (
     <div className={scope}>
-      <EmailToolsNav waitListId={waitListId} current="broadcasts" />
-      {broadcasts.length ? (
-        <div className={toolbar}>
+      <EmailToolsNav
+        waitListId={waitListId}
+        current="broadcasts"
+        action={
           <Button
             type="button"
             onClick={createDraft}
@@ -699,8 +699,8 @@ export function BroadcastManager({
           >
             {busyAction === "create" ? "Creating…" : "New broadcast"}
           </Button>
-        </div>
-      ) : null}
+        }
+      />
       {pendingSelection && (
         <DiscardBanner
           pendingSelection={pendingSelection}
@@ -958,9 +958,6 @@ export function BroadcastManager({
             <p className={emptyPaneBody}>
               Write one update, check who is eligible, then confirm to send it.
             </p>
-            <Button type="button" variant="default" onClick={createDraft} disabled={busy}>
-              {busyAction === "create" ? "Creating…" : "New broadcast"}
-            </Button>
           </div>
         )}
       </div>

@@ -162,6 +162,7 @@ export function EmailTemplatesManager({ waitListId, waitListName, initialTemplat
     try {
       const content = await exportMessage();
       setHtmlDraft(content.renderedHtml);
+      setPreview(null);
       setMode("html");
     } catch (error) {
       toast.error(error.message || "The editor is still loading.");
@@ -273,7 +274,11 @@ export function EmailTemplatesManager({ waitListId, waitListName, initialTemplat
           <div className="flex flex-wrap items-center justify-between gap-3">
             <EmailComposerModeBar
               mode={mode === "html" ? "html" : "visual"}
-              setMode={(next) => (next === "html" ? enterHtmlMode() : setMode("write"))}
+              setMode={(next) => {
+                if (next === "html") return enterHtmlMode();
+                setPreview(null);
+                setMode("write");
+              }}
               viewport={viewport}
               setViewport={setViewport}
             />
@@ -313,7 +318,7 @@ export function EmailTemplatesManager({ waitListId, waitListName, initialTemplat
               (setContent) and `save` → `exportMessage` both go through
               `editorRef.current`, which would be null if we unmounted the
               canvas for HTML/Preview modes. Hide it instead. */}
-          <div className={mode === "html" ? `${canvasShell} hidden` : canvasShell}>
+          <div className={mode === "html" || preview ? `${canvasShell} hidden` : canvasShell}>
             <EmailCanvas
               key={current}
               editorRef={editorRef}
