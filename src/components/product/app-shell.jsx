@@ -255,7 +255,7 @@ export function AppShell({ children, user, avatar, workspaces, selectedWorkspace
           <WorkspaceSwitcher workspaces={workspaces} selected={selectedWorkspace} />
           <nav
             aria-label="Main navigation"
-            className="ms-auto flex items-center gap-2 max-md:order-4 max-md:ms-0 max-md:me-0 max-md:w-full max-md:justify-start"
+            className="ms-auto flex min-w-0 items-center gap-2 max-md:order-4 max-md:ms-0 max-md:me-0 max-md:w-full max-md:justify-between max-md:gap-1"
           >
             <Link
               prefetch={false}
