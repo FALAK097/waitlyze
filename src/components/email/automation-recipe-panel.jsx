@@ -166,6 +166,8 @@ export function AutomationRecipePanel({
   validValues,
   editorRef,
   testTo,
+  initialHtmlState,
+  onHtmlStateChange,
   onTestToChange,
   onUpdateRecipe,
   onPreview,
@@ -177,13 +179,17 @@ export function AutomationRecipePanel({
   const delay = recipe.delayHours ?? hourValue(recipe.config.delayMinutes);
   const enabled = recipe.status === "ENABLED";
   const timing = recipeTiming(recipe);
-  const [mode, setMode] = useState("visual");
-  const [htmlDraft, setHtmlDraft] = useState("");
-  const [htmlBaseline, setHtmlBaseline] = useState("");
+  const [mode, setMode] = useState(initialHtmlState?.mode || "visual");
+  const [htmlDraft, setHtmlDraft] = useState(initialHtmlState?.draft || "");
+  const [htmlBaseline, setHtmlBaseline] = useState(initialHtmlState?.baseline || "");
   const [viewport, setViewport] = useState("desktop");
   const [templateChoice, setTemplateChoice] = useState("");
   const hasUnappliedHtml = mode === "html" && htmlDraft !== htmlBaseline;
   const effectiveDirty = dirty || hasUnappliedHtml;
+
+  function syncHtmlState(next) {
+    onHtmlStateChange?.(next);
+  }
 
   function applyTemplate() {
     const template = templates[templateChoice];
@@ -200,12 +206,14 @@ export function AutomationRecipePanel({
 
   async function changeMode(nextMode) {
     onClearPreview?.();
+    if (nextMode === "html" && mode === "html") return;
     if (nextMode === "html") {
       try {
         if (!editorRef.current?.editor) throw new Error("The editor is still loading.");
         const { html } = await editorRef.current.getEmail();
         setHtmlDraft(html);
         setHtmlBaseline(html);
+        syncHtmlState({ mode: "html", draft: html, baseline: html });
       } catch {
         return;
       }
@@ -214,19 +222,21 @@ export function AutomationRecipePanel({
       return;
     }
     setMode(nextMode);
+    syncHtmlState({ mode: nextMode, draft: htmlDraft, baseline: htmlBaseline });
   }
   function applyHtml() {
     onClearPreview?.();
     editorRef.current?.editor?.commands?.setContent(htmlDraft || "<p></p>");
     setHtmlBaseline(htmlDraft);
     setMode("visual");
+    syncHtmlState({ mode: "visual", draft: htmlDraft, baseline: htmlDraft });
   }
   function handlePreview() {
     if (mode === "html" && htmlDraft !== htmlBaseline) {
       applyHtml();
-      return;
+    } else {
+      setMode("visual");
     }
-    setMode("visual");
     onPreview();
   }
 
@@ -321,7 +331,13 @@ export function AutomationRecipePanel({
       </div>
       {mode === "html" ? (
         <div className="flex flex-col gap-3">
-          <HtmlSourceEditor value={htmlDraft} onChange={setHtmlDraft} />
+          <HtmlSourceEditor
+            value={htmlDraft}
+            onChange={(next) => {
+              setHtmlDraft(next);
+              syncHtmlState({ mode, draft: next, baseline: htmlBaseline });
+            }}
+          />
           <div className={metaBar}>
             <p className={hint}>Paste or edit HTML, then apply it to the visual editor.</p>
             <Button type="button" variant="default" onClick={applyHtml}>

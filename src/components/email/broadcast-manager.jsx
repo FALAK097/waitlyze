@@ -625,6 +625,7 @@ export function BroadcastManager({
 
   async function changeEditorMode(mode) {
     setDraftPreview(null);
+    if (mode === "html" && editorMode === "html") return;
     if (mode === "html") {
       try {
         if (!editorRef.current?.editor) throw new Error("The message editor is still loading.");
@@ -643,6 +644,7 @@ export function BroadcastManager({
   }
 
   function applyEditorHtml() {
+    setDraftPreview(null);
     editorRef.current?.editor?.commands?.setContent(editorHtml || "<p></p>");
     htmlSourceBaseline.current = editorHtml;
     setEditorMode("visual");
@@ -877,7 +879,14 @@ export function BroadcastManager({
                       mode={draftPreview ? "preview" : editorMode === "html" ? "html" : "visual"}
                       setMode={changeEditorMode}
                     />
-                    <Button type="button" variant="outline" onClick={previewDraft} disabled={busy}>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={previewDraft}
+                      disabled={
+                        busy || (editorMode === "html" && editorHtml !== htmlSourceBaseline.current)
+                      }
+                    >
                       {busyAction === "draft-preview" ? "Building…" : "Preview email"}
                     </Button>
                   </div>
@@ -932,7 +941,7 @@ export function BroadcastManager({
                       onChange={setTestTo}
                       onSubmit={sendTest}
                       busy={busyAction === "test"}
-                      disabled={draftDirty}
+                      disabled={draftDirty || busy}
                     />
                   </div>
                 </section>

@@ -367,7 +367,7 @@ export function AudienceTable({
       const result = await retryFailedVerification({ waitListId: waitlist.id, signupIds: ids });
       if (!result.ok) throw new Error(result.message);
       toast.success(result.message);
-      setSelectedIds([]);
+      if (!selectAll) setSelectedIds([]);
       setRetryCount((count) => count + 1);
     } catch (error) {
       toast.error(error.message || "Could not retry confirmation emails.");
@@ -500,7 +500,11 @@ export function AudienceTable({
 
   function retryableVerification(row) {
     const email = row.verificationDelivery;
-    return Boolean(email?.status === "FAILED" && email.issue !== "RECIPIENT_SUPPRESSED");
+    return Boolean(
+      email?.status === "FAILED" &&
+      email.issue !== "RECIPIENT_SUPPRESSED" &&
+      (email.issue !== "SIGNUP_NOT_SENDABLE" || deliveryFilter === "failed"),
+    );
   }
 
   const retryableSelectedIds = useMemo(
@@ -1003,6 +1007,7 @@ export function AudienceTable({
                   disabled={
                     !canManage ||
                     retrying ||
+                    selectAll ||
                     retryableSelectedIds.length === 0 ||
                     retryableSelectedIds.length > 25
                   }
@@ -1010,6 +1015,11 @@ export function AudienceTable({
                 >
                   {retrying ? "Retrying…" : "Retry failed confirmations"}
                 </Button>
+                {selectAll && retryableSelectedIds.length > 0 && (
+                  <span className="text-product-text-secondary">
+                    Retry failed confirmations applies to the current page.
+                  </span>
+                )}
                 {retryableSelectedIds.length > 25 && (
                   <span className="text-product-text-secondary">
                     Select up to 25 failed confirmations at a time to retry.

@@ -1,5 +1,6 @@
 "use client";
 
+import { Select as SelectPrimitive } from "@base-ui/react/select";
 import { ArrowDown01Icon, Tick01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { useSearchParams } from "next/navigation";
@@ -10,7 +11,6 @@ import { ReferralCockpitExtras } from "@/components/product/referral-cockpit";
 import { ShareButtons } from "@/components/product/share-buttons";
 import { StatusBadge } from "@/components/product/waitlist-page-content";
 import { PhoneInput } from "@/components/reui/phone-input";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { collectAttribution } from "@/utils/attribution";
 
@@ -140,8 +140,7 @@ function TurnstileAttempt({ siteKey, onToken, onRetry }) {
   return <div ref={containerRef} className="mt-3" />;
 }
 
-function CustomSelectField({ id, name, label, field, control }) {
-  const [open, setOpen] = useState(false);
+function CustomSelectField({ id, name, label, field, brand }) {
   const [selected, setSelected] = useState("");
   const options = Array.isArray(field.options) ? field.options : [];
   const placeholder = field.placeholder || "Choose an option";
@@ -149,64 +148,76 @@ function CustomSelectField({ id, name, label, field, control }) {
     <div className="mt-3">
       {label}
       <input type="hidden" name={name} value={selected} />
-      <Popover open={open} onOpenChange={setOpen}>
-        <PopoverTrigger
+      <SelectPrimitive.Root value={selected} onValueChange={(value) => setSelected(value ?? "")}>
+        <SelectPrimitive.Trigger
           id={id}
-          type="button"
           aria-required={field.required === true}
           className={cn(
             control,
-            "flex w-full cursor-pointer items-center justify-between gap-2 text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-wl-accent",
+            "flex w-full cursor-pointer items-center justify-between gap-2 text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-wl-accent data-popup-open:[&_svg]:rotate-180",
             !selected && "text-wl-muted",
           )}
         >
           <span className="min-w-0 flex-1 truncate">{selected || placeholder}</span>
-          <HugeiconsIcon
-            icon={ArrowDown01Icon}
-            size={14}
-            aria-hidden="true"
-            className={cn(
-              "shrink-0 text-wl-muted transition-transform duration-150",
-              open && "rotate-180",
-            )}
+          <SelectPrimitive.Icon
+            render={
+              <HugeiconsIcon
+                icon={ArrowDown01Icon}
+                size={14}
+                aria-hidden="true"
+                className="shrink-0 text-wl-muted transition-transform duration-150"
+              />
+            }
           />
-        </PopoverTrigger>
-        <PopoverContent className="w-(--anchor-width) p-1.5" align="start" sideOffset={6}>
-          <div
-            role="listbox"
-            aria-label={field.label || "Options"}
-            className="max-h-60 overflow-y-auto"
+        </SelectPrimitive.Trigger>
+        <SelectPrimitive.Portal>
+          <SelectPrimitive.Positioner
+            side="bottom"
+            sideOffset={6}
+            align="start"
+            alignItemWithTrigger={false}
+            className="isolate z-50"
           >
-            {options.map((option) => {
-              const active = option === selected;
-              return (
-                <button
-                  key={option}
-                  type="button"
-                  role="option"
-                  aria-selected={active}
-                  onClick={() => {
-                    setSelected(option);
-                    setOpen(false);
-                  }}
-                  className={cn(
-                    "flex w-full cursor-pointer items-center justify-between gap-2 rounded-md border-0 bg-transparent px-2.5 py-2 text-left text-sm hover:bg-product-bg-inset focus-visible:outline-2 focus-visible:outline-wl-accent",
-                    active && "bg-product-bg-inset font-semibold",
-                  )}
-                >
-                  <span className="min-w-0 flex-1 truncate">{option}</span>
-                  {active ? <HugeiconsIcon icon={Tick01Icon} size={14} aria-hidden="true" /> : null}
-                </button>
-              );
-            })}
-          </div>
-        </PopoverContent>
-      </Popover>
+            <SelectPrimitive.Popup
+              className="max-h-60 w-(--anchor-width) overflow-y-auto rounded-wl border border-wl-input-border bg-wl-input p-1.5 text-wl-input-text shadow-md"
+              style={
+                brand
+                  ? {
+                      "--wl-surface": brand.surfaceColor,
+                      "--wl-text": brand.textColor,
+                      "--wl-input": brand.inputBackground,
+                      "--wl-input-border": brand.inputBorder,
+                      "--wl-input-text": brand.inputTextColor,
+                      "--wl-accent": brand.accentColor,
+                    }
+                  : undefined
+              }
+            >
+              <SelectPrimitive.List>
+                {options.map((option) => (
+                  <SelectPrimitive.Item
+                    key={option}
+                    value={option}
+                    className="flex w-full cursor-pointer items-center justify-between gap-2 rounded-md px-2.5 py-2 text-left text-sm text-wl-input-text outline-none select-none data-highlighted:bg-wl-text/10 data-selected:bg-wl-text/10 data-selected:font-semibold"
+                  >
+                    <SelectPrimitive.ItemText className="min-w-0 flex-1 truncate">
+                      {option}
+                    </SelectPrimitive.ItemText>
+                    <SelectPrimitive.ItemIndicator
+                      render={<HugeiconsIcon icon={Tick01Icon} size={14} aria-hidden="true" />}
+                    />
+                  </SelectPrimitive.Item>
+                ))}
+              </SelectPrimitive.List>
+            </SelectPrimitive.Popup>
+          </SelectPrimitive.Positioner>
+        </SelectPrimitive.Portal>
+      </SelectPrimitive.Root>
     </div>
   );
 }
 
-function CustomFieldInput({ field, control }) {
+function CustomFieldInput({ field, brand }) {
   const id = useId();
   const name = `custom-${field.id}`;
   const label = (
@@ -231,7 +242,7 @@ function CustomFieldInput({ field, control }) {
     );
   }
   if (field.type === "select") {
-    return <CustomSelectField id={id} name={name} label={label} field={field} control={control} />;
+    return <CustomSelectField id={id} name={name} label={label} field={field} brand={brand} />;
   }
   if (field.type === "checkbox") {
     return (
@@ -684,7 +695,7 @@ function SignupFormInner({
         />
       )}
       {customFields.map((field) => (
-        <CustomFieldInput field={field} control={control} key={`${field.id}:${resetKey}`} />
+        <CustomFieldInput field={field} brand={brand} key={`${field.id}:${resetKey}`} />
       ))}
       {formConfig.requireConsent && <ConsentField formConfig={formConfig} />}
       {turnstileOn && (

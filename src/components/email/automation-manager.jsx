@@ -42,11 +42,18 @@ export function AutomationManager({
     initialRecipes.map((recipe) => ({ ...recipe, savedConfig: recipe.config })),
   );
   const [busyId, setBusyId] = useState(null);
-  const [activeRecipe, setActiveRecipe] = useState(
-    initialRecipes.some((recipe) => recipe.id === initialRecipeId)
+  const [selectedRecipe, setSelectedRecipe] = useState(null);
+  const [prevInitialRecipeId, setPrevInitialRecipeId] = useState(initialRecipeId);
+  if (initialRecipeId !== prevInitialRecipeId) {
+    setPrevInitialRecipeId(initialRecipeId);
+    setSelectedRecipe(null);
+  }
+  const activeRecipe =
+    selectedRecipe ??
+    (recipes.some((recipe) => recipe.id === initialRecipeId)
       ? initialRecipeId
-      : initialRecipes[0]?.id || null,
-  );
+      : recipes[0]?.id || null);
+  const [htmlDrafts, setHtmlDrafts] = useState({});
   const [checks, setChecks] = useState(null);
   const [testTo, setTestTo] = useState("");
 
@@ -200,7 +207,7 @@ export function AutomationManager({
               aria-current={activeRecipe === item.id ? "true" : undefined}
               disabled={Boolean(busyId)}
               onClick={() => {
-                setActiveRecipe(item.id);
+                setSelectedRecipe(item.id);
                 setChecks(null);
               }}
             >
@@ -222,6 +229,10 @@ export function AutomationManager({
             validValues={hasValidValues(recipe)}
             editorRef={editorRef}
             testTo={testTo}
+            initialHtmlState={htmlDrafts[recipe.id]}
+            onHtmlStateChange={(nextState) =>
+              setHtmlDrafts((current) => ({ ...current, [recipe.id]: nextState }))
+            }
             onTestToChange={setTestTo}
             onUpdateRecipe={updateRecipe}
             onPreview={() => previewChecks(recipe)}

@@ -40,14 +40,30 @@ export function CountryMultiSelect({
   );
   const countries = useMemo(() => {
     const search = query.trim().toLowerCase();
-    return allCountries.filter(
+    const matches = allCountries.filter(
       ({ code, name }) =>
         !search || code.toLowerCase().includes(search) || name.toLowerCase().includes(search),
     );
+    if (/^[a-z]{2}$/i.test(search)) {
+      const upper = search.toUpperCase();
+      if (!matches.some((country) => country.code === upper)) {
+        matches.unshift({ code: upper, name: labels[upper] || upper });
+      }
+    }
+    return matches;
   }, [allCountries, query]);
   const selectedCountries = selected.map(
     (code) => allCountries.find((country) => country.code === code) ?? { code, name: code },
   );
+  const items = useMemo(() => {
+    const seen = new Set(allCountries.map((country) => country.code));
+    const extras = [...selectedCountries, ...countries].filter((country) => {
+      if (seen.has(country.code)) return false;
+      seen.add(country.code);
+      return true;
+    });
+    return extras.length ? [...allCountries, ...extras] : allCountries;
+  }, [allCountries, countries, selectedCountries]);
 
   return (
     <div className="grid min-w-0 gap-1.5">
@@ -57,7 +73,7 @@ export function CountryMultiSelect({
         autoHighlight
         open={open}
         onOpenChange={setOpen}
-        items={allCountries}
+        items={items}
         filteredItems={countries}
         value={selectedCountries}
         inputValue={query}

@@ -828,6 +828,7 @@ function SignupPreviewFieldControl({ field }) {
       <span className="flex min-h-11 items-center gap-2 font-normal text-wl-muted">
         <span className="size-4 rounded border border-wl-input-border bg-wl-input" />
         {field.label || "Yes"}
+        {field.required ? " *" : ""}
       </span>
     );
   }
@@ -860,7 +861,10 @@ function SignupPreviewFieldControl({ field }) {
 }
 
 function SignupPreviewCustomField({ field }) {
-  const title = `${field.label || "Custom field"}${field.required ? " *" : ""}`;
+  const title =
+    field.type === "checkbox"
+      ? null
+      : `${field.label || "Custom field"}${field.required ? " *" : ""}`;
   return (
     <div className="grid gap-1 text-caption font-semibold">
       {title}

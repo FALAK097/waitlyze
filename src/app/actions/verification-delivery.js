@@ -62,12 +62,6 @@ export async function retryFailedVerification({ waitListId, signupIds }) {
           });
           if (suppressed) return null;
         }
-        if (signup.verifiedAt) {
-          await tx.signUp.update({
-            where: { id: signup.id },
-            data: { verifiedAt: null },
-          });
-        }
         const token = randomBytes(32).toString("base64url");
         const tokenHash = createHash("sha256").update(token).digest("hex");
         const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
@@ -82,7 +76,13 @@ export async function retryFailedVerification({ waitListId, signupIds }) {
             eventKey: key,
             type: "SIGNUP_VERIFICATION_REQUESTED",
             waitListId,
-            payload: { signUpId: signup.id, waitListId, email: signup.email, token },
+            payload: {
+              signUpId: signup.id,
+              waitListId,
+              email: signup.email,
+              token,
+              manualRetry: true,
+            },
           },
         });
         return key;

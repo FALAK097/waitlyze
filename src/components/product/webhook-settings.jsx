@@ -132,6 +132,15 @@ export function WebhookSettings({ waitListId, canManage = true }) {
 
   async function createEndpoint(event) {
     event.preventDefault();
+    try {
+      const parsed = new URL(url);
+      if (parsed.protocol !== "https:" || !parsed.hostname || /\s/.test(url)) {
+        throw new Error("Invalid endpoint");
+      }
+    } catch {
+      toast.error("Enter a valid HTTPS endpoint.");
+      return;
+    }
     const created = await call("", "POST", { name, url, events });
     if (created) {
       setName("");
