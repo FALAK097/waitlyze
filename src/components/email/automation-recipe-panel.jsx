@@ -20,6 +20,7 @@ import {
   VariableChips,
 } from "./email-composer-extras";
 import { EmailComposerModeBar } from "./email-composer-mode-bar";
+import { SavedTemplateSelect } from "./saved-template-select";
 
 const pane = "min-w-0 max-w-195 flex flex-col gap-5 lg:flex-1";
 const paneHead = "flex items-start justify-between gap-4 max-sm:flex-col max-sm:items-stretch";
@@ -268,23 +269,12 @@ export function AutomationRecipePanel({
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
-        <label className="sr-only" htmlFor={`automation-template-${recipe.id}`}>
-          Start from a saved email template
-        </label>
-        <select
-          id={`automation-template-${recipe.id}`}
-          className="min-h-9 min-w-52 rounded-product-control border border-product-border-control bg-white px-3 text-caption"
+        <SavedTemplateSelect
           value={templateChoice}
-          onChange={(event) => setTemplateChoice(event.target.value)}
+          onValueChange={setTemplateChoice}
+          templates={templates}
           disabled={busy}
-        >
-          <option value="">Start from a saved template…</option>
-          {Object.entries(templates).map(([key, template]) => (
-            <option key={key} value={key}>
-              {template.type || key}
-            </option>
-          ))}
-        </select>
+        />
         <Button
           type="button"
           variant="outline"
@@ -295,12 +285,7 @@ export function AutomationRecipePanel({
         </Button>
       </div>
 
-      <EmailComposerModeBar
-        mode={mode}
-        setMode={changeMode}
-        viewport={viewport}
-        setViewport={setViewport}
-      />
+      <EmailComposerModeBar mode={mode} setMode={changeMode} />
       {mode === "html" ? (
         <div className="flex flex-col gap-3">
           <HtmlSourceEditor value={htmlDraft} onChange={setHtmlDraft} />

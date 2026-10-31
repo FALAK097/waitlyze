@@ -28,6 +28,7 @@ import {
 } from "./email-composer-extras";
 import { EmailComposerModeBar } from "./email-composer-mode-bar";
 import { EmailToolsNav } from "./email-tools-nav";
+import { SavedTemplateSelect } from "./saved-template-select";
 
 const scope = "min-w-0 bg-white text-product-text-primary";
 const unsaved =
@@ -757,23 +758,12 @@ export function BroadcastManager({
                     </p>
                   </div>
                   <div className="flex flex-wrap items-center gap-2">
-                    <label className="sr-only" htmlFor="broadcast-template-select">
-                      Start from a saved email template
-                    </label>
-                    <select
-                      id="broadcast-template-select"
-                      className="min-h-9 min-w-52 rounded-product-control border border-product-border-control bg-white px-3 text-caption"
+                    <SavedTemplateSelect
                       value={templateChoice}
-                      onChange={(event) => setTemplateChoice(event.target.value)}
+                      onValueChange={setTemplateChoice}
+                      templates={initialTemplates}
                       disabled={busy}
-                    >
-                      <option value="">Start from a saved template…</option>
-                      {Object.entries(initialTemplates).map(([key, template]) => (
-                        <option key={key} value={key}>
-                          {template.type || key}
-                        </option>
-                      ))}
-                    </select>
+                    />
                     <Button
                       type="button"
                       variant="outline"
@@ -784,12 +774,7 @@ export function BroadcastManager({
                     </Button>
                   </div>
                 </section>
-                <EmailComposerModeBar
-                  mode={editorMode}
-                  setMode={changeEditorMode}
-                  viewport={previewViewport}
-                  setViewport={setPreviewViewport}
-                />
+                <EmailComposerModeBar mode={editorMode} setMode={changeEditorMode} />
                 <form
                   id="broadcast-draft-form"
                   className="flex flex-col gap-5"

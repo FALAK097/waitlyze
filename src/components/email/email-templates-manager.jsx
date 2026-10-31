@@ -279,8 +279,6 @@ export function EmailTemplatesManager({ waitListId, waitListName, initialTemplat
                 setPreview(null);
                 setMode("write");
               }}
-              viewport={viewport}
-              setViewport={setViewport}
             />
             <Button type="button" variant="outline" onClick={enterPreview}>
               Preview email

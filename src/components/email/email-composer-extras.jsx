@@ -2,8 +2,9 @@
 
 import { MonitorIcon, SmartphoneIcon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { useState } from "react";
+import { useRef, useState } from "react";
 
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { spamHint } from "@/lib/email/variables.mjs";
 
 const chipsLine = "m-0 text-xs text-product-text-secondary";
@@ -50,9 +51,9 @@ export function SpamHintView({ subject, previewText, text, html }) {
   );
 }
 
-const frameBar = "flex flex-wrap items-center gap-2";
-const frameTab =
-  "min-h-8.5 rounded-product-control border border-product-border-control bg-white px-3 text-caption font-semibold text-product-text-primary cursor-pointer aria-[pressed=true]:bg-product-bg-inset focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-product-success-text!";
+const frameBar = "flex flex-wrap items-center justify-between gap-3";
+const viewportGroup =
+  "flex gap-1 [&_button]:flex [&_button]:size-9 [&_button]:cursor-pointer [&_button]:items-center [&_button]:justify-center [&_button]:rounded-lg [&_button]:border-0 [&_button]:bg-transparent [&_button]:text-product-text-secondary [&_button[aria-pressed=true]]:bg-product-bg-surface [&_button[aria-pressed=true]]:text-product-text-primary";
 
 const htmlToken = "text-product-success-text";
 
@@ -79,23 +80,30 @@ function highlightHtml(source) {
 }
 
 export function HtmlSourceEditor({ value, onChange, label = "Email HTML source" }) {
+  const preRef = useRef(null);
   return (
-    <div className="relative min-h-72 overflow-hidden rounded-lg border border-product-border-subtle bg-white font-product-mono text-caption leading-relaxed max-sm:min-h-64">
+    <div className="relative h-80 max-h-[70vh] min-h-64 resize-y overflow-hidden rounded-lg border border-product-border-subtle bg-white font-product-mono text-caption leading-relaxed">
       <pre
+        ref={preRef}
         aria-hidden="true"
-        className="pointer-events-none absolute inset-0 m-0 overflow-auto p-4 break-words whitespace-pre-wrap text-product-text-primary"
+        className="pointer-events-none absolute inset-0 m-0 overflow-hidden p-4 break-words whitespace-pre-wrap text-product-text-primary"
       >
         {highlightHtml(value)}
         {"\n"}
       </pre>
       <textarea
-        className="relative min-h-72 w-full resize-y bg-transparent p-4 break-words whitespace-pre-wrap text-transparent caret-product-text-primary selection:bg-product-success-bg focus-visible:outline-2 focus-visible:outline-product-success-text max-sm:min-h-64 [&::-webkit-scrollbar]:hidden"
+        className="relative h-full max-h-full min-h-full w-full resize-none overflow-auto bg-transparent p-4 break-words whitespace-pre-wrap text-transparent caret-product-text-primary selection:bg-product-success-bg focus-visible:outline-2 focus-visible:outline-product-success-text [&::-webkit-scrollbar]:hidden"
         aria-label={label}
         value={value}
         spellCheck={false}
         autoCapitalize="off"
         autoCorrect="off"
         onChange={(event) => onChange(event.target.value)}
+        onScroll={(event) => {
+          if (!preRef.current) return;
+          preRef.current.scrollTop = event.currentTarget.scrollTop;
+          preRef.current.scrollLeft = event.currentTarget.scrollLeft;
+        }}
         style={{ WebkitTextFillColor: "transparent" }}
       />
     </div>
@@ -109,7 +117,6 @@ export function EmailPreviewFrame({
   onViewportChange,
 }) {
   const [localMobile, setLocalMobile] = useState(false);
-  const controlled = controlledViewport !== undefined;
   const mobile = controlledViewport ? controlledViewport === "mobile" : localMobile;
   const setMobile = (value) => {
     setLocalMobile(value);
@@ -118,29 +125,43 @@ export function EmailPreviewFrame({
   return (
     <div className="flex flex-col gap-3">
       <div className={frameBar}>
-        {!controlled && (
-          <>
-            <button
-              type="button"
-              className={frameTab}
-              aria-pressed={!mobile}
-              onClick={() => setMobile(false)}
-            >
-              <HugeiconsIcon icon={MonitorIcon} size={16} aria-hidden="true" />
-              <span className="sr-only">Desktop</span>
-            </button>
-            <button
-              type="button"
-              className={frameTab}
-              aria-pressed={mobile}
-              onClick={() => setMobile(true)}
-            >
-              <HugeiconsIcon icon={SmartphoneIcon} size={16} aria-hidden="true" />
-              <span className="sr-only">Mobile preview, 375 pixels wide</span>
-            </button>
-          </>
-        )}
-        <span className="text-caption text-product-text-secondary">{seedNote}</span>
+        <TooltipProvider>
+          <div className={viewportGroup} role="group" aria-label="Preview viewport">
+            <Tooltip>
+              <TooltipTrigger
+                render={
+                  <button
+                    type="button"
+                    aria-label="Desktop preview"
+                    aria-pressed={!mobile}
+                    onClick={() => setMobile(false)}
+                  />
+                }
+              >
+                <HugeiconsIcon icon={MonitorIcon} size={17} aria-hidden="true" />
+              </TooltipTrigger>
+              <TooltipContent side="top">Desktop</TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger
+                render={
+                  <button
+                    type="button"
+                    aria-label="Mobile preview"
+                    aria-pressed={mobile}
+                    onClick={() => setMobile(true)}
+                  />
+                }
+              >
+                <HugeiconsIcon icon={SmartphoneIcon} size={17} aria-hidden="true" />
+              </TooltipTrigger>
+              <TooltipContent side="top">Mobile</TooltipContent>
+            </Tooltip>
+          </div>
+        </TooltipProvider>
+        <span className="text-caption text-product-text-secondary max-sm:flex-1 max-sm:text-right">
+          {seedNote}
+        </span>
       </div>
       <div
         className="mx-auto w-full overflow-hidden rounded-lg border border-product-border-subtle bg-white transition-[max-width]"

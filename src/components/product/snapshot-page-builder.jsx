@@ -1751,7 +1751,7 @@ export function SnapshotPageBuilder({
                 </div>
                 <div
                   className={cn(
-                    "grid overflow-y-auto rounded-xl bg-white shadow-surface",
+                    "no-scrollbar grid overflow-y-auto rounded-xl bg-white shadow-surface",
                     statusViewport === "mobile" ? "mx-auto h-160 w-full max-w-md" : "h-140 w-full",
                   )}
                 >
@@ -2628,15 +2628,16 @@ function RewardsSection({ perks, updateRewards }) {
         <span className="block text-micro font-bold tracking-widest text-product-text-secondary uppercase">
           Custom events
         </span>
-        <p className="m-0 text-caption leading-relaxed text-product-text-secondary">
-          Reward verified signups for off-site actions (such as a completed survey or Discord join).
-          After the action, call <code>POST /api/waitlist/points</code> with <code>waitlistId</code>
-          , this event key as <code>event</code>, and either <code>email</code> or{" "}
-          <code>signupId</code> in the body. Send your API key in the <code>X-Api-Key</code> header.
-          Omit
-          <code> points</code> to award the configured amount; it adds to the signup’s points
-          balance, shown on the public referral/status page when points are enabled. Reuse an
-          <code> idempotencyKey</code> for safe retries.
+        <p className="m-0 max-w-prose text-caption leading-relaxed text-product-text-secondary">
+          Award points for verified off-site actions. Configure an event key, then send it through
+          the{" "}
+          <Link
+            className="font-medium text-product-text-primary underline underline-offset-2"
+            href="/docs/api/award-points"
+          >
+            Points API
+          </Link>
+          .
         </p>
         {(perks.customEvents ?? []).map((entry, index) => (
           <div

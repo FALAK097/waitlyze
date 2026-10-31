@@ -182,7 +182,7 @@ function FunnelChart({ data, showValues = true, showPercentage = true, showLabel
   const norms = data.map((stage) => Math.max(stage.value, 0) / scaleValue);
   const segmentWidth = (FUNNEL_WIDTH - FUNNEL_GAP * (data.length - 1)) / data.length;
   const layerScales = [1, 0.65, 0.3];
-  const layerOpacities = [0.18, 0.5, 0.84];
+  const layerFills = ["#e8eee9", "#bdcec2", "#668675"];
 
   return (
     <div className="analytics-funnel relative mt-1 w-full overflow-visible px-3 pt-1 pb-2">
@@ -211,8 +211,7 @@ function FunnelChart({ data, showValues = true, showPercentage = true, showLabel
                 <path
                   key={`ring-${layerScale}`}
                   d={funnelSegmentPath(normStart, normEnd, segmentWidth, layerScale)}
-                  fill="var(--product-green-700)"
-                  opacity={layerOpacities[layerIndex]}
+                  fill={layerFills[layerIndex]}
                 />
               ))}
             </g>
@@ -234,7 +233,7 @@ function FunnelChart({ data, showValues = true, showPercentage = true, showLabel
                   <button
                     type="button"
                     aria-label={`${stage.label}: ${number.format(stage.value)}, ${percentage} of visitors.${detail}`}
-                    className="analytics-funnel__stage group absolute top-0 grid h-full cursor-help border-0 bg-transparent p-0 text-center transition-opacity duration-150"
+                    className="analytics-funnel__stage group absolute top-0 grid h-full cursor-pointer border-0 bg-transparent p-0 text-center transition-opacity duration-150"
                     onBlur={() => setHoveredIndex(null)}
                     onFocus={() => setHoveredIndex(index)}
                     onPointerEnter={() => setHoveredIndex(index)}
@@ -254,7 +253,7 @@ function FunnelChart({ data, showValues = true, showPercentage = true, showLabel
                 ) : null}
                 {showPercentage ? (
                   <span className="grid place-items-center">
-                    <span className="ring-product-green-700/10 rounded-full bg-product-accent-solid px-2.5 py-1 text-micro leading-none font-semibold text-product-accent-label tabular-nums shadow-sm ring-1 group-focus-visible:ring-2 group-focus-visible:ring-product-focus group-focus-visible:ring-offset-2">
+                    <span className="rounded-full border border-product-border-control bg-white px-2.5 py-1 text-micro leading-none font-semibold text-product-text-primary tabular-nums group-focus-visible:ring-2 group-focus-visible:ring-product-focus group-focus-visible:ring-offset-2">
                       {percentage}
                     </span>
                   </span>
@@ -1171,9 +1170,6 @@ export function WaitlistAnalytics({ waitListId, emailsEnabled = false }) {
               <h3 id="waitlist-funnel-title" className="text-sm font-semibold">
                 Funnel
               </h3>
-              <span className="text-micro font-medium text-product-text-secondary">
-                Views → joins → verified
-              </span>
             </header>
             {noActivity ? (
               <p className="grid h-61.5 place-items-center border-t border-product-border-subtle p-6 text-center text-xs text-product-text-secondary">

@@ -175,7 +175,13 @@ function LinkedInIcon({ className }) {
 }
 
 function EmailIcon({ className }) {
-  return <HugeiconsIcon icon={Mail01Icon} className={className} aria-hidden="true" />;
+  return (
+    <HugeiconsIcon
+      icon={Mail01Icon}
+      className={cn(className, "text-product-text-secondary")}
+      aria-hidden="true"
+    />
+  );
 }
 
 function FacebookIcon({ className }) {
@@ -252,7 +258,7 @@ export function ShareButtons({
   subject,
   onShare,
   className,
-  iconClassName = "size-14!",
+  iconClassName = "size-10!",
 }) {
   const [copied, setCopied] = useState(false);
 
@@ -281,7 +287,7 @@ export function ShareButtons({
               aria-label={copied ? "Link copied" : "Copy link for Instagram"}
               title={copied ? "Copied" : "Copy link for Instagram"}
               onClick={copyLink}
-              className="grid min-h-14 min-w-14 cursor-pointer place-items-center border-0 bg-transparent p-0 transition-opacity hover:opacity-85"
+              className="grid min-h-11 min-w-11 cursor-pointer place-items-center border-0 bg-transparent p-0 transition-opacity hover:opacity-85"
             >
               <Icon className={iconClassName} />
             </button>
@@ -297,7 +303,7 @@ export function ShareButtons({
             aria-label={`Share on ${channelLabel(channel)}`}
             title={`Share on ${channelLabel(channel)}`}
             onClick={() => onShare?.(channel)}
-            className="grid min-h-14 min-w-14 place-items-center transition-opacity hover:opacity-85"
+            className="grid min-h-11 min-w-11 place-items-center transition-opacity hover:opacity-85"
           >
             <Icon className={iconClassName} />
           </a>
