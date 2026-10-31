@@ -19,7 +19,7 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { importSignups } from "@/app/actions/audience-import";
@@ -192,6 +192,7 @@ export function AudienceTable({
   );
   const [importing, setImporting] = useState(false);
   const [copiedId, setCopiedId] = useState(null);
+  const searchInputRef = useRef(null);
 
   const flags = result.flags || {
     showReferrals: waitlist.showReferrals,
@@ -493,22 +494,22 @@ export function AudienceTable({
     if (email.status === "DELIVERED") return "Accepted by sender";
     if (email.status === "PENDING" || email.status === "PROCESSING") return "Sending";
     if (email.issue === "RECIPIENT_SUPPRESSED") return "Not sent · suppressed";
-    if (email.issue === "SIGNUP_NOT_SENDABLE")
-      return deliveryFilter === "failed"
-        ? "Failed · needs a fresh link"
-        : "Not sent · no longer eligible";
+    if (email.issue === "SIGNUP_NOT_SENDABLE") return "Failed · needs a fresh link";
     return "Failed";
   }
 
   function retryableVerification(row) {
     const email = row.verificationDelivery;
-    return (
-      !row.verifiedAt &&
-      email?.status === "FAILED" &&
-      email.issue !== "RECIPIENT_SUPPRESSED" &&
-      (email.issue !== "SIGNUP_NOT_SENDABLE" || deliveryFilter === "failed")
-    );
+    return Boolean(email?.status === "FAILED" && email.issue !== "RECIPIENT_SUPPRESSED");
   }
+
+  const retryableSelectedIds = useMemo(
+    () =>
+      result.data
+        .filter((row) => selectedIds.includes(row.id) && retryableVerification(row))
+        .map((row) => row.id),
+    [result.data, selectedIds],
+  );
 
   const showingStart = result.total === 0 ? 0 : pageIndex * PAGE_SIZE + 1;
   const showingEnd = Math.min((pageIndex + 1) * PAGE_SIZE, result.total);
@@ -922,7 +923,7 @@ export function AudienceTable({
         <>
           <div className="min-w-0" aria-busy={isUpdating}>
             <div className="mb-6 flex flex-wrap items-center justify-between gap-4 max-[640px]:items-stretch">
-              <div className="w-full sm:max-w-sm" role="search">
+              <search className="w-full sm:max-w-sm">
                 <Label className="sr-only" htmlFor="audience-search">
                   Search signups by email
                 </Label>
@@ -931,6 +932,7 @@ export function AudienceTable({
                     <HugeiconsIcon icon={Search01Icon} size={16} aria-hidden="true" />
                   </InputGroupAddon>
                   <InputGroupInput
+                    ref={searchInputRef}
                     id="audience-search"
                     type="search"
                     autoComplete="off"
@@ -944,14 +946,17 @@ export function AudienceTable({
                       <InputGroupButton
                         size="icon-xs"
                         aria-label="Clear search"
-                        onClick={() => setQuery("")}
+                        onClick={() => {
+                          setQuery("");
+                          searchInputRef.current?.focus();
+                        }}
                       >
                         <HugeiconsIcon icon={Cancel01Icon} size={15} aria-hidden="true" />
                       </InputGroupButton>
                     </InputGroupAddon>
                   )}
                 </InputGroup>
-              </div>
+              </search>
               <Select value={filter} onValueChange={changeFilter}>
                 <SelectTrigger className="w-52 max-[640px]:w-full" aria-label="Filter signups">
                   <SelectValue>
@@ -979,30 +984,35 @@ export function AudienceTable({
                     : `${selectedIds.length} selected on this page`}
                   {selectTruncated ? " (first 2,000)" : ""}
                 </span>
+                {!selectAll &&
+                  selectedIds.length === result.data.length &&
+                  result.total > result.data.length && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      disabled={selecting || !canManage}
+                      onClick={selectAllMatching}
+                    >
+                      {selecting
+                        ? "Selecting…"
+                        : `Select all ${result.total.toLocaleString()} signups`}
+                    </Button>
+                  )}
                 <Button
                   variant="outline"
                   disabled={
                     !canManage ||
                     retrying ||
-                    selectAll ||
-                    selectedIds.length > 25 ||
-                    !result.data.some(
-                      (row) => selectedIds.includes(row.id) && retryableVerification(row),
-                    )
+                    retryableSelectedIds.length === 0 ||
+                    retryableSelectedIds.length > 25
                   }
-                  onClick={() =>
-                    retryEmails(
-                      result.data
-                        .filter((row) => selectedIds.includes(row.id) && retryableVerification(row))
-                        .map((row) => row.id),
-                    )
-                  }
+                  onClick={() => retryEmails(retryableSelectedIds)}
                 >
                   {retrying ? "Retrying…" : "Retry failed confirmations"}
                 </Button>
-                {(selectAll || selectedIds.length > 25) && (
+                {retryableSelectedIds.length > 25 && (
                   <span className="text-product-text-secondary">
-                    Select up to 25 at a time to retry.
+                    Select up to 25 failed confirmations at a time to retry.
                   </span>
                 )}
                 {canManage && (
@@ -1033,23 +1043,6 @@ export function AudienceTable({
                 )}
               </div>
             )}
-            {!selectAll &&
-              selectedIds.length > 0 &&
-              selectedIds.length === result.data.length &&
-              result.total > result.data.length && (
-                <div className="flex flex-wrap items-center gap-3 px-4 pb-1 text-sm text-product-text-secondary">
-                  <span>All {result.data.length} on this page selected.</span>
-                  <Button
-                    variant="ghost"
-                    disabled={selecting || !canManage}
-                    onClick={selectAllMatching}
-                  >
-                    {selecting
-                      ? "Selecting…"
-                      : `Select all ${result.total.toLocaleString()} signups`}
-                  </Button>
-                </div>
-              )}
 
             {error && (
               <div
@@ -1141,7 +1134,10 @@ export function AudienceTable({
                       {[0, 1, 2, 3, 4].map((row) => (
                         <TableRow aria-hidden="true" key={row}>
                           {columns.map((column, colIdx) => (
-                            <TableCell className="h-14" key={column.id || colIdx}>
+                            <TableCell
+                              className={`h-14 ${column.meta?.className || ""}`}
+                              key={column.id || colIdx}
+                            >
                               <i
                                 className={
                                   colIdx === 0

@@ -775,10 +775,92 @@ export function WaitlistPageContent({
   );
 }
 
+function SignupPreviewEmailRow({ form }) {
+  return (
+    <div>
+      <span className="mb-2 block text-caption font-bold">{form.label}</span>
+      <div
+        className={cn("flex gap-2 max-sm:flex-col", form.layout === "stacked" && "flex-col gap-3")}
+      >
+        <span className="flex h-12 min-h-12 flex-1 items-center rounded-wl border border-wl-input-border bg-wl-input px-4 text-wl-muted">
+          {form.placeholder}
+        </span>
+        <span className="inline-flex h-12 items-center justify-center rounded-wl bg-wl-button px-5 font-bold text-wl-button-text">
+          {form.buttonText}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function SignupPreviewPhoneField({ requirePhone }) {
+  return (
+    <div className="grid gap-1 text-caption font-semibold">
+      <span>
+        Phone number{requirePhone ? " *" : ""}
+        {!requirePhone && <span className="font-normal text-wl-muted"> (optional)</span>}
+      </span>
+      <div className="flex gap-2">
+        <span className="inline-flex h-12 shrink-0 items-center gap-1.5 rounded-wl border border-wl-input-border bg-wl-input px-3 font-normal text-wl-input-text">
+          <span aria-hidden="true">🇺🇸</span>
+          <span>+1</span>
+          <span aria-hidden="true" className="text-micro text-wl-muted">
+            ▾
+          </span>
+        </span>
+        <span className="flex h-12 min-w-0 flex-1 items-center rounded-wl border border-wl-input-border bg-wl-input px-4 font-normal text-wl-muted">
+          415 555 2671
+        </span>
+      </div>
+      <span className="text-micro font-normal text-wl-muted">
+        We only use this for launch updates.
+      </span>
+    </div>
+  );
+}
+
+function SignupPreviewCustomField({ field }) {
+  const options = Array.isArray(field.options) ? field.options : [];
+  return (
+    <div className="grid gap-1 text-caption font-semibold">
+      {field.label || "Custom field"}
+      {field.required ? " *" : ""}
+      {field.type === "checkbox" ? (
+        <span className="flex min-h-11 items-center gap-2 font-normal text-wl-muted">
+          <span className="size-4 rounded border border-wl-input-border bg-wl-input" />
+          {field.label || "Yes"}
+        </span>
+      ) : field.type === "textarea" ? (
+        <span className="flex min-h-20 items-start rounded-wl border border-wl-input-border bg-wl-input px-4 py-3 font-normal text-wl-muted">
+          {field.placeholder || "Your answer"}
+        </span>
+      ) : field.type === "select" ? (
+        <div className="grid gap-1">
+          <span className="flex h-12 items-center justify-between rounded-wl border border-wl-input-border bg-wl-input px-4 font-normal text-wl-muted">
+            <span>{field.placeholder || "Choose an option"}</span>
+            <span aria-hidden="true" className="text-micro text-wl-muted">
+              ▾
+            </span>
+          </span>
+          {options.length > 0 ? (
+            <span className="text-micro font-normal text-wl-muted">
+              Options: {options.join(" · ")}
+            </span>
+          ) : null}
+        </div>
+      ) : (
+        <span className="flex h-12 items-center rounded-wl border border-wl-input-border bg-wl-input px-4 font-normal text-wl-muted">
+          {field.placeholder || (field.type === "number" ? "0" : "Your answer")}
+        </span>
+      )}
+    </div>
+  );
+}
+
 export function WaitlistSignupPreview({ form, brand }) {
   const fontStylesheet = brand ? googleFontsStylesheet([brand.headingFont, brand.bodyFont]) : null;
   const customFields = Array.isArray(form.customFields) ? form.customFields : [];
-  const hasExtraFields = form.collectPhone || form.requirePhone || customFields.length > 0;
+  const showPhone = Boolean(form.collectPhone || form.requirePhone);
   return (
     <div
       className={cn("w-full text-wl-text", brand && "rounded-wl bg-wl-page p-8 font-wl-body")}
@@ -803,108 +885,19 @@ export function WaitlistSignupPreview({ form, brand }) {
       {fontStylesheet ? (
         <link href={fontStylesheet} rel="stylesheet" precedence="waitlyze-fonts" />
       ) : null}
-      {hasExtraFields ? (
-        <div className="grid gap-3">
-          <div>
-            <span className="mb-2 block text-caption font-bold">{form.label}</span>
-            <div
-              className={cn(
-                "flex gap-2 max-sm:flex-col",
-                form.layout === "stacked" && "flex-col gap-3",
-              )}
-            >
-              <span className="flex h-12 min-h-12 flex-1 items-center rounded-wl border border-wl-input-border bg-wl-input px-4 text-wl-muted">
-                {form.placeholder}
-              </span>
-              <span className="inline-flex h-12 items-center justify-center rounded-wl bg-wl-button px-5 font-bold text-wl-button-text">
-                {form.buttonText}
-              </span>
-            </div>
-          </div>
-          {(form.collectPhone || form.requirePhone) && (
-            <div className="grid gap-1 text-caption font-semibold">
-              <span>
-                Phone number{form.requirePhone ? " *" : ""}
-                {!form.requirePhone && (
-                  <span className="font-normal text-wl-muted"> (optional)</span>
-                )}
-              </span>
-              <div className="flex gap-2">
-                <span className="inline-flex h-12 shrink-0 items-center gap-1.5 rounded-wl border border-wl-input-border bg-wl-input px-3 font-normal text-wl-input-text">
-                  <span aria-hidden="true">🇺🇸</span>
-                  <span>+1</span>
-                  <span aria-hidden="true" className="text-micro text-wl-muted">
-                    ▾
-                  </span>
-                </span>
-                <span className="flex h-12 min-w-0 flex-1 items-center rounded-wl border border-wl-input-border bg-wl-input px-4 font-normal text-wl-muted">
-                  415 555 2671
-                </span>
-              </div>
-              <span className="text-micro font-normal text-wl-muted">
-                We only use this for launch updates.
-              </span>
-            </div>
-          )}
-          {customFields.map((field) => (
-            <div className="grid gap-1 text-caption font-semibold" key={field.id}>
-              {field.label || "Custom field"}
-              {field.required ? " *" : ""}
-              {field.type === "checkbox" ? (
-                <span className="flex min-h-11 items-center gap-2 font-normal text-wl-muted">
-                  <span className="size-4 rounded border border-wl-input-border bg-wl-input" />
-                  {field.label || "Yes"}
-                </span>
-              ) : field.type === "textarea" ? (
-                <span className="flex min-h-20 items-start rounded-wl border border-wl-input-border bg-wl-input px-4 py-3 font-normal text-wl-muted">
-                  {field.placeholder || "Your answer"}
-                </span>
-              ) : field.type === "select" ? (
-                <div className="grid gap-1">
-                  <span className="flex h-12 items-center justify-between rounded-wl border border-wl-input-border bg-wl-input px-4 font-normal text-wl-muted">
-                    <span>{field.placeholder || "Choose an option"}</span>
-                    <span aria-hidden="true" className="text-micro text-wl-muted">
-                      ▾
-                    </span>
-                  </span>
-                  {Array.isArray(field.options) && field.options.length > 0 && (
-                    <span className="text-micro font-normal text-wl-muted">
-                      Options: {field.options.join(" · ")}
-                    </span>
-                  )}
-                </div>
-              ) : (
-                <span className="flex h-12 items-center rounded-wl border border-wl-input-border bg-wl-input px-4 font-normal text-wl-muted">
-                  {field.placeholder || (field.type === "number" ? "0" : "Your answer")}
-                </span>
-              )}
-            </div>
-          ))}
-        </div>
-      ) : (
-        <>
-          <span className="mb-2 block text-caption font-bold">{form.label}</span>
-          <div
-            className={cn(
-              "flex gap-2 max-sm:flex-col",
-              form.layout === "stacked" && "flex-col gap-3",
-            )}
-          >
-            <span className="flex h-12 min-h-12 flex-1 items-center rounded-wl border border-wl-input-border bg-wl-input px-4 text-wl-muted">
-              {form.placeholder}
-            </span>
-            <span className="inline-flex h-12 items-center justify-center rounded-wl bg-wl-button px-5 font-bold text-wl-button-text">
-              {form.buttonText}
-            </span>
-          </div>
-        </>
-      )}
-      {form.requireConsent && (
+      <div className="grid gap-3">
+        <SignupPreviewEmailRow form={form} />
+        {showPhone ? <SignupPreviewPhoneField requirePhone={form.requirePhone} /> : null}
+        {customFields.map((field) => (
+          <SignupPreviewCustomField key={field.id} field={field} />
+        ))}
+      </div>
+      {form.requireConsent ? (
         <div className="mt-3 flex items-start gap-2.5 text-caption leading-relaxed font-normal text-wl-muted">
           <span className="mt-px size-4 shrink-0 rounded border border-wl-input-border bg-wl-input" />
           <span>{form.consentLabel}</span>
         </div>
-      )}
+      ) : null}
     </div>
   );
 }

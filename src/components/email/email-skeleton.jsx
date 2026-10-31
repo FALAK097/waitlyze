@@ -77,9 +77,9 @@ export function EmailSkeleton({ variant = "templates" }) {
             <div className="grid divide-y divide-product-border-subtle border-t border-product-border-subtle">
               {Array.from({ length: 8 }, (_, index) => (
                 <div key={index} className="flex items-center justify-between gap-4 py-3.5">
-                  <div className="grid gap-1.5">
-                    <i className={`${pulse} h-4 w-48`} />
-                    <i className={`${pulse} h-3.5 w-64`} />
+                  <div className="grid min-w-0 gap-1.5">
+                    <i className={`${pulse} h-4 w-48 max-w-full`} />
+                    <i className={`${pulse} h-3.5 w-64 max-w-full`} />
                   </div>
                   <i className={`${pulse} h-6 w-20 rounded-full`} />
                 </div>
@@ -94,19 +94,19 @@ export function EmailSkeleton({ variant = "templates" }) {
               ))}
             </div>
             <div className={skelPane}>
-              <div className="flex items-start justify-between gap-4">
-                <div className="grid gap-1.5">
-                  <i className={`${pulse} h-6 w-48`} />
+              <div className="flex flex-wrap items-start justify-between gap-4">
+                <div className="grid min-w-0 gap-1.5">
+                  <i className={`${pulse} h-6 w-48 max-w-full`} />
                   <i className={`${pulse} h-4 w-72 max-w-full`} />
                 </div>
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                   <i className={`${pulse} h-10 w-24`} />
                   {variant === "automations" ? <i className={`${pulse} h-10 w-20`} /> : null}
                 </div>
               </div>
               {config.hasTemplatePicker ? (
-                <div className="flex items-center gap-2">
-                  <i className={`${pulse} h-10 w-56`} />
+                <div className="flex flex-wrap items-center gap-2">
+                  <i className={`${pulse} h-10 w-56 max-w-full`} />
                   <i className={`${pulse} h-10 w-28`} />
                 </div>
               ) : null}
@@ -115,7 +115,7 @@ export function EmailSkeleton({ variant = "templates" }) {
                   <i key={index} className={skelField} />
                 ))}
               </div>
-              <div className="flex items-center justify-between gap-3">
+              <div className="flex flex-wrap items-center justify-between gap-3">
                 <i className={`${pulse} h-10 w-44`} />
                 <i className={`${pulse} h-10 w-28`} />
               </div>
@@ -126,16 +126,16 @@ export function EmailSkeleton({ variant = "templates" }) {
                     <i key={chip} className={`${pulse} h-7 w-24`} />
                   ))}
                 </div>
-                <div className="flex items-center gap-2">
-                  <i className={`${pulse} h-10 w-44`} />
+                <div className="flex flex-wrap items-center gap-2">
+                  <i className={`${pulse} h-10 w-44 max-w-full`} />
                   <i className={`${pulse} h-10 w-24`} />
                 </div>
               </div>
               {config.hasRecipients ? (
                 <div className="grid gap-3 rounded-lg border border-product-border-subtle p-4">
-                  <div className="flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-2.5">
-                      <i className={`${pulse} h-10 w-52`} />
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div className="flex flex-wrap items-center gap-2.5">
+                      <i className={`${pulse} h-10 w-52 max-w-full`} />
                       <i className={`${pulse} h-6 w-24 rounded-full`} />
                     </div>
                     <i className={`${pulse} h-10 w-36`} />

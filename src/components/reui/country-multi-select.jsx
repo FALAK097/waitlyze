@@ -45,9 +45,9 @@ export function CountryMultiSelect({
         !search || code.toLowerCase().includes(search) || name.toLowerCase().includes(search),
     );
   }, [allCountries, query]);
-  const selectedCountries = selected
-    .map((code) => allCountries.find((country) => country.code === code))
-    .filter(Boolean);
+  const selectedCountries = selected.map(
+    (code) => allCountries.find((country) => country.code === code) ?? { code, name: code },
+  );
 
   return (
     <div className="grid min-w-0 gap-1.5">
@@ -63,9 +63,7 @@ export function CountryMultiSelect({
         inputValue={query}
         onInputValueChange={setQuery}
         onValueChange={(next) => {
-          const visible = new Set(allCountries.map((country) => country.code));
-          const hidden = selected.filter((code) => !visible.has(code));
-          onChange([...next.map((country) => country.code), ...hidden]);
+          onChange(next.map((country) => country.code));
           setQuery("");
         }}
         itemToStringLabel={(country) => country.name}

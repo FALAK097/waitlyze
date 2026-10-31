@@ -171,6 +171,7 @@ function RecipientsPanel({
   segmentMeta,
   preview,
   previewFresh,
+  previewMatchesSelection,
   deliveryReady,
   draftDirty,
   busy,
@@ -178,9 +179,10 @@ function RecipientsPanel({
   onSegmentChange,
   onRefreshPreview,
 }) {
+  const showPreview = Boolean(previewMatchesSelection);
   const hasDetails =
     Boolean(segmentMeta?.description) ||
-    preview.samples.length > 0 ||
+    (showPreview && preview.samples.length > 0) ||
     previewFresh ||
     (!deliveryReady && previewFresh);
   return (
@@ -207,7 +209,7 @@ function RecipientsPanel({
               ))}
             </SelectContent>
           </Select>
-          <span className={recipientsCount}>{preview.count} eligible</span>
+          {showPreview ? <span className={recipientsCount}>{preview.count} eligible</span> : null}
         </div>
         <div className={recipientsControls}>
           {draftDirty && !previewFresh ? (
@@ -226,7 +228,7 @@ function RecipientsPanel({
       {hasDetails ? (
         <div className="grid gap-1 border-t border-product-border-subtle pt-3">
           {segmentMeta?.description ? <p className={hint}>{segmentMeta.description}</p> : null}
-          {preview.samples.length ? (
+          {showPreview && preview.samples.length ? (
             <p className={recipientsSamples}>
               <span className="font-medium text-product-text-primary">Sample recipients:</span>{" "}
               {preview.samples.join(", ")}
@@ -450,6 +452,10 @@ export function BroadcastManager({
   const [selectedId, setSelectedId] = useState(initialSelectedBroadcast?.id || null);
   const [data, setData] = useState(initialSelectedBroadcast || emptyDraft());
   const [preview, setPreview] = useState(initialPreview);
+  const [previewScope, setPreviewScope] = useState(() => ({
+    broadcastId: initialSelectedBroadcast?.id || null,
+    segment: initialSelectedBroadcast?.segment || "ALL",
+  }));
   const [segment, setSegment] = useState(initialSelectedBroadcast?.segment || "ALL");
   const [previewFresh, setPreviewFresh] = useState(false);
   const [reviewSend, setReviewSend] = useState(false);
@@ -550,6 +556,10 @@ export function BroadcastManager({
   async function saveDraft(event) {
     event.preventDefault();
     if (!selectedId || (data.status && data.status !== "DRAFT")) return;
+    if (editorMode === "html" && editorHtml !== htmlSourceBaseline.current) {
+      notify("Apply your HTML changes to the visual editor before saving.", true);
+      return;
+    }
     setBusyAction("save");
     try {
       if (!editorRef.current?.editor) throw new Error("The message editor is still loading.");
@@ -582,6 +592,7 @@ export function BroadcastManager({
     try {
       const nextPreview = await getBroadcastRecipients(waitListId, nextSegment);
       setPreview(nextPreview);
+      setPreviewScope({ broadcastId: selectedId, segment: nextSegment });
       setSegment(nextSegment);
       setPreviewFresh(true);
       setReviewSend(false);
@@ -605,7 +616,6 @@ export function BroadcastManager({
         html: applySeedVars(html, waitListName),
         text,
       });
-      setEditorMode("visual");
     } catch {
       notify("Couldn’t build the preview. Try again.", true);
     } finally {
@@ -935,6 +945,9 @@ export function BroadcastManager({
                     segmentMeta={segmentMeta}
                     preview={preview}
                     previewFresh={previewFresh}
+                    previewMatchesSelection={
+                      previewScope.broadcastId === selectedId && previewScope.segment === segment
+                    }
                     deliveryReady={deliveryReady}
                     draftDirty={draftDirty}
                     busy={busy}

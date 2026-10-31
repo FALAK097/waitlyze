@@ -8,7 +8,7 @@ export default function WaitlistLoading() {
       </p>
       <div aria-hidden="true">
         <div className="flex min-h-14 flex-wrap items-center justify-between gap-2.5 border-b border-product-border-subtle bg-product-bg-surface px-4 py-2">
-          <div className="flex items-center gap-1.5">
+          <div className="flex min-w-0 flex-wrap items-center gap-1.5">
             <i className={`${pulse} h-9 w-24`} />
             <i className={`${pulse} h-9 w-28`} />
             <i className={`${pulse} h-9 w-28`} />

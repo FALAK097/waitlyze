@@ -182,6 +182,8 @@ export function AutomationRecipePanel({
   const [htmlBaseline, setHtmlBaseline] = useState("");
   const [viewport, setViewport] = useState("desktop");
   const [templateChoice, setTemplateChoice] = useState("");
+  const hasUnappliedHtml = mode === "html" && htmlDraft !== htmlBaseline;
+  const effectiveDirty = dirty || hasUnappliedHtml;
 
   function applyTemplate() {
     const template = templates[templateChoice];
@@ -220,6 +222,10 @@ export function AutomationRecipePanel({
     setMode("visual");
   }
   function handlePreview() {
+    if (mode === "html" && htmlDraft !== htmlBaseline) {
+      applyHtml();
+      return;
+    }
     setMode("visual");
     onPreview();
   }
@@ -232,7 +238,12 @@ export function AutomationRecipePanel({
           <p className={paneMeta}>{timing}</p>
         </div>
         <div className={paneActions}>
-          <Button type="button" variant="default" onClick={onSave} disabled={busy || !validValues}>
+          <Button
+            type="button"
+            variant="default"
+            onClick={onSave}
+            disabled={busy || !validValues || hasUnappliedHtml}
+          >
             {busy ? "Saving…" : "Save changes"}
           </Button>
           <TooltipProvider delay={100}>
@@ -243,14 +254,20 @@ export function AutomationRecipePanel({
                     type="button"
                     variant={enabled ? "outline" : "default"}
                     onClick={onChangeStatus}
-                    disabled={busy || (!enabled && (!deliveryReady || dirty))}
+                    disabled={busy || (!enabled && (!deliveryReady || effectiveDirty))}
                   >
-                    {busy ? "Saving…" : enabled ? "Pause" : dirty ? "Save first" : "Enable"}
+                    {busy
+                      ? "Saving…"
+                      : enabled
+                        ? "Pause"
+                        : effectiveDirty
+                          ? "Save first"
+                          : "Enable"}
                   </Button>
                 }
               />
               <TooltipContent side="bottom">
-                {statusTooltipText({ enabled, deliveryReady, dirty })}
+                {statusTooltipText({ enabled, deliveryReady, dirty: effectiveDirty })}
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
@@ -350,7 +367,7 @@ export function AutomationRecipePanel({
         <TestSendForm
           recipe={recipe}
           busy={busy}
-          dirty={dirty}
+          dirty={effectiveDirty}
           testTo={testTo}
           onTestToChange={onTestToChange}
           onSendTest={onSendTest}

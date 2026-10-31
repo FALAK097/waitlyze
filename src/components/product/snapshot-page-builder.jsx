@@ -273,26 +273,27 @@ function Toggle({ label, checked, onChange, disabled = false, hint = "" }) {
         onCheckedChange={(value) => onChange(value === true)}
       />
       {hint ? (
-        <TooltipProvider delay={150}>
-          <Tooltip>
-            <TooltipTrigger
-              render={
-                <span className="inline-flex cursor-pointer items-center gap-1.5">
-                  <span>{label}</span>
-                  <span
-                    aria-hidden="true"
-                    className="grid size-5 shrink-0 place-items-center rounded-full text-product-text-muted hover:bg-product-bg-inset hover:text-product-text-primary"
+        <span className="inline-flex items-center gap-1.5">
+          <span>{label}</span>
+          <TooltipProvider delay={150}>
+            <Tooltip>
+              <TooltipTrigger
+                render={
+                  <button
+                    type="button"
+                    aria-label={`${label} information`}
+                    className="grid size-5 shrink-0 cursor-pointer place-items-center rounded-full border-0 bg-transparent p-0 text-product-text-muted hover:bg-product-bg-inset hover:text-product-text-primary"
                   >
                     <HugeiconsIcon icon={HelpCircleIcon} size={15} aria-hidden="true" />
-                  </span>
-                </span>
-              }
-            />
-            <TooltipContent side="top" className="max-w-64 text-center">
-              {hint}
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
+                  </button>
+                }
+              />
+              <TooltipContent side="top" className="max-w-64 text-center">
+                {hint}
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </span>
       ) : (
         <span>{label}</span>
       )}

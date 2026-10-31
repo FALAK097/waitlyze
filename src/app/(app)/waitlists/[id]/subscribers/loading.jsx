@@ -33,7 +33,7 @@ export default function SubscribersLoading() {
             <i className={`${pulse} ml-auto h-3 w-20 max-sm:hidden`} />
           </div>
           {[0, 1, 2, 3, 4, 5].map((row) => (
-            <div key={row} className="flex h-15 items-center gap-4">
+            <div key={row} className="flex h-15 min-w-0 items-center gap-4">
               <i className={`${pulse} size-4`} />
               <i className={`${pulse} h-4 w-48`} />
               <i className={`${pulse} h-5.5 w-20 rounded-full`} />
