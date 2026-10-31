@@ -10,7 +10,7 @@ const navLinkCurrent = "border-product-accent-solid text-product-text-primary";
 export function EmailToolsNav({ waitListId, current, action }) {
   const root = `/waitlists/${waitListId}/emails`;
   return (
-    <div className={`${scope} mb-6.5 flex items-center justify-between gap-4`}>
+    <div className={`${scope} mb-6.5 flex flex-wrap items-center justify-between gap-x-4 gap-y-3`}>
       <nav
         aria-label="Email tools"
         className="no-scrollbar flex min-w-0 items-center gap-5.5 overflow-x-auto"
@@ -48,7 +48,11 @@ export function EmailToolsNav({ waitListId, current, action }) {
           Logs
         </Link>
       </nav>
-      {action ? <div className="shrink-0">{action}</div> : null}
+      {action ? (
+        <div className="shrink-0 max-sm:order-last max-sm:w-full max-sm:[&_button]:w-full">
+          {action}
+        </div>
+      ) : null}
     </div>
   );
 }

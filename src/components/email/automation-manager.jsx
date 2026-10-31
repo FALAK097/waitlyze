@@ -32,6 +32,7 @@ export function AutomationManager({
   waitListId,
   waitListName,
   initialRecipes,
+  initialRecipeId,
   initialTemplates = EMPTY_TEMPLATES,
   deliveryReady,
 }) {
@@ -41,7 +42,11 @@ export function AutomationManager({
     initialRecipes.map((recipe) => ({ ...recipe, savedConfig: recipe.config })),
   );
   const [busyId, setBusyId] = useState(null);
-  const [activeRecipe, setActiveRecipe] = useState(initialRecipes[0]?.id || null);
+  const [activeRecipe, setActiveRecipe] = useState(
+    initialRecipes.some((recipe) => recipe.id === initialRecipeId)
+      ? initialRecipeId
+      : initialRecipes[0]?.id || null,
+  );
   const [checks, setChecks] = useState(null);
   const [testTo, setTestTo] = useState("");
 

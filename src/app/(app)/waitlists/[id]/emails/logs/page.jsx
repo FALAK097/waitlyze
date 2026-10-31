@@ -19,7 +19,7 @@ export default async function EmailLogsPage({ params }) {
   return (
     <ContentLayout title="Email logs">
       <EmailToolsNav waitListId={campaign.id} current="logs" />
-      <EmailLogs runs={runs} />
+      <EmailLogs waitListId={campaign.id} runs={runs} />
     </ContentLayout>
   );
 }

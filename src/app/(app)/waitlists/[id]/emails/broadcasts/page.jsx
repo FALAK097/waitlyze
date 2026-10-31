@@ -16,13 +16,16 @@ export const metadata = {
   description: "Create and send opted-in waitlist updates.",
 };
 
-export default async function BroadcastsPage({ params }) {
+export default async function BroadcastsPage({ params, searchParams }) {
   const { id } = await params;
+  const { broadcast: requestedBroadcastId } = await searchParams;
   const { campaign } = await requireCampaignPage(id, "sendEmail");
   if (!campaign) return notFound();
   const broadcasts = await listBroadcasts(campaign.id);
+  const initialBroadcast =
+    broadcasts.find((broadcast) => broadcast.id === requestedBroadcastId) || broadcasts[0];
   const [initialPreview, initialSegments, templates] = await Promise.all([
-    getBroadcastRecipients(campaign.id, broadcasts?.[0]?.segment || "ALL"),
+    getBroadcastRecipients(campaign.id, initialBroadcast?.segment || "ALL"),
     listBroadcastSegments(),
     getOrCreateTemplates(campaign.id),
   ]);
@@ -32,6 +35,7 @@ export default async function BroadcastsPage({ params }) {
         waitListId={campaign.id}
         waitListName={campaign.name}
         initialBroadcasts={broadcasts}
+        initialBroadcastId={initialBroadcast?.id || null}
         initialPreview={initialPreview}
         initialSegments={initialSegments}
         initialTemplates={templates}

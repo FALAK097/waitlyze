@@ -9,9 +9,9 @@ import { applySeedVars } from "@/lib/email/preview-vars.mjs";
 
 import { EmailCanvas } from "./email-canvas";
 import {
-  EmailPreviewFrame,
+  EmailPreviewResult,
+  EmailTestSendForm,
   HtmlSourceEditor,
-  SpamHintView,
   VariableChips,
 } from "./email-composer-extras";
 import { EmailComposerModeBar } from "./email-composer-mode-bar";
@@ -44,11 +44,6 @@ const fieldInput =
 const canvasShell = "overflow-hidden rounded-lg border border-product-border-subtle bg-white";
 const metaBar =
   "flex flex-wrap items-center justify-between gap-3.5 max-sm:flex-col max-sm:items-stretch";
-const testForm = "flex items-center gap-2";
-const testInput =
-  "h-9 w-45 min-w-0 rounded-product-control border border-product-border-control bg-white px-2.5 text-caption max-sm:w-auto max-sm:flex-1 max-sm:text-base";
-const testButton =
-  "min-h-9 rounded-product-control border border-transparent bg-product-bg-inset px-3.5 text-caption font-semibold text-product-text-primary cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-product-success-text!";
 const hint = "m-0 text-caption leading-normal text-product-text-secondary";
 
 const kinds = [
@@ -298,19 +293,14 @@ export function EmailTemplatesManager({ waitListId, waitListName, initialTemplat
             </div>
           ) : null}
           {preview ? (
-            <div className="flex flex-col gap-4">
-              <EmailPreviewFrame
-                html={preview.html}
-                viewport={viewport}
-                onViewportChange={setViewport}
-              />
-              <SpamHintView
-                subject={template.subject}
-                previewText={template.previewText}
-                text={preview.text}
-                html={preview.html}
-              />
-            </div>
+            <EmailPreviewResult
+              html={preview.html}
+              text={preview.text}
+              subject={template.subject}
+              previewText={template.previewText}
+              viewport={viewport}
+              onViewportChange={setViewport}
+            />
           ) : null}
           {/* The live editor stays mounted in every mode: `applyHtmlToEditor`
               (setContent) and `save` → `exportMessage` both go through
@@ -328,22 +318,14 @@ export function EmailTemplatesManager({ waitListId, waitListName, initialTemplat
           </div>
           <div className={metaBar}>
             <VariableChips keys={VARIABLE_SETS[current] || VARIABLE_SETS.signup} />
-            <form className={testForm} onSubmit={sendTest}>
-              <input
-                className={testInput}
-                id="subscriber-test-address"
-                type="email"
-                placeholder="you@example.com"
-                required
-                maxLength={320}
-                aria-label="Send a test to"
-                value={testTo}
-                onChange={(event) => setTestTo(event.target.value)}
-              />
-              <button type="submit" className={testButton} disabled={Boolean(busy) || dirty}>
-                {busy === "test" ? "Sending…" : "Send test"}
-              </button>
-            </form>
+            <EmailTestSendForm
+              id="subscriber-test-address"
+              value={testTo}
+              onChange={setTestTo}
+              onSubmit={sendTest}
+              busy={busy === "test"}
+              disabled={dirty}
+            />
           </div>
         </section>
       </div>

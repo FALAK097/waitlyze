@@ -177,3 +177,46 @@ export function EmailPreviewFrame({
     </div>
   );
 }
+
+export function EmailPreviewResult({
+  html,
+  text,
+  subject,
+  previewText = "",
+  viewport,
+  onViewportChange,
+}) {
+  return (
+    <div className="flex flex-col gap-4">
+      <EmailPreviewFrame html={html} viewport={viewport} onViewportChange={onViewportChange} />
+      <SpamHintView subject={subject} previewText={previewText} text={text} html={html} />
+    </div>
+  );
+}
+
+const testForm = "flex min-w-0 items-center gap-2 max-sm:w-full";
+const testInput =
+  "h-9 w-45 min-w-0 rounded-product-control border border-product-border-control bg-white px-2.5 text-caption max-sm:w-auto max-sm:flex-1 max-sm:text-base";
+const testButton =
+  "min-h-9 rounded-product-control border border-transparent bg-product-bg-inset px-3.5 text-caption font-semibold text-product-text-primary cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-product-success-text!";
+
+export function EmailTestSendForm({ id, value, onChange, onSubmit, busy, disabled = false }) {
+  return (
+    <form className={testForm} onSubmit={onSubmit}>
+      <input
+        className={testInput}
+        id={id}
+        type="email"
+        placeholder="you@example.com"
+        required
+        maxLength={320}
+        aria-label="Send a test to"
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+      />
+      <button type="submit" className={testButton} disabled={busy || disabled}>
+        {busy ? "Sending…" : "Send test"}
+      </button>
+    </form>
+  );
+}

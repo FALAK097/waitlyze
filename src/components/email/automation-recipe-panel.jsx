@@ -14,9 +14,9 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 
 import { EmailCanvas } from "./email-canvas";
 import {
-  EmailPreviewFrame,
+  EmailPreviewResult,
+  EmailTestSendForm,
   HtmlSourceEditor,
-  SpamHintView,
   VariableChips,
 } from "./email-composer-extras";
 import { EmailComposerModeBar } from "./email-composer-mode-bar";
@@ -146,21 +146,13 @@ function TimingFields({ recipe, delay, busy, onUpdateRecipe }) {
 
 function TestSendForm({ busy, dirty, testTo, onTestToChange, onSendTest, recipe }) {
   return (
-    <form className="flex items-center gap-2" onSubmit={(event) => onSendTest(event, recipe)}>
-      <input
-        className="h-11 w-45 min-w-0 rounded-product-control border border-product-border-control bg-white px-2.5 text-caption max-sm:w-auto max-sm:flex-1 max-sm:text-base"
-        type="email"
-        placeholder="you@example.com"
-        required
-        maxLength={320}
-        aria-label="Send a test to"
-        value={testTo}
-        onChange={(event) => onTestToChange(event.target.value)}
-      />
-      <Button type="submit" variant="outline" className="min-h-11" disabled={busy || dirty}>
-        {busy ? "Sending…" : "Send test"}
-      </Button>
-    </form>
+    <EmailTestSendForm
+      value={testTo}
+      onChange={onTestToChange}
+      busy={busy}
+      disabled={dirty}
+      onSubmit={(event) => onSendTest(event, recipe)}
+    />
   );
 }
 
@@ -227,6 +219,9 @@ export function AutomationRecipePanel({
           <p className={paneMeta}>{timing}</p>
         </div>
         <div className={paneActions}>
+          <Button type="button" variant="default" onClick={onSave} disabled={busy || !validValues}>
+            {busy ? "Saving…" : "Save changes"}
+          </Button>
           <TooltipProvider delay={100}>
             <Tooltip>
               <TooltipTrigger
@@ -285,7 +280,12 @@ export function AutomationRecipePanel({
         </Button>
       </div>
 
-      <EmailComposerModeBar mode={mode} setMode={changeMode} />
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <EmailComposerModeBar mode={mode} setMode={changeMode} />
+        <Button type="button" variant="outline" onClick={onPreview} disabled={busy}>
+          Preview email
+        </Button>
+      </div>
       {mode === "html" ? (
         <div className="flex flex-col gap-3">
           <HtmlSourceEditor value={htmlDraft} onChange={setHtmlDraft} />
@@ -314,6 +314,16 @@ export function AutomationRecipePanel({
         />
       </div>
 
+      {checks ? (
+        <EmailPreviewResult
+          html={checks.html}
+          text={checks.text}
+          subject={recipe.config.subject}
+          viewport={viewport}
+          onViewportChange={setViewport}
+        />
+      ) : null}
+
       <div className={metaBar}>
         <VariableChips
           keys={
@@ -322,40 +332,15 @@ export function AutomationRecipePanel({
               : ["waitlist", "name", "position", "points", "referral_link"]
           }
         />
-        <div className={paneActions}>
-          <Button type="button" variant="outline" onClick={onPreview} disabled={busy}>
-            Preview &amp; spam check
-          </Button>
-          <Button type="button" variant="default" onClick={onSave} disabled={busy || !validValues}>
-            {busy ? "Saving…" : "Save changes"}
-          </Button>
-        </div>
+        <TestSendForm
+          recipe={recipe}
+          busy={busy}
+          dirty={dirty}
+          testTo={testTo}
+          onTestToChange={onTestToChange}
+          onSendTest={onSendTest}
+        />
       </div>
-
-      {checks ? (
-        <div className="flex flex-col gap-4">
-          <EmailPreviewFrame
-            html={checks.html}
-            viewport={viewport}
-            onViewportChange={setViewport}
-          />
-          <SpamHintView
-            subject={recipe.config.subject}
-            previewText=""
-            text={checks.text}
-            html={checks.html}
-          />
-        </div>
-      ) : null}
-
-      <TestSendForm
-        recipe={recipe}
-        busy={busy}
-        dirty={dirty}
-        testTo={testTo}
-        onTestToChange={onTestToChange}
-        onSendTest={onSendTest}
-      />
 
       {recipe.type.startsWith("REFERRAL_") ? (
         <p className={hint}>

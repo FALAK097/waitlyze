@@ -1094,7 +1094,7 @@ export async function listEmailRuns(waitListId) {
       orderBy: { createdAt: "desc" },
       take: 100,
       include: {
-        recipe: { select: { type: true } },
+        recipe: { select: { id: true, type: true } },
         signUp: { select: { email: true } },
         steps: { select: { status: true, lastErrorCode: true } },
       },
@@ -1126,6 +1126,7 @@ export async function listEmailRuns(waitListId) {
   const items = [
     ...runs.map((run) => ({
       id: `run-${run.id}`,
+      targetId: run.recipe.id,
       kind: "Automation",
       title: automationTitle(run.recipe.type),
       recipient: maskEmail(run.signUp.email),
@@ -1138,6 +1139,7 @@ export async function listEmailRuns(waitListId) {
     })),
     ...broadcasts.map((broadcast) => ({
       id: `bc-${broadcast.id}`,
+      targetId: broadcast.id,
       kind: "Broadcast",
       title: broadcast.name || broadcast.subject || "Untitled broadcast",
       recipient: `${broadcast.recipientCount} recipient${broadcast.recipientCount === 1 ? "" : "s"}`,
