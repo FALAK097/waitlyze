@@ -212,6 +212,7 @@ export function AutomationManager({
 
         {recipe ? (
           <AutomationRecipePanel
+            key={recipe.id}
             recipe={recipe}
             templates={initialTemplates}
             checks={checks}

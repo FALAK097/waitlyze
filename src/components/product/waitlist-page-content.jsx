@@ -836,7 +836,7 @@ export function WaitlistSignupPreview({ form, brand }) {
               {field.type === "checkbox" ? (
                 <span className="flex min-h-11 items-center gap-2 font-normal text-wl-muted">
                   <span className="size-4 rounded border border-wl-input-border bg-wl-input" />
-                  {field.placeholder || field.label || "Yes"}
+                  {field.label || "Yes"}
                 </span>
               ) : field.type === "textarea" ? (
                 <span className="flex min-h-20 items-start rounded-wl border border-wl-input-border bg-wl-input px-4 py-3 font-normal text-wl-muted">

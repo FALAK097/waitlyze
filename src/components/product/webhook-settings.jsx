@@ -475,13 +475,10 @@ export function WebhookSettings({ waitListId, canManage = true }) {
                       type="text"
                       inputMode="url"
                       value={url.replace(/^https?:\/\//i, "")}
-                      onChange={(event) =>
-                        setUrl(
-                          event.target.value.trim()
-                            ? `https://${event.target.value.replace(/^https?:\/\//i, "")}`
-                            : "",
-                        )
-                      }
+                      onChange={(event) => {
+                        const host = event.target.value.trim().replace(/^https?:\/\//i, "");
+                        setUrl(host ? `https://${host}` : "");
+                      }}
                       required
                       placeholder="api.example.com/waitlist-events"
                       disabled={controlsDisabled}

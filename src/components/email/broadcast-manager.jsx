@@ -444,6 +444,7 @@ export function BroadcastManager({
   const [templateChoice, setTemplateChoice] = useState("");
   const [testTo, setTestTo] = useState("");
   const editorRef = useRef(null);
+  const htmlSourceBaseline = useRef("");
 
   function notify(text, failure = false) {
     if (failure) toast.error(text);
@@ -461,6 +462,12 @@ export function BroadcastManager({
   }
 
   function selectBroadcast(broadcast) {
+    if (broadcast.id !== selectedId) {
+      setEditorMode("visual");
+      setEditorHtml("");
+      htmlSourceBaseline.current = "";
+      setTemplateChoice("");
+    }
     setDraftDirty(false);
     setReviewCancel(false);
     setPendingSelection(null);
@@ -495,6 +502,10 @@ export function BroadcastManager({
       const draft = await createBroadcastDraft(waitListId);
       setBroadcasts((items) => [draft, ...items]);
       setSelectedId(draft.id);
+      setEditorMode("visual");
+      setEditorHtml("");
+      htmlSourceBaseline.current = "";
+      setTemplateChoice("");
       setData({
         name: draft.name,
         subject: draft.subject,
@@ -584,16 +595,21 @@ export function BroadcastManager({
         if (!editorRef.current?.editor) throw new Error("The message editor is still loading.");
         const { html } = await editorRef.current.getEmail();
         setEditorHtml(html);
+        htmlSourceBaseline.current = html;
       } catch {
         notify("The message editor is still loading.", true);
         return;
       }
+    } else if (editorMode === "html" && editorHtml !== htmlSourceBaseline.current) {
+      applyEditorHtml();
+      return;
     }
     setEditorMode(mode);
   }
 
   function applyEditorHtml() {
     editorRef.current?.editor?.commands?.setContent(editorHtml || "<p></p>");
+    htmlSourceBaseline.current = editorHtml;
     setEditorMode("visual");
   }
 
@@ -775,7 +791,7 @@ export function BroadcastManager({
                     <Button
                       type="button"
                       variant="outline"
-                      disabled={!templateChoice || busy}
+                      disabled={!templateChoice || busy || editorMode === "html"}
                       onClick={applySavedTemplate}
                     >
                       Use template
@@ -827,7 +843,13 @@ export function BroadcastManager({
                   </form>
                   {editorMode === "html" ? (
                     <div className="flex flex-col gap-3">
-                      <HtmlSourceEditor value={editorHtml} onChange={setEditorHtml} />
+                      <HtmlSourceEditor
+                        value={editorHtml}
+                        onChange={(html) => {
+                          setEditorHtml(html);
+                          setDraftDirty(true);
+                        }}
+                      />
                       <div className={metaBar}>
                         <p className="m-0 text-caption text-product-text-secondary">
                           Apply the HTML to the visual editor before saving.

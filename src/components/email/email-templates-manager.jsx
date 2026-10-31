@@ -268,7 +268,7 @@ export function EmailTemplatesManager({ waitListId, waitListName, initialTemplat
           </div>
           <div className="flex flex-wrap items-center justify-between gap-3">
             <EmailComposerModeBar
-              mode={mode === "html" ? "html" : "visual"}
+              mode={preview ? "preview" : mode === "html" ? "html" : "visual"}
               setMode={(next) => {
                 if (next === "html") return enterHtmlMode();
                 setPreview(null);

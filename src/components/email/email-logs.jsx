@@ -16,10 +16,9 @@ const statusBadgeTone = {
 };
 
 const logsPane = "w-full min-w-0";
-const logsRuns =
-  "m-0 mt-2 list-none overflow-hidden rounded-lg border border-product-border-subtle bg-white p-0";
+const logsRuns = "m-0 mt-2 list-none p-0";
 const logsRun =
-  "group flex flex-col gap-2 border-b border-product-border-subtle px-4 py-3.5 no-underline last:border-b-0 hover:bg-product-bg-inset focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-product-success-text! sm:flex-row sm:items-center sm:gap-4";
+  "group flex flex-col gap-2 border-b border-product-border-subtle px-3 py-3.5 no-underline last:border-b-0 hover:bg-product-bg-inset focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-product-success-text! sm:flex-row sm:items-center sm:gap-4";
 const logsRunWho = "min-w-0 flex-1";
 const logsRunTitle = "block text-caption font-medium text-product-text-primary";
 const logsRunDetail = "text-xs text-product-text-secondary wrap-anywhere";

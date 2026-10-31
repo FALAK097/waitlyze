@@ -178,6 +178,7 @@ export function AutomationRecipePanel({
   const timing = recipeTiming(recipe);
   const [mode, setMode] = useState("visual");
   const [htmlDraft, setHtmlDraft] = useState("");
+  const [htmlBaseline, setHtmlBaseline] = useState("");
   const [viewport, setViewport] = useState("desktop");
   const [templateChoice, setTemplateChoice] = useState("");
 
@@ -200,14 +201,19 @@ export function AutomationRecipePanel({
         if (!editorRef.current?.editor) throw new Error("The editor is still loading.");
         const { html } = await editorRef.current.getEmail();
         setHtmlDraft(html);
+        setHtmlBaseline(html);
       } catch {
         return;
       }
+    } else if (mode === "html" && htmlDraft !== htmlBaseline) {
+      applyHtml();
+      return;
     }
     setMode(nextMode);
   }
   function applyHtml() {
     editorRef.current?.editor?.commands?.setContent(htmlDraft || "<p></p>");
+    setHtmlBaseline(htmlDraft);
     setMode("visual");
   }
 
@@ -268,12 +274,12 @@ export function AutomationRecipePanel({
           value={templateChoice}
           onValueChange={setTemplateChoice}
           templates={templates}
-          disabled={busy}
+          disabled={busy || mode === "html"}
         />
         <Button
           type="button"
           variant="outline"
-          disabled={!templateChoice || busy}
+          disabled={!templateChoice || busy || mode === "html"}
           onClick={applyTemplate}
         >
           Use template

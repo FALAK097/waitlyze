@@ -296,7 +296,7 @@ export default async function WaitlistsPage({ searchParams }) {
     typeof params?.page === "string" && /^\d+$/.test(params.page) ? Number(params.page) : 1;
   return (
     <section aria-label="Waitlists">
-      <div className="mb-5 grid gap-3 md:grid-cols-[minmax(0,1fr)_minmax(10rem,20rem)_auto] md:items-center">
+      <div className="mb-5 grid gap-3 md:grid-cols-[auto_minmax(0,1fr)_auto] md:items-center">
         <StatusTabs query={query} status={status} sort={sort} />
         <div className="flex min-w-0 items-center justify-end gap-3 md:contents">
           <WaitlistSearch query={query} status={status} sort={sort} />

@@ -115,17 +115,25 @@ export async function getOrCreateTemplates(waitListId) {
 
   for (const key of Object.keys(TYPE_MAP)) {
     const enumType = TYPE_MAP[key];
-    if (!byType[enumType]) {
-      const created = await prisma.emailTemplate.create({
+    if (byType[enumType]) {
+      result[key] = byType[enumType];
+      continue;
+    }
+    try {
+      result[key] = await prisma.emailTemplate.create({
         data: {
           waitList: { connect: { id: waitListId, ...scope } },
           type: enumType,
           ...DEFAULTS[key],
         },
       });
-      result[key] = created;
-    } else {
-      result[key] = byType[enumType];
+    } catch (error) {
+      // Two first loads can race on @@unique([waitListId, type]); reuse the
+      // template the other request just created.
+      if (error?.code !== "P2002") throw error;
+      result[key] = await prisma.emailTemplate.findUnique({
+        where: { waitListId_type: { waitListId, type: enumType } },
+      });
     }
   }
 

@@ -63,7 +63,9 @@ export function CountryMultiSelect({
         inputValue={query}
         onInputValueChange={setQuery}
         onValueChange={(next) => {
-          onChange(next.map((country) => country.code));
+          const visible = new Set(allCountries.map((country) => country.code));
+          const hidden = selected.filter((code) => !visible.has(code));
+          onChange([...next.map((country) => country.code), ...hidden]);
           setQuery("");
         }}
         itemToStringLabel={(country) => country.name}
