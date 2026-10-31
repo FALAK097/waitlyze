@@ -175,20 +175,20 @@ function AccountMenu({ user, avatar }) {
             render={
               <Button
                 variant="ghost"
-                size="icon-lg"
+                size="icon"
                 aria-label="Send feedback"
                 onClick={() => setFeedbackOpen(true)}
               />
             }
           >
-            <HugeiconsIcon icon={BubbleChatIcon} className="size-7" aria-hidden="true" />
+            <HugeiconsIcon icon={BubbleChatIcon} className="size-6" aria-hidden="true" />
           </TooltipTrigger>
           <TooltipContent side="bottom">Send Feedback</TooltipContent>
         </Tooltip>
       </TooltipProvider>
       <DropdownMenu>
         <DropdownMenuTrigger
-          render={<Button variant="ghost" size="icon-lg" />}
+          render={<Button variant="ghost" size="icon" />}
           aria-label="Open account menu"
         >
           {avatar}
