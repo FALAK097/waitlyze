@@ -1710,35 +1710,49 @@ export function SnapshotPageBuilder({
                         </button>
                       ))}
                   </div>
-                  <div
-                    className="flex gap-1 [&_button]:flex [&_button]:size-9 [&_button]:cursor-pointer [&_button]:items-center [&_button]:justify-center [&_button]:rounded-lg [&_button]:border-0 [&_button]:bg-transparent [&_button]:text-product-text-secondary [&_button[aria-pressed=true]]:bg-product-bg-surface [&_button[aria-pressed=true]]:text-product-text-primary"
-                    role="group"
-                    aria-label="Preview viewport"
-                  >
-                    <button
-                      type="button"
-                      aria-label="Desktop preview"
-                      aria-pressed={statusViewport === "desktop"}
-                      onClick={() => setStatusViewport("desktop")}
+                  <TooltipProvider>
+                    <div
+                      className="flex gap-1 [&_button]:flex [&_button]:size-9 [&_button]:cursor-pointer [&_button]:items-center [&_button]:justify-center [&_button]:rounded-lg [&_button]:border-0 [&_button]:bg-transparent [&_button]:text-product-text-secondary [&_button[aria-pressed=true]]:bg-product-bg-surface [&_button[aria-pressed=true]]:text-product-text-primary"
+                      role="group"
+                      aria-label="Preview viewport"
                     >
-                      <HugeiconsIcon icon={MonitorIcon} size={17} aria-hidden="true" />
-                    </button>
-                    <button
-                      type="button"
-                      aria-label="Mobile preview"
-                      aria-pressed={statusViewport === "mobile"}
-                      onClick={() => setStatusViewport("mobile")}
-                    >
-                      <HugeiconsIcon icon={SmartphoneIcon} size={17} aria-hidden="true" />
-                    </button>
-                  </div>
+                      <Tooltip>
+                        <TooltipTrigger
+                          render={
+                            <button
+                              type="button"
+                              aria-label="Desktop preview"
+                              aria-pressed={statusViewport === "desktop"}
+                              onClick={() => setStatusViewport("desktop")}
+                            />
+                          }
+                        >
+                          <HugeiconsIcon icon={MonitorIcon} size={17} aria-hidden="true" />
+                        </TooltipTrigger>
+                        <TooltipContent side="bottom">Desktop</TooltipContent>
+                      </Tooltip>
+                      <Tooltip>
+                        <TooltipTrigger
+                          render={
+                            <button
+                              type="button"
+                              aria-label="Mobile preview"
+                              aria-pressed={statusViewport === "mobile"}
+                              onClick={() => setStatusViewport("mobile")}
+                            />
+                          }
+                        >
+                          <HugeiconsIcon icon={SmartphoneIcon} size={17} aria-hidden="true" />
+                        </TooltipTrigger>
+                        <TooltipContent side="bottom">Mobile</TooltipContent>
+                      </Tooltip>
+                    </div>
+                  </TooltipProvider>
                 </div>
                 <div
                   className={cn(
-                    "grid min-h-0 overflow-y-auto rounded-xl bg-white shadow-surface",
-                    statusViewport === "mobile"
-                      ? "mx-auto min-h-160 w-full max-w-md"
-                      : "min-h-140 w-full",
+                    "grid overflow-y-auto rounded-xl bg-white shadow-surface",
+                    statusViewport === "mobile" ? "mx-auto h-160 w-full max-w-md" : "h-140 w-full",
                   )}
                 >
                   <StatusPagePreview
@@ -2066,10 +2080,14 @@ function SelectField({ label, value, options, onChange }) {
     <div className={"grid gap-1.5"}>
       <Label htmlFor={id}>{label}</Label>
       <Select value={value} onValueChange={onChange}>
-        <SelectTrigger id={id}>
+        <SelectTrigger id={id} className="w-full min-w-0">
           <SelectValue>{options.find((option) => option.id === value)?.label ?? value}</SelectValue>
         </SelectTrigger>
-        <SelectContent>
+        <SelectContent
+          align="start"
+          alignItemWithTrigger={false}
+          className="w-max max-w-80 min-w-64"
+        >
           {options.map((option) => (
             <SelectItem value={option.id} key={option.id}>
               {option.label}
@@ -2500,7 +2518,7 @@ function StatusPanel({
             key={channel}
             label={
               <span className="inline-flex items-center gap-2">
-                <ShareChannelIcon channel={channel} />
+                <ShareChannelIcon channel={channel} className="size-7!" />
                 {label}
               </span>
             }

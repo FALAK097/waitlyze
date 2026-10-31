@@ -1,6 +1,6 @@
 "use client";
 
-import { Mail01Icon, RedditIcon as RedditMarkIcon } from "@hugeicons/core-free-icons";
+import { Mail01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { useId, useState } from "react";
 
@@ -205,11 +205,26 @@ function TelegramIcon({ className }) {
 
 function RedditIcon({ className }) {
   return (
-    <HugeiconsIcon
-      icon={RedditMarkIcon}
-      className={cn("text-share-reddit", className)}
-      aria-hidden="true"
-    />
+    <svg viewBox="0 0 256 256" className={className} aria-hidden="true">
+      <path
+        fill="#FF4500"
+        d="M128 0C57.3 0 0 57.3 0 128c0 35.4 14.3 67.4 37.5 90.5l-24.4 24.4c-4.8 4.8-1.4 13.1 5.4 13.1H128c70.7 0 128-57.3 128-128S198.7 0 128 0Z"
+      />
+      <circle cx="55.4" cy="123.7" r="29.9" fill="#fff" />
+      <circle cx="200.6" cy="123.7" r="29.9" fill="#fff" />
+      <ellipse cx="128.1" cy="149.3" rx="85.3" ry="64" fill="#fff" />
+      <circle cx="88" cy="141.5" r="15.5" fill="#842123" />
+      <circle cx="168.2" cy="141.5" r="15.5" fill="#842123" />
+      <path
+        d="M96 170c8.5 14.5 19.2 21.8 32.1 21.8 12.8 0 23.5-7.3 32-21.8-9.7-2.5-20.4-3.8-32-3.8S105.7 167.5 96 170Z"
+        fill="#172E35"
+      />
+      <path
+        d="M127.8 88c-2.5 0-4.6-1.1-4.6-2.7 0-19 15.4-34.4 34.4-34.4 2.5 0 4.6 2.1 4.6 4.6s-2.1 4.6-4.6 4.6c-13.9 0-25.2 11.3-25.2 25.2 0 1.7-2.1 2.7-4.6 2.7Z"
+        fill="#172E35"
+      />
+      <circle cx="174.8" cy="55.5" r="21.2" fill="#fff" stroke="#172E35" strokeWidth="7" />
+    </svg>
   );
 }
 
@@ -224,7 +239,7 @@ const ICONS = {
   reddit: RedditIcon,
 };
 
-export function ShareChannelIcon({ channel, className = "size-5" }) {
+export function ShareChannelIcon({ channel, className = "size-6!" }) {
   const Icon = ICONS[channel];
   if (!Icon) return null;
   return <Icon className={className} />;
@@ -237,7 +252,7 @@ export function ShareButtons({
   subject,
   onShare,
   className,
-  iconClassName = "size-12",
+  iconClassName = "size-14!",
 }) {
   const [copied, setCopied] = useState(false);
 
@@ -266,7 +281,7 @@ export function ShareButtons({
               aria-label={copied ? "Link copied" : "Copy link for Instagram"}
               title={copied ? "Copied" : "Copy link for Instagram"}
               onClick={copyLink}
-              className="grid min-h-12 min-w-12 cursor-pointer place-items-center border-0 bg-transparent p-0 transition-opacity hover:opacity-85"
+              className="grid min-h-14 min-w-14 cursor-pointer place-items-center border-0 bg-transparent p-0 transition-opacity hover:opacity-85"
             >
               <Icon className={iconClassName} />
             </button>
@@ -282,7 +297,7 @@ export function ShareButtons({
             aria-label={`Share on ${channelLabel(channel)}`}
             title={`Share on ${channelLabel(channel)}`}
             onClick={() => onShare?.(channel)}
-            className="grid min-h-12 min-w-12 place-items-center transition-opacity hover:opacity-85"
+            className="grid min-h-14 min-w-14 place-items-center transition-opacity hover:opacity-85"
           >
             <Icon className={iconClassName} />
           </a>
