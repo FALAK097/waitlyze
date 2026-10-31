@@ -1017,13 +1017,25 @@ export function AudienceTable({
                 )}
                 {canManage && (
                   <>
-                    <Button
-                      variant="outline"
-                      disabled={bulkPending || selectedIds.length > 1000}
-                      onClick={() => setBulkConfirm("offboard")}
-                    >
-                      Offboard
-                    </Button>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger
+                          render={
+                            <Button
+                              variant="outline"
+                              disabled={bulkPending || selectedIds.length > 1000}
+                              onClick={() => setBulkConfirm("offboard")}
+                            />
+                          }
+                        >
+                          Offboard
+                        </TooltipTrigger>
+                        <TooltipContent side="bottom" className="max-w-64">
+                          Stops marketing and broadcast emails while keeping their signup row,
+                          position, points, and referral history intact.
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
                     <Button
                       variant="outline-destructive"
                       disabled={bulkPending || selectedIds.length > 1000}
