@@ -20,9 +20,14 @@ export function SocialFollowTasks({ follows, waitListId, code, className }) {
     }).catch(() => {});
   }
   return (
-    <div className={cn("grid w-full max-w-md gap-2.5", className)}>
+    <div
+      className={cn(
+        "grid w-full max-w-md justify-items-center gap-3 border-t border-wl-text/15 pt-6",
+        className,
+      )}
+    >
       <p className="m-0 text-sm font-bold">Follow along</p>
-      <div className="grid gap-2">
+      <div className="flex w-full flex-wrap items-center justify-center gap-2.5">
         {follows.map((follow) => (
           <a
             key={follow.network}
@@ -30,12 +35,10 @@ export function SocialFollowTasks({ follows, waitListId, code, className }) {
             target="_blank"
             rel="noopener noreferrer"
             onClick={() => claimFollow(follow.network)}
-            className="flex min-h-11 items-center gap-2.5 rounded-wl bg-wl-surface px-3 py-2 text-left text-caption font-bold text-wl-text transition-opacity hover:opacity-85"
+            className="inline-flex min-h-10 items-center gap-2 rounded-wl border border-wl-text/15 bg-transparent px-4 py-2 text-caption font-bold text-wl-text transition-colors hover:bg-wl-text/5"
           >
             <ShareChannelIcon channel={follow.network} className="size-5" />
-            <span className="min-w-0 flex-1 truncate">
-              Follow on {channelLabel(follow.network)}
-            </span>
+            <span className="truncate">Follow on {channelLabel(follow.network)}</span>
           </a>
         ))}
       </div>
@@ -69,8 +72,10 @@ export function LeaderboardRows({ neighbors }) {
         <li
           key={entry.position}
           className={cn(
-            "flex items-center gap-2.5 rounded-wl px-3 py-2 text-caption",
-            entry.you ? "bg-wl-button font-bold text-wl-button-text" : "bg-wl-surface",
+            "flex items-center gap-2.5 px-3.5 py-2.5 text-caption",
+            entry.you
+              ? "rounded-wl bg-wl-button font-bold text-wl-button-text"
+              : "border-b border-wl-text/10 last:border-b-0",
           )}
           aria-current={entry.you ? "true" : undefined}
         >
@@ -121,7 +126,12 @@ export function ReferralCockpitExtras({ waitListId, code, statusPage, className 
   const showBoard = statusPage?.showLeaderboard !== false;
   if (!showBoard && follows.length === 0) return null;
   return (
-    <div className={cn("grid w-full max-w-md justify-items-center gap-6", className)}>
+    <div
+      className={cn(
+        "mt-3 grid w-full max-w-md justify-items-center gap-6 border-t border-wl-text/15 pt-6",
+        className,
+      )}
+    >
       {showBoard ? (
         <ReactQueryProvider>
           <LeaderboardCard waitListId={waitListId} code={code} />

@@ -822,35 +822,49 @@ function SignupPreviewPhoneField({ requirePhone }) {
   );
 }
 
+function SignupPreviewFieldControl({ field }) {
+  if (field.type === "checkbox") {
+    return (
+      <span className="flex min-h-11 items-center gap-2 font-normal text-wl-muted">
+        <span className="size-4 rounded border border-wl-input-border bg-wl-input" />
+        {field.label || "Yes"}
+      </span>
+    );
+  }
+  if (field.type === "textarea") {
+    return (
+      <span className="flex min-h-20 items-start rounded-wl border border-wl-input-border bg-wl-input px-4 py-3 font-normal text-wl-muted">
+        {field.placeholder || "Your answer"}
+      </span>
+    );
+  }
+  if (field.type === "select") {
+    return (
+      <span className="flex h-12 items-center justify-between gap-2 rounded-wl border border-wl-input-border bg-wl-input px-4 font-normal text-wl-muted">
+        <span className="min-w-0 flex-1 truncate">{field.placeholder || "Choose an option"}</span>
+        <HugeiconsIcon
+          icon={ArrowDown01Icon}
+          size={14}
+          aria-hidden="true"
+          className="shrink-0 text-wl-muted"
+        />
+      </span>
+    );
+  }
+  const fallback = field.type === "number" ? "0" : "Your answer";
+  return (
+    <span className="flex h-12 items-center rounded-wl border border-wl-input-border bg-wl-input px-4 font-normal text-wl-muted">
+      {field.placeholder || fallback}
+    </span>
+  );
+}
+
 function SignupPreviewCustomField({ field }) {
+  const title = `${field.label || "Custom field"}${field.required ? " *" : ""}`;
   return (
     <div className="grid gap-1 text-caption font-semibold">
-      {field.label || "Custom field"}
-      {field.required ? " *" : ""}
-      {field.type === "checkbox" ? (
-        <span className="flex min-h-11 items-center gap-2 font-normal text-wl-muted">
-          <span className="size-4 rounded border border-wl-input-border bg-wl-input" />
-          {field.label || "Yes"}
-        </span>
-      ) : field.type === "textarea" ? (
-        <span className="flex min-h-20 items-start rounded-wl border border-wl-input-border bg-wl-input px-4 py-3 font-normal text-wl-muted">
-          {field.placeholder || "Your answer"}
-        </span>
-      ) : field.type === "select" ? (
-        <span className="flex h-12 items-center justify-between gap-2 rounded-wl border border-wl-input-border bg-wl-input px-4 font-normal text-wl-muted">
-          <span className="min-w-0 flex-1 truncate">{field.placeholder || "Choose an option"}</span>
-          <HugeiconsIcon
-            icon={ArrowDown01Icon}
-            size={14}
-            aria-hidden="true"
-            className="shrink-0 text-wl-muted"
-          />
-        </span>
-      ) : (
-        <span className="flex h-12 items-center rounded-wl border border-wl-input-border bg-wl-input px-4 font-normal text-wl-muted">
-          {field.placeholder || (field.type === "number" ? "0" : "Your answer")}
-        </span>
-      )}
+      {title}
+      <SignupPreviewFieldControl field={field} />
     </div>
   );
 }
@@ -1018,14 +1032,9 @@ export function StatusPagePreview({ snapshot, state = "confirmed", showReferrals
           </div>
         )}
         {showReferrals && status.showReferralLink && !pending && (
-          <div className="mt-8 grid w-full max-w-md gap-2.5">
+          <div className="mt-8 grid w-full max-w-md gap-3">
             <p className="m-0 text-sm text-wl-muted">{status.shareMessage}</p>
-            <div
-              className={cn(
-                "flex items-center gap-2 overflow-hidden rounded-wl py-2 pr-2 pl-3",
-                card ? "border border-wl-text/10 bg-wl-page" : "bg-wl-surface",
-              )}
-            >
+            <div className="flex items-center gap-2 overflow-hidden rounded-wl border border-wl-text/15 bg-transparent py-2 pr-2 pl-3">
               <span className="min-w-0 flex-1 text-left text-caption text-ellipsis whitespace-nowrap text-wl-muted">
                 {demoLink.replace(/^https?:\/\//, "")}
               </span>
@@ -1040,8 +1049,8 @@ export function StatusPagePreview({ snapshot, state = "confirmed", showReferrals
               />
             )}
             {showReferrals && !pending && status.showLeaderboard !== false && (
-              <div className="grid w-full max-w-md justify-items-center gap-2.5">
-                <p className="m-0 w-full text-left text-sm font-bold">Leaderboard</p>
+              <div className="mt-3 grid w-full max-w-md justify-items-center gap-3 border-t border-wl-text/15 pt-6">
+                <p className="m-0 text-sm font-bold">Leaderboard</p>
                 <LeaderboardSummary position={47} total={2847} referralsToNext={1} />
                 <LeaderboardRows
                   neighbors={[
@@ -1055,7 +1064,7 @@ export function StatusPagePreview({ snapshot, state = "confirmed", showReferrals
               </div>
             )}
             {showReferrals && !pending && (
-              <SocialFollowTasks follows={socialFollowEntries(status)} />
+              <SocialFollowTasks follows={socialFollowEntries(status)} className="mt-3" />
             )}
           </div>
         )}

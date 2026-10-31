@@ -276,7 +276,7 @@ export function ShareButtons({
   }
 
   return (
-    <div className={cn("flex flex-wrap items-center gap-2", className)}>
+    <div className={cn("flex flex-wrap items-center justify-center gap-2", className)}>
       {channels.map((channel) => {
         const Icon = ICONS[channel];
         if (!Icon) return null;

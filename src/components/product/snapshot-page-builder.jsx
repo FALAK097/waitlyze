@@ -1766,9 +1766,10 @@ export function SnapshotPageBuilder({
                 </div>
                 <div
                   className={cn(
-                    "grid overflow-y-auto rounded-xl bg-white shadow-surface",
+                    "overflow-y-auto rounded-xl bg-(--wl-page) shadow-surface",
                     statusViewport === "mobile" ? "mx-auto h-160 w-full max-w-md" : "h-140 w-full",
                   )}
+                  style={{ "--wl-page": snapshot.brand.pageBackground }}
                 >
                   <StatusPagePreview
                     snapshot={snapshot}
@@ -2165,7 +2166,28 @@ function RedirectUrlField({ value, onChange }) {
   }
   return (
     <div className="grid gap-1.5">
-      <Label htmlFor={id}>Redirect URL (optional)</Label>
+      <div className="inline-flex items-center gap-1.5">
+        <Label htmlFor={id}>Redirect URL (optional)</Label>
+        <TooltipProvider delay={150}>
+          <Tooltip>
+            <TooltipTrigger
+              render={
+                <button
+                  type="button"
+                  aria-label="Redirect URL information"
+                  className="grid size-5 shrink-0 cursor-pointer place-items-center rounded-full border-0 bg-transparent p-0 text-product-text-muted hover:bg-product-bg-inset hover:text-product-text-primary"
+                >
+                  <HugeiconsIcon icon={HelpCircleIcon} size={15} aria-hidden="true" />
+                </button>
+              }
+            />
+            <TooltipContent side="top" className="max-w-64 text-center">
+              Send visitors to a site path like /thanks or an HTTPS URL after signup. Leave empty to
+              stay on the confirmation screen.
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      </div>
       <InputGroup className="h-10">
         {showHttpsPrefix && <InputGroupAddon>https://</InputGroupAddon>}
         <InputGroupInput
