@@ -685,7 +685,7 @@ export async function dispatchPendingOutboxEvents(
     ]);
     if (
       !signup ||
-      signup.verifiedAt ||
+      (signup.verifiedAt && !payload.manualRetry) ||
       !verification ||
       !waitList ||
       waitList.status !== "PUBLISHED"

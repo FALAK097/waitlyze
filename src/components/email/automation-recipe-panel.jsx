@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+
 import {
   NumberField,
   NumberFieldDecrement,
@@ -11,7 +13,14 @@ import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 import { EmailCanvas } from "./email-canvas";
-import { EmailPreviewFrame, SpamHintView, VariableChips } from "./email-composer-extras";
+import {
+  EmailPreviewResult,
+  EmailTestSendForm,
+  HtmlSourceEditor,
+  VariableChips,
+} from "./email-composer-extras";
+import { EmailComposerModeBar } from "./email-composer-mode-bar";
+import { SavedTemplateSelect } from "./saved-template-select";
 
 const pane = "min-w-0 max-w-195 flex flex-col gap-5 lg:flex-1";
 const paneHead = "flex items-start justify-between gap-4 max-sm:flex-col max-sm:items-stretch";
@@ -32,6 +41,7 @@ const canvasShell = "overflow-hidden rounded-lg border border-product-border-sub
 const metaBar =
   "flex flex-wrap items-center justify-between gap-3.5 max-sm:flex-col max-sm:items-stretch";
 const hint = "m-0 text-caption leading-normal text-product-text-secondary";
+const EMPTY_TEMPLATES = {};
 
 const hourValue = (minutes) => Number((minutes / 60).toFixed(2));
 const waitLabel = (minutes) =>
@@ -136,26 +146,19 @@ function TimingFields({ recipe, delay, busy, onUpdateRecipe }) {
 
 function TestSendForm({ busy, dirty, testTo, onTestToChange, onSendTest, recipe }) {
   return (
-    <form className="flex items-center gap-2" onSubmit={(event) => onSendTest(event, recipe)}>
-      <input
-        className="h-11 w-45 min-w-0 rounded-product-control border border-product-border-control bg-white px-2.5 text-caption max-sm:w-auto max-sm:flex-1 max-sm:text-base"
-        type="email"
-        placeholder="you@example.com"
-        required
-        maxLength={320}
-        aria-label="Send a test to"
-        value={testTo}
-        onChange={(event) => onTestToChange(event.target.value)}
-      />
-      <Button type="submit" variant="outline" className="min-h-11" disabled={busy || dirty}>
-        {busy ? "Sending…" : "Send test"}
-      </Button>
-    </form>
+    <EmailTestSendForm
+      value={testTo}
+      onChange={onTestToChange}
+      busy={busy}
+      disabled={dirty}
+      onSubmit={(event) => onSendTest(event, recipe)}
+    />
   );
 }
 
 export function AutomationRecipePanel({
   recipe,
+  templates = EMPTY_TEMPLATES,
   checks,
   busy,
   deliveryReady,
@@ -163,9 +166,12 @@ export function AutomationRecipePanel({
   validValues,
   editorRef,
   testTo,
+  initialHtmlState,
+  onHtmlStateChange,
   onTestToChange,
   onUpdateRecipe,
   onPreview,
+  onClearPreview,
   onSave,
   onChangeStatus,
   onSendTest,
@@ -173,6 +179,66 @@ export function AutomationRecipePanel({
   const delay = recipe.delayHours ?? hourValue(recipe.config.delayMinutes);
   const enabled = recipe.status === "ENABLED";
   const timing = recipeTiming(recipe);
+  const [mode, setMode] = useState(initialHtmlState?.mode || "visual");
+  const [htmlDraft, setHtmlDraft] = useState(initialHtmlState?.draft || "");
+  const [htmlBaseline, setHtmlBaseline] = useState(initialHtmlState?.baseline || "");
+  const [viewport, setViewport] = useState("desktop");
+  const [templateChoice, setTemplateChoice] = useState("");
+  const hasUnappliedHtml = mode === "html" && htmlDraft !== htmlBaseline;
+  const effectiveDirty = dirty || hasUnappliedHtml;
+
+  function syncHtmlState(next) {
+    onHtmlStateChange?.(next);
+  }
+
+  function applyTemplate() {
+    const template = templates[templateChoice];
+    if (!template) return;
+    const content =
+      template.editorDocument || template.renderedHtml || template.starterHtml || "<p></p>";
+    editorRef.current?.editor?.commands?.setContent(content);
+    const document = editorRef.current?.getJSON?.() || content;
+    onUpdateRecipe(recipe.id, {
+      config: { ...recipe.config, subject: template.subject, editorDocument: document },
+    });
+    setTemplateChoice("");
+  }
+
+  async function changeMode(nextMode) {
+    onClearPreview?.();
+    if (nextMode === "html" && mode === "html") return;
+    if (nextMode === "html") {
+      try {
+        if (!editorRef.current?.editor) throw new Error("The editor is still loading.");
+        const { html } = await editorRef.current.getEmail();
+        setHtmlDraft(html);
+        setHtmlBaseline(html);
+        syncHtmlState({ mode: "html", draft: html, baseline: html });
+      } catch {
+        return;
+      }
+    } else if (mode === "html" && htmlDraft !== htmlBaseline) {
+      applyHtml();
+      return;
+    }
+    setMode(nextMode);
+    syncHtmlState({ mode: nextMode, draft: htmlDraft, baseline: htmlBaseline });
+  }
+  function applyHtml() {
+    onClearPreview?.();
+    editorRef.current?.editor?.commands?.setContent(htmlDraft || "<p></p>");
+    setHtmlBaseline(htmlDraft);
+    setMode("visual");
+    syncHtmlState({ mode: "visual", draft: htmlDraft, baseline: htmlDraft });
+  }
+  function handlePreview() {
+    if (mode === "html" && htmlDraft !== htmlBaseline) {
+      applyHtml();
+    } else {
+      setMode("visual");
+    }
+    onPreview();
+  }
 
   return (
     <section className={pane} aria-label={recipe.title}>
@@ -182,6 +248,14 @@ export function AutomationRecipePanel({
           <p className={paneMeta}>{timing}</p>
         </div>
         <div className={paneActions}>
+          <Button
+            type="button"
+            variant="default"
+            onClick={onSave}
+            disabled={busy || !validValues || hasUnappliedHtml}
+          >
+            {busy ? "Saving…" : "Save changes"}
+          </Button>
           <TooltipProvider delay={100}>
             <Tooltip>
               <TooltipTrigger
@@ -190,14 +264,20 @@ export function AutomationRecipePanel({
                     type="button"
                     variant={enabled ? "outline" : "default"}
                     onClick={onChangeStatus}
-                    disabled={busy || (!enabled && (!deliveryReady || dirty))}
+                    disabled={busy || (!enabled && (!deliveryReady || effectiveDirty))}
                   >
-                    {busy ? "Saving…" : enabled ? "Pause" : dirty ? "Save first" : "Enable"}
+                    {busy
+                      ? "Saving…"
+                      : enabled
+                        ? "Pause"
+                        : effectiveDirty
+                          ? "Save first"
+                          : "Enable"}
                   </Button>
                 }
               />
               <TooltipContent side="bottom">
-                {statusTooltipText({ enabled, deliveryReady, dirty })}
+                {statusTooltipText({ enabled, deliveryReady, dirty: effectiveDirty })}
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
@@ -223,7 +303,59 @@ export function AutomationRecipePanel({
         </div>
       </div>
 
-      <div className={canvasShell}>
+      <div className="flex flex-wrap items-center gap-2">
+        <SavedTemplateSelect
+          value={templateChoice}
+          onValueChange={setTemplateChoice}
+          templates={templates}
+          disabled={busy || mode === "html" || Boolean(checks)}
+        />
+        <Button
+          type="button"
+          variant="outline"
+          disabled={!templateChoice || busy || mode === "html" || Boolean(checks)}
+          onClick={applyTemplate}
+        >
+          Use template
+        </Button>
+      </div>
+
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <EmailComposerModeBar
+          mode={checks ? "preview" : mode === "html" ? "html" : "visual"}
+          setMode={changeMode}
+        />
+        <Button type="button" variant="outline" onClick={handlePreview} disabled={busy}>
+          Preview email
+        </Button>
+      </div>
+      {mode === "html" ? (
+        <div className="flex flex-col gap-3">
+          <HtmlSourceEditor
+            value={htmlDraft}
+            onChange={(next) => {
+              setHtmlDraft(next);
+              syncHtmlState({ mode, draft: next, baseline: htmlBaseline });
+            }}
+          />
+          <div className={metaBar}>
+            <p className={hint}>Paste or edit HTML, then apply it to the visual editor.</p>
+            <Button type="button" variant="default" onClick={applyHtml}>
+              Apply HTML
+            </Button>
+          </div>
+        </div>
+      ) : null}
+      {checks ? (
+        <EmailPreviewResult
+          html={checks.html}
+          text={checks.text}
+          subject={recipe.config.subject}
+          viewport={viewport}
+          onViewportChange={setViewport}
+        />
+      ) : null}
+      <div className={mode === "html" || checks ? `${canvasShell} hidden` : canvasShell}>
         <EmailCanvas
           key={recipe.id}
           editorRef={editorRef}
@@ -248,36 +380,15 @@ export function AutomationRecipePanel({
               : ["waitlist", "name", "position", "points", "referral_link"]
           }
         />
-        <div className={paneActions}>
-          <Button type="button" variant="outline" onClick={onPreview} disabled={busy}>
-            Preview &amp; spam check
-          </Button>
-          <Button type="button" variant="default" onClick={onSave} disabled={busy || !validValues}>
-            {busy ? "Saving…" : "Save changes"}
-          </Button>
-        </div>
+        <TestSendForm
+          recipe={recipe}
+          busy={busy}
+          dirty={effectiveDirty}
+          testTo={testTo}
+          onTestToChange={onTestToChange}
+          onSendTest={onSendTest}
+        />
       </div>
-
-      {checks ? (
-        <div className="flex flex-col gap-4">
-          <EmailPreviewFrame html={checks.html} />
-          <SpamHintView
-            subject={recipe.config.subject}
-            previewText=""
-            text={checks.text}
-            html={checks.html}
-          />
-        </div>
-      ) : null}
-
-      <TestSendForm
-        recipe={recipe}
-        busy={busy}
-        dirty={dirty}
-        testTo={testTo}
-        onTestToChange={onTestToChange}
-        onSendTest={onSendTest}
-      />
 
       {recipe.type.startsWith("REFERRAL_") ? (
         <p className={hint}>

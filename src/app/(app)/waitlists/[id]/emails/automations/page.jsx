@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 
 import { getAutomationConsole } from "@/app/actions/automations";
+import { getOrCreateTemplates } from "@/app/actions/emails";
 import { ContentLayout } from "@/components/dashboard/content-layout";
 import { AutomationManager } from "@/components/email/automation-manager";
 import { EmailToolsNav } from "@/components/email/email-tools-nav";
@@ -12,11 +13,14 @@ export const metadata = {
   description: "Set up consent-aware waitlist email automations.",
 };
 
-export default async function AutomationsPage({ params }) {
-  const { id } = await params;
+export default async function AutomationsPage({ params, searchParams }) {
+  const [{ id }, { recipe: requestedRecipeId }] = await Promise.all([params, searchParams]);
   const { campaign } = await requireCampaignPage(id, "sendEmail");
   if (!campaign) return notFound();
-  const data = await getAutomationConsole(campaign.id);
+  const [data, templates] = await Promise.all([
+    getAutomationConsole(campaign.id),
+    getOrCreateTemplates(campaign.id),
+  ]);
   return (
     <ContentLayout title="Automations">
       <EmailToolsNav waitListId={campaign.id} current="automations" />
@@ -24,6 +28,8 @@ export default async function AutomationsPage({ params }) {
         waitListId={campaign.id}
         waitListName={campaign.name}
         initialRecipes={data.recipes}
+        initialRecipeId={requestedRecipeId}
+        initialTemplates={templates}
         deliveryReady={Boolean(env.OUTBOX_DISPATCH_SECRET && env.RESEND_API_KEY)}
       />
     </ContentLayout>

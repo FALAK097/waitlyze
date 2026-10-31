@@ -29,8 +29,8 @@ export async function retryFailedVerification({ waitListId, signupIds }) {
       eventKey = await prisma.$transaction(async (tx) => {
         await tx.$queryRaw`SELECT "id" FROM "sign_ups" WHERE "id" = ${signupId} AND "waitListId" = ${waitListId} FOR UPDATE`;
         const signup = await tx.signUp.findFirst({
-          where: { id: signupId, waitListId, verifiedAt: null },
-          select: { id: true, email: true, emailNormalized: true },
+          where: { id: signupId, waitListId },
+          select: { id: true, email: true, emailNormalized: true, verifiedAt: true },
         });
         if (!signup) return null;
         const [latest] = await tx.outboxEvent.findMany({
@@ -39,7 +39,7 @@ export async function retryFailedVerification({ waitListId, signupIds }) {
             type: "SIGNUP_VERIFICATION_REQUESTED",
             payload: { path: ["signUpId"], equals: signupId },
           },
-          orderBy: { createdAt: "desc" },
+          orderBy: [{ createdAt: "desc" }, { id: "desc" }],
           take: 1,
           select: { status: true, createdAt: true, lastErrorCode: true },
         });
@@ -76,7 +76,13 @@ export async function retryFailedVerification({ waitListId, signupIds }) {
             eventKey: key,
             type: "SIGNUP_VERIFICATION_REQUESTED",
             waitListId,
-            payload: { signUpId: signup.id, waitListId, email: signup.email, token },
+            payload: {
+              signUpId: signup.id,
+              waitListId,
+              email: signup.email,
+              token,
+              manualRetry: true,
+            },
           },
         });
         return key;

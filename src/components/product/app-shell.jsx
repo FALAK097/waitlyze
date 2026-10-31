@@ -175,14 +175,13 @@ function AccountMenu({ user, avatar }) {
             render={
               <Button
                 variant="ghost"
-                size="icon-lg"
-                className="size-11"
+                size="icon"
                 aria-label="Send feedback"
                 onClick={() => setFeedbackOpen(true)}
               />
             }
           >
-            <HugeiconsIcon icon={BubbleChatIcon} size={20} aria-hidden="true" />
+            <HugeiconsIcon icon={BubbleChatIcon} className="size-6" aria-hidden="true" />
           </TooltipTrigger>
           <TooltipContent side="bottom">Send Feedback</TooltipContent>
         </Tooltip>
@@ -228,7 +227,7 @@ function AccountMenu({ user, avatar }) {
 export function AppShell({ children, user, avatar, workspaces, selectedWorkspace }) {
   const pathname = usePathname();
   const navLinkClass = cn(
-    "inline-flex min-h-11 items-center justify-center rounded-lg px-3 py-2 text-sm text-product-text-secondary no-underline transition-colors duration-150 hover:bg-product-bg-inset hover:text-product-text-primary",
+    "inline-flex min-h-11 min-w-0 flex-1 items-center justify-center rounded-lg px-3 py-2 text-sm whitespace-nowrap text-product-text-secondary no-underline transition-colors duration-150 hover:bg-product-bg-inset hover:text-product-text-primary md:flex-none",
   );
   return (
     <div className="min-h-dvh bg-white">
@@ -255,7 +254,7 @@ export function AppShell({ children, user, avatar, workspaces, selectedWorkspace
           <WorkspaceSwitcher workspaces={workspaces} selected={selectedWorkspace} />
           <nav
             aria-label="Main navigation"
-            className="ms-auto flex items-center gap-2 max-md:order-4 max-md:ms-0 max-md:me-0 max-md:w-full max-md:justify-start"
+            className="ms-auto flex min-w-0 items-center gap-2 max-md:order-4 max-md:ms-0 max-md:me-0 max-md:w-full max-md:justify-between max-md:gap-1"
           >
             <Link
               prefetch={false}
@@ -298,7 +297,7 @@ export function AppShell({ children, user, avatar, workspaces, selectedWorkspace
       <main
         id="product-content"
         tabIndex={-1}
-        className="mx-auto w-full max-w-288 px-8 pt-6 pb-16 max-[359px]:px-4 max-md:px-5"
+        className="mx-auto w-full max-w-288 px-8 pt-6 pb-28 max-[359px]:px-4 max-md:px-5"
       >
         {children}
       </main>

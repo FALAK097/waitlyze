@@ -1,11 +1,11 @@
 "use client";
 
-import { Cancel01Icon } from "@hugeicons/core-free-icons";
+import { Cancel01Icon, Globe02Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { useId, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
 import { Label } from "@/components/ui/label";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
@@ -55,13 +55,18 @@ export function ImageUploadField({
   return (
     <div className="grid gap-1.5">
       <Label htmlFor={id}>{label}</Label>
-      <div className="flex items-center gap-2">
-        <Input
-          id={id}
-          value={value}
-          placeholder="https://…"
-          onChange={(event) => onChange(event.target.value)}
-        />
+      <div className="flex min-w-0 items-center gap-2">
+        <InputGroup className="h-10 min-w-0 flex-1">
+          <InputGroupAddon>
+            <HugeiconsIcon icon={Globe02Icon} aria-hidden="true" />
+          </InputGroupAddon>
+          <InputGroupInput
+            id={id}
+            value={value}
+            placeholder="Paste an image URL"
+            onChange={(event) => onChange(event.target.value)}
+          />
+        </InputGroup>
         <Button
           type="button"
           variant="outline"

@@ -22,6 +22,7 @@ import {
   Analytics01Icon,
   ArrowDown01Icon,
   ArrowUp01Icon,
+  ArrowUpRight01Icon,
   CheckListIcon,
   Copy01Icon,
   Delete02Icon,
@@ -49,6 +50,7 @@ import { parseAsStringLiteral, useQueryState } from "nuqs";
 import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 
 import { ColorPicker } from "@/components/reui/color-picker";
+import { CountryMultiSelect } from "@/components/reui/country-multi-select";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -60,6 +62,7 @@ import {
 } from "@/components/ui/dialog";
 import { FontPicker } from "@/components/ui/font-picker";
 import { Input } from "@/components/ui/input";
+import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -183,7 +186,7 @@ function Field({
 }
 // Number input that lets founders clear the field while typing and commits a
 // clamped integer on blur, instead of snapping to 0 mid-edit.
-function PointsField({ label, value, onCommit, max = 100000 }) {
+function PointsField({ label, value, onCommit, max = 100000, unit }) {
   const id = useId();
   // Callers pass `key={value}` so React remounts and re-syncs the text state
   // when the committed value changes, instead of resetting it from an effect.
@@ -199,13 +202,26 @@ function PointsField({ label, value, onCommit, max = 100000 }) {
   return (
     <div className="grid gap-1.5 [&_input]:text-caption [&_label]:text-caption [&_label]:font-semibold">
       <Label htmlFor={id}>{label}</Label>
-      <Input
-        id={id}
-        type="number"
-        value={text}
-        onChange={(event) => setText(event.target.value)}
-        onBlur={commit}
-      />
+      {unit ? (
+        <InputGroup className="h-10">
+          <InputGroupInput
+            id={id}
+            type="number"
+            value={text}
+            onChange={(event) => setText(event.target.value)}
+            onBlur={commit}
+          />
+          <InputGroupAddon align="inline-end">{unit}</InputGroupAddon>
+        </InputGroup>
+      ) : (
+        <Input
+          id={id}
+          type="number"
+          value={text}
+          onChange={(event) => setText(event.target.value)}
+          onBlur={commit}
+        />
+      )}
     </div>
   );
 }
@@ -256,8 +272,31 @@ function Toggle({ label, checked, onChange, disabled = false, hint = "" }) {
         disabled={disabled}
         onCheckedChange={(value) => onChange(value === true)}
       />
-      <span>{label}</span>
-      {hint && <span className="text-micro text-product-text-muted">{hint}</span>}
+      {hint ? (
+        <span className="inline-flex items-center gap-1.5">
+          <span>{label}</span>
+          <TooltipProvider delay={150}>
+            <Tooltip>
+              <TooltipTrigger
+                render={
+                  <button
+                    type="button"
+                    aria-label={`${label} information`}
+                    className="grid size-5 shrink-0 cursor-pointer place-items-center rounded-full border-0 bg-transparent p-0 text-product-text-muted hover:bg-product-bg-inset hover:text-product-text-primary"
+                  >
+                    <HugeiconsIcon icon={HelpCircleIcon} size={15} aria-hidden="true" />
+                  </button>
+                }
+              />
+              <TooltipContent side="top" className="max-w-64 text-center">
+                {hint}
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </span>
+      ) : (
+        <span>{label}</span>
+      )}
     </label>
   );
 }
@@ -592,9 +631,6 @@ function BlockInspector({ section, update, form, updateForm }) {
           <div className="grid gap-1">
             <p className="text-micro font-bold tracking-widest text-product-text-secondary uppercase">
               Signup form
-            </p>
-            <p className="text-micro leading-relaxed text-product-text-secondary">
-              The same form is used wherever it appears on your page or embed.
             </p>
           </div>
           <FormPanel form={form} update={updateForm} />
@@ -1284,6 +1320,7 @@ export function SnapshotPageBuilder({
               rel="noopener noreferrer"
             >
               View live
+              <HugeiconsIcon icon={ArrowUpRight01Icon} size={14} aria-hidden="true" />
             </Link>
           )}
           {canPublish && hasUpdates && (
@@ -1636,6 +1673,8 @@ export function SnapshotPageBuilder({
           sidebar={
             <StatusPanel
               status={snapshot.statusPage}
+              form={snapshot.form}
+              updateForm={(value) => updateRoot("form", value)}
               showReferrals={waitList.showReferrals}
               waitListId={waitList.id}
               rewards={snapshot.rewards}
@@ -1686,36 +1725,51 @@ export function SnapshotPageBuilder({
                         </button>
                       ))}
                   </div>
-                  <div
-                    className="flex gap-1 [&_button]:flex [&_button]:size-9 [&_button]:cursor-pointer [&_button]:items-center [&_button]:justify-center [&_button]:rounded-lg [&_button]:border-0 [&_button]:bg-transparent [&_button]:text-product-text-secondary [&_button[aria-pressed=true]]:bg-product-bg-surface [&_button[aria-pressed=true]]:text-product-text-primary"
-                    role="group"
-                    aria-label="Preview viewport"
-                  >
-                    <button
-                      type="button"
-                      aria-label="Desktop preview"
-                      aria-pressed={statusViewport === "desktop"}
-                      onClick={() => setStatusViewport("desktop")}
+                  <TooltipProvider>
+                    <div
+                      className="flex gap-1 [&_button]:flex [&_button]:size-9 [&_button]:cursor-pointer [&_button]:items-center [&_button]:justify-center [&_button]:rounded-lg [&_button]:border-0 [&_button]:bg-transparent [&_button]:text-product-text-secondary [&_button[aria-pressed=true]]:bg-product-bg-surface [&_button[aria-pressed=true]]:text-product-text-primary"
+                      role="group"
+                      aria-label="Preview viewport"
                     >
-                      <HugeiconsIcon icon={MonitorIcon} size={17} aria-hidden="true" />
-                    </button>
-                    <button
-                      type="button"
-                      aria-label="Mobile preview"
-                      aria-pressed={statusViewport === "mobile"}
-                      onClick={() => setStatusViewport("mobile")}
-                    >
-                      <HugeiconsIcon icon={SmartphoneIcon} size={17} aria-hidden="true" />
-                    </button>
-                  </div>
+                      <Tooltip>
+                        <TooltipTrigger
+                          render={
+                            <button
+                              type="button"
+                              aria-label="Desktop preview"
+                              aria-pressed={statusViewport === "desktop"}
+                              onClick={() => setStatusViewport("desktop")}
+                            />
+                          }
+                        >
+                          <HugeiconsIcon icon={MonitorIcon} size={17} aria-hidden="true" />
+                        </TooltipTrigger>
+                        <TooltipContent side="bottom">Desktop</TooltipContent>
+                      </Tooltip>
+                      <Tooltip>
+                        <TooltipTrigger
+                          render={
+                            <button
+                              type="button"
+                              aria-label="Mobile preview"
+                              aria-pressed={statusViewport === "mobile"}
+                              onClick={() => setStatusViewport("mobile")}
+                            />
+                          }
+                        >
+                          <HugeiconsIcon icon={SmartphoneIcon} size={17} aria-hidden="true" />
+                        </TooltipTrigger>
+                        <TooltipContent side="bottom">Mobile</TooltipContent>
+                      </Tooltip>
+                    </div>
+                  </TooltipProvider>
                 </div>
                 <div
                   className={cn(
-                    "grid overflow-hidden rounded-xl bg-white shadow-surface",
-                    statusViewport === "mobile"
-                      ? "mx-auto min-h-160 w-full max-w-md"
-                      : "min-h-140 w-full",
+                    "overflow-y-auto rounded-xl bg-(--wl-page) shadow-surface",
+                    statusViewport === "mobile" ? "mx-auto h-160 w-full max-w-md" : "h-140 w-full",
                   )}
+                  style={{ "--wl-page": snapshot.brand.pageBackground }}
                 >
                   <StatusPagePreview
                     snapshot={snapshot}
@@ -1856,7 +1910,7 @@ function SurfaceLayout({ sidebar, children, mobileMode }) {
         {sidebar}
       </aside>
       <main
-        className="min-h-0 min-w-0 flex-1 overflow-hidden p-10 max-[900px]:p-7 max-[680px]:p-3 max-[680px]:data-[mobile-mode=edit]:hidden"
+        className="min-h-0 min-w-0 flex-1 overflow-y-auto p-10 max-[900px]:p-7 max-[680px]:p-3 max-[680px]:data-[mobile-mode=edit]:hidden"
         data-mobile-mode={mobileMode}
       >
         {children}
@@ -1870,8 +1924,8 @@ function TypeSizeField({ label, value, defaultValue, onChange, min = 12, max = 1
   return (
     <div className="grid gap-1.5">
       <Label htmlFor={id}>{label}</Label>
-      <div className="flex items-center gap-2">
-        <Input
+      <InputGroup className="h-10">
+        <InputGroupInput
           id={id}
           type="number"
           min={min}
@@ -1882,8 +1936,8 @@ function TypeSizeField({ label, value, defaultValue, onChange, min = 12, max = 1
             if (Number.isFinite(next)) onChange(Math.min(max, Math.max(min, Math.round(next))));
           }}
         />
-        <span className="text-micro text-product-text-secondary">px</span>
-      </div>
+        <InputGroupAddon align="inline-end">px</InputGroupAddon>
+      </InputGroup>
     </div>
   );
 }
@@ -2042,10 +2096,14 @@ function SelectField({ label, value, options, onChange }) {
     <div className={"grid gap-1.5"}>
       <Label htmlFor={id}>{label}</Label>
       <Select value={value} onValueChange={onChange}>
-        <SelectTrigger id={id}>
+        <SelectTrigger id={id} className="w-full min-w-0">
           <SelectValue>{options.find((option) => option.id === value)?.label ?? value}</SelectValue>
         </SelectTrigger>
-        <SelectContent>
+        <SelectContent
+          align="start"
+          alignItemWithTrigger={false}
+          className="w-max max-w-80 min-w-64"
+        >
           {options.map((option) => (
             <SelectItem value={option.id} key={option.id}>
               {option.label}
@@ -2053,6 +2111,101 @@ function SelectField({ label, value, options, onChange }) {
           ))}
         </SelectContent>
       </Select>
+    </div>
+  );
+}
+function HttpsInputField({ label, value, placeholder, disabled, onChange }) {
+  const id = useId();
+  const normalized = (value || "").replace(/^https?:\/\//i, "");
+  return (
+    <div className="grid gap-1.5">
+      <Label htmlFor={id}>{label}</Label>
+      <InputGroup className="h-10">
+        <InputGroupAddon>https://</InputGroupAddon>
+        <InputGroupInput
+          id={id}
+          autoCapitalize="none"
+          autoComplete="url"
+          disabled={disabled}
+          placeholder={placeholder}
+          value={normalized}
+          onChange={(event) =>
+            onChange(
+              event.target.value.trim()
+                ? `https://${event.target.value.replace(/^https?:\/\//i, "")}`
+                : "",
+            )
+          }
+        />
+      </InputGroup>
+    </div>
+  );
+}
+function RedirectUrlField({ value, onChange }) {
+  const id = useId();
+  const [draft, setDraft] = useState(value || "");
+  const dirty = draft !== (value || "");
+  useEffect(() => {
+    if (!dirty) return;
+    const warnBeforeUnload = (event) => {
+      event.preventDefault();
+      event.returnValue = "";
+    };
+    window.addEventListener("beforeunload", warnBeforeUnload);
+    return () => window.removeEventListener("beforeunload", warnBeforeUnload);
+  }, [dirty]);
+  const isPath = draft.startsWith("/");
+  const showHttpsPrefix = !isPath && Boolean(draft.trim());
+  const shown = /^https?:\/\//i.test(draft) ? draft.replace(/^https?:\/\//i, "") : draft;
+  function commit() {
+    const next = draft.trim();
+    const normalized =
+      next.startsWith("/") || !next ? next : `https://${next.replace(/^https?:\/\//i, "")}`;
+    setDraft(normalized);
+    onChange(normalized);
+  }
+  return (
+    <div className="grid gap-1.5">
+      <div className="inline-flex items-center gap-1.5">
+        <Label htmlFor={id}>Redirect URL (optional)</Label>
+        <TooltipProvider delay={150}>
+          <Tooltip>
+            <TooltipTrigger
+              render={
+                <button
+                  type="button"
+                  aria-label="Redirect URL information"
+                  className="grid size-5 shrink-0 cursor-pointer place-items-center rounded-full border-0 bg-transparent p-0 text-product-text-muted hover:bg-product-bg-inset hover:text-product-text-primary"
+                >
+                  <HugeiconsIcon icon={HelpCircleIcon} size={15} aria-hidden="true" />
+                </button>
+              }
+            />
+            <TooltipContent side="top" className="max-w-64 text-center">
+              Send visitors to a site path like /thanks or an HTTPS URL after signup. Leave empty to
+              stay on the confirmation screen.
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      </div>
+      <InputGroup className="h-10">
+        {showHttpsPrefix && <InputGroupAddon>https://</InputGroupAddon>}
+        <InputGroupInput
+          id={id}
+          autoComplete="url"
+          placeholder="/thanks or example.com/thanks"
+          value={shown}
+          onChange={(event) => setDraft(event.target.value)}
+          onBlur={commit}
+          onKeyDown={(event) => {
+            if (event.key === "Enter") {
+              event.preventDefault();
+              commit();
+              event.currentTarget.blur();
+            }
+          }}
+        />
+      </InputGroup>
     </div>
   );
 }
@@ -2114,18 +2267,14 @@ function FormPanel({ form, update }) {
         placeholder="competitor.com"
         onChange={(blockedEmailDomains) => update({ blockedEmailDomains })}
       />
-      <ListField
-        label="Allowed countries (ISO codes, empty = all)"
+      <CountryMultiSelect
+        label="Allowed countries (empty = all)"
         value={form.allowedCountries}
-        placeholder="US, DE, IN"
-        normalize={(code) => code.toUpperCase()}
         onChange={(allowedCountries) => update({ allowedCountries })}
       />
-      <ListField
-        label="Blocked countries (ISO codes)"
+      <CountryMultiSelect
+        label="Blocked countries"
         value={form.blockedCountries}
-        placeholder="RU, CN"
-        normalize={(code) => code.toUpperCase()}
         onChange={(blockedCountries) => update({ blockedCountries })}
       />
       <Toggle
@@ -2146,124 +2295,127 @@ function FormPanel({ form, update }) {
         label="Bot protection (Cloudflare Turnstile)"
         checked={form.requireTurnstile === true}
         onChange={(requireTurnstile) => update({ requireTurnstile })}
-        hint={
-          form.requireTurnstile === true
-            ? "Signups fail while the server's TURNSTILE_SECRET_KEY is missing."
-            : ""
-        }
       />
-      {form.requireTurnstile && (
-        <Field
-          label="Turnstile site key (must match this server's widget)"
-          value={form.turnstileSiteKey ?? ""}
-          onChange={(turnstileSiteKey) => update({ turnstileSiteKey })}
-        />
-      )}
-      <div className="grid gap-3 border-t border-product-border-subtle pt-4">
-        <span className="block text-micro font-bold tracking-widest text-product-text-secondary uppercase">
-          Custom fields
-        </span>
-        {customFields.map((field) => (
+      <div className="grid gap-4 border-t border-product-border-subtle pt-4">
+        <div className="flex items-center justify-between gap-2">
+          <span className="block text-micro font-bold tracking-widest text-product-text-secondary uppercase">
+            Custom fields
+          </span>
+          {customFields.length < 10 && (
+            <Button
+              variant="outline"
+              size="sm"
+              type="button"
+              onClick={() =>
+                update({
+                  customFields: [
+                    ...customFields,
+                    {
+                      id: `field-${crypto.randomUUID().slice(0, 8).toLowerCase()}`,
+                      label: "New question",
+                      type: "text",
+                      required: false,
+                      placeholder: "",
+                      options: [],
+                    },
+                  ],
+                })
+              }
+            >
+              <HugeiconsIcon icon={Add01Icon} size={14} aria-hidden="true" />
+              Add field
+            </Button>
+          )}
+        </div>
+        {customFields.map((field, index) => (
           <div
-            className="grid gap-2.5 rounded-lg border border-product-border-subtle p-3"
+            className="grid gap-3 [&+&]:border-t [&+&]:border-product-border-subtle [&+&]:pt-4"
             key={field.id}
           >
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-micro font-semibold text-product-text-secondary">
+                Field {index + 1}
+              </span>
+              <div className="flex items-center gap-3">
+                <Toggle
+                  label="Required"
+                  checked={field.required === true}
+                  onChange={(required) => updateField(field.id, { required })}
+                />
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  type="button"
+                  aria-label={`Remove ${field.label || `field ${index + 1}`}`}
+                  onClick={() =>
+                    update({
+                      customFields: customFields.filter((entry) => entry.id !== field.id),
+                    })
+                  }
+                >
+                  <HugeiconsIcon icon={Delete02Icon} size={15} aria-hidden="true" />
+                </Button>
+              </div>
+            </div>
             <Field
               label="Label"
               value={field.label}
               onChange={(label) => updateField(field.id, { label })}
             />
-            <div className="grid gap-4 sm:grid-cols-2">
-              <SelectField
-                label="Type"
-                value={field.type}
-                options={[
-                  { id: "text", label: "Short text" },
-                  { id: "textarea", label: "Long text" },
-                  { id: "number", label: "Number" },
-                  { id: "select", label: "Dropdown" },
-                  { id: "checkbox", label: "Checkbox" },
-                ]}
-                onChange={(type) => updateField(field.id, { type })}
-              />
+            <SelectField
+              label="Type"
+              value={field.type}
+              options={[
+                { id: "text", label: "Short text" },
+                { id: "textarea", label: "Long text" },
+                { id: "number", label: "Number" },
+                { id: "select", label: "Dropdown" },
+                { id: "checkbox", label: "Checkbox" },
+              ]}
+              onChange={(type) =>
+                updateField(
+                  field.id,
+                  type === "select" && (!Array.isArray(field.options) || field.options.length === 0)
+                    ? { type, options: ["Option 1", "Option 2"] }
+                    : { type },
+                )
+              }
+            />
+            {field.type !== "checkbox" && (
               <Field
                 label="Placeholder"
                 value={field.placeholder ?? ""}
                 onChange={(placeholder) => updateField(field.id, { placeholder })}
               />
-            </div>
+            )}
             {field.type === "select" && (
               <ListField
                 label="Options (comma-separated)"
                 value={field.options}
-                onChange={(options) => updateField(field.id, { options })}
+                placeholder="Option 1, Option 2"
+                onChange={(options) =>
+                  updateField(field.id, {
+                    options: options.length > 0 ? options : ["Option 1"],
+                  })
+                }
               />
             )}
-            <Toggle
-              label="Required"
-              checked={field.required === true}
-              onChange={(required) => updateField(field.id, { required })}
-            />
-            <Button
-              variant="ghost"
-              size="sm"
-              type="button"
-              onClick={() =>
-                update({
-                  customFields: customFields.filter((entry) => entry.id !== field.id),
-                })
-              }
-            >
-              Remove
-            </Button>
           </div>
         ))}
-        {customFields.length < 10 && (
-          <Button
-            variant="outline"
-            size="sm"
-            type="button"
-            onClick={() =>
-              update({
-                customFields: [
-                  ...customFields,
-                  {
-                    id: `field-${crypto.randomUUID().slice(0, 8).toLowerCase()}`,
-                    label: "New question",
-                    type: "text",
-                    required: false,
-                    placeholder: "",
-                    options: [],
-                  },
-                ],
-              })
-            }
-          >
-            Add field
-          </Button>
-        )}
-      </div>
-      <div className="grid gap-4 border-t border-product-border-subtle pt-4">
-        <span className="block text-micro font-bold tracking-widest text-product-text-secondary uppercase">
-          After signup
-        </span>
-        <Field
-          label="Redirect URL (empty = stay on the thank-you screen)"
-          value={form.successRedirectUrl ?? ""}
-          placeholder="/thanks"
-          onChange={(successRedirectUrl) => update({ successRedirectUrl })}
-        />
-        <ListField
-          label="Redirect host allowlist (for https:// URLs)"
-          value={form.successRedirectAllowlist}
-          placeholder="app.example.com"
-          onChange={(successRedirectAllowlist) => update({ successRedirectAllowlist })}
-        />
       </div>
     </div>
   );
 }
-function StatusPanel({ status, update, showReferrals = true, waitListId, rewards, updateRewards }) {
+function StatusPanel({
+  status,
+  update,
+  form,
+  updateForm,
+  showReferrals = true,
+  waitListId,
+  rewards,
+  updateRewards,
+}) {
   // Drafts saved before rewards existed have no key yet: fall back to the
   // zero-config defaults (same values the API resolves server-side).
   const perks = {
@@ -2299,7 +2451,7 @@ function StatusPanel({ status, update, showReferrals = true, waitListId, rewards
     update({ socialFollows: next });
   };
   return (
-    <div className={"grid gap-4 p-4"}>
+    <div className="grid gap-4 p-4">
       <SelectField
         label="After a successful signup"
         value={status.postSignupBehavior}
@@ -2309,136 +2461,152 @@ function StatusPanel({ status, update, showReferrals = true, waitListId, rewards
         ]}
         onChange={(postSignupBehavior) => update({ postSignupBehavior })}
       />
-      {status.postSignupBehavior === "no-change" && (
-        <p className="m-0 text-caption leading-relaxed text-product-text-secondary">
-          No redirect or confirmation/referral state is shown. The signup is still recorded.
-        </p>
+      {status.postSignupBehavior !== "no-change" && (
+        <RedirectUrlField
+          key={form.successRedirectUrl ?? ""}
+          value={form.successRedirectUrl ?? ""}
+          onChange={(successRedirectUrl) => {
+            let host = "";
+            if (/^https:\/\//i.test(successRedirectUrl)) {
+              try {
+                host = new URL(successRedirectUrl).hostname.toLowerCase();
+              } catch {
+                host = "";
+              }
+            }
+            updateForm({
+              successRedirectUrl,
+              successRedirectAllowlist: host ? [host] : [],
+            });
+          }}
+        />
       )}
-      <Field
-        label="Confirmed heading"
-        value={status.heading}
-        onChange={(heading) => update({ heading })}
-      />
-      <Field
-        label="Confirmed message"
-        value={status.body}
-        multiline
-        onChange={(body) => update({ body })}
-      />
-      <Field
-        label="Pending heading"
-        value={status.pendingHeading}
-        onChange={(pendingHeading) => update({ pendingHeading })}
-      />
-      <Field
-        label="Pending message"
-        value={status.pendingBody}
-        multiline
-        onChange={(pendingBody) => update({ pendingBody })}
-      />
-      <div className="grid gap-4 sm:grid-cols-2">
-        <SelectField
-          label="Icon style"
-          value={status.iconStyle || "filled"}
-          options={[
-            { id: "filled", label: "Filled" },
-            { id: "soft", label: "Soft" },
-          ]}
-          onChange={(iconStyle) => update({ iconStyle })}
-        />
-        <SelectField
-          label="Layout"
-          value={status.layout || "centered"}
-          options={[
-            { id: "centered", label: "Centered" },
-            { id: "card", label: "Card" },
-          ]}
-          onChange={(layout) => update({ layout })}
-        />
-      </div>
-      <Toggle
-        label="Show position"
-        checked={status.showPosition}
-        onChange={(showPosition) => update({ showPosition })}
-      />
-      {referralNote}
-      <Toggle
-        label="Show referral link"
-        checked={status.showReferralLink}
-        disabled={!showReferrals}
-        onChange={(showReferralLink) => update({ showReferralLink })}
-      />
-      <Toggle
-        label="Show referral count"
-        checked={status.showReferralCount}
-        disabled={!showReferrals}
-        onChange={(showReferralCount) => update({ showReferralCount })}
-      />
-      <Toggle
-        label="Show leaderboard"
-        checked={status.showLeaderboard !== false}
-        disabled={!showReferrals}
-        onChange={(showLeaderboard) => update({ showLeaderboard })}
-      />
-      <Field
-        label="Share message"
-        value={status.shareMessage}
-        multiline
-        disabled={!showReferrals}
-        onChange={(shareMessage) => update({ shareMessage })}
-      />
-      <div className={"grid gap-5"}>
-        <span
-          className={
-            "block text-micro font-bold tracking-widest text-product-text-secondary uppercase"
-          }
-        >
-          Share buttons
+      <div className="grid gap-4 border-t border-product-border-subtle pt-4">
+        <span className="block text-micro font-bold tracking-widest text-product-text-secondary uppercase">
+          Confirmation screen
         </span>
-        {SHARE_CHANNELS.map(({ id: channel, label }) => (
-          <Toggle
-            key={channel}
-            label={
-              <span className="inline-flex items-center gap-2">
-                <ShareChannelIcon channel={channel} />
-                {label}
-              </span>
-            }
-            checked={channels.includes(channel)}
-            disabled={!showReferrals}
-            onChange={(enabled) =>
-              update({
-                shareChannels: enabled
-                  ? [...channels, channel]
-                  : channels.filter((item) => item !== channel),
-              })
-            }
+        <Field
+          label="Confirmed heading"
+          value={status.heading}
+          onChange={(heading) => update({ heading })}
+        />
+        <Field
+          label="Confirmed message"
+          value={status.body}
+          multiline
+          onChange={(body) => update({ body })}
+        />
+        <Field
+          label="Pending heading"
+          value={status.pendingHeading}
+          onChange={(pendingHeading) => update({ pendingHeading })}
+        />
+        <Field
+          label="Pending message"
+          value={status.pendingBody}
+          multiline
+          onChange={(pendingBody) => update({ pendingBody })}
+        />
+        <div className="grid grid-cols-2 gap-3">
+          <SelectField
+            label="Icon style"
+            value={status.iconStyle || "filled"}
+            options={[
+              { id: "filled", label: "Filled" },
+              { id: "soft", label: "Soft" },
+            ]}
+            onChange={(iconStyle) => update({ iconStyle })}
           />
-        ))}
+          <SelectField
+            label="Layout"
+            value={status.layout || "centered"}
+            options={[
+              { id: "centered", label: "Centered" },
+              { id: "card", label: "Card" },
+            ]}
+            onChange={(layout) => update({ layout })}
+          />
+        </div>
+        <Toggle
+          label="Show position"
+          checked={status.showPosition}
+          onChange={(showPosition) => update({ showPosition })}
+        />
       </div>
-      <div className={"grid gap-4"}>
-        <span
-          className={
-            "block text-micro font-bold tracking-widest text-product-text-secondary uppercase"
-          }
-        >
+      <div className="grid gap-3.5 border-t border-product-border-subtle pt-4">
+        <span className="block text-micro font-bold tracking-widest text-product-text-secondary uppercase">
+          Referrals & sharing
+        </span>
+        {referralNote}
+        <Toggle
+          label="Show referral link"
+          checked={status.showReferralLink}
+          disabled={!showReferrals}
+          onChange={(showReferralLink) => update({ showReferralLink })}
+        />
+        <Toggle
+          label="Show referral count"
+          checked={status.showReferralCount}
+          disabled={!showReferrals}
+          onChange={(showReferralCount) => update({ showReferralCount })}
+        />
+        <Toggle
+          label="Show leaderboard"
+          checked={status.showLeaderboard !== false}
+          disabled={!showReferrals}
+          onChange={(showLeaderboard) => update({ showLeaderboard })}
+        />
+        <Field
+          label="Share message"
+          value={status.shareMessage}
+          multiline
+          disabled={!showReferrals}
+          onChange={(shareMessage) => update({ shareMessage })}
+        />
+        <div className="grid gap-2.5 pt-1">
+          <span className="block text-micro font-bold tracking-widest text-product-text-secondary uppercase">
+            Share buttons
+          </span>
+          <div className="grid grid-cols-2 gap-2.5">
+            {SHARE_CHANNELS.map(({ id: channel, label }) => (
+              <Toggle
+                key={channel}
+                label={
+                  <span className="inline-flex items-center gap-2">
+                    <ShareChannelIcon channel={channel} className="size-4" />
+                    {label}
+                  </span>
+                }
+                checked={channels.includes(channel)}
+                disabled={!showReferrals}
+                onChange={(enabled) =>
+                  update({
+                    shareChannels: enabled
+                      ? [...channels, channel]
+                      : channels.filter((item) => item !== channel),
+                  })
+                }
+              />
+            ))}
+          </div>
+        </div>
+      </div>
+      <div className="grid gap-3.5 border-t border-product-border-subtle pt-4">
+        <span className="block text-micro font-bold tracking-widest text-product-text-secondary uppercase">
           Social follows
         </span>
-        <p className="m-0 text-caption leading-relaxed text-product-text-secondary">
-          Shown as follow tasks on the referral cockpit. Follows earn points once rewards launch.
-        </p>
-        <Field
+        <HttpsInputField
           label="X profile URL"
           value={followUrl("x")}
           disabled={!showReferrals}
-          placeholder="https://x.com/yourhandle"
+          placeholder="x.com/yourhandle"
           onChange={(url) => setFollowUrl("x", url)}
         />
-        <Field
+        <HttpsInputField
           label="Instagram profile URL"
           value={followUrl("instagram")}
           disabled={!showReferrals}
-          placeholder="https://instagram.com/yourhandle"
+          placeholder="instagram.com/yourhandle"
           onChange={(url) => setFollowUrl("instagram", url)}
         />
       </div>
@@ -2451,45 +2619,39 @@ function RewardsSection({ perks, updateRewards }) {
   const setPerks = (patch) => updateRewards({ ...perks, ...patch });
   return (
     <div className="grid gap-4 border-t border-product-border-subtle pt-4">
-      <div className="grid gap-1">
-        <span className="block text-micro font-bold tracking-widest text-product-text-secondary uppercase">
-          Points & rewards
-        </span>
-        <p className="m-0 text-caption leading-relaxed text-product-text-secondary">
-          Points accrue automatically from activation. Reward tiers come from the Referral rewards
-          blocks on your page.
-        </p>
-      </div>
-      <div className="grid gap-4 sm:grid-cols-3">
+      <span className="block text-micro font-bold tracking-widest text-product-text-secondary uppercase">
+        Points & rewards
+      </span>
+      <div className="grid grid-cols-2 gap-3">
         <PointsField
           key={perks.pointsSignup}
-          label="Per verified signup"
+          label="Per signup"
           value={perks.pointsSignup}
+          unit="pts"
           onCommit={(pointsSignup) => setPerks({ pointsSignup })}
         />
         <PointsField
           key={perks.pointsReferral}
           label="Per referral"
           value={perks.pointsReferral}
+          unit="pts"
           onCommit={(pointsReferral) => setPerks({ pointsReferral })}
         />
         <PointsField
           key={perks.pointsFollow}
-          label="Per social follow"
+          label="Per follow"
           value={perks.pointsFollow}
+          unit="pts"
           onCommit={(pointsFollow) => setPerks({ pointsFollow })}
         />
+        <PointsField
+          key={perks.positionOffset}
+          label="Position boost"
+          value={perks.positionOffset}
+          max={1000000}
+          onCommit={(positionOffset) => setPerks({ positionOffset })}
+        />
       </div>
-      <PointsField
-        key={perks.positionOffset}
-        label="Position boost"
-        value={perks.positionOffset}
-        max={1000000}
-        onCommit={(positionOffset) => setPerks({ positionOffset })}
-      />
-      <p className="-mt-2 text-caption leading-relaxed text-product-text-secondary">
-        Adds to every displayed position — e.g. 846 makes the first signup show #847.
-      </p>
       <Toggle
         label="Show points balance"
         checked={perks.showPoints}
@@ -2501,36 +2663,108 @@ function RewardsSection({ perks, updateRewards }) {
         onChange={(showProgress) => setPerks({ showProgress })}
       />
       <Toggle
-        label="Stealth mode (hide all counts)"
+        label="Stealth Mode"
         hint="Hides positions, points, and headcounts on the public page. Best for private or B2B launches."
         checked={perks.hideCounts}
         onChange={(hideCounts) => setPerks({ hideCounts })}
       />
-      <div className="grid gap-2.5">
-        <span className="block text-micro font-bold tracking-widest text-product-text-secondary uppercase">
-          Custom events
-        </span>
-        <p className="m-0 text-caption leading-relaxed text-product-text-secondary">
-          Off-site actions awarded through the API (survey, Discord join…). The event key goes in
-          the API call.
+      <div className="grid gap-3.5 border-t border-product-border-subtle pt-4">
+        <div className="flex items-center justify-between gap-2">
+          <span className="block text-micro font-bold tracking-widest text-product-text-secondary uppercase">
+            Custom events
+          </span>
+          {(perks.customEvents ?? []).length < 12 && (
+            <Button
+              variant="outline"
+              size="sm"
+              type="button"
+              onClick={() => {
+                // Distinct keys: normalizeRewardsConfig keeps one entry per key,
+                // so adding twice without renaming must not collide.
+                const keys = new Set((perks.customEvents ?? []).map((entry) => entry.key));
+                let key = "survey";
+                for (let n = 2; keys.has(key); n += 1) key = `survey-${n}`;
+                setPerks({
+                  customEvents: [
+                    ...(perks.customEvents ?? []),
+                    {
+                      key,
+                      label: "Survey completed",
+                      points: 20,
+                      id: crypto.randomUUID(),
+                    },
+                  ],
+                });
+              }}
+            >
+              <HugeiconsIcon icon={Add01Icon} size={14} aria-hidden="true" />
+              Add event
+            </Button>
+          )}
+        </div>
+        <p className="m-0 max-w-prose text-caption leading-relaxed text-product-text-secondary">
+          Award points for off-site actions via the{" "}
+          <Link
+            className="inline-flex items-center gap-0.5 font-medium text-product-text-primary underline underline-offset-2"
+            href="/docs/api/award-points"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Points API
+            <HugeiconsIcon icon={ArrowUpRight01Icon} size={13} aria-hidden="true" />
+          </Link>
+          .
         </p>
         {(perks.customEvents ?? []).map((entry, index) => (
           <div
-            className="grid gap-2.5 border-t border-product-border-subtle pt-4 [&>button]:justify-self-start"
+            className="grid gap-3 [&+&]:border-t [&+&]:border-product-border-subtle [&+&]:pt-4"
             key={entry.id ?? `${entry.key}:${entry.label}:${entry.points}`}
           >
-            <Field
-              label="Event key"
-              value={entry.key}
-              maxLength={40}
-              onChange={(key) =>
-                setPerks({
-                  customEvents: perks.customEvents.map((item, itemIndex) =>
-                    itemIndex === index ? { ...item, key } : item,
-                  ),
-                })
-              }
-            />
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-micro font-semibold text-product-text-secondary">
+                Event {index + 1}
+              </span>
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                type="button"
+                aria-label={`Remove ${entry.label || `event ${index + 1}`}`}
+                onClick={() =>
+                  setPerks({
+                    customEvents: perks.customEvents.filter((_, itemIndex) => itemIndex !== index),
+                  })
+                }
+              >
+                <HugeiconsIcon icon={Delete02Icon} size={15} aria-hidden="true" />
+              </Button>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <Field
+                label="Event key"
+                value={entry.key}
+                maxLength={40}
+                onChange={(key) =>
+                  setPerks({
+                    customEvents: perks.customEvents.map((item, itemIndex) =>
+                      itemIndex === index ? { ...item, key } : item,
+                    ),
+                  })
+                }
+              />
+              <PointsField
+                key={entry.points}
+                label="Points"
+                value={entry.points}
+                unit="pts"
+                onCommit={(points) =>
+                  setPerks({
+                    customEvents: perks.customEvents.map((item, itemIndex) =>
+                      itemIndex === index ? { ...item, points } : item,
+                    ),
+                  })
+                }
+              />
+            </div>
             <Field
               label="Label"
               value={entry.label}
@@ -2543,59 +2777,8 @@ function RewardsSection({ perks, updateRewards }) {
                 })
               }
             />
-            <PointsField
-              key={entry.points}
-              label="Points"
-              value={entry.points}
-              onCommit={(points) =>
-                setPerks({
-                  customEvents: perks.customEvents.map((item, itemIndex) =>
-                    itemIndex === index ? { ...item, points } : item,
-                  ),
-                })
-              }
-            />
-            <Button
-              variant="ghost"
-              size="sm"
-              type="button"
-              onClick={() =>
-                setPerks({
-                  customEvents: perks.customEvents.filter((_, itemIndex) => itemIndex !== index),
-                })
-              }
-            >
-              Remove
-            </Button>
           </div>
         ))}
-        {(perks.customEvents ?? []).length < 12 && (
-          <Button
-            variant="outline"
-            size="sm"
-            type="button"
-            onClick={() => {
-              // Distinct keys: normalizeRewardsConfig keeps one entry per key,
-              // so adding twice without renaming must not collide.
-              const keys = new Set((perks.customEvents ?? []).map((entry) => entry.key));
-              let key = "survey";
-              for (let n = 2; keys.has(key); n += 1) key = `survey-${n}`;
-              setPerks({
-                customEvents: [
-                  ...(perks.customEvents ?? []),
-                  {
-                    key,
-                    label: "Survey completed",
-                    points: 20,
-                    id: crypto.randomUUID(),
-                  },
-                ],
-              });
-            }}
-          >
-            Add event
-          </Button>
-        )}
       </div>
     </div>
   );

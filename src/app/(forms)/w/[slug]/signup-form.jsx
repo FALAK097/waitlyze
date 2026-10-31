@@ -1,5 +1,8 @@
 "use client";
 
+import { Select as SelectPrimitive } from "@base-ui/react/select";
+import { ArrowDown01Icon, Tick01Icon } from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useId, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -137,7 +140,84 @@ function TurnstileAttempt({ siteKey, onToken, onRetry }) {
   return <div ref={containerRef} className="mt-3" />;
 }
 
-function CustomFieldInput({ field, control }) {
+function CustomSelectField({ id, name, label, field, brand }) {
+  const [selected, setSelected] = useState("");
+  const options = Array.isArray(field.options) ? field.options : [];
+  const placeholder = field.placeholder || "Choose an option";
+  return (
+    <div className="mt-3">
+      {label}
+      <input type="hidden" name={name} value={selected} />
+      <SelectPrimitive.Root value={selected} onValueChange={(value) => setSelected(value ?? "")}>
+        <SelectPrimitive.Trigger
+          id={id}
+          aria-required={field.required === true}
+          className={cn(
+            control,
+            "flex w-full cursor-pointer items-center justify-between gap-2 text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-wl-accent data-popup-open:[&_svg]:rotate-180",
+            !selected && "text-wl-muted",
+          )}
+        >
+          <span className="min-w-0 flex-1 truncate">{selected || placeholder}</span>
+          <SelectPrimitive.Icon
+            render={
+              <HugeiconsIcon
+                icon={ArrowDown01Icon}
+                size={14}
+                aria-hidden="true"
+                className="shrink-0 text-wl-muted transition-transform duration-150"
+              />
+            }
+          />
+        </SelectPrimitive.Trigger>
+        <SelectPrimitive.Portal>
+          <SelectPrimitive.Positioner
+            side="bottom"
+            sideOffset={6}
+            align="start"
+            alignItemWithTrigger={false}
+            className="isolate z-50"
+          >
+            <SelectPrimitive.Popup
+              className="max-h-60 w-(--anchor-width) overflow-y-auto rounded-wl border border-wl-input-border bg-wl-input p-1.5 text-wl-input-text shadow-md"
+              style={
+                brand
+                  ? {
+                      "--wl-surface": brand.surfaceColor,
+                      "--wl-text": brand.textColor,
+                      "--wl-input": brand.inputBackground,
+                      "--wl-input-border": brand.inputBorder,
+                      "--wl-input-text": brand.inputTextColor,
+                      "--wl-accent": brand.accentColor,
+                    }
+                  : undefined
+              }
+            >
+              <SelectPrimitive.List>
+                {options.map((option) => (
+                  <SelectPrimitive.Item
+                    key={option}
+                    value={option}
+                    className="flex w-full cursor-pointer items-center justify-between gap-2 rounded-md px-2.5 py-2 text-left text-sm text-wl-input-text outline-none select-none data-highlighted:bg-wl-text/10 data-selected:bg-wl-text/10 data-selected:font-semibold"
+                  >
+                    <SelectPrimitive.ItemText className="min-w-0 flex-1 truncate">
+                      {option}
+                    </SelectPrimitive.ItemText>
+                    <SelectPrimitive.ItemIndicator
+                      render={<HugeiconsIcon icon={Tick01Icon} size={14} aria-hidden="true" />}
+                    />
+                  </SelectPrimitive.Item>
+                ))}
+              </SelectPrimitive.List>
+            </SelectPrimitive.Popup>
+          </SelectPrimitive.Positioner>
+        </SelectPrimitive.Portal>
+      </SelectPrimitive.Root>
+    </div>
+  );
+}
+
+function CustomFieldInput({ field, brand }) {
   const id = useId();
   const name = `custom-${field.id}`;
   const label = (
@@ -162,27 +242,7 @@ function CustomFieldInput({ field, control }) {
     );
   }
   if (field.type === "select") {
-    return (
-      <div className="mt-3">
-        {label}
-        <select
-          className={cn(control, "w-full")}
-          id={id}
-          name={name}
-          required={field.required === true}
-          defaultValue=""
-        >
-          <option value="" disabled>
-            {field.placeholder || "Choose an option"}
-          </option>
-          {(Array.isArray(field.options) ? field.options : []).map((option) => (
-            <option value={option} key={option}>
-              {option}
-            </option>
-          ))}
-        </select>
-      </div>
-    );
+    return <CustomSelectField id={id} name={name} label={label} field={field} brand={brand} />;
   }
   if (field.type === "checkbox") {
     return (
@@ -418,16 +478,15 @@ function SignupFormInner({
   const [copied, setCopied] = useState(false);
   const [turnstileToken, setTurnstileToken] = useState("");
   const [phone, setPhone] = useState("");
+  const [resetKey, setResetKey] = useState(0);
 
   const collectPhone = formConfig.collectPhone === true || formConfig.requirePhone === true;
   const customFields = Array.isArray(formConfig.customFields) ? formConfig.customFields : [];
-  // Bot protection is opt-in per form. The site key normally comes from the
-  // founder's saved form config; a dashboard renderer can inject the platform
-  // key instead — either source may drive the widget.
+  // Bot protection is opt-in per form. Prefer the deployment's public key so
+  // old drafts cannot pin the widget to a stale environment-specific value.
   const turnstileSiteKeyResolved =
-    typeof formConfig.turnstileSiteKey === "string" && formConfig.turnstileSiteKey.trim() !== ""
-      ? formConfig.turnstileSiteKey.trim()
-      : turnstileSiteKey.trim();
+    turnstileSiteKey.trim() ||
+    (typeof formConfig.turnstileSiteKey === "string" ? formConfig.turnstileSiteKey.trim() : "");
   const turnstileOn = formConfig.requireTurnstile === true && turnstileSiteKeyResolved !== "";
 
   async function submit(event) {
@@ -444,6 +503,16 @@ function SignupFormInner({
           ? formData.get(`custom-${field.id}`) === "on"
           : (formData.get(`custom-${field.id}`) ?? ""),
     }));
+    const missingRequiredSelect = customFields.find(
+      (field) =>
+        field.type === "select" &&
+        field.required === true &&
+        !String(formData.get(`custom-${field.id}`) ?? "").trim(),
+    );
+    if (missingRequiredSelect) {
+      toast.error(`Please select an option for “${missingRequiredSelect.label}”.`);
+      return;
+    }
     // Opt-in protection requires a completed challenge before we even start.
     if (turnstileOn && !turnstileToken) {
       toast.error("Complete the security check and try again.");
@@ -485,7 +554,13 @@ function SignupFormInner({
         }
         throw new Error(data.message || "Couldn't join the waitlist. Try again.");
       }
-      if (statusPage.postSignupBehavior === "no-change") return;
+      if (statusPage.postSignupBehavior === "no-change") {
+        form.reset();
+        setPhone("");
+        setResetKey((current) => current + 1);
+        toast.success("You're on the waitlist.");
+        return;
+      }
 
       // Server-vetted redirect only: the API echoes a redirect URL solely when
       // the founder configured one that passes the allowlist. Never navigate
@@ -620,7 +695,7 @@ function SignupFormInner({
         />
       )}
       {customFields.map((field) => (
-        <CustomFieldInput field={field} control={control} key={field.id} />
+        <CustomFieldInput field={field} brand={brand} key={`${field.id}:${resetKey}`} />
       ))}
       {formConfig.requireConsent && <ConsentField formConfig={formConfig} />}
       {turnstileOn && (

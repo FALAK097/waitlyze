@@ -8,9 +8,9 @@ const pagePanel =
   "grid grid-cols-3 gap-3.5 rounded-xl border border-product-border-subtle bg-product-bg-surface p-5 max-[600px]:grid-cols-2 max-[600px]:p-4";
 const pagePanelSecondary = "grid-cols-1";
 const tableHead =
-  "flex min-h-12 items-center gap-4 rounded-t-xl border border-b-0 border-product-border-subtle bg-product-bg-surface px-5 max-[520px]:gap-2.5 max-[520px]:px-3";
+  "flex min-h-10 items-center gap-4 border-b border-product-border-subtle px-3 pb-2 max-[520px]:gap-2.5";
 const tableRow =
-  "flex min-h-16 items-center gap-4 border-x border-b-0 border-product-border-subtle bg-product-bg-surface px-5 last:rounded-b-xl last:border-b max-[520px]:gap-2.5 max-[520px]:px-3";
+  "flex min-h-16 items-center gap-4 border-b border-product-border-subtle px-3 py-4 max-[520px]:gap-2.5";
 const panel =
   "grid grid-cols-4 gap-4 rounded-xl border border-product-border-subtle bg-product-bg-surface p-5 max-[600px]:grid-cols-2 max-[600px]:gap-3 max-[600px]:p-4";
 const columns = "grid grid-cols-3 gap-3 max-[600px]:grid-cols-2";
@@ -22,8 +22,8 @@ const settingsPanel =
 
 export function ProductContentSkeleton({ label, variant = "detail", rows = 5 }) {
   return (
-    <div className="mt-6 grid gap-3">
-      <p role="status" aria-live="polite" className="text-sm text-product-text-secondary">
+    <div className="grid gap-3">
+      <p role="status" aria-live="polite" className="sr-only">
         {label}…
       </p>
       <div className="grid gap-3" aria-busy="true">
@@ -68,20 +68,24 @@ export function ProductContentSkeleton({ label, variant = "detail", rows = 5 }) 
               </div>
             </>
           ) : variant === "table" ? (
-            <>
+            <div className="grid">
               <div className={tableHead}>
-                <i className={`${shape} h-2.75 w-1/3`} />
-                <i className={`${shape} h-2.75 w-1/8`} />
-                <i className={`${shape} h-2.75 w-1/8 max-[520px]:hidden`} />
+                <i className={`${shape} h-3 w-1/4`} />
+                <i className={`${shape} h-3 w-16`} />
+                <i className={`${shape} h-3 w-20`} />
+                <i className={`${shape} h-3 w-20 max-[520px]:hidden`} />
+                <i className={`${shape} ml-auto h-3 w-24 max-[520px]:hidden`} />
               </div>
               {Array.from({ length: rows }, (_, index) => (
                 <div key={index} className={tableRow}>
-                  <i className={`${shape} h-3.5 w-1/2`} />
-                  <i className={`${shape} h-3.5 w-1/6`} />
-                  <i className={`${shape} h-3.5 w-1/6 max-[520px]:hidden`} />
+                  <i className={`${shape} h-4 w-1/4`} />
+                  <i className={`${shape} h-3.5 w-16`} />
+                  <i className={`${shape} h-3.5 w-20`} />
+                  <i className={`${shape} h-3.5 w-20 max-[520px]:hidden`} />
+                  <i className={`${shape} ml-auto h-3.5 w-24 max-[520px]:hidden`} />
                 </div>
               ))}
-            </>
+            </div>
           ) : variant === "settings" ? (
             [1, 2, 1, 1, 1].map((panelCount, index) => (
               <div className={settingsGroup} key={index}>

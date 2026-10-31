@@ -106,8 +106,7 @@ function failedVerificationWhere(waitListId, filters) {
         AND (
           "latest"."lastErrorCode" IS DISTINCT FROM 'SIGNUP_NOT_SENDABLE'
           OR (
-            "signup"."verifiedAt" IS NULL
-            AND EXISTS (
+            EXISTS (
               SELECT 1
               FROM "wait_lists" AS "eligibleWaitList"
               WHERE "eligibleWaitList"."id" = "signup"."waitListId"

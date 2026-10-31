@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 
 import {
   getBroadcastRecipients,
+  getOrCreateTemplates,
   listBroadcasts,
   listBroadcastSegments,
 } from "@/app/actions/emails";
@@ -15,14 +16,17 @@ export const metadata = {
   description: "Create and send opted-in waitlist updates.",
 };
 
-export default async function BroadcastsPage({ params }) {
-  const { id } = await params;
+export default async function BroadcastsPage({ params, searchParams }) {
+  const [{ id }, { broadcast: requestedBroadcastId }] = await Promise.all([params, searchParams]);
   const { campaign } = await requireCampaignPage(id, "sendEmail");
   if (!campaign) return notFound();
   const broadcasts = await listBroadcasts(campaign.id);
-  const [initialPreview, initialSegments] = await Promise.all([
-    getBroadcastRecipients(campaign.id, broadcasts?.[0]?.segment || "ALL"),
+  const initialBroadcast =
+    broadcasts.find((broadcast) => broadcast.id === requestedBroadcastId) || broadcasts[0];
+  const [initialPreview, initialSegments, templates] = await Promise.all([
+    getBroadcastRecipients(campaign.id, initialBroadcast?.segment || "ALL"),
     listBroadcastSegments(),
+    getOrCreateTemplates(campaign.id),
   ]);
   return (
     <ContentLayout title="Broadcasts">
@@ -30,8 +34,10 @@ export default async function BroadcastsPage({ params }) {
         waitListId={campaign.id}
         waitListName={campaign.name}
         initialBroadcasts={broadcasts}
+        initialBroadcastId={initialBroadcast?.id || null}
         initialPreview={initialPreview}
         initialSegments={initialSegments}
+        initialTemplates={templates}
         deliveryReady={Boolean(env.OUTBOX_DISPATCH_SECRET && env.RESEND_API_KEY)}
       />
     </ContentLayout>

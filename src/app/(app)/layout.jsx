@@ -17,9 +17,9 @@ const diceBearStyle = new Style(shapes);
 // deterministic generated image. Pass an opaque ID, never an email address.
 function AccountAvatar({ id, src, name }) {
   const source =
-    src || new DiceBearAvatar(diceBearStyle, { seed: String(id), size: 32 }).toDataUri();
+    src || new DiceBearAvatar(diceBearStyle, { seed: String(id), size: 24 }).toDataUri();
   return (
-    <Avatar>
+    <Avatar size="sm">
       <AvatarImage src={source} alt="" />
       <AvatarFallback>{(name || "?").slice(0, 1).toUpperCase()}</AvatarFallback>
     </Avatar>
