@@ -30,6 +30,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
+import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
 import { Label } from "@/components/ui/label";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 
@@ -467,17 +468,27 @@ export function WebhookSettings({ waitListId, canManage = true }) {
                 </div>
                 <div className="product-field">
                   <Label htmlFor="webhook-endpoint-url">HTTPS endpoint</Label>
-                  <Input
-                    id="webhook-endpoint-url"
-                    type="url"
-                    value={url}
-                    onChange={(event) => setUrl(event.target.value)}
-                    required
-                    placeholder="https://api.example.com/waitlist-events"
-                    disabled={controlsDisabled}
-                    autoComplete="url"
-                    aria-describedby="webhook-endpoint-dialog-help"
-                  />
+                  <InputGroup className="h-10">
+                    <InputGroupAddon>https://</InputGroupAddon>
+                    <InputGroupInput
+                      id="webhook-endpoint-url"
+                      type="text"
+                      inputMode="url"
+                      value={url.replace(/^https?:\/\//i, "")}
+                      onChange={(event) =>
+                        setUrl(
+                          event.target.value.trim()
+                            ? `https://${event.target.value.replace(/^https?:\/\//i, "")}`
+                            : "",
+                        )
+                      }
+                      required
+                      placeholder="api.example.com/waitlist-events"
+                      disabled={controlsDisabled}
+                      autoComplete="url"
+                      aria-describedby="webhook-endpoint-dialog-help"
+                    />
+                  </InputGroup>
                   <p
                     id="webhook-endpoint-dialog-help"
                     className="mb-4! text-sm leading-relaxed text-product-text-secondary"

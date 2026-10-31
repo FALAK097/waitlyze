@@ -1,4 +1,4 @@
-import { getTurnstileSiteKey, isTurnstileConfigured } from "../security/turnstile.mjs";
+import { isTurnstileConfigured } from "../security/turnstile.mjs";
 import { templateSnapshotSchema } from "../templates/catalog.mjs";
 import { AccessError, campaignScope } from "../workspaces/service.mjs";
 
@@ -21,11 +21,10 @@ const canonical = (value) =>
 const sameSnapshot = (left, right) =>
   JSON.stringify(canonical(left)) === JSON.stringify(canonical(right));
 
-// Turnstile sitekey/secret pairing is enforced here, not in the schema: the
-// schema is also parsed client-side and for drafts, where the server env is
-// unknown or the founder is mid-edit. A mismatched key would fail every
-// signup verification, so going live with one is blocked outright.
-const assertTurnstilePairing = (snapshot) => {
+// Turnstile configuration is deployment-scoped. The public site key is
+// injected into each hosted form at render time; drafts must not duplicate or
+// freeze an environment-specific key.
+const assertTurnstileConfigured = (snapshot) => {
   const parsed =
     snapshot && typeof snapshot === "object" && "form" in snapshot
       ? snapshot
@@ -35,12 +34,6 @@ const assertTurnstilePairing = (snapshot) => {
   if (!isTurnstileConfigured()) {
     throw new PublicationConflict(
       "Bot protection is on, but Turnstile isn't set up on this server yet. Turn it off, or ask your admin to configure Turnstile first.",
-    );
-  }
-  const platformKey = getTurnstileSiteKey();
-  if (typeof form.turnstileSiteKey !== "string" || form.turnstileSiteKey.trim() !== platformKey) {
-    throw new PublicationConflict(
-      "Bot protection is on, but the site key doesn't match this server's Turnstile widget. Paste the platform site key (ask your admin), or turn bot protection off.",
     );
   }
 };
@@ -66,7 +59,7 @@ export async function publishCampaign(db, actorId, workspaceId, waitListId, expe
     if (!page) throw new AccessError();
     if (page.templateRevision !== expectedRevision) throw new PublicationConflict();
     const snapshot = templateSnapshotSchema.parse(page.templateSnapshot);
-    assertTurnstilePairing(snapshot);
+    assertTurnstileConfigured(snapshot);
     if (page.status === "PUBLISHED" && page.publishedRevision) {
       const current = await tx.waitListPublicationRevision.findUnique({
         where: { waitListId_revision: { waitListId, revision: page.publishedRevision } },
@@ -140,7 +133,7 @@ export async function rollbackCampaign(db, actorId, workspaceId, waitListId) {
     });
     if (!previous)
       throw new PublicationConflict("There is no earlier published version to restore.");
-    assertTurnstilePairing(previous.snapshot);
+    assertTurnstileConfigured(previous.snapshot);
     const restoreDraft = !sameSnapshot(page.templateSnapshot, previous.snapshot);
     const nextTemplateRevision = page.templateRevision + (restoreDraft ? 1 : 0);
     if (restoreDraft)

@@ -158,22 +158,6 @@ export function AudienceTable({
   const [query, setQuery] = useState("");
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("all");
-  const [rawGeoFilters, setRawGeoFilters] = useState({
-    country: "",
-    city: "",
-    source: "",
-    landing: "",
-    utm: "",
-    device: "",
-  });
-  const [geoFilters, setGeoFilters] = useState({
-    country: "",
-    city: "",
-    source: "",
-    landing: "",
-    utm: "",
-    device: "",
-  });
   // Single source of truth for the table filter. status/delivery are derived
   // together so the dropdown selection can never disagree with the query.
   const status = filter === "failed" ? "all" : filter;
@@ -220,35 +204,6 @@ export function AudienceTable({
     return () => clearTimeout(timeout);
   }, [query]);
 
-  useEffect(() => {
-    const timeout = setTimeout(() => {
-      const next = {
-        country: rawGeoFilters.country.trim(),
-        city: rawGeoFilters.city.trim(),
-        source: rawGeoFilters.source.trim(),
-        landing: rawGeoFilters.landing.trim(),
-        utm: rawGeoFilters.utm.trim(),
-        device: rawGeoFilters.device.trim(),
-      };
-      setGeoFilters((current) =>
-        current.country === next.country &&
-        current.city === next.city &&
-        current.source === next.source &&
-        current.landing === next.landing &&
-        current.utm === next.utm &&
-        current.device === next.device
-          ? current
-          : next,
-      );
-      setCursors([null]);
-      setPageIndex(0);
-      setSelectedIds([]);
-      setSelectAll(false);
-      setSelectTruncated(false);
-    }, 300);
-    return () => clearTimeout(timeout);
-  }, [rawGeoFilters]);
-
   function resetList() {
     setCursors([null]);
     setPageIndex(0);
@@ -287,9 +242,6 @@ export function AudienceTable({
       setError("");
       const params = new URLSearchParams({ status, sort, delivery: deliveryFilter });
       if (search) params.set("q", search);
-      for (const [key, value] of Object.entries(geoFilters)) {
-        if (value) params.set(key, value);
-      }
       params.set("page", String(pageIndex));
       if (isJoinedSort && cursors[pageIndex]) params.set("cursor", cursors[pageIndex]);
       try {
@@ -301,9 +253,7 @@ export function AudienceTable({
         if (signal.aborted) return;
         if (!response.ok) throw new Error(payload.error || "Unable to load signups.");
         setResult(payload);
-        setLoadedCriteria(
-          `${status}\u0000${search}\u0000${sort}\u0000${deliveryFilter}\u0000${JSON.stringify(geoFilters)}`,
-        );
+        setLoadedCriteria(`${status}\u0000${search}\u0000${sort}\u0000${deliveryFilter}`);
       } catch (loadError) {
         if (loadError.name !== "AbortError") {
           setError("Unable to refresh signups.");
@@ -316,7 +266,6 @@ export function AudienceTable({
     [
       cursors,
       deliveryFilter,
-      geoFilters,
       isJoinedSort,
       pageIndex,
       retryCount,
@@ -343,9 +292,6 @@ export function AudienceTable({
         columns: exportColumns.join(","),
       });
       if (search) params.set("q", search);
-      for (const [key, value] of Object.entries(geoFilters)) {
-        if (value) params.set(key, value);
-      }
       const response = await fetch(
         `/api/wait-lists/${encodeURIComponent(waitlist.id)}/subscribers?${params}`,
         { method: "POST" },
@@ -517,9 +463,6 @@ export function AudienceTable({
     try {
       const params = new URLSearchParams({ status, sort, delivery: deliveryFilter });
       if (search) params.set("q", search);
-      for (const [key, value] of Object.entries(geoFilters)) {
-        if (value) params.set(key, value);
-      }
       params.set("select", "ids");
       const response = await fetch(
         `/api/wait-lists/${encodeURIComponent(waitlist.id)}/subscribers?${params}`,
@@ -575,29 +518,23 @@ export function AudienceTable({
       ? `${window.location.origin}/w/${flags.publicSlug}?r=${profile.referralCode}`
       : null;
   const requestedSearch = query.trim();
-  const geoFiltersChanging = Object.keys(geoFilters).some(
-    (key) => rawGeoFilters[key].trim() !== geoFilters[key],
-  );
   const criteriaChanging =
     requestedSearch !== search ||
-    geoFiltersChanging ||
-    loadedCriteria !==
-      `${status}\u0000${search}\u0000${sort}\u0000${deliveryFilter}\u0000${JSON.stringify(geoFilters)}`;
+    loadedCriteria !== `${status}\u0000${search}\u0000${sort}\u0000${deliveryFilter}`;
   const isUpdating = loading || (criteriaChanging && !error);
   const loadedFilters = loadedCriteria?.split("\u0000") || [];
-  const hasGeoFilters = Object.values(geoFilters).some(Boolean);
   const appliedCriteriaLabel = loadedCriteria
     ? `${loadedFilters[1] ? `“${loadedFilters[1]}” · ` : ""}${
         loadedFilters[3] === "failed"
           ? "Email failed"
           : FILTER_OPTIONS.find((option) => option.value === loadedFilters[0])?.label ||
             "All signups"
-      }${loadedFilters[4] && loadedFilters[4] !== JSON.stringify({ country: "", city: "", source: "", landing: "", utm: "", device: "" }) ? " · filtered" : ""}`
+      }`
     : "the initial signup list";
   const emptyTitle =
     deliveryFilter === "failed"
       ? "No failed confirmation emails"
-      : search || hasGeoFilters
+      : search
         ? "No signups match these filters"
         : status === "verified"
           ? "No verified signups yet"
@@ -605,7 +542,7 @@ export function AudienceTable({
             ? "No signups need confirmation"
             : "No signups yet";
   const emptyDescription =
-    search || hasGeoFilters || status !== "all" || deliveryFilter !== "all"
+    search || status !== "all" || deliveryFilter !== "all"
       ? "Try a different search or filter."
       : "Publish and share your waitlist page to invite the first signups.";
 
@@ -1010,61 +947,6 @@ export function AudienceTable({
                 </SelectContent>
               </Select>
             </div>
-            <div
-              className="mb-6 flex flex-wrap items-center gap-2"
-              role="group"
-              aria-label="Filter signups by location, source, and device"
-            >
-              {[
-                { key: "country", label: "Country", placeholder: "Country", width: "w-32" },
-                { key: "city", label: "City", placeholder: "City", width: "w-32" },
-                { key: "source", label: "UTM source", placeholder: "Source", width: "w-32" },
-                { key: "landing", label: "Landing page", placeholder: "Landing", width: "w-40" },
-                {
-                  key: "utm",
-                  label: "UTM campaign, medium, term, or referrer",
-                  placeholder: "Campaign / UTM",
-                  width: "w-40",
-                },
-                { key: "device", label: "Device", placeholder: "Device", width: "w-32" },
-              ].map(({ key, label, placeholder, width }) => (
-                <Label key={key} className={`block ${width} max-[640px]:w-full max-[640px]:flex-1`}>
-                  <span className="sr-only">{label}</span>
-                  <Input
-                    type="search"
-                    autoComplete="off"
-                    value={rawGeoFilters[key]}
-                    onChange={(event) =>
-                      setRawGeoFilters((current) => ({ ...current, [key]: event.target.value }))
-                    }
-                    placeholder={placeholder}
-                    maxLength={80}
-                    aria-label={label}
-                  />
-                </Label>
-              ))}
-              {hasGeoFilters && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => {
-                    const empty = {
-                      country: "",
-                      city: "",
-                      source: "",
-                      landing: "",
-                      utm: "",
-                      device: "",
-                    };
-                    setRawGeoFilters(empty);
-                    setGeoFilters(empty);
-                    resetList();
-                  }}
-                >
-                  Clear
-                </Button>
-              )}
-            </div>
             {selectedIds.length > 0 && (
               <div
                 className="flex flex-wrap items-center gap-3 px-4 py-3 text-sm"
@@ -1221,23 +1103,13 @@ export function AudienceTable({
                         />
                         <p className="font-medium">{emptyTitle}</p>
                         <p className="mt-1 text-product-text-secondary">{emptyDescription}</p>
-                        {search || status !== "all" || hasGeoFilters ? (
+                        {search || status !== "all" ? (
                           <Button
                             className="mt-4"
                             variant="outline"
                             onClick={() => {
-                              const empty = {
-                                country: "",
-                                city: "",
-                                source: "",
-                                landing: "",
-                                utm: "",
-                                device: "",
-                              };
                               setQuery("");
                               setFilter("all");
-                              setRawGeoFilters(empty);
-                              setGeoFilters(empty);
                             }}
                           >
                             Clear filters

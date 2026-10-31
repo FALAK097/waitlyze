@@ -421,13 +421,11 @@ function SignupFormInner({
 
   const collectPhone = formConfig.collectPhone === true || formConfig.requirePhone === true;
   const customFields = Array.isArray(formConfig.customFields) ? formConfig.customFields : [];
-  // Bot protection is opt-in per form. The site key normally comes from the
-  // founder's saved form config; a dashboard renderer can inject the platform
-  // key instead — either source may drive the widget.
+  // Bot protection is opt-in per form. Prefer the deployment's public key so
+  // old drafts cannot pin the widget to a stale environment-specific value.
   const turnstileSiteKeyResolved =
-    typeof formConfig.turnstileSiteKey === "string" && formConfig.turnstileSiteKey.trim() !== ""
-      ? formConfig.turnstileSiteKey.trim()
-      : turnstileSiteKey.trim();
+    turnstileSiteKey.trim() ||
+    (typeof formConfig.turnstileSiteKey === "string" ? formConfig.turnstileSiteKey.trim() : "");
   const turnstileOn = formConfig.requireTurnstile === true && turnstileSiteKeyResolved !== "";
 
   async function submit(event) {

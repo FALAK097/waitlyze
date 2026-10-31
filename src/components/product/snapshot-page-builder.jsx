@@ -49,6 +49,7 @@ import { parseAsStringLiteral, useQueryState } from "nuqs";
 import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 
 import { ColorPicker } from "@/components/reui/color-picker";
+import { CountryMultiSelect } from "@/components/reui/country-multi-select";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -60,6 +61,7 @@ import {
 } from "@/components/ui/dialog";
 import { FontPicker } from "@/components/ui/font-picker";
 import { Input } from "@/components/ui/input";
+import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -257,7 +259,30 @@ function Toggle({ label, checked, onChange, disabled = false, hint = "" }) {
         onCheckedChange={(value) => onChange(value === true)}
       />
       <span>{label}</span>
-      {hint && <span className="text-micro text-product-text-muted">{hint}</span>}
+      {hint && (
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger
+              render={
+                <button
+                  type="button"
+                  aria-label={`${typeof label === "string" ? label : "Setting"} information`}
+                  className="grid size-6 shrink-0 place-items-center rounded-full border-0 bg-transparent text-product-text-muted hover:bg-product-bg-inset hover:text-product-text-primary"
+                  onClick={(event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                  }}
+                />
+              }
+            >
+              <HugeiconsIcon icon={HelpCircleIcon} size={15} aria-hidden="true" />
+            </TooltipTrigger>
+            <TooltipContent side="top" className="max-w-64 text-center">
+              {hint}
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      )}
     </label>
   );
 }
@@ -592,9 +617,6 @@ function BlockInspector({ section, update, form, updateForm }) {
           <div className="grid gap-1">
             <p className="text-micro font-bold tracking-widest text-product-text-secondary uppercase">
               Signup form
-            </p>
-            <p className="text-micro leading-relaxed text-product-text-secondary">
-              The same form is used wherever it appears on your page or embed.
             </p>
           </div>
           <FormPanel form={form} update={updateForm} />
@@ -1636,6 +1658,8 @@ export function SnapshotPageBuilder({
           sidebar={
             <StatusPanel
               status={snapshot.statusPage}
+              form={snapshot.form}
+              updateForm={(value) => updateRoot("form", value)}
               showReferrals={waitList.showReferrals}
               waitListId={waitList.id}
               rewards={snapshot.rewards}
@@ -1711,7 +1735,7 @@ export function SnapshotPageBuilder({
                 </div>
                 <div
                   className={cn(
-                    "grid overflow-hidden rounded-xl bg-white shadow-surface",
+                    "grid min-h-0 overflow-y-auto rounded-xl bg-white shadow-surface",
                     statusViewport === "mobile"
                       ? "mx-auto min-h-160 w-full max-w-md"
                       : "min-h-140 w-full",
@@ -1856,7 +1880,7 @@ function SurfaceLayout({ sidebar, children, mobileMode }) {
         {sidebar}
       </aside>
       <main
-        className="min-h-0 min-w-0 flex-1 overflow-hidden p-10 max-[900px]:p-7 max-[680px]:p-3 max-[680px]:data-[mobile-mode=edit]:hidden"
+        className="min-h-0 min-w-0 flex-1 overflow-y-auto p-10 max-[900px]:p-7 max-[680px]:p-3 max-[680px]:data-[mobile-mode=edit]:hidden"
         data-mobile-mode={mobileMode}
       >
         {children}
@@ -2056,6 +2080,86 @@ function SelectField({ label, value, options, onChange }) {
     </div>
   );
 }
+function HttpsInputField({ label, value, placeholder, disabled, onChange }) {
+  const id = useId();
+  const normalized = (value || "").replace(/^https?:\/\//i, "");
+  return (
+    <div className="grid gap-1.5">
+      <Label htmlFor={id}>{label}</Label>
+      <InputGroup className="h-10">
+        <InputGroupAddon>https://</InputGroupAddon>
+        <InputGroupInput
+          id={id}
+          autoCapitalize="none"
+          autoComplete="url"
+          disabled={disabled}
+          placeholder={placeholder}
+          value={normalized}
+          onChange={(event) =>
+            onChange(
+              event.target.value.trim()
+                ? `https://${event.target.value.replace(/^https?:\/\//i, "")}`
+                : "",
+            )
+          }
+        />
+      </InputGroup>
+    </div>
+  );
+}
+function RedirectUrlField({ value, onChange }) {
+  const id = useId();
+  const [draft, setDraft] = useState(value || "");
+  useEffect(() => {
+    setDraft(value || "");
+  }, [value]);
+  const dirty = draft !== (value || "");
+  useEffect(() => {
+    if (!dirty) return;
+    const warnBeforeUnload = (event) => {
+      event.preventDefault();
+      event.returnValue = "";
+    };
+    window.addEventListener("beforeunload", warnBeforeUnload);
+    return () => window.removeEventListener("beforeunload", warnBeforeUnload);
+  }, [dirty]);
+  const isPath = draft.startsWith("/");
+  const showHttpsPrefix = !isPath && Boolean(draft.trim());
+  const shown = /^https?:\/\//i.test(draft) ? draft.replace(/^https?:\/\//i, "") : draft;
+  function commit() {
+    const next = draft.trim();
+    const normalized =
+      next.startsWith("/") || !next ? next : `https://${next.replace(/^https?:\/\//i, "")}`;
+    setDraft(normalized);
+    onChange(normalized);
+  }
+  return (
+    <div className="grid gap-1.5">
+      <Label htmlFor={id}>Redirect URL (empty = stay on the thank-you screen)</Label>
+      <InputGroup className="h-10">
+        {showHttpsPrefix && <InputGroupAddon>https://</InputGroupAddon>}
+        <InputGroupInput
+          id={id}
+          autoComplete="url"
+          placeholder="/thanks or example.com/thanks"
+          value={shown}
+          onChange={(event) => setDraft(event.target.value)}
+          onBlur={commit}
+          onKeyDown={(event) => {
+            if (event.key === "Enter") {
+              event.preventDefault();
+              commit();
+              event.currentTarget.blur();
+            }
+          }}
+        />
+      </InputGroup>
+      <span className="text-micro text-product-text-secondary">
+        Use a site path like <code>/thanks</code>, or an HTTPS URL and allowlist its host below.
+      </span>
+    </div>
+  );
+}
 function FormPanel({ form, update }) {
   const customFields = Array.isArray(form.customFields) ? form.customFields : [];
   const updateField = (id, patch) =>
@@ -2114,18 +2218,14 @@ function FormPanel({ form, update }) {
         placeholder="competitor.com"
         onChange={(blockedEmailDomains) => update({ blockedEmailDomains })}
       />
-      <ListField
-        label="Allowed countries (ISO codes, empty = all)"
+      <CountryMultiSelect
+        label="Allowed countries (empty = all)"
         value={form.allowedCountries}
-        placeholder="US, DE, IN"
-        normalize={(code) => code.toUpperCase()}
         onChange={(allowedCountries) => update({ allowedCountries })}
       />
-      <ListField
-        label="Blocked countries (ISO codes)"
+      <CountryMultiSelect
+        label="Blocked countries"
         value={form.blockedCountries}
-        placeholder="RU, CN"
-        normalize={(code) => code.toUpperCase()}
         onChange={(blockedCountries) => update({ blockedCountries })}
       />
       <Toggle
@@ -2148,17 +2248,10 @@ function FormPanel({ form, update }) {
         onChange={(requireTurnstile) => update({ requireTurnstile })}
         hint={
           form.requireTurnstile === true
-            ? "Signups fail while the server's TURNSTILE_SECRET_KEY is missing."
+            ? "Uses the Turnstile keys configured for this deployment."
             : ""
         }
       />
-      {form.requireTurnstile && (
-        <Field
-          label="Turnstile site key (must match this server's widget)"
-          value={form.turnstileSiteKey ?? ""}
-          onChange={(turnstileSiteKey) => update({ turnstileSiteKey })}
-        />
-      )}
       <div className="grid gap-3 border-t border-product-border-subtle pt-4">
         <span className="block text-micro font-bold tracking-widest text-product-text-secondary uppercase">
           Custom fields
@@ -2243,27 +2336,19 @@ function FormPanel({ form, update }) {
           </Button>
         )}
       </div>
-      <div className="grid gap-4 border-t border-product-border-subtle pt-4">
-        <span className="block text-micro font-bold tracking-widest text-product-text-secondary uppercase">
-          After signup
-        </span>
-        <Field
-          label="Redirect URL (empty = stay on the thank-you screen)"
-          value={form.successRedirectUrl ?? ""}
-          placeholder="/thanks"
-          onChange={(successRedirectUrl) => update({ successRedirectUrl })}
-        />
-        <ListField
-          label="Redirect host allowlist (for https:// URLs)"
-          value={form.successRedirectAllowlist}
-          placeholder="app.example.com"
-          onChange={(successRedirectAllowlist) => update({ successRedirectAllowlist })}
-        />
-      </div>
     </div>
   );
 }
-function StatusPanel({ status, update, showReferrals = true, waitListId, rewards, updateRewards }) {
+function StatusPanel({
+  status,
+  update,
+  form,
+  updateForm,
+  showReferrals = true,
+  waitListId,
+  rewards,
+  updateRewards,
+}) {
   // Drafts saved before rewards existed have no key yet: fall back to the
   // zero-config defaults (same values the API resolves server-side).
   const perks = {
@@ -2300,6 +2385,23 @@ function StatusPanel({ status, update, showReferrals = true, waitListId, rewards
   };
   return (
     <div className={"grid gap-4 p-4"}>
+      {status.postSignupBehavior !== "no-change" && (
+        <div className="grid gap-4 border-b border-product-border-subtle pb-4">
+          <span className="block text-micro font-bold tracking-widest text-product-text-secondary uppercase">
+            After-signup redirect
+          </span>
+          <RedirectUrlField
+            value={form.successRedirectUrl ?? ""}
+            onChange={(successRedirectUrl) => updateForm({ successRedirectUrl })}
+          />
+          <ListField
+            label="Allowed redirect hosts (comma-separated)"
+            value={form.successRedirectAllowlist}
+            placeholder="app.example.com"
+            onChange={(successRedirectAllowlist) => updateForm({ successRedirectAllowlist })}
+          />
+        </div>
+      )}
       <SelectField
         label="After a successful signup"
         value={status.postSignupBehavior}
@@ -2427,18 +2529,18 @@ function StatusPanel({ status, update, showReferrals = true, waitListId, rewards
         <p className="m-0 text-caption leading-relaxed text-product-text-secondary">
           Shown as follow tasks on the referral cockpit. Follows earn points once rewards launch.
         </p>
-        <Field
+        <HttpsInputField
           label="X profile URL"
           value={followUrl("x")}
           disabled={!showReferrals}
-          placeholder="https://x.com/yourhandle"
+          placeholder="x.com/yourhandle"
           onChange={(url) => setFollowUrl("x", url)}
         />
-        <Field
+        <HttpsInputField
           label="Instagram profile URL"
           value={followUrl("instagram")}
           disabled={!showReferrals}
-          placeholder="https://instagram.com/yourhandle"
+          placeholder="instagram.com/yourhandle"
           onChange={(url) => setFollowUrl("instagram", url)}
         />
       </div>
@@ -2501,7 +2603,7 @@ function RewardsSection({ perks, updateRewards }) {
         onChange={(showProgress) => setPerks({ showProgress })}
       />
       <Toggle
-        label="Stealth mode (hide all counts)"
+        label="Stealth Mode"
         hint="Hides positions, points, and headcounts on the public page. Best for private or B2B launches."
         checked={perks.hideCounts}
         onChange={(hideCounts) => setPerks({ hideCounts })}
@@ -2511,8 +2613,14 @@ function RewardsSection({ perks, updateRewards }) {
           Custom events
         </span>
         <p className="m-0 text-caption leading-relaxed text-product-text-secondary">
-          Off-site actions awarded through the API (survey, Discord join…). The event key goes in
-          the API call.
+          Reward verified signups for off-site actions (such as a completed survey or Discord join).
+          After the action, call <code>POST /api/waitlist/points</code> with <code>waitlistId</code>
+          , this event key as <code>event</code>, and either <code>email</code> or{" "}
+          <code>signupId</code> in the body. Send your API key in the <code>X-Api-Key</code> header.
+          Omit
+          <code> points</code> to award the configured amount; it adds to the signup’s points
+          balance, shown on the public referral/status page when points are enabled. Reuse an
+          <code> idempotencyKey</code> for safe retries.
         </p>
         {(perks.customEvents ?? []).map((entry, index) => (
           <div

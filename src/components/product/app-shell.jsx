@@ -228,7 +228,7 @@ function AccountMenu({ user, avatar }) {
 export function AppShell({ children, user, avatar, workspaces, selectedWorkspace }) {
   const pathname = usePathname();
   const navLinkClass = cn(
-    "inline-flex min-h-11 items-center justify-center rounded-lg px-3 py-2 text-sm text-product-text-secondary no-underline transition-colors duration-150 hover:bg-product-bg-inset hover:text-product-text-primary",
+    "inline-flex min-h-11 min-w-0 flex-1 items-center justify-center rounded-lg px-3 py-2 text-sm whitespace-nowrap text-product-text-secondary no-underline transition-colors duration-150 hover:bg-product-bg-inset hover:text-product-text-primary md:flex-none",
   );
   return (
     <div className="min-h-dvh bg-white">

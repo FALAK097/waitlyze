@@ -5,6 +5,7 @@ import {
   ArrowUp01Icon,
   ArrowUpDownIcon,
   Cancel01Icon,
+  Search01Icon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { useRouter } from "next/navigation";
@@ -58,7 +59,7 @@ export function WaitlistSearch({ query, status, sort }) {
   }
   return (
     <div
-      className="relative ms-auto max-w-90 min-w-0 min-w-55 shrink-1 grow-0 basis-90 max-[767px]:ms-0 max-[767px]:max-w-none max-[767px]:min-w-0 max-[767px]:grow max-[767px]:basis-auto [&_input]:w-full [&_input]:pr-10"
+      className="relative w-full min-w-0 sm:max-w-80 [&_input]:w-full [&_input]:ps-9 [&_input]:pr-10"
       role="search"
       aria-busy={isPending}
     >
@@ -73,6 +74,11 @@ export function WaitlistSearch({ query, status, sort }) {
         onChange={(event) => schedule(event.target.value)}
         placeholder="Search by name"
         autoComplete="off"
+      />
+      <HugeiconsIcon
+        icon={Search01Icon}
+        className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-product-text-secondary"
+        aria-hidden="true"
       />
       {value && (
         <button
@@ -92,7 +98,7 @@ export function StatusTabs({ query, status, sort }) {
   const [replace, isPending] = useReplaceParams();
   return (
     <div
-      className="mb-8 flex flex-wrap gap-5 max-[767px]:basis-full"
+      className="grid min-w-0 grid-cols-4 items-center gap-1"
       role="group"
       aria-label="Filter waitlists by status"
       aria-busy={isPending}
@@ -102,7 +108,7 @@ export function StatusTabs({ query, status, sort }) {
           key={filter.value || "all"}
           type="button"
           className={cn(
-            "inline-flex min-h-11 items-center border-0 border-b-2 border-transparent bg-transparent py-2.5 text-sm text-product-text-secondary hover:text-product-text-primary",
+            "inline-flex min-h-11 min-w-0 items-center justify-center border-0 border-b-2 border-transparent bg-transparent px-2 py-2.5 text-sm text-product-text-secondary hover:text-product-text-primary sm:px-3",
             status === filter.value &&
               "border-product-accent-solid font-semibold text-product-text-primary",
           )}

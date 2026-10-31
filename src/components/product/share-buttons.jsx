@@ -1,5 +1,7 @@
 "use client";
 
+import { Mail01Icon, RedditIcon as RedditMarkIcon } from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
 import { useId, useState } from "react";
 
 import { cn } from "@/lib/utils";
@@ -173,29 +175,7 @@ function LinkedInIcon({ className }) {
 }
 
 function EmailIcon({ className }) {
-  return (
-    <svg viewBox="0 0 256 256" className={className} aria-hidden="true">
-      <rect width="256" height="256" rx="56" fill="#26262b" />
-      <rect
-        x="56"
-        y="86"
-        width="144"
-        height="84"
-        rx="12"
-        fill="none"
-        stroke="#fff"
-        strokeWidth="14"
-      />
-      <path
-        d="M64 98l64 42 64-42"
-        fill="none"
-        stroke="#fff"
-        strokeWidth="14"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
+  return <HugeiconsIcon icon={Mail01Icon} className={className} aria-hidden="true" />;
 }
 
 function FacebookIcon({ className }) {
@@ -225,19 +205,11 @@ function TelegramIcon({ className }) {
 
 function RedditIcon({ className }) {
   return (
-    <svg viewBox="0 0 256 256" className={className} aria-hidden="true">
-      <rect width="256" height="256" rx="56" fill="#FF4500" />
-      <g fill="none" stroke="#fff" strokeWidth="10" strokeLinecap="round">
-        <ellipse cx="128" cy="156" rx="62" ry="40" fill="#FF4500" />
-        <circle cx="104" cy="150" r="2" fill="#fff" stroke="none" />
-        <circle cx="152" cy="150" r="2" fill="#fff" stroke="none" />
-        <path d="M104 172c6 6 15 9 24 9s18-3 24-9" />
-        <circle cx="66" cy="148" r="12" fill="#FF4500" />
-        <circle cx="190" cy="148" r="12" fill="#FF4500" />
-        <path d="M178 140l24-30 14 5" />
-        <circle cx="204" cy="112" r="7" fill="#fff" stroke="none" />
-      </g>
-    </svg>
+    <HugeiconsIcon
+      icon={RedditMarkIcon}
+      className={cn("text-share-reddit", className)}
+      aria-hidden="true"
+    />
   );
 }
 
@@ -252,7 +224,7 @@ const ICONS = {
   reddit: RedditIcon,
 };
 
-export function ShareChannelIcon({ channel, className = "size-4" }) {
+export function ShareChannelIcon({ channel, className = "size-5" }) {
   const Icon = ICONS[channel];
   if (!Icon) return null;
   return <Icon className={className} />;
@@ -265,7 +237,7 @@ export function ShareButtons({
   subject,
   onShare,
   className,
-  iconClassName = "size-10",
+  iconClassName = "size-12",
 }) {
   const [copied, setCopied] = useState(false);
 
@@ -294,7 +266,7 @@ export function ShareButtons({
               aria-label={copied ? "Link copied" : "Copy link for Instagram"}
               title={copied ? "Copied" : "Copy link for Instagram"}
               onClick={copyLink}
-              className="cursor-pointer border-0 bg-transparent p-0 transition-opacity hover:opacity-85"
+              className="grid min-h-12 min-w-12 cursor-pointer place-items-center border-0 bg-transparent p-0 transition-opacity hover:opacity-85"
             >
               <Icon className={iconClassName} />
             </button>
@@ -310,7 +282,7 @@ export function ShareButtons({
             aria-label={`Share on ${channelLabel(channel)}`}
             title={`Share on ${channelLabel(channel)}`}
             onClick={() => onShare?.(channel)}
-            className="transition-opacity hover:opacity-85"
+            className="grid min-h-12 min-w-12 place-items-center transition-opacity hover:opacity-85"
           >
             <Icon className={iconClassName} />
           </a>
