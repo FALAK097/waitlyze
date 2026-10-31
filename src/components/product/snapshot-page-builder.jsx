@@ -2110,6 +2110,19 @@ function HttpsInputField({ label, value, placeholder, disabled, onChange }) {
 function RedirectUrlField({ value, onChange }) {
   const id = useId();
   const [draft, setDraft] = useState(value || "");
+  useEffect(() => {
+    setDraft(value || "");
+  }, [value]);
+  const dirty = draft !== (value || "");
+  useEffect(() => {
+    if (!dirty) return;
+    const warnBeforeUnload = (event) => {
+      event.preventDefault();
+      event.returnValue = "";
+    };
+    window.addEventListener("beforeunload", warnBeforeUnload);
+    return () => window.removeEventListener("beforeunload", warnBeforeUnload);
+  }, [dirty]);
   const isPath = draft.startsWith("/");
   const showHttpsPrefix = !isPath && Boolean(draft.trim());
   const shown = /^https?:\/\//i.test(draft) ? draft.replace(/^https?:\/\//i, "") : draft;
