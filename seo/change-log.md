@@ -1,0 +1,16 @@
+# Waitlyze SEO Change Log
+
+> Every on-page, title, or metadata change is logged with a +90 day check date. Pages under active review must NOT be edited again until their check date has passed to allow Google's ranking signals to stabilize.
+
+| Date | Page / Route | Target Query | Initial Baseline | Action Taken | Check Due Date (+90d) | Status |
+| --- | --- | --- | --- | --- | --- | --- |
+| 2026-11-01 | `/` | waitlist builder | Unranked / New | Revamped metadata, JSON-LD Schema (SoftwareApplication, Organization), alternate text/markdown tags, and blog teaser section. | 2027-01-30 | In progress |
+| 2026-11-01 | `/blog` | waitlist guides | Unranked / New | Launched Fumadocs-powered blog engine, RSS feed (`/blog/feed.xml`), and schema (`Blog`). | 2027-01-30 | In progress |
+| 2026-11-01 | `/blog/how-to-build-a-waitlist` | how to build a waitlist | Unranked / New | Published pillar guide with FAQPage schema, TL;DR answer box, and open graph card. | 2027-01-30 | In progress |
+| 2026-11-01 | `/blog/referral-waitlist-guide` | referral waitlist | Unranked / New | Published referral mechanics guide with fraud protection breakdown and FAQPage schema. | 2027-01-30 | In progress |
+| 2026-11-01 | `/blog/waitlist-email-sequence` | waitlist email sequence | Unranked / New | Published email cadence guide with subject line examples and schedule table. | 2027-01-30 | In progress |
+| 2026-11-01 | `/blog/waitlist-landing-page-checklist` | waitlist landing page | Unranked / New | Published 12-point conversion checklist with FAQPage schema. | 2027-01-30 | In progress |
+| 2026-11-01 | `/blog/waitlist-metrics-that-matter` | waitlist conversion rate | Unranked / New | Published analytics guide covering K-factor, confirmation rate, and attribution. | 2027-01-30 | In progress |
+| 2026-11-01 | `/blog/how-to-get-first-1000-waitlist-signups` | how to get waitlist signups | Unranked / New | Published 4-phase distribution playbook for bootstrapped founders. | 2027-01-30 | In progress |
+| 2026-11-01 | `/agent-instructions.md` | AI agent waitlist setup | Unranked / New | Published developer & AI agent instructions for Cursor, Claude Code, and Codex. | 2027-01-30 | In progress |
+| 2026-11-01 | `/opengraph-image.png` | Brand social card | Old static card | Redesigned modern obsidian + electric lime OpenGraph card with feature pills. | 2027-01-30 | In progress |

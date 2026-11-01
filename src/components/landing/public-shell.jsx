@@ -68,6 +68,12 @@ export default function PublicShell({ children }) {
                 FAQs
               </Link>
               <Link
+                href="/blog"
+                className="inline-flex items-center gap-1.5 hover:text-product-success-text focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-neutral-900"
+              >
+                Blog
+              </Link>
+              <Link
                 href="/docs/changelog"
                 className="inline-flex items-center gap-1.5 hover:text-product-success-text focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-neutral-900"
               >
@@ -78,6 +84,12 @@ export default function PublicShell({ children }) {
                 className="inline-flex items-center gap-1.5 hover:text-product-success-text focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-neutral-900"
               >
                 Developer docs
+              </Link>
+              <Link
+                href="/agent-instructions.md"
+                className="inline-flex items-center gap-1.5 hover:text-product-success-text focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-neutral-900"
+              >
+                AI Agent instructions
               </Link>
             </nav>
             <nav

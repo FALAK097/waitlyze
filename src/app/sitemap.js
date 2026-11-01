@@ -1,24 +1,42 @@
+import { getPosts, getTags } from "@/lib/blog-source";
 import { SITE_URL } from "@/lib/site-metadata";
+import { source } from "@/lib/source";
 import { TEMPLATE_IDS } from "@/lib/templates/gallery.mjs";
 
-// Editorial update date, not the time a crawler requests this file.
-const lastModified = "2026-10-11";
+// Editorial update dates, not the time a crawler requests this file. Bump
+// SITE_UPDATED when marketing, template or docs pages change in a meaningful way.
+const SITE_UPDATED = "2026-11-01";
+const LEGAL_UPDATED = "2026-10-11";
+
 export default function sitemap() {
+  const posts = getPosts();
+  const newestPost = posts[0] ? (posts[0].data.updated ?? posts[0].data.date) : SITE_UPDATED;
   return [
-    { url: SITE_URL, lastModified, priority: 1, changeFrequency: "monthly" },
-    { url: `${SITE_URL}/templates`, lastModified, priority: 0.8, changeFrequency: "monthly" },
+    { url: SITE_URL, lastModified: SITE_UPDATED, priority: 1 },
+    { url: `${SITE_URL}/templates`, lastModified: SITE_UPDATED, priority: 0.8 },
     ...TEMPLATE_IDS.map((id) => ({
       url: `${SITE_URL}/templates/${id}`,
-      lastModified,
+      lastModified: SITE_UPDATED,
       priority: 0.7,
-      changeFrequency: "monthly",
     })),
-    { url: `${SITE_URL}/privacy`, lastModified, priority: 0.3 },
-    { url: `${SITE_URL}/terms`, lastModified, priority: 0.3 },
-    ...["", "/api", "/embed", "/webhooks", "/resend"].map((path) => ({
-      url: `${SITE_URL}/docs${path}`,
-      lastModified,
-      priority: 0.5,
+    { url: `${SITE_URL}/blog`, lastModified: newestPost, priority: 0.8 },
+    ...posts.map((post) => ({
+      url: `${SITE_URL}${post.url}`,
+      lastModified: post.data.updated ?? post.data.date,
+      priority: 0.7,
     })),
+    ...getTags().map((tag) => ({
+      url: `${SITE_URL}/blog/tag/${tag.slug}`,
+      lastModified: newestPost,
+      priority: 0.4,
+    })),
+    ...source.getPages().map((page) => ({
+      url: `${SITE_URL}${page.url}`,
+      lastModified: SITE_UPDATED,
+      priority: page.slugs.length === 0 ? 0.6 : 0.5,
+    })),
+    { url: `${SITE_URL}/docs/changelog`, lastModified: SITE_UPDATED, priority: 0.4 },
+    { url: `${SITE_URL}/privacy`, lastModified: LEGAL_UPDATED, priority: 0.3 },
+    { url: `${SITE_URL}/terms`, lastModified: LEGAL_UPDATED, priority: 0.3 },
   ];
 }

@@ -28,6 +28,8 @@ export default function Header() {
   const links = [
     ["How it works", "/#how-it-works"],
     ["Features", "/#features"],
+    ["Templates", "/templates"],
+    ["Blog", "/blog"],
     ["FAQ", "/#faq"],
   ];
   return (

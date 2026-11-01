@@ -1,6 +1,25 @@
 import { getSessionCookie } from "better-auth/cookies";
 import { NextResponse } from "next/server";
 
+function prefersMarkdown(acceptHeader) {
+  if (!acceptHeader || !acceptHeader.includes("text/markdown")) return false;
+  const entries = acceptHeader.split(",").map((entry) => {
+    const [type, ...params] = entry.trim().split(";");
+    let q = 1.0;
+    for (const p of params) {
+      const [k, v] = p.trim().split("=");
+      if (k === "q") q = parseFloat(v) || 0;
+    }
+    return { type: type.trim(), q };
+  });
+
+  const md = entries.find((e) => e.type === "text/markdown");
+  if (!md) return false;
+  const html = entries.find((e) => e.type === "text/html");
+  if (!html) return true;
+  return md.q > html.q;
+}
+
 export function proxy(req) {
   const hostname = req.headers.get("host")?.split(":")[0]?.toLowerCase().replace(/\.$/, "");
   const appRoot = process.env.APP_ROOT_DOMAIN?.toLowerCase()
@@ -13,6 +32,33 @@ export function proxy(req) {
     hostname.endsWith(".vercel.app");
   const isAppHost = appRoot && (hostname === appRoot || hostname.endsWith(`.${appRoot}`));
   const { pathname } = req.nextUrl;
+
+  // Dedicated machine endpoints with their own route handlers
+  if (
+    pathname === "/agent-instructions.md" ||
+    pathname === "/ai.txt" ||
+    pathname === "/llms.txt" ||
+    pathname === "/llms-full.txt"
+  ) {
+    return NextResponse.next();
+  }
+
+  // Handle .md URL requests and Accept: text/markdown content negotiation for AI agents
+  const isDirectMarkdown = pathname.endsWith(".md") && !pathname.startsWith("/api");
+  const isMarkdownNegotiated =
+    !pathname.startsWith("/api") &&
+    !pathname.startsWith("/_next") &&
+    !pathname.startsWith("/domain") &&
+    prefersMarkdown(req.headers.get("accept"));
+
+  if (isDirectMarkdown || isMarkdownNegotiated) {
+    const cleanPath = isDirectMarkdown ? pathname.replace(/\.md$/, "") : pathname;
+    const target = req.nextUrl.clone();
+    target.pathname = "/api/md";
+    target.search = `?path=${encodeURIComponent(cleanPath || "/")}`;
+    return NextResponse.rewrite(target);
+  }
+
   // Never rewrite file requests on custom hosts - serve public/ assets and
   // robots/favicon normally instead of the /domain HTML document.
   const isFileRequest = /\.[a-z0-9]+$/i.test(pathname);
@@ -30,6 +76,7 @@ export function proxy(req) {
     target.search = "";
     return NextResponse.rewrite(target);
   }
+
   const sessionCookie = getSessionCookie(req, {
     cookiePrefix: "ba",
   });
@@ -55,5 +102,5 @@ export function proxy(req) {
 }
 
 export const config = {
-  matcher: ["/((?!.*\\..*|_next|forms).*)", "/", "/(api|trpc)(.*)"],
+  matcher: ["/((?!.*\\..*|_next|forms).*)", "/", "/(api|trpc)(.*)", "/((?!_next).*.md)"],
 };

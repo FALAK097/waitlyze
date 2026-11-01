@@ -13,25 +13,32 @@ import {
   WorkHistoryIcon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
+import Link from "next/link";
 
+import { PostCard } from "@/components/blog/post-card";
 import FAQAccordion from "@/components/landing/faq-accordion";
 import ProductTour from "@/components/landing/product-tour";
 import PublicShell from "@/components/landing/public-shell";
 import SignupButton from "@/components/landing/signup-button";
 import WaitlistPlayground from "@/components/landing/waitlist-playground";
 import { SiteStructuredData } from "@/components/seo/structured-data";
+import { getPosts, getReadingMinutes } from "@/lib/blog-source";
+import { SITE_DESCRIPTION, SITE_TITLE } from "@/lib/site-metadata";
 
 export const metadata = {
-  title: { absolute: "Waitlyze | Build an audience before you launch" },
-  description:
-    "Create a branded waitlist, collect signups, grow with referrals, and understand your audience. A no-code waitlist builder for founders and marketing teams. Free to use.",
-  alternates: { canonical: "/" },
-  openGraph: {
-    title: "Waitlyze | Build an audience before you launch",
-    description:
-      "Your waitlist, referrals, and audience insights. One place to get your next launch started.",
+  title: { absolute: SITE_TITLE },
+  description: SITE_DESCRIPTION,
+  alternates: {
+    canonical: "/",
+    types: { "text/markdown": [{ url: "/index.md", title: "Markdown for AI agents" }] },
   },
-  twitter: { card: "summary_large_image", title: "Waitlyze | Build an audience before you launch" },
+  openGraph: {
+    type: "website",
+    url: "/",
+    title: SITE_TITLE,
+    description: SITE_DESCRIPTION,
+  },
+  twitter: { card: "summary_large_image", title: SITE_TITLE, description: SITE_DESCRIPTION },
 };
 
 const faqs = [
@@ -65,7 +72,11 @@ const containerClasses = "mx-auto w-full max-w-7xl px-4 sm:px-5 md:px-8 lg:px-12
 const eyebrowClasses =
   "flex items-center gap-2 text-micro font-semibold tracking-widest text-product-text-secondary uppercase";
 
-export default function LandingPage() {
+export default async function LandingPage() {
+  const latestPosts = getPosts().slice(0, 3);
+  const minutes = new Map(
+    await Promise.all(latestPosts.map(async (post) => [post.url, await getReadingMinutes(post)])),
+  );
   return (
     <PublicShell>
       <SiteStructuredData faqs={faqs} />
@@ -88,7 +99,8 @@ export default function LandingPage() {
               <span>Not to silence.</span>
             </h1>
             <p className="mx-auto mt-5 max-w-84 text-base leading-normal text-product-text-secondary">
-              Build a branded waitlist. Grow it with referrals. Know who’s ready for launch day.
+              A waitlist builder for founders. Brand your page, grow it with referrals, and know
+              who’s ready for launch day.
             </p>
             <div className="mt-8 flex flex-wrap items-center justify-center gap-3 max-sm:flex-col max-sm:gap-5 md:gap-4">
               <SignupButton className="max-sm:w-full" />
@@ -275,6 +287,37 @@ export default function LandingPage() {
           </div>
           <FAQAccordion items={faqs} />
         </section>
+        {latestPosts.length > 0 && (
+          <section className={`${containerClasses} py-14`} aria-labelledby="blog-teaser-title">
+            <div className="flex items-end justify-between gap-6">
+              <div>
+                <p className={eyebrowClasses}>From the blog</p>
+                <h2
+                  id="blog-teaser-title"
+                  className="mt-4 font-product-display text-4xl leading-tight font-semibold tracking-tighter text-balance max-sm:text-3xl"
+                >
+                  Guides for a better launch.
+                </h2>
+              </div>
+              <Link
+                href="/blog"
+                className="shrink-0 text-sm font-medium underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-neutral-900"
+              >
+                All articles →
+              </Link>
+            </div>
+            <div className="mt-8 grid grid-cols-1 gap-6 md:grid-cols-3">
+              {latestPosts.map((post) => (
+                <PostCard
+                  key={post.url}
+                  post={post}
+                  minutes={minutes.get(post.url)}
+                  headingAs="h3"
+                />
+              ))}
+            </div>
+          </section>
+        )}
         <section
           className={`${containerClasses} flex items-center justify-between gap-8 py-14 pb-18 max-md:flex-col max-md:items-start max-sm:py-15`}
           aria-labelledby="cta-title"

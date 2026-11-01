@@ -2,15 +2,18 @@ import Link from "next/link";
 
 import PublicShell from "@/components/landing/public-shell";
 import SignupButton from "@/components/landing/signup-button";
+import { JsonLd, absoluteUrl, breadcrumbNode } from "@/components/seo/json-ld";
 import { listTemplates } from "@/lib/templates/catalog.mjs";
 import { getGalleryMeta } from "@/lib/templates/gallery.mjs";
 
 export const metadata = {
-  title: "Waitlist Templates | Waitlyze",
+  title: "Waitlist Templates",
   description:
     "Browse 14 free waitlist templates for SaaS betas, AI launches, newsletters, events, pre-orders, and more. Pick a template and launch your waitlist.",
   alternates: { canonical: "/templates" },
   openGraph: {
+    type: "website",
+    url: "/templates",
     title: "Waitlist Templates | Waitlyze",
     description:
       "Fourteen free waitlist templates for every kind of launch. Pick one and make it yours.",
@@ -107,6 +110,28 @@ export default function TemplatesPage() {
   const templates = listTemplates();
   return (
     <PublicShell>
+      <JsonLd
+        data={[
+          {
+            "@type": "CollectionPage",
+            name: "Waitlist templates",
+            url: absoluteUrl("/templates"),
+            mainEntity: {
+              "@type": "ItemList",
+              itemListElement: templates.map((template, index) => ({
+                "@type": "ListItem",
+                position: index + 1,
+                name: template.name,
+                url: absoluteUrl(`/templates/${template.id}`),
+              })),
+            },
+          },
+          breadcrumbNode([
+            { name: "Home", path: "/" },
+            { name: "Templates", path: "/templates" },
+          ]),
+        ]}
+      />
       <main id="main-content" className="scroll-mt-28">
         <section
           className={`${containerClasses} pt-14 pb-10 md:pt-18`}

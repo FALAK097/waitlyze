@@ -6,7 +6,7 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
 export const metadata = {
-  title: "Changelog | Waitlyze",
+  title: "Changelog",
   description: "Waitlyze release notes, from the first waitlist release through the latest update.",
 };
 
