@@ -9,8 +9,9 @@ import {
 import { createRelativeLink } from "fumadocs-ui/mdx";
 import { notFound } from "next/navigation";
 
-import { JsonLd, absoluteUrl, breadcrumbNode } from "@/components/seo/json-ld";
+import { JsonLd } from "@/components/seo/json-ld";
 import { getPageImageUrl, getPageMarkdownUrl, gitConfig, docsRoute } from "@/lib/docs-shared";
+import { absoluteUrl, breadcrumbNode } from "@/lib/seo-helpers";
 import { SITE_URL } from "@/lib/site-metadata";
 import { source } from "@/lib/source";
 

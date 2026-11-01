@@ -7,7 +7,7 @@ import { PostCard, PostMeta } from "@/components/blog/post-card";
 import { PostFaq } from "@/components/blog/post-faq";
 import { PostToc } from "@/components/blog/post-toc";
 import PublicShell from "@/components/landing/public-shell";
-import { JsonLd, absoluteUrl, breadcrumbNode, faqNode } from "@/components/seo/json-ld";
+import { JsonLd } from "@/components/seo/json-ld";
 import {
   blogSource,
   formatPostDate,
@@ -17,6 +17,7 @@ import {
   getRelatedPosts,
   slugifyTag,
 } from "@/lib/blog-source";
+import { absoluteUrl, breadcrumbNode, faqNode } from "@/lib/seo-helpers";
 import { SITE_URL } from "@/lib/site-metadata";
 
 import { getMDXComponents } from "../../../../mdx-components";

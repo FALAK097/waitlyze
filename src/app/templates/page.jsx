@@ -2,7 +2,8 @@ import Link from "next/link";
 
 import PublicShell from "@/components/landing/public-shell";
 import SignupButton from "@/components/landing/signup-button";
-import { JsonLd, absoluteUrl, breadcrumbNode } from "@/components/seo/json-ld";
+import { JsonLd } from "@/components/seo/json-ld";
+import { absoluteUrl, breadcrumbNode } from "@/lib/seo-helpers";
 import { listTemplates } from "@/lib/templates/catalog.mjs";
 import { getGalleryMeta } from "@/lib/templates/gallery.mjs";
 

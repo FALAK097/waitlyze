@@ -11,7 +11,18 @@ export const blogSource = loader({
 
 const WORDS_PER_MINUTE = 220;
 
-/** Newest first. Draft-style future dates are excluded so scheduled posts stay hidden. */
+const postDateFormatter = new Intl.DateTimeFormat("en-US", {
+  year: "numeric",
+  month: "long",
+  day: "numeric",
+  timeZone: "UTC",
+});
+
+/**
+ * Newest first. Draft-style future dates are excluded so scheduled posts stay hidden.
+ * Listing pages revalidate hourly via ISR (or on the next build deploy) so newly
+ * due posts become visible automatically.
+ */
 export function getPosts() {
   const now = Date.now();
   return blogSource
@@ -63,10 +74,5 @@ export function getRelatedPosts(page, limit = 3) {
 }
 
 export function formatPostDate(date) {
-  return new Intl.DateTimeFormat("en-US", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-    timeZone: "UTC",
-  }).format(date);
+  return postDateFormatter.format(date);
 }

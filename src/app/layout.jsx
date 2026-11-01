@@ -37,7 +37,6 @@ export const metadata = {
   alternates: {
     types: {
       "application/rss+xml": [{ url: "/blog/feed.xml", title: "Waitlyze Blog" }],
-      "text/markdown": [{ url: "/index.md", title: "Markdown version for AI agents" }],
     },
   },
   openGraph: {

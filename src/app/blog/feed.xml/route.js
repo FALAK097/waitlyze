@@ -1,7 +1,7 @@
 import { getPosts } from "@/lib/blog-source";
 import { SITE_URL } from "@/lib/site-metadata";
 
-export const revalidate = false;
+export const revalidate = 3600;
 
 function escapeXml(value) {
   return value

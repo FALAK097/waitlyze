@@ -1,5 +1,6 @@
 import { ImageResponse } from "next/og";
 
+import { BrandLogo } from "@/components/og/brand-logo";
 import { SITE_URL } from "@/lib/site-metadata";
 
 export const alt = "Waitlyze - Build an audience before you launch";
@@ -48,25 +49,7 @@ export default function OpenGraphImage() {
           width: "100%",
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-          <div
-            style={{
-              display: "flex",
-              alignItems: "flex-end",
-              gap: 6,
-              height: 44,
-              transform: "skewX(-12deg)",
-            }}
-          >
-            <div style={{ width: 10, height: 24, background: "#c8f93f", borderRadius: 3 }} />
-            <div style={{ width: 10, height: 42, background: "#c8f93f", borderRadius: 3 }} />
-            <div style={{ width: 10, height: 32, background: "#c8f93f", borderRadius: 3 }} />
-          </div>
-          <div style={{ display: "flex", fontSize: 38, fontWeight: 800, letterSpacing: -1.2 }}>
-            <span>waitlyze</span>
-            <span style={{ color: "#c8f93f" }}>.</span>
-          </div>
-        </div>
+        <BrandLogo textSize={38} height={44} barWidth={10} heights={[24, 42, 32]} />
 
         <div
           style={{

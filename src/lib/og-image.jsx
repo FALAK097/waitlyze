@@ -1,5 +1,6 @@
 import { ImageResponse } from "next/og";
 
+import { BrandLogo } from "@/components/og/brand-logo";
 import { SITE_URL } from "@/lib/site-metadata";
 
 export const OG_SIZE = { width: 1200, height: 630 };
@@ -51,25 +52,7 @@ export function renderOgImage({ title, eyebrow, readingTime, date }) {
           width: "100%",
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-          <div
-            style={{
-              display: "flex",
-              alignItems: "flex-end",
-              gap: 6,
-              height: 40,
-              transform: "skewX(-12deg)",
-            }}
-          >
-            <div style={{ width: 9, height: 22, background: "#c8f93f", borderRadius: 3 }} />
-            <div style={{ width: 9, height: 38, background: "#c8f93f", borderRadius: 3 }} />
-            <div style={{ width: 9, height: 30, background: "#c8f93f", borderRadius: 3 }} />
-          </div>
-          <div style={{ display: "flex", fontSize: 34, fontWeight: 800, letterSpacing: -1 }}>
-            <span>waitlyze</span>
-            <span style={{ color: "#c8f93f" }}>.</span>
-          </div>
-        </div>
+        <BrandLogo />
 
         {eyebrow ? (
           <div

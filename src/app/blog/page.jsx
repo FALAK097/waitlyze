@@ -3,9 +3,12 @@ import Link from "next/link";
 import { BlogCta } from "@/components/blog/blog-cta";
 import { PostCard } from "@/components/blog/post-card";
 import PublicShell from "@/components/landing/public-shell";
-import { JsonLd, absoluteUrl, breadcrumbNode } from "@/components/seo/json-ld";
+import { JsonLd } from "@/components/seo/json-ld";
 import { getPosts, getReadingMinutes, getTags } from "@/lib/blog-source";
+import { absoluteUrl, breadcrumbNode } from "@/lib/seo-helpers";
 import { SITE_URL } from "@/lib/site-metadata";
+
+export const revalidate = 3600;
 
 const title = "Waitlyze Blog: waitlist guides for launching with an audience";
 const description =

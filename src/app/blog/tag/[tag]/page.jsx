@@ -4,8 +4,11 @@ import { notFound } from "next/navigation";
 import { BlogCta } from "@/components/blog/blog-cta";
 import { PostCard } from "@/components/blog/post-card";
 import PublicShell from "@/components/landing/public-shell";
-import { JsonLd, absoluteUrl, breadcrumbNode } from "@/components/seo/json-ld";
+import { JsonLd } from "@/components/seo/json-ld";
 import { getPosts, getReadingMinutes, getTags } from "@/lib/blog-source";
+import { absoluteUrl, breadcrumbNode } from "@/lib/seo-helpers";
+
+export const revalidate = 3600;
 
 export function generateStaticParams() {
   return getTags().map((tag) => ({ tag: tag.slug }));

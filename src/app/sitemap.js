@@ -8,6 +8,8 @@ import { TEMPLATE_IDS } from "@/lib/templates/gallery.mjs";
 const SITE_UPDATED = "2026-11-01";
 const LEGAL_UPDATED = "2026-10-11";
 
+export const revalidate = 3600;
+
 export default function sitemap() {
   const posts = getPosts();
   const newestPost = posts[0] ? (posts[0].data.updated ?? posts[0].data.date) : SITE_UPDATED;
