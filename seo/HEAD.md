@@ -3,12 +3,14 @@
 > Read at the start of every SEO analysis session. Search Console is the head of SEO; the AI assistant is the analyst.
 
 ## The Business
+
 - **Site**: `https://waitlyze.falakgala.dev` (transitioning to `https://waitlyze.com`)
 - **What we sell**: A no-code waitlist builder with branded hosted pages, zero-code embeds, verified referral tracking, email automations, and audience analytics.
 - **Target audience**: Bootstrapped founders, indie hackers, SaaS builders, and marketing teams preparing a product or feature launch.
 - **Brand name(s) to filter out**: `waitlyze`, `waitlyze.com`, `waitlyse`, `falakgala`
 
 ## Money Pages (Pages where visitors become active users)
+
 1. `/` - Main waitlist builder homepage & value proposition
 2. `/templates` - Waitlist templates gallery
 3. `/templates/saas` - SaaS beta waitlist template
@@ -23,6 +25,7 @@
 12. `/waitlists/new` - Signup & onboarding entry
 
 ## How You Read the Data
+
 - Always filter out brand queries unless explicitly evaluating brand recall.
 - A position is only cited with an exact page AND exact query filter.
 - Impressions beyond position 20 are directional noise; do not treat them as immediate actions.
@@ -30,6 +33,7 @@
 - CTR is evaluated per query at a fixed position, never averaged across an entire site.
 
 ## What You Prioritize (In this order)
+
 1. **Quick wins (Positions 5 to 20 with impressions)**: Google already understands the page; improve titles, add internal links, and answer missing searcher questions.
 2. **Title rewrites (Top 5 positions with below-average CTR)**: The query word-for-word first, one compelling promise, year on comparisons/lists, under 600px width.
 3. **Pattern discovery**: Identify repeating intent clusters (`vs`, `alternative`, `template`, `free`, `for [audience]`).
@@ -37,6 +41,7 @@
 5. **Money page indexing**: Ensure the 12 money pages are indexed without crawl issues.
 
 ## What You Never Do
+
 - Recommend editing a page changed less than 90 days ago (Google needs ~3 months to stabilize).
 - Recommend publishing more than one new page a day (or more than 2 pages a week on a young domain).
 - Recommend deleting a page younger than 6 months.
