@@ -1,7 +1,7 @@
 import { listMarkdownRoutes } from "@/lib/md-registry";
 import { SITE_URL } from "@/lib/site-metadata";
 
-export const revalidate = false;
+export const revalidate = 3600;
 
 export async function GET() {
   const routes = listMarkdownRoutes();
@@ -15,7 +15,7 @@ export async function GET() {
       path: r.path,
       title: r.title,
       type: r.type,
-      markdownUrl: `${SITE_URL}${r.path === "/" ? "/index.md" : `${r.path}.md`}`,
+      markdownUrl: `${SITE_URL}${r.path === "/" ? "/index.md" : r.path.endsWith(".md") ? r.path : `${r.path}.md`}`,
       canonicalUrl: `${SITE_URL}${r.path}`,
     })),
   };

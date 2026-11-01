@@ -1,4 +1,4 @@
-import { getPost, getPosts } from "@/lib/blog-source";
+import { getPost, getPosts, getTags } from "@/lib/blog-source";
 import { SITE_DESCRIPTION, SITE_TITLE, SITE_URL } from "@/lib/site-metadata";
 import { source } from "@/lib/source";
 import { listTemplates } from "@/lib/templates/catalog.mjs";
@@ -15,13 +15,20 @@ function canonical(path) {
 }
 
 /** Builds the full markdown response object */
-function buildMarkdownDoc({ title, description, path, body, related = [] }) {
+function buildMarkdownDoc({
+  title,
+  description,
+  path,
+  body,
+  related = [],
+  updated = "2026-11-01",
+}) {
   const content = `# ${title}
 
 > ${description}
 
 Canonical: ${canonical(path)}
-Last updated: 2026-11-01
+Last updated: ${updated}
 
 ${body.trim()}
 
@@ -225,11 +232,13 @@ ${post.data.tldr}
 
 ${text}${faqs}`;
 
+      const postDate = (post.data.updated ?? post.data.date).toISOString().slice(0, 10);
       return buildMarkdownDoc({
         title: post.data.title,
         description: post.data.description,
         path: post.url,
         body,
+        updated: postDate,
         related: [
           { title: "All Articles", path: "/blog", description: "Waitlyze Blog index" },
           { title: "Waitlist Templates", path: "/templates", description: "Browse templates" },
@@ -264,19 +273,107 @@ ${text}${faqs}`;
 
   // 7. Legal pages /privacy, /terms
   if (path === "/privacy" || path === "/terms") {
-    const title = path === "/privacy" ? "Privacy Policy" : "Terms of Service";
-    const body =
-      path === "/privacy"
-        ? `Waitlyze values your privacy. We collect minimal account and technical telemetry (IP, browser user agent, referral codes) strictly to operate your waitlists and prevent fraud. We do not sell personal data to third parties.`
-        : `By accessing Waitlyze, you agree to these Terms. You are responsible for ensuring that the email communications you send to your subscribers comply with relevant anti-spam laws (CAN-SPAM, GDPR).`;
+    const isPrivacy = path === "/privacy";
+    const title = isPrivacy ? "Privacy Policy" : "Terms of Service";
+    const body = isPrivacy
+      ? `At Waitlyze ("we," "us," "our"), accessible from https://waitlyze.falakgala.dev, we are committed to protecting your privacy. This Privacy Policy outlines our practices regarding data collection, usage, and sharing when you access our platform.
+
+## 1. Information We Collect
+- **Personal Information**: When you create an account, we collect personal information such as your name, email address, and any other details you choose to provide.
+- **Usage Data**: We automatically collect information about your interactions with our platform. This data includes your IP address, browser type, pages viewed, and the time and duration of your visits. We use this information to monitor and improve our services.
+
+## 2. Use of Information
+We use your information to:
+- Provide and improve our platform's services.
+- Personalize your experience and deliver content relevant to your interests.
+- Monitor platform performance and usage to identify trends and enhance functionality.
+
+## 3. Sharing of Information
+We do not sell or rent your personal information. However, we may share information in the following cases:
+- **Service Providers**: We may share information with trusted third-party service providers who perform services on our behalf.
+- **Legal Requirements**: We may disclose information if required by law, such as in response to a subpoena, court order, or other legal processes.
+
+## 4. Data Retention
+We retain your personal data only for as long as necessary to fulfill the purposes outlined in this Privacy Policy unless a longer retention period is required or permitted by law.
+
+## 5. Security
+We take data security seriously and implement reasonable measures to protect your information. However, no online service is completely secure, and we cannot guarantee the security of your data.
+
+## 6. Your Rights
+Depending on your location, you may have rights regarding your personal information, including access, correction, deletion, restriction of processing, and data portability.
+
+## 7. Changes to This Privacy Policy
+We may update this Privacy Policy from time to time. We will notify users of any material changes and indicate the effective date at the top of this policy.
+
+## 8. Contact Us
+If you have questions or concerns about this Privacy Policy or our data practices, please contact us at hi@falakgala.dev.`
+      : `Welcome to Waitlyze ("Platform," "Service," "we," "us," "our"). By accessing or using https://waitlyze.falakgala.dev ("Website"), you agree to comply with and be bound by these Terms of Service ("Terms"). If you do not agree to these Terms, you may not use our services.
+
+## 1. Acceptance of Terms
+By creating an account or accessing our Platform, you accept and agree to be bound by these Terms, our Privacy Policy, and any other policies or guidelines that we may implement.
+
+## 2. Description of Service
+Waitlyze provides a platform for creating and managing waitlists that help convert visitors into eager customers. The platform may collect analytics to enhance user experience, which is detailed in our Privacy Policy.
+
+## 3. Eligibility
+You must be at least 18 years of age or have permission from a legal guardian to use our services. By using the Platform, you confirm that you meet these requirements.
+
+## 4. User Accounts
+You are responsible for maintaining the confidentiality of your account information. You are solely responsible for all activities that occur under your account.
+
+## 5. User Conduct
+Users agree to use the Platform responsibly and may not:
+- Engage in any illegal or unauthorized activities
+- Violate or infringe upon the rights of others, including intellectual property rights
+- Use any automated means to access the Platform
+
+## 6. Intellectual Property
+All content provided on the Platform, including logos, graphics, and text, is owned by Waitlyze or our partners. Users are not granted any license to use this content without permission.
+
+## 7. Termination of Service
+We reserve the right to suspend or terminate access to the Platform without notice if you violate these Terms.
+
+## 8. Limitation of Liability
+To the fullest extent permitted by law, Waitlyze shall not be liable for any damages resulting from the use or inability to use our services.
+
+## 9. Modifications to Terms
+We reserve the right to update these Terms at any time. We will notify users of any material changes, and continued use of the Platform indicates acceptance of the revised Terms.
+
+## 10. Contact Information
+For questions about these Terms, please contact us at hi@falakgala.dev.`;
 
     return buildMarkdownDoc({
       title,
       description: `Waitlyze ${title}`,
       path,
       body,
+      updated: "2026-10-11",
       related: [{ title: "Waitlyze Home", path: "/", description: "Product overview" }],
     });
+  }
+
+  // 8. Blog tag /blog/tag/:slug
+  const tagMatch = path.match(/^\/blog\/tag\/([a-z0-9-]+)$/);
+  if (tagMatch) {
+    const tag = getTags().find((t) => t.slug === tagMatch[1]);
+    if (tag) {
+      const posts = getPosts().filter((post) => post.data.tags.includes(tag.name));
+      const list = posts
+        .map((post) => `- [${post.data.title}](${canonical(post.url)}) - ${post.data.description}`)
+        .join("\n");
+      const newestPostInTag = posts.reduce((latest, post) => {
+        const d = post.data.updated ?? post.data.date;
+        return d > latest ? d : latest;
+      }, new Date(0));
+      return buildMarkdownDoc({
+        title: `${tag.name} guides | Waitlyze Blog`,
+        description: `Waitlyze articles about ${tag.name.toLowerCase()}: practical waitlist and launch guidance you can apply today.`,
+        path: `/blog/tag/${tag.slug}`,
+        body: `${posts.length} ${posts.length === 1 ? "article" : "articles"} about ${tag.name.toLowerCase()}.\n\n## Articles\n${list}`,
+        updated: posts.length ? newestPostInTag.toISOString().slice(0, 10) : "2026-11-01",
+        related: [{ title: "All Articles", path: "/blog", description: "Waitlyze Blog index" }],
+      });
+    }
   }
 
   // Route not found
@@ -310,6 +407,6 @@ export function listMarkdownRoutes() {
     })),
     { path: "/privacy", title: "Privacy Policy", type: "legal" },
     { path: "/terms", title: "Terms of Service", type: "legal" },
-    { path: "/agent-instructions", title: "AI Agent Instructions", type: "agent" },
+    { path: "/agent-instructions.md", title: "AI Agent Instructions", type: "agent" },
   ];
 }

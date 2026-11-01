@@ -22,6 +22,10 @@ import { SITE_URL } from "@/lib/site-metadata";
 
 import { getMDXComponents } from "../../../../mdx-components";
 
+function lastModified({ date, updated }) {
+  return updated && updated.getTime() <= Date.now() ? updated : date;
+}
+
 export function generateStaticParams() {
   return getPosts().map((post) => ({ slug: post.slugs[0] }));
 }
@@ -30,7 +34,7 @@ export async function generateMetadata({ params }) {
   const { slug } = await params;
   const post = getPost(slug);
   if (!post) return { title: "Article not found" };
-  const { title, description, date, updated, tags } = post.data;
+  const { title, description, date, tags } = post.data;
   const image = { url: `/og/blog/${slug}`, width: 1200, height: 630, alt: title };
   return {
     title,
@@ -46,7 +50,7 @@ export async function generateMetadata({ params }) {
       title,
       description,
       publishedTime: date.toISOString(),
-      modifiedTime: (updated ?? date).toISOString(),
+      modifiedTime: lastModified(post.data).toISOString(),
       authors: [post.data.author],
       tags,
       images: [image],
@@ -83,7 +87,7 @@ export default async function BlogPostPage({ params }) {
             description,
             image: absoluteUrl(`/og/blog/${slug}`),
             datePublished: date.toISOString(),
-            dateModified: (updated ?? date).toISOString(),
+            dateModified: lastModified(post.data).toISOString(),
             inLanguage: "en",
             keywords: tags.join(", "),
             mainEntityOfPage: absoluteUrl(post.url),

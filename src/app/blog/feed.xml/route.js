@@ -23,7 +23,11 @@ export async function GET() {
       return `<item><title>${escapeXml(post.data.title)}</title><link>${url}</link><guid isPermaLink="true">${url}</guid><pubDate>${post.data.date.toUTCString()}</pubDate><description>${escapeXml(post.data.description)}</description>${categories}</item>`;
     })
     .join("");
-  const lastBuild = (posts[0]?.data.updated ?? posts[0]?.data.date ?? new Date()).toUTCString();
+  const lastChange = posts.reduce((latest, post) => {
+    const changed = post.data.updated ?? post.data.date;
+    return changed > latest ? changed : latest;
+  }, new Date(0));
+  const lastBuild = (posts.length ? lastChange : new Date()).toUTCString();
   const xml = `<?xml version="1.0" encoding="UTF-8"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Waitlyze Blog</title><link>${SITE_URL}/blog</link><description>Practical guides on building a waitlist, running referral campaigns, and launching with an audience.</description><language>en</language><lastBuildDate>${lastBuild}</lastBuildDate><atom:link href="${SITE_URL}/blog/feed.xml" rel="self" type="application/rss+xml"/>${items}</channel></rss>`;
   return new Response(xml, {
     headers: {

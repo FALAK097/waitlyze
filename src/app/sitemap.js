@@ -12,7 +12,11 @@ export const revalidate = 3600;
 
 export default function sitemap() {
   const posts = getPosts();
-  const newestPost = posts[0] ? (posts[0].data.updated ?? posts[0].data.date) : SITE_UPDATED;
+  const newestPost =
+    posts.reduce((latest, post) => {
+      const modified = post.data.updated ?? post.data.date;
+      return !latest || modified > latest ? modified : latest;
+    }, undefined) ?? SITE_UPDATED;
   return [
     { url: SITE_URL, lastModified: SITE_UPDATED, priority: 1 },
     { url: `${SITE_URL}/templates`, lastModified: SITE_UPDATED, priority: 0.8 },

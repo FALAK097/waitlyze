@@ -14,8 +14,10 @@ function prefersMarkdown(acceptHeader) {
   });
 
   const md = entries.find((e) => e.type === "text/markdown");
-  if (!md) return false;
-  const html = entries.find((e) => e.type === "text/html");
+  if (!md || md.q <= 0) return false;
+  const html = entries.find(
+    (e) => e.type === "text/html" || e.type === "text/*" || e.type === "*/*",
+  );
   if (!html) return true;
   return md.q > html.q;
 }
@@ -31,6 +33,7 @@ export function proxy(req) {
     hostname.endsWith(".localhost") ||
     hostname.endsWith(".vercel.app");
   const isAppHost = appRoot && (hostname === appRoot || hostname.endsWith(`.${appRoot}`));
+  const isCustomHost = Boolean(appRoot) && !isPlatformHost && !isAppHost;
   const { pathname } = req.nextUrl;
 
   // Dedicated machine endpoints with their own route handlers
@@ -44,8 +47,10 @@ export function proxy(req) {
   }
 
   // Handle .md URL requests and Accept: text/markdown content negotiation for AI agents
-  const isDirectMarkdown = pathname.endsWith(".md") && !pathname.startsWith("/api");
+  const isDirectMarkdown =
+    !isCustomHost && pathname.endsWith(".md") && !pathname.startsWith("/api");
   const isMarkdownNegotiated =
+    !isCustomHost &&
     !pathname.startsWith("/api") &&
     !pathname.startsWith("/_next") &&
     !pathname.startsWith("/domain") &&

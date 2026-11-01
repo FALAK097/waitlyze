@@ -44,10 +44,14 @@ export async function getReadingMinutes(page) {
 }
 
 export function slugifyTag(tag) {
-  return tag
+  const slug = tag
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-|-$/g, "");
+  if (!slug) {
+    throw new Error(`Tag "${tag}" does not contain alphanumeric characters for slug generation.`);
+  }
+  return slug;
 }
 
 export function getTags() {
@@ -55,9 +59,20 @@ export function getTags() {
   for (const post of getPosts()) {
     for (const tag of post.data.tags) counts.set(tag, (counts.get(tag) ?? 0) + 1);
   }
-  return [...counts.entries()]
-    .map(([name, count]) => ({ name, slug: slugifyTag(name), count }))
-    .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
+  const tags = [...counts.entries()].map(([name, count]) => ({
+    name,
+    slug: slugifyTag(name),
+    count,
+  }));
+  const namesBySlug = new Map();
+  for (const tag of tags) {
+    const existing = namesBySlug.get(tag.slug);
+    if (existing && existing !== tag.name) {
+      throw new Error(`Tags "${existing}" and "${tag.name}" share the slug "${tag.slug}".`);
+    }
+    namesBySlug.set(tag.slug, tag.name);
+  }
+  return tags.sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
 }
 
 export function getRelatedPosts(page, limit = 3) {
