@@ -9,6 +9,7 @@ import {
   SortableHeading,
   StatusTabs,
   WaitlistSearch,
+  WaitlistSearchProvider,
 } from "@/components/product/waitlists-toolbar";
 import {
   Table,
@@ -62,6 +63,7 @@ const waitlistTableWrap = [
   "max-[767px]:[&_tbody_td]:before:text-micro max-[767px]:[&_tbody_td]:before:font-medium",
   "max-[767px]:[&_tbody_td]:before:text-product-text-secondary max-[767px]:[&_tbody_td]:before:content-[attr(data-label)]",
   "max-[767px]:[&_tbody_th]:px-0 max-[767px]:[&_tbody_td]:px-0",
+  "max-[767px]:[&_tbody_th]:whitespace-normal max-[767px]:[&_tbody_th]:break-words",
   "max-[767px]:[&_tbody_td:last-child]:col-span-2 max-[767px]:[&_tbody_td:last-child]:items-end",
 ].join(" ");
 
@@ -319,31 +321,33 @@ export default async function WaitlistsPage({ searchParams }) {
   const requestedPage =
     typeof params?.page === "string" && /^\d+$/.test(params.page) ? Number(params.page) : 1;
   return (
-    <section aria-label="Waitlists">
-      <div className="mb-5 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-        <StatusTabs query={query} status={status} sort={sort} />
-        <div className="flex w-full min-w-0 items-center gap-3 lg:w-auto lg:justify-end">
-          <WaitlistSearch key={query} query={query} status={status} sort={sort} />
-          <div className="shrink-0">
-            <CreateWaitlistDialog />
+    <WaitlistSearchProvider query={query}>
+      <section aria-label="Waitlists">
+        <div className="mb-5 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <StatusTabs query={query} status={status} sort={sort} />
+          <div className="flex w-full min-w-0 items-center gap-3 lg:w-auto lg:justify-end">
+            <WaitlistSearch status={status} sort={sort} />
+            <div className="shrink-0">
+              <CreateWaitlistDialog />
+            </div>
           </div>
         </div>
-      </div>
-      <div className="mb-4">
-        <MobileWaitlistSort query={query} status={status} sort={sort} />
-      </div>
-      <Suspense
-        fallback={<ProductContentSkeleton label="Loading waitlists" variant="table" rows={5} />}
-      >
-        <WaitlistsResults
-          userId={user.id}
-          workspaceId={workspace.id}
-          query={query}
-          status={status}
-          sort={sort}
-          requestedPage={requestedPage}
-        />
-      </Suspense>
-    </section>
+        <div className="mb-4">
+          <MobileWaitlistSort query={query} status={status} sort={sort} />
+        </div>
+        <Suspense
+          fallback={<ProductContentSkeleton label="Loading waitlists" variant="table" rows={5} />}
+        >
+          <WaitlistsResults
+            userId={user.id}
+            workspaceId={workspace.id}
+            query={query}
+            status={status}
+            sort={sort}
+            requestedPage={requestedPage}
+          />
+        </Suspense>
+      </section>
+    </WaitlistSearchProvider>
   );
 }

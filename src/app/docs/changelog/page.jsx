@@ -16,6 +16,12 @@ export const metadata = {
     description:
       "Waitlyze release notes, from the first waitlist release through the latest update.",
   },
+  twitter: {
+    card: "summary_large_image",
+    title: "Changelog | Waitlyze",
+    description:
+      "Waitlyze release notes, from the first waitlist release through the latest update.",
+  },
 };
 
 function releaseId(title) {

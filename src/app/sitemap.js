@@ -1,4 +1,4 @@
-import { getPosts, getTags } from "@/lib/blog-source";
+import { getPostModifiedDate, getPosts, getTags } from "@/lib/blog-source";
 import { SITE_URL } from "@/lib/site-metadata";
 import { source } from "@/lib/source";
 import { TEMPLATE_IDS } from "@/lib/templates/gallery.mjs";
@@ -14,7 +14,7 @@ export default function sitemap() {
   const posts = getPosts();
   const newestPost =
     posts.reduce((latest, post) => {
-      const modified = post.data.updated ?? post.data.date;
+      const modified = getPostModifiedDate(post.data);
       return !latest || modified > latest ? modified : latest;
     }, undefined) ?? SITE_UPDATED;
   return [
@@ -28,12 +28,17 @@ export default function sitemap() {
     { url: `${SITE_URL}/blog`, lastModified: newestPost, priority: 0.8 },
     ...posts.map((post) => ({
       url: `${SITE_URL}${post.url}`,
-      lastModified: post.data.updated ?? post.data.date,
+      lastModified: getPostModifiedDate(post.data),
       priority: 0.7,
     })),
     ...getTags().map((tag) => ({
       url: `${SITE_URL}/blog/tag/${tag.slug}`,
-      lastModified: newestPost,
+      lastModified:
+        posts.reduce((latest, post) => {
+          if (!post.data.tags.includes(tag.name)) return latest;
+          const modified = getPostModifiedDate(post.data);
+          return !latest || modified > latest ? modified : latest;
+        }, undefined) ?? SITE_UPDATED,
       priority: 0.4,
     })),
     ...source.getPages().map((page) => ({
@@ -43,6 +48,6 @@ export default function sitemap() {
     })),
     { url: `${SITE_URL}/docs/changelog`, lastModified: SITE_UPDATED, priority: 0.4 },
     { url: `${SITE_URL}/privacy`, lastModified: LEGAL_UPDATED, priority: 0.3 },
-    { url: `${SITE_URL}/terms`, lastModified: LEGAL_UPDATED, priority: 0.3 },
+    { url: `${SITE_URL}/terms`, lastModified: "2026-11-02", priority: 0.3 },
   ];
 }

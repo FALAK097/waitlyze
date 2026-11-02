@@ -2,22 +2,23 @@ import { getSessionCookie } from "better-auth/cookies";
 import { NextResponse } from "next/server";
 
 function prefersMarkdown(acceptHeader) {
-  if (!acceptHeader || !acceptHeader.includes("text/markdown")) return false;
+  if (!acceptHeader || !acceptHeader.toLowerCase().includes("text/markdown")) return false;
   const entries = acceptHeader.split(",").map((entry) => {
     const [type, ...params] = entry.trim().split(";");
     let q = 1.0;
     for (const p of params) {
       const [k, v] = p.trim().split("=");
-      if (k === "q") q = parseFloat(v) || 0;
+      if (k.toLowerCase() === "q") q = parseFloat(v) || 0;
     }
-    return { type: type.trim(), q };
+    return { type: type.trim().toLowerCase(), q };
   });
 
   const md = entries.find((e) => e.type === "text/markdown");
   if (!md || md.q <= 0) return false;
-  const html = entries.find(
-    (e) => e.type === "text/html" || e.type === "text/*" || e.type === "*/*",
-  );
+  const html =
+    entries.find((e) => e.type === "text/html") ??
+    entries.find((e) => e.type === "text/*") ??
+    entries.find((e) => e.type === "*/*");
   if (!html) return true;
   return md.q > html.q;
 }
@@ -61,7 +62,10 @@ export function proxy(req) {
     const target = req.nextUrl.clone();
     target.pathname = "/api/md";
     target.search = `?path=${encodeURIComponent(cleanPath || "/")}`;
-    return NextResponse.rewrite(target);
+    const requestHeaders = new Headers(req.headers);
+    // Preserve the route path: rewritten query parameters are not available to the handler.
+    requestHeaders.set("x-waitlyze-markdown-path", cleanPath || "/");
+    return NextResponse.rewrite(target, { request: { headers: requestHeaders } });
   }
 
   // Never rewrite file requests on custom hosts - serve public/ assets and

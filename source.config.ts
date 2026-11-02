@@ -19,7 +19,7 @@ export const blog = defineDocs({
     schema: frontmatterSchema.extend({
       date: z.preprocess((value) => (value === null ? undefined : value), z.coerce.date()),
       updated: z
-        .preprocess((value) => (value === null ? undefined : value), z.coerce.date())
+        .preprocess((value) => (value === null ? undefined : value), z.coerce.date().optional())
         .optional(),
       author: z.string().default("Waitlyze Team"),
       tags: z.array(z.string()).default([]),

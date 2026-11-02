@@ -124,7 +124,7 @@ globs: **/*waitlist*
 When integrating the waitlist into our application:
 - Fetch and reference https://waitlyze.falakgala.dev/agent-instructions.md
 - For embeds, use <div class="waitlyze-widget" data-key-id="..." /> with ${SITE_URL}/js/embed.js.
-- For custom APIs, call POST ${SITE_URL}/api/waitlist with waitlistId, email, and optional referralCode.
+- For custom APIs, call POST ${SITE_URL}/api/waitlist with a server-side apiKey, waitlistId, email, and optional referralCode.
 \`\`\`
 
 ### Option 2: In Claude Code
@@ -140,8 +140,8 @@ claude "Read ${SITE_URL}/agent-instructions.md and integrate the Waitlyze signup
 - \`/llms.txt\` - Curated index of the entire product for language models.
 - \`/llms-full.txt\` - Complete consolidated documentation context in a single file.
 - \`/api/md/_catalog\` - JSON catalog of all markdown-rendered routes.
-- \`/<page>.md\` - Append \`.md\` to any public page URL (e.g., \`/templates.md\`, \`/blog.md\`) to get pure markdown.
-- Content Negotiation: Send \`Accept: text/markdown\` to any public page to receive clean markdown instead of HTML.
+- \`/<page>.md\` - Append \`.md\` to a page listed in \`/api/md/_catalog\` (e.g., \`/templates.md\`, \`/blog.md\`) to get pure markdown.
+- Content Negotiation: Send \`Accept: text/markdown\` to a page listed in \`/api/md/_catalog\` to receive clean markdown instead of HTML.
 
 ---
 Official Website: ${SITE_URL}

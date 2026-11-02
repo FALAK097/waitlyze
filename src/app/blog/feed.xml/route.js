@@ -1,4 +1,4 @@
-import { getPosts } from "@/lib/blog-source";
+import { getPostModifiedDate, getPosts } from "@/lib/blog-source";
 import { SITE_URL } from "@/lib/site-metadata";
 
 export const revalidate = 3600;
@@ -24,7 +24,7 @@ export async function GET() {
     })
     .join("");
   const lastChange = posts.reduce((latest, post) => {
-    const changed = post.data.updated ?? post.data.date;
+    const changed = getPostModifiedDate(post.data);
     return changed > latest ? changed : latest;
   }, new Date(0));
   const lastBuild = (posts.length ? lastChange : new Date()).toUTCString();

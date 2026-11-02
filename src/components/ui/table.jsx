@@ -14,7 +14,7 @@ function Table({ className, scrollHint, scrollLabel = "Scrollable table", ...pro
       aria-describedby={scrollHint ? scrollHintId : undefined}
     >
       {scrollHint && (
-        <p id={scrollHintId} className="sr-only">
+        <p id={scrollHintId} className="mb-2 px-3 text-sm text-product-text-secondary md:sr-only">
           {scrollHint}. Use the arrow keys when the table is focused.
         </p>
       )}

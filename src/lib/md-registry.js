@@ -1,4 +1,4 @@
-import { getPost, getPosts, getTags } from "@/lib/blog-source";
+import { getPost, getPostModifiedDate, getPosts, getTags } from "@/lib/blog-source";
 import { SITE_DESCRIPTION, SITE_TITLE, SITE_URL } from "@/lib/site-metadata";
 import { source } from "@/lib/source";
 import { listTemplates } from "@/lib/templates/catalog.mjs";
@@ -15,20 +15,13 @@ function canonical(path) {
 }
 
 /** Builds the full markdown response object */
-function buildMarkdownDoc({
-  title,
-  description,
-  path,
-  body,
-  related = [],
-  updated = "2026-11-01",
-}) {
+function buildMarkdownDoc({ title, description, path, body, related = [], updated }) {
   const content = `# ${title}
 
 > ${description}
 
 Canonical: ${canonical(path)}
-Last updated: ${updated}
+${updated ? `Last updated: ${updated}\n` : ""}
 
 ${body.trim()}
 
@@ -232,7 +225,7 @@ ${post.data.tldr}
 
 ${text}${faqs}`;
 
-      const postDate = (post.data.updated ?? post.data.date).toISOString().slice(0, 10);
+      const postDate = getPostModifiedDate(post.data).toISOString().slice(0, 10);
       return buildMarkdownDoc({
         title: post.data.title,
         description: post.data.description,
@@ -325,7 +318,7 @@ You are responsible for maintaining the confidentiality of your account informat
 Users agree to use the Platform responsibly and may not:
 - Engage in any illegal or unauthorized activities
 - Violate or infringe upon the rights of others, including intellectual property rights
-- Use any automated means to access the Platform
+- Use automated means to access the Platform, except to retrieve public pages allowed by our AI access policy (/ai.txt) and robots.txt; this exception does not permit automated access to accounts, private data, or authenticated features
 
 ## 6. Intellectual Property
 All content provided on the Platform, including logos, graphics, and text, is owned by Waitlyze or our partners. Users are not granted any license to use this content without permission.
@@ -347,7 +340,7 @@ For questions about these Terms, please contact us at hi@falakgala.dev.`;
       description: `Waitlyze ${title}`,
       path,
       body,
-      updated: "2026-10-11",
+      updated: isPrivacy ? "2026-10-11" : "2026-11-02",
       related: [{ title: "Waitlyze Home", path: "/", description: "Product overview" }],
     });
   }
@@ -362,7 +355,7 @@ For questions about these Terms, please contact us at hi@falakgala.dev.`;
         .map((post) => `- [${post.data.title}](${canonical(post.url)}) - ${post.data.description}`)
         .join("\n");
       const newestPostInTag = posts.reduce((latest, post) => {
-        const d = post.data.updated ?? post.data.date;
+        const d = getPostModifiedDate(post.data);
         return d > latest ? d : latest;
       }, new Date(0));
       return buildMarkdownDoc({
@@ -370,7 +363,7 @@ For questions about these Terms, please contact us at hi@falakgala.dev.`;
         description: `Waitlyze articles about ${tag.name.toLowerCase()}: practical waitlist and launch guidance you can apply today.`,
         path: `/blog/tag/${tag.slug}`,
         body: `${posts.length} ${posts.length === 1 ? "article" : "articles"} about ${tag.name.toLowerCase()}.\n\n## Articles\n${list}`,
-        updated: posts.length ? newestPostInTag.toISOString().slice(0, 10) : "2026-11-01",
+        updated: posts.length ? newestPostInTag.toISOString().slice(0, 10) : undefined,
         related: [{ title: "All Articles", path: "/blog", description: "Waitlyze Blog index" }],
       });
     }
@@ -399,6 +392,11 @@ export function listMarkdownRoutes() {
       path: p.url,
       title: p.data.title,
       type: "blog-post",
+    })),
+    ...getTags().map((tag) => ({
+      path: `/blog/tag/${tag.slug}`,
+      title: `${tag.name} guides`,
+      type: "blog-tag",
     })),
     ...docPages.map((d) => ({
       path: d.url,

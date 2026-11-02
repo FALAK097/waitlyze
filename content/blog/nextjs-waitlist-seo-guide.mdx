@@ -282,7 +282,7 @@ export function WaitlistSection() {
 ```
 
 ### Method B: Next.js Server Action (Custom UI)
-If you prefer building a custom form with Tailwind and shadcn/ui:
+If you prefer building a custom form with Tailwind and shadcn/ui, set `WAITLYZE_API_KEY` and `WAITLYZE_WAITLIST_ID` in your server environment (never expose the API key to the browser):
 
 ```typescript
 // app/actions/waitlist.ts
@@ -301,6 +301,7 @@ export async function submitWaitlist(prevState: any, formData: FormData) {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
+        apiKey: process.env.WAITLYZE_API_KEY,
         waitlistId: process.env.WAITLYZE_WAITLIST_ID,
         email,
         referralCode,

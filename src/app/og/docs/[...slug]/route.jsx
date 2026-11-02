@@ -11,6 +11,7 @@ export function generateStaticParams() {
 
 export async function GET(_request, { params }) {
   const { slug } = await params;
+  if (slug.at(-1) !== "image.png") notFound();
   // The last segment is the file name docs metadata points at (image.png).
   const page = source.getPage(slug.slice(0, -1));
   if (!page) notFound();

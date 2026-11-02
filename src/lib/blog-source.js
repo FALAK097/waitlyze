@@ -37,6 +37,11 @@ export function getPost(slug) {
   return page;
 }
 
+/** Use publication date until a scheduled edit has actually taken effect. */
+export function getPostModifiedDate({ date, updated }, now = Date.now()) {
+  return updated && updated.getTime() <= now ? updated : date;
+}
+
 export async function getReadingMinutes(page) {
   const text = await page.data.getText("processed");
   const words = text.trim().split(/\s+/).length;

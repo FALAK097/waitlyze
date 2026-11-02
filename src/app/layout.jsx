@@ -43,7 +43,6 @@ export const metadata = {
     type: "website",
     locale: "en_US",
     siteName: "Waitlyze",
-    url: SITE_URL,
     title: SITE_TITLE,
     description: SITE_DESCRIPTION,
   },

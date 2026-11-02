@@ -12,6 +12,7 @@ import {
   blogSource,
   formatPostDate,
   getPost,
+  getPostModifiedDate,
   getPosts,
   getReadingMinutes,
   getRelatedPosts,
@@ -22,9 +23,7 @@ import { SITE_URL } from "@/lib/site-metadata";
 
 import { getMDXComponents } from "../../../../mdx-components";
 
-function lastModified({ date, updated }) {
-  return updated && updated.getTime() <= Date.now() ? updated : date;
-}
+export const revalidate = 3600;
 
 export function generateStaticParams() {
   return getPosts().map((post) => ({ slug: post.slugs[0] }));
@@ -50,7 +49,7 @@ export async function generateMetadata({ params }) {
       title,
       description,
       publishedTime: date.toISOString(),
-      modifiedTime: lastModified(post.data).toISOString(),
+      modifiedTime: getPostModifiedDate(post.data).toISOString(),
       authors: [post.data.author],
       tags,
       images: [image],
@@ -72,7 +71,8 @@ export default async function BlogPostPage({ params }) {
   const relatedMinutes = new Map(
     await Promise.all(related.map(async (entry) => [entry.url, await getReadingMinutes(entry)])),
   );
-  const { title, description, date, updated, tags, tldr, faqs, author } = post.data;
+  const { title, description, date, tags, tldr, faqs, author } = post.data;
+  const modifiedDate = getPostModifiedDate(post.data);
   const isTeam = author === "Waitlyze Team";
   const primaryTag = tags[0];
 
@@ -87,7 +87,7 @@ export default async function BlogPostPage({ params }) {
             description,
             image: absoluteUrl(`/og/blog/${slug}`),
             datePublished: date.toISOString(),
-            dateModified: lastModified(post.data).toISOString(),
+            dateModified: modifiedDate.toISOString(),
             inLanguage: "en",
             keywords: tags.join(", "),
             mainEntityOfPage: absoluteUrl(post.url),
@@ -137,9 +137,10 @@ export default async function BlogPostPage({ params }) {
             <div className="mt-6 flex flex-wrap items-center gap-x-4 gap-y-2 text-caption text-product-text-secondary">
               <span className="font-semibold text-product-text-primary">By {author}</span>
               <PostMeta post={post} minutes={minutes} />
-              {updated && updated.getTime() > date.getTime() && (
+              {modifiedDate.getTime() > date.getTime() && (
                 <span>
-                  Updated <time dateTime={updated.toISOString()}>{formatPostDate(updated)}</time>
+                  Updated{" "}
+                  <time dateTime={modifiedDate.toISOString()}>{formatPostDate(modifiedDate)}</time>
                 </span>
               )}
             </div>

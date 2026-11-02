@@ -4,7 +4,7 @@ export const revalidate = false;
 
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
-  const path = searchParams.get("path") || "/";
+  const path = request.headers.get("x-waitlyze-markdown-path") || searchParams.get("path") || "/";
 
   // Prevent accessing private admin/auth paths via markdown
   const isPrivate =
