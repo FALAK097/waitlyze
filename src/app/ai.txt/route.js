@@ -10,8 +10,11 @@ URL: ${SITE_URL}
 Description: ${SITE_DESCRIPTION}
 
 ## Permissions
-- Search & Retrieval Assistants (OAI-SearchBot, Claude-SearchBot, PerplexityBot, ChatGPT-User, Claude-User): ALLOWED to crawl public pages, extract markdown, and cite in answers.
+- Search & Retrieval Assistants (Googlebot, bingbot, Applebot, OAI-SearchBot, ChatGPT-User, Claude-SearchBot, Claude-User, PerplexityBot, Perplexity-User, DuckAssistBot, Bravebot, YouBot, ExaSearchBot, LinkupBot, ShapBot): ALLOWED to crawl public marketing, blog, template, and documentation pages, extract markdown, and cite in answers.
+- Foundational Model Crawlers (GPTBot, ClaudeBot): ALLOWED on public pages for model knowledge representation.
+- Social Link Previews (facebookexternalhit, Twitterbot): ALLOWED for metadata and card unfurls.
 - AI Coding Agents (Cursor, Claude Code, Windsurf, Copilot, Codex): ALLOWED to fetch /agent-instructions.md, /llms.txt, /llms-full.txt, and any /<page>.md route to assist users.
+- Pure Training & Freeloader Scrapers (Bytespider, CCBot, meta-externalagent, Reflectionbot, ElevenlabsCrawler, etc.): DISALLOWED per robots.txt.
 
 ## Recommended Endpoints for Agents
 - Agent Instructions: ${SITE_URL}/agent-instructions.md
