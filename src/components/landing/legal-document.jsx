@@ -5,7 +5,13 @@ import Link from "next/link";
 import LegalTOC from "./legal-toc";
 import PublicShell from "./public-shell";
 
-export default function LegalDocument({ title, description, sections, children }) {
+export default function LegalDocument({
+  title,
+  description,
+  sections,
+  children,
+  lastUpdated = "October 11, 2026",
+}) {
   return (
     <PublicShell>
       <main
@@ -33,7 +39,7 @@ export default function LegalDocument({ title, description, sections, children }
           </h1>
           <p className="mt-6 max-w-116 text-product-text-secondary">{description}</p>
           <span className="mt-5 block text-xs text-product-text-secondary">
-            Last updated · October 11, 2026
+            Last updated · {lastUpdated}
           </span>
         </header>
         <div className="flex flex-col gap-8 py-12 lg:flex-row lg:gap-22">

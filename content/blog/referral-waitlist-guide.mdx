@@ -1,0 +1,92 @@
+---
+title: "How a Referral Waitlist Works (and Stays Fair)"
+description: "How referral waitlists turn subscribers into sharers, what counts as a real referral, and how to keep fake signups from distorting your campaign."
+date: 2026-11-01T09:10:00Z
+author: Waitlyze Team
+tags:
+  - Referrals
+  - Waitlist basics
+tldr: "A referral waitlist gives every confirmed subscriber a personal link to share. When someone joins through that link and confirms their email, the sharer gets credit. To keep results trustworthy, count only confirmed referrals, block self-referrals and duplicates, and review suspicious bursts before you reward anyone."
+faqs:
+  - question: What is a referral waitlist?
+    answer: A referral waitlist gives each subscriber a unique link. When people join through that link, the sharer earns credit, which can move them up the queue or count toward a reward you define.
+  - question: How do I stop people from gaming referrals?
+    answer: Count a referral only when both the sharer and the invited person have confirmed their email, ignore self-referrals and duplicate signups, rate-limit bursts from the same source, add a human check such as Cloudflare Turnstile if abuse is a risk, and review flagged referrals before rewarding them.
+  - question: What reward should I offer for referrals?
+    answer: Offer something that matches your product and costs you little to deliver, such as earlier access, extra invites, a founding-member perk, or a discount. Define the rule in advance and say plainly what a referral earns, so people know why sharing is worth it.
+  - question: Does a referral program work for every launch?
+    answer: It works best when your product is something people naturally talk about or share with a team or friends. If sharing feels awkward or irrelevant to your audience, a referral loop adds friction without much lift, and your effort is better spent on direct outreach.
+---
+
+Most waitlists grow in a straight line: you share the link, people sign up, and the list grows as fast as your own promotion. A referral waitlist adds a loop. Each subscriber can invite others, so the list can grow without every new signup coming from you.
+
+That only helps if the numbers are real. This guide explains how referral waitlists work and how to keep them honest.
+
+## The basic mechanics
+
+1. A visitor joins the waitlist and confirms their email.
+2. They receive a personal referral link, usually shown on the confirmation screen and in emails.
+3. They share the link. Anyone who opens it carries a referral code into the signup form.
+4. When the invited person joins and confirms, the sharer earns credit.
+5. Credit can change queue position, unlock a reward you define, or simply show who is helping most.
+
+The magic ingredient is a reason to share. People rarely share a link because you asked politely. They share because the reward is clear, the status is visible, or the product is something their friends would genuinely want.
+
+## What should count as a referral
+
+If you count every click, your numbers will look great and mean nothing. A trustworthy rule is stricter:
+
+- **The invited person must confirm their email.** An unconfirmed address could be a typo, a bot, or a throwaway.
+- **The sharer must be confirmed too.** Otherwise anyone can create an account just to farm credit.
+- **Self-referrals do not count.** The same address inviting itself is not growth.
+- **Duplicate signups do not count.** If the email is already on the list, there is no new person.
+
+Waitlyze applies these rules: a referral earns credit only when both the sharer and the invited address are verified, the referral is eligible, and its review status is clear or approved. You can read the details in the [referrals documentation](/docs/referrals).
+
+## Queue position is not a promise
+
+Many waitlists show a queue position: "You are number 412." It motivates sharing, but it is easy to misuse. Treat position as a current snapshot of where someone stands based on eligible referrals and signup order, not a guarantee of access or a particular reward. If you promise access by position, make sure you can actually deliver it in that order.
+
+## Preventing abuse
+
+Any visible reward attracts people who want it without earning it. Plan for abuse from the start:
+
+- **Rate limits.** A burst of signups from one network in a few minutes is rarely organic. Waitlyze applies IP-velocity limits to suspicious bursts.
+- **Human checks.** For campaigns with valuable rewards, add a bot check. Waitlyze supports Cloudflare Turnstile on a per-waitlist basis.
+- **A review queue.** Flag unusual referrals instead of rewarding them automatically, and decide each case yourself. In Waitlyze, referrals marked for review wait until an owner or admin approves or resolves them.
+- **Privacy by default.** If you show a leaderboard, mask the identities. Waitlyze's leaderboard never exposes raw email addresses.
+
+## Choosing a reward
+
+The best reward is something you can deliver cheaply and that your audience actually wants:
+
+| Reward | Works well for | Watch out for |
+| --- | --- | --- |
+| Earlier access | Products with limited capacity | Needs a clear access order you can keep |
+| Extra invites or seats | Team or social products | Can feel pushy if overdone |
+| Founding-member perk | Paid products | Define the perk and its limits clearly |
+| Discount or credit | Commerce and pre-orders | Can attract bargain-seekers |
+| Public recognition | Communities and creators | Needs opt-in to be named |
+
+Waitlyze records referral activity so you can build your own reward rules on top of verified counts and the `referral.completed` [webhook event](/docs/webhooks), which fires when a sharer earns verified credit.
+
+## Make sharing easy
+
+Reduce every step between "that is a great idea" and "sent":
+
+- Put the referral link on the confirmation screen so people see it at the moment of highest excitement.
+- Offer one-tap sharing for the channels your audience uses.
+- Write the share message for them. A ready-to-send sentence beats a blank text box.
+- Remind people. A [referral reminder email](/blog/waitlist-email-sequence) a few days later catches those who did not share the first time.
+
+## Measure the loop, not the vanity number
+
+The number that matters is how many new confirmed subscribers each existing subscriber brings in. Multiply the average number of invitations each person sends by the share of invitations that convert. If the result is above one, the list can grow by itself. Most campaigns land well below that, and that is fine: even a small referral effect lowers your cost of acquiring each signup. The [metrics guide](/blog/waitlist-metrics-that-matter) shows how to calculate it.
+
+## When not to use referrals
+
+Skip the loop if your product is private or sensitive, if your audience is small and niche so that everyone already knows each other, or if you cannot support the rewards you promise. A plain waitlist with excellent emails often beats a referral program that feels forced.
+
+## Try it on your next launch
+
+Waitlyze includes referral links, review for suspicious referrals, optional bot checks, and analytics that connect sharing to signups. [Create a waitlist](/templates) and turn on referral sharing in the waitlist settings.

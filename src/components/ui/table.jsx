@@ -15,7 +15,7 @@ function Table({ className, scrollHint, scrollLabel = "Scrollable table", ...pro
     >
       {scrollHint && (
         <p id={scrollHintId} className="mb-2 px-3 text-sm text-product-text-secondary md:sr-only">
-          {scrollHint}. Keyboard users can focus the table and use the arrow keys.
+          {scrollHint}. Use the arrow keys when the table is focused.
         </p>
       )}
       <table

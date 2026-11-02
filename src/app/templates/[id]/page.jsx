@@ -4,6 +4,8 @@ import { notFound } from "next/navigation";
 import PublicShell from "@/components/landing/public-shell";
 import SignupButton from "@/components/landing/signup-button";
 import { WaitlistPageContent } from "@/components/product/waitlist-page-content";
+import { JsonLd } from "@/components/seo/json-ld";
+import { absoluteUrl, breadcrumbNode } from "@/lib/seo-helpers";
 import { listTemplates } from "@/lib/templates/catalog.mjs";
 import { TEMPLATE_IDS, getGalleryMeta, isTemplateId } from "@/lib/templates/gallery.mjs";
 
@@ -17,10 +19,20 @@ export async function generateMetadata({ params }) {
   const meta = getGalleryMeta(id);
   const title = `${meta.seoTitle} | Waitlyze Templates`;
   return {
-    title,
+    title: { absolute: title },
     description: meta.seoDescription,
-    alternates: { canonical: `/templates/${id}` },
-    openGraph: { title, description: meta.seoDescription },
+    alternates: {
+      canonical: `/templates/${id}`,
+      types: {
+        "text/markdown": [{ url: `/templates/${id}.md`, title: `${meta.seoTitle} (Markdown)` }],
+      },
+    },
+    openGraph: {
+      type: "website",
+      url: `/templates/${id}`,
+      title,
+      description: meta.seoDescription,
+    },
     twitter: { card: "summary_large_image", title },
   };
 }
@@ -39,6 +51,22 @@ export default async function TemplateDetailPage({ params }) {
 
   return (
     <PublicShell>
+      <JsonLd
+        data={[
+          {
+            "@type": "WebPage",
+            name: meta.seoTitle,
+            description: meta.seoDescription,
+            url: absoluteUrl(`/templates/${id}`),
+            isPartOf: { "@id": absoluteUrl("/#website") },
+          },
+          breadcrumbNode([
+            { name: "Home", path: "/" },
+            { name: "Templates", path: "/templates" },
+            { name: meta.seoTitle, path: `/templates/${id}` },
+          ]),
+        ]}
+      />
       <main id="main-content" className="scroll-mt-28">
         <section
           className={`${containerClasses} pt-14 pb-10 md:pt-18`}

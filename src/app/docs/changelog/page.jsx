@@ -6,8 +6,22 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
 export const metadata = {
-  title: "Changelog | Waitlyze",
+  title: "Changelog",
   description: "Waitlyze release notes, from the first waitlist release through the latest update.",
+  alternates: { canonical: "/docs/changelog" },
+  openGraph: {
+    type: "website",
+    url: "/docs/changelog",
+    title: "Changelog | Waitlyze",
+    description:
+      "Waitlyze release notes, from the first waitlist release through the latest update.",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Changelog | Waitlyze",
+    description:
+      "Waitlyze release notes, from the first waitlist release through the latest update.",
+  },
 };
 
 function releaseId(title) {

@@ -41,7 +41,7 @@ export default function AuthAction({
       type="button"
       variant={compact ? "product-auth-outline" : "product-accent"}
       size={compact ? "product-action-compact" : "product-action"}
-      className={cn("group", className)}
+      className={cn("group col-start-1 row-start-1", className)}
       disabled={isPending}
       onClick={openAuthModal}
     >

@@ -11,13 +11,34 @@ export const metadata = {
   title: { default: SITE_TITLE, template: "%s | Waitlyze" },
   description: SITE_DESCRIPTION,
   applicationName: "Waitlyze",
+  authors: [{ name: "Waitlyze", url: SITE_URL }],
+  creator: "Waitlyze",
+  publisher: "Waitlyze",
+  category: "technology",
   keywords: [
     "waitlist builder",
+    "waitlist software",
     "waitlist forms",
-    "product launch",
-    "referral tracking",
+    "referral waitlist",
+    "pre-launch marketing",
     "email automation",
   ],
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+      "max-video-preview": -1,
+    },
+  },
+  alternates: {
+    types: {
+      "application/rss+xml": [{ url: "/blog/feed.xml", title: "Waitlyze Blog" }],
+    },
+  },
   openGraph: {
     type: "website",
     locale: "en_US",

@@ -58,6 +58,7 @@ export default function LegalPage() {
       title="Terms of Service"
       description="The terms that apply when you use Waitlyze."
       sections={sections}
+      lastUpdated="November 2, 2026"
     >
       <p>
         Welcome to Waitlyze ("Platform," "Service," "we," "us," "our"). By accessing or using{" "}
@@ -111,7 +112,14 @@ export default function LegalPage() {
         <li>
           Violate or infringe upon the rights of others, including intellectual property rights
         </li>
-        <li>Use any automated means to access the Platform</li>
+        <li>
+          Use automated means to access the Platform, except to retrieve public pages allowed by our{" "}
+          <Link prefetch={false} href="/ai.txt">
+            AI access policy
+          </Link>{" "}
+          and robots.txt; this exception does not permit automated access to accounts, private data,
+          or authenticated features
+        </li>
       </ul>
 
       <h2 id="intellectual-property">6. Intellectual Property</h2>

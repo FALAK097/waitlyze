@@ -28,6 +28,8 @@ export default function Header() {
   const links = [
     ["How it works", "/#how-it-works"],
     ["Features", "/#features"],
+    ["Templates", "/templates"],
+    ["Blog", "/blog"],
     ["FAQ", "/#faq"],
   ];
   return (
@@ -53,7 +55,7 @@ export default function Header() {
           ))}
         </nav>
         <div className="flex shrink-0 items-center gap-2 md:gap-1">
-          <SignupButton compact className="max-sm:gap-2 max-sm:px-3 max-sm:py-2">
+          <SignupButton compact className="min-h-10 gap-2 px-3 py-2 sm:px-4">
             Sign in
           </SignupButton>
           <Button

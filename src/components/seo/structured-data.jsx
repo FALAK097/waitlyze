@@ -1,5 +1,7 @@
 import { SITE_URL, SITE_DESCRIPTION } from "@/lib/site-metadata";
 
+const GITHUB_URL = "https://github.com/FALAK097/waitlyze";
+
 const siteGraph = {
   "@context": "https://schema.org",
   "@graph": [
@@ -9,6 +11,8 @@ const siteGraph = {
       name: "Waitlyze",
       url: SITE_URL,
       logo: `${SITE_URL}/web-app-manifest-512x512.png`,
+      description: SITE_DESCRIPTION,
+      sameAs: [GITHUB_URL],
     },
     {
       "@type": "WebSite",
@@ -16,22 +20,28 @@ const siteGraph = {
       name: "Waitlyze",
       url: SITE_URL,
       description: SITE_DESCRIPTION,
+      inLanguage: "en",
       publisher: { "@id": `${SITE_URL}/#organization` },
     },
     {
       "@type": "SoftwareApplication",
+      "@id": `${SITE_URL}/#software`,
       name: "Waitlyze",
       url: SITE_URL,
       applicationCategory: "BusinessApplication",
+      applicationSubCategory: "Waitlist and pre-launch marketing software",
       operatingSystem: "Web",
       description: SITE_DESCRIPTION,
+      publisher: { "@id": `${SITE_URL}/#organization` },
       featureList: [
         "Hosted waitlist pages",
         "Embeddable signup forms",
-        "Referral tracking",
-        "Email automation",
+        "Fourteen waitlist templates",
+        "Referral tracking with verified credit",
+        "Email broadcasts and automations",
         "Audience analytics",
-        "Subscriber exports",
+        "Public API and webhooks",
+        "Subscriber CSV export",
       ],
     },
   ],

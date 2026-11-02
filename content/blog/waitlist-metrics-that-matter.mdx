@@ -1,0 +1,90 @@
+---
+title: "Waitlist Metrics That Matter: Conversion, K-Factor, and Retention"
+description: "The five numbers that tell you if your pre-launch campaign is genuinely working, how to calculate them, and what benchmarks to aim for."
+date: 2026-11-01T09:40:00Z
+author: Waitlyze Team
+tags:
+  - Analytics
+  - Waitlist basics
+tldr: "Total signups is a vanity metric. To judge a pre-launch campaign, track visitor-to-signup conversion (aim for 20-40%), email confirmation rate (aim for >70%), viral coefficient / K-factor, email open & reply rates, and source attribution."
+faqs:
+  - question: What is a good conversion rate for a waitlist page?
+    answer: Between 20% and 40% for targeted traffic. A focused single-field waitlist page with a compelling value proposition and relevant audience should easily surpass 20%. Broad or cold traffic often converts between 10% and 20%.
+  - question: How do you calculate K-factor for a referral waitlist?
+    answer: "K-factor equals the average number of invites sent per subscriber multiplied by the conversion rate of those invites (K = i × c). If K is greater than 1, your waitlist is virally growing on its own. If K is between 0.2 and 0.5, each signup brings in 0.2 to 0.5 direct signups. Across all referral generations, the loop adds about 25% to 100% more signups (K ÷ (1 − K))."
+  - question: Why is the confirmation rate so important?
+    answer: Email confirmation proves that the person typed a real address they own and took an active second step to verify interest. Lists with low confirmation rates suffer from high bounce rates and poor deliverability on launch day.
+  - question: How should I track which channels drive the best signups?
+    answer: Use UTM campaign parameters on all shared links (utm_source, utm_medium, utm_campaign). Waitlyze automatically preserves and displays these in your analytics dashboard alongside location and device breakdowns.
+---
+
+When launching a new product, it is tempting to focus on a single headline number: total waitlist count. But 5,000 unverified email addresses from people who signed up for a giveaway and will never open an email is worth far less than 500 engaged founders waiting for your beta.
+
+Here are the five metrics that actually reflect launch readiness, how to track them, and how to improve them.
+
+## 1. Visitor-to-signup conversion rate
+
+**Formula:** `(Total Signups ÷ Unique Page Visitors) × 100`
+
+This measures how effectively your headline, copy, and visual proof convince an interested visitor to type their email address.
+
+- **Healthy benchmark:** 25% to 45% for warm or community traffic; 15% to 25% for cold search or social traffic.
+- **If it is below 15%:** Your headline is either too vague, the value proposition is unclear, or the page asks for too much information. Cut all fields except email, rewrite the headline around a specific pain point, and add a single product screenshot.
+- **Where to find it in Waitlyze:** Go to **Analytics** at `/waitlists/[id]/analytics`. The Conversion panel displays the percentage alongside day-by-day trend lines.
+
+## 2. Email confirmation rate
+
+**Formula:** `(Verified Signups ÷ Total Signups) × 100`
+
+When someone enters their email, Waitlyze sends a verification link that expires in 24 hours. Clicking that link confirms the address is real and that the subscriber actively wants your updates.
+
+- **Healthy benchmark:** 70% to 85%.
+- **If it is below 60%:** Your confirmation email may be landing in spam/promotions, the copy in the email may be confusing, or visitors do not realize they need to check their inbox. Add an explicit message on the post-submit screen: *"Check your inbox now to confirm your spot."*
+- **Why it matters:** Only verified signups count toward referral credits, milestone rewards, and broadcast email lists.
+
+## 3. Viral coefficient (K-factor)
+
+**Formula:** `K = i × c`
+- `i` = average number of invitations or referral links shared per verified subscriber
+- `c` = conversion rate of each referral click into a verified signup
+
+If 100 subscribers each share their link with an average of 3 friends (`i = 3`), and 15% of those friends join and confirm (`c = 0.15`), your K-factor is:
+`K = 3 × 0.15 = 0.45`
+
+| K-Factor | What it means | Action |
+| --- | --- | --- |
+| `< 0.1` | The referral loop is stagnant | Improve the incentive, rewrite the share copy, or make the link more prominent on confirmation |
+| `0.1 – 0.5` | Healthy organic amplification | Every 100 signups automatically generate an additional 10 to 50 signups for free |
+| `0.5 – 0.9` | Strong viral loop | Significant growth multiplier; double down on top-of-funnel traffic |
+| `> 1.0` | True viral growth | The waitlist grows exponentially without additional paid or manual promotion |
+
+In Waitlyze, the **Referral Cockpit** and **Analytics** tabs let you review referred signups, referral completion rates, and top referrers in real time.
+
+## 4. Email engagement: opens, clicks, and replies
+
+A waitlist is a relationship, not a static database. If you wait 3 months to send your first email on launch day, a large portion of subscribers will mark it as spam or ignore it.
+
+- **Open rate benchmark:** 40% to 65% on pre-launch emails (significantly higher than typical marketing newsletters).
+- **Reply rate benchmark:** 2% to 5%. Getting actual written replies from subscribers is the highest signal of genuine product-market interest.
+- **Deliverability signal:** Always keep unsubscribes easy and clear. High complaint or bounce rates damage your domain reputation before you even launch.
+
+Use Waitlyze's [email broadcasts and automations](/docs/automations) to send a welcome email immediately upon confirmation, followed by bi-weekly development previews.
+
+## 5. Channel attribution & acquisition quality
+
+Not all traffic sources are created equal. You might find that:
+- Twitter / X sends 1,000 visitors who convert at 12% and rarely refer others.
+- A niche Reddit thread sends 150 visitors who convert at 45%, have an 85% confirmation rate, and actively share their referral links.
+
+Waitlyze automatically parses incoming UTM parameters (`utm_source`, `utm_medium`, `utm_campaign`) and groups signups by traffic source, country, and device. Use this data to concentrate your launch efforts where high-intent buyers actually hang out.
+
+## Summary scorecard
+
+Before launching, audit your numbers against this checklist:
+- [ ] Visitor-to-signup conversion ≥ 25%
+- [ ] Confirmation rate ≥ 75%
+- [ ] Referral loop active with K-factor ≥ 0.25
+- [ ] At least 2 pre-launch emails sent with >40% open rates
+- [ ] Clean channel attribution identified for your top acquisition source
+
+Start measuring these metrics on your waitlist with Waitlyze's built-in [analytics dashboard](/docs/analytics).
