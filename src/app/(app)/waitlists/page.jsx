@@ -5,6 +5,7 @@ import { ProductContentSkeleton } from "@/components/product/content-skeleton";
 import { CreateWaitlistDialog } from "@/components/product/create-waitlist-dialog";
 import { WaitlistRowActions } from "@/components/product/waitlist-row-actions";
 import {
+  MobileWaitlistSort,
   SortableHeading,
   StatusTabs,
   WaitlistSearch,
@@ -52,13 +53,22 @@ const waitlistTableWrap = [
   "[&_tbody_tr:hover]:bg-neutral-50",
   "[&_th:first-child]:w-6/25 [&_th:nth-child(2)]:w-11/100 [&_th:nth-child(3)]:w-1/5",
   "[&_th:nth-child(4)]:w-7/50 [&_th:nth-child(5)]:w-4/25 [&_th:nth-child(6)]:w-16",
-  "max-[767px]:[&_table]:min-w-180",
+  "max-[767px]:[&_table]:block max-[767px]:[&_tbody]:grid max-[767px]:[&_tbody]:gap-3",
+  "max-[767px]:[&_thead]:sr-only max-[767px]:[&_tbody_tr]:grid max-[767px]:[&_tbody_tr]:grid-cols-2",
+  "max-[767px]:[&_tbody_tr]:rounded-lg max-[767px]:[&_tbody_tr]:border max-[767px]:[&_tbody_tr]:border-product-border-subtle",
+  "max-[767px]:[&_tbody_tr]:p-4 max-[767px]:[&_tbody_th]:col-span-2 max-[767px]:[&_tbody_th]:w-full",
+  "max-[767px]:[&_tbody_td]:flex max-[767px]:[&_tbody_td]:min-w-0 max-[767px]:[&_tbody_td]:flex-col",
+  "max-[767px]:[&_tbody_td]:items-start max-[767px]:[&_tbody_td]:whitespace-normal",
+  "max-[767px]:[&_tbody_td]:before:text-micro max-[767px]:[&_tbody_td]:before:font-medium",
+  "max-[767px]:[&_tbody_td]:before:text-product-text-secondary max-[767px]:[&_tbody_td]:before:content-[attr(data-label)]",
+  "max-[767px]:[&_tbody_th]:px-0 max-[767px]:[&_tbody_td]:px-0",
+  "max-[767px]:[&_tbody_td:last-child]:col-span-2 max-[767px]:[&_tbody_td:last-child]:items-end",
 ].join(" ");
 
 const waitlistRowLink = [
   "flex w-fit min-h-11 flex-wrap items-center gap-3 py-1",
   "text-sm text-product-text-primary hover:underline hover:underline-offset-4",
-  "max-[520px]:flex-col max-[520px]:items-start max-[520px]:gap-1.5",
+  "max-[767px]:break-words max-[767px]:whitespace-normal",
 ].join(" ");
 
 const waitlistCellLink =
@@ -73,7 +83,7 @@ const WAITLIST_DATE_FORMAT = new Intl.DateTimeFormat(undefined, { dateStyle: "me
 function WaitlistsTable({ waitlists, query, status, sort }) {
   return (
     <div className={waitlistTableWrap}>
-      <Table scrollHint="Swipe or scroll to see all columns" scrollLabel="Waitlists">
+      <Table>
         <caption className="sr-only">Your waitlists</caption>
         <TableHeader>
           <TableRow>
@@ -113,8 +123,8 @@ function WaitlistsTable({ waitlists, query, status, sort }) {
                     <p className="max-w-prose text-caption">{waitlist.description}</p>
                   )}
                 </TableHead>
-                <TableCell>{visitors.toLocaleString()}</TableCell>
-                <TableCell>
+                <TableCell data-label="Visitors">{visitors.toLocaleString()}</TableCell>
+                <TableCell data-label="Subscribers">
                   <Link
                     prefetch={false}
                     href={`/waitlists/${waitlist.id}/subscribers`}
@@ -124,7 +134,7 @@ function WaitlistsTable({ waitlists, query, status, sort }) {
                     {signups.toLocaleString()}
                   </Link>
                 </TableCell>
-                <TableCell>
+                <TableCell data-label="Conversion">
                   <Link
                     prefetch={false}
                     href={`/waitlists/${waitlist.id}/analytics`}
@@ -134,12 +144,12 @@ function WaitlistsTable({ waitlists, query, status, sort }) {
                     {conversion}
                   </Link>
                 </TableCell>
-                <TableCell>
+                <TableCell data-label="Updated">
                   <time dateTime={waitlist.updatedAt.toISOString()}>
                     {WAITLIST_DATE_FORMAT.format(waitlist.updatedAt)}
                   </time>
                 </TableCell>
-                <TableCell>
+                <TableCell data-label="Actions">
                   <WaitlistRowActions id={waitlist.id} name={waitlist.name} />
                 </TableCell>
               </TableRow>
@@ -310,14 +320,17 @@ export default async function WaitlistsPage({ searchParams }) {
     typeof params?.page === "string" && /^\d+$/.test(params.page) ? Number(params.page) : 1;
   return (
     <section aria-label="Waitlists">
-      <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+      <div className="mb-5 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <StatusTabs query={query} status={status} sort={sort} />
-        <div className="flex min-w-0 flex-1 items-center justify-end gap-3 sm:flex-initial">
-          <WaitlistSearch query={query} status={status} sort={sort} />
+        <div className="flex w-full min-w-0 items-center gap-3 lg:w-auto lg:justify-end">
+          <WaitlistSearch key={query} query={query} status={status} sort={sort} />
           <div className="shrink-0">
             <CreateWaitlistDialog />
           </div>
         </div>
+      </div>
+      <div className="mb-4">
+        <MobileWaitlistSort query={query} status={status} sort={sort} />
       </div>
       <Suspense
         fallback={<ProductContentSkeleton label="Loading waitlists" variant="table" rows={5} />}

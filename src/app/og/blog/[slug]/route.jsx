@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 
 import { formatPostDate, getPost, getPosts, getReadingMinutes } from "@/lib/blog-source";
-import { renderOgImage } from "@/lib/og-image";
+import { renderBlogOgImage } from "@/lib/og-image";
 
 export const revalidate = false;
 
@@ -15,7 +15,7 @@ export async function GET(_request, { params }) {
   if (!post) notFound();
 
   const minutes = await getReadingMinutes(post);
-  return renderOgImage({
+  return renderBlogOgImage({
     title: post.data.title,
     eyebrow: post.data.tags[0] ?? "Waitlyze Blog",
     readingTime: `${minutes} min read`,

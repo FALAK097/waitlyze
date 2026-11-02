@@ -26,8 +26,6 @@ Modern search engines and AI answer engines do not browse websites like humans. 
 
 This guide provides an end-to-end engineering blueprint for building a high-performance, SEO-optimized pre-launch page in **Next.js (App Router)**.
 
----
-
 ## 1. Rendering Strategy: Server Components vs. Client Islands
 
 The primary architectural mistake in React landing pages is placing `"use client"` at the root of the page or layout.
@@ -54,8 +52,6 @@ Keep your `page.jsx`, layout, headings, value propositions, and FAQ accordions a
 This delivers:
 1. **Instant First Contentful Paint (FCP)**: Crawlers receive complete semantic HTML in the initial response.
 2. **Minimal JavaScript execution**: Search engine bots do not have to wait for hydration before discovering your content.
-
----
 
 ## 2. Managing Metadata in the Next.js App Router
 
@@ -123,8 +119,6 @@ export async function generateMetadata({ params }) {
   };
 }
 ```
-
----
 
 ## 3. Dynamic OpenGraph Social Cards with `@vercel/og`
 
@@ -195,8 +189,6 @@ export default function OpenGraphImage() {
 }
 ```
 
----
-
 ## 4. Structured Data (JSON-LD) for AEO & AI Discovery
 
 Answer engines like ChatGPT, Claude, and Google AI Overviews extract facts directly from JSON-LD schema graphs.
@@ -255,8 +247,6 @@ export function StructuredData({ faqs = [] }) {
 }
 ```
 
----
-
 ## 5. Core Web Vitals Checklist for Pre-Launch Pages
 
 Google's ranking algorithm directly penalizes pages with poor Core Web Vitals. Follow these three rules:
@@ -266,8 +256,6 @@ Google's ranking algorithm directly penalizes pages with poor Core Web Vitals. F
 | **LCP (Largest Contentful Paint)** | `< 1.2s` | Use `next/font` for local variable font loading without layout shifts; preload hero images. |
 | **INP (Interaction to Next Paint)** | `< 200ms` | Keep form validation lightweight; use native form actions or minimal state libraries instead of heavy UI frameworks. |
 | **CLS (Cumulative Layout Shift)** | `0.00` | Explicitly define `width` and `height` on images or reserve aspect-ratio containers. |
-
----
 
 ## 6. Integrating Waitlyze with Next.js (Two Methods)
 
@@ -332,8 +320,6 @@ export async function submitWaitlist(prevState: any, formData: FormData) {
 }
 ```
 
----
-
 ## 7. Machine-Readable Discovery for AI Agents
 
 To ensure AI coding assistants (like Cursor, Claude Code, and Codex) understand your product architecture, implement discovery endpoints:
@@ -341,8 +327,6 @@ To ensure AI coding assistants (like Cursor, Claude Code, and Codex) understand 
 1. **`llms.txt`**: A clean, token-efficient table of contents in root markdown format.
 2. **`agent-instructions.md`**: Direct integration recipes for AI coding tools.
 3. **`Accept: text/markdown`**: Configure your Next.js `proxy.js` to serve pure markdown when agents request documentation endpoints.
-
----
 
 ## Build Your Next Launch on Proven Infrastructure
 

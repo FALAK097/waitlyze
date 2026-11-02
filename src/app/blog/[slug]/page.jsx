@@ -151,7 +151,7 @@ export default async function BlogPostPage({ params }) {
             <div className="min-w-0">
               <aside
                 aria-label="Key takeaways"
-                className="mb-10 rounded-xl border border-l-[3px] border-product-border-subtle border-l-product-accent-solid bg-product-bg-inset p-5"
+                className="mb-10 rounded-xl border border-product-border-subtle bg-product-bg-inset p-5 sm:p-6"
               >
                 <p className="text-micro font-semibold tracking-widest text-product-text-secondary uppercase">
                   The short answer

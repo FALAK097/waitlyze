@@ -42,9 +42,6 @@ export function WaitlistSearch({ query, status, sort }) {
   const [replace, isPending] = useReplaceParams();
   const [value, setValue] = useState(query);
   const timer = useRef(null);
-  useEffect(() => {
-    setValue(query);
-  }, [query]);
   useEffect(
     () => () => {
       if (timer.current) clearTimeout(timer.current);
@@ -64,7 +61,7 @@ export function WaitlistSearch({ query, status, sort }) {
     replace({ query: "", status, sort });
   }
   return (
-    <div className="w-full min-w-0 sm:max-w-80" role="search" aria-busy={isPending}>
+    <search className="w-full min-w-0 lg:max-w-80" aria-busy={isPending}>
       <Label className="sr-only" htmlFor="waitlist-search">
         Search waitlists by name
       </Label>
@@ -89,16 +86,15 @@ export function WaitlistSearch({ query, status, sort }) {
           </InputGroupAddon>
         )}
       </InputGroup>
-    </div>
+    </search>
   );
 }
 
 export function StatusTabs({ query, status, sort }) {
   const [replace, isPending] = useReplaceParams();
   return (
-    <div
+    <fieldset
       className="grid min-w-0 grid-cols-4 items-center gap-1"
-      role="group"
       aria-label="Filter waitlists by status"
       aria-busy={isPending}
     >
@@ -114,6 +110,27 @@ export function StatusTabs({ query, status, sort }) {
           {filter.label}
         </Button>
       ))}
+    </fieldset>
+  );
+}
+
+export function MobileWaitlistSort({ query, status, sort }) {
+  const [replace, isPending] = useReplaceParams();
+  return (
+    <div className="flex items-center gap-2 text-caption text-product-text-secondary md:hidden">
+      <label htmlFor="waitlist-mobile-sort">Sort by</label>
+      <select
+        id="waitlist-mobile-sort"
+        value={sort}
+        disabled={isPending}
+        onChange={(event) => replace({ query, status, sort: event.target.value })}
+        className="min-h-11 rounded-md border border-product-border-subtle bg-product-bg-surface px-3 text-sm text-product-text-primary"
+      >
+        <option value="name-asc">Name A–Z</option>
+        <option value="name-desc">Name Z–A</option>
+        <option value="subscribers-desc">Most subscribers</option>
+        <option value="subscribers-asc">Fewest subscribers</option>
+      </select>
     </div>
   );
 }

@@ -23,7 +23,7 @@ export default function PublicShell({ children }) {
       {children}
       <footer className="bg-product-bg-page pt-12 pb-6 text-product-text-primary">
         <div className="mx-auto w-full max-w-7xl px-4 sm:px-5 md:px-8 lg:px-12">
-          <div className="relative grid grid-cols-2 gap-5 md:grid-cols-4 md:gap-10">
+          <div className="relative grid grid-cols-2 gap-x-5 gap-y-10 md:grid-cols-5 md:gap-10">
             <div className="col-span-2">
               <Link
                 href="/"
@@ -67,6 +67,14 @@ export default function PublicShell({ children }) {
               >
                 FAQs
               </Link>
+            </nav>
+            <nav
+              aria-label="Resources"
+              className="flex flex-col items-start gap-3 text-xs text-product-text-primary"
+            >
+              <span className="mb-2 flex items-center gap-2 text-micro font-semibold tracking-widest text-product-text-secondary uppercase">
+                Resources
+              </span>
               <Link
                 href="/blog"
                 className="inline-flex items-center gap-1.5 hover:text-product-success-text focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-neutral-900"

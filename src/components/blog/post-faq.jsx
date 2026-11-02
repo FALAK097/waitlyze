@@ -9,10 +9,10 @@ export function PostFaq({ faqs }) {
       >
         Frequently asked questions
       </h2>
-      <div className="mt-5 divide-y divide-product-border-subtle border-y border-product-border-subtle">
+      <div className="mt-5 flex flex-col gap-2">
         {faqs.map(({ question, answer }) => (
           <details key={question} className="group py-4">
-            <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-base font-semibold focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-neutral-900 [&::-webkit-details-marker]:hidden">
+            <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-4 text-base font-semibold focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-neutral-900 [&::-webkit-details-marker]:hidden">
               {question}
               <span
                 aria-hidden="true"

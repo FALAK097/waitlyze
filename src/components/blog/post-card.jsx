@@ -1,43 +1,21 @@
+import Image from "next/image";
 import Link from "next/link";
 
 import { formatPostDate } from "@/lib/blog-source";
 import { cn } from "@/lib/utils";
 
-const covers = [
-  { panel: "bg-product-accent-solid text-product-ink", bar: "bg-product-ink/90" },
-  { panel: "bg-product-neutral-900 text-white", bar: "bg-product-accent-solid" },
-  { panel: "bg-product-green-300 text-product-ink", bar: "bg-product-ink/90" },
-  { panel: "bg-product-bg-inset text-product-ink", bar: "bg-product-accent-solid" },
-];
-
-function hash(value) {
-  let h = 0;
-  for (let i = 0; i < value.length; i += 1) h = (h * 31 + value.charCodeAt(i)) >>> 0;
-  return h;
-}
-
-/** A typographic cover built from the brand mark, so posts need no image assets. */
-export function PostCover({ title, tag, slug, className }) {
-  const style = covers[hash(slug) % covers.length];
+/** Use the same image on the blog card and in the article's social preview. */
+export function PostCover({ slug, featured = false }) {
   return (
-    <div
-      className={cn(
-        "relative flex aspect-video flex-col justify-between overflow-hidden rounded-lg p-5",
-        style.panel,
-        className,
-      )}
-      aria-hidden="true"
-    >
-      <span className="text-micro font-semibold tracking-widest uppercase opacity-80">{tag}</span>
-      <span className="line-clamp-3 max-w-[85%] font-product-display text-xl leading-tight font-semibold tracking-tight text-balance sm:text-2xl">
-        {title}
-      </span>
-      <span className="absolute right-5 bottom-5 inline-flex h-9 -skew-x-12 items-center gap-1">
-        <i className={cn("block h-5 w-1.5 rounded-sm", style.bar)} />
-        <i className={cn("block h-8 w-1.5 rounded-sm", style.bar)} />
-        <i className={cn("block h-6 w-1.5 rounded-sm", style.bar)} />
-      </span>
-    </div>
+    <Image
+      src={`/og/blog/${slug}`}
+      alt=""
+      width={1200}
+      height={630}
+      unoptimized
+      loading={featured ? "eager" : "lazy"}
+      className="block h-auto w-full rounded-lg bg-product-bg-inset"
+    />
   );
 }
 
@@ -57,7 +35,6 @@ export function PostMeta({ post, minutes, className }) {
 }
 
 export function PostCard({ post, minutes, featured = false, headingAs: Heading = "h2" }) {
-  const tag = post.data.tags[0] ?? "Guide";
   return (
     <article
       className={cn(
@@ -65,7 +42,7 @@ export function PostCard({ post, minutes, featured = false, headingAs: Heading =
         featured && "lg:grid lg:grid-cols-2 lg:items-center lg:gap-8 lg:p-4",
       )}
     >
-      <PostCover title={post.data.title} tag={tag} slug={post.slugs[0]} />
+      <PostCover slug={post.slugs[0]} featured={featured} />
       <div className={cn("flex flex-1 flex-col gap-2 px-2 pb-2", featured && "lg:pr-6")}>
         <PostMeta post={post} minutes={minutes} />
         <Heading

@@ -1,7 +1,7 @@
 ---
 title: "How to Set Up Robots.txt for AI SEO in 2026: The Definitive 10M-Request Guide"
 description: "Why blocking all AI bots destroys your ChatGPT and Perplexity citations, which crawlers actually send traffic, and how to block scraper freeloaders in Next.js."
-date: 2026-11-02T10:00:00Z
+date: 2026-11-02T09:00:00Z
 author: Waitlyze Team
 tags:
   - Technical
@@ -37,8 +37,6 @@ If you block all AI crawlers, you do not just stop scrapers. You also sever your
 
 Below is the definitive strategy for structuring `robots.txt` in 2026, backed by log data from over 10 million requests across 22 production SaaS applications and waitlists.
 
----
-
 ## The 4 Tiers of Web Crawlers in 2026
 
 Modern bots fall into four distinct categories. Your `robots.txt` must treat each category differently.
@@ -49,8 +47,6 @@ Modern bots fall into four distinct categories. Your `robots.txt` must treat eac
 | **Tier 2** | **Foundation Model Weights** | `GPTBot`, `ClaudeBot` | **ALLOW** | Embeds your brand entity and terminology into next-generation model weights. |
 | **Tier 3** | **Social Link Previews** | `facebookexternalhit`, `Twitterbot` | **ALLOW** | Generates OpenGraph link cards in Slack, Discord, Twitter/X, LinkedIn, and messaging apps. |
 | **Tier 4** | **Scraper Freeloaders** | `Bytespider`, `CCBot`, `meta-externalagent`, `Reflectionbot`, `ElevenlabsCrawler` | **BLOCK** | Consumes server resources, downloads bulk tokens, and provides 0 traffic or citations back. |
-
----
 
 ## 1. Keep Search + AI Answer Bots
 
@@ -68,8 +64,6 @@ The bots responsible for live answers and developer agent search must have unres
 
 If any of these bots hit a `Disallow: /` rule, the answer engine drops your URL from the citation list and recommends your competitor instead.
 
----
-
 ## 2. Keep Foundation Model Crawlers (`GPTBot` & `ClaudeBot`)
 
 `GPTBot` and `ClaudeBot` do not perform real-time search. They crawl the web to build pre-training and fine-tuning datasets for future models (like GPT-5 and Claude 4).
@@ -82,8 +76,6 @@ When an AI model has encountered your documentation, blog guides, and template l
 
 the model will naturally suggest your API structures, embed scripts, and idioms from memory without needing to query a search index. Both OpenAI and Anthropic respect crawl delays and average a lean 30–120ms per request with reasonable concurrency.
 
----
-
 ## 3. Keep Link Preview Bots
 
 When subscribers share their verified referral links or founders post product updates, social networks and chat platforms immediately fetch the URL to render OpenGraph cards:
@@ -93,8 +85,6 @@ When subscribers share their verified referral links or founders post product up
 - `Slackbot`, `LinkedInBot`, `TelegramBot`: Workplace and messaging unfurls.
 
 Blocking link preview bots makes your links appear as naked, unstyled text without titles, descriptions, or social images, slashing your click-through rates by up to 60%.
-
----
 
 ## 4. Block Pure AI Training Scrapers & Commercial Freeloaders
 
@@ -106,8 +96,6 @@ In our analysis of 10 million requests, over **1.6 million requests per week** o
 4. **Third-Party SEO Scrapers (`AionBot`, `Barkrowler`, `SERankingBacklinksBot`, `TokenFoundryBot`)**: Commercial bots compiling competitive databases to sell to third parties.
 
 By blocking these scrapers at the `robots.txt` level, you preserve edge bandwidth and database compute for real human visitors and high-value AI search assistants.
-
----
 
 ## The Production Next.js App Router Implementation
 
@@ -205,8 +193,6 @@ export default function robots() {
   };
 }
 ```
-
----
 
 ## Pairing Robots.txt with Machine-Readable Endpoints
 

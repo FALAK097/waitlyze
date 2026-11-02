@@ -1,10 +1,8 @@
-import Link from "next/link";
-
 import { BlogCta } from "@/components/blog/blog-cta";
 import { PostCard } from "@/components/blog/post-card";
 import PublicShell from "@/components/landing/public-shell";
 import { JsonLd } from "@/components/seo/json-ld";
-import { getPosts, getReadingMinutes, getTags } from "@/lib/blog-source";
+import { getPosts, getReadingMinutes } from "@/lib/blog-source";
 import { absoluteUrl, breadcrumbNode } from "@/lib/seo-helpers";
 import { SITE_URL } from "@/lib/site-metadata";
 
@@ -31,7 +29,6 @@ const eyebrowClasses =
 
 export default async function BlogIndexPage() {
   const posts = getPosts();
-  const tags = getTags();
   const minutes = new Map(
     await Promise.all(posts.map(async (post) => [post.url, await getReadingMinutes(post)])),
   );
@@ -80,20 +77,6 @@ export default async function BlogIndexPage() {
           <p className="mt-5 max-w-2xl text-base leading-normal text-product-text-secondary">
             {description}
           </p>
-          {tags.length > 0 && (
-            <nav aria-label="Topics" className="mt-8 flex flex-wrap gap-2">
-              {tags.map((tag) => (
-                <Link
-                  key={tag.slug}
-                  href={`/blog/tag/${tag.slug}`}
-                  className="inline-flex min-h-9 items-center rounded-full border border-product-border-subtle px-4 text-caption font-medium transition-colors hover:border-product-border-control hover:bg-product-bg-inset focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-neutral-900"
-                >
-                  {tag.name}
-                  <span className="ml-2 text-micro text-product-text-secondary">{tag.count}</span>
-                </Link>
-              ))}
-            </nav>
-          )}
         </section>
 
         <section className={`${containerClasses} pb-18`} aria-label="Latest articles">

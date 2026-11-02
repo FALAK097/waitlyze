@@ -8,24 +8,18 @@ export function BlogCta({
   return (
     <section
       aria-labelledby="blog-cta-title"
-      className="bg-product-neutral-900 relative overflow-hidden rounded-2xl px-6 py-10 text-white sm:px-10 sm:py-12"
+      className="flex flex-col gap-6 pt-8 pb-4 sm:pt-10 md:flex-row md:items-end md:justify-between md:gap-12"
     >
-      <span
-        className="pointer-events-none absolute -top-6 right-8 hidden h-40 -skew-x-12 items-end gap-2 opacity-90 sm:inline-flex"
-        aria-hidden="true"
-      >
-        <i className="block h-24 w-3 rounded-sm bg-product-accent-solid" />
-        <i className="block h-36 w-3 rounded-sm bg-product-accent-solid" />
-        <i className="block h-28 w-3 rounded-sm bg-product-accent-solid" />
-      </span>
-      <h2
-        id="blog-cta-title"
-        className="max-w-xl font-product-display text-3xl leading-tight font-semibold tracking-tight text-balance"
-      >
-        {title}
-      </h2>
-      <p className="mt-3 max-w-xl text-base text-pretty text-white/75">{body}</p>
-      <div className="mt-7">
+      <div className="max-w-xl">
+        <h2
+          id="blog-cta-title"
+          className="font-product-display text-2xl leading-tight font-semibold tracking-tight text-balance sm:text-3xl"
+        >
+          {title}
+        </h2>
+        <p className="mt-3 text-base text-pretty text-product-text-secondary">{body}</p>
+      </div>
+      <div className="shrink-0">
         <SignupButton>Create your waitlist</SignupButton>
       </div>
     </section>
