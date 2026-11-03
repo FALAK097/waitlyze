@@ -26,15 +26,15 @@ export default function Header() {
     return () => window.removeEventListener("keydown", handleEscape);
   }, [open]);
   const links = [
-    ["How it works", "/#how-it-works"],
     ["Features", "/#features"],
-    ["Templates", "/templates"],
+    ["How it works", "/#steps"],
+    ["Templates", "/#templates"],
     ["Blog", "/blog"],
-    ["FAQ", "/#faq"],
+    ["Docs", "/docs"],
   ];
   return (
-    <header className="sticky top-0 z-40 bg-product-bg-surface">
-      <div className="mx-auto flex h-18 w-full max-w-7xl items-center justify-between gap-3 px-4 sm:gap-6 sm:px-5 lg:h-18 lg:px-8 xl:px-12">
+    <header className="sticky top-0 z-40 bg-product-bg-surface/95 backdrop-blur-sm">
+      <div className="mx-auto flex h-16 w-full max-w-[1120px] items-center justify-between gap-3 px-5 sm:gap-6 sm:px-6">
         <Link
           href="/"
           aria-label="Waitlyze home"
@@ -43,20 +43,20 @@ export default function Header() {
         >
           <Wordmark />
         </Link>
-        <nav aria-label="Main navigation" className="hidden items-center gap-6 md:flex xl:gap-8">
+        <nav aria-label="Main navigation" className="hidden items-center gap-5 md:flex xl:gap-7">
           {links.map(([label, href]) => (
             <Link
               href={href}
               key={href}
-              className="text-sm text-product-text-secondary transition-colors duration-150 hover:text-product-success-text focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-neutral-900"
+              className="text-[13px] text-product-text-secondary transition-colors duration-150 hover:text-product-text-primary focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-neutral-900"
             >
               {label}
             </Link>
           ))}
         </nav>
-        <div className="flex shrink-0 items-center gap-2 md:gap-1">
-          <SignupButton compact className="min-h-10 gap-2 px-3 py-2 sm:px-4">
-            Sign in
+        <div className="flex shrink-0 items-center gap-1 md:gap-2">
+          <SignupButton className="min-h-9 gap-1 rounded-full border-[#19212d] bg-[#19212d] px-3 py-1.5 text-[13px] text-white hover:bg-[#2b3545] sm:px-4">
+            Start free
           </SignupButton>
           <Button
             ref={menuRef}
@@ -79,10 +79,7 @@ export default function Header() {
       </div>
       <nav
         id="wl-mobile-nav"
-        className={cn(
-          "grid gap-1 border-t border-product-border-subtle px-5 pt-2 pb-5 md:hidden",
-          !open && "hidden",
-        )}
+        className={cn("grid gap-1 px-5 pt-2 pb-5 md:hidden", !open && "hidden")}
         aria-label="Mobile navigation"
         hidden={!open}
       >

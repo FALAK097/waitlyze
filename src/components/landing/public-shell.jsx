@@ -5,6 +5,7 @@ import Link from "next/link";
 import { publicFontClasses } from "@/lib/public-fonts";
 
 import CopyrightYear from "./copyright-year";
+import GitHubMark from "./github-mark";
 import Header from "./header";
 import Wordmark from "./wordmark";
 
@@ -44,16 +45,16 @@ export default function PublicShell({ children }) {
                 Explore
               </span>
               <Link
-                href="/#how-it-works"
-                className="inline-flex items-center gap-1.5 hover:text-product-success-text focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-neutral-900"
-              >
-                How it works
-              </Link>
-              <Link
                 href="/#features"
                 className="inline-flex items-center gap-1.5 hover:text-product-success-text focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-neutral-900"
               >
                 Features
+              </Link>
+              <Link
+                href="/#steps"
+                className="inline-flex items-center gap-1.5 hover:text-product-success-text focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-neutral-900"
+              >
+                How it works
               </Link>
               <Link
                 href="/templates"
@@ -80,6 +81,12 @@ export default function PublicShell({ children }) {
                 className="inline-flex items-center gap-1.5 hover:text-product-success-text focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-neutral-900"
               >
                 Blog
+              </Link>
+              <Link
+                href="/rss.xml"
+                className="inline-flex items-center gap-1.5 hover:text-product-success-text focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-neutral-900"
+              >
+                RSS feed
               </Link>
               <Link
                 href="/docs/changelog"
@@ -128,17 +135,26 @@ export default function PublicShell({ children }) {
               </a>
             </nav>
           </div>
-          <div className="relative mt-12 flex flex-wrap justify-between gap-4 pt-6 text-micro text-product-text-secondary">
-            <span>
+          <div className="relative mt-12 grid grid-cols-[1fr_auto] items-center gap-x-4 gap-y-2 pt-6 text-micro text-product-text-secondary sm:grid-cols-[1fr_auto_1fr]">
+            <span className="whitespace-nowrap">
               © <CopyrightYear initialYear={new Date().getFullYear()} /> Waitlyze
             </span>
+            <a
+              href="https://github.com/FALAK097/waitlyze"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Waitlyze on GitHub"
+              className="inline-flex min-h-10 min-w-10 items-center justify-center text-product-text-primary transition-colors hover:text-product-success-text focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-neutral-900 max-sm:justify-self-end"
+            >
+              <GitHubMark size={18} />
+            </a>
             <a
               href="https://falakgala.dev"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 hover:text-product-success-text focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-neutral-900"
+              className="col-span-2 inline-flex items-center gap-1.5 whitespace-nowrap hover:text-product-text-primary focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-neutral-900 sm:col-span-1 sm:justify-self-end"
             >
-              Made by Falak Gala{" "}
+              Made by Falak Gala
               <HugeiconsIcon icon={ArrowUpRight01Icon} size={14} aria-hidden="true" />
             </a>
           </div>

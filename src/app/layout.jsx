@@ -36,7 +36,7 @@ export const metadata = {
   },
   alternates: {
     types: {
-      "application/rss+xml": [{ url: "/blog/feed.xml", title: "Waitlyze Blog" }],
+      "application/rss+xml": [{ url: "/rss.xml", title: "Waitlyze Blog" }],
     },
   },
   openGraph: {

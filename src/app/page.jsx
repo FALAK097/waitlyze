@@ -1,29 +1,20 @@
-import {
-  ArrowDown01Icon,
-  ArrowUpRight01Icon,
-  CodeIcon,
-  Download01Icon,
-  GlobeIcon,
-  Layout01Icon,
-  Mail01Icon,
-  ShieldCheckIcon,
-  Tick01Icon,
-  UserGroupIcon,
-  WorkflowCircle01Icon,
-  WorkHistoryIcon,
-} from "@hugeicons/core-free-icons";
+import { ArrowUpRight01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
+import Image from "next/image";
 import Link from "next/link";
 
 import { PostCard } from "@/components/blog/post-card";
 import FAQAccordion from "@/components/landing/faq-accordion";
-import ProductTour from "@/components/landing/product-tour";
+import GitHubMark from "@/components/landing/github-mark";
 import PublicShell from "@/components/landing/public-shell";
 import SignupButton from "@/components/landing/signup-button";
-import WaitlistPlayground from "@/components/landing/waitlist-playground";
+import TemplateCards from "@/components/landing/template-cards";
 import { SiteStructuredData } from "@/components/seo/structured-data";
 import { getPosts, getReadingMinutes } from "@/lib/blog-source";
 import { SITE_DESCRIPTION, SITE_TITLE } from "@/lib/site-metadata";
+import { listTemplates } from "@/lib/templates/catalog.mjs";
+
+import "./landing.css";
 
 export const metadata = {
   title: { absolute: SITE_TITLE },
@@ -32,311 +23,295 @@ export const metadata = {
     canonical: "/",
     types: { "text/markdown": [{ url: "/index.md", title: "Markdown for AI agents" }] },
   },
-  openGraph: {
-    type: "website",
-    url: "/",
-    title: SITE_TITLE,
-    description: SITE_DESCRIPTION,
-  },
+  openGraph: { type: "website", url: "/", title: SITE_TITLE, description: SITE_DESCRIPTION },
   twitter: { card: "summary_large_image", title: SITE_TITLE, description: SITE_DESCRIPTION },
 };
 
+const github = "https://github.com/FALAK097/waitlyze";
 const faqs = [
   [
-    "Is Waitlyze free to use?",
-    "Yes. You can currently create a waitlist, collect signups, and explore your audience with Waitlyze for free. No credit card is required.",
+    "Is Waitlyze free?",
+    "Yes. You can get started for free, with no credit card required. A free plan will remain available if paid plans are introduced later.",
   ],
   [
-    "Do I need a website or coding skills?",
-    "Neither is required. Build your form visually and share its hosted page. If you already have a website, you can add the form using the embed code from your waitlist editor.",
-  ],
-  [
-    "Can I make it look like my brand?",
-    "Yes. Choose a template, edit your headline and copy, and arrange the page sections. Your hosted page and website embed share the published design.",
+    "Do I need a website?",
+    "No. Publish a hosted waitlist page and share its link. You can also embed your published form on your own site.",
   ],
   [
     "How do referrals work?",
-    "Subscribers get a personal referral link they can share. Waitlyze tracks referred signups so you can see who is helping your audience grow.",
+    "When referral sharing is enabled, verified subscribers receive a personal link. Referred signups must confirm their email before they count toward referral credit.",
   ],
   [
-    "What can I learn about my audience?",
-    "See signups and impressions over time, where visitors come from, and the devices they use. Use those insights to understand which launch channels are bringing people in.",
+    "Can I email my subscribers?",
+    "Yes. Marketing broadcasts go only to verified subscribers who explicitly opted in. You can preview the eligible audience before sending.",
   ],
   [
-    "Can I export my subscribers?",
-    "Yes. Export your signup data as CSV from your dashboard, so you can work with your audience data outside Waitlyze.",
+    "Can I edit a published page?",
+    "Yes. Changes save as drafts. Your live page stays unchanged until you publish again, and you can roll back to an earlier published revision.",
+  ],
+  [
+    "Can I export my audience?",
+    "Yes. Search and filter subscribers in the dashboard, then export them as CSV.",
+  ],
+  [
+    "What does analytics show?",
+    "See visitors, signups, conversion and verification, plus available breakdowns by source, device, geography and landing page.",
+  ],
+  [
+    "Can my team work together?",
+    "Yes. Invite teammates to your workspace and assign permissions for editing, publishing and email work.",
   ],
 ];
 
-const containerClasses = "mx-auto w-full max-w-7xl px-4 sm:px-5 md:px-8 lg:px-12";
-const eyebrowClasses =
-  "flex items-center gap-2 text-micro font-semibold tracking-widest text-product-text-secondary uppercase";
+function TextLink({ href, children }) {
+  return (
+    <Link className="wl-text-link" href={href}>
+      {children}
+      <HugeiconsIcon icon={ArrowUpRight01Icon} size={17} aria-hidden="true" />
+    </Link>
+  );
+}
+
+function ProductFrame({ src, alt, tone = "mint", hero = false }) {
+  return (
+    <div className={`wl-product-frame wl-frame-${tone} ${hero ? "wl-product-frame-hero" : ""}`}>
+      <div className="wl-product-window">
+        <Image
+          src={src}
+          alt={alt}
+          width={1280}
+          height={625}
+          sizes={hero ? "(max-width: 1152px) 100vw, 1088px" : "(max-width: 720px) 100vw, 540px"}
+          priority={hero}
+        />
+      </div>
+    </div>
+  );
+}
+
+const featureCards = [
+  {
+    title: "Build a page that feels like yours",
+    copy: "Edit the headline, signup form and page sections while previewing the experience as you go.",
+    image: "/images/landing-design.webp",
+    alt: "Authenticated Waitlyze editor with a live preview of a sample Weekend waitlist",
+    tone: "mint",
+  },
+  {
+    title: "Make it work on every screen",
+    copy: "Switch to the mobile preview before you publish, so your page looks right wherever it’s shared.",
+    image: "/images/landing-design-late.webp",
+    alt: "Authenticated Waitlyze editor showing the mobile preview of the sample Weekend waitlist",
+    tone: "blue",
+  },
+  {
+    title: "Publish and share",
+    copy: "Get a hosted link or copy an embed snippet for your own website.",
+    image: "/images/landing-publish.webp",
+    alt: "Waitlyze publish screen showing hosted page and embed options for a sample waitlist",
+    tone: "sand",
+  },
+  {
+    title: "See what’s working",
+    copy: "Follow visitors, signups and conversion from a single analytics view.",
+    image: "/images/landing-understand.webp",
+    alt: "Authenticated Waitlyze analytics dashboard with sample visitor and signup data",
+    tone: "blue",
+  },
+  {
+    title: "Turn signups into supporters",
+    copy: "Give verified subscribers a share link, with points and queue position as friends join.",
+    image: "/images/landing-referrals.webp",
+    alt: "Waitlyze confirmed-signup preview with a referral link and leaderboard using example data",
+    tone: "referral",
+  },
+];
+
+const steps = [
+  {
+    number: "01",
+    title: "Make your page",
+    copy: "Start with a template, then write your story in the page builder. Edit your content and preview it on desktop or mobile before anyone sees it.",
+    href: "/docs/page-builder",
+    link: "Explore the page builder",
+    image: "/images/landing-design.webp",
+    alt: "Waitlyze page builder editing a sample waitlist",
+    tone: "mint",
+  },
+  {
+    number: "02",
+    title: "Put it out there",
+    copy: "Publish to a Waitlyze-hosted page, embed the form on your site, or collect signups through the API. One waitlist, wherever your audience finds you.",
+    href: "/docs/embed",
+    link: "See publishing options",
+    image: "/images/landing-publish.webp",
+    alt: "Waitlyze publish screen with hosted link and embed code",
+    tone: "sand",
+  },
+  {
+    number: "03",
+    title: "Give people a reason to share",
+    copy: "After signing up and verifying their email, subscribers can get a personal link to invite friends. Track their progress, points and place in the queue.",
+    href: "/docs/referrals",
+    link: "How referrals work",
+    image: "/images/landing-referrals.webp",
+    alt: "Waitlyze confirmed-signup preview showing a referral link and leaderboard with example data",
+    tone: "referral",
+  },
+  {
+    number: "04",
+    title: "Learn as you grow",
+    copy: "See where visitors come from, how many join and which channels convert. Use what you learn to make your next launch decision with confidence.",
+    href: "/docs/analytics",
+    link: "Explore analytics",
+    image: "/images/landing-understand.webp",
+    alt: "Waitlyze analytics screen with example visitor and signup trends",
+    tone: "mint",
+  },
+];
 
 export default async function LandingPage() {
+  const featuredTemplates = listTemplates().filter((template) =>
+    ["saas", "creator", "event"].includes(template.id),
+  );
   const latestPosts = getPosts().slice(0, 3);
   const minutes = new Map(
     await Promise.all(latestPosts.map(async (post) => [post.url, await getReadingMinutes(post)])),
   );
+
   return (
     <PublicShell>
       <SiteStructuredData faqs={faqs} />
-      <main id="main-content" className="scroll-mt-28">
-        <section
-          className={`${containerClasses} relative isolate grid grid-cols-1 justify-items-center gap-13 pt-18 pb-22 md:gap-8 md:py-12 2xl:gap-22`}
-          aria-labelledby="hero-title"
-        >
-          <div className="w-full max-w-4xl text-center">
-            <p className={`${eyebrowClasses} justify-center`}>
-              <span className="inline-block size-1.5 shrink-0 rounded-full bg-product-accent-solid" />{" "}
-              Big ideas start with a little interest
-            </p>
-            <h1
-              id="hero-title"
-              className="mt-5 font-product-display text-5xl leading-tight font-medium tracking-tighter text-balance lg:text-6xl"
-            >
-              Launch to people.
-              <br />
-              <span>Not to silence.</span>
+      <main id="main-content" className="wl-landing wl-root">
+        <section className="wl-hero" aria-labelledby="hero-title">
+          <div className="wl-hero-copy">
+            <a className="wl-source-pill" href={github} target="_blank" rel="noopener noreferrer">
+              <span>
+                <GitHubMark /> On GitHub
+              </span>
+              <span>See how Waitlyze is built</span>
+              <HugeiconsIcon icon={ArrowUpRight01Icon} size={13} aria-hidden="true" />
+            </a>
+            <h1 id="hero-title">
+              Your launch starts
+              <br className="wl-desktop-break" /> before launch day.
             </h1>
-            <p className="mx-auto mt-5 max-w-84 text-base leading-normal text-product-text-secondary">
-              A waitlist builder for founders. Brand your page, grow it with referrals, and know
-              who’s ready for launch day.
+            <p className="wl-hero-lede">
+              Build a page, grow your waitlist, and see what brings people in. Everything you need
+              to turn early interest into an audience.
             </p>
-            <div className="mt-8 flex flex-wrap items-center justify-center gap-3 max-sm:flex-col max-sm:gap-5 md:gap-4">
-              <SignupButton className="max-sm:w-full" />
-              <a
-                className="group inline-flex items-center gap-2.5 text-sm font-medium underline-offset-4 hover:underline focus:outline-2 focus:outline-offset-4 focus:outline-neutral-900"
-                href="#how-it-works"
-              >
-                Explore the product{" "}
-                <HugeiconsIcon
-                  icon={ArrowDown01Icon}
-                  size={16}
-                  aria-hidden="true"
-                  className="shrink-0 transition-transform duration-180 group-hover:translate-x-0.5"
-                />
-              </a>
+            <div className="wl-hero-actions">
+              <SignupButton className="wl-hero-primary">Start for free</SignupButton>
+              <Link className="wl-secondary-button" href="/templates">
+                Explore templates
+                <HugeiconsIcon icon={ArrowUpRight01Icon} size={17} aria-hidden="true" />
+              </Link>
             </div>
-            <p className="mt-5 flex flex-wrap justify-center gap-2 gap-x-4 text-micro text-product-text-secondary">
-              {["Free to use", "No credit card", "No code needed"].map((text) => (
-                <span key={text} className="flex items-center gap-1">
-                  <HugeiconsIcon icon={Tick01Icon} size={14} aria-hidden="true" />
-                  {text}
-                </span>
-              ))}
+            <p className="wl-assurance">
+              Free to get started <span aria-hidden="true">·</span> No credit card required
             </p>
           </div>
-          <WaitlistPlayground />
+          <ProductFrame
+            hero
+            src="/images/landing-understand.webp"
+            alt="Authenticated Waitlyze analytics dashboard showing sample visitor, signup and conversion data"
+            tone="blue"
+          />
+          <p className="wl-image-note">Inside Waitlyze · sample waitlist shown</p>
         </section>
-        <section
-          id="how-it-works"
-          className={`${containerClasses} scroll-mt-28 py-16 md:pt-6 md:pb-14 lg:pb-18 xl:pb-24`}
-          aria-labelledby="tour-title"
-        >
-          <div className="flex items-end justify-between gap-8 max-md:block">
-            <div>
-              <p className={eyebrowClasses}>Inside Waitlyze</p>
-              <h2
-                id="tour-title"
-                className="mt-4 font-product-display text-4xl leading-tight font-semibold tracking-tighter text-balance lg:text-5xl"
-              >
-                Your launch starts here.
-              </h2>
-            </div>
-            <p className="mt-5 max-w-54 text-body text-product-text-secondary max-md:mt-5 max-md:max-w-none">
-              Design it. Share it. Watch your audience grow.
-            </p>
+
+        <section id="features" className="wl-section wl-features" aria-labelledby="features-title">
+          <div className="wl-section-heading">
+            <h2 id="features-title">Everything you need to get your first people in.</h2>
+            <p>From the first page to the first signups, keep the whole launch in one place.</p>
           </div>
-          <ProductTour />
-        </section>
-        <section
-          id="features"
-          className={`${containerClasses} scroll-mt-28 py-16 md:py-14 lg:py-18 xl:py-24`}
-          aria-labelledby="features-title"
-        >
-          <div className="flex items-end justify-between gap-8 max-md:block">
-            <div>
-              <p className={eyebrowClasses}>Small setup. Room to grow.</p>
-              <h2
-                id="features-title"
-                className="mt-4 font-product-display text-4xl leading-tight font-semibold tracking-tighter text-balance lg:text-5xl"
+          <div className="wl-feature-grid">
+            {featureCards.map((feature, index) => (
+              <article
+                className={`wl-feature-card ${index < 2 ? "wl-feature-wide" : ""}`}
+                key={feature.title}
               >
-                More than an email field.
-              </h2>
-            </div>
-            <p className="mt-5 max-w-54 text-body text-product-text-secondary max-md:mt-5 max-md:max-w-none">
-              From the first signup to your launch-day email.
-            </p>
-          </div>
-          <div className="mt-12 grid grid-cols-1 gap-7 max-sm:mt-8 md:grid-cols-3 md:gap-6 lg:gap-12">
-            {[
-              [
-                Mail01Icon,
-                "Emails that keep it moving",
-                "Welcome subscribers, send updates, and set up email automation.",
-              ],
-              [
-                CodeIcon,
-                "Your site. Your form.",
-                "Share a hosted page, embed a form, or collect signups through the API.",
-              ],
-              [
-                Download01Icon,
-                "An audience you own",
-                "Take your subscriber list with you. Export your audience to CSV.",
-              ],
-              [
-                Layout01Icon,
-                "A starting point, ready",
-                "Choose a launch template and make the page your own.",
-              ],
-              [
-                WorkflowCircle01Icon,
-                "Connected to your workflow",
-                "Connect Resend for email and use webhooks to send events to your tools.",
-              ],
-              [
-                ShieldCheckIcon,
-                "Quality over quantity",
-                "Verify subscriber email addresses and track referral activity.",
-              ],
-              [
-                UserGroupIcon,
-                "Build with your team",
-                "Invite teammates and choose who can edit, publish, or send emails.",
-              ],
-              [
-                GlobeIcon,
-                "Your launch. Your domain.",
-                "Connect a custom domain to your hosted waitlist page.",
-              ],
-              [
-                WorkHistoryIcon,
-                "Publish with control",
-                "Keep drafts private, pause signups, or restore a published version.",
-              ],
-            ].map(([Icon, title, text]) => (
-              <article key={title}>
-                <HugeiconsIcon
-                  icon={Icon}
-                  size={21}
-                  strokeWidth={1.5}
-                  aria-hidden="true"
-                  className="text-product-success-text"
-                />
-                <h3 className="mt-4 font-product-display text-section leading-snug font-semibold tracking-tight text-balance">
-                  {title}
-                </h3>
-                <p className="mt-2.5 max-w-60 text-sm text-product-text-secondary">{text}</p>
+                <ProductFrame src={feature.image} alt={feature.alt} tone={feature.tone} />
+                <h3>{feature.title}</h3>
+                <p>{feature.copy}</p>
               </article>
             ))}
           </div>
-          <div
-            className="mt-12 grid grid-cols-1 gap-12 pt-8 md:grid-cols-2 md:gap-6"
-            aria-label="Planned features"
-          >
-            <div>
-              <p className={eyebrowClasses}>On the roadmap</p>
-              <p className="mt-3 max-w-48 text-base text-product-text-secondary">
-                Building the next part of your launch.
-              </p>
-            </div>
-            <ul className="flex flex-wrap gap-4 gap-x-6">
-              {[
-                [WorkflowCircle01Icon, "More native integrations"],
-                [ShieldCheckIcon, "Advanced spam detection"],
-                [CodeIcon, "Developer docs & SDKs"],
-                [UserGroupIcon, "Referral rewards"],
-              ].map(([Icon, text]) => (
-                <li key={text} className="flex items-center gap-2 text-caption">
-                  <HugeiconsIcon icon={Icon} size={16} aria-hidden="true" />
-                  {text}
-                  <span className="text-micro text-product-text-secondary">Planned</span>
-                </li>
-              ))}
-            </ul>
+        </section>
+
+        <section id="steps" className="wl-section wl-steps" aria-labelledby="steps-title">
+          <div className="wl-section-heading">
+            <h2 id="steps-title">
+              <span>How it works.</span> From an idea to an audience.
+            </h2>
+          </div>
+          <div className="wl-step-list">
+            {steps.map((step, index) => (
+              <article
+                className={`wl-step ${index % 2 ? "wl-step-reverse" : ""}`}
+                key={step.number}
+              >
+                <div className="wl-step-copy">
+                  <span className="wl-step-number">{step.number}</span>
+                  <h3>{step.title}</h3>
+                  <p>{step.copy}</p>
+                  <TextLink href={step.href}>{step.link}</TextLink>
+                </div>
+                <ProductFrame src={step.image} alt={step.alt} tone={step.tone} />
+              </article>
+            ))}
           </div>
         </section>
+
         <section
-          id="faq"
-          className={`${containerClasses} flex scroll-mt-28 flex-col gap-8 py-16 md:py-14 lg:flex-row lg:gap-20 lg:pb-18 xl:pb-24`}
-          aria-labelledby="faq-title"
+          id="templates"
+          className="wl-section wl-templates"
+          aria-labelledby="templates-title"
         >
-          <div className="lg:w-2/5">
-            <p className={eyebrowClasses}>A few things, answered</p>
-            <h2
-              id="faq-title"
-              className="mt-4 font-product-display text-4xl leading-tight font-semibold tracking-tighter text-balance lg:text-5xl"
-            >
-              FAQs.
-            </h2>
-            <p className="mt-5 max-w-80 text-product-text-secondary">
-              <a
-                href="mailto:hi@falakgala.dev"
-                className="group inline-flex items-center gap-2.5 text-sm font-medium underline-offset-4 hover:underline focus:outline-2 focus:outline-offset-4 focus:outline-neutral-900"
-              >
-                Talk to the maker{" "}
-                <HugeiconsIcon
-                  icon={ArrowUpRight01Icon}
-                  size={15}
-                  aria-hidden="true"
-                  className="shrink-0 transition-transform duration-180 group-hover:translate-x-0.5"
-                />
-              </a>
+          <div className="wl-section-heading wl-heading-with-link">
+            <div>
+              <h2 id="templates-title">A good place to begin.</h2>
+              <p>Choose a starting point. Make it unmistakably yours.</p>
+            </div>
+            <TextLink href="/templates">Explore all templates</TextLink>
+          </div>
+          <TemplateCards templates={featuredTemplates} />
+        </section>
+
+        <section id="faq" className="wl-section wl-faq" aria-labelledby="faq-title">
+          <div className="wl-section-heading">
+            <h2 id="faq-title">Good questions, answered.</h2>
+            <p>
+              Want the details? <Link href="/docs">Read the docs</Link>.
             </p>
           </div>
           <FAQAccordion items={faqs} />
         </section>
+
         {latestPosts.length > 0 && (
-          <section className={`${containerClasses} py-14`} aria-labelledby="blog-teaser-title">
-            <div className="flex items-end justify-between gap-6">
-              <div>
-                <p className={eyebrowClasses}>From the blog</p>
-                <h2
-                  id="blog-teaser-title"
-                  className="mt-4 font-product-display text-4xl leading-tight font-semibold tracking-tighter text-balance max-sm:text-3xl"
-                >
-                  Guides for a better launch.
-                </h2>
-              </div>
-              <Link
-                href="/blog"
-                className="shrink-0 text-sm font-medium underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-neutral-900"
-              >
-                All articles →
-              </Link>
+          <section className="wl-section wl-blog" aria-labelledby="blog-title">
+            <div className="wl-section-heading wl-heading-with-link">
+              <h2 id="blog-title">Ideas for the road ahead.</h2>
+              <TextLink href="/blog">Read the blog</TextLink>
             </div>
-            <div className="mt-8 grid grid-cols-1 gap-6 md:grid-cols-3">
+            <div className="wl-blog-grid">
               {latestPosts.map((post) => (
                 <PostCard
                   key={post.url}
                   post={post}
                   minutes={minutes.get(post.url)}
                   headingAs="h3"
+                  compact
                 />
               ))}
             </div>
           </section>
         )}
-        <section
-          className={`${containerClasses} flex items-center justify-between gap-8 py-14 pb-18 max-md:flex-col max-md:items-start max-sm:py-15`}
-          aria-labelledby="cta-title"
-        >
-          <div>
-            <p className={eyebrowClasses}>Ready when you are</p>
-            <h2
-              id="cta-title"
-              className="mt-4 font-product-display text-4xl leading-tight font-semibold tracking-tighter text-balance max-sm:text-3xl lg:text-5xl"
-            >
-              Give your idea a head start.
-            </h2>
-          </div>
-          <div>
-            <SignupButton />
-            <span className="mt-3 block text-micro text-product-text-secondary">
-              Free to use. No credit card needed.
-            </span>
-          </div>
+
+        <section className="wl-final" aria-labelledby="cta-title">
+          <h2 id="cta-title">Ready to make your first impression?</h2>
+          <p>Your next launch deserves more than a signup form.</p>
+          <SignupButton className="wl-hero-primary">Start for free</SignupButton>
         </section>
       </main>
     </PublicShell>

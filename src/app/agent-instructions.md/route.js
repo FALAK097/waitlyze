@@ -7,19 +7,19 @@ export async function GET() {
 
 > ${SITE_DESCRIPTION}
 
-This document is the official machine-readable guide for AI coding assistants (Claude Code, Cursor, Codex, Windsurf, ChatGPT) and developers integrating Waitlyze into applications.
+This document is the official machine-readable guide for AI coding assistants (Claude Code, Cursor, Codex, Windsurf, ChatGPT) and developers integrating Waitlyze into applications. For human-facing examples, browse the [homepage](${SITE_URL}/), [templates](${SITE_URL}/templates), and [documentation](${SITE_URL}/docs).
 
 ---
 
 ## 1. Product Summary & Architecture
 
 Waitlyze is an all-in-one pre-launch waitlist platform. It provides:
-1. **Hosted Pages**: Standalone waitlist landing pages hosted on \`https://waitlyze.falakgala.dev/w/[slug]\` (or custom domains like \`join.example.com\`).
+1. **Hosted Pages**: Standalone waitlist landing pages at \`${SITE_URL}/w/[slug]\` (or configured custom domains).
 2. **Embed Widget**: Drop-in JavaScript widget (\`/js/embed.js\`) compatible with Next.js, React, HTML, Webflow, and Framer.
-3. **Public Signup API**: Server-side endpoint \`POST https://waitlyze.falakgala.dev/api/waitlist\` to capture signups from custom frontends.
+3. **Signup API**: Server-side endpoint \`POST ${SITE_URL}/api/waitlist\` with a scoped API key to capture signups from custom frontends. Never expose the key in browser code.
 4. **Viral Referrals**: Automatic referral code generation (\`?r=CODE\`), queue position tracking, and fraud velocity limits.
 5. **Email Engine**: Welcome automations, referral reminders, and broadcast sends with double opt-in verification.
-6. **Analytics**: Real-time signups, impression conversion, geo breakdown, and device telemetry.
+6. **Analytics**: Visitors, signups, conversion, verification, and available source, geographic, and device breakdowns.
 
 ---
 
@@ -62,6 +62,7 @@ If you build custom UI and capture emails on your own backend:
 \`\`\`http
 POST ${SITE_URL}/api/waitlist HTTP/1.1
 Content-Type: application/json
+x-api-key: YOUR_SCOPED_API_KEY
 
 {
   "waitlistId": "YOUR_WAITLIST_ID",
@@ -80,7 +81,10 @@ export async function joinWaitlist(formData: FormData) {
 
   const res = await fetch("${SITE_URL}/api/waitlist", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      "x-api-key": process.env.WAITLYZE_API_KEY!,
+    },
     body: JSON.stringify({
       waitlistId: process.env.WAITLYZE_WAITLIST_ID,
       email,
@@ -94,8 +98,9 @@ export async function joinWaitlist(formData: FormData) {
   }
 
   const data = await res.json();
-  // Returns: { id, email, referralCode, referralLink, position }
-  return data;
+  // Returns { position, referral_code, referral_link, points,
+  // referral_count, verified, ... } in the data field.
+  return data.data;
 }
 \`\`\`
 
@@ -122,9 +127,9 @@ description: Waitlyze waitlist and pre-launch setup guidance
 globs: **/*waitlist*
 ---
 When integrating the waitlist into our application:
-- Fetch and reference https://waitlyze.falakgala.dev/agent-instructions.md
+- Fetch and reference ${SITE_URL}/agent-instructions.md
 - For embeds, use <div class="waitlyze-widget" data-key-id="..." /> with ${SITE_URL}/js/embed.js.
-- For custom APIs, call POST ${SITE_URL}/api/waitlist with a server-side apiKey, waitlistId, email, and optional referralCode.
+- For custom APIs, call POST ${SITE_URL}/api/waitlist from the server with an x-api-key header, waitlistId, email, and optional referralCode. Never put the API key in client code.
 \`\`\`
 
 ### Option 2: In Claude Code
@@ -138,6 +143,8 @@ claude "Read ${SITE_URL}/agent-instructions.md and integrate the Waitlyze signup
 ## 5. Machine-Readable Discovery Endpoints
 
 - \`/llms.txt\` - Curated index of the entire product for language models.
+- \`/rss.xml\` - RSS 2.0 feed for Waitlyze launch guides (also available at \`/blog/feed.xml\`).
+- \`/agent-instructions.md\` - This integration guide.
 - \`/llms-full.txt\` - Complete consolidated documentation context in a single file.
 - \`/api/md/_catalog\` - JSON catalog of all markdown-rendered routes.
 - \`/<page>.md\` - Append \`.md\` to a page listed in \`/api/md/_catalog\` (e.g., \`/templates.md\`, \`/blog.md\`) to get pure markdown.
