@@ -417,9 +417,9 @@ export default async function LandingPage() {
 
         <section className="wl-section wl-about" aria-labelledby="about-title">
           <div className="wl-about-title">
-            <p className="wl-eyebrow">A NOTE FROM THE BUILDER</p>
-            <h2 id="about-title">Built in the open by Falak Gala.</h2>
-            <p>Follow the work, ask a question or look through the code.</p>
+            <p className="wl-eyebrow">FROM THE BUILDER</p>
+            <h2 id="about-title">Building in the open.</h2>
+            <p>Follow along, ask a question or look through the code.</p>
           </div>
           <div className="wl-about-copy">
             <p>
@@ -428,7 +428,7 @@ export default async function LandingPage() {
             </p>
             <p>
               Have a question, spotted a rough edge, or want to see how something works? You can
-              reach the person building it.
+              reach me.
             </p>
             <div className="wl-about-links">
               <a href="mailto:hi@falakgala.dev">
