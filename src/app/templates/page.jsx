@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import FinalCta from "@/components/landing/final-cta";
 import PublicShell from "@/components/landing/public-shell";
 import SignupButton from "@/components/landing/signup-button";
 import { JsonLd } from "@/components/seo/json-ld";
@@ -163,6 +164,9 @@ export default function TemplatesPage() {
             ))}
           </div>
         </section>
+        <div className={`${containerClasses} pb-18`}>
+          <FinalCta />
+        </div>
       </main>
     </PublicShell>
   );

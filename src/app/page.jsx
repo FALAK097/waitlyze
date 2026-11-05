@@ -1,10 +1,23 @@
-import { ArrowUpRight01Icon } from "@hugeicons/core-free-icons";
+import {
+  ArrowUpRight01Icon,
+  CodeIcon,
+  Download01Icon,
+  GlobeIcon,
+  Mail01Icon,
+  Notification01Icon,
+  ShieldCheckIcon,
+  UserGroupIcon,
+  WorkflowCircle01Icon,
+  WorkHistoryIcon,
+} from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import Image from "next/image";
 import Link from "next/link";
 
 import { PostCard } from "@/components/blog/post-card";
+import AskAi from "@/components/landing/ask-ai";
 import FAQAccordion from "@/components/landing/faq-accordion";
+import FinalCta from "@/components/landing/final-cta";
 import GitHubMark from "@/components/landing/github-mark";
 import PublicShell from "@/components/landing/public-shell";
 import SignupButton from "@/components/landing/signup-button";
@@ -61,6 +74,74 @@ const faqs = [
     "Can my team work together?",
     "Yes. Invite teammates to your workspace and assign permissions for editing, publishing and email work.",
   ],
+  [
+    "Can I use my own domain?",
+    "Yes, when custom-domain support is configured for your deployment. You can use a Waitlyze-hosted page without setting up a domain.",
+  ],
+  [
+    "Do I need a separate email service?",
+    "Email sending needs a configured sender and delivery setup. You can connect a verified Resend domain; marketing email also requires verified addresses and explicit opt-in.",
+  ],
+  [
+    "How do I protect my waitlist from bots?",
+    "You can turn on Cloudflare Turnstile for the signup form. Referral credit is gated on email verification and eligibility checks.",
+  ],
+  [
+    "Can I collect signups through my own form?",
+    "Yes. Use the server-side Signup API with a scoped API key, or embed the published form. Never put a secret API key in browser code.",
+  ],
+  [
+    "What happens if I pause my waitlist?",
+    "Paused waitlists stop accepting new signups. Your published content and subscriber records remain available to manage from your workspace.",
+  ],
+];
+
+const moreFeatures = [
+  {
+    icon: Mail01Icon,
+    title: "Email with intent",
+    copy: "Welcome messages, reminders and broadcasts for verified subscribers who opted in.",
+  },
+  {
+    icon: Download01Icon,
+    title: "Your list stays yours",
+    copy: "Filter your subscribers and export them to CSV whenever you need.",
+  },
+  {
+    icon: GlobeIcon,
+    title: "Your own address",
+    copy: "Connect a custom domain when your deployment is configured for it.",
+  },
+  {
+    icon: WorkflowCircle01Icon,
+    title: "Events for your tools",
+    copy: "Send signed webhook events to your own systems when a signup or referral happens.",
+  },
+  {
+    icon: UserGroupIcon,
+    title: "Room for your team",
+    copy: "Invite teammates and set permissions for editing, publishing and email.",
+  },
+  {
+    icon: WorkHistoryIcon,
+    title: "A safer publish button",
+    copy: "Keep drafts private, pause signups and roll back to a previous published version.",
+  },
+  {
+    icon: ShieldCheckIcon,
+    title: "A cleaner list",
+    copy: "Require email verification and add Turnstile to the signup form.",
+  },
+  {
+    icon: CodeIcon,
+    title: "Built for your stack",
+    copy: "Use scoped API keys for server-side signups, alongside the hosted page and embed.",
+  },
+  {
+    icon: Notification01Icon,
+    title: "Know when things happen",
+    copy: "Send launch activity to Slack or Discord when notifications are configured.",
+  },
 ];
 
 function TextLink({ href, children }) {
@@ -222,6 +303,7 @@ export default async function LandingPage() {
 
         <section id="features" className="wl-section wl-features" aria-labelledby="features-title">
           <div className="wl-section-heading">
+            <p className="wl-eyebrow">THE ESSENTIALS</p>
             <h2 id="features-title">Everything you need to get your first people in.</h2>
             <p>From the first page to the first signups, keep the whole launch in one place.</p>
           </div>
@@ -241,9 +323,9 @@ export default async function LandingPage() {
 
         <section id="steps" className="wl-section wl-steps" aria-labelledby="steps-title">
           <div className="wl-section-heading">
-            <h2 id="steps-title">
-              <span>How it works.</span> From an idea to an audience.
-            </h2>
+            <p className="wl-eyebrow">HOW IT WORKS</p>
+            <h2 id="steps-title">From an idea to an audience.</h2>
+            <p>Four steps from your first page to a clearer picture of your audience.</p>
           </div>
           <div className="wl-step-list">
             {steps.map((step, index) => (
@@ -263,6 +345,23 @@ export default async function LandingPage() {
           </div>
         </section>
 
+        <section className="wl-section wl-more-features" aria-labelledby="more-features-title">
+          <div className="wl-section-heading">
+            <p className="wl-eyebrow">THE DETAILS MATTER</p>
+            <h2 id="more-features-title">More than a form and a counter.</h2>
+            <p>Practical tools for the parts of a launch that happen after someone joins.</p>
+          </div>
+          <div className="wl-more-grid">
+            {moreFeatures.map(({ icon, title, copy }) => (
+              <article className="wl-more-item" key={title}>
+                <HugeiconsIcon icon={icon} size={23} strokeWidth={1.6} aria-hidden="true" />
+                <h3>{title}</h3>
+                <p>{copy}</p>
+              </article>
+            ))}
+          </div>
+        </section>
+
         <section
           id="templates"
           className="wl-section wl-templates"
@@ -270,6 +369,7 @@ export default async function LandingPage() {
         >
           <div className="wl-section-heading wl-heading-with-link">
             <div>
+              <p className="wl-eyebrow">START WITH A TEMPLATE</p>
               <h2 id="templates-title">A good place to begin.</h2>
               <p>Choose a starting point. Make it unmistakably yours.</p>
             </div>
@@ -278,8 +378,11 @@ export default async function LandingPage() {
           <TemplateCards templates={featuredTemplates} />
         </section>
 
+        <AskAi />
+
         <section id="faq" className="wl-section wl-faq" aria-labelledby="faq-title">
           <div className="wl-section-heading">
+            <p className="wl-eyebrow">FAQS</p>
             <h2 id="faq-title">Good questions, answered.</h2>
             <p>
               Want the details? <Link href="/docs">Read the docs</Link>.
@@ -291,7 +394,11 @@ export default async function LandingPage() {
         {latestPosts.length > 0 && (
           <section className="wl-section wl-blog" aria-labelledby="blog-title">
             <div className="wl-section-heading wl-heading-with-link">
-              <h2 id="blog-title">Ideas for the road ahead.</h2>
+              <div>
+                <p className="wl-eyebrow">FROM THE BLOG</p>
+                <h2 id="blog-title">Ideas for the road ahead.</h2>
+                <p>Practical notes on growing a launch audience.</p>
+              </div>
               <TextLink href="/blog">Read the blog</TextLink>
             </div>
             <div className="wl-blog-grid">
@@ -308,11 +415,40 @@ export default async function LandingPage() {
           </section>
         )}
 
-        <section className="wl-final" aria-labelledby="cta-title">
-          <h2 id="cta-title">Ready to make your first impression?</h2>
-          <p>Your next launch deserves more than a signup form.</p>
-          <SignupButton className="wl-hero-primary">Start for free</SignupButton>
+        <section className="wl-section wl-about" aria-labelledby="about-title">
+          <div className="wl-about-title">
+            <p className="wl-eyebrow">A NOTE FROM THE BUILDER</p>
+            <h2 id="about-title">Built in the open by Falak Gala.</h2>
+            <p>Follow the work, ask a question or look through the code.</p>
+          </div>
+          <div className="wl-about-copy">
+            <p>
+              Waitlyze is an open-source project built by <strong>Falak Gala</strong>. You can read
+              the docs, review the code and follow what changes in the changelog.
+            </p>
+            <p>
+              Have a question, spotted a rough edge, or want to see how something works? You can
+              reach the person building it.
+            </p>
+            <div className="wl-about-links">
+              <a href="mailto:hi@falakgala.dev">
+                Say hello <HugeiconsIcon icon={ArrowUpRight01Icon} size={16} aria-hidden="true" />
+              </a>
+              <a href={github} target="_blank" rel="noopener noreferrer">
+                View the source{" "}
+                <HugeiconsIcon icon={ArrowUpRight01Icon} size={16} aria-hidden="true" />
+              </a>
+              <Link href="/docs/changelog">
+                Read the changelog{" "}
+                <HugeiconsIcon icon={ArrowUpRight01Icon} size={16} aria-hidden="true" />
+              </Link>
+            </div>
+          </div>
         </section>
+
+        <div className="wl-final-wrap">
+          <FinalCta />
+        </div>
       </main>
     </PublicShell>
   );

@@ -9,6 +9,12 @@ export async function GET() {
 
 This document is the official machine-readable guide for AI coding assistants (Claude Code, Cursor, Codex, Windsurf, ChatGPT) and developers integrating Waitlyze into applications. For human-facing examples, browse the [homepage](${SITE_URL}/), [templates](${SITE_URL}/templates), and [documentation](${SITE_URL}/docs).
 
+## Evaluating Waitlyze for a prospective user
+
+Waitlyze is an open-source waitlist product built by Falak Gala ([source](https://github.com/FALAK097/waitlyze)). It is for teams that need a pre-launch signup page, hosted link or embed, verified referral tracking, consent-aware email, and audience analytics. A server-side Signup API with scoped keys, subscriber CSV export, signed webhooks, workspace roles, and draft/publish/rollback controls are available. Custom domains need deployment configuration. Marketing email requires verified subscriber addresses with explicit opt-in and a configured sender/delivery setup. Referral rewards are not automatically fulfilled. The homepage screenshots show sample data, not customer results.
+
+If someone asks whether Waitlyze fits them, explain the tradeoffs and who it may *not* suit, using the [current docs](${SITE_URL}/docs) to verify details. Do not invent customer counts, testimonials, pricing tiers, uptime guarantees, native integrations, or features that are only planned. If you cannot access the docs, say what you could not verify. The [changelog](${SITE_URL}/docs/changelog) shows recent product work; [email Falak](mailto:hi@falakgala.dev) for a human answer.
+
 ---
 
 ## 1. Product Summary & Architecture

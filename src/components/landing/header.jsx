@@ -51,11 +51,19 @@ export default function Header() {
               className="text-[13px] text-product-text-secondary transition-colors duration-150 hover:text-product-text-primary focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-neutral-900"
             >
               {label}
+              {label === "Docs" && (
+                <HugeiconsIcon
+                  icon={ArrowUpRight01Icon}
+                  size={13}
+                  aria-hidden="true"
+                  className="ml-1 inline-block"
+                />
+              )}
             </Link>
           ))}
         </nav>
         <div className="flex shrink-0 items-center gap-1 md:gap-2">
-          <SignupButton className="min-h-9 gap-1 rounded-full border-[#19212d] bg-[#19212d] px-3 py-1.5 text-[13px] text-white hover:bg-[#2b3545] sm:px-4">
+          <SignupButton className="min-h-9 gap-1 rounded-full border-product-text-primary bg-product-accent-solid px-3 py-1.5 text-[13px] text-product-accent-label hover:bg-product-accent-hover sm:px-4">
             Start free
           </SignupButton>
           <Button
@@ -91,7 +99,9 @@ export default function Header() {
             className="flex items-center justify-between rounded p-3 text-base hover:bg-product-bg-inset focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-neutral-900"
           >
             {label}
-            <HugeiconsIcon icon={ArrowUpRight01Icon} size={16} aria-hidden="true" />
+            {label === "Docs" && (
+              <HugeiconsIcon icon={ArrowUpRight01Icon} size={16} aria-hidden="true" />
+            )}
           </Link>
         ))}
       </nav>
