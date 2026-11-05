@@ -157,16 +157,13 @@ export default function PublicShell({ children }) {
                 className="inline-flex min-h-10 min-w-10 items-center justify-center text-product-text-primary transition-colors hover:text-product-success-text focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-neutral-900"
               >
                 <svg
-                  viewBox="0 0 256 256"
+                  viewBox="0 0 1200 1227"
                   width="18"
                   height="18"
                   fill="currentColor"
                   aria-hidden="true"
                 >
-                  <path
-                    transform="translate(52 50) scale(0.1266)"
-                    d="M714.163 519.284 1160.89 0h-105.86L667.137 450.887 357.328 0H0l468.492 681.821L0 1226.37h105.866l409.625-476.152 327.181 476.152H1200L714.137 519.284h.026ZM569.165 687.828l-47.468-67.894-377.686-540.24h162.604l304.797 435.991 47.468 67.894 396.2 566.721H892.476L569.165 687.854v-.026Z"
-                  />
+                  <path d="M714.163 519.284 1160.89 0h-105.86L667.137 450.887 357.328 0H0l468.492 681.821L0 1226.37h105.866l409.625-476.152 327.181 476.152H1200L714.137 519.284h.026ZM569.165 687.828l-47.468-67.894-377.686-540.24h162.604l304.797 435.991 47.468 67.894 396.2 566.721H892.476L569.165 687.854v-.026Z" />
                 </svg>
               </a>
             </div>
