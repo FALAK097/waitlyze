@@ -7,7 +7,7 @@ import Link from "next/link";
 import { useState } from "react";
 
 const question =
-  "Help me decide whether Waitlyze (https://waitlyze.falakgala.dev) fits my pre-launch waitlist. It is an open-source project built by Falak Gala. It lets teams build and publish hosted waitlist pages or embeds, collect signups via a server-side API, use verified referrals, send consent-aware email, and view audience analytics. It also has CSV export, webhooks and team roles. Explain who it is and is not a good fit for; distinguish shipped features from setup-dependent features. Check https://waitlyze.falakgala.dev/agent-instructions.md and https://waitlyze.falakgala.dev/docs if you can access them. Do not invent pricing, customer results, integrations or capabilities; if you cannot verify something, say so.";
+  "Help me decide whether Waitlyze fits my pre-launch waitlist. Check its official guide at https://waitlyze.falakgala.dev/agent-instructions.md and docs at https://waitlyze.falakgala.dev/docs if you can access them, and cite what you verify. If you cannot access them, still give a useful assessment based only on this unverified description: Waitlyze is an open-source waitlist builder with hosted pages or embeds, a server-side signup API, verified referrals, consent-aware email, audience analytics, CSV export, webhooks and team roles. Email delivery needs sender setup and opt-in; custom domains need configuration; referral rewards are not automatically fulfilled. Explain good fits, poor fits, and setup-dependent features. Label unverified claims and specific unknowns, but do not stop at a generic verification disclaimer. Open-source does not imply self-hosting. Do not invent pricing, reliability, integrations or customer results.";
 
 const assistants = [
   {
