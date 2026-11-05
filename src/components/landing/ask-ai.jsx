@@ -101,13 +101,13 @@ export default function AskAi() {
           ChatGPT and Perplexity open with the question. Claude and Gemini copy it for you to paste.
           Sign-in and prompt support vary.
         </p>
-        <p className="wl-ai-copy-status" role="status">
+        <output className="wl-ai-copy-status">
           {copyError
             ? "Couldn’t copy automatically. Open the question below to select it."
             : copied
               ? "Question copied. Paste it into your AI chat."
               : ""}
-        </p>
+        </output>
         <details className="wl-ai-details">
           <summary>What will it ask?</summary>
           <p>{question}</p>

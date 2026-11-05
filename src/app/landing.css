@@ -301,6 +301,7 @@
   line-height: 1.5;
 }
 .wl-ai-copy-status {
+  display: block;
   margin-top: 8px;
   color: var(--product-success-text);
   font-size: 0.86rem;
