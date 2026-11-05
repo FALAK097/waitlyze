@@ -63,7 +63,10 @@ export default function Header() {
           ))}
         </nav>
         <div className="flex shrink-0 items-center gap-1 md:gap-2">
-          <SignupButton className="min-h-9 gap-1 rounded-full border-product-text-primary bg-product-accent-solid px-3 py-1.5 text-[13px] text-product-accent-label hover:bg-product-accent-hover sm:px-4">
+          <SignupButton
+            compact
+            className="min-h-9 gap-1 rounded-full border-product-text-primary bg-product-accent-solid px-3 py-1.5 text-[13px] text-product-accent-label hover:bg-product-accent-hover sm:px-4"
+          >
             Start free
           </SignupButton>
           <Button

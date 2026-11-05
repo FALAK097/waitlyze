@@ -3,6 +3,7 @@ import { SITE_URL } from "@/lib/site-metadata";
 
 function escapeXml(value) {
   return String(value)
+    .replace(/[^\t\n\r\u0020-\uD7FF\uE000-\uFFFD\u{10000}-\u{10FFFF}]/gu, "")
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")

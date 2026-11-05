@@ -164,6 +164,12 @@
   width: 100%;
   height: auto;
 }
+.wl-feature-card .wl-product-window img,
+.wl-step .wl-product-window img {
+  height: 100%;
+  object-fit: cover;
+  object-position: left top;
+}
 .wl-product-frame-hero {
   aspect-ratio: 1.92;
 }
