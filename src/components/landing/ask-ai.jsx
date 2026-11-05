@@ -38,13 +38,16 @@ const assistants = [
 
 export default function AskAi() {
   const [copied, setCopied] = useState(false);
+  const [copyError, setCopyError] = useState(false);
 
   async function copyQuestion() {
     try {
       await navigator.clipboard.writeText(question);
       setCopied(true);
+      setCopyError(false);
     } catch {
       setCopied(false);
+      setCopyError(true);
     }
   }
 
@@ -80,24 +83,30 @@ export default function AskAi() {
                 {content}
               </a>
             ) : (
-              <button
+              <a
                 key={name}
-                type="button"
+                href={url}
+                target="_blank"
+                rel="noopener noreferrer"
                 className="wl-ai-link"
                 aria-label={`Copy question and open ${name} in a new tab`}
-                onClick={() => {
-                  void copyQuestion();
-                  window.open(url, "_blank", "noopener,noreferrer");
-                }}
+                onClick={() => void copyQuestion()}
               >
                 {content}
-              </button>
+              </a>
             );
           })}
         </div>
         <p className="wl-ai-note">
           ChatGPT and Perplexity open with the question. Claude and Gemini copy it for you to paste.
           Sign-in and prompt support vary.
+        </p>
+        <p className="wl-ai-copy-status" role="status">
+          {copyError
+            ? "Couldn’t copy automatically. Open the question below to select it."
+            : copied
+              ? "Question copied. Paste it into your AI chat."
+              : ""}
         </p>
         <details className="wl-ai-details">
           <summary>What will it ask?</summary>

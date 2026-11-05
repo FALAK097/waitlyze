@@ -300,6 +300,14 @@
   font-size: 0.86rem;
   line-height: 1.5;
 }
+.wl-ai-copy-status {
+  margin-top: 8px;
+  color: var(--product-success-text);
+  font-size: 0.86rem;
+}
+.wl-ai-copy-status:empty {
+  display: none;
+}
 .wl-ai-details {
   margin-top: 20px;
 }
