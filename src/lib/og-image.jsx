@@ -5,7 +5,7 @@ import { SITE_URL } from "@/lib/site-metadata";
 
 export const OG_SIZE = { width: 1200, height: 630 };
 
-/** A light editorial card for articles; docs keep the dark reference card below. */
+/** A light editorial card for articles. */
 export function renderBlogOgImage({ title, eyebrow, readingTime, date }) {
   const size = title.length > 75 ? 51 : title.length > 50 ? 61 : 72;
 
@@ -93,8 +93,7 @@ export function renderBlogOgImage({ title, eyebrow, readingTime, date }) {
 }
 
 /**
- * Branded 1200x630 social card shared by blog posts and docs pages.
- * High-contrast dark obsidian canvas with electric lime accents.
+ * Branded light 1200x630 social card for docs pages.
  */
 export function renderOgImage({ title, eyebrow, readingTime, date }) {
   const host = new URL(SITE_URL).hostname;
@@ -108,24 +107,22 @@ export function renderOgImage({ title, eyebrow, readingTime, date }) {
         display: "flex",
         flexDirection: "column",
         justifyContent: "space-between",
-        background: "linear-gradient(135deg, #020c06 0%, #05180f 45%, #020c06 100%)",
+        background: "#f9faf6",
         padding: "64px 76px",
-        color: "#ffffff",
+        color: "#071b12",
         fontFamily: "system-ui, -apple-system, sans-serif",
         position: "relative",
       }}
     >
-      {/* Decorative top-right accent glow */}
+      {/* A quiet brand accent, consistent with the public pages. */}
       <div
         style={{
           position: "absolute",
-          top: "-120px",
-          right: "-120px",
-          width: "460px",
-          height: "460px",
-          background:
-            "radial-gradient(circle, rgba(200, 249, 63, 0.12) 0%, rgba(200, 249, 63, 0) 70%)",
-          borderRadius: "1000px",
+          top: 0,
+          right: 0,
+          width: 22,
+          height: "100%",
+          background: "#c8f93f",
           display: "flex",
         }}
       />
@@ -147,13 +144,12 @@ export function renderOgImage({ title, eyebrow, readingTime, date }) {
               display: "flex",
               alignItems: "center",
               gap: 8,
-              background: "rgba(200, 249, 63, 0.08)",
-              border: "1px solid rgba(200, 249, 63, 0.25)",
+              background: "#e7f8b8",
               padding: "7px 18px",
               borderRadius: 30,
               fontSize: 14,
               fontWeight: 700,
-              color: "#c8f93f",
+              color: "#193422",
               letterSpacing: 1.5,
               textTransform: "uppercase",
             }}
@@ -173,7 +169,7 @@ export function renderOgImage({ title, eyebrow, readingTime, date }) {
             lineHeight: 1.1,
             letterSpacing: -2,
             maxWidth: 1040,
-            color: "#ffffff",
+            color: "#071b12",
           }}
         >
           {title}
@@ -187,11 +183,11 @@ export function renderOgImage({ title, eyebrow, readingTime, date }) {
           justifyContent: "space-between",
           alignItems: "center",
           paddingTop: "20px",
-          borderTop: "1px solid rgba(255, 255, 255, 0.1)",
+          borderTop: "1px solid #cdd8ca",
         }}
       >
         <div
-          style={{ display: "flex", alignItems: "center", gap: 12, fontSize: 18, color: "#9db0a3" }}
+          style={{ display: "flex", alignItems: "center", gap: 12, fontSize: 18, color: "#42634e" }}
         >
           <span>Waitlyze Knowledge Hub</span>
           {readingTime ? (
@@ -207,7 +203,7 @@ export function renderOgImage({ title, eyebrow, readingTime, date }) {
             </div>
           ) : null}
         </div>
-        <div style={{ display: "flex", fontSize: 18, fontWeight: 700, color: "#c8f93f" }}>
+        <div style={{ display: "flex", fontSize: 18, fontWeight: 700, color: "#42634e" }}>
           {host}
         </div>
       </div>
