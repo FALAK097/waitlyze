@@ -17,7 +17,7 @@ export const metadata = {
   description,
   alternates: {
     canonical: "/blog",
-    types: { "application/rss+xml": [{ url: "/blog/feed.xml", title: "Waitlyze Blog" }] },
+    types: { "application/rss+xml": [{ url: "/rss.xml", title: "Waitlyze Blog" }] },
   },
   openGraph: { type: "website", url: "/blog", title, description },
   twitter: { card: "summary_large_image", title, description },

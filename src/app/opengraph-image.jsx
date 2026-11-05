@@ -15,8 +15,8 @@ export default function OpenGraphImage() {
       style={{
         width: "100%",
         height: "100%",
-        background: "linear-gradient(135deg, #020c06 0%, #05180f 45%, #020c06 100%)",
-        color: "#ffffff",
+        background: "#f9faf6",
+        color: "#071b12",
         display: "flex",
         flexDirection: "column",
         justifyContent: "space-between",
@@ -25,17 +25,15 @@ export default function OpenGraphImage() {
         position: "relative",
       }}
     >
-      {/* Decorative top-right accent glow */}
+      {/* A quiet brand accent, consistent with the light public pages. */}
       <div
         style={{
           position: "absolute",
-          top: "-120px",
-          right: "-120px",
-          width: "480px",
-          height: "480px",
-          background:
-            "radial-gradient(circle, rgba(200, 249, 63, 0.12) 0%, rgba(200, 249, 63, 0) 70%)",
-          borderRadius: "1000px",
+          top: 0,
+          right: 0,
+          width: 22,
+          height: "100%",
+          background: "#c8f93f",
           display: "flex",
         }}
       />
@@ -56,18 +54,17 @@ export default function OpenGraphImage() {
             display: "flex",
             alignItems: "center",
             gap: 10,
-            background: "rgba(200, 249, 63, 0.08)",
-            border: "1px solid rgba(200, 249, 63, 0.25)",
+            background: "#e7f8b8",
             padding: "8px 20px",
             borderRadius: 30,
             fontSize: 15,
             fontWeight: 700,
-            color: "#c8f93f",
+            color: "#193422",
             letterSpacing: 1.5,
             textTransform: "uppercase",
           }}
         >
-          <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#c8f93f" }} />
+          <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#42634e" }} />
           <span>Waitlist & Referral Engine</span>
         </div>
       </div>
@@ -82,7 +79,7 @@ export default function OpenGraphImage() {
             lineHeight: 1.06,
             letterSpacing: -2.5,
             maxWidth: 1020,
-            color: "#ffffff",
+            color: "#071b12",
           }}
         >
           Build an audience before you launch.
@@ -92,7 +89,7 @@ export default function OpenGraphImage() {
             display: "flex",
             fontSize: 26,
             lineHeight: 1.4,
-            color: "#9db0a3",
+            color: "#42634e",
             maxWidth: 960,
           }}
         >
@@ -108,7 +105,7 @@ export default function OpenGraphImage() {
           justifyContent: "space-between",
           alignItems: "center",
           paddingTop: "24px",
-          borderTop: "1px solid rgba(255, 255, 255, 0.1)",
+          borderTop: "1px solid #cdd8ca",
         }}
       >
         <div style={{ display: "flex", gap: 14 }}>
@@ -124,16 +121,16 @@ export default function OpenGraphImage() {
                 display: "flex",
                 alignItems: "center",
                 gap: 6,
-                background: "rgba(255, 255, 255, 0.06)",
-                border: "1px solid rgba(255, 255, 255, 0.12)",
+                background: "#ffffff",
+                border: "1px solid #dce4d8",
                 padding: "8px 16px",
                 borderRadius: 10,
                 fontSize: 16,
                 fontWeight: 600,
-                color: "#d7e3da",
+                color: "#193422",
               }}
             >
-              <span style={{ color: "#c8f93f" }}>✓</span>
+              <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#9fcf28" }} />
               <span>{label}</span>
             </div>
           ))}
@@ -143,7 +140,7 @@ export default function OpenGraphImage() {
             display: "flex",
             fontSize: 20,
             fontWeight: 700,
-            color: "#c8f93f",
+            color: "#42634e",
             letterSpacing: -0.5,
           }}
         >

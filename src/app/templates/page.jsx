@@ -1,7 +1,9 @@
 import Link from "next/link";
 
+import FinalCta from "@/components/landing/final-cta";
 import PublicShell from "@/components/landing/public-shell";
 import SignupButton from "@/components/landing/signup-button";
+import TemplatePreview from "@/components/landing/template-preview";
 import { JsonLd } from "@/components/seo/json-ld";
 import { absoluteUrl, breadcrumbNode } from "@/lib/seo-helpers";
 import { listTemplates } from "@/lib/templates/catalog.mjs";
@@ -28,7 +30,6 @@ const eyebrowClasses =
 
 function TemplateCard({ template }) {
   const meta = getGalleryMeta(template.id);
-  const hero = template.snapshot.sections.find((section) => section.type === "hero");
   const blockCount = template.snapshot.sections.filter((section) => section.visible).length;
   return (
     <article className="flex flex-col overflow-hidden rounded-xl border border-product-border-subtle bg-product-bg-surface">
@@ -38,33 +39,7 @@ function TemplateCard({ template }) {
         aria-label={`${template.name} template details`}
         className="block p-3 pb-0 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-neutral-900"
       >
-        <span
-          className="flex aspect-video flex-col gap-1.5 overflow-hidden rounded-lg p-4"
-          style={{
-            backgroundColor: template.snapshot.brand.pageBackground,
-            color: template.snapshot.brand.textColor,
-          }}
-          aria-hidden="true"
-        >
-          <span
-            className="h-1.5 w-16 rounded-full opacity-80"
-            style={{ backgroundColor: template.snapshot.brand.textColor }}
-          />
-          <span className="line-clamp-2 font-product-display text-lg leading-snug font-semibold tracking-tight">
-            {hero?.heading || template.name}
-          </span>
-          <span className="line-clamp-1 text-xs opacity-70">{hero?.body || ""}</span>
-          <span className="mt-auto flex items-center gap-2">
-            <span
-              className="inline-block h-6 w-24 rounded-full"
-              style={{ backgroundColor: template.snapshot.brand.accentColor }}
-            />
-            <span
-              className="inline-block h-6 w-12 rounded-full opacity-20"
-              style={{ backgroundColor: template.snapshot.brand.textColor }}
-            />
-          </span>
-        </span>
+        <TemplatePreview template={template} />
       </Link>
       <div className="flex flex-1 flex-col gap-1 p-4 pt-3">
         <p className="text-micro font-semibold tracking-widest text-product-text-secondary uppercase">
@@ -163,6 +138,9 @@ export default function TemplatesPage() {
             ))}
           </div>
         </section>
+        <div className={`${containerClasses} pb-18`}>
+          <FinalCta />
+        </div>
       </main>
     </PublicShell>
   );
