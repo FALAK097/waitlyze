@@ -43,7 +43,8 @@ export function WaitlistSenderSettings({ waitListId, canManage }) {
         setFromEmail(body.data?.fromEmail || "");
         setError("");
       } catch (failure) {
-        if (failure.name !== "AbortError") setError(failure.message || "Unable to load sender.");
+        if (!controller.signal.aborted && failure.name !== "AbortError")
+          setError(failure.message || "Unable to load sender.");
       } finally {
         if (!controller.signal.aborted) setLoading(false);
       }
