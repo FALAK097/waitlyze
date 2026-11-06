@@ -12,6 +12,10 @@ import { dispatchPendingWebhooks } from "@/lib/webhooks/delivery.mjs";
 
 export const runtime = "nodejs";
 
+const BATCH_SIZE = 40;
+const MAX_BATCHES = 10;
+const DRAIN_BUDGET_MS = 25_000;
+
 function authorized(request) {
   const secret = env.OUTBOX_DISPATCH_SECRET;
   const supplied = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "") || "";
@@ -23,6 +27,7 @@ function authorized(request) {
 
 export async function POST(request) {
   if (!authorized(request)) return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+  const started = Date.now();
   const sendEmail = createWorkspaceResendSender({
     db: prisma,
     defaults: {
@@ -32,16 +37,41 @@ export async function POST(request) {
     },
     createClient: (apiKey) => new Resend(apiKey),
   });
-  // These drains use independent queues. Overlap them, but wait for both to
-  // settle before surfacing a failure so neither queue is left unobserved.
+  const sendPlatform = createPlatformSender();
+  // Drain several small batches rather than claiming the entire queue at
+  // once. Finish in-flight sends before returning, even when the budget is up.
+  async function drainEmail() {
+    const result = { accepted: 0, retried: 0, failed: 0, skipped: 0, claimed: 0, batches: 0 };
+    while (result.batches < MAX_BATCHES && Date.now() - started < DRAIN_BUDGET_MS) {
+      const batch = await dispatchPendingOutboxEvents(prisma, {
+        send: sendEmail,
+        sendPlatform,
+        batchSize: BATCH_SIZE,
+        sweepScheduled: result.batches === 0,
+      });
+      result.batches++;
+      for (const key of ["accepted", "retried", "failed", "skipped", "claimed"])
+        result[key] += batch[key];
+      // No more due events, or another dispatcher won all the claims.
+      if (batch.claimed === 0 || batch.claimed < BATCH_SIZE) break;
+    }
+    return result;
+  }
+  // Email and webhook drains use independent queues. Wait for both to settle
+  // before surfacing a failure so neither queue is left unobserved.
   const [outboxResult, webhooksResult] = await Promise.allSettled([
-    dispatchPendingOutboxEvents(prisma, {
-      send: sendEmail,
-      sendPlatform: createPlatformSender(),
-    }),
+    drainEmail(),
     dispatchPendingWebhooks(prisma),
   ]);
   if (outboxResult.status === "rejected") throw outboxResult.reason;
   if (webhooksResult.status === "rejected") throw webhooksResult.reason;
-  return NextResponse.json({ ...outboxResult.value, webhooks: webhooksResult.value });
+  const pendingCount = await prisma.outboxEvent.count({
+    where: { status: "PENDING", availableAt: { lte: new Date() } },
+  });
+  return NextResponse.json({
+    ...outboxResult.value,
+    pendingCount,
+    durationMs: Date.now() - started,
+    webhooks: webhooksResult.value,
+  });
 }
