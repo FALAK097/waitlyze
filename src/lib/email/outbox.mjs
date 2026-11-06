@@ -570,15 +570,26 @@ async function dispatchFounderNotice(db, event, sendPlatform, now, attempt, resu
 
 export async function dispatchPendingOutboxEvents(
   db,
-  { send, sendPlatform, now = new Date(), batchSize = 20, waitListId, eventKeys } = {},
+  {
+    send,
+    sendPlatform,
+    now = new Date(),
+    batchSize = 20,
+    concurrency = 5,
+    sweepScheduled = true,
+    waitListId,
+    eventKeys,
+  } = {},
 ) {
   if (typeof send !== "function") throw new TypeError("A provider send function is required.");
+  if (!Number.isInteger(concurrency) || concurrency < 1 || concurrency > 10)
+    throw new TypeError("Outbox concurrency must be between 1 and 10.");
   // Fan out due scheduled broadcasts before claiming send events, so a
   // scheduled send starts within one dispatcher tick of its scheduled time.
   // Skipped for targeted dispatches (eventKeys): those run inline in
   // user-facing requests (signup verification, offboard goodbyes) and must
   // never absorb a broadcast fan-out in their latency path.
-  if (!eventKeys) {
+  if (!eventKeys && sweepScheduled) {
     try {
       await queueDueBroadcasts(db, now);
     } catch (error) {
@@ -596,8 +607,8 @@ export async function dispatchPendingOutboxEvents(
     orderBy: [{ availableAt: "asc" }, { createdAt: "asc" }],
     take: batchSize,
   });
-  const result = { accepted: 0, retried: 0, failed: 0, skipped: 0 };
-  for (const event of events) {
+  const result = { accepted: 0, retried: 0, failed: 0, skipped: 0, claimed: 0 };
+  async function dispatchEvent(event) {
     const claimed = await db.outboxEvent.updateMany({
       where: {
         id: event.id,
@@ -605,7 +616,8 @@ export async function dispatchPendingOutboxEvents(
       },
       data: { status: "PROCESSING", lockedAt: now, attempts: { increment: 1 } },
     });
-    if (claimed.count !== 1) continue;
+    if (claimed.count !== 1) return;
+    result.claimed++;
     const payload = safePayload(event.payload);
     const attempt = event.attempts + 1;
     if (event.type === "CHAT_NOTIFICATION_REQUESTED") {
@@ -640,13 +652,13 @@ export async function dispatchPendingOutboxEvents(
     }
     if (event.type === "FOUNDER_NOTICE_REQUESTED") {
       await dispatchFounderNotice(db, event, sendPlatform, now, attempt, result);
-      continue;
+      return;
     }
     if (event.type === "BROADCAST_EMAIL_REQUESTED") {
       const broadcastPayload =
         event.payload && typeof event.payload === "object" ? event.payload : null;
       await dispatchBroadcast(db, event, broadcastPayload, send, now, attempt, result);
-      continue;
+      return;
     }
     if (event.type === "MARKETING_AUTOMATION_TRIGGER_REQUESTED") {
       try {
@@ -672,15 +684,15 @@ export async function dispatchPendingOutboxEvents(
         if (canRetry) result.retried++;
         else result.failed++;
       }
-      continue;
+      return;
     }
     if (event.type === "MARKETING_AUTOMATION_STEP_REQUESTED") {
       await dispatchAutomationStep(db, event, event.payload, send, now, attempt, result);
-      continue;
+      return;
     }
     if (event.type === "OFFBOARD_EMAIL_REQUESTED") {
       await dispatchOffboard(db, event, send, now, attempt, result);
-      continue;
+      return;
     }
     if (event.type !== "SIGNUP_VERIFICATION_REQUESTED" || !payload) {
       await db.outboxEvent.update({
@@ -693,7 +705,7 @@ export async function dispatchPendingOutboxEvents(
         },
       });
       result.failed++;
-      continue;
+      return;
     }
     const [signup, verification, waitList] = await Promise.all([
       db.signUp.findUnique({
@@ -732,7 +744,7 @@ export async function dispatchPendingOutboxEvents(
         },
       });
       result.skipped++;
-      continue;
+      return;
     }
     const suppressed =
       waitList.workspaceId &&
@@ -756,7 +768,7 @@ export async function dispatchPendingOutboxEvents(
         },
       });
       result.skipped++;
-      continue;
+      return;
     }
     try {
       const response = await send({
@@ -827,5 +839,19 @@ export async function dispatchPendingOutboxEvents(
       else result.failed++;
     }
   }
+  // Bound provider requests and database transactions while preserving each
+  // event's atomic claim and provider idempotency key.
+  let next = 0;
+  async function worker() {
+    while (next < events.length) {
+      const event = events[next++];
+      await dispatchEvent(event);
+    }
+  }
+  const workers = await Promise.allSettled(
+    Array.from({ length: Math.min(concurrency, events.length) }, () => worker()),
+  );
+  const rejected = workers.find((outcome) => outcome.status === "rejected");
+  if (rejected) throw rejected.reason;
   return result;
 }
