@@ -621,6 +621,7 @@ model WebhookSubscription {
   url                      String
   eventTypes               String[] @default(["signup.created"])
   enabled                  Boolean  @default(true)
+  includeSubscriberData    Boolean  @default(false)
   secretCiphertext         String
   secretIv                 String
   secretTag                String

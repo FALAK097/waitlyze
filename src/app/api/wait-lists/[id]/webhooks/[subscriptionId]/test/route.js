@@ -4,6 +4,7 @@ import { NextResponse } from "next/server";
 
 import prisma from "@/lib/prisma";
 import { webhookAccess } from "@/lib/webhooks/access";
+import { sampleWebhookSubscriber } from "@/lib/webhooks/subscriber.mjs";
 
 export async function POST(request, { params }) {
   const { id, subscriptionId } = await params;
@@ -11,7 +12,7 @@ export async function POST(request, { params }) {
   if (access.response) return access.response;
   const subscription = await prisma.webhookSubscription.findFirst({
     where: { id: subscriptionId, waitListId: id },
-    select: { id: true, enabled: true },
+    select: { id: true, enabled: true, includeSubscriberData: true },
   });
   if (!subscription) return NextResponse.json({ error: "Not found" }, { status: 404 });
   if (!subscription.enabled)
@@ -27,7 +28,10 @@ export async function POST(request, { params }) {
     version: 1,
     occurredAt: now.toISOString(),
     waitlistId: id,
-    data: { test: true },
+    data: {
+      test: true,
+      ...(subscription.includeSubscriberData ? { subscriber: sampleWebhookSubscriber() } : {}),
+    },
   };
   const delivery = await prisma.webhookDelivery.create({
     data: {

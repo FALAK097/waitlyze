@@ -11,7 +11,7 @@ Webhooks stream signup activity to your stack in real time. Manage them in Waitl
 <Steps>
 <Step>
 ### Add a public HTTPS URL
-Enter your receiver URL. New endpoints subscribe to all four events - signup, referral, and milestone - there is nothing else to configure. Localhost and non-HTTPS URLs are rejected.
+Enter your receiver URL. New endpoints subscribe to all four events - signup, referral, and milestone. Localhost and non-HTTPS URLs are rejected. **Include subscriber data** is optional and off by default; enable it only if you trust the receiver with personal data. You can change it later from the endpoint's **View deliveries** panel.
 </Step>
 <Step>
 ### Copy the signing secret
@@ -19,7 +19,7 @@ Save it in your secrets manager immediately. You can copy it again any time from
 </Step>
 <Step>
 ### Send a test before going live
-Tests use `{ "test": true }` in `data` and never represent a real subscriber. Confirm your receiver verifies and dedupes before processing real events.
+Tests use `{ "test": true }` in `data` and never represent a real subscriber. When enrichment is enabled, the test also includes a sample `data.subscriber` to map fields in Zapier, Make, or n8n. Confirm your receiver verifies and dedupes before processing real events.
 </Step>
 </Steps>
 
@@ -49,7 +49,40 @@ Your deployment needs webhook encryption and dispatch configured before delivery
 | `referral.completed` | Inviter earns credit when the invitee verifies and the referral is `CLEAR`/`APPROVED` (same gate as the points ledger) | `{ signupId }` = inviter, `{ referredSignupId }` = invitee. Gate reward fulfillment on this, never on signup alone. Queue-position counting additionally requires the inviter to be verified - that rule lives in the position engine, not in this event. |
 | `milestone.reached` | Signup count hits 1, 10, 100, or 1000 - or a referrer crosses a reward-tier threshold | `{ count }` plus `triggeringSignupId` when known. Tier unlocks add `{ reward }` (the tier label) and use event ids shaped `reward-tier:{waitlist}:{signup}:{count}`, so they never collide with count milestones; there `signupId` is the referrer who earns the tier and `triggeringSignupId` is the invitee whose verification crossed it. Concurrent trips of the same milestone collapse to a single delivery, so dedupe by event `id` as usual. |
 
-Subscriber emails are **never** included - fetch what you need via your own subscriber read path using `signupId`. Return `2xx` only after durably accepting the event. Deduplicate by event ID because retries redeliver the same `id`.
+By default, subscriber emails are **not** included - fetch what you need via your subscriber read path using `signupId`. For an endpoint with **Include subscriber data** enabled, Waitlyze adds `data.subscriber` when a referenced signup exists. For `referral.completed` this is the inviter (`signupId`), not the invitee; for signup-count milestones it is `triggeringSignupId` when present. If there is no referenced signup or it was deleted, `data.subscriber` is omitted. Return `2xx` only after durably accepting the event. Deduplicate by event ID because retries redeliver the same `id`.
+
+```json title="Enriched signup event (opt-in only)"
+{
+  "id": "EVENT_ID",
+  "type": "signup.verified",
+  "version": 1,
+  "occurredAt": "2026-11-06T09:00:00.000Z",
+  "waitlistId": "WAITLIST_ID",
+  "data": {
+    "signupId": "SIGNUP_ID",
+    "subscriber": {
+      "email": "ada@example.com",
+      "phone": "+15555550123",
+      "customFields": { "role": "Founder" },
+      "verifiedAt": "2026-11-06T09:00:00.000Z",
+      "marketingConsent": true,
+      "referralCode": "sample-referral",
+      "referralLink": "https://example.com/w/sample?r=sample-referral",
+      "position": 42,
+      "points": 230,
+      "referralCount": 5,
+      "country": "US",
+      "utmSource": "newsletter",
+      "utmMedium": "email",
+      "utmCampaign": "launch",
+      "utmTerm": null,
+      "utmContent": null
+    }
+  }
+}
+```
+
+Fields are resolved when the delivery is first attempted, not at signup time. Optional fields can be `null` (`phone`, `customFields`, `verifiedAt`, `referralLink`, `position`, `country`, and UTM fields). `marketingConsent` reflects current opt-in without an unsubscribe, and `referralCount` includes eligible verified referrals. Retry attempts reuse the saved payload. Turning enrichment off removes subscriber data from subsequent delivery attempts; earlier deliveries cannot be recalled. Protect receiver logs and access to the signed payload, especially when sending phone numbers or custom qualification answers.
 
 ## Email events (coverage note)
 
@@ -85,7 +118,12 @@ There are no `email.*` webhook events. Resend delivery signals (delivered, bounc
     "data.signupId": {
       type: "string",
       required: true,
-      description: "The signup record (the inviter for referral.completed; the referrer for reward-tier milestone.reached). Subscriber emails are never included. Test deliveries carry `{ test: true }` here instead. Milestone events carry `count` (+ optional `triggeringSignupId`) rather than a subject signup.",
+      description: "The signup record (the inviter for referral.completed; the referrer for reward-tier milestone.reached). Email is included only in optional data.subscriber when enabled. Test deliveries carry `{ test: true }` here instead. Milestone events carry `count` (+ optional `triggeringSignupId`) rather than a subject signup.",
+    },
+    "data.subscriber": {
+      type: "object",
+      required: false,
+      description: "Opt-in subscriber snapshot with email, phone, customFields, verifiedAt, marketingConsent, referralCode, referralLink, position, points, referralCount, country, and utmSource/utmMedium/utmCampaign/utmTerm/utmContent. Test deliveries use sample values; events without a referenced signup omit it.",
     },
   }}
 />
