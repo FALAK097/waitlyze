@@ -484,6 +484,7 @@ export async function dispatchAutomationStep(db, event, payload, send, now, atte
       },
       idempotencyKey: event.eventKey,
       workspaceId: waitList.workspaceId,
+      waitListId: waitList.id,
     });
     if (response?.error) throw response.error;
     const providerMessageId = response?.data?.id || response?.id;

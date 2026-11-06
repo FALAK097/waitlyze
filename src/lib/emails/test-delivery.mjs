@@ -1,8 +1,8 @@
 import "server-only";
 import { Resend } from "resend";
 
+import { resolveEmailSender } from "@/lib/email/sender-resolution.mjs";
 import { env } from "@/lib/env.mjs";
-import { resolveWorkspaceEmailSender } from "@/lib/integrations/email-sender.mjs";
 import prisma from "@/lib/prisma";
 import { consumePublicBudget } from "@/lib/security/public-rate-limit.mjs";
 import { requireCampaign } from "@/lib/workspaces/authorize";
@@ -15,14 +15,17 @@ const platformSender = {
 
 const TEST_ADDRESS_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-// Prefer a verified workspace provider, with the platform sender as fallback.
+// Waitlist overrides take precedence over the workspace and platform sender.
 export async function senderForWaitlist(waitListId) {
   const waitlist = await prisma.waitList.findUnique({
     where: { id: waitListId },
     select: { workspaceId: true },
   });
-  const provider = await resolveWorkspaceEmailSender(prisma, waitlist?.workspaceId, null);
-  return provider || platformSender;
+  return resolveEmailSender(prisma, {
+    waitListId,
+    workspaceId: waitlist?.workspaceId,
+    defaults: platformSender,
+  });
 }
 
 export async function deliverTestEmail({
@@ -36,8 +39,6 @@ export async function deliverTestEmail({
   if (typeof to !== "string" || to.length > 320 || !TEST_ADDRESS_PATTERN.test(to)) {
     return { success: false, message: "Enter one valid test email address." };
   }
-  if (!env.RESEND_API_KEY) return { success: false, message: "RESEND_API_KEY not configured" };
-
   const validationError = validate?.();
   if (validationError) return { success: false, message: validationError };
 
@@ -60,6 +61,7 @@ export async function deliverTestEmail({
     if (prepared.error) return { success: false, message: prepared.error };
 
     const provider = await senderForWaitlist(waitListId);
+    if (!provider?.apiKey) return { success: false, message: "Email sender not configured" };
     const { error } = await new Resend(provider.apiKey).emails.send({
       from: provider.fromEmail,
       to,
@@ -71,6 +73,11 @@ export async function deliverTestEmail({
     return { success: true, message: successMessage(to) };
   } catch (error) {
     console.error(error);
+    if (error?.code === "SENDER_NEEDS_ATTENTION")
+      return {
+        success: false,
+        message: "The email sender needs attention. Update or remove it in settings.",
+      };
     return { success: false, message: "Failed to send email" };
   }
 }

@@ -380,10 +380,6 @@ export async function sendSignupEmail({ waitListId, to }) {
   ) {
     return { success: false, message: "Enter a valid email and waitlist." };
   }
-  if (!env.RESEND_API_KEY) {
-    return { success: false, message: "RESEND_API_KEY not configured" };
-  }
-
   try {
     await consumePublicBudget(prisma, {
       kind: "welcome",
@@ -433,6 +429,7 @@ export async function sendSignupEmail({ waitListId, to }) {
 
   try {
     const provider = await senderForWaitlist(waitListId);
+    if (!provider?.apiKey) return generic;
     const { error: sendError } = await new Resend(provider.apiKey).emails.send(
       {
         from: provider.fromEmail,
