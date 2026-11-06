@@ -1,26 +1,30 @@
 ---
 title: Automations
-description: Welcome, referral reminder, and milestone email recipes.
+description: Five event-driven email recipes, personalization, consent, and delivery logs.
 ---
 
-Automations are event-driven recipes at `/waitlists/[id]/emails/automations`. Each waitlist has the same three recipes, versioned independently.
+Automations are event-driven recipes at `/waitlists/[id]/emails/automations`. Each waitlist has five recipes, versioned independently. Save a draft before enabling it; recipes are not enabled automatically.
 
-## The three recipes
+## The five recipes
 
 | Recipe | Trigger | Default delay | Purpose |
 | --- | --- | --- | --- |
 | Welcome after confirmation | `SIGNUP_VERIFIED` | 0 minutes | Thank the subscriber right after they confirm. |
 | Referral reminder | `SIGNUP_VERIFIED` | 1440 minutes (24h) | Nudge subscribers with zero verified referrals at send time. Skipped with `REFERRALS_ALREADY_VERIFIED` if they already invited someone. |
-| Referral milestone | `REFERRAL_VERIFIED` | 0 minutes | Celebrate when verified referrals reach your goal. |
+| Referral milestone | `REFERRAL_VERIFIED` | 0 minutes | Celebrate when verified referrals reach your configured goal (3 by default). |
+| Welcome follow-up | `SIGNUP_VERIFIED` | 4320 minutes (72h) | Follow up with the subscriber's position, points, and referral link. |
+| Launch countdown | `SIGNUP_VERIFIED` | 10080 minutes (7 days) | Build anticipation before launch with a personalized reminder. |
 
-All three require verified email plus marketing opt-in, rechecked before each delivery.
+These are marketing emails: all five require verified email and explicit marketing opt-in, rechecked before delivery along with unsubscribe and suppression status. Signup verification itself is transactional and does not require marketing consent. The launch countdown is scheduled relative to confirmation; it is not tied to a configured launch date.
 
 ## Configure a recipe
 
 - **Delay**: 0 to 10080 minutes (0 to 168 hours). Use 0 for immediate.
-- **Subject**: up to 160 characters, supports `{{waitlist}}`.
-- **Body**: up to 3000 characters, supports `{{waitlist}}` and, for milestones only, `{{referral_count}}` with the subscriber's current eligible count.
+- **Subject**: up to 160 characters.
+- **Body**: up to 3000 characters.
 - **Milestone count** (milestone only): integer 1 to 100. Default 3.
+
+Subjects and bodies can use `{{waitlist}}`, `{{name}}`, `{{position}}`, `{{points}}`, `{{referral_link}}`, and `{{referral_count}}`. Values are resolved for each subscriber at send time; `{{referral_count}}` counts eligible verified referrals. When position or referral link is unavailable, those variables resolve to empty text. Use **Start from a saved template…** to load a saved Templates draft into a recipe, then review and save the recipe separately.
 
 <Steps>
 <Step>
@@ -41,7 +45,7 @@ Duplicate triggers are deduped by idempotency keys, so retried verifications do 
 
 ## Monitor runs
 
-The automations page shows the latest 30 runs with recipe, subscriber email, step status, and error codes. Use this plus [Subscribers](/docs/subscribers) to diagnose “why didn't they get it?” - usually unverified, not opted in, unsubscribed, suppressed, or paused.
+The Automations page shows recent runs for each recipe. The **Logs** tab at `/waitlists/[id]/emails/logs` brings automation and broadcast activity together. Automation runs show recipient, status, time, and skip or failure reasons; broadcast entries show a delivery summary, not individual recipient error codes. Open a log row to return to its recipe or broadcast. Use this plus [Subscribers](/docs/subscribers) to diagnose “why didn't they get it?” - usually unverified, not opted in, unsubscribed, suppressed, or paused.
 
 ## Next
 
