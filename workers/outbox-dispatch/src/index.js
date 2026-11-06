@@ -18,9 +18,32 @@ export default {
       method: "POST",
       headers: { authorization: `Bearer ${env.OUTBOX_DISPATCH_SECRET}` },
     });
-    await response.text();
+    // The internal route returns bounded counters, including due queue depth.
+    // Keep a failed HTTP response's original status even if its body is not JSON.
+    const body = await response.text();
+    let counters = {};
+    if (response.ok) {
+      try {
+        const parsed = JSON.parse(body);
+        counters = {
+          accepted: parsed.accepted,
+          retried: parsed.retried,
+          failed: parsed.failed,
+          pendingCount: parsed.pendingCount,
+          durationMs: parsed.durationMs,
+        };
+      } catch {
+        // An unexpected response still gets logged with its HTTP status.
+      }
+    }
     console.log(
-      `outbox dispatch cron=${event.cron} status=${response.status} ms=${Date.now() - started}`,
+      JSON.stringify({
+        event: "outbox_dispatch",
+        cron: event.cron,
+        status: response.status,
+        workerDurationMs: Date.now() - started,
+        ...counters,
+      }),
     );
     if (!response.ok) throw new Error(`Outbox dispatch failed with status ${response.status}.`);
   },
