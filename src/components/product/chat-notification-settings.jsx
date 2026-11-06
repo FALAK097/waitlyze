@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { formatProductDate } from "@/lib/product-date.mjs";
 
 const choices = [
   ["MILESTONE_COUNTS", "Milestone counts (1, 10, 100, 1,000)"],
@@ -14,7 +15,134 @@ const choices = [
   ["REWARD_TIER_UNLOCKED", "Reward tier unlocked"],
 ];
 
-function Channel({ waitListId, provider, canManage }) {
+function ChannelHeader({ provider, record, loading }) {
+  const status = loading
+    ? "Loading…"
+    : record?.status === "CONNECTED"
+      ? "Connected"
+      : record?.status === "NEEDS_ATTENTION"
+        ? "Needs attention"
+        : record
+          ? "Test needed"
+          : "Not connected";
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-2">
+      <h3 className="m-0 text-lg font-semibold">{provider === "SLACK" ? "Slack" : "Discord"}</h3>
+      <span className="rounded-full bg-product-bg-inset px-3 py-1 text-xs font-medium text-product-text-secondary">
+        {status}
+      </span>
+    </div>
+  );
+}
+
+function ChannelActions({
+  provider,
+  record,
+  url,
+  setUrl,
+  triggers,
+  setTriggers,
+  busy,
+  request,
+  confirmDisconnect,
+  setConfirmDisconnect,
+}) {
+  return (
+    <>
+      <form
+        className="grid gap-2"
+        onSubmit={(event) => {
+          event.preventDefault();
+          request("PUT", { webhookUrl: url, triggers });
+        }}
+      >
+        <Label htmlFor={`${provider}-webhook`}>
+          {record ? "Replace webhook URL" : "Webhook URL"}
+        </Label>
+        <Input
+          id={`${provider}-webhook`}
+          type="url"
+          value={url}
+          onChange={(event) => setUrl(event.target.value)}
+          placeholder={
+            provider === "SLACK"
+              ? "https://hooks.slack.com/services/…"
+              : "https://discord.com/api/webhooks/…"
+          }
+          autoComplete="off"
+          required
+          maxLength={2048}
+          disabled={busy}
+        />
+        <p className="m-0 text-xs text-product-text-secondary">
+          The URL is encrypted and never displayed again. Saving a URL requires a successful test to
+          activate it.
+        </p>
+        <Button
+          type="submit"
+          className="justify-self-start"
+          disabled={busy || triggers.length === 0}
+        >
+          {record ? "Replace URL" : "Save URL"}
+        </Button>
+      </form>
+      <fieldset className="grid gap-3 border-t border-product-border-subtle pt-4" disabled={busy}>
+        <legend className="mb-2 font-medium">Send a message for</legend>
+        {choices.map(([key, label]) => (
+          <div key={key} className="flex items-center gap-3">
+            <Checkbox
+              id={`${provider}-${key}`}
+              checked={triggers.includes(key)}
+              onCheckedChange={(checked) =>
+                setTriggers((previous) =>
+                  checked ? [...previous, key] : previous.filter((item) => item !== key),
+                )
+              }
+            />
+            <Label htmlFor={`${provider}-${key}`}>{label}</Label>
+          </div>
+        ))}
+        <p className="m-0 text-xs text-product-text-secondary">
+          Choose at least one trigger. Messages never include subscriber contact details.
+        </p>
+        {record && (
+          <Button
+            variant="outline"
+            className="justify-self-start"
+            disabled={busy || triggers.length === 0}
+            onClick={() => request("PATCH", { triggers })}
+          >
+            Save triggers
+          </Button>
+        )}
+      </fieldset>
+      {record && (
+        <div className="flex flex-wrap items-center gap-2 border-t border-product-border-subtle pt-4">
+          <Button variant="outline" disabled={busy} onClick={() => request("POST")}>
+            Send test
+          </Button>
+          {confirmDisconnect ? (
+            <>
+              <span className="text-sm">Disconnect {provider}?</span>
+              <Button variant="destructive" disabled={busy} onClick={() => request("DELETE")}>
+                Confirm disconnect
+              </Button>
+              <Button variant="ghost" disabled={busy} onClick={() => setConfirmDisconnect(false)}>
+                Cancel
+              </Button>
+            </>
+          ) : (
+            <Button variant="ghost" disabled={busy} onClick={() => setConfirmDisconnect(true)}>
+              Disconnect
+            </Button>
+          )}
+        </div>
+      )}
+    </>
+  );
+}
+
+function useChannel(endpoint) {
   const [record, setRecord] = useState(null);
   const [url, setUrl] = useState("");
   const [triggers, setTriggers] = useState(["MILESTONE_COUNTS"]);
@@ -22,26 +150,27 @@ function Channel({ waitListId, provider, canManage }) {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [confirmDisconnect, setConfirmDisconnect] = useState(false);
-  const endpoint = `/api/wait-lists/${encodeURIComponent(waitListId)}/notifications/${provider.toLowerCase()}`;
 
   useEffect(() => {
     const controller = new AbortController();
-    async function load() {
-      try {
-        const response = await fetch(endpoint, { cache: "no-store", signal: controller.signal });
+    fetch(endpoint, { cache: "no-store", signal: controller.signal })
+      .then((response) => {
         if (!response.ok) throw new Error("Could not load this channel.");
-        const body = await response.json();
-        if (controller.signal.aborted) return;
+        return response.json();
+      })
+      .then((body) => {
+        if (controller.signal.aborted) return null;
         setRecord(body.data);
         setTriggers(body.data?.triggers || ["MILESTONE_COUNTS"]);
-      } catch (failure) {
+        return null;
+      })
+      .catch((failure) => {
         if (!controller.signal.aborted && failure.name !== "AbortError")
           setError(failure.message || "Could not load this channel.");
-      } finally {
+      })
+      .finally(() => {
         if (!controller.signal.aborted) setLoading(false);
-      }
-    }
-    load();
+      });
     return () => controller.abort();
   }, [endpoint]);
 
@@ -92,25 +221,42 @@ function Channel({ waitListId, provider, canManage }) {
     }
   }
 
+  return {
+    record,
+    url,
+    setUrl,
+    triggers,
+    setTriggers,
+    loading,
+    error,
+    busy,
+    confirmDisconnect,
+    setConfirmDisconnect,
+    request,
+  };
+}
+
+function Channel({ waitListId, provider, canManage }) {
+  const endpoint = `/api/wait-lists/${encodeURIComponent(waitListId)}/notifications/${provider.toLowerCase()}`;
+  const {
+    record,
+    url,
+    setUrl,
+    triggers,
+    setTriggers,
+    loading,
+    error,
+    busy,
+    confirmDisconnect,
+    setConfirmDisconnect,
+    request,
+  } = useChannel(endpoint);
   return (
     <section
       className="grid gap-4 rounded-xl border border-product-border-subtle p-5"
       aria-label={`${provider} notifications`}
     >
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <h3 className="m-0 text-lg font-semibold">{provider === "SLACK" ? "Slack" : "Discord"}</h3>
-        <span className="rounded-full bg-product-bg-inset px-3 py-1 text-xs font-medium text-product-text-secondary">
-          {loading
-            ? "Loading…"
-            : record?.status === "CONNECTED"
-              ? "Connected"
-              : record?.status === "NEEDS_ATTENTION"
-                ? "Needs attention"
-                : record
-                  ? "Test needed"
-                  : "Not connected"}
-        </span>
-      </div>
+      <ChannelHeader provider={provider} record={record} loading={loading} />
       {error ? (
         <p role="alert" className="text-sm text-product-danger-text">
           {error}
@@ -119,110 +265,24 @@ function Channel({ waitListId, provider, canManage }) {
       {record && (
         <p className="m-0 text-sm text-product-text-secondary">
           {record.lastTestedAt
-            ? `Last tested ${new Date(record.lastTestedAt).toLocaleString()}`
+            ? `Last tested ${formatProductDate(record.lastTestedAt)}`
             : "Not tested yet"}
           {record.lastErrorCode ? ` · ${record.lastErrorCode}` : ""}
         </p>
       )}
       {!loading && !error && canManage && (
-        <>
-          <form
-            className="grid gap-2"
-            onSubmit={(event) => {
-              event.preventDefault();
-              request("PUT", { webhookUrl: url, triggers });
-            }}
-          >
-            <Label htmlFor={`${provider}-webhook`}>
-              {record ? "Replace webhook URL" : "Webhook URL"}
-            </Label>
-            <Input
-              id={`${provider}-webhook`}
-              type="url"
-              value={url}
-              onChange={(event) => setUrl(event.target.value)}
-              placeholder={
-                provider === "SLACK"
-                  ? "https://hooks.slack.com/services/…"
-                  : "https://discord.com/api/webhooks/…"
-              }
-              autoComplete="off"
-              required
-              maxLength={2048}
-              disabled={busy}
-            />
-            <p className="m-0 text-xs text-product-text-secondary">
-              The URL is encrypted and never displayed again. Saving a URL requires a successful
-              test to activate it.
-            </p>
-            <Button
-              type="submit"
-              className="justify-self-start"
-              disabled={busy || triggers.length === 0}
-            >
-              {record ? "Replace URL" : "Save URL"}
-            </Button>
-          </form>
-          <fieldset
-            className="grid gap-3 border-t border-product-border-subtle pt-4"
-            disabled={busy}
-          >
-            <legend className="mb-2 font-medium">Send a message for</legend>
-            {choices.map(([key, label]) => (
-              <div key={key} className="flex items-center gap-3">
-                <Checkbox
-                  id={`${provider}-${key}`}
-                  checked={triggers.includes(key)}
-                  onCheckedChange={(checked) =>
-                    setTriggers((previous) =>
-                      checked ? [...previous, key] : previous.filter((item) => item !== key),
-                    )
-                  }
-                />
-                <Label htmlFor={`${provider}-${key}`}>{label}</Label>
-              </div>
-            ))}
-            <p className="m-0 text-xs text-product-text-secondary">
-              Choose at least one trigger. Messages never include subscriber contact details.
-            </p>
-            {record && (
-              <Button
-                variant="outline"
-                className="justify-self-start"
-                disabled={busy || triggers.length === 0}
-                onClick={() => request("PATCH", { triggers })}
-              >
-                Save triggers
-              </Button>
-            )}
-          </fieldset>
-          {record && (
-            <div className="flex flex-wrap items-center gap-2 border-t border-product-border-subtle pt-4">
-              <Button variant="outline" disabled={busy} onClick={() => request("POST")}>
-                Send test
-              </Button>
-              {confirmDisconnect ? (
-                <>
-                  <span className="text-sm">Disconnect {provider}?</span>
-                  <Button variant="destructive" disabled={busy} onClick={() => request("DELETE")}>
-                    Confirm disconnect
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    disabled={busy}
-                    onClick={() => setConfirmDisconnect(false)}
-                  >
-                    Cancel
-                  </Button>
-                </>
-              ) : (
-                <Button variant="ghost" disabled={busy} onClick={() => setConfirmDisconnect(true)}>
-                  Disconnect
-                </Button>
-              )}
-            </div>
-          )}
-        </>
+        <ChannelActions
+          provider={provider}
+          record={record}
+          url={url}
+          setUrl={setUrl}
+          triggers={triggers}
+          setTriggers={setTriggers}
+          busy={busy}
+          request={request}
+          confirmDisconnect={confirmDisconnect}
+          setConfirmDisconnect={setConfirmDisconnect}
+        />
       )}
       {!canManage && !loading && !error && (
         <p className="m-0 text-sm text-product-text-secondary">
