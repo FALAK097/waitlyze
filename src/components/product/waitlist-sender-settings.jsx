@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { formatProductDate } from "@/lib/product-date.mjs";
 
 const sourceLabel = {
   waitlist: "This waitlist",
@@ -18,6 +19,122 @@ const statusLabel = {
   CONNECTED: "Connected",
   NEEDS_ATTENTION: "Needs attention",
 };
+
+function SenderStatus({ sender, resolved }) {
+  return (
+    <div className="rounded-lg border border-product-border-subtle bg-product-bg-inset p-4">
+      <p className="m-0 text-sm font-medium text-product-text-primary">Current sending identity</p>
+      <p className="mt-1 mb-0 text-sm text-product-text-secondary">
+        {resolved
+          ? `${sourceLabel[resolved.source] || resolved.source} · ${resolved.fromEmail || "No sender"}`
+          : "No sender configured"}
+      </p>
+      {sender && (
+        <p className="mt-2 mb-0 text-sm text-product-text-secondary">
+          Waitlist override: {statusLabel[sender.status] || sender.status}
+          {sender.lastTestedAt ? ` · Last tested ${formatProductDate(sender.lastTestedAt)}` : ""}
+          {sender.lastErrorCode ? ` · ${sender.lastErrorCode}` : ""}
+        </p>
+      )}
+    </div>
+  );
+}
+
+function SenderActions({
+  sender,
+  fromEmail,
+  setFromEmail,
+  apiKey,
+  setApiKey,
+  busy,
+  perform,
+  confirmRemove,
+  setConfirmRemove,
+}) {
+  return (
+    <>
+      <form
+        className="grid gap-4"
+        onSubmit={(event) => {
+          event.preventDefault();
+          perform("save", "PUT", "", { fromEmail, apiKey });
+        }}
+      >
+        <div className="grid gap-2">
+          <Label htmlFor="waitlist-sender-email">From email on a verified domain</Label>
+          <Input
+            id="waitlist-sender-email"
+            type="email"
+            value={fromEmail}
+            onChange={(event) => setFromEmail(event.target.value)}
+            autoComplete="email"
+            maxLength={254}
+            placeholder="hello@example.com"
+            disabled={Boolean(busy)}
+            required
+          />
+        </div>
+        <div className="grid gap-2">
+          <Label htmlFor="waitlist-sender-key">Resend sending API key</Label>
+          <Input
+            id="waitlist-sender-key"
+            type="password"
+            value={apiKey}
+            onChange={(event) => setApiKey(event.target.value)}
+            autoComplete="new-password"
+            spellCheck={false}
+            maxLength={512}
+            placeholder={sender ? "Saved securely · leave blank to keep" : "re_…"}
+            disabled={Boolean(busy)}
+            required={!sender}
+          />
+          <p className="m-0 text-sm text-product-text-secondary">
+            Use a sending-only key. Saved keys are encrypted and never shown again.
+          </p>
+        </div>
+        <Button type="submit" className="justify-self-start" disabled={Boolean(busy)}>
+          {busy === "save" ? "Saving…" : sender ? "Save changes" : "Save sender"}
+        </Button>
+      </form>
+      {sender && (
+        <div className="flex flex-wrap items-center gap-3 border-t border-product-border-subtle pt-5">
+          <Button
+            variant="outline"
+            disabled={Boolean(busy)}
+            onClick={() => perform("test", "POST", "/test")}
+          >
+            {busy === "test" ? "Sending…" : "Send test email"}
+          </Button>
+          {confirmRemove ? (
+            <>
+              <span className="text-sm text-product-text-secondary">
+                Use the inherited sender instead?
+              </span>
+              <Button
+                variant="destructive"
+                disabled={Boolean(busy)}
+                onClick={() => perform("remove", "DELETE")}
+              >
+                {busy === "remove" ? "Removing…" : "Remove sender"}
+              </Button>
+              <Button
+                variant="ghost"
+                disabled={Boolean(busy)}
+                onClick={() => setConfirmRemove(false)}
+              >
+                Cancel
+              </Button>
+            </>
+          ) : (
+            <Button variant="ghost" disabled={Boolean(busy)} onClick={() => setConfirmRemove(true)}>
+              Remove sender
+            </Button>
+          )}
+        </div>
+      )}
+    </>
+  );
+}
 
 export function WaitlistSenderSettings({ waitListId, canManage }) {
   const [sender, setSender] = useState(null);
@@ -32,24 +149,26 @@ export function WaitlistSenderSettings({ waitListId, canManage }) {
 
   useEffect(() => {
     const controller = new AbortController();
-    async function load() {
-      try {
-        const response = await fetch(url, { cache: "no-store", signal: controller.signal });
-        const body = await response.json();
-        if (!response.ok) throw new Error(body.error || "Unable to load sender settings.");
-        if (controller.signal.aborted) return;
+    fetch(url, { cache: "no-store", signal: controller.signal })
+      .then((response) => {
+        if (!response.ok) throw new Error("Unable to load sender settings.");
+        return response.json();
+      })
+      .then((body) => {
+        if (controller.signal.aborted) return null;
         setSender(body.data);
         setResolved(body.resolved);
         setFromEmail(body.data?.fromEmail || "");
         setError("");
-      } catch (failure) {
+        return null;
+      })
+      .catch((failure) => {
         if (!controller.signal.aborted && failure.name !== "AbortError")
           setError(failure.message || "Unable to load sender.");
-      } finally {
+      })
+      .finally(() => {
         if (!controller.signal.aborted) setLoading(false);
-      }
-    }
-    load();
+      });
     return () => controller.abort();
   }, [url]);
 
@@ -113,116 +232,24 @@ export function WaitlistSenderSettings({ waitListId, canManage }) {
 
   return (
     <div className="grid gap-6">
-      <div className="rounded-lg border border-product-border-subtle bg-product-bg-inset p-4">
-        <p className="m-0 text-sm font-medium text-product-text-primary">
-          Current sending identity
-        </p>
-        <p className="mt-1 mb-0 text-sm text-product-text-secondary">
-          {resolved
-            ? `${sourceLabel[resolved.source] || resolved.source} · ${resolved.fromEmail || "No sender"}`
-            : "No sender configured"}
-        </p>
-        {sender && (
-          <p className="mt-2 mb-0 text-sm text-product-text-secondary">
-            Waitlist override: {statusLabel[sender.status] || sender.status}
-            {sender.lastTestedAt
-              ? ` · Last tested ${new Date(sender.lastTestedAt).toLocaleString()}`
-              : ""}
-            {sender.lastErrorCode ? ` · ${sender.lastErrorCode}` : ""}
-          </p>
-        )}
-      </div>
+      <SenderStatus sender={sender} resolved={resolved} />
       <p className="m-0 text-sm leading-relaxed text-product-text-secondary">
         A connected waitlist sender takes priority over your workspace Resend connection and the
         deployment default. Until its test succeeds, the inherited sender stays active. A sender
         that needs attention pauses mail instead of silently falling back.
       </p>
       {canManage ? (
-        <>
-          <form
-            className="grid gap-4"
-            onSubmit={(event) => {
-              event.preventDefault();
-              perform("save", "PUT", "", { fromEmail, apiKey });
-            }}
-          >
-            <div className="grid gap-2">
-              <Label htmlFor="waitlist-sender-email">From email on a verified domain</Label>
-              <Input
-                id="waitlist-sender-email"
-                type="email"
-                value={fromEmail}
-                onChange={(event) => setFromEmail(event.target.value)}
-                autoComplete="email"
-                maxLength={254}
-                placeholder="hello@example.com"
-                disabled={Boolean(busy)}
-                required
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="waitlist-sender-key">Resend sending API key</Label>
-              <Input
-                id="waitlist-sender-key"
-                type="password"
-                value={apiKey}
-                onChange={(event) => setApiKey(event.target.value)}
-                autoComplete="new-password"
-                spellCheck={false}
-                maxLength={512}
-                placeholder={sender ? "Saved securely · leave blank to keep" : "re_…"}
-                disabled={Boolean(busy)}
-                required={!sender}
-              />
-              <p className="m-0 text-sm text-product-text-secondary">
-                Use a sending-only key. Saved keys are encrypted and never shown again.
-              </p>
-            </div>
-            <Button type="submit" className="justify-self-start" disabled={Boolean(busy)}>
-              {busy === "save" ? "Saving…" : sender ? "Save changes" : "Save sender"}
-            </Button>
-          </form>
-          {sender && (
-            <div className="flex flex-wrap items-center gap-3 border-t border-product-border-subtle pt-5">
-              <Button
-                variant="outline"
-                disabled={Boolean(busy)}
-                onClick={() => perform("test", "POST", "/test")}
-              >
-                {busy === "test" ? "Sending…" : "Send test email"}
-              </Button>
-              {confirmRemove ? (
-                <>
-                  <span className="text-sm text-product-text-secondary">
-                    Use the inherited sender instead?
-                  </span>
-                  <Button
-                    variant="destructive"
-                    disabled={Boolean(busy)}
-                    onClick={() => perform("remove", "DELETE")}
-                  >
-                    {busy === "remove" ? "Removing…" : "Remove sender"}
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    disabled={Boolean(busy)}
-                    onClick={() => setConfirmRemove(false)}
-                  >
-                    Cancel
-                  </Button>
-                </>
-              ) : (
-                <Button
-                  variant="ghost"
-                  disabled={Boolean(busy)}
-                  onClick={() => setConfirmRemove(true)}
-                >
-                  Remove sender
-                </Button>
-              )}
-            </div>
-          )}
-        </>
+        <SenderActions
+          sender={sender}
+          fromEmail={fromEmail}
+          setFromEmail={setFromEmail}
+          apiKey={apiKey}
+          setApiKey={setApiKey}
+          busy={busy}
+          perform={perform}
+          confirmRemove={confirmRemove}
+          setConfirmRemove={setConfirmRemove}
+        />
       ) : (
         <p className="m-0 text-sm text-product-text-secondary">
           Only owners and admins can manage this sender.
