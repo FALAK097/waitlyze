@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 
 import { renderSubscriberVerification } from "../../emails/render.jsx";
 import { notifyBroadcastSummary } from "../emails/founder-notifications.mjs";
+import { deliverChatNotification } from "../integrations/chat-notifiers.mjs";
 import { dispatchAutomationStep, processAutomationTrigger } from "./automations.mjs";
 import { emailBrandFromSnapshot } from "./brand.mjs";
 import { queueDueBroadcasts } from "./broadcast-queue.mjs";
@@ -607,6 +608,36 @@ export async function dispatchPendingOutboxEvents(
     if (claimed.count !== 1) continue;
     const payload = safePayload(event.payload);
     const attempt = event.attempts + 1;
+    if (event.type === "CHAT_NOTIFICATION_REQUESTED") {
+      try {
+        // Webhook POSTs have no provider idempotency key. Do not retry a
+        // partially completed fan-out and double-post to a healthy channel.
+        await deliverChatNotification(db, event);
+        await db.outboxEvent.update({
+          where: { id: event.id },
+          data: {
+            status: "DELIVERED",
+            processedAt: now,
+            lockedAt: null,
+            lastErrorCode: null,
+          },
+        });
+        result.accepted++;
+      } catch (error) {
+        console.error("Chat notification dispatch failed", error?.message || "unknown error");
+        await db.outboxEvent.update({
+          where: { id: event.id },
+          data: {
+            status: "FAILED",
+            processedAt: now,
+            lockedAt: null,
+            lastErrorCode: "CHAT_DELIVERY_FAILED",
+          },
+        });
+        result.failed++;
+      }
+      continue;
+    }
     if (event.type === "FOUNDER_NOTICE_REQUESTED") {
       await dispatchFounderNotice(db, event, sendPlatform, now, attempt, result);
       continue;

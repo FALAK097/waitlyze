@@ -3,10 +3,12 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { env } from "@/lib/env.mjs";
 import {
+  CHAT_TRIGGERS,
   isSupportedChatProvider,
   postDiscordMessage,
   postSlackMessage,
   validateChatWebhookUrl,
+  validChatTriggers,
 } from "@/lib/integrations/chat-notifiers.mjs";
 import { decryptIntegrationSecret, encryptIntegrationSecret } from "@/lib/integrations/secrets.mjs";
 import prisma from "@/lib/prisma";
@@ -19,6 +21,7 @@ const safeSelect = {
   waitListId: true,
   provider: true,
   status: true,
+  triggers: true,
   lastTestedAt: true,
   lastErrorCode: true,
   updatedAt: true,
@@ -29,7 +32,7 @@ function providerOf(channel) {
   return isSupportedChatProvider(provider) ? provider : null;
 }
 
-// Slack/Discord milestone notifications per waitlist. POST sends a live test
+// Slack/Discord notifications per waitlist. POST sends a live test
 // message through the saved webhook and activates the channel only on
 // success - same save-and-test-to-activate contract as email senders.
 export async function GET(request, { params }) {
@@ -57,6 +60,11 @@ export async function PUT(request, { params }) {
     return NextResponse.json({ error: "Secret encryption is not configured." }, { status: 503 });
   try {
     const body = await request.json();
+    if (body.triggers !== undefined && !validChatTriggers(body.triggers))
+      return NextResponse.json(
+        { error: "Choose at least one valid, unique trigger." },
+        { status: 400 },
+      );
     const { url, error } = validateChatWebhookUrl(
       provider,
       typeof body.webhookUrl === "string" ? body.webhookUrl : "",
@@ -65,8 +73,18 @@ export async function PUT(request, { params }) {
     const secret = encryptIntegrationSecret(url);
     const record = await prisma.waitlistNotificationChannel.upsert({
       where: { waitListId_provider: { waitListId: id, provider } },
-      create: { waitListId: id, provider, ...secret },
-      update: { status: "NEEDS_TEST", lastErrorCode: null, ...secret },
+      create: {
+        waitListId: id,
+        provider,
+        triggers: body.triggers ?? [CHAT_TRIGGERS[0]],
+        ...secret,
+      },
+      update: {
+        status: "NEEDS_TEST",
+        lastErrorCode: null,
+        ...(body.triggers ? { triggers: body.triggers } : {}),
+        ...secret,
+      },
       select: safeSelect,
     });
     const session = await auth.api.getSession({ headers: request.headers }).catch(() => null);
@@ -86,6 +104,39 @@ export async function PUT(request, { params }) {
       { status: 500 },
     );
   }
+}
+
+// Changing preferences does not replace the webhook secret or disable an
+// already connected channel. A saved-but-untested channel stays inactive.
+export async function PATCH(request, { params }) {
+  const { id, channel } = await params;
+  const access = await webhookAccess(request, id);
+  if (access.response) return access.response;
+  const provider = providerOf(channel);
+  if (!provider)
+    return NextResponse.json({ error: "Unknown notification channel." }, { status: 404 });
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON." }, { status: 400 });
+  }
+  if (!validChatTriggers(body.triggers))
+    return NextResponse.json(
+      { error: "Choose at least one valid, unique trigger." },
+      { status: 400 },
+    );
+  const updated = await prisma.waitlistNotificationChannel.updateMany({
+    where: { waitListId: id, provider },
+    data: { triggers: body.triggers },
+  });
+  if (!updated.count)
+    return NextResponse.json({ error: "Connect a channel first." }, { status: 404 });
+  const record = await prisma.waitlistNotificationChannel.findUnique({
+    where: { waitListId_provider: { waitListId: id, provider } },
+    select: safeSelect,
+  });
+  return NextResponse.json({ data: record }, { headers: { "Cache-Control": "no-store" } });
 }
 
 export async function DELETE(request, { params }) {
@@ -147,7 +198,7 @@ export async function POST(request, { params }) {
   const now = new Date();
   try {
     const post = provider === "SLACK" ? postSlackMessage : postDiscordMessage;
-    await post(url, "Waitlyze test: milestone notifications for this waitlist will arrive here.");
+    await post(url, "Waitlyze test: notifications for this waitlist will arrive here.");
     const updated = await prisma.waitlistNotificationChannel.updateMany({
       where: {
         id: record.id,

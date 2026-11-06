@@ -5,6 +5,7 @@ import {
   LinkSquare01Icon,
   Plug01Icon,
   Delete02Icon,
+  Notification01Icon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import Link from "next/link";
@@ -15,6 +16,7 @@ const sections = [
   { id: "referral", label: "Referral sharing", icon: UserGroupIcon },
   { id: "domain", label: "Custom domain", icon: LinkSquare01Icon },
   { id: "webhooks", label: "Webhooks", icon: Plug01Icon },
+  { id: "notifications", label: "Notifications", icon: Notification01Icon },
   { id: "delete", label: "Delete waitlist", icon: Delete02Icon, danger: true },
 ];
 

@@ -5,6 +5,7 @@ import { after } from "next/server";
 import { createUnsubscribeToken, hashUnsubscribeToken } from "../email/unsubscribe.mjs";
 import { maybeNotifySignupMilestone } from "../emails/founder-notifications.mjs";
 import { FraudLimitError, evaluateSignupFraud, silentSignupShape } from "../fraud/gates.mjs";
+import { queueChatNotification } from "../integrations/chat-notifiers.mjs";
 import { normalizeSignupEmail } from "../normalize-email.mjs";
 import {
   REFERRAL_CREDIT_STATUSES,
@@ -86,6 +87,12 @@ async function silentRewardSummary(db, waitListId, rank) {
 }
 
 async function recordVerifiedSignup(tx, signup, now) {
+  await queueChatNotification(tx, {
+    waitListId: signup.waitListId,
+    trigger: "VERIFIED_SIGNUP",
+    eventKey: `verified:${signup.id}`,
+    payload: { signUpId: signup.id },
+  });
   await enqueueWebhookEvent(tx, {
     waitListId: signup.waitListId,
     eventType: "signup.verified",
