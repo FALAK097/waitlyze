@@ -17,7 +17,7 @@ Email lives under `/waitlists/[id]/emails` with four sub-tabs: **Templates**, **
 
 Open Email tools → **Templates**. Four saved presets are available: **Welcome**, **Referral congrats**, **Launch invite**, and **Offboarding**. Edit their subject, preview text, heading, message, and additional content. The editor offers personalization variables such as `{{waitlist}}` and `{{referral_link}}`.
 
-Welcome can be used after signup confirmation; Offboarding is a saved draft for goodbye messages. Referral congrats and Launch invite are not automatically sent just because they are saved. In **Broadcasts** or **Automations**, choose **Start from a saved template…** to copy a saved preset into your draft. Review and save that broadcast or recipe separately; changing the saved template later does not update an existing draft.
+Welcome can be used after signup confirmation; Offboarding is a saved draft for goodbye messages. Referral congrats and Launch invite are not automatically sent just because they are saved. In **Broadcasts** or **Automations**, choose **Start from a saved template…** to copy a saved preset into your draft. Broadcasts copy the subject, message, and preview text; automations copy the subject and message, but not the preview text. Review and save that broadcast or recipe separately; changing the saved template later does not update an existing draft.
 
 <Steps>
 <Step>
@@ -34,7 +34,7 @@ The Templates header shows pending/failed counts for the latest 5 verification e
 </Step>
 <Step>
 ### Review delivery in Logs
-Open **Logs** at `/waitlists/[id]/emails/logs` to see broadcast and automation runs together, including recipient, status, time, and any skip or failure reason. Select a row to open its broadcast or recipe.
+Open **Logs** at `/waitlists/[id]/emails/logs` to see broadcast and automation runs together. Automation entries show recipient, status, time, and skip or failure reasons; broadcast entries show their delivery summary and status, not individual recipient error codes. Select a row to open its broadcast or recipe. If an older broadcast opens an editable draft instead of its delivery summary, load older broadcasts in the Broadcasts rail and select it there. Template test sends do not appear in Logs; check the test inbox for those messages.
 </Step>
 </Steps>
 
