@@ -82,7 +82,7 @@ const postByProvider = { SLACK: postSlackMessage, DISCORD: postDiscordMessage };
  * callers treat chat as a courtesy copy, not a delivery guarantee.
  */
 export async function notifyChatChannels(db, waitListId, text, trigger = "MILESTONE_COUNTS") {
-  if (!waitListId || !text || !CHAT_TRIGGERS.includes(trigger)) return 0;
+  if (!waitListId || !text || !CHAT_TRIGGERS.includes(trigger)) return { sent: 0, eligible: 0 };
   const channels = await db.waitlistNotificationChannel.findMany({
     where: { waitListId, status: "CONNECTED", triggers: { has: trigger } },
     select: {
@@ -106,7 +106,12 @@ export async function notifyChatChannels(db, waitListId, text, trigger = "MILEST
         const validated = validateChatWebhookUrl(record.provider, url);
         if (validated.error)
           throw Object.assign(new Error("Invalid chat webhook"), { code: "INVALID_WEBHOOK" });
-        await post(validated.url, text.replaceAll("@", "＠"));
+        const sanitized = text.replaceAll("@", "＠");
+        const message =
+          record.provider === "SLACK"
+            ? sanitized.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;")
+            : sanitized;
+        await post(validated.url, message);
         return true;
       } catch (error) {
         await db.waitlistNotificationChannel
@@ -128,11 +133,12 @@ export async function notifyChatChannels(db, waitListId, text, trigger = "MILEST
       return false;
     }),
   );
-  return deliveries.filter(Boolean).length;
+  return { sent: deliveries.filter(Boolean).length, eligible: channels.length };
 }
 
-// Queue only when a connected channel has opted into this trigger. Enqueueing
-// in the caller's transaction makes a rollback cancel the notification too.
+// Queue only when a connected channel has opted into this trigger. Callers
+// enqueue after their core transaction commits: chat failures never roll back
+// verified signups, referral points, or rewards.
 export async function queueChatNotification(db, { waitListId, trigger, eventKey, payload }) {
   if (!CHAT_TRIGGERS.includes(trigger)) throw new TypeError("Unknown chat trigger.");
   const channels = await db.waitlistNotificationChannel.count({
@@ -153,6 +159,38 @@ export async function queueChatNotification(db, { waitListId, trigger, eventKey,
   return created.count > 0;
 }
 
+export async function queueVerifiedChatNotifications(db, { waitListId, signUpId, unlocks = [] }) {
+  const notifications = [
+    ...(signUpId
+      ? [
+          {
+            waitListId,
+            trigger: "VERIFIED_SIGNUP",
+            eventKey: `verified:${signUpId}`,
+            payload: { signUpId },
+          },
+        ]
+      : []),
+    ...unlocks.map(({ referrerId, count, reward }) => ({
+      waitListId,
+      trigger: "REWARD_TIER_UNLOCKED",
+      eventKey: `reward:${waitListId}:${referrerId}:${count}`,
+      payload: { signUpId: referrerId, count, reward },
+    })),
+  ];
+  // Each enqueue is independent and courtesy-only. An outage must not change
+  // the result of an already committed signup.
+  await Promise.all(
+    notifications.map(async (notification) => {
+      try {
+        await queueChatNotification(db, notification);
+      } catch (error) {
+        console.error("Chat notification enqueue failed", error?.message || "unknown error");
+      }
+    }),
+  );
+}
+
 export async function deliverChatNotification(db, event) {
   const { trigger, signUpId, count, reward } = event.payload || {};
   if (!CHAT_TRIGGERS.includes(trigger)) throw new TypeError("Unknown chat trigger.");
@@ -160,7 +198,7 @@ export async function deliverChatNotification(db, event) {
     where: { id: event.waitListId },
     select: { name: true, status: true },
   });
-  if (!waitList || waitList.status !== "PUBLISHED") return 0;
+  if (!waitList || waitList.status !== "PUBLISHED") return { sent: 0, eligible: 0 };
   const name = String(waitList.name || "Your waitlist")
     .replace(/[\r\n]+/g, " ")
     .slice(0, 100);
@@ -182,5 +220,5 @@ export async function deliverChatNotification(db, event) {
   ) {
     text = `A subscriber unlocked ${reward.replace(/[\r\n]+/g, " ").slice(0, 120)} on ${name} with ${count} verified referrals.`;
   }
-  return text ? notifyChatChannels(db, event.waitListId, text, trigger) : 0;
+  return text ? notifyChatChannels(db, event.waitListId, text, trigger) : { sent: 0, eligible: 0 };
 }

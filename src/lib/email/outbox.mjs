@@ -576,6 +576,7 @@ export async function dispatchPendingOutboxEvents(
     now = new Date(),
     batchSize = 20,
     concurrency = 5,
+    chatOnly = false,
     sweepScheduled = true,
     waitListId,
     eventKeys,
@@ -597,12 +598,33 @@ export async function dispatchPendingOutboxEvents(
     }
   }
   const staleBefore = new Date(now.getTime() - STALE_LOCK_MS);
+  if (chatOnly) {
+    // A crashed process may have posted to the provider before it died.
+    // Incoming webhooks have no idempotency key, so never replay a stale
+    // PROCESSING chat event. Operators can see the uncertain outcome.
+    await db.outboxEvent.updateMany({
+      where: {
+        type: "CHAT_NOTIFICATION_REQUESTED",
+        status: "PROCESSING",
+        lockedAt: { lt: staleBefore },
+      },
+      data: {
+        status: "FAILED",
+        processedAt: now,
+        lockedAt: null,
+        lastErrorCode: "DELIVERY_UNCERTAIN",
+      },
+    });
+  }
   const events = await db.outboxEvent.findMany({
     where: {
+      type: chatOnly ? "CHAT_NOTIFICATION_REQUESTED" : { not: "CHAT_NOTIFICATION_REQUESTED" },
       ...(waitListId ? { waitListId } : {}),
       ...(eventKeys ? { eventKey: { in: eventKeys } } : {}),
       availableAt: { lte: now },
-      OR: [{ status: "PENDING" }, { status: "PROCESSING", lockedAt: { lt: staleBefore } }],
+      OR: chatOnly
+        ? [{ status: "PENDING" }]
+        : [{ status: "PENDING" }, { status: "PROCESSING", lockedAt: { lt: staleBefore } }],
     },
     orderBy: [{ availableAt: "asc" }, { createdAt: "asc" }],
     take: batchSize,
@@ -612,7 +634,9 @@ export async function dispatchPendingOutboxEvents(
     const claimed = await db.outboxEvent.updateMany({
       where: {
         id: event.id,
-        OR: [{ status: "PENDING" }, { status: "PROCESSING", lockedAt: { lt: staleBefore } }],
+        OR: chatOnly
+          ? [{ status: "PENDING" }]
+          : [{ status: "PENDING" }, { status: "PROCESSING", lockedAt: { lt: staleBefore } }],
       },
       data: { status: "PROCESSING", lockedAt: now, attempts: { increment: 1 } },
     });
@@ -624,17 +648,23 @@ export async function dispatchPendingOutboxEvents(
       try {
         // Webhook POSTs have no provider idempotency key. Do not retry a
         // partially completed fan-out and double-post to a healthy channel.
-        await deliverChatNotification(db, event);
+        const { sent, eligible } = await deliverChatNotification(db, event);
         await db.outboxEvent.update({
           where: { id: event.id },
           data: {
-            status: "DELIVERED",
+            status: eligible && !sent ? "FAILED" : "DELIVERED",
             processedAt: now,
             lockedAt: null,
-            lastErrorCode: null,
+            lastErrorCode: !eligible
+              ? "NO_ELIGIBLE_CHANNEL"
+              : sent < eligible
+                ? "PARTIAL_DELIVERY"
+                : null,
           },
         });
-        result.accepted++;
+        if (!eligible) result.skipped++;
+        else if (!sent) result.failed++;
+        else result.accepted++;
       } catch (error) {
         console.error("Chat notification dispatch failed", error?.message || "unknown error");
         await db.outboxEvent.update({
@@ -648,7 +678,7 @@ export async function dispatchPendingOutboxEvents(
         });
         result.failed++;
       }
-      continue;
+      return;
     }
     if (event.type === "FOUNDER_NOTICE_REQUESTED") {
       await dispatchFounderNotice(db, event, sendPlatform, now, attempt, result);

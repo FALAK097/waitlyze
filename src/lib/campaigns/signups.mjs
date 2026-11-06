@@ -5,7 +5,7 @@ import { after } from "next/server";
 import { createUnsubscribeToken, hashUnsubscribeToken } from "../email/unsubscribe.mjs";
 import { maybeNotifySignupMilestone } from "../emails/founder-notifications.mjs";
 import { FraudLimitError, evaluateSignupFraud, silentSignupShape } from "../fraud/gates.mjs";
-import { queueChatNotification } from "../integrations/chat-notifiers.mjs";
+import { queueVerifiedChatNotifications } from "../integrations/chat-notifiers.mjs";
 import { normalizeSignupEmail } from "../normalize-email.mjs";
 import {
   REFERRAL_CREDIT_STATUSES,
@@ -87,12 +87,7 @@ async function silentRewardSummary(db, waitListId, rank) {
 }
 
 async function recordVerifiedSignup(tx, signup, now) {
-  await queueChatNotification(tx, {
-    waitListId: signup.waitListId,
-    trigger: "VERIFIED_SIGNUP",
-    eventKey: `verified:${signup.id}`,
-    payload: { signUpId: signup.id },
-  });
+  const chatUnlocks = [];
   await enqueueWebhookEvent(tx, {
     waitListId: signup.waitListId,
     eventType: "signup.verified",
@@ -136,7 +131,7 @@ async function recordVerifiedSignup(tx, signup, now) {
       const counts = await getEligibleReferralCounts(tx, signup.waitListId, [
         referral.referredById,
       ]);
-      await checkRewardTierUnlocks(tx, {
+      const unlocked = await checkRewardTierUnlocks(tx, {
         waitListId: signup.waitListId,
         referrerId: referral.referredById,
         triggeringSignupId: signup.id,
@@ -144,6 +139,13 @@ async function recordVerifiedSignup(tx, signup, now) {
         tiers,
         now,
       });
+      chatUnlocks.push(
+        ...unlocked.map((tier) => ({
+          referrerId: referral.referredById,
+          count: tier.referrals,
+          reward: tier.reward,
+        })),
+      );
     }
   }
   await tx.outboxEvent.create({
@@ -154,6 +156,7 @@ async function recordVerifiedSignup(tx, signup, now) {
       payload: { signUpId: signup.id },
     },
   });
+  return chatUnlocks;
 }
 
 export class DuplicateSignupError extends Error {
@@ -388,6 +391,7 @@ export async function createCampaignSignup(
       }
 
       let verificationEventKey;
+      let chatUnlocks = [];
       if (requiresVerification) {
         const token = randomBytes(32).toString("base64url");
         const verification = await tx.signUpVerification.create({
@@ -412,7 +416,7 @@ export async function createCampaignSignup(
           },
         });
       } else {
-        await recordVerifiedSignup(tx, createdSignup, now);
+        chatUnlocks = await recordVerifiedSignup(tx, createdSignup, now);
       }
 
       const created = await tx.signUp.findUnique({
@@ -424,6 +428,7 @@ export async function createCampaignSignup(
       return {
         ...created,
         verificationEventKey,
+        chatUnlocks,
         signupOutcome: "created",
         redirectUrl: resolveSuccessRedirect(formConfig),
       };
@@ -466,16 +471,25 @@ export async function createCampaignSignup(
   // we actually created can move the milestone counters. Silent-mode fakes
   // never touch counters, webhooks, or email.
   if (signUp?.signupOutcome === "created" && !signUp.silent) {
+    if (!signUp.verificationEventKey)
+      after(() =>
+        queueVerifiedChatNotifications(db, {
+          waitListId: input.waitListId,
+          signUpId: signUp.id,
+          unlocks: signUp.chatUnlocks,
+        }),
+      );
     after(() => maybeNotifySignupMilestone(db, input.waitListId, { signupId: signUp.id }));
   }
   // Server-vetted post-signup redirect rides on signUp itself (null = stay on
   // the cockpit); rank and rewards progress spread onto the result.
-  return { ...signUp, rank, rewardSummary };
+  const { chatUnlocks: _chatUnlocks, ...publicSignUp } = signUp;
+  return { ...publicSignUp, rank, rewardSummary };
 }
 
 export async function verifyCampaignSignup(db, token, { now = new Date() } = {}) {
   if (typeof token !== "string" || token.length < 32 || token.length > 128) return false;
-  return db.$transaction(async (tx) => {
+  const verified = await db.$transaction(async (tx) => {
     const verification = await tx.signUpVerification.findUnique({
       where: { tokenHash: tokenDigest(token) },
       select: { id: true, signUpId: true, expiresAt: true, usedAt: true },
@@ -495,7 +509,9 @@ export async function verifyCampaignSignup(db, token, { now = new Date() } = {})
       where: { id: verification.signUpId },
       select: { id: true, waitListId: true, ipAddress: true },
     });
-    await recordVerifiedSignup(tx, signup, now);
-    return true;
+    const unlocks = await recordVerifiedSignup(tx, signup, now);
+    return { waitListId: signup.waitListId, signUpId: signup.id, unlocks };
   });
+  if (verified) await queueVerifiedChatNotifications(db, verified);
+  return Boolean(verified);
 }

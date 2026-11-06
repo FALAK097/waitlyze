@@ -60,14 +60,14 @@ export async function PUT(request, { params }) {
     return NextResponse.json({ error: "Secret encryption is not configured." }, { status: 503 });
   try {
     const body = await request.json();
-    if (body.triggers !== undefined && !validChatTriggers(body.triggers))
+    if (body?.triggers !== undefined && !validChatTriggers(body.triggers))
       return NextResponse.json(
         { error: "Choose at least one valid, unique trigger." },
         { status: 400 },
       );
     const { url, error } = validateChatWebhookUrl(
       provider,
-      typeof body.webhookUrl === "string" ? body.webhookUrl : "",
+      typeof body?.webhookUrl === "string" ? body.webhookUrl : "",
     );
     if (error) return NextResponse.json({ error }, { status: 400 });
     const secret = encryptIntegrationSecret(url);
@@ -76,13 +76,13 @@ export async function PUT(request, { params }) {
       create: {
         waitListId: id,
         provider,
-        triggers: body.triggers ?? [CHAT_TRIGGERS[0]],
+        triggers: body?.triggers ?? [CHAT_TRIGGERS[0]],
         ...secret,
       },
       update: {
         status: "NEEDS_TEST",
         lastErrorCode: null,
-        ...(body.triggers ? { triggers: body.triggers } : {}),
+        ...(body?.triggers ? { triggers: body.triggers } : {}),
         ...secret,
       },
       select: safeSelect,
@@ -121,7 +121,7 @@ export async function PATCH(request, { params }) {
   } catch {
     return NextResponse.json({ error: "Invalid JSON." }, { status: 400 });
   }
-  if (!validChatTriggers(body.triggers))
+  if (!validChatTriggers(body?.triggers))
     return NextResponse.json(
       { error: "Choose at least one valid, unique trigger." },
       { status: 400 },

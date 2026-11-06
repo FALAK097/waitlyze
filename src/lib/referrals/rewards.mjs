@@ -14,7 +14,6 @@
 // ../referrals/points.mjs) so retries collapse via skipDuplicates and the
 // balance bump happens in the same transaction as the triggering event.
 
-import { queueChatNotification } from "../integrations/chat-notifiers.mjs";
 import { templateSnapshotSchema } from "../templates/catalog.mjs";
 import { enqueueWebhookEventBatch } from "../webhooks/delivery.mjs";
 import {
@@ -150,16 +149,11 @@ export async function checkRewardTierUnlocks(
         now,
       })),
     );
-    for (const tier of unlocked) {
-      await queueChatNotification(tx, {
-        waitListId,
-        trigger: "REWARD_TIER_UNLOCKED",
-        eventKey: `reward:${waitListId}:${referrerId}:${tier.referrals}`,
-        payload: { signUpId: referrerId, count: tier.referrals, reward: tier.reward },
-      });
-    }
   }
-  return unlocked.length;
+  // Chat is queued after commit by the caller, and only for the threshold
+  // crossed by this referral. Never announce previously earned tiers when a
+  // channel is connected later.
+  return unlocked.filter((tier) => tier.referrals === count);
 }
 
 // Canonical per-signup rewards payload for cockpit + API responses. Never
