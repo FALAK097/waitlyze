@@ -29,13 +29,13 @@ function Channel({ waitListId, provider, canManage }) {
     async function load() {
       try {
         const response = await fetch(endpoint, { cache: "no-store", signal: controller.signal });
+        if (!response.ok) throw new Error("Could not load this channel.");
         const body = await response.json();
-        if (!response.ok) throw new Error(body.error || "Could not load this channel.");
         if (controller.signal.aborted) return;
         setRecord(body.data);
         setTriggers(body.data?.triggers || ["MILESTONE_COUNTS"]);
       } catch (failure) {
-        if (failure.name !== "AbortError")
+        if (!controller.signal.aborted && failure.name !== "AbortError")
           setError(failure.message || "Could not load this channel.");
       } finally {
         if (!controller.signal.aborted) setLoading(false);
@@ -54,8 +54,11 @@ function Channel({ waitListId, provider, canManage }) {
           ? { headers: { "content-type": "application/json" }, body: JSON.stringify(body) }
           : {}),
       });
+      if (!response.ok) {
+        const failure = await response.json();
+        throw new Error(failure.error || "Could not update this channel.");
+      }
       const result = await response.json();
-      if (!response.ok) throw new Error(result.error || "Could not update this channel.");
       if (method === "DELETE") {
         setRecord(null);
         setTriggers(["MILESTONE_COUNTS"]);
