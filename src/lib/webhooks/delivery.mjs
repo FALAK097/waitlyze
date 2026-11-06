@@ -8,6 +8,7 @@ import {
   signWebhook,
   validateWebhookUrl,
 } from "./security.mjs";
+import { resolveWebhookSubscriber } from "./subscriber.mjs";
 
 const MAX_ATTEMPTS = 6;
 const MAX_RESPONSE_BYTES = 64 * 1024;
@@ -183,16 +184,28 @@ export async function deliverWebhook(
   if (claimed.count !== 1) return { skipped: true };
   const attempt = delivery.attempts + 1;
   try {
+    let payload = delivery.payload;
+    if (delivery.subscription.includeSubscriberData && !payload?.data?.subscriber) {
+      const subscriber = await resolveWebhookSubscriber(prisma, payload);
+      if (subscriber) payload = { ...payload, data: { ...payload.data, subscriber } };
+    } else if (!delivery.subscription.includeSubscriberData && payload?.data?.subscriber) {
+      // An owner can turn off PII sharing between attempts or before replay.
+      const { subscriber: _subscriber, ...data } = payload.data;
+      payload = { ...payload, data };
+    }
+    if (payload !== delivery.payload) {
+      await prisma.webhookDelivery.update({ where: { id: deliveryId }, data: { payload } });
+    }
     const { url } = validateWebhookUrl(delivery.subscription.url);
     const addresses = await resolve(url.hostname);
     const timestamp = Math.floor(now.getTime() / 1000).toString();
-    const body = canonicalJson(delivery.payload);
+    const body = canonicalJson(payload);
     const currentSecret = decryptSecret({
       ciphertext: delivery.subscription.secretCiphertext,
       iv: delivery.subscription.secretIv,
       tag: delivery.subscription.secretTag,
     });
-    const signatures = [`v1=${signWebhook(currentSecret, timestamp, delivery.payload)}`];
+    const signatures = [`v1=${signWebhook(currentSecret, timestamp, payload)}`];
     if (
       delivery.subscription.previousSecretValidUntil > now &&
       delivery.subscription.previousSecretCiphertext
@@ -202,7 +215,7 @@ export async function deliverWebhook(
         iv: delivery.subscription.previousSecretIv,
         tag: delivery.subscription.previousSecretTag,
       });
-      signatures.push(`v1=${signWebhook(previous, timestamp, delivery.payload)}`);
+      signatures.push(`v1=${signWebhook(previous, timestamp, payload)}`);
     }
     const response = await send(url, addresses, body, {
       "x-waitlyze-timestamp": timestamp,

@@ -16,6 +16,7 @@ const select = {
   url: true,
   eventTypes: true,
   enabled: true,
+  includeSubscriberData: true,
   createdAt: true,
   lastDeliveredAt: true,
   deliveries: {
@@ -76,6 +77,8 @@ export async function POST(request, { params }) {
     )
       return NextResponse.json({ error: "Choose at least one supported event." }, { status: 400 });
     const { url, safeUrl } = validateWebhookUrl(body.url);
+    if (body.includeSubscriberData !== undefined && typeof body.includeSubscriberData !== "boolean")
+      return NextResponse.json({ error: "Invalid subscriber data setting." }, { status: 400 });
     const secret = createWebhookSecret();
     const encrypted = encryptSecret(secret);
     const subscription = await prisma.$transaction(async (tx) => {
@@ -91,6 +94,7 @@ export async function POST(request, { params }) {
           name: body.name.trim(),
           url: url.toString(),
           eventTypes: body.events,
+          includeSubscriberData: body.includeSubscriberData ?? false,
           ...Object.fromEntries(
             Object.entries(encrypted).map(([key, value]) => [
               `secret${key[0].toUpperCase()}${key.slice(1)}`,
@@ -104,6 +108,7 @@ export async function POST(request, { params }) {
           url: true,
           eventTypes: true,
           enabled: true,
+          includeSubscriberData: true,
           createdAt: true,
         },
       });

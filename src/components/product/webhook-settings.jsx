@@ -15,6 +15,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import {
   Dialog,
@@ -47,6 +48,7 @@ export function WebhookSettings({ waitListId, canManage = true }) {
   const [rows, setRows] = useState([]);
   const [name, setName] = useState("");
   const [url, setUrl] = useState("");
+  const [includeSubscriberData, setIncludeSubscriberData] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
   const [sheetId, setSheetId] = useState(null);
   const [showSecret, setShowSecret] = useState(false);
@@ -141,10 +143,11 @@ export function WebhookSettings({ waitListId, canManage = true }) {
       toast.error("Enter a valid HTTPS endpoint.");
       return;
     }
-    const created = await call("", "POST", { name, url, events });
+    const created = await call("", "POST", { name, url, events, includeSubscriberData });
     if (created) {
       setName("");
       setUrl("");
+      setIncludeSubscriberData(false);
       setAddOpen(false);
     }
   }
@@ -397,6 +400,24 @@ export function WebhookSettings({ waitListId, canManage = true }) {
                         {sheetRow.enabled ? "Active" : "Paused"}
                       </span>
                     </div>
+                    <div className="flex items-start justify-between gap-4 rounded-lg border border-product-border-subtle p-3">
+                      <div className="grid gap-1">
+                        <Label htmlFor="webhook-subscriber-data">Include subscriber data</Label>
+                        <p className="m-0 text-sm leading-relaxed text-product-text-secondary">
+                          Share email, phone, custom fields, and referral details with this
+                          endpoint. Leave off for ID-only payloads.
+                        </p>
+                      </div>
+                      <Checkbox
+                        id="webhook-subscriber-data"
+                        checked={sheetRow.includeSubscriberData}
+                        onCheckedChange={(checked) =>
+                          call(`/${sheetRow.id}`, "PATCH", { includeSubscriberData: checked })
+                        }
+                        disabled={controlsDisabled}
+                        aria-label={`Include subscriber data for ${sheetRow.name}`}
+                      />
+                    </div>
                     <div className="grid content-start gap-1">
                       <h4 className="mt-3 mb-0 text-caption font-medium text-product-text-secondary">
                         Recent deliveries
@@ -500,8 +521,25 @@ export function WebhookSettings({ waitListId, canManage = true }) {
                     className="mb-4! text-sm leading-relaxed text-product-text-secondary"
                   >
                     Use a public HTTPS endpoint. Receives signup, referral, and milestone events.
-                    Payloads exclude subscriber email addresses.
+                    Payloads exclude subscriber email addresses unless you enable subscriber data.
                   </p>
+                </div>
+                <div className="product-field">
+                  <div className="flex items-start gap-3">
+                    <Checkbox
+                      id="webhook-add-subscriber-data"
+                      checked={includeSubscriberData}
+                      onCheckedChange={setIncludeSubscriberData}
+                      disabled={controlsDisabled}
+                    />
+                    <div className="grid gap-1">
+                      <Label htmlFor="webhook-add-subscriber-data">Include subscriber data</Label>
+                      <p className="m-0 text-sm leading-relaxed text-product-text-secondary">
+                        Optional: send email, phone, custom fields, and referral details to this
+                        endpoint. Only enable this for a receiver you trust.
+                      </p>
+                    </div>
+                  </div>
                 </div>
                 <div className="product-actions">
                   <DialogClose render={<Button variant="outline" />} disabled={busy}>
