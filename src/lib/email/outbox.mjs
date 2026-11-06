@@ -221,6 +221,7 @@ async function dispatchBroadcast(db, event, payload, send, now, attempt, result)
       },
       idempotencyKey: event.eventKey,
       workspaceId: waitList.workspaceId,
+      waitListId: waitList.id,
     });
     if (response?.error) throw response.error;
     const providerMessageId = response?.data?.id || response?.id;
@@ -424,6 +425,7 @@ async function dispatchOffboard(db, event, send, now, attempt, result) {
       text,
       idempotencyKey: event.eventKey,
       workspaceId: waitList.workspaceId,
+      waitListId: waitList.id,
     });
     if (response?.error) throw response.error;
     const providerMessageId = response?.data?.id || response?.id;
@@ -738,6 +740,7 @@ export async function dispatchPendingOutboxEvents(
         text: `Confirm your email to secure your place on ${waitList.name || "the waitlist"}. Open this link within 24 hours: ${String(process.env.BETTER_AUTH_URL || "").replace(/\/$/, "")}/verify/${encodeURIComponent(payload.token)}`,
         idempotencyKey: event.eventKey,
         workspaceId: waitList.workspaceId,
+        waitListId: waitList.id,
       });
       if (response?.error) throw response.error;
       const providerMessageId = response?.data?.id || response?.id;
