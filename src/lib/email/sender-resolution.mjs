@@ -40,15 +40,8 @@ async function resolveWaitlistSender(db, waitListId) {
  * (throws SENDER_NEEDS_ATTENTION) instead of falling back; a NEEDS_TEST
  * sender stays dormant and falls back until its test succeeds.
  *
- * TODO (Phase 7c follow-up): thread waitListId through the remaining
- * sending paths so they resolve per-waitlist instead of per-workspace.
- * Still workspace-scoped today:
- * - src/lib/email/outbox.mjs (broadcast + offboard sends; waitList.id is
- *   in scope at both send() call sites - pass waitListId through)
- * - src/lib/email/dispatch-now.mjs
- * - src/app/actions/emails.js (test sends; resolveWorkspaceEmailSender
- *   call should become resolveEmailSender with the waitlist id)
- * - broadcast/automation enqueue paths that snapshot the sender
+ * Founder notices remain on the platform sender by design; subscriber mail
+ * and campaign test sends supply the waitlist id at the send boundary.
  */
 export async function resolveEmailSender(db, { workspaceId, waitListId, defaults }) {
   if (waitListId) {

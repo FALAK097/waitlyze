@@ -4,7 +4,7 @@ description: Connect your verified domain to send waitlist email.
 icon: resend
 ---
 
-Resend connects a verified sender to Waitlyze. A workspace connection is managed in **Settings → Integrations**; a waitlist can also have its own sender credentials on the sending paths that support waitlist-level resolution.
+Resend connects a verified sender to Waitlyze. Manage a shared workspace connection in **Settings → Integrations**, or give one waitlist its own sending identity in **Waitlist settings → Sender identity**.
 
 ## Connect your sender
 
@@ -41,13 +41,13 @@ Disconnecting falls back to the deployment sender immediately.
 
 ## Per-waitlist sender identity
 
-Each waitlist can store its own Resend key and From address instead of inheriting the workspace connection. Manage it through the authenticated waitlist sender endpoints (these are session-protected settings routes, not public API-key endpoints): `GET` / `PUT` / `DELETE /api/wait-lists/[id]/email-sender`, plus `POST /api/wait-lists/[id]/email-sender/test`.
+Each waitlist can store its own Resend key and From address instead of inheriting the workspace connection. Owners and admins can open **Waitlist settings → Sender identity**, enter a sending-only key and verified From address, save, and send a real test email to their account address. The page shows the active source and address, override status, last test time, and error code. Change the key by entering a replacement; a blank key keeps the saved encrypted key. Remove the override to return to the inherited sender. These actions also use session-protected routes (`GET` / `PUT` / `DELETE /api/wait-lists/[id]/email-sender`, `POST /api/wait-lists/[id]/email-sender/test`), not public API-key endpoints.
 
 - Resolution order is **connected waitlist sender → workspace sender → deployment default**. A waitlist sender in `NEEDS_TEST` stays dormant and falls back; `GET` also returns the currently `resolved` source and From address.
 - Save-and-test-to-activate, same as the workspace flow: the sender stays dormant until a test email succeeds, and deleting it falls back to the workspace sender immediately.
 - Fail-closed: a configured sender that breaks (bad key, undecryptable secret) surfaces a founder-facing error instead of silently reverting to the platform sender. Until a test succeeds - or after you delete the sender - the workspace sender applies as usual.
 
-This override is not used by every mail path yet. Broadcast, automation, and test-send paths still resolve at workspace scope because they do not pass the waitlist ID to sender resolution. The workspace Resend webhook is also the configured path for bounce/complaint suppression; waitlist-level keys do not create a separate callback or signing-secret slot.
+The waitlist override is used for verification, broadcast, automation, offboarding, direct welcome, and template/broadcast/automation test sends. Founder account notices remain on the platform sender. The workspace Resend webhook is still the configured path for bounce/complaint suppression; waitlist-level keys do not create a separate callback or signing-secret slot. If you use a waitlist-level Resend account, configure its bounce/complaint events to reach the workspace webhook so suppression stays current.
 
 ## Bounces, complaints, and suppression
 
