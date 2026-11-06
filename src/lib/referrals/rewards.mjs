@@ -150,7 +150,10 @@ export async function checkRewardTierUnlocks(
       })),
     );
   }
-  return unlocked.length;
+  // Chat is queued after commit by the caller, and only for the threshold
+  // crossed by this referral. Never announce previously earned tiers when a
+  // channel is connected later.
+  return unlocked.filter((tier) => tier.referrals === count);
 }
 
 // Canonical per-signup rewards payload for cockpit + API responses. Never

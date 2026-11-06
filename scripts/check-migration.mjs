@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { randomBytes } from "node:crypto";
-import { readFile } from "node:fs/promises";
+import { readFile, readdir } from "node:fs/promises";
 
 import pg from "pg";
 
@@ -116,6 +116,12 @@ try {
           "workspace_audit_events",
         );
         // Later additive migrations must also apply cleanly on the upgraded legacy schema.
+        const laterMigrations = (await readdir("prisma/migrations"))
+          .filter(
+            (name) =>
+              name > "20261027110000_broadcast_history_cursor_index" && /^\d{14}_/.test(name),
+          )
+          .sort();
         for (const name of [
           "20261014081346_phase0_attribution_points",
           "20261014083000_phase0_impression_dedupe",
@@ -135,7 +141,7 @@ try {
           "20261025120001_phase4_ledger_custom",
           "20261025140000_phase4_fraud_widgets",
           "20261027110000_broadcast_history_cursor_index",
-          "20261106090000_webhook_subscriber_data",
+          ...laterMigrations,
         ]) {
           await db.query(await readFile(`prisma/migrations/${name}/migration.sql`, "utf8"));
         }
