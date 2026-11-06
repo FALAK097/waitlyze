@@ -41,6 +41,11 @@ export async function PATCH(request, { params }) {
         return NextResponse.json({ error: "Invalid enabled state." }, { status: 400 });
       data.enabled = body.enabled;
     }
+    if (body.includeSubscriberData !== undefined) {
+      if (typeof body.includeSubscriberData !== "boolean")
+        return NextResponse.json({ error: "Invalid subscriber data setting." }, { status: 400 });
+      data.includeSubscriberData = body.includeSubscriberData;
+    }
     await prisma.$transaction(async (tx) => {
       await tx.webhookSubscription.update({ where: { id: subscriptionId }, data });
       if (data.enabled === true)

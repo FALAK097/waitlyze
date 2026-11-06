@@ -11,7 +11,7 @@ There is no native Waitlyze Zapier app. The supported path is a Waitlyze [webhoo
 <Steps>
 <Step>
 ### Add a webhook endpoint in Waitlyze
-In waitlist settings → **Webhooks**, add your Zapier webhook URL and subscribe it to the events the Zap needs (`signup.created`, `signup.verified`, `referral.completed`, `milestone.reached`). Copy the signing secret.
+In waitlist settings → **Webhooks**, add your Zapier webhook URL (new endpoints receive all four events: `signup.created`, `signup.verified`, `referral.completed`, `milestone.reached`). Enable **Include subscriber data** to map email, phone, custom fields, and referral details directly in later Zap steps; leave it off if you want ID-only events. Copy the signing secret.
 </Step>
 <Step>
 ### Catch the hook in Zapier
@@ -22,8 +22,8 @@ Create a Zap with a **Webhooks by Zapier → Catch Raw Hook** trigger and paste 
 Before any later Zap action runs, verify the event in a Code step: pass the Catch Raw Hook's request body, the `x-waitlyze-signature` header value, and your signing secret to the verifier from [Webhooks](/docs/webhooks), and stop the Zap if verification fails.
 </Step>
 <Step>
-### Look up the subscriber via the API
-Events carry `signupId`, never the email. Use a follow-up step against your own subscriber read path or the [Signup API](/docs/api) status lookup, then fan out to Sheets, Slack, your CRM, or wherever the Zap goes.
+### Map the subscriber fields
+With enrichment enabled, map fields from `data.subscriber` directly into Sheets, Slack, or your CRM; the test hook includes realistic sample values for setup. Without enrichment, use `signupId` in a follow-up lookup against your subscriber read path or the [Signup API](/docs/api). Always check for `data.test` before creating real contacts.
 </Step>
 </Steps>
 
