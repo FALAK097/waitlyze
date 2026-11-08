@@ -1,3 +1,4 @@
+import { getWorkspaceEntitlements } from "../billing/plans.mjs";
 import { templateSnapshotSchema } from "../templates/catalog.mjs";
 import { AccessError, campaignScope } from "../workspaces/service.mjs";
 
@@ -47,7 +48,7 @@ async function persistSnapshot(
 ) {
   if (!Number.isSafeInteger(expectedRevision) || expectedRevision < 1)
     throw new Error("Invalid page version.");
-  const snapshot = templateSnapshotSchema.parse(rawSnapshot);
+  let snapshot = templateSnapshotSchema.parse(rawSnapshot);
   return db.$transaction(async (tx) => {
     const where = scopedPage(actorId, waitListId, workspaceId);
     const current = await tx.waitList.findFirst({
@@ -55,6 +56,10 @@ async function persistSnapshot(
       select: { id: true, templateRevision: true, templateSnapshot: true },
     });
     if (!current) throw new AccessError();
+    const entitlements = await getWorkspaceEntitlements(tx, workspaceId);
+    if (!entitlements.removeBranding && snapshot.brand.showPoweredBy === false) {
+      snapshot = { ...snapshot, brand: { ...snapshot.brand, showPoweredBy: true } };
+    }
     const stored = templateSnapshotSchema.safeParse(current.templateSnapshot);
     if (!replaceInvalid && !stored.success) throw stored.error;
     if (current.templateRevision !== expectedRevision) throw new DraftRevisionConflict(current);

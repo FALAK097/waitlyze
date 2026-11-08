@@ -12,6 +12,7 @@ import {
   resendWorkspaceInvitation,
   revokeWorkspaceInvite,
 } from "@/app/actions/workspace-invitations";
+import { UpgradeButton } from "@/components/shared/upgrade-button";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -60,6 +61,9 @@ export function TeamAccessSettings({
   invitations,
   canManage,
   canInviteAdmins,
+  canManageBilling,
+  plan = "FREE",
+  memberLimit = 1,
   secureInvitesConfigured,
   currentUserId,
   isPersonalWorkspace = false,
@@ -147,6 +151,19 @@ export function TeamAccessSettings({
             Personal workspaces are just for you. Create a shared workspace from the workspace
             switcher to invite teammates.
           </p>
+        ) : canManage && secureInvitesConfigured && members.length >= memberLimit ? (
+          plan === "FREE" ? (
+            <UpgradeButton
+              label="Unlock team invitations"
+              feature="Workspace collaboration"
+              canManageBilling={canManageBilling}
+              size="md"
+            />
+          ) : (
+            <p className="m-0 text-sm text-product-text-secondary" role="status">
+              This Pro workspace is at its {memberLimit}-member limit.
+            </p>
+          )
         ) : canManage && secureInvitesConfigured ? (
           <Dialog open={inviteOpen} onOpenChange={setInviteOpen}>
             <DialogTrigger render={<Button variant="outline" />}>
@@ -160,6 +177,7 @@ export function TeamAccessSettings({
                 <InvitationForm
                   workspaceId={workspaceId}
                   canInviteAdmins={canInviteAdmins}
+                  canManageBilling={canManageBilling}
                   onComplete={() => setInviteOpen(false)}
                 />
               </div>
@@ -425,7 +443,7 @@ export function TeamAccessSettings({
   );
 }
 
-function InvitationForm({ workspaceId, canInviteAdmins, onComplete }) {
+function InvitationForm({ workspaceId, canInviteAdmins, canManageBilling, onComplete }) {
   const [state, action, pending] = useActionState(inviteWorkspaceMember, {});
   const [role, setRole] = useState("MEMBER");
   useEffect(() => {
@@ -466,6 +484,14 @@ function InvitationForm({ workspaceId, canInviteAdmins, onComplete }) {
       <p className="mb-4! text-sm leading-relaxed text-product-text-secondary">
         Members can edit waitlists. Admins can also manage workspace settings.
       </p>
+      {state.code === "PLAN_UPGRADE_REQUIRED" && (
+        <UpgradeButton
+          label="Compare Pro plans"
+          feature="Workspace collaboration"
+          canManageBilling={canManageBilling}
+          size="md"
+        />
+      )}
       <Button type="submit" disabled={pending} aria-busy={pending}>
         {pending ? "Sending invitation…" : "Send invitation"}
       </Button>

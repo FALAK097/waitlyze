@@ -9,13 +9,15 @@ import { SettingsLoadError } from "@/components/product/settings-load-error";
 import { SettingsPanelSkeleton } from "@/components/product/settings-panel-skeleton";
 import { SettingsSectionNavigation } from "@/components/product/settings-section-nav";
 import { TeamAccessSettings } from "@/components/product/team-access-settings";
+import { WorkspaceBillingSettings } from "@/components/product/workspace-billing-settings";
+import { getWorkspaceEntitlements } from "@/lib/billing/plans.mjs";
 import { env } from "@/lib/env.mjs";
 import prisma from "@/lib/prisma";
 import { currentWorkspace } from "@/lib/workspaces/current";
 
 export const metadata = { title: "Settings" };
 
-async function SelectedSettings({ section, user, workspace, role }) {
+async function SelectedSettings({ section, user, workspace, role, checkoutReturn }) {
   const canManage = ["OWNER", "ADMIN"].includes(role);
   if (section === "profile")
     return (
@@ -37,36 +39,39 @@ async function SelectedSettings({ section, user, workspace, role }) {
       </section>
     );
   if (section === "team") {
-    const results = await Promise.allSettled([
-      prisma.workspaceMember.findMany({
-        where: { workspaceId: workspace.id },
-        orderBy: [{ role: "asc" }, { createdAt: "asc" }],
-        select: {
-          userId: true,
-          role: true,
-          createdAt: true,
-          user: { select: { name: true, email: true, image: true, imageUrl: true } },
-        },
-      }),
-      canManage
-        ? prisma.workspaceInvitation.findMany({
-            where: {
-              workspaceId: workspace.id,
-              status: { in: ["PENDING", "SEND_FAILED"] },
-              expiresAt: { gt: new Date() },
-            },
-            orderBy: { createdAt: "desc" },
-            take: 50,
-            select: {
-              id: true,
-              emailNormalized: true,
-              role: true,
-              status: true,
-              createdAt: true,
-              expiresAt: true,
-            },
-          })
-        : Promise.resolve([]),
+    const [results, entitlements] = await Promise.all([
+      Promise.allSettled([
+        prisma.workspaceMember.findMany({
+          where: { workspaceId: workspace.id },
+          orderBy: [{ role: "asc" }, { createdAt: "asc" }],
+          select: {
+            userId: true,
+            role: true,
+            createdAt: true,
+            user: { select: { name: true, email: true, image: true, imageUrl: true } },
+          },
+        }),
+        canManage
+          ? prisma.workspaceInvitation.findMany({
+              where: {
+                workspaceId: workspace.id,
+                status: { in: ["PENDING", "SEND_FAILED"] },
+                expiresAt: { gt: new Date() },
+              },
+              orderBy: { createdAt: "desc" },
+              take: 50,
+              select: {
+                id: true,
+                emailNormalized: true,
+                role: true,
+                status: true,
+                createdAt: true,
+                expiresAt: true,
+              },
+            })
+          : Promise.resolve([]),
+      ]),
+      getWorkspaceEntitlements(prisma, workspace.id),
     ]);
     return (
       <section className="max-w-190 min-w-0 flex-1" aria-labelledby="settings-panel-heading">
@@ -83,6 +88,9 @@ async function SelectedSettings({ section, user, workspace, role }) {
             invitations={results[1].value}
             canManage={canManage}
             canInviteAdmins={role === "OWNER"}
+            canManageBilling={role === "OWNER"}
+            plan={entitlements.plan}
+            memberLimit={entitlements.members}
             secureInvitesConfigured={Boolean(process.env.WEBHOOK_SECRET_ENCRYPTION_KEY)}
             currentUserId={user.id}
             isPersonalWorkspace={Boolean(workspace.personalOwnerId)}
@@ -165,6 +173,40 @@ async function SelectedSettings({ section, user, workspace, role }) {
       </section>
     );
   }
+  if (section === "billing") {
+    const [subscription, waitlistCount, signupCount, memberCount, entitlements] = await Promise.all(
+      [
+        prisma.workspaceSubscription.findUnique({
+          where: { workspaceId: workspace.id },
+          select: {
+            interval: true,
+            status: true,
+            currentPeriodEnd: true,
+            cancelAtPeriodEnd: true,
+          },
+        }),
+        prisma.waitList.count({ where: { workspaceId: workspace.id } }),
+        prisma.signUp.count({ where: { waitList: { workspaceId: workspace.id } } }),
+        prisma.workspaceMember.count({ where: { workspaceId: workspace.id } }),
+        getWorkspaceEntitlements(prisma, workspace.id),
+      ],
+    );
+    return (
+      <WorkspaceBillingSettings
+        workspaceName={workspace.name}
+        plan={entitlements.plan}
+        interval={subscription?.interval || null}
+        status={subscription?.status || "FREE"}
+        currentPeriodEnd={subscription?.currentPeriodEnd?.toISOString() || null}
+        cancelAtPeriodEnd={subscription?.cancelAtPeriodEnd === true}
+        canManageBilling={role === "OWNER"}
+        waitlistCount={waitlistCount}
+        signupCount={signupCount}
+        memberCount={memberCount}
+        checkoutReturn={checkoutReturn}
+      />
+    );
+  }
   let connection;
   try {
     connection = await prisma.workspaceIntegration.findUnique({
@@ -211,7 +253,9 @@ async function SelectedSettings({ section, user, workspace, role }) {
 
 export default async function SettingsPage({ searchParams }) {
   const [context, query] = await Promise.all([currentWorkspace(), searchParams]);
-  const section = ["profile", "workspace", "team", "integrations", "audit"].includes(query.section)
+  const section = ["profile", "workspace", "team", "integrations", "audit", "billing"].includes(
+    query.section,
+  )
     ? query.section
     : "profile";
   return (
@@ -226,6 +270,7 @@ export default async function SettingsPage({ searchParams }) {
             section={section}
             {...context}
             role={context.workspace.members[0]?.role}
+            checkoutReturn={query.checkout === "return"}
           />
         </Suspense>
       </div>

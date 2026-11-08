@@ -1,164 +1,199 @@
 "use client";
 
-import { Cancel01Icon, Tick01Icon } from "@hugeicons/core-free-icons";
+import { Tick01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { motion } from "motion/react";
+import dynamic from "next/dynamic";
+import { useState } from "react";
 
+import SignupButton from "@/components/landing/signup-button";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-const plans = [
-  {
-    name: "Starter",
-    price: "$16",
-    originalPrice: "$23",
-    features: [
-      { name: "Up to 500 signups", available: true },
-      { name: "Unlimited Projects", available: true },
-      { name: "Waitlist Widget", available: true },
-      { name: "Hosted Page", available: true },
-      { name: "Realtime Social Proof", available: false },
-      { name: "Email Verification", available: false },
-      { name: "Waitlist Analytics", available: false },
-      { name: "Gamified Referrals", available: false },
-    ],
-    highlight: false,
-    color: "from-pink-500 to-rose-500",
-  },
-  {
-    name: "Pro",
-    price: "$35",
-    originalPrice: "$50",
-    features: [
-      { name: "Up to 2K signups", available: true },
-      { name: "Unlimited Projects", available: true },
-      { name: "Waitlist Widget", available: true },
-      { name: "Hosted Page", available: true },
-      { name: "Realtime Social Proof", available: true },
-      { name: "Email Verification", available: true },
-      { name: "Waitlist Analytics", available: false },
-      { name: "Gamified Referrals", available: false },
-    ],
-    highlight: true,
-    color: "from-primary to-primary/40",
-  },
-  {
-    name: "Hacker",
-    price: "$69",
-    originalPrice: "$99",
-    features: [
-      { name: "Up to 5K signups", available: true },
-      { name: "Unlimited Projects", available: true },
-      { name: "Waitlist Widget", available: true },
-      { name: "Hosted Page", available: true },
-      { name: "Realtime Social Proof", available: true },
-      { name: "Email Verification", available: true },
-      { name: "Waitlist Analytics", available: true },
-      { name: "Gamified Referrals", available: true },
-    ],
-    highlight: false,
-    color: "from-blue-500 to-cyan-500",
-  },
+
+// Better Auth's React hooks are browser-only in this app, so the checkout CTA
+// loads as a client-only island while the plan copy stays server-rendered.
+const PricingCheckoutButton = dynamic(() => import("./pricing-checkout-button"), {
+  ssr: false,
+  loading: () => (
+    <div className="h-9 w-full animate-pulse rounded-lg bg-product-bg-inset" aria-hidden="true" />
+  ),
+});
+
+const freeFeatures = [
+  "1 published waitlist",
+  "Up to 100 signups per workspace",
+  "Hosted page and embeddable form",
+  "Page builder and launch templates",
+  "Referral links and queue position",
+  "Connected sender for confirmation email",
+  "CSV export and full data ownership",
 ];
 
-export default function Pricing({ isModal = false }) {
+const proFeatures = [
+  "3 published waitlists",
+  "Up to 2,000 signups per workspace",
+  "Everything in Free",
+  "Advanced analytics with trends and sources",
+  "Referral milestones and reward tiers",
+  "Email broadcasts and automations via your connected sender",
+  "Remove Waitlyze branding and connect a custom domain",
+  "Up to 3 workspace members",
+];
+
+export default function Pricing({
+  isModal = false,
+  currentPlan = "FREE",
+  currentInterval = null,
+  canManageBilling = true,
+  feature = null,
+}) {
+  const [interval, setInterval] = useState("annual");
+  const isPro = currentPlan === "PRO";
+
+  const sectionClass = isModal
+    ? "px-1 py-2"
+    : "wl-section wl-pricing bg-product-bg-page px-4 sm:px-5 md:px-8 lg:px-12";
+
   return (
-    <section className={`${isModal ? "py-4" : "bg-background py-20"}`} id="pricing">
-      <div className={`${isModal ? "" : "container mx-auto px-4 sm:px-6 lg:px-8"}`}>
-        <motion.h2
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className={`${
-            isModal ? "mb-6 text-2xl" : "mb-12 text-4xl"
-          } bg-linear-to-r from-primary to-primary/20 bg-clip-text text-center font-bold text-transparent`}
-        >
-          Choose Your Plan
-        </motion.h2>
-        <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
-          {plans.map((plan, index) => (
-            <motion.div
-              key={plan.name}
-              initial={{ opacity: 0, y: 50 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: index * 0.1 }}
+    <section className={sectionClass} id={isModal ? undefined : "pricing"}>
+      <div className="mx-auto w-full max-w-7xl">
+        <header className="mx-auto mb-9 max-w-2xl text-center sm:mb-12">
+          {!isModal && <p className="wl-eyebrow">SIMPLE, WORKSPACE-LEVEL PRICING</p>}
+          <h2 className="font-product-display text-3xl leading-tight tracking-tight sm:text-4xl">
+            {feature ? `Unlock ${feature}` : "Start free. Upgrade when you need more."}
+          </h2>
+          <p className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-product-text-secondary sm:text-base">
+            One Pro plan, no feature maze. Pick monthly flexibility or save with annual billing.
+          </p>
+          <div
+            className="mx-auto mt-6 inline-flex rounded-full border border-product-border-subtle bg-product-bg-surface p-1"
+            aria-label="Billing interval"
+            role="group"
+          >
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              aria-pressed={interval === "monthly"}
+              className={
+                interval === "monthly" ? "rounded-full bg-product-bg-inset" : "rounded-full"
+              }
+              onClick={() => setInterval("monthly")}
             >
-              <Card
-                className={`flex h-full flex-col transition-all duration-300 ${
-                  plan.highlight ? "shadow-lg hover:shadow-xl" : "shadow hover:shadow-md"
-                } relative overflow-hidden`}
-              >
-                {plan.highlight && (
-                  <div className="absolute top-0 right-0 bg-linear-to-r from-primary to-primary/40 px-3 py-1 text-sm font-bold text-white">
-                    Popular
-                  </div>
-                )}
-                <div className={`h-2 bg-linear-to-r ${plan.color}`} />
-                <CardHeader className="text-center">
-                  <CardTitle className="text-2xl font-bold">{plan.name}</CardTitle>
-                  <div className="mt-4 flex items-baseline justify-center space-x-2">
-                    <p className="text-5xl font-extrabold text-primary">{plan.price}</p>
-                    <p className="text-xl text-muted-foreground">/mo</p>
-                  </div>
-                  {plan.originalPrice && (
-                    <p className="mt-1 text-sm text-muted-foreground">
-                      <span className="line-through">{plan.originalPrice}</span> Save{" "}
-                      {Math.round(
-                        (1 -
-                          Number.parseInt(plan.price.slice(1)) /
-                            Number.parseInt(plan.originalPrice.slice(1))) *
-                          100,
-                      )}
-                      %
-                    </p>
-                  )}
-                </CardHeader>
-                <CardContent className="grow">
-                  <ul className="space-y-3">
-                    {plan.features.map((feature, featureIndex) => (
-                      <motion.li
-                        key={feature.name}
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{
-                          duration: 0.3,
-                          delay: featureIndex * 0.1,
-                        }}
-                        className="flex items-center"
-                      >
-                        {feature.available ? (
-                          <HugeiconsIcon
-                            icon={Tick01Icon}
-                            className="mr-2 h-5 w-5 text-green-500"
-                          />
-                        ) : (
-                          <HugeiconsIcon
-                            icon={Cancel01Icon}
-                            className="mr-2 h-5 w-5 text-red-500"
-                          />
-                        )}
-                        <span
-                          className={`text-sm ${
-                            feature.available
-                              ? "text-foreground"
-                              : "text-muted-foreground line-through"
-                          }`}
-                        >
-                          {feature.name}
-                        </span>
-                      </motion.li>
-                    ))}
-                  </ul>
-                </CardContent>
-                <CardFooter>
-                  <Button
-                    className={`w-full bg-linear-to-r text-white ${plan.color} transition-opacity duration-300 hover:opacity-90`}
-                  >
-                    Get Started
-                  </Button>
-                </CardFooter>
-              </Card>
-            </motion.div>
-          ))}
+              Monthly
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              aria-pressed={interval === "annual"}
+              className={
+                interval === "annual" ? "rounded-full bg-product-bg-inset" : "rounded-full"
+              }
+              onClick={() => setInterval("annual")}
+            >
+              Annual <span className="ml-1 text-product-success-text">Save 72%</span>
+            </Button>
+          </div>
+        </header>
+
+        <div className="mx-auto grid max-w-5xl gap-5 md:grid-cols-2 md:gap-6">
+          <article className="flex flex-col rounded-2xl border border-product-border-subtle bg-product-bg-surface p-6 sm:p-8">
+            <div>
+              <p className="text-xs font-semibold tracking-[0.14em] text-product-text-secondary uppercase">
+                Free
+              </p>
+              <h3 className="mt-3 font-product-display text-2xl tracking-tight">
+                A real place to start
+              </h3>
+              <p className="mt-2 text-sm leading-relaxed text-product-text-secondary">
+                Build a page, collect your first signups and test your referral loop.
+              </p>
+              <p className="mt-6 flex items-baseline gap-2">
+                <span className="font-product-display text-4xl font-semibold tracking-tight">
+                  $0
+                </span>
+                <span className="text-sm text-product-text-secondary">forever</span>
+              </p>
+            </div>
+            <ul className="mt-6 grid gap-3 text-sm text-product-text-secondary">
+              {freeFeatures.map((item) => (
+                <li className="flex items-start gap-2.5" key={item}>
+                  <HugeiconsIcon
+                    icon={Tick01Icon}
+                    size={17}
+                    className="mt-0.5 shrink-0 text-product-success-text"
+                    aria-hidden="true"
+                  />
+                  <span>{item}</span>
+                </li>
+              ))}
+            </ul>
+            <div className="mt-auto pt-8">
+              <SignupButton className="w-full rounded-full">Start for free</SignupButton>
+              <p className="mt-3 text-center text-xs text-product-text-secondary">
+                No credit card required
+              </p>
+            </div>
+          </article>
+
+          <article className="relative flex flex-col rounded-2xl border border-product-text-primary bg-product-bg-surface p-6 shadow-lg sm:p-8">
+            <span className="absolute top-4 right-4 rounded-full bg-product-accent-solid px-3 py-1 text-xs font-semibold text-product-accent-label">
+              Pro
+            </span>
+            <div>
+              <p className="text-xs font-semibold tracking-[0.14em] text-product-text-secondary uppercase">
+                For growing launches
+              </p>
+              <h3 className="mt-3 font-product-display text-2xl tracking-tight">
+                More room to grow
+              </h3>
+              <p className="mt-2 text-sm leading-relaxed text-product-text-secondary">
+                Add insight, automation and polish as your audience grows.
+              </p>
+              <p className="mt-6 flex items-baseline gap-2">
+                <span className="font-product-display text-4xl font-semibold tracking-tight">
+                  {interval === "annual" ? "$50" : "$15"}
+                </span>
+                <span className="text-sm text-product-text-secondary">
+                  / {interval === "annual" ? "year" : "month"}
+                </span>
+              </p>
+              {interval === "annual" ? (
+                <p className="mt-1 text-xs text-product-text-secondary">
+                  $4.17/month equivalent · billed $50 annually
+                </p>
+              ) : (
+                <p className="mt-1 text-xs text-product-text-secondary">
+                  Billed monthly · cancel anytime
+                </p>
+              )}
+              <p className="mt-3 text-xs leading-relaxed text-product-text-secondary">
+                Shown in USD. Checkout adjusts the price to your country's purchasing power and
+                calculates local taxes automatically. Subscriber email is sent only through your
+                connected provider.
+              </p>
+            </div>
+            <ul className="mt-6 grid gap-3 text-sm text-product-text-secondary">
+              {proFeatures.map((item) => (
+                <li className="flex items-start gap-2.5" key={item}>
+                  <HugeiconsIcon
+                    icon={Tick01Icon}
+                    size={17}
+                    className="mt-0.5 shrink-0 text-product-success-text"
+                    aria-hidden="true"
+                  />
+                  <span>{item}</span>
+                </li>
+              ))}
+            </ul>
+            <div className="mt-auto pt-8">
+              <PricingCheckoutButton
+                interval={interval}
+                isPro={isPro}
+                currentInterval={currentInterval}
+                canManageBilling={canManageBilling}
+              />
+            </div>
+          </article>
         </div>
       </div>
     </section>

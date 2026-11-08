@@ -48,6 +48,7 @@ export default function sitemap() {
     })),
     { url: `${SITE_URL}/docs/changelog`, lastModified: SITE_UPDATED, priority: 0.4 },
     { url: `${SITE_URL}/privacy`, lastModified: LEGAL_UPDATED, priority: 0.3 },
-    { url: `${SITE_URL}/terms`, lastModified: "2026-11-02", priority: 0.3 },
+    { url: `${SITE_URL}/terms`, lastModified: LEGAL_UPDATED, priority: 0.3 },
+    { url: `${SITE_URL}/refund-policy`, lastModified: LEGAL_UPDATED, priority: 0.3 },
   ];
 }

@@ -1,6 +1,7 @@
 "use server";
 import { ZodError } from "zod";
 
+import { WorkspacePlanError } from "@/lib/billing/plans.mjs";
 import {
   createDraft,
   DraftCreationError,
@@ -32,6 +33,8 @@ export async function createWaitlistDraft({ name, publicSlug, creationKey, templ
     });
     return { ok: true, id: draft.id };
   } catch (error) {
+    if (error instanceof WorkspacePlanError)
+      return { ok: false, code: error.code, feature: error.feature, message: error.message };
     if (error instanceof DraftCreationError)
       return { ok: false, field: error.field, message: error.message };
     if (error instanceof ZodError) {

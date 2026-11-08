@@ -2,6 +2,8 @@ import { createHash, randomBytes } from "node:crypto";
 
 import { after } from "next/server";
 
+import { getWorkspaceEntitlements, requireCapacity } from "../billing/plans.mjs";
+import { resolveEmailSender } from "../email/sender-resolution.mjs";
 import { createUnsubscribeToken, hashUnsubscribeToken } from "../email/unsubscribe.mjs";
 import { maybeNotifySignupMilestone } from "../emails/founder-notifications.mjs";
 import { FraudLimitError, evaluateSignupFraud, silentSignupShape } from "../fraud/gates.mjs";
@@ -212,7 +214,7 @@ export async function createCampaignSignup(
       // Hold a share lock until the signup commits so a concurrent pause cannot
       // slip between the publication check and the subscriber insert.
       const published = await tx.$queryRaw`
-        SELECT "id", "showReferrals", "publishedRevision", "fraudMode" FROM "wait_lists"
+        SELECT "id", "workspaceId", "showReferrals", "publishedRevision", "fraudMode" FROM "wait_lists"
         WHERE "id" = ${input.waitListId} AND "status"::text = 'PUBLISHED'
         FOR SHARE
       `;
@@ -270,6 +272,15 @@ export async function createCampaignSignup(
         throw new DuplicateSignupError();
       }
 
+      // Confirmation emails must come from a connected waitlist/workspace
+      // sender. Never send subscriber email through Waitlyze's deployment key.
+      if (requiresVerification) {
+        await resolveEmailSender(tx, {
+          workspaceId: published[0].workspaceId,
+          waitListId: input.waitListId,
+        });
+      }
+
       // Fraud basics (additive, fail-open): IP velocity over the hard cap
       // rejects with 429; device-fingerprint velocity goes silent - a fake
       // success with nothing persisted (no row, no points, no webhooks, no
@@ -298,6 +309,24 @@ export async function createCampaignSignup(
           rank: Number.isSafeInteger(rank) && rank > 0 ? rank : null,
         });
       }
+
+      const workspaceId = published[0].workspaceId;
+      if (workspaceId) {
+        // Serialize intake per workspace so concurrent signups cannot race
+        // past the plan cap. Existing duplicate signups returned above.
+        await tx.$queryRaw`SELECT "id" FROM "workspaces" WHERE "id" = ${workspaceId} FOR UPDATE`;
+      }
+      const workspaceSignups = await tx.signUp.count({
+        where: workspaceId ? { waitList: { workspaceId } } : { waitListId: input.waitListId },
+      });
+      const entitlements = await getWorkspaceEntitlements(tx, workspaceId, now);
+      requireCapacity({
+        entitlements,
+        feature: "subscribers",
+        used: workspaceSignups,
+        message:
+          "This waitlist has reached the signup limit for its plan. Please contact the waitlist owner.",
+      });
 
       const createdSignup = await tx.signUp.create({
         data: {

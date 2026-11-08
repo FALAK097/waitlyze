@@ -68,6 +68,7 @@ export function WaitlistPageContent({
   signupCount = 128,
   hideCounts = false,
   compact = false,
+  forcePoweredBy = false,
   interactive = false,
   selectedBlockId = null,
   onBlockSelect,
@@ -778,7 +779,7 @@ export function WaitlistPageContent({
           );
         })}
       </div>
-      {snapshot.brand.showPoweredBy !== false && (
+      {(forcePoweredBy || snapshot.brand.showPoweredBy !== false) && (
         <a
           className={cn(
             "z-10 inline-flex items-center gap-2 rounded-full border border-black/10 bg-white px-4 py-2 text-sm no-underline shadow-md",

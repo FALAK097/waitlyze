@@ -22,7 +22,8 @@ export const auth = betterAuth({
     provider: "postgresql",
   }),
   emailAndPassword: {
-    enabled: false,
+    enabled:
+      process.env.NODE_ENV !== "production" && process.env.LOCAL_DEV_EMAIL_PASSWORD_AUTH === "true",
   },
   socialProviders,
   baseURL: process.env.BETTER_AUTH_URL,

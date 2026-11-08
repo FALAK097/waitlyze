@@ -1,6 +1,9 @@
+import { getWorkspaceEntitlements } from "../billing/plans.mjs";
+import { resolveEmailSender } from "../email/sender-resolution.mjs";
 import { isTurnstileConfigured } from "../security/turnstile.mjs";
 import { templateSnapshotSchema } from "../templates/catalog.mjs";
 import { AccessError, campaignScope } from "../workspaces/service.mjs";
+import { requiresDoubleOptIn } from "./form-rules.mjs";
 
 export class PublicationConflict extends Error {
   constructor(message = "The page changed before this action completed.") {
@@ -50,6 +53,7 @@ export async function publishCampaign(db, actorId, workspaceId, waitListId, expe
       where,
       select: {
         id: true,
+        workspaceId: true,
         status: true,
         templateSnapshot: true,
         templateRevision: true,
@@ -58,8 +62,14 @@ export async function publishCampaign(db, actorId, workspaceId, waitListId, expe
     });
     if (!page) throw new AccessError();
     if (page.templateRevision !== expectedRevision) throw new PublicationConflict();
-    const snapshot = templateSnapshotSchema.parse(page.templateSnapshot);
+    let snapshot = templateSnapshotSchema.parse(page.templateSnapshot);
+    const entitlements = await getWorkspaceEntitlements(tx, page.workspaceId);
+    if (!entitlements.removeBranding && snapshot.brand.showPoweredBy === false)
+      snapshot = { ...snapshot, brand: { ...snapshot.brand, showPoweredBy: true } };
     assertTurnstileConfigured(snapshot);
+    if (requiresDoubleOptIn(snapshot.form)) {
+      await resolveEmailSender(tx, { workspaceId: page.workspaceId, waitListId });
+    }
     if (page.status === "PUBLISHED" && page.publishedRevision) {
       const current = await tx.waitListPublicationRevision.findUnique({
         where: { waitListId_revision: { waitListId, revision: page.publishedRevision } },
@@ -119,6 +129,7 @@ export async function rollbackCampaign(db, actorId, workspaceId, waitListId) {
       where,
       select: {
         id: true,
+        workspaceId: true,
         status: true,
         publishedRevision: true,
         templateRevision: true,
@@ -133,8 +144,17 @@ export async function rollbackCampaign(db, actorId, workspaceId, waitListId) {
     });
     if (!previous)
       throw new PublicationConflict("There is no earlier published version to restore.");
-    assertTurnstileConfigured(previous.snapshot);
-    const restoreDraft = !sameSnapshot(page.templateSnapshot, previous.snapshot);
+    let restoredSnapshot = templateSnapshotSchema.parse(previous.snapshot);
+    const entitlements = await getWorkspaceEntitlements(tx, page.workspaceId);
+    if (!entitlements.removeBranding && restoredSnapshot.brand.showPoweredBy === false)
+      restoredSnapshot = {
+        ...restoredSnapshot,
+        brand: { ...restoredSnapshot.brand, showPoweredBy: true },
+      };
+    assertTurnstileConfigured(restoredSnapshot);
+    if (requiresDoubleOptIn(restoredSnapshot.form))
+      await resolveEmailSender(tx, { workspaceId: page.workspaceId, waitListId });
+    const restoreDraft = !sameSnapshot(page.templateSnapshot, restoredSnapshot);
     const nextTemplateRevision = page.templateRevision + (restoreDraft ? 1 : 0);
     if (restoreDraft)
       await tx.waitListRevision.create({
@@ -150,7 +170,7 @@ export async function rollbackCampaign(db, actorId, workspaceId, waitListId) {
         waitListId,
         revision: (latest?.revision || 0) + 1,
         templateRevision: nextTemplateRevision,
-        snapshot: previous.snapshot,
+        snapshot: restoredSnapshot,
       },
     });
     const updated = await tx.waitList.updateMany({
@@ -165,7 +185,7 @@ export async function rollbackCampaign(db, actorId, workspaceId, waitListId) {
         publishedRevision: restoredPublication.revision,
         publishedTemplateRevision: nextTemplateRevision,
         ...(restoreDraft
-          ? { templateSnapshot: previous.snapshot, templateRevision: nextTemplateRevision }
+          ? { templateSnapshot: restoredSnapshot, templateRevision: nextTemplateRevision }
           : {}),
       },
     });
@@ -173,7 +193,7 @@ export async function rollbackCampaign(db, actorId, workspaceId, waitListId) {
     return {
       revision: restoredPublication.revision,
       templateRevision: nextTemplateRevision,
-      snapshot: previous.snapshot,
+      snapshot: restoredSnapshot,
     };
   });
 }

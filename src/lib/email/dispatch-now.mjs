@@ -2,7 +2,6 @@ import { Resend } from "resend";
 
 import { dispatchPendingOutboxEvents } from "@/lib/email/outbox.mjs";
 import { createPlatformSender } from "@/lib/emails/platform.mjs";
-import { env } from "@/lib/env.mjs";
 import { createWorkspaceResendSender } from "@/lib/integrations/resend-sender.mjs";
 import prisma from "@/lib/prisma";
 
@@ -14,11 +13,6 @@ export async function dispatchVerificationNow(eventKey) {
   try {
     const sendEmail = createWorkspaceResendSender({
       db: prisma,
-      defaults: {
-        apiKey: env.RESEND_API_KEY,
-        fromEmail: env.RESEND_FROM_EMAIL,
-        replyTo: env.RESEND_REPLY_TO,
-      },
       createClient: (apiKey) => new Resend(apiKey),
     });
     await dispatchPendingOutboxEvents(prisma, { send: sendEmail, eventKeys: [eventKey] });
@@ -39,11 +33,6 @@ export async function dispatchFounderNoticesNow(eventKeys) {
     await dispatchPendingOutboxEvents(prisma, {
       send: createWorkspaceResendSender({
         db: prisma,
-        defaults: {
-          apiKey: env.RESEND_API_KEY,
-          fromEmail: env.RESEND_FROM_EMAIL,
-          replyTo: env.RESEND_REPLY_TO,
-        },
         createClient: (apiKey) => new Resend(apiKey),
       }),
       sendPlatform: createPlatformSender(),
@@ -66,11 +55,6 @@ export async function dispatchOffboardNow(eventKeys) {
   try {
     const sendEmail = createWorkspaceResendSender({
       db: prisma,
-      defaults: {
-        apiKey: env.RESEND_API_KEY,
-        fromEmail: env.RESEND_FROM_EMAIL,
-        replyTo: env.RESEND_REPLY_TO,
-      },
       createClient: (apiKey) => new Resend(apiKey),
     });
     await dispatchPendingOutboxEvents(prisma, {

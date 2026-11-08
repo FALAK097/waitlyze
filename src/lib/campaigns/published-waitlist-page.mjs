@@ -1,3 +1,4 @@
+import { getWorkspaceEntitlements } from "@/lib/billing/plans.mjs";
 import prisma from "@/lib/prisma";
 import { templateSnapshotSchema } from "@/lib/templates/catalog.mjs";
 
@@ -14,5 +15,7 @@ export async function resolvePublishedWaitlistPage(waitList) {
     select: { snapshot: true },
   });
   const parsed = templateSnapshotSchema.safeParse(publication?.snapshot);
-  return parsed.success ? { waitList, snapshot: parsed.data } : null;
+  if (!parsed.success) return null;
+  const entitlements = await getWorkspaceEntitlements(prisma, waitList.workspaceId);
+  return { waitList, snapshot: parsed.data, canRemoveBranding: entitlements.removeBranding };
 }

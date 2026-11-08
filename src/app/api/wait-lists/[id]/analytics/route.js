@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
 
 import { getWaitlistAnalytics } from "@/lib/analytics/waitlist-analytics.mjs";
+import { WorkspacePlanError } from "@/lib/billing/plans.mjs";
 import prisma from "@/lib/prisma";
-import { requireCampaign } from "@/lib/workspaces/authorize";
+import { requireCampaignFeature } from "@/lib/workspaces/authorize";
 import { AccessError } from "@/lib/workspaces/service.mjs";
 
 const datePattern = /^\d{4}-\d{2}-\d{2}$/;
@@ -10,7 +11,7 @@ const datePattern = /^\d{4}-\d{2}-\d{2}$/;
 export async function GET(request, { params }) {
   try {
     const { id } = await params;
-    await requireCampaign(id, "viewCampaign");
+    await requireCampaignFeature(id, "viewCampaign", "analytics");
     const { searchParams } = new URL(request.url);
     const requestedDays = Number(searchParams.get("days") ?? 30);
     if (!Number.isInteger(requestedDays) || requestedDays < 1 || requestedDays > 90) {
@@ -37,6 +38,11 @@ export async function GET(request, { params }) {
     });
     return NextResponse.json(analytics, { headers: { "Cache-Control": "private, no-store" } });
   } catch (error) {
+    if (error instanceof WorkspacePlanError)
+      return NextResponse.json(
+        { error: error.message, code: error.code, feature: error.feature },
+        { status: error.status },
+      );
     if (error instanceof AccessError) {
       return NextResponse.json({ error: error.message }, { status: error.status });
     }

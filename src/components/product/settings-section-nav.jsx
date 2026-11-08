@@ -6,6 +6,7 @@ import {
   Plug01Icon,
   HistoryIcon,
   Building02Icon,
+  CreditCardIcon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import Link from "next/link";
@@ -17,6 +18,7 @@ import { cn } from "@/lib/utils";
 const sections = [
   { id: "profile", label: "Profile", icon: UserCircleIcon },
   { id: "workspace", label: "Workspace", icon: Building02Icon },
+  { id: "billing", label: "Billing", icon: CreditCardIcon },
   { id: "team", label: "Members", icon: UserGroupIcon },
   { id: "integrations", label: "Integrations", icon: Plug01Icon },
   { id: "audit", label: "Audit", icon: HistoryIcon },

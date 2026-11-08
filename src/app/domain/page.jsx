@@ -26,6 +26,7 @@ const loadPage = cache(async function loadPage() {
       waitList: {
         select: {
           id: true,
+          workspaceId: true,
           name: true,
           status: true,
           publishedRevision: true,

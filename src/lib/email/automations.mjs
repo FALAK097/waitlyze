@@ -297,7 +297,16 @@ function automationHtml({ waitListName, body, unsubscribeUrl }) {
   return `<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width"><body style="margin:0;background:#f5f5f1;color:#191919;font:16px/1.6 Arial,sans-serif"><main style="max-width:600px;margin:32px auto;padding:32px;background:#fff;border:1px solid #e8e8e2;border-radius:16px"><p style="margin:0 0 24px;color:#70706a;font-size:13px">${escapeHtml(waitListName)}</p>${paragraphs}<hr style="border:0;border-top:1px solid #e8e8e2;margin:32px 0"><p style="color:#70706a;font-size:13px">You’re receiving this because you opted in to updates about this waitlist.</p><p style="font-size:13px"><a href="${escapeHtml(unsubscribeUrl)}">Unsubscribe from updates</a></p></main></body></html>`;
 }
 
-export async function dispatchAutomationStep(db, event, payload, send, now, attempt, result) {
+export async function dispatchAutomationStep(
+  db,
+  event,
+  payload,
+  send,
+  now,
+  attempt,
+  result,
+  canSendMarketing = async () => true,
+) {
   if (typeof payload?.automationStepId !== "string")
     throw new TypeError("Automation step is invalid.");
   const step = await db.automationRunStep.findUnique({
@@ -318,6 +327,30 @@ export async function dispatchAutomationStep(db, event, payload, send, now, atte
       },
     });
     result.failed++;
+    return;
+  }
+  if (!(await canSendMarketing(step.run?.waitList?.workspaceId))) {
+    await db.$transaction([
+      db.automationRunStep.updateMany({
+        where: { id: step.id, status: { in: ["PENDING", "PROCESSING"] } },
+        data: { status: "SKIPPED", finishedAt: now, lastErrorCode: "PLAN_REQUIRES_PRO" },
+      }),
+      db.automationRun.updateMany({
+        where: { id: step.runId, status: { in: ["PENDING", "PROCESSING"] } },
+        data: { status: "SKIPPED", finishedAt: now, skipReason: "PLAN_REQUIRES_PRO" },
+      }),
+      db.outboxEvent.update({
+        where: { id: event.id },
+        data: {
+          status: "FAILED",
+          processedAt: now,
+          lockedAt: null,
+          payload: { automationStepId: step.id },
+          lastErrorCode: "PLAN_REQUIRES_PRO",
+        },
+      }),
+    ]);
+    result.skipped++;
     return;
   }
   const claimed = await db.$transaction(async (tx) => {

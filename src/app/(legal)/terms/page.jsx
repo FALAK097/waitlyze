@@ -47,6 +47,10 @@ const sections = [
     label: "Modifications to Terms",
   },
   {
+    id: "subscriptions-and-billing",
+    label: "Subscriptions and Billing",
+  },
+  {
     id: "contact-information",
     label: "Contact Information",
   },
@@ -58,7 +62,7 @@ export default function LegalPage() {
       title="Terms of Service"
       description="The terms that apply when you use Waitlyze."
       sections={sections}
-      lastUpdated="November 2, 2026"
+      lastUpdated="November 8, 2026"
     >
       <p>
         Welcome to Waitlyze ("Platform," "Service," "we," "us," "our"). By accessing or using{" "}
@@ -147,7 +151,25 @@ export default function LegalPage() {
         changes, and continued use of the Platform indicates acceptance of the revised Terms.
       </p>
 
-      <h2 id="contact-information">10. Contact Information</h2>
+      <h2 id="subscriptions-and-billing">10. Subscriptions and Billing</h2>
+      <p>
+        Waitlyze offers a free plan and a paid Pro plan billed monthly or annually. Current prices
+        are shown on our{" "}
+        <Link prefetch={false} href="/#pricing">
+          pricing page
+        </Link>
+        ; applicable taxes are calculated at checkout based on your billing location. Paid
+        subscriptions renew automatically for the selected interval until canceled. The workspace
+        owner can manage or cancel renewal from Billing in workspace settings. A cancellation takes
+        effect at the end of the current paid period. Refunds are governed by our{" "}
+        <Link prefetch={false} href="/refund-policy">
+          Refund Policy
+        </Link>
+        . Dodo Payments acts as Merchant of Record for purchases and handles checkout, invoices, and
+        customer-facing transaction taxes.
+      </p>
+
+      <h2 id="contact-information">11. Contact Information</h2>
       <p>
         For questions about these Terms, please contact us at{" "}
         <Link

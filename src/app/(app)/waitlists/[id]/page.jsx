@@ -2,6 +2,8 @@ import { replaceInvalidDraftPage, saveDraftPage } from "@/app/actions/draft-snap
 import { publishWaitlist, pauseWaitlist, rollbackWaitlist } from "@/app/actions/publication";
 import { ContentLayout } from "@/components/dashboard/content-layout";
 import { SnapshotPageBuilder } from "@/components/product/snapshot-page-builder";
+import { getWorkspaceEntitlements } from "@/lib/billing/plans.mjs";
+import { hasCustomerEmailSender } from "@/lib/email/sender-resolution.mjs";
 import { env } from "@/lib/env.mjs";
 import prisma from "@/lib/prisma";
 import { SITE_URL } from "@/lib/site-metadata";
@@ -12,14 +14,14 @@ export const metadata = { title: "Builder" };
 
 export default async function WaitListsEditPage(props) {
   const { id } = await props.params;
-  const { campaign: waitList, role } = await requireCampaignPage(id, "editCampaign");
+  const { campaign: waitList, role, workspace } = await requireCampaignPage(id, "editCampaign");
   const canPublish = ["OWNER", "ADMIN"].includes(role);
 
   const parsedSnapshot = templateSnapshotSchema.safeParse(waitList.templateSnapshot);
   const templateSnapshot = parsedSnapshot.success
     ? parsedSnapshot.data
     : snapshotTemplate("simple");
-  const [publication, domain] = await Promise.all([
+  const [publication, domain, entitlements, customerEmailSenderConnected] = await Promise.all([
     waitList.publishedRevision
       ? prisma.waitListPublicationRevision.findUnique({
           where: {
@@ -32,6 +34,8 @@ export default async function WaitListsEditPage(props) {
       where: { waitListId: waitList.id },
       select: { hostname: true, status: true },
     }),
+    getWorkspaceEntitlements(prisma, workspace.id),
+    hasCustomerEmailSender(prisma, { workspaceId: workspace.id, waitListId: waitList.id }),
   ]);
   const parsedPublished = templateSnapshotSchema.safeParse(publication?.snapshot);
   return (
@@ -50,6 +54,7 @@ export default async function WaitListsEditPage(props) {
           snapshotReplacement: !parsedSnapshot.success,
           publishedSnapshot: parsedPublished.success ? parsedPublished.data : null,
           customDomain: domain,
+          canRemoveBranding: entitlements.removeBranding,
         }}
         saveDraftPage={saveDraftPage}
         replaceInvalidDraftPage={replaceInvalidDraftPage}
@@ -60,6 +65,7 @@ export default async function WaitListsEditPage(props) {
         turnstileConfigured={Boolean(
           env.TURNSTILE_SITE_KEY?.trim() && env.TURNSTILE_SECRET_KEY?.trim(),
         )}
+        customerEmailSenderConnected={customerEmailSenderConnected}
         publicationOrigin={
           process.env.VERCEL_ENV === "preview" && process.env.VERCEL_URL
             ? `https://${process.env.VERCEL_URL}`

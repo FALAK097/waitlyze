@@ -9,6 +9,11 @@ import { redirect } from "next/navigation";
 import { renderWorkspaceInvitation } from "@/emails/render.jsx";
 import { workspaceInvitationText } from "@/emails/text.mjs";
 import { auth } from "@/lib/auth";
+import {
+  getWorkspaceEntitlements,
+  requireCapacity,
+  WorkspacePlanError,
+} from "@/lib/billing/plans.mjs";
 import { sendPlatformEmail } from "@/lib/emails/platform.mjs";
 import { env } from "@/lib/env.mjs";
 import { decryptIntegrationSecret, encryptIntegrationSecret } from "@/lib/integrations/secrets.mjs";
@@ -113,6 +118,16 @@ export async function inviteWorkspaceMember(previous, form) {
           error: "Personal workspaces are private. Create a shared workspace to invite teammates.",
         };
       if (existingMember) return { error: "That person is already a workspace member." };
+      const [entitlements, memberCount] = await Promise.all([
+        getWorkspaceEntitlements(tx, workspaceId),
+        tx.workspaceMember.count({ where: { workspaceId } }),
+      ]);
+      requireCapacity({
+        entitlements,
+        feature: "members",
+        used: memberCount,
+        message: "The Free plan is for one workspace owner. Upgrade to invite teammates.",
+      });
       await tx.workspaceInvitation.updateMany({
         where: { workspaceId, status: { in: ["PENDING", "SEND_FAILED"] }, expiresAt: { lte: now } },
         data: { status: "EXPIRED", tokenCiphertext: "", tokenIv: "", tokenTag: "" },
@@ -182,7 +197,9 @@ export async function inviteWorkspaceMember(previous, form) {
     });
     revalidatePath("/settings#team");
     return { success: `Invitation sent to ${email}.` };
-  } catch {
+  } catch (error) {
+    if (error instanceof WorkspacePlanError)
+      return { error: error.message, code: error.code, feature: error.feature };
     return { error: "Could not create the invitation. Check your connection and try again." };
   }
 }

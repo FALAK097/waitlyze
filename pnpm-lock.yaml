@@ -100,6 +100,9 @@ importers:
       date-fns:
         specifier: ^4.4.0
         version: 4.4.0
+      dodopayments:
+        specifier: ^2.61.1
+        version: 2.61.1
       dotenv:
         specifier: ^18.0.5
         version: 18.0.5
@@ -218,6 +221,9 @@ importers:
         specifier: ^5.0.15
         version: 5.0.15(@types/react@19.3.0)(immer@11.1.18)(react@19.3.0)(use-sync-external-store@1.7.0(react@19.3.0))
     devDependencies:
+      '@dodopayments/opencode-plugin':
+        specifier: ^0.7.0
+        version: 0.7.0
       '@react-email/ui':
         specifier: ^6.11.1
         version: 6.11.1(@babel/core@7.29.7)(@opentelemetry/api@1.10.0)(@types/node@26.6.3)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
@@ -609,6 +615,14 @@ packages:
     resolution: {integrity: sha512-+MKAJEOfaBe5SmV6t34p80MMKhjvUz0vRrvVJbPT0WElzaOJ/1xs+D+KDv+tD/NE5ujfrChEcshd4fLn0wpiqg==}
     peerDependencies:
       react: '>=16.8.0'
+
+  '@dodopayments/opencode-plugin@0.7.0':
+    resolution: {integrity: sha512-h+gARMwgDIrCrB80r4V7jmX8eUg4zYSK4fP5wBZxjW85D8/cfTLRMVhv9e+VtCZnQzzstDfRrjTEjFxPOtZkvA==}
+    peerDependencies:
+      '@opencode-ai/plugin': '>=1.0.0'
+    peerDependenciesMeta:
+      '@opencode-ai/plugin':
+        optional: true
 
   '@electric-sql/pglite-socket@0.1.3':
     resolution: {integrity: sha512-LAciWM0M1dCL8hlsxu2venbVZcdxema0BtDfpWYVqr+Y468UADw0pFWidhKw1M8sfJ8rdLT71tjMmnirf/IZRQ==}
@@ -2849,6 +2863,9 @@ packages:
   '@smithy/core@3.35.1':
     resolution: {integrity: sha512-i4YPS4B6ts7bjn7UwLnGjiZdprOvHvgGobFZsYK3GIY3E5hIqtj0rReU69BcTpGp+fvtraSNXeG1l+jtJvF55w==}
     engines: {node: '>=18.0.0'}
+    deprecated: |-
+      Deprecated due to a bug in custom logger data redaction. Upgrade to the latest version. If you used a custom logger with this
+        version, review your logs and rotate any credentials or other secrets. See https://github.com/aws/aws-sdk-js-v3/issues/8393.
 
   '@smithy/credential-provider-imds@4.5.2':
     resolution: {integrity: sha512-A9uSdn72ozbRUSit0eib0TW7nXuNPlaeM0zcGkJ+nE6tFcSDbnmtwoxbTCFBukVQcszDAyvsd7+rTduPTXpygg==}
@@ -3946,6 +3963,10 @@ packages:
 
   devlop@1.1.0:
     resolution: {integrity: sha512-RWmIqhcFf1lRYBvNmr7qTNuyCt/7/ns2jbpp1+PalgE/rDQcBT0fioSMUpJ93irlUhC5hrg4cYqe6U+0ImW0rA==}
+
+  dodopayments@2.61.1:
+    resolution: {integrity: sha512-MgfCcXfx+v8iAOcKTwMJEcMQ19EFDHjewv8wdqRFYZjPa5EnrvWUOCDh4+rtGEBcGRB61UtBs8X0ezdHcpBdvg==}
+    hasBin: true
 
   dom-serializer@2.0.0:
     resolution: {integrity: sha512-wIkAryiqt/nV5EQKqQpo3SToSOV9J0DnbJqwK7Wv/Trc92zIAYZ4FlMu+JPFW1DfGFt81ZTCGgDEabffXeLyJg==}
@@ -6699,6 +6720,8 @@ snapshots:
       react: 19.3.0
       tslib: 2.8.1
 
+  '@dodopayments/opencode-plugin@0.7.0': {}
+
   '@electric-sql/pglite-socket@0.1.3(@electric-sql/pglite@0.4.3)':
     dependencies:
       '@electric-sql/pglite': 0.4.3
@@ -9414,6 +9437,10 @@ snapshots:
   devlop@1.1.0:
     dependencies:
       dequal: 2.0.3
+
+  dodopayments@2.61.1:
+    dependencies:
+      standardwebhooks: 1.1.1
 
   dom-serializer@2.0.0:
     dependencies:

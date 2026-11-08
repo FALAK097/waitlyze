@@ -723,6 +723,7 @@ model Workspace {
   integrations      WorkspaceIntegration[]
   customDomains     CustomDomain[]
   auditEvents     WorkspaceAuditEvent[]
+  subscription    WorkspaceSubscription?
 
   @@map("workspaces")
 }
@@ -769,6 +770,57 @@ enum WorkspaceInvitationStatus {
   REVOKED
   EXPIRED
   SEND_FAILED
+}
+
+enum WorkspacePlan {
+  FREE
+  PRO
+}
+
+enum WorkspaceBillingInterval {
+  MONTHLY
+  ANNUAL
+}
+
+enum WorkspaceBillingStatus {
+  FREE
+  ACTIVE
+  PAST_DUE
+  ON_HOLD
+  CANCELLED
+  EXPIRED
+}
+
+model WorkspaceSubscription {
+  workspaceId        String                 @id
+  plan               WorkspacePlan          @default(FREE)
+  status             WorkspaceBillingStatus @default(FREE)
+  interval           WorkspaceBillingInterval?
+  dodoCustomerId     String?
+  dodoSubscriptionId String?                 @unique
+  dodoProductId      String?
+  currentPeriodStart DateTime?
+  currentPeriodEnd   DateTime?
+  pastDueEndsAt      DateTime?
+  cancelAtPeriodEnd  Boolean                 @default(false)
+  lastEventAt        DateTime?
+  createdAt          DateTime                @default(now())
+  updatedAt          DateTime                @updatedAt
+  workspace          Workspace               @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([status, currentPeriodEnd])
+  @@index([dodoCustomerId])
+  @@map("workspace_subscriptions")
+}
+
+model DodoWebhookReceipt {
+  webhookId   String   @id
+  eventType   String
+  workspaceId String?
+  processedAt DateTime @default(now())
+
+  @@index([workspaceId, processedAt])
+  @@map("dodo_webhook_receipts")
 }
 
 model WorkspaceInvitation {

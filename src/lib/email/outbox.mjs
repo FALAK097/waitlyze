@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 
 import { renderSubscriberVerification } from "../../emails/render.jsx";
+import { getWorkspaceEntitlements } from "../billing/plans.mjs";
 import { notifyBroadcastSummary } from "../emails/founder-notifications.mjs";
 import { dispatchAutomationStep, processAutomationTrigger } from "./automations.mjs";
 import { emailBrandFromSnapshot } from "./brand.mjs";
@@ -77,7 +78,7 @@ async function finishBroadcastIfReady(db, broadcastId, now) {
   }
 }
 
-async function dispatchBroadcast(db, event, payload, send, now, attempt, result) {
+async function dispatchBroadcast(db, event, payload, send, now, attempt, result, canSendMarketing) {
   if (typeof payload?.broadcastId !== "string" || typeof payload?.recipientId !== "string") {
     await db.outboxEvent.update({
       where: { id: event.id },
@@ -141,6 +142,27 @@ async function dispatchBroadcast(db, event, payload, send, now, attempt, result)
 
   const { broadcast, signUp } = recipient;
   const waitList = broadcast.waitList;
+  if (!(await canSendMarketing(waitList.workspaceId))) {
+    await db.$transaction([
+      db.broadcastRecipient.update({
+        where: { id: recipient.id },
+        data: { status: "SKIPPED", lastErrorCode: "PLAN_REQUIRES_PRO" },
+      }),
+      db.outboxEvent.update({
+        where: { id: event.id },
+        data: {
+          status: "FAILED",
+          processedAt: now,
+          lockedAt: null,
+          payload: { broadcastId: broadcast.id, recipientId: recipient.id },
+          lastErrorCode: "PLAN_REQUIRES_PRO",
+        },
+      }),
+    ]);
+    result.skipped++;
+    await finishBroadcastIfReady(db, broadcast.id, now);
+    return;
+  }
   const emailNormalized = normalizeEmail(signUp.emailNormalized || signUp.email);
   const suppressed =
     waitList.workspaceId &&
@@ -609,6 +631,19 @@ export async function dispatchPendingOutboxEvents(
     take: batchSize,
   });
   const result = { accepted: 0, retried: 0, failed: 0, skipped: 0, claimed: 0 };
+  const marketingFeatureCache = new Map();
+  async function canSendMarketing(workspaceId) {
+    if (!workspaceId) return false;
+    if (!marketingFeatureCache.has(workspaceId)) {
+      marketingFeatureCache.set(
+        workspaceId,
+        getWorkspaceEntitlements(db, workspaceId, now).then(
+          (entitlements) => entitlements.emailMarketing,
+        ),
+      );
+    }
+    return marketingFeatureCache.get(workspaceId);
+  }
   async function dispatchEvent(event) {
     const claimed = await db.outboxEvent.updateMany({
       where: {
@@ -628,10 +663,39 @@ export async function dispatchPendingOutboxEvents(
     if (event.type === "BROADCAST_EMAIL_REQUESTED") {
       const broadcastPayload =
         event.payload && typeof event.payload === "object" ? event.payload : null;
-      await dispatchBroadcast(db, event, broadcastPayload, send, now, attempt, result);
+      await dispatchBroadcast(
+        db,
+        event,
+        broadcastPayload,
+        send,
+        now,
+        attempt,
+        result,
+        canSendMarketing,
+      );
       return;
     }
     if (event.type === "MARKETING_AUTOMATION_TRIGGER_REQUESTED") {
+      const waitList = event.waitListId
+        ? await db.waitList.findUnique({
+            where: { id: event.waitListId },
+            select: { workspaceId: true },
+          })
+        : null;
+      if (!(await canSendMarketing(waitList?.workspaceId))) {
+        await db.outboxEvent.update({
+          where: { id: event.id },
+          data: {
+            status: "FAILED",
+            processedAt: now,
+            lockedAt: null,
+            payload: { signUpId: event.payload?.signUpId },
+            lastErrorCode: "PLAN_REQUIRES_PRO",
+          },
+        });
+        result.skipped++;
+        return;
+      }
       try {
         await processAutomationTrigger(db, event, now);
       } catch (error) {
@@ -658,7 +722,16 @@ export async function dispatchPendingOutboxEvents(
       return;
     }
     if (event.type === "MARKETING_AUTOMATION_STEP_REQUESTED") {
-      await dispatchAutomationStep(db, event, event.payload, send, now, attempt, result);
+      await dispatchAutomationStep(
+        db,
+        event,
+        event.payload,
+        send,
+        now,
+        attempt,
+        result,
+        canSendMarketing,
+      );
       return;
     }
     if (event.type === "OFFBOARD_EMAIL_REQUESTED") {

@@ -1,21 +1,18 @@
 import "server-only";
 import { Resend } from "resend";
 
-import { resolveEmailSender } from "@/lib/email/sender-resolution.mjs";
-import { env } from "@/lib/env.mjs";
+import {
+  CustomerSenderNotConnectedError,
+  resolveEmailSender,
+} from "@/lib/email/sender-resolution.mjs";
 import prisma from "@/lib/prisma";
 import { consumePublicBudget } from "@/lib/security/public-rate-limit.mjs";
-import { requireCampaign } from "@/lib/workspaces/authorize";
-
-const platformSender = {
-  apiKey: env.RESEND_API_KEY,
-  fromEmail: env.RESEND_FROM_EMAIL,
-  replyTo: env.RESEND_REPLY_TO,
-};
+import { requireCampaignFeature } from "@/lib/workspaces/authorize";
 
 const TEST_ADDRESS_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-// Waitlist overrides take precedence over the workspace and platform sender.
+// A waitlist override takes precedence over the workspace sender. Subscriber
+// email tests never use Waitlyze's deployment Resend credentials.
 export async function senderForWaitlist(waitListId) {
   const waitlist = await prisma.waitList.findUnique({
     where: { id: waitListId },
@@ -24,7 +21,6 @@ export async function senderForWaitlist(waitListId) {
   return resolveEmailSender(prisma, {
     waitListId,
     workspaceId: waitlist?.workspaceId,
-    defaults: platformSender,
   });
 }
 
@@ -43,7 +39,11 @@ export async function deliverTestEmail({
   if (validationError) return { success: false, message: validationError };
 
   try {
-    const { user, campaign, scope } = await requireCampaign(waitListId, "sendEmail");
+    const { user, campaign, scope } = await requireCampaignFeature(
+      waitListId,
+      "sendEmail",
+      "emailMarketing",
+    );
     await consumePublicBudget(prisma, {
       kind: "testEmail",
       campaignId: campaign.workspaceId || campaign.id,
@@ -77,6 +77,11 @@ export async function deliverTestEmail({
       return {
         success: false,
         message: "The email sender needs attention. Update or remove it in settings.",
+      };
+    if (error instanceof CustomerSenderNotConnectedError)
+      return {
+        success: false,
+        message: "Connect a Resend sender before sending subscriber email.",
       };
     return { success: false, message: "Failed to send email" };
   }

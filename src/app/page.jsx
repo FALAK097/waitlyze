@@ -19,6 +19,7 @@ import AskAi from "@/components/landing/ask-ai";
 import FAQAccordion from "@/components/landing/faq-accordion";
 import FinalCta from "@/components/landing/final-cta";
 import GitHubMark from "@/components/landing/github-mark";
+import Pricing from "@/components/landing/pricing";
 import PublicShell from "@/components/landing/public-shell";
 import SignupButton from "@/components/landing/signup-button";
 import TemplateCards from "@/components/landing/template-cards";
@@ -44,7 +45,11 @@ const github = "https://github.com/FALAK097/waitlyze";
 const faqs = [
   [
     "Is Waitlyze free?",
-    "Yes. You can get started for free, with no credit card required. A free plan will remain available if paid plans are introduced later.",
+    "Yes. Free includes one waitlist and up to 100 signups per workspace, with no card required. Pro is $15 per month or $50 per year; compare plans in the pricing section.",
+  ],
+  [
+    "Will prices change by country?",
+    "Prices are listed in USD. At secure checkout, Dodo Payments adjusts the price to your country's purchasing power and calculates local taxes automatically, so the final amount can differ from the list price.",
   ],
   [
     "Do I need a website?",
@@ -56,7 +61,7 @@ const faqs = [
   ],
   [
     "Can I email my subscribers?",
-    "Yes. Marketing broadcasts go only to verified subscribers who explicitly opted in. You can preview the eligible audience before sending.",
+    "Yes, with Pro. Connect and verify your own Resend sender first. Waitlyze never falls back to its own Resend account for subscriber email. Marketing messages go only to verified subscribers who explicitly opted in.",
   ],
   [
     "Can I edit a published page?",
@@ -93,6 +98,10 @@ const faqs = [
   [
     "What happens if I pause my waitlist?",
     "Paused waitlists stop accepting new signups. Your published content and subscriber records remain available to manage from your workspace.",
+  ],
+  [
+    "Can I cancel Pro or get a refund?",
+    "You can cancel renewal from workspace Billing at any time and keep Pro through the paid period. Payments are non-refundable except where applicable law requires otherwise. See the Refund Policy in the footer.",
   ],
 ];
 
@@ -377,6 +386,8 @@ export default async function LandingPage() {
           </div>
           <TemplateCards templates={featuredTemplates} />
         </section>
+
+        <Pricing />
 
         <AskAi />
 

@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
 import { checkWaitlistSlug, createWaitlistDraft } from "@/app/actions/waitLists";
+import { UpgradeButton } from "@/components/shared/upgrade-button";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -46,6 +47,7 @@ export function CreateWaitlistDialog({
   const templateId = isTemplateId(initialTemplateId) ? initialTemplateId : "simple";
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [upgradeNeeded, setUpgradeNeeded] = useState(false);
   const [slugStatus, setSlugStatus] = useState({ state: "idle", message: "" });
   const [creationKey, setCreationKey] = useState(() => crypto.randomUUID());
   const suggestedSlug = useMemo(() => slugify(name), [name]);
@@ -83,6 +85,7 @@ export function CreateWaitlistDialog({
     if (busy || !name.trim() || publicSlug.length < 3) return;
     setBusy(true);
     setError("");
+    setUpgradeNeeded(false);
     try {
       const result = await createWaitlistDraft({
         name: name.trim(),
@@ -96,6 +99,7 @@ export function CreateWaitlistDialog({
         return;
       }
       setError(result?.message || "We couldn't create the waitlist. Try again.");
+      setUpgradeNeeded(result?.code === "PLAN_UPGRADE_REQUIRED");
       if (result?.field === "publicSlug")
         setSlugStatus({ state: "taken", message: result.message });
     } catch {
@@ -111,6 +115,7 @@ export function CreateWaitlistDialog({
     if (!next) {
       setCreationKey(crypto.randomUUID());
       setError("");
+      setUpgradeNeeded(false);
     }
   }
 
@@ -205,13 +210,17 @@ export function CreateWaitlistDialog({
               )}
             </div>
             {error && (
-              <p
-                className="-mt-1 text-caption leading-relaxed text-product-danger-text"
-                id="new-waitlist-error"
-                role="alert"
-              >
-                {error}
-              </p>
+              <div className="-mt-1 grid gap-2" id="new-waitlist-error" role="alert">
+                <p className="text-caption leading-relaxed text-product-danger-text">{error}</p>
+                {upgradeNeeded && (
+                  <UpgradeButton
+                    label="Compare Pro plans"
+                    feature="More waitlists"
+                    size="md"
+                    className="justify-self-stretch"
+                  />
+                )}
+              </div>
             )}
             <div className="flex justify-end pt-2">
               <Button

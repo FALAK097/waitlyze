@@ -6,6 +6,7 @@ import {
   publishCampaign,
   rollbackCampaign,
 } from "@/lib/campaigns/publication.mjs";
+import { CustomerSenderNotConnectedError } from "@/lib/email/sender-resolution.mjs";
 import { notifyWaitlistPublished } from "@/lib/emails/founder-notifications.mjs";
 import prisma from "@/lib/prisma";
 import { AUDIT_ACTIONS, recordWaitlistAuditEvent } from "@/lib/workspaces/audit.mjs";
@@ -19,6 +20,13 @@ async function action(run, fallback) {
   } catch (error) {
     if (error instanceof AccessError)
       return { ok: false, message: "You need to be an owner or admin to change publication." };
+    if (error instanceof CustomerSenderNotConnectedError)
+      return {
+        ok: false,
+        code: error.code,
+        message:
+          "Connect and verify a Resend sender before publishing a waitlist that requires email confirmation.",
+      };
     if (error instanceof PublicationConflict) return { ok: false, message: error.message };
     console.error(fallback, error.code || error.name);
     return { ok: false, message: "Couldn't update publication. Try again." };

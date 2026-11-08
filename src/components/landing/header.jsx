@@ -29,6 +29,7 @@ export default function Header() {
     ["Features", "/#features"],
     ["How it works", "/#steps"],
     ["Templates", "/#templates"],
+    ["Pricing", "/#pricing"],
     ["Blog", "/blog"],
     ["Docs", "/docs"],
   ];
