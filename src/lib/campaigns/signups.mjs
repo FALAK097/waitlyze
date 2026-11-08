@@ -316,10 +316,14 @@ export async function createCampaignSignup(
         // past the plan cap. Existing duplicate signups returned above.
         await tx.$queryRaw`SELECT "id" FROM "workspaces" WHERE "id" = ${workspaceId} FOR UPDATE`;
       }
-      const workspaceSignups = await tx.signUp.count({
-        where: workspaceId ? { waitList: { workspaceId } } : { waitListId: input.waitListId },
-      });
-      const entitlements = await getWorkspaceEntitlements(tx, workspaceId, now);
+      // Both reads are independent read-only queries on the same transaction
+      // connection; the FOR UPDATE lock above still serializes intake.
+      const [workspaceSignups, entitlements] = await Promise.all([
+        tx.signUp.count({
+          where: workspaceId ? { waitList: { workspaceId } } : { waitListId: input.waitListId },
+        }),
+        getWorkspaceEntitlements(tx, workspaceId, now),
+      ]);
       requireCapacity({
         entitlements,
         feature: "subscribers",

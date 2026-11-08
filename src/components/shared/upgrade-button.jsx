@@ -13,7 +13,7 @@ import { cn } from "@/lib/utils";
  * Every locked feature uses this component so the flow looks and behaves the
  * same everywhere.
  */
-export const upgradeCtaClasses = cn(
+const upgradeCtaClasses = cn(
   "h-auto gap-1.5 rounded-full bg-transparent px-3 py-1.5 text-xs font-semibold text-primary",
   "hover:bg-primary/10 hover:text-primary",
 );

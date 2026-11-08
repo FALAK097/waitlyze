@@ -22,19 +22,23 @@ export default async function BroadcastsPage({ params, searchParams }) {
   const [{ id }, { broadcast: requestedBroadcastId }] = await Promise.all([params, searchParams]);
   const { campaign, scope } = await requireCampaignFeature(id, "sendEmail", "emailMarketing");
   if (!campaign) return notFound();
-  const senderConnected = await hasCustomerEmailSender(prisma, {
-    workspaceId: campaign.workspaceId,
-    waitListId: campaign.id,
-  });
-  const [{ broadcasts, selectedBroadcast, hasMore, nextCursor }, initialSegments, templates] =
-    await Promise.all([
-      listBroadcasts(campaign.id, {
-        includeLatestContent: true,
-        selectedBroadcastId: typeof requestedBroadcastId === "string" ? requestedBroadcastId : null,
-      }),
-      listBroadcastSegments(),
-      getOrCreateTemplatesForCampaign(campaign.id, scope),
-    ]);
+  const [
+    { broadcasts, selectedBroadcast, hasMore, nextCursor },
+    initialSegments,
+    templates,
+    senderConnected,
+  ] = await Promise.all([
+    listBroadcasts(campaign.id, {
+      includeLatestContent: true,
+      selectedBroadcastId: typeof requestedBroadcastId === "string" ? requestedBroadcastId : null,
+    }),
+    listBroadcastSegments(),
+    getOrCreateTemplatesForCampaign(campaign.id, scope),
+    hasCustomerEmailSender(prisma, {
+      workspaceId: campaign.workspaceId,
+      waitListId: campaign.id,
+    }),
+  ]);
   const initialPreview = await getBroadcastRecipients(
     campaign.id,
     selectedBroadcast?.segment || broadcasts?.[0]?.segment || "ALL",

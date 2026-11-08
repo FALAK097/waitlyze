@@ -19,13 +19,13 @@ export default async function AutomationsPage({ params, searchParams }) {
   const [{ id }, { recipe: requestedRecipeId }] = await Promise.all([params, searchParams]);
   const { campaign, scope } = await requireCampaignFeature(id, "sendEmail", "emailMarketing");
   if (!campaign) return notFound();
-  const senderConnected = await hasCustomerEmailSender(prisma, {
-    workspaceId: campaign.workspaceId,
-    waitListId: campaign.id,
-  });
-  const [data, templates] = await Promise.all([
+  const [data, templates, senderConnected] = await Promise.all([
     getAutomationConsoleForCampaign(campaign.id, scope),
     getOrCreateTemplatesForCampaign(campaign.id, scope),
+    hasCustomerEmailSender(prisma, {
+      workspaceId: campaign.workspaceId,
+      waitListId: campaign.id,
+    }),
   ]);
   return (
     <ContentLayout title="Automations">
