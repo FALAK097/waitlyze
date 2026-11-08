@@ -799,11 +799,14 @@ model WorkspaceSubscription {
   interval           WorkspaceBillingInterval?
   dodoCustomerId     String?
   dodoSubscriptionId String?                 @unique
-  dodoProductId        String?
-  checkoutIntentId     String?                 @unique
-  checkoutInterval     WorkspaceBillingInterval?
-  checkoutUrl          String?
-  checkoutPendingUntil DateTime?
+  dodoProductId            String?
+  checkoutIntentId         String?                 @unique
+  checkoutInterval         WorkspaceBillingInterval?
+  checkoutUrl              String?
+  checkoutSessionId        String?                 @unique
+  checkoutUrlExpiresAt     DateTime?
+  checkoutCreationStartedAt DateTime?
+  checkoutPendingUntil     DateTime?
   currentPeriodStart   DateTime?
   currentPeriodEnd   DateTime?
   pastDueEndsAt      DateTime?

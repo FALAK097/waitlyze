@@ -31,16 +31,38 @@ function planStatusText({ interval, status, cancelAtPeriodEnd, periodEnd }) {
   return `${cadence} billing · ${state}${period}`;
 }
 
-function CheckoutReturnBanner({ onRefresh }) {
+function CheckoutReturnBanner({
+  onRefresh,
+  workspaceId,
+  workspaceIsSelected,
+  canManageBilling,
+  isPro,
+}) {
   return (
     <div
       className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-product-border-subtle bg-product-bg-surface p-4 text-sm"
       role="status"
     >
-      <span>Confirming your subscription with Dodo Payments.</span>
-      <Button type="button" variant="ghost" size="sm" onClick={onRefresh}>
-        Refresh status
-      </Button>
+      <span>
+        {isPro
+          ? "Pro is active for this workspace."
+          : "Confirming your subscription with Dodo Payments."}
+      </span>
+      <div className="flex flex-wrap items-center gap-2">
+        {!workspaceIsSelected && canManageBilling && (
+          <form action="/api/billing/return" method="post">
+            <input type="hidden" name="workspaceId" value={workspaceId} />
+            <Button type="submit" variant="outline" size="sm">
+              Select this workspace
+            </Button>
+          </form>
+        )}
+        {!isPro && (
+          <Button type="button" variant="ghost" size="sm" onClick={onRefresh}>
+            Refresh status
+          </Button>
+        )}
+      </div>
     </div>
   );
 }
@@ -129,6 +151,7 @@ export function WorkspaceBillingSettings({
   memberCount,
   hasBillingCustomer,
   checkoutReturn = false,
+  workspaceIsSelected = true,
 }) {
   const router = useRouter();
   const [portalPending, setPortalPending] = useState(false);
@@ -172,8 +195,14 @@ export function WorkspaceBillingSettings({
         <p className="text-product-text-secondary">Plans and usage for {workspaceName}.</p>
       </header>
 
-      {checkoutReturn && plan !== "PRO" && (
-        <CheckoutReturnBanner onRefresh={() => router.refresh()} />
+      {checkoutReturn && (plan !== "PRO" || !workspaceIsSelected) && (
+        <CheckoutReturnBanner
+          onRefresh={() => router.refresh()}
+          workspaceId={workspaceId}
+          workspaceIsSelected={workspaceIsSelected}
+          canManageBilling={canManageBilling}
+          isPro={plan === "PRO"}
+        />
       )}
 
       <CurrentPlanCard

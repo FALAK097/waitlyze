@@ -79,7 +79,7 @@ export default async function CustomDomainPage() {
           {page.waitList.publicSlug && (
             <Link
               className="mt-5 inline-block underline underline-offset-4"
-              href={`${SITE_URL}/w/${page.waitList.publicSlug}`}
+              href={`${(process.env.BETTER_AUTH_URL || SITE_URL).replace(/\/$/, "")}/w/${encodeURIComponent(page.waitList.publicSlug)}`}
             >
               Open the hosted waitlist
             </Link>

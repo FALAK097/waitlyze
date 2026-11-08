@@ -1,5 +1,7 @@
 "use server";
 
+import { randomUUID } from "node:crypto";
+
 import Papa from "papaparse";
 
 import {
@@ -183,9 +185,12 @@ export async function importSignups(waitListId, formData) {
     const duplicates = candidates.length - fresh.length;
 
     let imported = 0;
-    const stamp = Date.now().toString(36);
+    let insertedSignups = [];
+    // Namespaced uniqueUserIds let the referral pass identify only rows this
+    // import inserted, even when public signups race the createMany calls.
+    const stamp = randomUUID();
     if (fresh.length) {
-      imported = await prisma.$transaction(async (tx) => {
+      const importResult = await prisma.$transaction(async (tx) => {
         const workspaceId = campaign.workspaceId;
         if (workspaceId)
           await tx.$queryRaw`SELECT "id" FROM "workspaces" WHERE "id" = ${workspaceId} FOR UPDATE`;
@@ -202,7 +207,7 @@ export async function importSignups(waitListId, formData) {
         const stillFresh = fresh.filter(
           (row) => !emailLookupForms(row.email).some((form) => duplicateForms.has(form)),
         );
-        if (!stillFresh.length) return 0;
+        if (!stillFresh.length) return { inserted: 0, insertedRows: [] };
         const [usage, entitlements] = await Promise.all([
           workspaceId
             ? tx.workspace.findUnique({
@@ -222,6 +227,7 @@ export async function importSignups(waitListId, formData) {
         });
 
         let inserted = 0;
+        const insertedRows = [];
         for (let index = 0; index < stillFresh.length; index += 500) {
           const chunk = stillFresh.slice(index, index + 500).map((row, offset) => ({
             email: row.email,
@@ -236,6 +242,17 @@ export async function importSignups(waitListId, formData) {
           }));
           const result = await tx.signUp.createMany({ data: chunk, skipDuplicates: true });
           inserted += result.count;
+          if (result.count) {
+            insertedRows.push(
+              ...(await tx.signUp.findMany({
+                where: {
+                  waitListId,
+                  uniqueUserId: { in: chunk.map((row) => row.uniqueUserId) },
+                },
+                select: { id: true, emailNormalized: true, referralCode: true },
+              })),
+            );
+          }
         }
         if (workspaceId && inserted) {
           await tx.workspace.update({
@@ -243,30 +260,21 @@ export async function importSignups(waitListId, formData) {
             data: { signupUsageCount: { increment: inserted } },
           });
         }
-        return inserted;
+        return { inserted, insertedRows };
       });
+      imported = importResult.inserted;
+      insertedSignups = importResult.insertedRows;
     }
 
     // Second pass: link referrals by email or code, including rows from this file.
     let referralsLinked = 0;
-    const linkable = fresh.filter((row) => row.referredBy);
+    const insertedEmails = new Set(insertedSignups.map((row) => row.emailNormalized));
+    const linkable = fresh.filter(
+      (row) => row.referredBy && insertedEmails.has(row.emailNormalized),
+    );
     if (linkable.length > 0) {
-      const created = [];
-      const createdEmails = [...new Set(fresh.map((row) => row.emailNormalized))];
-      created.push(
-        ...(await queryInChunks(createdEmails, 500, (emailChunk) =>
-          prisma.signUp.findMany({
-            where: {
-              waitListId,
-              waitList: scope,
-              emailNormalized: { in: emailChunk },
-            },
-            select: { id: true, emailNormalized: true, referralCode: true },
-          }),
-        )),
-      );
-      const byEmail = new Map(created.map((row) => [row.emailNormalized, row]));
-      const byCode = new Map(created.map((row) => [row.referralCode, row]));
+      const byEmail = new Map(insertedSignups.map((row) => [row.emailNormalized, row]));
+      const byCode = new Map(insertedSignups.map((row) => [row.referralCode, row]));
 
       // Resolve against only the addresses and codes present in this bounded
       // CSV, rather than materializing every signup in the campaign.

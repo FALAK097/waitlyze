@@ -5,6 +5,7 @@ import { randomUUID } from "node:crypto";
 import { headers } from "next/headers";
 
 import { auth } from "@/lib/auth";
+import { reconcileCheckoutSession } from "@/lib/billing/checkout-reconciliation.mjs";
 import { createDodoClient, dodoProductId, DodoConfigurationError } from "@/lib/billing/dodo.mjs";
 import { BILLING_INTERVALS, effectiveWorkspacePlan } from "@/lib/billing/plans.mjs";
 import { env } from "@/lib/env.mjs";
@@ -60,13 +61,15 @@ async function createPortalLink(customerId, workspaceId) {
   return portal.link;
 }
 
-// Expire the local intent a little before Dodo's 24-hour checkout URL expiry.
-const CHECKOUT_INTENT_TTL_MS = 23 * 60 * 60 * 1000 + 55 * 60 * 1000;
+const CHECKOUT_URL_TTL_MS = 24 * 60 * 60 * 1000;
+// Dodo retries a webhook for about 28 hours after the event. Keep deletion and
+// replacement blocked through the checkout lifetime plus that retry window.
+const CHECKOUT_PROTECTION_TTL_MS = 54 * 60 * 60 * 1000;
 
 async function reserveCheckoutIntent(workspaceId, interval) {
   const newIntentId = randomUUID();
   const now = new Date();
-  const expiresAt = new Date(now.getTime() + CHECKOUT_INTENT_TTL_MS);
+  const protectionUntil = new Date(now.getTime() + CHECKOUT_PROTECTION_TTL_MS);
   const checkoutInterval = interval === "annual" ? "ANNUAL" : "MONTHLY";
 
   return prisma.$transaction(async (tx) => {
@@ -91,15 +94,47 @@ async function reserveCheckoutIntent(workspaceId, interval) {
       return { portalCustomerId: current.dodoCustomerId };
     }
 
+    if (current?.checkoutSessionId) {
+      if (current.checkoutInterval !== checkoutInterval)
+        return {
+          error:
+            "A checkout is already open for the other billing interval. Finish it or wait for it to expire.",
+        };
+      if (current.checkoutUrl && current.checkoutUrlExpiresAt && current.checkoutUrlExpiresAt > now)
+        return { checkoutUrl: current.checkoutUrl };
+      return {
+        reconcile: {
+          intentId: current.checkoutIntentId,
+          sessionId: current.checkoutSessionId,
+        },
+      };
+    }
+
     if (current?.checkoutIntentId && current.checkoutPendingUntil > now) {
       if (current.checkoutInterval !== checkoutInterval)
         return {
           error:
             "A checkout is already open for the other billing interval. Finish it or wait for it to expire.",
         };
-      if (current.checkoutUrl) return { checkoutUrl: current.checkoutUrl };
-      return { intentId: current.checkoutIntentId };
+      if (current.checkoutUrl)
+        return {
+          error: "This checkout needs reconciliation before another payment attempt can start.",
+        };
+      if (current.checkoutCreationStartedAt) return { creationPending: true };
+      await tx.workspaceSubscription.update({
+        where: { workspaceId },
+        data: {
+          checkoutCreationStartedAt: now,
+          checkoutPendingUntil: protectionUntil,
+        },
+      });
+      return { intentId: current.checkoutIntentId, creatorStartedAt: now };
     }
+
+    if (current?.checkoutIntentId && current.checkoutUrl)
+      return {
+        error: "This checkout needs reconciliation before another payment attempt can start.",
+      };
 
     await tx.workspaceSubscription.upsert({
       where: { workspaceId },
@@ -109,16 +144,20 @@ async function reserveCheckoutIntent(workspaceId, interval) {
         status: "FREE",
         checkoutIntentId: newIntentId,
         checkoutInterval,
-        checkoutPendingUntil: expiresAt,
+        checkoutCreationStartedAt: now,
+        checkoutPendingUntil: protectionUntil,
       },
       update: {
         checkoutIntentId: newIntentId,
         checkoutInterval,
         checkoutUrl: null,
-        checkoutPendingUntil: expiresAt,
+        checkoutSessionId: null,
+        checkoutUrlExpiresAt: null,
+        checkoutCreationStartedAt: now,
+        checkoutPendingUntil: protectionUntil,
       },
     });
-    return { intentId: newIntentId };
+    return { intentId: newIntentId, creatorStartedAt: now };
   });
 }
 
@@ -129,6 +168,9 @@ async function releaseCheckoutIntent(workspaceId, intentId) {
       checkoutIntentId: null,
       checkoutInterval: null,
       checkoutUrl: null,
+      checkoutSessionId: null,
+      checkoutUrlExpiresAt: null,
+      checkoutCreationStartedAt: null,
       checkoutPendingUntil: null,
     },
   });
@@ -146,48 +188,118 @@ export async function createProCheckout(interval, workspaceId) {
     if (context.error) return context;
     const { workspace } = context;
     resolvedWorkspaceId = workspace.id;
-    const reservation = await reserveCheckoutIntent(workspace.id, interval);
+    let reservation = await reserveCheckoutIntent(workspace.id, interval);
     if (reservation.error) return { error: reservation.error };
     if (reservation.portalCustomerId)
       return {
         portalUrl: await createPortalLink(reservation.portalCustomerId, workspace.id),
         billingManagementRequired: true,
       };
+    if (reservation.reconcile) {
+      const reconciled = await reconcileCheckoutSession(prisma, {
+        workspaceId: workspace.id,
+        intentId: reservation.reconcile.intentId,
+        sessionId: reservation.reconcile.sessionId,
+      });
+      if (reconciled.state === "safe_to_retry") {
+        reservation = await reserveCheckoutIntent(workspace.id, interval);
+        if (reservation.error) return { error: reservation.error };
+        if (reservation.portalCustomerId)
+          return {
+            portalUrl: await createPortalLink(reservation.portalCustomerId, workspace.id),
+            billingManagementRequired: true,
+          };
+        if (reservation.reconcile)
+          return { error: "A payment is still being reconciled. Refresh billing before retrying." };
+      } else if (reconciled.state === "active") {
+        if (!reconciled.customerId)
+          return {
+            error:
+              "Payment is confirmed, but billing is still syncing. Refresh shortly or contact support.",
+          };
+        return {
+          portalUrl: await createPortalLink(reconciled.customerId, workspace.id),
+          billingManagementRequired: true,
+        };
+      } else if (reconciled.state === "terminal") {
+        return {
+          error:
+            "Dodo confirmed a payment, but its subscription is no longer active. Contact support before retrying checkout.",
+        };
+      } else {
+        return {
+          error: "A checkout payment is still being reconciled. Refresh billing before retrying.",
+        };
+      }
+    }
+    if (reservation.creationPending)
+      return {
+        error:
+          "A secure checkout request is still being reconciled. Please wait or contact support before starting another payment.",
+      };
     if (reservation.checkoutUrl) return { checkoutUrl: reservation.checkoutUrl };
     reservedIntentId = reservation.intentId;
+    const creatorStartedAt = reservation.creatorStartedAt;
 
-    const client = createDodoClient({ requireWebhookKey: true });
-    const checkout = await client.checkoutSessions.create(
-      {
-        product_cart: [{ product_id: dodoProductId(interval), quantity: 1 }],
-        customer: {
-          email: session.user.email,
-          ...(session.user.name ? { name: session.user.name } : {}),
-        },
-        metadata: {
-          workspaceId: workspace.id,
-          userId: session.user.id,
-          plan: "PRO",
-          interval,
-          checkoutIntentId: reservedIntentId,
-        },
-        feature_flags: { allow_tax_id: true, allow_currency_selection: true },
-        return_url: new URL(
-          `/api/billing/return?workspaceId=${encodeURIComponent(workspace.id)}`,
-          env.BETTER_AUTH_URL,
-        ).toString(),
+    // The installed SDK does not send an idempotency header for this endpoint.
+    // The workspace-row claim elects one creator; disable blind POST retries.
+    const client = createDodoClient({ requireWebhookKey: true }).withOptions({
+      maxRetries: 0,
+      timeout: 30_000,
+    });
+    const checkout = await client.checkoutSessions.create({
+      product_cart: [{ product_id: dodoProductId(interval), quantity: 1 }],
+      customer: {
+        email: session.user.email,
+        ...(session.user.name ? { name: session.user.name } : {}),
       },
-      { idempotencyKey: reservedIntentId },
-    );
+      metadata: {
+        workspaceId: workspace.id,
+        userId: session.user.id,
+        plan: "PRO",
+        interval,
+        checkoutIntentId: reservedIntentId,
+      },
+      feature_flags: { allow_tax_id: true, allow_currency_selection: true },
+      return_url: new URL(
+        `/api/billing/return?workspaceId=${encodeURIComponent(workspace.id)}`,
+        env.BETTER_AUTH_URL,
+      ).toString(),
+    });
+    if (!checkout.session_id) {
+      return { error: "Dodo did not return a checkout session. Try again." };
+    }
     if (!checkout.checkout_url) {
-      await releaseCheckoutIntent(workspace.id, reservedIntentId);
+      await prisma.workspaceSubscription.updateMany({
+        where: {
+          workspaceId: workspace.id,
+          checkoutIntentId: reservedIntentId,
+          checkoutCreationStartedAt: creatorStartedAt,
+        },
+        data: {
+          checkoutSessionId: checkout.session_id,
+          checkoutUrlExpiresAt: new Date(creatorStartedAt.getTime() + CHECKOUT_URL_TTL_MS),
+          checkoutCreationStartedAt: null,
+        },
+      });
       reservedIntentId = null;
       return { error: "Dodo did not return a checkout link. Try again." };
     }
-    await prisma.workspaceSubscription.updateMany({
-      where: { workspaceId: workspace.id, checkoutIntentId: reservedIntentId },
-      data: { checkoutUrl: checkout.checkout_url },
+    const persisted = await prisma.workspaceSubscription.updateMany({
+      where: {
+        workspaceId: workspace.id,
+        checkoutIntentId: reservedIntentId,
+        checkoutCreationStartedAt: creatorStartedAt,
+      },
+      data: {
+        checkoutUrl: checkout.checkout_url,
+        checkoutSessionId: checkout.session_id,
+        checkoutUrlExpiresAt: new Date(creatorStartedAt.getTime() + CHECKOUT_URL_TTL_MS),
+        checkoutCreationStartedAt: null,
+      },
     });
+    if (persisted.count !== 1)
+      return { error: "Checkout changed while being created. Refresh billing before retrying." };
     return { checkoutUrl: checkout.checkout_url };
   } catch (error) {
     const status = Number(error?.status || error?.statusCode);
@@ -201,6 +313,9 @@ export async function createProCheckout(interval, workspaceId) {
         // Leave the expiring reservation in place rather than risk a second session.
       }
     }
+    // For ambiguous errors, preserve the creator lease. Another request must
+    // not issue a second POST while Dodo may have created a session; no URL is
+    // returned until its session ID and URL are stored.
     if (error instanceof BillingGateError) return { error: error.message };
     if (error instanceof DodoConfigurationError) return { error: error.message };
     console.error("Could not create Dodo checkout", error?.name || "unknown error");

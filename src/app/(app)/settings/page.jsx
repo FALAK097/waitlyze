@@ -17,7 +17,14 @@ import { currentWorkspace } from "@/lib/workspaces/current";
 
 export const metadata = { title: "Settings" };
 
-async function SelectedSettings({ section, user, workspace, role, checkoutReturn }) {
+async function SelectedSettings({
+  section,
+  user,
+  workspace,
+  role,
+  checkoutReturn,
+  workspaceIsSelected,
+}) {
   const canManage = ["OWNER", "ADMIN"].includes(role);
   if (section === "profile")
     return (
@@ -212,6 +219,7 @@ async function SelectedSettings({ section, user, workspace, role, checkoutReturn
         memberCount={memberCount}
         hasBillingCustomer={Boolean(subscription?.dodoCustomerId)}
         checkoutReturn={checkoutReturn}
+        workspaceIsSelected={workspaceIsSelected}
       />
     );
   }
@@ -278,7 +286,7 @@ export default async function SettingsPage({ searchParams }) {
       <div className="flex items-start gap-8 max-[760px]:flex-col max-[760px]:gap-8 lg:gap-12 xl:gap-18">
         <aside className="sticky top-6 w-52.5 min-w-0 shrink-0 max-[760px]:static max-[760px]:w-full">
           <h1 className="mt-0! mb-7.5! text-xl! max-[760px]:mb-4!">Settings</h1>
-          <SettingsSectionNavigation section={section} />
+          <SettingsSectionNavigation section={section} workspaceId={requestedWorkspace?.id} />
         </aside>
         <Suspense key={`${context.workspace.id}:${section}`} fallback={<SettingsPanelSkeleton />}>
           <SelectedSettings
@@ -286,6 +294,7 @@ export default async function SettingsPage({ searchParams }) {
             {...context}
             role={context.workspace.members[0]?.role}
             checkoutReturn={query.checkout === "return"}
+            workspaceIsSelected={context.workspace.id === currentContext.workspace.id}
           />
         </Suspense>
       </div>

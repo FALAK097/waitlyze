@@ -160,9 +160,17 @@ export function createWorkspaceService(db) {
           throw new TypeError("The personal workspace cannot be deleted.");
         const subscription = await tx.workspaceSubscription.findUnique({
           where: { workspaceId },
-          select: { dodoSubscriptionId: true, status: true, checkoutPendingUntil: true },
+          select: {
+            dodoSubscriptionId: true,
+            status: true,
+            checkoutUrl: true,
+            checkoutSessionId: true,
+            checkoutPendingUntil: true,
+          },
         });
         if (
+          subscription?.checkoutSessionId ||
+          (subscription?.checkoutUrl && !subscription.checkoutSessionId) ||
           subscription?.checkoutPendingUntil > new Date() ||
           (subscription?.dodoSubscriptionId &&
             !["EXPIRED", "FAILED", "CANCELLED"].includes(subscription.status))

@@ -4,6 +4,7 @@ import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 
 import { auth } from "@/lib/auth";
+import { reconcileCheckoutSession } from "@/lib/billing/checkout-reconciliation.mjs";
 import prisma from "@/lib/prisma";
 import { AUDIT_ACTIONS, recordAuditEvent } from "@/lib/workspaces/audit.mjs";
 import { requireCampaign } from "@/lib/workspaces/authorize";
@@ -127,8 +128,41 @@ export async function deleteWorkspace(previous, form) {
   try {
     const service = createWorkspaceService(prisma);
     const workspace = await service.requireAccess(session.user.id, workspaceId, "manageWorkspace");
+    const membership = await prisma.workspaceMember.findUnique({
+      where: { workspaceId_userId: { workspaceId, userId: session.user.id } },
+      select: { role: true },
+    });
+    if (membership?.role !== "OWNER")
+      return { error: "Only the workspace owner can delete this workspace." };
     if (!confirmation || confirmation !== workspace.name) {
       return { error: `Type “${workspace.name}” to confirm deletion.` };
+    }
+    const subscription = await prisma.workspaceSubscription.findUnique({
+      where: { workspaceId },
+      select: {
+        checkoutIntentId: true,
+        checkoutSessionId: true,
+      },
+    });
+    if (subscription?.checkoutSessionId && subscription.checkoutIntentId) {
+      let reconciliation;
+      try {
+        reconciliation = await reconcileCheckoutSession(prisma, {
+          workspaceId,
+          intentId: subscription.checkoutIntentId,
+          sessionId: subscription.checkoutSessionId,
+        });
+      } catch {
+        return {
+          error: "Could not verify this checkout with Dodo Payments. Try again before deleting.",
+        };
+      }
+      if (reconciliation.state === "active")
+        return {
+          error: "A paid subscription is connected. Cancel it before deleting this workspace.",
+        };
+      if (reconciliation.state !== "safe_to_retry" && reconciliation.state !== "terminal")
+        return { error: "A checkout or payment is still processing. Refresh and try again later." };
     }
     await service.deleteWorkspace(session.user.id, workspaceId);
   } catch (error) {

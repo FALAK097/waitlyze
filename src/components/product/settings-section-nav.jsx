@@ -29,14 +29,18 @@ const settingsNavClass = "grid gap-1 max-[760px]:grid-cols-2 max-[760px]:gap-1.5
 const settingsNavLinkClass =
   "flex min-h-11 items-center gap-3 rounded-lg px-3 py-2.5 text-item text-product-text-secondary no-underline transition-colors duration-150 hover:bg-product-bg-inset hover:text-product-text-primary max-[760px]:gap-2 max-[760px]:px-2.5";
 
-export function SettingsSectionNavigation({ section = "profile" }) {
+export function SettingsSectionNavigation({ section = "profile", workspaceId }) {
   const router = useRouter();
   useEffect(() => {
     function migrateHash() {
       const old = window.location.hash.slice(1);
       const mapped = old === "developers" ? "integrations" : old === "privacy" ? "profile" : old;
-      if (sections.some(({ id }) => id === mapped))
-        router.replace(`/settings?section=${mapped}`, { scroll: false });
+      if (sections.some(({ id }) => id === mapped)) {
+        const params = new URLSearchParams({ section: mapped });
+        const requestedWorkspaceId = new URLSearchParams(window.location.search).get("workspaceId");
+        if (requestedWorkspaceId) params.set("workspaceId", requestedWorkspaceId);
+        router.replace(`/settings?${params}`, { scroll: false });
+      }
     }
     migrateHash();
     window.addEventListener("hashchange", migrateHash);
@@ -47,7 +51,11 @@ export function SettingsSectionNavigation({ section = "profile" }) {
       {sections.map(({ id, label, icon }) => (
         <Link
           key={id}
-          href={`/settings?section=${id}`}
+          href={
+            workspaceId
+              ? `/settings?section=${id}&workspaceId=${encodeURIComponent(workspaceId)}`
+              : `/settings?section=${id}`
+          }
           aria-current={section === id ? "page" : undefined}
           scroll={false}
           className={cn(

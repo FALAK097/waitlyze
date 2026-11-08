@@ -143,13 +143,41 @@ export async function POST(request) {
       const matchesPendingCheckout =
         Boolean(eventCheckoutIntentId) &&
         workspaceSubscription?.checkoutIntentId === eventCheckoutIntentId;
-      if (workspaceSubscription?.checkoutIntentId && !matchesPendingCheckout) return;
+      const isCurrentSubscription = workspaceSubscription?.dodoSubscriptionId === subscriptionId;
+      const eventStatusValue = String(data.status || "").toLowerCase();
+      const indicatesActivation =
+        [
+          "subscription.active",
+          "subscription.renewed",
+          "subscription.unpaused",
+          "subscription.plan_changed",
+        ].includes(type) || ["active", "trialing"].includes(eventStatusValue);
+      if (
+        workspaceSubscription?.checkoutIntentId &&
+        !matchesPendingCheckout &&
+        !isCurrentSubscription
+      ) {
+        if (indicatesActivation)
+          // Abort the receipt transaction so Dodo retries; never acknowledge a
+          // paid activation that the workspace mapping cannot safely apply.
+          throw new TypeError(
+            "A paid activation belongs to a superseded checkout; do not acknowledge it before reconciliation.",
+          );
+        return;
+      }
       if (
         workspaceSubscription?.dodoSubscriptionId &&
         workspaceSubscription.dodoSubscriptionId !== subscriptionId &&
         !matchesPendingCheckout
-      )
+      ) {
+        if (indicatesActivation)
+          // A conflicting paid event must remain retryable, not become an
+          // acknowledged receipt with no corresponding local subscription.
+          throw new TypeError(
+            "A paid activation conflicts with the stored subscription; do not acknowledge it before reconciliation.",
+          );
         return;
+      }
 
       const suppliedProductId = typeof data.product_id === "string" ? data.product_id : null;
       const productId = suppliedProductId || existing?.dodoProductId || null;
@@ -230,6 +258,9 @@ export async function POST(request) {
                 checkoutIntentId: null,
                 checkoutInterval: null,
                 checkoutUrl: null,
+                checkoutSessionId: null,
+                checkoutUrlExpiresAt: null,
+                checkoutCreationStartedAt: null,
                 checkoutPendingUntil: null,
               }
             : {}),

@@ -221,6 +221,19 @@ export async function createCampaignSignup(
   let signUp;
   try {
     signUp = await db.$transaction(async (tx) => {
+      const campaignWorkspace = await tx.$queryRaw`
+        SELECT "workspaceId" FROM "wait_lists" WHERE "id" = ${input.waitListId}
+      `;
+      if (campaignWorkspace.length === 0) throw new InvalidCampaignError();
+      const workspaceId = campaignWorkspace[0].workspaceId;
+      if (workspaceId) {
+        // Always lock the workspace before the waitlist. Workspace deletion
+        // uses this same order before it locks and removes the campaign.
+        const lockedWorkspace =
+          await tx.$queryRaw`SELECT "id" FROM "workspaces" WHERE "id" = ${workspaceId} FOR UPDATE`;
+        if (lockedWorkspace.length === 0) throw new InvalidCampaignError();
+      }
+
       // Hold a share lock until the signup commits so a concurrent pause cannot
       // slip between the publication check and the subscriber insert.
       const published = await tx.$queryRaw`
@@ -229,6 +242,7 @@ export async function createCampaignSignup(
         FOR SHARE
       `;
       if (published.length === 0) throw new InvalidCampaignError();
+      if (published[0].workspaceId !== workspaceId) throw new InvalidCampaignError();
       if (!published[0].publishedRevision) {
         throw new TypeError("Published form configuration is invalid.");
       }
@@ -320,12 +334,6 @@ export async function createCampaignSignup(
         });
       }
 
-      const workspaceId = published[0].workspaceId;
-      if (workspaceId) {
-        // Serialize intake per workspace so concurrent signups cannot race
-        // past the plan cap. Existing duplicate signups returned above.
-        await tx.$queryRaw`SELECT "id" FROM "workspaces" WHERE "id" = ${workspaceId} FOR UPDATE`;
-      }
       // The persistent workspace counter survives waitlist deletion, so
       // removing old signups does not reset the Free-plan allowance.
       const [usage, entitlements] = await Promise.all([
