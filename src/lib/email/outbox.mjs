@@ -574,6 +574,7 @@ export async function dispatchPendingOutboxEvents(
   db,
   {
     send,
+    sendVerification,
     sendPlatform,
     now = new Date(),
     batchSize = 20,
@@ -803,7 +804,7 @@ export async function dispatchPendingOutboxEvents(
       return;
     }
     try {
-      const response = await send({
+      const response = await (sendVerification || send)({
         to: signup.email,
         subject: `Confirm your spot on ${waitList.name || "the waitlist"}`,
         html: await renderSubscriberVerification({

@@ -2,16 +2,11 @@ import "server-only";
 import { Resend } from "resend";
 
 import { resolveEmailSender } from "@/lib/email/sender-resolution.mjs";
-import { env } from "@/lib/env.mjs";
 import prisma from "@/lib/prisma";
 import { consumePublicBudget } from "@/lib/security/public-rate-limit.mjs";
 import { requireCampaign } from "@/lib/workspaces/authorize";
 
-const platformSender = {
-  apiKey: env.RESEND_API_KEY,
-  fromEmail: env.RESEND_FROM_EMAIL,
-  replyTo: env.RESEND_REPLY_TO,
-};
+const platformSender = null;
 
 const TEST_ADDRESS_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 

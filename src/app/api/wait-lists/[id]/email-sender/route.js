@@ -45,7 +45,7 @@ function validateSenderInput(fromEmail, apiKey, { keyRequired }) {
 
 // Per-waitlist BYOK sender. A CONNECTED row here wins over the workspace
 // connection (see sender-resolution.mjs); deleting it falls back to the
-// workspace sender, then the deployment default.
+// workspace sender when one is connected.
 export async function GET(request, { params }) {
   const { id } = await params;
   const access = await webhookAccess(request, id, "viewCampaign");
@@ -62,7 +62,7 @@ export async function GET(request, { params }) {
     const provider = await resolveEmailSender(prisma, {
       workspaceId: waitList?.workspaceId,
       waitListId: id,
-      defaults: { apiKey: env.RESEND_API_KEY, fromEmail: env.RESEND_FROM_EMAIL },
+      defaults: null,
     });
     if (provider) resolved = { source: provider.source, fromEmail: provider.fromEmail };
   } catch {

@@ -5,6 +5,7 @@ const SECTION_PATHS = {
   integrations: [
     "/docs/integrations",
     "/docs/resend",
+    "/docs/cloudflare-email",
     "/docs/notifications",
     "/docs/slack",
     "/docs/discord",
@@ -161,6 +162,7 @@ export function getDocsSectionTree(tree, section) {
       children: [
         sectionPage("Integrations", "/docs/integrations/overview"),
         sectionPage("Resend", "/docs/resend", integrationLogo("resend.svg")),
+        sectionPage("Cloudflare Email Sending", "/docs/cloudflare-email"),
         sectionPage("Slack", "/docs/slack", integrationLogo("slack.svg")),
         sectionPage("Discord", "/docs/discord", integrationLogo("discord.svg")),
         sectionPage("Webhooks", "/docs/webhooks", integrationLogo("webhooks.svg")),

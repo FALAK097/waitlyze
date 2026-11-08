@@ -120,7 +120,7 @@ export async function generateMetadata({ params }) {
 }
 ```
 
-## 3. Dynamic OpenGraph Social Cards with `@vercel/og`
+## 3. Dynamic Open Graph Social Cards with Next.js `ImageResponse`
 
 When users share your waitlist link on X/Twitter, LinkedIn, Slack, or Discord, high-converting social preview cards can increase click-through rates by up to 40%.
 
@@ -275,7 +275,7 @@ export function WaitlistSection() {
       <div className="waitlyze-widget" data-key-id="YOUR_PUBLIC_WAITLIST_ID" />
 
       {/* 2. Embedded Script */}
-      <Script src="https://waitlyze.falakgala.dev/js/embed.js" strategy="lazyOnload" />
+      <Script src="https://waitlyze.com/js/embed.js" strategy="lazyOnload" />
     </div>
   );
 }
@@ -297,7 +297,7 @@ export async function submitWaitlist(prevState: any, formData: FormData) {
   }
 
   try {
-    const res = await fetch("https://waitlyze.falakgala.dev/api/waitlist", {
+    const res = await fetch("https://waitlyze.com/api/waitlist", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({

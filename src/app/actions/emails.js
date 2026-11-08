@@ -30,6 +30,15 @@ import { consumePublicBudget, PublicRateLimitError } from "@/lib/security/public
 import { AUDIT_ACTIONS, recordWaitlistAuditEvent } from "@/lib/workspaces/audit.mjs";
 import { requireCampaign } from "@/lib/workspaces/authorize";
 
+async function campaignSenderConfigured(waitListId) {
+  if (!env.OUTBOX_DISPATCH_SECRET) return false;
+  try {
+    return Boolean((await senderForWaitlist(waitListId))?.apiKey);
+  } catch {
+    return false;
+  }
+}
+
 function renderLegacyTemplateEmail({ template, waitList, variables }) {
   const replaceVars = (text) =>
     text.replace(/\{\{([^}]+)\}\}/g, (_, key) => variables[key.trim()] ?? `{{${key}}}`);
@@ -252,7 +261,7 @@ export async function sendTestEmail({ waitListId, templateType, to }) {
 
       const vars = {
         ...seedPreviewVars(waitList.name),
-        waitlist_url: `https://waitlyze.falakgala.dev/forms/${waitListId}`,
+        waitlist_url: `https://waitlyze.com/forms/${waitListId}`,
       };
       return { email: renderLegacyTemplateEmail({ template: tpl, waitList, variables: vars }) };
     },
@@ -349,7 +358,7 @@ async function renderTemplate({ waitListId, enumType, varsOverride = {} }) {
 
   const baseVars = {
     waitlist: waitList.name || "Your Project",
-    waitlist_url: `https://waitlyze.falakgala.dev/forms/${waitListId}`,
+    waitlist_url: `https://waitlyze.com/forms/${waitListId}`,
     position: "",
     referral_link: "",
     referral_count: "",
@@ -714,8 +723,8 @@ export async function queueBroadcast({ waitListId, broadcastId, expectedRecipien
   const { campaign, user } = await requireCampaign(waitListId, "sendEmail");
   if (!Number.isInteger(expectedRecipientCount) || expectedRecipientCount < 0)
     return { success: false, message: "Refresh the recipient preview before sending." };
-  if (!env.OUTBOX_DISPATCH_SECRET || !env.RESEND_API_KEY)
-    return { success: false, message: "Email delivery is not configured yet." };
+  if (!(await campaignSenderConfigured(campaign.id)))
+    return { success: false, message: "Connect a Resend campaign sender before sending." };
   const seg = normalizeSegment(segment);
   try {
     // The recipient fan-out (bulk insert, variable snapshot, per-recipient
@@ -761,8 +770,8 @@ export async function scheduleBroadcast({
   // Authenticate before checking delivery configuration so this early return
   // cannot reveal server setup to an unauthenticated caller.
   const { campaign, user } = await requireCampaign(waitListId, "sendEmail");
-  if (!env.OUTBOX_DISPATCH_SECRET || !env.RESEND_API_KEY)
-    return { success: false, message: "Email delivery is not configured yet." };
+  if (!(await campaignSenderConfigured(campaign.id)))
+    return { success: false, message: "Connect a Resend campaign sender before scheduling." };
   const seg = normalizeSegment(segment);
   // Contract with the client: scheduledAt arrives as an explicit UTC ISO
   // string (the picker wall clock is converted in the founder's browser

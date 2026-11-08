@@ -112,7 +112,7 @@ Yes. Invite teammates to your workspace and assign editing, publishing, and emai
 ### How can I protect the signup form from bots?
 Enable Turnstile verification on the form. Marketing consent is a separate choice for subscribers.
 
-Waitlyze is built by Falak Gala. Questions or ideas? Email [Falak](mailto:hi@falakgala.dev).`;
+Waitlyze is built by Falak Gala. Questions or ideas? Email [Falak](mailto:support@waitlyze.com).`;
 
     return buildMarkdownDoc({
       title: SITE_TITLE,
@@ -304,7 +304,7 @@ ${text}${faqs}`;
     const isPrivacy = path === "/privacy";
     const title = isPrivacy ? "Privacy Policy" : "Terms of Service";
     const body = isPrivacy
-      ? `At Waitlyze ("we," "us," "our"), accessible from https://waitlyze.falakgala.dev, we are committed to protecting your privacy. This Privacy Policy outlines our practices regarding data collection, usage, and sharing when you access our platform.
+      ? `At Waitlyze ("we," "us," "our"), accessible from https://waitlyze.com, we are committed to protecting your privacy. This Privacy Policy outlines our practices regarding data collection, usage, and sharing when you access our platform.
 
 ## 1. Information We Collect
 - **Personal Information**: When you create an account, we collect personal information such as your name, email address, and any other details you choose to provide.
@@ -334,8 +334,8 @@ Depending on your location, you may have rights regarding your personal informat
 We may update this Privacy Policy from time to time. We will notify users of any material changes and indicate the effective date at the top of this policy.
 
 ## 8. Contact Us
-If you have questions or concerns about this Privacy Policy or our data practices, please contact us at hi@falakgala.dev.`
-      : `Welcome to Waitlyze ("Platform," "Service," "we," "us," "our"). By accessing or using https://waitlyze.falakgala.dev ("Website"), you agree to comply with and be bound by these Terms of Service ("Terms"). If you do not agree to these Terms, you may not use our services.
+If you have questions or concerns about this Privacy Policy or our data practices, please contact us at support@waitlyze.com.`
+      : `Welcome to Waitlyze ("Platform," "Service," "we," "us," "our"). By accessing or using https://waitlyze.com ("Website"), you agree to comply with and be bound by these Terms of Service ("Terms"). If you do not agree to these Terms, you may not use our services.
 
 ## 1. Acceptance of Terms
 By creating an account or accessing our Platform, you accept and agree to be bound by these Terms, our Privacy Policy, and any other policies or guidelines that we may implement.
@@ -368,7 +368,7 @@ To the fullest extent permitted by law, Waitlyze shall not be liable for any dam
 We reserve the right to update these Terms at any time. We will notify users of any material changes, and continued use of the Platform indicates acceptance of the revised Terms.
 
 ## 10. Contact Information
-For questions about these Terms, please contact us at hi@falakgala.dev.`;
+For questions about these Terms, please contact us at support@waitlyze.com.`;
 
     return buildMarkdownDoc({
       title,

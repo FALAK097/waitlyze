@@ -1,4 +1,7 @@
-import { resolveWorkspaceEmailSender } from "@/lib/integrations/email-sender.mjs";
+import {
+  resolveWorkspaceCloudflareEmailSender,
+  resolveWorkspaceEmailSender,
+} from "@/lib/integrations/email-sender.mjs";
 import { decryptIntegrationSecret } from "@/lib/integrations/secrets.mjs";
 
 function senderNeedsAttention() {
@@ -34,9 +37,8 @@ async function resolveWaitlistSender(db, waitListId) {
 }
 
 /**
- * Phase 7c BYOK sender resolution - the single seam every sending path
- * should adopt. Order: per-waitlist sender → workspace connection →
- * deployment default. A broken sender fails closed
+ * Phase 7c BYOK sender resolution. Order: per-waitlist sender → workspace
+ * connection. A broken sender fails closed
  * (throws SENDER_NEEDS_ATTENTION) instead of falling back; a NEEDS_TEST
  * sender stays dormant and falls back until its test succeeds.
  *
@@ -52,5 +54,27 @@ export async function resolveEmailSender(db, { workspaceId, waitListId, defaults
     const workspace = await resolveWorkspaceEmailSender(db, workspaceId, null);
     if (workspace) return { ...workspace, source: "workspace" };
   }
-  return defaults ? { ...defaults, source: "default" } : defaults;
+  return defaults?.apiKey && defaults?.fromEmail ? { ...defaults, source: "default" } : null;
+}
+
+/**
+ * Resolve a provider for signup verification only: per-waitlist Resend, then
+ * workspace Cloudflare transactional sender, then workspace Resend, then the
+ * platform Cloudflare binding. Marketing mail never calls this resolver.
+ */
+export async function resolveTransactionalEmailSender(
+  db,
+  { workspaceId, waitListId, platformSender },
+) {
+  if (waitListId) {
+    const waitlist = await resolveWaitlistSender(db, waitListId);
+    if (waitlist) return { ...waitlist, provider: "RESEND" };
+  }
+  if (workspaceId) {
+    const cloudflare = await resolveWorkspaceCloudflareEmailSender(db, workspaceId);
+    if (cloudflare) return cloudflare;
+    const resend = await resolveWorkspaceEmailSender(db, workspaceId, null);
+    if (resend) return { ...resend, provider: "RESEND" };
+  }
+  return platformSender ? { provider: "PLATFORM_CLOUDFLARE" } : null;
 }

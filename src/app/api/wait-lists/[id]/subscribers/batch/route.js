@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { dispatchOffboardNow } from "@/lib/email/dispatch-now.mjs";
-import { env } from "@/lib/env.mjs";
-import { resolveWorkspaceEmailSender } from "@/lib/integrations/email-sender.mjs";
+import { resolveEmailSender } from "@/lib/email/sender-resolution.mjs";
 import prisma from "@/lib/prisma";
 import { AUDIT_ACTIONS, recordWaitlistAuditEvent } from "@/lib/workspaces/audit.mjs";
 import { campaignRouteAccess } from "@/lib/workspaces/campaign-route-access.mjs";
@@ -39,10 +38,10 @@ function parseBody(body) {
   return { action, ids: [...new Set(ids)] };
 }
 
-async function deliveryConfigured(workspaceId) {
+async function deliveryConfigured(waitListId, workspaceId) {
   try {
-    if (env.RESEND_API_KEY) return true;
-    return Boolean(await resolveWorkspaceEmailSender(prisma, workspaceId, null));
+    const sender = await resolveEmailSender(prisma, { waitListId, workspaceId, defaults: null });
+    return Boolean(sender?.apiKey);
   } catch {
     return false;
   }
@@ -260,7 +259,7 @@ export async function POST(request, { params }) {
     const resubscribe = action === "resubscribe";
     const canEmail = resubscribe
       ? false
-      : await deliveryConfigured(workspace.id ?? waitlist.workspaceId);
+      : await deliveryConfigured(waitlist.id, workspace.id ?? waitlist.workspaceId);
     const outcome = await bulkOffboard({ waitlist, user, ids, resubscribe, canEmail });
     if (outcome.eventKeys.length) {
       // Best-effort: the scheduler delivers whatever is still pending.

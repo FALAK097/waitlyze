@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 
 import { normalizeAutomationConfig } from "@/lib/email/automations.mjs";
+import { senderForWaitlist } from "@/lib/emails/test-delivery.mjs";
 import { env } from "@/lib/env.mjs";
 import prisma from "@/lib/prisma";
 import { requireCampaign } from "@/lib/workspaces/authorize";
@@ -57,8 +58,17 @@ export async function setAutomationStatus({ waitListId, recipeId, status }) {
   });
   if (!recipe) return { success: false, message: "Automation recipe not found." };
   if (status === "ENABLED") {
-    if (!env.OUTBOX_DISPATCH_SECRET || !env.RESEND_API_KEY)
-      return { success: false, message: "Configure email delivery before enabling automations." };
+    let hasCampaignSender = false;
+    try {
+      hasCampaignSender = Boolean(
+        await senderForWaitlist(waitListId).then((sender) => sender?.apiKey),
+      );
+    } catch {}
+    if (!env.OUTBOX_DISPATCH_SECRET || !hasCampaignSender)
+      return {
+        success: false,
+        message: "Connect a Resend campaign sender before enabling automations.",
+      };
     try {
       normalizeAutomationConfig(recipe.type, recipe.versions[0]?.config);
     } catch {

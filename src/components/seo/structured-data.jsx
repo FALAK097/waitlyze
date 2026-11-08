@@ -1,4 +1,4 @@
-import { SITE_URL, SITE_DESCRIPTION } from "@/lib/site-metadata";
+import { SITE_URL, SITE_DESCRIPTION, SITE_SUPPORT_EMAIL } from "@/lib/site-metadata";
 
 const GITHUB_URL = "https://github.com/FALAK097/waitlyze";
 
@@ -12,6 +12,11 @@ const siteGraph = {
       url: SITE_URL,
       logo: `${SITE_URL}/web-app-manifest-512x512.png`,
       description: SITE_DESCRIPTION,
+      contactPoint: {
+        "@type": "ContactPoint",
+        contactType: "customer support",
+        email: SITE_SUPPORT_EMAIL,
+      },
       sameAs: [GITHUB_URL],
     },
     {

@@ -116,6 +116,7 @@ test("API and integration sidebars are section-specific and have no duplicate se
   assert.deepEqual(pageUrls(integrationsTree.children), [
     "/docs/integrations/overview",
     "/docs/resend",
+    "/docs/cloudflare-email",
     "/docs/slack",
     "/docs/discord",
     "/docs/webhooks",

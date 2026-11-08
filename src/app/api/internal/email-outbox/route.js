@@ -7,6 +7,7 @@ import { dispatchPendingOutboxEvents } from "@/lib/email/outbox.mjs";
 import { createPlatformSender } from "@/lib/emails/platform.mjs";
 import { env } from "@/lib/env.mjs";
 import { createWorkspaceResendSender } from "@/lib/integrations/resend-sender.mjs";
+import { createTransactionalEmailSender } from "@/lib/integrations/transactional-email-sender.mjs";
 import prisma from "@/lib/prisma";
 import { dispatchPendingWebhooks } from "@/lib/webhooks/delivery.mjs";
 
@@ -30,14 +31,11 @@ export async function POST(request) {
   const started = Date.now();
   const sendEmail = createWorkspaceResendSender({
     db: prisma,
-    defaults: {
-      apiKey: env.RESEND_API_KEY,
-      fromEmail: env.RESEND_FROM_EMAIL,
-      replyTo: env.RESEND_REPLY_TO,
-    },
+    defaults: null,
     createClient: (apiKey) => new Resend(apiKey),
   });
   const sendPlatform = createPlatformSender();
+  const sendVerification = createTransactionalEmailSender({ db: prisma });
   // Drain several small batches rather than claiming the entire queue at
   // once. Finish in-flight sends before returning, even when the budget is up.
   async function drainEmail() {
@@ -45,6 +43,7 @@ export async function POST(request) {
     while (result.batches < MAX_BATCHES && Date.now() - started < DRAIN_BUDGET_MS) {
       const batch = await dispatchPendingOutboxEvents(prisma, {
         send: sendEmail,
+        sendVerification,
         sendPlatform,
         batchSize: BATCH_SIZE,
         sweepScheduled: result.batches === 0,
@@ -62,6 +61,7 @@ export async function POST(request) {
     while (result.batches < 4 && Date.now() - started < DRAIN_BUDGET_MS) {
       const batch = await dispatchPendingOutboxEvents(prisma, {
         send: sendEmail,
+        sendVerification,
         sendPlatform,
         chatOnly: true,
         sweepScheduled: false,

@@ -2,7 +2,7 @@
 
 Fires every minute and calls the app's `POST /api/internal/email-outbox`
 route, which drains the **email outbox** and pending **webhook deliveries**.
-This replaces a Vercel Cron - no framework changes needed on the Next.js side.
+This Cloudflare Cron Worker independently drains the email outbox and webhook queue.
 
 ## One-time setup
 
@@ -15,7 +15,7 @@ wrangler secret put APP_URL
 
 wrangler secret put OUTBOX_DISPATCH_SECRET
 # paste the SAME value as the Next.js app's OUTBOX_DISPATCH_SECRET
-# (local .env, plus Vercel → Settings → Environment Variables for production)
+# Set the same values as Worker secrets in Cloudflare for production.
 
 wrangler deploy
 ```

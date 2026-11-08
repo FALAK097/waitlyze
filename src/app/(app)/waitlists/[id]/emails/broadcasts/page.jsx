@@ -8,6 +8,7 @@ import {
 import { ContentLayout } from "@/components/dashboard/content-layout";
 import { BroadcastManager } from "@/components/email/broadcast-manager";
 import { getOrCreateTemplatesForCampaign } from "@/lib/emails/templates.mjs";
+import { senderForWaitlist } from "@/lib/emails/test-delivery.mjs";
 import { env } from "@/lib/env.mjs";
 import { requireCampaignPage } from "@/lib/workspaces/authorize";
 
@@ -20,15 +21,20 @@ export default async function BroadcastsPage({ params, searchParams }) {
   const [{ id }, { broadcast: requestedBroadcastId }] = await Promise.all([params, searchParams]);
   const { campaign, scope } = await requireCampaignPage(id, "sendEmail");
   if (!campaign) return notFound();
-  const [{ broadcasts, selectedBroadcast, hasMore, nextCursor }, initialSegments, templates] =
-    await Promise.all([
-      listBroadcasts(campaign.id, {
-        includeLatestContent: true,
-        selectedBroadcastId: typeof requestedBroadcastId === "string" ? requestedBroadcastId : null,
-      }),
-      listBroadcastSegments(),
-      getOrCreateTemplatesForCampaign(campaign.id, scope),
-    ]);
+  const [
+    { broadcasts, selectedBroadcast, hasMore, nextCursor },
+    initialSegments,
+    templates,
+    sender,
+  ] = await Promise.all([
+    listBroadcasts(campaign.id, {
+      includeLatestContent: true,
+      selectedBroadcastId: typeof requestedBroadcastId === "string" ? requestedBroadcastId : null,
+    }),
+    listBroadcastSegments(),
+    getOrCreateTemplatesForCampaign(campaign.id, scope),
+    senderForWaitlist(campaign.id).catch(() => null),
+  ]);
   const initialPreview = await getBroadcastRecipients(
     campaign.id,
     selectedBroadcast?.segment || broadcasts?.[0]?.segment || "ALL",
@@ -45,7 +51,7 @@ export default async function BroadcastsPage({ params, searchParams }) {
         initialPreview={initialPreview}
         initialSegments={initialSegments}
         initialTemplates={templates}
-        deliveryReady={Boolean(env.OUTBOX_DISPATCH_SECRET && env.RESEND_API_KEY)}
+        deliveryReady={Boolean(env.OUTBOX_DISPATCH_SECRET && sender?.apiKey)}
       />
     </ContentLayout>
   );

@@ -835,6 +835,7 @@ model WorkspaceIntegration {
   webhookSecretIv         String?
   webhookSecretTag        String?
   fromEmail          String
+  providerConfig     Json?
   lastTestedAt       DateTime?
   lastErrorCode      String?
   createdAt          DateTime @default(now())
@@ -899,6 +900,7 @@ enum CustomDomainStatus {
 model CustomDomain {
   id             String             @id @default(cuid())
   hostname       String             @unique
+  providerId     String?            @unique
   workspaceId    String
   waitListId     String             @unique
   status         CustomDomainStatus @default(NEEDS_DNS)
@@ -924,4 +926,14 @@ model RateLimitBucket {
 
   @@index([expiresAt])
   @@map("rate_limit_buckets")
+}
+
+model CloudflareEmailUsage {
+  id             String   @id @default(cuid())
+  idempotencyKey String   @unique
+  messageId      String?
+  createdAt      DateTime @default(now()) @db.Timestamptz(3)
+
+  @@index([createdAt])
+  @@map("cloudflare_email_usage")
 }

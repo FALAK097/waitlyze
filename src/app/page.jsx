@@ -80,7 +80,7 @@ const faqs = [
   ],
   [
     "Do I need a separate email service?",
-    "Email sending needs a configured sender and delivery setup. You can connect a verified Resend domain; marketing email also requires verified addresses and explicit opt-in.",
+    "Transactional confirmation email can use Cloudflare Email Sending. Marketing broadcasts and automations require a configured Resend sender, verified addresses, and explicit opt-in.",
   ],
   [
     "How do I protect my waitlist from bots?",
@@ -431,7 +431,7 @@ export default async function LandingPage() {
               reach me.
             </p>
             <div className="wl-about-links">
-              <a href="mailto:hi@falakgala.dev">
+              <a href="mailto:support@waitlyze.com">
                 Say hello <HugeiconsIcon icon={ArrowUpRight01Icon} size={16} aria-hidden="true" />
               </a>
               <a href={github} target="_blank" rel="noopener noreferrer">

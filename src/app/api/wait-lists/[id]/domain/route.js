@@ -1,24 +1,33 @@
 import { NextResponse } from "next/server";
 
 import {
-  domainStatus,
-  mapDnsRecords,
-  mapVercelDomain,
+  createCloudflareHostname,
+  deleteCloudflareHostname,
+  getCloudflareHostname,
   normalizeDomain,
-  vercelDomain,
-  vercelProjectPath,
 } from "@/lib/domains/provider.mjs";
 import prisma from "@/lib/prisma";
 import { webhookAccess } from "@/lib/webhooks/access";
 
 function safeDomain(row) {
   if (!row) return null;
+  const hasCloudflareHostname = Boolean(row.providerId);
   return {
     id: row.id,
     hostname: row.hostname,
-    status: row.status,
-    verification: row.verification,
-    dnsRecords: row.dnsRecords,
+    // Rows created before the provider migration must not appear live merely
+    // because they were verified by the former host.
+    status: hasCloudflareHostname ? row.status : row.status === "ACTIVE" ? "NEEDS_DNS" : row.status,
+    verification: hasCloudflareHostname ? row.verification : [],
+    dnsRecords: hasCloudflareHostname
+      ? row.dnsRecords
+      : [
+          {
+            type: "CNAME",
+            name: row.hostname,
+            value: process.env.CLOUDFLARE_CUSTOM_HOSTNAME_TARGET || "customers.waitlyze.com",
+          },
+        ],
     lastCheckedAt: row.lastCheckedAt,
     lastErrorCode: row.lastErrorCode,
   };
@@ -58,35 +67,30 @@ export async function POST(request, { params }) {
     });
     let current;
     try {
-      current = await vercelDomain(vercelProjectPath(hostname, "add"), {
-        method: "POST",
-        body: { name: hostname },
-      });
+      current = await createCloudflareHostname(hostname);
     } catch (error) {
       await prisma.customDomain.delete({ where: { id: reserved.id } });
       throw error;
     }
-    const mapped = mapVercelDomain(current);
-    let dnsRecords = [];
-    let providerConfig;
     try {
-      providerConfig = await vercelDomain(`/v6/domains/${encodeURIComponent(hostname)}/config`);
-      dnsRecords = mapDnsRecords(providerConfig, hostname);
-    } catch {
-      /* DNS guidance is optional when the provider does not return it. */
+      const row = await prisma.customDomain.update({
+        where: { id: reserved.id },
+        data: {
+          providerId: current.id,
+          status: current.status,
+          verification: current.verification,
+          dnsRecords: current.dnsRecords,
+        },
+      });
+      return NextResponse.json(
+        { data: safeDomain(row) },
+        { status: 201, headers: { "Cache-Control": "no-store" } },
+      );
+    } catch (error) {
+      await deleteCloudflareHostname({ providerId: current.id, hostname }).catch(() => {});
+      await prisma.customDomain.delete({ where: { id: reserved.id } }).catch(() => {});
+      throw error;
     }
-    const row = await prisma.customDomain.update({
-      where: { id: reserved.id },
-      data: {
-        status: domainStatus(current, providerConfig),
-        verification: mapped.verification,
-        dnsRecords,
-      },
-    });
-    return NextResponse.json(
-      { data: safeDomain(row) },
-      { status: 201, headers: { "Cache-Control": "no-store" } },
-    );
   } catch (error) {
     const status = error.status || (error.code === "P2002" ? 409 : 400);
     return NextResponse.json(
@@ -103,27 +107,18 @@ export async function PATCH(request, { params }) {
   const existing = await prisma.customDomain.findUnique({ where: { waitListId: id } });
   if (!existing) return NextResponse.json({ error: "No domain is connected." }, { status: 404 });
   try {
-    try {
-      await vercelDomain(vercelProjectPath(existing.hostname, "verify"), { method: "POST" });
-    } catch (error) {
-      if (error.status !== 400) throw error;
-    }
-    const current = await vercelDomain(vercelProjectPath(existing.hostname));
-    const mapped = mapVercelDomain(current);
-    let dnsRecords = existing.dnsRecords;
-    let providerConfig;
-    try {
-      providerConfig = await vercelDomain(
-        `/v6/domains/${encodeURIComponent(existing.hostname)}/config`,
-      );
-      dnsRecords = mapDnsRecords(providerConfig, existing.hostname);
-    } catch {}
+    let current = await getCloudflareHostname({
+      providerId: existing.providerId,
+      hostname: existing.hostname,
+    });
+    if (!current) current = await createCloudflareHostname(existing.hostname);
     const domain = await prisma.customDomain.update({
       where: { id: existing.id },
       data: {
-        status: domainStatus(current, providerConfig),
-        verification: mapped.verification,
-        dnsRecords,
+        providerId: current.id,
+        status: current.status,
+        verification: current.verification,
+        dnsRecords: current.dnsRecords,
         lastCheckedAt: new Date(),
         lastErrorCode: null,
       },
@@ -155,7 +150,10 @@ export async function DELETE(request, { params }) {
   const existing = await prisma.customDomain.findUnique({ where: { waitListId: id } });
   if (!existing) return NextResponse.json({ error: "No domain is connected." }, { status: 404 });
   try {
-    await vercelDomain(vercelProjectPath(existing.hostname), { method: "DELETE" });
+    await deleteCloudflareHostname({
+      providerId: existing.providerId,
+      hostname: existing.hostname,
+    });
     await prisma.customDomain.delete({ where: { id: existing.id } });
     return NextResponse.json({ ok: true });
   } catch (error) {

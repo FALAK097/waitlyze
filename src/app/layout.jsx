@@ -43,10 +43,17 @@ export const metadata = {
     type: "website",
     locale: "en_US",
     siteName: "Waitlyze",
+    url: SITE_URL,
     title: SITE_TITLE,
     description: SITE_DESCRIPTION,
+    images: ["/opengraph-image"],
   },
-  twitter: { card: "summary_large_image", title: SITE_TITLE, description: SITE_DESCRIPTION },
+  twitter: {
+    card: "summary_large_image",
+    title: SITE_TITLE,
+    description: SITE_DESCRIPTION,
+    images: ["/opengraph-image"],
+  },
   appleWebApp: { title: "Waitlyze", capable: true, statusBarStyle: "default" },
 };
 

@@ -7,6 +7,12 @@
     "dev": "prisma generate && next dev",
     "build": "prisma generate && next build",
     "start": "next start",
+    "build:worker": "opennextjs-cloudflare build",
+    "preview:worker": "opennextjs-cloudflare build && wrangler dev",
+    "deploy:worker": "opennextjs-cloudflare build && wrangler deploy",
+    "upload:worker": "opennextjs-cloudflare build && opennextjs-cloudflare upload",
+    "cf:typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts",
+    "migrate:deploy": "prisma migrate deploy",
     "lint": "oxlint --report-unused-disable-directives",
     "lint:fix": "oxlint --fix",
     "format": "oxfmt",
@@ -14,7 +20,6 @@
     "check": "pnpm lint && pnpm format:check",
     "test": "node --test src/lib/*.test.mjs src/lib/**/*.test.mjs",
     "agentation": "agentation-mcp server",
-    "vercel-build": "prisma generate && prisma migrate deploy && next build",
     "email": "email dev --dir src/emails/templates --port 3001",
     "doctor": "react-doctor"
   },
@@ -55,13 +60,13 @@
     "fumadocs-core": "16.17.1",
     "fumadocs-mdx": "^15.4.7",
     "fumadocs-ui": "16.17.1",
-    "geoip-lite": "^2.0.3",
+    "image-size": "2.1.0",
     "input-otp": "^1.5.0",
     "jspdf": "^4.2.1",
     "marked": "^18.0.14",
     "motion": "^14.0.0",
     "nanoid": "^6.0.1",
-    "next": "16.3.8",
+    "next": "16.4.5",
     "next-nprogress-bar": "^2.4.7",
     "nuqs": "^2.10.1",
     "papaparse": "^5.7.0",
@@ -80,7 +85,6 @@
     "remark-gfm": "^4.0.1",
     "resend": "^6.32.0",
     "sanitize-html": "2.18.0",
-    "sharp": "^0.35.5",
     "sonner": "^2.0.8",
     "tailwind-merge": "^3.7.0",
     "tailwindcss-animate": "^1.0.7",
@@ -89,6 +93,7 @@
     "zustand": "^5.0.15"
   },
   "devDependencies": {
+    "@opennextjs/cloudflare": "1.20.16",
     "@react-email/ui": "^6.11.1",
     "@shadcn/lint": "^0.2.0",
     "agentation": "^3.1.2",
@@ -99,7 +104,8 @@
     "react-email": "^6.11.1",
     "svix": "^1.65.0",
     "tailwindcss": "^4.3.3",
-    "tw-animate-css": "^1.4.0"
+    "tw-animate-css": "^1.4.0",
+    "wrangler": "4.158.0"
   },
   "engines": {
     "node": "24.x"

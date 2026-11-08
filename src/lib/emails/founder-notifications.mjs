@@ -15,9 +15,9 @@ import { enqueueWebhookEvent } from "@/lib/webhooks/delivery.mjs";
 // Product notices from Waitlyze to the people who own a workspace.
 //
 // Delivery: every notice is enqueued as a FOUNDER_NOTICE_REQUESTED outbox
-// event and sent by the dispatcher through the platform sender (own verified
-// From + RESEND_REPLY_TO default, HTML + plain-text fallback, idempotency
-// keys, retries). Nothing here calls Resend directly, so a provider blip
+// event and sent by the dispatcher through the Cloudflare Email Sending
+// binding (Waitlyze's verified sender, support reply-to, HTML + plain-text
+// fallback, retries). Nothing here calls Resend directly, so a provider blip
 // delays a notice instead of dropping it - and enqueueing never blocks a
 // signup, a publish, or a broadcast.
 //

@@ -2,8 +2,8 @@ import { Resend } from "resend";
 
 import { dispatchPendingOutboxEvents } from "@/lib/email/outbox.mjs";
 import { createPlatformSender } from "@/lib/emails/platform.mjs";
-import { env } from "@/lib/env.mjs";
 import { createWorkspaceResendSender } from "@/lib/integrations/resend-sender.mjs";
+import { createTransactionalEmailSender } from "@/lib/integrations/transactional-email-sender.mjs";
 import prisma from "@/lib/prisma";
 
 // Sends one queued signup verification email inside the signup request, so
@@ -14,14 +14,14 @@ export async function dispatchVerificationNow(eventKey) {
   try {
     const sendEmail = createWorkspaceResendSender({
       db: prisma,
-      defaults: {
-        apiKey: env.RESEND_API_KEY,
-        fromEmail: env.RESEND_FROM_EMAIL,
-        replyTo: env.RESEND_REPLY_TO,
-      },
+      defaults: null,
       createClient: (apiKey) => new Resend(apiKey),
     });
-    await dispatchPendingOutboxEvents(prisma, { send: sendEmail, eventKeys: [eventKey] });
+    await dispatchPendingOutboxEvents(prisma, {
+      send: sendEmail,
+      sendVerification: createTransactionalEmailSender({ db: prisma }),
+      eventKeys: [eventKey],
+    });
   } catch (error) {
     console.error("Verification email dispatch failed", error);
   }
@@ -39,11 +39,7 @@ export async function dispatchFounderNoticesNow(eventKeys) {
     await dispatchPendingOutboxEvents(prisma, {
       send: createWorkspaceResendSender({
         db: prisma,
-        defaults: {
-          apiKey: env.RESEND_API_KEY,
-          fromEmail: env.RESEND_FROM_EMAIL,
-          replyTo: env.RESEND_REPLY_TO,
-        },
+        defaults: null,
         createClient: (apiKey) => new Resend(apiKey),
       }),
       sendPlatform: createPlatformSender(),
@@ -66,11 +62,7 @@ export async function dispatchOffboardNow(eventKeys) {
   try {
     const sendEmail = createWorkspaceResendSender({
       db: prisma,
-      defaults: {
-        apiKey: env.RESEND_API_KEY,
-        fromEmail: env.RESEND_FROM_EMAIL,
-        replyTo: env.RESEND_REPLY_TO,
-      },
+      defaults: null,
       createClient: (apiKey) => new Resend(apiKey),
     });
     await dispatchPendingOutboxEvents(prisma, {

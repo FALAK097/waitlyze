@@ -12,9 +12,9 @@ export class PublicRateLimitError extends Error {
   }
 }
 
-/** Trust only Vercel's overwritten edge header; other hosts share a safe fallback. */
-export function publicClientIdentity(headers, { vercel = process.env.VERCEL === "1" } = {}) {
-  const value = vercel ? headers.get("x-vercel-forwarded-for")?.trim() : null;
+/** Trust Cloudflare's edge-overwritten client IP header, never a caller's forwarded-for value. */
+export function publicClientIdentity(headers) {
+  const value = headers.get("cf-connecting-ip")?.trim();
   if (!value || !isIP(value)) return "untrusted-client";
   return isIP(value) === 6 ? new URL(`http://[${value}]/`).hostname.slice(1, -1) : value;
 }
@@ -69,11 +69,7 @@ const policies = {
 export async function consumePublicBudget(
   db,
   { kind, campaignId, headers, email, actorId },
-  {
-    now = new Date(),
-    vercel = process.env.VERCEL === "1",
-    secret = process.env.BETTER_AUTH_SECRET,
-  } = {},
+  { now = new Date(), secret = process.env.BETTER_AUTH_SECRET } = {},
 ) {
   const policy = policies[kind];
   if (
@@ -93,7 +89,7 @@ export async function consumePublicBudget(
     [`public:${kind}:global`, ...policy.global],
     [`public:${kind}:campaign:${hash(campaignId)}`, ...policy.campaign],
     [
-      `public:${kind}:client:${hash(policy.authenticated ? `actor:${actorId}` : publicClientIdentity(headers, { vercel }))}`,
+      `public:${kind}:client:${hash(policy.authenticated ? `actor:${actorId}` : publicClientIdentity(headers))}`,
       ...policy.client,
     ],
     ...(policy.recipient

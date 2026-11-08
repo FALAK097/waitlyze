@@ -1,8 +1,8 @@
+import { getCloudflareContext } from "@opennextjs/cloudflare";
 import ct from "countries-and-timezones";
-import geoip from "geoip-lite";
 
-// Vercel URL-encodes the city/region edge headers. Malformed input keeps its
-// raw value so a bad header never blanks stored geo data.
+// Cloudflare may URL-encode city and region metadata. Keep malformed values
+// rather than discarding geo data for a request.
 const decodeHeader = (value) => {
   if (!value) return value;
   try {
@@ -13,6 +13,8 @@ const decodeHeader = (value) => {
 };
 
 export const getIpAddress = (request) => {
+  const cloudflareIp = request.headers.get("cf-connecting-ip");
+  if (cloudflareIp) return cloudflareIp.trim();
   const forwarded = request.headers.get("x-forwarded-for");
   if (forwarded) {
     return forwarded.split(",")[0].trim();
@@ -38,14 +40,18 @@ export const getGeoInfo = (request) => {
     }
 
     const headers = request.headers;
-    const country = headers.get("x-vercel-ip-country");
-    // Vercel URL-encodes the city header ("San%20Francisco") - decode it so
-    // stored cities stay human-readable. Fail-open: keep the raw value.
-    const city = decodeHeader(headers.get("x-vercel-ip-city"));
-    const region = decodeHeader(headers.get("x-vercel-ip-country-region"));
-    const latitude = headers.get("x-vercel-ip-latitude");
-    const longitude = headers.get("x-vercel-ip-longitude");
-    const timezone = headers.get("x-vercel-ip-timezone");
+    let edge = {};
+    try {
+      edge = getCloudflareContext().cf || {};
+    } catch {
+      // Standard Next.js development and build contexts do not include CF data.
+    }
+    const country = headers.get("cf-ipcountry") || edge.country;
+    const city = decodeHeader(headers.get("cf-ipcity") || edge.city);
+    const region = decodeHeader(headers.get("cf-region") || edge.regionCode || edge.region);
+    const latitude = headers.get("cf-iplatitude") || edge.latitude;
+    const longitude = headers.get("cf-iplongitude") || edge.longitude;
+    const timezone = headers.get("cf-timezone") || edge.timezone;
 
     if (country || city || region || timezone) {
       return {
@@ -56,21 +62,6 @@ export const getGeoInfo = (request) => {
         longitude: longitude || undefined,
         timezone: timezone || undefined,
       };
-    }
-
-    const ip = getIpAddress(request);
-    if (ip && ip !== "::1" && ip !== "127.0.0.1") {
-      const geo = geoip.lookup(ip);
-      if (geo) {
-        return {
-          country: geo.country,
-          city: geo.city,
-          region: geo.region,
-          latitude: geo.ll?.[0]?.toString(),
-          longitude: geo.ll?.[1]?.toString(),
-          timezone: undefined,
-        };
-      }
     }
 
     return {};

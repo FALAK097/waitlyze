@@ -1,0 +1,11 @@
+NEXTJS_ENV=development
+NODE_ENV=development
+BETTER_AUTH_URL=http://localhost:3000
+BETTER_AUTH_SECRET=replace-with-a-local-only-secret
+APP_ROOT_DOMAIN=waitlyze.com
+NEXT_PUBLIC_R2_PUBLIC_URL=https://assets.waitlyze.com
+DATABASE_URL=postgresql://waitlyze:waitlyze@127.0.0.1:5432/waitlyze
+R2_ACCOUNT_ID=local-fixture
+R2_ACCESS_KEY_ID=local-fixture
+R2_SECRET_ACCESS_KEY=local-fixture
+R2_BUCKET_NAME=waitlyze

@@ -1,52 +1,43 @@
-// In-memory sliding window rate limiter
-const rateLimitMap = new Map();
+import { createHash } from "node:crypto";
 
-// Cleanup older entries every 10 minutes to prevent memory leak
-const intervalId = setInterval(
-  () => {
-    const now = Date.now();
-    for (const [key, timestamps] of rateLimitMap.entries()) {
-      // Keep only timestamps from the last 1 hour (3600000 ms)
-      const validTimestamps = timestamps.filter((t) => now - t < 3600000);
-      if (validTimestamps.length === 0) {
-        rateLimitMap.delete(key);
-      } else {
-        rateLimitMap.set(key, validTimestamps);
-      }
-    }
-  },
-  10 * 60 * 1000,
-);
+/** Atomic PostgreSQL rate limiter shared across Cloudflare Worker isolates. */
+export async function checkRateLimit(db, userId, limit = 10, windowMs = 60 * 60 * 1000) {
+  if (
+    !db?.$queryRaw ||
+    typeof userId !== "string" ||
+    !userId ||
+    !Number.isInteger(limit) ||
+    limit < 1 ||
+    !Number.isFinite(windowMs) ||
+    windowMs < 1
+  )
+    throw new TypeError("Rate limit configuration is invalid.");
 
-if (intervalId && typeof intervalId.unref === "function") {
-  intervalId.unref();
-}
-
-/**
- * Checks if a user has exceeded the rate limit.
- * @param {string} userId - Unique identifier for the user.
- * @param {number} limit - Maximum allowed actions in the window.
- * @param {number} windowMs - Time window in milliseconds (default 1 hour).
- * @returns {boolean} - True if allowed, false if rate limited.
- */
-export function checkRateLimit(userId, limit = 10, windowMs = 60 * 60 * 1000) {
-  const now = Date.now();
-  if (!rateLimitMap.has(userId)) {
-    rateLimitMap.set(userId, [now]);
-    return true;
+  const now = new Date();
+  const expiresAt = new Date(now.getTime() + windowMs);
+  const userKey = createHash("sha256").update(userId).digest("hex");
+  const key = `user-action:${userKey}`;
+  try {
+    const rows = await db.$queryRaw`
+      INSERT INTO "rate_limit_buckets" ("key", "count", "expiresAt", "updatedAt")
+      VALUES (${key}, 1, ${expiresAt}, ${now})
+      ON CONFLICT ("key") DO UPDATE SET
+        "count" = CASE
+          WHEN "rate_limit_buckets"."expiresAt" <= ${now} THEN 1
+          ELSE "rate_limit_buckets"."count" + 1
+        END,
+        "expiresAt" = CASE
+          WHEN "rate_limit_buckets"."expiresAt" <= ${now} THEN ${expiresAt}
+          ELSE "rate_limit_buckets"."expiresAt"
+        END,
+        "updatedAt" = ${now}
+      RETURNING "count"
+    `;
+    return Number(rows[0]?.count) <= limit;
+  } catch (error) {
+    console.error("Rate limit storage unavailable", error?.code || error?.name || "unknown error");
+    throw Object.assign(new Error("Rate limiting is temporarily unavailable."), {
+      code: "RATE_LIMIT_UNAVAILABLE",
+    });
   }
-
-  const timestamps = rateLimitMap.get(userId);
-  // Filter out timestamps outside the window
-  const validTimestamps = timestamps.filter((t) => now - t < windowMs);
-
-  if (validTimestamps.length >= limit) {
-    // Update map with trimmed timestamps
-    rateLimitMap.set(userId, validTimestamps);
-    return false;
-  }
-
-  validTimestamps.push(now);
-  rateLimitMap.set(userId, validTimestamps);
-  return true;
 }

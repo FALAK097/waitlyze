@@ -149,14 +149,15 @@ export function ResendIntegration({ initialConnection, accountEmail, canManage, 
           <div className="grid gap-7 pt-6">
             <div className="grid gap-2 rounded-lg border border-product-bg-inset bg-product-bg-inset px-4 py-3.5">
               <p className="m-0 text-caption leading-relaxed text-product-text-secondary">
-                <strong className="text-product-text-primary">Waitlist email</strong> (confirmation,
-                broadcasts, automations) sends from your domain once connected. If this connection
-                needs attention, sending pauses until you fix or disconnect it.
+                <strong className="text-product-text-primary">Campaign email</strong> (broadcasts
+                and marketing automations) sends from your verified Resend domain. If this
+                connection needs attention, campaigns pause until you fix or disconnect it.
               </p>
               <p className="m-0 text-caption leading-relaxed text-product-text-secondary">
                 <strong className="text-product-text-primary">Account email</strong> like workspace
-                invitations always comes from Waitlyze, so connect this only when you want your own
-                sender.
+                invitations comes from Waitlyze through Cloudflare Email Sending. Signup
+                confirmations can use the Cloudflare transactional sender configured for your
+                workspace.
               </p>
             </div>
             {webhookUrl && (
@@ -304,7 +305,8 @@ export function ResendIntegration({ initialConnection, accountEmail, canManage, 
                 {confirmDisconnect ? (
                   <>
                     <p className="text-sm">
-                      Disconnect Resend? Waitlist emails will use the deployment sender.
+                      Disconnect Resend? Campaign sending will pause until you connect a sender
+                      again.
                     </p>
                     <div>
                       <Button

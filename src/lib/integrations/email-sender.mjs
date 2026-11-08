@@ -15,6 +15,7 @@ export async function resolveWorkspaceEmailSender(db, workspaceId, fallback) {
     });
   try {
     return {
+      provider: "RESEND",
       apiKey: decryptIntegrationSecret(connection),
       fromEmail: connection.fromEmail,
       replyTo: connection.fromEmail,
@@ -25,6 +26,48 @@ export async function resolveWorkspaceEmailSender(db, workspaceId, fallback) {
       data: { status: "NEEDS_ATTENTION", lastErrorCode: "SECRET_DECRYPTION_FAILED" },
     });
     throw Object.assign(new Error("Connected email sender needs attention"), {
+      code: "SENDER_NEEDS_ATTENTION",
+      statusCode: 503,
+    });
+  }
+}
+
+/** Cloudflare Email Sending BYOK is used only by transactional sending paths. */
+export async function resolveWorkspaceCloudflareEmailSender(db, workspaceId) {
+  if (!workspaceId) return null;
+  const connection = await db.workspaceIntegration.findUnique({
+    where: { workspaceId_provider: { workspaceId, provider: "CLOUDFLARE_EMAIL" } },
+  });
+  if (!connection) return null;
+  if (connection.status !== "CONNECTED")
+    throw Object.assign(new Error("Connected Cloudflare email sender needs attention"), {
+      code: "SENDER_NEEDS_ATTENTION",
+      statusCode: 503,
+    });
+  const accountId =
+    connection.providerConfig && typeof connection.providerConfig === "object"
+      ? connection.providerConfig.accountId
+      : null;
+  if (typeof accountId !== "string" || !accountId)
+    throw Object.assign(new Error("Connected Cloudflare email sender needs attention"), {
+      code: "SENDER_NEEDS_ATTENTION",
+      statusCode: 503,
+    });
+  try {
+    return {
+      provider: "CLOUDFLARE_EMAIL",
+      apiToken: decryptIntegrationSecret(connection),
+      accountId,
+      fromEmail: connection.fromEmail,
+      replyTo: connection.fromEmail,
+      source: "workspace-cloudflare",
+    };
+  } catch {
+    await db.workspaceIntegration.update({
+      where: { id: connection.id },
+      data: { status: "NEEDS_ATTENTION", lastErrorCode: "SECRET_DECRYPTION_FAILED" },
+    });
+    throw Object.assign(new Error("Connected Cloudflare email sender needs attention"), {
       code: "SENDER_NEEDS_ATTENTION",
       statusCode: 503,
     });
