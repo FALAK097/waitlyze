@@ -164,7 +164,7 @@ export function WorkspaceBillingSettings({
   }
 
   return (
-    <div className="max-w-190 min-w-0 flex-1" aria-labelledby="settings-panel-heading">
+    <div className="max-w-240 min-w-0 flex-1" aria-labelledby="settings-panel-heading">
       <header className="mb-7">
         <h2 id="settings-panel-heading" className="mb-1.5!">
           Billing
@@ -194,6 +194,7 @@ export function WorkspaceBillingSettings({
 
       <div className="mt-8">
         <Pricing
+          isModal
           currentPlan={plan}
           currentInterval={interval}
           canManageBilling={canManageBilling}

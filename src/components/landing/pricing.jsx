@@ -56,7 +56,7 @@ export default function Pricing({
 
   return (
     <section className={sectionClass} id={isModal ? undefined : "pricing"}>
-      <div className="mx-auto w-full max-w-7xl">
+      <div className="@container mx-auto w-full max-w-7xl">
         <header className="mx-auto mb-9 max-w-2xl text-center sm:mb-12">
           {!isModal && <p className="wl-eyebrow">SIMPLE, WORKSPACE-LEVEL PRICING</p>}
           <h2 className="font-product-display text-3xl leading-tight tracking-tight sm:text-4xl">
@@ -94,7 +94,7 @@ export default function Pricing({
           </div>
         </header>
 
-        <div className="mx-auto grid max-w-5xl gap-5 md:grid-cols-2 md:gap-6">
+        <div className="mx-auto grid w-full max-w-5xl grid-cols-1 gap-5 md:gap-6 @min-[56rem]:grid-cols-2">
           <article className="flex flex-col rounded-2xl border border-product-border-subtle bg-product-bg-surface p-6 sm:p-8">
             <div>
               <p className="flex min-h-6 items-center text-xs font-semibold tracking-[0.14em] text-product-text-secondary uppercase">
