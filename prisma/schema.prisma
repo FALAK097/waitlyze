@@ -931,6 +931,7 @@ model WaitlistNotificationChannel {
   waitListId       String
   provider         String
   status           String    @default("NEEDS_TEST")
+  triggers         String[]  @default(["MILESTONE_COUNTS"])
   secretCiphertext String
   secretIv         String
   secretTag        String

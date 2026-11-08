@@ -1,3 +1,4 @@
+import { queueVerifiedChatNotifications } from "../integrations/chat-notifiers.mjs";
 import { awardPoints, isFarmSuspect, referralEventKey } from "../referrals/points.mjs";
 import { checkRewardTierUnlocks, getPublishedRewards } from "../referrals/rewards.mjs";
 import { getEligibleReferralCounts } from "./referral-position.mjs";
@@ -16,7 +17,8 @@ export async function resolveReferralReview(
     throw new TypeError("Add a review note between 8 and 240 characters.");
   }
 
-  return db.$transaction(async (tx) => {
+  const outcome = await db.$transaction(async (tx) => {
+    const chatUnlocks = [];
     const update = await tx.referral.updateMany({
       where: {
         id: referralId,
@@ -65,15 +67,31 @@ export async function resolveReferralReview(
           eventKey: referralEventKey(referralId),
         });
         const counts = await getEligibleReferralCounts(tx, waitListId, [referral.referredById]);
-        await checkRewardTierUnlocks(tx, {
+        const unlocked = await checkRewardTierUnlocks(tx, {
           waitListId,
           referrerId: referral.referredById,
           triggeringSignupId: referral.signUp.id,
           verifiedReferrals: counts.get(referral.referredById) ?? 0,
           tiers,
         });
+        chatUnlocks.push(
+          ...unlocked.map((tier) => ({
+            referrerId: referral.referredById,
+            count: tier.referrals,
+            reward: tier.reward,
+          })),
+        );
       }
     }
-    return { status };
+    return { status, chatUnlocks };
   });
+  if (outcome.chatUnlocks.length) {
+    // The approved referral is committed. A chat outage cannot undo it.
+    await queueVerifiedChatNotifications(db, {
+      waitListId,
+      signUpId: null,
+      unlocks: outcome.chatUnlocks,
+    });
+  }
+  return { status: outcome.status };
 }

@@ -1,22 +1,23 @@
 ---
 title: Notifications
-description: Compare Slack and Discord milestone messages and their delivery limits.
+description: Configure Slack and Discord signup and reward messages.
 ---
 
-Waitlyze can send signup-milestone messages to one Slack channel and one Discord channel per waitlist. These are best-effort notifications, not a general event stream.
+Waitlyze can send best-effort messages to one Slack channel and one Discord channel per waitlist. Open **Waitlist settings → Notifications** to connect, test, choose triggers, and disconnect each channel independently.
 
-The channel handlers currently have no dedicated settings form in the app. Managing a channel uses a session-protected waitlist endpoint and requires waitlist-management access; signup API keys are not accepted.
+Each channel is inactive until you save an official webhook URL and send a successful test. A URL change requires a new test; changing triggers alone does not. The dashboard displays the channel status, last test time, and error code. Owners and admins can manage channels; other members can view status. Signup API keys cannot manage them.
 
 ## Choose a destination
 
 <Cards>
-<Card className="waitlyze-integration-card" icon={<img src="/integrations/slack.svg" width={20} height={20} className="size-5 object-contain" alt="" />} title="Slack" href="/docs/slack" description="Create an incoming webhook and receive signup-milestone pings." />
-<Card className="waitlyze-integration-card" icon={<img src="/integrations/discord.svg" width={20} height={20} className="size-5 object-contain" alt="" />} title="Discord" href="/docs/discord" description="Create a channel webhook and receive signup-milestone pings." />
+<Card className="waitlyze-integration-card" icon={<img src="/integrations/slack.svg" width={20} height={20} className="size-5 object-contain" alt="" />} title="Slack" href="/docs/slack" description="Create an incoming webhook for signup and reward pings." />
+<Card className="waitlyze-integration-card" icon={<img src="/integrations/discord.svg" width={20} height={20} className="size-5 object-contain" alt="" />} title="Discord" href="/docs/discord" description="Create a channel webhook for signup and reward pings." />
 </Cards>
 
 ## Shared behavior
 
-- Messages are sent when a published waitlist reaches **1, 10, 100, or 1,000 signups**.
-- Only plain-text milestone summaries are sent; no individual signup details or referral events are included.
+- The default trigger sends at **1, 10, 100, or 1,000 signups**. Optionally enable **Every verified signup** and **Reward tier unlocked** per channel. At least one trigger must stay selected.
+- Messages are sent for published waitlists only. They contain a waitlist name and count or a generic signup/reward summary, never subscriber contact details. Triggers are deduplicated by signup, milestone count, or referrer/tier threshold.
+- Queued notifications are delivered by the outbox scheduler. They are best effort, not a retried event stream; a channel disabled before delivery does not receive queued messages.
 - A failing channel is marked as needing attention and skipped. Signup intake, owner email, and webhooks continue independently.
 - Use [Webhooks](/docs/webhooks) for signed event payloads, retries, and delivery recovery.

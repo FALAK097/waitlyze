@@ -2,6 +2,7 @@ import { ArrowUpRight01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import Link from "next/link";
 
+import { ChatNotificationSettings } from "@/components/product/chat-notification-settings";
 import { CustomDomainSettings } from "@/components/product/custom-domain-settings";
 import { DeleteWaitlist } from "@/components/product/delete-waitlist";
 import { ReferralSettings } from "@/components/product/referral-settings";
@@ -16,7 +17,14 @@ import { requireCampaignPage } from "@/lib/workspaces/authorize";
 
 export const metadata = { title: "Waitlist settings" };
 
-const VALID_SECTIONS = new Set(["referral", "domain", "sender", "webhooks", "delete"]);
+const VALID_SECTIONS = new Set([
+  "referral",
+  "domain",
+  "sender",
+  "webhooks",
+  "notifications",
+  "delete",
+]);
 
 function SelectedWaitlistSettings({
   section,
@@ -26,6 +34,20 @@ function SelectedWaitlistSettings({
   domainAvailable,
   proAvailable,
 }) {
+  if (section === "notifications")
+    return (
+      <section className="max-w-190 min-w-0 flex-1" aria-labelledby="settings-panel-heading">
+        <header className="mb-9 max-[760px]:mb-6">
+          <h2 id="settings-panel-heading" className="mb-1.5!">
+            Notifications
+          </h2>
+          <p className="text-product-text-secondary">
+            Connect Slack or Discord to keep your team in the loop.
+          </p>
+        </header>
+        <ChatNotificationSettings waitListId={waitlist.id} canManage={canManage} />
+      </section>
+    );
   if (section === "sender")
     return (
       <section className="max-w-190 min-w-0 flex-1" aria-labelledby="settings-panel-heading">
