@@ -52,14 +52,20 @@ export async function renderMarkdownRoute(rawPath) {
   // 1. Home /
   if (path === "/") {
     const templates = listTemplates();
-    const body = `Waitlyze is a waitlist builder for founders and teams. Create a branded waitlist page or embed a signup form on any website, grow signups with verified referral loops, send automated email sequences, and inspect privacy-first audience analytics.
+    const body = `Waitlyze is a waitlist builder made by Falak Gala for founders and teams. Build a branded page, publish a hosted page or embed, grow with verified referrals, send consent-aware email, and learn from audience analytics. Free to use; no credit card required.
 
 ## Core Capabilities
-- **Hosted Pages & Zero-Code Embeds**: Launch a standalone page on \`waitlyze.falakgala.dev/w/your-slug\` or embed a customizable widget onto Next.js, React, HTML, Webflow, or Framer.
-- **Viral Referral Engine**: Every subscriber gets a verified referral link. Track queue positions, referral points, and milestones.
-- **Built-in Email Engine**: Visual email designer with welcome messages, referral reminders, and milestone broadcasts powered by Resend and BYOK senders.
-- **Privacy-First Analytics**: Track visitors, conversion rates, confirmation rates, UTM traffic sources, geographic locations, and devices without tracking cookies.
-- **Developer API & Webhooks**: Public Signup API (\`POST /api/waitlist\`), API keys, and real-time webhooks (\`referral.completed\`, \`signup.created\`).
+- **Build and publish**: Start with a template, edit content and brand, preview desktop and mobile, save drafts without changing the live page, then publish, pause, or roll back.
+- **Hosted Pages & Embeds**: Share a hosted page or embed its published form on your site. Custom domains require deployment configuration.
+- **Verified Referrals**: When enabled, confirmed subscribers receive personal share links. Referred signups count toward credit only after verification. Review points and queue positions; reward fulfillment is not automatic.
+- **Consent-Aware Email**: Send verification email and configure welcome, reminder, and milestone automations or one-time broadcasts. Marketing email requires verified addresses with explicit opt-in, plus a configured sender and delivery setup.
+- **Audience Analytics**: See visitors, signups, conversion, verification, acquisition sources, geography, devices, and referral activity. Product screenshots on the homepage show example data, not customer results.
+- **Developer Tools**: Server-side Signup API (\`POST /api/waitlist\`), scoped API keys, signed webhooks, and subscriber CSV export. Zapier-style connections use webhook recipes rather than a native integration.
+- **Workspace Controls**: Invite teammates with role permissions and review publication changes.
+
+The homepage includes the Blank page template as an interactive example waitlist. Its form is a local preview only: it does not collect, store, or send email.
+
+Explore the [Waitlyze source on GitHub](https://github.com/FALAK097/waitlyze).
 
 ## Available Templates (14 Ready-to-Use Layouts)
 ${templates
@@ -71,13 +77,42 @@ ${templates
 
 ## Frequently Asked Questions
 ### Is Waitlyze free to use?
-Yes. You can create a waitlist, publish a hosted page, embed signup widgets, and collect signups for free.
+Yes. You can get started for free, and no credit card is required. A free plan will remain available if paid plans are introduced later.
 
 ### Do I need a website or coding skills?
 No. You can visually design your page in the builder and share its hosted URL. If you already have a website, copy the embed snippet from your dashboard.
 
 ### How do referrals work?
-Each subscriber receives a personal referral link upon confirmation. Waitlyze tracks referred signups and applies fraud checks so you can reward authentic promoters.`;
+When referral sharing is enabled, confirmed subscribers receive a personal link. Referred signups must verify their email before they count toward credit. Reward delivery is up to the waitlist owner.
+
+### Can I email everyone who signs up?
+Marketing email is sent only to verified subscribers who explicitly opted in. Broadcasts let you preview the eligible audience before confirming; a sender and delivery setup are required.
+
+### Can I change a live page without breaking it?
+Edits save as drafts. Visitors continue seeing the published version until you publish again. You can pause signups or roll back to an earlier published revision.
+
+### Can I use my own domain?
+A custom domain can serve the published page when domain support is configured for the deployment. The Waitlyze-hosted page works without it.
+
+### Can I take my subscriber data with me?
+Yes. Search and filter subscribers in your dashboard, then export them as CSV.
+
+### What happens after someone joins?
+You can require email confirmation before a signup is verified. The after-signup experience can include a personal share link, queue position, and configured referral rewards.
+
+### Can I put the signup form on my own site?
+Yes. Publish your waitlist, then copy its embed snippet into your site. Hosted and embedded forms feed the same waitlist.
+
+### What can I see in analytics?
+Review visitors, signups, conversion, verification, and referral activity, with breakdowns by source, device, geography, and landing page as data arrives.
+
+### Can teammates work on a waitlist?
+Yes. Invite teammates to your workspace and assign editing, publishing, and email permissions.
+
+### How can I protect the signup form from bots?
+Enable Turnstile verification on the form. Marketing consent is a separate choice for subscribers.
+
+Waitlyze is built by Falak Gala. Questions or ideas? Email [Falak](mailto:hi@falakgala.dev).`;
 
     return buildMarkdownDoc({
       title: SITE_TITLE,
