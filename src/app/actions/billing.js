@@ -47,6 +47,14 @@ async function ownerContext(session, workspaceId) {
   return { session, workspace };
 }
 
+async function createPortalLink(customerId) {
+  const client = createDodoClient();
+  const portal = await client.customers.customerPortal.create(customerId, {
+    return_url: new URL("/settings?section=billing", env.BETTER_AUTH_URL).toString(),
+  });
+  return portal.link;
+}
+
 /** Starts a Dodo-hosted checkout for the selected workspace only. */
 export async function createProCheckout(interval, workspaceId) {
   try {
@@ -61,8 +69,14 @@ export async function createProCheckout(interval, workspaceId) {
     });
     if (effectiveWorkspacePlan(current) === "PRO")
       return { error: "This workspace already has Pro. Manage its renewal in Billing settings." };
-    if (current?.dodoSubscriptionId)
-      return { error: "Manage this workspace's existing subscription in Billing settings." };
+    if (current?.status === "ON_HOLD" || current?.status === "PAST_DUE") {
+      if (!current.dodoCustomerId)
+        return { error: "This subscription needs attention. Contact support to recover billing." };
+      return {
+        portalUrl: await createPortalLink(current.dodoCustomerId),
+        billingManagementRequired: true,
+      };
+    }
 
     const client = createDodoClient({ requireWebhookKey: true });
     const checkout = await client.checkoutSessions.create({
@@ -79,7 +93,7 @@ export async function createProCheckout(interval, workspaceId) {
       },
       feature_flags: { allow_tax_id: true, allow_currency_selection: true },
       return_url: new URL(
-        "/settings?section=billing&checkout=return",
+        `/api/billing/return?workspaceId=${encodeURIComponent(workspace.id)}`,
         env.BETTER_AUTH_URL,
       ).toString(),
     });
@@ -106,11 +120,7 @@ export async function createBillingPortal(workspaceId) {
     });
     if (!subscription?.dodoCustomerId)
       return { error: "No paid subscription is connected to this workspace." };
-    const client = createDodoClient();
-    const portal = await client.customers.customerPortal.create(subscription.dodoCustomerId, {
-      return_url: new URL("/settings?section=billing", env.BETTER_AUTH_URL).toString(),
-    });
-    return { portalUrl: portal.link };
+    return { portalUrl: await createPortalLink(subscription.dodoCustomerId) };
   } catch (error) {
     if (error instanceof BillingGateError) return { error: error.message };
     if (error instanceof DodoConfigurationError) return { error: error.message };

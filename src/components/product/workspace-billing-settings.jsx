@@ -199,7 +199,7 @@ export function WorkspaceBillingSettings({
           currentInterval={interval}
           canManageBilling={canManageBilling}
           workspaceId={workspaceId}
-          hasBillingCustomer={hasBillingCustomer}
+          billingNeedsAttention={status === "ON_HOLD" || status === "PAST_DUE"}
         />
       </div>
     </div>

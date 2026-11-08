@@ -69,12 +69,10 @@ export function AuthModal({ open, onOpenChange, onCloseAutoFocus }) {
               name: localName.trim() || "Local Preview",
               email: localEmail.trim(),
               password: localPassword,
-              callbackURL: "/waitlists",
             })
           : await authClient.signIn.email({
               email: localEmail.trim(),
               password: localPassword,
-              callbackURL: "/waitlists",
             });
       if (result.error) throw new Error(result.error.message || "Authentication failed.");
       if (attempt !== attemptRef.current) return;

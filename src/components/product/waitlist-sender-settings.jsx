@@ -203,7 +203,9 @@ export function WaitlistSenderSettings({ waitListId, canManage }) {
       } else {
         setConfirmRemove(false);
         setApiKey("");
-        if (refreshed.resolved?.source === "workspace")
+        if (refreshed.resolved?.source === "waitlist")
+          toast.success("Waitlist sender removed; the waitlist's own sender is active.");
+        else if (refreshed.resolved?.source === "workspace")
           toast.success("Waitlist sender removed. The workspace sender is now active.");
         else if (refreshed.resolved?.source === "needs-attention")
           toast.error("Waitlist sender removed, but the workspace sender needs attention.");

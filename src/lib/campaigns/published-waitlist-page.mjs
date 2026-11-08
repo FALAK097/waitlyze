@@ -5,7 +5,9 @@ import { templateSnapshotSchema } from "@/lib/templates/catalog.mjs";
 /** Resolve the stored revision used by public waitlist routes. */
 export async function resolvePublishedWaitlistPage(waitList) {
   if (!waitList) return null;
-  if (waitList.status === "PAUSED") return { waitList, paused: true };
+  const entitlements = await getWorkspaceEntitlements(prisma, waitList.workspaceId);
+  if (waitList.status === "PAUSED")
+    return { waitList, paused: true, canUseCustomDomain: entitlements.customDomains };
   if (waitList.status !== "PUBLISHED" || !waitList.publishedRevision) return null;
 
   const publication = await prisma.waitListPublicationRevision.findUnique({
@@ -16,7 +18,6 @@ export async function resolvePublishedWaitlistPage(waitList) {
   });
   const parsed = templateSnapshotSchema.safeParse(publication?.snapshot);
   if (!parsed.success) return null;
-  const entitlements = await getWorkspaceEntitlements(prisma, waitList.workspaceId);
   return {
     waitList,
     snapshot: parsed.data,

@@ -326,10 +326,25 @@ export function createWorkspaceService(db) {
               // Existing missing/revoked membership is never recreated by login/backfill.
               if (membership?.role !== "OWNER")
                 throw new Error("Personal workspace ownership requires review.");
-              await tx.waitList.updateMany({
+              const legacyWaitlists = await tx.waitList.findMany({
                 where: { userId, workspaceId: null },
-                data: { workspaceId: workspace.id },
+                select: { id: true },
               });
+              if (legacyWaitlists.length) {
+                const legacyWaitlistIds = legacyWaitlists.map((waitList) => waitList.id);
+                await tx.waitList.updateMany({
+                  where: { id: { in: legacyWaitlistIds }, userId, workspaceId: null },
+                  data: { workspaceId: workspace.id },
+                });
+                const legacySignupCount = await tx.signUp.count({
+                  where: { waitListId: { in: legacyWaitlistIds } },
+                });
+                if (legacySignupCount)
+                  await tx.workspace.update({
+                    where: { id: workspace.id },
+                    data: { signupUsageCount: { increment: legacySignupCount } },
+                  });
+              }
               return workspace;
             },
             { isolationLevel: "Serializable" },

@@ -189,6 +189,20 @@ export async function importSignups(waitListId, formData) {
         const workspaceId = campaign.workspaceId;
         if (workspaceId)
           await tx.$queryRaw`SELECT "id" FROM "workspaces" WHERE "id" = ${workspaceId} FOR UPDATE`;
+        const candidateForms = [...new Set(fresh.flatMap((row) => emailLookupForms(row.email)))];
+        const concurrentDuplicates = await tx.signUp.findMany({
+          where: {
+            waitListId,
+            waitList: scope,
+            emailNormalized: { in: candidateForms },
+          },
+          select: { emailNormalized: true },
+        });
+        const duplicateForms = new Set(concurrentDuplicates.map((row) => row.emailNormalized));
+        const stillFresh = fresh.filter(
+          (row) => !emailLookupForms(row.email).some((form) => duplicateForms.has(form)),
+        );
+        if (!stillFresh.length) return 0;
         const [usage, entitlements] = await Promise.all([
           workspaceId
             ? tx.workspace.findUnique({
@@ -203,13 +217,13 @@ export async function importSignups(waitListId, formData) {
           entitlements,
           feature: "subscribers",
           used: currentUsage,
-          requested: fresh.length,
+          requested: stillFresh.length,
           message: `This import would exceed the ${entitlements.plan === "FREE" ? "Free" : "Pro"} workspace signup limit.`,
         });
 
         let inserted = 0;
-        for (let index = 0; index < fresh.length; index += 500) {
-          const chunk = fresh.slice(index, index + 500).map((row, offset) => ({
+        for (let index = 0; index < stillFresh.length; index += 500) {
+          const chunk = stillFresh.slice(index, index + 500).map((row, offset) => ({
             email: row.email,
             emailNormalized: row.emailNormalized,
             uniqueUserId: `import:${stamp}:${index + offset}`,

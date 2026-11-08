@@ -23,6 +23,7 @@ const currentWorkspaceCampaign = cache(async (id) => {
     },
     select: {
       id: true,
+      workspaceId: true,
       name: true,
       publicSlug: true,
       status: true,

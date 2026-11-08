@@ -15,7 +15,7 @@ export default function PricingCheckoutButton({
   currentInterval,
   canManageBilling,
   workspaceId,
-  hasBillingCustomer,
+  billingNeedsAttention,
 }) {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
@@ -32,6 +32,10 @@ export default function PricingCheckoutButton({
     setPending(true);
     try {
       const result = await createProCheckout(interval, workspaceId);
+      if (result?.portalUrl) {
+        window.location.assign(result.portalUrl);
+        return;
+      }
       if (result?.checkoutUrl) {
         window.location.assign(result.checkoutUrl);
         return;
@@ -50,7 +54,7 @@ export default function PricingCheckoutButton({
         <Button type="button" variant="product-outline" className="w-full" disabled>
           {currentInterval ? `You're on Pro (${currentInterval.toLowerCase()})` : "You're on Pro"}
         </Button>
-      ) : hasBillingCustomer && canManageBilling ? (
+      ) : billingNeedsAttention && canManageBilling ? (
         <Button type="button" variant="product-outline" className="w-full" disabled>
           Manage the existing subscription above
         </Button>

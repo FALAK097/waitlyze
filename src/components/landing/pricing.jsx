@@ -3,7 +3,7 @@
 import { Tick01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import dynamic from "next/dynamic";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import SignupButton from "@/components/landing/signup-button";
 import { Button } from "@/components/ui/button";
@@ -45,10 +45,24 @@ export default function Pricing({
   feature = null,
   regionalPricing = null,
   workspaceId = null,
-  hasBillingCustomer = false,
+  billingNeedsAttention = false,
 }) {
   const [interval, setInterval] = useState("annual");
+  const [clientRegionalPricing, setClientRegionalPricing] = useState(null);
   const isPro = currentPlan === "PRO";
+  const displayedRegionalPricing = regionalPricing || clientRegionalPricing;
+
+  useEffect(() => {
+    if (regionalPricing) return;
+    const controller = new AbortController();
+    fetch("/api/billing/regional-pricing", { cache: "no-store", signal: controller.signal })
+      .then((response) => (response.ok ? response.json() : null))
+      .then((result) => {
+        if (!controller.signal.aborted) setClientRegionalPricing(result?.pricing || null);
+      })
+      .catch(() => {});
+    return () => controller.abort();
+  }, [regionalPricing]);
 
   const sectionClass = isModal
     ? "px-1 py-2"
@@ -105,7 +119,7 @@ export default function Pricing({
               </h3>
               <p className="mt-6 flex items-baseline gap-2">
                 <span className="font-product-display text-4xl font-semibold tracking-tight">
-                  {regionalPricing?.zeroFormatted || "$0"}
+                  {displayedRegionalPricing?.zeroFormatted || "$0"}
                 </span>
                 <span className="text-sm text-product-text-secondary">forever</span>
               </p>
@@ -133,10 +147,10 @@ export default function Pricing({
               <p className="text-xs font-semibold tracking-[0.14em] text-product-success-text uppercase">
                 PRO
               </p>
-              {regionalPricing?.country && (
+              {displayedRegionalPricing?.country && (
                 <p className="inline-flex items-center gap-1.5 rounded-full bg-product-bg-inset px-2.5 py-1 text-xs font-medium text-product-text-secondary">
-                  <span aria-hidden="true">{regionalPricing.flag}</span>
-                  {regionalPricing.country} · {regionalPricing.currency}
+                  <span aria-hidden="true">{displayedRegionalPricing.flag}</span>
+                  {displayedRegionalPricing.country} · {displayedRegionalPricing.currency}
                 </p>
               )}
             </div>
@@ -146,11 +160,12 @@ export default function Pricing({
               </h3>
               <p className="mt-6 flex items-baseline gap-2">
                 <span className="font-product-display text-4xl font-semibold tracking-tight">
-                  {regionalPricing?.[interval]?.formatted ||
+                  {displayedRegionalPricing?.[interval]?.formatted ||
                     (interval === "annual" ? "$50" : "$15")}
                 </span>
                 <span className="text-sm text-product-text-secondary">
-                  / {interval === "annual" ? "year" : "month"} {regionalPricing ? "" : "USD"}
+                  / {interval === "annual" ? "year" : "month"}{" "}
+                  {displayedRegionalPricing ? "" : "USD"}
                 </span>
               </p>
             </div>
@@ -174,7 +189,7 @@ export default function Pricing({
                 currentInterval={currentInterval}
                 canManageBilling={canManageBilling}
                 workspaceId={workspaceId}
-                hasBillingCustomer={hasBillingCustomer}
+                billingNeedsAttention={billingNeedsAttention}
               />
             </div>
           </article>

@@ -108,7 +108,12 @@ export async function POST(request) {
       const productId = suppliedProductId || existing?.dodoProductId || null;
       if (!productId) throw new TypeError("Subscription webhook is missing a product identifier.");
       const productInterval = dodoBillingInterval(productId);
-      const interval = productInterval || (suppliedProductId ? null : existing?.interval);
+      const historicalInterval =
+        suppliedProductId && suppliedProductId === existing?.dodoProductId && existing?.interval
+          ? existing.interval
+          : null;
+      const interval =
+        productInterval || historicalInterval || (suppliedProductId ? null : existing?.interval);
 
       const eventAt = validDate(event.timestamp) || new Date();
       if (existing?.lastEventAt && existing.lastEventAt > eventAt) return;
@@ -129,7 +134,9 @@ export async function POST(request) {
           ? data.cancel_at_next_billing_date
           : existing?.cancelAtPeriodEnd || false;
       const plan =
-        productInterval && type !== "subscription.failed" && type !== "subscription.expired"
+        (productInterval || historicalInterval) &&
+        type !== "subscription.failed" &&
+        type !== "subscription.expired"
           ? "PRO"
           : "FREE";
 
