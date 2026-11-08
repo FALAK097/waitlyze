@@ -129,9 +129,17 @@ export default function Pricing({
           </article>
 
           <article className="relative flex flex-col rounded-2xl border border-product-text-primary bg-product-bg-surface p-6 shadow-lg sm:p-8">
-            <p className="text-xs font-semibold tracking-[0.14em] text-product-success-text uppercase">
-              PRO
-            </p>
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-xs font-semibold tracking-[0.14em] text-product-success-text uppercase">
+                PRO
+              </p>
+              {regionalPricing?.country && (
+                <p className="inline-flex items-center gap-1.5 rounded-full bg-product-bg-inset px-2.5 py-1 text-xs font-medium text-product-text-secondary">
+                  <span aria-hidden="true">{regionalPricing.flag}</span>
+                  {regionalPricing.country} · {regionalPricing.currency}
+                </p>
+              )}
+            </div>
             <div>
               <h3 className="mt-3 font-product-display text-2xl tracking-tight">
                 More room to grow
@@ -145,13 +153,6 @@ export default function Pricing({
                   / {interval === "annual" ? "year" : "month"} {regionalPricing ? "" : "USD"}
                 </span>
               </p>
-              {regionalPricing?.country ? (
-                <p className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-product-bg-inset px-2.5 py-1 text-xs font-medium text-product-text-secondary">
-                  <span aria-hidden="true">{regionalPricing.flag}</span>
-                  {regionalPricing.country} · {regionalPricing.currency}
-                </p>
-              ) : null}
-              <p className="mt-1 text-xs text-product-text-secondary">Taxes at checkout</p>
             </div>
             <ul className="mt-6 grid gap-3 text-sm text-product-text-secondary">
               {proFeatures.map((item) => (

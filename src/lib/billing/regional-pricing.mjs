@@ -34,11 +34,19 @@ const cachedPreview = unstable_cache(
   { revalidate: 3600 },
 );
 
-function formatMinorUnits(amount, currency) {
+function formatRoundedCurrency(amount, currency) {
   if (!Number.isFinite(amount) || amount < 0 || !/^[A-Z]{3}$/.test(currency || "")) return null;
-  const formatter = new Intl.NumberFormat("en", { style: "currency", currency });
-  const fractionDigits = formatter.resolvedOptions().maximumFractionDigits;
-  return formatter.format(amount / 10 ** fractionDigits);
+  const fractionDigits = new Intl.NumberFormat("en", {
+    style: "currency",
+    currency,
+  }).resolvedOptions().maximumFractionDigits;
+  const wholeAmount = Math.round(amount / 10 ** fractionDigits);
+  return new Intl.NumberFormat("en", {
+    style: "currency",
+    currency,
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(wholeAmount);
 }
 
 function countryFlag(country) {
@@ -63,15 +71,15 @@ export async function getRegionalPricing(countryCode) {
     const annual = preview.prices[env.DODO_PRO_ANNUAL_PRODUCT_ID];
     if (!monthly || !annual || monthly.currency !== annual.currency) return null;
     const currency = monthly.currency;
-    const monthlyFormatted = formatMinorUnits(monthly.amount, currency);
-    const annualFormatted = formatMinorUnits(annual.amount, currency);
+    const monthlyFormatted = formatRoundedCurrency(monthly.amount, currency);
+    const annualFormatted = formatRoundedCurrency(annual.amount, currency);
     if (!monthlyFormatted || !annualFormatted) return null;
     const resolvedCountry = preview.country;
     return {
       country: countryNames.of(resolvedCountry) || resolvedCountry,
       flag: countryFlag(resolvedCountry) || flag,
       currency,
-      zeroFormatted: formatMinorUnits(0, currency),
+      zeroFormatted: formatRoundedCurrency(0, currency),
       monthly: { amount: monthly.amount, formatted: monthlyFormatted },
       annual: { amount: annual.amount, formatted: annualFormatted },
     };
