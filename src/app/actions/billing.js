@@ -81,13 +81,10 @@ async function reserveCheckoutIntent(workspaceId, interval) {
 
     const providerStateNeedsReview =
       ["ACTIVE", "PAST_DUE", "ON_HOLD"].includes(current?.status) ||
-      (current?.status === "CANCELLED" &&
-        current.cancelAtPeriodEnd &&
-        !current.currentPeriodEnd);
+      (current?.status === "CANCELLED" && current.cancelAtPeriodEnd && !current.currentPeriodEnd);
     if (
       providerStateNeedsReview ||
-      (current?.dodoSubscriptionId &&
-        !["CANCELLED", "EXPIRED", "FAILED"].includes(current.status))
+      (current?.dodoSubscriptionId && !["CANCELLED", "EXPIRED", "FAILED"].includes(current.status))
     ) {
       if (!current.dodoCustomerId)
         return { error: "This subscription needs attention. Contact support to recover billing." };
