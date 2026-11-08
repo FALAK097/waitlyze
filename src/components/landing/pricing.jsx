@@ -18,8 +18,8 @@ const PricingCheckoutButton = dynamic(() => import("./pricing-checkout-button"),
 });
 
 const freeFeatures = [
-  "1 published waitlist",
-  "Up to 100 signups per workspace",
+  "1 active waitlist",
+  "100 cumulative signups per workspace",
   "Hosted page and embeddable form",
   "Page builder and launch templates",
   "Referral links and queue position",
@@ -28,14 +28,13 @@ const freeFeatures = [
 ];
 
 const proFeatures = [
-  "3 published waitlists",
-  "Up to 2,000 signups per workspace",
+  "Unlimited waitlists and signups",
   "Everything in Free",
   "Advanced analytics with trends and sources",
   "Referral milestones and reward tiers",
   "Email broadcasts and automations via your connected sender",
   "Remove Waitlyze branding and connect a custom domain",
-  "Up to 3 workspace members",
+  "Unlimited workspace members",
 ];
 
 export default function Pricing({
@@ -44,6 +43,7 @@ export default function Pricing({
   currentInterval = null,
   canManageBilling = true,
   feature = null,
+  regionalPricing = null,
 }) {
   const [interval, setInterval] = useState("annual");
   const isPro = currentPlan === "PRO";
@@ -60,9 +60,6 @@ export default function Pricing({
           <h2 className="font-product-display text-3xl leading-tight tracking-tight sm:text-4xl">
             {feature ? `Unlock ${feature}` : "Start free. Upgrade when you need more."}
           </h2>
-          <p className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-product-text-secondary sm:text-base">
-            One Pro plan, no feature maze. Pick monthly flexibility or save with annual billing.
-          </p>
           <div
             className="mx-auto mt-6 inline-flex rounded-full border border-product-border-subtle bg-product-bg-surface p-1"
             aria-label="Billing interval"
@@ -104,9 +101,6 @@ export default function Pricing({
               <h3 className="mt-3 font-product-display text-2xl tracking-tight">
                 A real place to start
               </h3>
-              <p className="mt-2 text-sm leading-relaxed text-product-text-secondary">
-                Build a page, collect your first signups and test your referral loop.
-              </p>
               <p className="mt-6 flex items-baseline gap-2">
                 <span className="font-product-display text-4xl font-semibold tracking-tight">
                   $0
@@ -129,9 +123,6 @@ export default function Pricing({
             </ul>
             <div className="mt-auto pt-8">
               <SignupButton className="w-full rounded-full">Start for free</SignupButton>
-              <p className="mt-3 text-center text-xs text-product-text-secondary">
-                No credit card required
-              </p>
             </div>
           </article>
 
@@ -146,31 +137,22 @@ export default function Pricing({
               <h3 className="mt-3 font-product-display text-2xl tracking-tight">
                 More room to grow
               </h3>
-              <p className="mt-2 text-sm leading-relaxed text-product-text-secondary">
-                Add insight, automation and polish as your audience grows.
-              </p>
               <p className="mt-6 flex items-baseline gap-2">
                 <span className="font-product-display text-4xl font-semibold tracking-tight">
-                  {interval === "annual" ? "$50" : "$15"}
+                  {regionalPricing?.[interval]?.formatted ||
+                    (interval === "annual" ? "$50" : "$15")}
                 </span>
                 <span className="text-sm text-product-text-secondary">
                   / {interval === "annual" ? "year" : "month"}
                 </span>
               </p>
-              {interval === "annual" ? (
-                <p className="mt-1 text-xs text-product-text-secondary">
-                  $4.17/month equivalent · billed $50 annually
+              {regionalPricing?.country ? (
+                <p className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-product-bg-inset px-2.5 py-1 text-xs font-medium text-product-text-secondary">
+                  <span aria-hidden="true">{regionalPricing.flag}</span>
+                  {regionalPricing.country} · {regionalPricing.currency}
                 </p>
-              ) : (
-                <p className="mt-1 text-xs text-product-text-secondary">
-                  Billed monthly · cancel anytime
-                </p>
-              )}
-              <p className="mt-3 text-xs leading-relaxed text-product-text-secondary">
-                Shown in USD. Checkout adjusts the price to your country's purchasing power and
-                calculates local taxes automatically. Subscriber email is sent only through your
-                connected provider.
-              </p>
+              ) : null}
+              <p className="mt-1 text-xs text-product-text-secondary">Taxes at checkout</p>
             </div>
             <ul className="mt-6 grid gap-3 text-sm text-product-text-secondary">
               {proFeatures.map((item) => (

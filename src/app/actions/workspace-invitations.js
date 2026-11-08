@@ -382,7 +382,18 @@ export async function acceptWorkspaceInvite(previous, form) {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session?.user?.id) return { error: "Sign in with the invited account to continue." };
   const token = form.get("token");
-  const result = await acceptWorkspaceInvitation(prisma, { token, user: session.user });
+  let result;
+  try {
+    result = await acceptWorkspaceInvitation(prisma, { token, user: session.user });
+  } catch (error) {
+    if (error instanceof WorkspacePlanError)
+      return {
+        error: error.message,
+        code: error.code,
+        feature: error.feature,
+      };
+    return { error: "Could not accept this invitation. Try again." };
+  }
   if (!result.success) {
     const messages = {
       INVALID: "This invitation is no longer available. Ask a workspace admin for a new one.",

@@ -89,9 +89,9 @@ function CurrentPlanCard({
       </div>
 
       <div className="mt-5 grid grid-cols-3 gap-2 border-t border-product-border-subtle pt-4 sm:gap-4">
-        <Usage label="Waitlists" value={waitlistCount} limit={pro ? 3 : 1} />
-        <Usage label="Signups" value={signupCount} limit={pro ? 2000 : 100} />
-        <Usage label="Members" value={memberCount} limit={pro ? 3 : 1} />
+        <Usage label="Waitlists" value={waitlistCount} limit={pro ? null : 1} />
+        <Usage label="Signups used" value={signupCount} limit={pro ? null : 100} />
+        <Usage label="Members" value={memberCount} limit={pro ? null : 1} />
       </div>
       {!canManageBilling && (
         <p className="mt-4 text-xs text-product-text-secondary">
@@ -179,7 +179,7 @@ export function WorkspaceBillingSettings({
 }
 
 function Usage({ label, value, limit }) {
-  const atLimit = value >= limit;
+  const atLimit = limit !== null && value >= limit;
   return (
     <div className="min-w-0">
       <p className="text-xs text-product-text-secondary">{label}</p>
@@ -187,9 +187,13 @@ function Usage({ label, value, limit }) {
         className={`mt-1 truncate text-sm font-semibold ${atLimit ? "text-product-danger-text" : "text-product-text-primary"}`}
       >
         {numberFormat.format(value)}{" "}
-        <span className="font-normal text-product-text-secondary">
-          / {numberFormat.format(limit)}
-        </span>
+        {limit === null ? (
+          <span className="font-normal text-product-text-secondary">· unlimited</span>
+        ) : (
+          <span className="font-normal text-product-text-secondary">
+            / {numberFormat.format(limit)}
+          </span>
+        )}
       </p>
     </div>
   );

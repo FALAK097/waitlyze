@@ -13,9 +13,9 @@ const PLAN_ENTITLEMENTS = Object.freeze({
     removeBranding: false,
   }),
   PRO: Object.freeze({
-    waitlists: 3,
-    subscribers: 2000,
-    members: 3,
+    waitlists: null,
+    subscribers: null,
+    members: null,
     analytics: true,
     customDomains: true,
     emailMarketing: true,
@@ -79,14 +79,17 @@ export function requireFeature(entitlements, feature) {
   });
 }
 
-export function requireCapacity({ entitlements, feature, used, message }) {
+export function requireCapacity({ entitlements, feature, used, requested = 1, message }) {
   const limit = entitlements[feature];
+  // A null limit is intentionally uncapped (Pro); abuse and platform-level
+  // rate limits remain separate from plan entitlements.
+  if (limit === null) return;
   if (typeof limit !== "number") throw new Error("Unknown plan limit.");
-  if (used < limit) return;
+  if (used + requested <= limit) return;
   throw new WorkspacePlanError({
     feature,
     limit,
-    used,
+    used: used + requested,
     message:
       message ||
       `Your ${entitlements.plan === "FREE" ? "Free" : "Pro"} workspace has reached its ${limit.toLocaleString()} ${feature} limit.`,

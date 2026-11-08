@@ -186,7 +186,12 @@ async function SelectedSettings({ section, user, workspace, role, checkoutReturn
           },
         }),
         prisma.waitList.count({ where: { workspaceId: workspace.id } }),
-        prisma.signUp.count({ where: { waitList: { workspaceId: workspace.id } } }),
+        prisma.workspace
+          .findUnique({
+            where: { id: workspace.id },
+            select: { signupUsageCount: true },
+          })
+          .then((record) => record?.signupUsageCount || 0),
         prisma.workspaceMember.count({ where: { workspaceId: workspace.id } }),
         getWorkspaceEntitlements(prisma, workspace.id),
       ],

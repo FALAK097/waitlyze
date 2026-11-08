@@ -38,7 +38,8 @@ const loadPage = cache(async function loadPage() {
   });
   if (domain?.status !== "ACTIVE" || !domain.waitList) return null;
   const waitList = domain.waitList;
-  return resolvePublishedWaitlistPage(waitList);
+  const page = await resolvePublishedWaitlistPage(waitList);
+  return page?.canUseCustomDomain ? page : null;
 });
 
 export async function generateMetadata() {

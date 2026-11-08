@@ -128,7 +128,7 @@ function TeamToolbarSlot({
       </p>
     );
   }
-  if (canManage && secureInvitesConfigured && memberCount >= memberLimit) {
+  if (canManage && secureInvitesConfigured && memberLimit !== null && memberCount >= memberLimit) {
     return plan === "FREE" ? (
       <UpgradeButton
         label="Unlock team invitations"

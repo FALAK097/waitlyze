@@ -17,5 +17,10 @@ export async function resolvePublishedWaitlistPage(waitList) {
   const parsed = templateSnapshotSchema.safeParse(publication?.snapshot);
   if (!parsed.success) return null;
   const entitlements = await getWorkspaceEntitlements(prisma, waitList.workspaceId);
-  return { waitList, snapshot: parsed.data, canRemoveBranding: entitlements.removeBranding };
+  return {
+    waitList,
+    snapshot: parsed.data,
+    canRemoveBranding: entitlements.removeBranding,
+    canUseCustomDomain: entitlements.customDomains,
+  };
 }

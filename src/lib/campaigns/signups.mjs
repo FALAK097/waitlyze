@@ -316,14 +316,18 @@ export async function createCampaignSignup(
         // past the plan cap. Existing duplicate signups returned above.
         await tx.$queryRaw`SELECT "id" FROM "workspaces" WHERE "id" = ${workspaceId} FOR UPDATE`;
       }
-      // Both reads are independent read-only queries on the same transaction
-      // connection; the FOR UPDATE lock above still serializes intake.
-      const [workspaceSignups, entitlements] = await Promise.all([
-        tx.signUp.count({
-          where: workspaceId ? { waitList: { workspaceId } } : { waitListId: input.waitListId },
-        }),
+      // The persistent workspace counter survives waitlist deletion, so
+      // removing old signups does not reset the Free-plan allowance.
+      const [usage, entitlements] = await Promise.all([
+        workspaceId
+          ? tx.workspace.findUnique({
+              where: { id: workspaceId },
+              select: { signupUsageCount: true },
+            })
+          : tx.signUp.count({ where: { waitListId: input.waitListId } }),
         getWorkspaceEntitlements(tx, workspaceId, now),
       ]);
+      const workspaceSignups = workspaceId ? usage?.signupUsageCount || 0 : usage;
       requireCapacity({
         entitlements,
         feature: "subscribers",
@@ -364,6 +368,12 @@ export async function createCampaignSignup(
           ...(input.marketingConsent === true ? { marketingConsentAt: now } : {}),
         },
       });
+      if (workspaceId) {
+        await tx.workspace.update({
+          where: { id: workspaceId },
+          data: { signupUsageCount: { increment: 1 } },
+        });
+      }
       await enqueueWebhookEvent(tx, {
         waitListId: input.waitListId,
         eventType: "signup.created",

@@ -11,6 +11,7 @@ import {
   WorkHistoryIcon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
+import { headers } from "next/headers";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -24,6 +25,7 @@ import PublicShell from "@/components/landing/public-shell";
 import SignupButton from "@/components/landing/signup-button";
 import TemplateCards from "@/components/landing/template-cards";
 import { SiteStructuredData } from "@/components/seo/structured-data";
+import { getRegionalPricing } from "@/lib/billing/regional-pricing.mjs";
 import { getPosts, getReadingMinutes } from "@/lib/blog-source";
 import { SITE_DESCRIPTION, SITE_TITLE } from "@/lib/site-metadata";
 import { listTemplates } from "@/lib/templates/catalog.mjs";
@@ -45,11 +47,11 @@ const github = "https://github.com/FALAK097/waitlyze";
 const faqs = [
   [
     "Is Waitlyze free?",
-    "Yes. Free includes one waitlist and up to 100 signups per workspace, with no card required. Pro is $15 per month or $50 per year; compare plans in the pricing section.",
+    "Yes. Free includes one active waitlist and 100 lifetime signups per workspace. Deleting a waitlist removes its data but does not reset signup usage. Pro is $15 per month or $50 per year, with unlimited waitlists, signups, and workspace members.",
   ],
   [
     "Will prices change by country?",
-    "Prices are listed in USD. At secure checkout, Dodo Payments adjusts the price to your country's purchasing power and calculates local taxes automatically, so the final amount can differ from the list price.",
+    "Where available, the pricing page shows Dodo Payments' country-adjusted price in your local currency. Taxes are calculated at checkout, and the final total is confirmed before payment.",
   ],
   [
     "Do I need a website?",
@@ -261,13 +263,19 @@ const steps = [
 ];
 
 export default async function LandingPage() {
+  const requestHeaders = await headers();
+  const requestCountry =
+    requestHeaders.get("x-vercel-ip-country") || requestHeaders.get("cf-ipcountry");
+  const pricingCountry = requestCountry || (process.env.NODE_ENV === "development" ? "IN" : null);
   const featuredTemplates = listTemplates().filter((template) =>
     ["saas", "creator", "event"].includes(template.id),
   );
   const latestPosts = getPosts().slice(0, 3);
-  const minutes = new Map(
-    await Promise.all(latestPosts.map(async (post) => [post.url, await getReadingMinutes(post)])),
-  );
+  const [readingMinutes, regionalPricing] = await Promise.all([
+    Promise.all(latestPosts.map(async (post) => [post.url, await getReadingMinutes(post)])),
+    getRegionalPricing(pricingCountry),
+  ]);
+  const minutes = new Map(readingMinutes);
 
   return (
     <PublicShell>
@@ -387,7 +395,7 @@ export default async function LandingPage() {
           <TemplateCards templates={featuredTemplates} />
         </section>
 
-        <Pricing />
+        <Pricing regionalPricing={regionalPricing} />
 
         <AskAi />
 

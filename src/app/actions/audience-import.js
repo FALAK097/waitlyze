@@ -2,6 +2,11 @@
 
 import Papa from "papaparse";
 
+import {
+  getWorkspaceEntitlements,
+  requireCapacity,
+  WorkspacePlanError,
+} from "@/lib/billing/plans.mjs";
 import { emailLookupForms, normalizeSignupEmail } from "@/lib/normalize-email.mjs";
 import prisma from "@/lib/prisma";
 import { requireCampaign } from "@/lib/workspaces/authorize";
@@ -59,7 +64,7 @@ function parseJoinedAt(value) {
 // verified and never trigger emails. Referral links resolve in a second pass.
 export async function importSignups(waitListId, formData) {
   try {
-    const { scope } = await requireCampaign(waitListId, "manageAudience");
+    const { scope, campaign } = await requireCampaign(waitListId, "manageAudience");
     const file = formData.get("file");
     if (!(file instanceof File) || file.size === 0)
       return { ok: false, message: "Choose a CSV file to import." };
@@ -179,20 +184,53 @@ export async function importSignups(waitListId, formData) {
 
     let imported = 0;
     const stamp = Date.now().toString(36);
-    for (let index = 0; index < fresh.length; index += 500) {
-      const chunk = fresh.slice(index, index + 500).map((row, offset) => ({
-        email: row.email,
-        emailNormalized: row.emailNormalized,
-        uniqueUserId: `import:${stamp}:${index + offset}`,
-        waitListId,
-        country: row.country,
-        points: row.points,
-        ...(row.referralCode ? { referralCode: row.referralCode } : {}),
-        ...(row.verifiedAt ? { verifiedAt: row.verifiedAt } : {}),
-        ...(row.createdAt ? { createdAt: row.createdAt } : {}),
-      }));
-      const result = await prisma.signUp.createMany({ data: chunk, skipDuplicates: true });
-      imported += result.count;
+    if (fresh.length) {
+      imported = await prisma.$transaction(async (tx) => {
+        const workspaceId = campaign.workspaceId;
+        if (workspaceId)
+          await tx.$queryRaw`SELECT "id" FROM "workspaces" WHERE "id" = ${workspaceId} FOR UPDATE`;
+        const [usage, entitlements] = await Promise.all([
+          workspaceId
+            ? tx.workspace.findUnique({
+                where: { id: workspaceId },
+                select: { signupUsageCount: true },
+              })
+            : tx.signUp.count({ where: { waitListId } }),
+          getWorkspaceEntitlements(tx, workspaceId),
+        ]);
+        const currentUsage = workspaceId ? usage?.signupUsageCount || 0 : usage;
+        requireCapacity({
+          entitlements,
+          feature: "subscribers",
+          used: currentUsage,
+          requested: fresh.length,
+          message: `This import would exceed the ${entitlements.plan === "FREE" ? "Free" : "Pro"} workspace signup limit.`,
+        });
+
+        let inserted = 0;
+        for (let index = 0; index < fresh.length; index += 500) {
+          const chunk = fresh.slice(index, index + 500).map((row, offset) => ({
+            email: row.email,
+            emailNormalized: row.emailNormalized,
+            uniqueUserId: `import:${stamp}:${index + offset}`,
+            waitListId,
+            country: row.country,
+            points: row.points,
+            ...(row.referralCode ? { referralCode: row.referralCode } : {}),
+            ...(row.verifiedAt ? { verifiedAt: row.verifiedAt } : {}),
+            ...(row.createdAt ? { createdAt: row.createdAt } : {}),
+          }));
+          const result = await tx.signUp.createMany({ data: chunk, skipDuplicates: true });
+          inserted += result.count;
+        }
+        if (workspaceId && inserted) {
+          await tx.workspace.update({
+            where: { id: workspaceId },
+            data: { signupUsageCount: { increment: inserted } },
+          });
+        }
+        return inserted;
+      });
     }
 
     // Second pass: link referrals by email or code, including rows from this file.
@@ -268,6 +306,8 @@ export async function importSignups(waitListId, formData) {
   } catch (error) {
     if (error instanceof AccessError)
       return { ok: false, message: "You no longer have access to this waitlist." };
+    if (error instanceof WorkspacePlanError)
+      return { ok: false, code: error.code, feature: error.feature, message: error.message };
     console.error("Audience import failed", error?.code || error?.name);
     return { ok: false, message: "Couldn't import that file. Try again." };
   }

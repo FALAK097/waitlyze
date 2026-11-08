@@ -69,11 +69,6 @@ export default function PricingCheckoutButton({
           {error}
         </p>
       )}
-      <p className="mt-3 text-center text-xs text-product-text-secondary">
-        {interval === "annual" ? "Renews yearly until canceled." : "Renews monthly until canceled."}{" "}
-        No refunds except where required by law. Checkout automatically adjusts for your country's
-        purchasing power.
-      </p>{" "}
     </>
   );
 }

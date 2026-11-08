@@ -713,6 +713,7 @@ model Workspace {
   id              String            @id @default(cuid())
   name            String
   personalOwnerId String?           @unique
+  signupUsageCount Int              @default(0)
   personalOwner   User?             @relation("PersonalWorkspace", fields: [personalOwnerId], references: [id], onDelete: Restrict)
   createdAt       DateTime          @default(now())
   updatedAt       DateTime          @updatedAt
