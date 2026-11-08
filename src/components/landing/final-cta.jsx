@@ -5,9 +5,12 @@ import SignupButton from "./signup-button";
 
 import "./final-cta.css";
 
-export default function FinalCta({ className = "" }) {
+export default function FinalCta({ className = "", compact = false }) {
   return (
-    <section className={`wl-final-cta ${className}`} aria-labelledby="wl-final-cta-title">
+    <section
+      className={`wl-final-cta ${compact ? "wl-final-cta-compact" : ""} ${className}`}
+      aria-labelledby="wl-final-cta-title"
+    >
       <div className="wl-final-cta-content">
         <p className="wl-final-cta-eyebrow">WHEN YOU’RE READY</p>
         <h2 id="wl-final-cta-title">Give your next launch a head start.</h2>

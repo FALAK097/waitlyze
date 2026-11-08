@@ -22,8 +22,8 @@ export default function PublicShell({ children }) {
       </a>
       <Header />
       {children}
-      <footer className="bg-product-bg-page pt-12 pb-6 text-product-text-primary">
-        <div className="mx-auto w-full max-w-7xl px-4 sm:px-5 md:px-8 lg:px-12">
+      <footer className="pt-12 pb-6 text-product-text-primary">
+        <div className="mx-auto w-full max-w-[1120px] px-[18px]">
           <div className="relative grid grid-cols-2 gap-x-5 gap-y-10 md:grid-cols-5 md:gap-10">
             <div className="col-span-2">
               <Link

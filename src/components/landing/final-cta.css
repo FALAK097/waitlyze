@@ -37,6 +37,21 @@
 .wl-final-cta-content {
   padding: clamp(48px, 7vw, 90px) clamp(24px, 6vw, 82px);
 }
+.wl-final-cta-compact {
+  min-height: 0;
+}
+.wl-final-cta-compact .wl-final-cta-content {
+  padding-block: clamp(36px, 5vw, 64px);
+}
+.wl-final-cta-compact h2 {
+  margin-top: 16px;
+}
+.wl-final-cta-compact .wl-final-cta-content > p:not(.wl-final-cta-eyebrow) {
+  margin-top: 14px;
+}
+.wl-final-cta-compact .wl-final-cta-actions {
+  margin-top: 24px;
+}
 .wl-final-cta-eyebrow {
   font-size: 0.72rem;
   font-weight: 700;

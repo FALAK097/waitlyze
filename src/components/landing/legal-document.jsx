@@ -14,10 +14,7 @@ export default function LegalDocument({
 }) {
   return (
     <PublicShell>
-      <main
-        id="main-content"
-        className="mx-auto w-full max-w-7xl px-4 pt-12 pb-18 sm:px-5 md:px-8 lg:px-12"
-      >
+      <main id="main-content" className="mx-auto w-full max-w-[1120px] px-[18px] pt-12 pb-18">
         <Link
           href="/"
           className="group inline-flex items-center gap-2.5 text-sm font-medium underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-neutral-900"
