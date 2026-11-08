@@ -87,4 +87,4 @@ Area-chart styling adapted from [Evil Charts](https://evilcharts.com) by Gurbind
 
 ## License
 
-MIT - see [LICENSE](LICENSE).
+[MIT](LICENSE).
