@@ -1,55 +1,54 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { useState } from "react";
 
-export default function WaitlistPlayground() {
-  return (
-    <div className="w-full max-w-2xl scroll-mt-28" id="preview">
-      <div className="bg-product-bg-surface p-0">
-        <div className="bg-product-bg-surface p-0 text-center text-product-text-primary">
-          <div className="inline-flex items-center gap-2 font-product-display text-body font-bold tracking-tight text-product-text-primary">
-            <span
-              className="grid size-6 place-items-center rounded-t-lg rounded-br-sm font-serif text-sm text-product-success-text italic"
-              aria-hidden="true"
-            >
-              w.
-            </span>
-            <span>weekend</span>
-          </div>
-          <h2 className="mx-auto mt-3 max-w-72 font-product-display text-4xl leading-tight tracking-tighter">
-            Go outside.
-          </h2>
-          <p className="mx-auto mt-3 max-w-70 text-sm leading-relaxed text-product-text-secondary">
-            A fresh way to find your next weekend escape.
-          </p>
-          <div className="mx-auto max-w-100 pt-6">
-            <form
-              noValidate
-              onSubmit={(event) => event.preventDefault()}
-              aria-label="Example waitlist form"
-              className="grid gap-2.5"
-            >
-              <label className="sr-only" htmlFor="preview-example-email">
-                Example email address
-              </label>
-              <Input
-                id="preview-example-email"
-                type="email"
-                placeholder="you@example.com"
-                autoComplete="off"
-                className="h-11 w-full rounded-lg border border-product-border-subtle bg-white px-3 py-2.5 text-sm text-product-text-primary placeholder:text-product-text-muted focus-visible:ring-0 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-900"
-              />
-              <Button type="submit" variant="product-accent" size="xl" className="w-full">
-                Join the waitlist
-              </Button>
-            </form>
-            <p className="mt-2.5 mb-0 text-center text-xs leading-normal text-product-text-secondary">
-              Demo form · No email is collected or sent.
-            </p>
-          </div>
-        </div>
+export default function WaitlistPlayground({ form }) {
+  const [submitted, setSubmitted] = useState(false);
+
+  function submitPreview(event) {
+    event.preventDefault();
+    event.currentTarget.reset();
+    setSubmitted(true);
+  }
+
+  if (submitted) {
+    return (
+      <div className="grid gap-3 text-wl-text">
+        <output className="font-wl-heading text-xl font-bold">This was just a preview.</output>
+        <p className="text-sm text-wl-muted">No email was collected, stored, or sent.</p>
+        <button
+          type="button"
+          onClick={() => setSubmitted(false)}
+          className="min-h-11 w-fit font-semibold text-wl-text underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-wl-text"
+        >
+          Try the form again
+        </button>
       </div>
-    </div>
+    );
+  }
+
+  return (
+    <form onSubmit={submitPreview} aria-label="Demo waitlist form" className="grid gap-3">
+      <label htmlFor="demo-waitlist-email" className="text-caption font-bold text-wl-text">
+        {form.label}
+      </label>
+      <div className="flex gap-2 max-sm:flex-col">
+        <input
+          id="demo-waitlist-email"
+          type="email"
+          required
+          placeholder={form.placeholder}
+          autoComplete="off"
+          className="h-12 min-w-0 flex-1 rounded-wl border border-wl-input-border bg-wl-input px-4 text-wl-text placeholder:text-wl-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-wl-text"
+        />
+        <button
+          type="submit"
+          className="inline-flex min-h-12 items-center justify-center rounded-wl bg-wl-button px-5 font-bold text-wl-button-text focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-wl-text"
+        >
+          {form.buttonText}
+        </button>
+      </div>
+      <p className="text-xs text-wl-muted">Demo only · No email is collected, stored, or sent.</p>
+    </form>
   );
 }

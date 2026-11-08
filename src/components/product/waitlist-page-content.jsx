@@ -67,12 +67,15 @@ export function WaitlistPageContent({
   previewViewport,
   signupCount = 128,
   hideCounts = false,
+  compact = false,
   interactive = false,
   selectedBlockId = null,
   onBlockSelect,
   renderBlockToolbar,
 }) {
-  const visible = snapshot.sections.filter((section) => section.visible);
+  const visible = snapshot.sections.filter(
+    (section) => section.visible && (!compact || section.type !== "hero"),
+  );
   const firstForm = visible.find(
     (section) => section.type === "form" || (section.type === "hero" && section.showForm),
   );
@@ -102,7 +105,9 @@ export function WaitlistPageContent({
   return (
     <div
       className={cn(
-        "relative min-h-screen overflow-x-clip bg-wl-page px-6 font-wl-body text-wl-text",
+        "relative overflow-x-clip bg-wl-page px-6 font-wl-body text-wl-text",
+        !compact && "min-h-screen",
+        compact && "pb-5",
         bodyText,
         mobile && "min-h-203 px-4",
       )}
@@ -229,14 +234,16 @@ export function WaitlistPageContent({
                 <section
                   className={cn(
                     sectionClass,
-                    mobile
-                      ? "grid min-h-0 items-center justify-items-center px-4 py-16 text-center"
-                      : "grid min-h-190 items-center justify-items-center py-20 text-center max-sm:min-h-0 max-sm:py-16",
+                    compact
+                      ? "grid min-h-0 items-center justify-items-center py-7 text-center max-sm:py-6"
+                      : mobile
+                        ? "grid min-h-0 items-center justify-items-center px-4 py-16 text-center"
+                        : "grid min-h-190 items-center justify-items-center py-20 text-center max-sm:min-h-0 max-sm:py-16",
                   )}
                   id="top"
                   key={section.id}
                 >
-                  <div className="max-w-4xl">
+                  <div className={compact ? "w-full" : "max-w-4xl"}>
                     {!hasVisibleNavigation && brandLogo && (
                       <Image
                         alt={name}
@@ -248,7 +255,12 @@ export function WaitlistPageContent({
                       />
                     )}
                     {section.eyebrow && (
-                      <p className="mb-6 text-xs font-bold tracking-widest text-wl-muted uppercase">
+                      <p
+                        className={cn(
+                          "text-xs font-bold tracking-widest text-wl-muted uppercase",
+                          compact ? "mb-3" : "mb-6",
+                        )}
+                      >
                         {section.eyebrow}
                       </p>
                     )}
@@ -258,7 +270,14 @@ export function WaitlistPageContent({
                     >
                       {section.heading}
                     </h1>
-                    <p className="mx-auto mt-7 max-w-3xl text-lg text-wl-muted">{section.body}</p>
+                    <p
+                      className={cn(
+                        "mx-auto max-w-3xl text-wl-muted",
+                        compact ? "mt-3 text-base" : "mt-7 text-lg",
+                      )}
+                    >
+                      {section.body}
+                    </p>
                   </div>
                   {section.showForm && (
                     <div
@@ -581,6 +600,12 @@ export function WaitlistPageContent({
               );
             }
             if (section.type === "form") {
+              if (compact)
+                return (
+                  <section className="py-7" id="signup" key={section.id}>
+                    {renderForm(section)}
+                  </section>
+                );
               if (section.variant === "card")
                 return (
                   <section
@@ -608,16 +633,21 @@ export function WaitlistPageContent({
                 <section
                   className={cn(
                     sectionClass,
-                    mobile
-                      ? "flex flex-col items-start gap-9 py-20"
-                      : "flex flex-col items-start gap-9 py-20 md:flex-row md:gap-16",
+                    compact
+                      ? "flex flex-col items-start gap-4 py-5"
+                      : mobile
+                        ? "flex flex-col items-start gap-9 py-20"
+                        : "flex flex-col items-start gap-9 py-20 md:flex-row md:gap-16",
                   )}
                   id={section.id === firstForm?.id ? "signup" : undefined}
                   key={section.id}
                 >
                   <div className="md:grow-8 md:basis-0">
                     {section.heading && (
-                      <Heading className={cn("mb-5 leading-none", h2)} style={{ "--wl-h2": h2Px }}>
+                      <Heading
+                        className={cn(compact ? "mb-2 leading-tight" : "mb-5 leading-none", h2)}
+                        style={{ "--wl-h2": h2Px }}
+                      >
                         {section.heading}
                       </Heading>
                     )}
@@ -750,7 +780,10 @@ export function WaitlistPageContent({
       </div>
       {snapshot.brand.showPoweredBy !== false && (
         <a
-          className="absolute right-5 bottom-5 z-10 inline-flex items-center gap-2 rounded-full border border-black/10 bg-white px-4 py-2 text-sm no-underline shadow-md"
+          className={cn(
+            "z-10 inline-flex items-center gap-2 rounded-full border border-black/10 bg-white px-4 py-2 text-sm no-underline shadow-md",
+            compact ? "relative mt-3 ml-auto flex w-fit" : "absolute right-5 bottom-5",
+          )}
           href={SITE_URL}
           target="_blank"
           rel="noopener noreferrer"
