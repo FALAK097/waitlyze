@@ -148,6 +148,9 @@ export function createWorkspaceService(db) {
       actor(userId);
       if (typeof workspaceId !== "string" || !workspaceId) throw new AccessError();
       return db.$transaction(async (tx) => {
+        const lockedWorkspace =
+          await tx.$queryRaw`SELECT "id" FROM "workspaces" WHERE "id" = ${workspaceId} FOR UPDATE`;
+        if (lockedWorkspace.length === 0) throw new AccessError();
         const workspace = await tx.workspace.findFirst({
           where: { id: workspaceId, members: { some: { userId, role: "OWNER" } } },
           select: { id: true, name: true, personalOwnerId: true },
@@ -155,6 +158,18 @@ export function createWorkspaceService(db) {
         if (!workspace) throw new AccessError();
         if (workspace.personalOwnerId)
           throw new TypeError("The personal workspace cannot be deleted.");
+        const subscription = await tx.workspaceSubscription.findUnique({
+          where: { workspaceId },
+          select: { dodoSubscriptionId: true, status: true, checkoutPendingUntil: true },
+        });
+        if (
+          subscription?.checkoutPendingUntil > new Date() ||
+          (subscription?.dodoSubscriptionId &&
+            !["EXPIRED", "FAILED", "CANCELLED"].includes(subscription.status))
+        )
+          throw new TypeError(
+            "Cancel or finish this workspace's subscription and any pending checkout before deleting the workspace.",
+          );
         const waitlists = await tx.waitList.findMany({
           where: { workspaceId },
           select: { id: true },
