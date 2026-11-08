@@ -62,6 +62,8 @@ export default async function WaitListsEditPage(props) {
         pausePage={pauseWaitlist}
         rollbackPage={rollbackWaitlist}
         canPublish={canPublish}
+        canManageBilling={role === "OWNER"}
+        workspaceId={workspace.id}
         turnstileConfigured={Boolean(
           env.TURNSTILE_SITE_KEY?.trim() && env.TURNSTILE_SECRET_KEY?.trim(),
         )}

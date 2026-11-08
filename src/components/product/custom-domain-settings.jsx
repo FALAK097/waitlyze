@@ -54,7 +54,14 @@ function RecordCopyButton({ text, label }) {
   );
 }
 
-export function CustomDomainSettings({ waitListId, canManage, available, proAvailable = false }) {
+export function CustomDomainSettings({
+  waitListId,
+  workspaceId,
+  canManage,
+  canManageBilling,
+  available,
+  proAvailable = false,
+}) {
   const [domain, setDomain] = useState(null);
   const [hostname, setHostname] = useState("");
   const [busy, setBusy] = useState(false);
@@ -173,7 +180,13 @@ export function CustomDomainSettings({ waitListId, canManage, available, proAvai
               Free.
             </p>
             {canManage ? (
-              <UpgradeButton label="Unlock custom domains" feature="Custom domains" size="md" />
+              <UpgradeButton
+                label={canManageBilling ? "Unlock custom domains" : "See Pro plans"}
+                feature="Custom domains"
+                workspaceId={workspaceId}
+                canManageBilling={canManageBilling}
+                size="md"
+              />
             ) : (
               <p className="m-0 text-xs text-product-text-secondary">
                 Ask the workspace owner to upgrade.
@@ -257,7 +270,14 @@ export function CustomDomainSettings({ waitListId, canManage, available, proAvai
                 This workspace is on Free. The existing domain is retained; Pro is required to add
                 another domain.
               </p>
-              {canManage && <UpgradeButton label="Compare Pro plans" feature="Custom domains" />}
+              {canManage && (
+                <UpgradeButton
+                  label={canManageBilling ? "Compare Pro plans" : "See Pro plans"}
+                  feature="Custom domains"
+                  workspaceId={workspaceId}
+                  canManageBilling={canManageBilling}
+                />
+              )}
             </div>
           )}
           <ConfirmDialog

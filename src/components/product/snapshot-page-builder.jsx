@@ -234,6 +234,8 @@ export function SnapshotPageBuilder({
   pausePage,
   rollbackPage,
   canPublish,
+  canManageBilling = false,
+  workspaceId = null,
   publicationOrigin,
   turnstileConfigured,
   customerEmailSenderConnected = true,
@@ -1185,6 +1187,8 @@ export function SnapshotPageBuilder({
               <DesignPanel
                 brand={snapshot.brand}
                 canRemoveBranding={waitList.canRemoveBranding}
+                canManageBilling={canManageBilling}
+                workspaceId={workspaceId}
                 update={(value) => updateRoot("brand", value)}
               />
             )}
@@ -1464,7 +1468,13 @@ function TypeSizeField({ label, value, defaultValue, onChange, min = 12, max = 1
     </div>
   );
 }
-function DesignPanel({ brand, update, canRemoveBranding = false }) {
+function DesignPanel({
+  brand,
+  update,
+  canRemoveBranding = false,
+  canManageBilling = false,
+  workspaceId = null,
+}) {
   const poweredById = useId();
   return (
     <div className={"grid gap-4 p-4"}>
@@ -1491,7 +1501,12 @@ function DesignPanel({ brand, update, canRemoveBranding = false }) {
             onCheckedChange={(checked) => update({ showPoweredBy: checked })}
           />
         ) : (
-          <UpgradeButton label="Pro" feature="Remove Waitlyze branding" />
+          <UpgradeButton
+            label={canManageBilling ? "Pro" : "See Pro plans"}
+            feature="Remove Waitlyze branding"
+            canManageBilling={canManageBilling}
+            workspaceId={workspaceId}
+          />
         )}
       </div>
       <FontPicker

@@ -134,6 +134,7 @@ function TeamToolbarSlot({
         label="Unlock team invitations"
         feature="Workspace collaboration"
         canManageBilling={canManageBilling}
+        workspaceId={workspaceId}
         size="md"
       />
     ) : (
@@ -541,6 +542,7 @@ function InvitationForm({ workspaceId, canInviteAdmins, canManageBilling, onComp
           label="Compare Pro plans"
           feature="Workspace collaboration"
           canManageBilling={canManageBilling}
+          workspaceId={workspaceId}
           size="md"
         />
       )}

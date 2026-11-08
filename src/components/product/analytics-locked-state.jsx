@@ -5,7 +5,7 @@ import { UpgradeButton } from "@/components/shared/upgrade-button";
 
 const previewBars = [42, 58, 49, 71, 62, 82, 67, 92, 75, 100, 80, 88];
 
-export function AnalyticsLockedState({ waitlistName, canManageBilling }) {
+export function AnalyticsLockedState({ waitlistName, workspaceId, canManageBilling }) {
   return (
     <main
       className="mx-auto w-full max-w-280 px-4 py-7 sm:px-7 lg:px-10"
@@ -95,6 +95,7 @@ export function AnalyticsLockedState({ waitlistName, canManageBilling }) {
               label={canManageBilling ? "Compare Pro plans" : "See Pro plans"}
               feature="Advanced analytics"
               canManageBilling={canManageBilling}
+              workspaceId={workspaceId}
               size="md"
               className="mt-6 justify-center"
             />

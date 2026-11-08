@@ -12,7 +12,11 @@ export default async function AnalyticsPage({ params }) {
   const entitlements = await getWorkspaceEntitlements(prisma, workspace.id);
   if (!entitlements.analytics)
     return (
-      <AnalyticsLockedState waitlistName={waitlist.name} canManageBilling={role === "OWNER"} />
+      <AnalyticsLockedState
+        waitlistName={waitlist.name}
+        workspaceId={workspace.id}
+        canManageBilling={role === "OWNER"}
+      />
     );
   return (
     <WaitlistAnalytics

@@ -38,6 +38,8 @@ export function CreateWaitlistDialog({
   initialOpen = false,
   first = false,
   initialTemplateId = "simple",
+  workspaceId = null,
+  canManageBilling = false,
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(initialOpen);
@@ -216,6 +218,8 @@ export function CreateWaitlistDialog({
                   <UpgradeButton
                     label="Compare Pro plans"
                     feature="More waitlists"
+                    workspaceId={workspaceId}
+                    canManageBilling={canManageBilling}
                     size="md"
                     className="justify-self-stretch"
                   />

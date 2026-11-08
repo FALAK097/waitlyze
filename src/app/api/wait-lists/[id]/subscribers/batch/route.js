@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { getWorkspaceEntitlements } from "@/lib/billing/plans.mjs";
 import { dispatchOffboardNow } from "@/lib/email/dispatch-now.mjs";
 import { hasCustomerEmailSender } from "@/lib/email/sender-resolution.mjs";
 import prisma from "@/lib/prisma";
@@ -252,9 +253,12 @@ export async function POST(request, { params }) {
     }
 
     const resubscribe = action === "resubscribe";
-    const canEmail = resubscribe
-      ? false
-      : await deliveryConfigured(workspace.id ?? waitlist.workspaceId, waitlist.id);
+    const workspaceId = workspace.id ?? waitlist.workspaceId;
+    const entitlements = await getWorkspaceEntitlements(prisma, workspaceId);
+    const canEmail =
+      !resubscribe &&
+      entitlements.emailMarketing &&
+      (await deliveryConfigured(workspaceId, waitlist.id));
     const outcome = await bulkOffboard({ waitlist, user, ids, resubscribe, canEmail });
     if (outcome.eventKeys.length) {
       // Best-effort: the scheduler delivers whatever is still pending.

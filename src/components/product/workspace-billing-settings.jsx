@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 
 import { createBillingPortal } from "@/app/actions/billing";
 import Pricing from "@/components/landing/pricing";
@@ -30,14 +31,16 @@ function planStatusText({ interval, status, cancelAtPeriodEnd, periodEnd }) {
   return `${cadence} billing · ${state}${period}`;
 }
 
-function CheckoutReturnBanner() {
+function CheckoutReturnBanner({ onRefresh }) {
   return (
     <div
-      className="mb-5 rounded-xl border border-product-border-subtle bg-product-bg-surface p-4 text-sm"
+      className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-product-border-subtle bg-product-bg-surface p-4 text-sm"
       role="status"
     >
-      Checkout returned. We’re confirming the subscription with Dodo Payments; this page will update
-      after its signed notification arrives.
+      <span>Confirming your subscription with Dodo Payments.</span>
+      <Button type="button" variant="ghost" size="sm" onClick={onRefresh}>
+        Refresh status
+      </Button>
     </div>
   );
 }
@@ -49,6 +52,7 @@ function CurrentPlanCard({
   periodEnd,
   cancelAtPeriodEnd,
   canManageBilling,
+  hasBillingCustomer,
   waitlistCount,
   signupCount,
   memberCount,
@@ -73,10 +77,14 @@ function CurrentPlanCard({
           <p className="mt-1 text-sm text-product-text-secondary">
             {pro
               ? planStatusText({ interval, status, cancelAtPeriodEnd, periodEnd })
-              : "Free forever · no card required"}
+              : hasBillingCustomer
+                ? status === "PAST_DUE" || status === "ON_HOLD"
+                  ? "Subscription needs attention"
+                  : "Subscription ended"
+                : "Free forever"}
           </p>
         </div>
-        {canManageBilling && pro && (
+        {canManageBilling && hasBillingCustomer && (
           <Button
             type="button"
             variant="product-outline"
@@ -108,6 +116,7 @@ function CurrentPlanCard({
 }
 
 export function WorkspaceBillingSettings({
+  workspaceId,
   workspaceName,
   plan,
   interval,
@@ -118,17 +127,30 @@ export function WorkspaceBillingSettings({
   waitlistCount,
   signupCount,
   memberCount,
+  hasBillingCustomer,
   checkoutReturn = false,
 }) {
+  const router = useRouter();
   const [portalPending, setPortalPending] = useState(false);
   const [error, setError] = useState("");
   const periodEnd = dateLabel(currentPeriodEnd);
+
+  useEffect(() => {
+    if (!checkoutReturn || plan === "PRO") return;
+    let attempts = 0;
+    const timer = window.setInterval(() => {
+      router.refresh();
+      attempts += 1;
+      if (attempts >= 20) window.clearInterval(timer);
+    }, 3000);
+    return () => window.clearInterval(timer);
+  }, [checkoutReturn, plan, router]);
 
   async function openPortal() {
     setPortalPending(true);
     setError("");
     try {
-      const result = await createBillingPortal();
+      const result = await createBillingPortal(workspaceId);
       if (result?.portalUrl) {
         window.location.assign(result.portalUrl);
         return;
@@ -150,7 +172,9 @@ export function WorkspaceBillingSettings({
         <p className="text-product-text-secondary">Plans and usage for {workspaceName}.</p>
       </header>
 
-      {checkoutReturn && <CheckoutReturnBanner />}
+      {checkoutReturn && plan !== "PRO" && (
+        <CheckoutReturnBanner onRefresh={() => router.refresh()} />
+      )}
 
       <CurrentPlanCard
         plan={plan}
@@ -159,6 +183,7 @@ export function WorkspaceBillingSettings({
         periodEnd={periodEnd}
         cancelAtPeriodEnd={cancelAtPeriodEnd}
         canManageBilling={canManageBilling}
+        hasBillingCustomer={hasBillingCustomer}
         waitlistCount={waitlistCount}
         signupCount={signupCount}
         memberCount={memberCount}
@@ -172,6 +197,8 @@ export function WorkspaceBillingSettings({
           currentPlan={plan}
           currentInterval={interval}
           canManageBilling={canManageBilling}
+          workspaceId={workspaceId}
+          hasBillingCustomer={hasBillingCustomer}
         />
       </div>
     </div>

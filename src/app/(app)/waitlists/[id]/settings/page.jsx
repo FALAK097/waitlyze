@@ -18,7 +18,14 @@ export const metadata = { title: "Waitlist settings" };
 
 const VALID_SECTIONS = new Set(["referral", "domain", "sender", "webhooks", "delete"]);
 
-function SelectedWaitlistSettings({ section, waitlist, canManage, domainAvailable }) {
+function SelectedWaitlistSettings({
+  section,
+  waitlist,
+  canManage,
+  canManageBilling,
+  domainAvailable,
+  proAvailable,
+}) {
   if (section === "sender")
     return (
       <section className="max-w-190 min-w-0 flex-1" aria-labelledby="settings-panel-heading">
@@ -44,8 +51,11 @@ function SelectedWaitlistSettings({ section, waitlist, canManage, domainAvailabl
         </header>
         <CustomDomainSettings
           waitListId={waitlist.id}
+          workspaceId={waitlist.workspaceId}
           canManage={canManage}
+          canManageBilling={canManageBilling}
           available={domainAvailable}
+          proAvailable={proAvailable}
         />
       </section>
     );
@@ -123,6 +133,7 @@ export default async function WaitlistSettings({ params, searchParams }) {
           section={section}
           waitlist={waitlist}
           canManage={canManage}
+          canManageBilling={role === "OWNER"}
           domainAvailable={domainAvailable}
           proAvailable={entitlements.customDomains}
         />

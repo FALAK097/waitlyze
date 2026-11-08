@@ -64,7 +64,12 @@ export async function hasCustomerEmailSender(db, { workspaceId, waitListId }) {
   try {
     await resolveEmailSender(db, { workspaceId, waitListId });
     return true;
-  } catch {
-    return false;
+  } catch (error) {
+    if (
+      error instanceof CustomerSenderNotConnectedError ||
+      error?.code === "SENDER_NEEDS_ATTENTION"
+    )
+      return false;
+    throw error;
   }
 }

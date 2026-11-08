@@ -77,6 +77,7 @@ export function AuthModal({ open, onOpenChange, onCloseAutoFocus }) {
               callbackURL: "/waitlists",
             });
       if (result.error) throw new Error(result.error.message || "Authentication failed.");
+      if (attempt !== attemptRef.current) return;
       changeOpen(false);
       window.location.assign("/waitlists");
     } catch (error) {
@@ -89,7 +90,10 @@ export function AuthModal({ open, onOpenChange, onCloseAutoFocus }) {
 
   return (
     <Dialog open={open} onOpenChange={changeOpen}>
-      <DialogContent onCloseAutoFocus={onCloseAutoFocus}>
+      <DialogContent
+        className="max-h-[min(90dvh,48rem)] overflow-y-auto sm:max-w-lg"
+        onCloseAutoFocus={onCloseAutoFocus}
+      >
         <div
           className={`flex flex-col font-product-sans text-product-text-primary ${publicFontClasses}`}
         >

@@ -6,7 +6,7 @@ import { TEMPLATE_IDS } from "@/lib/templates/gallery.mjs";
 // Editorial update dates, not the time a crawler requests this file. Bump
 // SITE_UPDATED when marketing, template or docs pages change in a meaningful way.
 const SITE_UPDATED = "2026-11-01";
-const LEGAL_UPDATED = "2026-10-11";
+const LEGAL_UPDATED = "2026-11-08";
 
 export const revalidate = 3600;
 

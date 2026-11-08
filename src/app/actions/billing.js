@@ -23,8 +23,16 @@ async function checkAuth() {
 }
 
 /** Ensures the caller signs in and can view the workspace; ownership is re-checked per call. */
-async function ownerContext(session) {
-  const { workspace } = await currentWorkspace();
+async function ownerContext(session, workspaceId) {
+  const { workspace } = workspaceId
+    ? {
+        workspace: await createWorkspaceService(prisma).requireAccess(
+          session.user.id,
+          workspaceId,
+          "manageOwnership",
+        ),
+      }
+    : await currentWorkspace();
   const membership = await prisma.workspaceMember.findUnique({
     where: { workspaceId_userId: { workspaceId: workspace.id, userId: session.user.id } },
     select: { role: true },
@@ -40,12 +48,12 @@ async function ownerContext(session) {
 }
 
 /** Starts a Dodo-hosted checkout for the selected workspace only. */
-export async function createProCheckout(interval) {
+export async function createProCheckout(interval, workspaceId) {
   try {
     const session = await checkAuth();
     if (!BILLING_INTERVALS.includes(interval))
       return { error: "Choose monthly or annual billing." };
-    const context = await ownerContext(session);
+    const context = await ownerContext(session, workspaceId);
     if (context.error) return context;
     const { workspace } = context;
     const current = await prisma.workspaceSubscription.findUnique({
@@ -53,8 +61,10 @@ export async function createProCheckout(interval) {
     });
     if (effectiveWorkspacePlan(current) === "PRO")
       return { error: "This workspace already has Pro. Manage its renewal in Billing settings." };
+    if (current?.dodoSubscriptionId)
+      return { error: "Manage this workspace's existing subscription in Billing settings." };
 
-    const client = createDodoClient();
+    const client = createDodoClient({ requireWebhookKey: true });
     const checkout = await client.checkoutSessions.create({
       product_cart: [{ product_id: dodoProductId(interval), quantity: 1 }],
       customer: {
@@ -84,10 +94,10 @@ export async function createProCheckout(interval) {
 }
 
 /** Creates a short-lived Dodo portal link for the selected workspace owner. */
-export async function createBillingPortal() {
+export async function createBillingPortal(workspaceId) {
   try {
     const session = await checkAuth();
-    const context = await ownerContext(session);
+    const context = await ownerContext(session, workspaceId);
     if (context.error) return context;
     const { workspace } = context;
     const subscription = await prisma.workspaceSubscription.findUnique({
@@ -97,10 +107,9 @@ export async function createBillingPortal() {
     if (!subscription?.dodoCustomerId)
       return { error: "No paid subscription is connected to this workspace." };
     const client = createDodoClient();
-    const portal = await client.customers.customerPortal.create(
-      subscription.dodoCustomerId,
-      new URL("/settings?section=billing", env.BETTER_AUTH_URL).toString(),
-    );
+    const portal = await client.customers.customerPortal.create(subscription.dodoCustomerId, {
+      return_url: new URL("/settings?section=billing", env.BETTER_AUTH_URL).toString(),
+    });
     return { portalUrl: portal.link };
   } catch (error) {
     if (error instanceof BillingGateError) return { error: error.message };

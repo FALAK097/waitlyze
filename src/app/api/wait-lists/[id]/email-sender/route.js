@@ -47,8 +47,8 @@ function validateSenderInput(fromEmail, apiKey, { keyRequired }) {
 }
 
 // Per-waitlist BYOK sender. A CONNECTED row here wins over the workspace
-// connection (see sender-resolution.mjs); deleting it falls back to the
-// workspace sender, then the deployment default.
+// connection (see sender-resolution.mjs); deleting it falls back only to the
+// workspace's connected sender.
 export async function GET(request, { params }) {
   const { id } = await params;
   const access = await webhookAccess(request, id, "viewCampaign");

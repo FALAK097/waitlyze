@@ -7,6 +7,7 @@ import { dispatchAutomationStep, processAutomationTrigger } from "./automations.
 import { emailBrandFromSnapshot } from "./brand.mjs";
 import { queueDueBroadcasts } from "./broadcast-queue.mjs";
 import { interpolateEmail, legacyEmailContent, subscriberEmailHtml } from "./composer.mjs";
+import { CustomerSenderNotConnectedError } from "./sender-resolution.mjs";
 import { applyKnownProviderEvents } from "./suppression.mjs";
 import { createUnsubscribeToken } from "./unsubscribe.mjs";
 import { interpolateVars, interpolateVarsHtml, resolveSubscriberVars } from "./variables.mjs";
@@ -735,6 +736,26 @@ export async function dispatchPendingOutboxEvents(
       return;
     }
     if (event.type === "OFFBOARD_EMAIL_REQUESTED") {
+      const waitList = event.waitListId
+        ? await db.waitList.findUnique({
+            where: { id: event.waitListId },
+            select: { workspaceId: true },
+          })
+        : null;
+      if (!(await canSendMarketing(waitList?.workspaceId))) {
+        await db.outboxEvent.update({
+          where: { id: event.id },
+          data: {
+            status: "FAILED",
+            processedAt: now,
+            lockedAt: null,
+            payload: { signUpId: event.payload?.signUpId, waitListId: event.waitListId },
+            lastErrorCode: "PLAN_REQUIRES_PRO",
+          },
+        });
+        result.skipped++;
+        return;
+      }
       await dispatchOffboard(db, event, send, now, attempt, result);
       return;
     }
@@ -865,10 +886,13 @@ export async function dispatchPendingOutboxEvents(
           .slice(0, 80) || "PROVIDER_ERROR";
       const isVerificationEvent = event.type === "SIGNUP_VERIFICATION_REQUESTED";
       const maxAttempts = isVerificationEvent ? VERIFICATION_MAX_ATTEMPTS : MAX_ATTEMPTS;
-      const canRetry = transient(error) && attempt < maxAttempts;
-      const delay = isVerificationEvent
-        ? VERIFICATION_RETRY_DELAYS_MS[attempt - 1]
-        : Math.min(RETRY_BASE_MS * 2 ** Math.min(attempt - 1, 6), 60 * 60 * 1000);
+      const senderDisconnected = error instanceof CustomerSenderNotConnectedError;
+      const canRetry = senderDisconnected || (transient(error) && attempt < maxAttempts);
+      const delay = senderDisconnected
+        ? 15 * 60 * 1000
+        : isVerificationEvent
+          ? VERIFICATION_RETRY_DELAYS_MS[attempt - 1]
+          : Math.min(RETRY_BASE_MS * 2 ** Math.min(attempt - 1, 6), 60 * 60 * 1000);
       await db.outboxEvent.update({
         where: { id: event.id },
         data: {

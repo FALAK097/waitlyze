@@ -392,6 +392,18 @@ export async function POST(request) {
     );
   } catch (error) {
     if (error instanceof PublicRateLimitError) return rateLimitResponse(error);
+    if (
+      error instanceof CustomerSenderNotConnectedError ||
+      error?.code === "SENDER_NEEDS_ATTENTION"
+    )
+      return NextResponse.json(
+        {
+          success: false,
+          error:
+            "This waitlist cannot send confirmation emails right now. Please contact its owner.",
+        },
+        { status: 503 },
+      );
     // Fraud IP-velocity gate: explicit 429 (fail-closed on clear abuse).
     if (error instanceof FraudLimitError)
       return NextResponse.json(

@@ -1513,6 +1513,7 @@ export function AudienceTable({
                           label={canManageBilling ? "Compare Pro plans" : "See Pro plans"}
                           feature="Additional signups"
                           canManageBilling={canManageBilling}
+                          workspaceId={waitlist.workspaceId}
                           size="md"
                         />
                       </div>

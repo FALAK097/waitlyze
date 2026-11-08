@@ -18,7 +18,7 @@ const PricingCheckoutButton = dynamic(() => import("./pricing-checkout-button"),
 });
 
 const freeFeatures = [
-  "1 active waitlist",
+  "1 waitlist, drafts included",
   "100 cumulative signups per workspace",
   "Hosted page and embeddable form",
   "Page builder and launch templates",
@@ -44,6 +44,8 @@ export default function Pricing({
   canManageBilling = true,
   feature = null,
   regionalPricing = null,
+  workspaceId = null,
+  hasBillingCustomer = false,
 }) {
   const [interval, setInterval] = useState("annual");
   const isPro = currentPlan === "PRO";
@@ -103,7 +105,7 @@ export default function Pricing({
               </h3>
               <p className="mt-6 flex items-baseline gap-2">
                 <span className="font-product-display text-4xl font-semibold tracking-tight">
-                  $0
+                  {regionalPricing?.zeroFormatted || "$0"}
                 </span>
                 <span className="text-sm text-product-text-secondary">forever</span>
               </p>
@@ -127,13 +129,10 @@ export default function Pricing({
           </article>
 
           <article className="relative flex flex-col rounded-2xl border border-product-text-primary bg-product-bg-surface p-6 shadow-lg sm:p-8">
-            <span className="absolute top-4 right-4 rounded-full bg-product-accent-solid px-3 py-1 text-xs font-semibold text-product-accent-label">
-              Pro
-            </span>
+            <p className="text-xs font-semibold tracking-[0.14em] text-product-success-text uppercase">
+              PRO
+            </p>
             <div>
-              <p className="text-xs font-semibold tracking-[0.14em] text-product-text-secondary uppercase">
-                For growing launches
-              </p>
               <h3 className="mt-3 font-product-display text-2xl tracking-tight">
                 More room to grow
               </h3>
@@ -143,7 +142,7 @@ export default function Pricing({
                     (interval === "annual" ? "$50" : "$15")}
                 </span>
                 <span className="text-sm text-product-text-secondary">
-                  / {interval === "annual" ? "year" : "month"}
+                  / {interval === "annual" ? "year" : "month"} {regionalPricing ? "" : "USD"}
                 </span>
               </p>
               {regionalPricing?.country ? (
@@ -173,6 +172,8 @@ export default function Pricing({
                 isPro={isPro}
                 currentInterval={currentInterval}
                 canManageBilling={canManageBilling}
+                workspaceId={workspaceId}
+                hasBillingCustomer={hasBillingCustomer}
               />
             </div>
           </article>

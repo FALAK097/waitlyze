@@ -183,6 +183,7 @@ async function SelectedSettings({ section, user, workspace, role, checkoutReturn
             status: true,
             currentPeriodEnd: true,
             cancelAtPeriodEnd: true,
+            dodoCustomerId: true,
           },
         }),
         prisma.waitList.count({ where: { workspaceId: workspace.id } }),
@@ -198,6 +199,7 @@ async function SelectedSettings({ section, user, workspace, role, checkoutReturn
     );
     return (
       <WorkspaceBillingSettings
+        workspaceId={workspace.id}
         workspaceName={workspace.name}
         plan={entitlements.plan}
         interval={subscription?.interval || null}
@@ -208,6 +210,7 @@ async function SelectedSettings({ section, user, workspace, role, checkoutReturn
         waitlistCount={waitlistCount}
         signupCount={signupCount}
         memberCount={memberCount}
+        hasBillingCustomer={Boolean(subscription?.dodoCustomerId)}
         checkoutReturn={checkoutReturn}
       />
     );

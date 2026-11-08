@@ -47,7 +47,7 @@ const github = "https://github.com/FALAK097/waitlyze";
 const faqs = [
   [
     "Is Waitlyze free?",
-    "Yes. Free includes one active waitlist and 100 lifetime signups per workspace. Deleting a waitlist removes its data but does not reset signup usage. Pro is $15 per month or $50 per year, with unlimited waitlists, signups, and workspace members.",
+    "Yes. Free includes one waitlist (drafts count) and 100 lifetime signups per workspace. Deleting a waitlist removes its data but does not reset signup usage. Pro is $15 per month or $50 per year, with unlimited waitlists, signups, and workspace members.",
   ],
   [
     "Will prices change by country?",

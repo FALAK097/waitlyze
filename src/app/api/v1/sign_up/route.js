@@ -188,7 +188,10 @@ export const POST = async (req) => {
         { message: error.message, error: error.message, code: error.code, feature: error.feature },
         { status: error.status },
       );
-    if (error instanceof CustomerSenderNotConnectedError)
+    if (
+      error instanceof CustomerSenderNotConnectedError ||
+      error?.code === "SENDER_NEEDS_ATTENTION"
+    )
       return NextResponse.json(
         {
           message: "This waitlist is temporarily unable to send confirmation email.",

@@ -1,9 +1,18 @@
 import { LockIcon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 
+import { ScheduledBroadcastCancellation } from "@/components/product/scheduled-broadcast-cancellation";
 import { UpgradeButton } from "@/components/shared/upgrade-button";
 
-export function PlanFeatureLocked({ feature, title, description, canManageBilling }) {
+export function PlanFeatureLocked({
+  feature,
+  title,
+  description,
+  canManageBilling,
+  workspaceId,
+  waitListId,
+  scheduledBroadcasts = [],
+}) {
   return (
     <section
       className="mx-auto grid min-h-112 w-full max-w-190 place-items-center px-4 py-10"
@@ -29,9 +38,16 @@ export function PlanFeatureLocked({ feature, title, description, canManageBillin
           label={canManageBilling ? "Compare Pro plans" : "See Pro plans"}
           feature={feature}
           canManageBilling={canManageBilling}
+          workspaceId={workspaceId}
           size="md"
           className="mt-6 justify-center"
         />
+        {waitListId && scheduledBroadcasts.length > 0 && (
+          <ScheduledBroadcastCancellation
+            waitListId={waitListId}
+            broadcasts={scheduledBroadcasts}
+          />
+        )}
       </div>
     </section>
   );

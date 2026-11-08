@@ -29,7 +29,7 @@ import { env } from "@/lib/env.mjs";
 import prisma from "@/lib/prisma";
 import { consumePublicBudget, PublicRateLimitError } from "@/lib/security/public-rate-limit.mjs";
 import { AUDIT_ACTIONS, recordWaitlistAuditEvent } from "@/lib/workspaces/audit.mjs";
-import { requireCampaignFeature } from "@/lib/workspaces/authorize";
+import { requireCampaign, requireCampaignFeature } from "@/lib/workspaces/authorize";
 
 function renderLegacyTemplateEmail({ template, waitList, variables }) {
   const replaceVars = (text) =>
@@ -847,7 +847,9 @@ export async function scheduleBroadcast({
 }
 
 export async function cancelBroadcast({ waitListId, broadcastId }) {
-  const { campaign } = await requireCampaignFeature(waitListId, "sendEmail", "emailMarketing");
+  // Cancellation is permitted after downgrade so queued customer mail can
+  // always be stopped, even though creating/sending remains a Pro feature.
+  const { campaign } = await requireCampaign(waitListId, "sendEmail");
   const canceled = await prisma.$transaction(async (tx) => {
     const [broadcast] = await tx.$queryRaw`
       SELECT "id", "status"::text AS status FROM "marketing_broadcasts"

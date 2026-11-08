@@ -35,13 +35,11 @@ function eventStatus(type, data) {
   if (type === "subscription.on_hold" || type === "subscription.paused") return "ON_HOLD";
   if (type === "subscription.expired" || type === "subscription.failed") return "EXPIRED";
   if (type === "subscription.cancelled" && !data.cancel_at_next_billing_date) return "CANCELLED";
-  if (type === "subscription.updated") {
-    if (status === "past_due") return "PAST_DUE";
-    if (status === "on_hold" || status === "paused") return "ON_HOLD";
-    if (status === "expired" || status === "failed") return "EXPIRED";
-    if ((status === "cancelled" || status === "canceled") && !data.cancel_at_next_billing_date)
-      return "CANCELLED";
-  }
+  if (status === "past_due") return "PAST_DUE";
+  if (status === "on_hold" || status === "paused") return "ON_HOLD";
+  if (status === "expired" || status === "failed") return "EXPIRED";
+  if ((status === "cancelled" || status === "canceled") && !data.cancel_at_next_billing_date)
+    return "CANCELLED";
   return "ACTIVE";
 }
 
@@ -106,11 +104,11 @@ export async function POST(request) {
       const workspaceId = eventWorkspaceId(data) || existing?.workspaceId;
       if (!workspaceId) throw new TypeError("Subscription webhook is missing workspace metadata.");
 
-      const productId =
-        typeof data.product_id === "string" ? data.product_id : existing?.dodoProductId;
-      const interval = dodoBillingInterval(productId) || existing?.interval;
-      if (!interval)
-        throw new TypeError("Subscription webhook references an unknown Dodo product.");
+      const suppliedProductId = typeof data.product_id === "string" ? data.product_id : null;
+      const productId = suppliedProductId || existing?.dodoProductId || null;
+      if (!productId) throw new TypeError("Subscription webhook is missing a product identifier.");
+      const productInterval = dodoBillingInterval(productId);
+      const interval = productInterval || (suppliedProductId ? null : existing?.interval);
 
       const eventAt = validDate(event.timestamp) || new Date();
       if (existing?.lastEventAt && existing.lastEventAt > eventAt) return;
@@ -127,15 +125,19 @@ export async function POST(request) {
         existing?.currentPeriodEnd ||
         null;
       const cancelAtPeriodEnd =
-        type === "subscription.cancelled"
-          ? data.cancel_at_next_billing_date === true
+        typeof data.cancel_at_next_billing_date === "boolean"
+          ? data.cancel_at_next_billing_date
           : existing?.cancelAtPeriodEnd || false;
+      const plan =
+        productInterval && type !== "subscription.failed" && type !== "subscription.expired"
+          ? "PRO"
+          : "FREE";
 
       await tx.workspaceSubscription.upsert({
         where: { workspaceId },
         create: {
           workspaceId,
-          plan: type === "subscription.failed" || type === "subscription.expired" ? "FREE" : "PRO",
+          plan,
           status: eventStatus(type, data),
           interval,
           dodoCustomerId: customerId || null,
@@ -148,7 +150,7 @@ export async function POST(request) {
           lastEventAt: eventAt,
         },
         update: {
-          plan: type === "subscription.failed" || type === "subscription.expired" ? "FREE" : "PRO",
+          plan,
           status: eventStatus(type, data),
           interval,
           ...(customerId ? { dodoCustomerId: customerId } : {}),

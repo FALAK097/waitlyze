@@ -9,13 +9,16 @@ const countryNames = new Intl.DisplayNames(["en"], { type: "region" });
 const cachedPreview = unstable_cache(
   async (country, monthlyProductId, annualProductId, environment) => {
     const client = createDodoClient();
-    const preview = await client.checkoutSessions.preview({
-      product_cart: [
-        { product_id: monthlyProductId, quantity: 1 },
-        { product_id: annualProductId, quantity: 1 },
-      ],
-      billing_address: { country },
-    });
+    const preview = await client.checkoutSessions.preview(
+      {
+        product_cart: [
+          { product_id: monthlyProductId, quantity: 1 },
+          { product_id: annualProductId, quantity: 1 },
+        ],
+        billing_address: { country },
+      },
+      { timeout: 5000 },
+    );
     return {
       country: preview.billing_country || country,
       prices: Object.fromEntries(
@@ -68,6 +71,7 @@ export async function getRegionalPricing(countryCode) {
       country: countryNames.of(resolvedCountry) || resolvedCountry,
       flag: countryFlag(resolvedCountry) || flag,
       currency,
+      zeroFormatted: formatMinorUnits(0, currency),
       monthly: { amount: monthly.amount, formatted: monthlyFormatted },
       annual: { amount: annual.amount, formatted: annualFormatted },
     };

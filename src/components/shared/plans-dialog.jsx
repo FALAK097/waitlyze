@@ -26,6 +26,7 @@ export function PlansDialog({
   currentPlan = "FREE",
   currentInterval = null,
   canManageBilling = true,
+  workspaceId = null,
 }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -47,6 +48,7 @@ export function PlansDialog({
           currentPlan={currentPlan}
           currentInterval={currentInterval}
           canManageBilling={canManageBilling}
+          workspaceId={workspaceId}
         />
       </DialogContent>
     </Dialog>

@@ -25,6 +25,7 @@ export function UpgradeButton({
   currentPlan = "FREE",
   currentInterval = null,
   canManageBilling = true,
+  workspaceId = null,
   size = "sm",
 }) {
   return (
@@ -33,6 +34,7 @@ export function UpgradeButton({
       currentPlan={currentPlan}
       currentInterval={currentInterval}
       canManageBilling={canManageBilling}
+      workspaceId={workspaceId}
       trigger={
         <Button
           type="button"

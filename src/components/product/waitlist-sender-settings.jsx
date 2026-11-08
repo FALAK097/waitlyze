@@ -180,6 +180,7 @@ export function WaitlistSenderSettings({ waitListId, canManage }) {
     setResolved(body.resolved);
     setFromEmail(body.data?.fromEmail || "");
     setError("");
+    return body;
   }
 
   async function perform(action, method, path = "", body) {
@@ -193,7 +194,7 @@ export function WaitlistSenderSettings({ waitListId, canManage }) {
       });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || "Unable to update sender settings.");
-      await refresh();
+      const refreshed = await refresh();
       if (action === "save") {
         setApiKey("");
         toast.success("Sender saved. Send a test email to activate it.");
@@ -202,7 +203,11 @@ export function WaitlistSenderSettings({ waitListId, canManage }) {
       } else {
         setConfirmRemove(false);
         setApiKey("");
-        toast.success("Waitlist sender removed. The inherited sender is now active.");
+        if (refreshed.resolved?.source === "workspace")
+          toast.success("Waitlist sender removed. The workspace sender is now active.");
+        else if (refreshed.resolved?.source === "needs-attention")
+          toast.error("Waitlist sender removed, but the workspace sender needs attention.");
+        else toast.success("Waitlist sender removed. Connect a workspace sender to send email.");
       }
     } catch (failure) {
       toast.error(failure.message || "Try again shortly.");
@@ -234,9 +239,9 @@ export function WaitlistSenderSettings({ waitListId, canManage }) {
     <div className="grid gap-6">
       <SenderStatus sender={sender} resolved={resolved} />
       <p className="m-0 text-sm leading-relaxed text-product-text-secondary">
-        A connected waitlist sender takes priority over your workspace Resend connection and the
-        deployment default. Until its test succeeds, the inherited sender stays active. A sender
-        that needs attention pauses mail instead of silently falling back.
+        A connected waitlist sender takes priority over your workspace Resend connection. Until its
+        test succeeds, the workspace sender is used if connected. Waitlyze never falls back to its
+        deployment sender for subscriber email.
       </p>
       {canManage ? (
         <SenderActions
