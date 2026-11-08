@@ -52,12 +52,12 @@ export async function renderMarkdownRoute(rawPath) {
   // 1. Home /
   if (path === "/") {
     const templates = listTemplates();
-    const body = `Waitlyze is a waitlist builder made by Falak Gala for founders and teams. Build a branded page, publish a hosted page or embed, grow with verified referrals, send consent-aware email, and learn from audience analytics. Free to use; no credit card required.
+    const body = `Waitlyze is a waitlist builder made by Falak Gala for founders and teams. Build a branded page, publish a hosted page or embed, grow through referrals, send consent-aware email, and learn from audience analytics. Free to use; no credit card required.
 
 ## Core Capabilities
 - **Build and publish**: Start with a template, edit content and brand, preview desktop and mobile, save drafts without changing the live page, then publish, pause, or roll back.
 - **Hosted Pages & Embeds**: Share a hosted page or embed its published form on your site. Custom domains require deployment configuration.
-- **Verified Referrals**: When enabled, confirmed subscribers receive personal share links. Referred signups count toward credit only after verification. Review points and queue positions; reward fulfillment is not automatic.
+- **Referral Sharing and Credit**: When enabled, confirmed subscribers receive personal share links. With double opt-in enabled, referred signups earn credit after email verification; with it disabled, they may earn credit without verification. Review points and queue positions; reward fulfillment is not automatic.
 - **Consent-Aware Email**: Send verification email and configure welcome, reminder, and milestone automations or one-time broadcasts. Marketing email requires verified addresses with explicit opt-in, plus a configured sender and delivery setup.
 - **Audience Analytics**: See visitors, signups, conversion, verification, acquisition sources, geography, devices, and referral activity. Product screenshots on the homepage show example data, not customer results.
 - **Developer Tools**: Server-side Signup API (\`POST /api/waitlist\`), scoped API keys, signed webhooks, and subscriber CSV export. Zapier-style connections use webhook recipes rather than a native integration.
@@ -83,7 +83,7 @@ Yes. You can get started for free, and no credit card is required. A free plan w
 No. You can visually design your page in the builder and share its hosted URL. If you already have a website, copy the embed snippet from your dashboard.
 
 ### How do referrals work?
-When referral sharing is enabled, confirmed subscribers receive a personal link. Referred signups must verify their email before they count toward credit. Reward delivery is up to the waitlist owner.
+When referral sharing is enabled, confirmed subscribers receive a personal link. If double opt-in is enabled, referred signups earn credit after verifying their email. If it is disabled, they may earn credit without verifying. Reward delivery is up to the waitlist owner.
 
 ### Can I email everyone who signs up?
 Marketing email is sent only to verified subscribers who explicitly opted in. Broadcasts let you preview the eligible audience before confirming; a sender and delivery setup are required.
