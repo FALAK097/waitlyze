@@ -97,7 +97,7 @@ export default function Pricing({
         <div className="mx-auto grid max-w-5xl gap-5 md:grid-cols-2 md:gap-6">
           <article className="flex flex-col rounded-2xl border border-product-border-subtle bg-product-bg-surface p-6 sm:p-8">
             <div>
-              <p className="text-xs font-semibold tracking-[0.14em] text-product-text-secondary uppercase">
+              <p className="flex min-h-6 items-center text-xs font-semibold tracking-[0.14em] text-product-text-secondary uppercase">
                 Free
               </p>
               <h3 className="mt-3 font-product-display text-2xl tracking-tight">
@@ -129,7 +129,7 @@ export default function Pricing({
           </article>
 
           <article className="relative flex flex-col rounded-2xl border border-product-text-primary bg-product-bg-surface p-6 shadow-lg sm:p-8">
-            <div className="flex items-center justify-between gap-3">
+            <div className="flex min-h-6 items-center justify-between gap-3">
               <p className="text-xs font-semibold tracking-[0.14em] text-product-success-text uppercase">
                 PRO
               </p>
