@@ -10,9 +10,20 @@ import prisma from "@/lib/prisma";
 import { currentWorkspace } from "@/lib/workspaces/current";
 import { createWorkspaceService } from "@/lib/workspaces/service.mjs";
 
-async function ownerContext() {
+/**
+ * Central auth gate for billing actions (they are public POST endpoints).
+ * Throws so no privileged work can proceed without a session.
+ */
+class BillingGateError extends Error {}
+
+async function checkAuth() {
   const session = await auth.api.getSession({ headers: await headers() });
-  if (!session?.user?.id) return { error: "Sign in to manage this workspace's plan." };
+  if (!session?.user?.id) throw new BillingGateError("Sign in to manage this workspace's plan.");
+  return session;
+}
+
+/** Ensures the caller signs in and can view the workspace; ownership is re-checked per call. */
+async function ownerContext(session) {
   const { workspace } = await currentWorkspace();
   const membership = await prisma.workspaceMember.findUnique({
     where: { workspaceId_userId: { workspaceId: workspace.id, userId: session.user.id } },
@@ -30,11 +41,13 @@ async function ownerContext() {
 
 /** Starts a Dodo-hosted checkout for the selected workspace only. */
 export async function createProCheckout(interval) {
-  if (!BILLING_INTERVALS.includes(interval)) return { error: "Choose monthly or annual billing." };
   try {
-    const context = await ownerContext();
+    const session = await checkAuth();
+    if (!BILLING_INTERVALS.includes(interval))
+      return { error: "Choose monthly or annual billing." };
+    const context = await ownerContext(session);
     if (context.error) return context;
-    const { session, workspace } = context;
+    const { workspace } = context;
     const current = await prisma.workspaceSubscription.findUnique({
       where: { workspaceId: workspace.id },
     });
@@ -63,6 +76,7 @@ export async function createProCheckout(interval) {
     if (!checkout.checkout_url) return { error: "Dodo did not return a checkout link. Try again." };
     return { checkoutUrl: checkout.checkout_url };
   } catch (error) {
+    if (error instanceof BillingGateError) return { error: error.message };
     if (error instanceof DodoConfigurationError) return { error: error.message };
     console.error("Could not create Dodo checkout", error?.name || "unknown error");
     return { error: "Could not start checkout. Please try again." };
@@ -72,7 +86,8 @@ export async function createProCheckout(interval) {
 /** Creates a short-lived Dodo portal link for the selected workspace owner. */
 export async function createBillingPortal() {
   try {
-    const context = await ownerContext();
+    const session = await checkAuth();
+    const context = await ownerContext(session);
     if (context.error) return context;
     const { workspace } = context;
     const subscription = await prisma.workspaceSubscription.findUnique({
@@ -88,6 +103,7 @@ export async function createBillingPortal() {
     );
     return { portalUrl: portal.link };
   } catch (error) {
+    if (error instanceof BillingGateError) return { error: error.message };
     if (error instanceof DodoConfigurationError) return { error: error.message };
     console.error("Could not create Dodo billing portal", error?.name || "unknown error");
     return { error: "Could not open billing management. Please try again." };
