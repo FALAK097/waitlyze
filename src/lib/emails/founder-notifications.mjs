@@ -9,7 +9,7 @@ import {
   waitlistPublishedText,
 } from "@/emails/text.mjs";
 import { env } from "@/lib/env.mjs";
-import { notifyChatChannels } from "@/lib/integrations/chat-notifiers.mjs";
+import { queueChatNotification } from "@/lib/integrations/chat-notifiers.mjs";
 import { enqueueWebhookEvent } from "@/lib/webhooks/delivery.mjs";
 
 // Product notices from Waitlyze to the people who own a workspace.
@@ -140,14 +140,15 @@ export async function maybeNotifySignupMilestone(db, waitListId, { signupId } = 
       },
     });
     const waitlistName = waitList.name || "Your waitlist";
-    // Phase 7c: courtesy copy to connected Slack/Discord channels. Best
-    // effort - chat failures never block the owner email or the webhook.
+    // A deterministic outbox key avoids duplicate milestone pings when
+    // concurrent signups observe the same count.
     try {
-      await notifyChatChannels(
-        db,
+      await queueChatNotification(db, {
         waitListId,
-        `${waitlistName} just hit ${count} signup${count === 1 ? "" : "s"}.`,
-      );
+        trigger: "MILESTONE_COUNTS",
+        eventKey: `milestone:${waitListId}:${count}`,
+        payload: { count },
+      });
     } catch (error) {
       console.error("Chat milestone notice failed", error?.message || "unknown error");
     }
