@@ -260,7 +260,14 @@ async function SelectedSettings({ section, user, workspace, role, checkoutReturn
 }
 
 export default async function SettingsPage({ searchParams }) {
-  const [context, query] = await Promise.all([currentWorkspace(), searchParams]);
+  const [currentContext, query] = await Promise.all([currentWorkspace(), searchParams]);
+  const requestedWorkspace =
+    typeof query.workspaceId === "string"
+      ? currentContext.workspaces.find((workspace) => workspace.id === query.workspaceId)
+      : null;
+  const context = requestedWorkspace
+    ? { ...currentContext, workspace: requestedWorkspace }
+    : currentContext;
   const section = ["profile", "workspace", "team", "integrations", "audit", "billing"].includes(
     query.section,
   )

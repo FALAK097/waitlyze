@@ -10,8 +10,8 @@ import { Button } from "@/components/ui/button";
 export function ScheduledBroadcastCancellation({ waitListId, broadcasts }) {
   const router = useRouter();
   const [pendingId, setPendingId] = useState(null);
-  const [canceledIds, setCanceledIds] = useState([]);
-  const remaining = broadcasts.filter((broadcast) => !canceledIds.includes(broadcast.id));
+  const [canceledIds, setCanceledIds] = useState(() => new Set());
+  const remaining = broadcasts.filter((broadcast) => !canceledIds.has(broadcast.id));
 
   async function cancel(broadcastId) {
     setPendingId(broadcastId);
@@ -21,7 +21,7 @@ export function ScheduledBroadcastCancellation({ waitListId, broadcasts }) {
         toast.error(result.message);
         return;
       }
-      setCanceledIds((ids) => [...ids, broadcastId]);
+      setCanceledIds((ids) => new Set(ids).add(broadcastId));
       router.refresh();
       toast.success(result.message);
     } catch {

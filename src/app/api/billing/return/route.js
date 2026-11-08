@@ -1,4 +1,3 @@
-import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
 import { auth } from "@/lib/auth";
@@ -19,15 +18,9 @@ export async function GET(request) {
   });
   if (membership?.role !== "OWNER") return NextResponse.redirect(settingsUrl);
 
-  const cookieStore = await cookies();
-  cookieStore.set("waitlyze-workspace", requestedWorkspaceId, {
-    httpOnly: true,
-    sameSite: "lax",
-    secure: env.NODE_ENV === "production",
-    path: "/",
-    maxAge: 60 * 60 * 24 * 30,
-  });
-  return NextResponse.redirect(
-    new URL("/settings?section=billing&checkout=return", env.BETTER_AUTH_URL),
-  );
+  const returnUrl = new URL("/settings", env.BETTER_AUTH_URL);
+  returnUrl.searchParams.set("section", "billing");
+  returnUrl.searchParams.set("checkout", "return");
+  returnUrl.searchParams.set("workspaceId", requestedWorkspaceId);
+  return NextResponse.redirect(returnUrl);
 }

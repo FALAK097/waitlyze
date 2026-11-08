@@ -9,6 +9,59 @@ import { useAuthModal } from "@/components/auth/auth-modal-provider";
 import { Button } from "@/components/ui/button";
 import { useSession } from "@/lib/auth-client";
 
+function CheckoutActionButton({
+  isPro,
+  currentInterval,
+  billingNeedsAttention,
+  canManageBilling,
+  pending,
+  session,
+  sessionPending,
+  onCheckout,
+}) {
+  if (isPro)
+    return (
+      <Button type="button" variant="product-outline" className="w-full" disabled>
+        {currentInterval ? `You're on Pro (${currentInterval.toLowerCase()})` : "You're on Pro"}
+      </Button>
+    );
+  if (billingNeedsAttention && canManageBilling)
+    return (
+      <Button type="button" variant="product-outline" className="w-full" disabled>
+        Manage the existing subscription above
+      </Button>
+    );
+  if (!canManageBilling)
+    return (
+      <Button type="button" variant="product-outline" className="w-full" disabled>
+        Ask your workspace owner to upgrade
+      </Button>
+    );
+
+  return (
+    <Button
+      type="button"
+      variant="product-accent"
+      size="product-action"
+      className="group w-fit"
+      onClick={onCheckout}
+      disabled={pending || sessionPending}
+    >
+      {pending
+        ? "Opening secure checkout…"
+        : session
+          ? "Continue to secure checkout"
+          : "Sign up, then choose Pro"}
+      <HugeiconsIcon
+        icon={ArrowUpRight01Icon}
+        size={18}
+        aria-hidden="true"
+        className="shrink-0 transition-transform duration-180 group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
+      />
+    </Button>
+  );
+}
+
 export default function PricingCheckoutButton({
   interval,
   isPro,
@@ -23,21 +76,18 @@ export default function PricingCheckoutButton({
   const { openAuthModal } = useAuthModal();
 
   async function checkout() {
-    setError("");
     if (!session && !sessionPending) {
       openAuthModal();
       return;
     }
-    if (sessionPending || pending || isPro || !canManageBilling) return;
+    if (!session || sessionPending || pending || isPro || !canManageBilling) return;
+    setError("");
     setPending(true);
     try {
       const result = await createProCheckout(interval, workspaceId);
-      if (result?.portalUrl) {
-        window.location.assign(result.portalUrl);
-        return;
-      }
-      if (result?.checkoutUrl) {
-        window.location.assign(result.checkoutUrl);
+      const destination = result?.portalUrl || result?.checkoutUrl;
+      if (destination) {
+        window.location.assign(destination);
         return;
       }
       setError(result?.error || "Could not start checkout. Please try again.");
@@ -50,40 +100,16 @@ export default function PricingCheckoutButton({
 
   return (
     <>
-      {isPro ? (
-        <Button type="button" variant="product-outline" className="w-full" disabled>
-          {currentInterval ? `You're on Pro (${currentInterval.toLowerCase()})` : "You're on Pro"}
-        </Button>
-      ) : billingNeedsAttention && canManageBilling ? (
-        <Button type="button" variant="product-outline" className="w-full" disabled>
-          Manage the existing subscription above
-        </Button>
-      ) : canManageBilling ? (
-        <Button
-          type="button"
-          variant="product-accent"
-          size="product-action"
-          className="group w-fit"
-          onClick={checkout}
-          disabled={pending || sessionPending}
-        >
-          {pending
-            ? "Opening secure checkout…"
-            : session
-              ? "Continue to secure checkout"
-              : "Sign up, then choose Pro"}
-          <HugeiconsIcon
-            icon={ArrowUpRight01Icon}
-            size={18}
-            aria-hidden="true"
-            className="shrink-0 transition-transform duration-180 group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
-          />
-        </Button>
-      ) : (
-        <Button type="button" variant="product-outline" className="w-full" disabled>
-          Ask your workspace owner to upgrade
-        </Button>
-      )}
+      <CheckoutActionButton
+        isPro={isPro}
+        currentInterval={currentInterval}
+        billingNeedsAttention={billingNeedsAttention}
+        canManageBilling={canManageBilling}
+        pending={pending}
+        session={session}
+        sessionPending={sessionPending}
+        onCheckout={checkout}
+      />
       {error && (
         <p className="mt-3 text-center text-xs text-product-danger-text" role="alert">
           {error}

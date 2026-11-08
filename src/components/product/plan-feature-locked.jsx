@@ -4,6 +4,8 @@ import { HugeiconsIcon } from "@hugeicons/react";
 import { ScheduledBroadcastCancellation } from "@/components/product/scheduled-broadcast-cancellation";
 import { UpgradeButton } from "@/components/shared/upgrade-button";
 
+const EMPTY_SCHEDULED_BROADCASTS = Object.freeze([]);
+
 export function PlanFeatureLocked({
   feature,
   title,
@@ -11,7 +13,7 @@ export function PlanFeatureLocked({
   canManageBilling,
   workspaceId,
   waitListId,
-  scheduledBroadcasts = [],
+  scheduledBroadcasts = EMPTY_SCHEDULED_BROADCASTS,
 }) {
   return (
     <section
