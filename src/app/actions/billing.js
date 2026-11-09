@@ -194,6 +194,30 @@ async function releaseCheckoutIntent(workspaceId, intentId) {
   });
 }
 
+async function claimCheckoutDispatch(workspaceId, intentId, now) {
+  return prisma.$transaction(async (tx) => {
+    const lockedWorkspace =
+      await tx.$queryRaw`SELECT "id" FROM "workspaces" WHERE "id" = ${workspaceId} FOR UPDATE`;
+    if (lockedWorkspace.length === 0) return false;
+    const current = await tx.workspaceSubscription.findUnique({
+      where: { workspaceId },
+      select: { checkoutIntentId: true, checkoutCreationStartedAt: true },
+    });
+    if (
+      !current ||
+      current.checkoutIntentId !== intentId ||
+      current.checkoutCreationStartedAt !== null
+    ) {
+      return false;
+    }
+    await tx.workspaceSubscription.update({
+      where: { workspaceId },
+      data: { checkoutCreationStartedAt: now },
+    });
+    return true;
+  });
+}
+
 /** Starts a Dodo-hosted checkout for the selected workspace only. */
 export async function createProCheckout(interval, workspaceId) {
   let reservedIntentId = null;
@@ -265,14 +289,10 @@ export async function createProCheckout(interval, workspaceId) {
       timeout: 30_000,
     });
     const creatorStartedAt = new Date();
-    await prisma.workspaceSubscription.updateMany({
-      where: {
-        workspaceId: workspace.id,
-        checkoutIntentId: reservedIntentId,
-        checkoutCreationStartedAt: null,
-      },
-      data: { checkoutCreationStartedAt: creatorStartedAt },
-    });
+    const claimed = await claimCheckoutDispatch(workspace.id, reservedIntentId, creatorStartedAt);
+    if (!claimed) {
+      return { error: "Checkout reservation expired or was superseded. Please try again." };
+    }
     const checkout = await client.checkoutSessions.create({
       product_cart: [{ product_id: dodoProductId(interval), quantity: 1 }],
       customer: {
