@@ -115,7 +115,7 @@ const faqs = [
   ],
   [
     "Do I need a separate email service?",
-    "Email sending needs a configured sender and delivery setup. You can connect a verified Resend domain; marketing email also requires verified addresses and explicit opt-in.",
+    "Transactional confirmation email can use Cloudflare Email Sending. Marketing broadcasts and automations require a configured Resend sender, verified addresses, and explicit opt-in.",
   ],
   [
     "How do I protect my waitlist from bots?",

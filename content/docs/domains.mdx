@@ -23,7 +23,7 @@ Add the exact type, name, and value from the app to your DNS provider. Do not us
 </Steps>
 
 <Callout title="Availability depends on deployment setup">
-If the panel says custom domains are unavailable, the deployment lacks a domain provider (`VERCEL_TOKEN`, `VERCEL_PROJECT_ID`, `APP_ROOT_DOMAIN`). The Waitlyze hosted page still works after publication.
+If the panel says custom domains are unavailable, Cloudflare for SaaS is not configured for this deployment. The Worker needs a zone-scoped `CLOUDFLARE_API_TOKEN`, the `CLOUDFLARE_ZONE_ID`, and the configured customer CNAME target. The Waitlyze hosted page still works after publication.
 </Callout>
 
 ## Verify DNS and ownership

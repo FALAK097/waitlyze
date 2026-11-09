@@ -17,9 +17,16 @@ import {
   SheetDescription,
 } from "@/components/ui/sheet";
 
+import { CloudflareEmailIntegration } from "./cloudflare-email-integration";
 import { ResendIntegration } from "./resend-integration";
 
-export function IntegrationsPanel({ initialConnection, accountEmail, canManage, appOrigin }) {
+export function IntegrationsPanel({
+  initialConnection,
+  initialCloudflareConnection,
+  accountEmail,
+  canManage,
+  appOrigin,
+}) {
   const [keysOpen, setKeysOpen] = useState(false);
   return (
     <div>
@@ -60,6 +67,11 @@ export function IntegrationsPanel({ initialConnection, accountEmail, canManage, 
               className="shrink-0 bg-transparent outline-none"
             />
           }
+        />
+        <CloudflareEmailIntegration
+          initialConnection={initialCloudflareConnection}
+          accountEmail={accountEmail}
+          canManage={canManage}
         />
         <SheetContent>
           <SheetHeader>

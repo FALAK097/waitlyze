@@ -124,3 +124,65 @@ export async function recordVerifiedProviderEvent(db, event, eventId, expectedWo
   if (target && recipientEmails.includes(normalizeEmail(target.recipient)))
     await suppress(db, target.workspaceId, target.recipient, event.type);
 }
+
+// Cloudflare Email Sending event-subscription types (published to a Queue).
+// Deferred/delivered/failed/rejected events are acknowledged but not stored.
+const CLOUDFLARE_SENDING_EVENT_TYPES = new Set([
+  "cf.email.sending.message.bounced",
+  "cf.email.sending.message.complained",
+]);
+
+/**
+ * Ingest a Cloudflare Email Sending lifecycle event (delivered via the
+ * account's event subscription) and apply permanent bounces/complaints to
+ * workspace suppression, mirroring the Resend webhook path. Called only from
+ * the secret-authenticated internal route fed by the queue consumer.
+ */
+export async function recordCloudflareSendingEvent(db, event) {
+  if (typeof event !== "object" || event === null) throw new TypeError("Invalid event payload");
+  if (!CLOUDFLARE_SENDING_EVENT_TYPES.has(event.type)) return "ignored";
+  const payload = event.payload || {};
+  const eventId = payload.eventId;
+  const messageId = payload.messageId;
+  const recipient = normalizeEmail(payload.recipient);
+  if (
+    typeof eventId !== "string" ||
+    !eventId ||
+    typeof messageId !== "string" ||
+    !messageId ||
+    !recipient ||
+    recipient.length > 320
+  )
+    throw new TypeError("Invalid event payload");
+  const type =
+    event.type === "cf.email.sending.message.complained" ? "email.complained" : "email.bounced";
+  // A soft bounce whose retries are exhausted is terminal for this delivery.
+  const isPermanent =
+    type === "email.complained" || payload.terminal === true || payload.bounce?.type === "hard";
+
+  // Map the delivery back to its workspace by the provider message id the
+  // outbox recorded for it. When nothing matches (the id is saved just after
+  // the send, or the send predates id recording), store the event
+  // workspace-neutral instead of guessing from the sender address: several
+  // workspaces can save the same fromEmail, so a guess could pick the wrong
+  // one and stop that workspace's mail to this recipient — and the wrong
+  // workspaceId would also make applyKnownProviderEvents skip the event for
+  // the real sender. A neutral event is applied as soon as the message id
+  // identifies the delivery.
+  const target = await deliveryRecipient(db, messageId);
+  await db.emailProviderEvent.upsert({
+    where: { providerEventId: eventId },
+    create: {
+      providerEventId: eventId,
+      providerMessageId: messageId,
+      workspaceId: target?.workspaceId ?? null,
+      type,
+      isPermanent,
+      recipientEmails: [recipient],
+    },
+    update: {},
+  });
+  if (!isPermanent || !target) return "recorded";
+  await suppress(db, target.workspaceId, recipient, type);
+  return "suppressed";
+}

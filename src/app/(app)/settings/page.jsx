@@ -224,19 +224,36 @@ async function SelectedSettings({
     );
   }
   let connection;
+  let cloudflareConnection;
   try {
-    connection = await prisma.workspaceIntegration.findUnique({
-      where: { workspaceId_provider: { workspaceId: workspace.id, provider: "RESEND" } },
-      select: {
-        id: true,
-        workspaceId: true,
-        status: true,
-        fromEmail: true,
-        lastTestedAt: true,
-        lastErrorCode: true,
-        webhookSecretCiphertext: true,
-      },
-    });
+    [connection, cloudflareConnection] = await Promise.all([
+      prisma.workspaceIntegration.findUnique({
+        where: { workspaceId_provider: { workspaceId: workspace.id, provider: "RESEND" } },
+        select: {
+          id: true,
+          workspaceId: true,
+          status: true,
+          fromEmail: true,
+          lastTestedAt: true,
+          lastErrorCode: true,
+          webhookSecretCiphertext: true,
+        },
+      }),
+      prisma.workspaceIntegration.findUnique({
+        where: {
+          workspaceId_provider: { workspaceId: workspace.id, provider: "CLOUDFLARE_EMAIL" },
+        },
+        select: {
+          id: true,
+          workspaceId: true,
+          status: true,
+          fromEmail: true,
+          providerConfig: true,
+          lastTestedAt: true,
+          lastErrorCode: true,
+        },
+      }),
+    ]);
   } catch {
     return (
       <SettingsLoadError
@@ -257,6 +274,17 @@ async function SelectedSettings({
             lastTestedAt: connection.lastTestedAt,
             lastErrorCode: connection.lastErrorCode,
             webhookConfigured: Boolean(connection.webhookSecretCiphertext),
+          }
+        }
+        initialCloudflareConnection={
+          cloudflareConnection && {
+            id: cloudflareConnection.id,
+            workspaceId: cloudflareConnection.workspaceId,
+            status: cloudflareConnection.status,
+            fromEmail: cloudflareConnection.fromEmail,
+            accountId: cloudflareConnection.providerConfig?.accountId || null,
+            lastTestedAt: cloudflareConnection.lastTestedAt,
+            lastErrorCode: cloudflareConnection.lastErrorCode,
           }
         }
         accountEmail={user.email}

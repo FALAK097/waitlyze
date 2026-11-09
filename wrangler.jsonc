@@ -1,0 +1,60 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "waitlyze",
+  "main": "cloudflare-worker.js",
+  "account_id": "598a393819cd44e21ef2145dabea9a2f",
+  "compatibility_date": "2026-11-08",
+  "compatibility_flags": ["nodejs_compat"],
+  "limits": { "cpu_ms": 10000 },
+  "workers_dev": true,
+  "upload_source_maps": true,
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS",
+  },
+  "observability": { "enabled": true },
+  "routes": [
+    { "pattern": "waitlyze.com", "custom_domain": true },
+    { "pattern": "www.waitlyze.com", "custom_domain": true },
+    { "pattern": "*/*", "zone_name": "waitlyze.com" },
+  ],
+  "r2_buckets": [
+    { "binding": "WAITLYZE_UPLOADS", "bucket_name": "waitlyze" },
+    {
+      "binding": "NEXT_INC_CACHE_R2_BUCKET",
+      "bucket_name": "waitlyze-next-cache",
+    },
+  ],
+  "services": [{ "binding": "WORKER_SELF_REFERENCE", "service": "waitlyze" }],
+  "durable_objects": {
+    "bindings": [
+      { "name": "NEXT_CACHE_DO_QUEUE", "class_name": "DOQueueHandler" },
+      { "name": "NEXT_TAG_CACHE_DO_SHARDED", "class_name": "DOShardedTagCache" },
+    ],
+  },
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_sqlite_classes": ["DOQueueHandler", "DOShardedTagCache"],
+    },
+  ],
+  "vars": {
+    "NEXTJS_ENV": "production",
+    "NODE_ENV": "production",
+    "BETTER_AUTH_URL": "https://waitlyze.com",
+    "APP_ROOT_DOMAIN": "waitlyze.com",
+    "CLOUDFLARE_ZONE_ID": "0a0152727cd71fe7985bb5cdaa2ca789",
+    "CLOUDFLARE_CUSTOM_HOSTNAME_TARGET": "customers.waitlyze.com",
+  },
+  "send_email": [{ "name": "EMAIL", "allowed_sender_addresses": ["noreply@waitlyze.com"] }],
+  "queues": {
+    "consumers": [
+      {
+        "queue": "waitlyze-email-events",
+        "max_batch_size": 20,
+        "max_retries": 3,
+        "dead_letter_queue": "waitlyze-email-events-dlq",
+      },
+    ],
+  },
+}

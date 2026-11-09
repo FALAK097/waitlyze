@@ -22,7 +22,7 @@
 - [x] Removed Tegami; releases are now versioned manually in `package.json` and `CHANGELOG.md`.
 - [x] Fixed the Waitlyze outbox Worker's Cloudflare build by giving it a workspace package, pinning pnpm to 11.5.0, and using the local Wrangler dependency. Production build verified Ready.
 - [x] Verified the separate DMS Worker already has a valid pnpm workspace/package-manager setup; keep its required `pnpm run build:cf` command.
-- [ ] Revisit Neon Native Integration preview-branch policy if desired. It currently creates branches for Vercel preview deployments; the Vercel production failure was a Prisma migration advisory-lock timeout, and redeploy succeeded.
+- [ ] Revisit Neon Native Integration preview-branch policy if desired. It currently creates branches for preview deployments; the production failure was a Prisma migration advisory-lock timeout, and redeploy succeeded.
 
 ## 2. Phase 0 - Stabilize & restore regressions (DO FIRST) - DONE Oct 2026, verified in headless browser
 
@@ -103,8 +103,8 @@
 
 - [x] Guarantee capture on both funnels: page view → impression (ip, city, country, timezone, device, referrer, UTM) and join → signup (same + linkage to impression).
   - PR #118 (merged): embed-tracker gap + API attribution/mirroring fixed; P2002 back-link when a view predates the join (live exact-match proof).
-- [x] Verify city + timezone capture end-to-end, including the Vercel-header vs GeoIP fallback path.
-  - Capture verified forward-only (Vercel-decode + GeoIP fallback + derivation, all exercised live); no historical backfill was performed.
+- [x] Verify city + timezone capture end-to-end, including the Cloudflare metadata path.
+  - Capture verified forward-only (edge metadata + derivation, all exercised live); no historical backfill was performed.
 - [x] Capture landing page + referring site + UTM params per signup (hidden fields, zero founder effort).
   - PR #118 (merged): first-touch sessionStorage snapshot on all funnels (live row proof).
 - [x] Expose the data where it matters: signups table columns + filters, geo map + device breakdown in Analytics (Phase 6), CSV export includes all fields.
@@ -137,7 +137,7 @@
 - [x] List every occasion we must email founders: welcome, email verification, waitlist published, first signup, milestones (10/100/1000 signups), broadcast/invite summaries, billing + limits, re-engagement, changelog digests.
   - PR #122 (merged) matrix: welcome / published / first-signup + milestones / broadcast summaries implemented outbox-backed; verification n/a (social-only auth); invite-accepted/billing/re-engagement/changelog deferred + documented.
 - [x] Template + tone audit: consistent brand, Reply-To set, plain-text fallbacks; verify sends are retried (outbox dispatcher exists - confirm coverage for all occasions).
-  - PR #122 (merged): text builders for all 6, `RESEND_REPLY_TO` default, deterministic keys, live Resend-header proof.
+  - PR #122 (merged): text builders for all 6, support reply-to default, deterministic keys, provider-header proof.
 
 ### 7b. Founder → their list (builder, automations, testing)
 

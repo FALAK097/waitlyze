@@ -1,4 +1,7 @@
-import { resolveWorkspaceEmailSender } from "@/lib/integrations/email-sender.mjs";
+import {
+  resolveWorkspaceCloudflareEmailSender,
+  resolveWorkspaceEmailSender,
+} from "@/lib/integrations/email-sender.mjs";
 import { decryptIntegrationSecret } from "@/lib/integrations/secrets.mjs";
 
 function senderNeedsAttention() {
@@ -58,6 +61,28 @@ export async function resolveEmailSender(db, { workspaceId, waitListId }) {
     if (workspace) return { ...workspace, source: "workspace" };
   }
   throw new CustomerSenderNotConnectedError();
+}
+
+/**
+ * Resolve a provider for signup verification only: per-waitlist Resend, then
+ * workspace Cloudflare transactional sender, then workspace Resend, then the
+ * platform Cloudflare binding. Marketing mail never calls this resolver.
+ */
+export async function resolveTransactionalEmailSender(
+  db,
+  { workspaceId, waitListId, platformSender },
+) {
+  if (waitListId) {
+    const waitlist = await resolveWaitlistSender(db, waitListId);
+    if (waitlist) return { ...waitlist, provider: "RESEND" };
+  }
+  if (workspaceId) {
+    const cloudflare = await resolveWorkspaceCloudflareEmailSender(db, workspaceId);
+    if (cloudflare) return cloudflare;
+    const resend = await resolveWorkspaceEmailSender(db, workspaceId, null);
+    if (resend) return { ...resend, provider: "RESEND" };
+  }
+  return platformSender ? { provider: "PLATFORM_CLOUDFLARE" } : null;
 }
 
 export async function hasCustomerEmailSender(db, { workspaceId, waitListId }) {

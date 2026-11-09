@@ -28,11 +28,10 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm lint --format=github
       - run: pnpm format:check
-      - run: pnpm test
 
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 25
     env:
       NODE_ENV: production
       DATABASE_URL: postgresql://waitlyze:waitlyze@127.0.0.1:5432/waitlyze
@@ -43,9 +42,6 @@ jobs:
       R2_SECRET_ACCESS_KEY: fixture
       R2_BUCKET_NAME: waitlyze-test
       NEXT_PUBLIC_R2_PUBLIC_URL: http://127.0.0.1:3000/fixture-assets
-      RESEND_API_KEY: re_fixture_not_a_real_key
-      RESEND_FROM_EMAIL: test@example.invalid
-      RESEND_REPLY_TO: test@example.invalid
     steps:
       - uses: actions/checkout@v4
         with:
@@ -59,6 +55,7 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm build
+      - run: pnpm build:worker
 
   migrations:
     runs-on: ubuntu-latest

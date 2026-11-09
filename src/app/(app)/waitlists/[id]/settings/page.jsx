@@ -144,7 +144,7 @@ export default async function WaitlistSettings({ params, searchParams }) {
   const { campaign: waitlist, role } = await requireCampaignPage(id, "viewCampaign");
   const entitlements = await getWorkspaceEntitlements(prisma, waitlist.workspaceId);
   const canManage = ["OWNER", "ADMIN"].includes(role);
-  const domainAvailable = Boolean(env.VERCEL_TOKEN && env.VERCEL_PROJECT_ID && env.APP_ROOT_DOMAIN);
+  const domainAvailable = Boolean(env.CLOUDFLARE_API_TOKEN && env.CLOUDFLARE_ZONE_ID);
   return (
     <div className="mx-auto w-full max-w-280">
       <div className="flex items-start gap-8 max-[760px]:flex-col max-[760px]:gap-8 lg:gap-12 xl:gap-18">

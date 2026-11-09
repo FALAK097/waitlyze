@@ -3,6 +3,7 @@ import { Resend } from "resend";
 import { dispatchPendingOutboxEvents } from "@/lib/email/outbox.mjs";
 import { createPlatformSender } from "@/lib/emails/platform.mjs";
 import { createWorkspaceResendSender } from "@/lib/integrations/resend-sender.mjs";
+import { createTransactionalEmailSender } from "@/lib/integrations/transactional-email-sender.mjs";
 import prisma from "@/lib/prisma";
 
 // Sends one queued signup verification email inside the signup request, so
@@ -15,7 +16,11 @@ export async function dispatchVerificationNow(eventKey) {
       db: prisma,
       createClient: (apiKey) => new Resend(apiKey),
     });
-    await dispatchPendingOutboxEvents(prisma, { send: sendEmail, eventKeys: [eventKey] });
+    await dispatchPendingOutboxEvents(prisma, {
+      send: sendEmail,
+      sendVerification: createTransactionalEmailSender({ db: prisma }),
+      eventKeys: [eventKey],
+    });
   } catch (error) {
     console.error("Verification email dispatch failed", error);
   }

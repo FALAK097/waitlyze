@@ -68,11 +68,7 @@ export default async function WaitListsEditPage(props) {
           env.TURNSTILE_SITE_KEY?.trim() && env.TURNSTILE_SECRET_KEY?.trim(),
         )}
         customerEmailSenderConnected={customerEmailSenderConnected}
-        publicationOrigin={
-          process.env.VERCEL_ENV === "preview" && process.env.VERCEL_URL
-            ? `https://${process.env.VERCEL_URL}`
-            : process.env.BETTER_AUTH_URL || SITE_URL
-        }
+        publicationOrigin={process.env.BETTER_AUTH_URL || SITE_URL}
       />
     </ContentLayout>
   );

@@ -5,6 +5,7 @@ import { headers } from "next/headers";
 import { auth } from "@/lib/auth";
 import { env } from "@/lib/env.mjs";
 import { r2 } from "@/lib/r2";
+import { purgePublicAsset } from "@/lib/uploads/public-cache";
 
 export const removeUpload = async (logoKey) => {
   try {
@@ -25,6 +26,8 @@ export const removeUpload = async (logoKey) => {
     };
 
     await r2.send(new DeleteObjectCommand(deleteParams));
+    // Remove any edge-cached copy so the public URL stops serving the image.
+    await purgePublicAsset(logoKey);
     return { success: true, message: "Upload removed" };
   } catch (error) {
     console.error("Failed to remove upload:", error);

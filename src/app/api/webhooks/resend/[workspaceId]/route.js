@@ -5,7 +5,6 @@ import {
   recordVerifiedProviderEvent,
   WebhookWorkspaceMismatchError,
 } from "@/lib/email/suppression.mjs";
-import { env } from "@/lib/env.mjs";
 import { decryptWebhookSecret } from "@/lib/integrations/secrets.mjs";
 import prisma from "@/lib/prisma";
 
@@ -28,7 +27,7 @@ export async function POST(request, { params }) {
   };
   let event;
   try {
-    event = new Resend(env.RESEND_API_KEY).webhooks.verify({
+    event = new Resend("re_webhook_signature_only").webhooks.verify({
       payload: await request.text(),
       headers,
       webhookSecret: decryptWebhookSecret(connection),

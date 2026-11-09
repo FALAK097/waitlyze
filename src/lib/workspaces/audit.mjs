@@ -70,6 +70,8 @@ export const AUDIT_ACTIONS = Object.freeze({
   API_KEY_REVOKED: "api_key.revoked",
   RESEND_CONNECTED: "resend.connected",
   RESEND_DISCONNECTED: "resend.disconnected",
+  CLOUDFLARE_EMAIL_CONNECTED: "cloudflare_email.connected",
+  CLOUDFLARE_EMAIL_DISCONNECTED: "cloudflare_email.disconnected",
   WAITLIST_SENDER_CONNECTED: "waitlist_sender.connected",
   WAITLIST_SENDER_DISCONNECTED: "waitlist_sender.disconnected",
   CHAT_NOTIFICATION_CONNECTED: "chat_notification.connected",

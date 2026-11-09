@@ -59,6 +59,8 @@ const ACTION_LABELS = {
   "api_key.revoked": ["Revoked", "muted"],
   "resend.connected": ["Connected", "success"],
   "resend.disconnected": ["Disconnected", "muted"],
+  "cloudflare_email.connected": ["Cloudflare Email connected", "success"],
+  "cloudflare_email.disconnected": ["Cloudflare Email disconnected", "muted"],
   "broadcast.sent": ["Sent", "success"],
 };
 

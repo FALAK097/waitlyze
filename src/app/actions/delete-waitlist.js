@@ -2,9 +2,11 @@
 import { DeleteObjectCommand } from "@aws-sdk/client-s3";
 import { revalidatePath } from "next/cache";
 
+import { deleteCloudflareHostname } from "@/lib/domains/provider.mjs";
 import { env } from "@/lib/env.mjs";
 import prisma from "@/lib/prisma";
 import { r2 } from "@/lib/r2";
+import { purgePublicAsset } from "@/lib/uploads/public-cache";
 import { AUDIT_ACTIONS, recordAuditEvent } from "@/lib/workspaces/audit.mjs";
 import { requireCampaign } from "@/lib/workspaces/authorize";
 
@@ -17,6 +19,24 @@ export async function deleteWaitlist(id, confirmation) {
       where: { id },
       select: { workspaceId: true, _count: { select: { signUps: true } } },
     });
+    // Clean up the Cloudflare hostname before deleting the waitlist database row.
+    // Keeping the hostname reserved in custom_domains until Cloudflare cleanup
+    // finishes prevents another workspace from connecting the same hostname and
+    // having its fresh provider object accidentally deleted by this cleanup.
+    const domain = await prisma.customDomain.findUnique({
+      where: { waitListId: id },
+      select: { hostname: true, providerId: true },
+    });
+    if (domain) {
+      try {
+        await deleteCloudflareHostname({
+          providerId: domain.providerId,
+          hostname: domain.hostname,
+        });
+      } catch {
+        console.error("Cloudflare hostname cleanup before waitlist deletion failed.");
+      }
+    }
     const result = await prisma.waitList.deleteMany({
       where: { id, name: campaign.name, ...scope },
     });
@@ -39,6 +59,7 @@ export async function deleteWaitlist(id, confirmation) {
         await r2.send(
           new DeleteObjectCommand({ Bucket: env.R2_BUCKET_NAME, Key: campaign.logoKey }),
         );
+        await purgePublicAsset(campaign.logoKey);
       } catch {
         console.error("Deleted waitlist has a stored logo pending cleanup.");
       }

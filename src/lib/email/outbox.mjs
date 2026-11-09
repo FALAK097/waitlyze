@@ -25,6 +25,11 @@ const transient = (error) =>
   error?.statusCode >= 500 ||
   (error?.statusCode === 409 && error?.code === "concurrent_idempotent_requests") ||
   (error?.name === "application_error" && error?.statusCode === null) ||
+  // Cloudflare Email Sending connection failures (timeout, unreachable, DNS)
+  // carry no HTTP status but must stay retryable so verification keeps its
+  // remaining attempts instead of failing on the first blip.
+  error?.code === "EMAIL_PROVIDER_TIMEOUT" ||
+  error?.code === "EMAIL_PROVIDER_UNREACHABLE" ||
   error?.name === "TypeError";
 const normalizeEmail = (email) =>
   String(email || "")
@@ -597,6 +602,7 @@ export async function dispatchPendingOutboxEvents(
   db,
   {
     send,
+    sendVerification,
     sendPlatform,
     now = new Date(),
     batchSize = 20,
@@ -897,7 +903,7 @@ export async function dispatchPendingOutboxEvents(
       return;
     }
     try {
-      const response = await send({
+      const response = await (sendVerification || send)({
         to: signup.email,
         subject: `Confirm your spot on ${waitList.name || "the waitlist"}`,
         html: await renderSubscriberVerification({

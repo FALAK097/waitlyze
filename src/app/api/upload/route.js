@@ -5,9 +5,11 @@ import { NextResponse } from "next/server";
 
 import { auth } from "@/lib/auth";
 import { env } from "@/lib/env.mjs";
+import prisma from "@/lib/prisma";
 import { r2 } from "@/lib/r2";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { normalizeUploadedImage } from "@/lib/uploads/image.mjs";
+import { purgePublicAsset } from "@/lib/uploads/public-cache";
 
 export async function POST(req) {
   try {
@@ -21,7 +23,7 @@ export async function POST(req) {
     const userId = session.user.id;
 
     // 2. Rate limit check (10 uploads per user per hour)
-    const isAllowed = checkRateLimit(userId, 10, 60 * 60 * 1000);
+    const isAllowed = await checkRateLimit(prisma, userId, 10, 60 * 60 * 1000);
     if (!isAllowed) {
       return NextResponse.json(
         { error: "Too many uploads. Please try again in an hour." },
@@ -50,7 +52,7 @@ export async function POST(req) {
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
 
-    // 7. Generate a unique key
+    // 7. Validate the raster image before assigning it a public object key.
     const image = await normalizeUploadedImage(buffer);
     const uniqueKey = `${userId}-${nanoid()}.${image.extension}`;
 
@@ -60,6 +62,7 @@ export async function POST(req) {
       Key: uniqueKey,
       Body: image.data,
       ContentType: image.contentType,
+      ContentDisposition: "inline",
     };
 
     await r2.send(new PutObjectCommand(uploadParams));
@@ -105,6 +108,8 @@ export async function DELETE(req) {
     };
 
     await r2.send(new DeleteObjectCommand(deleteParams));
+    // Remove any edge-cached copy so the public URL stops serving the image.
+    await purgePublicAsset(key);
 
     return NextResponse.json({ success: true });
   } catch (error) {
