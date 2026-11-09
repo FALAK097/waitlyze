@@ -115,7 +115,7 @@ Yes. Invite teammates to your workspace and assign editing, publishing, and emai
 ### How can I protect the signup form from bots?
 Enable Turnstile verification on the form. Marketing consent is a separate choice for subscribers.
 
-Waitlyze is built by Falak Gala. Questions or ideas? Email [Falak](mailto:hi@falakgala.dev).`;
+Waitlyze is built by Falak Gala. Questions or ideas? Email [Falak](mailto:support@waitlyze.com).`;
 
     return buildMarkdownDoc({
       title: SITE_TITLE,
@@ -308,7 +308,7 @@ ${text}${faqs}`;
     const isTerms = path === "/terms";
     const title = isPrivacy ? "Privacy Policy" : isTerms ? "Terms of Service" : "Refund Policy";
     const body = isPrivacy
-      ? `At Waitlyze ("we," "us," "our"), accessible from https://waitlyze.falakgala.dev, we are committed to protecting your privacy. This Privacy Policy outlines our practices regarding data collection, usage, and sharing when you access our platform.
+      ? `At Waitlyze ("we," "us," "our"), accessible from https://waitlyze.com, we are committed to protecting your privacy. This Privacy Policy outlines our practices regarding data collection, usage, and sharing when you access our platform.
 
 ## 1. Information We Collect
 - **Personal Information**: When you create an account, we collect personal information such as your name, email address, and any other details you choose to provide.
@@ -338,9 +338,9 @@ Depending on your location, you may have rights regarding your personal informat
 We may update this Privacy Policy from time to time. We will notify users of any material changes and indicate the effective date at the top of this policy.
 
 ## 8. Contact Us
-If you have questions or concerns about this Privacy Policy or our data practices, please contact us at hi@falakgala.dev.`
+If you have questions or concerns about this Privacy Policy or our data practices, please contact us at support@waitlyze.com.`
       : isTerms
-        ? `Welcome to Waitlyze ("Platform," "Service," "we," "us," "our"). By accessing or using https://waitlyze.falakgala.dev ("Website"), you agree to comply with and be bound by these Terms of Service ("Terms"). If you do not agree to these Terms, you may not use our services.
+        ? `Welcome to Waitlyze ("Platform," "Service," "we," "us," "our"). By accessing or using https://waitlyze.com ("Website"), you agree to comply with and be bound by these Terms of Service ("Terms"). If you do not agree to these Terms, you may not use our services.
 
 ## 1. Acceptance of Terms
 By creating an account or accessing our Platform, you accept and agree to be bound by these Terms, our Privacy Policy, and any other policies or guidelines that we may implement.
@@ -373,10 +373,10 @@ To the fullest extent permitted by law, Waitlyze shall not be liable for any dam
 We reserve the right to update these Terms at any time. We will notify users of any material changes, and continued use of the Platform indicates acceptance of the revised Terms.
 
 ## 10. Subscriptions and Billing
-Waitlyze offers a free plan and a paid Pro plan billed monthly or annually. Base prices are $15 per month and $50 per year in USD. Where available, the pricing page shows Dodo Payments' country-adjusted price in local currency; applicable taxes are calculated based on your billing location and shown at checkout. Paid subscriptions renew automatically for the selected interval until canceled. The workspace owner can manage or cancel renewal from Billing in workspace settings. A cancellation takes effect at the end of the current paid period. Refunds are governed by our [Refund Policy](https://waitlyze.falakgala.dev/refund-policy). Dodo Payments acts as Merchant of Record for purchases and handles checkout, invoices, and customer-facing transaction taxes.
+Waitlyze offers a free plan and a paid Pro plan billed monthly or annually. Base prices are $15 per month and $50 per year in USD. Where available, the pricing page shows Dodo Payments' country-adjusted price in local currency; applicable taxes are calculated based on your billing location and shown at checkout. Paid subscriptions renew automatically for the selected interval until canceled. The workspace owner can manage or cancel renewal from Billing in workspace settings. A cancellation takes effect at the end of the current paid period. Refunds are governed by our [Refund Policy](https://waitlyze.com/refund-policy). Dodo Payments acts as Merchant of Record for purchases and handles checkout, invoices, and customer-facing transaction taxes.
 
 ## 11. Contact Information
-For questions about these Terms, please contact us at hi@falakgala.dev.`
+For questions about these Terms, please contact us at support@waitlyze.com.`
         : `## No Refunds
 
 **Payments are non-refundable.** Waitlyze does not provide refunds or credits for partial subscription periods, unused features, unused time after cancellation, or a renewal that has already been charged. Your subscription remains available through the end of the paid billing period unless the service is terminated for a serious violation of our Terms.
@@ -387,7 +387,7 @@ You can cancel renewal at any time from Billing in your workspace settings. Canc
 
 ## Billing Issues
 
-If you see a duplicate charge, an incorrect billing interval, or a technical issue that prevented access to a paid feature, contact hi@falakgala.dev with the workspace name and Dodo Payments transaction reference. We will investigate and correct verified billing or service errors. This does not change the no-refund policy for unused time or a change of mind.
+If you see a duplicate charge, an incorrect billing interval, or a technical issue that prevented access to a paid feature, contact support@waitlyze.com with the workspace name and Dodo Payments transaction reference. We will investigate and correct verified billing or service errors. This does not change the no-refund policy for unused time or a change of mind.
 
 ## Rights Required by Law
 
@@ -395,7 +395,7 @@ Nothing in this policy limits a refund, cancellation, or other right that cannot
 
 ## Contact
 
-For billing questions, contact [hi@falakgala.dev](mailto:hi@falakgala.dev). Never email a full card number or security code.`;
+For billing questions, contact [support@waitlyze.com](mailto:support@waitlyze.com). Never email a full card number or security code.`;
 
     return buildMarkdownDoc({
       title,

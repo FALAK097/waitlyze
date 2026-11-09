@@ -66,8 +66,8 @@ export default function LegalPage() {
     >
       <p>
         Welcome to Waitlyze ("Platform," "Service," "we," "us," "our"). By accessing or using{" "}
-        <Link prefetch={false} href="https://waitlyze.falakgala.dev">
-          www.waitlyze.falakgala.dev
+        <Link prefetch={false} href="https://waitlyze.com">
+          www.waitlyze.com
         </Link>
         ("Website"), you agree to comply with and be bound by these Terms of Service ("Terms"). If
         you do not agree to these Terms, you may not use our services.
@@ -174,10 +174,10 @@ export default function LegalPage() {
         For questions about these Terms, please contact us at{" "}
         <Link
           prefetch={false}
-          href="mailto:hi@falakgala.dev"
+          href="mailto:support@waitlyze.com"
           className="text-purple-600 hover:text-purple-800"
         >
-          hi@falakgala.dev
+          support@waitlyze.com
         </Link>
         .
       </p>

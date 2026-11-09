@@ -9,7 +9,7 @@ import { auth } from "@/lib/auth";
 import { sendPlatformEmail } from "@/lib/emails/platform.mjs";
 import { checkRateLimit } from "@/lib/rate-limit";
 
-const FEEDBACK_INBOX = "hi@falakgala.dev";
+const FEEDBACK_INBOX = "support@waitlyze.com";
 const FEEDBACK_LABELS = new Set([
   "Idea",
   "Issue",

@@ -14,7 +14,7 @@ const nextConfig = {
       },
       {
         protocol: "https",
-        hostname: "r2.waitlyze.falakgala.dev",
+        hostname: "r2.waitlyze.com",
         port: "",
       },
     ],

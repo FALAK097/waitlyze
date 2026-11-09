@@ -60,6 +60,6 @@ BroadcastSummaryEmail.PreviewProps = {
   failed: 2,
   skipped: 4,
   canceled: 0,
-  url: "https://waitlyze.falakgala.dev/waitlists/demo/emails/broadcasts",
+  url: "https://waitlyze.com/waitlists/demo/emails/broadcasts",
 };
 export default BroadcastSummaryEmail;

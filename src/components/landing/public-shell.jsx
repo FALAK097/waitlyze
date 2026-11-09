@@ -133,7 +133,7 @@ export default function PublicShell({ children }) {
                 Refund policy
               </Link>
               <a
-                href="mailto:hi@falakgala.dev"
+                href="mailto:support@waitlyze.com"
                 className="inline-flex items-center gap-1.5 hover:text-product-success-text focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-neutral-900"
               >
                 Get in touch{" "}

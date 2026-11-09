@@ -157,7 +157,7 @@ export function CreateWaitlistDialog({
               <Label htmlFor="new-waitlist-slug">Page address</Label>
               <InputGroup className="h-11">
                 <InputGroupAddon className="shrink-0 whitespace-nowrap">
-                  waitlyze.falakgala.dev/w/
+                  waitlyze.com/w/
                 </InputGroupAddon>
                 <InputGroupInput
                   id="new-waitlist-slug"

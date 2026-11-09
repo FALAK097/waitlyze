@@ -44,7 +44,7 @@ export default function LegalDocument({
             <LegalTOC sections={sections} />
             <a
               className="group inline-flex items-center gap-2.5 text-sm font-medium underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-neutral-900"
-              href="mailto:hi@falakgala.dev"
+              href="mailto:support@waitlyze.com"
             >
               Have a question?{" "}
               <HugeiconsIcon

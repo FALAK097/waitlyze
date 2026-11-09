@@ -253,7 +253,7 @@ export async function sendTestEmail({ waitListId, templateType, to }) {
 
       const vars = {
         ...seedPreviewVars(waitList.name),
-        waitlist_url: `https://waitlyze.falakgala.dev/forms/${waitListId}`,
+        waitlist_url: `https://waitlyze.com/forms/${waitListId}`,
       };
       return { email: renderLegacyTemplateEmail({ template: tpl, waitList, variables: vars }) };
     },
@@ -356,7 +356,7 @@ async function renderTemplate({ waitListId, enumType, varsOverride = {} }) {
 
   const baseVars = {
     waitlist: waitList.name || "Your Project",
-    waitlist_url: `https://waitlyze.falakgala.dev/forms/${waitListId}`,
+    waitlist_url: `https://waitlyze.com/forms/${waitListId}`,
     position: "",
     referral_link: "",
     referral_count: "",

@@ -29,7 +29,7 @@ export const auth = betterAuth({
   baseURL: process.env.BETTER_AUTH_URL,
   trustedOrigins: [
     process.env.BETTER_AUTH_URL,
-    "https://waitlyze.falakgala.dev",
+    "https://waitlyze.com",
     "http://localhost:3000",
   ].filter(Boolean),
   advanced: {

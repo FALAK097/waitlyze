@@ -32,11 +32,11 @@ export async function GET(request) {
 The requested markdown page \`${path}\` does not exist.
 
 ## Useful Resources
-- [Waitlyze Home](https://waitlyze.falakgala.dev/)
-- [Templates Gallery](https://waitlyze.falakgala.dev/templates)
-- [Blog & Guides](https://waitlyze.falakgala.dev/blog)
-- [Developer Docs](https://waitlyze.falakgala.dev/docs)
-- [Full LLMs Context](https://waitlyze.falakgala.dev/llms-full.txt)
+- [Waitlyze Home](https://waitlyze.com/)
+- [Templates Gallery](https://waitlyze.com/templates)
+- [Blog & Guides](https://waitlyze.com/blog)
+- [Developer Docs](https://waitlyze.com/docs)
+- [Full LLMs Context](https://waitlyze.com/llms-full.txt)
 `;
     return new Response(notFoundContent, {
       status: 404,

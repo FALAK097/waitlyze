@@ -65,8 +65,8 @@ export default function RefundPolicyPage() {
       <h2 id="contact-information">5. Contact</h2>
       <p>
         For billing questions, contact{" "}
-        <Link prefetch={false} href="mailto:hi@falakgala.dev">
-          hi@falakgala.dev
+        <Link prefetch={false} href="mailto:support@waitlyze.com">
+          support@waitlyze.com
         </Link>
         . Include the workspace name and transaction reference, but never email a full card number
         or security code.
