@@ -304,7 +304,8 @@ export function ResendIntegration({ initialConnection, accountEmail, canManage, 
                 {confirmDisconnect ? (
                   <>
                     <p className="text-sm">
-                      Disconnect Resend? Waitlist emails will use the deployment sender.
+                      Disconnect Resend? Waitlists with their own sender keep using it; other
+                      subscriber mail pauses until a sender is connected.
                     </p>
                     <div>
                       <Button

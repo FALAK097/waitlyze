@@ -7,9 +7,11 @@ import {
 } from "@/app/actions/emails";
 import { ContentLayout } from "@/components/dashboard/content-layout";
 import { BroadcastManager } from "@/components/email/broadcast-manager";
+import { hasCustomerEmailSender } from "@/lib/email/sender-resolution.mjs";
 import { getOrCreateTemplatesForCampaign } from "@/lib/emails/templates.mjs";
 import { env } from "@/lib/env.mjs";
-import { requireCampaignPage } from "@/lib/workspaces/authorize";
+import prisma from "@/lib/prisma";
+import { requireCampaignFeature } from "@/lib/workspaces/authorize";
 
 export const metadata = {
   title: "Broadcasts",
@@ -18,17 +20,25 @@ export const metadata = {
 
 export default async function BroadcastsPage({ params, searchParams }) {
   const [{ id }, { broadcast: requestedBroadcastId }] = await Promise.all([params, searchParams]);
-  const { campaign, scope } = await requireCampaignPage(id, "sendEmail");
+  const { campaign, scope } = await requireCampaignFeature(id, "sendEmail", "emailMarketing");
   if (!campaign) return notFound();
-  const [{ broadcasts, selectedBroadcast, hasMore, nextCursor }, initialSegments, templates] =
-    await Promise.all([
-      listBroadcasts(campaign.id, {
-        includeLatestContent: true,
-        selectedBroadcastId: typeof requestedBroadcastId === "string" ? requestedBroadcastId : null,
-      }),
-      listBroadcastSegments(),
-      getOrCreateTemplatesForCampaign(campaign.id, scope),
-    ]);
+  const [
+    { broadcasts, selectedBroadcast, hasMore, nextCursor },
+    initialSegments,
+    templates,
+    senderConnected,
+  ] = await Promise.all([
+    listBroadcasts(campaign.id, {
+      includeLatestContent: true,
+      selectedBroadcastId: typeof requestedBroadcastId === "string" ? requestedBroadcastId : null,
+    }),
+    listBroadcastSegments(),
+    getOrCreateTemplatesForCampaign(campaign.id, scope),
+    hasCustomerEmailSender(prisma, {
+      workspaceId: campaign.workspaceId,
+      waitListId: campaign.id,
+    }),
+  ]);
   const initialPreview = await getBroadcastRecipients(
     campaign.id,
     selectedBroadcast?.segment || broadcasts?.[0]?.segment || "ALL",
@@ -45,7 +55,7 @@ export default async function BroadcastsPage({ params, searchParams }) {
         initialPreview={initialPreview}
         initialSegments={initialSegments}
         initialTemplates={templates}
-        deliveryReady={Boolean(env.OUTBOX_DISPATCH_SECRET && env.RESEND_API_KEY)}
+        deliveryReady={Boolean(env.OUTBOX_DISPATCH_SECRET && senderConnected)}
       />
     </ContentLayout>
   );

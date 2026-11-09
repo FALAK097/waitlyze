@@ -4,6 +4,7 @@
 
 import { brandContrastIssues } from "../color/contrast.mjs";
 import { findUnchangedStarterCopy } from "../templates/starter-copy.mjs";
+import { requiresDoubleOptIn } from "./form-rules.mjs";
 
 const canonical = (value) =>
   Array.isArray(value)
@@ -42,10 +43,15 @@ const referralContent = (snapshot) => {
  * Collects the reasons a publish is blocked or worth a second look.
  *
  * @param {object} snapshot draft experience document
- * @param {{ publishedSnapshot?: object|null, showReferrals?: boolean, turnstileConfigured?: boolean }} options
+ * @param {{ publishedSnapshot?: object|null, showReferrals?: boolean, turnstileConfigured?: boolean, customerEmailSenderConnected?: boolean }} options
  */
 export function assessPublishReadiness(snapshot, options = {}) {
-  const { publishedSnapshot = null, showReferrals = true, turnstileConfigured = false } = options;
+  const {
+    publishedSnapshot = null,
+    showReferrals = true,
+    turnstileConfigured = false,
+    customerEmailSenderConnected = true,
+  } = options;
   const blockers = [];
   const warnings = [];
 
@@ -77,6 +83,15 @@ export function assessPublishReadiness(snapshot, options = {}) {
       title: "Turnstile needs configuration",
       detail: "Set both TURNSTILE_SITE_KEY and TURNSTILE_SECRET_KEY for this deployment.",
       fix: { surface: "publish", label: "Review publish settings" },
+    });
+
+  if (requiresDoubleOptIn(snapshot.form) && !customerEmailSenderConnected)
+    blockers.push({
+      id: "customer-email-sender-not-connected",
+      title: "Connect your email sender",
+      detail:
+        "Email confirmations are sent only through your connected Resend account. Waitlyze will not send subscriber email through its own account.",
+      fix: { surface: "email-sender", label: "Connect a Resend sender" },
     });
 
   const starterCopy = findUnchangedStarterCopy(snapshot);

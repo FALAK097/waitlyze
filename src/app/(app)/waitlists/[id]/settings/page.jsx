@@ -10,7 +10,9 @@ import { WaitlistSenderSettings } from "@/components/product/waitlist-sender-set
 import { WaitlistSettingsNavigation } from "@/components/product/waitlist-settings-nav";
 import { WebhookSettings } from "@/components/product/webhook-settings";
 import { Button } from "@/components/ui/button";
+import { getWorkspaceEntitlements } from "@/lib/billing/plans.mjs";
 import { env } from "@/lib/env.mjs";
+import prisma from "@/lib/prisma";
 import { requireCampaignPage } from "@/lib/workspaces/authorize";
 
 export const metadata = { title: "Waitlist settings" };
@@ -24,7 +26,14 @@ const VALID_SECTIONS = new Set([
   "delete",
 ]);
 
-function SelectedWaitlistSettings({ section, waitlist, canManage, domainAvailable }) {
+function SelectedWaitlistSettings({
+  section,
+  waitlist,
+  canManage,
+  canManageBilling,
+  domainAvailable,
+  proAvailable,
+}) {
   if (section === "notifications")
     return (
       <section className="max-w-190 min-w-0 flex-1" aria-labelledby="settings-panel-heading">
@@ -64,8 +73,11 @@ function SelectedWaitlistSettings({ section, waitlist, canManage, domainAvailabl
         </header>
         <CustomDomainSettings
           waitListId={waitlist.id}
+          workspaceId={waitlist.workspaceId}
           canManage={canManage}
+          canManageBilling={canManageBilling}
           available={domainAvailable}
+          proAvailable={proAvailable}
         />
       </section>
     );
@@ -130,6 +142,7 @@ export default async function WaitlistSettings({ params, searchParams }) {
   const [{ id }, query] = await Promise.all([params, searchParams]);
   const section = VALID_SECTIONS.has(query?.section) ? query.section : "referral";
   const { campaign: waitlist, role } = await requireCampaignPage(id, "viewCampaign");
+  const entitlements = await getWorkspaceEntitlements(prisma, waitlist.workspaceId);
   const canManage = ["OWNER", "ADMIN"].includes(role);
   const domainAvailable = Boolean(env.VERCEL_TOKEN && env.VERCEL_PROJECT_ID && env.APP_ROOT_DOMAIN);
   return (
@@ -142,7 +155,9 @@ export default async function WaitlistSettings({ params, searchParams }) {
           section={section}
           waitlist={waitlist}
           canManage={canManage}
+          canManageBilling={role === "OWNER"}
           domainAvailable={domainAvailable}
+          proAvailable={entitlements.customDomains}
         />
       </div>
     </div>

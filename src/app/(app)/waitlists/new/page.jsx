@@ -2,11 +2,12 @@ import Link from "next/link";
 
 import { CreateWaitlistDialog } from "@/components/product/create-waitlist-dialog";
 import { isTemplateId } from "@/lib/templates/gallery.mjs";
+import { currentWorkspace } from "@/lib/workspaces/current";
 
 export const metadata = { title: "New waitlist" };
 
 export default async function NewWaitlistPage({ searchParams }) {
-  const resolved = await searchParams;
+  const [resolved, { workspace }] = await Promise.all([searchParams, currentWorkspace()]);
   const template = Array.isArray(resolved?.template) ? resolved.template[0] : resolved?.template;
   const initialTemplateId = isTemplateId(template) ? template : "simple";
   return (
@@ -21,7 +22,12 @@ export default async function NewWaitlistPage({ searchParams }) {
         Name the launch, then shape the page in Builder.
       </p>
       <div className="mt-5">
-        <CreateWaitlistDialog initialOpen initialTemplateId={initialTemplateId} />
+        <CreateWaitlistDialog
+          initialOpen
+          initialTemplateId={initialTemplateId}
+          workspaceId={workspace.id}
+          canManageBilling={workspace.members?.[0]?.role === "OWNER"}
+        />
       </div>
       <Link prefetch={false} href="/waitlists" className="mt-5 inline-block">
         Back to waitlists

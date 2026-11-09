@@ -37,6 +37,7 @@ export default async function SubscribersPage({ params }) {
         initialReviews={reviewData.reviews}
         initialReviewsFailed={reviewData.failed}
         canManage={canManage}
+        canManageBilling={role === "OWNER"}
       />
     </div>
   );

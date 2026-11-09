@@ -163,14 +163,18 @@ function WaitlistsTable({ waitlists, query, status, sort }) {
   );
 }
 
-function WaitlistsEmptyState({ query, status, sort, hasFilters }) {
+function WaitlistsEmptyState({ query, status, sort, hasFilters, workspaceId, canManageBilling }) {
   if (!hasFilters) {
     return (
       <div className={waitlistEmpty}>
         <h2 className="mb-2! text-xl">Your next launch starts here.</h2>
         <p>Create a waitlist to collect subscribers and learn who's interested.</p>
         <div className="mt-5">
-          <CreateWaitlistDialog first />
+          <CreateWaitlistDialog
+            first
+            workspaceId={workspaceId}
+            canManageBilling={canManageBilling}
+          />
         </div>
       </div>
     );
@@ -208,7 +212,15 @@ async function WaitlistsResults(props) {
   return renderWaitlistsResults(props);
 }
 
-async function renderWaitlistsResults({ userId, workspaceId, query, status, sort, requestedPage }) {
+async function renderWaitlistsResults({
+  userId,
+  workspaceId,
+  canManageBilling,
+  query,
+  status,
+  sort,
+  requestedPage,
+}) {
   let total;
   let page;
   let pageCount;
@@ -309,7 +321,14 @@ async function renderWaitlistsResults({ userId, workspaceId, query, status, sort
       )}
     </>
   ) : (
-    <WaitlistsEmptyState query={query} status={status} sort={sort} hasFilters={hasFilters} />
+    <WaitlistsEmptyState
+      query={query}
+      status={status}
+      sort={sort}
+      hasFilters={hasFilters}
+      workspaceId={workspaceId}
+      canManageBilling={canManageBilling}
+    />
   );
 }
 
@@ -328,7 +347,10 @@ export default async function WaitlistsPage({ searchParams }) {
           <div className="flex w-full min-w-0 items-center gap-3 lg:w-auto lg:justify-end">
             <WaitlistSearch status={status} sort={sort} />
             <div className="shrink-0">
-              <CreateWaitlistDialog />
+              <CreateWaitlistDialog
+                workspaceId={workspace.id}
+                canManageBilling={workspace.members?.[0]?.role === "OWNER"}
+              />
             </div>
           </div>
         </div>
@@ -341,6 +363,7 @@ export default async function WaitlistsPage({ searchParams }) {
           <WaitlistsResults
             userId={user.id}
             workspaceId={workspace.id}
+            canManageBilling={workspace.members?.[0]?.role === "OWNER"}
             query={query}
             status={status}
             sort={sort}

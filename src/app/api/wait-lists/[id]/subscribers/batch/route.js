@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 
+import { getWorkspaceEntitlements } from "@/lib/billing/plans.mjs";
 import { dispatchOffboardNow } from "@/lib/email/dispatch-now.mjs";
-import { env } from "@/lib/env.mjs";
-import { resolveWorkspaceEmailSender } from "@/lib/integrations/email-sender.mjs";
+import { hasCustomerEmailSender } from "@/lib/email/sender-resolution.mjs";
 import prisma from "@/lib/prisma";
 import { AUDIT_ACTIONS, recordWaitlistAuditEvent } from "@/lib/workspaces/audit.mjs";
 import { campaignRouteAccess } from "@/lib/workspaces/campaign-route-access.mjs";
@@ -39,13 +39,8 @@ function parseBody(body) {
   return { action, ids: [...new Set(ids)] };
 }
 
-async function deliveryConfigured(workspaceId) {
-  try {
-    if (env.RESEND_API_KEY) return true;
-    return Boolean(await resolveWorkspaceEmailSender(prisma, workspaceId, null));
-  } catch {
-    return false;
-  }
+async function deliveryConfigured(workspaceId, waitListId) {
+  return hasCustomerEmailSender(prisma, { workspaceId, waitListId });
 }
 
 function actorLabel(user) {
@@ -258,9 +253,12 @@ export async function POST(request, { params }) {
     }
 
     const resubscribe = action === "resubscribe";
-    const canEmail = resubscribe
-      ? false
-      : await deliveryConfigured(workspace.id ?? waitlist.workspaceId);
+    const workspaceId = workspace.id ?? waitlist.workspaceId;
+    const entitlements = await getWorkspaceEntitlements(prisma, workspaceId);
+    const canEmail =
+      !resubscribe &&
+      entitlements.emailMarketing &&
+      (await deliveryConfigured(workspaceId, waitlist.id));
     const outcome = await bulkOffboard({ waitlist, user, ids, resubscribe, canEmail });
     if (outcome.eventKeys.length) {
       // Best-effort: the scheduler delivers whatever is still pending.

@@ -33,7 +33,7 @@ export async function generateMetadata({ params }) {
   };
 }
 
-const containerClasses = "mx-auto w-full max-w-7xl px-4 sm:px-5 md:px-8 lg:px-12";
+const containerClasses = "mx-auto w-full max-w-[1120px] px-[18px]";
 
 export default async function BlogTagPage({ params }) {
   const { tag: slug } = await params;
@@ -89,7 +89,7 @@ export default async function BlogTagPage({ params }) {
           </div>
         </section>
         <section className={`${containerClasses} pb-18`}>
-          <BlogCta />
+          <BlogCta compact />
         </section>
       </main>
     </PublicShell>

@@ -5,6 +5,7 @@ import { HugeiconsIcon } from "@hugeicons/react";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 
+import { UpgradeButton } from "@/components/shared/upgrade-button";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
@@ -53,7 +54,14 @@ function RecordCopyButton({ text, label }) {
   );
 }
 
-export function CustomDomainSettings({ waitListId, canManage, available }) {
+export function CustomDomainSettings({
+  waitListId,
+  workspaceId,
+  canManage,
+  canManageBilling,
+  available,
+  proAvailable = false,
+}) {
   const [domain, setDomain] = useState(null);
   const [hostname, setHostname] = useState("");
   const [busy, setBusy] = useState(false);
@@ -162,44 +170,69 @@ export function CustomDomainSettings({ waitListId, canManage, available }) {
         </div>
       )}
 
-      {loadState === "ready" && !domain && (
-        <form
-          onSubmit={(event) => {
-            event.preventDefault();
-            call("POST", { hostname });
-          }}
-          className="grid max-w-140 gap-4"
-        >
-          {available ? (
-            <div className="flex flex-wrap items-stretch gap-2">
-              <InputGroup className="h-11 min-w-55 flex-1">
-                <InputGroupAddon>https://</InputGroupAddon>
-                <InputGroupInput
-                  aria-label="Domain name"
-                  autoComplete="url"
-                  value={hostname}
-                  onChange={(event) => setHostname(event.target.value.replace(/^https?:\/\//i, ""))}
-                  placeholder="launch.example.com"
-                  required
-                  disabled={!canManage || busy}
-                />
-              </InputGroup>
-              <Button type="submit" size="xl" disabled={!actionsEnabled || !hostname.trim()}>
-                {busy ? "Connecting…" : "Connect domain"}
-              </Button>
-            </div>
-          ) : (
-            <p className="mb-4! text-sm leading-relaxed text-product-text-secondary">
-              Custom domains are unavailable. Ask your administrator to finish domain setup.
+      {loadState === "ready" &&
+        !domain &&
+        (!proAvailable ? (
+          <div className="grid max-w-140 gap-3 rounded-xl border border-product-border-subtle bg-product-bg-surface p-5">
+            <h3 className="m-0! text-base! font-semibold!">Use your own domain</h3>
+            <p className="m-0 text-sm leading-relaxed text-product-text-secondary">
+              Custom domains are included with Pro. Your hosted Waitlyze page stays available on
+              Free.
             </p>
-          )}
-          {!canManage && (
-            <p className="mb-4! text-sm leading-relaxed text-product-text-secondary">
-              An owner or admin can connect a domain.
-            </p>
-          )}
-        </form>
-      )}
+            {canManage ? (
+              <UpgradeButton
+                label={canManageBilling ? "Unlock custom domains" : "See Pro plans"}
+                feature="Custom domains"
+                workspaceId={workspaceId}
+                canManageBilling={canManageBilling}
+                size="md"
+              />
+            ) : (
+              <p className="m-0 text-xs text-product-text-secondary">
+                Ask the workspace owner to upgrade.
+              </p>
+            )}
+          </div>
+        ) : (
+          <form
+            onSubmit={(event) => {
+              event.preventDefault();
+              call("POST", { hostname });
+            }}
+            className="grid max-w-140 gap-4"
+          >
+            {available ? (
+              <div className="flex flex-wrap items-stretch gap-2">
+                <InputGroup className="h-11 min-w-55 flex-1">
+                  <InputGroupAddon>https://</InputGroupAddon>
+                  <InputGroupInput
+                    aria-label="Domain name"
+                    autoComplete="url"
+                    value={hostname}
+                    onChange={(event) =>
+                      setHostname(event.target.value.replace(/^https?:\/\//i, ""))
+                    }
+                    placeholder="launch.example.com"
+                    required
+                    disabled={!canManage || busy}
+                  />
+                </InputGroup>
+                <Button type="submit" size="xl" disabled={!actionsEnabled || !hostname.trim()}>
+                  {busy ? "Connecting…" : "Connect domain"}
+                </Button>
+              </div>
+            ) : (
+              <p className="mb-4! text-sm leading-relaxed text-product-text-secondary">
+                Custom domains are unavailable. Ask your administrator to finish domain setup.
+              </p>
+            )}
+            {!canManage && (
+              <p className="mb-4! text-sm leading-relaxed text-product-text-secondary">
+                An owner or admin can connect a domain.
+              </p>
+            )}
+          </form>
+        ))}
 
       {domain && (
         <>
@@ -231,6 +264,22 @@ export function CustomDomainSettings({ waitListId, canManage, available }) {
               </div>
             )}
           </header>
+          {!proAvailable && (
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-product-border-subtle bg-product-bg-inset p-4">
+              <p className="m-0 text-sm text-product-text-secondary">
+                This workspace is on Free. The existing domain is retained; Pro is required to add
+                another domain.
+              </p>
+              {canManage && (
+                <UpgradeButton
+                  label={canManageBilling ? "Compare Pro plans" : "See Pro plans"}
+                  feature="Custom domains"
+                  workspaceId={workspaceId}
+                  canManageBilling={canManageBilling}
+                />
+              )}
+            </div>
+          )}
           <ConfirmDialog
             open={removeOpen}
             onOpenChange={setRemoveOpen}

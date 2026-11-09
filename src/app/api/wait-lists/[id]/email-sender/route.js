@@ -1,7 +1,10 @@
 import { NextResponse } from "next/server";
 
 import { auth } from "@/lib/auth";
-import { resolveEmailSender } from "@/lib/email/sender-resolution.mjs";
+import {
+  CustomerSenderNotConnectedError,
+  resolveEmailSender,
+} from "@/lib/email/sender-resolution.mjs";
 import { env } from "@/lib/env.mjs";
 import { encryptIntegrationSecret } from "@/lib/integrations/secrets.mjs";
 import prisma from "@/lib/prisma";
@@ -44,8 +47,8 @@ function validateSenderInput(fromEmail, apiKey, { keyRequired }) {
 }
 
 // Per-waitlist BYOK sender. A CONNECTED row here wins over the workspace
-// connection (see sender-resolution.mjs); deleting it falls back to the
-// workspace sender, then the deployment default.
+// connection (see sender-resolution.mjs); deleting it falls back only to the
+// workspace's connected sender.
 export async function GET(request, { params }) {
   const { id } = await params;
   const access = await webhookAccess(request, id, "viewCampaign");
@@ -62,11 +65,14 @@ export async function GET(request, { params }) {
     const provider = await resolveEmailSender(prisma, {
       workspaceId: waitList?.workspaceId,
       waitListId: id,
-      defaults: { apiKey: env.RESEND_API_KEY, fromEmail: env.RESEND_FROM_EMAIL },
     });
     if (provider) resolved = { source: provider.source, fromEmail: provider.fromEmail };
-  } catch {
-    resolved = { source: "needs-attention", fromEmail: sender?.fromEmail || null };
+  } catch (error) {
+    resolved = {
+      source:
+        error instanceof CustomerSenderNotConnectedError ? "not-connected" : "needs-attention",
+      fromEmail: sender?.fromEmail || null,
+    };
   }
   return NextResponse.json(
     { data: sender, resolved },

@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { cache } from "react";
 
+import { getWorkspaceEntitlements, requireFeature } from "@/lib/billing/plans.mjs";
 import prisma from "@/lib/prisma";
 
 import { currentSession, currentWorkspace } from "./current.js";
@@ -22,6 +23,7 @@ const currentWorkspaceCampaign = cache(async (id) => {
     },
     select: {
       id: true,
+      workspaceId: true,
       name: true,
       publicSlug: true,
       status: true,
@@ -57,6 +59,13 @@ export async function requireCampaign(id, permission = "viewCampaign") {
   const user = await sessionActor();
   const campaign = await createWorkspaceService(prisma).campaign(user.id, id, permission);
   return { user, campaign, scope: campaignScope(user.id, permission) };
+}
+
+export async function requireCampaignFeature(id, permission, feature) {
+  const result = await requireCampaign(id, permission);
+  const entitlements = await getWorkspaceEntitlements(prisma, result.campaign.workspaceId);
+  requireFeature(entitlements, feature);
+  return { ...result, entitlements };
 }
 
 export async function requireCampaignPage(id, permission) {

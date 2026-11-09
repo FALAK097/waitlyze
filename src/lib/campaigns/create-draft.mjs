@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+import { getWorkspaceEntitlements, requireCapacity } from "../billing/plans.mjs";
 import { snapshotTemplate } from "../templates/catalog.mjs";
 import { campaignScope, createWorkspaceService } from "../workspaces/service.mjs";
 
@@ -92,6 +93,16 @@ export async function createDraft(db, actorId, workspaceId, rawInput) {
               );
             return existing;
           }
+          const [entitlements, workspaceWaitlists] = await Promise.all([
+            getWorkspaceEntitlements(tx, workspaceId),
+            tx.waitList.count({ where: { workspaceId } }),
+          ]);
+          requireCapacity({
+            entitlements,
+            feature: "waitlists",
+            used: workspaceWaitlists,
+            message: `The ${entitlements.plan === "FREE" ? "Free" : "Pro"} plan includes ${entitlements.waitlists} waitlist${entitlements.waitlists === 1 ? "" : "s"} per workspace. Upgrade or remove a waitlist to create another.`,
+          });
           if (
             await tx.waitList.findUnique({
               where: { publicSlug: input.publicSlug },

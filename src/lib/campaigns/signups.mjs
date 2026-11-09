@@ -2,6 +2,8 @@ import { createHash, randomBytes } from "node:crypto";
 
 import { after } from "next/server";
 
+import { getWorkspaceEntitlements, requireCapacity } from "../billing/plans.mjs";
+import { resolveEmailSender } from "../email/sender-resolution.mjs";
 import { createUnsubscribeToken, hashUnsubscribeToken } from "../email/unsubscribe.mjs";
 import { maybeNotifySignupMilestone } from "../emails/founder-notifications.mjs";
 import { FraudLimitError, evaluateSignupFraud, silentSignupShape } from "../fraud/gates.mjs";
@@ -219,14 +221,28 @@ export async function createCampaignSignup(
   let signUp;
   try {
     signUp = await db.$transaction(async (tx) => {
+      const campaignWorkspace = await tx.$queryRaw`
+        SELECT "workspaceId" FROM "wait_lists" WHERE "id" = ${input.waitListId}
+      `;
+      if (campaignWorkspace.length === 0) throw new InvalidCampaignError();
+      const workspaceId = campaignWorkspace[0].workspaceId;
+      if (workspaceId) {
+        // Always lock the workspace before the waitlist. Workspace deletion
+        // uses this same order before it locks and removes the campaign.
+        const lockedWorkspace =
+          await tx.$queryRaw`SELECT "id" FROM "workspaces" WHERE "id" = ${workspaceId} FOR UPDATE`;
+        if (lockedWorkspace.length === 0) throw new InvalidCampaignError();
+      }
+
       // Hold a share lock until the signup commits so a concurrent pause cannot
       // slip between the publication check and the subscriber insert.
       const published = await tx.$queryRaw`
-        SELECT "id", "showReferrals", "publishedRevision", "fraudMode" FROM "wait_lists"
+        SELECT "id", "workspaceId", "showReferrals", "publishedRevision", "fraudMode" FROM "wait_lists"
         WHERE "id" = ${input.waitListId} AND "status"::text = 'PUBLISHED'
         FOR SHARE
       `;
       if (published.length === 0) throw new InvalidCampaignError();
+      if (published[0].workspaceId !== workspaceId) throw new InvalidCampaignError();
       if (!published[0].publishedRevision) {
         throw new TypeError("Published form configuration is invalid.");
       }
@@ -280,6 +296,15 @@ export async function createCampaignSignup(
         throw new DuplicateSignupError();
       }
 
+      // Confirmation emails must come from a connected waitlist/workspace
+      // sender. Never send subscriber email through Waitlyze's deployment key.
+      if (requiresVerification) {
+        await resolveEmailSender(tx, {
+          workspaceId: published[0].workspaceId,
+          waitListId: input.waitListId,
+        });
+      }
+
       // Fraud basics (additive, fail-open): IP velocity over the hard cap
       // rejects with 429; device-fingerprint velocity goes silent - a fake
       // success with nothing persisted (no row, no points, no webhooks, no
@@ -308,6 +333,26 @@ export async function createCampaignSignup(
           rank: Number.isSafeInteger(rank) && rank > 0 ? rank : null,
         });
       }
+
+      // The persistent workspace counter survives waitlist deletion, so
+      // removing old signups does not reset the Free-plan allowance.
+      const [usage, entitlements] = await Promise.all([
+        workspaceId
+          ? tx.workspace.findUnique({
+              where: { id: workspaceId },
+              select: { signupUsageCount: true },
+            })
+          : tx.signUp.count({ where: { waitListId: input.waitListId } }),
+        getWorkspaceEntitlements(tx, workspaceId, now),
+      ]);
+      const workspaceSignups = workspaceId ? usage?.signupUsageCount || 0 : usage;
+      requireCapacity({
+        entitlements,
+        feature: "subscribers",
+        used: workspaceSignups,
+        message:
+          "This waitlist has reached the signup limit for its plan. Please contact the waitlist owner.",
+      });
 
       const createdSignup = await tx.signUp.create({
         data: {
@@ -341,6 +386,12 @@ export async function createCampaignSignup(
           ...(input.marketingConsent === true ? { marketingConsentAt: now } : {}),
         },
       });
+      if (workspaceId) {
+        await tx.workspace.update({
+          where: { id: workspaceId },
+          data: { signupUsageCount: { increment: 1 } },
+        });
+      }
       await enqueueWebhookEvent(tx, {
         waitListId: input.waitListId,
         eventType: "signup.created",

@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 
 import { NextResponse } from "next/server";
 
+import { WorkspacePlanError } from "@/lib/billing/plans.mjs";
 import { getCampaignPosition } from "@/lib/campaigns/referral-position.mjs";
 import { findSignupByEmail } from "@/lib/campaigns/signup-lookup.mjs";
 import {
@@ -15,6 +16,7 @@ import {
   verifyTurnstileToken,
 } from "@/lib/campaigns/turnstile.mjs";
 import { dispatchVerificationNow } from "@/lib/email/dispatch-now.mjs";
+import { CustomerSenderNotConnectedError } from "@/lib/email/sender-resolution.mjs";
 import { fingerprintSignupDevice } from "@/lib/fraud/gates.mjs";
 import prisma from "@/lib/prisma";
 import { summarizeSignupRewards } from "@/lib/referrals/rewards.mjs";
@@ -139,6 +141,20 @@ export async function GET(request) {
       },
     );
   } catch (error) {
+    if (error instanceof WorkspacePlanError)
+      return NextResponse.json(
+        { success: false, error: error.message, code: error.code, feature: error.feature },
+        { status: error.status },
+      );
+    if (error instanceof CustomerSenderNotConnectedError)
+      return NextResponse.json(
+        {
+          success: false,
+          error:
+            "This waitlist is temporarily unable to send confirmation email. Please contact its owner.",
+        },
+        { status: 503 },
+      );
     if (error instanceof PublicRateLimitError) return rateLimitResponse(error);
     console.error("Waitlist status lookup error:", error);
     return NextResponse.json({ success: false, error: "Internal server error" }, { status: 500 });
@@ -375,7 +391,24 @@ export async function POST(request) {
       { headers: budgetHeaders },
     );
   } catch (error) {
+    if (error instanceof WorkspacePlanError)
+      return NextResponse.json(
+        { success: false, error: error.message, code: error.code, feature: error.feature },
+        { status: error.status },
+      );
     if (error instanceof PublicRateLimitError) return rateLimitResponse(error);
+    if (
+      error instanceof CustomerSenderNotConnectedError ||
+      error?.code === "SENDER_NEEDS_ATTENTION"
+    )
+      return NextResponse.json(
+        {
+          success: false,
+          error:
+            "This waitlist cannot send confirmation emails right now. Please contact its owner.",
+        },
+        { status: 503 },
+      );
     // Fraud IP-velocity gate: explicit 429 (fail-closed on clear abuse).
     if (error instanceof FraudLimitError)
       return NextResponse.json(

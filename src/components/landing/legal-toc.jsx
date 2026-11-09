@@ -1,11 +1,10 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 
 import { cn } from "@/lib/utils";
 
 export default function LegalTOC({ sections }) {
-  const navRef = useRef(null);
   const [active, setActive] = useState(sections[0]?.id);
 
   useEffect(() => {
@@ -38,21 +37,10 @@ export default function LegalTOC({ sections }) {
     };
   }, [sections]);
 
-  useEffect(() => {
-    const nav = navRef.current;
-    const link = nav?.querySelector('[aria-current="location"]');
-    if (!nav || !link || window.innerWidth > 800) return;
-    const navBox = nav.getBoundingClientRect();
-    const linkBox = link.getBoundingClientRect();
-    if (linkBox.left < navBox.left) nav.scrollLeft -= navBox.left - linkBox.left + 8;
-    else if (linkBox.right > navBox.right) nav.scrollLeft += linkBox.right - navBox.right + 8;
-  }, [active]);
-
   return (
     <nav
-      ref={navRef}
       aria-label="On this page"
-      className="mb-7 grid gap-3 text-xs text-product-text-secondary max-md:mb-0 max-md:flex max-md:overflow-x-auto max-md:p-1.5"
+      className="mb-7 grid gap-3 text-xs text-product-text-secondary max-md:mb-0 max-md:grid-cols-2 max-md:gap-x-3 max-md:gap-y-1"
     >
       <p className="mb-2 flex items-center gap-2 text-micro font-semibold tracking-widest text-product-text-secondary uppercase max-md:hidden">
         On this page
@@ -63,7 +51,7 @@ export default function LegalTOC({ sections }) {
           key={id}
           aria-current={active === id ? "location" : undefined}
           className={cn(
-            "-ml-2 rounded px-2 py-1.5 hover:text-product-success-text focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-neutral-900 max-md:ml-0 max-md:shrink-0 max-md:whitespace-nowrap",
+            "-ml-2 min-w-0 rounded px-2 py-1.5 hover:text-product-success-text focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-neutral-900 max-md:ml-0 max-md:break-words max-md:whitespace-normal",
             active === id && "bg-product-bg-inset font-bold text-product-success-text",
           )}
         >

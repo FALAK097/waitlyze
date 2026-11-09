@@ -23,7 +23,7 @@ export const metadata = {
   twitter: { card: "summary_large_image", title, description },
 };
 
-const containerClasses = "mx-auto w-full max-w-7xl px-4 sm:px-5 md:px-8 lg:px-12";
+const containerClasses = "mx-auto w-full max-w-[1120px] px-[18px]";
 const eyebrowClasses =
   "flex items-center gap-2 text-micro font-semibold tracking-widest text-product-text-secondary uppercase";
 
@@ -91,7 +91,7 @@ export default async function BlogIndexPage() {
         </section>
 
         <section className={`${containerClasses} pb-18`}>
-          <BlogCta />
+          <BlogCta compact />
         </section>
       </main>
     </PublicShell>

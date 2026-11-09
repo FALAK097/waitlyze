@@ -32,6 +32,7 @@ export function PublishedWaitlistPage({
         name={page.waitList.name}
         signupCount={page.waitList._count.signUps}
         hideCounts={hideCounts}
+        forcePoweredBy={!page.canRemoveBranding}
         renderSignupForm={renderSignupForm}
       />
     </main>
