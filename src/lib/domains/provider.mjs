@@ -2,7 +2,6 @@ import { isIP } from "node:net";
 import { domainToASCII } from "node:url";
 
 const DEFAULT_ROOT_DOMAIN = "waitlyze.com";
-const LEGACY_APP_DOMAIN = "waitlyze.falakgala.dev";
 
 export function normalizeDomain(
   input,
@@ -30,11 +29,7 @@ export function normalizeDomain(
   )
     throw new Error("Enter a valid public hostname.");
   const root = domainToASCII(rootDomain.toLowerCase());
-  if (
-    (root && (hostname === root || hostname.endsWith(`.${root}`))) ||
-    hostname === LEGACY_APP_DOMAIN ||
-    hostname.endsWith(`.${LEGACY_APP_DOMAIN}`)
-  )
+  if (root && (hostname === root || hostname.endsWith(`.${root}`)))
     throw new Error("Use a domain outside the Waitlyze app domain.");
   return hostname;
 }
