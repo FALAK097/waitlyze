@@ -63,6 +63,18 @@ export default function PublicShell({ children }) {
                 Templates
               </Link>
               <Link
+                href="/alternatives"
+                className="inline-flex items-center gap-1.5 hover:text-product-success-text focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-neutral-900"
+              >
+                Alternatives
+              </Link>
+              <Link
+                href="/compare"
+                className="inline-flex items-center gap-1.5 hover:text-product-success-text focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-neutral-900"
+              >
+                Compare tools
+              </Link>
+              <Link
                 href="/#faq"
                 className="inline-flex items-center gap-1.5 hover:text-product-success-text focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-neutral-900"
               >
