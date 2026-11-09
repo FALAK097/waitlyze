@@ -1,4 +1,5 @@
 import { getPostModifiedDate, getPosts, getTags } from "@/lib/blog-source";
+import { competitors } from "@/lib/comparison-data";
 import { SITE_URL } from "@/lib/site-metadata";
 import { source } from "@/lib/source";
 import { TEMPLATE_IDS } from "@/lib/templates/gallery.mjs";
@@ -20,6 +21,13 @@ export default function sitemap() {
   return [
     { url: SITE_URL, lastModified: SITE_UPDATED, priority: 1 },
     { url: `${SITE_URL}/templates`, lastModified: SITE_UPDATED, priority: 0.8 },
+    { url: `${SITE_URL}/alternatives`, lastModified: "2026-11-09", priority: 0.8 },
+    { url: `${SITE_URL}/compare`, lastModified: "2026-11-09", priority: 0.8 },
+    ...competitors.map(({ slug }) => ({
+      url: `${SITE_URL}/alternatives/${slug}`,
+      lastModified: "2026-11-09",
+      priority: 0.7,
+    })),
     ...TEMPLATE_IDS.map((id) => ({
       url: `${SITE_URL}/templates/${id}`,
       lastModified: SITE_UPDATED,
