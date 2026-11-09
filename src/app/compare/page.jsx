@@ -107,8 +107,9 @@ export default function ComparePage() {
             </div>
             <FeatureLegend />
           </div>
-          <section
+          <div
             className="compare-table-wrap"
+            role="region"
             aria-label="Scrollable comparison table"
             tabIndex={0}
           >
@@ -160,7 +161,7 @@ export default function ComparePage() {
                 ))}
               </tbody>
             </table>
-          </section>
+          </div>
           <p className="compare-research-note mt-4">
             Similar names don&apos;t always mean similar depth. Open a focused guide for the
             tradeoffs behind each row.

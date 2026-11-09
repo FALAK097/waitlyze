@@ -13,7 +13,7 @@ import Wordmark from "./wordmark";
 export default function PublicShell({ children }) {
   return (
     <div
-      className={`bg-product-bg-page font-product-sans text-base leading-relaxed text-product-text-primary antialiased selection:bg-product-accent-solid/40 ${publicFontClasses}`}
+      className={`min-h-screen max-w-full overflow-x-clip bg-product-bg-page font-product-sans text-base leading-relaxed text-product-text-primary antialiased selection:bg-product-accent-solid/40 ${publicFontClasses}`}
     >
       <a
         href="#main-content"

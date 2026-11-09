@@ -11,6 +11,12 @@
   font-display: swap;
 }
 
+html,
+body {
+  max-width: 100%;
+  overflow-x: clip;
+}
+
 .product-ui {
   /* shadcn aliases are scoped to product consumers. */
   --background: var(--product-bg-page);

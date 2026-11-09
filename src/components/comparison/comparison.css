@@ -7,11 +7,14 @@
   --compare-space-2xl: 3rem;
   --compare-space-3xl: clamp(3.5rem, 7vw, 5.75rem);
   min-height: 70vh;
+  max-width: 100%;
+  overflow-x: clip;
   color: var(--product-text-primary);
 }
 
 .compare-wrap {
   width: min(100% - 2.5rem, 70rem);
+  max-width: 100%;
   margin-inline: auto;
 }
 
@@ -257,11 +260,16 @@
 }
 
 .compare-table-wrap {
+  position: relative;
+  width: 100%;
+  max-width: 100%;
   overflow-x: auto;
-  overflow-y: clip;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
   overscroll-behavior-inline: contain;
   scrollbar-color: var(--product-text-muted) var(--product-bg-inset);
   scrollbar-width: thin;
+  contain: paint;
 }
 .compare-table-wrap:focus-visible {
   outline: 2px solid var(--product-text-primary);
@@ -282,16 +290,25 @@
   vertical-align: top;
 }
 .compare-table thead th {
-  position: sticky;
-  top: 4rem;
-  z-index: 2;
   background: var(--product-bg-page);
   font-weight: 680;
 }
+.compare-table thead th:first-child {
+  position: sticky;
+  left: 0;
+  z-index: 3;
+  background: var(--product-bg-page);
+}
 .compare-table tbody th {
+  position: sticky;
+  left: 0;
+  z-index: 2;
   width: 10.5rem;
+  min-width: 8.5rem;
+  background: var(--product-bg-page);
   color: var(--product-text-secondary);
   font-weight: 570;
+  box-shadow: 1px 0 0 var(--product-border-subtle);
 }
 .compare-table-tool {
   display: inline-flex;
