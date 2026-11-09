@@ -5,7 +5,6 @@ import Link from "next/link";
 
 import {
   Breadcrumbs,
-  breadcrumbSchema,
   ComparisonCta,
   ComparisonShell,
   Eyebrow,
@@ -14,7 +13,7 @@ import {
   ResearchNote,
   StructuredData,
 } from "@/components/comparison/comparison-shell";
-import { competitors, RESEARCHED_ON } from "@/lib/comparison-data";
+import { breadcrumbSchema, competitors, RESEARCHED_ON } from "@/lib/comparison-data";
 import { SITE_URL } from "@/lib/site-metadata";
 
 const crumbs = [

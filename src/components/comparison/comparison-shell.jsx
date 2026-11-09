@@ -12,7 +12,6 @@ import Link from "next/link";
 import PublicShell from "@/components/landing/public-shell";
 import SignupButton from "@/components/landing/signup-button";
 import { FEATURE_LEVELS } from "@/lib/comparison-data";
-import { SITE_URL } from "@/lib/site-metadata";
 
 import "./comparison.css";
 
@@ -169,16 +168,4 @@ export function StructuredData({ data }) {
       dangerouslySetInnerHTML={{ __html: JSON.stringify(data).replace(/</g, "\\u003c") }}
     />
   );
-}
-
-export function breadcrumbSchema(items) {
-  return {
-    "@type": "BreadcrumbList",
-    itemListElement: items.map(({ label, href }, index) => ({
-      "@type": "ListItem",
-      position: index + 1,
-      name: label,
-      item: `${SITE_URL}${href}`,
-    })),
-  };
 }

@@ -3,7 +3,6 @@ import Link from "next/link";
 
 import {
   Breadcrumbs,
-  breadcrumbSchema,
   ComparisonCta,
   ComparisonShell,
   Eyebrow,
@@ -16,6 +15,7 @@ import {
   ToolLogo,
 } from "@/components/comparison/comparison-shell";
 import {
+  breadcrumbSchema,
   competitors,
   featureRows,
   pricingRows,

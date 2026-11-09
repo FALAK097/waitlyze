@@ -1,3 +1,16 @@
+import { SITE_URL } from "@/lib/site-metadata";
+
+export function breadcrumbSchema(items) {
+  return {
+    "@type": "BreadcrumbList",
+    itemListElement: items.map(({ label, href }, index) => ({
+      "@type": "ListItem",
+      position: index + 1,
+      name: label,
+      item: `${SITE_URL}${href}`,
+    })),
+  };
+}
 export const RESEARCHED_ON = "November 9, 2026";
 
 /**
