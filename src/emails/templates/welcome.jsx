@@ -33,7 +33,7 @@ export function WelcomeEmail({ name, url }) {
 
 WelcomeEmail.PreviewProps = {
   name: "Falak",
-  url: "https://waitlyze.falakgala.dev/waitlists/new",
+  url: "https://waitlyze.com/waitlists/new",
 };
 
 export default WelcomeEmail;

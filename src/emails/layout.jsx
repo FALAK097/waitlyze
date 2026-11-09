@@ -80,7 +80,7 @@ export function EmailLayout({ preview, heading, children, footer, brandName = "w
             {isPlatformBrand ? (
               <Text style={{ margin: "12px 0 0", fontSize: 12, color: MUTED }}>
                 <Link
-                  href="https://waitlyze.falakgala.dev"
+                  href="https://waitlyze.com"
                   style={{ color: MUTED, textDecoration: "underline" }}
                 >
                   Waitlyze
