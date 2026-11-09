@@ -361,6 +361,29 @@ a.compare-table-tool:focus-visible {
   line-height: 1.55;
 }
 
+.compare-callout-card {
+  border: 1px solid var(--product-border-subtle);
+  border-left: 3px solid var(--product-text-primary);
+  border-radius: 0.75rem;
+  padding: var(--compare-space-md) var(--compare-space-lg);
+  background: var(--product-bg-surface);
+  margin-bottom: var(--compare-space-xl);
+}
+.compare-callout-badge {
+  display: inline-block;
+  color: var(--product-text-primary);
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.compare-callout-copy {
+  margin-top: 0.35rem;
+  color: var(--product-text-secondary);
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+
 .compare-prose-grid {
   display: grid;
   gap: var(--compare-space-2xl);

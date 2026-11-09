@@ -137,14 +137,24 @@ export function HowWeChecked({ date }) {
       <div className="compare-section-heading">
         <h2 id="how-we-checked">How we checked</h2>
         <p>
-          Every competitor detail comes from that company&apos;s own public pricing, feature, and
-          help pages, reviewed on {date}. Prices are in USD on monthly billing unless noted. We are
-          Waitlyze, so we are not a neutral party, but we credit where a competitor wins. If
-          something has changed or we have misread a feature,{" "}
+          Every competitor fact comes from that company&apos;s own public pricing, feature, and
+          documentation pages, reviewed on {date}. Prices are in USD on monthly billing unless
+          noted. We are Waitlyze, so we are not a neutral party, but we credit where competitors win
+          and acknowledge our own gaps. Our comparison data is tracked openly in our repository on{" "}
+          <a
+            className="compare-inline-link"
+            href="https://github.com/FALAK097/waitlyze"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            GitHub
+          </a>
+          . If you work at any of these platforms or spot an inaccuracy, please open a PR on GitHub
+          or{" "}
           <a className="compare-inline-link" href="mailto:hi@falakgala.dev">
-            tell us
-          </a>{" "}
-          and we will fix it.
+            email us
+          </a>
+          —we merge corrections quickly.
         </p>
       </div>
     </section>

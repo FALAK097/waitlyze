@@ -130,6 +130,10 @@ export const waitlyzeHighlights = [
 export const competitors = [
   {
     name: "GetWaitlist",
+    whereTheyWinToday:
+      "If you already have a mature website and solely need a drop-in widget with unlimited signups on an entry plan, GetWaitlist does that better than we do today. Their entry tier ($15/mo) gives you unlimited leads without workspace boundaries, making it very cost-effective if you will never need a hosted page builder.",
+    whoShouldPickThemSummary:
+      "Teams that already built their own marketing pages and just need a drop-in widget with referral leaderboards and custom questions.",
     slug: "getwaitlist",
     logo: "/competitors/getwaitlist.png",
     category: "Signup widget",
@@ -177,6 +181,10 @@ export const competitors = [
   },
   {
     name: "LaunchList",
+    whereTheyWinToday:
+      "If your launch relies on complex referral scoring, fraud risk checks, or connecting with dozens of third-party tools via pre-built integrations, LaunchList offers a broader referral toolkit today. Their entry tier ($9/mo) is cheaper for small contact lists, and they have built-in trust scoring that flags suspicious referral activity.",
+    whoShouldPickThemSummary:
+      "Growth marketers and campaign organizers who want detailed referral mechanics, gamified rewards, and integrations with their existing automation stack.",
     slug: "launchlist",
     logo: "/competitors/launchlist.png",
     category: "Waitlist and referral builder",
@@ -224,6 +232,10 @@ export const competitors = [
   },
   {
     name: "Prefinery",
+    whereTheyWinToday:
+      "If you are an established brand running a large-scale referral program with sophisticated rule-based email automations, webhook payloads, and multi-tier rewards, Prefinery has over a decade of dedicated campaign infrastructure. They offer deeper enterprise campaign configuration and unlimited email sends on published plans.",
+    whoShouldPickThemSummary:
+      "Established teams and marketing departments with the budget ($49 to $249+/mo) for a dedicated referral marketing platform with enterprise campaign controls.",
     slug: "prefinery",
     logo: "/competitors/prefinery.png",
     category: "Referral campaign platform",
@@ -270,6 +282,10 @@ export const competitors = [
   },
   {
     name: "KickoffLabs",
+    whereTheyWinToday:
+      "If you are running viral giveaways, contests, sweepstakes, or need multi-variant A/B split testing to optimize landing page conversion, KickoffLabs is specialized for contest mechanics in ways Waitlyze is not designed to be. Their platform supports reward tiers, instant-win contests, and leaderboard scoring.",
+    whoShouldPickThemSummary:
+      "Campaign managers and event organizers running gamified giveaways, sweepstakes, or viral contests that need A/B testing and reward levels.",
     slug: "kickofflabs",
     logo: "/competitors/kickofflabs.png",
     category: "Viral campaign builder",
@@ -316,6 +332,10 @@ export const competitors = [
   },
   {
     name: "Viral Loops",
+    whereTheyWinToday:
+      "If you are looking beyond a pre-launch waitlist to an ongoing, multi-program referral engine (like a newsletter milestone program or in-app invite-a-friend loop), Viral Loops is built for that broader lifecycle. They offer battle-tested templates inspired by Dropbox and Robinhood for various post-launch growth stages.",
+    whoShouldPickThemSummary:
+      "Companies wanting a single referral platform for both pre-launch buzz and permanent post-launch customer referral programs.",
     slug: "viral-loops",
     logo: "/competitors/viral-loops.png",
     category: "Referral marketing suite",
@@ -363,6 +383,10 @@ export const competitors = [
   },
   {
     name: "Waitlister",
+    whereTheyWinToday:
+      "If you want unlimited subscribers immediately from the first paid tier ($19/mo) and prefer their curated visual themes and straightforward setup, Waitlister delivers a clean, focused experience. Their pricing is tied directly to subscriber limits without workspace tiering.",
+    whoShouldPickThemSummary:
+      "Founders who want an established all-in-one waitlist product with pre-set templates and unlimited subscribers on the entry plan.",
     slug: "waitlister",
     logo: "/competitors/waitlister.png",
     category: "All-in-one waitlist",

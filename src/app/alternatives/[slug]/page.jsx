@@ -295,19 +295,20 @@ export default async function AlternativeDetailPage({ params }) {
         <section className="compare-wrap compare-section" aria-labelledby="fair-take">
           <div className="compare-section-heading">
             <Eyebrow>A fair take</Eyebrow>
-            <h2 id="fair-take">Where {competitor.name} does well</h2>
-            <p>
-              {competitor.name} is a good fit for {competitor.bestFor.charAt(0).toLowerCase()}
-              {competitor.bestFor.slice(1)}
-            </p>
+            <h2 id="fair-take">Where {competitor.name} does better today</h2>
+            <p>{competitor.whereTheyWinToday}</p>
+          </div>
+          <div className="compare-callout-card">
+            <span className="compare-callout-badge">Who should pick {competitor.name}</span>
+            <p className="compare-callout-copy">{competitor.whoShouldPickThemSummary}</p>
           </div>
           <div className="compare-prose-grid">
             <div>
-              <h3>Strengths</h3>
+              <h3>{competitor.name} strengths</h3>
               <CheckList items={competitor.strengths} />
             </div>
             <div>
-              <h3>Worth weighing</h3>
+              <h3>Tradeoffs to keep in mind</h3>
               <ul className="compare-tradeoffs">
                 {competitor.tradeoffs.map((tradeoff) => (
                   <li key={tradeoff}>{tradeoff}</li>
