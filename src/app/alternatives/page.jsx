@@ -7,10 +7,11 @@ import {
   ComparisonCta,
   ComparisonShell,
   Eyebrow,
+  HowWeChecked,
   PrimaryLink,
   ResearchNote,
 } from "@/components/comparison/comparison-shell";
-import { adjacentTools, competitors, RESEARCHED_ON } from "@/lib/comparison-data";
+import { competitors, RESEARCHED_ON } from "@/lib/comparison-data";
 
 export const metadata = {
   title: { absolute: "Best Waitlist Software Alternatives (2026) | Waitlyze" },
@@ -85,34 +86,7 @@ export default function AlternativesPage() {
           </div>
         </section>
 
-        <section className="compare-wrap compare-section" aria-labelledby="adjacent-tools">
-          <div className="compare-section-heading">
-            <h2 id="adjacent-tools">Useful tools that are not quite waitlist platforms</h2>
-            <p>
-              These can collect interest, but you will assemble more of the launch workflow
-              yourself. They belong in the conversation—just not in a false like-for-like table.
-            </p>
-          </div>
-          <div className="compare-adjacent-list">
-            {adjacentTools.map((tool) => (
-              <article className="compare-adjacent-item" key={tool.name}>
-                <div className="flex items-center gap-3">
-                  <Image
-                    src={tool.logo}
-                    alt=""
-                    width={28}
-                    height={28}
-                    className="h-7 w-7 rounded-md object-contain"
-                  />
-                  <h3>{tool.name}</h3>
-                </div>
-                <p>
-                  <strong>{tool.fit}.</strong> {tool.gap}.
-                </p>
-              </article>
-            ))}
-          </div>
-        </section>
+        <HowWeChecked date={RESEARCHED_ON} />
 
         <ComparisonCta
           title="Start with the launch, not the feature checklist."

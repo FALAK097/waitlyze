@@ -6,6 +6,7 @@ import {
   ComparisonCta,
   ComparisonShell,
   Eyebrow,
+  HowWeChecked,
   PrimaryLink,
   ResearchNote,
 } from "@/components/comparison/comparison-shell";
@@ -133,6 +134,8 @@ export default function ComparePage() {
             ships. Boolean rows deliberately avoid implying that every implementation is equal.
           </p>
         </section>
+
+        <HowWeChecked date={RESEARCHED_ON} />
 
         <ComparisonCta
           title="Keep the launch in one place."

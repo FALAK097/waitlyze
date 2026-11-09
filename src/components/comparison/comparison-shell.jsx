@@ -70,3 +70,20 @@ export function ComparisonCta({ title, copy, href, label }) {
     </section>
   );
 }
+
+export function HowWeChecked({ date }) {
+  return (
+    <section className="compare-wrap compare-section" aria-labelledby="how-we-checked">
+      <div className="compare-section-heading">
+        <h2 id="how-we-checked">How we checked</h2>
+        <p>
+          Every competitor fact comes from that vendor&apos;s own pricing, feature, and help pages,
+          checked on {date}. Prices are in USD on monthly billing unless a row says otherwise. We
+          are Waitlyze, so we are not a neutral party, but we credit where a competitor wins and
+          flag where our own pricing is still pre-release. If something has changed or we have
+          misread a feature, tell us and we will fix it.
+        </p>
+      </div>
+    </section>
+  );
+}

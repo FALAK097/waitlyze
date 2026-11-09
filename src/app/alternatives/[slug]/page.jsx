@@ -5,6 +5,7 @@ import {
   ComparisonCta,
   ComparisonShell,
   Eyebrow,
+  HowWeChecked,
   PrimaryLink,
   ResearchNote,
   SourceLink,
@@ -108,6 +109,8 @@ export default async function AlternativeDetailPage({ params }) {
             </div>
           </div>
         </section>
+
+        <HowWeChecked date={RESEARCHED_ON} />
 
         <ComparisonCta
           title="A launch workspace, not just a signup box."

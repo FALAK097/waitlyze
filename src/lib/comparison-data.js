@@ -196,33 +196,6 @@ export const competitors = [
   },
 ];
 
-export const adjacentTools = [
-  {
-    name: "Kit",
-    logo: "/competitors/kit.png",
-    fit: "Email-first audience building",
-    gap: "Not a purpose-built queue or referral waitlist",
-  },
-  {
-    name: "Mailchimp",
-    logo: "/competitors/mailchimp.png",
-    fit: "Broad email marketing",
-    gap: "No native referral position or launch workflow",
-  },
-  {
-    name: "Tally",
-    logo: "/competitors/tally.png",
-    fit: "Flexible forms",
-    gap: "Needs other tools for referrals, queue position, and launch analytics",
-  },
-  {
-    name: "Google Forms",
-    logo: "/competitors/google.png",
-    fit: "Basic zero-cost collection",
-    gap: "No branded page, referral loop, or launch operations",
-  },
-];
-
 export const featureRows = [
   ["Free starting point", "freePlan"],
   ["Lowest paid plan", "price"],
