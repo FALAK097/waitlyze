@@ -5,7 +5,7 @@
   --compare-space-lg: 1.5rem;
   --compare-space-xl: 2rem;
   --compare-space-2xl: 3rem;
-  --compare-space-3xl: clamp(4rem, 8vw, 7rem);
+  --compare-space-3xl: clamp(3.5rem, 7vw, 5.75rem);
   min-height: 70vh;
   color: var(--product-text-primary);
 }
@@ -16,10 +16,11 @@
 }
 
 .compare-hero {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: var(--compare-space-xl);
-  padding-block: clamp(4rem, 10vw, 8rem) var(--compare-space-3xl);
+  padding-block: clamp(3.5rem, 8vw, 6.5rem) var(--compare-space-3xl);
+}
+
+.compare-hero-copy {
+  max-width: 54rem;
 }
 
 .compare-eyebrow {
@@ -43,13 +44,13 @@
 }
 
 .compare-title {
-  max-width: 15ch;
+  max-width: 22ch;
   margin-top: var(--compare-space-md);
   font-family: var(--product-font-display), sans-serif;
-  font-size: clamp(2.75rem, 7vw, 5.8rem);
-  font-weight: 720;
-  letter-spacing: -0.055em;
-  line-height: 0.98;
+  font-size: clamp(2.35rem, 5vw, 4.4rem);
+  font-weight: 700;
+  letter-spacing: -0.048em;
+  line-height: 1.02;
 }
 
 .compare-lede {
@@ -65,7 +66,11 @@
   flex-wrap: wrap;
   align-items: center;
   gap: var(--compare-space-md);
-  margin-top: var(--compare-space-xl);
+  margin-top: var(--compare-space-lg);
+}
+
+.compare-hero .compare-research-note {
+  margin-top: var(--compare-space-lg);
 }
 
 .compare-primary-link {
@@ -138,7 +143,7 @@
 
 .compare-section-heading h2 {
   font-family: var(--product-font-display), sans-serif;
-  font-size: clamp(2rem, 4vw, 3.25rem);
+  font-size: clamp(1.8rem, 3.4vw, 2.75rem);
   font-weight: 680;
   letter-spacing: -0.045em;
   line-height: 1.05;
@@ -240,7 +245,14 @@
 
 .compare-table-wrap {
   overflow-x: auto;
+  overflow-y: clip;
   overscroll-behavior-inline: contain;
+  scrollbar-color: var(--product-text-muted) var(--product-bg-inset);
+  scrollbar-width: thin;
+}
+.compare-table-wrap:focus-visible {
+  outline: 2px solid var(--product-text-primary);
+  outline-offset: 4px;
 }
 .compare-table {
   width: 100%;
@@ -271,14 +283,6 @@
 .compare-table .is-waitlyze {
   background: color-mix(in oklch, var(--product-accent-solid) 10%, var(--product-bg-page));
 }
-.compare-table-boolean {
-  font-weight: 700;
-}
-.compare-table-boolean[data-value="no"] {
-  color: var(--product-text-muted);
-  font-weight: 500;
-}
-
 .compare-adjacent-list {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
@@ -313,6 +317,12 @@
   font-weight: 640;
   letter-spacing: -0.035em;
   line-height: 1.2;
+}
+.compare-pricing-note {
+  max-width: 56ch;
+  color: var(--product-text-muted);
+  font-size: 0.8rem;
+  line-height: 1.55;
 }
 
 .compare-prose-grid {
@@ -360,9 +370,9 @@
   padding-block: var(--compare-space-2xl) var(--compare-space-3xl);
 }
 .compare-cta h2 {
-  max-width: 15ch;
+  max-width: 20ch;
   font-family: var(--product-font-display), sans-serif;
-  font-size: clamp(2rem, 5vw, 4rem);
+  font-size: clamp(1.9rem, 4vw, 3.25rem);
   font-weight: 680;
   letter-spacing: -0.05em;
   line-height: 1;
@@ -376,18 +386,6 @@
 @media (min-width: 48rem) {
   .compare-wrap {
     width: min(100% - 4rem, 70rem);
-  }
-  .compare-hero {
-    grid-template-columns: minmax(0, 3fr) minmax(15rem, 1fr);
-    align-items: end;
-  }
-  .compare-hero-copy {
-    grid-column: 1;
-  }
-  .compare-hero-aside {
-    grid-column: 2;
-    align-self: end;
-    padding-bottom: 0.25rem;
   }
   .compare-snapshot {
     grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -412,6 +410,14 @@
 }
 
 @media (max-width: 40rem) {
+  .compare-eyebrow,
+  .compare-pricing-note,
+  .compare-research-note,
+  .compare-snapshot dt,
+  .compare-table,
+  .compare-tool-meta {
+    font-size: 0.875rem;
+  }
   .compare-tool-link {
     grid-template-columns: 2.75rem minmax(0, 1fr);
   }
@@ -420,7 +426,9 @@
     white-space: normal;
   }
   .compare-title {
-    font-size: clamp(2.6rem, 14vw, 4.25rem);
+    max-width: 18ch;
+    font-size: clamp(2.25rem, 11vw, 3.2rem);
+    line-height: 1.04;
   }
 }
 

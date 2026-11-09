@@ -1,6 +1,8 @@
+/* oxlint-disable jsx-a11y/no-noninteractive-tabindex -- Safari does not focus scroll regions automatically; keyboard users need access to later columns. */
 import Link from "next/link";
 
 import {
+  ComparisonCta,
   ComparisonShell,
   Eyebrow,
   PrimaryLink,
@@ -21,15 +23,6 @@ export const metadata = {
   },
 };
 
-function renderValue(value) {
-  if (typeof value !== "boolean") return value;
-  return (
-    <span className="compare-table-boolean" data-value={value ? "yes" : "no"}>
-      {value ? "Yes" : "No"}
-    </span>
-  );
-}
-
 export default function ComparePage() {
   const tools = [waitlyze, ...competitors];
   return (
@@ -38,11 +31,11 @@ export default function ComparePage() {
         <section className="compare-wrap compare-hero">
           <div className="compare-hero-copy">
             <Eyebrow>Side-by-side comparison</Eyebrow>
-            <h1 className="compare-title">Seven waitlist tools. One honest view.</h1>
+            <h1 className="compare-title">Compare waitlist tools side by side.</h1>
             <p className="compare-lede">
-              Compare the cost model and the launch essentials before you commit. A checkmark only
-              means the capability exists; the focused guides explain where plans and workflows
-              differ.
+              See how seven dedicated platforms price growth and where their essential launch
+              features unlock. Use the focused guides when the workflow matters as much as the
+              checklist.
             </p>
             <div className="compare-hero-actions">
               <PrimaryLink href="/alternatives">Read the focused guides</PrimaryLink>
@@ -50,8 +43,6 @@ export default function ComparePage() {
                 See Waitlyze in action
               </Link>
             </div>
-          </div>
-          <div className="compare-hero-aside">
             <ResearchNote date={RESEARCHED_ON} />
           </div>
         </section>
@@ -93,7 +84,11 @@ export default function ComparePage() {
               to the vendor source.
             </p>
           </div>
-          <section className="compare-table-wrap" aria-label="Scrollable comparison table">
+          <section
+            className="compare-table-wrap"
+            aria-label="Scrollable comparison table"
+            tabIndex={0}
+          >
             <table className="compare-table">
               <thead>
                 <tr>
@@ -115,7 +110,7 @@ export default function ComparePage() {
                     <th scope="row">{label}</th>
                     {tools.map((tool, index) => (
                       <td className={index === 0 ? "is-waitlyze" : undefined} key={tool.slug}>
-                        {renderValue(tool[key])}
+                        {tool[key]}
                       </td>
                     ))}
                   </tr>
@@ -129,18 +124,12 @@ export default function ComparePage() {
           </p>
         </section>
 
-        <section className="compare-wrap compare-cta">
-          <div>
-            <h2>Keep the launch in one place.</h2>
-            <p>
-              Design the page, protect the list, grow through verified referrals, and learn what is
-              converting—without stitching five tools together.
-            </p>
-          </div>
-          <div className="compare-cta-actions">
-            <PrimaryLink href="/">Start with Waitlyze</PrimaryLink>
-          </div>
-        </section>
+        <ComparisonCta
+          title="Keep the launch in one place."
+          copy="Design the page, protect the list, grow through verified referrals, and learn what is converting—without stitching five tools together."
+          href="/"
+          label="Start with Waitlyze"
+        />
       </main>
     </ComparisonShell>
   );

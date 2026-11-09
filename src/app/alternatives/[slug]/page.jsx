@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 
 import {
   CheckList,
+  ComparisonCta,
   ComparisonShell,
   Eyebrow,
   PrimaryLink,
@@ -38,15 +39,16 @@ export default async function AlternativeDetailPage({ params }) {
       <main id="main-content" className="compare-page">
         <section className="compare-wrap compare-hero">
           <div className="compare-hero-copy">
-            <Eyebrow>Waitlyze vs {competitor.name}</Eyebrow>
-            <h1 className="compare-title">Two good tools. Different kinds of launch.</h1>
-            <p className="compare-lede">{competitor.verdict}</p>
+            <Eyebrow>Focused comparison</Eyebrow>
+            <h1 className="compare-title">Waitlyze vs {competitor.name}</h1>
+            <p className="compare-lede">
+              A practical look at pricing, launch workflow, referrals, email, and the tradeoffs that
+              matter after your first hundred signups.
+            </p>
             <div className="compare-hero-actions">
               <PrimaryLink href="/">Try Waitlyze free</PrimaryLink>
               <SourceLink href={competitor.source} />
             </div>
-          </div>
-          <div className="compare-hero-aside">
             <ResearchNote date={RESEARCHED_ON} />
           </div>
         </section>
@@ -78,6 +80,7 @@ export default async function AlternativeDetailPage({ params }) {
                 <dd>{competitor.model}</dd>
               </div>
             </dl>
+            <p className="compare-pricing-note">{waitlyze.note}</p>
             <p className="compare-verdict">{competitor.verdict}</p>
           </div>
         </section>
@@ -106,18 +109,12 @@ export default async function AlternativeDetailPage({ params }) {
           </div>
         </section>
 
-        <section className="compare-wrap compare-cta">
-          <div>
-            <h2>A launch workspace, not just a signup box.</h2>
-            <p>
-              Waitlyze is designed for the full path from page idea to a verified, engaged launch
-              audience—with the operational details kept quiet until you need them.
-            </p>
-          </div>
-          <div className="compare-cta-actions">
-            <PrimaryLink href="/compare">Compare all seven tools</PrimaryLink>
-          </div>
-        </section>
+        <ComparisonCta
+          title="A launch workspace, not just a signup box."
+          copy="Waitlyze is designed for the full path from page idea to a verified, engaged launch audience—with the operational details kept quiet until you need them."
+          href="/compare"
+          label="Compare all seven tools"
+        />
       </main>
     </ComparisonShell>
   );

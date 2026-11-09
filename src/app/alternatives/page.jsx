@@ -3,6 +3,7 @@ import { HugeiconsIcon } from "@hugeicons/react";
 import Link from "next/link";
 
 import {
+  ComparisonCta,
   ComparisonShell,
   Eyebrow,
   PrimaryLink,
@@ -30,11 +31,11 @@ export default function AlternativesPage() {
         <section className="compare-wrap compare-hero">
           <div className="compare-hero-copy">
             <Eyebrow>Waitlist alternatives</Eyebrow>
-            <h1 className="compare-title">Choose for the launch you actually have.</h1>
+            <h1 className="compare-title">Find the right waitlist tool.</h1>
             <p className="compare-lede">
-              Most waitlist tools collect an email. The real differences are what happens before and
-              after: page design, verification, referrals, email, analytics, and how the bill
-              changes as your audience grows.
+              Compare dedicated platforms by the parts that shape a real launch: page design,
+              verification, referrals, email, analytics, and how the bill changes as your audience
+              grows.
             </p>
             <div className="compare-hero-actions">
               <PrimaryLink href="/compare">Compare every tool</PrimaryLink>
@@ -42,8 +43,6 @@ export default function AlternativesPage() {
                 Explore Waitlyze
               </Link>
             </div>
-          </div>
-          <div className="compare-hero-aside">
             <ResearchNote date={RESEARCHED_ON} />
           </div>
         </section>
@@ -99,18 +98,12 @@ export default function AlternativesPage() {
           </div>
         </section>
 
-        <section className="compare-wrap compare-cta">
-          <div>
-            <h2>Start with the launch, not the feature checklist.</h2>
-            <p>
-              Waitlyze keeps your page, verified audience, referrals, email, and launch signals
-              together—without making the setup feel like a growth-ops project.
-            </p>
-          </div>
-          <div className="compare-cta-actions">
-            <PrimaryLink href="/">Build your waitlist free</PrimaryLink>
-          </div>
-        </section>
+        <ComparisonCta
+          title="Start with the launch, not the feature checklist."
+          copy="Waitlyze keeps your page, verified audience, referrals, email, and launch signals together—without making the setup feel like a growth-ops project."
+          href="/"
+          label="Build your waitlist free"
+        />
       </main>
     </ComparisonShell>
   );

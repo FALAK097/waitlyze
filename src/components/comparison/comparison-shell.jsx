@@ -56,3 +56,17 @@ export function ResearchNote({ date }) {
     </p>
   );
 }
+
+export function ComparisonCta({ title, copy, href, label }) {
+  return (
+    <section className="compare-wrap compare-cta">
+      <div>
+        <h2>{title}</h2>
+        <p>{copy}</p>
+      </div>
+      <div className="compare-cta-actions">
+        <PrimaryLink href={href}>{label}</PrimaryLink>
+      </div>
+    </section>
+  );
+}
