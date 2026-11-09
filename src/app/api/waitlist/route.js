@@ -391,6 +391,11 @@ export async function POST(request) {
       { headers: budgetHeaders },
     );
   } catch (error) {
+    if (error instanceof WorkspacePlanError)
+      return NextResponse.json(
+        { success: false, error: error.message, code: error.code, feature: error.feature },
+        { status: error.status },
+      );
     if (error instanceof PublicRateLimitError) return rateLimitResponse(error);
     if (
       error instanceof CustomerSenderNotConnectedError ||

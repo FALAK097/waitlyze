@@ -269,18 +269,18 @@ async function SelectedSettings({
 
 export default async function SettingsPage({ searchParams }) {
   const [currentContext, query] = await Promise.all([currentWorkspace(), searchParams]);
-  const requestedWorkspace =
-    typeof query.workspaceId === "string"
-      ? currentContext.workspaces.find((workspace) => workspace.id === query.workspaceId)
-      : null;
-  const context = requestedWorkspace
-    ? { ...currentContext, workspace: requestedWorkspace }
-    : currentContext;
   const section = ["profile", "workspace", "team", "integrations", "audit", "billing"].includes(
     query.section,
   )
     ? query.section
     : "profile";
+  const requestedWorkspace =
+    section === "billing" && typeof query.workspaceId === "string"
+      ? currentContext.workspaces.find((workspace) => workspace.id === query.workspaceId)
+      : null;
+  const context = requestedWorkspace
+    ? { ...currentContext, workspace: requestedWorkspace }
+    : currentContext;
   return (
     <div className="mx-auto w-full max-w-280">
       <div className="flex items-start gap-8 max-[760px]:flex-col max-[760px]:gap-8 lg:gap-12 xl:gap-18">

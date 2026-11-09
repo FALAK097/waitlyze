@@ -95,13 +95,17 @@ async function reserveCheckoutIntent(workspaceId, interval) {
     }
 
     if (current?.checkoutSessionId) {
-      if (current.checkoutInterval !== checkoutInterval)
-        return {
-          error:
-            "A checkout is already open for the other billing interval. Finish it or wait for it to expire.",
-        };
-      if (current.checkoutUrl && current.checkoutUrlExpiresAt && current.checkoutUrlExpiresAt > now)
+      const checkoutUrlIsActive = Boolean(
+        current.checkoutUrl && current.checkoutUrlExpiresAt && current.checkoutUrlExpiresAt > now,
+      );
+      if (checkoutUrlIsActive) {
+        if (current.checkoutInterval !== checkoutInterval)
+          return {
+            error:
+              "A checkout is already open for the other billing interval. Finish it or wait for it to expire.",
+          };
         return { checkoutUrl: current.checkoutUrl };
+      }
       return {
         reconcile: {
           intentId: current.checkoutIntentId,
