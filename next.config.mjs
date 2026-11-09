@@ -5,6 +5,14 @@ import { createMDX } from "fumadocs-mdx/next";
 const nextConfig = {
   experimental: {
     serverActions: { bodySizeLimit: "5mb" },
+    optimizePackageImports: [
+      "@hugeicons/core-free-icons",
+      "@hugeicons/react",
+      "date-fns",
+      "recharts",
+      "echarts",
+      "lucide-react",
+    ],
   },
   images: {
     // Workers don't provide the Next.js sharp optimizer. Serve source images
@@ -28,7 +36,7 @@ const nextConfig = {
       },
     ],
   },
-  serverExternalPackages: ["@prisma/client", ".prisma/client", "better-auth"],
+  serverExternalPackages: ["@prisma/client", ".prisma/client", "better-auth", "prisma"],
   async redirects() {
     return [
       {

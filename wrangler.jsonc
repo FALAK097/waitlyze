@@ -7,7 +7,8 @@
   "compatibility_flags": ["nodejs_compat"],
   "limits": { "cpu_ms": 10000 },
   "workers_dev": true,
-  "upload_source_maps": true,
+  "minify": true,
+  "upload_source_maps": false,
   "assets": {
     "directory": ".open-next/assets",
     "binding": "ASSETS",
@@ -15,7 +16,7 @@
   "observability": { "enabled": true },
   "routes": [
     { "pattern": "waitlyze.com", "custom_domain": true },
-    { "pattern": "www.waitlyze.com", "custom_domain": true }
+    { "pattern": "www.waitlyze.com", "custom_domain": true },
   ],
   "r2_buckets": [
     { "binding": "WAITLYZE_UPLOADS", "bucket_name": "waitlyze" },
