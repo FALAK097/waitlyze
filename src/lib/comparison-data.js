@@ -116,7 +116,7 @@ export const waitlyzeHighlights = [
   {
     icon: "shield",
     title: "Referrals that only count real people",
-    copy: "Referred signups must confirm their email before they earn credit, and Cloudflare Turnstile keeps bots off the form.",
+    copy: "When verification is enabled, referred signups must confirm their email before earning credit, and optional Cloudflare Turnstile protects forms from bots.",
   },
   {
     icon: "mail",
@@ -482,7 +482,7 @@ export function getCompetitorFaqs(competitor) {
     ],
     [
       `Which is better for referrals, Waitlyze or ${competitor.name}?`,
-      `${referralCopy} Waitlyze includes referrals on every plan: verified subscribers get a personal link, and referred signups only count after they confirm their email, which keeps the leaderboard honest.`,
+      `${referralCopy} Waitlyze includes referrals on every plan: subscribers can share personal links, and when verification is required, referred signups only earn credit after confirming their email to keep leaderboards honest.`,
     ],
     [
       `Can I move my waitlist from ${competitor.name} to Waitlyze?`,
