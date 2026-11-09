@@ -33,7 +33,10 @@ export async function deleteWaitlist(id, confirmation) {
       return { error: "Waitlist not found or access changed. Refresh and try again." };
     if (domain) {
       try {
-        await deleteCloudflareHostname({ providerId: domain.providerId, hostname: domain.hostname });
+        await deleteCloudflareHostname({
+          providerId: domain.providerId,
+          hostname: domain.hostname,
+        });
       } catch {
         // Best effort: connecting this hostname again deletes and recreates
         // it, so a leftover here cannot hand its approval to another workspace.
