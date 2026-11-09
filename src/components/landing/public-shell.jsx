@@ -1,7 +1,13 @@
-import { ArrowUpRight01Icon } from "@hugeicons/core-free-icons";
+import {
+  ArrowUpRight01Icon,
+  CubeIcon,
+  Layout2ColumnIcon,
+  ListIcon,
+} from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import Link from "next/link";
 
+import { competitors } from "@/lib/comparison-data";
 import { publicFontClasses } from "@/lib/public-fonts";
 
 import CopyrightYear from "./copyright-year";
@@ -22,10 +28,10 @@ export default function PublicShell({ children }) {
       </a>
       <Header />
       {children}
-      <footer className="pt-12 pb-6 text-product-text-primary">
-        <div className="mx-auto w-full max-w-[1120px] px-[18px]">
-          <div className="relative grid grid-cols-2 gap-x-5 gap-y-10 md:grid-cols-5 md:gap-10">
-            <div className="col-span-2">
+      <footer className="bg-product-bg-page pt-12 pb-6 text-product-text-primary">
+        <div className="mx-auto w-full max-w-7xl px-4 sm:px-5 md:px-8 lg:px-12">
+          <div className="relative grid grid-cols-2 gap-x-5 gap-y-10 md:grid-cols-4 md:gap-10 lg:grid-cols-6">
+            <div className="col-span-2 md:col-span-4 lg:col-span-2">
               <Link
                 href="/"
                 aria-label="Waitlyze home"
@@ -67,6 +73,62 @@ export default function PublicShell({ children }) {
                 className="inline-flex items-center gap-1.5 hover:text-product-success-text focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-neutral-900"
               >
                 FAQs
+              </Link>
+            </nav>
+            <nav
+              aria-label="Alternatives"
+              className="flex flex-col items-start gap-3 text-xs text-product-text-primary"
+            >
+              <span className="mb-2 flex items-center gap-2 text-micro font-semibold tracking-widest text-product-text-secondary uppercase">
+                Alternatives
+              </span>
+              <Link
+                href="/alternatives"
+                className="inline-flex items-center gap-2 hover:text-product-success-text focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-neutral-900"
+              >
+                <HugeiconsIcon icon={CubeIcon} size={16} aria-hidden="true" />
+                Best waitlist tools
+              </Link>
+              {[
+                { name: "Prefinery", slug: "prefinery" },
+                { name: "GetWaitlist", slug: "getwaitlist" },
+                { name: "Viral Loops", slug: "viral-loops" },
+                { name: "KickoffLabs", slug: "kickofflabs" },
+                { name: "LaunchList", slug: "launchlist" },
+                ...competitors.filter(
+                  (c) =>
+                    ![
+                      "prefinery",
+                      "getwaitlist",
+                      "viral-loops",
+                      "kickofflabs",
+                      "launchlist",
+                    ].includes(c.slug),
+                ),
+              ].map(({ name, slug }) => (
+                <Link
+                  key={slug}
+                  href={`/alternatives/${slug}`}
+                  title={`Waitlyze vs ${name}`}
+                  className="inline-flex items-center gap-2 hover:text-product-success-text focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-neutral-900"
+                >
+                  <HugeiconsIcon icon={CubeIcon} size={16} aria-hidden="true" />
+                  {name}
+                </Link>
+              ))}
+              <Link
+                href="/alternatives"
+                className="inline-flex items-center gap-2 hover:text-product-success-text focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-neutral-900"
+              >
+                <HugeiconsIcon icon={ListIcon} size={16} aria-hidden="true" />
+                All alternatives
+              </Link>
+              <Link
+                href="/compare"
+                className="inline-flex items-center gap-2 hover:text-product-success-text focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-neutral-900"
+              >
+                <HugeiconsIcon icon={Layout2ColumnIcon} size={16} aria-hidden="true" />
+                Compare tools
               </Link>
             </nav>
             <nav

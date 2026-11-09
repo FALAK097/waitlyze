@@ -28,6 +28,7 @@ export default function Header() {
   const links = [
     ["Features", "/#features"],
     ["How it works", "/#steps"],
+    ["Compare", "/compare"],
     ["Templates", "/#templates"],
     ["Pricing", "/#pricing"],
     ["Blog", "/blog"],
@@ -44,7 +45,7 @@ export default function Header() {
         >
           <Wordmark />
         </Link>
-        <nav aria-label="Main navigation" className="hidden items-center gap-5 md:flex xl:gap-7">
+        <nav aria-label="Main navigation" className="hidden items-center gap-4 md:flex xl:gap-6">
           {links.map(([label, href]) => (
             <Link
               href={href}
