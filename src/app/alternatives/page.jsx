@@ -1,5 +1,6 @@
 import { ArrowRight02Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
+import Image from "next/image";
 import Link from "next/link";
 
 import {
@@ -63,7 +64,13 @@ export default function AlternativesPage() {
                 key={competitor.slug}
               >
                 <span className="compare-tool-mark" aria-hidden="true">
-                  {competitor.mark}
+                  <Image
+                    src={competitor.logo}
+                    alt=""
+                    width={32}
+                    height={32}
+                    className="h-8 w-8 rounded-md object-contain"
+                  />
                 </span>
                 <span className="compare-tool-copy">
                   <h3>Waitlyze vs {competitor.name}</h3>
@@ -89,7 +96,16 @@ export default function AlternativesPage() {
           <div className="compare-adjacent-list">
             {adjacentTools.map((tool) => (
               <article className="compare-adjacent-item" key={tool.name}>
-                <h3>{tool.name}</h3>
+                <div className="flex items-center gap-3">
+                  <Image
+                    src={tool.logo}
+                    alt=""
+                    width={28}
+                    height={28}
+                    className="h-7 w-7 rounded-md object-contain"
+                  />
+                  <h3>{tool.name}</h3>
+                </div>
                 <p>
                   <strong>{tool.fit}.</strong> {tool.gap}.
                 </p>

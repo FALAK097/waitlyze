@@ -1,4 +1,5 @@
 /* oxlint-disable jsx-a11y/no-noninteractive-tabindex -- Safari does not focus scroll regions automatically; keyboard users need access to later columns. */
+import Image from "next/image";
 import Link from "next/link";
 
 import {
@@ -99,7 +100,16 @@ export default function ComparePage() {
                       scope="col"
                       key={tool.slug}
                     >
-                      {tool.name}
+                      <span className="inline-flex items-center gap-2">
+                        <Image
+                          src={tool.logo}
+                          alt=""
+                          width={20}
+                          height={20}
+                          className="h-5 w-5 rounded object-contain"
+                        />
+                        {tool.name}
+                      </span>
                     </th>
                   ))}
                 </tr>
