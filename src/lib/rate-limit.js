@@ -27,27 +27,82 @@ export async function checkRateLimit(db, userId, limit = 10, windowMs = 60 * 60 
     // keeps recent requests weighted at ~1, decays idle counters toward zero,
     // and still stays a single atomic statement shared by every Worker
     // isolate. `expiresAt` is only a TTL for the idle-row sweep.
+    // Sliding-window counter with retry lockout prevention: decay is evaluated
+    // against the time since the last accepted update. If the decayed count
+    // is already at or above limit, the attempt is rejected without advancing
+    // updatedAt or incrementing count, so retries cannot keep users locked out.
     const rows = await db.$queryRaw`
       INSERT INTO "rate_limit_buckets" ("key", "count", "expiresAt", "updatedAt")
       VALUES (${key}, 1, ${expiresAt}, ${now})
       ON CONFLICT ("key") DO UPDATE SET
-        "count" = (
-          CEIL(
-            "rate_limit_buckets"."count"::double precision
-            * LEAST(
-              1.0::double precision,
-              GREATEST(
-                0.0::double precision,
-                (${windowMs}::double precision
-                  - (EXTRACT(EPOCH FROM (${now}::timestamptz - "rate_limit_buckets"."updatedAt")) * 1000.0)::double precision)
-                / ${windowMs}::double precision
+        "count" = CASE
+          WHEN (
+            CEIL(
+              "rate_limit_buckets"."count"::double precision
+              * LEAST(
+                1.0::double precision,
+                GREATEST(
+                  0.0::double precision,
+                  (${windowMs}::double precision
+                    - (EXTRACT(EPOCH FROM (${now}::timestamptz - "rate_limit_buckets"."updatedAt")) * 1000.0)::double precision)
+                  / ${windowMs}::double precision
+                )
               )
-            )
-          ) + 1
-        )::int,
-        "expiresAt" = ${expiresAt},
-        "updatedAt" = ${now}
-      RETURNING "count"
+            ) + 1
+          ) <= ${limit} THEN (
+            CEIL(
+              "rate_limit_buckets"."count"::double precision
+              * LEAST(
+                1.0::double precision,
+                GREATEST(
+                  0.0::double precision,
+                  (${windowMs}::double precision
+                    - (EXTRACT(EPOCH FROM (${now}::timestamptz - "rate_limit_buckets"."updatedAt")) * 1000.0)::double precision)
+                  / ${windowMs}::double precision
+                )
+              )
+            )::int + 1
+          )
+          ELSE "rate_limit_buckets"."count"
+        END,
+        "expiresAt" = CASE
+          WHEN (
+            CEIL(
+              "rate_limit_buckets"."count"::double precision
+              * LEAST(
+                1.0::double precision,
+                GREATEST(
+                  0.0::double precision,
+                  (${windowMs}::double precision
+                    - (EXTRACT(EPOCH FROM (${now}::timestamptz - "rate_limit_buckets"."updatedAt")) * 1000.0)::double precision)
+                  / ${windowMs}::double precision
+                )
+              )
+            ) + 1
+          ) <= ${limit} THEN ${expiresAt}
+          ELSE "rate_limit_buckets"."expiresAt"
+        END,
+        "updatedAt" = CASE
+          WHEN (
+            CEIL(
+              "rate_limit_buckets"."count"::double precision
+              * LEAST(
+                1.0::double precision,
+                GREATEST(
+                  0.0::double precision,
+                  (${windowMs}::double precision
+                    - (EXTRACT(EPOCH FROM (${now}::timestamptz - "rate_limit_buckets"."updatedAt")) * 1000.0)::double precision)
+                  / ${windowMs}::double precision
+                )
+              )
+            ) + 1
+          ) <= ${limit} THEN ${now}
+          ELSE "rate_limit_buckets"."updatedAt"
+        END
+      RETURNING CASE
+        WHEN "rate_limit_buckets"."updatedAt" = ${now} THEN "rate_limit_buckets"."count"
+        ELSE ${limit + 1}
+      END AS "count"
     `;
     return Number(rows[0]?.count) <= limit;
   } catch (error) {

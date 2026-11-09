@@ -19,18 +19,14 @@ export async function deleteWaitlist(id, confirmation) {
       where: { id },
       select: { workspaceId: true, _count: { select: { signUps: true } } },
     });
-    // Read the domain before the cascade removes it with the waitlist, so the
-    // Cloudflare hostname can be released too. A leftover hostname would let
-    // the next workspace to claim this domain inherit its approval.
+    // Clean up the Cloudflare hostname before deleting the waitlist database row.
+    // Keeping the hostname reserved in custom_domains until Cloudflare cleanup
+    // finishes prevents another workspace from connecting the same hostname and
+    // having its fresh provider object accidentally deleted by this cleanup.
     const domain = await prisma.customDomain.findUnique({
       where: { waitListId: id },
       select: { hostname: true, providerId: true },
     });
-    const result = await prisma.waitList.deleteMany({
-      where: { id, name: campaign.name, ...scope },
-    });
-    if (!result.count)
-      return { error: "Waitlist not found or access changed. Refresh and try again." };
     if (domain) {
       try {
         await deleteCloudflareHostname({
@@ -38,11 +34,14 @@ export async function deleteWaitlist(id, confirmation) {
           hostname: domain.hostname,
         });
       } catch {
-        // Best effort: connecting this hostname again deletes and recreates
-        // it, so a leftover here cannot hand its approval to another workspace.
-        console.error("Cloudflare hostname cleanup after waitlist deletion failed.");
+        console.error("Cloudflare hostname cleanup before waitlist deletion failed.");
       }
     }
+    const result = await prisma.waitList.deleteMany({
+      where: { id, name: campaign.name, ...scope },
+    });
+    if (!result.count)
+      return { error: "Waitlist not found or access changed. Refresh and try again." };
     if (context?.workspaceId) {
       const removed = context._count.signUps;
       await recordAuditEvent(prisma, {
