@@ -160,20 +160,16 @@ export async function recordCloudflareSendingEvent(db, event) {
   const isPermanent =
     type === "email.complained" || payload.terminal === true || payload.bounce?.type === "hard";
 
-  // Map the delivery back to its workspace: first by the outbox's recorded
-  // provider message id, else by the workspace whose Cloudflare connection
-  // sent from this address (covers sends recorded before the id was stored).
-  let target = await deliveryRecipient(db, messageId);
-  if (!target) {
-    const sender = typeof payload.sender === "string" ? payload.sender.trim().toLowerCase() : "";
-    if (sender) {
-      const connection = await db.workspaceIntegration.findFirst({
-        where: { provider: "CLOUDFLARE_EMAIL", fromEmail: { equals: sender, mode: "insensitive" } },
-        select: { workspaceId: true },
-      });
-      if (connection) target = { workspaceId: connection.workspaceId, recipient };
-    }
-  }
+  // Map the delivery back to its workspace by the provider message id the
+  // outbox recorded for it. When nothing matches (the id is saved just after
+  // the send, or the send predates id recording), store the event
+  // workspace-neutral instead of guessing from the sender address: several
+  // workspaces can save the same fromEmail, so a guess could pick the wrong
+  // one and stop that workspace's mail to this recipient — and the wrong
+  // workspaceId would also make applyKnownProviderEvents skip the event for
+  // the real sender. A neutral event is applied as soon as the message id
+  // identifies the delivery.
+  const target = await deliveryRecipient(db, messageId);
   await db.emailProviderEvent.upsert({
     where: { providerEventId: eventId },
     create: {

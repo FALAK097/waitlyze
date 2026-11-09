@@ -67,11 +67,16 @@ export async function POST(request, { params }) {
     });
     let current;
     try {
-      // Reuse an existing Cloudflare hostname (e.g., left behind by an
-      // earlier attempt) instead of creating a duplicate.
-      current =
-        (await getCloudflareHostname({ providerId: null, hostname })) ||
-        (await createCloudflareHostname(hostname));
+      // A hostname that exists in Cloudflare but has no database row is an
+      // orphan (its waitlist was deleted, or an earlier attempt failed
+      // midway). Adopting it would copy the previous connection's approval —
+      // including ACTIVE — into this workspace's row with no ownership proof,
+      // serving the new waitlist on a domain it never verified. Delete the
+      // orphan and create a fresh hostname instead: Cloudflare then validates
+      // this connection from scratch and the domain only goes ACTIVE once its
+      // DNS checks pass again.
+      await deleteCloudflareHostname({ providerId: null, hostname });
+      current = await createCloudflareHostname(hostname);
     } catch (error) {
       await prisma.customDomain.delete({ where: { id: reserved.id } });
       throw error;

@@ -18,29 +18,34 @@ export async function checkRateLimit(db, userId, limit = 10, windowMs = 60 * 60 
   const userKey = createHash("sha256").update(userId).digest("hex");
   const key = `user-action:${userKey}`;
   try {
-    // Sliding-window counter: before incrementing, decay the current count by
-    // the fraction of the window that has already elapsed. A burst at the end
-    // of a window therefore cannot be repeated in full at the start of the
-    // next one (the classic fixed-window 2x burst), while staying a single
-    // atomic statement shared by every Worker isolate.
+    // Sliding-window counter: each request decays the stored count by the
+    // fraction of the window elapsed since the previous request (measured
+    // from `updatedAt`, the last touch) and then adds itself. Discounting
+    // against a fixed `expiresAt` would re-shrink the same old count on every
+    // call — near the end of the window it floors at 2 forever and unlimited
+    // traffic slips through — whereas keying the decay to the last update
+    // keeps recent requests weighted at ~1, decays idle counters toward zero,
+    // and still stays a single atomic statement shared by every Worker
+    // isolate. `expiresAt` is only a TTL for the idle-row sweep.
     const rows = await db.$queryRaw`
       INSERT INTO "rate_limit_buckets" ("key", "count", "expiresAt", "updatedAt")
       VALUES (${key}, 1, ${expiresAt}, ${now})
       ON CONFLICT ("key") DO UPDATE SET
-        "count" = CASE
-          WHEN "rate_limit_buckets"."expiresAt" <= ${now} THEN 1
-          ELSE (
-            CEIL(
-              "rate_limit_buckets"."count"::double precision
-              * (EXTRACT(EPOCH FROM ("rate_limit_buckets"."expiresAt" - ${now})) * 1000.0)
-              / ${windowMs}::double precision
-            ) + 1
-          )::int
-        END,
-        "expiresAt" = CASE
-          WHEN "rate_limit_buckets"."expiresAt" <= ${now} THEN ${expiresAt}
-          ELSE "rate_limit_buckets"."expiresAt"
-        END,
+        "count" = (
+          CEIL(
+            "rate_limit_buckets"."count"::double precision
+            * LEAST(
+              1.0::double precision,
+              GREATEST(
+                0.0::double precision,
+                (${windowMs}::double precision
+                  - (EXTRACT(EPOCH FROM (${now}::timestamptz - "rate_limit_buckets"."updatedAt")) * 1000.0)::double precision)
+                / ${windowMs}::double precision
+              )
+            )
+          ) + 1
+        )::int,
+        "expiresAt" = ${expiresAt},
         "updatedAt" = ${now}
       RETURNING "count"
     `;

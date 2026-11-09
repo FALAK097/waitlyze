@@ -7,14 +7,123 @@ const FORMATS = new Set(["jpg", "png", "webp", "gif", "avif"]);
 const PNG_SIGNATURE = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
 // PNG text/time chunks can embed GPS or device details.
 const PNG_PRIVATE_CHUNKS = new Set(["eXIf", "tEXt", "zTXt", "iTXt", "tIME"]);
-// WebP metadata chunks (and the matching VP8X flag bits).
-const WEBP_PRIVATE_CHUNKS = new Set(["EXIF", "XMP "]);
-const WEBP_PRIVATE_FLAGS = 0x08 | 0x04; // EXIF | XMP
+// EXIF Orientation tag (0x0112) — the one value worth keeping when stripping.
+const EXIF_ORIENTATION_TAG = 0x0112;
+// WebP metadata chunks: "EXIF" keeps only its Orientation tag, "XMP " is
+// dropped entirely (matching VP8X flag bits below).
+const WEBP_XMP_FLAG = 0x04;
+const WEBP_EXIF_FLAG = 0x08;
+
+/**
+ * Read the EXIF Orientation tag (0x0112) from a raw EXIF payload, with or
+ * without the JPEG-style "Exif\0\0" prefix. Returns 1-8, or null when the
+ * payload is malformed or has no orientation. Never throws: a payload we
+ * cannot parse is simply dropped with the rest of the metadata.
+ */
+function readExifOrientation(payload) {
+  try {
+    let tiff = payload;
+    if (tiff.length >= 6 && tiff.toString("latin1", 0, 6) === "Exif\0\0") tiff = tiff.subarray(6);
+    if (tiff.length < 8) return null;
+    const byteOrder = tiff.toString("latin1", 0, 2);
+    if (byteOrder !== "II" && byteOrder !== "MM") return null;
+    const little = byteOrder === "II";
+    const u16 = (offset) => (little ? tiff.readUInt16LE(offset) : tiff.readUInt16BE(offset));
+    const u32 = (offset) => (little ? tiff.readUInt32LE(offset) : tiff.readUInt32BE(offset));
+    if (u16(2) !== 42) return null;
+    const ifd = u32(4);
+    if (ifd < 8 || ifd + 2 > tiff.length) return null;
+    const entries = u16(ifd);
+    if (ifd + 2 + entries * 12 > tiff.length) return null;
+    for (let i = 0; i < entries; i++) {
+      const entry = ifd + 2 + i * 12;
+      if (u16(entry) !== EXIF_ORIENTATION_TAG) continue;
+      // Orientation is a single SHORT whose value sits in the value field.
+      if (u16(entry + 2) !== 3 || u32(entry + 4) !== 1) return null;
+      const value = u16(entry + 8);
+      return value >= 1 && value <= 8 ? value : null;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+/** Minimal EXIF blob holding nothing but the Orientation tag. */
+function buildExifOrientationPayload(orientation, withPrefix) {
+  const tiff = Buffer.alloc(26);
+  tiff.write("II", 0, "latin1"); // little-endian TIFF header
+  tiff.writeUInt16LE(42, 2);
+  tiff.writeUInt32LE(8, 4); // IFD0 follows the 8-byte header
+  tiff.writeUInt16LE(1, 8); // exactly one entry
+  tiff.writeUInt16LE(EXIF_ORIENTATION_TAG, 10);
+  tiff.writeUInt16LE(3, 12); // SHORT
+  tiff.writeUInt32LE(1, 14); // one value
+  tiff.writeUInt16LE(orientation, 18); // value in the first two bytes, then padding
+  tiff.writeUInt32LE(0, 22); // no further IFDs (GPS, Exif IFD, thumbnails all gone)
+  if (!withPrefix) return tiff;
+  return Buffer.concat([Buffer.from("Exif\0\0", "latin1"), tiff]);
+}
+
+/**
+ * Rebuild an EXIF payload that keeps only Orientation (2-8; 1 needs no tag).
+ * Returns null when there is nothing worth keeping, so callers drop the
+ * metadata entirely.
+ */
+function rebuildExifKeepOrientation(payload) {
+  const orientation = readExifOrientation(payload);
+  if (orientation === null || orientation < 2 || orientation > 8) return null;
+  const withPrefix = payload.length >= 6 && payload.toString("latin1", 0, 6) === "Exif\0\0";
+  return buildExifOrientationPayload(orientation, withPrefix);
+}
+
+const CRC_TABLE = (() => {
+  const table = new Uint32Array(256);
+  for (let n = 0; n < 256; n++) {
+    let c = n;
+    for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
+    table[n] = c >>> 0;
+  }
+  return table;
+})();
+
+function crc32(buffer) {
+  let crc = 0xffffffff;
+  for (let i = 0; i < buffer.length; i++) crc = CRC_TABLE[(crc ^ buffer[i]) & 0xff] ^ (crc >>> 8);
+  return (crc ^ 0xffffffff) >>> 0;
+}
+
+function buildJpegApp1Segment(payload) {
+  const segment = Buffer.alloc(4 + payload.length);
+  segment[0] = 0xff;
+  segment[1] = 0xe1;
+  segment.writeUInt16BE(payload.length + 2, 2); // length includes its own two bytes
+  payload.copy(segment, 4);
+  return segment;
+}
+
+function buildPngChunk(type, data) {
+  const chunk = Buffer.alloc(12 + data.length);
+  chunk.writeUInt32BE(data.length, 0);
+  chunk.write(type, 4, "latin1");
+  data.copy(chunk, 8);
+  chunk.writeUInt32BE(crc32(chunk.subarray(4, 8 + data.length)), 8 + data.length);
+  return chunk;
+}
+
+function buildWebpChunk(type, data) {
+  const chunk = Buffer.alloc(8 + data.length + (data.length % 2)); // RIFF pads to even sizes
+  chunk.write(type, 0, "latin1");
+  chunk.writeUInt32LE(data.length, 4);
+  data.copy(chunk, 8);
+  return chunk;
+}
 
 /**
  * Remove APP1 (EXIF/XMP, including GPS) and other private APPn segments from
- * a JPEG stream, keeping the JFIF and ICC profiles and every byte from the
- * start of scan onward. Returns null when the stream is not a walkable JPEG.
+ * a JPEG stream, keeping the JFIF and ICC profiles, an orientation-only EXIF
+ * value, and every byte from the start of scan onward. Returns null when the
+ * stream is not a walkable JPEG.
  */
 function stripJpegMetadata(buffer) {
   if (buffer.length < 4 || buffer[0] !== 0xff || buffer[1] !== 0xd8) return null;
@@ -40,7 +149,18 @@ function stripJpegMetadata(buffer) {
     if (length < 2 || offset + 2 + length > buffer.length) return null;
     const isAppn = marker >= 0xe0 && marker <= 0xef;
     const keep = !isAppn || marker === 0xe0 || marker === 0xe2; // JFIF (APP0), ICC (APP2)
-    if (keep) parts.push(buffer.subarray(offset, offset + 2 + length));
+    if (keep) {
+      parts.push(buffer.subarray(offset, offset + 2 + length));
+    } else if (
+      marker === 0xe1 &&
+      length >= 8 &&
+      buffer.toString("latin1", offset + 4, offset + 10) === "Exif\0\0"
+    ) {
+      // EXIF: strip GPS, device details and thumbnails, but keep the
+      // Orientation tag or phone photos would render sideways.
+      const rebuilt = rebuildExifKeepOrientation(buffer.subarray(offset + 4, offset + 2 + length));
+      if (rebuilt) parts.push(buildJpegApp1Segment(rebuilt));
+    }
     offset += 2 + length;
     if (marker === 0xd9) break;
   }
@@ -59,7 +179,13 @@ function stripPngMetadata(buffer) {
     const type = buffer.toString("latin1", offset + 4, offset + 8);
     const total = 12 + length;
     if (offset + total > buffer.length) return null;
-    if (!PNG_PRIVATE_CHUNKS.has(type)) parts.push(buffer.subarray(offset, offset + total));
+    if (type === "eXIf") {
+      // Keep only Orientation; drop GPS and the rest of the EXIF payload.
+      const rebuilt = rebuildExifKeepOrientation(buffer.subarray(offset + 8, offset + 8 + length));
+      if (rebuilt) parts.push(buildPngChunk("eXIf", rebuilt));
+    } else if (!PNG_PRIVATE_CHUNKS.has(type)) {
+      parts.push(buffer.subarray(offset, offset + total));
+    }
     offset += total;
     if (type === "IEND") {
       sawEnd = true;
@@ -70,7 +196,21 @@ function stripPngMetadata(buffer) {
   return Buffer.concat(parts);
 }
 
-/** Drop EXIF/XMP chunks from a WebP container and clear their VP8X flags. */
+/** EXIF chunk data of a WebP container, or null when it has none. */
+function readWebpExifChunk(buffer) {
+  let offset = 12;
+  while (offset + 8 <= buffer.length) {
+    const type = buffer.toString("latin1", offset, offset + 4);
+    const size = buffer.readUInt32LE(offset + 4);
+    const total = 8 + size + (size % 2);
+    if (offset + total > buffer.length) return null;
+    if (type === "EXIF") return buffer.subarray(offset + 8, offset + 8 + size);
+    offset += total;
+  }
+  return null;
+}
+
+/** Drop EXIF/XMP chunks from a WebP container, keeping orientation-only EXIF. */
 function stripWebpMetadata(buffer) {
   if (
     buffer.length < 12 ||
@@ -78,6 +218,10 @@ function stripWebpMetadata(buffer) {
     buffer.toString("latin1", 8, 12) !== "WEBP"
   )
     return null;
+  // VP8X, which carries the EXIF flag, precedes every other chunk, so decide
+  // now whether an orientation-only EXIF chunk survives the strip.
+  const exifData = readWebpExifChunk(buffer);
+  const keptExif = exifData ? rebuildExifKeepOrientation(exifData) : null;
   const parts = [buffer.subarray(0, 12)];
   let offset = 12;
   let sawImage = false;
@@ -86,13 +230,19 @@ function stripWebpMetadata(buffer) {
     const size = buffer.readUInt32LE(offset + 4);
     const total = 8 + size + (size % 2);
     if (offset + total > buffer.length) return null;
-    if (WEBP_PRIVATE_CHUNKS.has(type)) {
+    if (type === "EXIF") {
+      if (keptExif) parts.push(buildWebpChunk("EXIF", keptExif));
+      offset += total;
+      continue;
+    }
+    if (type === "XMP ") {
       offset += total;
       continue;
     }
     if (type === "VP8X" && size >= 10) {
       const chunk = Buffer.from(buffer.subarray(offset, offset + total));
-      chunk[8] &= ~WEBP_PRIVATE_FLAGS;
+      chunk[8] &= ~WEBP_XMP_FLAG;
+      if (!keptExif) chunk[8] &= ~WEBP_EXIF_FLAG;
       parts.push(chunk);
     } else {
       if (type === "VP8 " || type === "VP8L") sawImage = true;
