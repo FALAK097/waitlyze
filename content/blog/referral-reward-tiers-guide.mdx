@@ -1,0 +1,92 @@
+---
+title: "Referral Reward Tiers: How to Design a Waitlist Incentive"
+description: "Choose rewards people want, set achievable milestones, protect your margins, and write clear rules for a fair pre-launch referral campaign."
+date: 2026-11-09T06:10:00Z
+author: Waitlyze Team
+tags:
+  - Referrals
+  - Rewards
+  - Growth
+featured: true
+tldr: "The best waitlist rewards are relevant to the product, inexpensive to fulfill, and valuable to subscribers. Use three or four escalating tiers, make the first achievable after a few verified referrals, reserve scarce benefits for higher tiers, and reward confirmed eligible referrals—not clicks or unverified addresses."
+faqs:
+  - question: What is a referral reward tier?
+    answer: It is a benefit a subscriber unlocks after reaching a defined number of eligible referrals, such as early access after five verified referrals.
+  - question: How many referral tiers should a waitlist have?
+    answer: Three or four tiers are enough for most campaigns. This creates an early win and a larger goal without making the program hard to understand.
+  - question: Should I offer cash for waitlist referrals?
+    answer: Usually not during validation. Cash can attract people who want the payout rather than the product. Product access, credits, useful upgrades, and recognition better align the incentive with future users.
+  - question: When should a reward be granted?
+    answer: Only after the referred person completes the eligibility action in your rules, such as confirming their email. Add a review or hold period for valuable rewards.
+---
+
+A referral reward gives subscribers a reason to share. The difficult part is choosing an incentive that attracts future users, feels achievable, and remains affordable if the campaign grows.
+
+## Start with the behavior
+
+For most waitlists, the desired behavior is: invite people who genuinely want the product and complete signup confirmation. That excludes rewards for views, clicks, or raw submissions, which are easy to inflate.
+
+Choose one campaign goal: reach qualified peers, identify engaged testers, fill a beta in priority order, or reduce founder-led promotion. The goal determines the reward. If you need testers, early access is aligned. If you need feedback, a group product session may work better than merchandise.
+
+## Score every reward idea
+
+| Quality | Question |
+| --- | --- |
+| Relevant | Would someone who does not want the product chase it? |
+| Valuable | Will the intended subscriber share for it? |
+| Scalable | Can you deliver it if ten times more people qualify? |
+| Clear | Can you explain the benefit in one sentence? |
+| Verifiable | Can you objectively decide when it is earned? |
+
+Product rewards include earlier access, trial extensions, credits, extra usage, and priority onboarding. Access rewards include a private community, group walkthrough, roadmap vote, or founding-member recognition. Digital templates and workshops can scale; one-to-one services should be capped.
+
+Cash, gift cards, and physical products add fraud, shipping, tax, geography, and support considerations. Get appropriate legal and tax advice for high-value campaigns or competitions.
+
+## Build a simple ladder
+
+Use an achievable first win, a valuable core reward, and a scarce advocate tier.
+
+| Verified referrals | Example reward | Reason |
+| ---: | --- | --- |
+| 3 | Founding badge and template pack | Low cost and attainable |
+| 5 | Priority beta access | Directly tied to product interest |
+| 10 | Three months of a paid plan | Valuable and bounded |
+| 25 | Group setup session | Scarce benefit for advocates |
+
+These are examples, not benchmarks. Base thresholds on how many relevant people a subscriber can realistically reach, then adjust future campaigns from observed behavior.
+
+## Model the cost
+
+`Expected reward cost = expected qualifiers × fulfillment cost per reward`
+
+Include staff review, support time, shipping, vendor fees, scarce capacity, and disputes. Run a stress case at two or three times the expected number of qualifiers. If it would force you to change the rules, redesign the offer before launch.
+
+## Write eligibility rules plainly
+
+State what counts, whether confirmation is required, how duplicates and self-referrals are treated, when progress updates, whether suspicious activity can be reviewed, how rewards arrive, and any limits.
+
+Waitlyze credits eligible referrals after the invited person verifies and the referral is clear or approved. The [referral guide](/blog/referral-waitlist-guide) explains the flow and fraud controls.
+
+## Separate unlocking from fulfillment
+
+Reaching a tier and delivering the benefit are different operations. For valuable rewards:
+
+1. record the eligible referral event;
+2. deduplicate it with a stable event ID;
+3. review suspicious patterns;
+4. fulfill it in your product or operations system;
+5. record delivery so it cannot happen twice.
+
+Waitlyze exposes `referral.completed` and reward-tier milestones through signed webhooks. Use the verified event—not a signup alone—to drive fulfillment. See the [webhook documentation](/docs/webhooks).
+
+## Avoid these mistakes
+
+- A prize unrelated to the product grows the wrong audience.
+- Too many tiers make the program hard to explain.
+- Unbounded “lifetime” promises create hidden long-term costs.
+- Rewarding submissions invites throwaway accounts.
+- Hidden rules create disputes with the people you want as advocates.
+
+Before publishing, write down the intended invitee, eligibility event, maximum stress-case cost, fulfillment owner, delivery time, review signals, and public rules link. If any answer is vague, the campaign is not ready.
+
+The right ladder gives future users more of what they already value—and gives you growth you can afford to honor.

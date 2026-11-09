@@ -14,10 +14,7 @@ export default function LegalDocument({
 }) {
   return (
     <PublicShell>
-      <main
-        id="main-content"
-        className="mx-auto w-full max-w-7xl px-4 pt-12 pb-18 sm:px-5 md:px-8 lg:px-12"
-      >
+      <main id="main-content" className="mx-auto w-full max-w-[1120px] px-[18px] pt-12 pb-18">
         <Link
           href="/"
           className="group inline-flex items-center gap-2.5 text-sm font-medium underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-neutral-900"
@@ -43,7 +40,7 @@ export default function LegalDocument({
           </span>
         </header>
         <div className="flex flex-col gap-8 py-12 lg:flex-row lg:gap-22">
-          <aside className="min-w-0 self-start lg:sticky lg:top-30">
+          <aside className="w-full min-w-0 self-start lg:sticky lg:top-30 lg:w-56 lg:shrink-0">
             <LegalTOC sections={sections} />
             <a
               className="group inline-flex items-center gap-2.5 text-sm font-medium underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-neutral-900"
@@ -58,28 +55,10 @@ export default function LegalDocument({
               />
             </a>
           </aside>
-          <article className="min-w-0 text-base leading-loose break-words text-product-text-secondary [&_a]:text-product-text-primary [&_a]:underline [&_a]:underline-offset-4 [&_a:hover]:text-product-success-text [&_h2]:mt-10 [&_h2]:mb-4 [&_h2]:scroll-mt-28 [&_h2]:font-product-display [&_h2]:text-section [&_h2]:leading-snug [&_h2]:tracking-tight [&_h2]:text-product-text-primary max-md:[&_h2]:scroll-mt-45 [&_li+li]:mt-2.5 [&_p+p]:mt-4 [&_ul]:my-4 [&_ul]:list-disc [&_ul]:pl-6">
+          <article className="min-w-0 flex-1 text-base leading-loose break-words text-product-text-secondary [&_a]:text-product-text-primary [&_a]:underline [&_a]:underline-offset-4 [&_a:hover]:text-product-success-text [&_h2]:mt-10 [&_h2]:mb-4 [&_h2]:scroll-mt-28 [&_h2]:font-product-display [&_h2]:text-section [&_h2]:leading-snug [&_h2]:tracking-tight [&_h2]:text-product-text-primary max-md:[&_h2]:scroll-mt-45 [&_li+li]:mt-2.5 [&_p+p]:mt-4 [&_ul]:my-4 [&_ul]:list-disc [&_ul]:pl-6">
             {children}
           </article>
         </div>
-        <nav
-          className="flex gap-8 border-t border-product-border-subtle pt-7 text-caption"
-          aria-label="Related policies"
-        >
-          <Link
-            href="/privacy"
-            className="inline-flex items-center gap-2 hover:text-product-success-text focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-neutral-900"
-          >
-            Privacy policy <HugeiconsIcon icon={ArrowUpRight01Icon} size={15} aria-hidden="true" />
-          </Link>
-          <Link
-            href="/terms"
-            className="inline-flex items-center gap-2 hover:text-product-success-text focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-neutral-900"
-          >
-            Terms of service{" "}
-            <HugeiconsIcon icon={ArrowUpRight01Icon} size={15} aria-hidden="true" />
-          </Link>
-        </nav>
       </main>
     </PublicShell>
   );

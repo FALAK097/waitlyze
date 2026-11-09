@@ -129,7 +129,7 @@ export async function DELETE(request) {
     action: AUDIT_ACTIONS.RESEND_DISCONNECTED,
     resourceType: "integration",
     resourceName: "Resend",
-    detail: "Falls back to the deployment sender",
+    detail: "Workspace Resend sender disconnected",
   });
   return NextResponse.json({ ok: true });
 }

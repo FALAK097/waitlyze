@@ -306,8 +306,8 @@ export function ResendIntegration({ initialConnection, accountEmail, canManage, 
                 {confirmDisconnect ? (
                   <>
                     <p className="text-sm">
-                      Disconnect Resend? Campaign sending will pause until you connect a sender
-                      again.
+                      Disconnect Resend? Waitlists with their own sender keep using it; other
+                      subscriber mail pauses until a sender is connected.
                     </p>
                     <div>
                       <Button

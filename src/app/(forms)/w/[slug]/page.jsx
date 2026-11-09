@@ -15,6 +15,7 @@ const publishedPage = cache(async function publishedPage(slug) {
     where: { publicSlug: slug },
     select: {
       id: true,
+      workspaceId: true,
       name: true,
       status: true,
       publishedRevision: true,

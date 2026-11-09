@@ -77,7 +77,7 @@ ${templates
 
 ## Frequently Asked Questions
 ### Is Waitlyze free to use?
-Yes. You can get started for free, and no credit card is required. A free plan will remain available if paid plans are introduced later.
+Yes. Free includes one waitlist and up to 100 signups per workspace, with no credit card required. Pro is $15 per month or $50 per year.
 
 ### Do I need a website or coding skills?
 No. You can visually design your page in the builder and share its hosted URL. If you already have a website, copy the embed snippet from your dashboard.
@@ -86,7 +86,10 @@ No. You can visually design your page in the builder and share its hosted URL. I
 When referral sharing is enabled, confirmed subscribers receive a personal link. If double opt-in is enabled, referred signups earn credit after verifying their email. If it is disabled, they may earn credit without verifying. Reward delivery is up to the waitlist owner.
 
 ### Can I email everyone who signs up?
-Marketing email is sent only to verified subscribers who explicitly opted in. Broadcasts let you preview the eligible audience before confirming; a sender and delivery setup are required.
+With Pro, connect and verify your own Resend sender to send broadcasts and automations. Waitlyze never uses its deployment Resend key for subscriber email. Marketing email goes only to verified subscribers who explicitly opted in.
+
+### Can I cancel Pro or get a refund?
+You can cancel renewal from workspace Billing at any time and keep Pro through the paid period. Payments are non-refundable except where applicable law requires otherwise. See the [Refund Policy](/refund-policy).
 
 ### Can I change a live page without breaking it?
 Edits save as drafts. Visitors continue seeing the published version until you publish again. You can pause signups or roll back to an earlier published revision.
@@ -299,10 +302,11 @@ ${text}${faqs}`;
     }
   }
 
-  // 7. Legal pages /privacy, /terms
-  if (path === "/privacy" || path === "/terms") {
+  // 7. Legal pages
+  if (path === "/privacy" || path === "/terms" || path === "/refund-policy") {
     const isPrivacy = path === "/privacy";
-    const title = isPrivacy ? "Privacy Policy" : "Terms of Service";
+    const isTerms = path === "/terms";
+    const title = isPrivacy ? "Privacy Policy" : isTerms ? "Terms of Service" : "Refund Policy";
     const body = isPrivacy
       ? `At Waitlyze ("we," "us," "our"), accessible from https://waitlyze.com, we are committed to protecting your privacy. This Privacy Policy outlines our practices regarding data collection, usage, and sharing when you access our platform.
 
@@ -335,7 +339,8 @@ We may update this Privacy Policy from time to time. We will notify users of any
 
 ## 8. Contact Us
 If you have questions or concerns about this Privacy Policy or our data practices, please contact us at support@waitlyze.com.`
-      : `Welcome to Waitlyze ("Platform," "Service," "we," "us," "our"). By accessing or using https://waitlyze.com ("Website"), you agree to comply with and be bound by these Terms of Service ("Terms"). If you do not agree to these Terms, you may not use our services.
+      : isTerms
+        ? `Welcome to Waitlyze ("Platform," "Service," "we," "us," "our"). By accessing or using https://waitlyze.com ("Website"), you agree to comply with and be bound by these Terms of Service ("Terms"). If you do not agree to these Terms, you may not use our services.
 
 ## 1. Acceptance of Terms
 By creating an account or accessing our Platform, you accept and agree to be bound by these Terms, our Privacy Policy, and any other policies or guidelines that we may implement.
@@ -367,16 +372,49 @@ To the fullest extent permitted by law, Waitlyze shall not be liable for any dam
 ## 9. Modifications to Terms
 We reserve the right to update these Terms at any time. We will notify users of any material changes, and continued use of the Platform indicates acceptance of the revised Terms.
 
-## 10. Contact Information
-For questions about these Terms, please contact us at support@waitlyze.com.`;
+## 10. Subscriptions and Billing
+Waitlyze offers a free plan and a paid Pro plan billed monthly or annually. Base prices are $15 per month and $50 per year in USD. Where available, the pricing page shows Dodo Payments' country-adjusted price in local currency; applicable taxes are calculated based on your billing location and shown at checkout. Paid subscriptions renew automatically for the selected interval until canceled. The workspace owner can manage or cancel renewal from Billing in workspace settings. A cancellation takes effect at the end of the current paid period. Refunds are governed by our [Refund Policy](https://waitlyze.com/refund-policy). Dodo Payments acts as Merchant of Record for purchases and handles checkout, invoices, and customer-facing transaction taxes.
+
+## 11. Contact Information
+For questions about these Terms, please contact us at support@waitlyze.com.`
+        : `## No Refunds
+
+**Payments are non-refundable.** Waitlyze does not provide refunds or credits for partial subscription periods, unused features, unused time after cancellation, or a renewal that has already been charged. Your subscription remains available through the end of the paid billing period unless the service is terminated for a serious violation of our Terms.
+
+## Cancel a Subscription
+
+You can cancel renewal at any time from Billing in your workspace settings. Cancellation prevents the next charge; it does not refund the current billing period. Your workspace keeps Pro access until the paid period ends, then returns to the Free plan. Existing waitlists and subscriber data are retained, and Free-plan limits apply to new activity.
+
+## Billing Issues
+
+If you see a duplicate charge, an incorrect billing interval, or a technical issue that prevented access to a paid feature, contact support@waitlyze.com with the workspace name and Dodo Payments transaction reference. We will investigate and correct verified billing or service errors. This does not change the no-refund policy for unused time or a change of mind.
+
+## Rights Required by Law
+
+Nothing in this policy limits a refund, cancellation, or other right that cannot lawfully be excluded in your jurisdiction. Where mandatory law requires a refund, Dodo Payments and Waitlyze will follow the applicable process.
+
+## Contact
+
+For billing questions, contact [support@waitlyze.com](mailto:support@waitlyze.com). Never email a full card number or security code.`;
 
     return buildMarkdownDoc({
       title,
       description: `Waitlyze ${title}`,
       path,
       body,
-      updated: isPrivacy ? "2026-10-11" : "2026-11-02",
-      related: [{ title: "Waitlyze Home", path: "/", description: "Product overview" }],
+      updated: isPrivacy ? "2026-10-11" : "2026-11-08",
+      related: [
+        { title: "Waitlyze Home", path: "/", description: "Product overview" },
+        ...(isPrivacy
+          ? []
+          : [
+              {
+                title: "Refund Policy",
+                path: "/refund-policy",
+                description: "Subscriptions and refunds",
+              },
+            ]),
+      ],
     });
   }
 
@@ -440,6 +478,7 @@ export function listMarkdownRoutes() {
     })),
     { path: "/privacy", title: "Privacy Policy", type: "legal" },
     { path: "/terms", title: "Terms of Service", type: "legal" },
+    { path: "/refund-policy", title: "Refund Policy", type: "legal" },
     { path: "/agent-instructions.md", title: "AI Agent Instructions", type: "agent" },
   ];
 }

@@ -50,6 +50,7 @@ import { parseAsStringLiteral, useQueryState } from "nuqs";
 import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 
 import { ColorPicker } from "@/components/reui/color-picker";
+import { UpgradeButton } from "@/components/shared/upgrade-button";
 import { Button, buttonVariants } from "@/components/ui/button";
 import {
   Dialog,
@@ -233,8 +234,11 @@ export function SnapshotPageBuilder({
   pausePage,
   rollbackPage,
   canPublish,
+  canManageBilling = false,
+  workspaceId = null,
   publicationOrigin,
   turnstileConfigured,
+  customerEmailSenderConnected = true,
 }) {
   const router = useRouter();
   const sensors = useSensors(
@@ -711,11 +715,22 @@ export function SnapshotPageBuilder({
         publishedSnapshot: waitList.publishedSnapshot,
         showReferrals: waitList.showReferrals,
         turnstileConfigured,
+        customerEmailSenderConnected,
       }),
-    [snapshot, waitList.publishedSnapshot, waitList.showReferrals, turnstileConfigured],
+    [
+      snapshot,
+      waitList.publishedSnapshot,
+      waitList.showReferrals,
+      turnstileConfigured,
+      customerEmailSenderConnected,
+    ],
   );
   const goToFix = (fix) => {
     if (!fix) return;
+    if (fix.surface === "email-sender") {
+      router.push(`/waitlists/${waitList.id}/settings?section=sender`);
+      return;
+    }
     if (fix.surface === "referrals") {
       router.push(`/waitlists/${waitList.id}/settings?section=referral`);
       return;
@@ -1126,6 +1141,7 @@ export function SnapshotPageBuilder({
                 name={waitList.name}
                 previewViewport={previewViewport}
                 hideCounts={snapshot.rewards?.hideCounts === true}
+                forcePoweredBy={!waitList.canRemoveBranding}
                 renderSignupForm={() => <WaitlistSignupPreview form={snapshot.form} />}
                 interactive
                 selectedBlockId={selectedId}
@@ -1168,7 +1184,13 @@ export function SnapshotPageBuilder({
                 updateForm={(value) => updateRoot("form", value)}
               />
             ) : (
-              <DesignPanel brand={snapshot.brand} update={(value) => updateRoot("brand", value)} />
+              <DesignPanel
+                brand={snapshot.brand}
+                canRemoveBranding={waitList.canRemoveBranding}
+                canManageBilling={canManageBilling}
+                workspaceId={workspaceId}
+                update={(value) => updateRoot("brand", value)}
+              />
             )}
           </aside>
         </div>
@@ -1381,6 +1403,7 @@ export function SnapshotPageBuilder({
               name={waitList.name}
               previewViewport="desktop"
               hideCounts={snapshot.rewards?.hideCounts === true}
+              forcePoweredBy={!waitList.canRemoveBranding}
               renderSignupForm={() => <WaitlistSignupPreview form={snapshot.form} />}
             />
           </div>
@@ -1445,7 +1468,13 @@ function TypeSizeField({ label, value, defaultValue, onChange, min = 12, max = 1
     </div>
   );
 }
-function DesignPanel({ brand, update }) {
+function DesignPanel({
+  brand,
+  update,
+  canRemoveBranding = false,
+  canManageBilling = false,
+  workspaceId = null,
+}) {
   const poweredById = useId();
   return (
     <div className={"grid gap-4 p-4"}>
@@ -1465,11 +1494,20 @@ function DesignPanel({ brand, update }) {
       />
       <div className="flex items-center justify-between gap-3">
         <Label htmlFor={poweredById}>Powered by Waitlyze</Label>
-        <Switch
-          checked={brand.showPoweredBy !== false}
-          id={poweredById}
-          onCheckedChange={(checked) => update({ showPoweredBy: checked })}
-        />
+        {canRemoveBranding ? (
+          <Switch
+            checked={brand.showPoweredBy !== false}
+            id={poweredById}
+            onCheckedChange={(checked) => update({ showPoweredBy: checked })}
+          />
+        ) : (
+          <UpgradeButton
+            label={canManageBilling ? "Pro" : "See Pro plans"}
+            feature="Remove Waitlyze branding"
+            canManageBilling={canManageBilling}
+            workspaceId={workspaceId}
+          />
+        )}
       </div>
       <FontPicker
         label="Heading font"

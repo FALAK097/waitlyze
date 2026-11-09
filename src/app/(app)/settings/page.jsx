@@ -9,13 +9,22 @@ import { SettingsLoadError } from "@/components/product/settings-load-error";
 import { SettingsPanelSkeleton } from "@/components/product/settings-panel-skeleton";
 import { SettingsSectionNavigation } from "@/components/product/settings-section-nav";
 import { TeamAccessSettings } from "@/components/product/team-access-settings";
+import { WorkspaceBillingSettings } from "@/components/product/workspace-billing-settings";
+import { getWorkspaceEntitlements } from "@/lib/billing/plans.mjs";
 import { env } from "@/lib/env.mjs";
 import prisma from "@/lib/prisma";
 import { currentWorkspace } from "@/lib/workspaces/current";
 
 export const metadata = { title: "Settings" };
 
-async function SelectedSettings({ section, user, workspace, role }) {
+async function SelectedSettings({
+  section,
+  user,
+  workspace,
+  role,
+  checkoutReturn,
+  workspaceIsSelected,
+}) {
   const canManage = ["OWNER", "ADMIN"].includes(role);
   if (section === "profile")
     return (
@@ -37,36 +46,39 @@ async function SelectedSettings({ section, user, workspace, role }) {
       </section>
     );
   if (section === "team") {
-    const results = await Promise.allSettled([
-      prisma.workspaceMember.findMany({
-        where: { workspaceId: workspace.id },
-        orderBy: [{ role: "asc" }, { createdAt: "asc" }],
-        select: {
-          userId: true,
-          role: true,
-          createdAt: true,
-          user: { select: { name: true, email: true, image: true, imageUrl: true } },
-        },
-      }),
-      canManage
-        ? prisma.workspaceInvitation.findMany({
-            where: {
-              workspaceId: workspace.id,
-              status: { in: ["PENDING", "SEND_FAILED"] },
-              expiresAt: { gt: new Date() },
-            },
-            orderBy: { createdAt: "desc" },
-            take: 50,
-            select: {
-              id: true,
-              emailNormalized: true,
-              role: true,
-              status: true,
-              createdAt: true,
-              expiresAt: true,
-            },
-          })
-        : Promise.resolve([]),
+    const [results, entitlements] = await Promise.all([
+      Promise.allSettled([
+        prisma.workspaceMember.findMany({
+          where: { workspaceId: workspace.id },
+          orderBy: [{ role: "asc" }, { createdAt: "asc" }],
+          select: {
+            userId: true,
+            role: true,
+            createdAt: true,
+            user: { select: { name: true, email: true, image: true, imageUrl: true } },
+          },
+        }),
+        canManage
+          ? prisma.workspaceInvitation.findMany({
+              where: {
+                workspaceId: workspace.id,
+                status: { in: ["PENDING", "SEND_FAILED"] },
+                expiresAt: { gt: new Date() },
+              },
+              orderBy: { createdAt: "desc" },
+              take: 50,
+              select: {
+                id: true,
+                emailNormalized: true,
+                role: true,
+                status: true,
+                createdAt: true,
+                expiresAt: true,
+              },
+            })
+          : Promise.resolve([]),
+      ]),
+      getWorkspaceEntitlements(prisma, workspace.id),
     ]);
     return (
       <section className="max-w-190 min-w-0 flex-1" aria-labelledby="settings-panel-heading">
@@ -83,6 +95,9 @@ async function SelectedSettings({ section, user, workspace, role }) {
             invitations={results[1].value}
             canManage={canManage}
             canInviteAdmins={role === "OWNER"}
+            canManageBilling={role === "OWNER"}
+            plan={entitlements.plan}
+            memberLimit={entitlements.members}
             secureInvitesConfigured={Boolean(process.env.WEBHOOK_SECRET_ENCRYPTION_KEY)}
             currentUserId={user.id}
             isPersonalWorkspace={Boolean(workspace.personalOwnerId)}
@@ -165,6 +180,49 @@ async function SelectedSettings({ section, user, workspace, role }) {
       </section>
     );
   }
+  if (section === "billing") {
+    const [subscription, waitlistCount, signupCount, memberCount, entitlements] = await Promise.all(
+      [
+        prisma.workspaceSubscription.findUnique({
+          where: { workspaceId: workspace.id },
+          select: {
+            interval: true,
+            status: true,
+            currentPeriodEnd: true,
+            cancelAtPeriodEnd: true,
+            dodoCustomerId: true,
+          },
+        }),
+        prisma.waitList.count({ where: { workspaceId: workspace.id } }),
+        prisma.workspace
+          .findUnique({
+            where: { id: workspace.id },
+            select: { signupUsageCount: true },
+          })
+          .then((record) => record?.signupUsageCount || 0),
+        prisma.workspaceMember.count({ where: { workspaceId: workspace.id } }),
+        getWorkspaceEntitlements(prisma, workspace.id),
+      ],
+    );
+    return (
+      <WorkspaceBillingSettings
+        workspaceId={workspace.id}
+        workspaceName={workspace.name}
+        plan={entitlements.plan}
+        interval={subscription?.interval || null}
+        status={subscription?.status || "FREE"}
+        currentPeriodEnd={subscription?.currentPeriodEnd?.toISOString() || null}
+        cancelAtPeriodEnd={subscription?.cancelAtPeriodEnd === true}
+        canManageBilling={role === "OWNER"}
+        waitlistCount={waitlistCount}
+        signupCount={signupCount}
+        memberCount={memberCount}
+        hasBillingCustomer={Boolean(subscription?.dodoCustomerId)}
+        checkoutReturn={checkoutReturn}
+        workspaceIsSelected={workspaceIsSelected}
+      />
+    );
+  }
   let connection;
   let cloudflareConnection;
   try {
@@ -238,22 +296,33 @@ async function SelectedSettings({ section, user, workspace, role }) {
 }
 
 export default async function SettingsPage({ searchParams }) {
-  const [context, query] = await Promise.all([currentWorkspace(), searchParams]);
-  const section = ["profile", "workspace", "team", "integrations", "audit"].includes(query.section)
+  const [currentContext, query] = await Promise.all([currentWorkspace(), searchParams]);
+  const section = ["profile", "workspace", "team", "integrations", "audit", "billing"].includes(
+    query.section,
+  )
     ? query.section
     : "profile";
+  const requestedWorkspace =
+    typeof query.workspaceId === "string"
+      ? currentContext.workspaces.find((workspace) => workspace.id === query.workspaceId)
+      : null;
+  const context = requestedWorkspace
+    ? { ...currentContext, workspace: requestedWorkspace }
+    : currentContext;
   return (
     <div className="mx-auto w-full max-w-280">
       <div className="flex items-start gap-8 max-[760px]:flex-col max-[760px]:gap-8 lg:gap-12 xl:gap-18">
         <aside className="sticky top-6 w-52.5 min-w-0 shrink-0 max-[760px]:static max-[760px]:w-full">
           <h1 className="mt-0! mb-7.5! text-xl! max-[760px]:mb-4!">Settings</h1>
-          <SettingsSectionNavigation section={section} />
+          <SettingsSectionNavigation section={section} workspaceId={context.workspace.id} />
         </aside>
         <Suspense key={`${context.workspace.id}:${section}`} fallback={<SettingsPanelSkeleton />}>
           <SelectedSettings
             section={section}
             {...context}
             role={context.workspace.members[0]?.role}
+            checkoutReturn={query.checkout === "return"}
+            workspaceIsSelected={context.workspace.id === currentContext.workspace.id}
           />
         </Suspense>
       </div>

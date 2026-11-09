@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { cache } from "react";
 
 import { WaitlistPageContent } from "@/components/product/waitlist-page-content";
+import { getWorkspaceEntitlements } from "@/lib/billing/plans.mjs";
 import { env } from "@/lib/env.mjs";
 import prisma from "@/lib/prisma";
 import { templateSnapshotSchema } from "@/lib/templates/catalog.mjs";
@@ -79,6 +80,7 @@ export default async function WaitListsPreviewPage(props) {
     where: { id },
     select: {
       id: true,
+      workspaceId: true,
       name: true,
       publicSlug: true,
       status: true,
@@ -106,6 +108,7 @@ export default async function WaitListsPreviewPage(props) {
     });
     const parsed = templateSnapshotSchema.safeParse(publication?.snapshot);
     if (parsed.success) {
+      const entitlements = await getWorkspaceEntitlements(prisma, structured.workspaceId);
       const embedSnapshot = {
         ...parsed.data,
         sections: [
@@ -127,6 +130,7 @@ export default async function WaitListsPreviewPage(props) {
             snapshot={embedSnapshot}
             name={structured.name}
             previewViewport="mobile"
+            forcePoweredBy={!entitlements.removeBranding}
             renderSignupForm={(_section, snapshot) => (
               <SignupForm
                 slug={structured.publicSlug || undefined}

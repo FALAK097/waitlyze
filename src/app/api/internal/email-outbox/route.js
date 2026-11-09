@@ -31,7 +31,6 @@ export async function POST(request) {
   const started = Date.now();
   const sendEmail = createWorkspaceResendSender({
     db: prisma,
-    defaults: null,
     createClient: (apiKey) => new Resend(apiKey),
   });
   const sendPlatform = createPlatformSender();

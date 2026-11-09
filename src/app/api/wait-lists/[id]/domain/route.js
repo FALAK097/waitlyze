@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { getWorkspaceEntitlements } from "@/lib/billing/plans.mjs";
 import {
   createCloudflareHostname,
   deleteCloudflareHostname,
@@ -62,6 +63,16 @@ export async function POST(request, { params }) {
     });
     if (!waitlist?.workspaceId)
       return NextResponse.json({ error: "This waitlist is not in a workspace." }, { status: 409 });
+    const entitlements = await getWorkspaceEntitlements(prisma, waitlist.workspaceId);
+    if (!entitlements.customDomains)
+      return NextResponse.json(
+        {
+          error: "Custom domains are a Pro feature. Upgrade this workspace to connect a domain.",
+          code: "PLAN_UPGRADE_REQUIRED",
+          feature: "customDomains",
+        },
+        { status: 402 },
+      );
     const reserved = await prisma.customDomain.create({
       data: { hostname, workspaceId: waitlist.workspaceId, waitListId: id, status: "NEEDS_DNS" },
     });

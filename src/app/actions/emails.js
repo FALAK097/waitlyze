@@ -5,6 +5,7 @@ import { headers } from "next/headers";
 import { Resend } from "resend";
 
 import { Prisma } from "@/generated/prisma/client";
+import { getWorkspaceEntitlements } from "@/lib/billing/plans.mjs";
 import { getCampaignPosition } from "@/lib/campaigns/referral-position.mjs";
 import { escapeHtmlText, renderEmailMarkdown } from "@/lib/email-markdown.mjs";
 import { emailBrandFromSnapshot } from "@/lib/email/brand.mjs";
@@ -28,16 +29,7 @@ import { env } from "@/lib/env.mjs";
 import prisma from "@/lib/prisma";
 import { consumePublicBudget, PublicRateLimitError } from "@/lib/security/public-rate-limit.mjs";
 import { AUDIT_ACTIONS, recordWaitlistAuditEvent } from "@/lib/workspaces/audit.mjs";
-import { requireCampaign } from "@/lib/workspaces/authorize";
-
-async function campaignSenderConfigured(waitListId) {
-  if (!env.OUTBOX_DISPATCH_SECRET) return false;
-  try {
-    return Boolean((await senderForWaitlist(waitListId))?.apiKey);
-  } catch {
-    return false;
-  }
-}
+import { requireCampaign, requireCampaignFeature } from "@/lib/workspaces/authorize";
 
 function renderLegacyTemplateEmail({ template, waitList, variables }) {
   const replaceVars = (text) =>
@@ -195,7 +187,7 @@ export async function upsertEmailTemplate({ waitListId, templateType, data }) {
         success: false,
         message: "Add a subject and keep the preview text under 180 characters.",
       };
-    const { scope } = await requireCampaign(waitListId, "sendEmail");
+    const { scope } = await requireCampaignFeature(waitListId, "sendEmail", "emailMarketing");
     const updated = await prisma.emailTemplate.upsert({
       where: {
         waitListId_type: {
@@ -342,7 +334,13 @@ export async function sendAutomationTestEmail({ waitListId, recipeId, to }) {
 async function renderTemplate({ waitListId, enumType, varsOverride = {} }) {
   const waitList = await prisma.waitList.findUnique({
     where: { id: waitListId, status: "PUBLISHED" },
-    select: { id: true, name: true, sendEmailsToSubscribers: true, templateSnapshot: true },
+    select: {
+      id: true,
+      name: true,
+      workspaceId: true,
+      sendEmailsToSubscribers: true,
+      templateSnapshot: true,
+    },
   });
   if (!waitList) return { error: "Waitlist not found" };
 
@@ -431,6 +429,8 @@ export async function sendSignupEmail({ waitListId, to }) {
   if (error === "Waitlist not found") return { success: false, message: error };
   if (error === "Template not found") return generic;
   if (!waitList.sendEmailsToSubscribers) return generic;
+  const entitlements = await getWorkspaceEntitlements(prisma, waitList.workspaceId);
+  if (!entitlements.emailMarketing) return generic;
 
   if (signUp?.signUpEmailSent) {
     return generic;
@@ -504,7 +504,7 @@ export async function listBroadcasts(
   waitListId,
   { includeLatestContent = false, selectedBroadcastId = null, cursor = null, pageSize = 25 } = {},
 ) {
-  const { campaign } = await requireCampaign(waitListId, "sendEmail");
+  const { campaign } = await requireCampaignFeature(waitListId, "sendEmail", "emailMarketing");
   const take = Number.isInteger(pageSize) ? Math.min(Math.max(pageSize, 1), 50) : 25;
   let pageCursor = null;
   if (cursor != null) {
@@ -635,7 +635,7 @@ export async function getBroadcastContent(waitListId, broadcastId) {
     !broadcastId
   )
     return null;
-  const { campaign } = await requireCampaign(waitListId, "sendEmail");
+  const { campaign } = await requireCampaignFeature(waitListId, "sendEmail", "emailMarketing");
   return prisma.marketingBroadcast.findFirst({
     where: { id: broadcastId, waitListId: campaign.id },
     select: {
@@ -653,7 +653,7 @@ export async function getBroadcastContent(waitListId, broadcastId) {
 }
 
 export async function createBroadcastDraft(waitListId) {
-  const { campaign } = await requireCampaign(waitListId, "sendEmail");
+  const { campaign } = await requireCampaignFeature(waitListId, "sendEmail", "emailMarketing");
   const draft = await prisma.marketingBroadcast.create({
     data: {
       waitListId: campaign.id,
@@ -688,7 +688,7 @@ export async function saveBroadcastDraft({ waitListId, broadcastId, data }) {
       message:
         value?.error || "Keep the subject, preview, and message within their character limits.",
     };
-  await requireCampaign(waitListId, "sendEmail");
+  await requireCampaignFeature(waitListId, "sendEmail", "emailMarketing");
   const updated = await prisma.marketingBroadcast.updateMany({
     where: { id: broadcastId, waitListId, status: "DRAFT" },
     data: value,
@@ -699,7 +699,7 @@ export async function saveBroadcastDraft({ waitListId, broadcastId, data }) {
 }
 
 export async function getBroadcastRecipients(waitListId, segment = "ALL") {
-  const { campaign } = await requireCampaign(waitListId, "sendEmail");
+  const { campaign } = await requireCampaignFeature(waitListId, "sendEmail", "emailMarketing");
   const seg = normalizeSegment(segment);
   const [count, rows] = await Promise.all([
     countEligibleRecipients(prisma, campaign.id, seg),
@@ -720,11 +720,23 @@ export async function listBroadcastSegments() {
 }
 
 export async function queueBroadcast({ waitListId, broadcastId, expectedRecipientCount, segment }) {
-  const { campaign, user } = await requireCampaign(waitListId, "sendEmail");
+  const { campaign, user } = await requireCampaignFeature(
+    waitListId,
+    "sendEmail",
+    "emailMarketing",
+  );
   if (!Number.isInteger(expectedRecipientCount) || expectedRecipientCount < 0)
     return { success: false, message: "Refresh the recipient preview before sending." };
-  if (!(await campaignSenderConfigured(campaign.id)))
-    return { success: false, message: "Connect a Resend campaign sender before sending." };
+  if (!env.OUTBOX_DISPATCH_SECRET)
+    return { success: false, message: "Email delivery is not configured yet." };
+  try {
+    await senderForWaitlist(campaign.id);
+  } catch {
+    return {
+      success: false,
+      message: "Connect and verify a Resend sender before sending customer email.",
+    };
+  }
   const seg = normalizeSegment(segment);
   try {
     // The recipient fan-out (bulk insert, variable snapshot, per-recipient
@@ -769,9 +781,21 @@ export async function scheduleBroadcast({
 }) {
   // Authenticate before checking delivery configuration so this early return
   // cannot reveal server setup to an unauthenticated caller.
-  const { campaign, user } = await requireCampaign(waitListId, "sendEmail");
-  if (!(await campaignSenderConfigured(campaign.id)))
-    return { success: false, message: "Connect a Resend campaign sender before scheduling." };
+  const { campaign, user } = await requireCampaignFeature(
+    waitListId,
+    "sendEmail",
+    "emailMarketing",
+  );
+  if (!env.OUTBOX_DISPATCH_SECRET)
+    return { success: false, message: "Email delivery is not configured yet." };
+  try {
+    await senderForWaitlist(campaign.id);
+  } catch {
+    return {
+      success: false,
+      message: "Connect and verify a Resend sender before sending customer email.",
+    };
+  }
   const seg = normalizeSegment(segment);
   // Contract with the client: scheduledAt arrives as an explicit UTC ISO
   // string (the picker wall clock is converted in the founder's browser
@@ -823,6 +847,8 @@ export async function scheduleBroadcast({
 }
 
 export async function cancelBroadcast({ waitListId, broadcastId }) {
+  // Cancellation is permitted after downgrade so queued customer mail can
+  // always be stopped, even though creating/sending remains a Pro feature.
   const { campaign } = await requireCampaign(waitListId, "sendEmail");
   const canceled = await prisma.$transaction(async (tx) => {
     const [broadcast] = await tx.$queryRaw`
@@ -867,7 +893,7 @@ export async function cancelBroadcast({ waitListId, broadcastId }) {
 }
 
 export async function listEmailRuns(waitListId) {
-  const { campaign } = await requireCampaign(waitListId, "sendEmail");
+  const { campaign } = await requireCampaignFeature(waitListId, "sendEmail", "emailMarketing");
   const [runs, broadcasts] = await Promise.all([
     prisma.automationRun.findMany({
       where: { waitListId: campaign.id },

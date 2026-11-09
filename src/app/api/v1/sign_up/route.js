@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { WorkspacePlanError } from "@/lib/billing/plans.mjs";
 import { getPublishedFormConfig, pickCustomFields } from "@/lib/campaigns/form-rules.mjs";
 import { getCampaignPosition } from "@/lib/campaigns/referral-position.mjs";
 import {
@@ -9,6 +10,7 @@ import {
 } from "@/lib/campaigns/signups.mjs";
 import { TurnstileVerificationError } from "@/lib/campaigns/turnstile.mjs";
 import { dispatchVerificationNow } from "@/lib/email/dispatch-now.mjs";
+import { CustomerSenderNotConnectedError } from "@/lib/email/sender-resolution.mjs";
 import { fingerprintSignupDevice } from "@/lib/fraud/gates.mjs";
 import prisma from "@/lib/prisma";
 import { summarizeSignupRewards } from "@/lib/referrals/rewards.mjs";
@@ -181,6 +183,22 @@ export const POST = async (req) => {
       signUp: legacySignupResponse(signUp, { includeReferralCode: true }),
     });
   } catch (error) {
+    if (error instanceof WorkspacePlanError)
+      return NextResponse.json(
+        { message: error.message, error: error.message, code: error.code, feature: error.feature },
+        { status: error.status },
+      );
+    if (
+      error instanceof CustomerSenderNotConnectedError ||
+      error?.code === "SENDER_NEEDS_ATTENTION"
+    )
+      return NextResponse.json(
+        {
+          message: "This waitlist is temporarily unable to send confirmation email.",
+          error: "CUSTOMER_SENDER_NOT_CONNECTED",
+        },
+        { status: 503 },
+      );
     if (error instanceof TurnstileVerificationError)
       return NextResponse.json(
         { message: "Complete the security check and try again." },

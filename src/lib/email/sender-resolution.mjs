@@ -11,13 +11,21 @@ function senderNeedsAttention() {
   });
 }
 
+export class CustomerSenderNotConnectedError extends Error {
+  constructor() {
+    super("Connect a Resend sender to this workspace before sending email to subscribers.");
+    this.name = "CustomerSenderNotConnectedError";
+    this.code = "CUSTOMER_SENDER_NOT_CONNECTED";
+    this.statusCode = 424;
+  }
+}
+
 async function resolveWaitlistSender(db, waitListId) {
   const sender = await db.waitlistEmailSender.findUnique({ where: { waitListId } });
   if (!sender) return null;
-  // NEEDS_TEST stays dormant: fall back to the workspace or deployment
-  // sender until a test succeeds (see content/docs/resend.mdx). Fail closed
-  // only for a configured-but-broken sender, which must never silently fall
-  // back.
+  // NEEDS_TEST stays dormant until verification succeeds, so a connected
+  // workspace sender can serve this waitlist. A configured-but-broken sender
+  // always fails closed.
   if (sender.status === "NEEDS_TEST") return null;
   if (sender.status !== "CONNECTED") senderNeedsAttention();
   try {
@@ -37,15 +45,13 @@ async function resolveWaitlistSender(db, waitListId) {
 }
 
 /**
- * Phase 7c BYOK sender resolution. Order: per-waitlist sender → workspace
- * connection. A broken sender fails closed
- * (throws SENDER_NEEDS_ATTENTION) instead of falling back; a NEEDS_TEST
- * sender stays dormant and falls back until its test succeeds.
+ * Resolve customer mail only through a connected waitlist or workspace sender.
+ * Waitlyze's deployment sender is deliberately not a fallback for subscribers.
  *
  * Founder notices remain on the platform sender by design; subscriber mail
  * and campaign test sends supply the waitlist id at the send boundary.
  */
-export async function resolveEmailSender(db, { workspaceId, waitListId, defaults }) {
+export async function resolveEmailSender(db, { workspaceId, waitListId }) {
   if (waitListId) {
     const sender = await resolveWaitlistSender(db, waitListId);
     if (sender) return sender;
@@ -54,7 +60,7 @@ export async function resolveEmailSender(db, { workspaceId, waitListId, defaults
     const workspace = await resolveWorkspaceEmailSender(db, workspaceId, null);
     if (workspace) return { ...workspace, source: "workspace" };
   }
-  return defaults?.apiKey && defaults?.fromEmail ? { ...defaults, source: "default" } : null;
+  throw new CustomerSenderNotConnectedError();
 }
 
 /**
@@ -77,4 +83,18 @@ export async function resolveTransactionalEmailSender(
     if (resend) return { ...resend, provider: "RESEND" };
   }
   return platformSender ? { provider: "PLATFORM_CLOUDFLARE" } : null;
+}
+
+export async function hasCustomerEmailSender(db, { workspaceId, waitListId }) {
+  try {
+    await resolveEmailSender(db, { workspaceId, waitListId });
+    return true;
+  } catch (error) {
+    if (
+      error instanceof CustomerSenderNotConnectedError ||
+      error?.code === "SENDER_NEEDS_ATTENTION"
+    )
+      return false;
+    throw error;
+  }
 }

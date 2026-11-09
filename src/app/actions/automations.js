@@ -6,14 +6,14 @@ import { normalizeAutomationConfig } from "@/lib/email/automations.mjs";
 import { senderForWaitlist } from "@/lib/emails/test-delivery.mjs";
 import { env } from "@/lib/env.mjs";
 import prisma from "@/lib/prisma";
-import { requireCampaign } from "@/lib/workspaces/authorize";
+import { requireCampaign, requireCampaignFeature } from "@/lib/workspaces/authorize";
 
 function refresh(waitListId) {
   revalidatePath(`/waitlists/${waitListId}/emails/automations`);
 }
 
 export async function saveAutomationRecipe({ waitListId, recipeId, data }) {
-  const { scope } = await requireCampaign(waitListId, "sendEmail");
+  const { scope } = await requireCampaignFeature(waitListId, "sendEmail", "emailMarketing");
   const recipe = await prisma.automationRecipe.findFirst({
     where: { id: recipeId, waitListId, waitList: scope },
     select: { id: true, type: true },
@@ -49,7 +49,11 @@ export async function saveAutomationRecipe({ waitListId, recipeId, data }) {
 }
 
 export async function setAutomationStatus({ waitListId, recipeId, status }) {
-  const { scope } = await requireCampaign(waitListId, "sendEmail");
+  const access =
+    status === "ENABLED"
+      ? await requireCampaignFeature(waitListId, "sendEmail", "emailMarketing")
+      : await requireCampaign(waitListId, "sendEmail");
+  const { scope } = access;
   if (!["ENABLED", "PAUSED"].includes(status))
     return { success: false, message: "Choose enable or pause." };
   const recipe = await prisma.automationRecipe.findFirst({
@@ -58,17 +62,16 @@ export async function setAutomationStatus({ waitListId, recipeId, status }) {
   });
   if (!recipe) return { success: false, message: "Automation recipe not found." };
   if (status === "ENABLED") {
-    let hasCampaignSender = false;
+    if (!env.OUTBOX_DISPATCH_SECRET)
+      return { success: false, message: "Email delivery is not configured yet." };
     try {
-      hasCampaignSender = Boolean(
-        await senderForWaitlist(waitListId).then((sender) => sender?.apiKey),
-      );
-    } catch {}
-    if (!env.OUTBOX_DISPATCH_SECRET || !hasCampaignSender)
+      await senderForWaitlist(waitListId);
+    } catch {
       return {
         success: false,
-        message: "Connect a Resend campaign sender before enabling automations.",
+        message: "Connect and verify a Resend sender before enabling automations.",
       };
+    }
     try {
       normalizeAutomationConfig(recipe.type, recipe.versions[0]?.config);
     } catch {

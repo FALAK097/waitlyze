@@ -4,7 +4,7 @@ import { listEmailRuns } from "@/app/actions/emails";
 import { ContentLayout } from "@/components/dashboard/content-layout";
 import { EmailLogs } from "@/components/email/email-logs";
 import { EmailToolsNav } from "@/components/email/email-tools-nav";
-import { requireCampaignPage } from "@/lib/workspaces/authorize";
+import { requireCampaignFeature } from "@/lib/workspaces/authorize";
 
 export const metadata = {
   title: "Email logs",
@@ -13,7 +13,7 @@ export const metadata = {
 
 export default async function EmailLogsPage({ params }) {
   const { id } = await params;
-  const { campaign } = await requireCampaignPage(id, "sendEmail");
+  const { campaign } = await requireCampaignFeature(id, "sendEmail", "emailMarketing");
   if (!campaign) return notFound();
   const runs = await listEmailRuns(campaign.id);
   return (

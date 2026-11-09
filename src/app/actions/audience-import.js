@@ -1,7 +1,14 @@
 "use server";
 
+import { randomUUID } from "node:crypto";
+
 import Papa from "papaparse";
 
+import {
+  getWorkspaceEntitlements,
+  requireCapacity,
+  WorkspacePlanError,
+} from "@/lib/billing/plans.mjs";
 import { emailLookupForms, normalizeSignupEmail } from "@/lib/normalize-email.mjs";
 import prisma from "@/lib/prisma";
 import { requireCampaign } from "@/lib/workspaces/authorize";
@@ -59,7 +66,7 @@ function parseJoinedAt(value) {
 // verified and never trigger emails. Referral links resolve in a second pass.
 export async function importSignups(waitListId, formData) {
   try {
-    const { scope } = await requireCampaign(waitListId, "manageAudience");
+    const { scope, campaign } = await requireCampaign(waitListId, "manageAudience");
     const file = formData.get("file");
     if (!(file instanceof File) || file.size === 0)
       return { ok: false, message: "Choose a CSV file to import." };
@@ -178,85 +185,152 @@ export async function importSignups(waitListId, formData) {
     const duplicates = candidates.length - fresh.length;
 
     let imported = 0;
-    const stamp = Date.now().toString(36);
-    for (let index = 0; index < fresh.length; index += 500) {
-      const chunk = fresh.slice(index, index + 500).map((row, offset) => ({
-        email: row.email,
-        emailNormalized: row.emailNormalized,
-        uniqueUserId: `import:${stamp}:${index + offset}`,
-        waitListId,
-        country: row.country,
-        points: row.points,
-        ...(row.referralCode ? { referralCode: row.referralCode } : {}),
-        ...(row.verifiedAt ? { verifiedAt: row.verifiedAt } : {}),
-        ...(row.createdAt ? { createdAt: row.createdAt } : {}),
-      }));
-      const result = await prisma.signUp.createMany({ data: chunk, skipDuplicates: true });
-      imported += result.count;
-    }
-
-    // Second pass: link referrals by email or code, including rows from this file.
     let referralsLinked = 0;
-    const linkable = fresh.filter((row) => row.referredBy);
-    if (linkable.length > 0) {
-      const created = [];
-      const createdEmails = [...new Set(fresh.map((row) => row.emailNormalized))];
-      created.push(
-        ...(await queryInChunks(createdEmails, 500, (emailChunk) =>
-          prisma.signUp.findMany({
+    // Namespaced uniqueUserIds let the referral pass identify only rows this
+    // import inserted, even when public signups race the createMany calls.
+    const stamp = randomUUID();
+    if (fresh.length) {
+      const importResult = await prisma.$transaction(
+        async (tx) => {
+          const workspaceId = campaign.workspaceId;
+          if (workspaceId)
+            await tx.$queryRaw`SELECT "id" FROM "workspaces" WHERE "id" = ${workspaceId} FOR UPDATE`;
+          const candidateForms = [...new Set(fresh.flatMap((row) => emailLookupForms(row.email)))];
+          const concurrentDuplicates = await tx.signUp.findMany({
             where: {
               waitListId,
               waitList: scope,
-              emailNormalized: { in: emailChunk },
+              emailNormalized: { in: candidateForms },
             },
-            select: { id: true, emailNormalized: true, referralCode: true },
-          }),
-        )),
-      );
-      const byEmail = new Map(created.map((row) => [row.emailNormalized, row]));
-      const byCode = new Map(created.map((row) => [row.referralCode, row]));
+            select: { emailNormalized: true },
+          });
+          const duplicateForms = new Set(concurrentDuplicates.map((row) => row.emailNormalized));
+          const stillFresh = fresh.filter(
+            (row) => !emailLookupForms(row.email).some((form) => duplicateForms.has(form)),
+          );
+          if (!stillFresh.length) return { inserted: 0, referralsLinked: 0 };
+          const [usage, entitlements] = await Promise.all([
+            workspaceId
+              ? tx.workspace.findUnique({
+                  where: { id: workspaceId },
+                  select: { signupUsageCount: true },
+                })
+              : tx.signUp.count({ where: { waitListId } }),
+            getWorkspaceEntitlements(tx, workspaceId),
+          ]);
+          const currentUsage = workspaceId ? usage?.signupUsageCount || 0 : usage;
+          requireCapacity({
+            entitlements,
+            feature: "subscribers",
+            used: currentUsage,
+            requested: stillFresh.length,
+            message: `This import would exceed the ${entitlements.plan === "FREE" ? "Free" : "Pro"} workspace signup limit.`,
+          });
 
-      // Resolve against only the addresses and codes present in this bounded
-      // CSV, rather than materializing every signup in the campaign.
-      const lookupKeys = [...new Set(linkable.map((row) => row.referredBy.trim()).filter(Boolean))];
-      const matchingRows = await queryInChunks(lookupKeys, 400, (keyChunk) => {
-        const emailForms = [...new Set(keyChunk.flatMap((key) => emailLookupForms(key)))];
-        const referralCodes = keyChunk.filter((key) => REFERRAL_CODE_FORMAT.test(key));
-        return prisma.signUp.findMany({
-          where: {
-            waitListId,
-            waitList: scope,
-            OR: [
-              ...(emailForms.length ? [{ emailNormalized: { in: emailForms } }] : []),
-              ...(referralCodes.length ? [{ referralCode: { in: referralCodes } }] : []),
-            ],
-          },
-          select: { id: true, emailNormalized: true, referralCode: true },
-        });
-      });
-      for (const row of matchingRows) {
-        if (row.emailNormalized && !byEmail.has(row.emailNormalized))
-          byEmail.set(row.emailNormalized, row);
-        if (row.referralCode && !byCode.has(row.referralCode)) byCode.set(row.referralCode, row);
-      }
-      const links = [];
-      for (const row of linkable) {
-        const newcomer = byEmail.get(row.emailNormalized);
-        const key = row.referredBy.trim();
-        const referrer =
-          emailLookupForms(key)
-            .map((form) => byEmail.get(form))
-            .find(Boolean) || byCode.get(key);
-        if (newcomer && referrer && referrer.id !== newcomer.id)
-          links.push({ signUpId: newcomer.id, referredById: referrer.id });
-      }
-      for (let index = 0; index < links.length; index += 500) {
-        const result = await prisma.referral.createMany({
-          data: links.slice(index, index + 500),
-          skipDuplicates: true,
-        });
-        referralsLinked += result.count;
-      }
+          let inserted = 0;
+          const insertedRows = [];
+          for (let index = 0; index < stillFresh.length; index += 500) {
+            const chunk = stillFresh.slice(index, index + 500).map((row, offset) => ({
+              email: row.email,
+              emailNormalized: row.emailNormalized,
+              uniqueUserId: `import:${stamp}:${index + offset}`,
+              waitListId,
+              country: row.country,
+              points: row.points,
+              ...(row.referralCode ? { referralCode: row.referralCode } : {}),
+              ...(row.verifiedAt ? { verifiedAt: row.verifiedAt } : {}),
+              ...(row.createdAt ? { createdAt: row.createdAt } : {}),
+            }));
+            const result = await tx.signUp.createMany({ data: chunk, skipDuplicates: true });
+            inserted += result.count;
+            if (result.count) {
+              insertedRows.push(
+                ...(await tx.signUp.findMany({
+                  where: {
+                    waitListId,
+                    uniqueUserId: { in: chunk.map((row) => row.uniqueUserId) },
+                  },
+                  select: { id: true, emailNormalized: true, referralCode: true },
+                })),
+              );
+            }
+          }
+          if (workspaceId && inserted) {
+            await tx.workspace.update({
+              where: { id: workspaceId },
+              data: { signupUsageCount: { increment: inserted } },
+            });
+          }
+
+          // Second pass: link referrals by email or code within the same transaction.
+          let txReferralsLinked = 0;
+          const insertedEmails = new Set(insertedRows.map((row) => row.emailNormalized));
+          const linkable = fresh.filter(
+            (row) => row.referredBy && insertedEmails.has(row.emailNormalized),
+          );
+          if (linkable.length > 0) {
+            const byEmail = new Map();
+            for (const row of insertedRows) {
+              for (const form of emailLookupForms(row.emailNormalized)) {
+                if (!byEmail.has(form)) byEmail.set(form, row);
+              }
+            }
+            const byCode = new Map(insertedRows.map((row) => [row.referralCode, row]));
+
+            // Resolve against only the addresses and codes present in this bounded
+            // CSV, rather than materializing every signup in the campaign.
+            const lookupKeys = [
+              ...new Set(linkable.map((row) => row.referredBy.trim()).filter(Boolean)),
+            ];
+            const matchingRows = await queryInChunks(lookupKeys, 400, (keyChunk) => {
+              const emailForms = [...new Set(keyChunk.flatMap((key) => emailLookupForms(key)))];
+              const referralCodes = keyChunk.filter((key) => REFERRAL_CODE_FORMAT.test(key));
+              return tx.signUp.findMany({
+                where: {
+                  waitListId,
+                  waitList: scope,
+                  OR: [
+                    ...(emailForms.length ? [{ emailNormalized: { in: emailForms } }] : []),
+                    ...(referralCodes.length ? [{ referralCode: { in: referralCodes } }] : []),
+                  ],
+                },
+                select: { id: true, emailNormalized: true, referralCode: true },
+              });
+            });
+            for (const row of matchingRows) {
+              if (row.emailNormalized) {
+                for (const form of emailLookupForms(row.emailNormalized)) {
+                  if (!byEmail.has(form)) byEmail.set(form, row);
+                }
+              }
+              if (row.referralCode && !byCode.has(row.referralCode))
+                byCode.set(row.referralCode, row);
+            }
+            const links = [];
+            for (const row of linkable) {
+              const newcomer = byEmail.get(row.emailNormalized);
+              const key = row.referredBy.trim();
+              const referrer =
+                emailLookupForms(key)
+                  .map((form) => byEmail.get(form))
+                  .find(Boolean) || byCode.get(key);
+              if (newcomer && referrer && referrer.id !== newcomer.id)
+                links.push({ signUpId: newcomer.id, referredById: referrer.id });
+            }
+            for (let index = 0; index < links.length; index += 500) {
+              const result = await tx.referral.createMany({
+                data: links.slice(index, index + 500),
+                skipDuplicates: true,
+              });
+              txReferralsLinked += result.count;
+            }
+          }
+          return { inserted, referralsLinked: txReferralsLinked };
+        },
+        { maxWait: 10000, timeout: 30000 },
+      );
+      imported = importResult.inserted;
+      referralsLinked = importResult.referralsLinked;
     }
     return {
       ok: true,
@@ -268,6 +342,8 @@ export async function importSignups(waitListId, formData) {
   } catch (error) {
     if (error instanceof AccessError)
       return { ok: false, message: "You no longer have access to this waitlist." };
+    if (error instanceof WorkspacePlanError)
+      return { ok: false, code: error.code, feature: error.feature, message: error.message };
     console.error("Audience import failed", error?.code || error?.name);
     return { ok: false, message: "Couldn't import that file. Try again." };
   }

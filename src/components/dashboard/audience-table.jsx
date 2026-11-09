@@ -25,6 +25,7 @@ import { toast } from "sonner";
 import { importSignups } from "@/app/actions/audience-import";
 import { retryFailedVerification } from "@/app/actions/verification-delivery";
 import { ReferralReview } from "@/components/dashboard/referral-review";
+import { UpgradeButton } from "@/components/shared/upgrade-button";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
@@ -160,6 +161,7 @@ export function AudienceTable({
   initialReviews = [],
   initialReviewsFailed = false,
   canManage = false,
+  canManageBilling = false,
 }) {
   const [view, setView] = useState("subscribers");
   const [query, setQuery] = useState("");
@@ -191,6 +193,7 @@ export function AudienceTable({
     EXPORT_COLUMNS.map((column) => column.key),
   );
   const [importing, setImporting] = useState(false);
+  const [importPlanError, setImportPlanError] = useState("");
   const [copiedId, setCopiedId] = useState(null);
   const searchInputRef = useRef(null);
 
@@ -322,6 +325,7 @@ export function AudienceTable({
 
   async function runImport(event) {
     event.preventDefault();
+    setImportPlanError("");
     const file = new FormData(event.currentTarget).get("file");
     setImporting(true);
     try {
@@ -342,6 +346,8 @@ export function AudienceTable({
           );
         toast.success(`${parts.join(", ")}.`);
         setRetryCount((count) => count + 1);
+      } else if (outcome.code === "PLAN_UPGRADE_REQUIRED") {
+        setImportPlanError(outcome.message);
       } else toast.error(outcome.message);
     } catch {
       toast.error("Couldn't import that file. Try again.");
@@ -1228,7 +1234,10 @@ export function AudienceTable({
           <Sheet
             open={sheet !== null}
             onOpenChange={(open) => {
-              if (!open) setSheet(null);
+              if (!open) {
+                setSheet(null);
+                setImportPlanError("");
+              }
             }}
           >
             <SheetContent className="min-w-0 overflow-x-hidden overflow-y-auto">
@@ -1497,6 +1506,18 @@ export function AudienceTable({
                         {importing ? "Importing…" : "Import"}
                       </Button>
                     </form>
+                    {importPlanError && (
+                      <div className="grid gap-2" role="alert">
+                        <p className="m-0 text-sm text-product-danger-text">{importPlanError}</p>
+                        <UpgradeButton
+                          label={canManageBilling ? "Compare Pro plans" : "See Pro plans"}
+                          feature="Additional signups"
+                          canManageBilling={canManageBilling}
+                          workspaceId={waitlist.workspaceId}
+                          size="md"
+                        />
+                      </div>
+                    )}
                   </div>
                 </>
               )}

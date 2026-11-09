@@ -12,6 +12,7 @@ import {
   resendWorkspaceInvitation,
   revokeWorkspaceInvite,
 } from "@/app/actions/workspace-invitations";
+import { UpgradeButton } from "@/components/shared/upgrade-button";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -54,41 +55,132 @@ function formatDate(value) {
   return formatProductDate(value, { includeTime: false });
 }
 
+function memberMatches(member, needle) {
+  if (!needle) return true;
+  return (
+    (member.user.name || "").toLowerCase().includes(needle) ||
+    (member.user.email || "").toLowerCase().includes(needle) ||
+    member.role.toLowerCase().includes(needle) ||
+    "active".includes(needle)
+  );
+}
+
+function invitationMatches(invitation, needle) {
+  if (!needle) return true;
+  const status = invitation.status === "SEND_FAILED" ? "failed" : "pending";
+  return (
+    (invitation.emailNormalized || "").toLowerCase().includes(needle) ||
+    invitation.role.toLowerCase().includes(needle) ||
+    status.includes(needle)
+  );
+}
+
+function AtLimitHint({ memberLimit }) {
+  return (
+    <p className="m-0 text-sm text-product-text-secondary" role="status">
+      This Pro workspace is at its {memberLimit}-member limit.
+    </p>
+  );
+}
+
+function InviteDialog({ workspaceId, canInviteAdmins, canManageBilling }) {
+  const [inviteOpen, setInviteOpen] = useState(false);
+  const close = () => setInviteOpen(false);
+  return (
+    <Dialog open={inviteOpen} onOpenChange={setInviteOpen}>
+      <DialogTrigger render={<Button variant="outline" />}>
+        <HugeiconsIcon icon={Add01Icon} aria-hidden="true" />
+        Invite member
+      </DialogTrigger>
+      <DialogContent>
+        <div className="max-w-120 [&_h2]:mt-0 [&_h2]:mr-10 [&_h2]:mb-2 [&_h2]:text-xl [&_p]:mt-0 [&_p]:mb-6">
+          <DialogTitle>Invite a member</DialogTitle>
+          <DialogDescription>Give a teammate access to this workspace.</DialogDescription>
+          <InvitationForm
+            workspaceId={workspaceId}
+            canInviteAdmins={canInviteAdmins}
+            canManageBilling={canManageBilling}
+            onComplete={close}
+          />
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+/** The toolbar slot between search and the members table. */
+function TeamToolbarSlot({
+  isPersonalWorkspace,
+  canManage,
+  secureInvitesConfigured,
+  memberCount,
+  memberLimit,
+  plan,
+  canManageBilling,
+  workspaceId,
+  canInviteAdmins,
+}) {
+  if (isPersonalWorkspace) {
+    return (
+      <p className="m-0 text-sm text-product-text-secondary tabular-nums">
+        Personal workspaces are just for you. Create a shared workspace from the workspace switcher
+        to invite teammates.
+      </p>
+    );
+  }
+  if (canManage && secureInvitesConfigured && memberLimit !== null && memberCount >= memberLimit) {
+    return plan === "FREE" ? (
+      <UpgradeButton
+        label="Unlock team invitations"
+        feature="Workspace collaboration"
+        canManageBilling={canManageBilling}
+        workspaceId={workspaceId}
+        size="md"
+      />
+    ) : (
+      <AtLimitHint memberLimit={memberLimit} />
+    );
+  }
+  if (canManage && secureInvitesConfigured) {
+    return (
+      <InviteDialog
+        workspaceId={workspaceId}
+        canInviteAdmins={canInviteAdmins}
+        canManageBilling={canManageBilling}
+      />
+    );
+  }
+  return canManage ? (
+    <p className="m-0 text-sm text-product-text-secondary tabular-nums" role="status">
+      Invitations are unavailable. Ask your administrator to configure secure invitations.
+    </p>
+  ) : (
+    <p className="m-0 text-sm text-product-text-secondary tabular-nums">
+      An owner or admin can invite teammates.
+    </p>
+  );
+}
+
 export function TeamAccessSettings({
   workspaceId,
   members,
   invitations,
   canManage,
   canInviteAdmins,
+  canManageBilling,
+  plan = "FREE",
+  memberLimit = 1,
   secureInvitesConfigured,
   currentUserId,
   isPersonalWorkspace = false,
 }) {
-  const [inviteOpen, setInviteOpen] = useState(false);
   const [memberQuery, setMemberQuery] = useState("");
   const [rowPending, startTransition] = useTransition();
   const [revokeTarget, setRevokeTarget] = useState(null);
   const [removeTarget, setRemoveTarget] = useState(null);
-  const visibleMembers = members.filter((member) => {
-    const needle = memberQuery.trim().toLowerCase();
-    if (!needle) return true;
-    return (
-      (member.user.name || "").toLowerCase().includes(needle) ||
-      (member.user.email || "").toLowerCase().includes(needle) ||
-      member.role.toLowerCase().includes(needle) ||
-      "active".includes(needle)
-    );
-  });
-  const visibleInvitations = invitations.filter((invite) => {
-    const needle = memberQuery.trim().toLowerCase();
-    if (!needle) return true;
-    const status = invite.status === "SEND_FAILED" ? "failed" : "pending";
-    return (
-      (invite.emailNormalized || "").toLowerCase().includes(needle) ||
-      invite.role.toLowerCase().includes(needle) ||
-      status.includes(needle)
-    );
-  });
+  const needle = memberQuery.trim().toLowerCase();
+  const visibleMembers = members.filter((member) => memberMatches(member, needle));
+  const visibleInvitations = invitations.filter((invite) => invitationMatches(invite, needle));
 
   function runRowAction(operation, ...args) {
     startTransition(async () => {
@@ -142,38 +234,17 @@ export function TeamAccessSettings({
             />
           </div>
         )}
-        {isPersonalWorkspace ? (
-          <p className="m-0 text-sm text-product-text-secondary tabular-nums">
-            Personal workspaces are just for you. Create a shared workspace from the workspace
-            switcher to invite teammates.
-          </p>
-        ) : canManage && secureInvitesConfigured ? (
-          <Dialog open={inviteOpen} onOpenChange={setInviteOpen}>
-            <DialogTrigger render={<Button variant="outline" />}>
-              <HugeiconsIcon icon={Add01Icon} aria-hidden="true" />
-              Invite member
-            </DialogTrigger>
-            <DialogContent>
-              <div className="max-w-120 [&_h2]:mt-0 [&_h2]:mr-10 [&_h2]:mb-2 [&_h2]:text-xl [&_p]:mt-0 [&_p]:mb-6">
-                <DialogTitle>Invite a member</DialogTitle>
-                <DialogDescription>Give a teammate access to this workspace.</DialogDescription>
-                <InvitationForm
-                  workspaceId={workspaceId}
-                  canInviteAdmins={canInviteAdmins}
-                  onComplete={() => setInviteOpen(false)}
-                />
-              </div>
-            </DialogContent>
-          </Dialog>
-        ) : canManage ? (
-          <p className="m-0 text-sm text-product-text-secondary tabular-nums" role="status">
-            Invitations are unavailable. Ask your administrator to configure secure invitations.
-          </p>
-        ) : (
-          <p className="m-0 text-sm text-product-text-secondary tabular-nums">
-            An owner or admin can invite teammates.
-          </p>
-        )}
+        <TeamToolbarSlot
+          isPersonalWorkspace={isPersonalWorkspace}
+          canManage={canManage}
+          secureInvitesConfigured={secureInvitesConfigured}
+          memberCount={members.length}
+          memberLimit={memberLimit}
+          plan={plan}
+          canManageBilling={canManageBilling}
+          workspaceId={workspaceId}
+          canInviteAdmins={canInviteAdmins}
+        />
       </div>
 
       <section aria-labelledby="team-members-heading">
@@ -425,7 +496,7 @@ export function TeamAccessSettings({
   );
 }
 
-function InvitationForm({ workspaceId, canInviteAdmins, onComplete }) {
+function InvitationForm({ workspaceId, canInviteAdmins, canManageBilling, onComplete }) {
   const [state, action, pending] = useActionState(inviteWorkspaceMember, {});
   const [role, setRole] = useState("MEMBER");
   useEffect(() => {
@@ -466,6 +537,15 @@ function InvitationForm({ workspaceId, canInviteAdmins, onComplete }) {
       <p className="mb-4! text-sm leading-relaxed text-product-text-secondary">
         Members can edit waitlists. Admins can also manage workspace settings.
       </p>
+      {state.code === "PLAN_UPGRADE_REQUIRED" && (
+        <UpgradeButton
+          label="Compare Pro plans"
+          feature="Workspace collaboration"
+          canManageBilling={canManageBilling}
+          workspaceId={workspaceId}
+          size="md"
+        />
+      )}
       <Button type="submit" disabled={pending} aria-busy={pending}>
         {pending ? "Sending invitation…" : "Send invitation"}
       </Button>

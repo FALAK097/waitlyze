@@ -7,10 +7,11 @@ import {
 } from "@/app/actions/emails";
 import { ContentLayout } from "@/components/dashboard/content-layout";
 import { BroadcastManager } from "@/components/email/broadcast-manager";
+import { hasCustomerEmailSender } from "@/lib/email/sender-resolution.mjs";
 import { getOrCreateTemplatesForCampaign } from "@/lib/emails/templates.mjs";
-import { senderForWaitlist } from "@/lib/emails/test-delivery.mjs";
 import { env } from "@/lib/env.mjs";
-import { requireCampaignPage } from "@/lib/workspaces/authorize";
+import prisma from "@/lib/prisma";
+import { requireCampaignFeature } from "@/lib/workspaces/authorize";
 
 export const metadata = {
   title: "Broadcasts",
@@ -19,13 +20,13 @@ export const metadata = {
 
 export default async function BroadcastsPage({ params, searchParams }) {
   const [{ id }, { broadcast: requestedBroadcastId }] = await Promise.all([params, searchParams]);
-  const { campaign, scope } = await requireCampaignPage(id, "sendEmail");
+  const { campaign, scope } = await requireCampaignFeature(id, "sendEmail", "emailMarketing");
   if (!campaign) return notFound();
   const [
     { broadcasts, selectedBroadcast, hasMore, nextCursor },
     initialSegments,
     templates,
-    sender,
+    senderConnected,
   ] = await Promise.all([
     listBroadcasts(campaign.id, {
       includeLatestContent: true,
@@ -33,7 +34,10 @@ export default async function BroadcastsPage({ params, searchParams }) {
     }),
     listBroadcastSegments(),
     getOrCreateTemplatesForCampaign(campaign.id, scope),
-    senderForWaitlist(campaign.id).catch(() => null),
+    hasCustomerEmailSender(prisma, {
+      workspaceId: campaign.workspaceId,
+      waitListId: campaign.id,
+    }),
   ]);
   const initialPreview = await getBroadcastRecipients(
     campaign.id,
@@ -51,7 +55,7 @@ export default async function BroadcastsPage({ params, searchParams }) {
         initialPreview={initialPreview}
         initialSegments={initialSegments}
         initialTemplates={templates}
-        deliveryReady={Boolean(env.OUTBOX_DISPATCH_SECRET && sender?.apiKey)}
+        deliveryReady={Boolean(env.OUTBOX_DISPATCH_SECRET && senderConnected)}
       />
     </ContentLayout>
   );

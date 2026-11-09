@@ -14,7 +14,6 @@ export async function dispatchVerificationNow(eventKey) {
   try {
     const sendEmail = createWorkspaceResendSender({
       db: prisma,
-      defaults: null,
       createClient: (apiKey) => new Resend(apiKey),
     });
     await dispatchPendingOutboxEvents(prisma, {
@@ -39,7 +38,6 @@ export async function dispatchFounderNoticesNow(eventKeys) {
     await dispatchPendingOutboxEvents(prisma, {
       send: createWorkspaceResendSender({
         db: prisma,
-        defaults: null,
         createClient: (apiKey) => new Resend(apiKey),
       }),
       sendPlatform: createPlatformSender(),
@@ -62,7 +60,6 @@ export async function dispatchOffboardNow(eventKeys) {
   try {
     const sendEmail = createWorkspaceResendSender({
       db: prisma,
-      defaults: null,
       createClient: (apiKey) => new Resend(apiKey),
     });
     await dispatchPendingOutboxEvents(prisma, {
