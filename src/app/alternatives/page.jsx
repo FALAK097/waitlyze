@@ -4,14 +4,23 @@ import Image from "next/image";
 import Link from "next/link";
 
 import {
+  Breadcrumbs,
+  breadcrumbSchema,
   ComparisonCta,
   ComparisonShell,
   Eyebrow,
   HowWeChecked,
   PrimaryLink,
   ResearchNote,
+  StructuredData,
 } from "@/components/comparison/comparison-shell";
 import { competitors, RESEARCHED_ON } from "@/lib/comparison-data";
+import { SITE_URL } from "@/lib/site-metadata";
+
+const crumbs = [
+  { label: "Home", href: "/" },
+  { label: "Alternatives", href: "/alternatives" },
+];
 
 export const metadata = {
   title: { absolute: "Best Waitlist Software Alternatives (2026) | Waitlyze" },
@@ -22,16 +31,35 @@ export const metadata = {
     type: "website",
     url: "/alternatives",
     title: "Waitlist software alternatives, without the sales fog",
-    description: "A source-checked guide to choosing the right waitlist platform for your launch.",
+    description: "A practical guide to choosing the right waitlist platform for your launch.",
   },
 };
 
 export default function AlternativesPage() {
   return (
     <ComparisonShell>
+      <StructuredData
+        data={{
+          "@context": "https://schema.org",
+          "@graph": [
+            breadcrumbSchema(crumbs),
+            {
+              "@type": "ItemList",
+              name: "Waitlist software alternatives",
+              itemListElement: competitors.map((competitor, index) => ({
+                "@type": "ListItem",
+                position: index + 1,
+                name: `Waitlyze vs ${competitor.name}`,
+                url: `${SITE_URL}/alternatives/${competitor.slug}`,
+              })),
+            },
+          ],
+        }}
+      />
       <main id="main-content" className="compare-page">
         <section className="compare-wrap compare-hero">
           <div className="compare-hero-copy">
+            <Breadcrumbs items={crumbs} />
             <Eyebrow>Waitlist alternatives</Eyebrow>
             <h1 className="compare-title">Find the right waitlist tool.</h1>
             <p className="compare-lede">
@@ -75,10 +103,13 @@ export default function AlternativesPage() {
                 </span>
                 <span className="compare-tool-copy">
                   <h3>Waitlyze vs {competitor.name}</h3>
-                  <p>{competitor.bestFor}</p>
+                  <p>
+                    <span className="compare-tool-category">{competitor.category}</span>
+                    {competitor.bestFor}
+                  </p>
                 </span>
                 <span className="compare-tool-meta">
-                  {competitor.price}
+                  From {competitor.price}
                   <HugeiconsIcon className="ml-2 inline" icon={ArrowRight02Icon} size={16} />
                 </span>
               </Link>
@@ -91,8 +122,7 @@ export default function AlternativesPage() {
         <ComparisonCta
           title="Start with the launch, not the feature checklist."
           copy="Waitlyze keeps your page, verified audience, referrals, email, and launch signals together—without making the setup feel like a growth-ops project."
-          href="/"
-          label="Build your waitlist free"
+          secondary={{ href: "/compare", label: "Compare every tool" }}
         />
       </main>
     </ComparisonShell>

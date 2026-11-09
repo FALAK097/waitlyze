@@ -1,47 +1,67 @@
 /* oxlint-disable jsx-a11y/no-noninteractive-tabindex -- Safari does not focus scroll regions automatically; keyboard users need access to later columns. */
-import Image from "next/image";
 import Link from "next/link";
 
 import {
+  Breadcrumbs,
+  breadcrumbSchema,
   ComparisonCta,
   ComparisonShell,
   Eyebrow,
+  FeatureLegend,
+  FeatureValue,
   HowWeChecked,
   PrimaryLink,
   ResearchNote,
+  StructuredData,
+  ToolLogo,
 } from "@/components/comparison/comparison-shell";
-import { competitors, featureRows, RESEARCHED_ON, waitlyze } from "@/lib/comparison-data";
+import {
+  competitors,
+  featureRows,
+  pricingRows,
+  RESEARCHED_ON,
+  waitlyze,
+} from "@/lib/comparison-data";
 
 export const metadata = {
-  title: { absolute: "Waitlist Software Comparison: 7 Tools Side by Side | Waitlyze" },
+  title: { absolute: "Waitlist Software Comparison: 7 Tools Side by Side (2026) | Waitlyze" },
   description:
-    "Compare Waitlyze, GetWaitlist, LaunchList, Prefinery, KickoffLabs, Viral Loops, and Waitlister on pricing and launch features.",
+    "Compare Waitlyze, GetWaitlist, LaunchList, Prefinery, KickoffLabs, Viral Loops, and Waitlister on free plans, pricing, hosted pages, referrals, email, analytics, and API access.",
   alternates: { canonical: "/compare" },
   openGraph: {
     type: "website",
     url: "/compare",
     title: "Waitlist software compared side by side",
-    description: "A source-checked comparison of seven dedicated waitlist platforms.",
+    description: "Seven dedicated waitlist platforms compared on pricing and launch features.",
   },
 };
+
+const crumbs = [
+  { label: "Home", href: "/" },
+  { label: "Compare", href: "/compare" },
+];
 
 export default function ComparePage() {
   const tools = [waitlyze, ...competitors];
   return (
     <ComparisonShell>
+      <StructuredData
+        data={{ "@context": "https://schema.org", "@graph": [breadcrumbSchema(crumbs)] }}
+      />
       <main id="main-content" className="compare-page">
         <section className="compare-wrap compare-hero">
           <div className="compare-hero-copy">
+            <Breadcrumbs items={crumbs} />
             <Eyebrow>Side-by-side comparison</Eyebrow>
             <h1 className="compare-title">Compare waitlist tools side by side.</h1>
             <p className="compare-lede">
               See how seven dedicated platforms price growth and where their essential launch
-              features unlock. Use the focused guides when the workflow matters as much as the
+              features unlock. Open a focused guide when the workflow matters as much as the
               checklist.
             </p>
             <div className="compare-hero-actions">
               <PrimaryLink href="/alternatives">Read the focused guides</PrimaryLink>
-              <Link className="compare-text-link" href="/">
+              <Link className="compare-text-link" href="/#features">
                 See Waitlyze in action
               </Link>
             </div>
@@ -71,20 +91,22 @@ export default function ComparePage() {
               <dd>Prefinery, KickoffLabs, Viral Loops</dd>
             </div>
             <div>
-              <dt>Waitlyze’s angle</dt>
-              <dd>One calm workspace for the whole launch</dd>
+              <dt>Lowest annual price</dt>
+              <dd>Waitlyze Pro · $50/yr</dd>
             </div>
           </dl>
         </section>
 
         <section className="compare-wrap compare-section" aria-labelledby="comparison-table">
-          <div className="compare-section-heading">
-            <h2 id="comparison-table">Feature and pricing snapshot</h2>
-            <p>
-              Prices are listed in USD and billed monthly unless noted. Scroll horizontally on
-              smaller screens; the first column stays descriptive and every focused guide links back
-              to the vendor source.
-            </p>
+          <div className="compare-section-heading compare-heading-row">
+            <div>
+              <h2 id="comparison-table">Feature and pricing snapshot</h2>
+              <p>
+                Prices are in USD on monthly billing unless noted. On smaller screens, scroll the
+                table sideways to see every tool.
+              </p>
+            </div>
+            <FeatureLegend />
           </div>
           <section
             className="compare-table-wrap"
@@ -101,22 +123,23 @@ export default function ComparePage() {
                       scope="col"
                       key={tool.slug}
                     >
-                      <span className="inline-flex items-center gap-2">
-                        <Image
-                          src={tool.logo}
-                          alt=""
-                          width={20}
-                          height={20}
-                          className="h-5 w-5 rounded object-contain"
-                        />
-                        {tool.name}
-                      </span>
+                      {index === 0 ? (
+                        <span className="compare-table-tool">
+                          <ToolLogo tool={tool} size={20} />
+                          {tool.name}
+                        </span>
+                      ) : (
+                        <Link className="compare-table-tool" href={`/alternatives/${tool.slug}`}>
+                          <ToolLogo tool={tool} size={20} />
+                          {tool.name}
+                        </Link>
+                      )}
                     </th>
                   ))}
                 </tr>
               </thead>
               <tbody>
-                {featureRows.map(([label, key]) => (
+                {pricingRows.map(({ key, label }) => (
                   <tr key={key}>
                     <th scope="row">{label}</th>
                     {tools.map((tool, index) => (
@@ -126,12 +149,22 @@ export default function ComparePage() {
                     ))}
                   </tr>
                 ))}
+                {featureRows.map(({ key, label }) => (
+                  <tr key={key}>
+                    <th scope="row">{label}</th>
+                    {tools.map((tool, index) => (
+                      <td className={index === 0 ? "is-waitlyze" : undefined} key={tool.slug}>
+                        <FeatureValue value={tool.features[key]} />
+                      </td>
+                    ))}
+                  </tr>
+                ))}
               </tbody>
             </table>
           </section>
           <p className="compare-research-note mt-4">
-            Waitlyze Pro details reflect the open billing implementation and may change before it
-            ships. Boolean rows deliberately avoid implying that every implementation is equal.
+            Similar names don&apos;t always mean similar depth. Open a focused guide for the
+            tradeoffs behind each row.
           </p>
         </section>
 
@@ -140,8 +173,7 @@ export default function ComparePage() {
         <ComparisonCta
           title="Keep the launch in one place."
           copy="Design the page, protect the list, grow through verified referrals, and learn what is converting—without stitching five tools together."
-          href="/"
-          label="Start with Waitlyze"
+          secondary={{ href: "/alternatives", label: "Read the focused guides" }}
         />
       </main>
     </ComparisonShell>
