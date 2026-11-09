@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 /**
- * One canonical "compare plans" CTA. No border or filled background — a quiet
+ * One canonical "compare plans" CTA. No border or filled background; a quiet
  * link-style button with a gem icon that reads as an upgrade hint, not an alert.
  * Every locked feature uses this component so the flow looks and behaves the
  * same everywhere.

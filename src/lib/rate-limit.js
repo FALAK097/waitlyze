@@ -22,8 +22,8 @@ export async function checkRateLimit(db, userId, limit = 10, windowMs = 60 * 60 
     // fraction of the window elapsed since the previous request (measured
     // from `updatedAt`, the last touch) and then adds itself. Discounting
     // against a fixed `expiresAt` would re-shrink the same old count on every
-    // call — near the end of the window it floors at 2 forever and unlimited
-    // traffic slips through — whereas keying the decay to the last update
+    // call: near the end of the window it floors at 2 forever and unlimited
+    // traffic slips through, whereas keying the decay to the last update
     // keeps recent requests weighted at ~1, decays idle counters toward zero,
     // and still stays a single atomic statement shared by every Worker
     // isolate. `expiresAt` is only a TTL for the idle-row sweep.

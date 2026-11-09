@@ -183,8 +183,7 @@
   width: 2.75rem;
   height: 2.75rem;
   place-items: center;
-  border-radius: 50%;
-  background: var(--product-bg-inset);
+  background: transparent;
   font-family: var(--product-font-mono), monospace;
   font-size: 0.75rem;
   font-weight: 700;
@@ -489,17 +488,15 @@ a.compare-table-tool:focus-visible {
 .compare-logo {
   display: inline-grid;
   flex: none;
-  width: calc(var(--logo-size) + 10px);
-  height: calc(var(--logo-size) + 10px);
+  width: var(--logo-size);
+  height: var(--logo-size);
   place-items: center;
-  border: 1px solid var(--product-border-subtle);
-  border-radius: 0.6rem;
-  background: var(--product-bg-surface);
+  border: none;
+  background: transparent;
 }
 .compare-logo img {
   width: var(--logo-size);
   height: var(--logo-size);
-  border-radius: 0.35rem;
   object-fit: contain;
 }
 

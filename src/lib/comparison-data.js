@@ -372,7 +372,7 @@ export const competitors = [
       "No permanent free plan, a short trial capped at 10 participants, and pricing that grows with total participants. Several developer features need higher tiers.",
     bestFor: "Companies running several types of referral program beyond a pre-launch waitlist.",
     verdict:
-      "Choose Waitlyze when the waitlist itself—not a general referral program—is the center of your launch.",
+      "Choose Waitlyze when the waitlist itself, not a general referral program, is the center of your launch.",
     chooseWaitlyze: [
       "Your goal is a pre-launch waitlist, not an ongoing referral program",
       "You want broadcasts and follow-ups, not just notification emails",

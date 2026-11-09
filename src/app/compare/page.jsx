@@ -80,7 +80,7 @@ export default function ComparePage() {
           <dl className="compare-snapshot">
             <div>
               <dt>Lowest entry price</dt>
-              <dd>LaunchList · $9/mo</dd>
+              <dd>LaunchList ($9/mo)</dd>
             </div>
             <div>
               <dt>Flat paid pricing</dt>
@@ -92,7 +92,7 @@ export default function ComparePage() {
             </div>
             <div>
               <dt>Lowest annual price</dt>
-              <dd>Waitlyze Pro · $50/yr</dd>
+              <dd>Waitlyze Pro ($50/yr)</dd>
             </div>
           </dl>
         </section>
@@ -172,7 +172,7 @@ export default function ComparePage() {
 
         <ComparisonCta
           title="Keep the launch in one place."
-          copy="Design the page, protect the list, grow through verified referrals, and learn what is converting—without stitching five tools together."
+          copy="Design the page, protect the list, grow through verified referrals, and learn what is converting without stitching five tools together."
           secondary={{ href: "/alternatives", label: "Read the focused guides" }}
         />
       </main>

@@ -36,7 +36,7 @@ export default function LegalDocument({
           </h1>
           <p className="mt-6 max-w-116 text-product-text-secondary">{description}</p>
           <span className="mt-5 block text-xs text-product-text-secondary">
-            Last updated · {lastUpdated}
+            Last updated: {lastUpdated}
           </span>
         </header>
         <div className="flex flex-col gap-8 py-12 lg:flex-row lg:gap-22">

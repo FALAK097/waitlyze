@@ -3,7 +3,7 @@ import { ImageResponse } from "next/og";
 import { BrandLogo } from "@/components/og/brand-logo";
 import { SITE_URL } from "@/lib/site-metadata";
 
-export const alt = "Waitlyze - Build an audience before you launch";
+export const alt = "Waitlyze: Build an audience before you launch";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 

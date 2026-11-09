@@ -165,7 +165,7 @@ export async function recordCloudflareSendingEvent(db, event) {
   // the send, or the send predates id recording), store the event
   // workspace-neutral instead of guessing from the sender address: several
   // workspaces can save the same fromEmail, so a guess could pick the wrong
-  // one and stop that workspace's mail to this recipient — and the wrong
+  // one and stop that workspace's mail to this recipient, and the wrong
   // workspaceId would also make applyKnownProviderEvents skip the event for
   // the real sender. A neutral event is applied as soon as the message id
   // identifies the delivery.

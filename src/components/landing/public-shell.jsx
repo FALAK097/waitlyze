@@ -1,9 +1,4 @@
-import {
-  ArrowUpRight01Icon,
-  CubeIcon,
-  Layout2ColumnIcon,
-  ListIcon,
-} from "@hugeicons/core-free-icons";
+import { ArrowUpRight01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import Link from "next/link";
 
@@ -82,13 +77,6 @@ export default function PublicShell({ children }) {
               <span className="mb-2 flex items-center gap-2 text-micro font-semibold tracking-widest text-product-text-secondary uppercase">
                 Alternatives
               </span>
-              <Link
-                href="/alternatives"
-                className="inline-flex items-center gap-2 hover:text-product-success-text focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-neutral-900"
-              >
-                <HugeiconsIcon icon={CubeIcon} size={16} aria-hidden="true" />
-                Best waitlist tools
-              </Link>
               {[
                 { name: "Prefinery", slug: "prefinery" },
                 { name: "GetWaitlist", slug: "getwaitlist" },
@@ -110,24 +98,21 @@ export default function PublicShell({ children }) {
                   key={slug}
                   href={`/alternatives/${slug}`}
                   title={`Waitlyze vs ${name}`}
-                  className="inline-flex items-center gap-2 hover:text-product-success-text focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-neutral-900"
+                  className="inline-flex items-center gap-1.5 hover:text-product-success-text focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-neutral-900"
                 >
-                  <HugeiconsIcon icon={CubeIcon} size={16} aria-hidden="true" />
                   {name}
                 </Link>
               ))}
               <Link
                 href="/alternatives"
-                className="inline-flex items-center gap-2 hover:text-product-success-text focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-neutral-900"
+                className="inline-flex items-center gap-1.5 hover:text-product-success-text focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-neutral-900"
               >
-                <HugeiconsIcon icon={ListIcon} size={16} aria-hidden="true" />
                 All alternatives
               </Link>
               <Link
                 href="/compare"
-                className="inline-flex items-center gap-2 hover:text-product-success-text focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-neutral-900"
+                className="inline-flex items-center gap-1.5 hover:text-product-success-text focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-neutral-900"
               >
-                <HugeiconsIcon icon={Layout2ColumnIcon} size={16} aria-hidden="true" />
                 Compare tools
               </Link>
             </nav>

@@ -7,7 +7,7 @@ const FORMATS = new Set(["jpg", "png", "webp", "gif", "avif"]);
 const PNG_SIGNATURE = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
 // PNG text/time chunks can embed GPS or device details.
 const PNG_PRIVATE_CHUNKS = new Set(["eXIf", "tEXt", "zTXt", "iTXt", "tIME"]);
-// EXIF Orientation tag (0x0112) — the one value worth keeping when stripping.
+// EXIF Orientation tag (0x0112): the one value worth keeping when stripping.
 const EXIF_ORIENTATION_TAG = 0x0112;
 // WebP metadata chunks: "EXIF" keeps only its Orientation tag, "XMP " is
 // dropped entirely (matching VP8X flag bits below).

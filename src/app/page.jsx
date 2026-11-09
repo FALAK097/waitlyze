@@ -328,7 +328,7 @@ export default async function LandingPage() {
               </Link>
             </div>
             <p className="wl-assurance">
-              Free to get started <span aria-hidden="true">·</span> No credit card required
+              Free to get started. No credit card required.
             </p>
           </div>
           <ProductFrame
@@ -337,7 +337,7 @@ export default async function LandingPage() {
             alt="Authenticated Waitlyze analytics dashboard showing sample visitor, signup and conversion data"
             tone="blue"
           />
-          <p className="wl-image-note">Inside Waitlyze · sample waitlist shown</p>
+          <p className="wl-image-note">Inside Waitlyze (sample waitlist shown)</p>
         </section>
 
         <section id="features" className="wl-section wl-features" aria-labelledby="features-title">

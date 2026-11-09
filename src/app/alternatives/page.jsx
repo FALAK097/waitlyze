@@ -81,7 +81,7 @@ export default function AlternativesPage() {
             <h2 id="dedicated-tools">Dedicated waitlist platforms</h2>
             <p>
               Six serious alternatives, each useful for a different launch shape. No universal
-              winner—just clearer tradeoffs.
+              winner, just clearer tradeoffs.
             </p>
           </div>
           <div className="compare-tool-list">
@@ -97,7 +97,7 @@ export default function AlternativesPage() {
                     alt=""
                     width={32}
                     height={32}
-                    className="h-8 w-8 rounded-md object-contain"
+                    className="h-8 w-8 object-contain"
                   />
                 </span>
                 <span className="compare-tool-copy">
@@ -120,7 +120,7 @@ export default function AlternativesPage() {
 
         <ComparisonCta
           title="Start with the launch, not the feature checklist."
-          copy="Waitlyze keeps your page, verified audience, referrals, email, and launch signals together—without making the setup feel like a growth-ops project."
+          copy="Waitlyze keeps your page, verified audience, referrals, email, and launch signals together without making the setup feel like a growth-ops project."
           secondary={{ href: "/compare", label: "Compare every tool" }}
         />
       </main>

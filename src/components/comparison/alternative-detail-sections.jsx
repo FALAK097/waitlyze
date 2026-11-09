@@ -348,7 +348,7 @@ export function RelatedComparisonsSection({ related }) {
               <span>
                 <strong>Waitlyze vs {tool.name}</strong>
                 <span>
-                  {tool.category} · from {tool.price}
+                  {tool.category}, from {tool.price}
                 </span>
               </span>
               <HugeiconsIcon icon={ArrowRight01Icon} size={18} aria-hidden="true" />

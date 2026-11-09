@@ -153,7 +153,7 @@ export function HowWeChecked({ date }) {
           <a className="compare-inline-link" href="mailto:support@waitlyze.com">
             email us
           </a>
-          —we merge corrections quickly.
+          . We merge corrections quickly.
         </p>
       </div>
     </section>

@@ -36,7 +36,7 @@ export function PlansDialog({
         showCloseButton={false}
       >
         <DialogTitle className="sr-only">
-          {feature ? `Compare plans — ${feature}` : "Compare Waitlyze plans"}
+          {feature ? `Compare plans: ${feature}` : "Compare Waitlyze plans"}
         </DialogTitle>
         <DialogClose className="absolute top-4 right-4 z-10 grid size-8 place-items-center rounded-full text-product-text-secondary transition-colors hover:bg-product-bg-inset hover:text-product-text-primary">
           <HugeiconsIcon icon={Cancel01Icon} className="size-4" aria-hidden="true" />
