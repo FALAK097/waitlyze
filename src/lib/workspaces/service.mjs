@@ -166,12 +166,16 @@ export function createWorkspaceService(db) {
             checkoutUrl: true,
             checkoutSessionId: true,
             checkoutPendingUntil: true,
+            checkoutCreationStartedAt: true,
           },
         });
-        if (
+        const hasPendingCheckout =
           subscription?.checkoutSessionId ||
-          (subscription?.checkoutUrl && !subscription.checkoutSessionId) ||
-          subscription?.checkoutPendingUntil > new Date() ||
+          (subscription?.checkoutPendingUntil &&
+            subscription.checkoutPendingUntil > new Date() &&
+            (subscription?.checkoutUrl || subscription?.checkoutCreationStartedAt));
+        if (
+          hasPendingCheckout ||
           (subscription?.dodoSubscriptionId &&
             !["EXPIRED", "FAILED", "CANCELLED"].includes(subscription.status))
         )

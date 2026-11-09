@@ -5,7 +5,10 @@ import { randomUUID } from "node:crypto";
 import { headers } from "next/headers";
 
 import { auth } from "@/lib/auth";
-import { reconcileCheckoutSession } from "@/lib/billing/checkout-reconciliation.mjs";
+import {
+  extractSessionIdFromUrl,
+  reconcileCheckoutSession,
+} from "@/lib/billing/checkout-reconciliation.mjs";
 import { createDodoClient, dodoProductId, DodoConfigurationError } from "@/lib/billing/dodo.mjs";
 import { BILLING_INTERVALS, effectiveWorkspacePlan } from "@/lib/billing/plans.mjs";
 import { env } from "@/lib/env.mjs";
@@ -65,6 +68,7 @@ const CHECKOUT_URL_TTL_MS = 24 * 60 * 60 * 1000;
 // Dodo retries a webhook for about 28 hours after the event. Keep deletion and
 // replacement blocked through the checkout lifetime plus that retry window.
 const CHECKOUT_PROTECTION_TTL_MS = 54 * 60 * 60 * 1000;
+const CHECKOUT_CREATION_LEASE_MS = 60 * 1000;
 
 async function reserveCheckoutIntent(workspaceId, interval) {
   const newIntentId = randomUUID();
@@ -94,7 +98,10 @@ async function reserveCheckoutIntent(workspaceId, interval) {
       return { portalCustomerId: current.dodoCustomerId };
     }
 
-    if (current?.checkoutSessionId) {
+    const activeSessionId =
+      current?.checkoutSessionId || extractSessionIdFromUrl(current?.checkoutUrl);
+
+    if (activeSessionId) {
       const checkoutUrlIsActive = Boolean(
         current.checkoutUrl && current.checkoutUrlExpiresAt && current.checkoutUrlExpiresAt > now,
       );
@@ -109,7 +116,7 @@ async function reserveCheckoutIntent(workspaceId, interval) {
       return {
         reconcile: {
           intentId: current.checkoutIntentId,
-          sessionId: current.checkoutSessionId,
+          sessionId: activeSessionId,
         },
       };
     }
@@ -120,22 +127,29 @@ async function reserveCheckoutIntent(workspaceId, interval) {
           error:
             "A checkout is already open for the other billing interval. Finish it or wait for it to expire.",
         };
-      if (current.checkoutUrl)
+      if (current.checkoutUrl) {
+        const checkoutUrlIsActive = Boolean(
+          current.checkoutUrlExpiresAt && current.checkoutUrlExpiresAt > now,
+        );
+        if (checkoutUrlIsActive) return { checkoutUrl: current.checkoutUrl };
         return {
           error: "This checkout needs reconciliation before another payment attempt can start.",
         };
-      if (current.checkoutCreationStartedAt) return { creationPending: true };
-      await tx.workspaceSubscription.update({
-        where: { workspaceId },
-        data: {
-          checkoutCreationStartedAt: now,
-          checkoutPendingUntil: protectionUntil,
-        },
-      });
-      return { intentId: current.checkoutIntentId, creatorStartedAt: now };
+      }
+      if (current.checkoutCreationStartedAt) {
+        const isLeaseActive =
+          now.getTime() - current.checkoutCreationStartedAt.getTime() < CHECKOUT_CREATION_LEASE_MS;
+        if (isLeaseActive) return { creationPending: true };
+        return {
+          error:
+            "A previous checkout request is still pending confirmation. Please wait or contact support before starting another payment.",
+        };
+      }
+      // If checkoutCreationStartedAt is null, the reservation was abandoned before a Dodo
+      // request was dispatched. Safe to recover/release this abandoned reservation.
     }
 
-    if (current?.checkoutIntentId && current.checkoutUrl)
+    if (current?.checkoutIntentId && current.checkoutUrl && current.checkoutPendingUntil > now)
       return {
         error: "This checkout needs reconciliation before another payment attempt can start.",
       };
@@ -148,7 +162,7 @@ async function reserveCheckoutIntent(workspaceId, interval) {
         status: "FREE",
         checkoutIntentId: newIntentId,
         checkoutInterval,
-        checkoutCreationStartedAt: now,
+        checkoutCreationStartedAt: null,
         checkoutPendingUntil: protectionUntil,
       },
       update: {
@@ -157,11 +171,11 @@ async function reserveCheckoutIntent(workspaceId, interval) {
         checkoutUrl: null,
         checkoutSessionId: null,
         checkoutUrlExpiresAt: null,
-        checkoutCreationStartedAt: now,
+        checkoutCreationStartedAt: null,
         checkoutPendingUntil: protectionUntil,
       },
     });
-    return { intentId: newIntentId, creatorStartedAt: now };
+    return { intentId: newIntentId };
   });
 }
 
@@ -243,13 +257,21 @@ export async function createProCheckout(interval, workspaceId) {
       };
     if (reservation.checkoutUrl) return { checkoutUrl: reservation.checkoutUrl };
     reservedIntentId = reservation.intentId;
-    const creatorStartedAt = reservation.creatorStartedAt;
 
     // The installed SDK does not send an idempotency header for this endpoint.
     // The workspace-row claim elects one creator; disable blind POST retries.
     const client = createDodoClient({ requireWebhookKey: true }).withOptions({
       maxRetries: 0,
       timeout: 30_000,
+    });
+    const creatorStartedAt = new Date();
+    await prisma.workspaceSubscription.updateMany({
+      where: {
+        workspaceId: workspace.id,
+        checkoutIntentId: reservedIntentId,
+        checkoutCreationStartedAt: null,
+      },
+      data: { checkoutCreationStartedAt: creatorStartedAt },
     });
     const checkout = await client.checkoutSessions.create({
       product_cart: [{ product_id: dodoProductId(interval), quantity: 1 }],

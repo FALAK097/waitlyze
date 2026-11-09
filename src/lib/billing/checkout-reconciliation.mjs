@@ -30,11 +30,27 @@ async function clearUnpaidCheckout(db, { workspaceId, intentId, sessionId }) {
   });
 }
 
+export function extractSessionIdFromUrl(url) {
+  if (typeof url !== "string" || !url) return null;
+  try {
+    const parsed = new URL(url);
+    const fromParam = parsed.searchParams.get("sessionId") || parsed.searchParams.get("session_id");
+    if (fromParam) return fromParam;
+    const parts = parsed.pathname.split("/").filter(Boolean);
+    const last = parts[parts.length - 1];
+    if (last && /^cks_[A-Za-z0-9_-]+$/.test(last)) return last;
+    return null;
+  } catch {
+    return null;
+  }
+}
+
 async function applyPaidSubscription(db, { workspaceId, intentId, payment, now }) {
   const client = createDodoClient();
   const subscriptionId = payment.subscription_id;
   if (typeof subscriptionId !== "string" || !subscriptionId) return { state: "paid_unresolved" };
 
+  const fetchStartedAt = new Date();
   const providerSubscription = await client.subscriptions.retrieve(
     subscriptionId,
     {},
@@ -48,9 +64,18 @@ async function applyPaidSubscription(db, { workspaceId, intentId, payment, now }
 
   const productId =
     typeof providerSubscription.product_id === "string" ? providerSubscription.product_id : null;
-  const interval = dodoBillingInterval(productId);
+  const metadataInterval =
+    typeof metadata.interval === "string"
+      ? metadata.interval.toLowerCase() === "annual"
+        ? "ANNUAL"
+        : metadata.interval.toLowerCase() === "monthly"
+          ? "MONTHLY"
+          : null
+      : null;
+  const productInterval = dodoBillingInterval(productId);
   const customerId =
     providerSubscription.customer?.customer_id || payment.customer?.customer_id || null;
+  const snapshotAt = validDate(providerSubscription.updated_at) || fetchStartedAt;
 
   return db.$transaction(async (tx) => {
     const lockedWorkspace =
@@ -69,42 +94,73 @@ async function applyPaidSubscription(db, { workspaceId, intentId, payment, now }
     )
       throw new TypeError("Workspace already has a different provider subscription.");
 
-    const status = subscriptionWebhookStatus(
-      "subscription.updated",
-      providerSubscription,
-      current.status,
+    // Resolve interval through product mapping, metadata, historical records, or stored checkout
+    // to preserve Pro status even if product IDs were rotated.
+    const historicalInterval =
+      productId && productId === current.dodoProductId && current.interval ? current.interval : null;
+    const interval =
+      productInterval ||
+      metadataInterval ||
+      historicalInterval ||
+      (current.checkoutIntentId === intentId ? current.checkoutInterval : null) ||
+      (sameSubscription ? current.interval : null);
+
+    // Freshness check: if a newer webhook event already committed for this subscription,
+    // preserve the newer stored state rather than overwriting with an older provider snapshot.
+    const isSnapshotStale = Boolean(
+      sameSubscription && current.lastEventAt && current.lastEventAt > snapshotAt,
     );
-    const plan = interval && status !== "EXPIRED" ? "PRO" : "FREE";
+
+    const status = isSnapshotStale
+      ? current.status
+      : subscriptionWebhookStatus(
+          "subscription.updated",
+          providerSubscription,
+          current.status,
+        );
+    const plan = (interval || metadata.plan === "PRO") && status !== "EXPIRED" ? "PRO" : "FREE";
+
+    const updateData = isSnapshotStale
+      ? {
+          plan,
+          interval: current.interval || interval,
+          dodoCustomerId: customerId || (sameSubscription ? current.dodoCustomerId : null),
+          dodoSubscriptionId: subscriptionId,
+          dodoProductId: productId || (sameSubscription ? current.dodoProductId : null),
+          ...(current.checkoutIntentId === intentId ? checkoutFields() : {}),
+        }
+      : {
+          plan,
+          status,
+          interval,
+          dodoCustomerId: customerId || (sameSubscription ? current.dodoCustomerId : null),
+          dodoSubscriptionId: subscriptionId,
+          dodoProductId: productId || (sameSubscription ? current.dodoProductId : null),
+          currentPeriodStart:
+            validDate(providerSubscription.previous_billing_date) ||
+            validDate(providerSubscription.created_at) ||
+            (sameSubscription ? current.currentPeriodStart : null) ||
+            now,
+          currentPeriodEnd:
+            validDate(providerSubscription.next_billing_date) ||
+            validDate(providerSubscription.current_period_end) ||
+            (sameSubscription ? current.currentPeriodEnd : null),
+          pastDueEndsAt:
+            status === "PAST_DUE"
+              ? validDate(providerSubscription.past_due_ends_at) ||
+                (sameSubscription ? current.pastDueEndsAt : null)
+              : null,
+          cancelAtPeriodEnd:
+            typeof providerSubscription.cancel_at_next_billing_date === "boolean"
+              ? providerSubscription.cancel_at_next_billing_date
+              : sameSubscription && current.cancelAtPeriodEnd,
+          lastEventAt: snapshotAt,
+          ...(current.checkoutIntentId === intentId ? checkoutFields() : {}),
+        };
+
     await tx.workspaceSubscription.update({
       where: { workspaceId },
-      data: {
-        plan,
-        status,
-        interval,
-        dodoCustomerId: customerId || (sameSubscription ? current.dodoCustomerId : null),
-        dodoSubscriptionId: subscriptionId,
-        dodoProductId: productId || (sameSubscription ? current.dodoProductId : null),
-        currentPeriodStart:
-          validDate(providerSubscription.previous_billing_date) ||
-          validDate(providerSubscription.created_at) ||
-          (sameSubscription ? current.currentPeriodStart : null) ||
-          now,
-        currentPeriodEnd:
-          validDate(providerSubscription.next_billing_date) ||
-          validDate(providerSubscription.current_period_end) ||
-          (sameSubscription ? current.currentPeriodEnd : null),
-        pastDueEndsAt:
-          status === "PAST_DUE"
-            ? validDate(providerSubscription.past_due_ends_at) ||
-              (sameSubscription ? current.pastDueEndsAt : null)
-            : null,
-        cancelAtPeriodEnd:
-          typeof providerSubscription.cancel_at_next_billing_date === "boolean"
-            ? providerSubscription.cancel_at_next_billing_date
-            : sameSubscription && current.cancelAtPeriodEnd,
-        lastEventAt: now,
-        ...(current.checkoutIntentId === intentId ? checkoutFields() : {}),
-      },
+      data: updateData,
     });
     return {
       state: ["EXPIRED", "FAILED", "CANCELLED"].includes(status) ? "terminal" : "active",

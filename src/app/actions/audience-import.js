@@ -185,7 +185,7 @@ export async function importSignups(waitListId, formData) {
     const duplicates = candidates.length - fresh.length;
 
     let imported = 0;
-    let insertedSignups = [];
+    let referralsLinked = 0;
     // Namespaced uniqueUserIds let the referral pass identify only rows this
     // import inserted, even when public signups race the createMany calls.
     const stamp = randomUUID();
@@ -207,7 +207,7 @@ export async function importSignups(waitListId, formData) {
         const stillFresh = fresh.filter(
           (row) => !emailLookupForms(row.email).some((form) => duplicateForms.has(form)),
         );
-        if (!stillFresh.length) return { inserted: 0, insertedRows: [] };
+        if (!stillFresh.length) return { inserted: 0, referralsLinked: 0 };
         const [usage, entitlements] = await Promise.all([
           workspaceId
             ? tx.workspace.findUnique({
@@ -260,63 +260,63 @@ export async function importSignups(waitListId, formData) {
             data: { signupUsageCount: { increment: inserted } },
           });
         }
-        return { inserted, insertedRows };
+
+        // Second pass: link referrals by email or code within the same transaction.
+        let txReferralsLinked = 0;
+        const insertedEmails = new Set(insertedRows.map((row) => row.emailNormalized));
+        const linkable = fresh.filter(
+          (row) => row.referredBy && insertedEmails.has(row.emailNormalized),
+        );
+        if (linkable.length > 0) {
+          const byEmail = new Map(insertedRows.map((row) => [row.emailNormalized, row]));
+          const byCode = new Map(insertedRows.map((row) => [row.referralCode, row]));
+
+          // Resolve against only the addresses and codes present in this bounded
+          // CSV, rather than materializing every signup in the campaign.
+          const lookupKeys = [...new Set(linkable.map((row) => row.referredBy.trim()).filter(Boolean))];
+          const matchingRows = await queryInChunks(lookupKeys, 400, (keyChunk) => {
+            const emailForms = [...new Set(keyChunk.flatMap((key) => emailLookupForms(key)))];
+            const referralCodes = keyChunk.filter((key) => REFERRAL_CODE_FORMAT.test(key));
+            return tx.signUp.findMany({
+              where: {
+                waitListId,
+                waitList: scope,
+                OR: [
+                  ...(emailForms.length ? [{ emailNormalized: { in: emailForms } }] : []),
+                  ...(referralCodes.length ? [{ referralCode: { in: referralCodes } }] : []),
+                ],
+              },
+              select: { id: true, emailNormalized: true, referralCode: true },
+            });
+          });
+          for (const row of matchingRows) {
+            if (row.emailNormalized && !byEmail.has(row.emailNormalized))
+              byEmail.set(row.emailNormalized, row);
+            if (row.referralCode && !byCode.has(row.referralCode)) byCode.set(row.referralCode, row);
+          }
+          const links = [];
+          for (const row of linkable) {
+            const newcomer = byEmail.get(row.emailNormalized);
+            const key = row.referredBy.trim();
+            const referrer =
+              emailLookupForms(key)
+                .map((form) => byEmail.get(form))
+                .find(Boolean) || byCode.get(key);
+            if (newcomer && referrer && referrer.id !== newcomer.id)
+              links.push({ signUpId: newcomer.id, referredById: referrer.id });
+          }
+          for (let index = 0; index < links.length; index += 500) {
+            const result = await tx.referral.createMany({
+              data: links.slice(index, index + 500),
+              skipDuplicates: true,
+            });
+            txReferralsLinked += result.count;
+          }
+        }
+        return { inserted, referralsLinked: txReferralsLinked };
       });
       imported = importResult.inserted;
-      insertedSignups = importResult.insertedRows;
-    }
-
-    // Second pass: link referrals by email or code, including rows from this file.
-    let referralsLinked = 0;
-    const insertedEmails = new Set(insertedSignups.map((row) => row.emailNormalized));
-    const linkable = fresh.filter(
-      (row) => row.referredBy && insertedEmails.has(row.emailNormalized),
-    );
-    if (linkable.length > 0) {
-      const byEmail = new Map(insertedSignups.map((row) => [row.emailNormalized, row]));
-      const byCode = new Map(insertedSignups.map((row) => [row.referralCode, row]));
-
-      // Resolve against only the addresses and codes present in this bounded
-      // CSV, rather than materializing every signup in the campaign.
-      const lookupKeys = [...new Set(linkable.map((row) => row.referredBy.trim()).filter(Boolean))];
-      const matchingRows = await queryInChunks(lookupKeys, 400, (keyChunk) => {
-        const emailForms = [...new Set(keyChunk.flatMap((key) => emailLookupForms(key)))];
-        const referralCodes = keyChunk.filter((key) => REFERRAL_CODE_FORMAT.test(key));
-        return prisma.signUp.findMany({
-          where: {
-            waitListId,
-            waitList: scope,
-            OR: [
-              ...(emailForms.length ? [{ emailNormalized: { in: emailForms } }] : []),
-              ...(referralCodes.length ? [{ referralCode: { in: referralCodes } }] : []),
-            ],
-          },
-          select: { id: true, emailNormalized: true, referralCode: true },
-        });
-      });
-      for (const row of matchingRows) {
-        if (row.emailNormalized && !byEmail.has(row.emailNormalized))
-          byEmail.set(row.emailNormalized, row);
-        if (row.referralCode && !byCode.has(row.referralCode)) byCode.set(row.referralCode, row);
-      }
-      const links = [];
-      for (const row of linkable) {
-        const newcomer = byEmail.get(row.emailNormalized);
-        const key = row.referredBy.trim();
-        const referrer =
-          emailLookupForms(key)
-            .map((form) => byEmail.get(form))
-            .find(Boolean) || byCode.get(key);
-        if (newcomer && referrer && referrer.id !== newcomer.id)
-          links.push({ signUpId: newcomer.id, referredById: referrer.id });
-      }
-      for (let index = 0; index < links.length; index += 500) {
-        const result = await prisma.referral.createMany({
-          data: links.slice(index, index + 500),
-          skipDuplicates: true,
-        });
-        referralsLinked += result.count;
-      }
+      referralsLinked = importResult.referralsLinked;
     }
     return {
       ok: true,

@@ -4,7 +4,10 @@ import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 
 import { auth } from "@/lib/auth";
-import { reconcileCheckoutSession } from "@/lib/billing/checkout-reconciliation.mjs";
+import {
+  extractSessionIdFromUrl,
+  reconcileCheckoutSession,
+} from "@/lib/billing/checkout-reconciliation.mjs";
 import prisma from "@/lib/prisma";
 import { AUDIT_ACTIONS, recordAuditEvent } from "@/lib/workspaces/audit.mjs";
 import { requireCampaign } from "@/lib/workspaces/authorize";
@@ -142,15 +145,20 @@ export async function deleteWorkspace(previous, form) {
       select: {
         checkoutIntentId: true,
         checkoutSessionId: true,
+        checkoutUrl: true,
+        checkoutPendingUntil: true,
+        checkoutCreationStartedAt: true,
       },
     });
-    if (subscription?.checkoutSessionId && subscription.checkoutIntentId) {
+    const sessionId =
+      subscription?.checkoutSessionId || extractSessionIdFromUrl(subscription?.checkoutUrl);
+    if (sessionId && subscription?.checkoutIntentId) {
       let reconciliation;
       try {
         reconciliation = await reconcileCheckoutSession(prisma, {
           workspaceId,
           intentId: subscription.checkoutIntentId,
-          sessionId: subscription.checkoutSessionId,
+          sessionId,
         });
       } catch {
         return {
@@ -163,6 +171,13 @@ export async function deleteWorkspace(previous, form) {
         };
       if (reconciliation.state !== "safe_to_retry" && reconciliation.state !== "terminal")
         return { error: "A checkout or payment is still processing. Refresh and try again later." };
+    } else if (
+      subscription?.checkoutIntentId &&
+      subscription?.checkoutPendingUntil &&
+      subscription.checkoutPendingUntil > new Date() &&
+      (subscription.checkoutUrl || subscription.checkoutCreationStartedAt)
+    ) {
+      return { error: "A checkout or payment is still processing. Refresh and try again later." };
     }
     await service.deleteWorkspace(session.user.id, workspaceId);
   } catch (error) {
