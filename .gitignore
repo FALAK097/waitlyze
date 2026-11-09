@@ -62,3 +62,4 @@ next-env.d.ts
 
 # Temporary route materialized only during isolated browser builds
 /src/app/design-system/
+/.neon/
