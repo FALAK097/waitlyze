@@ -44,19 +44,24 @@ export async function POST(request) {
     return NextResponse.json({ message: "Expected 1-100 events" }, { status: 400 });
 
   const counters = { recorded: 0, ignored: 0, invalid: 0, suppressed: 0 };
-  for (const event of events) {
-    try {
-      const outcome = await recordCloudflareSendingEvent(prisma, event);
-      counters[outcome] += 1;
-    } catch (error) {
-      if (error instanceof TypeError) {
-        counters.invalid += 1;
-        continue;
+  // Each event maps to its own upsert keyed by providerEventId, so process the
+  // batch concurrently; any non-validation failure returns 500 so the queue
+  // redelivers the batch.
+  const outcomes = await Promise.all(
+    events.map(async (event) => {
+      try {
+        return await recordCloudflareSendingEvent(prisma, event);
+      } catch (error) {
+        if (error instanceof TypeError) return "invalid";
+        console.error("Cloudflare email event ingestion failed:", error);
+        return "failed";
       }
-      console.error("Cloudflare email event ingestion failed:", error);
-      // Signal a retryable failure so the queue redelivers the batch.
+    }),
+  );
+  for (const outcome of outcomes) {
+    if (outcome === "failed")
       return NextResponse.json({ message: "Ingestion failed" }, { status: 500 });
-    }
+    counters[outcome] += 1;
   }
   return NextResponse.json(counters);
 }
