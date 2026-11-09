@@ -23,7 +23,7 @@ After saving, copy the webhook URL shown in the connection panel. Add it in Rese
 </Step>
 </Steps>
 
-The connection is ready only after the test succeeds. Until then the deployment sender is used. Keep the Resend event webhook configured so permanent bounces and complaints can update the workspace suppression list.
+The connection is ready only after the test succeeds. Until then waitlists keep using the workspace connection; with no connected Resend sender anywhere, campaigns cannot send and stay failed until you connect one. Keep the Resend event webhook configured so permanent bounces and complaints can update the workspace suppression list.
 
 ## If a test fails
 
@@ -33,7 +33,7 @@ The connection is ready only after the test succeeds. Until then the deployment 
 - Correct the details, save, and test again.
 - Check [Email tools](/docs/email) delivery health for dispatcher versus sender errors.
 
-Disconnecting falls back to the deployment sender immediately.
+Disconnecting removes the waitlist override and returns to the workspace Resend connection. If no Resend sender remains connected, campaign sends stop until you connect one again.
 
 ## List your Resend domains
 

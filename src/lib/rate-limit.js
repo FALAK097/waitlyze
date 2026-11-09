@@ -18,13 +18,24 @@ export async function checkRateLimit(db, userId, limit = 10, windowMs = 60 * 60 
   const userKey = createHash("sha256").update(userId).digest("hex");
   const key = `user-action:${userKey}`;
   try {
+    // Sliding-window counter: before incrementing, decay the current count by
+    // the fraction of the window that has already elapsed. A burst at the end
+    // of a window therefore cannot be repeated in full at the start of the
+    // next one (the classic fixed-window 2x burst), while staying a single
+    // atomic statement shared by every Worker isolate.
     const rows = await db.$queryRaw`
       INSERT INTO "rate_limit_buckets" ("key", "count", "expiresAt", "updatedAt")
       VALUES (${key}, 1, ${expiresAt}, ${now})
       ON CONFLICT ("key") DO UPDATE SET
         "count" = CASE
           WHEN "rate_limit_buckets"."expiresAt" <= ${now} THEN 1
-          ELSE "rate_limit_buckets"."count" + 1
+          ELSE (
+            CEIL(
+              "rate_limit_buckets"."count"::double precision
+              * (EXTRACT(EPOCH FROM ("rate_limit_buckets"."expiresAt" - ${now})) * 1000.0)
+              / ${windowMs}::double precision
+            ) + 1
+          )::int
         END,
         "expiresAt" = CASE
           WHEN "rate_limit_buckets"."expiresAt" <= ${now} THEN ${expiresAt}

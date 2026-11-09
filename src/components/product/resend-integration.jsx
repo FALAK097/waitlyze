@@ -151,7 +151,8 @@ export function ResendIntegration({ initialConnection, accountEmail, canManage, 
               <p className="m-0 text-caption leading-relaxed text-product-text-secondary">
                 <strong className="text-product-text-primary">Campaign email</strong> (broadcasts
                 and marketing automations) sends from your verified Resend domain. If this
-                connection needs attention, campaigns pause until you fix or disconnect it.
+                connection needs attention or you disconnect it, campaigns stop until a Resend
+                sender is connected again.
               </p>
               <p className="m-0 text-caption leading-relaxed text-product-text-secondary">
                 <strong className="text-product-text-primary">Account email</strong> like workspace

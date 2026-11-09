@@ -129,7 +129,8 @@ export async function DELETE(request) {
     action: AUDIT_ACTIONS.CLOUDFLARE_EMAIL_DISCONNECTED,
     resourceType: "integration",
     resourceName: "Cloudflare Email",
-    detail: "Transactional confirmation email falls back to the Waitlyze sender",
+    detail:
+      "Transactional confirmation email falls back to the workspace Resend sender when connected, otherwise the Waitlyze sender",
   });
   return NextResponse.json({ ok: true });
 }

@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { env } from "@/lib/env.mjs";
 import prisma from "@/lib/prisma";
 import { r2 } from "@/lib/r2";
+import { purgePublicAsset } from "@/lib/uploads/public-cache";
 import { AUDIT_ACTIONS, recordAuditEvent } from "@/lib/workspaces/audit.mjs";
 import { requireCampaign } from "@/lib/workspaces/authorize";
 
@@ -39,6 +40,7 @@ export async function deleteWaitlist(id, confirmation) {
         await r2.send(
           new DeleteObjectCommand({ Bucket: env.R2_BUCKET_NAME, Key: campaign.logoKey }),
         );
+        await purgePublicAsset(campaign.logoKey);
       } catch {
         console.error("Deleted waitlist has a stored logo pending cleanup.");
       }

@@ -47,4 +47,14 @@
     "CLOUDFLARE_CUSTOM_HOSTNAME_TARGET": "customers.waitlyze.com",
   },
   "send_email": [{ "name": "EMAIL", "allowed_sender_addresses": ["noreply@waitlyze.com"] }],
+  "queues": {
+    "consumers": [
+      {
+        "queue": "waitlyze-email-events",
+        "max_batch_size": 20,
+        "max_retries": 3,
+        "dead_letter_queue": "waitlyze-email-events-dlq",
+      },
+    ],
+  },
 }

@@ -116,11 +116,18 @@ export async function createCloudflareHostname(hostname) {
 
 export async function getCloudflareHostname({ providerId, hostname }) {
   const { zoneId } = cloudflareConfig();
-  const result = providerId
-    ? await cloudflareRequest(`${customHostnamePath(zoneId)}/${encodeURIComponent(providerId)}`, {
+  let result = null;
+  if (providerId)
+    result = await cloudflareRequest(
+      `${customHostnamePath(zoneId)}/${encodeURIComponent(providerId)}`,
+      {
         allowNotFound: true,
-      })
-    : await findCloudflareHostname(hostname);
+      },
+    );
+  // The stored ID may be stale (the hostname was recreated in the Cloudflare
+  // dashboard). Search by hostname before concluding it does not exist, so
+  // refresh flows reuse it instead of attempting a duplicate creation.
+  if (!result) result = await findCloudflareHostname(hostname);
   if (!result) return null;
   return mapCloudflareHostname(result, hostname);
 }

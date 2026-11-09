@@ -67,7 +67,11 @@ export async function POST(request, { params }) {
     });
     let current;
     try {
-      current = await createCloudflareHostname(hostname);
+      // Reuse an existing Cloudflare hostname (e.g., left behind by an
+      // earlier attempt) instead of creating a duplicate.
+      current =
+        (await getCloudflareHostname({ providerId: null, hostname })) ||
+        (await createCloudflareHostname(hostname));
     } catch (error) {
       await prisma.customDomain.delete({ where: { id: reserved.id } });
       throw error;

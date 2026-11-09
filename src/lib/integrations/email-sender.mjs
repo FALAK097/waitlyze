@@ -39,6 +39,10 @@ export async function resolveWorkspaceCloudflareEmailSender(db, workspaceId) {
     where: { workspaceId_provider: { workspaceId, provider: "CLOUDFLARE_EMAIL" } },
   });
   if (!connection) return null;
+  // A saved-but-untested connection stays dormant so verification falls back
+  // to the workspace Resend or platform sender while setup is in progress.
+  // A configured-but-broken connection still fails closed.
+  if (connection.status === "NEEDS_TEST") return null;
   if (connection.status !== "CONNECTED")
     throw Object.assign(new Error("Connected Cloudflare email sender needs attention"), {
       code: "SENDER_NEEDS_ATTENTION",

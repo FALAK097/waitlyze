@@ -139,6 +139,14 @@ export default {
     const hostname = getHost(request);
     const appRoot = String(env.APP_ROOT_DOMAIN || "waitlyze.com").toLowerCase();
 
+    // Permanent www → apex redirect that preserves path and query, so www can
+    // never serve duplicate content even if the zone-level rule is removed.
+    if (hostname === `www.${appRoot}`) {
+      const target = new URL(url.toString());
+      target.hostname = appRoot;
+      return Response.redirect(target.toString(), 301);
+    }
+
     // The wildcard SaaS route also receives the custom R2 hostname. Serve it
     // from the existing private bucket binding rather than forwarding it to
     // the Next.js application or exposing the bucket's S3 endpoint.
@@ -193,5 +201,45 @@ export default {
     }
 
     return nextWorker.fetch(request, env, ctx);
+  },
+
+  // Cloudflare Email Sending lifecycle events (event subscription → queue).
+  // Forward each batch to the app's internal ingestion route, which applies
+  // permanent bounces and complaints to workspace suppression.
+  async queue(batch, env) {
+    const appRoot = String(env.APP_ROOT_DOMAIN || "waitlyze.com").toLowerCase();
+    const events = [];
+    for (const message of batch.messages) {
+      try {
+        events.push(message.body);
+      } catch {
+        // A malformed body must not block the rest of the batch.
+      }
+    }
+    if (!events.length) {
+      for (const message of batch.messages) message.ack();
+      return;
+    }
+    let ok = false;
+    try {
+      const response = await env.WORKER_SELF_REFERENCE.fetch(
+        new Request(`https://${appRoot}/api/internal/email-events`, {
+          method: "POST",
+          headers: {
+            authorization: `Bearer ${env.OUTBOX_DISPATCH_SECRET || ""}`,
+            "content-type": "application/json",
+          },
+          body: JSON.stringify({ events }),
+        }),
+      );
+      ok = response.ok;
+      if (!ok) console.error("email-event ingestion returned", response.status);
+    } catch (error) {
+      console.error("email-event ingestion failed:", error?.name || error?.message || "unknown");
+    }
+    for (const message of batch.messages) {
+      if (ok) message.ack();
+      else message.retry();
+    }
   },
 };

@@ -9,6 +9,7 @@ import prisma from "@/lib/prisma";
 import { r2 } from "@/lib/r2";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { normalizeUploadedImage } from "@/lib/uploads/image.mjs";
+import { purgePublicAsset } from "@/lib/uploads/public-cache";
 
 export async function POST(req) {
   try {
@@ -107,6 +108,8 @@ export async function DELETE(req) {
     };
 
     await r2.send(new DeleteObjectCommand(deleteParams));
+    // Remove any edge-cached copy so the public URL stops serving the image.
+    await purgePublicAsset(key);
 
     return NextResponse.json({ success: true });
   } catch (error) {

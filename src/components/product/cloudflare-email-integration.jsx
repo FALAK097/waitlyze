@@ -21,6 +21,121 @@ const statusLabel = {
   NEEDS_ATTENTION: "Needs attention",
 };
 
+async function request(path, method, body) {
+  const response = await fetch(path, {
+    method,
+    ...(body
+      ? { headers: { "content-type": "application/json" }, body: JSON.stringify(body) }
+      : {}),
+  });
+  const result = await response.json();
+  if (!response.ok) throw new Error(result.error || "The request could not be completed.");
+  return result;
+}
+
+function CloudflareEmailForm({
+  busy,
+  hasConnection,
+  accountId,
+  apiToken,
+  fromEmail,
+  onAccountIdChange,
+  onApiTokenChange,
+  onFromEmailChange,
+  onSubmit,
+}) {
+  return (
+    <form onSubmit={onSubmit} className="grid gap-4">
+      <label className="product-field" htmlFor="cloudflare-account-id">
+        <span>Cloudflare account ID</span>
+        <Input
+          id="cloudflare-account-id"
+          autoComplete="off"
+          value={accountId}
+          onChange={(event) => onAccountIdChange(event.target.value)}
+          placeholder="32-character account ID"
+          maxLength={32}
+          required
+          disabled={Boolean(busy)}
+        />
+      </label>
+      <label className="product-field" htmlFor="cloudflare-email-token">
+        <span>API token</span>
+        <Input
+          id="cloudflare-email-token"
+          type="password"
+          autoComplete="new-password"
+          spellCheck="false"
+          value={apiToken}
+          onChange={(event) => onApiTokenChange(event.target.value)}
+          placeholder={hasConnection ? "Saved token · enter a replacement" : "Cloudflare API token"}
+          required={!hasConnection}
+          maxLength={512}
+          disabled={Boolean(busy)}
+        />
+        {hasConnection && (
+          <span className="text-caption text-product-text-secondary">
+            The saved token is encrypted and cannot be viewed or copied.
+          </span>
+        )}
+      </label>
+      <label className="product-field" htmlFor="cloudflare-sender-email">
+        <span>Verified sender address</span>
+        <Input
+          id="cloudflare-sender-email"
+          type="email"
+          autoComplete="email"
+          value={fromEmail}
+          onChange={(event) => onFromEmailChange(event.target.value)}
+          placeholder="notifications@example.com"
+          required
+          disabled={Boolean(busy)}
+        />
+      </label>
+      <Button type="submit" disabled={Boolean(busy)}>
+        {busy === "save" ? "Saving…" : hasConnection ? "Save changes" : "Save connection"}
+      </Button>
+    </form>
+  );
+}
+
+function CloudflareEmailActions({
+  busy,
+  accountEmail,
+  confirmDisconnect,
+  onConfirmDisconnectChange,
+  onDisconnect,
+  onTest,
+}) {
+  return (
+    <div className="grid gap-3">
+      <p className="m-0 text-sm text-product-text-secondary">
+        Tests send a real email to {accountEmail}.
+      </p>
+      <Button type="button" variant="outline" onClick={onTest} disabled={Boolean(busy)}>
+        {busy === "test" ? "Sending…" : "Send test email"}
+      </Button>
+      <Button
+        type="button"
+        variant="ghost"
+        onClick={() => onConfirmDisconnectChange(true)}
+        disabled={Boolean(busy)}
+      >
+        Disconnect Cloudflare Email
+      </Button>
+      <ConfirmDialog
+        open={confirmDisconnect}
+        onOpenChange={onConfirmDisconnectChange}
+        title="Disconnect Cloudflare Email?"
+        description="Signup confirmations fall back to your workspace Resend sender when one is connected, otherwise Waitlyze's Cloudflare sender. Campaign email is unaffected."
+        confirmLabel="Disconnect"
+        pendingLabel="Disconnecting…"
+        onConfirm={onDisconnect}
+      />
+    </div>
+  );
+}
+
 export function CloudflareEmailIntegration({ initialConnection, accountEmail, canManage }) {
   const [connection, setConnection] = useState(initialConnection);
   const [open, setOpen] = useState(false);
@@ -29,18 +144,6 @@ export function CloudflareEmailIntegration({ initialConnection, accountEmail, ca
   const [fromEmail, setFromEmail] = useState(initialConnection?.fromEmail || "");
   const [busy, setBusy] = useState("");
   const [confirmDisconnect, setConfirmDisconnect] = useState(false);
-
-  async function request(path, method, body) {
-    const response = await fetch(path, {
-      method,
-      ...(body
-        ? { headers: { "content-type": "application/json" }, body: JSON.stringify(body) }
-        : {}),
-    });
-    const result = await response.json();
-    if (!response.ok) throw new Error(result.error || "The request could not be completed.");
-    return result;
-  }
 
   async function perform(action, operation) {
     setBusy(action);
@@ -71,9 +174,20 @@ export function CloudflareEmailIntegration({ initialConnection, accountEmail, ca
 
   function test() {
     void perform("test", async () => {
-      const result = await request("/api/settings/integrations/cloudflare-email/test", "POST");
-      setConnection((current) => ({ ...current, ...result.data }));
-      toast.success(`Test email sent to ${result.data.sentTo}.`);
+      try {
+        const result = await request("/api/settings/integrations/cloudflare-email/test", "POST");
+        setConnection((current) => ({ ...current, ...result.data }));
+        toast.success(`Test email sent to ${result.data.sentTo}.`);
+      } catch (error) {
+        // A failed test can mark the connection NEEDS_ATTENTION server-side;
+        // reload the authoritative state so the panel does not keep showing
+        // Connected while transactional sends would fail.
+        const fresh = await request("/api/settings/integrations/cloudflare-email", "GET").catch(
+          () => null,
+        );
+        if (fresh) setConnection(fresh.data ?? null);
+        throw error;
+      }
     });
   }
 
@@ -126,90 +240,31 @@ export function CloudflareEmailIntegration({ initialConnection, accountEmail, ca
               automations. Those remain on the workspace’s Resend connection.
             </p>
             {canManage ? (
-              <form onSubmit={save} className="grid gap-4">
-                <label className="product-field" htmlFor="cloudflare-account-id">
-                  <span>Cloudflare account ID</span>
-                  <Input
-                    id="cloudflare-account-id"
-                    autoComplete="off"
-                    value={accountId}
-                    onChange={(event) => setAccountId(event.target.value)}
-                    placeholder="32-character account ID"
-                    maxLength={32}
-                    required
-                    disabled={Boolean(busy)}
-                  />
-                </label>
-                <label className="product-field" htmlFor="cloudflare-email-token">
-                  <span>API token</span>
-                  <Input
-                    id="cloudflare-email-token"
-                    type="password"
-                    autoComplete="new-password"
-                    spellCheck="false"
-                    value={apiToken}
-                    onChange={(event) => setApiToken(event.target.value)}
-                    placeholder={
-                      connection ? "Saved token · enter a replacement" : "Cloudflare API token"
-                    }
-                    required={!connection}
-                    maxLength={512}
-                    disabled={Boolean(busy)}
-                  />
-                  {connection && (
-                    <span className="text-caption text-product-text-secondary">
-                      The saved token is encrypted and cannot be viewed or copied.
-                    </span>
-                  )}
-                </label>
-                <label className="product-field" htmlFor="cloudflare-sender-email">
-                  <span>Verified sender address</span>
-                  <Input
-                    id="cloudflare-sender-email"
-                    type="email"
-                    autoComplete="email"
-                    value={fromEmail}
-                    onChange={(event) => setFromEmail(event.target.value)}
-                    placeholder="notifications@example.com"
-                    required
-                    disabled={Boolean(busy)}
-                  />
-                </label>
-                <Button type="submit" disabled={Boolean(busy)}>
-                  {busy === "save" ? "Saving…" : connection ? "Save changes" : "Save connection"}
-                </Button>
-              </form>
+              <CloudflareEmailForm
+                busy={busy}
+                hasConnection={Boolean(connection)}
+                accountId={accountId}
+                apiToken={apiToken}
+                fromEmail={fromEmail}
+                onAccountIdChange={setAccountId}
+                onApiTokenChange={setApiToken}
+                onFromEmailChange={setFromEmail}
+                onSubmit={save}
+              />
             ) : (
               <p className="m-0 text-sm text-product-text-secondary">
                 Only workspace owners and admins can change this connection.
               </p>
             )}
             {connection && canManage && (
-              <div className="grid gap-3">
-                <p className="m-0 text-sm text-product-text-secondary">
-                  Tests send a real email to {accountEmail}.
-                </p>
-                <Button type="button" variant="outline" onClick={test} disabled={Boolean(busy)}>
-                  {busy === "test" ? "Sending…" : "Send test email"}
-                </Button>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  onClick={() => setConfirmDisconnect(true)}
-                  disabled={Boolean(busy)}
-                >
-                  Disconnect Cloudflare Email
-                </Button>
-                <ConfirmDialog
-                  open={confirmDisconnect}
-                  onOpenChange={setConfirmDisconnect}
-                  title="Disconnect Cloudflare Email?"
-                  description="Transactional signup confirmation emails will use Waitlyze's Cloudflare sender instead. Resend remains connected for campaign email."
-                  confirmLabel="Disconnect"
-                  pendingLabel="Disconnecting…"
-                  onConfirm={disconnect}
-                />
-              </div>
+              <CloudflareEmailActions
+                busy={busy}
+                accountEmail={accountEmail}
+                confirmDisconnect={confirmDisconnect}
+                onConfirmDisconnectChange={setConfirmDisconnect}
+                onDisconnect={disconnect}
+                onTest={test}
+              />
             )}
           </div>
         </SheetContent>

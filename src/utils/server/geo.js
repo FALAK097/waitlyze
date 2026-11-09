@@ -46,12 +46,15 @@ export const getGeoInfo = (request) => {
     } catch {
       // Standard Next.js development and build contexts do not include CF data.
     }
-    const country = headers.get("cf-ipcountry") || edge.country;
-    const city = decodeHeader(headers.get("cf-ipcity") || edge.city);
-    const region = decodeHeader(headers.get("cf-region") || edge.regionCode || edge.region);
-    const latitude = headers.get("cf-iplatitude") || edge.latitude;
-    const longitude = headers.get("cf-iplongitude") || edge.longitude;
-    const timezone = headers.get("cf-timezone") || edge.timezone;
+    // Prefer the trusted request.cf context Cloudflare populates at the edge;
+    // headers are only a fallback for non-Cloudflare environments and can be
+    // spoofed when a zone does not overwrite them.
+    const country = edge.country || headers.get("cf-ipcountry");
+    const city = decodeHeader(edge.city || headers.get("cf-ipcity"));
+    const region = decodeHeader(edge.regionCode || edge.region || headers.get("cf-region"));
+    const latitude = edge.latitude || headers.get("cf-iplatitude");
+    const longitude = edge.longitude || headers.get("cf-iplongitude");
+    const timezone = edge.timezone || headers.get("cf-timezone");
 
     if (country || city || region || timezone) {
       return {

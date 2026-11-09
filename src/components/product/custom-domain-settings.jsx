@@ -246,6 +246,14 @@ export function CustomDomainSettings({ waitListId, canManage, available }) {
                 Add the records at your DNS provider. Verification can take a little while after DNS
                 changes.
               </p>
+              {domain.hostname.split(".").length === 2 && (
+                <p className="mb-4! text-sm leading-relaxed text-product-text-secondary">
+                  You are connecting an apex (root) domain. The CNAME below only works if your DNS
+                  provider supports CNAME flattening (sometimes called ANAME) at the root. If yours
+                  does not, use a subdomain such as <code>wait.{domain.hostname}</code> or switch to
+                  a provider that flattens.
+                </p>
+              )}
               {(domain.dnsRecords || []).concat(domain.verification || []).map((record, index) => (
                 <dl
                   className="my-3 grid gap-2 border-0 bg-transparent p-0"

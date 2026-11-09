@@ -29,8 +29,10 @@ export async function POST(request) {
   try {
     apiToken = decryptIntegrationSecret(connection);
   } catch {
-    await prisma.workspaceIntegration.update({
-      where: { id: connection.id },
+    // Version guard: never clobber a row another admin changed while this
+    // test was decrypting the old secret.
+    await prisma.workspaceIntegration.updateMany({
+      where: { id: connection.id, updatedAt: connection.updatedAt },
       data: { status: "NEEDS_ATTENTION", lastErrorCode: "SECRET_DECRYPTION_FAILED" },
     });
     return NextResponse.json(
@@ -52,15 +54,12 @@ export async function POST(request) {
       html: "<p>This test confirms the Cloudflare Email Sending account configured for your workspace is ready for transactional confirmation messages.</p>",
       text: "This test confirms the Cloudflare Email Sending account configured for your workspace is ready for transactional confirmation messages.",
     });
+    // Version guard: the predicate covers status, sender address, secret, and
+    // providerConfig (account ID). If the row changed while the test was in
+    // flight - a save, a replacement token, or another test - the result of
+    // testing the old values must not overwrite the newer state.
     const updated = await prisma.workspaceIntegration.updateMany({
-      where: {
-        id: connection.id,
-        status: connection.status,
-        fromEmail: connection.fromEmail,
-        secretCiphertext: connection.secretCiphertext,
-        secretIv: connection.secretIv,
-        secretTag: connection.secretTag,
-      },
+      where: { id: connection.id, updatedAt: connection.updatedAt },
       data: { status: "CONNECTED", lastTestedAt: now, lastErrorCode: null },
     });
     if (!updated.count)
@@ -87,10 +86,20 @@ export async function POST(request) {
       String(error?.code || error?.name || "CONNECTION_FAILED")
         .replace(/[^A-Za-z0-9_.-]/g, "")
         .slice(0, 80) || "CONNECTION_FAILED";
-    await prisma.workspaceIntegration.updateMany({
-      where: { id: connection.id },
+    // Version guard: a slow failing test must not mark replacement
+    // credentials NEEDS_ATTENTION after another admin tested them.
+    const failed = await prisma.workspaceIntegration.updateMany({
+      where: { id: connection.id, updatedAt: connection.updatedAt },
       data: { status: "NEEDS_ATTENTION", lastTestedAt: now, lastErrorCode: code },
     });
+    if (!failed.count)
+      return NextResponse.json(
+        {
+          error:
+            "The Cloudflare Email connection changed while it was being tested. Save and test again.",
+        },
+        { status: 409 },
+      );
     return NextResponse.json(
       {
         error:

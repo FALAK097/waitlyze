@@ -124,3 +124,69 @@ export async function recordVerifiedProviderEvent(db, event, eventId, expectedWo
   if (target && recipientEmails.includes(normalizeEmail(target.recipient)))
     await suppress(db, target.workspaceId, target.recipient, event.type);
 }
+
+// Cloudflare Email Sending event-subscription types (published to a Queue).
+// Deferred/delivered/failed/rejected events are acknowledged but not stored.
+const CLOUDFLARE_SENDING_EVENT_TYPES = new Set([
+  "cf.email.sending.message.bounced",
+  "cf.email.sending.message.complained",
+]);
+
+/**
+ * Ingest a Cloudflare Email Sending lifecycle event (delivered via the
+ * account's event subscription) and apply permanent bounces/complaints to
+ * workspace suppression, mirroring the Resend webhook path. Called only from
+ * the secret-authenticated internal route fed by the queue consumer.
+ */
+export async function recordCloudflareSendingEvent(db, event) {
+  if (typeof event !== "object" || event === null) throw new TypeError("Invalid event payload");
+  if (!CLOUDFLARE_SENDING_EVENT_TYPES.has(event.type)) return "ignored";
+  const payload = event.payload || {};
+  const eventId = payload.eventId;
+  const messageId = payload.messageId;
+  const recipient = normalizeEmail(payload.recipient);
+  if (
+    typeof eventId !== "string" ||
+    !eventId ||
+    typeof messageId !== "string" ||
+    !messageId ||
+    !recipient ||
+    recipient.length > 320
+  )
+    throw new TypeError("Invalid event payload");
+  const type =
+    event.type === "cf.email.sending.message.complained" ? "email.complained" : "email.bounced";
+  // A soft bounce whose retries are exhausted is terminal for this delivery.
+  const isPermanent =
+    type === "email.complained" || payload.terminal === true || payload.bounce?.type === "hard";
+
+  // Map the delivery back to its workspace: first by the outbox's recorded
+  // provider message id, else by the workspace whose Cloudflare connection
+  // sent from this address (covers sends recorded before the id was stored).
+  let target = await deliveryRecipient(db, messageId);
+  if (!target) {
+    const sender = typeof payload.sender === "string" ? payload.sender.trim().toLowerCase() : "";
+    if (sender) {
+      const connection = await db.workspaceIntegration.findFirst({
+        where: { provider: "CLOUDFLARE_EMAIL", fromEmail: { equals: sender, mode: "insensitive" } },
+        select: { workspaceId: true },
+      });
+      if (connection) target = { workspaceId: connection.workspaceId, recipient };
+    }
+  }
+  await db.emailProviderEvent.upsert({
+    where: { providerEventId: eventId },
+    create: {
+      providerEventId: eventId,
+      providerMessageId: messageId,
+      workspaceId: target?.workspaceId ?? null,
+      type,
+      isPermanent,
+      recipientEmails: [recipient],
+    },
+    update: {},
+  });
+  if (!isPermanent || !target) return "recorded";
+  await suppress(db, target.workspaceId, recipient, type);
+  return "suppressed";
+}
