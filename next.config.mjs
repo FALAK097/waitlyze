@@ -23,8 +23,7 @@ const nextConfig = {
       },
       {
         protocol: "https",
-        // Existing user-created pages can still reference the former R2 host.
-        hostname: "r2.waitlyze.falakgala.dev",
+        hostname: "r2.waitlyze.com",
         port: "",
       },
     ],
