@@ -58,6 +58,6 @@ export function SignupMilestoneEmail({ waitlistName, count, url, showReferrals =
 SignupMilestoneEmail.PreviewProps = {
   waitlistName: "The next launch",
   count: 1,
-  url: "https://waitlyze.falakgala.dev/waitlists/demo/subscribers",
+  url: "https://waitlyze.com/waitlists/demo/subscribers",
 };
 export default SignupMilestoneEmail;

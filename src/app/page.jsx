@@ -431,7 +431,7 @@ export default async function LandingPage() {
               reach me.
             </p>
             <div className="wl-about-links">
-              <a href="mailto:hi@falakgala.dev">
+              <a href="mailto:support@waitlyze.com">
                 Say hello <HugeiconsIcon icon={ArrowUpRight01Icon} size={16} aria-hidden="true" />
               </a>
               <a href={github} target="_blank" rel="noopener noreferrer">

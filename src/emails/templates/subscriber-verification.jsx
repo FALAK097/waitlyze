@@ -20,6 +20,6 @@ export function SubscriberVerificationEmail({ waitlistName, url }) {
 
 SubscriberVerificationEmail.PreviewProps = {
   waitlistName: "The next launch",
-  url: "https://waitlyze.falakgala.dev/verify/example",
+  url: "https://waitlyze.com/verify/example",
 };
 export default SubscriberVerificationEmail;
