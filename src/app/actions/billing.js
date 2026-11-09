@@ -194,11 +194,18 @@ async function releaseCheckoutIntent(workspaceId, intentId) {
   });
 }
 
-async function claimCheckoutDispatch(workspaceId, intentId, now) {
+async function claimCheckoutDispatch(workspaceId, intentId, now, userId) {
   return prisma.$transaction(async (tx) => {
     const lockedWorkspace =
       await tx.$queryRaw`SELECT "id" FROM "workspaces" WHERE "id" = ${workspaceId} FOR UPDATE`;
     if (lockedWorkspace.length === 0) return false;
+    if (userId) {
+      const membership = await tx.workspaceMember.findUnique({
+        where: { workspaceId_userId: { workspaceId, userId } },
+        select: { role: true },
+      });
+      if (membership?.role !== "OWNER") return false;
+    }
     const current = await tx.workspaceSubscription.findUnique({
       where: { workspaceId },
       select: { checkoutIntentId: true, checkoutCreationStartedAt: true },
@@ -289,7 +296,12 @@ export async function createProCheckout(interval, workspaceId) {
       timeout: 30_000,
     });
     const creatorStartedAt = new Date();
-    const claimed = await claimCheckoutDispatch(workspace.id, reservedIntentId, creatorStartedAt);
+    const claimed = await claimCheckoutDispatch(
+      workspace.id,
+      reservedIntentId,
+      creatorStartedAt,
+      session.user.id,
+    );
     if (!claimed) {
       return { error: "Checkout reservation expired or was superseded. Please try again." };
     }

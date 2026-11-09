@@ -23,10 +23,16 @@ function checkoutFields() {
 async function clearUnpaidCheckout(db, { workspaceId, intentId, sessionId }) {
   await db.$transaction(async (tx) => {
     await tx.$queryRaw`SELECT "id" FROM "workspaces" WHERE "id" = ${workspaceId} FOR UPDATE`;
-    await tx.workspaceSubscription.updateMany({
-      where: { workspaceId, checkoutIntentId: intentId, checkoutSessionId: sessionId },
-      data: checkoutFields(),
-    });
+    const current = await tx.workspaceSubscription.findUnique({ where: { workspaceId } });
+    if (!current || current.checkoutIntentId !== intentId) return;
+    const currentSessionId =
+      current.checkoutSessionId || extractSessionIdFromUrl(current.checkoutUrl);
+    if (!sessionId || currentSessionId === sessionId) {
+      await tx.workspaceSubscription.update({
+        where: { workspaceId },
+        data: checkoutFields(),
+      });
+    }
   });
 }
 
@@ -124,7 +130,7 @@ async function applyPaidSubscription(db, { workspaceId, intentId, payment, now }
           interval: current.interval || interval,
           dodoCustomerId: customerId || (sameSubscription ? current.dodoCustomerId : null),
           dodoSubscriptionId: subscriptionId,
-          dodoProductId: productId || (sameSubscription ? current.dodoProductId : null),
+          dodoProductId: current.dodoProductId || productId || null,
           ...(current.checkoutIntentId === intentId ? checkoutFields() : {}),
         }
       : {

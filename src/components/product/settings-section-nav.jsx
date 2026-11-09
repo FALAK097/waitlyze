@@ -38,7 +38,7 @@ export function SettingsSectionNavigation({ section = "profile", workspaceId }) 
       if (sections.some(({ id }) => id === mapped)) {
         const params = new URLSearchParams({ section: mapped });
         const requestedWorkspaceId = new URLSearchParams(window.location.search).get("workspaceId");
-        if (requestedWorkspaceId && mapped === "billing")
+        if (requestedWorkspaceId && mapped !== "profile")
           params.set("workspaceId", requestedWorkspaceId);
         router.replace(`/settings?${params}`, { scroll: false });
       }
@@ -53,8 +53,8 @@ export function SettingsSectionNavigation({ section = "profile", workspaceId }) 
         <Link
           key={id}
           href={
-            id === "billing" && workspaceId
-              ? `/settings?section=billing&workspaceId=${encodeURIComponent(workspaceId)}`
+            workspaceId && id !== "profile"
+              ? `/settings?section=${id}&workspaceId=${encodeURIComponent(workspaceId)}`
               : `/settings?section=${id}`
           }
           aria-current={section === id ? "page" : undefined}

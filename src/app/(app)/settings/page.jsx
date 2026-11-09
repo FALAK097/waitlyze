@@ -275,7 +275,7 @@ export default async function SettingsPage({ searchParams }) {
     ? query.section
     : "profile";
   const requestedWorkspace =
-    section === "billing" && typeof query.workspaceId === "string"
+    typeof query.workspaceId === "string"
       ? currentContext.workspaces.find((workspace) => workspace.id === query.workspaceId)
       : null;
   const context = requestedWorkspace
@@ -286,7 +286,7 @@ export default async function SettingsPage({ searchParams }) {
       <div className="flex items-start gap-8 max-[760px]:flex-col max-[760px]:gap-8 lg:gap-12 xl:gap-18">
         <aside className="sticky top-6 w-52.5 min-w-0 shrink-0 max-[760px]:static max-[760px]:w-full">
           <h1 className="mt-0! mb-7.5! text-xl! max-[760px]:mb-4!">Settings</h1>
-          <SettingsSectionNavigation section={section} workspaceId={requestedWorkspace?.id} />
+          <SettingsSectionNavigation section={section} workspaceId={context.workspace.id} />
         </aside>
         <Suspense key={`${context.workspace.id}:${section}`} fallback={<SettingsPanelSkeleton />}>
           <SelectedSettings
