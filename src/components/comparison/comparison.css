@@ -842,19 +842,30 @@ a.compare-table-tool:focus-visible {
   gap: var(--compare-space-xl) var(--compare-space-2xl);
 }
 .compare-highlights article {
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: 0.5rem;
   align-content: start;
 }
-.compare-highlights svg {
-  margin-bottom: 0.35rem;
+.compare-highlight-header {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
 }
-.compare-highlights h3 {
-  font-size: 1.02rem;
+.compare-highlight-header svg {
+  flex-shrink: 0;
+  color: var(--product-success-text);
+}
+.compare-highlight-header h3 {
+  margin: 0;
+  font-size: 1.05rem;
   font-weight: 680;
   letter-spacing: -0.015em;
+  line-height: 1.25;
 }
 .compare-highlights p {
+  width: 100%;
+  max-width: none;
   color: var(--product-text-secondary);
   font-size: 0.9rem;
   line-height: 1.6;

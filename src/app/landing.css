@@ -221,21 +221,33 @@
 .wl-more-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 52px 36px;
+  gap: 48px 36px;
   margin-top: 48px;
 }
-.wl-more-item svg {
-  color: var(--product-success-text);
+.wl-more-item {
+  display: flex;
+  flex-direction: column;
 }
-.wl-more-item h3 {
-  margin-top: 16px;
-  font-size: 1.2rem;
+.wl-more-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.wl-more-header svg {
+  color: var(--product-success-text);
+  flex-shrink: 0;
+}
+.wl-more-header h3 {
+  margin: 0;
+  font-size: 1.18rem;
+  font-weight: 650;
   letter-spacing: -0.025em;
   line-height: 1.25;
 }
 .wl-more-item p {
-  max-width: 32ch;
-  margin-top: 8px;
+  width: 100%;
+  max-width: none;
+  margin-top: 10px;
   color: var(--wl-muted);
   font-size: 0.92rem;
   line-height: 1.55;
@@ -378,17 +390,26 @@
 }
 .wl-about-links {
   display: flex;
-  flex-wrap: wrap;
-  gap: 8px 22px;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: clamp(8px, 2.5vw, 24px);
   margin-top: 24px;
+  width: 100%;
 }
 .wl-about-links a {
   display: inline-flex;
-  min-height: 44px;
+  min-height: 40px;
   align-items: center;
-  gap: 5px;
-  font-size: 0.9rem;
+  gap: 4px;
+  font-size: clamp(0.78rem, 2.7vw, 0.9rem);
   font-weight: 600;
+  white-space: nowrap;
+}
+.wl-about-links a svg {
+  flex-shrink: 0;
+  width: 15px;
+  height: 15px;
 }
 .wl-about-links a:hover {
   text-decoration: underline;
@@ -554,7 +575,8 @@
 }
 @media (max-width: 900px) {
   .wl-more-grid {
-    gap: 40px 22px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 36px 24px;
   }
 }
 @media (max-width: 720px) {
@@ -601,16 +623,17 @@
     gap: 12px;
   }
 }
-@media (max-width: 520px) {
+@media (max-width: 580px) {
   .wl-more-grid {
     grid-template-columns: 1fr;
-    gap: 32px 20px;
+    gap: 28px;
   }
-  .wl-more-item h3 {
+  .wl-more-header h3 {
     font-size: 1.08rem;
   }
   .wl-more-item p {
-    font-size: 0.86rem;
+    font-size: 0.88rem;
+    line-height: 1.5;
   }
   .wl-ai-links {
     grid-template-columns: 1fr 1fr;

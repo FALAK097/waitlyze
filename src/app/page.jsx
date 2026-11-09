@@ -391,8 +391,10 @@ export default async function LandingPage() {
           <div className="wl-more-grid">
             {moreFeatures.map(({ icon, title, copy }) => (
               <article className="wl-more-item" key={title}>
-                <HugeiconsIcon icon={icon} size={23} strokeWidth={1.6} aria-hidden="true" />
-                <h3>{title}</h3>
+                <div className="wl-more-header">
+                  <HugeiconsIcon icon={icon} size={22} strokeWidth={1.6} aria-hidden="true" />
+                  <h3>{title}</h3>
+                </div>
                 <p>{copy}</p>
               </article>
             ))}
@@ -480,7 +482,7 @@ export default async function LandingPage() {
                 <HugeiconsIcon icon={ArrowUpRight01Icon} size={16} aria-hidden="true" />
               </a>
               <Link href="/docs/changelog">
-                Read the changelog{" "}
+                View changelog{" "}
                 <HugeiconsIcon icon={ArrowUpRight01Icon} size={16} aria-hidden="true" />
               </Link>
             </div>

@@ -260,13 +260,15 @@ export function WhyWaitlyzeSection({ competitor, highlights }) {
       <div className="compare-highlights">
         {highlights.map(({ icon, title, copy }) => (
           <article key={title}>
-            <HugeiconsIcon
-              icon={highlightIcons[icon]}
-              size={22}
-              strokeWidth={1.6}
-              aria-hidden="true"
-            />
-            <h3>{title}</h3>
+            <div className="compare-highlight-header">
+              <HugeiconsIcon
+                icon={highlightIcons[icon]}
+                size={22}
+                strokeWidth={1.6}
+                aria-hidden="true"
+              />
+              <h3>{title}</h3>
+            </div>
             <p>{copy}</p>
           </article>
         ))}
