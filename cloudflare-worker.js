@@ -147,6 +147,13 @@ export default {
       return Response.redirect(target.toString(), 301);
     }
 
+    // Redirect any *.workers.dev subdomain access to the canonical apex domain.
+    if (hostname.endsWith(".workers.dev")) {
+      const target = new URL(url.toString());
+      target.hostname = appRoot;
+      return Response.redirect(target.toString(), 301);
+    }
+
     // The wildcard SaaS route also receives the custom R2 hostname. Serve it
     // from the existing private bucket binding rather than forwarding it to
     // the Next.js application or exposing the bucket's S3 endpoint.
