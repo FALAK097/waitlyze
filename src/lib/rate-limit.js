@@ -35,76 +35,39 @@ export async function checkRateLimit(db, userId, limit = 10, windowMs = 60 * 60 
       INSERT INTO "rate_limit_buckets" ("key", "count", "expiresAt", "updatedAt")
       VALUES (${key}, 1, ${expiresAt}, ${now})
       ON CONFLICT ("key") DO UPDATE SET
-        "count" = CASE
-          WHEN (
-            CEIL(
-              "rate_limit_buckets"."count"::double precision
-              * LEAST(
-                1.0::double precision,
-                GREATEST(
-                  0.0::double precision,
-                  (${windowMs}::double precision
-                    - (EXTRACT(EPOCH FROM (${now}::timestamptz - "rate_limit_buckets"."updatedAt")) * 1000.0)::double precision)
-                  / ${windowMs}::double precision
-                )
+        "count" = (
+          CEIL(
+            "rate_limit_buckets"."count"::double precision
+            * LEAST(
+              1.0::double precision,
+              GREATEST(
+                0.0::double precision,
+                (${windowMs}::double precision
+                  - (EXTRACT(EPOCH FROM (${now}::timestamptz - "rate_limit_buckets"."updatedAt")) * 1000.0)::double precision)
+                / ${windowMs}::double precision
               )
-            ) + 1
-          ) <= ${limit} THEN (
-            CEIL(
-              "rate_limit_buckets"."count"::double precision
-              * LEAST(
-                1.0::double precision,
-                GREATEST(
-                  0.0::double precision,
-                  (${windowMs}::double precision
-                    - (EXTRACT(EPOCH FROM (${now}::timestamptz - "rate_limit_buckets"."updatedAt")) * 1000.0)::double precision)
-                  / ${windowMs}::double precision
-                )
-              )
-            )::int + 1
+            )
+          )::int + 1
+        ),
+        "expiresAt" = ${expiresAt},
+        "updatedAt" = ${now}
+      WHERE (
+        CEIL(
+          "rate_limit_buckets"."count"::double precision
+          * LEAST(
+            1.0::double precision,
+            GREATEST(
+              0.0::double precision,
+              (${windowMs}::double precision
+                - (EXTRACT(EPOCH FROM (${now}::timestamptz - "rate_limit_buckets"."updatedAt")) * 1000.0)::double precision)
+              / ${windowMs}::double precision
+            )
           )
-          ELSE "rate_limit_buckets"."count"
-        END,
-        "expiresAt" = CASE
-          WHEN (
-            CEIL(
-              "rate_limit_buckets"."count"::double precision
-              * LEAST(
-                1.0::double precision,
-                GREATEST(
-                  0.0::double precision,
-                  (${windowMs}::double precision
-                    - (EXTRACT(EPOCH FROM (${now}::timestamptz - "rate_limit_buckets"."updatedAt")) * 1000.0)::double precision)
-                  / ${windowMs}::double precision
-                )
-              )
-            ) + 1
-          ) <= ${limit} THEN ${expiresAt}
-          ELSE "rate_limit_buckets"."expiresAt"
-        END,
-        "updatedAt" = CASE
-          WHEN (
-            CEIL(
-              "rate_limit_buckets"."count"::double precision
-              * LEAST(
-                1.0::double precision,
-                GREATEST(
-                  0.0::double precision,
-                  (${windowMs}::double precision
-                    - (EXTRACT(EPOCH FROM (${now}::timestamptz - "rate_limit_buckets"."updatedAt")) * 1000.0)::double precision)
-                  / ${windowMs}::double precision
-                )
-              )
-            ) + 1
-          ) <= ${limit} THEN ${now}
-          ELSE "rate_limit_buckets"."updatedAt"
-        END
-      RETURNING CASE
-        WHEN "rate_limit_buckets"."updatedAt" = ${now} THEN "rate_limit_buckets"."count"
-        ELSE ${limit + 1}
-      END AS "count"
+        ) + 1
+      ) <= ${limit}
+      RETURNING "count"
     `;
-    return Number(rows[0]?.count) <= limit;
+    return rows.length > 0;
   } catch (error) {
     console.error("Rate limit storage unavailable", error?.code || error?.name || "unknown error");
     throw Object.assign(new Error("Rate limiting is temporarily unavailable."), {
