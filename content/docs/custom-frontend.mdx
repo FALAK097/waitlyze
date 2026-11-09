@@ -10,7 +10,7 @@ This guide wires the whole public surface together: a form you own, Waitlyze-own
 Build any form (React, plain HTML, mobile app backend) and POST from **your server** with a [Signup API](/docs/api) key. Never ship the key to the browser - proxy through your backend.
 
 ```js title="Your backend → Waitlyze"
-const response = await fetch("https://waitlyze.falakgala.dev/api/waitlist", {
+const response = await fetch("https://waitlyze.com/api/waitlist", {
   method: "POST",
   headers: {
     "Content-Type": "application/json",

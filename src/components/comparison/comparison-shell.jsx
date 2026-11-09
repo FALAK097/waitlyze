@@ -150,7 +150,7 @@ export function HowWeChecked({ date }) {
           </a>
           . If you work at any of these platforms or spot an inaccuracy, please open a PR on GitHub
           or{" "}
-          <a className="compare-inline-link" href="mailto:hi@falakgala.dev">
+          <a className="compare-inline-link" href="mailto:support@waitlyze.com">
             email us
           </a>
           —we merge corrections quickly.

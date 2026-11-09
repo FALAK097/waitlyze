@@ -2,7 +2,7 @@
   // Configuration
   const scriptOrigin = document.currentScript?.src
     ? new URL(document.currentScript.src).origin
-    : "https://waitlyze.falakgala.dev";
+    : "https://waitlyze.com";
   const BASE_URL = `${scriptOrigin}/forms`;
   const DEFAULT_HEIGHT = "380px";
   const MESSAGE_SOURCE = "waitlyze-embed";

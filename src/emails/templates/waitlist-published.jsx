@@ -36,8 +36,8 @@ export function WaitlistPublishedEmail({ waitlistName, pageUrl, dashboardUrl }) 
 
 WaitlistPublishedEmail.PreviewProps = {
   waitlistName: "The next launch",
-  pageUrl: "https://waitlyze.falakgala.dev/w/the-next-launch",
-  dashboardUrl: "https://waitlyze.falakgala.dev/waitlists/demo",
+  pageUrl: "https://waitlyze.com/w/the-next-launch",
+  dashboardUrl: "https://waitlyze.com/waitlists/demo",
 };
 
 export default WaitlistPublishedEmail;

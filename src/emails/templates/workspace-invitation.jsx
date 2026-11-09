@@ -32,7 +32,7 @@ WorkspaceInvitationEmail.PreviewProps = {
   inviterName: "Falak Gala",
   workspaceName: "Acme Inc",
   role: "Admin",
-  url: "https://waitlyze.falakgala.dev/accept-invitation/example-token",
+  url: "https://waitlyze.com/accept-invitation/example-token",
 };
 
 export default WorkspaceInvitationEmail;

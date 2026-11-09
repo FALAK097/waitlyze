@@ -85,7 +85,7 @@ export function renderBlogOgImage({ title, eyebrow, readingTime, date }) {
           <span>·</span>
           <span>{readingTime}</span>
         </div>
-        <span>waitlyze.falakgala.dev</span>
+        <span>waitlyze.com</span>
       </div>
     </div>,
     OG_SIZE,

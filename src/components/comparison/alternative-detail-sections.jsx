@@ -319,7 +319,7 @@ export function AlternativeFaqSection({ competitor, faqs }) {
           <h2 id="faq">Waitlyze vs {competitor.name}, answered.</h2>
           <p>
             More questions? <Link href="/docs">Read the docs</Link> or{" "}
-            <a href="mailto:hi@falakgala.dev">get in touch</a>.
+            <a href="mailto:support@waitlyze.com">get in touch</a>.
           </p>
         </div>
         <FAQAccordion items={faqs} />
