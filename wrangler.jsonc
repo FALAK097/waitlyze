@@ -15,8 +15,7 @@
   "observability": { "enabled": true },
   "routes": [
     { "pattern": "waitlyze.com", "custom_domain": true },
-    { "pattern": "www.waitlyze.com", "custom_domain": true },
-    { "pattern": "*/*", "zone_name": "waitlyze.com" },
+    { "pattern": "www.waitlyze.com", "custom_domain": true }
   ],
   "r2_buckets": [
     { "binding": "WAITLYZE_UPLOADS", "bucket_name": "waitlyze" },
