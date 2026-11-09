@@ -6,13 +6,14 @@ import { normalizeAutomationConfig } from "@/lib/email/automations.mjs";
 import { senderForWaitlist } from "@/lib/emails/test-delivery.mjs";
 import { env } from "@/lib/env.mjs";
 import prisma from "@/lib/prisma";
-import { requireCampaign, requireCampaignFeature } from "@/lib/workspaces/authorize";
+import { requireAuth, requireCampaign, requireCampaignFeature } from "@/lib/workspaces/authorize";
 
 function refresh(waitListId) {
   revalidatePath(`/waitlists/${waitListId}/emails/automations`);
 }
 
 export async function saveAutomationRecipe({ waitListId, recipeId, data }) {
+  await requireAuth();
   const { scope } = await requireCampaignFeature(waitListId, "sendEmail", "emailMarketing");
   const recipe = await prisma.automationRecipe.findFirst({
     where: { id: recipeId, waitListId, waitList: scope },
@@ -49,6 +50,7 @@ export async function saveAutomationRecipe({ waitListId, recipeId, data }) {
 }
 
 export async function setAutomationStatus({ waitListId, recipeId, status }) {
+  await requireAuth();
   const access =
     status === "ENABLED"
       ? await requireCampaignFeature(waitListId, "sendEmail", "emailMarketing")

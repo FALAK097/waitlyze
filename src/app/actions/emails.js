@@ -29,7 +29,7 @@ import { env } from "@/lib/env.mjs";
 import prisma from "@/lib/prisma";
 import { consumePublicBudget, PublicRateLimitError } from "@/lib/security/public-rate-limit.mjs";
 import { AUDIT_ACTIONS, recordWaitlistAuditEvent } from "@/lib/workspaces/audit.mjs";
-import { requireCampaign, requireCampaignFeature } from "@/lib/workspaces/authorize";
+import { requireAuth, requireCampaign, requireCampaignFeature } from "@/lib/workspaces/authorize";
 
 function renderLegacyTemplateEmail({ template, waitList, variables }) {
   const replaceVars = (text) =>
@@ -170,6 +170,7 @@ function renderLegacyTemplateEmail({ template, waitList, variables }) {
 }
 
 export async function upsertEmailTemplate({ waitListId, templateType, data }) {
+  await requireAuth();
   const enumType = emailTemplateType(templateType);
   if (!enumType) return { success: false, message: "Invalid template type" };
 
@@ -376,6 +377,8 @@ async function renderTemplate({ waitListId, enumType, varsOverride = {} }) {
   };
 }
 
+// Genuinely public unauthenticated action: sends confirmation link to signup email with IP rate-limiting
+// react-doctor-disable-next-line react-doctor/server-auth-actions
 export async function sendSignupEmail({ waitListId, to }) {
   if (
     typeof waitListId !== "string" ||
@@ -653,6 +656,7 @@ export async function getBroadcastContent(waitListId, broadcastId) {
 }
 
 export async function createBroadcastDraft(waitListId) {
+  await requireAuth();
   const { campaign } = await requireCampaignFeature(waitListId, "sendEmail", "emailMarketing");
   const draft = await prisma.marketingBroadcast.create({
     data: {

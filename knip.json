@@ -1,0 +1,14 @@
+{
+  "$schema": "https://unpkg.com/knip@5/overview/configuration-types.json",
+  "next": {
+    "entry": [
+      "next.config.{js,ts,cjs,mjs}",
+      "src/app/**/*.{js,jsx,ts,tsx}",
+      "src/middleware.{js,ts}"
+    ]
+  },
+  "project": ["src/**/*.{js,jsx,ts,tsx}"],
+  "ignore": ["workers/**", "scripts/**", "test/**", "playwright-report/**", "src/components/ui/**"],
+  "ignoreDependencies": ["@cloudflare/workers-types", "sharp"],
+  "ignoreExportsUsedInFile": true
+}

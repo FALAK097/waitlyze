@@ -61,39 +61,42 @@ export function WebhookSettings({ waitListId, canManage = true }) {
   const controlsDisabled =
     !canManage || !configured || busy || initialLoad !== "ready" || Boolean(loadError);
 
-  async function refresh({ signal, initial = false } = {}) {
-    if (initial) {
-      setInitialLoad("loading");
-      setLoadError("");
-    }
-    try {
-      const response = await fetch(`/api/wait-lists/${encodeURIComponent(waitListId)}/webhooks`, {
-        cache: "no-store",
-        signal,
-      });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "Unable to load webhooks.");
-      if (!Array.isArray(data.data))
-        throw new Error("The webhook list could not be read. Try again.");
-      setRows(data.data);
-      setConfigured(data.configured !== false);
-      setInitialLoad("ready");
-      setLoadError("");
-      return true;
-    } catch (error) {
-      if (error.name === "AbortError") return false;
-      setLoadError(
-        error.message || "Unable to load webhooks. Check your connection and try again.",
-      );
-      if (initial) setInitialLoad("error");
-      return false;
-    }
-  }
+  const refresh = useCallback(
+    async ({ signal, initial = false } = {}) => {
+      if (initial) {
+        setInitialLoad("loading");
+        setLoadError("");
+      }
+      try {
+        const response = await fetch(`/api/wait-lists/${encodeURIComponent(waitListId)}/webhooks`, {
+          cache: "no-store",
+          signal,
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || "Unable to load webhooks.");
+        if (!Array.isArray(data.data))
+          throw new Error("The webhook list could not be read. Try again.");
+        setRows(data.data);
+        setConfigured(data.configured !== false);
+        setInitialLoad("ready");
+        setLoadError("");
+        return true;
+      } catch (error) {
+        if (error.name === "AbortError") return false;
+        setLoadError(
+          error.message || "Unable to load webhooks. Check your connection and try again.",
+        );
+        if (initial) setInitialLoad("error");
+        return false;
+      }
+    },
+    [waitListId],
+  );
   useEffect(() => {
     const controller = new AbortController();
     refresh({ signal: controller.signal, initial: true });
     return () => controller.abort();
-  }, [waitListId]);
+  }, [refresh]);
 
   async function call(path, method = "POST", body) {
     setBusy(true);

@@ -751,7 +751,6 @@ export function SnapshotPageBuilder({
 
   return (
     // Delegated undo/redo shortcuts for every control inside the studio.
-    // oxlint-disable-next-line jsx-a11y/no-static-element-interactions
     <section className={"min-w-0"} onKeyDown={onKeyDown}>
       <p className="sr-only" role="status" aria-live="polite">
         {announcement}

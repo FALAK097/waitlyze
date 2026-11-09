@@ -758,7 +758,6 @@ export function WaitlistPageContent({
           const isSelected = selectedBlockId === section.id;
           return (
             // Click selection is for the studio preview; keyboard users select blocks from the block list.
-            // oxlint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions
             <div
               className={cn(
                 "group relative cursor-pointer outline-2 -outline-offset-2 outline-transparent transition-colors hover:outline-product-accent-solid",

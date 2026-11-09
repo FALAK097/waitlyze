@@ -195,7 +195,12 @@ export function AudienceTable({
   const [importing, setImporting] = useState(false);
   const [importPlanError, setImportPlanError] = useState("");
   const [copiedId, setCopiedId] = useState(null);
+  const [origin, setOrigin] = useState("");
   const searchInputRef = useRef(null);
+
+  useEffect(() => {
+    setOrigin(window.location.origin);
+  }, []);
 
   const flags = result.flags || {
     showReferrals: waitlist.showReferrals,
@@ -274,24 +279,14 @@ export function AudienceTable({
         if (!signal.aborted) setLoading(false);
       }
     },
-    [
-      cursors,
-      deliveryFilter,
-      isJoinedSort,
-      pageIndex,
-      retryCount,
-      search,
-      sort,
-      status,
-      waitlist.id,
-    ],
+    [cursors, deliveryFilter, isJoinedSort, pageIndex, search, sort, status, waitlist.id],
   );
 
   useEffect(() => {
     const controller = new AbortController();
     load(controller.signal);
     return () => controller.abort();
-  }, [load]);
+  }, [load, retryCount]);
 
   async function exportCsv() {
     setExporting(true);
@@ -504,21 +499,24 @@ export function AudienceTable({
     return "Failed";
   }
 
-  function retryableVerification(row) {
-    const email = row.verificationDelivery;
-    return Boolean(
-      email?.status === "FAILED" &&
-      email.issue !== "RECIPIENT_SUPPRESSED" &&
-      (email.issue !== "SIGNUP_NOT_SENDABLE" || deliveryFilter === "failed"),
-    );
-  }
+  const retryableVerification = useCallback(
+    (row) => {
+      const email = row.verificationDelivery;
+      return Boolean(
+        email?.status === "FAILED" &&
+        email.issue !== "RECIPIENT_SUPPRESSED" &&
+        (email.issue !== "SIGNUP_NOT_SENDABLE" || deliveryFilter === "failed"),
+      );
+    },
+    [deliveryFilter],
+  );
 
   const retryableSelectedIds = useMemo(
     () =>
       result.data
         .filter((row) => selectedIds.includes(row.id) && retryableVerification(row))
         .map((row) => row.id),
-    [result.data, selectedIds],
+    [result.data, selectedIds, retryableVerification],
   );
 
   const showingStart = result.total === 0 ? 0 : pageIndex * PAGE_SIZE + 1;
@@ -532,8 +530,8 @@ export function AudienceTable({
     [profile],
   );
   const profileLink =
-    profile?.referralCode && flags.publicSlug && flags.showReferrals
-      ? `${window.location.origin}/w/${flags.publicSlug}?r=${profile.referralCode}`
+    origin && profile?.referralCode && flags.publicSlug && flags.showReferrals
+      ? `${origin}/w/${flags.publicSlug}?r=${profile.referralCode}`
       : null;
   const requestedSearch = query.trim();
   const criteriaChanging =

@@ -1029,17 +1029,17 @@ export function ColorPicker({
   useEffect(() => {
     const root = fieldRef.current?.getRootNode();
     if (!root) return;
-    let pending = 0;
+    let timer = null;
     const onReset = (event) => {
       if (event.target !== fieldRef.current?.form) return;
-      pending = window.setTimeout(() => {
+      timer = setTimeout(() => {
         if (!event.defaultPrevented) resetRef.current();
-      });
+      }, 0);
     };
     root.addEventListener("reset", onReset, true);
     return () => {
       root.removeEventListener("reset", onReset, true);
-      window.clearTimeout(pending);
+      if (timer) clearTimeout(timer);
     };
   }, [hasField]);
 

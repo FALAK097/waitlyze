@@ -327,9 +327,7 @@ export default async function LandingPage() {
                 <HugeiconsIcon icon={ArrowUpRight01Icon} size={17} aria-hidden="true" />
               </Link>
             </div>
-            <p className="wl-assurance">
-              Free to get started. No credit card required.
-            </p>
+            <p className="wl-assurance">Free to get started. No credit card required.</p>
           </div>
           <ProductFrame
             hero

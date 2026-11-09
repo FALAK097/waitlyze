@@ -50,6 +50,10 @@ const currentWorkspaceCampaign = cache(async (id) => {
   return { user, workspace, campaign, role };
 });
 
+export async function requireAuth() {
+  return sessionActor();
+}
+
 export async function sessionActor() {
   const session = await currentSession();
   if (!session?.user?.id) throw new AccessError(401);

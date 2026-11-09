@@ -1437,6 +1437,7 @@ export function EChartsComposedChart({
       // the throwaway instance and the surviving one renders without it.
       live.hasRevealed = false;
     };
+    // oxlint-disable-next-line react-hooks/exhaustive-deps
   }, [renderer]);
 
   // ── Sync ECharts with props/theme/selection - resolve, build, push ────────────

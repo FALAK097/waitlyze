@@ -17,6 +17,37 @@ import {
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 
+const STEP_CONTENT = [
+  {
+    id: "welcome",
+    title: "Welcome to Waitlyze! ",
+    description:
+      "Create stunning waitlist pages that perfectly match your brand and build anticipation for your product launch.",
+    image: "/images/onboarding/welcome.png",
+  },
+  {
+    id: "designer",
+    title: "No-Code Designer",
+    description:
+      "Design beautiful waitlist forms with our intuitive no-code designer. Customize colors, styles, and branding elements in real-time.",
+    image: "/images/onboarding/designer.png",
+  },
+  {
+    id: "integration",
+    title: "Easy Integration",
+    description:
+      "Embed your waitlist widget into your existing website or use our hosted page. Perfect whether you have a website or not!",
+    image: "/images/onboarding/integration.png",
+  },
+  {
+    id: "analytics",
+    title: "Track Your Growth",
+    description:
+      "Monitor signups, track visitor analytics, and understand your audience with detailed insights about your waitlist's performance.",
+    image: "/images/onboarding/analytics.png",
+  },
+];
+
 export default function OnboardingDialog({ userId, isOnboarded, onComplete }) {
   const [step, setStep] = useState(1);
   const [isOpen, setIsOpen] = useState(false);
@@ -28,14 +59,19 @@ export default function OnboardingDialog({ userId, isOnboarded, onComplete }) {
     }
   }, [isOnboarded]);
 
+  const handleComplete = useCallback(async () => {
+    await onComplete(userId);
+    setIsOpen(false);
+  }, [onComplete, userId]);
+
   const handleContinue = useCallback(() => {
-    if (step < totalSteps) {
+    if (step < STEP_CONTENT.length) {
       setStep(step + 1);
     } else {
       handleComplete();
       router.push("/waitlists/new");
     }
-  }, [step]);
+  }, [step, handleComplete, router]);
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -50,43 +86,8 @@ export default function OnboardingDialog({ userId, isOnboarded, onComplete }) {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [handleContinue]);
 
-  const stepContent = [
-    {
-      id: "welcome",
-      title: "Welcome to Waitlyze! ",
-      description:
-        "Create stunning waitlist pages that perfectly match your brand and build anticipation for your product launch.",
-      image: "/images/onboarding/welcome.png",
-    },
-    {
-      id: "designer",
-      title: "No-Code Designer",
-      description:
-        "Design beautiful waitlist forms with our intuitive no-code designer. Customize colors, styles, and branding elements in real-time.",
-      image: "/images/onboarding/designer.png",
-    },
-    {
-      id: "integration",
-      title: "Easy Integration",
-      description:
-        "Embed your waitlist widget into your existing website or use our hosted page. Perfect whether you have a website or not!",
-      image: "/images/onboarding/integration.png",
-    },
-    {
-      id: "analytics",
-      title: "Track Your Growth",
-      description:
-        "Monitor signups, track visitor analytics, and understand your audience with detailed insights about your waitlist's performance.",
-      image: "/images/onboarding/analytics.png",
-    },
-  ];
-
-  const totalSteps = stepContent.length;
-
-  const handleComplete = async () => {
-    await onComplete(userId);
-    setIsOpen(false);
-  };
+  const stepContent = STEP_CONTENT;
+  const totalSteps = STEP_CONTENT.length;
 
   return (
     <Dialog

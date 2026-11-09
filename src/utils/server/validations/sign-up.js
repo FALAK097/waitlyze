@@ -172,7 +172,7 @@ const checkIfRequestIsValid = async (body, context = {}) => {
 };
 
 export const validateRequest = async (body, context = {}) => {
-  let validator = await checkIfRequestIsValid(body, context);
+  const validator = await checkIfRequestIsValid(body, context);
   // If validator is not null, return the validator
   if (validator) return validator;
   const normalizedEmail = typeof body.email === "string" ? body.email.trim().toLowerCase() : "";

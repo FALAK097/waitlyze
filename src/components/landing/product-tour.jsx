@@ -148,6 +148,7 @@ export default function ProductTour() {
           className="no-scrollbar flex max-w-full gap-2 overflow-x-auto max-sm:flex-1 max-sm:justify-between max-sm:gap-4"
           role="tablist"
           aria-label="Product walkthrough"
+          tabIndex={0}
           onKeyDown={onKeyDown}
         >
           {views.map((item, index) => (

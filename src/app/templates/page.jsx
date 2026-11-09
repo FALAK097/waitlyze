@@ -56,9 +56,7 @@ function TemplateCard({ template }) {
         </h2>
         <p className="text-sm text-product-text-secondary">{template.description}</p>
         {meta && (
-          <p className="text-sm text-product-text-secondary">
-            Best for: {meta.bestFor.join(", ")}
-          </p>
+          <p className="text-sm text-product-text-secondary">Best for: {meta.bestFor.join(", ")}</p>
         )}
         <p className="text-micro text-product-text-secondary">{blockCount} sections</p>
         <div className="mt-auto flex flex-wrap gap-2 pt-3">
@@ -124,8 +122,9 @@ export default function TemplatesPage() {
             Start from a page that already works.
           </h1>
           <p className="mt-5 max-w-2xl text-base leading-normal text-product-text-secondary">
-            Fourteen templates for every kind of launch, including SaaS betas, AI previews, newsletters,
-            events, pre-orders, and more. Pick one, make it yours, and publish when ready.
+            Fourteen templates for every kind of launch, including SaaS betas, AI previews,
+            newsletters, events, pre-orders, and more. Pick one, make it yours, and publish when
+            ready.
           </p>
           <div className="mt-8">
             <SignupButton>Browse templates, then create free</SignupButton>

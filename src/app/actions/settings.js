@@ -10,7 +10,7 @@ import {
 } from "@/lib/billing/checkout-reconciliation.mjs";
 import prisma from "@/lib/prisma";
 import { AUDIT_ACTIONS, recordAuditEvent } from "@/lib/workspaces/audit.mjs";
-import { requireCampaign } from "@/lib/workspaces/authorize";
+import { requireAuth, requireCampaign } from "@/lib/workspaces/authorize";
 import { AccessError, createWorkspaceService } from "@/lib/workspaces/service.mjs";
 
 export async function saveProfile(previous, form) {
@@ -59,6 +59,7 @@ export async function saveWorkspaceName(previous, form) {
 }
 
 export async function setWaitlistReferrals(waitListId, enabled) {
+  await requireAuth();
   if (typeof enabled !== "boolean") return { error: "Choose whether referral sharing is enabled." };
   try {
     const { campaign, scope } = await requireCampaign(waitListId, "editCampaign");
