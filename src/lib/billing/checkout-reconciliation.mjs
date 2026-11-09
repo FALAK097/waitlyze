@@ -97,7 +97,9 @@ async function applyPaidSubscription(db, { workspaceId, intentId, payment, now }
     // Resolve interval through product mapping, metadata, historical records, or stored checkout
     // to preserve Pro status even if product IDs were rotated.
     const historicalInterval =
-      productId && productId === current.dodoProductId && current.interval ? current.interval : null;
+      productId && productId === current.dodoProductId && current.interval
+        ? current.interval
+        : null;
     const interval =
       productInterval ||
       metadataInterval ||
@@ -113,11 +115,7 @@ async function applyPaidSubscription(db, { workspaceId, intentId, payment, now }
 
     const status = isSnapshotStale
       ? current.status
-      : subscriptionWebhookStatus(
-          "subscription.updated",
-          providerSubscription,
-          current.status,
-        );
+      : subscriptionWebhookStatus("subscription.updated", providerSubscription, current.status);
     const plan = (interval || metadata.plan === "PRO") && status !== "EXPIRED" ? "PRO" : "FREE";
 
     const updateData = isSnapshotStale

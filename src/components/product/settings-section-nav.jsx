@@ -38,7 +38,8 @@ export function SettingsSectionNavigation({ section = "profile", workspaceId }) 
       if (sections.some(({ id }) => id === mapped)) {
         const params = new URLSearchParams({ section: mapped });
         const requestedWorkspaceId = new URLSearchParams(window.location.search).get("workspaceId");
-        if (requestedWorkspaceId && mapped === "billing") params.set("workspaceId", requestedWorkspaceId);
+        if (requestedWorkspaceId && mapped === "billing")
+          params.set("workspaceId", requestedWorkspaceId);
         router.replace(`/settings?${params}`, { scroll: false });
       }
     }

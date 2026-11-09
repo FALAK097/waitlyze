@@ -273,7 +273,9 @@ export async function importSignups(waitListId, formData) {
 
           // Resolve against only the addresses and codes present in this bounded
           // CSV, rather than materializing every signup in the campaign.
-          const lookupKeys = [...new Set(linkable.map((row) => row.referredBy.trim()).filter(Boolean))];
+          const lookupKeys = [
+            ...new Set(linkable.map((row) => row.referredBy.trim()).filter(Boolean)),
+          ];
           const matchingRows = await queryInChunks(lookupKeys, 400, (keyChunk) => {
             const emailForms = [...new Set(keyChunk.flatMap((key) => emailLookupForms(key)))];
             const referralCodes = keyChunk.filter((key) => REFERRAL_CODE_FORMAT.test(key));
@@ -292,7 +294,8 @@ export async function importSignups(waitListId, formData) {
           for (const row of matchingRows) {
             if (row.emailNormalized && !byEmail.has(row.emailNormalized))
               byEmail.set(row.emailNormalized, row);
-            if (row.referralCode && !byCode.has(row.referralCode)) byCode.set(row.referralCode, row);
+            if (row.referralCode && !byCode.has(row.referralCode))
+              byCode.set(row.referralCode, row);
           }
           const links = [];
           for (const row of linkable) {
