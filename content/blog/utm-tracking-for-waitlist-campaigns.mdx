@@ -1,0 +1,96 @@
+---
+title: "UTM Tracking for Waitlist Campaigns: A Practical Guide"
+description: "Name, build, and analyze UTM-tagged waitlist links so you can identify the channels and messages that produce qualified subscribers."
+date: 2026-11-09T06:20:00Z
+author: Waitlyze Team
+tags:
+  - Analytics
+  - Growth
+  - Attribution
+tldr: "Add consistent utm_source, utm_medium, and utm_campaign values to every waitlist link; use utm_content only to distinguish creative or placement and utm_term for paid keywords. Judge sources by confirmed and engaged subscribers, not clicks or raw signups, and keep a shared naming sheet so fragmented spellings do not split the same channel into multiple rows."
+faqs:
+  - question: Which UTM parameters does a waitlist need?
+    answer: Use utm_source, utm_medium, and utm_campaign on every controlled link. Add utm_content to distinguish creative or placement and utm_term for paid-search keywords when needed.
+  - question: Do UTM parameters affect SEO?
+    answer: UTM parameters are analytics labels, not ranking signals. Keep the clean page URL as the canonical and use tagged URLs only for campaign distribution.
+  - question: Can I use UTMs and referral links together?
+    answer: Yes. The referral code identifies the sharing subscriber while UTM values identify the distribution context. Preserve both through the signup flow.
+  - question: What if a visitor has no UTM values?
+    answer: Keep direct and referring-site traffic as valid categories. Do not invent campaign values after the fact; compare tagged campaigns separately from organic, referral, and direct visits.
+---
+
+If every post, email, partner, and advertisement points to the same plain waitlist URL, you can count signups but cannot explain where the useful ones came from. UTM parameters add a small attribution label to each link.
+
+## The five UTM parameters
+
+| Parameter | Answers | Example |
+| --- | --- | --- |
+| `utm_source` | Who sent the traffic? | `linkedin`, `partner_acme` |
+| `utm_medium` | What kind of channel? | `social`, `email`, `community` |
+| `utm_campaign` | Which initiative? | `private_beta_nov` |
+| `utm_content` | Which creative or placement? | `founder_post`, `footer_cta` |
+| `utm_term` | Which paid keyword? | `waitlist_software` |
+
+A tagged link might be:
+
+```text
+https://example.com/join?utm_source=linkedin&utm_medium=social&utm_campaign=private_beta_nov&utm_content=founder_post
+```
+
+Use lowercase values, hyphens or underscores consistently, and no personal information. `linkedin`, `LinkedIn`, and `linkedin.com` become three rows in many analytics systems.
+
+## Create a naming convention first
+
+Maintain a small shared table with the approved values, owner, destination, and date. Keep source specific, medium reusable, campaign stable across channels, and content optional.
+
+| Distribution | Source | Medium | Campaign | Content |
+| --- | --- | --- | --- | --- |
+| Founder LinkedIn post | `linkedin` | `social` | `private_beta_nov` | `founder_story` |
+| Subscriber update | `waitlist_email` | `email` | `private_beta_nov` | `progress_update_2` |
+| Partner newsletter | `partner_acme` | `partner` | `private_beta_nov` | `newsletter_main` |
+
+Do not encode the date in every field. The campaign name or your link registry can carry timing without making reports unreadable.
+
+## Preserve referral and campaign context
+
+A referral parameter answers “which subscriber shared?” while UTMs answer “where and in what campaign was the link distributed?” They can coexist:
+
+```text
+https://example.com/join?r=PERSONAL_CODE&utm_source=linkedin&utm_medium=social&utm_campaign=member_sharing
+```
+
+Waitlyze hosted and embedded signup flows preserve referral and UTM parameters. The analytics view groups acquisition by channel, referrer, campaign, and keyword. See [analytics](/docs/analytics) and [embed setup](/docs/embed).
+
+## Measure quality after the click
+
+Clicks are not the goal. Compare each source across the funnel:
+
+1. visitors;
+2. submitted signups;
+3. confirmed subscribers;
+4. marketing opt-ins where relevant;
+5. completed referrals;
+6. replies, beta participation, or launch activation in your downstream system.
+
+A broad social post may create more signups while a niche partner creates fewer but more confirmations. The latter can be the better channel. Never treat UTM attribution as proof of causation: people often encounter several messages before using the final link.
+
+## Common mistakes
+
+- Tagging internal navigation overwrites the original acquisition context.
+- Putting email addresses or names in UTM values leaks personal data into URLs and logs.
+- Changing campaign spelling mid-launch fragments reporting.
+- Using one campaign value for every initiative makes comparison impossible.
+- Judging sources on signups without confirmation rewards low-quality traffic.
+- Publishing tagged URLs as canonical URLs creates unnecessary duplicates.
+
+## A pre-launch checklist
+
+- Define source, medium, and campaign values.
+- Generate and click every final link.
+- Confirm parameters survive redirects and signup.
+- Submit a test signup from each important path.
+- Verify the source appears in analytics.
+- Keep one clean canonical URL for search and sharing defaults.
+- Review confirmed signups by source each week.
+
+UTMs will not produce perfect multi-touch attribution. They will answer the practical early-stage question: which distribution choices are bringing people who care enough to complete the next step?
