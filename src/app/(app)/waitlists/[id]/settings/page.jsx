@@ -29,13 +29,23 @@ function SelectedWaitlistSettings({
   if (section === "notifications")
     return (
       <section className="max-w-190 min-w-0 flex-1" aria-labelledby="settings-panel-heading">
-        <header className="mb-9 max-[760px]:mb-6">
-          <h2 id="settings-panel-heading" className="mb-1.5!">
-            Notifications
-          </h2>
-          <p className="text-product-text-secondary">
-            Connect Slack or Discord to keep your team in the loop.
-          </p>
+        <header className="mb-9 flex flex-wrap items-start justify-between gap-x-4 gap-y-2 max-[760px]:mb-6 [&>div]:min-w-0">
+          <div>
+            <h2 id="settings-panel-heading" className="mb-1.5!">
+              Notifications
+            </h2>
+            <p className="text-product-text-secondary">
+              Connect Slack or Discord to keep your team in the loop.
+            </p>
+          </div>
+          <Button
+            variant="ghost"
+            render={
+              <Link prefetch={false} href="/docs/notifications" target="_blank" rel="noreferrer" />
+            }
+          >
+            View docs <HugeiconsIcon icon={ArrowUpRight01Icon} size={16} aria-hidden="true" />
+          </Button>
         </header>
         <ChatNotificationSettings waitListId={waitlist.id} canManage={canManage} />
       </section>

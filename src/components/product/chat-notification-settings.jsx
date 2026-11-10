@@ -127,7 +127,6 @@ function ChannelRow({ waitListId, provider, name, description, logo, canManage }
     setUrl,
     triggers,
     setTriggers,
-    loading,
     error,
     busy,
     confirmDisconnect,
@@ -135,15 +134,13 @@ function ChannelRow({ waitListId, provider, name, description, logo, canManage }
     request,
   } = useChannel(endpoint);
 
-  const status = loading
-    ? "Loading…"
-    : record?.status === "CONNECTED"
+  const connectedStatus = record
+    ? record.status === "CONNECTED"
       ? "Connected"
-      : record?.status === "NEEDS_ATTENTION"
+      : record.status === "NEEDS_ATTENTION"
         ? "Needs attention"
-        : record
-          ? "Test needed"
-          : "Not connected";
+        : "Test needed"
+    : null;
 
   function changeOpen(next) {
     if (busy) return;
@@ -172,9 +169,17 @@ function ChannelRow({ waitListId, provider, name, description, logo, canManage }
           </div>
         </div>
         <div className="flex items-center gap-3 max-[600px]:flex-col max-[600px]:items-end max-[600px]:gap-2 max-[400px]:w-full max-[400px]:flex-row max-[400px]:items-center max-[400px]:justify-between [&_button]:max-[400px]:shrink-0 [&_button]:max-[400px]:whitespace-nowrap">
-          <span className="rounded-full bg-product-bg-inset px-2.5 py-0.5 text-xs font-medium text-product-text-secondary">
-            {status}
-          </span>
+          {connectedStatus && (
+            <span
+              className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                record?.status === "CONNECTED"
+                  ? "bg-product-success-bg text-product-success-text"
+                  : "bg-product-bg-inset text-product-text-secondary"
+              }`}
+            >
+              {connectedStatus}
+            </span>
+          )}
           <SheetTrigger render={<Button variant="outline" />}>
             {canManage ? (record ? "Manage" : "Connect") : "View"}
           </SheetTrigger>
@@ -189,8 +194,8 @@ function ChannelRow({ waitListId, provider, name, description, logo, canManage }
               : "Post signup updates to a Discord channel using a Discord webhook."}
           </SheetDescription>
         </SheetHeader>
-        <div className="p-6 pt-0">
-          <div className="grid gap-6 pt-6">
+        <div className="px-6 pb-6">
+          <div className="grid gap-6">
             {error ? (
               <p role="alert" className="text-sm text-product-danger-text">
                 {error}
