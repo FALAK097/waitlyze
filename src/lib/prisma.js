@@ -7,12 +7,11 @@ const globalForPrisma = global;
 let prisma;
 
 if (!globalForPrisma.prisma) {
-  // Workers can suspend isolates between requests. Rotate connections instead
-  // of reusing a socket across unrelated invocations.
   const adapter = new PrismaPg({
     connectionString: process.env.DATABASE_URL,
-    max: 1,
-    maxUses: 1,
+    max: 5,
+    idleTimeoutMillis: 10000,
+    connectionTimeoutMillis: 5000,
   });
   prisma = new PrismaClient({ adapter });
   if (process.env.NODE_ENV !== "production") {

@@ -44,6 +44,7 @@ export function WaitlistNav({ id, canSendEmail }) {
           <Link
             key={href}
             href={href}
+            prefetch={true}
             aria-current={isCurrent(href) ? "page" : undefined}
             className={cn(
               "inline-flex min-h-11 items-center border-b-2 border-transparent px-0 py-2.5 text-sm font-medium whitespace-nowrap text-product-text-secondary no-underline hover:text-product-text-primary max-[480px]:snap-start",

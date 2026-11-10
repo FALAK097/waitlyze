@@ -1,4 +1,5 @@
 import "server-only";
+import { cache } from "react";
 
 export const BILLING_INTERVALS = Object.freeze(["monthly", "annual"]);
 
@@ -62,11 +63,15 @@ export function workspaceEntitlements(subscription, now = new Date()) {
   return { plan, ...PLAN_ENTITLEMENTS[plan] };
 }
 
-export async function getWorkspaceEntitlements(db, workspaceId, now = new Date()) {
-  if (!workspaceId) return workspaceEntitlements(null, now);
-  const subscription = await db.workspaceSubscription.findUnique({
+const loadWorkspaceSubscription = cache(async (db, workspaceId) => {
+  return db.workspaceSubscription.findUnique({
     where: { workspaceId },
   });
+});
+
+export async function getWorkspaceEntitlements(db, workspaceId, now = new Date()) {
+  if (!workspaceId) return workspaceEntitlements(null, now);
+  const subscription = await loadWorkspaceSubscription(db, workspaceId);
   return { ...workspaceEntitlements(subscription, now), subscription };
 }
 
