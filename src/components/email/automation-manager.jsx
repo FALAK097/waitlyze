@@ -20,7 +20,7 @@ import {
 } from "./email-manager-controls";
 
 const notice =
-  "m-0 rounded-lg bg-product-bg-inset px-3.5 py-2.75 text-caption leading-relaxed text-product-text-primary";
+  "m-0 mb-6 rounded-lg bg-product-bg-inset px-4 py-3 text-caption leading-relaxed text-product-text-primary";
 const emptyPane = "max-w-107 py-1.5";
 const emptyPaneTitle = "m-0 mb-1.5! text-section";
 const emptyPaneBody = "m-0 mb-4.5! leading-relaxed text-product-text-secondary";
