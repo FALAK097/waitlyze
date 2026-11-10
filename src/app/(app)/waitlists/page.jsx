@@ -358,7 +358,7 @@ export default async function WaitlistsPage({ searchParams }) {
                   currentPlan="FREE"
                   label="Upgrade to Pro"
                   variant="product-outline"
-                  size="default"
+                  size="md"
                 />
               </div>
             )}

@@ -79,7 +79,7 @@ export function IntegrationsPanel({
               height={32}
               alt=""
               unoptimized
-              className="h-8 w-8 shrink-0 object-contain bg-transparent outline-none"
+              className="h-8 w-8 shrink-0 bg-transparent object-contain outline-none"
             />
           }
         />

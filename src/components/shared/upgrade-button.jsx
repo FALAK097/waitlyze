@@ -40,11 +40,8 @@ export function UpgradeButton({
         <Button
           type="button"
           variant={variant}
-          className={cn(
-            variant === "ghost" && upgradeCtaClasses,
-            size === "md" && "px-4 py-2.5 text-sm",
-            className,
-          )}
+          size={size}
+          className={cn(variant === "ghost" && upgradeCtaClasses, className)}
         >
           <HugeiconsIcon icon={GemIcon} className="size-3.5 shrink-0" aria-hidden="true" />
           {label}

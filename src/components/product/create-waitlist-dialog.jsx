@@ -123,7 +123,7 @@ export function CreateWaitlistDialog({
 
   return (
     <Dialog open={open} onOpenChange={changeOpen}>
-      <DialogTrigger render={<Button size="default" />}>
+      <DialogTrigger render={<Button size="md" />}>
         <HugeiconsIcon icon={Add01Icon} aria-hidden="true" />
         {first ? "Create your first waitlist" : "New waitlist"}
       </DialogTrigger>

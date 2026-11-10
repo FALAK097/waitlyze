@@ -136,12 +136,7 @@ function CloudflareEmailActions({
   );
 }
 
-export function CloudflareEmailIntegration({
-  initialConnection,
-  accountEmail,
-  canManage,
-  logo,
-}) {
+export function CloudflareEmailIntegration({ initialConnection, accountEmail, canManage, logo }) {
   const [connection, setConnection] = useState(initialConnection);
   const [open, setOpen] = useState(false);
   const [accountId, setAccountId] = useState(initialConnection?.accountId || "");

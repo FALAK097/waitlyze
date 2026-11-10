@@ -9,8 +9,8 @@ import { Label } from "@/components/ui/label";
 import { formatProductDate } from "@/lib/product-date.mjs";
 
 const sourceLabel = {
-  waitlist: "This waitlist",
-  workspace: "Workspace Resend connection",
+  waitlist: "Dedicated waitlist sender",
+  workspace: "Workspace Resend (inherited)",
   default: "Deployment default",
   "needs-attention": "Needs attention",
 };
@@ -240,11 +240,26 @@ export function WaitlistSenderSettings({ waitListId, canManage }) {
   return (
     <div className="grid gap-6">
       <SenderStatus sender={sender} resolved={resolved} />
-      <p className="m-0 text-sm leading-relaxed text-product-text-secondary">
-        A connected waitlist sender takes priority over your workspace Resend connection. Until its
-        test succeeds, the workspace sender is used if connected. Waitlyze never falls back to its
-        deployment sender for subscriber email.
-      </p>
+      <div className="rounded-lg border border-product-border-subtle bg-product-bg-surface p-4 text-sm leading-relaxed text-product-text-secondary">
+        <p className="mb-2 font-medium text-product-text-primary">How sending identity works</p>
+        <ul className="list-disc space-y-1.5 pl-4">
+          <li>
+            <strong>Workspace default:</strong> All waitlists automatically inherit your workspace
+            Resend connection configured in Settings → Integrations. If you only use one brand
+            domain, no setup is needed here.
+          </li>
+          <li>
+            <strong>Dedicated waitlist override:</strong> Only configure this form if this waitlist
+            requires a distinct sender address or separate Resend key (e.g. client campaigns or
+            multi-product brands).
+          </li>
+          <li>
+            <strong>Why Cloudflare isn’t here:</strong> Cloudflare Email Sending is dedicated to
+            workspace transactional emails (e.g. team invites and sign-in verifications), whereas
+            Resend sends subscriber campaign emails.
+          </li>
+        </ul>
+      </div>
       {canManage ? (
         <SenderActions
           sender={sender}

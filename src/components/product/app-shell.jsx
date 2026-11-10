@@ -137,7 +137,7 @@ function WorkspaceSwitcher({ workspaces, selected, plan }) {
               <span className="flex-1 truncate">{workspace.name}</span>
               {workspace.id === selected && (
                 <>
-                  <span className="mr-1 text-micro font-medium uppercase text-product-text-secondary">
+                  <span className="mr-1 text-micro font-medium text-product-text-secondary uppercase">
                     {plan}
                   </span>
                   <HugeiconsIcon icon={Tick01Icon} aria-hidden="true" />
@@ -244,7 +244,11 @@ function PlanBadge({ plan = "FREE" }) {
         className="inline-flex shrink-0 items-center gap-1 rounded-full border border-product-border-subtle bg-product-bg-inset px-2.5 py-0.5 text-xs font-semibold text-product-text-primary no-underline transition-colors hover:border-product-text-secondary/40 hover:bg-neutral-100"
         title="Pro plan · View billing"
       >
-        <HugeiconsIcon icon={GemIcon} className="size-3 text-product-text-primary" aria-hidden="true" />
+        <HugeiconsIcon
+          icon={GemIcon}
+          className="size-3 text-product-text-primary"
+          aria-hidden="true"
+        />
         <span>PRO</span>
       </Link>
     );
@@ -270,7 +274,7 @@ export function AppShellControls({
 }) {
   return (
     <>
-      <div className="order-1 flex min-w-0 max-w-115 items-center gap-2 max-md:max-w-none max-md:flex-1">
+      <div className="order-1 flex max-w-115 min-w-0 items-center gap-2 max-md:max-w-none max-md:flex-1">
         <WorkspaceSwitcher workspaces={workspaces} selected={selectedWorkspace} plan={plan} />
         <PlanBadge plan={plan} />
         {plan === "FREE" && canManageBilling && (

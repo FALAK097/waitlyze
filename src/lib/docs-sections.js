@@ -162,7 +162,11 @@ export function getDocsSectionTree(tree, section) {
       children: [
         sectionPage("Integrations", "/docs/integrations/overview"),
         sectionPage("Resend", "/docs/resend", integrationLogo("resend.svg")),
-        sectionPage("Cloudflare Email Sending", "/docs/cloudflare-email"),
+        sectionPage(
+          "Cloudflare Email Sending",
+          "/docs/cloudflare-email",
+          integrationLogo("cloudflare.svg"),
+        ),
         sectionPage("Slack", "/docs/slack", integrationLogo("slack.svg")),
         sectionPage("Discord", "/docs/discord", integrationLogo("discord.svg")),
         sectionPage("Webhooks", "/docs/webhooks", integrationLogo("webhooks.svg")),
