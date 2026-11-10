@@ -1,10 +1,4 @@
-import {
-  createCipheriv,
-  createDecipheriv,
-  createHmac,
-  randomBytes,
-  timingSafeEqual,
-} from "node:crypto";
+import { createCipheriv, createDecipheriv, createHmac, randomBytes } from "node:crypto";
 import { lookup } from "node:dns/promises";
 import { isIP } from "node:net";
 
@@ -60,18 +54,6 @@ export function signWebhook(secret, timestamp, payload) {
   return createHmac("sha256", secret)
     .update(`${timestamp}.${canonicalJson(payload)}`)
     .digest("hex");
-}
-
-export function verifyWebhookSignature(secret, timestamp, payload, signature) {
-  if (typeof signature !== "string" || !/^[a-f0-9]{64}$/i.test(signature)) return false;
-  const expected = Buffer.from(signWebhook(secret, timestamp, payload), "hex");
-  let supplied;
-  try {
-    supplied = Buffer.from(signature, "hex");
-  } catch {
-    return false;
-  }
-  return supplied.length === expected.length && timingSafeEqual(supplied, expected);
 }
 
 function inV4(ip, base, bits) {

@@ -2,7 +2,6 @@
 
 import { Cancel01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { useState } from "react";
 
 import Pricing from "@/components/landing/pricing";
 import {
@@ -53,10 +52,4 @@ export function PlansDialog({
       </DialogContent>
     </Dialog>
   );
-}
-
-/** Small helper for callers that manage dialog state sparingly. */
-export function usePlansDialog() {
-  const [open, setOpen] = useState(false);
-  return { open, setOpen };
 }

@@ -6,20 +6,6 @@ import { brandContrastIssues } from "../color/contrast.mjs";
 import { findUnchangedStarterCopy } from "../templates/starter-copy.mjs";
 import { requiresDoubleOptIn } from "./form-rules.mjs";
 
-const canonical = (value) =>
-  Array.isArray(value)
-    ? value.map(canonical)
-    : value && typeof value === "object"
-      ? Object.fromEntries(
-          Object.keys(value)
-            .sort()
-            .map((key) => [key, canonical(value[key])]),
-        )
-      : value;
-
-export const sameContent = (left, right) =>
-  JSON.stringify(canonical(left)) === JSON.stringify(canonical(right));
-
 const visibleSignupForms = (snapshot) =>
   snapshot.sections.filter(
     (section) =>
@@ -211,39 +197,4 @@ export function assessPublishReadiness(snapshot, options = {}) {
     });
 
   return { blockers, warnings };
-}
-
-/**
- * Describes what publishing this draft would change, compared with the
- * revision that is live right now.
- */
-export function summarizeChanges(draft, published) {
-  if (!draft || !published) return null;
-  const draftSections = new Map(draft.sections.map((section) => [section.id, section]));
-  const publishedSections = new Map(published.sections.map((section) => [section.id, section]));
-  const added = draft.sections.filter((section) => !publishedSections.has(section.id)).length;
-  const removed = published.sections.filter((section) => !draftSections.has(section.id)).length;
-  const edited = draft.sections.filter((section) => {
-    const before = publishedSections.get(section.id);
-    return before && !sameContent(before, section);
-  }).length;
-  const brandChanged = !sameContent(draft.brand, published.brand);
-  const formChanged = !sameContent(draft.form, published.form);
-  const statusChanged = !sameContent(draft.statusPage, published.statusPage);
-  const seoChanged = !sameContent(draft.seo, published.seo);
-  const templateChanged = draft.templateId !== published.templateId;
-  const total = added + removed + edited;
-  const changed = total > 0 || brandChanged || formChanged || statusChanged || seoChanged;
-  return {
-    added,
-    removed,
-    edited,
-    brandChanged,
-    formChanged,
-    statusChanged,
-    seoChanged,
-    templateChanged,
-    total,
-    changed,
-  };
 }

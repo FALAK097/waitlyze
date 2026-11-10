@@ -132,5 +132,3 @@ export async function revokeWorkspaceInvitation(
   });
   return result.count === 1 ? { success: true } : { success: false, code: "NOT_FOUND" };
 }
-
-export const invitationStatuses = ACTIVE_STATUSES;

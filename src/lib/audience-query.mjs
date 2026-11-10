@@ -114,16 +114,6 @@ export function csvCell(value) {
   return `"${text.replaceAll('"', '""')}"`;
 }
 
-export function subscriberCsvRow(subscriber) {
-  return [
-    subscriber.email,
-    subscriber.verifiedAt ? "Verified" : "Needs confirmation",
-    subscriber.createdAt,
-  ]
-    .map(csvCell)
-    .join(",");
-}
-
 export const EXPORT_COLUMNS = [
   { key: "email", label: "Email" },
   { key: "phone", label: "Phone" },

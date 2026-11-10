@@ -21,8 +21,6 @@
 
 import { createHash } from "node:crypto";
 
-export const FRAUD_MODES = Object.freeze(["STANDARD", "STRICT"]);
-
 const HOUR_MS = 60 * 60 * 1000;
 
 // Signups per IP per trailing hour before the request is rejected with 429.

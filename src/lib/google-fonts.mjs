@@ -87,20 +87,6 @@ export function googleFontsStylesheet(values) {
   return `https://fonts.googleapis.com/css2?${query}&display=swap`;
 }
 
-export function loadGoogleFont(value) {
-  if (typeof document === "undefined") return;
-  const family = resolveFontFamily(value);
-  if (!family || loadedFonts.has(family)) return;
-  loadedFonts.add(family);
-  const href = googleFontsStylesheet([family]);
-  if (!href) return;
-  const link = document.createElement("link");
-  link.href = href;
-  link.rel = "stylesheet";
-  link.dataset.waitlyzeFont = family;
-  document.head.append(link);
-}
-
 // Load a family's binaries before the caller commits it to the page, so the
 // preview doesn't flash fallback text across the whole canvas. Resolves
 // quickly on cache hits; never rejects. No-op for bundled legacy families.

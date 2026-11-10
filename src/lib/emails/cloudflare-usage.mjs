@@ -49,5 +49,3 @@ export async function recordCloudflarePlatformEmail(db, key, messageId) {
 export async function releaseCloudflarePlatformEmail(db, key) {
   await db.cloudflareEmailUsage.deleteMany({ where: { idempotencyKey: key } });
 }
-
-export const CLOUDFLARE_PLATFORM_EMAIL_SEND_LIMIT = PLATFORM_SEND_LIMIT;

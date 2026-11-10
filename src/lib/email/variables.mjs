@@ -7,21 +7,6 @@
 
 import { escapeHtmlText } from "../email-markdown.mjs";
 
-export const VARIABLE_KEYS = [
-  "name",
-  "position",
-  "referral_link",
-  "referral_count",
-  "points",
-  "rewards",
-  "waitlist",
-  "waitlist_url",
-  "email",
-];
-
-// Legacy keys still honored by older saved templates and the offboard flow.
-export const LEGACY_VARIABLE_KEYS = ["expiry_time", "reason", "feedback_link", "total_signups"];
-
 export function nameFromEmail(email) {
   const local = String(email || "").split("@")[0] || "";
   // Strip plus-tags (john+promo → john) before humanizing.
