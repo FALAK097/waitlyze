@@ -44,6 +44,9 @@ export const metadata = {
   twitter: { card: "summary_large_image", title: SITE_TITLE, description: SITE_DESCRIPTION },
 };
 
+/**
+ * Renders the localized pricing section based on the visitor's country header.
+ */
 async function LocalizedPricing() {
   const requestHeaders = await headers();
   const country =
@@ -54,6 +57,9 @@ async function LocalizedPricing() {
   return <Pricing regionalPricing={regionalPricing} />;
 }
 
+/**
+ * Renders a skeleton placeholder while localized pricing is loading.
+ */
 function PricingFallback() {
   return (
     <section
@@ -138,51 +144,54 @@ const faqs = [
 const moreFeatures = [
   {
     icon: Mail01Icon,
-    title: "Email with intent",
-    copy: "Welcome messages, reminders and broadcasts for verified subscribers who opted in.",
-  },
-  {
-    icon: Download01Icon,
-    title: "Your list stays yours",
-    copy: "Filter your subscribers and export them to CSV whenever you need.",
-  },
-  {
-    icon: GlobeIcon,
-    title: "Your own address",
-    copy: "Connect a custom domain when your deployment is configured for it.",
-  },
-  {
-    icon: WorkflowCircle01Icon,
-    title: "Events for your tools",
-    copy: "Send signed webhook events to your own systems when a signup or referral happens.",
-  },
-  {
-    icon: UserGroupIcon,
-    title: "Room for your team",
-    copy: "Invite teammates and set permissions for editing, publishing and email.",
-  },
-  {
-    icon: WorkHistoryIcon,
-    title: "A safer publish button",
-    copy: "Keep drafts private, pause signups and roll back to a previous published version.",
+    title: "Automated welcome & milestone emails",
+    copy: "Send transactional confirmations via Cloudflare Email or Resend, and run cohort broadcasts and automated sequences with your verified Resend sender.",
   },
   {
     icon: ShieldCheckIcon,
-    title: "A cleaner list",
-    copy: "Require email verification and add Turnstile to the signup form.",
+    title: "Turnstile & velocity fraud protection",
+    copy: "Block bot bursts with Cloudflare Turnstile, IP-velocity limits and verified-only referral credit.",
+  },
+  {
+    icon: WorkflowCircle01Icon,
+    title: "Signed webhooks & retry outbox",
+    copy: "Stream real-time signup and referral events to your stack with delivery logs and one-click retries.",
+  },
+  {
+    icon: Download01Icon,
+    title: "Transparent referral point ledger",
+    copy: "Every qualifying share is recorded in an auditable ledger with masked public leaderboards and CSV export.",
+  },
+  {
+    icon: GlobeIcon,
+    title: "Hosted page, embed or custom domain",
+    copy: "Launch on a Waitlyze-hosted URL, connect your domain, or drop embeddable forms and counters onto your site.",
+  },
+  {
+    icon: WorkHistoryIcon,
+    title: "Drafts, revisions & instant rollback",
+    copy: "Edit safely in private drafts, pause signups anytime and roll back to any previously published revision.",
+  },
+  {
+    icon: UserGroupIcon,
+    title: "Role-based workspace collaboration",
+    copy: "Invite teammates with granular permissions across page editing, subscriber management and broadcasts.",
   },
   {
     icon: CodeIcon,
-    title: "Built for your stack",
-    copy: "Use scoped API keys for server-side signups, alongside the hosted page and embed.",
+    title: "Server-side Signup API",
+    copy: "Collect signups from your own custom frontend using scoped server-side API keys alongside hosted pages.",
   },
   {
     icon: Notification01Icon,
-    title: "Know when things happen",
-    copy: "Send launch activity to Slack or Discord when notifications are configured.",
+    title: "Real-time Slack & Discord alerts",
+    copy: "Route new signup and referral milestone notifications straight to your team's launch channel.",
   },
 ];
 
+/**
+ * Renders a styled internal link with an upward-right arrow icon.
+ */
 function TextLink({ href, children }) {
   return (
     <Link className="wl-text-link" href={href}>
@@ -193,7 +202,11 @@ function TextLink({ href, children }) {
 }
 
 const ASSET_BASE = process.env.NEXT_PUBLIC_R2_PUBLIC_URL || "https://assets.waitlyze.com";
+const ASSET_VER = "v=3";
 
+/**
+ * Renders a framed product screenshot or walkthrough video.
+ */
 function ProductFrame({ src, alt, tone = "mint", hero = false, videoSrc, poster }) {
   return (
     <div
@@ -212,15 +225,15 @@ function ProductFrame({ src, alt, tone = "mint", hero = false, videoSrc, poster 
             preload="none"
             poster={poster || src}
             aria-label={alt}
-            width={1280}
-            height={720}
+            width={1120}
+            height={630}
           >
             <source src={videoSrc} type="video/webm" />
             <Image
               src={src}
               alt={alt}
-              width={1280}
-              height={720}
+              width={1120}
+              height={875}
               sizes={hero ? "(max-width: 1152px) 100vw, 1088px" : "(max-width: 720px) 100vw, 540px"}
             />
           </video>
@@ -228,8 +241,8 @@ function ProductFrame({ src, alt, tone = "mint", hero = false, videoSrc, poster 
           <Image
             src={src}
             alt={alt}
-            width={1280}
-            height={720}
+            width={1120}
+            height={875}
             sizes={hero ? "(max-width: 1152px) 100vw, 1088px" : "(max-width: 720px) 100vw, 540px"}
             priority={hero}
           />
@@ -241,85 +254,88 @@ function ProductFrame({ src, alt, tone = "mint", hero = false, videoSrc, poster 
 
 const featureCards = [
   {
-    title: "Build a page that feels like yours",
-    copy: "Edit headlines, signup forms and brand styling with real-time responsive canvas preview.",
-    image: `${ASSET_BASE}/showcase-builder-4k.png`,
-    alt: "Authenticated Waitlyze visual page builder with live preview for Nova Studio",
+    title: "Visual page builder with live responsive canvas",
+    copy: "Customize sections, signup fields, brand kit tokens and post-signup confirmation screens with instant desktop and mobile preview.",
+    image: `${ASSET_BASE}/showcase-builder-4k.png?${ASSET_VER}`,
+    alt: "Waitlyze visual page builder showing blocks, live Nova Studio canvas preview, and section properties",
     tone: "mint",
   },
   {
-    title: "Filter and manage verified signups",
-    copy: "Inspect subscribers, referral counts, tags and verified status, with one-click CSV export.",
-    image: `${ASSET_BASE}/showcase-subscribers-4k.png`,
-    alt: "Waitlyze subscribers manager displaying verified records, tags and search filters",
+    title: "Verified subscriber CRM & fraud review",
+    copy: "Filter signups by verification status, acquisition source, geography and referral points—with one-click CSV import and export.",
+    image: `${ASSET_BASE}/showcase-subscribers-4k.png?${ASSET_VER}`,
+    alt: "Waitlyze signups manager displaying verified subscribers, country flags, acquisition sources, devices, positions, and referral points",
     tone: "blue",
   },
   {
-    title: "Keep your list warm with email updates",
-    copy: "Schedule marketing broadcasts, release announcements and onboarding notes to opted-in subscribers.",
-    image: `${ASSET_BASE}/showcase-emails-4k.png`,
-    alt: "Waitlyze email broadcast management screen showing scheduled announcements and delivery rates",
+    title: "Cohort broadcasts & automated sequences",
+    copy: "Send release waves, roadmap updates and automated milestone emails to opted-in subscribers from your connected Resend sender.",
+    image: `${ASSET_BASE}/showcase-emails-4k.png?${ASSET_VER}`,
+    alt: "Waitlyze email broadcast composer showing Beta Cohort 2 rollout draft and completed campaign history",
     tone: "sand",
   },
   {
-    title: "See what is working in real time",
-    copy: "Track visitors, conversion curves and traffic attribution across direct, social and referral channels.",
-    image: `${ASSET_BASE}/showcase-analytics-4k.png`,
-    alt: "Waitlyze analytics dashboard with traffic curves, conversion metrics and channel breakdown",
+    title: "Full-funnel attribution & K-factor analytics",
+    copy: "Measure visitors, conversion benchmarks, viral K-factor, referral share rates and channel breakdown in real time.",
+    image: `${ASSET_BASE}/showcase-analytics-4k.png?${ASSET_VER}`,
+    alt: "Waitlyze analytics dashboard with visitor-to-signup conversion, K-factor, referral points awarded, and 30-day activity chart",
     tone: "blue",
   },
   {
-    title: "Turn signups into organic advocates",
-    copy: "Reward early signups with unique referral links, leaderboard ranking and queue jump incentives.",
-    image: `${ASSET_BASE}/showcase-public-waitlist-4k.png`,
-    alt: "Waitlyze live public waitlist page showcasing waitlist counter and referral access",
-    tone: "referral",
+    title: "Referral cockpit, queue jumps & point ledger",
+    copy: "Turn every verified subscriber into an advocate with personal referral links, live queue position, points and social sharing.",
+    image: `${ASSET_BASE}/showcase-referral-4k.png?${ASSET_VER}`,
+    alt: "Waitlyze post-signup referral screen showing live queue position, earned points, personal share link, and social channels",
+    tone: "mint",
   },
 ];
 
 const steps = [
   {
     number: "01",
-    title: "Make your page",
-    copy: "Start with a clean template, then customize your story in the visual builder. Edit your content and preview it on desktop or mobile before anyone sees it.",
+    title: "Design your launch page",
+    copy: "Start from a high-converting template and tailor every block in the visual builder. Configure custom fields, brand styling, and confirmation states before publishing.",
     href: "/docs/page-builder",
     link: "Explore the page builder",
-    image: `${ASSET_BASE}/showcase-builder-4k.png`,
+    image: `${ASSET_BASE}/showcase-builder-4k.png?${ASSET_VER}`,
     alt: "Waitlyze visual builder configuring Nova Studio launch page",
     tone: "mint",
   },
   {
     number: "02",
-    title: "Put it out there",
-    copy: "Publish to a Waitlyze-hosted page, embed the form on your site, or collect signups through the API. One waitlist, wherever your audience finds you.",
+    title: "Publish anywhere in one click",
+    copy: "Go live on a Waitlyze-hosted page, connect your custom domain, embed the widget on your existing site, or submit signups through our server-side API.",
     href: "/docs/embed",
     link: "See publishing options",
-    image: `${ASSET_BASE}/showcase-public-waitlist-4k.png`,
-    alt: "Live published Nova Studio waitlist page with position indicator and signup form",
+    image: `${ASSET_BASE}/showcase-published-4k.png?${ASSET_VER}`,
+    alt: "Live published Nova Studio waitlist page with early access signup form",
     tone: "sand",
   },
   {
     number: "03",
-    title: "Give people a reason to share",
-    copy: "After signing up and verifying their email, subscribers get a personal link to invite colleagues. Track their progress, points and place in the queue.",
+    title: "Reward referrals automatically",
+    copy: "Once verified, subscribers unlock their queue position, point balance, and personal referral link. Built-in velocity checks and email verification keep rewards fair.",
     href: "/docs/referrals",
     link: "How referrals work",
-    image: `${ASSET_BASE}/showcase-subscribers-4k.png`,
-    alt: "Subscribers table showing referral counts and verified badges",
-    tone: "referral",
+    image: `${ASSET_BASE}/showcase-referral-4k.png?${ASSET_VER}`,
+    alt: "Post-signup referral experience showing queue position #128, 80 points, and personal share link",
+    tone: "blue",
   },
   {
     number: "04",
-    title: "Learn as you grow",
-    copy: "See where visitors come from, how many join and which channels convert. Use verified data to make your next launch decision with confidence.",
+    title: "Track attribution & roll out cohorts",
+    copy: "See which channels and referrers drive verified signups, then invite top supporters in waves using targeted email broadcasts or CSV exports.",
     href: "/docs/analytics",
     link: "Explore analytics",
-    image: `${ASSET_BASE}/showcase-analytics-4k.png`,
-    alt: "Waitlyze analytics screen with 30-day visitor and signup trends",
+    image: `${ASSET_BASE}/showcase-analytics-4k.png?${ASSET_VER}`,
+    alt: "Waitlyze analytics dashboard with 30-day visitor and signup trends and K-factor metrics",
     tone: "mint",
   },
 ];
 
+/**
+ * Renders the public Waitlyze marketing landing page.
+ */
 export default async function LandingPage() {
   const featuredTemplates = listTemplates().filter((template) =>
     ["saas", "creator", "event"].includes(template.id),
@@ -361,11 +377,10 @@ export default async function LandingPage() {
           </div>
           <ProductFrame
             hero
-            src={`${ASSET_BASE}/showcase-analytics-4k.png`}
-            alt="Authenticated Waitlyze 4K analytics dashboard showing Nova Studio visitor, signup, and conversion analytics"
+            src={`${ASSET_BASE}/showcase-analytics-4k.png?${ASSET_VER}`}
+            alt="Waitlyze analytics dashboard showing Nova Studio visitor, signup, conversion, K-factor, and referral metrics"
             tone="blue"
           />
-          <p className="wl-image-note">Inside Waitlyze (live Nova Studio launch dashboard shown)</p>
         </section>
 
         <section id="features" className="wl-section wl-features" aria-labelledby="features-title">
@@ -390,21 +405,20 @@ export default async function LandingPage() {
 
         <section id="demo" className="wl-section wl-demo" aria-labelledby="demo-title">
           <div className="wl-section-heading">
-            <p className="wl-eyebrow">4K PRODUCT WALKTHROUGH</p>
+            <p className="wl-eyebrow">PRODUCT WALKTHROUGH</p>
             <h2 id="demo-title">Built for speed, focus, and clarity.</h2>
             <p>
-              Take a tour of the dashboard, visual page builder, subscriber manager, and marketing
-              broadcasts.
+              Take a tour of the analytics workspace, visual page builder, referral experience,
+              subscriber CRM, and cohort broadcasts.
             </p>
           </div>
           <div className="wl-demo-media">
             <ProductFrame
-              videoSrc={`${ASSET_BASE}/showcase-demo-4k.webm`}
-              src={`${ASSET_BASE}/showcase-analytics-4k.png`}
-              alt="Waitlyze 4K product walkthrough video demonstrating dashboard, page builder, subscriber list, and live analytics"
+              videoSrc={`${ASSET_BASE}/showcase-demo-4k.webm?${ASSET_VER}`}
+              src={`${ASSET_BASE}/showcase-analytics-4k.png?${ASSET_VER}`}
+              alt="Waitlyze product walkthrough video demonstrating analytics, visual page builder, referral settings, subscriber list, and email broadcasts"
               tone="mint"
             />
-            <p className="wl-image-note">4K walkthrough of the Waitlyze workspace</p>
           </div>
         </section>
 
