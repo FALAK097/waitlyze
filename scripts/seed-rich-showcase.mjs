@@ -212,7 +212,8 @@ async function main() {
   const userRes = await pool.query(
     `SELECT wm."workspaceId", u.* FROM users u
      LEFT JOIN workspace_members wm ON wm."userId" = u.id
-     WHERE u.email = $1 LIMIT 1`,
+     WHERE u.email IN ($1, 'preview-owner@waitlyze.local')
+     ORDER BY CASE WHEN u.email = $1 THEN 0 ELSE 1 END LIMIT 1`,
     [showcaseEmail],
   );
 
@@ -329,6 +330,8 @@ async function main() {
       "templateRevision" = 1,
       "templateSnapshot" = $5,
       "sendEmailsToSubscribers" = true,
+      "userId" = $2,
+      "workspaceId" = $3,
       "updatedAt" = NOW()
   `,
     [novaId, user.id, workspaceId, subDays(30), JSON.stringify(novaSnapshot)],
@@ -347,12 +350,7 @@ async function main() {
     [cuid("pr"), novaId, JSON.stringify(novaSnapshot)],
   );
 
-  await pool.query(`DELETE FROM wait_lists WHERE id != $1 AND "workspaceId" = $2`, [
-    novaId,
-    workspaceId,
-  ]);
-
-  const hyperFocusId = cuid("w");
+  const hyperFocusId = "cmw7hyperfocus0001iz6l74of9yrx";
   const hyperFocusSnapshot = createCustomizedSnapshot({
     name: "HyperFocus AI",
     tagline: "Deep work and distraction shield for engineers.",
@@ -361,7 +359,7 @@ async function main() {
     placeholder: "name@company.com",
   });
 
-  await pool.query(
+  const hyperRes = await pool.query(
     `
     INSERT INTO wait_lists (
       id, name, "publicSlug", description, "websiteUrl",
@@ -376,9 +374,25 @@ async function main() {
       1, $5, $2, $3,
       $4, $4
     )
+    ON CONFLICT ("publicSlug")
+    DO UPDATE SET
+      name = 'HyperFocus AI',
+      description = 'Intelligent focus blocks and distraction shield for engineers.',
+      "websiteUrl" = 'https://hyperfocus.dev',
+      "buttonColor" = '#6366f1',
+      status = 'PUBLISHED',
+      "publishedRevision" = 1,
+      "publishedTemplateRevision" = 1,
+      "templateRevision" = 1,
+      "templateSnapshot" = $5,
+      "userId" = $2,
+      "workspaceId" = $3,
+      "updatedAt" = NOW()
+    RETURNING id
   `,
     [hyperFocusId, user.id, workspaceId, subDays(18), JSON.stringify(hyperFocusSnapshot)],
   );
+  const actualHyperFocusId = hyperRes.rows[0].id;
 
   await pool.query(
     `
@@ -390,11 +404,11 @@ async function main() {
     ON CONFLICT ("waitListId", revision)
     DO UPDATE SET snapshot = $3
   `,
-    [cuid("pr"), hyperFocusId, JSON.stringify(hyperFocusSnapshot)],
+    [cuid("pr"), actualHyperFocusId, JSON.stringify(hyperFocusSnapshot)],
   );
 
-  const devPulseId = cuid("w");
-  await pool.query(
+  const devPulseId = "cmw7devpulse00001iz6l74of9yrx";
+  const devPulseRes = await pool.query(
     `
     INSERT INTO wait_lists (
       id, name, "publicSlug", description, "websiteUrl",
@@ -407,9 +421,28 @@ async function main() {
       '#0f172a', '#ffffff', 'DRAFT', $2, $3,
       $4, $4
     )
+    ON CONFLICT ("publicSlug")
+    DO UPDATE SET
+      name = 'DevPulse CLI',
+      description = 'Distributed systems telemetry streamed directly to terminal stdout.',
+      "websiteUrl" = 'https://devpulse.sh',
+      "buttonColor" = '#0f172a',
+      status = 'DRAFT',
+      "userId" = $2,
+      "workspaceId" = $3,
+      "updatedAt" = NOW()
+    RETURNING id
   `,
     [devPulseId, user.id, workspaceId, subDays(5)],
   );
+  const actualDevPulseId = devPulseRes.rows[0].id;
+
+  await pool.query(`DELETE FROM wait_lists WHERE id NOT IN ($1, $2, $3) AND "workspaceId" = $4`, [
+    novaId,
+    actualHyperFocusId,
+    actualDevPulseId,
+    workspaceId,
+  ]);
 
   // 6. Generate 340 Subscribers for Nova Studio with authentic curves
   console.log("Generating subscribers and referrals for Nova Studio...");
@@ -689,6 +722,7 @@ async function main() {
   );
 
   // 11. Also add 45 subscribers to HyperFocus
+  await pool.query(`DELETE FROM sign_ups WHERE "waitListId" = $1`, [actualHyperFocusId]);
   for (let j = 1; j <= 45; j++) {
     const fn = FIRST_NAMES[j % FIRST_NAMES.length];
     const ln = LAST_NAMES[j % LAST_NAMES.length];
@@ -711,7 +745,7 @@ async function main() {
         crypto.randomUUID(),
         email,
         email.toLowerCase(),
-        hyperFocusId,
+        actualHyperFocusId,
         5,
         j,
         subDays(Math.floor(j / 3)),
