@@ -24,24 +24,37 @@ const choices = [
   ["REWARD_TIER_UNLOCKED", "Reward tier unlocked"],
 ];
 
-function useChannel(endpoint) {
-  const [record, setRecord] = useState(null);
+async function safeReadJson(response, defaultError = "Request failed") {
+  const text = await response.text().catch(() => "");
+  let data = null;
+  try {
+    data = text ? JSON.parse(text) : null;
+  } catch {}
+  if (!response.ok) {
+    throw new Error(data?.error || defaultError);
+  }
+  return data;
+}
+
+function useChannel(endpoint, initialRecord = undefined) {
+  const [record, setRecord] = useState(initialRecord ?? null);
   const [url, setUrl] = useState("");
-  const [triggers, setTriggers] = useState(["MILESTONE_COUNTS"]);
-  const [loading, setLoading] = useState(true);
+  const [triggers, setTriggers] = useState(initialRecord?.triggers || ["MILESTONE_COUNTS"]);
+  const [loading, setLoading] = useState(initialRecord === undefined);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [confirmDisconnect, setConfirmDisconnect] = useState(false);
 
   useEffect(() => {
+    if (initialRecord !== undefined) return;
     const controller = new AbortController();
     fetch(endpoint, { cache: "no-store", signal: controller.signal })
-      .then((response) => {
-        if (!response.ok) throw new Error("Could not load this channel.");
-        return response.json();
+      .then(async (response) => {
+        const body = await safeReadJson(response, "Could not load this channel.");
+        return body;
       })
       .then((body) => {
-        if (controller.signal.aborted) return null;
+        if (controller.signal.aborted || !body) return null;
         setRecord(body.data);
         setTriggers(body.data?.triggers || ["MILESTONE_COUNTS"]);
         return null;
@@ -54,7 +67,7 @@ function useChannel(endpoint) {
         if (!controller.signal.aborted) setLoading(false);
       });
     return () => controller.abort();
-  }, [endpoint]);
+  }, [endpoint, initialRecord]);
 
   async function request(method, body) {
     setBusy(true);
@@ -65,11 +78,7 @@ function useChannel(endpoint) {
           ? { headers: { "content-type": "application/json" }, body: JSON.stringify(body) }
           : {}),
       });
-      if (!response.ok) {
-        const failure = await response.json();
-        throw new Error(failure.error || "Could not update this channel.");
-      }
-      const result = await response.json();
+      const result = await safeReadJson(response, "Could not update this channel.");
       if (method === "DELETE") {
         setRecord(null);
         setTriggers(["MILESTONE_COUNTS"]);
@@ -77,8 +86,8 @@ function useChannel(endpoint) {
       } else {
         setRecord((previous) => ({
           ...previous,
-          ...result.data,
-          lastErrorCode: result.data.lastErrorCode ?? null,
+          ...result?.data,
+          lastErrorCode: result?.data?.lastErrorCode ?? null,
         }));
       }
       if (method === "PUT") setUrl("");
@@ -94,7 +103,8 @@ function useChannel(endpoint) {
       // A failed test can move the channel to NEEDS_ATTENTION on the server.
       try {
         const response = await fetch(endpoint, { cache: "no-store" });
-        if (response.ok) setRecord((await response.json()).data);
+        const refreshed = await safeReadJson(response, "").catch(() => null);
+        if (refreshed?.data) setRecord(refreshed.data);
       } catch {
         /* Keep the last known status when offline. */
       }
@@ -118,7 +128,7 @@ function useChannel(endpoint) {
   };
 }
 
-function ChannelRow({ waitListId, provider, name, description, logo, canManage }) {
+function ChannelRow({ waitListId, provider, name, description, logo, canManage, initialRecord }) {
   const [open, setOpen] = useState(false);
   const endpoint = `/api/wait-lists/${encodeURIComponent(waitListId)}/notifications/${provider.toLowerCase()}`;
   const {
@@ -132,7 +142,7 @@ function ChannelRow({ waitListId, provider, name, description, logo, canManage }
     confirmDisconnect,
     setConfirmDisconnect,
     request,
-  } = useChannel(endpoint);
+  } = useChannel(endpoint, initialRecord);
 
   function changeOpen(next) {
     if (busy) return;
@@ -316,7 +326,10 @@ function ChannelRow({ waitListId, provider, name, description, logo, canManage }
   );
 }
 
-export function ChatNotificationSettings({ waitListId, canManage }) {
+export function ChatNotificationSettings({ waitListId, canManage, initialChannels = [] }) {
+  const slackChannel = initialChannels.find((c) => c.provider === "SLACK") || null;
+  const discordChannel = initialChannels.find((c) => c.provider === "DISCORD") || null;
+
   return (
     <div className="divide-y divide-product-border-subtle">
       <ChannelRow
@@ -326,6 +339,7 @@ export function ChatNotificationSettings({ waitListId, canManage }) {
         description="Send new signup and milestone notifications to your Slack channels."
         logo="/integrations/slack.svg"
         canManage={canManage}
+        initialRecord={slackChannel}
       />
       <ChannelRow
         waitListId={waitListId}
@@ -334,6 +348,7 @@ export function ChatNotificationSettings({ waitListId, canManage }) {
         description="Send new signup and milestone notifications to your Discord server."
         logo="/integrations/discord.svg"
         canManage={canManage}
+        initialRecord={discordChannel}
       />
     </div>
   );

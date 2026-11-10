@@ -2,23 +2,20 @@ import { PrismaPg } from "@prisma/adapter-pg";
 
 import { PrismaClient } from "@/generated/prisma/client";
 
-const globalForPrisma = global;
+const globalForPrisma = globalThis;
 
-let prisma;
-
-if (!globalForPrisma.prisma) {
+function createPrismaClient() {
   const adapter = new PrismaPg({
     connectionString: process.env.DATABASE_URL,
-    max: 5,
-    idleTimeoutMillis: 10000,
-    connectionTimeoutMillis: 5000,
+    max: 10,
+    idleTimeoutMillis: 30000,
+    connectionTimeoutMillis: 15000,
   });
-  prisma = new PrismaClient({ adapter });
-  if (process.env.NODE_ENV !== "production") {
-    globalForPrisma.prisma = prisma;
-  }
-} else {
-  prisma = globalForPrisma.prisma;
+  return new PrismaClient({ adapter });
 }
+
+export const prisma = globalForPrisma.prisma ?? createPrismaClient();
+
+globalForPrisma.prisma = prisma;
 
 export default prisma;

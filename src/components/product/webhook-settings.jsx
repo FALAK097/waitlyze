@@ -44,8 +44,20 @@ const deliveryDateTime = new Intl.DateTimeFormat(undefined, {
   minute: "2-digit",
 });
 
-export function WebhookSettings({ waitListId, canManage = true }) {
-  const [rows, setRows] = useState([]);
+async function safeReadJson(response, defaultError = "Request failed") {
+  const text = await response.text().catch(() => "");
+  let data = null;
+  try {
+    data = text ? JSON.parse(text) : null;
+  } catch {}
+  if (!response.ok) {
+    throw new Error(data?.error || defaultError);
+  }
+  return data;
+}
+
+export function WebhookSettings({ waitListId, canManage = true, initialData = null }) {
+  const [rows, setRows] = useState(initialData?.data || []);
   const [name, setName] = useState("");
   const [url, setUrl] = useState("");
   const [includeSubscriberData, setIncludeSubscriberData] = useState(false);
@@ -54,9 +66,11 @@ export function WebhookSettings({ waitListId, canManage = true }) {
   const [showSecret, setShowSecret] = useState(false);
   const [secret, setSecret] = useState("");
   const [busy, setBusy] = useState(false);
-  const [initialLoad, setInitialLoad] = useState("loading");
+  const [initialLoad, setInitialLoad] = useState(initialData ? "ready" : "loading");
   const [loadError, setLoadError] = useState("");
-  const [configured, setConfigured] = useState(true);
+  const [configured, setConfigured] = useState(
+    initialData ? initialData.configured !== false : true,
+  );
   const [rotateTarget, setRotateTarget] = useState(null);
   const controlsDisabled =
     !canManage || !configured || busy || initialLoad !== "ready" || Boolean(loadError);
@@ -72,9 +86,8 @@ export function WebhookSettings({ waitListId, canManage = true }) {
           cache: "no-store",
           signal,
         });
-        const data = await response.json();
-        if (!response.ok) throw new Error(data.error || "Unable to load webhooks.");
-        if (!Array.isArray(data.data))
+        const data = await safeReadJson(response, "Unable to load webhooks.");
+        if (!Array.isArray(data?.data))
           throw new Error("The webhook list could not be read. Try again.");
         setRows(data.data);
         setConfigured(data.configured !== false);
@@ -93,10 +106,11 @@ export function WebhookSettings({ waitListId, canManage = true }) {
     [waitListId],
   );
   useEffect(() => {
+    if (initialData) return;
     const controller = new AbortController();
     refresh({ signal: controller.signal, initial: true });
     return () => controller.abort();
-  }, [refresh]);
+  }, [initialData, refresh]);
 
   async function call(path, method = "POST", body) {
     setBusy(true);
@@ -109,9 +123,8 @@ export function WebhookSettings({ waitListId, canManage = true }) {
           ...(body ? { body: JSON.stringify(body) } : {}),
         },
       );
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "Request failed.");
-      if (data.data?.secret) {
+      const data = await safeReadJson(response, "Request failed.");
+      if (data?.data?.secret) {
         setSecret(data.data.secret);
         setShowSecret(false);
       }
@@ -162,14 +175,15 @@ export function WebhookSettings({ waitListId, canManage = true }) {
         `/api/wait-lists/${encodeURIComponent(waitListId)}/webhooks/${encodeURIComponent(subscriptionId)}/secret`,
         { method: "POST" },
       );
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "Could not read the signing secret.");
-      try {
-        await navigator.clipboard.writeText(data.data.secret);
-      } catch {
-        throw new Error(
-          "Copy is unavailable in this browser. Rotate the secret to reveal a new one.",
-        );
+      const data = await safeReadJson(response, "Could not read the signing secret.");
+      if (data?.data?.secret) {
+        try {
+          await navigator.clipboard.writeText(data.data.secret);
+        } catch {
+          throw new Error(
+            "Copy is unavailable in this browser. Rotate the secret to reveal a new one.",
+          );
+        }
       }
       toast.success("Signing secret copied.");
     } catch (error) {
@@ -374,7 +388,7 @@ export function WebhookSettings({ waitListId, canManage = true }) {
                   <SheetHeader>
                     <SheetTitle>{sheetRow.name}</SheetTitle>
                   </SheetHeader>
-                  <div className="grid min-h-0 min-w-0 flex-1 content-start gap-5 overflow-x-clip overflow-y-auto px-4 pt-0 pb-4 [&>*]:min-w-0">
+                  <div className="-mt-2 grid min-h-0 min-w-0 flex-1 content-start gap-4 overflow-x-clip overflow-y-auto px-4 pb-4 [&>*]:min-w-0">
                     <div className="flex items-center gap-2 rounded-lg border border-product-border-subtle bg-product-bg-inset p-3">
                       <code className="min-w-0 flex-1 truncate text-caption text-product-text-secondary">
                         {sheetRow.url}

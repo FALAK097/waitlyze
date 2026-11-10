@@ -12,11 +12,70 @@ import { Button } from "@/components/ui/button";
 import { getWorkspaceEntitlements } from "@/lib/billing/plans.mjs";
 import { env } from "@/lib/env.mjs";
 import prisma from "@/lib/prisma";
+import { validateWebhookUrl } from "@/lib/webhooks/security.mjs";
 import { requireCampaignPage } from "@/lib/workspaces/authorize";
 
 export const metadata = { title: "Waitlist settings" };
 
 const VALID_SECTIONS = new Set(["referral", "domain", "webhooks", "notifications", "delete"]);
+
+const webhookSelect = {
+  id: true,
+  name: true,
+  url: true,
+  eventTypes: true,
+  enabled: true,
+  includeSubscriberData: true,
+  createdAt: true,
+  lastDeliveredAt: true,
+  deliveries: {
+    select: {
+      id: true,
+      eventType: true,
+      status: true,
+      attempts: true,
+      responseStatus: true,
+      lastErrorCode: true,
+      createdAt: true,
+      deliveredAt: true,
+    },
+    orderBy: { createdAt: "desc" },
+    take: 10,
+  },
+};
+
+const notificationSelect = {
+  id: true,
+  waitListId: true,
+  provider: true,
+  status: true,
+  triggers: true,
+  lastTestedAt: true,
+  lastErrorCode: true,
+  updatedAt: true,
+};
+
+function safeDomain(row) {
+  if (!row) return null;
+  const hasCloudflareHostname = Boolean(row.providerId);
+  return {
+    id: row.id,
+    hostname: row.hostname,
+    status: hasCloudflareHostname ? row.status : row.status === "ACTIVE" ? "NEEDS_DNS" : row.status,
+    verification: hasCloudflareHostname ? row.verification : [],
+    dnsRecords: hasCloudflareHostname
+      ? row.dnsRecords
+      : [
+          {
+            type: "CNAME",
+            name: row.hostname,
+            value: process.env.CLOUDFLARE_CUSTOM_HOSTNAME_TARGET || "customers.waitlyze.com",
+          },
+        ],
+    lastCheckedAt: row.lastCheckedAt,
+    lastErrorCode: row.lastErrorCode,
+  };
+}
 
 function SelectedWaitlistSettings({
   section,
@@ -25,6 +84,7 @@ function SelectedWaitlistSettings({
   canManageBilling,
   domainAvailable,
   proAvailable,
+  initialSectionData,
 }) {
   if (section === "notifications")
     return (
@@ -47,7 +107,11 @@ function SelectedWaitlistSettings({
             View docs <HugeiconsIcon icon={ArrowUpRight01Icon} size={16} aria-hidden="true" />
           </Button>
         </header>
-        <ChatNotificationSettings waitListId={waitlist.id} canManage={canManage} />
+        <ChatNotificationSettings
+          waitListId={waitlist.id}
+          canManage={canManage}
+          initialChannels={initialSectionData || []}
+        />
       </section>
     );
   if (section === "domain")
@@ -66,6 +130,7 @@ function SelectedWaitlistSettings({
           canManageBilling={canManageBilling}
           available={domainAvailable}
           proAvailable={proAvailable}
+          initialDomain={initialSectionData}
         />
       </section>
     );
@@ -88,7 +153,11 @@ function SelectedWaitlistSettings({
             View docs <HugeiconsIcon icon={ArrowUpRight01Icon} size={16} aria-hidden="true" />
           </Button>
         </header>
-        <WebhookSettings waitListId={waitlist.id} canManage={canManage} />
+        <WebhookSettings
+          waitListId={waitlist.id}
+          canManage={canManage}
+          initialData={initialSectionData}
+        />
       </section>
     );
   if (section === "delete")
@@ -130,7 +199,40 @@ export default async function WaitlistSettings({ params, searchParams }) {
   const [{ id }, query] = await Promise.all([params, searchParams]);
   const section = VALID_SECTIONS.has(query?.section) ? query.section : "referral";
   const { campaign: waitlist, role } = await requireCampaignPage(id, "viewCampaign");
-  const entitlements = await getWorkspaceEntitlements(prisma, waitlist.workspaceId);
+
+  const [entitlements, initialSectionData] = await Promise.all([
+    getWorkspaceEntitlements(prisma, waitlist.workspaceId),
+    (async () => {
+      if (section === "webhooks") {
+        const rows = await prisma.webhookSubscription.findMany({
+          where: { waitListId: waitlist.id },
+          select: webhookSelect,
+          orderBy: { createdAt: "asc" },
+        });
+        return JSON.parse(
+          JSON.stringify({
+            data: rows.map((row) => ({ ...row, url: validateWebhookUrl(row.url).safeUrl })),
+            configured: Boolean(env.WEBHOOK_SECRET_ENCRYPTION_KEY),
+          }),
+        );
+      }
+      if (section === "notifications") {
+        const channels = await prisma.waitlistNotificationChannel.findMany({
+          where: { waitListId: waitlist.id },
+          select: notificationSelect,
+        });
+        return JSON.parse(JSON.stringify(channels));
+      }
+      if (section === "domain") {
+        const domainRow = await prisma.customDomain.findUnique({
+          where: { waitListId: waitlist.id },
+        });
+        return JSON.parse(JSON.stringify(safeDomain(domainRow)));
+      }
+      return null;
+    })(),
+  ]);
+
   const canManage = ["OWNER", "ADMIN"].includes(role);
   const domainAvailable = Boolean(env.CLOUDFLARE_API_TOKEN && env.CLOUDFLARE_ZONE_ID);
   return (
@@ -146,6 +248,7 @@ export default async function WaitlistSettings({ params, searchParams }) {
           canManageBilling={role === "OWNER"}
           domainAvailable={domainAvailable}
           proAvailable={entitlements.customDomains}
+          initialSectionData={initialSectionData}
         />
       </div>
     </div>

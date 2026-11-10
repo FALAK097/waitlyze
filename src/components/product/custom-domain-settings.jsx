@@ -54,6 +54,18 @@ function RecordCopyButton({ text, label }) {
   );
 }
 
+async function safeReadJson(response, defaultError = "Request failed") {
+  const text = await response.text().catch(() => "");
+  let data = null;
+  try {
+    data = text ? JSON.parse(text) : null;
+  } catch {}
+  if (!response.ok) {
+    throw new Error(data?.error || defaultError);
+  }
+  return data;
+}
+
 export function CustomDomainSettings({
   waitListId,
   workspaceId,
@@ -61,11 +73,12 @@ export function CustomDomainSettings({
   canManageBilling,
   available,
   proAvailable = false,
+  initialDomain = undefined,
 }) {
-  const [domain, setDomain] = useState(null);
+  const [domain, setDomain] = useState(initialDomain ?? null);
   const [hostname, setHostname] = useState("");
   const [busy, setBusy] = useState(false);
-  const [loadState, setLoadState] = useState("loading");
+  const [loadState, setLoadState] = useState(initialDomain !== undefined ? "ready" : "loading");
   const [loadError, setLoadError] = useState("");
   const [removeOpen, setRemoveOpen] = useState(false);
 
@@ -78,9 +91,8 @@ export function CustomDomainSettings({
           cache: "no-store",
           signal,
         });
-        const body = await response.json();
-        if (!response.ok) throw new Error(body.error || "Could not load custom domain settings.");
-        setDomain(body.data || null);
+        const body = await safeReadJson(response, "Could not load custom domain settings.");
+        setDomain(body?.data || null);
         setLoadState("ready");
         return true;
       } catch (error) {
@@ -94,10 +106,11 @@ export function CustomDomainSettings({
   );
 
   useEffect(() => {
+    if (initialDomain !== undefined) return;
     const controller = new AbortController();
     void refresh(controller.signal);
     return () => controller.abort();
-  }, [refresh]);
+  }, [initialDomain, refresh]);
 
   async function retry() {
     await refresh();
@@ -111,11 +124,10 @@ export function CustomDomainSettings({
         headers: { "content-type": "application/json" },
         ...(body ? { body: JSON.stringify(body) } : {}),
       });
-      const result = await response.json();
-      if (!response.ok) throw new Error(result.error || "Could not update domain.");
+      const result = await safeReadJson(response, "Could not update domain.");
 
       if (method === "DELETE") setDomain(null);
-      else if (result.data) setDomain(result.data);
+      else if (result?.data) setDomain(result.data);
       if (method === "POST") setHostname("");
 
       const successMessage =
@@ -123,7 +135,7 @@ export function CustomDomainSettings({
           ? "Domain added. Follow the DNS records below, then check again."
           : method === "DELETE"
             ? "Domain removed."
-            : result.data?.status === "ACTIVE"
+            : result?.data?.status === "ACTIVE"
               ? "Domain verified and connected."
               : "DNS is still propagating. Check again shortly.";
       toast.success(successMessage);
@@ -223,7 +235,9 @@ export function CustomDomainSettings({
               </div>
             ) : (
               <p className="mb-4! text-sm leading-relaxed text-product-text-secondary">
-                Custom domains are unavailable. Ask your administrator to finish domain setup.
+                {canManage
+                  ? "Custom domains require CLOUDFLARE_API_TOKEN to be configured in your Cloudflare environment secrets. Once set, custom domains can be connected here."
+                  : "Custom domains are unavailable. Ask your administrator to finish domain setup."}
               </p>
             )}
             {!canManage && (
