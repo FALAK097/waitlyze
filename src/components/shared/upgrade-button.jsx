@@ -27,6 +27,7 @@ export function UpgradeButton({
   canManageBilling = true,
   workspaceId = null,
   size = "sm",
+  variant = "ghost",
 }) {
   return (
     <PlansDialog
@@ -38,8 +39,12 @@ export function UpgradeButton({
       trigger={
         <Button
           type="button"
-          variant="ghost"
-          className={cn(upgradeCtaClasses, size === "md" && "px-4 py-2.5 text-sm", className)}
+          variant={variant}
+          className={cn(
+            variant === "ghost" && upgradeCtaClasses,
+            size === "md" && "px-4 py-2.5 text-sm",
+            className,
+          )}
         >
           <HugeiconsIcon icon={GemIcon} className="size-3.5 shrink-0" aria-hidden="true" />
           {label}

@@ -11,6 +11,7 @@ import {
   WaitlistSearch,
   WaitlistSearchProvider,
 } from "@/components/product/waitlists-toolbar";
+import { UpgradeButton } from "@/components/shared/upgrade-button";
 import {
   Table,
   TableBody,
@@ -19,6 +20,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { getWorkspaceEntitlements } from "@/lib/billing/plans.mjs";
 import prisma from "@/lib/prisma";
 import {
   normalizeWaitlistSearch,
@@ -339,6 +341,8 @@ export default async function WaitlistsPage({ searchParams }) {
   const sort = normalizeWaitlistSort(params?.sort);
   const requestedPage =
     typeof params?.page === "string" && /^\d+$/.test(params.page) ? Number(params.page) : 1;
+  const canManageBilling = workspace.members?.[0]?.role === "OWNER";
+  const entitlements = await getWorkspaceEntitlements(prisma, workspace.id);
   return (
     <WaitlistSearchProvider query={query}>
       <section aria-label="Waitlists">
@@ -346,10 +350,22 @@ export default async function WaitlistsPage({ searchParams }) {
           <StatusTabs query={query} status={status} sort={sort} />
           <div className="flex w-full min-w-0 items-center gap-3 lg:w-auto lg:justify-end">
             <WaitlistSearch status={status} sort={sort} />
+            {entitlements.plan === "FREE" && canManageBilling && (
+              <div className="shrink-0">
+                <UpgradeButton
+                  workspaceId={workspace.id}
+                  canManageBilling={canManageBilling}
+                  currentPlan="FREE"
+                  label="Upgrade to Pro"
+                  variant="product-outline"
+                  size="default"
+                />
+              </div>
+            )}
             <div className="shrink-0">
               <CreateWaitlistDialog
                 workspaceId={workspace.id}
-                canManageBilling={workspace.members?.[0]?.role === "OWNER"}
+                canManageBilling={canManageBilling}
               />
             </div>
           </div>

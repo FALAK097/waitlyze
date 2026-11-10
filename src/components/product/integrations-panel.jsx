@@ -72,6 +72,16 @@ export function IntegrationsPanel({
           initialConnection={initialCloudflareConnection}
           accountEmail={accountEmail}
           canManage={canManage}
+          logo={
+            <Image
+              src="/integrations/cloudflare.svg"
+              width={32}
+              height={32}
+              alt=""
+              unoptimized
+              className="h-8 w-8 shrink-0 object-contain bg-transparent outline-none"
+            />
+          }
         />
         <SheetContent>
           <SheetHeader>

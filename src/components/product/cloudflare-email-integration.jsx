@@ -73,11 +73,11 @@ function CloudflareEmailForm({
           maxLength={512}
           disabled={Boolean(busy)}
         />
-        {hasConnection && (
-          <span className="text-caption text-product-text-secondary">
-            The saved token is encrypted and cannot be viewed or copied.
-          </span>
-        )}
+        <span className="text-caption text-product-text-secondary">
+          {hasConnection
+            ? "The saved token is encrypted and cannot be viewed or copied."
+            : "Use an API token with Email Sending: Edit permission."}
+        </span>
       </label>
       <label className="product-field" htmlFor="cloudflare-sender-email">
         <span>Verified sender address</span>
@@ -127,7 +127,7 @@ function CloudflareEmailActions({
         open={confirmDisconnect}
         onOpenChange={onConfirmDisconnectChange}
         title="Disconnect Cloudflare Email?"
-        description="Signup confirmations fall back to your workspace Resend sender when one is connected, otherwise Waitlyze's Cloudflare sender. Campaign email is unaffected."
+        description="Transactional signup confirmations will fall back to your default sender. Campaign email is unaffected."
         confirmLabel="Disconnect"
         pendingLabel="Disconnecting…"
         onConfirm={onDisconnect}
@@ -136,7 +136,12 @@ function CloudflareEmailActions({
   );
 }
 
-export function CloudflareEmailIntegration({ initialConnection, accountEmail, canManage }) {
+export function CloudflareEmailIntegration({
+  initialConnection,
+  accountEmail,
+  canManage,
+  logo,
+}) {
   const [connection, setConnection] = useState(initialConnection);
   const [open, setOpen] = useState(false);
   const [accountId, setAccountId] = useState(initialConnection?.accountId || "");
@@ -210,65 +215,67 @@ export function CloudflareEmailIntegration({ initialConnection, accountEmail, ca
   }
 
   return (
-    <div className="flex flex-wrap items-center justify-between gap-4 border-t border-product-border-subtle py-6 max-[600px]:items-start max-[400px]:flex-col">
-      <div>
-        <h3 className="mb-1!">Cloudflare Email Sending</h3>
-        <p className="m-0 text-sm text-product-text-secondary">
-          Transactional confirmation email through your Cloudflare account.
-        </p>
-        {connection && (
-          <p className="m-0 mt-1 text-xs text-product-text-secondary">
-            {statusLabel[connection.status] || "Status unknown"} · {connection.fromEmail}
+    <div className="flex items-center justify-between gap-4 border-t border-product-border-subtle py-6 max-[600px]:items-start max-[600px]:gap-3 max-[400px]:flex-col max-[400px]:gap-5">
+      <div className="flex items-center gap-4 max-[600px]:gap-3">
+        {logo}
+        <div>
+          <h3 className="mb-1!">Cloudflare Email Sending</h3>
+          <p className="m-0 text-sm text-product-text-secondary">
+            Transactional confirmation email through your Cloudflare account.
           </p>
-        )}
-      </div>
-      <Sheet open={open} onOpenChange={closeSheet}>
-        <SheetTrigger render={<Button variant="outline" />}>
-          {canManage ? (connection ? "Manage" : "Connect") : "View"}
-        </SheetTrigger>
-        <SheetContent>
-          <SheetHeader>
-            <SheetTitle>Cloudflare Email Sending</SheetTitle>
-            <SheetDescription>
-              Connect an account with an Email Sending domain onboarded. Use a token scoped to Email
-              Sending: Edit; the token is encrypted and never shown again.
-            </SheetDescription>
-          </SheetHeader>
-          <div className="grid gap-5 p-6 pt-0">
-            <p className="m-0 rounded-lg bg-product-bg-inset p-3 text-caption leading-relaxed text-product-text-secondary">
-              Cloudflare Email Sending is transactional-only. It cannot send broadcasts or marketing
-              automations. Those remain on the workspace’s Resend connection.
+          {connection && (
+            <p className="m-0 mt-1 text-xs text-product-text-secondary">
+              {statusLabel[connection.status] || "Status unknown"} · {connection.fromEmail}
             </p>
-            {canManage ? (
-              <CloudflareEmailForm
-                busy={busy}
-                hasConnection={Boolean(connection)}
-                accountId={accountId}
-                apiToken={apiToken}
-                fromEmail={fromEmail}
-                onAccountIdChange={setAccountId}
-                onApiTokenChange={setApiToken}
-                onFromEmailChange={setFromEmail}
-                onSubmit={save}
-              />
-            ) : (
-              <p className="m-0 text-sm text-product-text-secondary">
-                Only workspace owners and admins can change this connection.
-              </p>
-            )}
-            {connection && canManage && (
-              <CloudflareEmailActions
-                busy={busy}
-                accountEmail={accountEmail}
-                confirmDisconnect={confirmDisconnect}
-                onConfirmDisconnectChange={setConfirmDisconnect}
-                onDisconnect={disconnect}
-                onTest={test}
-              />
-            )}
-          </div>
-        </SheetContent>
-      </Sheet>
+          )}
+        </div>
+      </div>
+      <div className="flex items-center gap-4 max-[600px]:flex-col max-[600px]:items-end max-[600px]:gap-2 max-[400px]:w-full max-[400px]:flex-row max-[400px]:items-center max-[400px]:justify-between [&_button]:max-[400px]:shrink-0 [&_button]:max-[400px]:whitespace-nowrap">
+        <Sheet open={open} onOpenChange={closeSheet}>
+          <SheetTrigger render={<Button variant="outline" />}>
+            {canManage ? (connection ? "Manage" : "Connect") : "View"}
+          </SheetTrigger>
+          <SheetContent>
+            <SheetHeader>
+              <SheetTitle>
+                {connection ? "Manage Cloudflare Email" : "Connect Cloudflare Email"}
+              </SheetTitle>
+              <SheetDescription>
+                Send transactional confirmation emails through your Cloudflare account.
+              </SheetDescription>
+            </SheetHeader>
+            <div className="grid gap-5 p-6 pt-0">
+              {canManage ? (
+                <CloudflareEmailForm
+                  busy={busy}
+                  hasConnection={Boolean(connection)}
+                  accountId={accountId}
+                  apiToken={apiToken}
+                  fromEmail={fromEmail}
+                  onAccountIdChange={setAccountId}
+                  onApiTokenChange={setApiToken}
+                  onFromEmailChange={setFromEmail}
+                  onSubmit={save}
+                />
+              ) : (
+                <p className="m-0 text-sm text-product-text-secondary">
+                  Only workspace owners and admins can change this connection.
+                </p>
+              )}
+              {connection && canManage && (
+                <CloudflareEmailActions
+                  busy={busy}
+                  accountEmail={accountEmail}
+                  confirmDisconnect={confirmDisconnect}
+                  onConfirmDisconnectChange={setConfirmDisconnect}
+                  onDisconnect={disconnect}
+                  onTest={test}
+                />
+              )}
+            </div>
+          </SheetContent>
+        </Sheet>
+      </div>
     </div>
   );
 }

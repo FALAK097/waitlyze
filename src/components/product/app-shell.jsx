@@ -5,6 +5,7 @@ import {
   ArrowDown01Icon,
   ArrowUpRight01Icon,
   BubbleChatIcon,
+  GemIcon,
   Logout01Icon,
   Tick01Icon,
 } from "@hugeicons/core-free-icons";
@@ -16,6 +17,7 @@ import { useActionState, useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { createWorkspace, selectWorkspace } from "@/app/actions/settings";
+import { UpgradeButton } from "@/components/shared/upgrade-button";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogClose, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import {
@@ -87,7 +89,7 @@ function CreateWorkspaceDialog({ open, onOpenChange }) {
   );
 }
 
-function WorkspaceSwitcher({ workspaces, selected }) {
+function WorkspaceSwitcher({ workspaces, selected, plan }) {
   const [pending, setPending] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
   const current = workspaces.find((workspace) => workspace.id === selected);
@@ -107,7 +109,7 @@ function WorkspaceSwitcher({ workspaces, selected }) {
     }
   }
   return (
-    <div className="order-1 max-w-75 min-w-0 max-md:max-w-none max-md:flex-1 [&>button]:max-w-full [&>button]:gap-2 [&>button[data-popup-open]_svg:last-child]:rotate-180">
+    <div className="max-w-75 min-w-0 max-md:max-w-none max-md:flex-1 [&>button]:max-w-full [&>button]:gap-2 [&>button[data-popup-open]_svg:last-child]:rotate-180">
       <DropdownMenu>
         <DropdownMenuTrigger
           render={<Button variant="ghost" />}
@@ -135,6 +137,9 @@ function WorkspaceSwitcher({ workspaces, selected }) {
               <span className="flex-1 truncate">{workspace.name}</span>
               {workspace.id === selected && (
                 <>
+                  <span className="mr-1 text-micro font-medium uppercase text-product-text-secondary">
+                    {plan}
+                  </span>
                   <HugeiconsIcon icon={Tick01Icon} aria-hidden="true" />
                   <span className="sr-only">Current workspace</span>
                 </>
@@ -230,10 +235,55 @@ function AccountMenu({ user, avatar }) {
   );
 }
 
-export function AppShellControls({ user, avatar, workspaces, selectedWorkspace }) {
+function PlanBadge({ plan = "FREE" }) {
+  const isPro = plan === "PRO";
+  if (isPro) {
+    return (
+      <Link
+        href="/settings?section=billing"
+        className="inline-flex shrink-0 items-center gap-1 rounded-full border border-product-border-subtle bg-product-bg-inset px-2.5 py-0.5 text-xs font-semibold text-product-text-primary no-underline transition-colors hover:border-product-text-secondary/40 hover:bg-neutral-100"
+        title="Pro plan · View billing"
+      >
+        <HugeiconsIcon icon={GemIcon} className="size-3 text-product-text-primary" aria-hidden="true" />
+        <span>PRO</span>
+      </Link>
+    );
+  }
+  return (
+    <Link
+      href="/settings?section=billing"
+      className="inline-flex shrink-0 items-center rounded-full border border-product-border-subtle bg-product-bg-inset px-2 py-0.5 text-xs font-medium text-product-text-secondary no-underline transition-colors hover:border-product-text-secondary/40 hover:bg-neutral-100"
+      title="Free plan · View billing"
+    >
+      <span>Free</span>
+    </Link>
+  );
+}
+
+export function AppShellControls({
+  user,
+  avatar,
+  workspaces,
+  selectedWorkspace,
+  plan = "FREE",
+  canManageBilling = true,
+}) {
   return (
     <>
-      <WorkspaceSwitcher workspaces={workspaces} selected={selectedWorkspace} />
+      <div className="order-1 flex min-w-0 max-w-115 items-center gap-2 max-md:max-w-none max-md:flex-1">
+        <WorkspaceSwitcher workspaces={workspaces} selected={selectedWorkspace} plan={plan} />
+        <PlanBadge plan={plan} />
+        {plan === "FREE" && canManageBilling && (
+          <UpgradeButton
+            workspaceId={selectedWorkspace}
+            canManageBilling={canManageBilling}
+            currentPlan="FREE"
+            label="Upgrade"
+            variant="product-outline"
+            size="sm"
+          />
+        )}
+      </div>
       <AccountMenu user={user} avatar={avatar} />
     </>
   );

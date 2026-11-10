@@ -140,27 +140,13 @@ export function ResendIntegration({ initialConnection, accountEmail, canManage, 
       </div>
       <SheetContent>
         <SheetHeader>
-          <SheetTitle>Connect Resend</SheetTitle>
+          <SheetTitle>{connection ? "Manage Resend" : "Connect Resend"}</SheetTitle>
           <SheetDescription>
-            Use a sending-only API key and a verified sender address.
+            Send waitlist campaigns and marketing automations from your verified domain.
           </SheetDescription>
         </SheetHeader>
         <div className="p-6 pt-0">
           <div className="grid gap-7 pt-6">
-            <div className="grid gap-2 rounded-lg border border-product-bg-inset bg-product-bg-inset px-4 py-3.5">
-              <p className="m-0 text-caption leading-relaxed text-product-text-secondary">
-                <strong className="text-product-text-primary">Campaign email</strong> (broadcasts
-                and marketing automations) sends from your verified Resend domain. If this
-                connection needs attention or you disconnect it, campaigns stop until a Resend
-                sender is connected again.
-              </p>
-              <p className="m-0 text-caption leading-relaxed text-product-text-secondary">
-                <strong className="text-product-text-primary">Account email</strong> like workspace
-                invitations comes from Waitlyze through Cloudflare Email Sending. Signup
-                confirmations can use the Cloudflare transactional sender configured for your
-                workspace.
-              </p>
-            </div>
             {webhookUrl && (
               <div className="grid gap-2.5 rounded-lg border border-product-bg-inset bg-product-bg-inset px-4 py-3.5 [&_input]:font-mono [&_input]:text-caption">
                 <p className="m-0 text-caption leading-relaxed text-product-text-secondary">
