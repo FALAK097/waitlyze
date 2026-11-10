@@ -134,14 +134,6 @@ function ChannelRow({ waitListId, provider, name, description, logo, canManage }
     request,
   } = useChannel(endpoint);
 
-  const connectedStatus = record
-    ? record.status === "CONNECTED"
-      ? "Connected"
-      : record.status === "NEEDS_ATTENTION"
-        ? "Needs attention"
-        : "Test needed"
-    : null;
-
   function changeOpen(next) {
     if (busy) return;
     setOpen(next);
@@ -168,18 +160,7 @@ function ChannelRow({ waitListId, provider, name, description, logo, canManage }
             <p className="m-0 text-sm text-product-text-secondary">{description}</p>
           </div>
         </div>
-        <div className="flex items-center gap-3 max-[600px]:flex-col max-[600px]:items-end max-[600px]:gap-2 max-[400px]:w-full max-[400px]:flex-row max-[400px]:items-center max-[400px]:justify-between [&_button]:max-[400px]:shrink-0 [&_button]:max-[400px]:whitespace-nowrap">
-          {connectedStatus && (
-            <span
-              className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                record?.status === "CONNECTED"
-                  ? "bg-product-success-bg text-product-success-text"
-                  : "bg-product-bg-inset text-product-text-secondary"
-              }`}
-            >
-              {connectedStatus}
-            </span>
-          )}
+        <div className="flex items-center gap-4 max-[600px]:flex-col max-[600px]:items-end max-[600px]:gap-2 max-[400px]:w-full max-[400px]:flex-row max-[400px]:items-center max-[400px]:justify-between [&_button]:max-[400px]:shrink-0 [&_button]:max-[400px]:whitespace-nowrap">
           <SheetTrigger render={<Button variant="outline" />}>
             {canManage ? (record ? "Manage" : "Connect") : "View"}
           </SheetTrigger>
