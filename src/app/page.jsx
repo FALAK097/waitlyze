@@ -192,18 +192,47 @@ function TextLink({ href, children }) {
   );
 }
 
-function ProductFrame({ src, alt, tone = "mint", hero = false }) {
+const ASSET_BASE = process.env.NEXT_PUBLIC_R2_PUBLIC_URL || "https://assets.waitlyze.com";
+
+function ProductFrame({ src, alt, tone = "mint", hero = false, videoSrc, poster }) {
   return (
-    <div className={`wl-product-frame wl-frame-${tone} ${hero ? "wl-product-frame-hero" : ""}`}>
+    <div
+      className={`wl-product-frame wl-frame-${tone} ${hero ? "wl-product-frame-hero" : ""} ${
+        videoSrc ? "wl-product-frame-video" : ""
+      }`}
+    >
       <div className="wl-product-window">
-        <Image
-          src={src}
-          alt={alt}
-          width={1280}
-          height={625}
-          sizes={hero ? "(max-width: 1152px) 100vw, 1088px" : "(max-width: 720px) 100vw, 540px"}
-          priority={hero}
-        />
+        {videoSrc ? (
+          <video
+            autoPlay
+            loop
+            muted
+            playsInline
+            preload="none"
+            poster={poster || src}
+            aria-label={alt}
+            width={1280}
+            height={720}
+          >
+            <source src={videoSrc} type="video/webm" />
+            <Image
+              src={src}
+              alt={alt}
+              width={1280}
+              height={720}
+              sizes={hero ? "(max-width: 1152px) 100vw, 1088px" : "(max-width: 720px) 100vw, 540px"}
+            />
+          </video>
+        ) : (
+          <Image
+            src={src}
+            alt={alt}
+            width={1280}
+            height={720}
+            sizes={hero ? "(max-width: 1152px) 100vw, 1088px" : "(max-width: 720px) 100vw, 540px"}
+            priority={hero}
+          />
+        )}
       </div>
     </div>
   );
@@ -212,37 +241,37 @@ function ProductFrame({ src, alt, tone = "mint", hero = false }) {
 const featureCards = [
   {
     title: "Build a page that feels like yours",
-    copy: "Edit the headline, signup form and page sections while previewing the experience as you go.",
-    image: "/images/landing-design.webp",
-    alt: "Authenticated Waitlyze editor with a live preview of a sample Weekend waitlist",
+    copy: "Edit headlines, signup forms and brand styling with real-time responsive canvas preview.",
+    image: `${ASSET_BASE}/showcase-builder-4k.png`,
+    alt: "Authenticated Waitlyze visual page builder with live preview for Nova Studio",
     tone: "mint",
   },
   {
-    title: "Make it work on every screen",
-    copy: "Switch to the mobile preview before you publish, so your page looks right wherever it’s shared.",
-    image: "/images/landing-design-late.webp",
-    alt: "Authenticated Waitlyze editor showing the mobile preview of the sample Weekend waitlist",
+    title: "Filter and manage verified signups",
+    copy: "Inspect subscribers, referral counts, tags and verified status, with one-click CSV export.",
+    image: `${ASSET_BASE}/showcase-subscribers-4k.png`,
+    alt: "Waitlyze subscribers manager displaying verified records, tags and search filters",
     tone: "blue",
   },
   {
-    title: "Publish and share",
-    copy: "Get a hosted link or copy an embed snippet for your own website.",
-    image: "/images/landing-publish.webp",
-    alt: "Waitlyze publish screen showing hosted page and embed options for a sample waitlist",
+    title: "Keep your list warm with email updates",
+    copy: "Schedule marketing broadcasts, release announcements and onboarding notes to opted-in subscribers.",
+    image: `${ASSET_BASE}/showcase-emails-4k.png`,
+    alt: "Waitlyze email broadcast management screen showing scheduled announcements and delivery rates",
     tone: "sand",
   },
   {
-    title: "See what’s working",
-    copy: "Follow visitors, signups and conversion from a single analytics view.",
-    image: "/images/landing-understand.webp",
-    alt: "Authenticated Waitlyze analytics dashboard with sample visitor and signup data",
+    title: "See what is working in real time",
+    copy: "Track visitors, conversion curves and traffic attribution across direct, social and referral channels.",
+    image: `${ASSET_BASE}/showcase-analytics-4k.png`,
+    alt: "Waitlyze analytics dashboard with traffic curves, conversion metrics and channel breakdown",
     tone: "blue",
   },
   {
-    title: "Turn signups into supporters",
-    copy: "Give verified subscribers a share link, with points and queue position as friends join.",
-    image: "/images/landing-referrals.webp",
-    alt: "Waitlyze confirmed-signup preview with a referral link and leaderboard using example data",
+    title: "Turn signups into organic advocates",
+    copy: "Reward early signups with unique referral links, leaderboard ranking and queue jump incentives.",
+    image: `${ASSET_BASE}/showcase-public-waitlist-4k.png`,
+    alt: "Waitlyze live public waitlist page showcasing waitlist counter and referral access",
     tone: "referral",
   },
 ];
@@ -251,11 +280,11 @@ const steps = [
   {
     number: "01",
     title: "Make your page",
-    copy: "Start with a template, then write your story in the page builder. Edit your content and preview it on desktop or mobile before anyone sees it.",
+    copy: "Start with a clean template, then customize your story in the visual builder. Edit your content and preview it on desktop or mobile before anyone sees it.",
     href: "/docs/page-builder",
     link: "Explore the page builder",
-    image: "/images/landing-design.webp",
-    alt: "Waitlyze page builder editing a sample waitlist",
+    image: `${ASSET_BASE}/showcase-builder-4k.png`,
+    alt: "Waitlyze visual builder configuring Nova Studio launch page",
     tone: "mint",
   },
   {
@@ -264,28 +293,28 @@ const steps = [
     copy: "Publish to a Waitlyze-hosted page, embed the form on your site, or collect signups through the API. One waitlist, wherever your audience finds you.",
     href: "/docs/embed",
     link: "See publishing options",
-    image: "/images/landing-publish.webp",
-    alt: "Waitlyze publish screen with hosted link and embed code",
+    image: `${ASSET_BASE}/showcase-public-waitlist-4k.png`,
+    alt: "Live published Nova Studio waitlist page with position indicator and signup form",
     tone: "sand",
   },
   {
     number: "03",
     title: "Give people a reason to share",
-    copy: "After signing up and verifying their email, subscribers can get a personal link to invite friends. Track their progress, points and place in the queue.",
+    copy: "After signing up and verifying their email, subscribers get a personal link to invite colleagues. Track their progress, points and place in the queue.",
     href: "/docs/referrals",
     link: "How referrals work",
-    image: "/images/landing-referrals.webp",
-    alt: "Waitlyze confirmed-signup preview showing a referral link and leaderboard with example data",
+    image: `${ASSET_BASE}/showcase-subscribers-4k.png`,
+    alt: "Subscribers table showing referral counts and verified badges",
     tone: "referral",
   },
   {
     number: "04",
     title: "Learn as you grow",
-    copy: "See where visitors come from, how many join and which channels convert. Use what you learn to make your next launch decision with confidence.",
+    copy: "See where visitors come from, how many join and which channels convert. Use verified data to make your next launch decision with confidence.",
     href: "/docs/analytics",
     link: "Explore analytics",
-    image: "/images/landing-understand.webp",
-    alt: "Waitlyze analytics screen with example visitor and signup trends",
+    image: `${ASSET_BASE}/showcase-analytics-4k.png`,
+    alt: "Waitlyze analytics screen with 30-day visitor and signup trends",
     tone: "mint",
   },
 ];
@@ -331,11 +360,11 @@ export default async function LandingPage() {
           </div>
           <ProductFrame
             hero
-            src="/images/landing-understand.webp"
-            alt="Authenticated Waitlyze analytics dashboard showing sample visitor, signup and conversion data"
+            src={`${ASSET_BASE}/showcase-analytics-4k.png`}
+            alt="Authenticated Waitlyze 4K analytics dashboard showing Nova Studio visitor, signup, and conversion analytics"
             tone="blue"
           />
-          <p className="wl-image-note">Inside Waitlyze (sample waitlist shown)</p>
+          <p className="wl-image-note">Inside Waitlyze (live Nova Studio launch dashboard shown)</p>
         </section>
 
         <section id="features" className="wl-section wl-features" aria-labelledby="features-title">
@@ -355,6 +384,26 @@ export default async function LandingPage() {
                 <p>{feature.copy}</p>
               </article>
             ))}
+          </div>
+        </section>
+
+        <section id="demo" className="wl-section wl-demo" aria-labelledby="demo-title">
+          <div className="wl-section-heading">
+            <p className="wl-eyebrow">4K PRODUCT WALKTHROUGH</p>
+            <h2 id="demo-title">Built for speed, focus, and clarity.</h2>
+            <p>
+              Take a tour of the dashboard, visual page builder, subscriber manager, and marketing
+              broadcasts.
+            </p>
+          </div>
+          <div className="mt-10 sm:mt-12">
+            <ProductFrame
+              videoSrc={`${ASSET_BASE}/showcase-demo-4k.webm`}
+              src={`${ASSET_BASE}/showcase-analytics-4k.png`}
+              alt="Waitlyze 4K product walkthrough video demonstrating dashboard, page builder, subscriber list, and live analytics"
+              tone="mint"
+            />
+            <p className="wl-image-note">4K walkthrough of the Waitlyze workspace</p>
           </div>
         </section>
 

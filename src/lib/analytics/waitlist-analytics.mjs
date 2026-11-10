@@ -454,24 +454,37 @@ export async function getWaitlistAnalytics(
                ROW_NUMBER() OVER (PARTITION BY "groupingSet" ORDER BY "count" DESC, "displayLabel" COLLATE "C" ASC) AS "rowNumber"
         FROM normalized
       )
-      SELECT grouped.*, NULL::text AS "displayLabel", NULL::int AS "dimensionTotal"
+      SELECT grouped."groupingSet",
+             grouped."utmMedium", grouped."utmSource", grouped."referrer", grouped."utmCampaign",
+             grouped."country", grouped."region", grouped."city", grouped."deviceType", grouped."device",
+             grouped."count", NULL::text AS "displayLabel", NULL::int AS "dimensionTotal"
       FROM grouped
       WHERE "groupingSet" NOT IN (479, 383, 495, 487, 491, 509)
       UNION ALL
-      SELECT ranked."groupingSet", NULL::text, NULL::text, NULL::text, NULL::text,
+      SELECT ranked."groupingSet",
              NULL::text, NULL::text, NULL::text, NULL::text,
-             ranked."count", ranked."displayLabel", ranked."dimensionTotal"
+             NULL::text, NULL::text, NULL::text, NULL::text, NULL::text,
+             ranked."count", ranked."displayLabel", ranked."dimensionTotal"::int
       FROM ranked
       WHERE ranked."rowNumber" <= CASE ranked."groupingSet" WHEN 509 THEN 8 WHEN 495 THEN 250 ELSE 5 END
     `,
     db.$queryRaw`
       WITH grouped AS (
-      SELECT GROUPING(
+      SELECT CASE GROUPING(
                "utmMedium", "utmSource", "referrer", "utmCampaign", "country",
-               "region", "city", "deviceType", "device"
-             )::int AS "groupingSet",
+               "city", "deviceType", "device"
+             )::int
+               WHEN 31  THEN 63  -- (utmMedium, utmSource, referrer)
+               WHEN 239 THEN 479 -- (utmCampaign)
+               WHEN 223 THEN 447 -- (referrer)
+               WHEN 191 THEN 383 -- (utmSource)
+               WHEN 247 THEN 495 -- (country)
+               WHEN 243 THEN 491 -- (city, country)
+               WHEN 253 THEN 509 -- (deviceType)
+               WHEN 254 THEN 510 -- (device)
+             END AS "groupingSet",
              "utmMedium", "utmSource", "referrer", "utmCampaign", "country",
-             "region", "city", "deviceType", "device", COUNT(*) AS "count"
+             NULL::text AS "region", "city", "deviceType", "device", COUNT(*) AS "count"
       FROM "sign_ups" AS signup
       WHERE signup."waitListId" = ${waitListId}::text
         AND signup."createdAt" >= ${startUtc}::timestamptz
@@ -510,13 +523,17 @@ export async function getWaitlistAnalytics(
                ROW_NUMBER() OVER (PARTITION BY "groupingSet" ORDER BY "count" DESC, "displayLabel" COLLATE "C" ASC) AS "rowNumber"
         FROM normalized
       )
-      SELECT grouped.*, NULL::text AS "displayLabel", NULL::int AS "dimensionTotal"
+      SELECT grouped."groupingSet",
+             grouped."utmMedium", grouped."utmSource", grouped."referrer", grouped."utmCampaign",
+             grouped."country", grouped."region", grouped."city", grouped."deviceType", grouped."device",
+             grouped."count", NULL::text AS "displayLabel", NULL::int AS "dimensionTotal"
       FROM grouped
       WHERE "groupingSet" NOT IN (479, 383, 495, 491, 509)
       UNION ALL
-      SELECT ranked."groupingSet", NULL::text, NULL::text, NULL::text, NULL::text,
+      SELECT ranked."groupingSet",
              NULL::text, NULL::text, NULL::text, NULL::text,
-             ranked."count", ranked."displayLabel", ranked."dimensionTotal"
+             NULL::text, NULL::text, NULL::text, NULL::text, NULL::text,
+             ranked."count", ranked."displayLabel", ranked."dimensionTotal"::int
       FROM ranked
       WHERE ranked."rowNumber" <= CASE ranked."groupingSet" WHEN 509 THEN 8 ELSE 5 END
     `,
