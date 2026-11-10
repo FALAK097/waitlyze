@@ -121,7 +121,7 @@ const faqs = [
   ],
   [
     "Do I need a separate email service?",
-    "Transactional confirmation email can use Cloudflare Email Sending. Marketing broadcasts and automations require a configured Resend sender, verified addresses, and explicit opt-in.",
+    "Transactional platform emails are handled automatically by Waitlyze. To send waitlist confirmation emails, broadcasts, and automated sequences from your own domain, simply connect your Resend account in workspace settings.",
   ],
   [
     "How do I protect my waitlist from bots?",
@@ -145,7 +145,7 @@ const moreFeatures = [
   {
     icon: Mail01Icon,
     title: "Automated welcome & milestone emails",
-    copy: "Send transactional confirmations via Cloudflare Email or Resend, and run cohort broadcasts and automated sequences with your verified Resend sender.",
+    copy: "Send confirmation emails, cohort broadcasts, and automated sequences with your verified Resend account.",
   },
   {
     icon: ShieldCheckIcon,
