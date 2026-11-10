@@ -455,7 +455,7 @@
   margin-top: clamp(40px, 6vw, 64px);
 }
 .wl-demo .wl-product-frame {
-  aspect-ratio: 1.42;
+  aspect-ratio: 1.72;
 }
 .wl-demo .wl-product-window {
   top: 4.5%;
@@ -466,7 +466,7 @@
 }
 @media (max-width: 720px) {
   .wl-demo .wl-product-frame {
-    aspect-ratio: 1.38;
+    aspect-ratio: 1.65;
   }
 }
 .wl-steps .wl-section-heading h2 {

@@ -44,6 +44,9 @@ export const metadata = {
   twitter: { card: "summary_large_image", title: SITE_TITLE, description: SITE_DESCRIPTION },
 };
 
+/**
+ * Renders the localized pricing section based on the visitor's country header.
+ */
 async function LocalizedPricing() {
   const requestHeaders = await headers();
   const country =
@@ -54,6 +57,9 @@ async function LocalizedPricing() {
   return <Pricing regionalPricing={regionalPricing} />;
 }
 
+/**
+ * Renders a skeleton placeholder while localized pricing is loading.
+ */
 function PricingFallback() {
   return (
     <section
@@ -139,7 +145,7 @@ const moreFeatures = [
   {
     icon: Mail01Icon,
     title: "Automated welcome & milestone emails",
-    copy: "Send branded welcome emails, verification nudges and cohort broadcasts via Resend or Cloudflare Email.",
+    copy: "Send transactional confirmations via Cloudflare Email or Resend, and run cohort broadcasts and automated sequences with your verified Resend sender.",
   },
   {
     icon: ShieldCheckIcon,
@@ -183,6 +189,9 @@ const moreFeatures = [
   },
 ];
 
+/**
+ * Renders a styled internal link with an upward-right arrow icon.
+ */
 function TextLink({ href, children }) {
   return (
     <Link className="wl-text-link" href={href}>
@@ -193,8 +202,11 @@ function TextLink({ href, children }) {
 }
 
 const ASSET_BASE = process.env.NEXT_PUBLIC_R2_PUBLIC_URL || "https://assets.waitlyze.com";
-const ASSET_VER = "v=2";
+const ASSET_VER = "v=3";
 
+/**
+ * Renders a framed product screenshot or walkthrough video.
+ */
 function ProductFrame({ src, alt, tone = "mint", hero = false, videoSrc, poster }) {
   return (
     <div
@@ -214,7 +226,7 @@ function ProductFrame({ src, alt, tone = "mint", hero = false, videoSrc, poster 
             poster={poster || src}
             aria-label={alt}
             width={1120}
-            height={875}
+            height={630}
           >
             <source src={videoSrc} type="video/webm" />
             <Image
@@ -257,7 +269,7 @@ const featureCards = [
   },
   {
     title: "Cohort broadcasts & automated sequences",
-    copy: "Send release waves, roadmap updates and automated milestone emails from your own verified Resend or Cloudflare sender.",
+    copy: "Send release waves, roadmap updates and automated milestone emails to opted-in subscribers from your connected Resend sender.",
     image: `${ASSET_BASE}/showcase-emails-4k.png?${ASSET_VER}`,
     alt: "Waitlyze email broadcast composer showing Beta Cohort 2 rollout draft and completed campaign history",
     tone: "sand",
@@ -321,6 +333,9 @@ const steps = [
   },
 ];
 
+/**
+ * Renders the public Waitlyze marketing landing page.
+ */
 export default async function LandingPage() {
   const featuredTemplates = listTemplates().filter((template) =>
     ["saas", "creator", "event"].includes(template.id),
@@ -385,6 +400,25 @@ export default async function LandingPage() {
                 <p>{feature.copy}</p>
               </article>
             ))}
+          </div>
+        </section>
+
+        <section id="demo" className="wl-section wl-demo" aria-labelledby="demo-title">
+          <div className="wl-section-heading">
+            <p className="wl-eyebrow">PRODUCT WALKTHROUGH</p>
+            <h2 id="demo-title">Built for speed, focus, and clarity.</h2>
+            <p>
+              Take a tour of the analytics workspace, visual page builder, referral experience,
+              subscriber CRM, and cohort broadcasts.
+            </p>
+          </div>
+          <div className="wl-demo-media">
+            <ProductFrame
+              videoSrc={`${ASSET_BASE}/showcase-demo-4k.webm?${ASSET_VER}`}
+              src={`${ASSET_BASE}/showcase-analytics-4k.png?${ASSET_VER}`}
+              alt="Waitlyze product walkthrough video demonstrating analytics, visual page builder, referral settings, subscriber list, and email broadcasts"
+              tone="mint"
+            />
           </div>
         </section>
 
