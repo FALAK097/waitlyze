@@ -3,59 +3,61 @@ title: Custom domains
 description: Serve a published waitlist from a domain you own.
 ---
 
-Custom domains serve the **same published revision** as the hosted `/w/slug` page. They do not create a separate copy.
+Custom domains let you host your waitlist directly on your own branded domain (such as `launch.yourbrand.com` or `waitlist.startup.io`) instead of the default `waitlyze.com/w/slug` URL.
 
-## Add your domain
+Your custom domain serves the **exact published revision** of your waitlist, including custom styling, social share previews, and referral links, with automatic SSL and zero maintenance.
 
-<Steps>
-<Step>
-### Open Custom domain
-Go to Waitlist settings → **Custom domain**. Owners and admins can manage this connection; members can view status.
-</Step>
-<Step>
-### Enter your hostname
-Type the exact hostname, such as `join.example.com`. Subdomains are recommended over apex domains.
-</Step>
-<Step>
-### Copy the DNS records shown
-Add the exact type, name, and value from the app to your DNS provider. Do not use a generic hardcoded target - use what the app shows for your hostname.
-</Step>
-</Steps>
-
-<Callout title="Availability depends on deployment setup">
-If the panel says custom domains are unavailable, Cloudflare for SaaS is not configured for this deployment. The Worker needs a zone-scoped `CLOUDFLARE_API_TOKEN`, the `CLOUDFLARE_ZONE_ID`, and the configured customer CNAME target. The Waitlyze hosted page still works after publication.
+<Callout title="Included with Pro">
+Custom domains are available on Pro plans. You can connect one custom domain per waitlist. Your hosted Waitlyze link continues to function as a reliable fallback at all times.
 </Callout>
 
-## Verify DNS and ownership
+## How to connect your domain
 
 <Steps>
 <Step>
-### Check again after propagation
-Choose **Check DNS**. DNS and certificates can take minutes to hours.
+### Open Custom domain settings
+In your dashboard, navigate to **Waitlist settings → Custom domain**. Owners and admins can connect and manage domains; team members can view the current connection status.
 </Step>
 <Step>
-### Track status
-| Status | Meaning | Action |
-| --- | --- | --- |
-| Ownership check pending | Verification record not found yet | Confirm the verification record at your DNS provider |
-| DNS / certificate setup pending | Ownership passed; DNS or cert propagating | Wait, then check again |
-| Ready (Active) | Domain serves your published page | Share it |
-| Needs attention | Records mismatch or expired check | Compare records with current instructions and recheck |
+### Enter your subdomain
+Type the hostname you want to use, such as `launch.example.com` or `waitlist.example.com`. 
+
+We recommend using a subdomain rather than your apex domain (`example.com`) so your main company website or homepage remains unaffected.
 </Step>
 <Step>
-### Keep the waitlist published
-A Ready domain with a draft or paused waitlist still accepts no signups. See [Publishing](/docs/publishing).
+### Add the DNS records at your registrar
+Waitlyze provides two records to add to your DNS provider (e.g., Cloudflare, Namecheap, GoDaddy, AWS Route 53, or Google Cloud DNS):
+
+1. **CNAME record**: Points your subdomain to Waitlyze's edge network so visitors are routed to your waitlist.
+2. **TXT verification record**: Confirms domain ownership to ensure only you can connect your domain.
+</Step>
+<Step>
+### Verify and launch
+Once added, click **Check DNS**. Edge verification and automatic SSL certificate generation usually complete within a few minutes.
 </Step>
 </Steps>
 
-## Remove a domain
+## Status guide
 
-A waitlist holds one custom domain at a time - remove the current one before connecting another. Removing the connection stops serving through it. It does not delete the waitlist or its Waitlyze hosted page. Overview readiness drops the domain check once removed.
+Track your custom domain status directly in Waitlyze:
+
+| Status | Meaning | Recommended action |
+| --- | --- | --- |
+| **Ownership check pending** | The ownership TXT record hasn't been detected yet | Confirm the TXT verification record was saved correctly at your DNS registrar |
+| **DNS or certificate setup pending** | Ownership verified; SSL certificate is issuing across global edge networks | Wait a few moments, then click **Check DNS** |
+| **Ready** | Fully verified and active with HTTPS | Your branded waitlist is live; share your custom URL |
+| **Needs attention** | DNS records were altered or failed renewal | Check your registrar DNS settings and re-verify |
+
+## Best practices
+
+- **Keep your waitlist published**: A custom domain will only accept signups when your waitlist status is **Published**. If your waitlist is in Draft or Paused state, visitors will see the published hold screen.
+- **Switching domains**: A waitlist connects to one custom domain at a time. To switch domains, click **Remove domain** and add your new hostname. Removing a domain will not delete your waitlist, its signups, or its data.
+- **Subdomain vs. Root domain**: Subdomains (`join.brand.com`, `get.brand.com`) provide the cleanest isolation and easiest DNS configuration without interfering with your primary corporate email or website records.
 
 ## Next
 
 <Cards>
-<Card title="Hosted pages and embeds" href="/docs/embed" description="Fallback URL when domains propagate." />
-<Card title="Publishing" href="/docs/publishing" description="Keep the served revision live." />
-<Card title="Troubleshooting" href="/docs/troubleshooting" description="Fix ownership and DNS issues." />
+<Card title="Page builder" href="/docs/page-builder" description="Customize sections, forms, and social previews." />
+<Card title="Publishing" href="/docs/publishing" description="Publish your changes to go live." />
+<Card title="Troubleshooting" href="/docs/troubleshooting" description="Resolve common DNS and propagation questions." />
 </Cards>
