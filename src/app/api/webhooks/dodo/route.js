@@ -7,6 +7,7 @@ import {
 } from "@/lib/billing/dodo.mjs";
 import { subscriptionWebhookStatus } from "@/lib/billing/subscription-webhook-status.mjs";
 import prisma from "@/lib/prisma";
+import { AUDIT_ACTIONS, recordAuditEvent } from "@/lib/workspaces/audit.mjs";
 
 export const runtime = "nodejs";
 const MAX_WEBHOOK_BODY_BYTES = 1024 * 1024;
@@ -266,6 +267,146 @@ export async function POST(request) {
             : {}),
         },
       });
+
+      // Record audit event for subscription lifecycle events
+      let validUserId = null;
+      const webhookUserId = typeof data.metadata?.userId === "string" ? data.metadata.userId : null;
+      if (webhookUserId) {
+        const userExists = await tx.user.findUnique({
+          where: { id: webhookUserId },
+          select: { id: true },
+        });
+        if (userExists) validUserId = userExists.id;
+      }
+
+      const intervalLabel = interval ? interval.toLowerCase() : "subscription";
+      const resourceName = `Pro (${intervalLabel})`;
+
+      if (type === "subscription.active") {
+        await recordAuditEvent(tx, {
+          workspaceId,
+          userId: validUserId,
+          action: AUDIT_ACTIONS.BILLING_PLAN_UPGRADED,
+          resourceType: "billing",
+          resourceId: subscriptionId,
+          resourceName,
+          detail: `Upgraded to Pro with ${intervalLabel} billing`,
+        });
+      } else if (type === "subscription.renewed") {
+        await recordAuditEvent(tx, {
+          workspaceId,
+          userId: validUserId,
+          action: AUDIT_ACTIONS.BILLING_PLAN_RENEWED,
+          resourceType: "billing",
+          resourceId: subscriptionId,
+          resourceName,
+          detail: `Subscription renewed for another ${intervalLabel} period`,
+        });
+      } else if (type === "subscription.plan_changed") {
+        await recordAuditEvent(tx, {
+          workspaceId,
+          userId: validUserId,
+          action: AUDIT_ACTIONS.BILLING_PLAN_CHANGED,
+          resourceType: "billing",
+          resourceId: subscriptionId,
+          resourceName,
+          detail: `Subscription plan changed to ${intervalLabel} billing`,
+        });
+      } else if (type === "subscription.cancelled") {
+        await recordAuditEvent(tx, {
+          workspaceId,
+          userId: validUserId,
+          action: AUDIT_ACTIONS.BILLING_PLAN_CANCELLED,
+          resourceType: "billing",
+          resourceId: subscriptionId,
+          resourceName,
+          detail: cancelAtPeriodEnd
+            ? "Subscription set to cancel at end of current billing period"
+            : "Subscription cancelled immediately",
+        });
+      } else if (type === "subscription.expired" || status === "EXPIRED") {
+        await recordAuditEvent(tx, {
+          workspaceId,
+          userId: validUserId,
+          action: AUDIT_ACTIONS.BILLING_PLAN_EXPIRED,
+          resourceType: "billing",
+          resourceId: subscriptionId,
+          resourceName,
+          detail: "Subscription expired; workspace reverted to Free plan",
+        });
+      } else if (type === "subscription.failed" || status === "FAILED") {
+        await recordAuditEvent(tx, {
+          workspaceId,
+          userId: validUserId,
+          action: AUDIT_ACTIONS.BILLING_PAYMENT_FAILED,
+          resourceType: "billing",
+          resourceId: subscriptionId,
+          resourceName,
+          detail: "Subscription payment failed",
+        });
+      } else if (type === "subscription.past_due" || status === "PAST_DUE") {
+        await recordAuditEvent(tx, {
+          workspaceId,
+          userId: validUserId,
+          action: AUDIT_ACTIONS.BILLING_PAYMENT_FAILED,
+          resourceType: "billing",
+          resourceId: subscriptionId,
+          resourceName,
+          detail: "Subscription payment is past due",
+        });
+      } else if (type === "subscription.paused") {
+        await recordAuditEvent(tx, {
+          workspaceId,
+          userId: validUserId,
+          action: AUDIT_ACTIONS.BILLING_PLAN_PAUSED,
+          resourceType: "billing",
+          resourceId: subscriptionId,
+          resourceName,
+          detail: "Subscription paused",
+        });
+      } else if (type === "subscription.unpaused") {
+        await recordAuditEvent(tx, {
+          workspaceId,
+          userId: validUserId,
+          action: AUDIT_ACTIONS.BILLING_PLAN_RESUMED,
+          resourceType: "billing",
+          resourceId: subscriptionId,
+          resourceName,
+          detail: "Subscription resumed",
+        });
+      } else if (type === "subscription.updated") {
+        if (cancelAtPeriodEnd && !existing?.cancelAtPeriodEnd) {
+          await recordAuditEvent(tx, {
+            workspaceId,
+            userId: validUserId,
+            action: AUDIT_ACTIONS.BILLING_PLAN_CANCELLED,
+            resourceType: "billing",
+            resourceId: subscriptionId,
+            resourceName,
+            detail: "Subscription scheduled to cancel at end of current period",
+          });
+        } else if (!cancelAtPeriodEnd && existing?.cancelAtPeriodEnd) {
+          await recordAuditEvent(tx, {
+            workspaceId,
+            userId: validUserId,
+            action: AUDIT_ACTIONS.BILLING_PLAN_RESUMED,
+            resourceType: "billing",
+            resourceId: subscriptionId,
+            resourceName,
+            detail: "Subscription cancellation revoked; auto-renewal resumed",
+          });
+        } else if (existing?.interval && interval && existing.interval !== interval) {
+          await recordAuditEvent(tx, {
+            workspaceId,
+            userId: validUserId,
+            action: AUDIT_ACTIONS.BILLING_PLAN_CHANGED,
+            resourceType: "billing",
+            resourceId: subscriptionId,
+            resourceName,
+            detail: `Plan changed from ${existing.interval.toLowerCase()} to ${intervalLabel} billing`,
+          });
+        }
+      }
     });
     if (result?.duplicate) return NextResponse.json({ received: true, duplicate: true });
     return NextResponse.json({ received: true });

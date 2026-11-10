@@ -60,8 +60,20 @@ const ACTION_LABELS = {
   "resend.connected": ["Connected", "success"],
   "resend.disconnected": ["Disconnected", "muted"],
   "cloudflare_email.connected": ["Cloudflare Email connected", "success"],
-  "cloudflare_email.disconnected": ["Cloudflare Email disconnected", "muted"],
   "broadcast.sent": ["Sent", "success"],
+  "audience.bulk_offboarded": ["Audience offboarded", "info"],
+  "audience.bulk_resubscribed": ["Audience resubscribed", "success"],
+  "audience.bulk_deleted": ["Audience deleted", "danger"],
+  "billing.checkout_started": ["Checkout started", "info"],
+  "billing.portal_opened": ["Portal opened", "info"],
+  "billing.plan_upgraded": ["Upgraded to Pro", "success"],
+  "billing.plan_renewed": ["Renewed", "success"],
+  "billing.plan_changed": ["Plan changed", "info"],
+  "billing.plan_cancelled": ["Cancelled renewal", "danger"],
+  "billing.plan_expired": ["Plan expired", "muted"],
+  "billing.payment_failed": ["Payment failed", "danger"],
+  "billing.plan_paused": ["Plan paused", "muted"],
+  "billing.plan_resumed": ["Plan resumed", "success"],
 };
 
 const DATE_RANGES = [
@@ -320,7 +332,10 @@ export function AuditLog({ events }) {
                   <TableCell>
                     {event.resourceName ? (
                       <span className="grid min-w-32 flex-1 gap-0.5">
-                        <strong className="block truncate text-sm font-medium">
+                        <strong
+                          className="block truncate text-sm font-medium"
+                          title={event.resourceId || undefined}
+                        >
                           {event.resourceName}
                         </strong>
                         {event.resourceType && (

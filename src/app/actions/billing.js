@@ -13,6 +13,7 @@ import { createDodoClient, dodoProductId, DodoConfigurationError } from "@/lib/b
 import { BILLING_INTERVALS, effectiveWorkspacePlan } from "@/lib/billing/plans.mjs";
 import { env } from "@/lib/env.mjs";
 import prisma from "@/lib/prisma";
+import { AUDIT_ACTIONS, recordAuditEvent } from "@/lib/workspaces/audit.mjs";
 import { currentWorkspace } from "@/lib/workspaces/current";
 import { createWorkspaceService } from "@/lib/workspaces/service.mjs";
 
@@ -286,7 +287,18 @@ export async function createProCheckout(interval, workspaceId) {
         error:
           "A secure checkout request is still being reconciled. Please wait or contact support before starting another payment.",
       };
-    if (reservation.checkoutUrl) return { checkoutUrl: reservation.checkoutUrl };
+    if (reservation.checkoutUrl) {
+      await recordAuditEvent(prisma, {
+        workspaceId: workspace.id,
+        userId: session.user.id,
+        action: AUDIT_ACTIONS.BILLING_CHECKOUT_STARTED,
+        resourceType: "billing",
+        resourceId: extractSessionIdFromUrl(reservation.checkoutUrl) || null,
+        resourceName: `Pro (${interval})`,
+        detail: `Resumed active Pro checkout with ${interval} billing`,
+      });
+      return { checkoutUrl: reservation.checkoutUrl };
+    }
     reservedIntentId = reservation.intentId;
 
     // The installed SDK does not send an idempotency header for this endpoint.
@@ -358,6 +370,15 @@ export async function createProCheckout(interval, workspaceId) {
     });
     if (persisted.count !== 1)
       return { error: "Checkout changed while being created. Refresh billing before retrying." };
+    await recordAuditEvent(prisma, {
+      workspaceId: workspace.id,
+      userId: session.user.id,
+      action: AUDIT_ACTIONS.BILLING_CHECKOUT_STARTED,
+      resourceType: "billing",
+      resourceId: checkout.session_id,
+      resourceName: `Pro (${interval})`,
+      detail: `Started Pro checkout with ${interval} billing`,
+    });
     return { checkoutUrl: checkout.checkout_url };
   } catch (error) {
     const status = Number(error?.status || error?.statusCode);
@@ -394,7 +415,17 @@ export async function createBillingPortal(workspaceId) {
     });
     if (!subscription?.dodoCustomerId)
       return { error: "No paid subscription is connected to this workspace." };
-    return { portalUrl: await createPortalLink(subscription.dodoCustomerId, workspace.id) };
+    const portalUrl = await createPortalLink(subscription.dodoCustomerId, workspace.id);
+    await recordAuditEvent(prisma, {
+      workspaceId: workspace.id,
+      userId: session.user.id,
+      action: AUDIT_ACTIONS.BILLING_PORTAL_OPENED,
+      resourceType: "billing",
+      resourceId: subscription.dodoCustomerId,
+      resourceName: "Customer Portal",
+      detail: "Opened billing management portal",
+    });
+    return { portalUrl };
   } catch (error) {
     if (error instanceof BillingGateError) return { error: error.message };
     if (error instanceof DodoConfigurationError) return { error: error.message };

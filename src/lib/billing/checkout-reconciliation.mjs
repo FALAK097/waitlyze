@@ -1,4 +1,5 @@
 import "server-only";
+import { AUDIT_ACTIONS, recordAuditEvent } from "../workspaces/audit.mjs";
 import { createDodoClient, dodoBillingInterval } from "./dodo.mjs";
 import { subscriptionWebhookStatus } from "./subscription-webhook-status.mjs";
 
@@ -166,6 +167,28 @@ async function applyPaidSubscription(db, { workspaceId, intentId, payment, now }
       where: { workspaceId },
       data: updateData,
     });
+
+    if (current.plan !== "PRO" && plan === "PRO") {
+      let validUserId = null;
+      if (metadata.userId) {
+        const userExists = await tx.user.findUnique({
+          where: { id: metadata.userId },
+          select: { id: true },
+        });
+        if (userExists) validUserId = userExists.id;
+      }
+      const intervalLabel = interval ? interval.toLowerCase() : "subscription";
+      await recordAuditEvent(tx, {
+        workspaceId,
+        userId: validUserId,
+        action: AUDIT_ACTIONS.BILLING_PLAN_UPGRADED,
+        resourceType: "billing",
+        resourceId: subscriptionId,
+        resourceName: `Pro (${intervalLabel})`,
+        detail: `Upgraded to Pro with ${intervalLabel} billing via checkout`,
+      });
+    }
+
     return {
       state: ["EXPIRED", "FAILED", "CANCELLED"].includes(status) ? "terminal" : "active",
       customerId,
