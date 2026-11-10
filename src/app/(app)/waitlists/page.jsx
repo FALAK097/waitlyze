@@ -42,10 +42,10 @@ const PAGE_SIZE = 25;
 /* The waitlist list table: borderless shell, fixed layout, and the column
    rhythm that used to live in the shared experience stylesheet. */
 const waitlistTableWrap = [
-  "relative overflow-x-auto rounded-none border-0 bg-product-bg-surface no-scrollbar",
-  "[&_[data-slot=table-container]]:overflow-x-auto",
+  "relative w-full min-w-0 max-w-full overflow-hidden rounded-none border-0 bg-product-bg-surface",
+  "[&_[data-slot=table-container]]:max-w-full [&_[data-slot=table-container]]:overflow-x-auto",
   "[&_[data-slot=table-container]]:no-scrollbar",
-  "[&_table]:w-full [&_table]:border-collapse [&_table]:text-sm [&_table]:table-fixed",
+  "[&_table]:w-full [&_table]:min-w-[760px] [&_table]:border-collapse [&_table]:text-sm [&_table]:table-fixed",
   "[&_th]:text-left [&_th]:border-b [&_th]:border-product-border-subtle",
   "[&_thead_th]:px-3 [&_thead_th]:pt-0 [&_thead_th]:pb-2",
   "[&_thead_th]:font-medium [&_thead_th]:text-product-text-secondary",
@@ -56,23 +56,11 @@ const waitlistTableWrap = [
   "[&_tbody_tr:hover]:bg-neutral-50",
   "[&_th:first-child]:w-6/25 [&_th:nth-child(2)]:w-11/100 [&_th:nth-child(3)]:w-1/5",
   "[&_th:nth-child(4)]:w-7/50 [&_th:nth-child(5)]:w-4/25 [&_th:nth-child(6)]:w-16",
-  "max-[767px]:[&_table]:block max-[767px]:[&_tbody]:grid max-[767px]:[&_tbody]:gap-3",
-  "max-[767px]:[&_thead]:sr-only max-[767px]:[&_tbody_tr]:grid max-[767px]:[&_tbody_tr]:grid-cols-2",
-  "max-[767px]:[&_tbody_tr]:rounded-lg max-[767px]:[&_tbody_tr]:border max-[767px]:[&_tbody_tr]:border-product-border-subtle",
-  "max-[767px]:[&_tbody_tr]:p-4 max-[767px]:[&_tbody_th]:col-span-2 max-[767px]:[&_tbody_th]:w-full",
-  "max-[767px]:[&_tbody_td]:flex max-[767px]:[&_tbody_td]:min-w-0 max-[767px]:[&_tbody_td]:flex-col",
-  "max-[767px]:[&_tbody_td]:items-start max-[767px]:[&_tbody_td]:whitespace-normal",
-  "max-[767px]:[&_tbody_td]:before:text-micro max-[767px]:[&_tbody_td]:before:font-medium",
-  "max-[767px]:[&_tbody_td]:before:text-product-text-secondary max-[767px]:[&_tbody_td]:before:content-[attr(data-label)]",
-  "max-[767px]:[&_tbody_th]:px-0 max-[767px]:[&_tbody_td]:px-0",
-  "max-[767px]:[&_tbody_th]:whitespace-normal max-[767px]:[&_tbody_th]:break-words",
-  "max-[767px]:[&_tbody_td:last-child]:col-span-2 max-[767px]:[&_tbody_td:last-child]:items-end",
 ].join(" ");
 
 const waitlistRowLink = [
   "flex w-fit min-h-11 flex-wrap items-center gap-3 py-1",
   "text-sm text-product-text-primary hover:underline hover:underline-offset-4",
-  "max-[767px]:break-words max-[767px]:whitespace-normal",
 ].join(" ");
 
 const waitlistCellLink =
@@ -87,7 +75,10 @@ const WAITLIST_DATE_FORMAT = new Intl.DateTimeFormat(undefined, { dateStyle: "me
 function WaitlistsTable({ waitlists, query, status, sort }) {
   return (
     <div className={waitlistTableWrap}>
-      <Table>
+      <Table
+        scrollHint="Swipe horizontally to see all waitlist columns"
+        scrollLabel="Waitlists table"
+      >
         <caption className="sr-only">Your waitlists</caption>
         <TableHeader>
           <TableRow>
