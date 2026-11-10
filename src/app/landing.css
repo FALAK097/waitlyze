@@ -460,7 +460,7 @@
 .wl-demo .wl-product-window {
   top: 4.5%;
   right: 3.5%;
-  bottom: -4%;
+  bottom: 0;
   left: 3.5%;
   border-radius: 12px 12px 0 0;
 }
