@@ -162,24 +162,87 @@ const DEVICES = [
   { device: "Android", deviceType: "mobile" },
 ];
 
+function createCustomizedSnapshot({
+  name,
+  eyebrow = "PRIVATE BETA",
+  tagline,
+  description,
+  buttonText = "Request early access",
+  placeholder = "name@company.com",
+}) {
+  const base = snapshotTemplate("saas");
+  const sections = base.sections.map((sec) => {
+    if (sec.type === "navigation") {
+      return { ...sec, brand: name, buttonText };
+    }
+    if (sec.type === "hero") {
+      return {
+        ...sec,
+        eyebrow,
+        heading: tagline || sec.heading,
+        body: description || sec.body,
+      };
+    }
+    if (sec.type === "form") {
+      return {
+        ...sec,
+        heading: `Request early access to ${name}`,
+        body: "Join our early supporter cohort and receive your private access link.",
+      };
+    }
+    return sec;
+  });
+
+  return {
+    ...base,
+    sections,
+    form: {
+      ...base.form,
+      buttonText,
+      placeholder,
+    },
+  };
+}
+
 async function main() {
   console.log("Seeding rich showcase data...");
 
-  // 1. Get user & workspace
-  let userRes = await pool.query(
-    `SELECT wm."workspaceId", u.* FROM workspace_members wm JOIN users u ON u.id = wm."userId" WHERE u.email IN ('alex@waitlyze.local', 'preview-owner@waitlyze.local') LIMIT 1`,
+  // 1. Get or create dedicated demo user and workspace
+  const showcaseEmail = process.env.SHOWCASE_USER_EMAIL || "alex@waitlyze.local";
+  const userRes = await pool.query(
+    `SELECT wm."workspaceId", u.* FROM users u
+     LEFT JOIN workspace_members wm ON wm."userId" = u.id
+     WHERE u.email = $1 LIMIT 1`,
+    [showcaseEmail],
   );
-  if (!userRes.rows.length) {
-    userRes = await pool.query(
-      `SELECT wm."workspaceId", u.* FROM workspace_members wm JOIN users u ON u.id = wm."userId" LIMIT 1`,
+
+  let user = userRes.rows[0];
+  let workspaceId = user?.workspaceId;
+
+  if (!user) {
+    const userId = cuid("u");
+    await pool.query(
+      `INSERT INTO users (id, name, email, "emailVerified", "isOnboarded", "createdAt", "updatedAt")
+       VALUES ($1, 'Alex Rivera', $2, true, true, NOW(), NOW())`,
+      [userId, showcaseEmail],
+    );
+    const uRow = await pool.query(`SELECT * FROM users WHERE email = $1`, [showcaseEmail]);
+    user = uRow.rows[0];
+  }
+
+  if (!workspaceId) {
+    workspaceId = cuid("ws");
+    await pool.query(
+      `INSERT INTO workspaces (id, name, "personalOwnerId", "createdAt", "updatedAt")
+       VALUES ($1, 'Nova Studio Workspace', $2, NOW(), NOW())`,
+      [workspaceId, user.id],
+    );
+    await pool.query(
+      `INSERT INTO workspace_members ("workspaceId", "userId", role, "createdAt")
+       VALUES ($1, $2, 'OWNER', NOW())`,
+      [workspaceId, user.id],
     );
   }
-  if (!userRes.rows.length) {
-    console.error("No user/workspace found in database!");
-    process.exit(1);
-  }
-  const user = userRes.rows[0];
-  const workspaceId = user.workspaceId;
 
   await pool.query(`UPDATE users SET "isOnboarded" = true, name = 'Alex Rivera' WHERE id = $1`, [
     user.id,
@@ -213,7 +276,14 @@ async function main() {
 
   // 4. Update / Upsert Primary Waitlist: Nova Studio
   const novaId = "cmw7nr6iu0002iz6lhgh24pxa";
-  const novaSnapshot = snapshotTemplate("saas");
+  const novaSnapshot = createCustomizedSnapshot({
+    name: "Nova Studio",
+    tagline: "The real-time collaborative canvas.",
+    description:
+      "Infinite boards, generative design systems, and instant multiplayer sync for modern product teams.",
+    buttonText: "Request early access",
+    placeholder: "Enter your work email...",
+  });
 
   await pool.query(
     `
@@ -283,7 +353,13 @@ async function main() {
   ]);
 
   const hyperFocusId = cuid("w");
-  const hyperFocusSnapshot = snapshotTemplate("saas");
+  const hyperFocusSnapshot = createCustomizedSnapshot({
+    name: "HyperFocus AI",
+    tagline: "Deep work and distraction shield for engineers.",
+    description: "Smart calendar blocks, context switching prevention, and AI-driven flow states.",
+    buttonText: "Join waitlist",
+    placeholder: "name@company.com",
+  });
 
   await pool.query(
     `
