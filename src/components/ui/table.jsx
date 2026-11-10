@@ -1,23 +1,15 @@
 "use client";
-import * as React from "react";
 
 import { cn } from "@/lib/utils";
-function Table({ className, scrollHint, scrollLabel = "Scrollable table", ...props }) {
-  const scrollHintId = React.useId();
+function Table({ className, scrollLabel, ...props }) {
   return (
     <div
       data-slot="table-container"
       className="relative w-full overflow-x-auto focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
-      tabIndex={scrollHint ? 0 : undefined}
-      role={scrollHint ? "region" : undefined}
-      aria-label={scrollHint ? scrollLabel : undefined}
-      aria-describedby={scrollHint ? scrollHintId : undefined}
+      tabIndex={scrollLabel ? 0 : undefined}
+      role={scrollLabel ? "region" : undefined}
+      aria-label={scrollLabel}
     >
-      {scrollHint && (
-        <p id={scrollHintId} className="mb-2 px-3 text-sm text-product-text-secondary md:sr-only">
-          {scrollHint}. Use the arrow keys when the table is focused.
-        </p>
-      )}
       <table
         data-slot="table"
         className={cn("w-full caption-bottom text-sm", className)}

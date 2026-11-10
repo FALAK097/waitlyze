@@ -75,7 +75,7 @@ const WAITLIST_DATE_FORMAT = new Intl.DateTimeFormat(undefined, { dateStyle: "me
 function WaitlistsTable({ waitlists, query, status, sort }) {
   return (
     <div className={waitlistTableWrap}>
-      <Table>
+      <Table scrollLabel="Waitlists table">
         <caption className="sr-only">Your waitlists</caption>
         <TableHeader>
           <TableRow>
