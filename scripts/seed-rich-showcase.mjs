@@ -263,7 +263,50 @@ async function main() {
     "Workspace upgraded to PRO plan with full analytics, email marketing & custom domains.",
   );
 
-  // 3. Clear existing signups/impressions for this workspace to ensure clean high quality data
+  // 3. Showcase waitlist IDs
+  const novaId = "cmw7nr6iu0002iz6lhgh24pxa";
+  const hyperFocusId = "cmw7hyperfocus0001iz6l74of9yrx";
+  const devPulseId = "cmw7devpulse00001iz6l74of9yrx";
+
+  // 4. Safety check: ensure showcase waitlists and slugs are not owned by an unrelated user
+  async function assertSafeToSeedWaitlist(id, slug) {
+    const res = await pool.query(
+      `SELECT wl.id, wl."workspaceId", wl."publicSlug", u.email
+       FROM wait_lists wl
+       JOIN users u ON u.id = wl."userId"
+       WHERE wl.id = $1 OR wl."publicSlug" = $2`,
+      [id, slug],
+    );
+    for (const row of res.rows) {
+      const isShowcaseAccount =
+        row.email === showcaseEmail ||
+        row.email === "alex@waitlyze.local" ||
+        row.email === "preview-owner@waitlyze.local" ||
+        row.workspaceId === workspaceId;
+
+      if (!isShowcaseAccount) {
+        console.error(
+          `Safety check failed: waitlist "${row.publicSlug}" (${row.id}) is owned by an unrelated user (${row.email}). Aborting seed to prevent overwriting existing data.`,
+        );
+        process.exit(1);
+      }
+    }
+  }
+
+  await assertSafeToSeedWaitlist(novaId, "nova-studio");
+  await assertSafeToSeedWaitlist(hyperFocusId, "hyperfocus");
+  await assertSafeToSeedWaitlist(devPulseId, "devpulse");
+
+  // 5. Clear existing signups/impressions for this workspace and showcase IDs to ensure clean high quality data
+  const targetWlIds = [novaId, hyperFocusId, devPulseId];
+  for (const tid of targetWlIds) {
+    await pool.query(`DELETE FROM impressions WHERE "waitListId" = $1`, [tid]);
+    await pool.query(`DELETE FROM sign_ups WHERE "waitListId" = $1`, [tid]);
+    await pool.query(`DELETE FROM marketing_broadcasts WHERE "waitListId" = $1`, [tid]);
+    await pool.query(`DELETE FROM automation_recipes WHERE "waitListId" = $1`, [tid]);
+    await pool.query(`DELETE FROM webhook_subscriptions WHERE "waitListId" = $1`, [tid]);
+  }
+
   const existingWaitlists = await pool.query(`SELECT id FROM wait_lists WHERE "workspaceId" = $1`, [
     workspaceId,
   ]);
@@ -275,8 +318,7 @@ async function main() {
     await pool.query(`DELETE FROM webhook_subscriptions WHERE "waitListId" = $1`, [wl.id]);
   }
 
-  // 4. Update / Upsert Primary Waitlist: Nova Studio
-  const novaId = "cmw7nr6iu0002iz6lhgh24pxa";
+  // 6. Update / Upsert Primary Waitlist: Nova Studio
   const novaSnapshot = createCustomizedSnapshot({
     name: "Nova Studio",
     tagline: "The real-time collaborative canvas.",
@@ -350,7 +392,6 @@ async function main() {
     [cuid("pr"), novaId, JSON.stringify(novaSnapshot)],
   );
 
-  const hyperFocusId = "cmw7hyperfocus0001iz6l74of9yrx";
   const hyperFocusSnapshot = createCustomizedSnapshot({
     name: "HyperFocus AI",
     tagline: "Deep work and distraction shield for engineers.",
@@ -407,7 +448,6 @@ async function main() {
     [cuid("pr"), actualHyperFocusId, JSON.stringify(hyperFocusSnapshot)],
   );
 
-  const devPulseId = "cmw7devpulse00001iz6l74of9yrx";
   const devPulseRes = await pool.query(
     `
     INSERT INTO wait_lists (
@@ -489,6 +529,8 @@ async function main() {
         true, $18, $18,
         $18, $18
       )
+      ON CONFLICT ("waitListId", "emailNormalized")
+      DO UPDATE SET points = EXCLUDED.points
     `,
       [
         signupId,
@@ -530,7 +572,7 @@ async function main() {
       "apple.com",
       "company.io",
     ][Math.floor(Math.random() * 7)];
-    const email = `${fn.toLowerCase()}.${ln.toLowerCase()}${Math.floor(Math.random() * 89 + 10)}@${domain}`;
+    const email = `${fn.toLowerCase()}.${ln.toLowerCase()}.${i}@${domain}`;
 
     // Weight towards recent days
     const day = Math.min(27, Math.floor(Math.pow(Math.random(), 1.4) * 28));
@@ -566,6 +608,8 @@ async function main() {
         true, $18, $18,
         $18, $18
       )
+      ON CONFLICT ("waitListId", "emailNormalized")
+      DO UPDATE SET points = EXCLUDED.points
     `,
       [
         signupId,
@@ -726,7 +770,7 @@ async function main() {
   for (let j = 1; j <= 45; j++) {
     const fn = FIRST_NAMES[j % FIRST_NAMES.length];
     const ln = LAST_NAMES[j % LAST_NAMES.length];
-    const email = `${fn.toLowerCase()}.${ln.toLowerCase()}@hyperfocus.test`;
+    const email = `${fn.toLowerCase()}.${ln.toLowerCase()}.${j}@hyperfocus.test`;
     await pool.query(
       `
       INSERT INTO sign_ups (
@@ -738,6 +782,7 @@ async function main() {
         $6, $7, $8, true, $9,
         $9, $9
       )
+      ON CONFLICT ("waitListId", "emailNormalized") DO NOTHING
     `,
       [
         cuid("s"),
