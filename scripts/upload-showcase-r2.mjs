@@ -62,7 +62,7 @@ async function main() {
         Key: asset.key,
         Body: body,
         ContentType: asset.contentType,
-        CacheControl: "public, max-age=31536000, immutable",
+        CacheControl: "public, max-age=86400, stale-while-revalidate=604800",
       }),
     );
 

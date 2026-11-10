@@ -207,6 +207,7 @@ function ProductFrame({ src, alt, tone = "mint", hero = false, videoSrc, poster 
             autoPlay
             loop
             muted
+            controls
             playsInline
             preload="none"
             poster={poster || src}
@@ -396,7 +397,7 @@ export default async function LandingPage() {
               broadcasts.
             </p>
           </div>
-          <div className="mt-10 sm:mt-12">
+          <div className="wl-demo-media">
             <ProductFrame
               videoSrc={`${ASSET_BASE}/showcase-demo-4k.webm`}
               src={`${ASSET_BASE}/showcase-analytics-4k.png`}

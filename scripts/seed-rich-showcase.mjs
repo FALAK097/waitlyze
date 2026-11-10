@@ -5,7 +5,12 @@
 
 import crypto from "node:crypto";
 
+import dotenv from "dotenv";
 import pg from "pg";
+
+import { snapshotTemplate } from "../src/lib/templates/catalog.mjs";
+
+dotenv.config();
 
 const dbUrl = process.env.DATABASE_URL || "";
 let dbHost = "";
@@ -161,28 +166,24 @@ async function main() {
   console.log("Seeding rich showcase data...");
 
   // 1. Get user & workspace
-  const userRes = await pool.query(
-    `SELECT * FROM users WHERE email = 'preview-owner@waitlyze.local'`,
+  let userRes = await pool.query(
+    `SELECT wm."workspaceId", u.* FROM workspace_members wm JOIN users u ON u.id = wm."userId" WHERE u.email IN ('alex@waitlyze.local', 'preview-owner@waitlyze.local') LIMIT 1`,
   );
   if (!userRes.rows.length) {
-    console.error("User preview-owner@waitlyze.local not found!");
+    userRes = await pool.query(
+      `SELECT wm."workspaceId", u.* FROM workspace_members wm JOIN users u ON u.id = wm."userId" LIMIT 1`,
+    );
+  }
+  if (!userRes.rows.length) {
+    console.error("No user/workspace found in database!");
     process.exit(1);
   }
   const user = userRes.rows[0];
+  const workspaceId = user.workspaceId;
 
   await pool.query(`UPDATE users SET "isOnboarded" = true, name = 'Alex Rivera' WHERE id = $1`, [
     user.id,
   ]);
-
-  const memberRes = await pool.query(
-    `SELECT "workspaceId" FROM workspace_members WHERE "userId" = $1 LIMIT 1`,
-    [user.id],
-  );
-  const workspaceId = memberRes.rows[0]?.workspaceId;
-  if (!workspaceId) {
-    console.error("No workspace found for user!");
-    process.exit(1);
-  }
 
   // 2. Set Pro Subscription
   await pool.query(
@@ -212,6 +213,8 @@ async function main() {
 
   // 4. Update / Upsert Primary Waitlist: Nova Studio
   const novaId = "cmw7nr6iu0002iz6lhgh24pxa";
+  const novaSnapshot = snapshotTemplate("saas");
+
   await pool.query(
     `
     INSERT INTO wait_lists (
@@ -220,7 +223,8 @@ async function main() {
       "badgeColor", "badgeText", "badgeTextColor",
       "showBadge", "showReferrals", "showBranding", "showSocialProof",
       "buttonText", "placeholderText", "successMessage",
-      status, "sendEmailsToSubscribers", "userId", "workspaceId",
+      status, "publishedRevision", "publishedTemplateRevision", "templateRevision", "templateSnapshot",
+      "sendEmailsToSubscribers", "userId", "workspaceId",
       "createdAt", "updatedAt"
     )
     VALUES (
@@ -232,7 +236,8 @@ async function main() {
       true, true, false, true,
       'Request early access', 'Enter your work email...',
       'You are on the list! Check your inbox for your private referral link.',
-      'PUBLISHED', true, $2, $3,
+      'PUBLISHED', 1, 1, 1, $5,
+      true, $2, $3,
       $4, $4
     )
     ON CONFLICT (id)
@@ -249,10 +254,27 @@ async function main() {
       "showBranding" = false,
       "showSocialProof" = true,
       status = 'PUBLISHED',
+      "publishedRevision" = 1,
+      "publishedTemplateRevision" = 1,
+      "templateRevision" = 1,
+      "templateSnapshot" = $5,
       "sendEmailsToSubscribers" = true,
       "updatedAt" = NOW()
   `,
-    [novaId, user.id, workspaceId, subDays(30)],
+    [novaId, user.id, workspaceId, subDays(30), JSON.stringify(novaSnapshot)],
+  );
+
+  await pool.query(
+    `
+    INSERT INTO wait_list_publication_revisions (
+      id, "waitListId", revision, "templateRevision", snapshot, "createdAt"
+    ) VALUES (
+      $1, $2, 1, 1, $3, NOW()
+    )
+    ON CONFLICT ("waitListId", revision)
+    DO UPDATE SET snapshot = $3
+  `,
+    [cuid("pr"), novaId, JSON.stringify(novaSnapshot)],
   );
 
   await pool.query(`DELETE FROM wait_lists WHERE id != $1 AND "workspaceId" = $2`, [
@@ -261,21 +283,38 @@ async function main() {
   ]);
 
   const hyperFocusId = cuid("w");
+  const hyperFocusSnapshot = snapshotTemplate("saas");
+
   await pool.query(
     `
     INSERT INTO wait_lists (
       id, name, "publicSlug", description, "websiteUrl",
-      "buttonColor", "buttonTextColor", status, "userId", "workspaceId",
+      "buttonColor", "buttonTextColor", status, "publishedRevision", "publishedTemplateRevision",
+      "templateRevision", "templateSnapshot", "userId", "workspaceId",
       "createdAt", "updatedAt"
     ) VALUES (
       $1, 'HyperFocus AI', 'hyperfocus',
       'Intelligent focus blocks and distraction shield for engineers.',
       'https://hyperfocus.dev',
-      '#6366f1', '#ffffff', 'PUBLISHED', $2, $3,
+      '#6366f1', '#ffffff', 'PUBLISHED', 1, 1,
+      1, $5, $2, $3,
       $4, $4
     )
   `,
-    [hyperFocusId, user.id, workspaceId, subDays(18)],
+    [hyperFocusId, user.id, workspaceId, subDays(18), JSON.stringify(hyperFocusSnapshot)],
+  );
+
+  await pool.query(
+    `
+    INSERT INTO wait_list_publication_revisions (
+      id, "waitListId", revision, "templateRevision", snapshot, "createdAt"
+    ) VALUES (
+      $1, $2, 1, 1, $3, NOW()
+    )
+    ON CONFLICT ("waitListId", revision)
+    DO UPDATE SET snapshot = $3
+  `,
+    [cuid("pr"), hyperFocusId, JSON.stringify(hyperFocusSnapshot)],
   );
 
   const devPulseId = cuid("w");

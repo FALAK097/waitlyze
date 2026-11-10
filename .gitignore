@@ -21,6 +21,7 @@
 /coverage
 /playwright-report/
 /test-results/
+/public/images/showcase/
 
 # next.js
 /.next/

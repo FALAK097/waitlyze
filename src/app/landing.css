@@ -454,7 +454,7 @@
   font-size: 0.96rem;
   line-height: 1.5;
 }
-.wl-demo > div {
+.wl-demo-media {
   margin-top: clamp(40px, 6vw, 64px);
 }
 .wl-demo .wl-product-frame {

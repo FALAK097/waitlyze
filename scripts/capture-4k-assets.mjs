@@ -11,9 +11,16 @@ const BASE_URL = process.env.BASE_URL || "http://localhost:3000";
 const OUTPUT_DIR = path.resolve("public/images/showcase");
 fs.mkdirSync(OUTPUT_DIR, { recursive: true });
 
-const SESSION_TOKEN =
-  "hiSE5YQVOdht9rMrvhzjZxRZMQwJcSs9.lQ%2FhFdqgFmPxLA0qyElbGLl7EKqfN1gQSlhJfRLysEQ%3D";
-const WAITLIST_ID = "cmw7nr6iu0002iz6lhgh24pxa";
+const SESSION_TOKEN = process.env.SHOWCASE_SESSION_TOKEN || process.env.SESSION_TOKEN;
+if (!SESSION_TOKEN) {
+  console.error("Missing SHOWCASE_SESSION_TOKEN or SESSION_TOKEN in environment.");
+  console.error(
+    "Please export SHOWCASE_SESSION_TOKEN=<valid_session_token> before running capture.",
+  );
+  process.exit(1);
+}
+const WAITLIST_ID =
+  process.env.SHOWCASE_WAITLIST_ID || process.env.WAITLIST_ID || "cmw7nr6iu0002iz6lhgh24pxa";
 
 async function main() {
   const diaPath = "/Applications/Dia.app/Contents/MacOS/Dia";
@@ -120,22 +127,20 @@ async function main() {
   await page.screenshot({ path: publicPagePath, fullPage: false });
   console.log("Saved:", publicPagePath);
 
+  const video = page.video();
+
   // Close context to flush video recording
   await page.close();
   await context.close();
-  await browser.close();
 
-  // Find generated video
-  const videoFiles = fs
-    .readdirSync(OUTPUT_DIR)
-    .filter((f) => f.endsWith(".webm") || f.endsWith(".mp4"));
-  console.log("Recorded video files:", videoFiles);
-  if (videoFiles.length > 0) {
-    const videoFile = videoFiles[0];
+  if (video) {
     const finalVideoPath = path.join(OUTPUT_DIR, "demo-4k.webm");
-    fs.renameSync(path.join(OUTPUT_DIR, videoFile), finalVideoPath);
+    await video.saveAs(finalVideoPath);
+    await video.delete();
     console.log("Final 4K video saved to:", finalVideoPath);
   }
+
+  await browser.close();
 
   console.log("All 4K product assets successfully captured!");
 }
