@@ -4,7 +4,7 @@ import { ArrowUpRight01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import Link from "next/link";
 
-import { useAuthModal } from "@/components/auth/auth-modal-provider";
+import { useOpenAuthModal } from "@/components/auth/auth-modal-provider";
 import { Button } from "@/components/ui/button";
 import { useSession } from "@/lib/auth-client";
 import { cn } from "@/lib/utils";
@@ -17,7 +17,7 @@ export default function AuthAction({
   className = "",
   compact = false,
 }) {
-  const { openAuthModal } = useAuthModal();
+  const openAuthModal = useOpenAuthModal();
   const { data: session, isPending } = useSession();
   const classes = cn(
     "group col-start-1 row-start-1 inline-flex min-h-13 items-center justify-center gap-5 rounded-md border border-product-border-subtle bg-product-bg-surface px-6 py-3 text-body leading-tight font-semibold whitespace-nowrap text-product-text-primary transition duration-160 hover:border-product-text-secondary focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-neutral-900 active:translate-y-px disabled:cursor-wait disabled:opacity-65",

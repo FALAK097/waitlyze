@@ -81,7 +81,8 @@
     "tailwind-merge": "^3.7.0",
     "world-atlas": "^2.0.2",
     "ws": "^8.22.2",
-    "zod": "^4.6.6"
+    "zod": "^4.6.6",
+    "zustand": "^5.1.0"
   },
   "devDependencies": {
     "@opennextjs/cloudflare": "1.20.16",

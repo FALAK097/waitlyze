@@ -5,7 +5,7 @@ import { HugeiconsIcon } from "@hugeicons/react";
 import { useState } from "react";
 
 import { createProCheckout } from "@/app/actions/billing";
-import { useAuthModal } from "@/components/auth/auth-modal-provider";
+import { useOpenAuthModal } from "@/components/auth/auth-modal-provider";
 import { Button } from "@/components/ui/button";
 import { useSession } from "@/lib/auth-client";
 
@@ -73,7 +73,7 @@ export default function PricingCheckoutButton({
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
   const { data: session, isPending: sessionPending } = useSession();
-  const { openAuthModal } = useAuthModal();
+  const openAuthModal = useOpenAuthModal();
 
   async function checkout() {
     if (!session && !sessionPending) {
