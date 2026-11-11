@@ -98,14 +98,34 @@ function SelectedWaitlistSettings({
               Connect Slack or Discord to keep your team in the loop.
             </p>
           </div>
-          <Button
-            variant="ghost"
-            render={
-              <Link prefetch={false} href="/docs/notifications" target="_blank" rel="noreferrer" />
-            }
-          >
-            View docs <HugeiconsIcon icon={ArrowUpRight01Icon} size={16} aria-hidden="true" />
-          </Button>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              variant="ghost"
+              render={
+                <Link
+                  prefetch={false}
+                  href="/docs/slack"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                />
+              }
+            >
+              Slack docs <HugeiconsIcon icon={ArrowUpRight01Icon} size={16} aria-hidden="true" />
+            </Button>
+            <Button
+              variant="ghost"
+              render={
+                <Link
+                  prefetch={false}
+                  href="/docs/discord"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                />
+              }
+            >
+              Discord docs <HugeiconsIcon icon={ArrowUpRight01Icon} size={16} aria-hidden="true" />
+            </Button>
+          </div>
         </header>
         <ChatNotificationSettings
           waitListId={waitlist.id}

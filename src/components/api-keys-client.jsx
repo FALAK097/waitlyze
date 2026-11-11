@@ -28,6 +28,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { formatProductDate } from "@/lib/product-date.mjs";
 
 export function ApiKeysClient() {
@@ -44,12 +52,12 @@ export function ApiKeysClient() {
   const [reveal, setReveal] = useState(false);
   const [toRevoke, setToRevoke] = useState(null);
   const panelHeading = useRef(null);
-  const docsLink = useRef(null);
+  const createButton = useRef(null);
   const panelWasOpen = useRef(false);
   useEffect(() => {
     const panelOpen = Boolean(creating || toRevoke);
     if (panelOpen) panelHeading.current?.focus();
-    else if (panelWasOpen.current) docsLink.current?.focus();
+    else if (panelWasOpen.current) createButton.current?.focus();
     panelWasOpen.current = panelOpen;
   }, [creating, toRevoke, loading]);
 
@@ -85,9 +93,6 @@ export function ApiKeysClient() {
     load(controller.signal);
     return () => controller.abort();
   }, []);
-  const available = waitlists.filter(
-    (waitlist) => !keys.some((key) => key.waitlist?.id === waitlist.id),
-  );
   function changeCreate(next) {
     if (busy) return;
     setCreating(next);
@@ -161,7 +166,6 @@ export function ApiKeysClient() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <Link
           prefetch={false}
-          ref={docsLink}
           href="/docs/api/reference"
           target="_blank"
           rel="noopener noreferrer"
@@ -169,13 +173,14 @@ export function ApiKeysClient() {
         >
           View API reference ↗
         </Link>
-        {!creating && !toRevoke && available.length > 0 && (
+        {!creating && !toRevoke && (
           <Button
+            ref={createButton}
             onClick={() => setCreating(true)}
-            disabled={loading || Boolean(error) || !available.length}
+            disabled={loading || Boolean(error) || !waitlists.length}
           >
             <HugeiconsIcon icon={Add01Icon} size={16} aria-hidden="true" />
-            Create key
+            Create API key
           </Button>
         )}
       </div>
@@ -198,7 +203,7 @@ export function ApiKeysClient() {
           </div>
         ) : (
           <>
-            {!keys.length && !available.length && (
+            {!keys.length && !waitlists.length && (
               <div className="space-y-3">
                 <p className="mb-0! text-sm leading-relaxed text-product-text-secondary">
                   Create a waitlist before adding an API key.
@@ -208,43 +213,65 @@ export function ApiKeysClient() {
                 </Button>
               </div>
             )}
-            {keys.map((key) => (
-              <article
-                key={key.id}
-                className="grid gap-2 border-b border-product-border-subtle py-5 first:border-t [&>header]:flex [&>header]:items-center [&>header]:justify-between [&>header]:gap-3"
+            {keys.length > 0 && (
+              <div
+                className={[
+                  "rounded-xl border border-product-border-subtle bg-product-bg-surface",
+                  "[&_table]:min-w-190",
+                  "[&_th]:border-b [&_th]:border-product-border-subtle [&_th]:px-4 [&_th]:py-3.5",
+                  "[&_thead_th]:font-medium [&_thead_th]:text-product-text-secondary",
+                  "[&_td]:border-b [&_td]:border-product-border-subtle [&_td]:px-4 [&_td]:py-4",
+                  "[&_td]:text-product-text-secondary",
+                  "[&_th:first-child]:w-1/4 [&_th:nth-child(2)]:w-1/5 [&_th:nth-child(3)]:w-1/4",
+                  "[&_th:nth-child(4)]:w-1/5",
+                ].join(" ")}
               >
-                <header>
-                  <strong className="text-sm">{key.name}</strong>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    aria-label={`Revoke ${key.name}`}
-                    onClick={() => setToRevoke(key)}
-                  >
-                    <HugeiconsIcon icon={Delete02Icon} size={16} aria-hidden="true" />
-                  </Button>
-                </header>
-                <p className="m-0 text-sm text-product-text-secondary">
-                  {key.waitlist?.name || "Unlinked"} · Create signups, check status, award custom
-                  points
-                </p>
-                <p className="m-0 text-caption text-product-text-secondary">
-                  {key.keyId ? (
-                    <>
-                      Key ID <code>{key.keyId.slice(0, 8)}…</code>
-                    </>
-                  ) : (
-                    "Legacy key"
-                  )}{" "}
-                  · Secret cannot be retrieved
-                </p>
-                <p className="m-0 text-caption text-product-text-secondary">
-                  {key.expiresAt
-                    ? `Expires ${formatProductDate(key.expiresAt, { includeTime: false })}`
-                    : "No expiry"}
-                </p>
-              </article>
-            ))}
+                <Table scrollLabel="API keys">
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead scope="col">Key</TableHead>
+                      <TableHead scope="col">Waitlist</TableHead>
+                      <TableHead scope="col">Access</TableHead>
+                      <TableHead scope="col">Expires</TableHead>
+                      <TableHead scope="col">
+                        <span className="sr-only">Actions</span>
+                      </TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {keys.map((key) => (
+                      <TableRow key={key.id}>
+                        <TableHead scope="row" className="whitespace-normal">
+                          <span className="block font-medium text-product-text-primary">
+                            {key.name}
+                          </span>
+                          <span className="block text-caption font-normal text-product-text-secondary">
+                            {key.keyId ? `ID ${key.keyId.slice(0, 8)}…` : "Legacy key"}
+                          </span>
+                        </TableHead>
+                        <TableCell>{key.waitlist?.name || "Unlinked"}</TableCell>
+                        <TableCell className="whitespace-normal">Signups, status, points</TableCell>
+                        <TableCell>
+                          {key.expiresAt
+                            ? formatProductDate(key.expiresAt, { includeTime: false })
+                            : "Never"}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            aria-label={`Revoke ${key.name}`}
+                            onClick={() => setToRevoke(key)}
+                          >
+                            <HugeiconsIcon icon={Delete02Icon} size={16} aria-hidden="true" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
           </>
         ))}
       {creating && !loading && (
@@ -317,12 +344,12 @@ export function ApiKeysClient() {
                 <Select value={waitlistId} onValueChange={setWaitlistId} disabled={busy}>
                   <SelectTrigger id="api-key-waitlist">
                     <SelectValue>
-                      {available.find((waitlist) => waitlist.id === waitlistId)?.name ||
+                      {waitlists.find((waitlist) => waitlist.id === waitlistId)?.name ||
                         "Choose a waitlist"}
                     </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
-                    {available.map((waitlist) => (
+                    {waitlists.map((waitlist) => (
                       <SelectItem key={waitlist.id} value={waitlist.id}>
                         {waitlist.name}
                       </SelectItem>
@@ -380,7 +407,8 @@ export function ApiKeysClient() {
             Revoke {toRevoke.name}?
           </h3>
           <p className="mb-4! text-sm leading-relaxed text-product-text-secondary">
-            Apps using this key will lose access immediately. Create a replacement after revoking.
+            Apps using this key will lose access immediately. Create, configure, test, and switch
+            all integrations to a replacement key before revoking.
           </p>
           <div className="flex flex-wrap gap-3">
             <Button variant="outline" disabled={busy} onClick={() => setToRevoke(null)}>

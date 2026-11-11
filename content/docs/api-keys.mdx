@@ -14,11 +14,11 @@ Go to Settings → API keys.
 </Step>
 <Step>
 ### Choose a waitlist and expiry
-Name the key and select its waitlist. Choose expiry of 30 days, 90 days, one year, or never. Each waitlist has **one active key at a time**.
+Name the key and select its waitlist. Choose expiry of 30 days, 90 days, one year, or never. You can create multiple keys for a waitlist so integrations can be rotated without downtime.
 </Step>
 <Step>
 ### Save the secret once
-Reveal or copy the key before closing the panel. Store it in a server variable such as `WAITLYZE_API_KEY`. Waitlyze stores only its hash and cannot show the plaintext again.
+Reveal or copy the key before leaving the page. Store it in a server variable such as `WAITLYZE_API_KEY`. Waitlyze stores only its hash and cannot show the plaintext again.
 </Step>
 <Step>
 ### Test a signup
@@ -30,21 +30,21 @@ Send a test [Create signup](/docs/api/create-signup) request with the new key an
 
 <Steps>
 <Step>
-### Revoke the old key
-Revoke, then confirm you understand access loss. Revocation takes effect immediately - in-flight requests with the old key start failing with `401`.
+### Create the replacement key
+Create another key for the same waitlist, copy it, and update your server configuration. Existing integrations continue to use the old key until you revoke it.
 </Step>
 <Step>
-### Create its replacement
-Create the new key for the same waitlist, copy it, and update your server configuration.
+### Verify and revoke the old key
+Send a test signup with the new key. Once the new key is in use, revoke the old one. Revocation takes effect immediately and further requests with the old key return `401`.
 </Step>
 <Step>
-### Verify and monitor
-Send another test signup. Watch for `401` (missed rotation) versus `409`/`429` (app-level, not key) in [Troubleshooting](/docs/troubleshooting).
+### Monitor requests
+Watch for `401` (missed rotation) versus `409`/`429` (app-level, not key) in [Troubleshooting](/docs/troubleshooting).
 </Step>
 </Steps>
 
-<Callout type="warn" title="Plan for the replacement window">
-With one active key per waitlist, revoke → create briefly interrupts integrations. Rotate during low traffic. There is no overlapping-key rotation or automatic default workspace key.
+<Callout type="warn" title="Keep old keys only while rotating">
+More than one key can be active for a waitlist. Revoke an old key once every integration has switched to its replacement.
 </Callout>
 
 ## Scope and access

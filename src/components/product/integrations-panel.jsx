@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowUpRight01Icon, Key02Icon } from "@hugeicons/core-free-icons";
+import { ArrowUpRight01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import Image from "next/image";
 import Link from "next/link";
@@ -33,11 +33,6 @@ export function IntegrationsPanel({ initialConnection, accountEmail, canManage, 
           >
             View docs <HugeiconsIcon icon={ArrowUpRight01Icon} size={16} aria-hidden="true" />
           </Button>
-          {canManage && (
-            <Button variant="outline" render={<Link href="/settings?section=api-keys" />}>
-              <HugeiconsIcon icon={Key02Icon} size={16} aria-hidden="true" /> API keys
-            </Button>
-          )}
         </div>
       </div>
       <ResendIntegration
