@@ -51,14 +51,14 @@ export function ChangelogIndicator({ version = LATEST_CHANGELOG_VERSION }) {
     <div
       role="status"
       aria-label="New changelog release available"
-      className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50/80 px-2.5 py-1 text-xs text-emerald-900 shadow-2xs transition-colors hover:bg-emerald-100/70 max-[360px]:hidden"
+      className="inline-flex shrink-0 items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50/80 px-2 py-0.5 text-xs text-emerald-900 shadow-2xs transition-colors hover:bg-emerald-100/70 sm:gap-1.5 sm:px-2.5 sm:py-1"
     >
       <a
         href={changelogUrl}
         target="_blank"
         rel="noopener noreferrer"
         onClick={handleOpen}
-        className="inline-flex items-center gap-1.5 font-medium text-emerald-900 no-underline"
+        className="inline-flex items-center gap-1 font-medium text-emerald-900 no-underline sm:gap-1.5"
         title={`View ${version} changelog in a new tab`}
       >
         <span className="relative flex h-2 w-2 shrink-0" aria-hidden="true">
@@ -71,13 +71,13 @@ export function ChangelogIndicator({ version = LATEST_CHANGELOG_VERSION }) {
           icon={ArrowUpRight01Icon}
           size={12}
           aria-hidden="true"
-          className="opacity-75"
+          className="opacity-75 max-[360px]:hidden"
         />
       </a>
       <button
         type="button"
         onClick={handleDismiss}
-        className="ml-0.5 inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-emerald-700/70 transition-colors hover:bg-emerald-200/80 hover:text-emerald-950 focus:outline-hidden"
+        className="ml-0.5 inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-emerald-700/70 transition-colors hover:bg-emerald-200/80 hover:text-emerald-950"
         aria-label={`Dismiss ${version} notification`}
         title="Dismiss until next release"
       >

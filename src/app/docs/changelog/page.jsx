@@ -70,10 +70,11 @@ export default async function ChangelogPage() {
             <Link
               href="/rss.xml"
               prefetch={false}
+              title="Subscribe to Waitlyze blog updates via RSS"
               className="inline-flex items-center gap-1.5 rounded-lg border border-fd-border bg-white px-3 py-1.5 text-xs font-medium text-fd-muted-foreground shadow-2xs transition-colors hover:border-fd-border hover:bg-fd-muted/50 hover:text-fd-foreground"
             >
               <HugeiconsIcon icon={RssIcon} size={13} aria-hidden="true" />
-              RSS Feed
+              Blog feed
             </Link>
           </div>
 
