@@ -12,6 +12,7 @@ import {
   UserGroupIcon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   createColumnHelper,
   flexRender,
@@ -68,9 +69,11 @@ import {
 } from "@/components/ui/table";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { EXPORT_COLUMNS, IMPORT_TEMPLATE_CSV } from "@/lib/audience-query.mjs";
+import { dashboardQueryKeys } from "@/lib/dashboard-query-keys";
 import { formatProductDate } from "@/lib/product-date.mjs";
 
 const PAGE_SIZE = 25;
+const EMPTY_RESULT = { data: [], total: 0, nextCursor: null, flags: null };
 const FILTER_OPTIONS = [
   { value: "all", label: "All signups" },
   { value: "verified", label: "Verified" },
@@ -182,11 +185,39 @@ export function AudienceTable({
   const [selecting, setSelecting] = useState(false);
   const [cursors, setCursors] = useState([null]);
   const [pageIndex, setPageIndex] = useState(0);
-  const [result, setResult] = useState({ data: [], total: 0, nextCursor: null, flags: null });
-  const [loadedCriteria, setLoadedCriteria] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [retryCount, setRetryCount] = useState(0);
-  const [error, setError] = useState("");
+  const queryClient = useQueryClient();
+  const isJoinedSort = sort === "joined_asc" || sort === "joined_desc";
+  const cursor = isJoinedSort ? (cursors[pageIndex] ?? null) : null;
+  const criteria = `${status}\u0000${search}\u0000${sort}\u0000${deliveryFilter}`;
+  const { data, error, isFetching, isPending, refetch } = useQuery({
+    queryKey: dashboardQueryKeys.subscriberPage(
+      waitlist.id,
+      status,
+      deliveryFilter,
+      search,
+      sort,
+      pageIndex,
+      cursor,
+    ),
+    staleTime: 15_000,
+    retry: false,
+    queryFn: async ({ signal }) => {
+      const params = new URLSearchParams({ status, sort, delivery: deliveryFilter });
+      if (search) params.set("q", search);
+      params.set("page", String(pageIndex));
+      if (cursor) params.set("cursor", cursor);
+      const response = await fetch(
+        `/api/wait-lists/${encodeURIComponent(waitlist.id)}/subscribers?${params}`,
+        { signal, cache: "no-store" },
+      );
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error || "Unable to load signups.");
+      return payload;
+    },
+  });
+  const result = data ?? EMPTY_RESULT;
+  const loadedCriteria = data ? criteria : null;
+  const loading = isFetching || (isPending && !error);
   const [sheet, setSheet] = useState(null);
   const [exporting, setExporting] = useState(false);
   const [exportColumns, setExportColumns] = useState(() =>
@@ -233,8 +264,6 @@ export function AudienceTable({
     resetList();
   }
 
-  const isJoinedSort = sort === "joined_asc" || sort === "joined_desc";
-
   function toggleSort() {
     setSort((current) => (current === "joined_asc" ? "joined_desc" : "joined_asc"));
     resetList();
@@ -252,41 +281,10 @@ export function AudienceTable({
     resetList();
   }
 
-  const load = useCallback(
-    async (signal) => {
-      setLoading(true);
-      setError("");
-      const params = new URLSearchParams({ status, sort, delivery: deliveryFilter });
-      if (search) params.set("q", search);
-      params.set("page", String(pageIndex));
-      if (isJoinedSort && cursors[pageIndex]) params.set("cursor", cursors[pageIndex]);
-      try {
-        const response = await fetch(
-          `/api/wait-lists/${encodeURIComponent(waitlist.id)}/subscribers?${params}`,
-          { signal, cache: "no-store" },
-        );
-        const payload = await response.json();
-        if (signal.aborted) return;
-        if (!response.ok) throw new Error(payload.error || "Unable to load signups.");
-        setResult(payload);
-        setLoadedCriteria(`${status}\u0000${search}\u0000${sort}\u0000${deliveryFilter}`);
-      } catch (loadError) {
-        if (loadError.name !== "AbortError") {
-          setError("Unable to refresh signups.");
-          toast.error("Unable to refresh signups.");
-        }
-      } finally {
-        if (!signal.aborted) setLoading(false);
-      }
-    },
-    [cursors, deliveryFilter, isJoinedSort, pageIndex, search, sort, status, waitlist.id],
-  );
-
-  useEffect(() => {
-    const controller = new AbortController();
-    load(controller.signal);
-    return () => controller.abort();
-  }, [load, retryCount]);
+  function invalidateDashboardData() {
+    void queryClient.invalidateQueries({ queryKey: dashboardQueryKeys.subscribers(waitlist.id) });
+    void queryClient.invalidateQueries({ queryKey: dashboardQueryKeys.analytics(waitlist.id) });
+  }
 
   async function exportCsv() {
     setExporting(true);
@@ -340,7 +338,7 @@ export function AudienceTable({
             `${outcome.referralsLinked.toLocaleString()} referral${outcome.referralsLinked === 1 ? "" : "s"} linked`,
           );
         toast.success(`${parts.join(", ")}.`);
-        setRetryCount((count) => count + 1);
+        invalidateDashboardData();
       } else if (outcome.code === "PLAN_UPGRADE_REQUIRED") {
         setImportPlanError(outcome.message);
       } else toast.error(outcome.message);
@@ -369,7 +367,7 @@ export function AudienceTable({
       if (!result.ok) throw new Error(result.message);
       toast.success(result.message);
       if (!selectAll) setSelectedIds([]);
-      setRetryCount((count) => count + 1);
+      invalidateDashboardData();
     } catch (error) {
       toast.error(error.message || "Could not retry confirmation emails.");
     } finally {
@@ -395,7 +393,7 @@ export function AudienceTable({
     setSelectedIds([]);
     setSelectAll(false);
     setSelectTruncated(false);
-    setRetryCount((count) => count + 1);
+    invalidateDashboardData();
   }
 
   async function undoBulkOffboard(ids) {
@@ -534,9 +532,7 @@ export function AudienceTable({
       ? `${origin}/w/${flags.publicSlug}?r=${profile.referralCode}`
       : null;
   const requestedSearch = query.trim();
-  const criteriaChanging =
-    requestedSearch !== search ||
-    loadedCriteria !== `${status}\u0000${search}\u0000${sort}\u0000${deliveryFilter}`;
+  const criteriaChanging = requestedSearch !== search || loadedCriteria !== criteria;
   const isUpdating = loading || (criteriaChanging && !error);
   const loadedFilters = loadedCriteria?.split("\u0000") || [];
   const appliedCriteriaLabel = loadedCriteria
@@ -1082,7 +1078,7 @@ export function AudienceTable({
                     ? `Couldn’t refresh the list. Showing the last loaded results for ${appliedCriteriaLabel}.`
                     : "Signups couldn’t be loaded."}
                 </span>
-                <Button variant="outline" onClick={() => setRetryCount((count) => count + 1)}>
+                <Button variant="outline" onClick={() => void refetch()}>
                   Try again
                 </Button>
               </div>

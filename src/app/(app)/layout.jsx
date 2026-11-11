@@ -9,6 +9,7 @@ import { getWorkspaceEntitlements } from "@/lib/billing/plans.mjs";
 import prisma from "@/lib/prisma";
 import { publicFontClasses } from "@/lib/public-fonts";
 import { currentWorkspace } from "@/lib/workspaces/current";
+import { ReactQueryProvider } from "@/providers/query";
 
 export const metadata = {
   robots: { index: false, follow: false },
@@ -64,23 +65,25 @@ function AppShellControlsFallback() {
 export default function AppLayout({ children }) {
   return (
     <div className={`product-ui min-h-dvh bg-product-bg-page ${publicFontClasses}`}>
-      <AppShell
-        headerControls={
-          <Suspense fallback={<AppShellControlsFallback />}>
-            <AppShellControlsData />
-          </Suspense>
-        }
-      >
-        <Suspense
-          fallback={
-            <section className="product-ui" aria-label="Loading waitlists">
-              <ProductContentSkeleton label="Loading waitlists" variant="table" />
-            </section>
+      <ReactQueryProvider>
+        <AppShell
+          headerControls={
+            <Suspense fallback={<AppShellControlsFallback />}>
+              <AppShellControlsData />
+            </Suspense>
           }
         >
-          {children}
-        </Suspense>
-      </AppShell>
+          <Suspense
+            fallback={
+              <section className="product-ui" aria-label="Loading waitlists">
+                <ProductContentSkeleton label="Loading waitlists" variant="table" />
+              </section>
+            }
+          >
+            {children}
+          </Suspense>
+        </AppShell>
+      </ReactQueryProvider>
     </div>
   );
 }
