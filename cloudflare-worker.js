@@ -261,18 +261,22 @@ export default {
     ctx.waitUntil(
       (async () => {
         try {
+          let response;
           if (env.WORKER_SELF_REFERENCE) {
-            await env.WORKER_SELF_REFERENCE.fetch(
+            response = await env.WORKER_SELF_REFERENCE.fetch(
               new Request(url, {
                 method: "GET",
                 headers: { "x-cron-source": "cloudflare-worker-cron" },
               }),
             );
           } else {
-            await fetch(url, {
+            response = await fetch(url, {
               method: "GET",
               headers: { "x-cron-source": "cloudflare-worker-cron" },
             });
+          }
+          if (!response.ok) {
+            console.error("Scheduled database keep-alive returned", response.status);
           }
         } catch (error) {
           console.error(

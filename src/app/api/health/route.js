@@ -25,17 +25,16 @@ export async function GET() {
       },
     );
   } catch (error) {
+    const latencyMs = Date.now() - start;
+    console.error("Database health check failed", {
+      errorName: error instanceof Error ? error.name : "UnknownError",
+      latencyMs,
+    });
     return NextResponse.json(
       {
         status: "degraded",
         database: "disconnected",
-        error: error?.message || "Database unreachable",
-        envDatabaseUrlSet: Boolean(process.env.DATABASE_URL),
-        envDatabaseUrlLength: process.env.DATABASE_URL ? process.env.DATABASE_URL.length : 0,
-        envKeys: Object.keys(process.env).filter(
-          (k) => !k.includes("KEY") && !k.includes("SECRET"),
-        ),
-        latencyMs: Date.now() - start,
+        latencyMs,
         timestamp: new Date().toISOString(),
       },
       {
