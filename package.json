@@ -32,6 +32,8 @@
     "@dnd-kit/utilities": "^3.2.2",
     "@hugeicons/core-free-icons": "^4.3.5",
     "@hugeicons/react": "^1.1.10",
+    "@neondatabase/serverless": "^1.2.0",
+    "@prisma/adapter-neon": "7.10.0",
     "@prisma/adapter-pg": "^7.10.0",
     "@prisma/client": "^7.10.0",
     "@react-email/components": "^1.0.12",
@@ -78,6 +80,7 @@
     "sonner": "^2.0.8",
     "tailwind-merge": "^3.7.0",
     "world-atlas": "^2.0.2",
+    "ws": "^8.22.2",
     "zod": "^4.6.6"
   },
   "devDependencies": {

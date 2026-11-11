@@ -32,7 +32,6 @@ export function WaitlistSettingsNavigation({ waitlistId, section = "referral" })
         <Link
           key={id}
           href={`/waitlists/${waitlistId}/settings?section=${id}`}
-          prefetch={true}
           aria-current={section === id ? "page" : undefined}
           data-danger={danger || undefined}
           scroll={false}

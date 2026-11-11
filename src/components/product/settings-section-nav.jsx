@@ -58,7 +58,6 @@ export function SettingsSectionNavigation({ section = "profile", workspaceId }) 
               : `/settings?section=${id}`
           }
           aria-current={section === id ? "page" : undefined}
-          prefetch={true}
           scroll={false}
           className={cn(
             settingsNavLinkClass,

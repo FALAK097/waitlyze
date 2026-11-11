@@ -89,14 +89,19 @@ export function createWorkspaceService(db) {
     },
     async currentContext(userId) {
       actor(userId);
-      const [workspaces, legacyWaitlist] = await Promise.all([
-        this.list(userId),
-        db.waitList.findFirst({
-          where: { userId, workspaceId: null },
-          select: { id: true },
-        }),
-      ]);
+      const workspaces = await this.list(userId);
       const personal = workspaces.find((workspace) => workspace.personalOwnerId === userId);
+      if (personal?.members?.[0]?.role === "OWNER" && personal.name !== "Personal workspace") {
+        return {
+          personal: { id: personal.id, name: personal.name },
+          workspaces,
+        };
+      }
+
+      const legacyWaitlist = await db.waitList.findFirst({
+        where: { userId, workspaceId: null },
+        select: { id: true },
+      });
       if (isPersonalWorkspaceReady(personal, legacyWaitlist)) {
         return {
           personal: { id: personal.id, name: personal.name },

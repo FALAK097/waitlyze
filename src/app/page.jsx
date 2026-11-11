@@ -11,10 +11,8 @@ import {
   WorkHistoryIcon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { headers } from "next/headers";
 import Image from "next/image";
 import Link from "next/link";
-import { Suspense } from "react";
 
 import { PostCard } from "@/components/blog/post-card";
 import AskAi from "@/components/landing/ask-ai";
@@ -26,12 +24,13 @@ import PublicShell from "@/components/landing/public-shell";
 import SignupButton from "@/components/landing/signup-button";
 import TemplateCards from "@/components/landing/template-cards";
 import { SiteStructuredData } from "@/components/seo/structured-data";
-import { getRegionalPricing } from "@/lib/billing/regional-pricing.mjs";
 import { getPosts, getReadingMinutes } from "@/lib/blog-source";
 import { SITE_DESCRIPTION, SITE_TITLE } from "@/lib/site-metadata";
 import { listTemplates } from "@/lib/templates/catalog.mjs";
 
 import "./landing.css";
+
+export const revalidate = 3600;
 
 export const metadata = {
   title: { absolute: SITE_TITLE },
@@ -43,39 +42,6 @@ export const metadata = {
   openGraph: { type: "website", url: "/", title: SITE_TITLE, description: SITE_DESCRIPTION },
   twitter: { card: "summary_large_image", title: SITE_TITLE, description: SITE_DESCRIPTION },
 };
-
-/**
- * Renders the localized pricing section based on the visitor's country header.
- */
-async function LocalizedPricing() {
-  const requestHeaders = await headers();
-  const country =
-    requestHeaders.get("x-vercel-ip-country") ||
-    requestHeaders.get("cf-ipcountry") ||
-    (process.env.NODE_ENV === "development" ? "IN" : null);
-  const regionalPricing = await getRegionalPricing(country);
-  return <Pricing regionalPricing={regionalPricing} />;
-}
-
-/**
- * Renders a skeleton placeholder while localized pricing is loading.
- */
-function PricingFallback() {
-  return (
-    <section
-      id="pricing"
-      className="wl-section wl-pricing bg-product-bg-page px-4 sm:px-5 md:px-8 lg:px-12"
-      aria-label="Loading plans"
-    >
-      <div className="@container mx-auto w-full max-w-7xl">
-        <div className="grid grid-cols-1 gap-5 md:gap-6 @min-[56rem]:grid-cols-2">
-          <div className="h-112 animate-pulse rounded-2xl border border-product-border-subtle bg-product-bg-surface" />
-          <div className="h-112 animate-pulse rounded-2xl border border-product-border-subtle bg-product-bg-surface" />
-        </div>
-      </div>
-    </section>
-  );
-}
 
 const github = "https://github.com/FALAK097/waitlyze";
 const faqs = [
@@ -466,9 +432,7 @@ export default async function LandingPage() {
           <TemplateCards templates={featuredTemplates} />
         </section>
 
-        <Suspense fallback={<PricingFallback />}>
-          <LocalizedPricing />
-        </Suspense>
+        <Pricing />
 
         <AskAi />
 

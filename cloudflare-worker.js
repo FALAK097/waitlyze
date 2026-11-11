@@ -4,7 +4,7 @@ import nextWorker from "./.open-next/worker.js";
 
 // The OpenNext cache implementations use these durable object exports.
 // @ts-ignore
-export { DOQueueHandler, DOShardedTagCache } from "./.open-next/worker.js";
+export { DOQueueHandler, DOShardedTagCache, BucketCachePurge } from "./.open-next/worker.js";
 
 const MACHINE_PATHS = new Set(["/agent-instructions.md", "/ai.txt", "/llms.txt", "/llms-full.txt"]);
 const MARKDOWN_TYPE = "text/markdown";
@@ -36,8 +36,12 @@ function hasSessionCookie(request) {
   const names = new Set([
     "ba.session_token",
     "ba-session_token",
+    "ba_session_token",
     "__Secure-ba.session_token",
     "__Secure-ba-session_token",
+    "__Secure-ba_session_token",
+    "better-auth.session_token",
+    "__Secure-better-auth.session_token",
   ]);
   return cookieHeader.split(";").some((cookie) => {
     const name = cookie.trim().split("=", 1)[0];
@@ -193,7 +197,7 @@ export default {
       pathname.startsWith("/waitlists") ||
       pathname.startsWith("/settings");
     if (protectedRoute && !hasSessionCookie(request))
-      return Response.redirect(new URL("/", "https://waitlyze.com"), 307);
+      return Response.redirect(new URL("/", request.url), 307);
 
     const isFileRequest = /\.[a-z0-9]+$/i.test(pathname);
     if (
@@ -248,5 +252,35 @@ export default {
       if (ok) message.ack();
       else message.retry();
     }
+  },
+
+  // Lightweight scheduled cron trigger to keep Neon DB awake and isolates warm
+  scheduled(controller, env, ctx) {
+    const appRoot = String(env.APP_ROOT_DOMAIN || "waitlyze.com").toLowerCase();
+    const url = `https://${appRoot}/api/health`;
+    ctx.waitUntil(
+      (async () => {
+        try {
+          if (env.WORKER_SELF_REFERENCE) {
+            await env.WORKER_SELF_REFERENCE.fetch(
+              new Request(url, {
+                method: "GET",
+                headers: { "x-cron-source": "cloudflare-worker-cron" },
+              }),
+            );
+          } else {
+            await fetch(url, {
+              method: "GET",
+              headers: { "x-cron-source": "cloudflare-worker-cron" },
+            });
+          }
+        } catch (error) {
+          console.error(
+            "Scheduled keep-alive ping failed:",
+            error?.name || error?.message || "unknown",
+          );
+        }
+      })(),
+    );
   },
 };

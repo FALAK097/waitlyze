@@ -10,6 +10,8 @@ import { SITE_URL } from "@/lib/site-metadata";
 import { ImpressionTracker } from "./impression-tracker";
 import { SignupForm } from "./signup-form";
 
+export const revalidate = 60;
+
 const publishedPage = cache(async function publishedPage(slug) {
   const waitList = await prisma.waitList.findUnique({
     where: { publicSlug: slug },

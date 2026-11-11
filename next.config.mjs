@@ -36,7 +36,14 @@ const nextConfig = {
       },
     ],
   },
-  serverExternalPackages: ["@prisma/client", ".prisma/client", "better-auth", "prisma"],
+  serverExternalPackages: [
+    "@prisma/client",
+    ".prisma/client",
+    "@prisma/adapter-neon",
+    "@neondatabase/serverless",
+    "better-auth",
+    "prisma",
+  ],
   async redirects() {
     return [
       {
