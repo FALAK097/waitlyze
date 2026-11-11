@@ -198,8 +198,8 @@ function WaitlistsEmptyState({ query, status, sort, hasFilters, workspaceId, can
   );
 }
 
-async function WaitlistsResults(props) {
-  return renderWaitlistsResults(props);
+async function WaitlistsResults({ results }) {
+  return await results;
 }
 
 async function renderWaitlistsResults({
@@ -330,6 +330,15 @@ export default async function WaitlistsPage({ searchParams }) {
   const requestedPage =
     typeof params?.page === "string" && /^\d+$/.test(params.page) ? Number(params.page) : 1;
   const canManageBilling = workspace.members?.[0]?.role === "OWNER";
+  const results = renderWaitlistsResults({
+    userId: user.id,
+    workspaceId: workspace.id,
+    canManageBilling,
+    query,
+    status,
+    sort,
+    requestedPage,
+  });
   const entitlements = await getWorkspaceEntitlements(prisma, workspace.id);
   return (
     <WaitlistSearchProvider query={query}>
@@ -364,15 +373,7 @@ export default async function WaitlistsPage({ searchParams }) {
         <Suspense
           fallback={<ProductContentSkeleton label="Loading waitlists" variant="table" rows={5} />}
         >
-          <WaitlistsResults
-            userId={user.id}
-            workspaceId={workspace.id}
-            canManageBilling={workspace.members?.[0]?.role === "OWNER"}
-            query={query}
-            status={status}
-            sort={sort}
-            requestedPage={requestedPage}
-          />
+          <WaitlistsResults results={results} />
         </Suspense>
       </section>
     </WaitlistSearchProvider>

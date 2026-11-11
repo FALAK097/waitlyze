@@ -1,5 +1,7 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
+
 import {
   pauseCampaign,
   PublicationConflict,
@@ -12,6 +14,16 @@ import prisma from "@/lib/prisma";
 import { AUDIT_ACTIONS, recordWaitlistAuditEvent } from "@/lib/workspaces/audit.mjs";
 import { sessionActor } from "@/lib/workspaces/authorize";
 import { AccessError } from "@/lib/workspaces/service.mjs";
+
+async function revalidatePublication(id) {
+  const campaign = await prisma.waitList.findUnique({
+    where: { id },
+    select: { publicSlug: true },
+  });
+  revalidatePath("/waitlists");
+  revalidatePath(`/waitlists/${id}`);
+  if (campaign?.publicSlug) revalidatePath(`/w/${campaign.publicSlug}`);
+}
 
 async function action(run, fallback) {
   try {
@@ -48,6 +60,7 @@ export async function publishWaitlist(id, revision) {
     });
     firstPublish = Boolean(before) && !before.publishedRevision;
     const result = await publishCampaign(prisma, userId, undefined, id, revision);
+    if (!result.unchanged) await revalidatePublication(id);
     await recordWaitlistAuditEvent(prisma, {
       userId,
       waitListId: id,
@@ -69,6 +82,7 @@ export async function publishWaitlist(id, revision) {
 export async function pauseWaitlist(id) {
   return action(async (userId) => {
     const result = await pauseCampaign(prisma, userId, undefined, id);
+    await revalidatePublication(id);
     await recordWaitlistAuditEvent(prisma, {
       userId,
       waitListId: id,
@@ -79,8 +93,9 @@ export async function pauseWaitlist(id) {
   }, "Waitlist pause failed");
 }
 export async function rollbackWaitlist(id) {
-  return action(
-    (userId) => rollbackCampaign(prisma, userId, undefined, id),
-    "Waitlist rollback failed",
-  );
+  return action(async (userId) => {
+    const result = await rollbackCampaign(prisma, userId, undefined, id);
+    await revalidatePublication(id);
+    return result;
+  }, "Waitlist rollback failed");
 }

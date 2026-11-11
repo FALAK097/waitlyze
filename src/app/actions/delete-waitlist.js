@@ -42,6 +42,8 @@ export async function deleteWaitlist(id, confirmation) {
     });
     if (!result.count)
       return { error: "Waitlist not found or access changed. Refresh and try again." };
+    revalidatePath("/waitlists");
+    if (campaign.publicSlug) revalidatePath(`/w/${campaign.publicSlug}`);
     if (context?.workspaceId) {
       const removed = context._count.signUps;
       await recordAuditEvent(prisma, {
@@ -64,7 +66,6 @@ export async function deleteWaitlist(id, confirmation) {
         console.error("Deleted waitlist has a stored logo pending cleanup.");
       }
     }
-    revalidatePath("/waitlists");
     return { success: true };
   } catch {
     return { error: "Could not delete this waitlist. Refresh and try again." };
