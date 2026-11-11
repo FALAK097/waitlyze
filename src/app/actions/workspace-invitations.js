@@ -181,7 +181,7 @@ export async function inviteWorkspaceMember(previous, form) {
         where: { id: invitation.id, status: "PENDING" },
         data: { status: "SEND_FAILED" },
       });
-      revalidatePath("/settings#team");
+      revalidatePath("/settings");
       return {
         error: "The invite is saved, but email delivery failed. Retry it from Pending invitations.",
       };
@@ -195,7 +195,7 @@ export async function inviteWorkspaceMember(previous, form) {
       resourceName: email,
       detail: `Invited as ${role}`,
     });
-    revalidatePath("/settings#team");
+    revalidatePath("/settings");
     return { success: `Invitation sent to ${email}.` };
   } catch (error) {
     if (error instanceof WorkspacePlanError)
@@ -262,7 +262,7 @@ export async function resendWorkspaceInvitation(invitationId) {
         where: { id: invite.id, status: "PENDING" },
         data: { status: "SEND_FAILED" },
       });
-      revalidatePath("/settings#team");
+      revalidatePath("/settings");
       return { error: "Email delivery failed. The invitation is still available to retry." };
     }
     await prisma.workspaceInvitation.updateMany({
@@ -278,7 +278,7 @@ export async function resendWorkspaceInvitation(invitationId) {
       resourceName: invite.emailNormalized,
       detail: `Role: ${invite.role === "ADMIN" ? "Admin" : "Member"}`,
     });
-    revalidatePath("/settings#team");
+    revalidatePath("/settings");
     return { success: `Invitation resent to ${invite.emailNormalized}.` };
   } catch {
     return { error: "Email delivery failed. The invitation is still available to retry." };
@@ -309,7 +309,7 @@ export async function revokeWorkspaceInvite(invitationId, workspaceId) {
       resourceName: revoked?.emailNormalized || null,
       detail: revoked ? `Role was ${revoked.role === "ADMIN" ? "Admin" : "Member"}` : null,
     });
-    revalidatePath("/settings#team");
+    revalidatePath("/settings");
     return { success: "Invitation revoked." };
   } catch {
     return { error: "Could not revoke this invitation. Try again." };

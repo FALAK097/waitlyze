@@ -1,30 +1,27 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { createContext, useContext, useState, useCallback, useRef, useMemo } from "react";
+import { create } from "zustand";
 
 const AuthModal = dynamic(() => import("./auth-modal").then((m) => m.AuthModal), { ssr: false });
 
-const AuthModalContext = createContext(null);
+// The modal is shared by landing and pricing buttons. Keep its state outside the
+// page tree so opening it only updates the modal host, not every consumer.
+const useAuthModalStore = create((set) => ({
+  open: false,
+  hasOpened: false,
+  returnFocus: null,
+  openAuthModal: () => set({ open: true, hasOpened: true, returnFocus: document.activeElement }),
+  setOpen: (open) => set({ open }),
+}));
 
 export function AuthModalProvider({ children }) {
-  const [open, setOpen] = useState(false);
-  const [hasOpened, setHasOpened] = useState(false);
-  const triggerRef = useRef(null);
-
-  const openAuthModal = useCallback(() => {
-    triggerRef.current = document.activeElement;
-    setHasOpened(true);
-    setOpen(true);
-  }, []);
-  const closeAuthModal = useCallback(() => setOpen(false), []);
-  const value = useMemo(
-    () => ({ openAuthModal, closeAuthModal, isAuthModalOpen: open }),
-    [openAuthModal, closeAuthModal, open],
-  );
+  const open = useAuthModalStore((state) => state.open);
+  const hasOpened = useAuthModalStore((state) => state.hasOpened);
+  const setOpen = useAuthModalStore((state) => state.setOpen);
 
   return (
-    <AuthModalContext.Provider value={value}>
+    <>
       {children}
       {hasOpened && (
         <AuthModal
@@ -32,18 +29,15 @@ export function AuthModalProvider({ children }) {
           onOpenChange={setOpen}
           onCloseAutoFocus={(event) => {
             event.preventDefault();
-            if (triggerRef.current?.isConnected) triggerRef.current.focus();
+            const trigger = useAuthModalStore.getState().returnFocus;
+            if (trigger?.isConnected) trigger.focus();
           }}
         />
       )}
-    </AuthModalContext.Provider>
+    </>
   );
 }
 
-export function useAuthModal() {
-  const ctx = useContext(AuthModalContext);
-  if (!ctx) {
-    throw new Error("useAuthModal must be used within AuthModalProvider");
-  }
-  return ctx;
+export function useOpenAuthModal() {
+  return useAuthModalStore((state) => state.openAuthModal);
 }

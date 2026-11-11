@@ -22,6 +22,7 @@ if (
 }
 
 const timings = [];
+const headerTimings = [];
 const statuses = new Map();
 let next = 0;
 
@@ -35,6 +36,7 @@ async function worker() {
         redirect: "manual",
         signal: AbortSignal.timeout(15_000),
       });
+      headerTimings.push(performance.now() - started);
       // Consume the body: a streaming response can start quickly but finish slowly.
       await response.arrayBuffer();
       timings.push(performance.now() - started);
@@ -47,8 +49,9 @@ async function worker() {
 
 await Promise.all(Array.from({ length: Math.min(samples, concurrency) }, () => worker()));
 timings.sort((a, b) => a - b);
-const percentile = (fraction) =>
-  timings.length ? Math.round(timings[Math.ceil(timings.length * fraction) - 1]) : null;
+headerTimings.sort((a, b) => a - b);
+const percentile = (values, fraction) =>
+  values.length ? Math.round(values[Math.ceil(values.length * fraction) - 1]) : null;
 
 console.log(
   JSON.stringify(
@@ -58,10 +61,15 @@ console.log(
       concurrency,
       statuses: Object.fromEntries(statuses),
       completed: timings.length,
+      headersMs: {
+        p50: percentile(headerTimings, 0.5),
+        p95: percentile(headerTimings, 0.95),
+        p99: percentile(headerTimings, 0.99),
+      },
       latencyMs: {
-        p50: percentile(0.5),
-        p95: percentile(0.95),
-        p99: percentile(0.99),
+        p50: percentile(timings, 0.5),
+        p95: percentile(timings, 0.95),
+        p99: percentile(timings, 0.99),
         max: timings.length ? Math.round(timings.at(-1)) : null,
       },
     },

@@ -2,10 +2,11 @@
 
 import { ArrowUpDownIcon, CalendarIcon, ChartLineData01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
+import { useQuery } from "@tanstack/react-query";
 import { differenceInCalendarDays, format } from "date-fns";
 import Link from "next/link";
 import { parseAsString, parseAsStringLiteral, useQueryStates } from "nuqs";
-import { useEffect, useEffectEvent, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 
 import { AnalyticsSkeleton } from "@/components/product/analytics-skeleton";
 import { EvilBarRows } from "@/components/product/evil-bar-chart";
@@ -21,6 +22,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { dashboardQueryKeys } from "@/lib/dashboard-query-keys";
 import { SIGNUP_POINTS, REFERRAL_POINTS } from "@/lib/referrals/points.mjs";
 
 import { number } from "./waitlist-analytics-formatters";
@@ -420,7 +422,6 @@ export function WaitlistAnalytics({ waitListId, emailsEnabled = false }) {
   const [{ range, from, to }, setRangeState] = useQueryStates(rangeQueryOptions, {
     history: "push",
   });
-  const [retryCount, setRetryCount] = useState(0);
   const [mode, setMode] = useState("chart");
   const [acquisitionMetric, setAcquisitionMetric] = useState("visitors");
   const [audienceMetric, setAudienceMetric] = useState("visitors");
@@ -428,9 +429,6 @@ export function WaitlistAnalytics({ waitListId, emailsEnabled = false }) {
   const [acquisitionView, setAcquisitionView] = useState("channels");
   const [audienceView, setAudienceView] = useState("map");
   const [technologyView, setTechnologyView] = useState("browsers");
-  const [analytics, setAnalytics] = useState(null);
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(true);
   const timeZone = useMemo(() => {
     try {
       return Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
@@ -454,47 +452,34 @@ export function WaitlistAnalytics({ waitListId, emailsEnabled = false }) {
   const requestEnd = range === "custom" ? (parseIsoDate(to) ? to : null) : null;
   const requestValid = range !== "custom" || Boolean(parseIsoDate(from) && parseIsoDate(to));
 
-  const load = useEffectEvent(async (signal) => {
-    if (!requestValid) return;
-    setLoading(true);
-    setError("");
-    try {
+  const {
+    data: analytics,
+    error: queryError,
+    isFetching: loading,
+    isPending,
+    refetch,
+  } = useQuery({
+    queryKey: dashboardQueryKeys.analyticsRange(waitListId, requestDays, requestEnd, timeZone),
+    enabled: requestValid,
+    staleTime: 30_000,
+    retry: false,
+    queryFn: async ({ signal }) => {
       const query = new URLSearchParams({ days: String(requestDays), timeZone });
       if (requestEnd) query.set("endDate", requestEnd);
-      const response = await fetch(`/api/wait-lists/${waitListId}/analytics?${query}`, {
-        signal,
-        cache: "no-store",
-      });
+      const response = await fetch(
+        `/api/wait-lists/${encodeURIComponent(waitListId)}/analytics?${query}`,
+        {
+          signal,
+          cache: "no-store",
+        },
+      );
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || "Could not load analytics.");
-      if (!signal.aborted)
-        setAnalytics({
-          ...result,
-          requestKey: { waitListId, days: requestDays, end: requestEnd ?? null },
-        });
-    } catch (cause) {
-      if (cause.name !== "AbortError") setError(cause.message || "Could not load analytics.");
-    } finally {
-      if (!signal.aborted) setLoading(false);
-    }
+      return result;
+    },
   });
-
-  useEffect(() => {
-    if (!requestValid) {
-      setLoading(false);
-      return undefined;
-    }
-    const controller = new AbortController();
-    void load(controller.signal);
-    return () => controller.abort();
-  }, [requestDays, requestEnd, requestValid, retryCount, timeZone]);
-
-  const rangeMatches = (result) =>
-    result?.requestKey &&
-    result.requestKey.waitListId === waitListId &&
-    result.requestKey.days === requestDays &&
-    result.requestKey.end === (requestEnd ?? null);
-  const currentAnalytics = analytics && rangeMatches(analytics) ? analytics : null;
+  const currentAnalytics = requestValid ? analytics : null;
+  const error = requestValid ? queryError?.message || "" : "";
   const summary = currentAnalytics?.summary;
   const referrals = currentAnalytics?.referrals;
   const kFactor = currentAnalytics?.kFactor;
@@ -598,7 +583,7 @@ export function WaitlistAnalytics({ waitListId, emailsEnabled = false }) {
     <section
       className="mt-7 grid gap-4 max-[600px]:mt-6"
       aria-labelledby="waitlist-analytics-title"
-      aria-busy={loading}
+      aria-busy={requestValid && (loading || isPending)}
     >
       <header className="flex items-end justify-between gap-5 pb-1 max-[600px]:flex-col max-[600px]:items-stretch">
         <div>
@@ -630,7 +615,7 @@ export function WaitlistAnalytics({ waitListId, emailsEnabled = false }) {
           role="alert"
         >
           <p className="pb-1.25 font-medium text-product-text-primary">{error}</p>
-          <Button type="button" onClick={() => setRetryCount((count) => count + 1)}>
+          <Button type="button" onClick={() => void refetch()}>
             Try again
           </Button>
         </div>
@@ -646,7 +631,7 @@ export function WaitlistAnalytics({ waitListId, emailsEnabled = false }) {
           <span>Choose both a start and end date (up to 90 days).</span>
         </div>
       ) : null}
-      {!error && requestValid && loading && !currentAnalytics ? (
+      {!error && requestValid && isPending ? (
         <>
           <p className="sr-only" role="status">
             Loading analytics…
