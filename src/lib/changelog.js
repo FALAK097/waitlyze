@@ -24,7 +24,8 @@ export function releaseId(title) {
  */
 export function formatChangelogDate(dateStr) {
   if (!dateStr) return "";
-  const parts = dateStr.trim().split(/\s+/);
+  const cleaned = dateStr.replace(/,/g, "").trim();
+  const parts = cleaned.split(/\s+/);
   if (parts.length === 3) {
     const months = {
       Jan: "January",
@@ -47,10 +48,10 @@ export function formatChangelogDate(dateStr) {
 }
 
 /**
- * Parses raw CHANGELOG.md content into structured release objects.
+ * Parses raw CHANGELOG.md content into structured release objects with features and fixes.
  *
  * @param {string} raw - Raw markdown string from CHANGELOG.md.
- * @returns {Array<{ version: string, date: string, title: string, summary: string, section: string, highlights: Array<{ title: string, description: string }>, isLatest: boolean, id: string }>}
+ * @returns {Array<{ version: string, date: string, title: string, summary: string, features: Array<{ title: string, description: string }>, fixes: Array<{ title: string, description: string }>, isLatest: boolean, id: string }>}
  */
 export function parseChangelog(raw) {
   const blocks = raw.split(/^##\s+/m).filter(Boolean);
@@ -63,7 +64,8 @@ export function parseChangelog(raw) {
 
     let title = "";
     const summaryLines = [];
-    const highlights = [];
+    const features = [];
+    const fixes = [];
     let currentSection = "";
 
     for (let i = 1; i < lines.length; i++) {
@@ -73,20 +75,28 @@ export function parseChangelog(raw) {
       if (line.startsWith("### ")) {
         title = line.replace(/^###\s+/, "");
       } else if (line.startsWith("#### ")) {
-        currentSection = line.replace(/^####\s+/, "");
+        currentSection = line
+          .replace(/^####\s+/, "")
+          .trim()
+          .toLowerCase();
       } else if (line.startsWith("- ")) {
         const bulletText = line.replace(/^-\s+/, "");
         const boldMatch = bulletText.match(/^\*\*([^*]+)\*\*\s*(.*)$/);
-        if (boldMatch) {
-          highlights.push({
-            title: boldMatch[1].replace(/\.$/, "").trim(),
-            description: boldMatch[2].trim(),
-          });
+        const item = boldMatch
+          ? {
+              title: boldMatch[1].replace(/\.$/, "").trim(),
+              description: boldMatch[2].trim(),
+            }
+          : {
+              title: "",
+              description: bulletText,
+            };
+
+        if (currentSection.includes("fix")) {
+          fixes.push(item);
         } else {
-          highlights.push({
-            title: "",
-            description: bulletText,
-          });
+          // Defaults to features (or highlights)
+          features.push(item);
         }
       } else {
         if (!currentSection) {
@@ -100,8 +110,8 @@ export function parseChangelog(raw) {
       date,
       title,
       summary: summaryLines.join(" "),
-      section: currentSection || "Highlights",
-      highlights,
+      features,
+      fixes,
       isLatest: index === 0,
       id: releaseId(version),
     };

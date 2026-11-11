@@ -1,144 +1,200 @@
-## v0.11.0 · Nov 11 2026
+## v0.11.0 · Nov 11, 2026
 
-### Flexible API key management and documentation overhaul
+### Flexible API key management and zero-downtime rotation
 
-API key management now matches the workspace table patterns seen in Members and Audit logs, with support for seamless key rotation. Documentation has been streamlined, removing obsolete notification pages and dead links, alongside full-width release notes and in-app update indicators.
+Manage server credentials in a structured workspace table with modal generation and safe revocation warnings. Teams can now rotate active API keys without downtime, audit billing events, and follow direct guides for custom domains.
 
-#### Highlights
+#### Features
 
-- **Overlapping API keys for zero-downtime rotation.** Workspaces can now create replacement API keys while an active key continues serving traffic, eliminating downtime during credential rotation.
-- **Redesigned API keys interface.** API keys now live in a full workspace table with instant key creation, one-click copy, and inline revocation warnings instead of a constrained drawer.
-- **In-app changelog notifications.** Logged-in users receive subtle release indicators in the navigation when updates ship, with direct links to release notes and instant dismissal.
-- **Full-width changelog experience.** Release notes now utilize the full reading container with proper release timestamps, clean typography, and optimized TOC navigation.
-- **Documentation cleanup and navigation polish.** Pruned outdated notification documentation, fixed dangling cross-references, and ensured all external documentation links reliably open in new tabs.
+- **Modal-based API key creation.** Generate API keys in a modal dialog with one-click secret copying and visibility toggles.
+- **Table view for API credentials.** Manage active workspace keys, waitlist bindings, creation dates, and expirations in a unified table.
+- **Billing activity in audit logs.** Track plan subscriptions, upgrades, and billing events directly in workspace audit logs.
+- **Custom domain documentation.** Direct links to DNS configuration and verification documentation from domain settings.
 
-## v0.10.0 · Oct 26 2026
+#### Fixes
 
-### The full campaign loop: cockpit, rewards, and cleaner growth signals
+- **Mobile waitlists table scrolling.** Fixed an issue where waitlists data tables did not scroll smoothly horizontally on mobile screens.
+- **Notification drawer polish.** Cleaned up Slack and Discord notification drawers and removed unnecessary status badges.
+- **Automation notice spacing.** Fixed vertical layout spacing below email delivery notices in the automation manager.
 
-Launches now have an end-to-end loop - share to grow, earn points, and watch a fair, well-attributed funnel - with email delivery that reaches the inbox. Abuse limits and verification keep the campaign honest without adding friction.
+## v0.10.0 · Oct 26, 2026
 
-#### Highlights
+### The full campaign loop: cockpit, rewards, and workspace billing
 
-- **Run the campaign from one place.** The referral cockpit lets teams control share channels, social follows, and campaign settings, with a masked leaderboard view that never exposes raw emails.
-- **Turn sharing into rewards.** Qualifying referrals now earn points from a transparent ledger, and subscribers see their position and progress toward the next reward tier.
-- **Keep the funnel honest.** IP-velocity fraud limits gate suspicious signup bursts, and each waitlist can opt in to Cloudflare Turnstile human verification.
-- **Attribute growth properly.** Signups break down by source, location, and device, with embeddable public widgets (leaderboard and counter) so momentum can be shown anywhere.
-- **Email that keeps launches moving.** A founder email builder with reusable templates and a retried delivery outbox, plus per-waitlist BYOK senders and Slack notifications.
+Launches now run end-to-end with referral cockpits, point tiers, and transparent fraud protections. Teams can monetize with flexible workspace billing plans and display live momentum with embeddable public widgets.
 
-## v0.9.0 · Oct 19 2026
+#### Features
 
-### Analytics, with more signal
+- **Referral campaign cockpit.** Manage social share channels, referral points, and masked leaderboards from a single control center.
+- **Point rewards and subscriber progress.** Award verified points for successful referrals with real-time participant position tracking.
+- **Anti-fraud verification.** Guard waitlists against automated bursts using Cloudflare Turnstile verification and IP velocity limits.
+- **Public widgets.** Embed live waitlist counters and participant leaderboards on external marketing sites.
+- **Workspace billing tiers.** Support for Free and Pro workspace plans with localized purchasing power parity (PPP) pricing.
 
-The analytics workspace grew from top-line signup counts into a clearer picture of who is joining, how they found the waitlist, and which referrals are bringing in new people. Date comparisons help teams understand whether a launch is gaining momentum or needs attention.
+#### Fixes
 
-#### Highlights
+- **Mobile responsive overflow.** Prevented horizontal overflow on mobile comparison and pricing tables.
+- **Email template formatting.** Sanitized Markdown parsing in email composers to prevent escaped syntax errors.
+- **Domain reservation cleanup.** Fixed reservation state handling when deleting waitlists linked to custom domains.
 
-- **Understand acquisition quality.** Break down signups by source, location, device, and referral activity so teams can see which channels are contributing more than raw traffic.
-- **Compare performance over time.** Choose date ranges, review conversion alongside useful benchmarks, and spot changes in signup activity without exporting data to a spreadsheet.
-- **Connect sharing to outcomes.** Review referral leaders and sharing activity beside the signup funnel to understand how word-of-mouth contributes to growth.
-- **Move from totals to context.** Keep audience and referral signals together in the redesigned analytics workspace for a faster read on campaign performance.
+## v0.9.0 · Oct 19, 2026
 
-## v0.8.0 · Oct 12 2026
+### Analytics, with more signal and date comparisons
 
-### A fairer referral engine
+Understand launch performance with granular audience acquisition signals and time-period comparisons. Identify which referral channels bring the highest-converting subscribers without leaving the dashboard.
 
-Referral campaigns became easier to understand and harder to manipulate. Subscribers can see how their sharing activity progresses, while teams get safeguards and a clearer record of how rewards are earned.
+#### Features
 
-#### Highlights
+- **Acquisition channel breakdowns.** Track signups by referral sources, geographic locations, and device types.
+- **Date range comparisons.** Compare signup and conversion velocity across customizable time windows.
+- **Referral performance attribution.** Identify top advocates and word-of-mouth contributors beside conversion funnels.
 
-- **Reward successful referrals.** Award points when a referral results in a qualifying signup, with activity recorded in a transparent ledger instead of leaving participants to guess how totals changed.
-- **Make campaign progress visible.** Give subscribers a clearer view of their position, earned progress, and referral activity so they can understand what to do next.
-- **Reduce abuse.** Apply velocity checks and duplicate-signup safeguards to catch suspicious bursts and repeated entries before they distort campaign results.
-- **Keep the experience fair.** Pair participant-facing progress with workspace-level protections so rewards are easier to trust for both organizers and subscribers.
+#### Fixes
 
-## v0.7.0 · Oct 05 2026
+- **Date comparison filter persistence.** Fixed an issue where active date comparison filters reset upon changing workspace tabs.
+- **Geographic IP resolution.** Improved country and city attribution accuracy for proxied traffic.
+- **Leaderboard score recalculation.** Resolved a delay when recalculating leaderboard positions following point grants.
 
-### Email that keeps launches moving
+## v0.8.0 · Oct 12, 2026
 
-Waitlyze added email tools for keeping subscribers informed from their first signup through campaign milestones. Teams can start from reusable templates, automate common messages, and connect a delivery provider that fits their setup.
+### A fairer referral engine with point ledgers and safeguards
 
-#### Highlights
+Referral campaigns are now easier to trust and harder to manipulate. Subscribers can view their exact position and milestones, while organizers get transparent point audit ledgers.
 
-- **Send branded campaigns.** Create email campaigns from reusable templates, then adapt the content to match a launch and its audience.
-- **Automate timely updates.** Send welcome messages and milestone emails as the list grows, keeping common follow-ups from becoming a manual task.
-- **Choose a delivery setup.** Connect Resend or configure another supported email provider, with sender details managed for delivery from your domain.
-- **Keep email close to the audience.** Work with subscriber and campaign context inside the same workspace used to manage the waitlist.
+#### Features
 
-## v0.6.0 · Sep 28 2026
+- **Transparent point ledgers.** Every point award is logged with timestamped attribution and verifiable referral source tracking.
+- **Subscriber milestone progress.** Display progress bars and next-tier goals directly on participant confirmation screens.
+- **Suspicious signup protection.** Catch duplicate submissions and suspicious velocity spikes before they distort leaderboards.
 
-### Integrations and dependable delivery
+#### Fixes
 
-This release connected waitlist activity to external tools and made background delivery easier to monitor. Workspace owners can manage integrations centrally and investigate failed deliveries instead of losing track of them.
+- **Rapid duplicate submission gating.** Fixed a race condition where rapid double-clicks could record duplicate signup entries.
+- **Verification failure messaging.** Clearer user feedback when bot verification challenges fail or expire.
+- **Position display accuracy.** Corrected referral position calculations when deleted signups are removed from a waitlist.
 
-#### Highlights
+## v0.7.0 · Oct 05, 2026
 
-- **React to important events.** Send webhook notifications for key waitlist activity so connected systems can respond when signups and campaign events happen.
-- **Inspect delivery outcomes.** Review webhook and email delivery history to see what was attempted and identify work that needs attention.
-- **Retry failures.** Retry eligible webhook or email jobs from their delivery records rather than manually recreating the event.
-- **Manage connections centrally.** Configure workspace integrations and their secrets in one settings area, keeping connection setup separate from day-to-day waitlist work.
+### Email broadcasts, automated welcome flows, and custom senders
 
-## v0.5.0 · Sep 21 2026
+Keep waitlist subscribers engaged from signup to launch with branded emails. Compose updates using Markdown templates, automate welcome messages, and route through custom domains.
 
-### A more useful subscriber workspace
+#### Features
 
-Subscriber management gained the tools teams need when a list becomes too large to review one record at a time. Search and filters help locate people, while richer profiles and file exchange make common audience tasks easier to complete.
+- **Automated welcome sequences.** Automatically dispatch personalized confirmation emails when subscribers join a waitlist.
+- **Reusable Markdown email templates.** Compose and save formatted email templates with real-time variable previews.
+- **Custom email sender integration.** Connect Resend or custom email providers to send messages directly from your brand's domain.
 
-#### Highlights
+#### Fixes
 
-- **Find the right subscriber.** Search and filter the audience, then open an individual profile to review its signup details without scanning the whole list.
-- **Bring data in and take it out.** Import signups from a file and export selected audience data for follow-up or analysis in other tools.
-- **Understand each record.** Review verification status, referral activity, location, and acquisition details together in the subscriber profile.
-- **Work at both levels.** Move between the audience list and an individual record while keeping the context needed to manage a growing waitlist.
+- **Variable preview rendering.** Fixed custom template variable interpolation in the email composer preview.
+- **Reply-To header configuration.** Ensured sender Reply-To addresses are properly applied to all outbound emails.
+- **Broadcast delivery deduplication.** Prevented inadvertent duplicate email dispatches during manual broadcast triggers.
 
-## v0.4.0 · Sep 14 2026
+## v0.6.0 · Sep 28, 2026
 
-### Know where signups come from
+### Integrations, real-time webhooks, and dependable delivery
 
-The first analytics release gave waitlist owners a way to measure launch performance inside Waitlyze. Core signup and conversion metrics can be viewed over a selected period and broken down by the channels and places that brought people in.
+Connect your waitlists to downstream databases and automation platforms with real-time webhooks. Inspect delivery attempts, monitor payload status, and retry failed events centrally.
 
-#### Highlights
+#### Features
 
-- **Measure the signup funnel.** Track impressions, signups, conversion, and referral performance together to see how interest turns into audience growth.
-- **Attribute signups.** Break down the audience by acquisition source and geography to identify where signups are coming from.
-- **Focus the reporting period.** Use date filters to inspect a launch window, compare campaign periods, or narrow the view to the dates that matter.
-- **Start with an in-product view.** Check the essential launch metrics directly in the workspace rather than assembling a report from separate sources.
+- **Real-time webhook notifications.** Dispatch event webhooks for new signups, referral updates, and status changes.
+- **Delivery logs and payload inspection.** Inspect HTTP status codes, request headers, and error logs for every delivery attempt.
+- **Centralized integration management.** Configure webhook endpoints and secure signing secrets in workspace settings.
 
-## v0.3.0 · Sep 07 2026
+#### Fixes
 
-### Make the waitlist feel like yours
+- **Webhook secret regeneration.** Fixed an issue where regenerating signing secrets could fail to invalidate cached tokens.
+- **Timeout handling.** Extended delivery timeout limits for slower webhook consumer endpoints.
+- **Retry button state.** Corrected retry button responsiveness during in-flight delivery attempts.
 
-Waitlist pages moved beyond a default form and became customizable launch destinations. A visual designer, reusable starting points, brand controls, and publishing choices help teams shape the signup experience to fit their campaign.
+## v0.5.0 · Sep 21, 2026
 
-#### Highlights
+### A more useful subscriber workspace with import and export
 
-- **Design without code.** Use the visual page designer to shape a branded waitlist page and its signup experience without building the page infrastructure yourself.
-- **Start from reusable foundations.** Choose a template, apply custom colors, and save a brand kit so pages can be created consistently across campaigns.
-- **Publish where your audience expects you.** Launch on a Waitlyze-hosted link or connect a custom domain for a more branded destination.
-- **Keep page creation and publishing together.** Build, preview, and publish the public-facing page from the same workspace used to manage its signups.
+Scale subscriber operations with deep search, multi-attribute filtering, and profile views. Import existing contact lists and export campaign data with a single click.
 
-## v0.2.0 · Aug 31 2026
+#### Features
 
-### Sharing that brings in the next signup
+- **Audience search and filtering.** Filter subscribers by signup date, referral count, verification status, and acquisition source.
+- **Subscriber profile inspector.** Inspect an individual subscriber's referral link, verification status, and activity timeline.
+- **CSV import and export.** Seamlessly import existing subscriber lists and export audience segments for external tools.
 
-The referral release gave every subscriber a way to invite someone else to the waitlist. Referral links, progress, and rankings helped teams turn sharing into a measurable part of a launch rather than an untracked extra.
+#### Fixes
 
-#### Highlights
+- **Unicode CSV export.** Fixed CSV export formatting for non-Latin character sets and international email addresses.
+- **Search query debouncing.** Improved list filtering performance when typing rapid queries in large subscriber lists.
+- **Modal focus traps.** Ensured keyboard focus remains trapped within confirmation dialogs when deleting subscribers.
 
-- **Give each subscriber a personal link.** Create a referral URL that can be shared directly, making it possible to connect an invitation with the signup it generated.
-- **Make participation visible.** Add referral progress and rankings to the signup experience so participants can see how their sharing contributes to the campaign.
-- **Support campaign rewards.** Use rewards to encourage referrals and give subscribers a reason to keep sharing after their initial signup.
-- **Trace growth back to its source.** Track referrals to the people and channels that generated them, helping teams recognize the contributors behind new signups.
+## v0.4.0 · Sep 14, 2026
 
-## v0.1.0 · Aug 24 2026
+### Know where signups come from with analytics
 
-### The first Waitlyze waitlist
+Measure launch growth directly within your workspace. Visualize visitors turning into subscribers with real-time conversion rates, geographic heatmaps, and device metrics.
 
-The first release brought the essential waitlist workflow into one place: create a campaign, publish a signup page, and manage the people who join. It gave early launches a simple starting point without requiring teams to build and operate their own signup infrastructure.
+#### Features
 
-#### Highlights
+- **Signup funnel and conversion rates.** Real-time tracking of page impressions, total signups, and conversion percentages.
+- **Geographic distribution map.** Visualize where your audience is discovering your waitlist across countries and regions.
+- **Device and platform breakdown.** Understand whether your subscribers are signing up via mobile, tablet, or desktop.
 
-- **Create a waitlist quickly.** Set up a campaign and publish a signup page without building or hosting the form infrastructure yourself.
-- **Collect signups centrally.** Manage the people who join from one workspace instead of maintaining a separate list for each launch.
-- **Share a public signup page.** Give a campaign a destination that can be shared with an audience and used to collect interest before launch.
-- **Start with the core loop.** Publish the page, grow an audience, and manage signups together-the foundation for the page design, referral, analytics, and email capabilities that followed.
+#### Fixes
+
+- **Chart tooltip clipping.** Fixed tooltip clipping along the outer boundaries of small mobile screens.
+- **Timezone offset calculations.** Resolved date boundary discrepancies in daily signup count calculations.
+- **Device classification accuracy.** Corrected platform classification for embedded webviews and mobile browsers.
+
+## v0.3.0 · Sep 07, 2026
+
+### Make the waitlist feel like yours with the page builder
+
+Turn generic signup forms into branded launch experiences. Use the visual page builder to select palettes, customize typography, upload brand assets, and connect custom domains.
+
+#### Features
+
+- **Visual page builder.** Real-time visual designer for waitlist landing pages with instant live previews.
+- **Brand customization presets.** Customize color palettes, upload custom logos, and apply consistent branding.
+- **Custom domain publishing.** Host waitlists on your own custom domain or use Waitlyze-hosted subdomains.
+
+#### Fixes
+
+- **Color picker synchronization.** Fixed hex code input synchronization across template color pickers.
+- **Domain DNS verification polling.** Corrected verification status polling intervals on custom domain settings.
+- **Mobile builder preview.** Resolved layout scaling issues when previewing pages on small viewport sizes.
+
+## v0.2.0 · Aug 31, 2026
+
+### Sharing that brings in the next signup with referrals
+
+Turn your waitlist into an organic referral engine. Give every subscriber a unique sharing link with live position updates, social share buttons, and milestone incentives.
+
+#### Features
+
+- **Unique referral links.** Automatically generate trackable referral links for each subscriber upon signup.
+- **Live queue position rankings.** Display real-time queue position and milestone rankings to incentivize sharing.
+- **Social sharing shortcuts.** One-click sharing buttons for X/Twitter, WhatsApp, LinkedIn, and direct link copying.
+
+#### Fixes
+
+- **Social share URL tagging.** Fixed missing campaign query parameters when sharing directly to X/Twitter.
+- **Position update latency.** Corrected real-time queue position recalculation when signups are removed.
+- **Clipboard feedback.** Added instant visual feedback when copying referral links to the clipboard.
+
+## v0.1.0 · Aug 24, 2026
+
+### The first Waitlyze waitlist launch
+
+The inaugural release of Waitlyze. Launch a hosted waitlist in minutes, capture early interest, and manage subscribers from a centralized workspace.
+
+#### Features
+
+- **Instant waitlist creation.** Set up and publish a hosted waitlist signup page in minutes without writing code.
+- **Centralized subscriber management.** View, manage, and organize waitlist signups in a unified workspace dashboard.
+- **Secure authentication.** Simple, secure sign-in with Google authentication for workspace owners and collaborators.
+
+#### Fixes
+
+- **Slug collision handling.** Added real-time slug availability validation to prevent conflicting waitlist URLs.
+- **Email validation messaging.** Improved form validation error messaging for malformed email submissions.
+- **Session persistence.** Fixed session state persistence on mobile Safari and Chrome browsers.
