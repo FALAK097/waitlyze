@@ -1,16 +1,16 @@
 ---
 title: API keys
-description: Create, store, replace, and revoke per-waitlist signup keys.
+description: Create, store, replace, and revoke per-waitlist API keys.
 ---
 
-API keys live in Settings → Integrations → **API keys**. Workspace owners and admins can create keys for waitlists they manage. Members cannot. The [API reference](/docs/api/reference) lists the public endpoints these keys can use.
+API keys live in Settings → **API keys**. Workspace owners and admins can create keys for waitlists they manage. Members cannot. The [API reference](/docs/api/reference) lists the public endpoints these keys can use.
 
 ## Create and store a key
 
 <Steps>
 <Step>
 ### Open API keys
-Go to Settings → Integrations → API keys. The legacy `/api-keys` URL redirects to this section.
+Go to Settings → API keys.
 </Step>
 <Step>
 ### Choose a waitlist and expiry
@@ -22,7 +22,7 @@ Reveal or copy the key before closing the panel. Store it in a server variable s
 </Step>
 <Step>
 ### Test a signup
-Send a test [Signup API](/docs/api) request with the new key and matching `waitlistId`. Confirm `200` before wiring production traffic.
+Send a test [Create signup](/docs/api/create-signup) request with the new key and matching `waitlistId`. Confirm `200` before wiring production traffic.
 </Step>
 </Steps>
 
@@ -69,7 +69,7 @@ Each key gets 5,000 requests per day across signups, status lookups, and point a
 
 <Cards>
 <Card title="API Reference" href="/docs/api/reference" description="See every supported endpoint and authentication rule." />
-<Card title="Signup API" href="/docs/api" description="Exact request contract and status codes." />
+<Card title="Create signup" href="/docs/api/create-signup" description="Request contract and status codes." />
 <Card title="Webhooks" href="/docs/webhooks" description="Stream accepted signups to your stack." />
 <Card title="Workspace and roles" href="/docs/workspace" description="Who can manage keys." />
 </Cards>

@@ -3,7 +3,7 @@ title: Signup and verification
 description: What visitors do, confirm, and share after they submit.
 ---
 
-This is the visitor-side flow for hosted `/w/slug` pages, embeds, and server-side [Signup API](/docs/api) calls. Only **published** waitlists accept signups.
+This is the visitor-side flow for hosted `/w/slug` pages, embeds, and server-side [Signup API](/docs/api/create-signup) calls. Only **published** waitlists accept signups.
 
 ## Visitor steps
 
@@ -38,7 +38,7 @@ Email confirmation proves ownership. Broadcasts and automations additionally req
 | Embed widget | Your site + `/js/embed.js` | Forwarded from your page URL |
 | Server API | `POST /api/waitlist` with `apiKey`, `waitlistId`, `email` | If Turnstile is enabled, include the single-use `cf-turnstile-response` token. Optional `referralCode` / `referral_code` is scoped to the same waitlist; response carries the new `referral_code` + `referral_link`. `GET /api/waitlist` re-reads position later. |
 
-Duplicate emails return `409`. Non-accepting states (draft, paused) also return `409` with a state reason. Rate-limited clients must respect `Retry-After`. See [Signup API](/docs/api) and [Troubleshooting](/docs/troubleshooting).
+Duplicate emails return `409`. Non-accepting states (draft, paused) also return `409` with a state reason. Rate-limited clients must respect `Retry-After`. See [Create signup](/docs/api/create-signup) and [Troubleshooting](/docs/troubleshooting).
 
 ## Impressions and positions
 

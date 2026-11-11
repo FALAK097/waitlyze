@@ -17,14 +17,14 @@ All endpoints use the domain where your Waitlyze workspace is hosted. Keep reque
 
 ## Authentication and scope
 
-Create a key in **Settings → Integrations → API keys** and link it to one waitlist. Send it in an `X-Api-Key` or `Authorization: Bearer` header. The signup endpoint also accepts the legacy `apiKey` JSON field; use a header whenever possible. The points endpoint accepts header authentication only.
+Create a key in **Settings → API keys** and link it to one waitlist. Send it in an `X-Api-Key` or `Authorization: Bearer` header. The signup endpoint also accepts the legacy `apiKey` JSON field; use a header whenever possible. The points endpoint accepts header authentication only.
 
 These keys are deliberately narrow: they can create signups, check signup status, and award custom points for their linked waitlist. They cannot manage a workspace, list subscribers, or call dashboard APIs. See [API keys](/docs/api-keys) for expiry, rotation, and rate limits.
 
 ## Choose a connection pattern
 
 - Use the [hosted page or embed](/docs/embed) when you want Waitlyze to own the browser form without a backend integration.
-- Use the [Signup API](/docs/api) when your server needs to control the signup flow or return position and referral data to a custom frontend.
+- Use [Create signup](/docs/api/create-signup) when your server needs to control the signup flow or return position and referral data to a custom frontend.
 - Use [webhooks](/docs/webhooks) when your system needs to react to signups, verification, referrals, or milestones. Most custom connections use the API for commands and webhooks for asynchronous updates.
 
 <Callout title="Dashboard routes are not public API endpoints">
@@ -34,7 +34,7 @@ Routes under `/api/v1` and the settings endpoints used by the app require a sign
 ## Next
 
 <Cards>
-<Card title="Signup API" href="/docs/api" description="Requests, responses, idempotency, and rate limits." />
+<Card title="Create signup" href="/docs/api/create-signup" description="Create a signup from your server." />
 <Card title="API keys" href="/docs/api-keys" description="Create and rotate a key scoped to one waitlist." />
 <Card title="Custom frontend guide" href="/docs/custom-frontend" description="Connect signups, referrals, and email end to end." />
 </Cards>

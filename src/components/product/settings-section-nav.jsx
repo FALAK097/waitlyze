@@ -4,6 +4,7 @@ import {
   UserCircleIcon,
   UserGroupIcon,
   Plug01Icon,
+  Key02Icon,
   HistoryIcon,
   Building02Icon,
   CreditCardIcon,
@@ -21,6 +22,7 @@ const sections = [
   { id: "billing", label: "Billing", icon: CreditCardIcon },
   { id: "team", label: "Members", icon: UserGroupIcon },
   { id: "integrations", label: "Integrations", icon: Plug01Icon },
+  { id: "api-keys", label: "API keys", icon: Key02Icon },
   { id: "audit", label: "Audit", icon: HistoryIcon },
 ];
 

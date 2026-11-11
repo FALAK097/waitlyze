@@ -51,7 +51,7 @@ export function ApiKeysClient() {
     if (panelOpen) panelHeading.current?.focus();
     else if (panelWasOpen.current) docsLink.current?.focus();
     panelWasOpen.current = panelOpen;
-  }, [creating, toRevoke]);
+  }, [creating, toRevoke, loading]);
 
   async function load(signal) {
     setLoading(true);
@@ -73,6 +73,7 @@ export function ApiKeysClient() {
         throw new Error("Could not load API keys. Try again.");
       setKeys(keyData.data);
       setWaitlists(waitlistData.data);
+      if (!keyData.data.length && waitlistData.data.length) setCreating(true);
     } catch (failure) {
       if (failure.name !== "AbortError") setError(failure.message);
     } finally {
@@ -122,7 +123,7 @@ export function ApiKeysClient() {
       const created = data.data.apiKey;
       setNewKey(created);
       setKeys((current) => [...current, { ...created, apiKey: undefined }]);
-      toast.success("API key created. Copy it before closing.");
+      toast.success("API key created. Copy it now; it won't be shown again.");
     } catch (failure) {
       toast.error(failure.message);
     } finally {
@@ -156,17 +157,19 @@ export function ApiKeysClient() {
     }
   }
   return (
-    <div className="grid gap-5" aria-busy={loading}>
+    <div className="grid gap-6" aria-busy={loading}>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <Link
           prefetch={false}
           ref={docsLink}
-          href="/docs/api"
+          href="/docs/api/reference"
+          target="_blank"
+          rel="noopener noreferrer"
           className="text-sm underline underline-offset-4"
         >
-          Read API docs
+          View API reference ↗
         </Link>
-        {!creating && !toRevoke && (
+        {!creating && !toRevoke && available.length > 0 && (
           <Button
             onClick={() => setCreating(true)}
             disabled={loading || Boolean(error) || !available.length}
@@ -195,15 +198,20 @@ export function ApiKeysClient() {
           </div>
         ) : (
           <>
-            {!keys.length && (
-              <p className="mb-4! text-sm leading-relaxed text-product-text-secondary">
-                No API keys yet. Create one for a waitlist to accept signups from your server.
-              </p>
+            {!keys.length && !available.length && (
+              <div className="space-y-3">
+                <p className="mb-0! text-sm leading-relaxed text-product-text-secondary">
+                  Create a waitlist before adding an API key.
+                </p>
+                <Button variant="outline" render={<Link href="/waitlists/new" />}>
+                  Create waitlist
+                </Button>
+              </div>
             )}
             {keys.map((key) => (
               <article
                 key={key.id}
-                className="grid gap-2 py-4 [&>header]:flex [&>header]:items-center [&>header]:justify-between [&>header]:gap-3"
+                className="grid gap-2 border-b border-product-border-subtle py-5 first:border-t [&>header]:flex [&>header]:items-center [&>header]:justify-between [&>header]:gap-3"
               >
                 <header>
                   <strong className="text-sm">{key.name}</strong>
@@ -216,12 +224,20 @@ export function ApiKeysClient() {
                     <HugeiconsIcon icon={Delete02Icon} size={16} aria-hidden="true" />
                   </Button>
                 </header>
-                <p className="m-0 text-caption text-product-text-secondary">
-                  {key.waitlist?.name || "Unlinked"} · Signup access
+                <p className="m-0 text-sm text-product-text-secondary">
+                  {key.waitlist?.name || "Unlinked"} · Create signups, check status, award custom
+                  points
                 </p>
-                <code className="text-sm break-all">
-                  {key.keyId ? `wl2_${key.keyId}_` : "Legacy key · "}••••••••••••••••
-                </code>
+                <p className="m-0 text-caption text-product-text-secondary">
+                  {key.keyId ? (
+                    <>
+                      Key ID <code>{key.keyId.slice(0, 8)}…</code>
+                    </>
+                  ) : (
+                    "Legacy key"
+                  )}{" "}
+                  · Secret cannot be retrieved
+                </p>
                 <p className="m-0 text-caption text-product-text-secondary">
                   {key.expiresAt
                     ? `Expires ${formatProductDate(key.expiresAt, { includeTime: false })}`
@@ -229,17 +245,13 @@ export function ApiKeysClient() {
                 </p>
               </article>
             ))}
-            {!available.length && (
-              <p className="mb-4! text-sm leading-relaxed text-product-text-secondary">
-                {waitlists.length
-                  ? "Each waitlist already has a key. Revoke a key before creating its replacement."
-                  : "Create a waitlist before adding an API key."}
-              </p>
-            )}
           </>
         ))}
-      {creating && (
-        <section aria-labelledby="create-api-key-heading" className="space-y-4">
+      {creating && !loading && (
+        <section
+          aria-labelledby="create-api-key-heading"
+          className="space-y-5 rounded-xl bg-product-bg-inset p-5 sm:p-6"
+        >
           <header>
             <h3
               id="create-api-key-heading"
@@ -251,18 +263,19 @@ export function ApiKeysClient() {
             </h3>
             <p className="mb-4! text-sm leading-relaxed text-product-text-secondary">
               {newKey
-                ? "This secret is shown once. Keep it on your server."
-                : "A key only creates signups for its selected waitlist."}
+                ? "Copy this secret now and store it on your server. You cannot retrieve it after leaving this screen."
+                : "Choose a waitlist to create signups, check status, and award custom points from your server."}
             </p>
           </header>
           {newKey ? (
             <div className="space-y-4 [&_input]:font-mono [&_input]:text-caption">
-              <InputGroup className="h-10">
+              <InputGroup className="h-11">
                 <InputGroupInput
                   aria-label="New API key"
                   type={reveal ? "text" : "password"}
                   value={newKey.apiKey}
                   readOnly
+                  onFocus={(event) => event.target.select()}
                 />
                 <InputGroupAddon align="inline-end">
                   <InputGroupButton
@@ -282,7 +295,7 @@ export function ApiKeysClient() {
                   </InputGroupButton>
                 </InputGroupAddon>
               </InputGroup>
-              <Button onClick={() => changeCreate(false)}>Done</Button>
+              <Button onClick={() => changeCreate(false)}>I’ve saved this key</Button>
             </div>
           ) : (
             <form onSubmit={create} className="space-y-4">
@@ -341,14 +354,16 @@ export function ApiKeysClient() {
                 <Button type="submit" disabled={busy}>
                   {busy ? "Creating…" : "Create key"}
                 </Button>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  onClick={() => changeCreate(false)}
-                  disabled={busy}
-                >
-                  Cancel
-                </Button>
+                {keys.length > 0 && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    onClick={() => changeCreate(false)}
+                    disabled={busy}
+                  >
+                    Cancel
+                  </Button>
+                )}
               </div>
             </form>
           )}

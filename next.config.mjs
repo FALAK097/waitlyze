@@ -47,6 +47,11 @@ const nextConfig = {
   async redirects() {
     return [
       {
+        source: "/docs/api",
+        destination: "/docs/api/reference",
+        permanent: true,
+      },
+      {
         source: "/wait-lists/:path*",
         destination: "/waitlists/:path*",
         permanent: true,

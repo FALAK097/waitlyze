@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 
+import { ApiKeysClient } from "@/components/api-keys-client";
 import { AuditLog } from "@/components/product/audit-log";
 import { DeleteWorkspace } from "@/components/product/delete-workspace";
 import { IntegrationsPanel } from "@/components/product/integrations-panel";
@@ -26,6 +27,26 @@ async function SelectedSettings({
   workspaceIsSelected,
 }) {
   const canManage = ["OWNER", "ADMIN"].includes(role);
+  if (section === "api-keys")
+    return (
+      <section className="max-w-190 min-w-0 flex-1" aria-labelledby="settings-panel-heading">
+        <header className="mb-8">
+          <h2 id="settings-panel-heading" className="mb-1.5!">
+            API keys
+          </h2>
+          <p className="text-product-text-secondary">
+            Connect your server to a waitlist. Each key is shown only when you create it.
+          </p>
+        </header>
+        {canManage ? (
+          <ApiKeysClient />
+        ) : (
+          <p className="text-product-text-secondary">
+            Only workspace owners and admins can manage API keys.
+          </p>
+        )}
+      </section>
+    );
   if (section === "profile")
     return (
       <section className="max-w-190 min-w-0 flex-1" aria-labelledby="settings-panel-heading">
@@ -269,9 +290,15 @@ async function SelectedSettings({
 
 export default async function SettingsPage({ searchParams }) {
   const [currentContext, query] = await Promise.all([currentWorkspace(), searchParams]);
-  const section = ["profile", "workspace", "team", "integrations", "audit", "billing"].includes(
-    query.section,
-  )
+  const section = [
+    "profile",
+    "workspace",
+    "team",
+    "integrations",
+    "api-keys",
+    "audit",
+    "billing",
+  ].includes(query.section)
     ? query.section
     : "profile";
   const requestedWorkspace =

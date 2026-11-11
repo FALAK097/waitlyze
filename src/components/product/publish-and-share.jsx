@@ -349,7 +349,7 @@ export function PublishAndShare({
                 <CopyButton value={apiEndpoint} label="Endpoint" />
                 <Link
                   className={buttonVariants({ variant: "ghost", size: "sm" })}
-                  href="/docs/api"
+                  href="/docs/api/reference"
                   target="_blank"
                   rel="noopener noreferrer"
                 >
@@ -357,7 +357,7 @@ export function PublishAndShare({
                 </Link>
                 <Link
                   className={buttonVariants({ variant: "ghost", size: "sm" })}
-                  href="/settings?section=integrations"
+                  href="/settings?section=api-keys"
                 >
                   API keys
                 </Link>

@@ -82,16 +82,6 @@ export function filterDocsTree(tree, section) {
   );
 
   const children = pruneChildren(tree.children, includePage, hiddenSeparatorLabels);
-  if (selected === "api" && !containsPage(children, "/docs/api")) {
-    const referenceIndex = children.findIndex(
-      (node) => node.type === "page" && node.url === "/docs/api/reference",
-    );
-    children.splice(referenceIndex + 1, 0, {
-      type: "page",
-      name: "Signup API",
-      url: "/docs/api",
-    });
-  }
 
   return {
     ...tree,
@@ -170,12 +160,4 @@ export function getDocsSectionTree(tree, section) {
   }
 
   return filterDocsTree(tree, "documentation");
-}
-
-function containsPage(nodes, url) {
-  return nodes.some((node) => {
-    if (node.type === "page") return node.url === url;
-    if (node.type !== "folder") return false;
-    return node.index?.url === url || containsPage(node.children, url);
-  });
 }

@@ -24,7 +24,7 @@ curl --request POST "$WAITLYZE_URL/api/waitlist" \
 
 ## Response
 
-A successful response includes the signup's position, verification state, referral link, and reward summary. A duplicate returns `409` with the existing signup position; an expired or mismatched key returns `401`. See the [full signup guide](/docs/api) for payload fields, examples, rate limits, and error handling.
+A successful response includes the signup's position, verification state, referral link, and reward summary. A duplicate returns `409` with the existing signup position; an expired or mismatched key returns `401`. See the [API reference](/docs/api/reference) for all supported endpoints and authentication rules.
 
 <Callout type="warn" title="Keep the key on your server">
 Waitlist API keys are secrets. Never expose one in browser code, a mobile bundle, or a public repository. For browser-only forms, use the [hosted page or embed](/docs/embed).

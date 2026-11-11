@@ -7,7 +7,7 @@ This guide wires the whole public surface together: a form you own, Waitlyze-own
 
 ## 1. Collect signups with the API
 
-Build any form (React, plain HTML, mobile app backend) and POST from **your server** with a [Signup API](/docs/api) key. Never ship the key to the browser - proxy through your backend.
+Build any form (React, plain HTML, mobile app backend) and POST from **your server** with a [Create signup](/docs/api/create-signup) key. Never ship the key to the browser - proxy through your backend.
 
 ```js title="Your backend → Waitlyze"
 const response = await fetch("https://waitlyze.com/api/waitlist", {
@@ -65,7 +65,7 @@ Per-waitlist sender credentials are also supported through authenticated waitlis
 ## Next
 
 <Cards>
-<Card title="Signup API" href="/docs/api" description="Exact request contract, idempotency, and status codes." />
+<Card title="Create signup" href="/docs/api/create-signup" description="Request contract, idempotency, and status codes." />
 <Card title="API Reference" href="/docs/api/reference" description="All supported public endpoints and their scope." />
 <Card title="Webhooks" href="/docs/webhooks" description="Stream signup, referral, and milestone events." />
 <Card title="Hosted pages and embeds" href="/docs/embed" description="The no-backend alternative." />
