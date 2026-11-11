@@ -18,6 +18,9 @@ test("only anonymous HTML documents with no variants share a cache entry", () =>
     { Authorization: "Bearer token" },
     { RSC: "1" },
     { "Next-Router-State-Tree": "[]" },
+    { "Next-Router-Prefetch": "1" },
+    { "Next-Router-Segment-Prefetch": "1" },
+    { "Next-Url": "/waitlists" },
     { Accept: "text/markdown" },
   ]) {
     assert.equal(

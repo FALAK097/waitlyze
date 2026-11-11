@@ -8,7 +8,16 @@ export function isCacheablePublicDocument(request) {
   const url = new URL(request.url);
   if (!PUBLIC_DOCUMENTS.has(url.pathname) || url.search) return false;
   if (request.headers.has("cookie") || request.headers.has("authorization")) return false;
-  if (request.headers.has("rsc") || request.headers.has("next-router-state-tree")) return false;
+  if (
+    [
+      "rsc",
+      "next-router-state-tree",
+      "next-router-prefetch",
+      "next-router-segment-prefetch",
+      "next-url",
+    ].some((header) => request.headers.has(header))
+  )
+    return false;
   const accept = request.headers.get("accept") || "";
   if (accept.includes("text/markdown")) return false;
   return accept.includes("text/html") || accept.includes("*/*") || !accept;
