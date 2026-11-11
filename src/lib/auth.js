@@ -1,12 +1,6 @@
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 
-import { renderWelcomeEmail } from "@/emails/render.jsx";
-import { welcomeText } from "@/emails/text.mjs";
-
-import { dispatchFounderNoticesNow } from "./email/dispatch-now.mjs";
-import { enqueueFounderNotice } from "./emails/founder-notifications.mjs";
-import { env } from "./env.mjs";
 import prisma from "./prisma";
 
 const socialProviders = {};
@@ -50,6 +44,19 @@ export const auth = betterAuth({
         after: async (user) => {
           try {
             if (!user?.email) return;
+            const [
+              { renderWelcomeEmail },
+              { welcomeText },
+              { dispatchFounderNoticesNow },
+              { enqueueFounderNotice },
+              { env },
+            ] = await Promise.all([
+              import("@/emails/render.jsx"),
+              import("@/emails/text.mjs"),
+              import("./email/dispatch-now.mjs"),
+              import("./emails/founder-notifications.mjs"),
+              import("./env.mjs"),
+            ]);
             const url = new URL("/waitlists", env.BETTER_AUTH_URL).toString();
             const props = { name: user.name, url };
             const eventKey = await enqueueFounderNotice(prisma, {

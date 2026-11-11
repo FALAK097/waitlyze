@@ -66,6 +66,13 @@ export function workspaceEntitlements(subscription, now = new Date()) {
 const loadWorkspaceSubscription = cache(async (db, workspaceId) => {
   return db.workspaceSubscription.findUnique({
     where: { workspaceId },
+    select: {
+      plan: true,
+      status: true,
+      currentPeriodEnd: true,
+      pastDueEndsAt: true,
+      cancelAtPeriodEnd: true,
+    },
   });
 });
 
