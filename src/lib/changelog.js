@@ -1,6 +1,12 @@
 export const LATEST_CHANGELOG_VERSION = "v0.11.0";
 export const LATEST_CHANGELOG_DATE = "Nov 11 2026";
 
+/**
+ * Generates an HTML-safe anchor ID for a changelog version or heading.
+ *
+ * @param {string} title - Version or heading string (e.g. "v0.11.0 · Nov 11 2026").
+ * @returns {string} Clean anchor ID (e.g. "release-v0-11-0").
+ */
 export function releaseId(title) {
   const versionMatch = String(title).match(/v\d+\.\d+\.\d+/);
   const base = versionMatch ? versionMatch[0] : title;
@@ -10,6 +16,12 @@ export function releaseId(title) {
     .replace(/^-|-$/g, "")}`;
 }
 
+/**
+ * Formats a short date string (e.g. "Nov 11 2026") into an expanded readable date ("November 11, 2026").
+ *
+ * @param {string} dateStr - Short date string.
+ * @returns {string} Formatted human-readable date string.
+ */
 export function formatChangelogDate(dateStr) {
   if (!dateStr) return "";
   const parts = dateStr.trim().split(/\s+/);
@@ -34,6 +46,12 @@ export function formatChangelogDate(dateStr) {
   return dateStr;
 }
 
+/**
+ * Parses raw CHANGELOG.md content into structured release objects.
+ *
+ * @param {string} raw - Raw markdown string from CHANGELOG.md.
+ * @returns {Array<{ version: string, date: string, title: string, summary: string, section: string, highlights: Array<{ title: string, description: string }>, isLatest: boolean, id: string }>}
+ */
 export function parseChangelog(raw) {
   const blocks = raw.split(/^##\s+/m).filter(Boolean);
   return blocks.map((block, index) => {

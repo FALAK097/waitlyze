@@ -407,7 +407,8 @@ export function ApiKeysClient() {
             Revoke {toRevoke.name}?
           </h3>
           <p className="mb-4! text-sm leading-relaxed text-product-text-secondary">
-            Apps using this key will lose access immediately. Create a replacement after revoking.
+            Apps using this key will lose access immediately. Create, configure, test, and switch
+            all integrations to a replacement key before revoking.
           </p>
           <div className="flex flex-wrap gap-3">
             <Button variant="outline" disabled={busy} onClick={() => setToRevoke(null)}>
