@@ -1,0 +1,27 @@
+extends: substitution
+message: "Use '%s' instead of '%s'."
+level: error
+ignorecase: false
+action:
+  name: replace
+exceptions:
+  - x-waitlyze-signature
+  - x-waitlyze-event-id
+  - nextjs-waitlist-seo-guide
+swap:
+  waitlyze: Waitlyze
+  WaitLyze: Waitlyze
+  WAITLYZE: Waitlyze
+  Nextjs: Next.js
+  NextJS: Next.js
+  next.js: Next.js
+  Next.JS: Next.js
+  dodopayments: Dodo Payments
+  DodoPayments: Dodo Payments
+  betterauth: Better Auth
+  BetterAuth: Better Auth
+  fumadocs: Fumadocs
+  github: GitHub
+  Github: GitHub
+  youtube: YouTube
+  Youtube: YouTube

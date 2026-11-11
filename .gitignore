@@ -24,6 +24,11 @@
 /public/images/showcase/
 lighthouse*.json
 
+# vale downloaded packages (synced via `vale sync`)
+/styles/Google/
+/styles/Readability/
+/styles/proselint/
+
 # next.js
 /.next/
 /out/
