@@ -1,0 +1,10 @@
+extends: existence
+message: "Avoid filler word '%s' in instructions. Be direct and concise."
+level: warning
+ignorecase: true
+tokens:
+  - obviously
+  - clearly
+  - simply
+  - easy as pie
+  - needless to say

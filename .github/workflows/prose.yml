@@ -1,0 +1,30 @@
+name: Prose Linting (Vale)
+
+on:
+  pull_request:
+    paths:
+      - "content/**/*.mdx"
+      - ".vale.ini"
+      - "styles/**"
+      - "README.md"
+
+concurrency:
+  group: prose-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  vale:
+    name: Lint Prose
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Run Vale
+        uses: errata-ai/vale-action@v2
+        with:
+          files: "content"
+          onlyAnnotateModifiedLines: true
+          fail_on_error: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
