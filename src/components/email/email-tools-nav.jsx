@@ -16,7 +16,6 @@ export function EmailToolsNav({ waitListId, current, action }) {
         className="no-scrollbar flex min-w-0 items-center gap-5.5 overflow-x-auto"
       >
         <Link
-          prefetch={false}
           href={root}
           aria-current={current === "templates" ? "page" : undefined}
           className={cn(navLink, current === "templates" && navLinkCurrent)}
@@ -24,7 +23,6 @@ export function EmailToolsNav({ waitListId, current, action }) {
           Templates
         </Link>
         <Link
-          prefetch={false}
           href={`${root}/broadcasts`}
           aria-current={current === "broadcasts" ? "page" : undefined}
           className={cn(navLink, current === "broadcasts" && navLinkCurrent)}
@@ -32,7 +30,6 @@ export function EmailToolsNav({ waitListId, current, action }) {
           Broadcasts
         </Link>
         <Link
-          prefetch={false}
           href={`${root}/automations`}
           aria-current={current === "automations" ? "page" : undefined}
           className={cn(navLink, current === "automations" && navLinkCurrent)}
@@ -40,7 +37,6 @@ export function EmailToolsNav({ waitListId, current, action }) {
           Automations
         </Link>
         <Link
-          prefetch={false}
           href={`${root}/logs`}
           aria-current={current === "logs" ? "page" : undefined}
           className={cn(navLink, current === "logs" && navLinkCurrent)}

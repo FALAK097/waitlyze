@@ -1,7 +1,10 @@
+import { Suspense } from "react";
+
+import { ProductContentSkeleton } from "@/components/product/content-skeleton";
 import { WaitlistNav } from "@/components/product/waitlist-nav";
 import { requireCampaignPage } from "@/lib/workspaces/authorize";
 
-export default async function WaitlistLayout({ children, params }) {
+async function AuthorizedWaitlistLayout({ children, params }) {
   const { id } = await params;
   const { campaign, role } = await requireCampaignPage(id, "viewCampaign");
   const canSendEmail = ["OWNER", "ADMIN"].includes(role);
@@ -15,5 +18,13 @@ export default async function WaitlistLayout({ children, params }) {
       </div>
       {children}
     </section>
+  );
+}
+
+export default function WaitlistLayout({ children, params }) {
+  return (
+    <Suspense fallback={<ProductContentSkeleton label="Loading waitlist" variant="campaign" />}>
+      <AuthorizedWaitlistLayout params={params}>{children}</AuthorizedWaitlistLayout>
+    </Suspense>
   );
 }

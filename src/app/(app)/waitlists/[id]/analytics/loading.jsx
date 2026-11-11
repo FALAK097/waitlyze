@@ -1,4 +1,4 @@
-import { AnalyticsSkeleton } from "@/components/product/waitlist-analytics";
+import { AnalyticsSkeleton } from "@/components/product/analytics-skeleton";
 
 export default function AnalyticsLoading() {
   return (
