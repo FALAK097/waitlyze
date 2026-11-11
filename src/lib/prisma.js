@@ -11,7 +11,8 @@ if (typeof WebSocket === "undefined") {
 const globalForPrisma = globalThis;
 
 function getDatabaseUrl() {
-  const url = process.env.DATABASE_URL;
+  const cfContext = globalThis[Symbol.for("__cloudflare-context__")];
+  const url = cfContext?.env?.DATABASE_URL || process.env.DATABASE_URL;
   if (!url) return "";
   // Ensure Neon connections route through PgBouncer (-pooler) for serverless multiplexing
   if (url.includes(".neon.tech") && !url.includes("-pooler")) {
@@ -33,6 +34,14 @@ function createPrismaClient() {
 }
 
 export function getPrisma() {
+  const cfContext = globalThis[Symbol.for("__cloudflare-context__")];
+  if (cfContext) {
+    if (!cfContext.__prisma) {
+      cfContext.__prisma = createPrismaClient();
+    }
+    return cfContext.__prisma;
+  }
+
   if (!globalForPrisma.prisma) {
     globalForPrisma.prisma = createPrismaClient();
   }
