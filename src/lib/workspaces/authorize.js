@@ -15,35 +15,40 @@ import {
 const currentWorkspaceCampaign = cache(async (id) => {
   if (typeof id !== "string" || !id) throw new AccessError();
   const { user, workspace } = await currentWorkspace();
-  const result = await prisma.waitList.findFirst({
-    where: {
-      id,
-      workspaceId: workspace.id,
-      workspace: { members: { some: { userId: user.id } } },
-    },
-    select: {
-      id: true,
-      workspaceId: true,
-      name: true,
-      publicSlug: true,
-      status: true,
-      showReferrals: true,
-      sendEmailsToSubscribers: true,
-      templateRevision: true,
-      publishedRevision: true,
-      publishedTemplateRevision: true,
-      templateSnapshot: true,
-      workspace: {
-        select: {
-          members: {
-            where: { userId: user.id },
-            select: { role: true },
-            take: 1,
+  const started = performance.now();
+  const result = await prisma.waitList
+    .findFirst({
+      where: {
+        id,
+        workspaceId: workspace.id,
+        workspace: { members: { some: { userId: user.id } } },
+      },
+      select: {
+        id: true,
+        workspaceId: true,
+        name: true,
+        publicSlug: true,
+        status: true,
+        showReferrals: true,
+        sendEmailsToSubscribers: true,
+        templateRevision: true,
+        publishedRevision: true,
+        publishedTemplateRevision: true,
+        workspace: {
+          select: {
+            members: {
+              where: { userId: user.id },
+              select: { role: true },
+              take: 1,
+            },
           },
         },
       },
-    },
-  });
+    })
+    .finally(() => {
+      const latencyMs = Math.round(performance.now() - started);
+      if (latencyMs >= 500) console.warn("Slow campaign authorization lookup", { latencyMs });
+    });
   const role = result?.workspace?.members[0]?.role;
   if (!result || !role) throw new AccessError();
   const { workspace: _workspace, ...campaign } = result;

@@ -9,7 +9,11 @@ export const metadata = { title: "Signups" };
 export default async function SubscribersPage({ params }) {
   const { id } = await params;
   const { campaign: waitlist, role } = await requireCampaignPage(id, "viewAudience");
-  const [publication, reviewData] = await Promise.all([
+  const [draft, publication, reviewData] = await Promise.all([
+    prisma.waitList.findFirst({
+      where: { id, workspaceId: waitlist.workspaceId },
+      select: { templateSnapshot: true },
+    }),
     waitlist.publishedRevision
       ? prisma.waitListPublicationRevision.findUnique({
           where: {
@@ -20,7 +24,7 @@ export default async function SubscribersPage({ params }) {
       : null,
     loadReferralReviews(prisma, id),
   ]);
-  const draftSnapshot = templateSnapshotSchema.safeParse(waitlist.templateSnapshot);
+  const draftSnapshot = templateSnapshotSchema.safeParse(draft?.templateSnapshot);
   const publishedSnapshot = templateSnapshotSchema.safeParse(publication?.snapshot);
   const snapshotCollectsPhone = (parsed) =>
     parsed.success &&

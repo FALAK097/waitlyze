@@ -17,26 +17,34 @@ export default async function WaitListsEditPage(props) {
   const { campaign: waitList, role, workspace } = await requireCampaignPage(id, "editCampaign");
   const canPublish = ["OWNER", "ADMIN"].includes(role);
 
-  const parsedSnapshot = templateSnapshotSchema.safeParse(waitList.templateSnapshot);
+  const [draft, publication, domain, entitlements, customerEmailSenderConnected] =
+    await Promise.all([
+      prisma.waitList.findFirst({
+        where: { id: waitList.id, workspaceId: workspace.id },
+        select: { templateSnapshot: true },
+      }),
+      waitList.publishedRevision
+        ? prisma.waitListPublicationRevision.findUnique({
+            where: {
+              waitListId_revision: {
+                waitListId: waitList.id,
+                revision: waitList.publishedRevision,
+              },
+            },
+            select: { snapshot: true },
+          })
+        : null,
+      prisma.customDomain.findUnique({
+        where: { waitListId: waitList.id },
+        select: { hostname: true, status: true },
+      }),
+      getWorkspaceEntitlements(prisma, workspace.id),
+      hasCustomerEmailSender(prisma, { workspaceId: workspace.id, waitListId: waitList.id }),
+    ]);
+  const parsedSnapshot = templateSnapshotSchema.safeParse(draft?.templateSnapshot);
   const templateSnapshot = parsedSnapshot.success
     ? parsedSnapshot.data
     : snapshotTemplate("simple");
-  const [publication, domain, entitlements, customerEmailSenderConnected] = await Promise.all([
-    waitList.publishedRevision
-      ? prisma.waitListPublicationRevision.findUnique({
-          where: {
-            waitListId_revision: { waitListId: waitList.id, revision: waitList.publishedRevision },
-          },
-          select: { snapshot: true },
-        })
-      : null,
-    prisma.customDomain.findUnique({
-      where: { waitListId: waitList.id },
-      select: { hostname: true, status: true },
-    }),
-    getWorkspaceEntitlements(prisma, workspace.id),
-    hasCustomerEmailSender(prisma, { workspaceId: workspace.id, waitListId: waitList.id }),
-  ]);
   const parsedPublished = templateSnapshotSchema.safeParse(publication?.snapshot);
   return (
     <ContentLayout title="Builder">

@@ -8,17 +8,25 @@ import prisma from "@/lib/prisma";
 import { createWorkspaceService } from "./service.mjs";
 
 export const currentSession = cache(async () => {
-  return auth.api.getSession({ headers: await headers() });
+  const started = performance.now();
+  try {
+    return await auth.api.getSession({ headers: await headers() });
+  } finally {
+    const latencyMs = Math.round(performance.now() - started);
+    if (latencyMs >= 500) console.warn("Slow session lookup", { latencyMs });
+  }
 });
 
 export const currentWorkspace = cache(async () => {
   const session = await currentSession();
   if (!session?.user?.id) redirect("/");
   const service = createWorkspaceService(prisma);
-  const [{ personal, workspaces }, cookieStore] = await Promise.all([
-    service.currentContext(session.user.id),
-    cookies(),
-  ]);
+  const started = performance.now();
+  const context = service.currentContext(session.user.id).finally(() => {
+    const latencyMs = Math.round(performance.now() - started);
+    if (latencyMs >= 500) console.warn("Slow workspace lookup", { latencyMs });
+  });
+  const [{ personal, workspaces }, cookieStore] = await Promise.all([context, cookies()]);
   const selectedId = cookieStore.get("waitlyze-workspace")?.value;
   const workspace =
     workspaces.find((item) => item.id === selectedId) ||
