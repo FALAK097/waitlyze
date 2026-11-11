@@ -5,7 +5,6 @@ const SECTION_PATHS = {
   integrations: [
     "/docs/integrations",
     "/docs/resend",
-    "/docs/notifications",
     "/docs/slack",
     "/docs/discord",
     "/docs/webhooks",

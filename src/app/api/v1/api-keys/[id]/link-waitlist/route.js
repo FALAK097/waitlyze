@@ -68,17 +68,11 @@ export async function POST(request, context) {
 
     const updatedApiKey = await prisma.$transaction(async (tx) => {
       await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtext(${`api-key:${id}`})) IS NULL AS acquired`;
-      await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtext(${waitlistId})) IS NULL AS acquired`;
       const linkable = await tx.apiKey.findFirst({
         where: { id, userId: user.id, keyId: null, waitlistId: null, revokedAt: null },
         select: { id: true },
       });
       if (!linkable) return null;
-      const active = await tx.apiKey.findFirst({
-        where: { waitlistId, revokedAt: null },
-        select: { id: true },
-      });
-      if (active) return null;
       return tx.apiKey.update({
         where: { id },
         data: { waitlistId },
@@ -96,7 +90,7 @@ export async function POST(request, context) {
     });
     if (!updatedApiKey)
       return NextResponse.json(
-        { error: { message: "This waitlist is already linked to another API key" } },
+        { error: { message: "This API key can no longer be linked" } },
         { status: 409 },
       );
     const apiKeyWithMaskedKey = { ...updatedApiKey, key: "••••••••••••••••" };

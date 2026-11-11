@@ -101,7 +101,7 @@ function SelectedWaitlistSettings({
           <Button
             variant="ghost"
             render={
-              <Link prefetch={false} href="/docs/notifications" target="_blank" rel="noreferrer" />
+              <Link prefetch={false} href="/docs/slack" target="_blank" rel="noopener noreferrer" />
             }
           >
             View docs <HugeiconsIcon icon={ArrowUpRight01Icon} size={16} aria-hidden="true" />

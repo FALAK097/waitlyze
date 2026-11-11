@@ -17,6 +17,7 @@ import { useActionState, useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { createWorkspace, selectWorkspace } from "@/app/actions/settings";
+import { ChangelogIndicator } from "@/components/product/changelog-indicator";
 import { UpgradeButton } from "@/components/shared/upgrade-button";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogClose, DialogContent, DialogTitle } from "@/components/ui/dialog";
@@ -346,6 +347,7 @@ export function AppShell({ children, headerControls }) {
             >
               Settings
             </Link>
+            <ChangelogIndicator />
             <Link
               prefetch={false}
               className={navLinkClass}

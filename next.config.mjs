@@ -57,6 +57,16 @@ const nextConfig = {
         permanent: true,
       },
       {
+        source: "/changelog",
+        destination: "/docs/changelog",
+        permanent: true,
+      },
+      {
+        source: "/docs/notifications",
+        destination: "/docs/slack",
+        permanent: true,
+      },
+      {
         source: "/dashboard/:path*",
         destination: "/waitlists/:path*",
         permanent: true,

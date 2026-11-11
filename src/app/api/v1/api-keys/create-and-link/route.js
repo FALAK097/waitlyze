@@ -58,35 +58,14 @@ export async function POST(request) {
       return NextResponse.json({ error: { message: "Waitlist not found" } }, { status: 404 });
     }
 
-    const result = await prisma.$transaction(async (tx) => {
-      // Serialize key creation for this waitlist so concurrent requests cannot both pass the check.
-      await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtext(${waitlistId})) IS NULL AS acquired`;
-      const existing = await tx.apiKey.findFirst({
-        where: { waitlistId, revokedAt: null },
-        select: { id: true },
-      });
-      if (existing) return { conflict: true };
-      const apiKey = await createApiKey({
-        name: name.trim(),
-        userId: user.id,
-        waitlistId,
-        expiresAt:
-          expiresInDays === null
-            ? null
-            : new Date(Date.now() + expiresInDays * 24 * 60 * 60 * 1000),
-        scopes: ["waitlist:write"],
-        db: tx,
-      });
-      return { apiKey };
+    const newApiKey = await createApiKey({
+      name: name.trim(),
+      userId: user.id,
+      waitlistId,
+      expiresAt:
+        expiresInDays === null ? null : new Date(Date.now() + expiresInDays * 24 * 60 * 60 * 1000),
+      scopes: ["waitlist:write"],
     });
-
-    if (result.conflict) {
-      return NextResponse.json(
-        { error: { message: "This waitlist is already linked to another API key" } },
-        { status: 409 },
-      );
-    }
-    const newApiKey = result.apiKey;
     await recordAuditEvent(prisma, {
       workspaceId: waitlist.workspaceId,
       userId: user.id,

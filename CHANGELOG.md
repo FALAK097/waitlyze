@@ -1,4 +1,18 @@
-## v0.10.0
+## v0.11.0 · Nov 11 2026
+
+### Flexible API key management and documentation overhaul
+
+API key management now matches the workspace table patterns seen in Members and Audit logs, with support for seamless key rotation. Documentation has been streamlined, removing obsolete notification pages and dead links, alongside full-width release notes and in-app update indicators.
+
+#### Highlights
+
+- **Overlapping API keys for zero-downtime rotation.** Workspaces can now create replacement API keys while an active key continues serving traffic, eliminating downtime during credential rotation.
+- **Redesigned API keys interface.** API keys now live in a full workspace table with instant key creation, one-click copy, and inline revocation warnings instead of a constrained drawer.
+- **In-app changelog notifications.** Logged-in users receive subtle release indicators in the navigation when updates ship, with direct links to release notes and instant dismissal.
+- **Full-width changelog experience.** Release notes now utilize the full reading container with proper release timestamps, clean typography, and optimized TOC navigation.
+- **Documentation cleanup and navigation polish.** Pruned outdated notification documentation, fixed dangling cross-references, and ensured all external documentation links reliably open in new tabs.
+
+## v0.10.0 · Oct 26 2026
 
 ### The full campaign loop: cockpit, rewards, and cleaner growth signals
 
@@ -12,7 +26,7 @@ Launches now have an end-to-end loop - share to grow, earn points, and watch a f
 - **Attribute growth properly.** Signups break down by source, location, and device, with embeddable public widgets (leaderboard and counter) so momentum can be shown anywhere.
 - **Email that keeps launches moving.** A founder email builder with reusable templates and a retried delivery outbox, plus per-waitlist BYOK senders and Slack notifications.
 
-## v0.9.0
+## v0.9.0 · Oct 19 2026
 
 ### Analytics, with more signal
 
@@ -25,7 +39,7 @@ The analytics workspace grew from top-line signup counts into a clearer picture 
 - **Connect sharing to outcomes.** Review referral leaders and sharing activity beside the signup funnel to understand how word-of-mouth contributes to growth.
 - **Move from totals to context.** Keep audience and referral signals together in the redesigned analytics workspace for a faster read on campaign performance.
 
-## v0.8.0
+## v0.8.0 · Oct 12 2026
 
 ### A fairer referral engine
 
@@ -38,7 +52,7 @@ Referral campaigns became easier to understand and harder to manipulate. Subscri
 - **Reduce abuse.** Apply velocity checks and duplicate-signup safeguards to catch suspicious bursts and repeated entries before they distort campaign results.
 - **Keep the experience fair.** Pair participant-facing progress with workspace-level protections so rewards are easier to trust for both organizers and subscribers.
 
-## v0.7.0
+## v0.7.0 · Oct 05 2026
 
 ### Email that keeps launches moving
 
@@ -51,7 +65,7 @@ Waitlyze added email tools for keeping subscribers informed from their first sig
 - **Choose a delivery setup.** Connect Resend or configure another supported email provider, with sender details managed for delivery from your domain.
 - **Keep email close to the audience.** Work with subscriber and campaign context inside the same workspace used to manage the waitlist.
 
-## v0.6.0
+## v0.6.0 · Sep 28 2026
 
 ### Integrations and dependable delivery
 
@@ -64,7 +78,7 @@ This release connected waitlist activity to external tools and made background d
 - **Retry failures.** Retry eligible webhook or email jobs from their delivery records rather than manually recreating the event.
 - **Manage connections centrally.** Configure workspace integrations and their secrets in one settings area, keeping connection setup separate from day-to-day waitlist work.
 
-## v0.5.0
+## v0.5.0 · Sep 21 2026
 
 ### A more useful subscriber workspace
 
@@ -77,7 +91,7 @@ Subscriber management gained the tools teams need when a list becomes too large 
 - **Understand each record.** Review verification status, referral activity, location, and acquisition details together in the subscriber profile.
 - **Work at both levels.** Move between the audience list and an individual record while keeping the context needed to manage a growing waitlist.
 
-## v0.4.0
+## v0.4.0 · Sep 14 2026
 
 ### Know where signups come from
 
@@ -90,7 +104,7 @@ The first analytics release gave waitlist owners a way to measure launch perform
 - **Focus the reporting period.** Use date filters to inspect a launch window, compare campaign periods, or narrow the view to the dates that matter.
 - **Start with an in-product view.** Check the essential launch metrics directly in the workspace rather than assembling a report from separate sources.
 
-## v0.3.0
+## v0.3.0 · Sep 07 2026
 
 ### Make the waitlist feel like yours
 
@@ -103,7 +117,7 @@ Waitlist pages moved beyond a default form and became customizable launch destin
 - **Publish where your audience expects you.** Launch on a Waitlyze-hosted link or connect a custom domain for a more branded destination.
 - **Keep page creation and publishing together.** Build, preview, and publish the public-facing page from the same workspace used to manage its signups.
 
-## v0.2.0
+## v0.2.0 · Aug 31 2026
 
 ### Sharing that brings in the next signup
 
@@ -116,7 +130,7 @@ The referral release gave every subscriber a way to invite someone else to the w
 - **Support campaign rewards.** Use rewards to encourage referrals and give subscribers a reason to keep sharing after their initial signup.
 - **Trace growth back to its source.** Track referrals to the people and channels that generated them, helping teams recognize the contributors behind new signups.
 
-## v0.1.0
+## v0.1.0 · Aug 24 2026
 
 ### The first Waitlyze waitlist
 
