@@ -1,6 +1,10 @@
 // OpenNext generates this entrypoint at build time.
 // @ts-ignore
 import nextWorker from "./.open-next/worker.js";
+import {
+  isCacheablePublicDocument,
+  isCacheablePublicResponse,
+} from "./src/lib/edge-public-page-cache.mjs";
 
 // The OpenNext cache implementations use these durable object exports.
 // @ts-ignore
@@ -209,6 +213,34 @@ export default {
       !pathname.startsWith("/_next/")
     ) {
       return nextWorker.fetch(rewriteRequest(request, "/domain", ""), env, ctx);
+    }
+
+    if (isCacheablePublicDocument(request)) {
+      // Next's static HTML is normally read from the incremental cache on
+      // every request. Keep only these anonymous documents in the Worker
+      // region's cache for five minutes to avoid repeated R2/cache lookups.
+      const cacheKey = new Request(request.url);
+      const cached = await caches.default.match(cacheKey);
+      if (cached) return cached;
+      const response = await nextWorker.fetch(request, env, ctx);
+      if (isCacheablePublicResponse(response)) {
+        const headers = new Headers(response.headers);
+        headers.set("cache-control", "public, max-age=0, s-maxage=300");
+        headers.set("x-waitlyze-public-cache", "HIT");
+        const toCache = new Response(response.clone().body, {
+          status: response.status,
+          headers,
+        });
+        ctx.waitUntil(caches.default.put(cacheKey, toCache));
+        const originalHeaders = new Headers(response.headers);
+        originalHeaders.set("x-waitlyze-public-cache", "MISS");
+        return new Response(response.body, {
+          status: response.status,
+          statusText: response.statusText,
+          headers: originalHeaders,
+        });
+      }
+      return response;
     }
 
     return nextWorker.fetch(request, env, ctx);
