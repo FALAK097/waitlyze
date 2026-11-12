@@ -188,11 +188,9 @@ export default function Pricing({
             </ul>
             {interval === "annual" && (
               <p className="mt-5 text-sm leading-relaxed text-product-text-secondary">
-                <strong className="font-semibold text-product-text-primary">
-                  Need help with email?
-                </strong>{" "}
-                Annual Pro includes one-time assisted Resend setup using your account and verified
-                domain.
+                <strong className="font-semibold text-product-text-primary">Need a hand?</strong>{" "}
+                Annual Pro includes priority support from the founder, hands-on setup help, and
+                personalized recommendations for your launch.
               </p>
             )}
             <div className="mt-auto pt-8">
