@@ -91,7 +91,7 @@ export default function ComparePage() {
               <dd>Prefinery, KickoffLabs, Viral Loops</dd>
             </div>
             <div>
-              <dt>Lowest annual price</dt>
+              <dt>Annual workspace price</dt>
               <dd>Waitlyze Pro ({WAITLYZE_PRICING.pro.annual.formatted}/yr)</dd>
             </div>
           </dl>
