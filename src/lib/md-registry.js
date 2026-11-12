@@ -1,3 +1,4 @@
+import { WAITLYZE_PRICING } from "@/lib/billing/pricing.mjs";
 import { getPost, getPostModifiedDate, getPosts, getTags } from "@/lib/blog-source";
 import { SITE_DESCRIPTION, SITE_TITLE, SITE_URL } from "@/lib/site-metadata";
 import { source } from "@/lib/source";
@@ -56,9 +57,9 @@ export async function renderMarkdownRoute(rawPath) {
 
 ## Core Capabilities
 - **Build and publish**: Start with a template, edit content and brand, preview desktop and mobile, save drafts without changing the live page, then publish, pause, or roll back.
-- **Hosted Pages & Embeds**: Share a hosted page or embed its published form on your site. Custom domains require deployment configuration.
+- **Hosted Pages & Embeds**: Share a hosted page or embed its published form on your site. Pro includes one optional custom domain per waitlist, and the hosted URL remains available.
 - **Referral Sharing and Credit**: When enabled, confirmed subscribers receive personal share links. With double opt-in enabled, referred signups earn credit after email verification; with it disabled, they may earn credit without verification. Review points and queue positions; reward fulfillment is not automatic.
-- **Consent-Aware Email**: Send verification email and configure welcome, reminder, and milestone automations or one-time broadcasts. Marketing email requires verified addresses with explicit opt-in, plus a configured sender and delivery setup.
+- **Consent-Aware Email**: Connect a verified Resend sender for subscriber confirmation email. Pro adds welcome, reminder, and milestone automations plus one-time broadcasts. Marketing email requires verified addresses with explicit opt-in.
 - **Audience Analytics**: See visitors, signups, conversion, verification, acquisition sources, geography, devices, and referral activity. Product screenshots on the homepage show example data, not customer results.
 - **Developer Tools**: Server-side Signup API (\`POST /api/waitlist\`), scoped API keys, signed webhooks, and subscriber CSV export. Zapier-style connections use webhook recipes rather than a native integration.
 - **Workspace Controls**: Invite teammates with role permissions and review publication changes.
@@ -77,7 +78,7 @@ ${templates
 
 ## Frequently Asked Questions
 ### Is Waitlyze free to use?
-Yes. Free includes one waitlist and up to 100 signups per workspace, with no credit card required. Pro is $15 per month or $50 per year.
+Yes. Free includes one waitlist and up to 100 signups per workspace, with no credit card required. Pro is ${WAITLYZE_PRICING.pro.monthly.formatted} per month or ${WAITLYZE_PRICING.pro.annual.formatted} per year.
 
 ### Do I need a website or coding skills?
 No. You can visually design your page in the builder and share its hosted URL. If you already have a website, copy the embed snippet from your dashboard.
@@ -86,7 +87,7 @@ No. You can visually design your page in the builder and share its hosted URL. I
 When referral sharing is enabled, confirmed subscribers receive a personal link. If double opt-in is enabled, referred signups earn credit after verifying their email. If it is disabled, they may earn credit without verifying. Reward delivery is up to the waitlist owner.
 
 ### Can I email everyone who signs up?
-With Pro, connect and verify your own Resend sender to send broadcasts and automations. Waitlyze never uses its deployment Resend key for subscriber email. Marketing email goes only to verified subscribers who explicitly opted in.
+With Pro, connect and verify your own Resend sender to send broadcasts and automations from your domain. Marketing email goes only to verified subscribers who explicitly opted in. A connected Resend sender is also required if your signup form sends confirmation email.
 
 ### Can I cancel Pro or get a refund?
 You can cancel renewal from workspace Billing at any time and keep Pro through the paid period. Payments are non-refundable except where applicable law requires otherwise. See the [Refund Policy](/refund-policy).
@@ -95,7 +96,7 @@ You can cancel renewal from workspace Billing at any time and keep Pro through t
 Edits save as drafts. Visitors continue seeing the published version until you publish again. You can pause signups or roll back to an earlier published revision.
 
 ### Can I use my own domain?
-A custom domain can serve the published page when domain support is configured for the deployment. The Waitlyze-hosted page works without it.
+Pro includes one custom domain per waitlist with automatic HTTPS. The Waitlyze-hosted page remains available, so connecting a domain is optional.
 
 ### Can I take my subscriber data with me?
 Yes. Search and filter subscribers in your dashboard, then export them as CSV.
@@ -373,7 +374,7 @@ To the fullest extent permitted by law, Waitlyze shall not be liable for any dam
 We reserve the right to update these Terms at any time. We will notify users of any material changes, and continued use of the Platform indicates acceptance of the revised Terms.
 
 ## 10. Subscriptions and Billing
-Waitlyze offers a free plan and a paid Pro plan billed monthly or annually. Base prices are $15 per month and $50 per year in USD. Where available, the pricing page shows Dodo Payments' country-adjusted price in local currency; applicable taxes are calculated based on your billing location and shown at checkout. Paid subscriptions renew automatically for the selected interval until canceled. The workspace owner can manage or cancel renewal from Billing in workspace settings. A cancellation takes effect at the end of the current paid period. Refunds are governed by our [Refund Policy](https://waitlyze.com/refund-policy). Dodo Payments acts as Merchant of Record for purchases and handles checkout, invoices, and customer-facing transaction taxes.
+Waitlyze offers a free plan and a paid Pro plan billed monthly or annually. Base prices are ${WAITLYZE_PRICING.pro.monthly.formatted} per month and ${WAITLYZE_PRICING.pro.annual.formatted} per year in USD. Where available, the pricing page shows Dodo Payments' country-adjusted price in local currency; applicable taxes are calculated based on your billing location and shown at checkout. Paid subscriptions renew automatically for the selected interval until canceled. The workspace owner can manage or cancel renewal from Billing in workspace settings. A cancellation takes effect at the end of the current paid period. Refunds are governed by our [Refund Policy](https://waitlyze.com/refund-policy). Dodo Payments acts as Merchant of Record for purchases and handles checkout, invoices, and customer-facing transaction taxes.
 
 ## 11. Contact Information
 For questions about these Terms, please contact us at support@waitlyze.com.`

@@ -24,6 +24,7 @@ import PublicShell from "@/components/landing/public-shell";
 import SignupButton from "@/components/landing/signup-button";
 import TemplateCards from "@/components/landing/template-cards";
 import { SiteStructuredData } from "@/components/seo/structured-data";
+import { WAITLYZE_PRICING } from "@/lib/billing/pricing.mjs";
 import { getPosts, getReadingMinutes } from "@/lib/blog-source";
 import { SITE_DESCRIPTION, SITE_TITLE } from "@/lib/site-metadata";
 import { listTemplates } from "@/lib/templates/catalog.mjs";
@@ -47,7 +48,7 @@ const github = "https://github.com/FALAK097/waitlyze";
 const faqs = [
   [
     "Is Waitlyze free?",
-    "Yes. Free includes one waitlist (drafts count) and 100 lifetime signups per workspace. Deleting a waitlist removes its data but does not reset signup usage. Pro is $15 per month or $50 per year, with unlimited waitlists, signups, and workspace members.",
+    `Yes. Free includes one waitlist (drafts count) and 100 lifetime signups per workspace. Deleting a waitlist removes its data but does not reset signup usage. Pro is ${WAITLYZE_PRICING.pro.monthly.formatted} per month or ${WAITLYZE_PRICING.pro.annual.formatted} per year, with unlimited waitlists, signups, and workspace members.`,
   ],
   [
     "Will prices change by country?",
@@ -63,7 +64,7 @@ const faqs = [
   ],
   [
     "Can I email my subscribers?",
-    "Yes, with Pro. Connect and verify your own Resend sender first. Waitlyze never falls back to its own Resend account for subscriber email. Marketing messages go only to verified subscribers who explicitly opted in.",
+    "Yes, with Pro. Connect and verify your own Resend sender to send broadcasts and automations from your domain. Waitlyze sends them only to verified subscribers who explicitly opted in.",
   ],
   [
     "Can I edit a published page?",
@@ -83,11 +84,11 @@ const faqs = [
   ],
   [
     "Can I use my own domain?",
-    "Yes, when custom-domain support is configured for your deployment. You can use a Waitlyze-hosted page without setting up a domain.",
+    "Yes. Pro includes one custom domain per waitlist, with automatic HTTPS. Your Waitlyze-hosted URL remains available as a fallback, so a custom domain is optional.",
   ],
   [
     "Do I need a separate email service?",
-    "Transactional platform emails are handled automatically by Waitlyze. To send waitlist confirmation emails, broadcasts, and automated sequences from your own domain, simply connect your Resend account in workspace settings.",
+    "Yes, for email sent to subscribers. Connect a verified Resend sender for confirmation emails on any plan; Pro also unlocks broadcasts and automated sequences. Waitlyze handles account notices and workspace invitations separately.",
   ],
   [
     "How do I protect my waitlist from bots?",
@@ -111,7 +112,7 @@ const moreFeatures = [
   {
     icon: Mail01Icon,
     title: "Automated welcome & milestone emails",
-    copy: "Send confirmation emails, cohort broadcasts, and automated sequences with your verified Resend account.",
+    copy: "Deliver confirmation emails through your verified Resend sender, then use Pro for cohort broadcasts and automated sequences.",
   },
   {
     icon: ShieldCheckIcon,

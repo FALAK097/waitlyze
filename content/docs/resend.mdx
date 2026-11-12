@@ -25,6 +25,12 @@ After saving, copy the webhook URL shown in the connection panel. Add it in Rese
 
 The connection is ready only after the test succeeds. Subscriber email is sent only through a connected waitlist or workspace sender; Waitlyze never falls back to its deployment Resend key for customer mail. If a published form requires email confirmation, connect and test a sender before publishing. Keep the Resend event webhook configured so permanent bounces and complaints can update the workspace suppression list.
 
+## Workspace and waitlist senders
+
+The workspace sender is the default for every waitlist in that workspace. You can also save and test separate Resend credentials for one waitlist through its authenticated email-sender settings endpoint. Once that waitlist sender passes its test, it takes priority for that waitlist's confirmation email, template tests, broadcasts, and automations. Until then, the connected workspace sender remains in use.
+
+Removing a waitlist sender returns that waitlist to the workspace sender. Disconnecting the workspace sender pauses subscriber email for waitlists that do not have their own connected sender.
+
 ## If a test fails
 
 - Confirm the key is sending-only with send permission, not a full-access or expired key.

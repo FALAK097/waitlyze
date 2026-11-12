@@ -235,9 +235,8 @@ export function CustomDomainSettings({
               </div>
             ) : (
               <p className="mb-4! text-sm leading-relaxed text-product-text-secondary">
-                {canManage
-                  ? "Custom domains require CLOUDFLARE_API_TOKEN to be configured in your Cloudflare environment secrets. Once set, custom domains can be connected here."
-                  : "Custom domains are unavailable. Ask your administrator to finish domain setup."}
+                Custom domains are temporarily unavailable on this Waitlyze deployment. Your hosted
+                page still works; contact support if you expected domain setup to be enabled.
               </p>
             )}
             {!canManage && (

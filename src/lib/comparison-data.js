@@ -1,3 +1,4 @@
+import { WAITLYZE_PRICING } from "@/lib/billing/pricing.mjs";
 import { SITE_URL } from "@/lib/site-metadata";
 
 export function breadcrumbSchema(items) {
@@ -70,11 +71,11 @@ export const waitlyze = {
   name: "Waitlyze",
   slug: "waitlyze",
   logo: "/web-app-manifest-192x192.png",
-  price: "$15/mo or $50/yr",
+  price: `${WAITLYZE_PRICING.pro.monthly.formatted}/mo or ${WAITLYZE_PRICING.pro.annual.formatted}/yr`,
   freePlan: "1 waitlist, 100 signups",
   model: "Flat price per workspace",
-  entryMonthly: 15,
-  entryAnnual: 50,
+  entryMonthly: WAITLYZE_PRICING.pro.monthly.amount,
+  entryAnnual: WAITLYZE_PRICING.pro.annual.amount,
   features: {
     pageBuilder: { level: "included", label: "Every plan" },
     referrals: { level: "included", label: "Every plan" },
@@ -96,8 +97,8 @@ export const waitlyze = {
     },
     {
       name: "Pro",
-      price: "$15",
-      cadence: "per month, or $50 per year",
+      price: WAITLYZE_PRICING.pro.monthly.formatted,
+      cadence: `per month, or ${WAITLYZE_PRICING.pro.annual.formatted} per year`,
       items: [
         "Unlimited waitlists, signups, and teammates",
         "Email broadcasts, analytics, and custom domains",
@@ -325,7 +326,7 @@ export const competitors = [
     chooseWaitlyze: [
       "You’re launching a product, not running a contest",
       "You want a price that doesn’t move with monthly signup spikes",
-      "You want email and analytics for $15 a month",
+      `You want email and analytics for ${WAITLYZE_PRICING.pro.monthly.formatted} a month`,
     ],
     chooseThem: [
       "You run giveaways or contests alongside your launch",
@@ -425,7 +426,7 @@ export const competitors = [
       "Choose Waitlyze when you want referrals and API access from day one, team controls, and a lower annual price.",
     chooseWaitlyze: [
       "You want referrals running on the free plan",
-      "You want a custom domain and API access for $15 a month",
+      `You want a custom domain and API access for ${WAITLYZE_PRICING.pro.monthly.formatted} a month`,
       "You want teammates with editing, publishing, and email permissions",
     ],
     chooseThem: [
@@ -474,7 +475,7 @@ export function getCompetitorFaqs(competitor) {
   return [
     [
       `Is Waitlyze cheaper than ${competitor.name}?`,
-      `Waitlyze Pro is $15 a month or $50 a year for the whole workspace, so twelve months costs $${cost.waitlyzeAnnual} on annual billing. ${competitor.name}’s lowest paid plan is ${competitor.price} (${competitor.model.toLowerCase()}), or about $${cost.competitor} a year at its monthly list price. Waitlyze also has a free plan for your first 100 signups.`,
+      `Waitlyze Pro is ${WAITLYZE_PRICING.pro.monthly.formatted} a month or ${WAITLYZE_PRICING.pro.annual.formatted} a year for the whole workspace, so twelve months costs ${WAITLYZE_PRICING.pro.annual.formatted} on annual billing. ${competitor.name}’s lowest paid plan is ${competitor.price} (${competitor.model.toLowerCase()}), or about $${cost.competitor} a year at its monthly list price. Waitlyze also has a free plan for your first 100 signups.`,
     ],
     [
       `Does ${competitor.name} have a free plan?`,

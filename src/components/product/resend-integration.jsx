@@ -142,7 +142,7 @@ export function ResendIntegration({ initialConnection, accountEmail, canManage, 
         <SheetHeader>
           <SheetTitle>{connection ? "Manage Resend" : "Connect Resend"}</SheetTitle>
           <SheetDescription>
-            Send waitlist campaigns and marketing automations from your verified domain.
+            Send confirmation email and Pro campaigns from your verified domain.
           </SheetDescription>
         </SheetHeader>
         <div className="p-6 pt-0">

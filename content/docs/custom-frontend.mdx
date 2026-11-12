@@ -50,7 +50,7 @@ Add `join.example.com` in Waitlist settings → **Custom domain** ([Custom domai
 
 Connect [Resend](/docs/resend) (Settings → Integrations → Resend) so waitlist email can use your verified sender. The workspace connection is the shared fallback for verification, broadcast, and automation email. Keep it **Active** before launch so verification messages can be delivered reliably.
 
-Per-waitlist sender credentials are also supported through authenticated waitlist settings endpoints; see [Resend](/docs/resend#per-waitlist-sender-identity). They are not a complete override yet: broadcast, automation, and test-send paths still use the workspace sender because they do not pass a waitlist ID through sender resolution. Do not assume those paths use a waitlist-specific From address.
+Per-waitlist sender credentials are also supported through authenticated waitlist settings endpoints; see [Resend](/docs/resend#workspace-and-waitlist-senders). A connected per-waitlist sender takes priority for that waitlist's confirmation email, tests, broadcasts, and automations. If it has not passed its connection test, Waitlyze continues using the connected workspace sender.
 
 ## Launch checklist
 

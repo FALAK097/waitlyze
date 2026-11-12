@@ -13,6 +13,7 @@ import {
   StructuredData,
   ToolLogo,
 } from "@/components/comparison/comparison-shell";
+import { WAITLYZE_PRICING } from "@/lib/billing/pricing.mjs";
 import {
   breadcrumbSchema,
   competitors,
@@ -91,7 +92,7 @@ export default function ComparePage() {
             </div>
             <div>
               <dt>Lowest annual price</dt>
-              <dd>Waitlyze Pro ($50/yr)</dd>
+              <dd>Waitlyze Pro ({WAITLYZE_PRICING.pro.annual.formatted}/yr)</dd>
             </div>
           </dl>
         </section>

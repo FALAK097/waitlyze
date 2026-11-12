@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 
 import SignupButton from "@/components/landing/signup-button";
 import { Button } from "@/components/ui/button";
+import { WAITLYZE_PRICING } from "@/lib/billing/pricing.mjs";
 
 // Better Auth's React hooks are browser-only in this app, so the checkout CTA
 // loads as a client-only island while the plan copy stays server-rendered.
@@ -23,7 +24,7 @@ const freeFeatures = [
   "Hosted page and embeddable form",
   "Page builder and launch templates",
   "Referral links and queue position",
-  "Connected sender for confirmation email",
+  "Confirmation email through your connected Resend sender",
   "CSV export and full data ownership",
 ];
 
@@ -103,7 +104,10 @@ export default function Pricing({
               }
               onClick={() => setInterval("annual")}
             >
-              Annual <span className="ml-1 text-product-success-text">Save 72%</span>
+              Annual{" "}
+              <span className="ml-1 text-product-success-text">
+                Save {WAITLYZE_PRICING.pro.annualSavingsPercent}%
+              </span>
             </Button>
           </div>
         </header>
@@ -119,7 +123,7 @@ export default function Pricing({
               </h3>
               <p className="mt-6 flex items-baseline gap-2">
                 <span className="font-product-display text-4xl font-semibold tracking-tight">
-                  {displayedRegionalPricing?.zeroFormatted || "$0"}
+                  {displayedRegionalPricing?.zeroFormatted || WAITLYZE_PRICING.free.formatted}
                 </span>
                 <span className="text-sm text-product-text-secondary">forever</span>
               </p>
@@ -161,7 +165,7 @@ export default function Pricing({
               <p className="mt-6 flex items-baseline gap-2">
                 <span className="font-product-display text-4xl font-semibold tracking-tight">
                   {displayedRegionalPricing?.[interval]?.formatted ||
-                    (interval === "annual" ? "$50" : "$15")}
+                    WAITLYZE_PRICING.pro[interval].formatted}
                 </span>
                 <span className="text-sm text-product-text-secondary">
                   / {interval === "annual" ? "year" : "month"}{" "}
