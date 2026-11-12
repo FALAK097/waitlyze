@@ -51,7 +51,7 @@ function CheckoutActionButton({
         ? "Opening secure checkout…"
         : session
           ? "Continue to secure checkout"
-          : "Sign up, then choose Pro"}
+          : "Get started with Pro"}
       <HugeiconsIcon
         icon={ArrowUpRight01Icon}
         size={18}
