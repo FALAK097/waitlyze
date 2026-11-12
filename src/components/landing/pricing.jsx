@@ -186,6 +186,15 @@ export default function Pricing({
                 </li>
               ))}
             </ul>
+            {interval === "annual" && (
+              <p className="mt-5 text-sm leading-relaxed text-product-text-secondary">
+                <strong className="font-semibold text-product-text-primary">
+                  Need help with email?
+                </strong>{" "}
+                Annual Pro includes one-time assisted Resend setup using your account and verified
+                domain.
+              </p>
+            )}
             <div className="mt-auto pt-8">
               <PricingCheckoutButton
                 interval={interval}

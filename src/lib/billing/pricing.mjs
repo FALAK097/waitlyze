@@ -7,7 +7,7 @@ const formatUsd = (amount) =>
   }).format(amount);
 
 const proMonthlyUsd = 15;
-const proAnnualUsd = 50;
+const proAnnualUsd = 119;
 
 export const WAITLYZE_PRICING = Object.freeze({
   currency: "USD",
