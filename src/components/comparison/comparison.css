@@ -161,6 +161,16 @@
   line-height: 1.65;
 }
 
+.compare-section + .compare-methodology,
+.compare-methodology + .compare-cta {
+  border-top: 0;
+}
+
+.compare-methodology .compare-section-heading {
+  max-width: none;
+  margin-bottom: 0;
+}
+
 .compare-tool-list {
   display: grid;
 }

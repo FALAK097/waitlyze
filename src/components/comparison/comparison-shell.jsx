@@ -132,7 +132,10 @@ export function ComparisonCta({ title, copy, secondary }) {
 
 export function HowWeChecked({ date }) {
   return (
-    <section className="compare-wrap compare-section" aria-labelledby="how-we-checked">
+    <section
+      className="compare-wrap compare-section compare-methodology"
+      aria-labelledby="how-we-checked"
+    >
       <div className="compare-section-heading">
         <h2 id="how-we-checked">How we checked</h2>
         <p>
