@@ -172,6 +172,14 @@ export default function Pricing({
                   {displayedRegionalPricing ? "" : "USD"}
                 </span>
               </p>
+              {interval === "annual" && (
+                <p className="mt-2 text-sm text-product-text-secondary">
+                  Equivalent to{" "}
+                  {displayedRegionalPricing?.annual.monthlyEquivalentFormatted ||
+                    WAITLYZE_PRICING.pro.annual.monthlyEquivalentFormatted}
+                  /month
+                </p>
+              )}
             </div>
             <ul className="mt-6 grid gap-3 text-sm text-product-text-secondary">
               {proFeatures.map((item) => (

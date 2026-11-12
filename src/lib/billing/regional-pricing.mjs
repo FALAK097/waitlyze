@@ -73,7 +73,8 @@ export async function getRegionalPricing(countryCode) {
     const currency = monthly.currency;
     const monthlyFormatted = formatRoundedCurrency(monthly.amount, currency);
     const annualFormatted = formatRoundedCurrency(annual.amount, currency);
-    if (!monthlyFormatted || !annualFormatted) return null;
+    const annualMonthlyEquivalentFormatted = formatRoundedCurrency(annual.amount / 12, currency);
+    if (!monthlyFormatted || !annualFormatted || !annualMonthlyEquivalentFormatted) return null;
     const resolvedCountry = preview.country;
     return {
       country: countryNames.of(resolvedCountry) || resolvedCountry,
@@ -81,7 +82,11 @@ export async function getRegionalPricing(countryCode) {
       currency,
       zeroFormatted: formatRoundedCurrency(0, currency),
       monthly: { amount: monthly.amount, formatted: monthlyFormatted },
-      annual: { amount: annual.amount, formatted: annualFormatted },
+      annual: {
+        amount: annual.amount,
+        formatted: annualFormatted,
+        monthlyEquivalentFormatted: annualMonthlyEquivalentFormatted,
+      },
     };
   } catch {
     // Pricing page should remain available if Dodo preview is temporarily down.
