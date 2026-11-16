@@ -30,6 +30,7 @@
     "public/**",
     "coverage/**",
     "playwright-report/**",
-    "test-results/**"
+    "test-results/**",
+    "video/**"
   ]
 }

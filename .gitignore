@@ -23,6 +23,7 @@
 /test-results/
 /public/images/showcase/
 lighthouse*.json
+/video/
 
 # vale downloaded packages (synced via `vale sync`)
 /styles/Google/

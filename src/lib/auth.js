@@ -1,10 +1,10 @@
+import { mcp } from "@better-auth/mcp";
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { jwt } from "better-auth/plugins";
-import { mcp } from "@better-auth/mcp";
 
 import { getMcpResourceUrl, MCP_SCOPES } from "./mcp/config.mjs";
-import prisma from "./prisma";
+import prisma from "./prisma.js";
 
 const socialProviders = {};
 if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
