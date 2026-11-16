@@ -30,11 +30,12 @@ export function OnboardingProvider({ children, initialOpen, userName }) {
   }, []);
 
   const closeTour = useCallback(
-    async ({ outcome, stepId, stepIndex }) => {
+    async ({ chapterId, outcome, stepId, stepIndex }) => {
       setOpen(false);
       trackClientEvent(POSTHOG_EVENTS.ONBOARDING_TOUR_FINISHED, {
         entry,
         outcome,
+        chapter_id: chapterId,
         step_id: stepId,
         step_number: stepIndex + 1,
       });
