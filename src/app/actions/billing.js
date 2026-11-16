@@ -553,13 +553,25 @@ export async function transferProSubscription(workspaceId) {
       });
     } catch (transactionError) {
       try {
-        const committedToTarget = await prisma.workspaceSubscription.findFirst({
-          where: {
-            workspaceId: workspace.id,
-            dodoSubscriptionId: sourceSubscription.dodoSubscriptionId,
-          },
+        // Decide under the same workspace locks so a sibling transfer's commit
+        // is visible before choosing whether to revert the metadata. Revert
+        // only when the subscription is still parked on the source workspace:
+        // if a committed transfer moved it elsewhere, that transfer's own
+        // metadata write already points at its new workspace.
+        let stillAtSource = false;
+        await prisma.$transaction(async (tx) => {
+          const [firstLockId, secondLockId] = [source.id, workspace.id].sort();
+          await tx.$queryRaw`SELECT "id" FROM "workspaces" WHERE "id" = ${firstLockId} FOR UPDATE`;
+          await tx.$queryRaw`SELECT "id" FROM "workspaces" WHERE "id" = ${secondLockId} FOR UPDATE`;
+          const parked = await tx.workspaceSubscription.findFirst({
+            where: {
+              workspaceId: source.id,
+              dodoSubscriptionId: sourceSubscription.dodoSubscriptionId,
+            },
+          });
+          stillAtSource = Boolean(parked);
         });
-        if (!committedToTarget) {
+        if (stillAtSource) {
           await client.subscriptions.update(sourceSubscription.dodoSubscriptionId, {
             metadata: { workspaceId: source.id, userId: session.user.id, plan: "PRO" },
           });
