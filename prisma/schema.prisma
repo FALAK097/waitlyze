@@ -19,16 +19,20 @@ model User {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
-  personalWorkspace    Workspace?        @relation("PersonalWorkspace")
-  workspaceMemberships WorkspaceMember[]
-  workspaceInvitationsCreated WorkspaceInvitation[] @relation("WorkspaceInvitationCreator")
+  personalWorkspace            Workspace?            @relation("PersonalWorkspace")
+  workspaceMemberships         WorkspaceMember[]
+  workspaceInvitationsCreated  WorkspaceInvitation[] @relation("WorkspaceInvitationCreator")
   workspaceInvitationsAccepted WorkspaceInvitation[] @relation("WorkspaceInvitationAccepter")
 
-  waitLists WaitList[]
-  apiKeys   ApiKey[]
-  sessions  Session[]
-  accounts  Account[]
-  auditEvents WorkspaceAuditEvent[]
+  waitLists          WaitList[]
+  apiKeys            ApiKey[]
+  sessions           Session[]
+  accounts           Account[]
+  auditEvents        WorkspaceAuditEvent[]
+  oauthClients       OauthClient[]
+  oauthRefreshTokens OauthRefreshToken[]
+  oauthAccessTokens  OauthAccessToken[]
+  oauthConsents      OauthConsent[]
 
   @@map("users")
 }
@@ -52,82 +56,82 @@ enum LaunchRehearsalStatus {
 }
 
 model WaitList {
-  status                  CampaignStatus @default(DRAFT)
-  publicSlug              String? @unique
-  templateSnapshot        Json?
-  templateRevision        Int @default(1)
-  templateRevisions       WaitListRevision[]
-  publicationRevisions    WaitListPublicationRevision[]
-  publishedRevision       Int?
+  status                    CampaignStatus                @default(DRAFT)
+  publicSlug                String?                       @unique
+  templateSnapshot          Json?
+  templateRevision          Int                           @default(1)
+  templateRevisions         WaitListRevision[]
+  publicationRevisions      WaitListPublicationRevision[]
+  publishedRevision         Int?
   publishedTemplateRevision Int?
-  creationKey             String?
+  creationKey               String?
 
-  id                      String  @id @unique @default(cuid())
+  id                      String   @id @unique @default(cuid())
   createdAt               DateTime @default(now())
   updatedAt               DateTime @updatedAt
   name                    String?
   description             String?
   websiteUrl              String?
-  logoUrl                 String? @default("/images/logo.png")
+  logoUrl                 String?  @default("/images/logo.png")
   logoKey                 String?
-  buttonColor             String? @default("#FF6B4A")
-  buttonBorder            String? @default("#FF9D7A")
-  buttonTextColor         String? @default("#FFFFFF")
-  mainBgColor             String? @default("#FFFFFF")
-  enableMainBgColor       Boolean @default(false)
-  bgColor                 String? @default("#FFFFFF")
-  enableBgColor           Boolean @default(false)
-  borderWidth             String? @default("0px")
-  borderRadius            String? @default("large")
-  fontWeight              String? @default("normal")
-  logoSize                String? @default("1X")
-  buttonText              String? @default("Join the waitlist")
-  successMessage          String? @default("Success! You're on the waitlist")
-  showLogo                Boolean @default(true)
-  showSocialProof         Boolean @default(true)
-  showBadge               Boolean @default(true)
-  showBranding            Boolean @default(true)
-  showReferrals           Boolean @default(true)
-  badgeColor              String? @default("#FF9D7A")
-  badgeText               String? @default("Sign Up to get early access")
-  badgeTextColor          String? @default("#FFFFFF")
-  inputColor              String? @default("#FFFFF")
-  inputBorder             String? @default("#E5E7EB")
-  inputTextColor          String? @default("#000000")
-  placeholderText         String? @default("Enter your email")
+  buttonColor             String?  @default("#FF6B4A")
+  buttonBorder            String?  @default("#FF9D7A")
+  buttonTextColor         String?  @default("#FFFFFF")
+  mainBgColor             String?  @default("#FFFFFF")
+  enableMainBgColor       Boolean  @default(false)
+  bgColor                 String?  @default("#FFFFFF")
+  enableBgColor           Boolean  @default(false)
+  borderWidth             String?  @default("0px")
+  borderRadius            String?  @default("large")
+  fontWeight              String?  @default("normal")
+  logoSize                String?  @default("1X")
+  buttonText              String?  @default("Join the waitlist")
+  successMessage          String?  @default("Success! You're on the waitlist")
+  showLogo                Boolean  @default(true)
+  showSocialProof         Boolean  @default(true)
+  showBadge               Boolean  @default(true)
+  showBranding            Boolean  @default(true)
+  showReferrals           Boolean  @default(true)
+  badgeColor              String?  @default("#FF9D7A")
+  badgeText               String?  @default("Sign Up to get early access")
+  badgeTextColor          String?  @default("#FFFFFF")
+  inputColor              String?  @default("#FFFFF")
+  inputBorder             String?  @default("#E5E7EB")
+  inputTextColor          String?  @default("#000000")
+  placeholderText         String?  @default("Enter your email")
   twitterLink             String?
   facebookLink            String?
   instagramLink           String?
   linkedInLink            String?
-  showSocialLinks         Boolean @default(true)
-  sendEmailsToSubscribers Boolean @default(false)
+  showSocialLinks         Boolean  @default(true)
+  sendEmailsToSubscribers Boolean  @default(false)
   ogTitle                 String?
   ogDescription           String?
   ogImage                 String?
-  shareOnTwitter          Boolean @default(true)
-  shareOnWhatsapp         Boolean @default(true)
-  shareOnLinkedin         Boolean @default(true)
-  shareOnInstagram        Boolean @default(false)
-  shareOnFacebook         Boolean @default(false)
-  shareOnEmail            Boolean @default(false)
-  shareOnReddit           Boolean @default(false)
+  shareOnTwitter          Boolean  @default(true)
+  shareOnWhatsapp         Boolean  @default(true)
+  shareOnLinkedin         Boolean  @default(true)
+  shareOnInstagram        Boolean  @default(false)
+  shareOnFacebook         Boolean  @default(false)
+  shareOnEmail            Boolean  @default(false)
+  shareOnReddit           Boolean  @default(false)
 
   workspaceId String?
   workspace   Workspace? @relation(fields: [workspaceId], references: [id], onDelete: Restrict)
 
-  userId               String
-  user                 User            @relation(fields: [userId], references: [id], onDelete: Cascade)
-  signUps              SignUp[]
+  userId                 String
+  user                   User                          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  signUps                SignUp[]
   // Fraud posture for the public signup path: STANDARD (default) or STRICT.
   // STRICT tightens IP/device velocity caps and widens silent-mode coverage.
   // Validated in code; unknown values fail open to STANDARD.
-  fraudMode            String          @default("STANDARD")
-  impressions          Impression[]
-  shareEvents          ShareEvent[]
-  launchRehearsals     LaunchRehearsal[]
-  apiKeys              ApiKey[]
-  emailTemplateRecords EmailTemplate[]
-  broadcasts           MarketingBroadcast[]
+  fraudMode              String                        @default("STANDARD")
+  impressions            Impression[]
+  shareEvents            ShareEvent[]
+  launchRehearsals       LaunchRehearsal[]
+  apiKeys                ApiKey[]
+  emailTemplateRecords   EmailTemplate[]
+  broadcasts             MarketingBroadcast[]
   marketingConsentEvents MarketingConsentEvent[]
   automationRecipes      AutomationRecipe[]
   automationRuns         AutomationRun[]
@@ -144,12 +148,12 @@ model WaitList {
 }
 
 model WaitListRevision {
-  id           String   @id @default(cuid())
-  waitListId   String
-  revision     Int
-  snapshot     Json
-  createdAt    DateTime @default(now())
-  waitList     WaitList @relation(fields: [waitListId], references: [id], onDelete: Cascade)
+  id         String   @id @default(cuid())
+  waitListId String
+  revision   Int
+  snapshot   Json
+  createdAt  DateTime @default(now())
+  waitList   WaitList @relation(fields: [waitListId], references: [id], onDelete: Cascade)
 
   @@unique([waitListId, revision])
   @@index([waitListId, createdAt])
@@ -157,13 +161,13 @@ model WaitListRevision {
 }
 
 model WaitListPublicationRevision {
-  id             String   @id @default(cuid())
-  waitListId     String
-  revision       Int
+  id               String   @id @default(cuid())
+  waitListId       String
+  revision         Int
   templateRevision Int
-  snapshot       Json
-  createdAt      DateTime @default(now())
-  waitList       WaitList @relation(fields: [waitListId], references: [id], onDelete: Cascade)
+  snapshot         Json
+  createdAt        DateTime @default(now())
+  waitList         WaitList @relation(fields: [waitListId], references: [id], onDelete: Cascade)
 
   @@unique([waitListId, revision])
   @@index([waitListId, createdAt])
@@ -171,50 +175,50 @@ model WaitListPublicationRevision {
 }
 
 model SignUp {
-  id              String      @id @default(cuid())
-  uniqueUserId    String
-  referralCode    String      @unique @default(dbgenerated("(gen_random_uuid())::text"))
-  email           String
-  emailNormalized String?
-  device          String?
-  deviceType      String?
-  city            String?
-  country         String?
-  timezone        String?
-  ipAddress       String?
-  latitude        String?
-  longitude       String?
-  referrer        String?
-  landingPage     String?
-  utmSource       String?
-  utmMedium       String?
-  utmCampaign     String?
-  utmTerm         String?
-  utmContent      String?
-  points          Int         @default(0)
+  id                      String                  @id @default(cuid())
+  uniqueUserId            String
+  referralCode            String                  @unique @default(dbgenerated("(gen_random_uuid())::text"))
+  email                   String
+  emailNormalized         String?
+  device                  String?
+  deviceType              String?
+  city                    String?
+  country                 String?
+  timezone                String?
+  ipAddress               String?
+  latitude                String?
+  longitude               String?
+  referrer                String?
+  landingPage             String?
+  utmSource               String?
+  utmMedium               String?
+  utmCampaign             String?
+  utmTerm                 String?
+  utmContent              String?
+  points                  Int                     @default(0)
   // SHA-256 device digest (see lib/fraud/gates.mjs) for velocity checks.
   // Null for rows written before capture; those rows skip fingerprint gates.
-  deviceFingerprint String?
-  phone           String?
-  customFields    Json?
-  waitListId      String
-  impressionId    String?
-  rank            Int?
-  signUpEmailSent Boolean     @default(false)
-  verifiedAt      DateTime?
-  marketingConsentAt DateTime?
+  deviceFingerprint       String?
+  phone                   String?
+  customFields            Json?
+  waitListId              String
+  impressionId            String?
+  rank                    Int?
+  signUpEmailSent         Boolean                 @default(false)
+  verifiedAt              DateTime?
+  marketingConsentAt      DateTime?
   marketingUnsubscribedAt DateTime?
-  unsubscribeTokenHash String? @unique
-  createdAt       DateTime    @default(now())
-  updatedAt       DateTime    @updatedAt
-  waitList        WaitList    @relation(fields: [waitListId], references: [id], onDelete: Cascade)
-  impression      Impression? @relation(fields: [impressionId], references: [id], onDelete: SetNull)
-  referrals       Referral[]  @relation("referredByReferral")
-  referredBy      Referral[]  @relation("signUpReferral")
-  verification    SignUpVerification?
-  broadcastRecipients BroadcastRecipient[]
-  marketingConsentEvents MarketingConsentEvent[]
-  automationRuns AutomationRun[]
+  unsubscribeTokenHash    String?                 @unique
+  createdAt               DateTime                @default(now())
+  updatedAt               DateTime                @updatedAt
+  waitList                WaitList                @relation(fields: [waitListId], references: [id], onDelete: Cascade)
+  impression              Impression?             @relation(fields: [impressionId], references: [id], onDelete: SetNull)
+  referrals               Referral[]              @relation("referredByReferral")
+  referredBy              Referral[]              @relation("signUpReferral")
+  verification            SignUpVerification?
+  broadcastRecipients     BroadcastRecipient[]
+  marketingConsentEvents  MarketingConsentEvent[]
+  automationRuns          AutomationRun[]
 
   @@unique([waitListId, emailNormalized])
   @@index([waitListId, uniqueUserId])
@@ -225,13 +229,13 @@ model SignUp {
 }
 
 model SignUpVerification {
-  id        String   @id @default(cuid())
-  signUpId  String   @unique
-  tokenHash String   @unique
+  id        String    @id @default(cuid())
+  signUpId  String    @unique
+  tokenHash String    @unique
   expiresAt DateTime
   usedAt    DateTime?
-  createdAt DateTime @default(now())
-  signUp    SignUp   @relation(fields: [signUpId], references: [id], onDelete: Cascade)
+  createdAt DateTime  @default(now())
+  signUp    SignUp    @relation(fields: [signUpId], references: [id], onDelete: Cascade)
 
   @@index([expiresAt])
   @@map("sign_up_verifications")
@@ -245,19 +249,19 @@ enum OutboxStatus {
 }
 
 model OutboxEvent {
-  id          String       @id @default(cuid())
-  eventKey    String       @unique
-  type        String
-  payload     Json
-  status      OutboxStatus @default(PENDING)
-  attempts    Int          @default(0)
-  availableAt DateTime     @default(now())
-  createdAt   DateTime     @default(now())
-  processedAt DateTime?
-  lockedAt    DateTime?
-  waitListId  String?
+  id                String       @id @default(cuid())
+  eventKey          String       @unique
+  type              String
+  payload           Json
+  status            OutboxStatus @default(PENDING)
+  attempts          Int          @default(0)
+  availableAt       DateTime     @default(now())
+  createdAt         DateTime     @default(now())
+  processedAt       DateTime?
+  lockedAt          DateTime?
+  waitListId        String?
   providerMessageId String?
-  lastErrorCode String?
+  lastErrorCode     String?
 
   @@index([status, availableAt])
   @@index([status, lockedAt])
@@ -294,15 +298,15 @@ enum MarketingConsentSource {
 }
 
 model MarketingConsentEvent {
-  id        String                 @id @default(cuid())
-  waitListId String
-  signUpId  String
-  action    MarketingConsentAction
-  source    MarketingConsentSource
+  id          String                 @id @default(cuid())
+  waitListId  String
+  signUpId    String
+  action      MarketingConsentAction
+  source      MarketingConsentSource
   consentText String?
-  createdAt DateTime               @default(now())
-  waitList  WaitList               @relation(fields: [waitListId], references: [id], onDelete: Cascade)
-  signUp    SignUp                 @relation(fields: [signUpId], references: [id], onDelete: Cascade)
+  createdAt   DateTime               @default(now())
+  waitList    WaitList               @relation(fields: [waitListId], references: [id], onDelete: Cascade)
+  signUp      SignUp                 @relation(fields: [signUpId], references: [id], onDelete: Cascade)
 
   @@index([signUpId, createdAt])
   @@index([waitListId, createdAt])
@@ -310,9 +314,9 @@ model MarketingConsentEvent {
 }
 
 model MarketingBroadcast {
-  id             String          @id @default(cuid())
+  id             String               @id @default(cuid())
   waitListId     String
-  waitList       WaitList        @relation(fields: [waitListId], references: [id], onDelete: Cascade)
+  waitList       WaitList             @relation(fields: [waitListId], references: [id], onDelete: Cascade)
   name           String
   subject        String
   previewText    String
@@ -320,12 +324,12 @@ model MarketingBroadcast {
   editorDocument Json?
   renderedHtml   String?
   renderedText   String?
-  status         BroadcastStatus @default(DRAFT)
-  recipientCount Int             @default(0)
-  segment        String          @default("ALL")
+  status         BroadcastStatus      @default(DRAFT)
+  recipientCount Int                  @default(0)
+  segment        String               @default("ALL")
   scheduledAt    DateTime?
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
   sentAt         DateTime?
   recipients     BroadcastRecipient[]
 
@@ -386,14 +390,14 @@ enum AutomationStepStatus {
 }
 
 model AutomationRecipe {
-  id             String                @id @default(cuid())
+  id             String                    @id @default(cuid())
   waitListId     String
-  waitList       WaitList              @relation(fields: [waitListId], references: [id], onDelete: Cascade)
+  waitList       WaitList                  @relation(fields: [waitListId], references: [id], onDelete: Cascade)
   type           AutomationRecipeType
-  status         AutomationRecipeStatus @default(DRAFT)
-  currentVersion Int                   @default(1)
-  createdAt      DateTime              @default(now())
-  updatedAt      DateTime              @updatedAt
+  status         AutomationRecipeStatus    @default(DRAFT)
+  currentVersion Int                       @default(1)
+  createdAt      DateTime                  @default(now())
+  updatedAt      DateTime                  @updatedAt
   versions       AutomationRecipeVersion[]
   runs           AutomationRun[]
 
@@ -416,23 +420,23 @@ model AutomationRecipeVersion {
 }
 
 model AutomationRun {
-  recipeId         String
-  recipe           AutomationRecipe       @relation(fields: [recipeId], references: [id], onDelete: Cascade)
-  id               String                 @id @default(cuid())
-  recipeVersionId  String
-  recipeVersion    AutomationRecipeVersion @relation(fields: [recipeVersionId], references: [id], onDelete: Cascade)
-  waitListId       String
-  waitList         WaitList               @relation(fields: [waitListId], references: [id], onDelete: Cascade)
-  signUpId         String
-  signUp           SignUp                 @relation(fields: [signUpId], references: [id], onDelete: Cascade)
-  triggerKey       String
-  status           AutomationRunStatus    @default(PENDING)
-  scheduledAt      DateTime
-  startedAt        DateTime?
-  finishedAt       DateTime?
-  skipReason       String?
-  createdAt        DateTime               @default(now())
-  steps            AutomationRunStep[]
+  recipeId        String
+  recipe          AutomationRecipe        @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  id              String                  @id @default(cuid())
+  recipeVersionId String
+  recipeVersion   AutomationRecipeVersion @relation(fields: [recipeVersionId], references: [id], onDelete: Cascade)
+  waitListId      String
+  waitList        WaitList                @relation(fields: [waitListId], references: [id], onDelete: Cascade)
+  signUpId        String
+  signUp          SignUp                  @relation(fields: [signUpId], references: [id], onDelete: Cascade)
+  triggerKey      String
+  status          AutomationRunStatus     @default(PENDING)
+  scheduledAt     DateTime
+  startedAt       DateTime?
+  finishedAt      DateTime?
+  skipReason      String?
+  createdAt       DateTime                @default(now())
+  steps           AutomationRunStep[]
 
   @@unique([recipeId, triggerKey])
   @@index([waitListId, createdAt])
@@ -502,18 +506,18 @@ model ShareEvent {
 }
 
 model Referral {
-  id           String   @id @default(cuid())
-  signUpId     String   @unique
+  id           String               @id @default(cuid())
+  signUpId     String               @unique
   referredById String?
   reviewStatus ReferralReviewStatus @default(CLEAR)
   reviewReason String?
   resolution   String?
   reviewedAt   DateTime?
   reviewedById String?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-  signUp       SignUp   @relation("signUpReferral", fields: [signUpId], references: [id], onDelete: Cascade)
-  referredBy   SignUp?  @relation("referredByReferral", fields: [referredById], references: [id], onDelete: Cascade)
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
+  signUp       SignUp               @relation("signUpReferral", fields: [signUpId], references: [id], onDelete: Cascade)
+  referredBy   SignUp?              @relation("referredByReferral", fields: [referredById], references: [id], onDelete: Cascade)
 
   @@index([referredById, reviewStatus])
   @@map("referrals")
@@ -545,32 +549,32 @@ model PointLedger {
 // Rehearsal records contain checklist results only. Simulated activity never
 // becomes a SignUp, OutboxEvent, impression, or report input.
 model LaunchRehearsal {
-  id            String                @id @default(cuid())
-  waitListId    String
-  status        LaunchRehearsalStatus
-  checksPassed  Int
-  checksFailed  Int
-  checkResults  Json
-  createdAt     DateTime              @default(now())
-  waitList      WaitList              @relation(fields: [waitListId], references: [id], onDelete: Cascade)
+  id           String                @id @default(cuid())
+  waitListId   String
+  status       LaunchRehearsalStatus
+  checksPassed Int
+  checksFailed Int
+  checkResults Json
+  createdAt    DateTime              @default(now())
+  waitList     WaitList              @relation(fields: [waitListId], references: [id], onDelete: Cascade)
 
   @@index([waitListId, createdAt])
   @@map("launch_rehearsal_runs")
 }
 
 model ApiKey {
-  id         String   @id @default(cuid())
+  id         String    @id @default(cuid())
   name       String
-  keyHash    String   @unique
-  keyId      String?  @unique
-  scopes     String[] @default(["waitlist:write"])
+  keyHash    String    @unique
+  keyId      String?   @unique
+  scopes     String[]  @default(["waitlist:write"])
   expiresAt  DateTime?
   lastUsedAt DateTime?
   revokedAt  DateTime?
   userId     String
   waitlistId String?
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
 
   user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   waitlist WaitList? @relation(fields: [waitlistId], references: [id], onDelete: SetNull)
@@ -580,21 +584,21 @@ model ApiKey {
 }
 
 model EmailTemplate {
-  id          String            @id @default(cuid())
-  waitListId  String
-  waitList    WaitList          @relation(fields: [waitListId], references: [id], onDelete: Cascade)
-  type        EmailTemplateType
-  subject     String
-  previewText String
-  header      String
-  subHeader   String
-  mainBody    String
+  id             String            @id @default(cuid())
+  waitListId     String
+  waitList       WaitList          @relation(fields: [waitListId], references: [id], onDelete: Cascade)
+  type           EmailTemplateType
+  subject        String
+  previewText    String
+  header         String
+  subHeader      String
+  mainBody       String
   editorDocument Json?
   renderedHtml   String?
   renderedText   String?
-  subBody     String
-  createdAt   DateTime          @default(now())
-  updatedAt   DateTime          @updatedAt
+  subBody        String
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
 
   @@unique([waitListId, type])
   @@map("email_templates")
@@ -616,13 +620,13 @@ enum WebhookDeliveryStatus {
 }
 
 model WebhookSubscription {
-  id                       String   @id @default(cuid())
+  id                       String            @id @default(cuid())
   waitListId               String
   name                     String
   url                      String
-  eventTypes               String[] @default(["signup.created"])
-  enabled                  Boolean  @default(true)
-  includeSubscriberData    Boolean  @default(false)
+  eventTypes               String[]          @default(["signup.created"])
+  enabled                  Boolean           @default(true)
+  includeSubscriberData    Boolean           @default(false)
   secretCiphertext         String
   secretIv                 String
   secretTag                String
@@ -630,10 +634,10 @@ model WebhookSubscription {
   previousSecretIv         String?
   previousSecretTag        String?
   previousSecretValidUntil DateTime?
-  createdAt                DateTime @default(now())
-  updatedAt                DateTime @updatedAt
+  createdAt                DateTime          @default(now())
+  updatedAt                DateTime          @updatedAt
   lastDeliveredAt          DateTime?
-  waitList                 WaitList @relation(fields: [waitListId], references: [id], onDelete: Cascade)
+  waitList                 WaitList          @relation(fields: [waitListId], references: [id], onDelete: Cascade)
   deliveries               WebhookDelivery[]
 
   @@index([waitListId, enabled])
@@ -641,23 +645,23 @@ model WebhookSubscription {
 }
 
 model WebhookDelivery {
-  id               String                @id @default(cuid())
-  subscriptionId   String
-  eventId          String
-  eventKey         String                @unique
-  eventType        String
-  payload          Json
-  status           WebhookDeliveryStatus @default(PENDING)
-  attempts         Int                   @default(0)
-  replayCount      Int                   @default(0)
-  availableAt      DateTime              @default(now())
-  createdAt        DateTime              @default(now())
-  lockedAt         DateTime?
-  processedAt      DateTime?
-  deliveredAt      DateTime?
-  responseStatus   Int?
-  lastErrorCode    String?
-  subscription     WebhookSubscription   @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  id             String                @id @default(cuid())
+  subscriptionId String
+  eventId        String
+  eventKey       String                @unique
+  eventType      String
+  payload        Json
+  status         WebhookDeliveryStatus @default(PENDING)
+  attempts       Int                   @default(0)
+  replayCount    Int                   @default(0)
+  availableAt    DateTime              @default(now())
+  createdAt      DateTime              @default(now())
+  lockedAt       DateTime?
+  processedAt    DateTime?
+  deliveredAt    DateTime?
+  responseStatus Int?
+  lastErrorCode  String?
+  subscription   WebhookSubscription   @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
 
   @@index([status, availableAt])
   @@index([status, lockedAt])
@@ -666,15 +670,17 @@ model WebhookDelivery {
 }
 
 model Session {
-  id        String   @id
-  expiresAt DateTime
-  token     String   @unique
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  ipAddress String?
-  userAgent String?
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id                 String              @id
+  expiresAt          DateTime
+  token              String              @unique
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  ipAddress          String?
+  userAgent          String?
+  userId             String
+  user               User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  oauthRefreshTokens OauthRefreshToken[]
+  oauthAccessTokens  OauthAccessToken[]
 
   @@map("sessions")
 }
@@ -709,23 +715,202 @@ model Verification {
   @@map("verifications")
 }
 
+model Jwks {
+  id         String    @id
+  publicKey  String
+  privateKey String
+  createdAt  DateTime
+  expiresAt  DateTime?
+  alg        String?
+  crv        String?
+
+  @@map("jwks")
+}
+
+model OauthClient {
+  id                               String                @id
+  clientId                         String                @unique
+  clientSecret                     String?
+  clientDiscoveryId                String?
+  disabled                         Boolean?              @default(false)
+  skipConsent                      Boolean?
+  enableEndSession                 Boolean?
+  subjectType                      String?
+  scopes                           String[]
+  clientCredentialsScopes          String[]              @default([])
+  userId                           String?
+  user                             User?                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt                        DateTime?
+  updatedAt                        DateTime?
+  name                             String?
+  uri                              String?
+  icon                             String?
+  contacts                         String[]
+  tos                              String?
+  policy                           String?
+  softwareId                       String?
+  softwareVersion                  String?
+  softwareStatement                String?
+  redirectUris                     String[]
+  postLogoutRedirectUris           String[]
+  backchannelLogoutUri             String?
+  backchannelLogoutSessionRequired Boolean?
+  tokenEndpointAuthMethod          String?
+  applicationType                  String?
+  jwks                             String?
+  jwksUri                          String?
+  grantTypes                       String[]
+  responseTypes                    String[]
+  requirePKCE                      Boolean?
+  dpopBoundAccessTokens            Boolean?              @default(false)
+  referenceId                      String?
+  metadata                         Json?
+  resources                        OauthClientResource[]
+  refreshTokens                    OauthRefreshToken[]
+  accessTokens                     OauthAccessToken[]
+  consents                         OauthConsent[]
+
+  @@index([userId])
+  @@map("oauthClient")
+}
+
+model OauthResource {
+  id                            String                @id
+  identifier                    String                @unique
+  name                          String
+  accessTokenTtl                Int?
+  refreshTokenTtl               Int?
+  signingAlgorithm              String?
+  signingKeyId                  String?
+  allowedScopes                 String[]
+  customClaims                  Json?
+  dpopBoundAccessTokensRequired Boolean?              @default(false)
+  disabled                      Boolean?              @default(false)
+  createdAt                     DateTime?
+  updatedAt                     DateTime?
+  policyVersion                 Int?                  @default(1)
+  metadata                      Json?
+  clients                       OauthClientResource[]
+
+  @@map("oauthResource")
+}
+
+model OauthClientResource {
+  id         String        @id
+  clientId   String
+  client     OauthClient   @relation(fields: [clientId], references: [clientId], onDelete: Cascade)
+  resourceId String
+  resource   OauthResource @relation(fields: [resourceId], references: [identifier], onDelete: Cascade)
+  metadata   Json?
+  createdAt  DateTime?
+
+  @@index([clientId])
+  @@index([resourceId])
+  @@map("oauthClientResource")
+}
+
+model OauthRefreshToken {
+  id                      String             @id
+  token                   String             @unique
+  clientId                String
+  client                  OauthClient        @relation(fields: [clientId], references: [clientId], onDelete: Cascade)
+  sessionId               String?
+  session                 Session?           @relation(fields: [sessionId], references: [id], onDelete: SetNull)
+  userId                  String
+  user                    User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  referenceId             String?
+  authorizationCodeId     String?
+  resources               String[]
+  requestedUserInfoClaims String[]
+  expiresAt               DateTime?
+  createdAt               DateTime?
+  revoked                 DateTime?
+  rotatedAt               DateTime?
+  rotationReplayResponse  String?
+  rotationReplayExpiresAt DateTime?
+  authTime                DateTime?
+  confirmation            Json?
+  scopes                  String[]
+  accessTokens            OauthAccessToken[]
+
+  @@index([clientId])
+  @@index([sessionId])
+  @@index([userId])
+  @@index([authorizationCodeId])
+  @@map("oauthRefreshToken")
+}
+
+model OauthAccessToken {
+  id                      String             @id
+  token                   String?            @unique
+  clientId                String
+  client                  OauthClient        @relation(fields: [clientId], references: [clientId], onDelete: Cascade)
+  sessionId               String?
+  session                 Session?           @relation(fields: [sessionId], references: [id], onDelete: SetNull)
+  userId                  String?
+  user                    User?              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  referenceId             String?
+  authorizationCodeId     String?
+  resources               String[]
+  requestedUserInfoClaims String[]
+  refreshId               String?
+  refreshToken            OauthRefreshToken? @relation(fields: [refreshId], references: [id], onDelete: Cascade)
+  expiresAt               DateTime?
+  createdAt               DateTime?
+  revoked                 DateTime?
+  confirmation            Json?
+  scopes                  String[]
+
+  @@index([clientId])
+  @@index([sessionId])
+  @@index([userId])
+  @@index([authorizationCodeId])
+  @@index([refreshId])
+  @@map("oauthAccessToken")
+}
+
+model OauthConsent {
+  id                      String      @id
+  clientId                String
+  client                  OauthClient @relation(fields: [clientId], references: [clientId], onDelete: Cascade)
+  userId                  String?
+  user                    User?       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  referenceId             String?
+  resources               String[]
+  requestedUserInfoClaims String[]
+  scopes                  String[]
+  createdAt               DateTime?
+  updatedAt               DateTime?
+
+  @@index([clientId])
+  @@index([userId])
+  @@map("oauthConsent")
+}
+
+model OauthClientAssertion {
+  id        String   @id
+  expiresAt DateTime
+
+  @@map("oauthClientAssertion")
+}
+
 // Additive tenancy: personalOwnerId provides an idempotent legacy mapping.
 model Workspace {
-  id              String            @id @default(cuid())
-  name            String
-  personalOwnerId String?           @unique
-  signupUsageCount Int              @default(0)
-  personalOwner   User?             @relation("PersonalWorkspace", fields: [personalOwnerId], references: [id], onDelete: Restrict)
-  createdAt       DateTime          @default(now())
-  updatedAt       DateTime          @updatedAt
-  members         WorkspaceMember[]
-  invitations     WorkspaceInvitation[]
-  waitLists       WaitList[]
+  id                String                 @id @default(cuid())
+  name              String
+  personalOwnerId   String?                @unique
+  signupUsageCount  Int                    @default(0)
+  personalOwner     User?                  @relation("PersonalWorkspace", fields: [personalOwnerId], references: [id], onDelete: Restrict)
+  createdAt         DateTime               @default(now())
+  updatedAt         DateTime               @updatedAt
+  members           WorkspaceMember[]
+  invitations       WorkspaceInvitation[]
+  waitLists         WaitList[]
   emailSuppressions EmailSuppression[]
   integrations      WorkspaceIntegration[]
   customDomains     CustomDomain[]
-  auditEvents     WorkspaceAuditEvent[]
-  subscription    WorkspaceSubscription?
+  auditEvents       WorkspaceAuditEvent[]
+  subscription      WorkspaceSubscription?
 
   @@map("workspaces")
 }
@@ -794,28 +979,28 @@ enum WorkspaceBillingStatus {
 }
 
 model WorkspaceSubscription {
-  workspaceId        String                 @id
-  plan               WorkspacePlan          @default(FREE)
-  status             WorkspaceBillingStatus @default(FREE)
-  interval           WorkspaceBillingInterval?
-  dodoCustomerId     String?
-  dodoSubscriptionId String?                 @unique
-  dodoProductId            String?
-  checkoutIntentId         String?                 @unique
-  checkoutInterval         WorkspaceBillingInterval?
-  checkoutUrl              String?
-  checkoutSessionId        String?                 @unique
-  checkoutUrlExpiresAt     DateTime?
+  workspaceId               String                    @id
+  plan                      WorkspacePlan             @default(FREE)
+  status                    WorkspaceBillingStatus    @default(FREE)
+  interval                  WorkspaceBillingInterval?
+  dodoCustomerId            String?
+  dodoSubscriptionId        String?                   @unique
+  dodoProductId             String?
+  checkoutIntentId          String?                   @unique
+  checkoutInterval          WorkspaceBillingInterval?
+  checkoutUrl               String?
+  checkoutSessionId         String?                   @unique
+  checkoutUrlExpiresAt      DateTime?
   checkoutCreationStartedAt DateTime?
-  checkoutPendingUntil     DateTime?
-  currentPeriodStart   DateTime?
-  currentPeriodEnd   DateTime?
-  pastDueEndsAt      DateTime?
-  cancelAtPeriodEnd  Boolean                 @default(false)
-  lastEventAt        DateTime?
-  createdAt          DateTime                @default(now())
-  updatedAt          DateTime                @updatedAt
-  workspace          Workspace               @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  checkoutPendingUntil      DateTime?
+  currentPeriodStart        DateTime?
+  currentPeriodEnd          DateTime?
+  pastDueEndsAt             DateTime?
+  cancelAtPeriodEnd         Boolean                   @default(false)
+  lastEventAt               DateTime?
+  createdAt                 DateTime                  @default(now())
+  updatedAt                 DateTime                  @updatedAt
+  workspace                 Workspace                 @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
 
   @@index([status, currentPeriodEnd])
   @@index([dodoCustomerId])
@@ -872,11 +1057,11 @@ model EmailProviderEvent {
 }
 
 model EmailSuppression {
-  id              String   @id @default(cuid())
+  id              String    @id @default(cuid())
   workspaceId     String
   emailNormalized String
   reason          String
-  createdAt       DateTime @default(now())
+  createdAt       DateTime  @default(now())
   workspace       Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
 
   @@unique([workspaceId, emailNormalized])
@@ -885,23 +1070,23 @@ model EmailSuppression {
 }
 
 model WorkspaceIntegration {
-  id                 String   @id @default(cuid())
-  workspaceId        String
-  provider           String
-  status             String   @default("NEEDS_TEST")
-  secretCiphertext   String
-  secretIv           String
-  secretTag          String
+  id                      String    @id @default(cuid())
+  workspaceId             String
+  provider                String
+  status                  String    @default("NEEDS_TEST")
+  secretCiphertext        String
+  secretIv                String
+  secretTag               String
   webhookSecretCiphertext String?
   webhookSecretIv         String?
   webhookSecretTag        String?
-  fromEmail          String
-  providerConfig     Json?
-  lastTestedAt       DateTime?
-  lastErrorCode      String?
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
-  workspace          Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  fromEmail               String
+  providerConfig          Json?
+  lastTestedAt            DateTime?
+  lastErrorCode           String?
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
+  workspace               Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
 
   @@unique([workspaceId, provider])
   @@index([workspaceId, status])
@@ -959,20 +1144,20 @@ enum CustomDomainStatus {
 }
 
 model CustomDomain {
-  id             String             @id @default(cuid())
-  hostname       String             @unique
-  providerId     String?            @unique
-  workspaceId    String
-  waitListId     String             @unique
-  status         CustomDomainStatus @default(NEEDS_DNS)
-  verification   Json?
-  dnsRecords     Json?
-  lastCheckedAt  DateTime?
-  lastErrorCode  String?
-  createdAt      DateTime           @default(now())
-  updatedAt      DateTime           @updatedAt
-  workspace      Workspace          @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  waitList       WaitList           @relation(fields: [waitListId], references: [id], onDelete: Cascade)
+  id            String             @id @default(cuid())
+  hostname      String             @unique
+  providerId    String?            @unique
+  workspaceId   String
+  waitListId    String             @unique
+  status        CustomDomainStatus @default(NEEDS_DNS)
+  verification  Json?
+  dnsRecords    Json?
+  lastCheckedAt DateTime?
+  lastErrorCode String?
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+  workspace     Workspace          @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  waitList      WaitList           @relation(fields: [waitListId], references: [id], onDelete: Cascade)
 
   @@index([workspaceId, status])
   @@map("custom_domains")
