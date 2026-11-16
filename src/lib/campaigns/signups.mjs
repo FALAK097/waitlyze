@@ -9,6 +9,8 @@ import { maybeNotifySignupMilestone } from "../emails/founder-notifications.mjs"
 import { FraudLimitError, evaluateSignupFraud, silentSignupShape } from "../fraud/gates.mjs";
 import { queueVerifiedChatNotifications } from "../integrations/chat-notifiers.mjs";
 import { normalizeSignupEmail } from "../normalize-email.mjs";
+import { POSTHOG_EVENTS } from "../posthog/events.mjs";
+import { trackServerEvent } from "../posthog/server.mjs";
 import {
   REFERRAL_CREDIT_STATUSES,
   awardPoints,
@@ -148,6 +150,38 @@ async function recordVerifiedSignup(tx, signup, now) {
           reward: tier.reward,
         })),
       );
+
+      const waitlistRecord = await tx.waitList.findUnique({
+        where: { id: signup.waitListId },
+        select: { workspaceId: true },
+      });
+
+      trackServerEvent({
+        distinctId: `waitlist_${signup.waitListId}`,
+        event: POSTHOG_EVENTS.REFERRAL_CONVERSION_RECEIVED,
+        properties: {
+          waitlist_id: signup.waitListId,
+          workspace_id: waitlistRecord?.workspaceId,
+          points_awarded: rewards.pointsReferral,
+        },
+        groups: waitlistRecord?.workspaceId ? { company: waitlistRecord.workspaceId } : {},
+      }).catch(() => {});
+
+      if (unlocked.length > 0) {
+        for (const tier of unlocked) {
+          trackServerEvent({
+            distinctId: `waitlist_${signup.waitListId}`,
+            event: POSTHOG_EVENTS.REFERRAL_REWARD_UNLOCKED,
+            properties: {
+              waitlist_id: signup.waitListId,
+              workspace_id: waitlistRecord?.workspaceId,
+              referrals_required: tier.referrals,
+              reward: tier.reward,
+            },
+            groups: waitlistRecord?.workspaceId ? { company: waitlistRecord.workspaceId } : {},
+          }).catch(() => {});
+        }
+      }
     }
   }
   await tx.outboxEvent.create({

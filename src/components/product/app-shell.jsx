@@ -33,6 +33,7 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { signOut } from "@/lib/auth-client";
+import { resetClientUser } from "@/lib/posthog/client";
 import { cn } from "@/lib/utils";
 
 const FeedbackForm = dynamic(() =>
@@ -170,6 +171,7 @@ function AccountMenu({ user, avatar }) {
     try {
       const result = await signOut();
       if (result.error) throw new Error("Sign out failed");
+      resetClientUser();
       router.replace("/");
       router.refresh();
     } catch {

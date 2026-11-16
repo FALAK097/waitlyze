@@ -10,6 +10,8 @@ import {
 } from "@/emails/text.mjs";
 import { env } from "@/lib/env.mjs";
 import { queueChatNotification } from "@/lib/integrations/chat-notifiers.mjs";
+import { POSTHOG_EVENTS } from "@/lib/posthog/events.mjs";
+import { trackServerEvent } from "@/lib/posthog/server.mjs";
 import { enqueueWebhookEvent } from "@/lib/webhooks/delivery.mjs";
 
 // Product notices from Waitlyze to the people who own a workspace.
@@ -139,6 +141,18 @@ export async function maybeNotifySignupMilestone(db, waitListId, { signupId } = 
         ...(typeof signupId === "string" ? { triggeringSignupId: signupId } : {}),
       },
     });
+
+    trackServerEvent({
+      distinctId: `waitlist_${waitListId}`,
+      event: POSTHOG_EVENTS.WAITLIST_MILESTONE_REACHED,
+      properties: {
+        waitlist_id: waitListId,
+        workspace_id: waitList.workspaceId,
+        milestone_count: count,
+      },
+      groups: waitList.workspaceId ? { company: waitList.workspaceId } : {},
+    }).catch(() => {});
+
     const waitlistName = waitList.name || "Your waitlist";
     // A deterministic outbox key avoids duplicate milestone pings when
     // concurrent signups observe the same count.

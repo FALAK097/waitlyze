@@ -18,6 +18,8 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { authClient } from "@/lib/auth-client";
+import { trackClientEvent } from "@/lib/posthog/client";
+import { POSTHOG_EVENTS } from "@/lib/posthog/events.mjs";
 import { publicFontClasses } from "@/lib/public-fonts";
 
 export function AuthModal({ open, onOpenChange, onCloseAutoFocus }) {
@@ -35,6 +37,10 @@ export function AuthModal({ open, onOpenChange, onCloseAutoFocus }) {
     if (!nextOpen) {
       attemptRef.current += 1;
       setLoading(false);
+    } else {
+      trackClientEvent(POSTHOG_EVENTS.MARKETING_SIGNUP_STARTED, {
+        method: "modal_opened",
+      });
     }
     onOpenChange(nextOpen);
   };
@@ -42,6 +48,9 @@ export function AuthModal({ open, onOpenChange, onCloseAutoFocus }) {
   const handleGoogleSignIn = async () => {
     if (loading) return;
     const attempt = ++attemptRef.current;
+    trackClientEvent(POSTHOG_EVENTS.MARKETING_SIGNUP_STARTED, {
+      method: "google",
+    });
     setLoading(true);
     try {
       const result = await authClient.signIn.social({

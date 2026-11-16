@@ -74,8 +74,24 @@ export const auth = betterAuth({
               idempotencyKey: `welcome-${user.id}`,
             });
             if (eventKey) await dispatchFounderNoticesNow([eventKey]);
+
+            // Track server-verified registration completion in PostHog
+            const [{ trackServerEvent }, { POSTHOG_EVENTS }] = await Promise.all([
+              import("@/lib/posthog/server.mjs"),
+              import("@/lib/posthog/events.mjs"),
+            ]);
+            await trackServerEvent({
+              distinctId: user.id,
+              event: POSTHOG_EVENTS.MARKETING_SIGNUP_COMPLETED,
+              properties: {
+                signup_method: user.emailVerified ? "oauth" : "email",
+              },
+            });
           } catch (error) {
-            console.error("Welcome email failed", error?.name || error?.message || "unknown error");
+            console.error(
+              "Welcome email / signup analytics failed",
+              error?.name || error?.message || "unknown error",
+            );
           }
         },
       },

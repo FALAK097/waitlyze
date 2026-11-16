@@ -29,9 +29,13 @@ export const env = createEnv({
     DODO_PRO_MONTHLY_PRODUCT_ID: z.string().optional(),
     DODO_PRO_ANNUAL_PRODUCT_ID: z.string().optional(),
     DODO_PRO_COLLECTION_ID: z.string().optional(),
+    POSTHOG_PROJECT_TOKEN: z.string().optional(),
+    POSTHOG_HOST: z.string().optional(),
   },
   client: {
     NEXT_PUBLIC_R2_PUBLIC_URL: z.string().url().default("https://assets.waitlyze.com"),
+    NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN: z.string().optional(),
+    NEXT_PUBLIC_POSTHOG_HOST: z.string().optional(),
   },
   runtimeEnv: {
     DATABASE_URL: process.env.DATABASE_URL,
@@ -62,5 +66,9 @@ export const env = createEnv({
     DODO_PRO_MONTHLY_PRODUCT_ID: process.env.DODO_PRO_MONTHLY_PRODUCT_ID,
     DODO_PRO_ANNUAL_PRODUCT_ID: process.env.DODO_PRO_ANNUAL_PRODUCT_ID,
     DODO_PRO_COLLECTION_ID: process.env.DODO_PRO_COLLECTION_ID,
+    POSTHOG_PROJECT_TOKEN: process.env.POSTHOG_PROJECT_TOKEN,
+    POSTHOG_HOST: process.env.POSTHOG_HOST,
+    NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN: process.env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN,
+    NEXT_PUBLIC_POSTHOG_HOST: process.env.NEXT_PUBLIC_POSTHOG_HOST,
   },
 });

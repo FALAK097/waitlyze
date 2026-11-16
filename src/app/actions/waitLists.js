@@ -31,6 +31,24 @@ export async function createWaitlistDraft({ name, publicSlug, creationKey, templ
       resourceName: draft.name,
       detail: "Created as a private draft",
     });
+
+    const [{ trackServerEvent }, { POSTHOG_EVENTS }] = await Promise.all([
+      import("@/lib/posthog/server.mjs"),
+      import("@/lib/posthog/events.mjs"),
+    ]);
+    await trackServerEvent({
+      distinctId: user.id,
+      event: POSTHOG_EVENTS.WAITLIST_CREATED,
+      properties: {
+        waitlist_id: draft.id,
+        template_id: templateId || "simple",
+        creation_method: "dialog",
+      },
+      groups: {
+        company: workspace.id,
+      },
+    });
+
     return { ok: true, id: draft.id };
   } catch (error) {
     if (error instanceof WorkspacePlanError)
