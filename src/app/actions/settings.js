@@ -115,6 +115,27 @@ export async function createWorkspace(previous, form) {
       path: "/",
       maxAge: 60 * 60 * 24 * 30,
     });
+
+    try {
+      const [{ trackServerEvent }, { POSTHOG_EVENTS }] = await Promise.all([
+        import("@/lib/posthog/server.mjs"),
+        import("@/lib/posthog/events.mjs"),
+      ]);
+      await trackServerEvent({
+        distinctId: session.user.id,
+        event: POSTHOG_EVENTS.WORKSPACE_CREATED,
+        properties: {
+          workspace_id: workspace.id,
+          creation_method: "dialog",
+          member_count: 1,
+        },
+        groups: {
+          company: workspace.id,
+        },
+      });
+    } catch {
+      // Best-effort
+    }
   } catch {
     return { error: "Could not create the workspace. Try again." };
   }

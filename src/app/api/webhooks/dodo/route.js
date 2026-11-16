@@ -407,8 +407,73 @@ export async function POST(request) {
           });
         }
       }
+      return {
+        applied: true,
+        workspaceId,
+        validUserId,
+      };
     });
     if (result?.duplicate) return NextResponse.json({ received: true, duplicate: true });
+    if (!result?.applied) return NextResponse.json({ received: true, skipped: true });
+
+    // Track verified subscription lifecycle in PostHog
+    try {
+      const [{ trackServerEvent }, { POSTHOG_EVENTS }] = await Promise.all([
+        import("@/lib/posthog/server.mjs"),
+        import("@/lib/posthog/events.mjs"),
+      ]);
+
+      const distinctId =
+        result.validUserId ||
+        event.data?.metadata?.userId ||
+        event.data?.customer?.customer_id ||
+        event.data?.subscription_id;
+      const workspaceId = result.workspaceId || eventWorkspaceId(event.data);
+      const interval = event.data?.interval || dodoBillingInterval(event.data?.product_id);
+
+      let eventName = null;
+      if (event.type === "subscription.active") {
+        eventName = POSTHOG_EVENTS.BILLING_SUBSCRIPTION_CREATED;
+      } else if (
+        event.type === "subscription.updated" ||
+        event.type === "subscription.plan_changed" ||
+        event.type === "subscription.renewed"
+      ) {
+        eventName = POSTHOG_EVENTS.BILLING_SUBSCRIPTION_UPDATED;
+      } else if (event.type === "subscription.cancelled" || event.type === "subscription.expired") {
+        eventName = POSTHOG_EVENTS.BILLING_SUBSCRIPTION_CANCELLED;
+      } else if (event.type === "subscription.failed" || event.type === "payment.failed") {
+        eventName = POSTHOG_EVENTS.BILLING_PAYMENT_FAILED;
+      } else if (
+        event.type === "refund.succeeded" ||
+        event.type === "refund.processed" ||
+        event.type === "payment.refunded"
+      ) {
+        eventName = POSTHOG_EVENTS.BILLING_REFUND_PROCESSED;
+      }
+
+      if (eventName && distinctId) {
+        await trackServerEvent({
+          distinctId,
+          event: eventName,
+          properties: {
+            plan: "PRO",
+            billing_interval: interval ? interval.toLowerCase() : undefined,
+            currency: event.data?.currency || undefined,
+            subscription_id: event.data?.subscription_id || undefined,
+            dodo_event_id: event.id || undefined,
+            workspace_id: workspaceId || undefined,
+          },
+          groups: workspaceId ? { company: workspaceId } : {},
+        });
+      }
+    } catch (analyticsError) {
+      console.warn(
+        "PostHog billing webhook analytics error:",
+        analyticsError?.message || analyticsError,
+      );
+    }
+
     return NextResponse.json({ received: true });
   } catch (error) {
     console.error("Dodo webhook processing failed", error?.code || error?.name || "unknown error");

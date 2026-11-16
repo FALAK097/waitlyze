@@ -33,6 +33,7 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { signOut } from "@/lib/auth-client";
+import { resetClientUser } from "@/lib/posthog/client";
 import { cn } from "@/lib/utils";
 
 const FeedbackForm = dynamic(() =>
@@ -170,6 +171,7 @@ function AccountMenu({ user, avatar }) {
     try {
       const result = await signOut();
       if (result.error) throw new Error("Sign out failed");
+      resetClientUser();
       router.replace("/");
       router.refresh();
     } catch {
@@ -206,7 +208,7 @@ function AccountMenu({ user, avatar }) {
         <DropdownMenuContent align="end" sideOffset={8} className="min-w-64">
           <div className="flex max-w-80 items-center gap-3 px-2 pt-3 pb-4 whitespace-nowrap">
             {avatar}
-            <div className="grid min-w-0 flex-1 gap-1">
+            <div className="ph-no-capture grid min-w-0 flex-1 gap-1">
               <strong className="text-sm font-semibold break-words">
                 {user.name || "Account"}
               </strong>

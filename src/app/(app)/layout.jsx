@@ -6,6 +6,7 @@ import { AppShell, AppShellControls } from "@/components/product/app-shell";
 import { ProductContentSkeleton } from "@/components/product/content-skeleton";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { getWorkspaceEntitlements } from "@/lib/billing/plans.mjs";
+import { PostHogUserSync } from "@/lib/posthog/user-sync";
 import prisma from "@/lib/prisma";
 import { publicFontClasses } from "@/lib/public-fonts";
 import { currentWorkspace } from "@/lib/workspaces/current";
@@ -33,17 +34,29 @@ function AccountAvatar({ id, src, name }) {
 
 async function AppShellControlsData() {
   const { user, workspace, workspaces } = await currentWorkspace();
-  const entitlements = await getWorkspaceEntitlements(prisma, workspace.id);
+  const [entitlements, memberCount] = await Promise.all([
+    getWorkspaceEntitlements(prisma, workspace.id),
+    prisma.workspaceMember.count({ where: { workspaceId: workspace.id } }),
+  ]);
   const canManageBilling = workspace.members?.[0]?.role === "OWNER";
   return (
-    <AppShellControls
-      workspaces={workspaces.map((item) => ({ id: item.id, name: item.name }))}
-      selectedWorkspace={workspace.id}
-      user={{ name: user.name, email: user.email }}
-      avatar={<AccountAvatar id={user.id} src={user.image || user.imageUrl} name={user.name} />}
-      plan={entitlements.plan}
-      canManageBilling={canManageBilling}
-    />
+    <>
+      <PostHogUserSync
+        userId={user.id}
+        plan={entitlements.plan}
+        role={workspace.members?.[0]?.role || "MEMBER"}
+        workspaceId={workspace.id}
+        memberCount={memberCount}
+      />
+      <AppShellControls
+        workspaces={workspaces.map((item) => ({ id: item.id, name: item.name }))}
+        selectedWorkspace={workspace.id}
+        user={{ name: user.name, email: user.email }}
+        avatar={<AccountAvatar id={user.id} src={user.image || user.imageUrl} name={user.name} />}
+        plan={entitlements.plan}
+        canManageBilling={canManageBilling}
+      />
+    </>
   );
 }
 

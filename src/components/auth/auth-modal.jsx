@@ -4,7 +4,7 @@ import { Loading02Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import Image from "next/image";
 import Link from "next/link";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import Wordmark from "@/components/landing/wordmark";
@@ -18,6 +18,8 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { authClient } from "@/lib/auth-client";
+import { trackClientEvent } from "@/lib/posthog/client";
+import { POSTHOG_EVENTS } from "@/lib/posthog/events.mjs";
 import { publicFontClasses } from "@/lib/public-fonts";
 
 export function AuthModal({ open, onOpenChange, onCloseAutoFocus }) {
@@ -27,9 +29,19 @@ export function AuthModal({ open, onOpenChange, onCloseAutoFocus }) {
   const [localEmail, setLocalEmail] = useState("");
   const [localPassword, setLocalPassword] = useState("");
   const attemptRef = useRef(0);
+  const wasOpenRef = useRef(false);
   const localPasswordAuthEnabled =
     process.env.NODE_ENV !== "production" &&
     process.env.NEXT_PUBLIC_LOCAL_DEV_EMAIL_PASSWORD_AUTH === "true";
+
+  useEffect(() => {
+    if (open && !wasOpenRef.current) {
+      trackClientEvent(POSTHOG_EVENTS.MARKETING_SIGNUP_STARTED, {
+        method: "modal_opened",
+      });
+    }
+    wasOpenRef.current = open;
+  }, [open]);
 
   const changeOpen = (nextOpen) => {
     if (!nextOpen) {
@@ -42,6 +54,9 @@ export function AuthModal({ open, onOpenChange, onCloseAutoFocus }) {
   const handleGoogleSignIn = async () => {
     if (loading) return;
     const attempt = ++attemptRef.current;
+    trackClientEvent(POSTHOG_EVENTS.MARKETING_SIGNUP_STARTED, {
+      method: "google",
+    });
     setLoading(true);
     try {
       const result = await authClient.signIn.social({

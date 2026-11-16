@@ -68,6 +68,8 @@
     "nuqs": "^2.10.1",
     "papaparse": "^5.7.0",
     "pg": "^8.23.1",
+    "posthog-js": "^1.449.2",
+    "posthog-node": "^5.73.1",
     "react": "^19.3.0",
     "react-day-picker": "^10.0.2",
     "react-dom": "^19.3.0",

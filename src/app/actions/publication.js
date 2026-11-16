@@ -67,6 +67,27 @@ export async function publishWaitlist(id, revision) {
       action: AUDIT_ACTIONS.WAITLIST_PUBLISHED,
       detail: "Page published",
     });
+
+    if (!result.unchanged) {
+      try {
+        const [{ trackServerEvent }, { POSTHOG_EVENTS }] = await Promise.all([
+          import("@/lib/posthog/server.mjs"),
+          import("@/lib/posthog/events.mjs"),
+        ]);
+        await trackServerEvent({
+          distinctId: userId,
+          event: POSTHOG_EVENTS.WAITLIST_PUBLISHED,
+          properties: {
+            waitlist_id: id,
+            revision: result.revision,
+            is_first_publish: firstPublish,
+          },
+        });
+      } catch {
+        // Best-effort analytics
+      }
+    }
+
     return result;
   }, "Waitlist publish failed");
   // Best-effort owner notice via the outbox; never affects the publish result.
