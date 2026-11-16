@@ -6,7 +6,7 @@ description: Connect AI coding assistants and agents directly to your Waitlyze w
 Waitlyze provides a first-class, hosted Model Context Protocol (MCP) server. You can manage your waitlist lifecycle—creating campaigns, inspecting signups, evaluating K-factor viral analytics, dispatching broadcasts, and managing webhooks—directly from inside Claude Code, Cursor, Codex, VS Code, Gemini, or OpenCode without opening the web dashboard.
 
 <Callout type="info" title="Hosted option only">
-Waitlyze hosts the MCP server at `https://waitlyze.com/mcp`. You do not need local npm packages or stdio subprocesses.
+Waitlyze hosts the MCP server at `https://waitlyze.com/mcp`. You don't need local npm packages or stdio subprocesses.
 </Callout>
 
 ---
@@ -22,8 +22,8 @@ https://waitlyze.com/mcp
 
 You can authenticate AI agents in two ways:
 
-- **Scoped API key** — generate an API key in **Settings → API keys** (prefixed with `wl2_`). Pass it as an HTTP Bearer header (`Authorization: Bearer wl2_YOUR_KEY`) or in `x-waitlyze-api-key`.
-- **OAuth 2.0** — point your client to `https://waitlyze.com/mcp`. The agent discovers the authorization server and initiates RFC 9728 authentication.
+- **Scoped API key**: generate an API key in **Settings → API keys** (prefixed with `wl2_`). Pass it as an HTTP Bearer header (`Authorization: Bearer wl2_YOUR_KEY`) or in `x-waitlyze-api-key`.
+- **OAuth 2.0**: point your client to `https://waitlyze.com/mcp`. The agent discovers the authorization server and initiates RFC 9728 authentication.
 
 ---
 
@@ -31,7 +31,7 @@ You can authenticate AI agents in two ways:
 
 <Steps>
 <Step>
-### Connect Claude Code
+### Set up Claude Code
 Add Waitlyze to Claude Code with one command:
 
 ```bash
@@ -45,7 +45,7 @@ claude mcp add --transport http waitlyze https://waitlyze.com/mcp
 </Step>
 
 <Step>
-### Connect Cursor
+### Set up Cursor
 In your project root, create or edit `.cursor/mcp.json`:
 
 ```json
@@ -63,7 +63,7 @@ In your project root, create or edit `.cursor/mcp.json`:
 </Step>
 
 <Step>
-### Connect Codex
+### Set up Codex
 Add Waitlyze to your agent configuration:
 
 ```json
@@ -81,7 +81,7 @@ Add Waitlyze to your agent configuration:
 </Step>
 
 <Step>
-### Connect VS Code
+### Set up VS Code
 In your VS Code settings or MCP configuration:
 
 ```json
@@ -100,7 +100,7 @@ In your VS Code settings or MCP configuration:
 </Step>
 
 <Step>
-### Connect OpenCode
+### Set up OpenCode
 In your `opencode.json` configuration:
 
 ```json
@@ -118,7 +118,7 @@ In your `opencode.json` configuration:
 </Step>
 
 <Step>
-### Connect Gemini
+### Set up Gemini
 Configure the server endpoint in your agent tool manifests:
 
 ```json
