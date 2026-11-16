@@ -66,6 +66,7 @@ function PostHogPageViewTracker() {
       posthog.set_config({
         opt_out_capturing_by_default: false,
         persistence: isPublicPage ? "memory" : "localStorage+cookie",
+        cookieless_mode: isPublicPage ? "always" : "on_reject",
         disable_session_recording: isPublicPage,
       });
       if (isPublicPage && typeof posthog.stopSessionRecording === "function") {

@@ -8,7 +8,8 @@ let clientInitialized = false;
 
 /**
  * Initializes the PostHog browser SDK with privacy-conscious defaults:
- * - Cookieless persistence ('memory') on public pages to avoid requiring a cookie banner.
+ * - Native stateless cookieless tracking on public marketing pages.
+ * - Falls back to cookieless tracking if persistence is rejected in the authenticated app.
  * - Masks text inputs, passwords, and sensitive fields during session replay.
  * - Disables autocapture by default to avoid accidental PII ingestion.
  * - Does NOT track public waitlist forms (/w/[slug]).
@@ -43,9 +44,15 @@ export function initClientPostHog() {
       person_profiles: "identified_only",
       capture_pageview: false, // Handled explicitly on navigation
       capture_pageleave: true,
+      capture_exceptions: {
+        capture_unhandled_errors: true,
+        capture_unhandled_rejections: true,
+        capture_console_errors: false,
+      },
       autocapture: false, // Strict explicit business event tracking
-      // On public marketing pages, use memory persistence to eliminate cookie banner requirements
+      // Public marketing analytics stay stateless and do not write a PostHog cookie.
       persistence: isPublicPage ? "memory" : "localStorage+cookie",
+      cookieless_mode: isPublicPage ? "always" : "on_reject",
       disable_session_recording: isPublicPage,
       session_recording: {
         maskAllInputs: true,
