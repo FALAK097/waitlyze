@@ -502,10 +502,20 @@ export async function transferProSubscription(workspaceId) {
         const [firstLockId, secondLockId] = [source.id, workspace.id].sort();
         await tx.$queryRaw`SELECT "id" FROM "workspaces" WHERE "id" = ${firstLockId} FOR UPDATE`;
         await tx.$queryRaw`SELECT "id" FROM "workspaces" WHERE "id" = ${secondLockId} FOR UPDATE`;
-        const [currentSource, currentTarget] = await Promise.all([
+        const [sourceOwner, targetOwner, currentSource, currentTarget] = await Promise.all([
+          tx.workspaceMember.findUnique({
+            where: { workspaceId_userId: { workspaceId: source.id, userId: session.user.id } },
+            select: { role: true },
+          }),
+          tx.workspaceMember.findUnique({
+            where: { workspaceId_userId: { workspaceId: workspace.id, userId: session.user.id } },
+            select: { role: true },
+          }),
           tx.workspaceSubscription.findUnique({ where: { workspaceId: source.id } }),
           tx.workspaceSubscription.findUnique({ where: { workspaceId: workspace.id } }),
         ]);
+        if (sourceOwner?.role !== "OWNER" || targetOwner?.role !== "OWNER")
+          throw new Error("You must be an owner of both workspaces to move Pro.");
         if (
           currentSource?.dodoSubscriptionId !== sourceSubscription.dodoSubscriptionId ||
           effectiveWorkspacePlan(currentSource) !== "PRO"
@@ -519,28 +529,41 @@ export async function transferProSubscription(workspaceId) {
           throw new Error("Billing changed while Pro was being moved.");
 
         await tx.workspaceSubscription.delete({ where: { workspaceId: source.id } });
-        await tx.workspaceSubscription.create({
-          data: {
+        const movedSubscriptionData = {
+          plan: currentSource.plan,
+          status: currentSource.status,
+          interval: currentSource.interval,
+          dodoCustomerId: currentSource.dodoCustomerId,
+          dodoSubscriptionId: currentSource.dodoSubscriptionId,
+          dodoProductId: currentSource.dodoProductId,
+          currentPeriodStart: currentSource.currentPeriodStart,
+          currentPeriodEnd: currentSource.currentPeriodEnd,
+          pastDueEndsAt: currentSource.pastDueEndsAt,
+          cancelAtPeriodEnd: currentSource.cancelAtPeriodEnd,
+          lastEventAt: currentSource.lastEventAt,
+        };
+        await tx.workspaceSubscription.upsert({
+          where: { workspaceId: workspace.id },
+          create: {
             workspaceId: workspace.id,
-            plan: currentSource.plan,
-            status: currentSource.status,
-            interval: currentSource.interval,
-            dodoCustomerId: currentSource.dodoCustomerId,
-            dodoSubscriptionId: currentSource.dodoSubscriptionId,
-            dodoProductId: currentSource.dodoProductId,
-            currentPeriodStart: currentSource.currentPeriodStart,
-            currentPeriodEnd: currentSource.currentPeriodEnd,
-            pastDueEndsAt: currentSource.pastDueEndsAt,
-            cancelAtPeriodEnd: currentSource.cancelAtPeriodEnd,
-            lastEventAt: currentSource.lastEventAt,
+            ...movedSubscriptionData,
           },
+          update: movedSubscriptionData,
         });
       });
     } catch (transactionError) {
       try {
-        await client.subscriptions.update(sourceSubscription.dodoSubscriptionId, {
-          metadata: { workspaceId: source.id, userId: session.user.id, plan: "PRO" },
+        const committedToTarget = await prisma.workspaceSubscription.findFirst({
+          where: {
+            workspaceId: workspace.id,
+            dodoSubscriptionId: sourceSubscription.dodoSubscriptionId,
+          },
         });
+        if (!committedToTarget) {
+          await client.subscriptions.update(sourceSubscription.dodoSubscriptionId, {
+            metadata: { workspaceId: source.id, userId: session.user.id, plan: "PRO" },
+          });
+        }
       } catch (revertError) {
         console.error(
           "Could not revert Dodo subscription metadata after a failed move",

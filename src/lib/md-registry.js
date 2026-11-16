@@ -384,7 +384,7 @@ For questions about these Terms, please contact us at support@waitlyze.com.`
 
 ## Cancel a Subscription
 
-You can cancel renewal at any time from Billing in your workspace settings. Cancellation prevents the next charge; it does not refund the current billing period. Your workspace keeps Pro access until the paid period ends, then returns to the Free plan. Existing waitlists, subscribers, and members are retained, and pending invitations expire. Free then allows one workspace with one waitlist, 100 lifetime signups, and one member; new activity above those limits prompts an upgrade.
+You can cancel renewal at any time from Billing in your workspace settings. Cancellation prevents the next charge; it does not refund the current billing period. Your workspace keeps Pro access until the paid period ends, then returns to the Free plan. Existing waitlists, subscribers, and members are retained, and pending invitations expire. If you have no other active Pro workspace, your account is limited to one owned workspace, and each Free workspace includes one waitlist, 100 lifetime signups, and one member; new activity above those limits prompts an upgrade.
 
 ## Billing Issues
 

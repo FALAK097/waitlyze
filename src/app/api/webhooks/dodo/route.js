@@ -214,10 +214,9 @@ export async function POST(request) {
         data,
         existing?.status || workspaceSubscription?.status,
       );
-      const pastDueEndsAt =
-        status === "PAST_DUE"
-          ? validDate(data.past_due_ends_at) || existing?.pastDueEndsAt || null
-          : null;
+      const pastDueEndsAt = ["PAST_DUE", "ON_HOLD"].includes(status)
+        ? validDate(data.past_due_ends_at) || existing?.pastDueEndsAt || null
+        : null;
       const clearCheckoutIntent = matchesPendingCheckout;
       const isTerminalFailure = type === "subscription.failed" || type === "subscription.expired";
       const plan = isTerminalFailure

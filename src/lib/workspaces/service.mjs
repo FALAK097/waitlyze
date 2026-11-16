@@ -37,7 +37,7 @@ function actor(userId) {
 
 function isPersonalWorkspaceReady(workspace, legacyWaitlist) {
   return (
-    workspace?.members[0]?.role === "OWNER" &&
+    Boolean(workspace?.members?.[0]?.role) &&
     workspace.name !== "Personal workspace" &&
     !legacyWaitlist
   );
@@ -97,7 +97,7 @@ export function createWorkspaceService(db) {
       actor(userId);
       const workspaces = await this.list(userId);
       const personal = workspaces.find((workspace) => workspace.personalOwnerId === userId);
-      if (personal?.members?.[0]?.role === "OWNER" && personal.name !== "Personal workspace") {
+      if (personal?.members?.[0]?.role && personal.name !== "Personal workspace") {
         return {
           personal: { id: personal.id, name: personal.name },
           workspaces,
@@ -195,6 +195,29 @@ export function createWorkspaceService(db) {
             email: targetMembership.user.email,
             unchanged: true,
           };
+        await tx.$queryRaw`SELECT "id" FROM "users" WHERE "id" = ${targetUserId} FOR UPDATE`;
+        const targetEntitlements = await getOwnedWorkspaceEntitlements(tx, targetUserId);
+        const subscription = await tx.workspaceSubscription.findUnique({
+          where: { workspaceId },
+          select: {
+            plan: true,
+            status: true,
+            currentPeriodEnd: true,
+            pastDueEndsAt: true,
+            cancelAtPeriodEnd: true,
+            lastEventAt: true,
+          },
+        });
+        const isProWorkspace = effectiveWorkspacePlan(subscription, new Date()) === "PRO";
+        if (!isProWorkspace) {
+          requireCapacity({
+            entitlements: targetEntitlements,
+            feature: "workspaces",
+            used: targetEntitlements.ownedCount,
+            message:
+              "That member already owns a workspace on the Free plan. Free allows one owned workspace.",
+          });
+        }
         // Billing access follows ownership: the previous owner steps down to admin.
         await tx.workspaceMember.update({
           where: { workspaceId_userId: { workspaceId, userId: targetUserId } },
@@ -282,6 +305,9 @@ export function createWorkspaceService(db) {
       actor(userId);
       if (typeof workspaceId !== "string" || !workspaceId) throw new AccessError();
       return db.$transaction(async (tx) => {
+        const lockedWorkspace =
+          await tx.$queryRaw`SELECT "id" FROM "workspaces" WHERE "id" = ${workspaceId} FOR UPDATE`;
+        if (lockedWorkspace.length === 0) throw new AccessError();
         const membership = await tx.workspaceMember.findUnique({
           where: { workspaceId_userId: { workspaceId, userId } },
           select: { role: true },
@@ -305,6 +331,9 @@ export function createWorkspaceService(db) {
       if (targetUserId === userId)
         throw new TypeError("You cannot remove yourself from a workspace.");
       return db.$transaction(async (tx) => {
+        const lockedWorkspace =
+          await tx.$queryRaw`SELECT "id" FROM "workspaces" WHERE "id" = ${workspaceId} FOR UPDATE`;
+        if (lockedWorkspace.length === 0) throw new AccessError();
         const [actor, target] = await Promise.all([
           tx.workspaceMember.findUnique({
             where: { workspaceId_userId: { workspaceId, userId } },
@@ -334,6 +363,9 @@ export function createWorkspaceService(db) {
       if (!["MEMBER", "ADMIN"].includes(role)) throw new TypeError("Choose Member or Admin.");
       if (targetUserId === userId) throw new TypeError("You cannot change your own role.");
       return db.$transaction(async (tx) => {
+        const lockedWorkspace =
+          await tx.$queryRaw`SELECT "id" FROM "workspaces" WHERE "id" = ${workspaceId} FOR UPDATE`;
+        if (lockedWorkspace.length === 0) throw new AccessError();
         const [actor, target] = await Promise.all([
           tx.workspaceMember.findUnique({
             where: { workspaceId_userId: { workspaceId, userId } },
@@ -434,8 +466,7 @@ export function createWorkspaceService(db) {
                 where: { workspaceId_userId: { workspaceId: workspace.id, userId } },
               });
               // Existing missing/revoked membership is never recreated by login/backfill.
-              if (membership?.role !== "OWNER")
-                throw new Error("Personal workspace ownership requires review.");
+              if (!membership) throw new Error("Personal workspace ownership requires review.");
               const legacyWaitlists = await tx.waitList.findMany({
                 where: { userId, workspaceId: null },
                 select: { id: true },

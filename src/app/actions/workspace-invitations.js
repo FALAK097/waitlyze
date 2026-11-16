@@ -399,7 +399,8 @@ export async function transferWorkspaceOwnership(memberUserId, workspaceId) {
     revalidatePath("/settings");
     return { success: `${moved.name || moved.email || "Member"} is now the workspace owner.` };
   } catch (error) {
-    if (error instanceof TypeError) return { error: error.message };
+    if (error instanceof TypeError || error instanceof WorkspacePlanError)
+      return { error: error.message };
     return { error: "Could not transfer ownership. Try again." };
   }
 }
