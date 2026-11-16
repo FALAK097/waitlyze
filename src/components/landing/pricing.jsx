@@ -19,8 +19,8 @@ const PricingCheckoutButton = dynamic(() => import("./pricing-checkout-button"),
 });
 
 const freeFeatures = [
-  "1 waitlist, drafts included",
-  "100 cumulative signups per workspace",
+  "1 workspace with 1 waitlist",
+  "100 cumulative signups",
   "Hosted page and embeddable form",
   "Page builder and launch templates",
   "Referral links and queue position",
@@ -29,13 +29,14 @@ const freeFeatures = [
 ];
 
 const proFeatures = [
+  "Unlimited workspaces",
   "Unlimited waitlists and signups",
+  "Unlimited workspace members",
   "Everything in Free",
   "Advanced analytics with trends and sources",
   "Referral milestones and reward tiers",
   "Email broadcasts and automations via your connected sender",
   "Remove Waitlyze branding and connect a custom domain",
-  "Unlimited workspace members",
 ];
 
 export default function Pricing({

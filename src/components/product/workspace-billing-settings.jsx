@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
-import { createBillingPortal } from "@/app/actions/billing";
+import { createBillingPortal, transferProSubscription } from "@/app/actions/billing";
 import Pricing from "@/components/landing/pricing";
 import { Button } from "@/components/ui/button";
 
@@ -137,6 +137,47 @@ function CurrentPlanCard({
   );
 }
 
+function MoveProNotice({
+  otherProWorkspace,
+  canManageBilling,
+  transferPending,
+  transferError,
+  onMovePro,
+}) {
+  return (
+    <section
+      className="mb-5 rounded-xl border border-product-border-subtle bg-product-bg-surface p-4 sm:p-5"
+      aria-label="Move Pro to this workspace"
+    >
+      <p className="text-sm font-semibold">You already have Pro on {otherProWorkspace.name}.</p>
+      <p className="mt-1 text-sm text-product-text-secondary">
+        Move it here instead of paying for a second subscription.
+      </p>
+      {canManageBilling ? (
+        <Button
+          type="button"
+          variant="product-outline"
+          size="sm"
+          className="mt-3"
+          onClick={onMovePro}
+          disabled={transferPending}
+        >
+          {transferPending ? "Moving…" : "Move Pro here"}
+        </Button>
+      ) : (
+        <p className="mt-3 text-sm text-product-text-secondary">
+          Ask the owner of {otherProWorkspace.name} to manage that subscription.
+        </p>
+      )}
+      {transferError && (
+        <p className="mt-3 text-sm text-product-danger-text" role="alert">
+          {transferError}
+        </p>
+      )}
+    </section>
+  );
+}
+
 export function WorkspaceBillingSettings({
   workspaceId,
   workspaceName,
@@ -150,12 +191,15 @@ export function WorkspaceBillingSettings({
   signupCount,
   memberCount,
   hasBillingCustomer,
+  otherProWorkspace = null,
   checkoutReturn = false,
   workspaceIsSelected = true,
 }) {
   const router = useRouter();
   const [portalPending, setPortalPending] = useState(false);
   const [error, setError] = useState("");
+  const [transferPending, setTransferPending] = useState(false);
+  const [transferError, setTransferError] = useState("");
   const periodEnd = dateLabel(currentPeriodEnd);
 
   useEffect(() => {
@@ -186,6 +230,23 @@ export function WorkspaceBillingSettings({
     }
   }
 
+  async function moveProHere() {
+    setTransferPending(true);
+    setTransferError("");
+    try {
+      const result = await transferProSubscription(workspaceId);
+      if (result?.error) {
+        setTransferError(result.error);
+        return;
+      }
+      router.refresh();
+    } catch {
+      setTransferError("Could not move Pro. Try again.");
+    } finally {
+      setTransferPending(false);
+    }
+  }
+
   return (
     <div className="max-w-240 min-w-0 flex-1" aria-labelledby="settings-panel-heading">
       <header className="mb-7">
@@ -202,6 +263,16 @@ export function WorkspaceBillingSettings({
           workspaceIsSelected={workspaceIsSelected}
           canManageBilling={canManageBilling}
           isPro={plan === "PRO"}
+        />
+      )}
+
+      {plan !== "PRO" && otherProWorkspace && (
+        <MoveProNotice
+          otherProWorkspace={otherProWorkspace}
+          canManageBilling={canManageBilling}
+          transferPending={transferPending}
+          transferError={transferError}
+          onMovePro={moveProHere}
         />
       )}
 

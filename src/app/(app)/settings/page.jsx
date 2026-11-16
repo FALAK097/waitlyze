@@ -11,7 +11,7 @@ import { SettingsPanelSkeleton } from "@/components/product/settings-panel-skele
 import { SettingsSectionNavigation } from "@/components/product/settings-section-nav";
 import { TeamAccessSettings } from "@/components/product/team-access-settings";
 import { WorkspaceBillingSettings } from "@/components/product/workspace-billing-settings";
-import { getWorkspaceEntitlements } from "@/lib/billing/plans.mjs";
+import { effectiveWorkspacePlan, getWorkspaceEntitlements } from "@/lib/billing/plans.mjs";
 import { env } from "@/lib/env.mjs";
 import prisma from "@/lib/prisma";
 import { currentWorkspace } from "@/lib/workspaces/current";
@@ -22,6 +22,7 @@ async function SelectedSettings({
   section,
   user,
   workspace,
+  workspaces,
   role,
   checkoutReturn,
   workspaceIsSelected,
@@ -121,7 +122,6 @@ async function SelectedSettings({
             memberLimit={entitlements.members}
             secureInvitesConfigured={Boolean(process.env.WEBHOOK_SECRET_ENCRYPTION_KEY)}
             currentUserId={user.id}
-            isPersonalWorkspace={Boolean(workspace.personalOwnerId)}
           />
         ) : (
           <SettingsLoadError
@@ -225,6 +225,25 @@ async function SelectedSettings({
         getWorkspaceEntitlements(prisma, workspace.id),
       ],
     );
+    const otherOwnedIds = workspaces
+      .filter((item) => item.id !== workspace.id && item.members?.[0]?.role === "OWNER")
+      .map((item) => item.id);
+    const otherSubscriptions = otherOwnedIds.length
+      ? await prisma.workspaceSubscription.findMany({
+          where: { workspaceId: { in: otherOwnedIds } },
+          select: {
+            plan: true,
+            status: true,
+            currentPeriodEnd: true,
+            pastDueEndsAt: true,
+            cancelAtPeriodEnd: true,
+            lastEventAt: true,
+            workspace: { select: { id: true, name: true } },
+          },
+        })
+      : [];
+    const otherProWorkspace =
+      otherSubscriptions.find((row) => effectiveWorkspacePlan(row) === "PRO")?.workspace ?? null;
     return (
       <WorkspaceBillingSettings
         workspaceId={workspace.id}
@@ -241,6 +260,7 @@ async function SelectedSettings({
         hasBillingCustomer={Boolean(subscription?.dodoCustomerId)}
         checkoutReturn={checkoutReturn}
         workspaceIsSelected={workspaceIsSelected}
+        otherProWorkspace={otherProWorkspace}
       />
     );
   }

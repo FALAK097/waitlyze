@@ -9,15 +9,16 @@ datasource db {
 }
 
 model User {
-  id            String   @id @unique @default(cuid())
-  email         String   @unique
-  name          String?
-  emailVerified Boolean  @default(false)
-  image         String?
-  imageUrl      String?
-  isOnboarded   Boolean  @default(false)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id              String   @id @unique @default(cuid())
+  email           String   @unique
+  name            String?
+  emailVerified   Boolean  @default(false)
+  image           String?
+  imageUrl        String?
+  isOnboarded     Boolean  @default(false)
+  lastWorkspaceId String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
   personalWorkspace    Workspace?        @relation("PersonalWorkspace")
   workspaceMemberships WorkspaceMember[]

@@ -1,3 +1,9 @@
+import {
+  effectiveWorkspacePlan,
+  getOwnedWorkspaceEntitlements,
+  requireCapacity,
+} from "../billing/plans.mjs";
+
 const permissions = Object.freeze({
   viewCampaign: ["OWNER", "ADMIN", "MEMBER"],
   editCampaign: ["OWNER", "ADMIN", "MEMBER"],
@@ -144,9 +150,65 @@ export function createWorkspaceService(db) {
       if (typeof name !== "string" || !name.trim() || name.trim().length > 80) {
         throw new TypeError("Workspace name must contain 1 to 80 characters.");
       }
-      return db.workspace.create({
-        data: { name: name.trim(), members: { create: { userId, role: "OWNER" } } },
-        select: { id: true, name: true },
+      return db.$transaction(async (tx) => {
+        // Serialize creation per user so two concurrent requests cannot both
+        // pass the owned-workspace limit.
+        await tx.$queryRaw`SELECT "id" FROM "users" WHERE "id" = ${userId} FOR UPDATE`;
+        const entitlements = await getOwnedWorkspaceEntitlements(tx, userId);
+        requireCapacity({
+          entitlements,
+          feature: "workspaces",
+          used: entitlements.ownedCount,
+          message: "The Free plan includes one workspace. Upgrade to Pro to create another.",
+        });
+        return tx.workspace.create({
+          data: { name: name.trim(), members: { create: { userId, role: "OWNER" } } },
+          select: { id: true, name: true },
+        });
+      });
+    },
+    async transferOwnership(userId, workspaceId, targetUserId) {
+      actor(userId);
+      if (typeof workspaceId !== "string" || !workspaceId) throw new AccessError();
+      if (typeof targetUserId !== "string" || !targetUserId) throw new AccessError();
+      if (targetUserId === userId) throw new TypeError("You already own this workspace.");
+      return db.$transaction(async (tx) => {
+        const lockedWorkspace =
+          await tx.$queryRaw`SELECT "id" FROM "workspaces" WHERE "id" = ${workspaceId} FOR UPDATE`;
+        if (lockedWorkspace.length === 0) throw new AccessError();
+        const [ownerMembership, targetMembership] = await Promise.all([
+          tx.workspaceMember.findUnique({
+            where: { workspaceId_userId: { workspaceId, userId } },
+            select: { role: true },
+          }),
+          tx.workspaceMember.findUnique({
+            where: { workspaceId_userId: { workspaceId, userId: targetUserId } },
+            select: { role: true, user: { select: { name: true, email: true } } },
+          }),
+        ]);
+        if (!ownerMembership || ownerMembership.role !== "OWNER") throw new AccessError();
+        if (!targetMembership) throw new AccessError();
+        if (targetMembership.role === "OWNER")
+          return {
+            userId: targetUserId,
+            name: targetMembership.user.name,
+            email: targetMembership.user.email,
+            unchanged: true,
+          };
+        // Billing access follows ownership: the previous owner steps down to admin.
+        await tx.workspaceMember.update({
+          where: { workspaceId_userId: { workspaceId, userId: targetUserId } },
+          data: { role: "OWNER" },
+        });
+        await tx.workspaceMember.update({
+          where: { workspaceId_userId: { workspaceId, userId } },
+          data: { role: "ADMIN" },
+        });
+        return {
+          userId: targetUserId,
+          name: targetMembership.user.name,
+          email: targetMembership.user.email,
+        };
       });
     },
     async deleteWorkspace(userId, workspaceId) {
@@ -166,8 +228,13 @@ export function createWorkspaceService(db) {
         const subscription = await tx.workspaceSubscription.findUnique({
           where: { workspaceId },
           select: {
-            dodoSubscriptionId: true,
+            plan: true,
             status: true,
+            currentPeriodEnd: true,
+            pastDueEndsAt: true,
+            cancelAtPeriodEnd: true,
+            lastEventAt: true,
+            dodoSubscriptionId: true,
             checkoutUrl: true,
             checkoutSessionId: true,
             checkoutPendingUntil: true,
@@ -187,6 +254,17 @@ export function createWorkspaceService(db) {
           throw new TypeError(
             "Cancel or finish this workspace's subscription and any pending checkout before deleting the workspace.",
           );
+        // A workspace that still holds Pro access cannot be deleted: recreating it
+        // would reset the lifetime signup counter and mint fresh Free allowances.
+        if (effectiveWorkspacePlan(subscription, new Date()) === "PRO") {
+          const paidThrough = new Intl.DateTimeFormat("en", {
+            dateStyle: "medium",
+            timeZone: "UTC",
+          }).format(subscription.currentPeriodEnd);
+          throw new TypeError(
+            `This workspace still has Pro access through ${paidThrough}. Cancel renewal and wait until the paid period ends before deleting it, or contact support.`,
+          );
+        }
         const waitlists = await tx.waitList.findMany({
           where: { workspaceId },
           select: { id: true },
@@ -213,7 +291,7 @@ export function createWorkspaceService(db) {
           const owners = await tx.workspaceMember.count({ where: { workspaceId, role: "OWNER" } });
           if (owners < 2)
             throw new TypeError(
-              "You’re the only owner. Delete the workspace or make another member an owner first.",
+              "You’re the only owner. Make another member an owner first, or delete the workspace.",
             );
         }
         await tx.workspaceMember.delete({ where: { workspaceId_userId: { workspaceId, userId } } });

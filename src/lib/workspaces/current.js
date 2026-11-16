@@ -17,6 +17,18 @@ export const currentSession = cache(async () => {
   }
 });
 
+// The cookie is the fast path; users.lastWorkspaceId keeps the selection when
+// the cookie is lost so an invited member returns to the right workspace.
+// Best effort only: remembering must never fail a mutation.
+export async function rememberWorkspace(userId, workspaceId) {
+  if (!userId || !workspaceId) return;
+  try {
+    await prisma.user.update({ where: { id: userId }, data: { lastWorkspaceId: workspaceId } });
+  } catch {
+    /* best effort */
+  }
+}
+
 export const currentWorkspace = cache(async () => {
   const session = await currentSession();
   if (!session?.user?.id) redirect("/");
@@ -28,9 +40,24 @@ export const currentWorkspace = cache(async () => {
   });
   const [{ personal, workspaces }, cookieStore] = await Promise.all([context, cookies()]);
   const selectedId = cookieStore.get("waitlyze-workspace")?.value;
+  const cookieWorkspace = workspaces.find((item) => item.id === selectedId);
+  let rememberedId;
+  if (!cookieWorkspace) {
+    try {
+      const user = await prisma.user.findUnique({
+        where: { id: session.user.id },
+        select: { lastWorkspaceId: true },
+      });
+      rememberedId = user?.lastWorkspaceId;
+    } catch {
+      // Best effort: fall back to the account's first workspace.
+    }
+  }
   const workspace =
-    workspaces.find((item) => item.id === selectedId) ||
-    workspaces.find((item) => item.id === personal.id);
+    cookieWorkspace ||
+    workspaces.find((item) => item.id === rememberedId) ||
+    workspaces.find((item) => item.id === personal.id) ||
+    workspaces[0];
   return { user: session.user, workspace, workspaces };
 });
 

@@ -48,7 +48,7 @@ const github = "https://github.com/FALAK097/waitlyze";
 const faqs = [
   [
     "Is Waitlyze free?",
-    `Yes. Free includes one waitlist (drafts count) and 100 lifetime signups per workspace. Deleting a waitlist removes its data but does not reset signup usage. Pro is ${WAITLYZE_PRICING.pro.monthly.formatted} per month or ${WAITLYZE_PRICING.pro.annual.formatted} per year, with unlimited waitlists, signups, and workspace members.`,
+    `Yes. Free includes one workspace with one waitlist and 100 lifetime signups. Deleting a waitlist removes its data but does not reset signup usage. Pro is ${WAITLYZE_PRICING.pro.monthly.formatted} per month or ${WAITLYZE_PRICING.pro.annual.formatted} per year, with unlimited workspaces, waitlists, signups, and members.`,
   ],
   [
     "Will prices change by country?",
@@ -80,7 +80,7 @@ const faqs = [
   ],
   [
     "Can my team work together?",
-    "Yes. Invite teammates to your workspace and assign permissions for editing, publishing and email work.",
+    "Yes, with Pro. Invite teammates to your workspace and assign permissions for editing, publishing and email work. Free includes one member per workspace.",
   ],
   [
     "Can I use my own domain?",

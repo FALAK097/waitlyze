@@ -72,7 +72,7 @@ export const waitlyze = {
   slug: "waitlyze",
   logo: "/web-app-manifest-192x192.png",
   price: `${WAITLYZE_PRICING.pro.monthly.formatted}/mo or ${WAITLYZE_PRICING.pro.annual.formatted}/yr`,
-  freePlan: "1 waitlist, 100 signups",
+  freePlan: "1 workspace, 1 waitlist, 100 signups",
   model: "Flat price per workspace",
   entryMonthly: WAITLYZE_PRICING.pro.monthly.amount,
   entryAnnual: WAITLYZE_PRICING.pro.annual.amount,
@@ -90,9 +90,9 @@ export const waitlyze = {
       price: "$0",
       cadence: "forever",
       items: [
-        "1 waitlist and 100 signups",
+        "1 workspace with 1 waitlist and 100 signups",
+        "1 member per workspace",
         "Hosted page, templates, and embed",
-        "Verified referrals and API access",
       ],
     },
     {
@@ -100,7 +100,7 @@ export const waitlyze = {
       price: WAITLYZE_PRICING.pro.monthly.formatted,
       cadence: `per month, or ${WAITLYZE_PRICING.pro.annual.formatted} per year`,
       items: [
-        "Unlimited waitlists, signups, and teammates",
+        "Unlimited workspaces, waitlists, signups, and teammates",
         "Email broadcasts, analytics, and custom domains",
         "Remove Waitlyze branding",
       ],

@@ -59,6 +59,7 @@ export const AUDIT_ACTIONS = Object.freeze({
   MEMBER_REMOVED: "member.removed",
   MEMBER_LEFT: "member.left",
   MEMBER_ROLE_CHANGED: "member.role_changed",
+  OWNERSHIP_TRANSFERRED: "workspace.ownership_transferred",
   INVITATION_RESENT: "invitation.resent",
   INVITATION_REVOKED: "invitation.revoked",
   MEMBER_JOINED: "member.joined",
@@ -90,4 +91,5 @@ export const AUDIT_ACTIONS = Object.freeze({
   BILLING_PAYMENT_FAILED: "billing.payment_failed",
   BILLING_PLAN_PAUSED: "billing.plan_paused",
   BILLING_PLAN_RESUMED: "billing.plan_resumed",
+  SUBSCRIPTION_TRANSFERRED: "billing.subscription_transferred",
 });

@@ -5,6 +5,7 @@ import {
   dodoBillingInterval,
   DodoConfigurationError,
 } from "@/lib/billing/dodo.mjs";
+import { effectiveWorkspacePlan } from "@/lib/billing/plans.mjs";
 import { subscriptionWebhookStatus } from "@/lib/billing/subscription-webhook-status.mjs";
 import prisma from "@/lib/prisma";
 import { AUDIT_ACTIONS, recordAuditEvent } from "@/lib/workspaces/audit.mjs";
@@ -188,8 +189,7 @@ export async function POST(request) {
         suppliedProductId && suppliedProductId === existing?.dodoProductId && existing?.interval
           ? existing.interval
           : null;
-      const interval =
-        productInterval || historicalInterval || (suppliedProductId ? null : existing?.interval);
+      const interval = productInterval || historicalInterval || existing?.interval || null;
 
       const eventAt = validDate(event.timestamp) || new Date();
       if (existing?.lastEventAt && existing.lastEventAt > eventAt) return;
@@ -219,12 +219,18 @@ export async function POST(request) {
           ? validDate(data.past_due_ends_at) || existing?.pastDueEndsAt || null
           : null;
       const clearCheckoutIntent = matchesPendingCheckout;
-      const plan =
-        (productInterval || historicalInterval) &&
-        type !== "subscription.failed" &&
-        type !== "subscription.expired"
+      const isTerminalFailure = type === "subscription.failed" || type === "subscription.expired";
+      const plan = isTerminalFailure
+        ? "FREE"
+        : interval
           ? "PRO"
-          : "FREE";
+          : existing?.plan || workspaceSubscription?.plan || "FREE";
+      if (suppliedProductId && !productInterval) {
+        console.warn("Unrecognized Dodo product identifier", {
+          productId: suppliedProductId,
+          workspaceId,
+        });
+      }
 
       await tx.workspaceSubscription.upsert({
         where: { workspaceId },
@@ -267,6 +273,26 @@ export async function POST(request) {
             : {}),
         },
       });
+
+      // Invitations created under Pro cannot be accepted after a downgrade, so
+      // expire the outstanding ones at the same moment the plan stops applying.
+      const effectivePlan = effectiveWorkspacePlan(
+        {
+          plan,
+          status,
+          currentPeriodEnd,
+          pastDueEndsAt,
+          cancelAtPeriodEnd,
+          lastEventAt: eventAt,
+        },
+        eventAt,
+      );
+      if (effectivePlan === "FREE") {
+        await tx.workspaceInvitation.updateMany({
+          where: { workspaceId, status: { in: ["PENDING", "SEND_FAILED"] } },
+          data: { status: "EXPIRED", tokenCiphertext: "", tokenIv: "", tokenTag: "" },
+        });
+      }
 
       // Record audit event for subscription lifecycle events
       let validUserId = null;

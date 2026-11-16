@@ -18,6 +18,7 @@ import { toast } from "sonner";
 
 import { createWorkspace, selectWorkspace } from "@/app/actions/settings";
 import { ChangelogIndicator } from "@/components/product/changelog-indicator";
+import { PlansDialog } from "@/components/shared/plans-dialog";
 import { UpgradeButton } from "@/components/shared/upgrade-button";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogClose, DialogContent, DialogTitle } from "@/components/ui/dialog";
@@ -91,9 +92,17 @@ function CreateWorkspaceDialog({ open, onOpenChange }) {
   );
 }
 
-function WorkspaceSwitcher({ workspaces, selected, plan }) {
+function WorkspaceSwitcher({
+  workspaces,
+  selected,
+  plan,
+  canCreateWorkspace = true,
+  workspaceId = null,
+  canManageBilling = true,
+}) {
   const [pending, setPending] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
+  const [upgradeOpen, setUpgradeOpen] = useState(false);
   const current = workspaces.find((workspace) => workspace.id === selected);
   async function switchTo(id) {
     if (id === selected || pending) return;
@@ -149,13 +158,31 @@ function WorkspaceSwitcher({ workspaces, selected, plan }) {
             </DropdownMenuItem>
           ))}
           <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={() => setCreateOpen(true)} className="cursor-pointer">
-            <HugeiconsIcon icon={Add01Icon} aria-hidden="true" />
-            <span className="flex-1">Create workspace</span>
-          </DropdownMenuItem>
+          {canCreateWorkspace ? (
+            <DropdownMenuItem onClick={() => setCreateOpen(true)} className="cursor-pointer">
+              <HugeiconsIcon icon={Add01Icon} aria-hidden="true" />
+              <span className="flex-1">Create workspace</span>
+            </DropdownMenuItem>
+          ) : (
+            <DropdownMenuItem onClick={() => setUpgradeOpen(true)} className="cursor-pointer">
+              <HugeiconsIcon icon={Add01Icon} aria-hidden="true" />
+              <span className="flex-1">Add workspace</span>
+            </DropdownMenuItem>
+          )}
         </DropdownMenuContent>
       </DropdownMenu>
-      <CreateWorkspaceDialog open={createOpen} onOpenChange={setCreateOpen} />
+      {canCreateWorkspace ? (
+        <CreateWorkspaceDialog open={createOpen} onOpenChange={setCreateOpen} />
+      ) : (
+        <PlansDialog
+          open={upgradeOpen}
+          onOpenChange={setUpgradeOpen}
+          feature="More workspaces"
+          currentPlan={plan}
+          canManageBilling={canManageBilling}
+          workspaceId={workspaceId}
+        />
+      )}
     </div>
   );
 }
@@ -274,11 +301,20 @@ export function AppShellControls({
   selectedWorkspace,
   plan = "FREE",
   canManageBilling = true,
+  canCreateWorkspace = true,
+  workspaceId = null,
 }) {
   return (
     <>
       <div className="order-1 flex max-w-115 min-w-0 items-center gap-2 max-md:max-w-none max-md:flex-1">
-        <WorkspaceSwitcher workspaces={workspaces} selected={selectedWorkspace} plan={plan} />
+        <WorkspaceSwitcher
+          workspaces={workspaces}
+          selected={selectedWorkspace}
+          plan={plan}
+          canCreateWorkspace={canCreateWorkspace}
+          workspaceId={workspaceId || selectedWorkspace}
+          canManageBilling={canManageBilling}
+        />
         <PlanBadge plan={plan} />
         {plan === "FREE" && canManageBilling && (
           <UpgradeButton

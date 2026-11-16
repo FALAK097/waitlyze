@@ -42,9 +42,12 @@ Work through the section that matches your symptom. Each fix links to the guide 
 </Accordion>
 <Accordion title="Members, roles, and workspace">
 - Members cannot publish, send email, manage keys, or delete. Owners/admins can. See [Workspace](/docs/workspace).
-- Only owners can invite admins. The workspace caps at 50 pending invitations.
+- Only owners can invite admins and transfer ownership. The workspace caps at 50 pending invitations.
+- Free includes one workspace with one member; Pro removes both limits. Pending invitations count toward the member limit.
+- Returning to Free keeps existing members but expires pending invitations, and new activity above the Free limits prompts an upgrade.
+- Stuck as the only owner? Make another member the owner instead of adding a second owner.
 - Invite creation failing usually means missing encryption config on the deployment.
-- Export (`/api/settings/export`) before deleting a workspace or waitlist - deletion has no undo.
+- Export (`/api/settings/export`) before deleting a workspace or waitlist - deletion has no undo. Deleting a workspace is blocked while Pro is active or still paid through, and the account's first workspace cannot be deleted.
 </Accordion>
 <Accordion title="Gather safe diagnostics">
 Include the page or endpoint, HTTP status, approximate timestamp (with time zone), and a relevant event or waitlist ID. For webhooks, include Recent deliveries response codes. For analytics, include range and time zone.
