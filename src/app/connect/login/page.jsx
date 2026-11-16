@@ -7,12 +7,21 @@ import Wordmark from "@/components/landing/wordmark";
 import { Button } from "@/components/ui/button";
 import { authClient } from "@/lib/auth-client";
 
+// Whitelist callback URLs: only relative, same-app paths are allowed.
+function sanitizeCallbackUrl(url) {
+  return url.startsWith("/") && !url.startsWith("//") ? url : "";
+}
+
 function ConnectLoginContent() {
   const searchParams = useSearchParams();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  const callbackURL = searchParams.get("callbackURL") || "/connect/consent";
+  // Sanitize the redirect target: only allow same-app relative paths so a
+  // crafted callbackURL cannot bounce users to an attacker-controlled site
+  // after sign in (open redirect).
+  const callbackURL =
+    sanitizeCallbackUrl(searchParams.get("callbackURL") || "") || "/connect/consent";
 
   const handleGoogleSignIn = async () => {
     setLoading(true);

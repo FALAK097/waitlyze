@@ -70,7 +70,7 @@ export async function POST(request) {
           jsonrpc: "2.0",
           error: {
             code: -32603,
-            message: error?.message || "Internal MCP error",
+            message: "Internal MCP error",
           },
           id: null,
         }),

@@ -10,6 +10,23 @@ import prisma from "@/lib/prisma.js";
  * 2. OAuth 2.0 Bearer tokens in Authorization header
  * 3. Session cookies (for browser-based agent testing)
  */
+
+function isTrustedOrigin(origin, requestUrl) {
+  try {
+    const configured = [process.env.BETTER_AUTH_URL, process.env.NEXT_PUBLIC_APP_URL].filter(
+      Boolean,
+    );
+    for (const base of configured) {
+      if (new URL(base).origin === origin) {
+        return true;
+      }
+    }
+    return new URL(requestUrl).origin === origin;
+  } catch {
+    return false;
+  }
+}
+
 export async function resolveMcpAuth(request) {
   try {
     const authHeader = request.headers.get("authorization") || "";
@@ -23,7 +40,17 @@ export async function resolveMcpAuth(request) {
     }
 
     if (!token) {
-      // Check session cookie as fallback
+      // Check session cookie as fallback.
+      // Only honor cookies when the request originates from a trusted origin,
+      // to prevent cross-site form POSTs from riding session cookies (CSRF).
+      const origin = request.headers.get("origin");
+      if (origin && !isTrustedOrigin(origin, request.url)) {
+        return {
+          authenticated: false,
+          error: "Untrusted origin. Use API key or OAuth authentication for cross-origin requests.",
+        };
+      }
+
       try {
         const session = await auth.api.getSession({ headers: request.headers });
         if (session?.user?.id) {
@@ -119,34 +146,6 @@ export async function resolveMcpAuth(request) {
         clientName: oauthToken.client?.clientName,
         scopes: oauthToken.scopes || ["mcp:read", "mcp:write"],
       };
-    }
-
-    // 3. Fallback JWT check if token is signed JWT
-    if (token.split(".").length === 3) {
-      try {
-        const payloadBase64 = token.split(".")[1];
-        const payloadJson = Buffer.from(payloadBase64, "base64url").toString("utf-8");
-        const payload = JSON.parse(payloadJson);
-
-        if (payload?.sub) {
-          const user = await prisma.user.findUnique({
-            where: { id: payload.sub },
-            select: { id: true, name: true, email: true },
-          });
-
-          if (user) {
-            return {
-              authenticated: true,
-              authType: "jwt",
-              userId: user.id,
-              user,
-              scopes: payload.scope ? payload.scope.split(" ") : ["mcp:read", "mcp:write"],
-            };
-          }
-        }
-      } catch {
-        // Invalid JWT format
-      }
     }
 
     return {

@@ -5,6 +5,16 @@ import { createApiKey, listUserApiKeys, revokeApiKey } from "@/services/api-key/
 
 import { resolveWorkspaceContext } from "./auth.js";
 
+// Waitlist permissions that mutate state; they require a write scope.
+const WRITE_PERMISSIONS = new Set([
+  "editCampaign",
+  "publishCampaign",
+  "deleteCampaign",
+  "manageAudience",
+  "sendEmail",
+  "manageConnections",
+]);
+
 function jsonContent(data) {
   return {
     content: [
@@ -41,8 +51,24 @@ export function registerWaitlyzeTools(server, authContext) {
   }
 
   // Helper to check waitlist access
-  async function getAuthorizedWaitlist(waitlistId, _permission = "viewCampaign") {
+  // Write permissions require a write scope: 'waitlist:write' for API keys,
+  // 'mcp:write' for OAuth tokens and authenticated sessions.
+  async function getAuthorizedWaitlist(waitlistId, permission = "viewCampaign") {
     ensureAuth();
+
+    if (WRITE_PERMISSIONS.has(permission)) {
+      const scopes = authContext.scopes || [];
+      const hasWriteScope =
+        authContext.authType === "api_key"
+          ? scopes.includes("waitlist:write")
+          : scopes.includes("mcp:write");
+      if (!hasWriteScope) {
+        throw new Error(
+          `Forbidden: '${permission}' requires write access. Request the '${authContext.authType === "api_key" ? "waitlist:write" : "mcp:write"}' scope.`,
+        );
+      }
+    }
+
     if (authContext.waitlistId && authContext.waitlistId !== waitlistId) {
       throw new Error("Forbidden: Scoped API key does not have access to this waitlist.");
     }
@@ -706,7 +732,7 @@ export function registerWaitlyzeTools(server, authContext) {
           where: {
             waitListId: waitlistId,
             ...(subscriberId ? { id: subscriberId } : {}),
-            ...(email ? { email: email.toLowerCase() } : {}),
+            ...(email ? { emailNormalized: email.toLowerCase() } : {}),
             ...(referralCode ? { referralCode } : {}),
           },
           include: {
@@ -767,7 +793,10 @@ export function registerWaitlyzeTools(server, authContext) {
           .boolean()
           .default(true)
           .describe("Whether to immediately mark subscriber as verified"),
-        customFields: z.record(z.any()).optional().describe("Custom metadata / form answers"),
+        customFields: z
+          .record(z.string(), z.any())
+          .optional()
+          .describe("Custom metadata / form answers"),
         utmSource: z.string().optional(),
         utmMedium: z.string().optional(),
         utmCampaign: z.string().optional(),
@@ -887,7 +916,7 @@ export function registerWaitlyzeTools(server, authContext) {
         subscriberId: z.string().describe("ID of the subscriber"),
         verified: z.boolean().optional().describe("Mark subscriber as verified or unverified"),
         points: z.number().int().optional().describe("Set referral points balance"),
-        customFields: z.record(z.any()).optional().describe("Update custom metadata"),
+        customFields: z.record(z.string(), z.any()).optional().describe("Update custom metadata"),
       }),
     },
     async ({ waitlistId, subscriberId, verified, points, customFields }) => {
@@ -988,11 +1017,12 @@ export function registerWaitlyzeTools(server, authContext) {
         });
 
         if (format === "csv") {
+          const escapeCsv = (value) => `"${String(value ?? "").replace(/"/g, '""')}"`;
           const header = "id,email,referralCode,rank,points,country,isVerified,createdAt\n";
           const rows = subscribers
             .map(
               (s) =>
-                `"${s.id}","${s.email}","${s.referralCode}",${s.rank || ""},${s.points},"${s.country || ""}",${!!s.verifiedAt},"${s.createdAt.toISOString()}"`,
+                `${escapeCsv(s.id)},${escapeCsv(s.email)},${escapeCsv(s.referralCode)},${s.rank || ""},${s.points},${escapeCsv(s.country)},${!!s.verifiedAt},${escapeCsv(s.createdAt.toISOString())}`,
             )
             .join("\n");
           return jsonContent(header + rows);
@@ -1425,9 +1455,34 @@ export function registerWaitlyzeTools(server, authContext) {
     async ({ keyId }) => {
       try {
         ensureAuth();
-        const success = await revokeApiKey(keyId, authContext.userId);
+
+        // Look the key up first so we can authorize waitlist-scoped keys and
+        // revoke them with the right waitlistId (revokeApiKey only matches
+        // user-scoped keys by default).
+        const key = await prisma.apiKey.findFirst({
+          where: { OR: [{ id: keyId }, { keyId }] },
+          select: { id: true, keyId: true, userId: true, waitlistId: true, revokedAt: true },
+        });
+
+        if (!key || key.revokedAt) {
+          return errorContent("API key not found or already revoked.");
+        }
+
+        if (key.waitlistId) {
+          // Waitlist-scoped keys require the caller to manage that waitlist.
+          await getAuthorizedWaitlist(key.waitlistId, "manageConnections");
+          const success = await revokeApiKey(key.id, authContext.userId, key.waitlistId);
+          if (!success) return errorContent("API key not found or already revoked.");
+          return jsonContent({ message: `API key '${key.keyId}' has been revoked.` });
+        }
+
+        // User-scoped keys can only be revoked by their owner.
+        if (key.userId !== authContext.userId) {
+          return errorContent("API key not found or already revoked.");
+        }
+        const success = await revokeApiKey(key.id, authContext.userId);
         if (!success) return errorContent("API key not found or already revoked.");
-        return jsonContent({ message: `API key '${keyId}' has been revoked.` });
+        return jsonContent({ message: `API key '${key.keyId}' has been revoked.` });
       } catch (err) {
         return errorContent(err.message);
       }
