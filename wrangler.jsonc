@@ -49,6 +49,9 @@
     "APP_ROOT_DOMAIN": "waitlyze.com",
     "CLOUDFLARE_ZONE_ID": "0a0152727cd71fe7985bb5cdaa2ca789",
     "CLOUDFLARE_CUSTOM_HOSTNAME_TARGET": "customers.waitlyze.com",
+    "NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN": "phc_vfaMAZVH3zqkvQmHiAbNij5CBFaXgWh4yB7HZYRJJk7p",
+    "NEXT_PUBLIC_POSTHOG_HOST": "https://us.i.posthog.com",
+    "POSTHOG_HOST": "https://us.i.posthog.com",
   },
   "send_email": [{ "name": "EMAIL", "allowed_sender_addresses": ["noreply@waitlyze.com"] }],
   "queues": {
