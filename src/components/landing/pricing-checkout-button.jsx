@@ -8,6 +8,8 @@ import { createProCheckout } from "@/app/actions/billing";
 import { useOpenAuthModal } from "@/components/auth/auth-modal-provider";
 import { Button } from "@/components/ui/button";
 import { useSession } from "@/lib/auth-client";
+import { trackClientEvent } from "@/lib/posthog/client";
+import { POSTHOG_EVENTS } from "@/lib/posthog/events.mjs";
 
 function CheckoutActionButton({
   isPro,
@@ -77,10 +79,17 @@ export default function PricingCheckoutButton({
 
   async function checkout() {
     if (!session && !sessionPending) {
+      trackClientEvent(POSTHOG_EVENTS.MARKETING_CHECKOUT_STARTED_FROM_PRICING, {
+        billing_interval: interval,
+      });
       openAuthModal();
       return;
     }
     if (!session || sessionPending || pending || isPro || !canManageBilling) return;
+    trackClientEvent(POSTHOG_EVENTS.BILLING_CHECKOUT_STARTED, {
+      workspace_id: workspaceId,
+      billing_interval: interval,
+    });
     setError("");
     setPending(true);
     try {

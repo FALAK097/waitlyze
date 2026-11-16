@@ -15,6 +15,13 @@ import { currentWorkspace } from "@/lib/workspaces/current";
 export async function createWaitlistDraft({ name, publicSlug, creationKey, templateId }) {
   const { user, workspace } = await currentWorkspace();
   try {
+    const existingDraft = creationKey
+      ? await prisma.waitList.findFirst({
+          where: { creationKey, workspaceId: workspace.id },
+          select: { id: true },
+        })
+      : null;
+
     const draft = await createDraft(prisma, user.id, workspace.id, {
       name,
       description: "",
@@ -32,22 +39,24 @@ export async function createWaitlistDraft({ name, publicSlug, creationKey, templ
       detail: "Created as a private draft",
     });
 
-    const [{ trackServerEvent }, { POSTHOG_EVENTS }] = await Promise.all([
-      import("@/lib/posthog/server.mjs"),
-      import("@/lib/posthog/events.mjs"),
-    ]);
-    await trackServerEvent({
-      distinctId: user.id,
-      event: POSTHOG_EVENTS.WAITLIST_CREATED,
-      properties: {
-        waitlist_id: draft.id,
-        template_id: templateId || "simple",
-        creation_method: "dialog",
-      },
-      groups: {
-        company: workspace.id,
-      },
-    });
+    if (!existingDraft) {
+      const [{ trackServerEvent }, { POSTHOG_EVENTS }] = await Promise.all([
+        import("@/lib/posthog/server.mjs"),
+        import("@/lib/posthog/events.mjs"),
+      ]);
+      await trackServerEvent({
+        distinctId: user.id,
+        event: POSTHOG_EVENTS.WAITLIST_CREATED,
+        properties: {
+          waitlist_id: draft.id,
+          template_id: templateId || "simple",
+          creation_method: "dialog",
+        },
+        groups: {
+          company: workspace.id,
+        },
+      });
+    }
 
     return { ok: true, id: draft.id };
   } catch (error) {

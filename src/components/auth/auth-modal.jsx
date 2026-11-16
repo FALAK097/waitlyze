@@ -4,7 +4,7 @@ import { Loading02Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import Image from "next/image";
 import Link from "next/link";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import Wordmark from "@/components/landing/wordmark";
@@ -29,18 +29,24 @@ export function AuthModal({ open, onOpenChange, onCloseAutoFocus }) {
   const [localEmail, setLocalEmail] = useState("");
   const [localPassword, setLocalPassword] = useState("");
   const attemptRef = useRef(0);
+  const wasOpenRef = useRef(false);
   const localPasswordAuthEnabled =
     process.env.NODE_ENV !== "production" &&
     process.env.NEXT_PUBLIC_LOCAL_DEV_EMAIL_PASSWORD_AUTH === "true";
+
+  useEffect(() => {
+    if (open && !wasOpenRef.current) {
+      trackClientEvent(POSTHOG_EVENTS.MARKETING_SIGNUP_STARTED, {
+        method: "modal_opened",
+      });
+    }
+    wasOpenRef.current = open;
+  }, [open]);
 
   const changeOpen = (nextOpen) => {
     if (!nextOpen) {
       attemptRef.current += 1;
       setLoading(false);
-    } else {
-      trackClientEvent(POSTHOG_EVENTS.MARKETING_SIGNUP_STARTED, {
-        method: "modal_opened",
-      });
     }
     onOpenChange(nextOpen);
   };

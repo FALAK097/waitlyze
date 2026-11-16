@@ -92,6 +92,7 @@ async function silentRewardSummary(db, waitListId, rank) {
 
 async function recordVerifiedSignup(tx, signup, now) {
   const chatUnlocks = [];
+  const analyticsEvents = [];
   await enqueueWebhookEvent(tx, {
     waitListId: signup.waitListId,
     eventType: "signup.verified",
@@ -156,7 +157,7 @@ async function recordVerifiedSignup(tx, signup, now) {
         select: { workspaceId: true },
       });
 
-      trackServerEvent({
+      analyticsEvents.push({
         distinctId: `waitlist_${signup.waitListId}`,
         event: POSTHOG_EVENTS.REFERRAL_CONVERSION_RECEIVED,
         properties: {
@@ -165,11 +166,11 @@ async function recordVerifiedSignup(tx, signup, now) {
           points_awarded: rewards.pointsReferral,
         },
         groups: waitlistRecord?.workspaceId ? { company: waitlistRecord.workspaceId } : {},
-      }).catch(() => {});
+      });
 
       if (unlocked.length > 0) {
         for (const tier of unlocked) {
-          trackServerEvent({
+          analyticsEvents.push({
             distinctId: `waitlist_${signup.waitListId}`,
             event: POSTHOG_EVENTS.REFERRAL_REWARD_UNLOCKED,
             properties: {
@@ -179,7 +180,7 @@ async function recordVerifiedSignup(tx, signup, now) {
               reward: tier.reward,
             },
             groups: waitlistRecord?.workspaceId ? { company: waitlistRecord.workspaceId } : {},
-          }).catch(() => {});
+          });
         }
       }
     }
@@ -192,7 +193,7 @@ async function recordVerifiedSignup(tx, signup, now) {
       payload: { signUpId: signup.id },
     },
   });
-  return chatUnlocks;
+  return { chatUnlocks, analyticsEvents };
 }
 
 export class DuplicateSignupError extends Error {
@@ -477,6 +478,7 @@ export async function createCampaignSignup(
 
       let verificationEventKey;
       let chatUnlocks = [];
+      let analyticsEvents = [];
       if (requiresVerification) {
         const token = randomBytes(32).toString("base64url");
         const verification = await tx.signUpVerification.create({
@@ -501,7 +503,9 @@ export async function createCampaignSignup(
           },
         });
       } else {
-        chatUnlocks = await recordVerifiedSignup(tx, createdSignup, now);
+        const verifiedResult = await recordVerifiedSignup(tx, createdSignup, now);
+        chatUnlocks = verifiedResult.chatUnlocks;
+        analyticsEvents = verifiedResult.analyticsEvents;
       }
 
       const created = await tx.signUp.findUnique({
@@ -514,6 +518,7 @@ export async function createCampaignSignup(
         ...created,
         verificationEventKey,
         chatUnlocks,
+        analyticsEvents,
         signupOutcome: "created",
         redirectUrl: resolveSuccessRedirect(formConfig),
       };
@@ -557,18 +562,21 @@ export async function createCampaignSignup(
   // never touch counters, webhooks, or email.
   if (signUp?.signupOutcome === "created" && !signUp.silent) {
     if (!signUp.verificationEventKey)
-      after(() =>
+      after(() => {
         queueVerifiedChatNotifications(db, {
           waitListId: input.waitListId,
           signUpId: signUp.id,
           unlocks: signUp.chatUnlocks,
-        }),
-      );
+        });
+        for (const event of signUp.analyticsEvents || []) {
+          trackServerEvent(event).catch(() => {});
+        }
+      });
     after(() => maybeNotifySignupMilestone(db, input.waitListId, { signupId: signUp.id }));
   }
   // Server-vetted post-signup redirect rides on signUp itself (null = stay on
   // the cockpit); rank and rewards progress spread onto the result.
-  const { chatUnlocks: _chatUnlocks, ...publicSignUp } = signUp;
+  const { chatUnlocks: _chatUnlocks, analyticsEvents: _analyticsEvents, ...publicSignUp } = signUp;
   return { ...publicSignUp, rank, rewardSummary };
 }
 
@@ -594,9 +602,19 @@ export async function verifyCampaignSignup(db, token, { now = new Date() } = {})
       where: { id: verification.signUpId },
       select: { id: true, waitListId: true, ipAddress: true },
     });
-    const unlocks = await recordVerifiedSignup(tx, signup, now);
-    return { waitListId: signup.waitListId, signUpId: signup.id, unlocks };
+    const { chatUnlocks, analyticsEvents } = await recordVerifiedSignup(tx, signup, now);
+    return {
+      waitListId: signup.waitListId,
+      signUpId: signup.id,
+      unlocks: chatUnlocks,
+      analyticsEvents,
+    };
   });
-  if (verified) await queueVerifiedChatNotifications(db, verified);
+  if (verified) {
+    await queueVerifiedChatNotifications(db, verified);
+    for (const event of verified.analyticsEvents || []) {
+      trackServerEvent(event).catch(() => {});
+    }
+  }
   return Boolean(verified);
 }

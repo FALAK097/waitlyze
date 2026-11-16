@@ -49,10 +49,38 @@ export function initClientPostHog() {
       disable_session_recording: isPublicPage,
       session_recording: {
         maskAllInputs: true,
+        maskTextSelector: "[data-ph-mask], [data-mask], .sensitive-data",
         maskInputOptions: {
           password: true,
           email: true,
         },
+      },
+      before_send: (event) => {
+        if (event?.properties?.$current_url) {
+          try {
+            const urlObj = new URL(event.properties.$current_url);
+            const cleanParams = new URLSearchParams();
+            const allowed = new Set([
+              "utm_source",
+              "utm_medium",
+              "utm_campaign",
+              "utm_term",
+              "utm_content",
+              "ref",
+              "source",
+            ]);
+            for (const [key, value] of urlObj.searchParams.entries()) {
+              if (allowed.has(key.toLowerCase())) {
+                cleanParams.set(key, value);
+              }
+            }
+            urlObj.search = cleanParams.toString();
+            event.properties.$current_url = urlObj.toString();
+          } catch {
+            // Keep unmodified if parsing fails
+          }
+        }
+        return event;
       },
       loaded: () => {
         clientInitialized = true;

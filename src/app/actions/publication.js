@@ -68,22 +68,24 @@ export async function publishWaitlist(id, revision) {
       detail: "Page published",
     });
 
-    try {
-      const [{ trackServerEvent }, { POSTHOG_EVENTS }] = await Promise.all([
-        import("@/lib/posthog/server.mjs"),
-        import("@/lib/posthog/events.mjs"),
-      ]);
-      await trackServerEvent({
-        distinctId: userId,
-        event: POSTHOG_EVENTS.WAITLIST_PUBLISHED,
-        properties: {
-          waitlist_id: id,
-          revision,
-          is_first_publish: firstPublish,
-        },
-      });
-    } catch {
-      // Best-effort analytics
+    if (!result.unchanged) {
+      try {
+        const [{ trackServerEvent }, { POSTHOG_EVENTS }] = await Promise.all([
+          import("@/lib/posthog/server.mjs"),
+          import("@/lib/posthog/events.mjs"),
+        ]);
+        await trackServerEvent({
+          distinctId: userId,
+          event: POSTHOG_EVENTS.WAITLIST_PUBLISHED,
+          properties: {
+            waitlist_id: id,
+            revision: result.revision,
+            is_first_publish: firstPublish,
+          },
+        });
+      } catch {
+        // Best-effort analytics
+      }
     }
 
     return result;

@@ -34,7 +34,10 @@ function AccountAvatar({ id, src, name }) {
 
 async function AppShellControlsData() {
   const { user, workspace, workspaces } = await currentWorkspace();
-  const entitlements = await getWorkspaceEntitlements(prisma, workspace.id);
+  const [entitlements, memberCount] = await Promise.all([
+    getWorkspaceEntitlements(prisma, workspace.id),
+    prisma.workspaceMember.count({ where: { workspaceId: workspace.id } }),
+  ]);
   const canManageBilling = workspace.members?.[0]?.role === "OWNER";
   return (
     <>
@@ -43,8 +46,7 @@ async function AppShellControlsData() {
         plan={entitlements.plan}
         role={workspace.members?.[0]?.role || "MEMBER"}
         workspaceId={workspace.id}
-        workspaceName={workspace.name}
-        memberCount={workspace.members?.length || 1}
+        memberCount={memberCount}
       />
       <AppShellControls
         workspaces={workspaces.map((item) => ({ id: item.id, name: item.name }))}

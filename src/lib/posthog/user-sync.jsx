@@ -8,7 +8,7 @@ import { identifyClientUser, setClientGroup } from "@/lib/posthog/client";
  * Syncs the current authenticated user's ID and active workspace group with PostHog.
  * Never transmits sensitive PII (names, passwords, emails).
  */
-export function PostHogUserSync({ userId, plan, role, workspaceId, workspaceName, memberCount }) {
+export function PostHogUserSync({ userId, plan, role, workspaceId, memberCount }) {
   useEffect(() => {
     if (!userId) return;
 
@@ -19,12 +19,11 @@ export function PostHogUserSync({ userId, plan, role, workspaceId, workspaceName
 
     if (workspaceId) {
       setClientGroup(workspaceId, {
-        name: workspaceName,
         plan: plan || "FREE",
         member_count: memberCount || 1,
       });
     }
-  }, [userId, plan, role, workspaceId, workspaceName, memberCount]);
+  }, [userId, plan, role, workspaceId, memberCount]);
 
   return null;
 }

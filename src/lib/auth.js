@@ -63,34 +63,48 @@ export const auth = betterAuth({
               import("./emails/founder-notifications.mjs"),
               import("./env.mjs"),
             ]);
-            const url = new URL("/waitlists", env.BETTER_AUTH_URL).toString();
-            const props = { name: user.name, url };
-            const eventKey = await enqueueFounderNotice(prisma, {
-              kind: "welcome",
-              to: user.email,
-              subject: "Welcome to Waitlyze",
-              html: await renderWelcomeEmail(props),
-              text: welcomeText(props),
-              idempotencyKey: `welcome-${user.id}`,
-            });
-            if (eventKey) await dispatchFounderNoticesNow([eventKey]);
+            try {
+              const url = new URL("/waitlists", env.BETTER_AUTH_URL).toString();
+              const props = { name: user.name, url };
+              const eventKey = await enqueueFounderNotice(prisma, {
+                kind: "welcome",
+                to: user.email,
+                subject: "Welcome to Waitlyze",
+                html: await renderWelcomeEmail(props),
+                text: welcomeText(props),
+                idempotencyKey: `welcome-${user.id}`,
+              });
+              if (eventKey) await dispatchFounderNoticesNow([eventKey]);
+            } catch (emailError) {
+              console.error(
+                "Welcome email notice failed",
+                emailError?.name || emailError?.message || "unknown error",
+              );
+            }
 
             // Track server-verified registration completion in PostHog
-            const [{ trackServerEvent }, { POSTHOG_EVENTS }] = await Promise.all([
-              import("@/lib/posthog/server.mjs"),
-              import("@/lib/posthog/events.mjs"),
-            ]);
-            await trackServerEvent({
-              distinctId: user.id,
-              event: POSTHOG_EVENTS.MARKETING_SIGNUP_COMPLETED,
-              properties: {
-                signup_method: user.emailVerified ? "oauth" : "email",
-              },
-            });
-          } catch (error) {
+            try {
+              const [{ trackServerEvent }, { POSTHOG_EVENTS }] = await Promise.all([
+                import("@/lib/posthog/server.mjs"),
+                import("@/lib/posthog/events.mjs"),
+              ]);
+              await trackServerEvent({
+                distinctId: user.id,
+                event: POSTHOG_EVENTS.MARKETING_SIGNUP_COMPLETED,
+                properties: {
+                  signup_method: user.emailVerified ? "oauth" : "email",
+                },
+              });
+            } catch (analyticsError) {
+              console.error(
+                "Signup analytics failed",
+                analyticsError?.name || analyticsError?.message || "unknown error",
+              );
+            }
+          } catch (hookError) {
             console.error(
-              "Welcome email / signup analytics failed",
-              error?.name || error?.message || "unknown error",
+              "User registration hook failed",
+              hookError?.name || hookError?.message || "unknown error",
             );
           }
         },

@@ -142,16 +142,36 @@ export async function maybeNotifySignupMilestone(db, waitListId, { signupId } = 
       },
     });
 
-    trackServerEvent({
-      distinctId: `waitlist_${waitListId}`,
-      event: POSTHOG_EVENTS.WAITLIST_MILESTONE_REACHED,
-      properties: {
-        waitlist_id: waitListId,
-        workspace_id: waitList.workspaceId,
-        milestone_count: count,
-      },
-      groups: waitList.workspaceId ? { company: waitList.workspaceId } : {},
-    }).catch(() => {});
+    let shouldTrackMilestone = false;
+    try {
+      await db.outboxEvent.create({
+        data: {
+          eventKey: `posthog:milestone:${waitListId}:${count}`,
+          type: "ANALYTICS_MILESTONE_CLAIMED",
+          waitListId,
+          payload: { count },
+        },
+      });
+      shouldTrackMilestone = true;
+    } catch (claimError) {
+      if (claimError?.code !== "P2002") {
+        console.warn("Milestone claim check failed:", claimError?.message || claimError);
+      }
+    }
+
+    if (shouldTrackMilestone) {
+      trackServerEvent({
+        distinctId: `waitlist_${waitListId}`,
+        event: POSTHOG_EVENTS.WAITLIST_MILESTONE_REACHED,
+        properties: {
+          $insert_id: `milestone:${waitListId}:${count}`,
+          waitlist_id: waitListId,
+          workspace_id: waitList.workspaceId,
+          milestone_count: count,
+        },
+        groups: waitList.workspaceId ? { company: waitList.workspaceId } : {},
+      }).catch(() => {});
+    }
 
     const waitlistName = waitList.name || "Your waitlist";
     // A deterministic outbox key avoids duplicate milestone pings when
