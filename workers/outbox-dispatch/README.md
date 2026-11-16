@@ -1,8 +1,10 @@
 # Outbox dispatch worker (Cloudflare Cron)
 
-Fires every minute and calls the app's `POST /api/internal/email-outbox`
+Fires every 15 minutes and calls the app's `POST /api/internal/email-outbox`
 route, which drains the **email outbox** and pending **webhook deliveries**.
 This Cloudflare Cron Worker independently drains the email outbox and webhook queue.
+Immediate sends (like signup verification) are sent inline by the app; this scheduled
+worker serves as a background sweeper and retry dispatcher.
 
 ## One-time setup
 
@@ -26,7 +28,7 @@ wrangler deploy
 | --------------- | --------------------------------------------------------------------------------- |
 | Dispatch logic  | `src/app/api/internal/email-outbox/route.js` (emails + `dispatchPendingWebhooks`) |
 | Signing/retries | `src/lib/webhooks/delivery.mjs`                                                   |
-| Cadence         | `[triggers] crons` in `wrangler.toml` (currently every minute)                    |
+| Cadence         | `[triggers] crons` in `wrangler.toml` (every 15 minutes)                          |
 
 ## Verify it works
 

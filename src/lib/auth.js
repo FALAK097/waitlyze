@@ -26,6 +26,12 @@ export const auth = betterAuth({
     "https://waitlyze.com",
     "http://localhost:3000",
   ].filter(Boolean),
+  session: {
+    cookieCache: {
+      enabled: true,
+      maxAge: 5 * 60,
+    },
+  },
   advanced: {
     useSecureCookies: process.env.NODE_ENV === "production",
     cookiePrefix: "ba",

@@ -36,7 +36,9 @@ export async function GET(request, { params }) {
       endDate,
       timeZone,
     });
-    return NextResponse.json(analytics, { headers: { "Cache-Control": "private, no-store" } });
+    return NextResponse.json(analytics, {
+      headers: { "Cache-Control": "private, max-age=60, stale-while-revalidate=120" },
+    });
   } catch (error) {
     if (error instanceof WorkspacePlanError)
       return NextResponse.json(

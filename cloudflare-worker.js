@@ -46,6 +46,14 @@ function hasSessionCookie(request) {
     "__Secure-ba_session_token",
     "better-auth.session_token",
     "__Secure-better-auth.session_token",
+    "ba.session_data",
+    "ba-session_data",
+    "ba_session_data",
+    "__Secure-ba.session_data",
+    "__Secure-ba-session_data",
+    "__Secure-ba_session_data",
+    "better-auth.session_data",
+    "__Secure-better-auth.session_data",
   ]);
   return cookieHeader.split(";").some((cookie) => {
     const name = cookie.trim().split("=", 1)[0];

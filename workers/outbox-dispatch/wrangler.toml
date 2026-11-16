@@ -5,8 +5,9 @@ compatibility_date = "2026-10-01"
 [limits]
 cpu_ms = 10000
 
-# Runs every minute: drains the email outbox and pending webhook
+# Runs every 15 minutes: drains the email outbox and pending webhook
 # deliveries via the app's internal route. Adjust as needed, e.g.
-# "*/5 * * * *" for every five minutes, then redeploy.
+# "*/30 * * * *" for every thirty minutes, then redeploy.
 [triggers]
-crons = ["* * * * *"]
+crons = ["*/15 * * * *"]
+
