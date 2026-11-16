@@ -20,16 +20,16 @@ https://waitlyze.com/mcp
 
 ### Authentication methods
 
-You can authenticate your AI agents in two ways:
+You can authenticate AI agents in two ways:
 
-1. **Scoped API Key (Recommended for IDEs & Scripts)**:
-   Generate an API key in **Settings → API keys** (format: `wl2_...`). Pass it as an HTTP Bearer header (`Authorization: Bearer wl2_...`) or `x-waitlyze-api-key: wl2_...`.
+1. **Scoped API key**:
+   Generate an API key in **Settings → API keys** (prefixed with `wl2_`). Pass it as an HTTP Bearer header (`Authorization: Bearer wl2_YOUR_KEY`) or in `x-waitlyze-api-key`.
 2. **OAuth 2.0 (RFC 9728)**:
-   For interactive agents supporting RFC 9728 discovery, point your client to `https://waitlyze.com/mcp`. The agent will automatically query `/.well-known/oauth-protected-resource`, discover the authorization server, and guide you through authorization.
+   For interactive agents supporting RFC 9728 discovery, point your client to `https://waitlyze.com/mcp`. The agent discovers the authorization server and initiates authentication.
 
 ---
 
-## Client Setup
+## Client setup
 
 <Steps>
 <Step>
@@ -135,9 +135,9 @@ Configure the server endpoint in your agent tool manifests:
 
 ---
 
-## Tool Reference
+## Tool reference
 
-The Waitlyze MCP server exposes over 20 specialized tools organized by domain:
+The Waitlyze MCP server exposes 26 tools organized by domain:
 
 ### Workspace
 | Tool | Description |
@@ -148,7 +148,7 @@ The Waitlyze MCP server exposes over 20 specialized tools organized by domain:
 ### Waitlists
 | Tool | Description |
 | :--- | :--- |
-| `waitlyze_list_waitlists` | List waitlists with status filters (DRAFT, PUBLISHED, PAUSED) and counts. |
+| `waitlyze_list_waitlists` | List waitlists with status filters and counts. |
 | `waitlyze_get_waitlist` | Retrieve waitlist settings, public URL, design config, and conversion stats. |
 | `waitlyze_create_waitlist` | Create a new waitlist campaign in the active workspace. |
 | `waitlyze_update_waitlist` | Update headline, description, website URL, or fraud security mode. |
@@ -156,7 +156,7 @@ The Waitlyze MCP server exposes over 20 specialized tools organized by domain:
 | `waitlyze_pause_waitlist` | Temporarily pause new signups on a published waitlist. |
 | `waitlyze_delete_waitlist` | Archive or delete a waitlist campaign. |
 
-### Audience & Subscribers
+### Audience and subscribers
 | Tool | Description |
 | :--- | :--- |
 | `waitlyze_list_subscribers` | Search, filter, and paginate through subscribers with sorting by position or points. |
@@ -166,12 +166,12 @@ The Waitlyze MCP server exposes over 20 specialized tools organized by domain:
 | `waitlyze_remove_subscriber` | Delete a subscriber from a waitlist. |
 | `waitlyze_export_subscribers` | Export subscribers in JSON or CSV format. |
 
-### Analytics & Virality
+### Analytics and viral growth
 | Tool | Description |
 | :--- | :--- |
 | `waitlyze_get_analytics` | Comprehensive funnels, page views, signups, viral K-factor, and referral leaderboard. |
 
-### Email Broadcasts
+### Broadcasts
 | Tool | Description |
 | :--- | :--- |
 | `waitlyze_list_broadcasts` | List drafts and sent broadcasts with recipient statistics. |
@@ -185,11 +185,11 @@ The Waitlyze MCP server exposes over 20 specialized tools organized by domain:
 | `waitlyze_create_webhook` | Subscribe an HTTPS endpoint to signup and verification events. |
 | `waitlyze_delete_webhook` | Remove a webhook endpoint. |
 
-### API Keys
+### API keys
 | Tool | Description |
 | :--- | :--- |
 | `waitlyze_list_api_keys` | List active API keys for a waitlist. |
-| `waitlyze_create_api_key` | Generate a new scoped secret key (`wl2_...`). |
+| `waitlyze_create_api_key` | Generate a new scoped secret key. |
 | `waitlyze_revoke_api_key` | Immediately revoke an API key. |
 
 ### Capabilities
@@ -199,12 +199,14 @@ The Waitlyze MCP server exposes over 20 specialized tools organized by domain:
 
 ---
 
-## Example Prompts for Agents
+## Example prompts for agents
 
-Once connected, you can give your AI natural language instructions like:
+Once connected, you can give your AI natural language instructions:
 
-- *"Create a new waitlist called 'Developer Toolkit' with the slug 'devtools' and publish it."*
-- *"Show me our viral K-factor and total signups for the past 30 days."*
-- *"Who are the top 5 referrers on the waitlist, and what are their referral codes?"*
-- *"Draft an email broadcast announcing early beta access to our top 50 verified subscribers."*
-- *"Add a webhook to notify https://my-server.com/api/waitlyze when someone signs up."*
+```text
+Create a new waitlist called "Developer Toolkit" with the slug "devtools" and publish it.
+Calculate the viral K-factor and total signups for the past 30 days.
+List the top 5 referrers on the waitlist along with referral counts.
+Draft a broadcast announcing beta access to the top 50 verified subscribers.
+Add a webhook to notify https://example.com/api/webhooks when someone signs up.
+```
