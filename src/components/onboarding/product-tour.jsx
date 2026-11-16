@@ -519,7 +519,7 @@ export function ProductTour({ entry, onClose, open, userName }) {
           </p>
         </aside>
 
-        <main className="relative grid min-h-0 grid-rows-[minmax(260px,1.35fr)_minmax(190px,.65fr)] overflow-hidden max-[760px]:grid-rows-[minmax(210px,1fr)_auto]">
+        <main className="relative grid min-h-0 grid-rows-[minmax(160px,1.35fr)_minmax(0,.65fr)] overflow-hidden max-[760px]:grid-rows-[minmax(180px,1fr)_auto]">
           <button
             type="button"
             onClick={() => finish("skipped")}
@@ -550,7 +550,11 @@ export function ProductTour({ entry, onClose, open, userName }) {
             </AnimatePresence>
           </div>
 
-          <div className="flex min-h-0 items-center px-[clamp(1.5rem,5vw,4.5rem)] py-7 max-[760px]:items-start max-[760px]:overflow-y-auto max-[760px]:py-5">
+          <div className="flex min-h-0 items-center overflow-y-auto px-[clamp(1.5rem,5vw,4.5rem)] py-7 max-[760px]:items-start max-[760px]:py-5">
+            <p aria-live="polite" className="sr-only">
+              {step.id === "welcome" && firstName ? `Welcome, ${firstName}. ` : ""}
+              {step.title}
+            </p>
             <AnimatePresence initial={false} mode="wait">
               <motion.div
                 key={`${step.id}-copy`}
@@ -559,7 +563,6 @@ export function ProductTour({ entry, onClose, open, userName }) {
                 exit={{ opacity: 0, y: reduceMotion ? 0 : -5 }}
                 transition={{ duration: reduceMotion ? 0 : 0.22 }}
                 className="max-w-170"
-                aria-live="polite"
               >
                 <p className="text-micro font-semibold tracking-[0.16em] text-product-success-text uppercase">
                   {step.eyebrow}
@@ -577,9 +580,9 @@ export function ProductTour({ entry, onClose, open, userName }) {
         </main>
 
         <footer className="col-start-2 flex items-center gap-6 px-8 max-[760px]:col-start-1 max-[760px]:gap-3 max-[760px]:px-4">
-          <div className="flex min-w-0 flex-1 items-center gap-3">
+          <div className="flex min-w-0 flex-1 items-center gap-3 max-sm:gap-2">
             <div
-              className="h-1.5 min-w-16 flex-1 overflow-hidden rounded-full bg-product-bg-inset"
+              className="h-1.5 min-w-8 flex-1 overflow-hidden rounded-full bg-product-bg-inset max-sm:min-w-6"
               aria-hidden="true"
             >
               <motion.div
@@ -588,7 +591,7 @@ export function ProductTour({ entry, onClose, open, userName }) {
                 transition={{ duration: reduceMotion ? 0 : 0.25, ease: [0.22, 1, 0.36, 1] }}
               />
             </div>
-            <span className="shrink-0 text-micro font-medium text-product-text-muted">
+            <span className="shrink-0 text-micro font-medium text-product-text-muted max-sm:hidden">
               {stepIndex + 1} of {TOUR_STEPS.length}
             </span>
           </div>

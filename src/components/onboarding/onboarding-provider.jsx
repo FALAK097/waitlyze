@@ -39,8 +39,12 @@ export function OnboardingProvider({ children, initialOpen, userName }) {
         step_number: stepIndex + 1,
       });
 
-      const result = await completeOnboarding();
-      if (!result?.ok) toast.error(result?.message || "Could not save your tour progress.");
+      try {
+        const result = await completeOnboarding();
+        if (!result?.ok) toast.error(result?.message || "Could not save your tour progress.");
+      } catch {
+        toast.error("Could not save your tour progress.");
+      }
     },
     [entry],
   );
