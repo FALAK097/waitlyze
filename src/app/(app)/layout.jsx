@@ -2,6 +2,7 @@ import { Avatar as DiceBearAvatar, Style } from "@dicebear/core";
 import shapes from "@dicebear/styles/shapes.json" with { type: "json" };
 import { Suspense } from "react";
 
+import { OnboardingProvider } from "@/components/onboarding/onboarding-provider";
 import { AppShell, AppShellControls } from "@/components/product/app-shell";
 import { ProductContentSkeleton } from "@/components/product/content-skeleton";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
@@ -75,28 +76,36 @@ function AppShellControlsFallback() {
   );
 }
 
-export default function AppLayout({ children }) {
+export default async function AppLayout({ children }) {
+  const { user } = await currentWorkspace();
+  const onboarding = await prisma.user.findUnique({
+    where: { id: user.id },
+    select: { isOnboarded: true },
+  });
+
   return (
     <div className={`product-ui min-h-dvh bg-product-bg-page ${publicFontClasses}`}>
-      <ReactQueryProvider>
-        <AppShell
-          headerControls={
-            <Suspense fallback={<AppShellControlsFallback />}>
-              <AppShellControlsData />
-            </Suspense>
-          }
-        >
-          <Suspense
-            fallback={
-              <section className="product-ui" aria-label="Loading waitlists">
-                <ProductContentSkeleton label="Loading waitlists" variant="table" />
-              </section>
+      <OnboardingProvider initialOpen={!onboarding?.isOnboarded} userName={user.name}>
+        <ReactQueryProvider>
+          <AppShell
+            headerControls={
+              <Suspense fallback={<AppShellControlsFallback />}>
+                <AppShellControlsData />
+              </Suspense>
             }
           >
-            {children}
-          </Suspense>
-        </AppShell>
-      </ReactQueryProvider>
+            <Suspense
+              fallback={
+                <section className="product-ui" aria-label="Loading waitlists">
+                  <ProductContentSkeleton label="Loading waitlists" variant="table" />
+                </section>
+              }
+            >
+              {children}
+            </Suspense>
+          </AppShell>
+        </ReactQueryProvider>
+      </OnboardingProvider>
     </div>
   );
 }
