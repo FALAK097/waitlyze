@@ -285,38 +285,4 @@ export default {
       else message.retry();
     }
   },
-
-  // Lightweight scheduled cron trigger to keep Neon DB awake and isolates warm
-  scheduled(controller, env, ctx) {
-    const appRoot = String(env.APP_ROOT_DOMAIN || "waitlyze.com").toLowerCase();
-    const url = `https://${appRoot}/api/health`;
-    ctx.waitUntil(
-      (async () => {
-        try {
-          let response;
-          if (env.WORKER_SELF_REFERENCE) {
-            response = await env.WORKER_SELF_REFERENCE.fetch(
-              new Request(url, {
-                method: "GET",
-                headers: { "x-cron-source": "cloudflare-worker-cron" },
-              }),
-            );
-          } else {
-            response = await fetch(url, {
-              method: "GET",
-              headers: { "x-cron-source": "cloudflare-worker-cron" },
-            });
-          }
-          if (!response.ok) {
-            console.error("Scheduled database keep-alive returned", response.status);
-          }
-        } catch (error) {
-          console.error(
-            "Scheduled keep-alive ping failed:",
-            error?.name || error?.message || "unknown",
-          );
-        }
-      })(),
-    );
-  },
 };
