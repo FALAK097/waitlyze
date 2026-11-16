@@ -4,6 +4,11 @@ import posthog from "posthog-js";
 
 import { env } from "../env.mjs";
 
+// PostHog project tokens are public identifiers. Cloudflare Worker vars are only
+// available at runtime, after Next.js has produced the browser bundle, so keep a
+// checked-in fallback to ensure analytics is initialized in production builds.
+const PUBLIC_POSTHOG_PROJECT_TOKEN = "phc_vfaMAZVH3zqkvQmHiAbNij5CBFaXgWh4yB7HZYRJJk7p";
+
 let clientInitialized = false;
 
 /**
@@ -17,7 +22,7 @@ let clientInitialized = false;
 export function initClientPostHog() {
   if (typeof window === "undefined" || clientInitialized) return posthog;
 
-  const token = env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN;
+  const token = env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN || PUBLIC_POSTHOG_PROJECT_TOKEN;
   const host = env.NEXT_PUBLIC_POSTHOG_HOST || "https://us.i.posthog.com";
 
   if (!token) return posthog;
