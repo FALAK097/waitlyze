@@ -30,6 +30,16 @@ const nextConfig = {
       "lucide-react",
     ],
   },
+  outputFileTracingExcludes: {
+    "*": [
+      "node_modules/prisma/**",
+      "node_modules/@prisma/engines/**",
+      "node_modules/@prisma/engines-version/**",
+      "node_modules/wrangler/**",
+      "node_modules/@opennextjs/**",
+      "node_modules/workerd/**",
+    ],
+  },
   images: {
     // Workers don't provide the Next.js sharp optimizer. Serve source images
     // directly; the Cloudflare CDN can cache them at the edge.
@@ -58,7 +68,6 @@ const nextConfig = {
     "@prisma/adapter-neon",
     "@neondatabase/serverless",
     "better-auth",
-    "prisma",
   ],
   async redirects() {
     return [
