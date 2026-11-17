@@ -7,7 +7,7 @@ import {
   BubbleChatIcon,
   GemIcon,
   Logout01Icon,
-  Presentation01Icon,
+  Compass01Icon,
   Tick01Icon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
@@ -236,7 +236,7 @@ function AccountMenu({ user, avatar }) {
           {avatar}
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" sideOffset={8} className="min-w-64">
-          <div className="flex max-w-80 items-center gap-3 px-2 pt-3 pb-4 whitespace-nowrap">
+          <div className="flex max-w-80 items-center gap-3 px-2 pt-3 pb-3 whitespace-nowrap">
             {avatar}
             <div className="ph-no-capture grid min-w-0 flex-1 gap-1">
               <strong className="text-sm font-semibold break-words">
@@ -250,9 +250,10 @@ function AccountMenu({ user, avatar }) {
               </span>
             </div>
           </div>
+          <DropdownMenuSeparator />
           <DropdownMenuItem className="cursor-pointer" onClick={openTour}>
-            <HugeiconsIcon icon={Presentation01Icon} aria-hidden="true" />
-            Product tour
+            <HugeiconsIcon icon={Compass01Icon} aria-hidden="true" />
+            <span className="flex-1">Take a Tour</span>
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem
@@ -262,7 +263,7 @@ function AccountMenu({ user, avatar }) {
             disabled={pending}
           >
             <HugeiconsIcon icon={Logout01Icon} aria-hidden="true" />
-            {pending ? "Signing out…" : "Sign out"}
+            <span className="flex-1">{pending ? "Signing out…" : "Sign out"}</span>
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
