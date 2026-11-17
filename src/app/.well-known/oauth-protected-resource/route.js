@@ -13,6 +13,7 @@ export async function GET() {
   const metadata = {
     resource,
     authorization_servers: [`${baseUrl}/api/auth`],
+    bearer_methods_supported: ["header"],
     scopes_supported: [...MCP_SCOPES],
     resource_name: "Waitlyze MCP",
     resource_documentation: `${baseUrl}/docs/mcp`,

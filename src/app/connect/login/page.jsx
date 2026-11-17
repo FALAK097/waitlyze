@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
 
@@ -50,11 +51,7 @@ function ConnectLoginContent() {
           </p>
         </div>
 
-        {error && (
-          <div className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-600 dark:bg-red-950/30 dark:text-red-400">
-            {error}
-          </div>
-        )}
+        {error && <div className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-600">{error}</div>}
 
         <div className="space-y-4">
           <Button
@@ -63,6 +60,7 @@ function ConnectLoginContent() {
             onClick={handleGoogleSignIn}
             disabled={loading}
           >
+            <Image src="/images/google.svg" alt="" width={18} height={18} unoptimized />
             {loading ? "Connecting..." : "Continue with Google"}
           </Button>
 

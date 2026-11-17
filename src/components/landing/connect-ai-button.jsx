@@ -124,10 +124,10 @@ export function ConnectAiButton({ className = "" }) {
       <button
         type="button"
         onClick={handleOpen}
-        className={`inline-flex items-center gap-2.5 rounded-xl border border-black/15 bg-white/80 px-4 py-2.5 text-sm font-semibold text-neutral-900 shadow-sm backdrop-blur-sm transition-all hover:border-black/30 hover:bg-white hover:shadow dark:border-white/20 dark:bg-neutral-900/80 dark:text-neutral-100 dark:hover:border-white/40 dark:hover:bg-neutral-900 ${className}`}
+        className={`wl-secondary-button ${className}`}
         aria-label="Connect your AI agent to Waitlyze via Model Context Protocol"
       >
-        <span className="flex items-center gap-1.5 text-neutral-900 dark:text-neutral-100">
+        <span className="flex items-center gap-1.5 text-neutral-900">
           <OpenAiIcon className="h-4 w-4" />
           <ClaudeIcon className="h-4 w-4" />
         </span>
@@ -135,25 +135,25 @@ export function ConnectAiButton({ className = "" }) {
       </button>
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-xl p-6">
+        <DialogContent className="max-w-xl border-neutral-200 bg-white p-6 text-neutral-900">
           <DialogHeader>
             <div className="flex items-center gap-2">
-              <span className="flex items-center gap-1 text-neutral-800 dark:text-neutral-200">
+              <span className="flex items-center gap-1 text-neutral-800">
                 <OpenAiIcon className="h-5 w-5" />
                 <ClaudeIcon className="h-5 w-5" />
               </span>
-              <DialogTitle className="text-lg font-semibold tracking-tight">
+              <DialogTitle className="text-lg font-semibold tracking-tight text-neutral-900">
                 Connect your AI Agent to Waitlyze
               </DialogTitle>
             </div>
-            <DialogDescription className="text-xs text-neutral-500 dark:text-neutral-400">
+            <DialogDescription className="text-xs text-neutral-500">
               Control your entire waitlist platform through Cursor, Claude Code, Codex, VS Code, or
               OpenCode via hosted MCP.
             </DialogDescription>
           </DialogHeader>
 
           <div className="mt-4">
-            <div className="flex gap-1.5 border-b border-neutral-200 pb-2 dark:border-neutral-800">
+            <div className="flex gap-1.5 border-b border-neutral-200 pb-2">
               {CLIENT_CONFIGS.map((client) => (
                 <button
                   key={client.id}
@@ -161,8 +161,8 @@ export function ConnectAiButton({ className = "" }) {
                   onClick={() => setSelectedClient(client.id)}
                   className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
                     selectedClient === client.id
-                      ? "bg-neutral-900 text-white dark:bg-white dark:text-neutral-900"
-                      : "text-neutral-600 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-800"
+                      ? "bg-neutral-900 text-white"
+                      : "text-neutral-600 hover:bg-neutral-100"
                   }`}
                 >
                   {client.name}
@@ -171,7 +171,7 @@ export function ConnectAiButton({ className = "" }) {
             </div>
 
             <div className="relative mt-3">
-              <pre className="max-h-60 overflow-x-auto rounded-xl border border-neutral-200 bg-neutral-950 p-3.5 font-mono text-xs text-neutral-100 dark:border-neutral-800">
+              <pre className="max-h-60 overflow-x-auto rounded-xl border border-neutral-200 bg-neutral-950 p-3.5 font-mono text-xs text-neutral-100">
                 <code>{copyText}</code>
               </pre>
               <button
@@ -191,14 +191,12 @@ export function ConnectAiButton({ className = "" }) {
             <div className="mt-4 flex items-center justify-between pt-2 text-xs">
               <span className="text-neutral-500">
                 Hosted URL:{" "}
-                <code className="font-mono text-neutral-800 dark:text-neutral-300">
-                  https://waitlyze.com/mcp
-                </code>
+                <code className="font-mono text-neutral-800">https://waitlyze.com/mcp</code>
               </span>
               <Link
                 href="/docs/mcp"
                 onClick={() => setOpen(false)}
-                className="font-medium text-blue-600 hover:underline dark:text-blue-400"
+                className="font-medium text-blue-600 hover:underline"
               >
                 View full MCP docs →
               </Link>

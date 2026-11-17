@@ -2,6 +2,8 @@ import { createMcpHandler } from "@modelcontextprotocol/server";
 
 import { resolveMcpAuth } from "@/lib/mcp/auth.js";
 import { createWaitlyzeMcpServer } from "@/lib/mcp/server.js";
+import prisma from "@/lib/prisma.js";
+import { checkRateLimit } from "@/lib/rate-limit.js";
 
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
@@ -59,6 +61,34 @@ async function normalizeRequest(request) {
 
 export async function POST(request) {
   try {
+    const clientIp = request.headers.get("cf-connecting-ip") || "unknown-client";
+    try {
+      const allowed = await checkRateLimit(prisma, `mcp:${clientIp}`, 120, 60 * 1000);
+      if (!allowed) {
+        return applyCors(
+          new Response(
+            JSON.stringify({
+              jsonrpc: "2.0",
+              error: {
+                code: -32000,
+                message: "Rate limit exceeded. Too many MCP requests.",
+              },
+              id: null,
+            }),
+            {
+              status: 429,
+              headers: {
+                "Content-Type": "application/json",
+                "Retry-After": "60",
+              },
+            },
+          ),
+        );
+      }
+    } catch (rateLimitErr) {
+      console.warn("MCP rate limit check skipped:", rateLimitErr?.message || rateLimitErr);
+    }
+
     const { req, parsedBody } = await normalizeRequest(request);
     const response = await mcpHandler.fetch(req, { parsedBody });
     return applyCors(response);

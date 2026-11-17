@@ -1,13 +1,36 @@
 import { createHash, timingSafeEqual } from "node:crypto";
 
+import { verifyBearerToken } from "better-auth/oauth2";
+
 import { auth } from "@/lib/auth.js";
 import prisma from "@/lib/prisma.js";
+
+async function getLocalJwks() {
+  const records = await prisma.jwks.findMany({
+    where: {
+      OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
+    },
+  });
+  const keys = records
+    .map((record) => {
+      try {
+        const parsed = JSON.parse(record.publicKey);
+        if (!parsed.kid && record.id) parsed.kid = record.id;
+        if (!parsed.alg && record.alg) parsed.alg = record.alg;
+        return parsed;
+      } catch {
+        return null;
+      }
+    })
+    .filter(Boolean);
+  return { keys };
+}
 
 /**
  * Resolves authentication for MCP requests.
  * Supports:
  * 1. Waitlyze API keys (wl2_... or wl_...) in Authorization header or x-waitlyze-api-key header
- * 2. OAuth 2.0 Bearer tokens in Authorization header
+ * 2. OAuth 2.0 Bearer tokens in Authorization header (JWT or opaque)
  * 3. Session cookies (for browser-based agent testing)
  */
 
@@ -43,12 +66,39 @@ export async function resolveMcpAuth(request) {
       // Check session cookie as fallback.
       // Only honor cookies when the request originates from a trusted origin,
       // to prevent cross-site form POSTs from riding session cookies (CSRF).
+      const secFetchSite = request.headers.get("sec-fetch-site");
+      if (secFetchSite === "cross-site") {
+        return {
+          authenticated: false,
+          error: "Untrusted origin. Use API key or OAuth authentication for cross-origin requests.",
+        };
+      }
+
       const origin = request.headers.get("origin");
       if (origin && !isTrustedOrigin(origin, request.url)) {
         return {
           authenticated: false,
           error: "Untrusted origin. Use API key or OAuth authentication for cross-origin requests.",
         };
+      }
+
+      const referer = request.headers.get("referer");
+      if (!origin && referer) {
+        try {
+          if (!isTrustedOrigin(new URL(referer).origin, request.url)) {
+            return {
+              authenticated: false,
+              error:
+                "Untrusted origin. Use API key or OAuth authentication for cross-origin requests.",
+            };
+          }
+        } catch {
+          return {
+            authenticated: false,
+            error:
+              "Untrusted origin. Use API key or OAuth authentication for cross-origin requests.",
+          };
+        }
       }
 
       try {
@@ -123,7 +173,43 @@ export async function resolveMcpAuth(request) {
       };
     }
 
-    // 2. Check OAuth 2.0 Access Token in database
+    // 2. Check OAuth 2.0 Access Token
+    // Better Auth issues self-contained signed JWTs for resource-scoped access tokens
+    if (token.split(".").length === 3) {
+      try {
+        const payload = await verifyBearerToken(token, {
+          jwksFetch: getLocalJwks,
+          jwksCacheKey: "mcp-local-jwks",
+        });
+
+        if (payload?.sub) {
+          const user = await prisma.user.findUnique({
+            where: { id: payload.sub },
+            select: { id: true, name: true, email: true },
+          });
+
+          if (user) {
+            const scopes =
+              typeof payload.scope === "string" && payload.scope.trim()
+                ? payload.scope.trim().split(/\s+/)
+                : ["mcp:read", "mcp:write"];
+
+            return {
+              authenticated: true,
+              authType: "oauth",
+              userId: user.id,
+              user,
+              clientId: payload.client_id || payload.azp || null,
+              scopes,
+            };
+          }
+        }
+      } catch (jwtError) {
+        console.warn("JWT access token verification failed:", jwtError?.message || jwtError);
+      }
+    }
+
+    // Fallback: Check OAuth 2.0 opaque access token in database
     const oauthToken = await prisma.oauthAccessToken.findFirst({
       where: {
         token,

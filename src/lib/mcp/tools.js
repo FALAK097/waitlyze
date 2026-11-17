@@ -1,6 +1,18 @@
 import { z } from "zod";
 
+import { getWorkspaceEntitlements, requireCapacity } from "@/lib/billing/plans.mjs";
+import { RESERVED_WAITLIST_SLUGS } from "@/lib/campaigns/create-draft.mjs";
+import { pauseCampaign, publishCampaign } from "@/lib/campaigns/publication.mjs";
+import { enqueueBroadcast } from "@/lib/email/broadcast-queue.mjs";
+import { normalizeSignupEmail } from "@/lib/normalize-email.mjs";
 import prisma from "@/lib/prisma.js";
+import { snapshotTemplate } from "@/lib/templates/catalog.mjs";
+import { isSupportedWebhookEvent, WEBHOOK_EVENT_TYPES } from "@/lib/webhooks/delivery.mjs";
+import {
+  createWebhookSecret,
+  encryptSecret,
+  validateWebhookUrl,
+} from "@/lib/webhooks/security.mjs";
 import { createApiKey, listUserApiKeys, revokeApiKey } from "@/services/api-key/index.js";
 
 import { resolveWorkspaceContext } from "./auth.js";
@@ -462,7 +474,12 @@ export function registerWaitlyzeTools(server, authContext) {
         const wsContext = await resolveWorkspaceContext(authContext, workspaceId);
 
         let slug = publicSlug;
-        if (!slug) {
+        if (slug) {
+          slug = slug.toLowerCase().replace(/[^a-z0-9-]+/g, "");
+          if (RESERVED_WAITLIST_SLUGS.has(slug)) {
+            return errorContent(`Slug '${slug}' is a reserved address. Please choose another.`);
+          }
+        } else {
           slug = name
             .toLowerCase()
             .replace(/[^a-z0-9]+/g, "-")
@@ -470,6 +487,20 @@ export function registerWaitlyzeTools(server, authContext) {
           const randomSuffix = Math.random().toString(36).substring(2, 6);
           slug = `${slug}-${randomSuffix}`;
         }
+
+        // Check workspace entitlements for waitlists capacity
+        const [entitlements, workspaceWaitlists] = await Promise.all([
+          getWorkspaceEntitlements(prisma, wsContext.workspaceId),
+          prisma.waitList.count({ where: { workspaceId: wsContext.workspaceId } }),
+        ]);
+        requireCapacity({
+          entitlements,
+          feature: "waitlists",
+          used: workspaceWaitlists,
+          message: `The ${entitlements.plan === "FREE" ? "Free" : "Pro"} plan includes ${entitlements.waitlists} waitlist${entitlements.waitlists === 1 ? "" : "s"} per workspace. Upgrade or remove a waitlist to create another.`,
+        });
+
+        const snapshot = snapshotTemplate("simple");
 
         const waitlist = await prisma.waitList.create({
           data: {
@@ -479,11 +510,28 @@ export function registerWaitlyzeTools(server, authContext) {
             publicSlug: slug,
             buttonText,
             successMessage,
-            status: publishImmediately ? "PUBLISHED" : "DRAFT",
+            status: "DRAFT",
+            templateSnapshot: snapshot,
             userId: authContext.userId,
             workspaceId: wsContext.workspaceId,
           },
         });
+
+        let finalStatus = "DRAFT";
+        if (publishImmediately) {
+          try {
+            await publishCampaign(
+              prisma,
+              authContext.userId,
+              wsContext.workspaceId,
+              waitlist.id,
+              waitlist.templateRevision,
+            );
+            finalStatus = "PUBLISHED";
+          } catch (pubErr) {
+            console.warn("Immediate publication failed:", pubErr?.message || pubErr);
+          }
+        }
 
         const baseUrl = process.env.BETTER_AUTH_URL || "https://waitlyze.com";
         return jsonContent({
@@ -491,7 +539,7 @@ export function registerWaitlyzeTools(server, authContext) {
           waitlist: {
             id: waitlist.id,
             name: waitlist.name,
-            status: waitlist.status,
+            status: finalStatus,
             publicSlug: waitlist.publicSlug,
             publicUrl: `${baseUrl}/waitlist/${waitlist.publicSlug}`,
             workspaceId: waitlist.workspaceId,
@@ -566,17 +614,21 @@ export function registerWaitlyzeTools(server, authContext) {
     async ({ waitlistId }) => {
       try {
         const waitlist = await getAuthorizedWaitlist(waitlistId, "publishCampaign");
-        const updated = await prisma.waitList.update({
-          where: { id: waitlist.id },
-          data: { status: "PUBLISHED" },
-        });
+        const pubResult = await publishCampaign(
+          prisma,
+          authContext.userId,
+          waitlist.workspaceId,
+          waitlist.id,
+          waitlist.templateRevision,
+        );
 
         const baseUrl = process.env.BETTER_AUTH_URL || "https://waitlyze.com";
         return jsonContent({
           message: "Waitlist published successfully and is now accepting signups.",
-          id: updated.id,
-          status: updated.status,
-          publicUrl: `${baseUrl}/waitlist/${updated.publicSlug}`,
+          id: waitlist.id,
+          revision: pubResult.revision,
+          status: "PUBLISHED",
+          publicUrl: `${baseUrl}/waitlist/${waitlist.publicSlug}`,
         });
       } catch (err) {
         return errorContent(err.message);
@@ -595,15 +647,12 @@ export function registerWaitlyzeTools(server, authContext) {
     async ({ waitlistId }) => {
       try {
         const waitlist = await getAuthorizedWaitlist(waitlistId, "publishCampaign");
-        const updated = await prisma.waitList.update({
-          where: { id: waitlist.id },
-          data: { status: "PAUSED" },
-        });
+        await pauseCampaign(prisma, authContext.userId, waitlist.workspaceId, waitlist.id);
 
         return jsonContent({
           message: "Waitlist paused. New signups are now disabled.",
-          id: updated.id,
-          status: updated.status,
+          id: waitlist.id,
+          status: "PAUSED",
         });
       } catch (err) {
         return errorContent(err.message);
@@ -732,14 +781,14 @@ export function registerWaitlyzeTools(server, authContext) {
           where: {
             waitListId: waitlistId,
             ...(subscriberId ? { id: subscriberId } : {}),
-            ...(email ? { emailNormalized: email.toLowerCase() } : {}),
+            ...(email ? { emailNormalized: normalizeSignupEmail(email) } : {}),
             ...(referralCode ? { referralCode } : {}),
           },
           include: {
             _count: { select: { referrals: true } },
             referredBy: {
               include: {
-                referredBySignUp: {
+                referredBy: {
                   select: { id: true, email: true, referralCode: true },
                 },
               },
@@ -756,7 +805,7 @@ export function registerWaitlyzeTools(server, authContext) {
           position: subscriber.rank,
           points: subscriber.points,
           referralCount: subscriber._count.referrals,
-          referredBy: subscriber.referredBy?.[0]?.referredBySignUp?.email || null,
+          referredBy: subscriber.referredBy?.[0]?.referredBy?.email || null,
           isVerified: !!subscriber.verifiedAt,
           verifiedAt: subscriber.verifiedAt,
           marketingConsentAt: subscriber.marketingConsentAt,
@@ -814,7 +863,7 @@ export function registerWaitlyzeTools(server, authContext) {
     }) => {
       try {
         const waitlist = await getAuthorizedWaitlist(waitlistId, "manageAudience");
-        const normalizedEmail = email.trim().toLowerCase();
+        const normalizedEmail = normalizeSignupEmail(email);
 
         // Check if subscriber already exists
         const existing = await prisma.signUp.findUnique({
@@ -842,8 +891,8 @@ export function registerWaitlyzeTools(server, authContext) {
         // Handle referrer if provided
         let referrerSignUp = null;
         if (referralCode) {
-          referrerSignUp = await prisma.signUp.findUnique({
-            where: { referralCode },
+          referrerSignUp = await prisma.signUp.findFirst({
+            where: { referralCode, waitListId: waitlist.id },
           });
         }
 
@@ -871,10 +920,9 @@ export function registerWaitlyzeTools(server, authContext) {
           if (referrerSignUp) {
             await tx.referral.create({
               data: {
-                waitListId: waitlist.id,
-                referredBySignUpId: referrerSignUp.id,
                 signUpId: created.id,
-                status: autoVerify ? "VERIFIED" : "PENDING",
+                referredById: referrerSignUp.id,
+                reviewStatus: "CLEAR",
               },
             });
             if (autoVerify) {
@@ -923,6 +971,11 @@ export function registerWaitlyzeTools(server, authContext) {
       try {
         await getAuthorizedWaitlist(waitlistId, "manageAudience");
 
+        const existing = await prisma.signUp.findFirst({
+          where: { id: subscriberId, waitListId: waitlistId },
+        });
+        if (!existing) return errorContent("Subscriber not found.");
+
         const data = {};
         if (verified !== undefined) {
           data.verifiedAt = verified ? new Date() : null;
@@ -935,7 +988,7 @@ export function registerWaitlyzeTools(server, authContext) {
         }
 
         const updated = await prisma.signUp.update({
-          where: { id: subscriberId, waitListId: waitlistId },
+          where: { id: subscriberId },
           data,
         });
 
@@ -967,9 +1020,12 @@ export function registerWaitlyzeTools(server, authContext) {
     async ({ waitlistId, subscriberId }) => {
       try {
         await getAuthorizedWaitlist(waitlistId, "manageAudience");
-        await prisma.signUp.delete({
+        const result = await prisma.signUp.deleteMany({
           where: { id: subscriberId, waitListId: waitlistId },
         });
+        if (result.count === 0) {
+          return errorContent("Subscriber not found.");
+        }
         return jsonContent({ message: `Subscriber '${subscriberId}' removed from waitlist.` });
       } catch (err) {
         return errorContent(err.message);
@@ -1017,12 +1073,19 @@ export function registerWaitlyzeTools(server, authContext) {
         });
 
         if (format === "csv") {
-          const escapeCsv = (value) => `"${String(value ?? "").replace(/"/g, '""')}"`;
+          const sanitizeCsvField = (value) => {
+            if (value === null || value === undefined) return '""';
+            let str = String(value);
+            if (/^[=+\-@\t\r]/.test(str)) {
+              str = `'${str}`;
+            }
+            return `"${str.replace(/"/g, '""')}"`;
+          };
           const header = "id,email,referralCode,rank,points,country,isVerified,createdAt\n";
           const rows = subscribers
             .map(
               (s) =>
-                `${escapeCsv(s.id)},${escapeCsv(s.email)},${escapeCsv(s.referralCode)},${s.rank || ""},${s.points},${escapeCsv(s.country)},${!!s.verifiedAt},${escapeCsv(s.createdAt.toISOString())}`,
+                `${sanitizeCsvField(s.id)},${sanitizeCsvField(s.email)},${sanitizeCsvField(s.referralCode)},${s.rank || ""},${s.points},${sanitizeCsvField(s.country)},${!!s.verifiedAt},${sanitizeCsvField(s.createdAt.toISOString())}`,
             )
             .join("\n");
           return jsonContent(header + rows);
@@ -1077,7 +1140,7 @@ export function registerWaitlyzeTools(server, authContext) {
             where: { waitListId: waitlist.id, createdAt: { gte: startDate } },
             select: { createdAt: true },
           }),
-          prisma.referral.count({ where: { waitListId: waitlist.id } }),
+          prisma.referral.count({ where: { signUp: { waitListId: waitlist.id } } }),
           prisma.signUp.findMany({
             where: { waitListId: waitlist.id, referrals: { some: {} } },
             select: {
@@ -1202,10 +1265,11 @@ export function registerWaitlyzeTools(server, authContext) {
         const broadcast = await prisma.marketingBroadcast.create({
           data: {
             waitListId: waitlist.id,
-            userId: authContext.userId,
+            name: subject,
             subject,
-            contentHtml,
-            previewText: previewText || null,
+            previewText: previewText || "",
+            body: contentHtml,
+            renderedHtml: contentHtml,
             status: "DRAFT",
           },
         });
@@ -1236,35 +1300,30 @@ export function registerWaitlyzeTools(server, authContext) {
     },
     async ({ waitlistId, broadcastId }) => {
       try {
-        await getAuthorizedWaitlist(waitlistId, "sendEmail");
+        const waitlist = await getAuthorizedWaitlist(waitlistId, "sendEmail");
 
         const broadcast = await prisma.marketingBroadcast.findFirst({
-          where: { id: broadcastId, waitListId: waitlistId },
+          where: { id: broadcastId, waitListId: waitlist.id },
         });
         if (!broadcast) return errorContent("Broadcast not found.");
 
-        // Count eligible recipients (verified and marketing consented)
-        const eligibleCount = await prisma.signUp.count({
-          where: {
-            waitListId: waitlistId,
-            verifiedAt: { not: null },
-            marketingUnsubscribedAt: null,
+        const count = await prisma.$transaction(
+          async (tx) => {
+            return enqueueBroadcast(tx, {
+              waitListId: waitlist.id,
+              broadcastId: broadcast.id,
+              segment: broadcast.segment || "ALL",
+              exact: false,
+            });
           },
-        });
-
-        const updated = await prisma.marketingBroadcast.update({
-          where: { id: broadcastId },
-          data: {
-            status: "QUEUED",
-            sentAt: new Date(),
-          },
-        });
+          { timeout: 30000 },
+        );
 
         return jsonContent({
           message: "Broadcast successfully queued for dispatch.",
-          broadcastId: updated.id,
-          status: updated.status,
-          targetSubscribers: eligibleCount,
+          broadcastId: broadcast.id,
+          status: "SENDING",
+          targetSubscribers: count,
         });
       } catch (err) {
         return errorContent(err.message);
@@ -1292,14 +1351,25 @@ export function registerWaitlyzeTools(server, authContext) {
           where: { waitListId: waitlistId },
           select: {
             id: true,
+            name: true,
             url: true,
-            events: true,
-            status: true,
+            eventTypes: true,
+            enabled: true,
             createdAt: true,
           },
+          orderBy: { createdAt: "desc" },
         });
 
-        return jsonContent({ webhooks });
+        return jsonContent({
+          webhooks: webhooks.map((w) => ({
+            id: w.id,
+            name: w.name,
+            url: w.url,
+            events: w.eventTypes,
+            status: w.enabled ? "ACTIVE" : "DISABLED",
+            createdAt: w.createdAt,
+          })),
+        });
       } catch (err) {
         return errorContent(err.message);
       }
@@ -1314,32 +1384,62 @@ export function registerWaitlyzeTools(server, authContext) {
       inputSchema: z.object({
         waitlistId: z.string().describe("ID of the waitlist"),
         url: z.string().url().describe("Target HTTPS endpoint URL"),
+        name: z.string().optional().describe("Label for the webhook subscription"),
         events: z
           .array(z.string())
-          .default(["subscriber.created", "subscriber.verified"])
-          .describe("Events to subscribe to"),
+          .default(["signup.created", "signup.verified"])
+          .describe(
+            "Events to subscribe to: signup.created, signup.verified, referral.completed, milestone.reached",
+          ),
       }),
     },
-    async ({ waitlistId, url, events }) => {
+    async ({ waitlistId, url, name, events }) => {
       try {
         const waitlist = await getAuthorizedWaitlist(waitlistId, "manageConnections");
+
+        // Validate webhook URL (prevent SSRF)
+        const validated = validateWebhookUrl(url);
+
+        // Normalize and validate event types
+        const normalizedEvents = (events || []).map((e) => {
+          if (e === "subscriber.created") return "signup.created";
+          if (e === "subscriber.verified") return "signup.verified";
+          return e;
+        });
+
+        const invalidEvents = normalizedEvents.filter((e) => !isSupportedWebhookEvent(e));
+        if (invalidEvents.length > 0) {
+          return errorContent(
+            `Unsupported webhook event(s): ${invalidEvents.join(", ")}. Supported events: ${WEBHOOK_EVENT_TYPES.join(", ")}`,
+          );
+        }
+
+        const secret = createWebhookSecret();
+        const { ciphertext, iv, tag } = encryptSecret(secret);
 
         const webhook = await prisma.webhookSubscription.create({
           data: {
             waitListId: waitlist.id,
-            url,
-            events,
-            status: "ACTIVE",
+            name: name || `Webhook ${validated.url.hostname}`,
+            url: validated.url.toString(),
+            eventTypes: normalizedEvents,
+            enabled: true,
+            secretCiphertext: ciphertext,
+            secretIv: iv,
+            secretTag: tag,
           },
         });
 
         return jsonContent({
-          message: "Webhook created successfully",
+          message:
+            "Webhook created successfully. Save the signing secret now, as it cannot be displayed again.",
           webhook: {
             id: webhook.id,
+            name: webhook.name,
             url: webhook.url,
-            events: webhook.events,
-            status: webhook.status,
+            events: webhook.eventTypes,
+            status: webhook.enabled ? "ACTIVE" : "DISABLED",
+            secret,
             createdAt: webhook.createdAt,
           },
         });
@@ -1361,9 +1461,12 @@ export function registerWaitlyzeTools(server, authContext) {
     async ({ waitlistId, webhookId }) => {
       try {
         await getAuthorizedWaitlist(waitlistId, "manageConnections");
-        await prisma.webhookSubscription.delete({
+        const result = await prisma.webhookSubscription.deleteMany({
           where: { id: webhookId, waitListId: waitlistId },
         });
+        if (result.count === 0) {
+          return errorContent("Webhook not found.");
+        }
         return jsonContent({ message: `Webhook '${webhookId}' deleted.` });
       } catch (err) {
         return errorContent(err.message);

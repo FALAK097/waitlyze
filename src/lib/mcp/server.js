@@ -27,6 +27,27 @@ export function createWaitlyzeMcpServer(authContext) {
     const posthogClient = getServerPostHog();
     instrument(server, posthogClient, {
       serverBuild: "waitlyze-mcp@0.10.0",
+      beforeSend: (event) => {
+        if (!event) return event;
+        // Redact API keys, tokens, or authorization values
+        const sanitizeValue = (val) => {
+          if (typeof val !== "string") return val;
+          return val
+            .replace(/wl2_[a-f0-9]{32}_[A-Za-z0-9_-]{43}/gi, "wl2_[REDACTED]")
+            .replace(/whsec_[A-Za-z0-9_-]+/gi, "whsec_[REDACTED]")
+            .replace(/Bearer\s+[A-Za-z0-9_.-]+/gi, "Bearer [REDACTED]");
+        };
+
+        if (event.properties && typeof event.properties === "object") {
+          for (const key of Object.keys(event.properties)) {
+            event.properties[key] = sanitizeValue(event.properties[key]);
+          }
+        }
+        if (event.error) {
+          event.error = sanitizeValue(String(event.error));
+        }
+        return event;
+      },
     });
   } catch (error) {
     console.warn("Failed to instrument MCP server with PostHog:", error?.message || error);

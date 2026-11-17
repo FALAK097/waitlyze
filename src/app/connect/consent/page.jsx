@@ -55,11 +55,7 @@ function ConnectConsentContent() {
           </p>
         </div>
 
-        {error && (
-          <div className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-600 dark:bg-red-950/30 dark:text-red-400">
-            {error}
-          </div>
-        )}
+        {error && <div className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-600">{error}</div>}
 
         <div className="border-product-border/60 bg-product-subtle/40 mb-6 space-y-3 rounded-xl border p-4 text-sm">
           <div className="border-product-border/40 flex justify-between border-b pb-2">
