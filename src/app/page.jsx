@@ -168,56 +168,24 @@ function TextLink({ href, children }) {
   );
 }
 
-const ASSET_BASE = process.env.NEXT_PUBLIC_R2_PUBLIC_URL || "https://assets.waitlyze.com";
+// Published marketing media is independent of user-upload storage configuration.
+const ASSET_BASE = "https://assets.waitlyze.com";
 const ASSET_VER = "v=4";
+const LAUNCH_ASSET_BASE = `${ASSET_BASE}/launch`;
 
-/**
- * Renders a framed product screenshot or walkthrough video.
- */
-function ProductFrame({ src, alt, tone = "mint", hero = false, videoSrc, poster }) {
+/** Renders a framed product screenshot. */
+function ProductFrame({ src, alt, tone = "mint", hero = false }) {
   return (
-    <div
-      className={`wl-product-frame wl-frame-${tone} ${hero ? "wl-product-frame-hero" : ""} ${
-        videoSrc ? "wl-product-frame-video" : ""
-      }`}
-    >
+    <div className={`wl-product-frame wl-frame-${tone} ${hero ? "wl-product-frame-hero" : ""}`}>
       <div className="wl-product-window">
-        {videoSrc ? (
-          <video
-            autoPlay
-            loop
-            muted
-            controls
-            playsInline
-            preload={hero ? "metadata" : "none"}
-            poster={poster}
-            aria-label={alt}
-            width={1120}
-            height={630}
-          >
-            <source src={videoSrc} type="video/webm" />
-            {src ? (
-              <Image
-                src={src}
-                alt={alt}
-                width={1120}
-                height={875}
-                sizes={
-                  hero ? "(max-width: 1152px) 100vw, 1088px" : "(max-width: 720px) 100vw, 540px"
-                }
-              />
-            ) : null}
-          </video>
-        ) : (
-          <Image
-            src={src}
-            alt={alt}
-            width={1120}
-            height={875}
-            sizes={hero ? "(max-width: 1152px) 100vw, 1088px" : "(max-width: 720px) 100vw, 540px"}
-            priority={hero}
-          />
-        )}
+        <Image
+          src={src}
+          alt={alt}
+          width={1120}
+          height={875}
+          sizes={hero ? "(max-width: 1152px) 100vw, 1088px" : "(max-width: 720px) 100vw, 540px"}
+          priority={hero}
+        />
       </div>
     </div>
   );
@@ -346,12 +314,31 @@ export default async function LandingPage() {
             </div>
             <p className="wl-assurance">Free to get started. No credit card required.</p>
           </div>
-          <ProductFrame
-            hero
-            videoSrc={`${ASSET_BASE}/showcase-demo-4k.webm?${ASSET_VER}`}
-            alt="Waitlyze product walkthrough video demonstrating analytics, visual page builder, referral settings, subscriber list, and email broadcasts"
-            tone="mint"
-          />
+          <figure className="wl-launch-film">
+            <video
+              controls
+              playsInline
+              preload="none"
+              poster={`${LAUNCH_ASSET_BASE}/waitlyze-launch-41e3af827abd.webp`}
+              width={1920}
+              height={1080}
+              aria-label="Waitlyze launch film"
+            >
+              <source
+                src={`${LAUNCH_ASSET_BASE}/waitlyze-launch-5a11efd6d418.mp4`}
+                type="video/mp4"
+              />
+              <track
+                kind="captions"
+                src="/videos/waitlyze-launch.en.vtt"
+                srcLang="en"
+                label="English"
+              />
+              <a href={`${LAUNCH_ASSET_BASE}/waitlyze-launch-5a11efd6d418.mp4`}>
+                Watch the Waitlyze launch film
+              </a>
+            </video>
+          </figure>
         </section>
 
         <section id="features" className="wl-section wl-features" aria-labelledby="features-title">
