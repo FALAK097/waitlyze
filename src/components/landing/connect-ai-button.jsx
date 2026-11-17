@@ -173,7 +173,7 @@ export function ConnectAiButton({ className = "" }) {
       </button>
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-xl border-neutral-200 bg-white p-6 text-neutral-900">
+        <DialogContent className="w-full max-w-[calc(100vw-2rem)] overflow-hidden rounded-2xl border-neutral-200 bg-white p-5 text-neutral-900 shadow-xl sm:max-w-xl sm:p-6">
           <DialogHeader>
             <div className="flex items-center gap-2">
               <span className="flex items-center gap-1.5 text-neutral-800">
@@ -208,48 +208,51 @@ export function ConnectAiButton({ className = "" }) {
                   aria-hidden="true"
                 />
               </span>
-              <DialogTitle className="text-lg font-semibold tracking-tight text-neutral-900">
-                Connect your AI Agent to Waitlyze
+              <DialogTitle className="text-base font-semibold tracking-tight text-neutral-900 sm:text-lg">
+                Connect your AI agent to Waitlyze
               </DialogTitle>
             </div>
-            <DialogDescription className="text-xs text-neutral-500">
-              Control your entire waitlist platform through Cursor, Claude Code, Codex, VS Code, or
-              OpenCode via hosted MCP.
+            <DialogDescription className="mt-1 text-xs text-neutral-500">
+              Control your entire waitlist platform through Claude Code, Cursor, Codex, VS Code, or
+              OpenCode via MCP.
             </DialogDescription>
           </DialogHeader>
 
-          <div className="mt-4">
-            <div className="flex flex-wrap gap-1.5 border-b border-neutral-200 pb-2">
-              {CLIENT_CONFIGS.map((client) => (
-                <button
-                  key={client.id}
-                  type="button"
-                  onClick={() => setSelectedClient(client.id)}
-                  className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors ${
-                    selectedClient === client.id
-                      ? "bg-neutral-900 text-white"
-                      : "text-neutral-600 hover:bg-neutral-100"
-                  }`}
-                >
-                  <img
-                    src={client.iconSrc}
-                    alt=""
-                    className="h-3.5 w-3.5 shrink-0 object-contain"
-                    aria-hidden="true"
-                  />
-                  <span>{client.name}</span>
-                </button>
-              ))}
+          <div className="mt-4 w-full min-w-0">
+            <div className="flex flex-wrap items-center gap-1.5 border-b border-neutral-200 pb-2.5">
+              {CLIENT_CONFIGS.map((client) => {
+                const isActive = selectedClient === client.id;
+                return (
+                  <button
+                    key={client.id}
+                    type="button"
+                    onClick={() => setSelectedClient(client.id)}
+                    className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-medium transition-all ${
+                      isActive
+                        ? "border-neutral-900 bg-neutral-100 font-semibold text-neutral-950 shadow-xs ring-1 ring-neutral-900/10"
+                        : "border-transparent bg-neutral-50/70 text-neutral-600 hover:border-neutral-200 hover:bg-neutral-100 hover:text-neutral-900"
+                    }`}
+                  >
+                    <img
+                      src={client.iconSrc}
+                      alt=""
+                      className="h-3.5 w-3.5 shrink-0 object-contain"
+                      aria-hidden="true"
+                    />
+                    <span>{client.name}</span>
+                  </button>
+                );
+              })}
             </div>
 
-            <div className="relative mt-3">
-              <pre className="max-h-60 overflow-x-auto rounded-xl border border-neutral-200 bg-neutral-950 p-3.5 font-mono text-xs text-neutral-100">
+            <div className="relative mt-3 w-full min-w-0 overflow-hidden rounded-xl border border-neutral-800 bg-neutral-950">
+              <pre className="max-h-60 w-full min-w-0 overflow-x-auto p-3.5 pr-20 font-mono text-xs text-neutral-100">
                 <code>{copyText}</code>
               </pre>
               <button
                 type="button"
                 onClick={handleCopy}
-                className="absolute top-2.5 right-2.5 inline-flex items-center gap-1 rounded-md bg-neutral-800 px-2 py-1 text-[11px] font-medium text-neutral-200 hover:bg-neutral-700 hover:text-white"
+                className="absolute top-2.5 right-2.5 inline-flex items-center gap-1 rounded-md bg-neutral-800/90 px-2 py-1 text-[11px] font-medium text-neutral-200 transition-colors hover:bg-neutral-700 hover:text-white"
               >
                 <HugeiconsIcon
                   icon={copied ? CheckmarkBadge01Icon : Copy01Icon}
@@ -260,17 +263,20 @@ export function ConnectAiButton({ className = "" }) {
               </button>
             </div>
 
-            <div className="mt-4 flex items-center justify-between pt-2 text-xs">
+            <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-neutral-100 pt-2 text-xs">
               <span className="text-neutral-500">
-                Hosted URL:{" "}
-                <code className="font-mono text-neutral-800">https://waitlyze.com/mcp</code>
+                MCP URL:{" "}
+                <code className="font-mono font-medium text-neutral-900 select-all">
+                  https://waitlyze.com/mcp
+                </code>
               </span>
               <Link
                 href="/docs/mcp"
                 onClick={() => setOpen(false)}
-                className="font-medium text-blue-600 hover:underline"
+                className="inline-flex items-center gap-1 font-medium text-neutral-900 hover:underline"
               >
-                View full MCP docs →
+                <span>View full MCP docs</span>
+                <span aria-hidden="true">→</span>
               </Link>
             </div>
           </div>

@@ -129,7 +129,7 @@ export async function GET(request) {
         {
           name: "waitlyze-mcp",
           version: "0.10.0",
-          description: "First-class Hosted Model Context Protocol (MCP) server for Waitlyze",
+          description: "First-class Model Context Protocol (MCP) server for Waitlyze",
           endpoint: `${baseUrl}/mcp`,
           protocol: "Streamable HTTP (2026-01-26)",
           documentation: `${baseUrl}/docs/mcp`,

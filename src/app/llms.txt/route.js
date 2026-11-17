@@ -20,7 +20,7 @@ Waitlyze is a waitlist builder for founders and marketing teams. Create a brande
 
 ## AI Agents & Developers
 
-- [Hosted MCP Server](${SITE_URL}/mcp): Streamable HTTP Model Context Protocol (MCP) server for Claude Code, Cursor, Codex, VS Code, Gemini, and OpenCode
+- [MCP Server](${SITE_URL}/mcp): Streamable HTTP Model Context Protocol (MCP) server for Claude Code, Cursor, Codex, VS Code, Gemini, and OpenCode
 - [MCP Documentation](${SITE_URL}/docs/mcp): Complete agent connection instructions, tool references, and schemas
 - [AI Agent Instructions](${SITE_URL}/agent-instructions.md): How to connect Cursor, Claude Code, and AI assistants to Waitlyze
 - [Full LLMs Context](${SITE_URL}/llms-full.txt): Complete product knowledge base in one file

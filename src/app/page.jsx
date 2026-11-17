@@ -234,7 +234,7 @@ const featureCards = [
   },
   {
     title: "Verified subscriber CRM & fraud review",
-    copy: "Filter signups by verification status, acquisition source, geography and referral points—with one-click CSV import and export.",
+    copy: "Filter signups by verification status, acquisition source, geography and referral points, with one-click CSV import and export.",
     image: `${ASSET_BASE}/showcase-subscribers-4k.png?${ASSET_VER}`,
     alt: "Waitlyze signups manager displaying verified subscribers, country flags, acquisition sources, devices, positions, and referral points",
     tone: "blue",

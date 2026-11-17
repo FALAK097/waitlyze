@@ -125,8 +125,8 @@ Events payload format:
 
 ## 4. How to Connect Waitlyze to Cursor, Claude, or Codex
 
-### Option 1: Hosted Model Context Protocol (MCP) Server (Recommended)
-Waitlyze provides a first-class, hosted Model Context Protocol (MCP) server at \`${SITE_URL}/mcp\` using Streamable HTTP. It enables agents to directly query waitlists, create signups, evaluate viral analytics, and send broadcasts.
+### Option 1: Model Context Protocol (MCP) Server (Recommended)
+Waitlyze provides a first-class Model Context Protocol (MCP) server at \`${SITE_URL}/mcp\` using Streamable HTTP. It enables agents to directly query waitlists, create signups, evaluate viral analytics, and send broadcasts.
 
 **In Claude Code:**
 \`\`\`bash
@@ -172,7 +172,7 @@ claude "Read ${SITE_URL}/agent-instructions.md and integrate the Waitlyze signup
 
 ## 5. Machine-Readable Discovery Endpoints
 
-- \`/mcp\` - Hosted Streamable HTTP Model Context Protocol (MCP) server.
+- \`/mcp\` - Streamable HTTP Model Context Protocol (MCP) server.
 - \`/.well-known/oauth-protected-resource\` - RFC 9728 OAuth 2.0 Protected Resource Metadata.
 - \`/.well-known/oauth-authorization-server\` - RFC 8414 OAuth 2.0 Authorization Server Metadata.
 - \`/llms.txt\` - Curated index of the entire product for language models.
