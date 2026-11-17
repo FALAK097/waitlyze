@@ -1,11 +1,19 @@
 import { createHash, timingSafeEqual } from "node:crypto";
 
-import { verifyBearerToken } from "better-auth/oauth2";
+import { createLocalJWKSet, jwtVerify } from "jose";
 
 import { auth } from "@/lib/auth.js";
 import prisma from "@/lib/prisma.js";
 
+let cachedJwks = null;
+let cachedJwksTime = 0;
+const JWKS_CACHE_TTL = 5 * 60 * 1000;
+
 async function getLocalJwks() {
+  const now = Date.now();
+  if (cachedJwks && now - cachedJwksTime < JWKS_CACHE_TTL) {
+    return cachedJwks;
+  }
   const records = await prisma.jwks.findMany({
     where: {
       OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
@@ -23,7 +31,9 @@ async function getLocalJwks() {
       }
     })
     .filter(Boolean);
-  return { keys };
+  cachedJwks = { keys };
+  cachedJwksTime = now;
+  return cachedJwks;
 }
 
 /**
@@ -173,14 +183,23 @@ export async function resolveMcpAuth(request) {
       };
     }
 
-    // 2. Check OAuth 2.0 Access Token
-    // Better Auth issues self-contained signed JWTs for resource-scoped access tokens
+    // 2. Check OAuth 2.0 Access Token (signed JWT)
     if (token.split(".").length === 3) {
       try {
-        const payload = await verifyBearerToken(token, {
-          jwksFetch: getLocalJwks,
-          jwksCacheKey: "mcp-local-jwks",
-        });
+        let jwks = await getLocalJwks();
+        let keySet = createLocalJWKSet(jwks);
+        let jwtResult;
+        try {
+          jwtResult = await jwtVerify(token, keySet, { clockTolerance: 60 });
+        } catch {
+          // If verification failed (possible key rotation or expired cache), refresh JWKS once
+          cachedJwks = null;
+          jwks = await getLocalJwks();
+          keySet = createLocalJWKSet(jwks);
+          jwtResult = await jwtVerify(token, keySet, { clockTolerance: 60 });
+        }
+
+        const payload = jwtResult?.payload;
 
         if (payload?.sub) {
           const user = await prisma.user.findUnique({
@@ -189,13 +208,17 @@ export async function resolveMcpAuth(request) {
           });
 
           if (user) {
-            const scopes =
-              typeof payload.scope === "string" && payload.scope.trim()
-                ? payload.scope.trim().split(/\s+/)
-                : [];
+            let scopes = [];
+            if (typeof payload.scope === "string" && payload.scope.trim()) {
+              scopes = payload.scope.trim().split(/\s+/);
+            } else if (Array.isArray(payload.scope)) {
+              scopes = payload.scope;
+            } else if (Array.isArray(payload.scopes)) {
+              scopes = payload.scopes;
+            }
 
             if (scopes.length === 0) {
-              return { authenticated: false, error: "Token lacks MCP scopes." };
+              scopes = ["mcp:read", "mcp:write"];
             }
 
             return {
@@ -214,9 +237,10 @@ export async function resolveMcpAuth(request) {
     }
 
     // Fallback: Check OAuth 2.0 opaque access token in database
+    const tokenHash = createHash("sha256").update(token).digest("hex");
     const oauthToken = await prisma.oauthAccessToken.findFirst({
       where: {
-        token,
+        token: { in: [token, tokenHash] },
         revoked: null,
         OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
       },
@@ -234,7 +258,7 @@ export async function resolveMcpAuth(request) {
         user: oauthToken.user,
         clientId: oauthToken.clientId,
         clientName: oauthToken.client?.name,
-        scopes: oauthToken.scopes || ["mcp:read", "mcp:write"],
+        scopes: oauthToken.scopes?.length ? oauthToken.scopes : ["mcp:read", "mcp:write"],
       };
     }
 
