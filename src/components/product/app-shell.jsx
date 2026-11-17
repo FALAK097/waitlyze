@@ -7,6 +7,7 @@ import {
   BubbleChatIcon,
   GemIcon,
   Logout01Icon,
+  Presentation01Icon,
   Tick01Icon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
@@ -17,6 +18,7 @@ import { useActionState, useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { createWorkspace, selectWorkspace } from "@/app/actions/settings";
+import { useOnboarding } from "@/components/onboarding/onboarding-provider";
 import { ChangelogIndicator } from "@/components/product/changelog-indicator";
 import { UpgradeButton } from "@/components/shared/upgrade-button";
 import { Button } from "@/components/ui/button";
@@ -163,6 +165,7 @@ function WorkspaceSwitcher({ workspaces, selected, plan }) {
 /** Account dropdown with sign-out and feedback actions. */
 function AccountMenu({ user, avatar }) {
   const router = useRouter();
+  const { openTour } = useOnboarding();
   const [pending, setPending] = useState(false);
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   /** Signs out the current user and returns them to the public home page. */
@@ -220,6 +223,11 @@ function AccountMenu({ user, avatar }) {
               </span>
             </div>
           </div>
+          <DropdownMenuItem className="cursor-pointer" onClick={openTour}>
+            <HugeiconsIcon icon={Presentation01Icon} aria-hidden="true" />
+            Product tour
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
           <DropdownMenuItem
             variant="destructive"
             className="cursor-pointer"

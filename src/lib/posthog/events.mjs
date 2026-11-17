@@ -18,7 +18,12 @@ export const POSTHOG_EVENTS = Object.freeze({
   WORKSPACE_MEMBER_JOINED: "workspace:member_joined",
   WORKSPACE_MEMBER_REMOVED: "workspace:member_removed",
 
-  // C. Waitlist
+  // C. Onboarding
+  ONBOARDING_TOUR_STARTED: "onboarding:tour_started",
+  ONBOARDING_TOUR_STEP_VIEWED: "onboarding:tour_step_viewed",
+  ONBOARDING_TOUR_FINISHED: "onboarding:tour_finished",
+
+  // D. Waitlist
   WAITLIST_CREATED: "waitlist:created",
   WAITLIST_UPDATED: "waitlist:updated",
   WAITLIST_PUBLISHED: "waitlist:published",
@@ -27,7 +32,7 @@ export const POSTHOG_EVENTS = Object.freeze({
   WAITLIST_SIGNUP_RECEIVED: "waitlist:signup_received",
   WAITLIST_MILESTONE_REACHED: "waitlist:milestone_reached",
 
-  // D. Referral
+  // E. Referral
   REFERRAL_CAMPAIGN_CREATED: "referral:campaign_created",
   REFERRAL_CAMPAIGN_UPDATED: "referral:campaign_updated",
   REFERRAL_LINK_SHARED: "referral:link_shared",
@@ -35,7 +40,7 @@ export const POSTHOG_EVENTS = Object.freeze({
   REFERRAL_REWARD_UNLOCKED: "referral:reward_unlocked",
   REFERRAL_REWARD_CLAIMED: "referral:reward_claimed",
 
-  // E. Feature Engagement
+  // F. Feature Engagement
   ANALYTICS_REPORT_VIEWED: "analytics:report_viewed",
   INTEGRATION_CONNECTED: "integration:connected",
   INTEGRATION_DISCONNECTED: "integration:disconnected",
@@ -47,7 +52,7 @@ export const POSTHOG_EVENTS = Object.freeze({
   EMAIL_DELIVERY_FAILED: "email:delivery_failed",
   API_REQUEST_FAILED: "api:request_failed",
 
-  // F. Billing
+  // G. Billing
   BILLING_UPGRADE_CLICKED: "billing:upgrade_clicked",
   BILLING_CHECKOUT_STARTED: "billing:checkout_started",
   BILLING_SUBSCRIPTION_CREATED: "billing:subscription_created",
