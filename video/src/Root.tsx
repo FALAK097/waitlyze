@@ -20,14 +20,14 @@ const fontFaceCss = `
 }
 @font-face {
   font-family: 'Manrope Local';
-  src: url('${staticFile("fonts/Manrope-800.woff2")}') format('woff2');
+  src: url('${staticFile("fonts/Manrope-700.woff2")}') format('woff2');
   font-weight: 800;
   font-style: normal;
   font-display: block;
 }
 @font-face {
   font-family: 'Hanken Local';
-  src: url('${staticFile("fonts/Hanken-400.woff2")}') format('woff2');
+  src: url('${staticFile("fonts/Hanken-500.woff2")}') format('woff2');
   font-weight: 400;
   font-style: normal;
   font-display: block;
@@ -41,14 +41,14 @@ const fontFaceCss = `
 }
 @font-face {
   font-family: 'Hanken Local';
-  src: url('${staticFile("fonts/Hanken-600.woff2")}') format('woff2');
+  src: url('${staticFile("fonts/Hanken-500.woff2")}') format('woff2');
   font-weight: 600;
   font-style: normal;
   font-display: block;
 }
 @font-face {
   font-family: 'Hanken Local';
-  src: url('${staticFile("fonts/Hanken-700.woff2")}') format('woff2');
+  src: url('${staticFile("fonts/Hanken-500.woff2")}') format('woff2');
   font-weight: 700;
   font-style: normal;
   font-display: block;

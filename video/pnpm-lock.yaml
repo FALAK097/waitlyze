@@ -11,9 +11,6 @@ importers:
       '@remotion/cli':
         specifier: 4.0.280
         version: 4.0.280(postcss@8.5.33)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
-      '@remotion/google-fonts':
-        specifier: 4.0.280
-        version: 4.0.280(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
       react:
         specifier: ^19.0.0
         version: 19.3.1
@@ -27,9 +24,6 @@ importers:
       '@types/react':
         specifier: ^19.0.0
         version: 19.3.0
-      playwright-core:
-        specifier: ^1.65.1
-        version: 1.65.1
       typescript:
         specifier: ^5.7.0
         version: 5.9.3
@@ -270,9 +264,6 @@ packages:
     resolution: {integrity: sha512-MZDyO4zXlzuYEvWUMvymERkc37FRnthNlbgGih8olAzIL0ARXaxNRpkkackDEh5WoPsocdPH/puU1AtHXGekeg==}
     cpu: [x64]
     os: [win32]
-
-  '@remotion/google-fonts@4.0.280':
-    resolution: {integrity: sha512-TyvjQtDk3qf1asJ0zE/oQVagI78BpVo1sHgIMMYzbPu+HJp1Bf/H4QiJIUKpo/735KsP+t/dRMG4Z1uYNZU7rg==}
 
   '@remotion/media-parser@4.0.280':
     resolution: {integrity: sha512-lNvAFCDUIHW3B/IaGqSp92UPdYhj6eGVO2R4LIgyiWMqbVP8e8uLUvSYqX4a/kboa+DRwfOtril7Eiwz1sqNHw==}
@@ -693,11 +684,6 @@ packages:
 
   picocolors@1.1.1:
     resolution: {integrity: sha512-xceH2snhtb5M9liqDsmEw56le376mTZkEX/jEb/RxNFyegNul7eNslCXP9FDj/Lcu0X8KEyMceP2ntpaHrDEVA==}
-
-  playwright-core@1.65.1:
-    resolution: {integrity: sha512-hqPpz7blSMPxWVdoeE1yiBSzXsKiVOd2k+kjCvmUywD2GPO2Dd9HfcWnq9NN0GHbNZDFgZ9JfBFr+X5/BLo0qw==}
-    engines: {node: '>=20'}
-    hasBin: true
 
   postcss-modules-extract-imports@3.1.0:
     resolution: {integrity: sha512-k3kNe0aNFQDAZGbin48pL2VNidTF0w4/eASDsxlyspobzU3wZQLOGj7L9gfRe0Jo9/4uud09DsjFNH7winGv8Q==}
@@ -1162,13 +1148,6 @@ snapshots:
 
   '@remotion/compositor-win32-x64-msvc@4.0.280':
     optional: true
-
-  '@remotion/google-fonts@4.0.280(react-dom@19.3.1(react@19.3.1))(react@19.3.1)':
-    dependencies:
-      remotion: 4.0.280(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
-    transitivePeerDependencies:
-      - react
-      - react-dom
 
   '@remotion/media-parser@4.0.280': {}
 
@@ -1667,8 +1646,6 @@ snapshots:
   pend@1.2.0: {}
 
   picocolors@1.1.1: {}
-
-  playwright-core@1.65.1: {}
 
   postcss-modules-extract-imports@3.1.0(postcss@8.5.33):
     dependencies:

@@ -70,3 +70,6 @@ next-env.d.ts
 # Temporary route materialized only during isolated browser builds
 /src/app/design-system/
 /.neon
+
+# Rendered launch media is published to R2, not source control.
+/video/out/
