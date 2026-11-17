@@ -1,0 +1,228 @@
+---
+title: Model Context Protocol (MCP)
+description: Connect AI coding assistants and agents directly to your Waitlyze waitlists, audience data, and analytics via Streamable HTTP MCP.
+---
+
+Waitlyze provides a first-class Model Context Protocol (MCP) server. You can manage your waitlist lifecycle, create campaigns, inspect signups, evaluate K-factor viral analytics, dispatch broadcasts, and manage webhooks directly from inside Claude Code, Cursor, Codex, VS Code, Gemini, or OpenCode without opening the web dashboard.
+
+---
+
+## Quick start
+
+The MCP server runs at:
+```
+https://waitlyze.com/mcp
+```
+
+### Authentication methods
+
+You can authenticate AI agents in two ways:
+
+- **Scoped API key**: generate an API key in **Settings → API keys** (prefixed with `wl2_`). Pass it as an HTTP Bearer header (`Authorization: Bearer wl2_YOUR_KEY`) or in `x-waitlyze-api-key`.
+- **OAuth 2.0**: point your client to `https://waitlyze.com/mcp`. The agent discovers the authorization server and initiates RFC 9728 authentication.
+
+---
+
+## Client setup
+
+<Steps>
+<Step>
+### Set up Claude
+Connect your Claude account to Waitlyze through MCP:
+
+1. Open **Customize → Connectors** in Claude.
+2. Select **Add custom connector**.
+3. Enter `https://waitlyze.com/mcp` as the connector URL.
+4. Complete the Waitlyze sign-in and approve the requested permissions.
+
+Once connected, Waitlyze tools are available directly in your Claude conversations.
+</Step>
+
+<Step>
+### Set up ChatGPT
+Connect your ChatGPT account to Waitlyze:
+
+1. Open **Settings → Apps → Advanced settings** and enable **Developer mode**.
+2. Go to **Settings → Connectors** and select **Create**.
+3. Enter `Waitlyze` as the name and `https://waitlyze.com/mcp` as the MCP server URL.
+4. Choose **OAuth** as the authentication method, then complete sign-in.
+</Step>
+
+<Step>
+### Set up Claude Code
+Add Waitlyze to Claude Code with one command:
+
+```bash
+claude mcp add --transport http waitlyze https://waitlyze.com/mcp --header "Authorization: Bearer wl2_YOUR_API_KEY"
+```
+
+If connecting via OAuth:
+```bash
+claude mcp add --transport http waitlyze https://waitlyze.com/mcp
+```
+</Step>
+
+<Step>
+### Set up Cursor
+In your project root, create or edit `.cursor/mcp.json`:
+
+```json
+{
+  "mcpServers": {
+    "waitlyze": {
+      "url": "https://waitlyze.com/mcp",
+      "headers": {
+        "Authorization": "Bearer wl2_YOUR_API_KEY"
+      }
+    }
+  }
+}
+```
+</Step>
+
+<Step>
+### Set up Codex
+Add Waitlyze to your agent configuration:
+
+```json
+{
+  "mcpServers": {
+    "waitlyze": {
+      "url": "https://waitlyze.com/mcp",
+      "headers": {
+        "Authorization": "Bearer wl2_YOUR_API_KEY"
+      }
+    }
+  }
+}
+```
+</Step>
+
+<Step>
+### Set up VS Code
+In your VS Code settings or MCP configuration:
+
+```json
+{
+  "mcp.servers": {
+    "waitlyze": {
+      "type": "http",
+      "url": "https://waitlyze.com/mcp",
+      "headers": {
+        "Authorization": "Bearer wl2_YOUR_API_KEY"
+      }
+    }
+  }
+}
+```
+</Step>
+
+<Step>
+### Set up OpenCode
+In your `opencode.json` configuration:
+
+```json
+{
+  "mcpServers": {
+    "waitlyze": {
+      "url": "https://waitlyze.com/mcp",
+      "headers": {
+        "Authorization": "Bearer wl2_YOUR_API_KEY"
+      }
+    }
+  }
+}
+```
+</Step>
+
+<Step>
+### Set up Gemini
+Configure the server endpoint in your agent tool manifests:
+
+```json
+{
+  "name": "waitlyze",
+  "url": "https://waitlyze.com/mcp",
+  "transport": "streamable_http"
+}
+```
+</Step>
+</Steps>
+
+---
+
+## Tool reference
+
+The Waitlyze MCP server exposes 26 tools organized by domain:
+
+### Workspace
+| Tool | Description |
+| :--- | :--- |
+| `waitlyze_get_workspace` | Get workspace details, active plan, subscriber totals, and limits. |
+| `waitlyze_list_workspaces` | List all workspaces accessible by the current account. |
+
+### Waitlists
+| Tool | Description |
+| :--- | :--- |
+| `waitlyze_list_waitlists` | List waitlists with status filters and counts. |
+| `waitlyze_get_waitlist` | Retrieve waitlist settings, public URL, design config, and conversion stats. |
+| `waitlyze_create_waitlist` | Create a new waitlist campaign in the active workspace. |
+| `waitlyze_update_waitlist` | Update headline, description, website URL, or fraud security mode. |
+| `waitlyze_publish_waitlist` | Publish a waitlist and open it for public signups. |
+| `waitlyze_pause_waitlist` | Temporarily pause new signups on a published waitlist. |
+| `waitlyze_delete_waitlist` | Archive or delete a waitlist campaign. |
+
+### Audience and subscribers
+| Tool | Description |
+| :--- | :--- |
+| `waitlyze_list_subscribers` | Search, filter, and paginate through subscribers with sorting by position or points. |
+| `waitlyze_get_subscriber` | Get subscriber profile, referral count, position, and attribution. |
+| `waitlyze_add_subscriber` | Add a subscriber directly, with support for referral tracking and auto-verification. |
+| `waitlyze_update_subscriber` | Update points balance, custom field responses, or verification status. |
+| `waitlyze_remove_subscriber` | Delete a subscriber from a waitlist. |
+| `waitlyze_export_subscribers` | Export subscribers in JSON or CSV format. |
+
+### Analytics and viral growth
+| Tool | Description |
+| :--- | :--- |
+| `waitlyze_get_analytics` | Comprehensive funnels, page views, signups, viral K-factor, and referral leaderboard. |
+
+### Broadcasts
+| Tool | Description |
+| :--- | :--- |
+| `waitlyze_list_broadcasts` | List drafts and sent broadcasts with recipient statistics. |
+| `waitlyze_create_broadcast` | Create a new draft email broadcast for waitlist subscribers. |
+| `waitlyze_send_broadcast` | Queue a broadcast for dispatch to verified opted-in subscribers. |
+
+### Webhooks
+| Tool | Description |
+| :--- | :--- |
+| `waitlyze_list_webhooks` | List registered webhook subscriptions. |
+| `waitlyze_create_webhook` | Subscribe an HTTPS endpoint to signup and verification events. |
+| `waitlyze_delete_webhook` | Remove a webhook endpoint. |
+
+### API keys
+| Tool | Description |
+| :--- | :--- |
+| `waitlyze_list_api_keys` | List active API keys for a waitlist. |
+| `waitlyze_create_api_key` | Generate a new scoped secret key. |
+| `waitlyze_revoke_api_key` | Immediately revoke an API key. |
+
+### Capabilities
+| Tool | Description |
+| :--- | :--- |
+| `waitlyze_explain_capabilities` | Inspect connected auth state, active workspace, and available platform features. |
+
+---
+
+## Example prompts for agents
+
+Once connected, you can give your AI natural language instructions:
+
+```text
+Create a new waitlist called "Developer Toolkit" with the slug "devtools" and publish it.
+Calculate the viral K-factor and total signups for the past 30 days.
+List the top 5 referrers on the waitlist along with referral counts.
+Draft a broadcast announcing beta access to the top 50 verified subscribers.
+Add a webhook to notify https://example.com/api/webhooks when someone signs up.
+```

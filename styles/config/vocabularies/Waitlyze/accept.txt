@@ -155,3 +155,11 @@ SCIM
 (?i)utm
 (?i)utms
 CSV
+Claude
+Claude Code
+VS Code
+Cursor
+Codex
+OpenCode
+Gemini
+(?i)opencode

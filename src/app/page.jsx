@@ -16,6 +16,7 @@ import Link from "next/link";
 
 import { PostCard } from "@/components/blog/post-card";
 import AskAi from "@/components/landing/ask-ai";
+import { ConnectAiButton } from "@/components/landing/connect-ai-button";
 import FAQAccordion from "@/components/landing/faq-accordion";
 import FinalCta from "@/components/landing/final-cta";
 import GitHubMark from "@/components/landing/github-mark";
@@ -304,10 +305,7 @@ export default async function LandingPage() {
             </p>
             <div className="wl-hero-actions">
               <SignupButton className="wl-hero-primary">Start for free</SignupButton>
-              <Link className="wl-secondary-button" href="/templates">
-                Explore templates
-                <HugeiconsIcon icon={ArrowUpRight01Icon} size={17} aria-hidden="true" />
-              </Link>
+              <ConnectAiButton />
             </div>
             <p className="wl-assurance">Free to get started. No credit card required.</p>
           </div>

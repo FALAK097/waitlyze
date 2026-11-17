@@ -125,7 +125,31 @@ Events payload format:
 
 ## 4. How to Connect Waitlyze to Cursor, Claude, or Codex
 
-### Option 1: In Cursor (.cursorrules / .cursor/rules)
+### Option 1: Model Context Protocol (MCP) Server (Recommended)
+Waitlyze provides a first-class Model Context Protocol (MCP) server at \`${SITE_URL}/mcp\` using Streamable HTTP. It enables agents to directly query waitlists, create signups, evaluate viral analytics, and send broadcasts.
+
+**In Claude Code:**
+\`\`\`bash
+claude mcp add --transport http waitlyze ${SITE_URL}/mcp --header "Authorization: Bearer wl2_YOUR_KEY"
+\`\`\`
+
+**In Cursor (\`.cursor/mcp.json\`):**
+\`\`\`json
+{
+  "mcpServers": {
+    "waitlyze": {
+      "url": "${SITE_URL}/mcp",
+      "headers": {
+        "Authorization": "Bearer wl2_YOUR_KEY"
+      }
+    }
+  }
+}
+\`\`\`
+
+Full setup guides and tool references: [Waitlyze MCP Documentation](${SITE_URL}/docs/mcp)
+
+### Option 2: In Cursor (.cursorrules / .cursor/rules)
 Add this to your project's \`.cursorrules\` or create \`.cursor/rules/waitlyze.mdc\`:
 \`\`\`markdown
 ---
@@ -138,7 +162,7 @@ When integrating the waitlist into our application:
 - For custom APIs, call POST ${SITE_URL}/api/waitlist from the server with an x-api-key header, waitlistId, email, and optional referralCode. Never put the API key in client code.
 \`\`\`
 
-### Option 2: In Claude Code
+### Option 3: In Claude Code
 Prompt:
 \`\`\`bash
 claude "Read ${SITE_URL}/agent-instructions.md and integrate the Waitlyze signup widget into our landing page hero component."
@@ -148,6 +172,9 @@ claude "Read ${SITE_URL}/agent-instructions.md and integrate the Waitlyze signup
 
 ## 5. Machine-Readable Discovery Endpoints
 
+- \`/mcp\` - Streamable HTTP Model Context Protocol (MCP) server.
+- \`/.well-known/oauth-protected-resource\` - RFC 9728 OAuth 2.0 Protected Resource Metadata.
+- \`/.well-known/oauth-authorization-server\` - RFC 8414 OAuth 2.0 Authorization Server Metadata.
 - \`/llms.txt\` - Curated index of the entire product for language models.
 - \`/rss.xml\` - RSS 2.0 feed for Waitlyze launch guides (also available at \`/blog/feed.xml\`).
 - \`/agent-instructions.md\` - This integration guide.

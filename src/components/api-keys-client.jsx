@@ -231,15 +231,16 @@ export function ApiKeysClient() {
 
       {/* Empty state: No waitlists */}
       {!loading && !error && !waitlists.length && (
-        <div className="rounded-xl border border-product-border-subtle bg-product-bg-surface px-6 py-12 text-center sm:py-16">
+        <div className="flex flex-col items-center justify-center rounded-xl border border-product-border-subtle bg-product-bg-surface px-6 py-12 text-center sm:py-16">
           <h3 className="text-base font-semibold text-product-text-primary">No waitlists found</h3>
-          <p className="mx-auto mt-1.5 max-w-md text-sm text-product-text-secondary">
+          <p className="mt-1.5 max-w-md text-center text-sm text-product-text-secondary">
             Create a waitlist before generating an API key.
           </p>
           <div className="mt-5">
             <Button
               variant="outline"
               render={<Link href="/waitlists/new" />}
+              nativeButton={false}
               className="cursor-pointer"
             >
               Create waitlist
@@ -250,15 +251,15 @@ export function ApiKeysClient() {
 
       {/* Empty state: Waitlists exist, but no keys yet */}
       {!loading && !error && waitlists.length > 0 && keys.length === 0 && (
-        <div className="rounded-xl border border-product-border-subtle bg-product-bg-surface px-6 py-12 text-center sm:py-16">
+        <div className="flex flex-col items-center justify-center rounded-xl border border-product-border-subtle bg-product-bg-surface px-6 py-12 text-center sm:py-16">
           <HugeiconsIcon
             icon={Key01Icon}
             size={32}
-            className="mx-auto mb-3 text-product-text-secondary"
+            className="mb-3 text-product-text-secondary"
             aria-hidden="true"
           />
           <h3 className="text-base font-semibold text-product-text-primary">No API keys yet</h3>
-          <p className="mx-auto mt-1.5 max-w-md text-sm leading-relaxed text-pretty text-product-text-secondary">
+          <p className="mt-1.5 max-w-md text-center text-sm leading-relaxed text-pretty text-product-text-secondary">
             Create an API key to connect your backend server to create signups, check status, and
             award custom points.
           </p>

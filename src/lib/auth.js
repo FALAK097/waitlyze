@@ -1,7 +1,10 @@
+import { mcp } from "@better-auth/mcp";
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
+import { jwt } from "better-auth/plugins";
 
-import prisma from "./prisma";
+import { getMcpResourceUrl, MCP_SCOPES } from "./mcp/config.mjs";
+import prisma from "./prisma.js";
 
 const socialProviders = {};
 if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
@@ -12,6 +15,7 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
 }
 
 export const auth = betterAuth({
+  disabledPaths: ["/token"],
   database: prismaAdapter(prisma, {
     provider: "postgresql",
   }),
@@ -32,6 +36,30 @@ export const auth = betterAuth({
       maxAge: 5 * 60,
     },
   },
+  plugins: [
+    jwt({ disableSettingJwtHeader: true }),
+    mcp({
+      loginPage: "/connect/login",
+      consentPage: "/connect/consent",
+      resource: getMcpResourceUrl(),
+      scopes: ["openid", "profile", "offline_access", ...MCP_SCOPES],
+      resources: [
+        {
+          identifier: getMcpResourceUrl(),
+          name: "Waitlyze MCP",
+          allowedScopes: MCP_SCOPES,
+          accessTokenTtl: 60 * 60,
+          refreshTokenTtl: 30 * 24 * 60 * 60,
+        },
+      ],
+      resourceSeedMode: "merge",
+      allowDynamicClientRegistration: true,
+      allowUnauthenticatedClientRegistration: true,
+      clientRegistrationDefaultApplicationType: "infer",
+      clientRegistrationDefaultScopes: MCP_SCOPES,
+      refreshTokenReuseInterval: 0,
+    }),
+  ],
   advanced: {
     useSecureCookies: process.env.NODE_ENV === "production",
     cookiePrefix: "ba",
