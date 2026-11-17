@@ -127,7 +127,7 @@ export const BuilderSurface: React.FC = () => {
               alignItems: "center",
             }}
           >
-            <label
+            <span
               style={{
                 fontSize: 12,
                 fontWeight: 600,
@@ -135,7 +135,7 @@ export const BuilderSurface: React.FC = () => {
               }}
             >
               Hero headline
-            </label>
+            </span>
             <span
               style={{
                 fontFamily: "'Paper Mono', monospace",
@@ -178,7 +178,7 @@ export const BuilderSurface: React.FC = () => {
 
         {/* Subheadline Field */}
         <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-          <label style={{ fontSize: 12, fontWeight: 600, color: "#2C3237" }}>Introduction</label>
+          <span style={{ fontSize: 12, fontWeight: 600, color: "#2C3237" }}>Introduction</span>
           <div
             style={{
               padding: "9px 12px",

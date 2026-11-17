@@ -171,8 +171,7 @@
 .wl-feature-card .wl-product-window img,
 .wl-feature-card .wl-product-window video,
 .wl-step .wl-product-window img,
-.wl-step .wl-product-window video,
-.wl-product-frame-video .wl-product-window video {
+.wl-step .wl-product-window video {
   height: 100%;
   object-fit: cover;
   object-position: top center;
@@ -685,4 +684,27 @@
   .wl-template-card:hover {
     transform: none;
   }
+}
+
+.wl-launch-film {
+  margin: 0;
+  width: 100%;
+}
+.wl-launch-film video {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 16 / 9;
+  object-fit: contain;
+  border-radius: 12px;
+  background: #fff;
+}
+.wl-launch-film figcaption {
+  margin-top: 12px;
+  text-align: center;
+  font-size: 0.875rem;
+}
+.wl-launch-film a {
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
