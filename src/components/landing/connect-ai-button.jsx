@@ -323,8 +323,8 @@ export function ConnectAiButton({ className = "" }) {
                   className="group flex cursor-pointer items-center justify-between rounded-xl border border-neutral-200/90 bg-white p-3.5 text-left transition-all hover:border-neutral-900 hover:shadow-2xs"
                 >
                   <div className="flex items-center gap-2.5">
-                    <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-neutral-100 text-neutral-700 transition-colors group-hover:bg-neutral-900 group-hover:text-white">
-                      <HugeiconsIcon icon={CodeIcon} size={13} aria-hidden="true" />
+                    <div className="flex h-5 w-5 shrink-0 items-center justify-center text-neutral-800">
+                      <HugeiconsIcon icon={CodeIcon} size={16} aria-hidden="true" />
                     </div>
                     <div>
                       <div className="text-xs font-semibold text-neutral-900 group-hover:text-black">
