@@ -200,15 +200,15 @@ export function ConnectAiButton({ className = "" }) {
       </button>
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="w-full max-w-[calc(100vw-2rem)] max-h-[90vh] overflow-y-auto rounded-3xl border-neutral-200 bg-white p-6 text-neutral-900 shadow-2xl sm:max-w-xl sm:p-8">
+        <DialogContent className="max-h-[90vh] w-full max-w-[calc(100vw-2rem)] overflow-y-auto rounded-3xl border-neutral-200 bg-white p-6 text-neutral-900 shadow-2xl sm:max-w-xl sm:p-8">
           <DialogHeader className="text-left">
             <DialogTitle className="text-2xl font-bold tracking-tight text-neutral-900 sm:text-3xl">
               Your favorite AI.
-              <span className="block font-normal italic font-serif text-neutral-800">
+              <span className="block font-serif font-normal text-neutral-800 italic">
                 Meet Waitlyze.
               </span>
             </DialogTitle>
-            <DialogDescription className="mt-1.5 text-xs sm:text-sm text-neutral-600 leading-relaxed">
+            <DialogDescription className="mt-1.5 text-xs leading-relaxed text-neutral-600 sm:text-sm">
               Manage waitlists and explore referrals from the conversation you already have open.
             </DialogDescription>
           </DialogHeader>
@@ -298,16 +298,16 @@ export function ConnectAiButton({ className = "" }) {
 
             {anotherAgentOpen && (
               <div className="mt-2 space-y-3">
-                <p className="text-xs text-neutral-500 leading-relaxed">
+                <p className="text-xs leading-relaxed text-neutral-500">
                   For Claude Code, Cursor, or another agent that supports remote MCP. Copy this
                   message and paste it into your agent.
                 </p>
 
                 <div>
-                  <span className="block text-[11px] font-semibold uppercase tracking-wider text-neutral-600 mb-1.5">
+                  <span className="mb-1.5 block text-[11px] font-semibold tracking-wider text-neutral-600 uppercase">
                     Connection message
                   </span>
-                  <div className="relative rounded-2xl border border-neutral-200 bg-neutral-50/80 p-3.5 text-xs text-neutral-800 leading-relaxed font-sans whitespace-pre-wrap select-all">
+                  <div className="relative rounded-2xl border border-neutral-200 bg-neutral-50/80 p-3.5 font-sans text-xs leading-relaxed whitespace-pre-wrap text-neutral-800 select-all">
                     {CONNECTION_MESSAGE}
                   </div>
                 </div>
@@ -315,14 +315,16 @@ export function ConnectAiButton({ className = "" }) {
                 <button
                   type="button"
                   onClick={handleCopyPrompt}
-                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-amber-400 px-4 py-2.5 text-xs font-semibold text-neutral-950 transition-all hover:bg-amber-500 active:scale-[0.99] shadow-2xs"
+                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-amber-400 px-4 py-2.5 text-xs font-semibold text-neutral-950 shadow-2xs transition-all hover:bg-amber-500 active:scale-[0.99]"
                 >
                   <HugeiconsIcon
                     icon={copiedPrompt ? CheckmarkBadge01Icon : Copy01Icon}
                     size={15}
                     aria-hidden="true"
                   />
-                  <span>{copiedPrompt ? "Copied connection message!" : "Copy connection message"}</span>
+                  <span>
+                    {copiedPrompt ? "Copied connection message!" : "Copy connection message"}
+                  </span>
                 </button>
 
                 <div className="pt-1">
