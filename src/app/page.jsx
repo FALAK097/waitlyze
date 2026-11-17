@@ -20,6 +20,7 @@ import { ConnectAiButton } from "@/components/landing/connect-ai-button";
 import FAQAccordion from "@/components/landing/faq-accordion";
 import FinalCta from "@/components/landing/final-cta";
 import GitHubMark from "@/components/landing/github-mark";
+import { HeroVideo } from "@/components/landing/hero-video";
 import Pricing from "@/components/landing/pricing";
 import PublicShell from "@/components/landing/public-shell";
 import SignupButton from "@/components/landing/signup-button";
@@ -309,31 +310,11 @@ export default async function LandingPage() {
             </div>
             <p className="wl-assurance">Free to get started. No credit card required.</p>
           </div>
-          <figure className="wl-launch-film">
-            <video
-              controls
-              playsInline
-              preload="none"
-              poster={`${LAUNCH_ASSET_BASE}/waitlyze-launch-41e3af827abd.webp`}
-              width={1920}
-              height={1080}
-              aria-label="Waitlyze launch film"
-            >
-              <source
-                src={`${LAUNCH_ASSET_BASE}/waitlyze-launch-5a11efd6d418.mp4`}
-                type="video/mp4"
-              />
-              <track
-                kind="captions"
-                src="/videos/waitlyze-launch.en.vtt"
-                srcLang="en"
-                label="English"
-              />
-              <a href={`${LAUNCH_ASSET_BASE}/waitlyze-launch-5a11efd6d418.mp4`}>
-                Watch the Waitlyze launch film
-              </a>
-            </video>
-          </figure>
+          <HeroVideo
+            poster={`${LAUNCH_ASSET_BASE}/waitlyze-launch-41e3af827abd.webp`}
+            src={`${LAUNCH_ASSET_BASE}/waitlyze-launch-5a11efd6d418.mp4`}
+            captionsSrc="/videos/waitlyze-launch.en.vtt"
+          />
         </section>
 
         <section id="features" className="wl-section wl-features" aria-labelledby="features-title">
