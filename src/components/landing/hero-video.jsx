@@ -21,7 +21,7 @@ export function HeroVideo({
   className = "",
 }) {
   const videoRef = useRef(null);
-  const [, setIsPlaying] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(false);
   const [feedback, setFeedback] = useState(null);
   const feedbackTimerRef = useRef(null);
 
@@ -113,11 +113,26 @@ export function HeroVideo({
           <a href={src}>Watch the Waitlyze launch film</a>
         </video>
 
+        {/* Transparent click surface across video above bottom controls (~60px) */}
+        <div
+          role="button"
+          tabIndex={0}
+          aria-label={isPlaying ? "Pause video" : "Play video"}
+          onClick={togglePlayback}
+          onKeyDown={(e) => {
+            if (e.key === " " || e.key === "k" || e.key === "K" || e.key === "Enter") {
+              e.preventDefault();
+              togglePlayback();
+            }
+          }}
+          className="absolute inset-x-0 top-0 bottom-16 z-10 cursor-pointer select-none"
+        />
+
         {/* YouTube-style center play/pause indicator badge */}
         {feedback && (
           <div
             key={feedback.key}
-            className="pointer-events-none absolute inset-0 flex items-center justify-center"
+            className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center"
             aria-hidden="true"
           >
             <div className="wl-video-feedback-badge flex h-16 w-16 items-center justify-center rounded-full bg-neutral-950/75 text-white shadow-xl backdrop-blur-xs">
