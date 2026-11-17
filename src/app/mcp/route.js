@@ -10,7 +10,7 @@ const CORS_HEADERS = {
   "Access-Control-Allow-Methods": "POST, GET, OPTIONS",
   "Access-Control-Allow-Headers":
     "Authorization, Content-Type, Accept, x-waitlyze-api-key, mcp-session-id, mcp-method, mcp-name, mcp-protocol-version, MCP-Protocol-Version",
-  "Access-Control-Expose-Headers": "mcp-session-id, WWW-Authenticate",
+  "Access-Control-Expose-Headers": "mcp-session-id, WWW-Authenticate, Link",
 };
 
 const mcpHandler = createMcpHandler(
@@ -24,9 +24,16 @@ const mcpHandler = createMcpHandler(
 );
 
 function applyCors(response) {
+  const baseUrl = process.env.BETTER_AUTH_URL || "https://waitlyze.com";
   const headers = new Headers(response.headers);
   for (const [key, value] of Object.entries(CORS_HEADERS)) {
     headers.set(key, value);
+  }
+  if (!headers.has("Link")) {
+    headers.set(
+      "Link",
+      `<${baseUrl}/.well-known/oauth-protected-resource>; rel="oauth-protected-resource"`,
+    );
   }
   return new Response(response.body, {
     status: response.status,
@@ -125,11 +132,12 @@ export async function POST(request) {
     const authContext = await resolveMcpAuth(req);
 
     const baseUrl = process.env.BETTER_AUTH_URL || "https://waitlyze.com";
-    // Claude requires a 401 challenge to begin OAuth and ignores authentication
-    // metadata on a successful response. All Waitlyze MCP operations are
-    // account-scoped, so challenge unauthenticated protocol requests before
-    // initialize or tools/list can make the server appear public.
-    if (!authContext.authenticated) {
+    const isToolCall = parsedBody?.method === "tools/call";
+
+    // Unauthenticated callers can discover capabilities (initialize, tools/list)
+    // so MCP clients like ChatGPT can inspect tools before user sign-in.
+    // Execution (tools/call) or requests with invalid tokens are challenged with 401.
+    if (!authContext.authenticated && (hasAuthToken || isToolCall)) {
       return createAuthChallenge({
         baseUrl,
         error: authContext.error,
@@ -166,16 +174,17 @@ export async function GET(request) {
   const hasMcpHeader = request.headers.has("mcp-method") || request.headers.has("mcp-session-id");
 
   if (accept.includes("text/event-stream") || hasMcpHeader) {
+    const authHeader = request.headers.get("authorization");
+    const apiKeyHeader = request.headers.get("x-waitlyze-api-key");
+    const hasAuthToken = Boolean(authHeader || apiKeyHeader);
     const authContext = await resolveMcpAuth(request);
-    if (!authContext.authenticated) {
+
+    if (!authContext.authenticated && hasAuthToken) {
       const baseUrl = process.env.BETTER_AUTH_URL || "https://waitlyze.com";
-      const hasAuthToken = Boolean(
-        request.headers.get("authorization") || request.headers.get("x-waitlyze-api-key"),
-      );
       return createAuthChallenge({
         baseUrl,
         error: authContext.error,
-        invalidToken: hasAuthToken,
+        invalidToken: true,
       });
     }
 
