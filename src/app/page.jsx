@@ -297,10 +297,7 @@ export default async function LandingPage() {
               <span>See how Waitlyze is built</span>
               <HugeiconsIcon icon={ArrowUpRight01Icon} size={13} aria-hidden="true" />
             </a>
-            <h1 id="hero-title">
-              Your launch starts
-              <br className="wl-desktop-break" /> before launch day.
-            </h1>
+            <h1 id="hero-title">Your launch starts before launch day.</h1>
             <p className="wl-hero-lede">
               Build a page, grow your waitlist, and see what brings people in. Everything you need
               to turn early interest into an audience.

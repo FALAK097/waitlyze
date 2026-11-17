@@ -24,7 +24,7 @@ export default function PublicShell({ children }) {
       <Header />
       {children}
       <footer className="bg-product-bg-page pt-12 pb-6 text-product-text-primary">
-        <div className="mx-auto w-full max-w-7xl px-4 sm:px-5 md:px-8 lg:px-12">
+        <div className="mx-auto w-full max-w-[1120px] px-5 sm:px-6">
           <div className="relative grid grid-cols-2 gap-x-5 gap-y-10 md:grid-cols-4 md:gap-10 lg:grid-cols-6">
             <div className="col-span-2 md:col-span-4 lg:col-span-2">
               <Link
@@ -62,6 +62,12 @@ export default function PublicShell({ children }) {
                 className="inline-flex items-center gap-1.5 hover:text-product-success-text focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-neutral-900"
               >
                 Templates
+              </Link>
+              <Link
+                href="/#pricing"
+                className="inline-flex items-center gap-1.5 hover:text-product-success-text focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-neutral-900"
+              >
+                Pricing
               </Link>
               <Link
                 href="/#faq"

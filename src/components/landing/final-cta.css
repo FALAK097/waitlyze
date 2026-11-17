@@ -58,13 +58,13 @@
   letter-spacing: 0.15em;
 }
 .wl-final-cta h2 {
-  max-width: 760px;
+  max-width: 830px;
   margin-top: 22px;
   font-family: var(--wl-display), sans-serif;
-  font-size: clamp(2.65rem, 5vw, 4.35rem);
+  font-size: clamp(2.2rem, 4.1vw, 3.5rem);
   font-weight: 520;
-  letter-spacing: -0.055em;
-  line-height: 1.08;
+  letter-spacing: -0.048em;
+  line-height: 1.1;
   text-wrap: balance;
 }
 .wl-final-cta-content > p:not(.wl-final-cta-eyebrow) {

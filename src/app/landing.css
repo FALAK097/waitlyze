@@ -62,9 +62,9 @@
 .wl-hero h1 {
   max-width: 1000px;
   margin-top: 28px;
-  font-size: clamp(3.15rem, 6.2vw, 5.25rem);
-  letter-spacing: -0.062em;
-  line-height: 1.01;
+  font-size: clamp(2.85rem, 5.2vw, 4.35rem);
+  letter-spacing: -0.054em;
+  line-height: 1.02;
   text-wrap: balance;
 }
 .wl-hero-lede {
@@ -191,12 +191,12 @@
   scroll-margin-top: 72px;
 }
 .wl-section-heading {
-  max-width: 770px;
+  max-width: 1000px;
 }
 .wl-section-heading h2 {
-  font-size: clamp(2.5rem, 4.6vw, 3.8rem);
-  letter-spacing: -0.054em;
-  line-height: 1.06;
+  font-size: clamp(2.15rem, 3.7vw, 3.05rem);
+  letter-spacing: -0.045em;
+  line-height: 1.1;
   text-wrap: balance;
 }
 .wl-section-heading > p,
@@ -206,6 +206,7 @@
   color: var(--wl-muted);
   font-size: clamp(1rem, 1.5vw, 1.15rem);
   line-height: 1.55;
+  text-wrap: pretty;
 }
 .wl-eyebrow {
   margin-bottom: 18px !important;
@@ -217,6 +218,11 @@
 }
 .wl-pricing-grid {
   margin-top: clamp(36px, 5vw, 52px);
+}
+/* Keep the pricing cards flush with the section heading so the interval
+   toggle lines up with the card edge instead of hanging past it. */
+.wl-pricing .wl-pricing-grid {
+  max-width: none;
 }
 @media (max-width: 900px) {
   .wl-pricing .wl-heading-with-link {
@@ -270,10 +276,16 @@
 }
 .wl-ask-ai-intro h2,
 .wl-about h2 {
-  font-size: clamp(2.5rem, 4.6vw, 3.8rem);
-  letter-spacing: -0.054em;
-  line-height: 1.06;
+  font-size: clamp(2.15rem, 3.7vw, 3.05rem);
+  letter-spacing: -0.045em;
+  line-height: 1.1;
   text-wrap: balance;
+}
+/* The Ask AI intro sits in a narrower column, so its title fits one line
+   only at a slightly smaller size. */
+.wl-ask-ai-intro h2 {
+  font-size: clamp(1.75rem, 3.1vw, 2.45rem);
+  letter-spacing: -0.04em;
 }
 .wl-ask-ai-intro > p:last-child {
   max-width: 40ch;
@@ -489,15 +501,15 @@
 .wl-step-number {
   color: oklch(0.6 0.018 245);
   font-family: var(--wl-display), sans-serif;
-  font-size: clamp(2rem, 3vw, 2.8rem);
-  letter-spacing: -0.05em;
+  font-size: clamp(1.7rem, 2.4vw, 2.2rem);
+  letter-spacing: -0.045em;
   line-height: 1;
 }
 .wl-step h3 {
-  margin-top: 15px;
-  font-size: clamp(2rem, 3.1vw, 2.85rem);
-  letter-spacing: -0.048em;
-  line-height: 1.08;
+  margin-top: 14px;
+  font-size: clamp(1.6rem, 2.45vw, 2.15rem);
+  letter-spacing: -0.04em;
+  line-height: 1.14;
 }
 .wl-step p {
   max-width: 48ch;
@@ -589,6 +601,13 @@
     gap: 36px 24px;
   }
 }
+/* Collapse the Ask AI intro before its title would need to wrap. */
+@media (max-width: 860px) {
+  .wl-ask-ai {
+    grid-template-columns: 1fr;
+    gap: 28px;
+  }
+}
 @media (max-width: 720px) {
   .wl-ask-ai,
   .wl-about {
@@ -599,10 +618,7 @@
     padding-top: 54px;
   }
   .wl-hero h1 {
-    font-size: clamp(2.9rem, 10vw, 4.2rem);
-  }
-  .wl-desktop-break {
-    display: none;
+    font-size: clamp(2.4rem, 8.5vw, 3.3rem);
   }
   .wl-product-frame-hero {
     aspect-ratio: 1.65;
