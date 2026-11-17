@@ -5,7 +5,11 @@ import {
   dodoBillingInterval,
   DodoConfigurationError,
 } from "@/lib/billing/dodo.mjs";
-import { effectiveWorkspacePlan } from "@/lib/billing/plans.mjs";
+import {
+  DETACHED_CUSTOMER_ID,
+  effectiveWorkspacePlan,
+  isDetachedCustomerId,
+} from "@/lib/billing/plans.mjs";
 import { subscriptionWebhookStatus } from "@/lib/billing/subscription-webhook-status.mjs";
 import prisma from "@/lib/prisma";
 import { AUDIT_ACTIONS, recordAuditEvent } from "@/lib/workspaces/audit.mjs";
@@ -194,7 +198,13 @@ export async function POST(request) {
       const eventAt = validDate(event.timestamp) || new Date();
       if (existing?.lastEventAt && existing.lastEventAt > eventAt) return;
 
-      const customerId = data.customer?.customer_id || existing?.dodoCustomerId;
+      const isDetachedCustomer =
+        !matchesPendingCheckout &&
+        (isDetachedCustomerId(existing?.dodoCustomerId) ||
+          isDetachedCustomerId(workspaceSubscription?.dodoCustomerId));
+      const customerId = isDetachedCustomer
+        ? DETACHED_CUSTOMER_ID
+        : data.customer?.customer_id || existing?.dodoCustomerId || null;
       const currentPeriodStart =
         validDate(data.previous_billing_date) ||
         validDate(data.created_at) ||
@@ -238,7 +248,7 @@ export async function POST(request) {
           plan,
           status,
           interval,
-          dodoCustomerId: customerId || null,
+          dodoCustomerId: customerId,
           dodoSubscriptionId: subscriptionId,
           dodoProductId: productId || null,
           currentPeriodStart,
@@ -252,7 +262,11 @@ export async function POST(request) {
           status,
           interval,
           dodoSubscriptionId: subscriptionId,
-          ...(customerId ? { dodoCustomerId: customerId } : {}),
+          ...(isDetachedCustomer
+            ? { dodoCustomerId: DETACHED_CUSTOMER_ID }
+            : customerId
+              ? { dodoCustomerId: customerId }
+              : {}),
           ...(productId ? { dodoProductId: productId } : {}),
           currentPeriodStart,
           currentPeriodEnd,

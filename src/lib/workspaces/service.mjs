@@ -1,4 +1,5 @@
 import {
+  DETACHED_CUSTOMER_ID,
   effectiveWorkspacePlan,
   getOwnedWorkspaceEntitlements,
   providerSubscriptionNeedsReview,
@@ -238,11 +239,13 @@ export function createWorkspaceService(db) {
           message:
             "That member already owns a workspace on the Free plan. Free allows one owned workspace.",
         });
-        // Detach the lapsed payer so the new owner can never open their portal.
-        if (subscription?.dodoCustomerId)
+        // Detach the lapsed payer so the new owner can never open their portal,
+        // and establish an explicit detached-customer state so future webhook
+        // events for this subscription cannot reattach the former payer's customer ID.
+        if (subscription?.dodoCustomerId || subscription?.dodoSubscriptionId)
           await tx.workspaceSubscription.update({
             where: { workspaceId },
-            data: { dodoCustomerId: null },
+            data: { dodoCustomerId: DETACHED_CUSTOMER_ID },
           });
         // The previous owner steps down to admin so there is always exactly one owner to act.
         await tx.workspaceMember.update({

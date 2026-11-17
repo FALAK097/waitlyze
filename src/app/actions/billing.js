@@ -14,6 +14,7 @@ import { createDodoClient, dodoProductId, DodoConfigurationError } from "@/lib/b
 import {
   BILLING_INTERVALS,
   effectiveWorkspacePlan,
+  isDetachedCustomerId,
   providerSubscriptionNeedsReview,
 } from "@/lib/billing/plans.mjs";
 import { env } from "@/lib/env.mjs";
@@ -93,7 +94,7 @@ async function reserveCheckoutIntent(workspaceId, interval) {
       return { error: "This workspace already has Pro. Manage its renewal in Billing settings." };
 
     if (providerSubscriptionNeedsReview(current)) {
-      if (!current.dodoCustomerId)
+      if (!current.dodoCustomerId || isDetachedCustomerId(current.dodoCustomerId))
         return { error: "This subscription needs attention. Contact support to recover billing." };
       return { portalCustomerId: current.dodoCustomerId };
     }
@@ -412,7 +413,7 @@ export async function createBillingPortal(workspaceId) {
       where: { workspaceId: workspace.id },
       select: { dodoCustomerId: true },
     });
-    if (!subscription?.dodoCustomerId)
+    if (!subscription?.dodoCustomerId || isDetachedCustomerId(subscription.dodoCustomerId))
       return { error: "No paid subscription is connected to this workspace." };
     const portalUrl = await createPortalLink(subscription.dodoCustomerId, workspace.id);
     await recordAuditEvent(prisma, {

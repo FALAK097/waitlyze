@@ -88,6 +88,15 @@ export function providerSubscriptionNeedsReview(subscription) {
   );
 }
 
+// Marker stored in dodoCustomerId when workspace ownership is transferred,
+// explicitly detaching the previous payer so their customer portal is unreachable
+// and subsequent webhooks for that subscription do not restore customer_id.
+export const DETACHED_CUSTOMER_ID = "detached";
+
+export function isDetachedCustomerId(customerId) {
+  return customerId === DETACHED_CUSTOMER_ID;
+}
+
 export function workspaceEntitlements(subscription, now = new Date()) {
   const plan = effectiveWorkspacePlan(subscription, now);
   return { plan, ...PLAN_ENTITLEMENTS[plan] };

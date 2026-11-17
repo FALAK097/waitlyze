@@ -11,7 +11,11 @@ import { SettingsPanelSkeleton } from "@/components/product/settings-panel-skele
 import { SettingsSectionNavigation } from "@/components/product/settings-section-nav";
 import { TeamAccessSettings } from "@/components/product/team-access-settings";
 import { WorkspaceBillingSettings } from "@/components/product/workspace-billing-settings";
-import { effectiveWorkspacePlan, getWorkspaceEntitlements } from "@/lib/billing/plans.mjs";
+import {
+  effectiveWorkspacePlan,
+  getWorkspaceEntitlements,
+  isDetachedCustomerId,
+} from "@/lib/billing/plans.mjs";
 import { env } from "@/lib/env.mjs";
 import prisma from "@/lib/prisma";
 import { currentWorkspace } from "@/lib/workspaces/current";
@@ -257,7 +261,9 @@ async function SelectedSettings({
         waitlistCount={waitlistCount}
         signupCount={signupCount}
         memberCount={memberCount}
-        hasBillingCustomer={Boolean(subscription?.dodoCustomerId)}
+        hasBillingCustomer={Boolean(
+          subscription?.dodoCustomerId && !isDetachedCustomerId(subscription.dodoCustomerId),
+        )}
         checkoutReturn={checkoutReturn}
         workspaceIsSelected={workspaceIsSelected}
         otherProWorkspace={otherProWorkspace}
