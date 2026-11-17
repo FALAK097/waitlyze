@@ -354,24 +354,10 @@ export function ConnectAiButton({ className = "" }) {
                     Paste into Cursor, Claude Code, or Codex
                   </span>
                 </div>
-                <div className="relative mt-2.5">
-                  <div className="max-h-36 overflow-y-auto rounded-lg border border-neutral-200 bg-white p-3 pr-11 font-mono text-[11px] leading-relaxed whitespace-pre-wrap text-neutral-800 select-all sm:max-h-none">
+                <div className="mt-2.5">
+                  <div className="max-h-36 overflow-y-auto rounded-lg border border-neutral-200 bg-white p-3 font-mono text-[11px] leading-relaxed whitespace-pre-wrap text-neutral-800 select-all sm:max-h-none">
                     {CONNECTION_PROMPT}
                   </div>
-                  <button
-                    type="button"
-                    onClick={handleCopyPrompt}
-                    aria-label={copiedPrompt ? "Copied" : "Copy connection prompt"}
-                    title={copiedPrompt ? "Copied" : "Copy connection prompt"}
-                    className="absolute top-2.5 right-2.5 flex h-7 w-7 cursor-pointer items-center justify-center rounded-lg border border-neutral-200 bg-white text-neutral-600 shadow-2xs transition-all hover:bg-neutral-50 hover:text-neutral-900"
-                  >
-                    <HugeiconsIcon
-                      icon={copiedPrompt ? Tick01Icon : Copy01Icon}
-                      size={15}
-                      className={copiedPrompt ? "text-emerald-600" : "text-neutral-600"}
-                      aria-hidden="true"
-                    />
-                  </button>
                 </div>
                 <button
                   type="button"
@@ -393,7 +379,7 @@ export function ConnectAiButton({ className = "" }) {
           ) : (
             <div className="mt-4 min-w-0 space-y-3">
               {/* Back to Options Navigation */}
-              <div className="flex items-center justify-between">
+              <div className="flex items-center">
                 <button
                   type="button"
                   onClick={() => setView("main")}
@@ -402,11 +388,10 @@ export function ConnectAiButton({ className = "" }) {
                   <HugeiconsIcon icon={ArrowLeft01Icon} size={14} aria-hidden="true" />
                   <span>Back to all options</span>
                 </button>
-                <span className="text-[11px] text-neutral-500">Select your client</span>
               </div>
 
               {/* Responsive Coding Agent Pill Selector */}
-              <div className="flex min-w-0 flex-wrap items-center gap-1.5 rounded-xl border border-neutral-200/80 bg-neutral-100/70 p-1">
+              <div className="grid w-full grid-cols-5 gap-1 rounded-xl border border-neutral-200/80 bg-neutral-100/70 p-1">
                 {CLIENT_CONFIGS.map((client) => {
                   const isActive = selectedClient === client.id;
                   return (
@@ -414,7 +399,7 @@ export function ConnectAiButton({ className = "" }) {
                       key={client.id}
                       type="button"
                       onClick={() => setSelectedClient(client.id)}
-                      className={`inline-flex cursor-pointer items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-all ${
+                      className={`flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-lg px-1.5 py-1.5 text-xs font-medium transition-all ${
                         isActive
                           ? "border border-neutral-200/80 bg-white font-semibold text-neutral-950 shadow-2xs"
                           : "border border-transparent text-neutral-600 hover:bg-white/60 hover:text-neutral-900"
@@ -426,31 +411,17 @@ export function ConnectAiButton({ className = "" }) {
                         className="h-3.5 w-3.5 shrink-0 object-contain"
                         aria-hidden="true"
                       />
-                      <span className="whitespace-nowrap">{client.name}</span>
+                      <span className="truncate">{client.name}</span>
                     </button>
                   );
                 })}
               </div>
 
               {/* Light-style Command / Config Box */}
-              <div className="relative h-56 w-full min-w-0 overflow-hidden rounded-xl border border-neutral-200 bg-neutral-50/80">
-                <pre className="h-full w-full min-w-0 overflow-auto p-3.5 pr-12 font-mono text-xs leading-relaxed text-neutral-800">
+              <div className="h-56 w-full min-w-0 overflow-hidden rounded-xl border border-neutral-200 bg-neutral-50/80">
+                <pre className="h-full w-full min-w-0 overflow-auto p-3.5 font-mono text-xs leading-relaxed text-neutral-800">
                   <SyntaxHighlightedCode code={copyRawText} language={activeConfig.language} />
                 </pre>
-                <button
-                  type="button"
-                  onClick={handleCopyConfig}
-                  aria-label={copiedConfig ? "Copied" : "Copy configuration"}
-                  title={copiedConfig ? "Copied" : "Copy configuration"}
-                  className="absolute top-2.5 right-2.5 flex h-7 w-7 cursor-pointer items-center justify-center rounded-lg border border-neutral-200 bg-white text-neutral-600 shadow-2xs transition-all hover:bg-neutral-50 hover:text-neutral-900"
-                >
-                  <HugeiconsIcon
-                    icon={copiedConfig ? Tick01Icon : Copy01Icon}
-                    size={15}
-                    className={copiedConfig ? "text-emerald-600" : "text-neutral-600"}
-                    aria-hidden="true"
-                  />
-                </button>
               </div>
 
               <button
