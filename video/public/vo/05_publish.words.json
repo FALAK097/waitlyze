@@ -1,0 +1,22 @@
+[
+  { "text": "Run", "start": 0.089, "end": 0.357 },
+  { "text": "the", "start": 0.368, "end": 0.458 },
+  { "text": "built-in", "start": 0.469, "end": 0.96 },
+  { "text": "launch", "start": 0.96, "end": 1.25 },
+  { "text": "readiness", "start": 1.25, "end": 1.562 },
+  { "text": "checklist", "start": 1.562, "end": 2.154 },
+  { "text": "publish", "start": 2.489, "end": 2.824 },
+  { "text": "to", "start": 2.824, "end": 2.902 },
+  { "text": "your", "start": 2.902, "end": 2.969 },
+  { "text": "custom", "start": 2.98, "end": 3.281 },
+  { "text": "domain", "start": 3.292, "end": 3.728 },
+  { "text": "or", "start": 4.118, "end": 4.163 },
+  { "text": "drop", "start": 4.163, "end": 4.386 },
+  { "text": "a", "start": 4.386, "end": 4.42 },
+  { "text": "responsive", "start": 4.42, "end": 5.045 },
+  { "text": "embed", "start": 5.1, "end": 5.458 },
+  { "text": "widget", "start": 5.458, "end": 5.759 },
+  { "text": "into", "start": 5.848, "end": 6.049 },
+  { "text": "any", "start": 6.15, "end": 6.317 },
+  { "text": "site", "start": 6.328, "end": 6.73 }
+]

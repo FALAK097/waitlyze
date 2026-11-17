@@ -1,0 +1,20 @@
+[
+  { "text": "Manage", "start": 0.078, "end": 0.424 },
+  { "text": "every", "start": 0.547, "end": 0.826 },
+  { "text": "waitlist", "start": 0.826, "end": 1.339 },
+  { "text": "from", "start": 1.339, "end": 1.562 },
+  { "text": "one", "start": 1.562, "end": 1.931 },
+  { "text": "clean", "start": 2.009, "end": 2.31 },
+  { "text": "workspace", "start": 2.31, "end": 3.002 },
+  { "text": "with", "start": 3.326, "end": 3.46 },
+  { "text": "live", "start": 3.46, "end": 3.795 },
+  { "text": "visitors", "start": 3.795, "end": 4.375 },
+  { "text": "verified", "start": 4.576, "end": 5.089 },
+  { "text": "subscribers", "start": 5.089, "end": 5.826 },
+  { "text": "and", "start": 6.004, "end": 6.105 },
+  { "text": "conversion", "start": 6.116, "end": 6.607 },
+  { "text": "rates", "start": 6.607, "end": 6.841 },
+  { "text": "at", "start": 6.853, "end": 6.931 },
+  { "text": "a", "start": 6.931, "end": 6.953 },
+  { "text": "glance", "start": 6.953, "end": 7.489 }
+]

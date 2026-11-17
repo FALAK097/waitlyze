@@ -1,0 +1,23 @@
+[
+  { "text": "Meet", "start": 0.091, "end": 0.295 },
+  { "text": "Waitlyze", "start": 0.307, "end": 0.932 },
+  { "text": "your", "start": 1.273, "end": 1.386 },
+  { "text": "launch", "start": 1.386, "end": 1.648 },
+  { "text": "starts", "start": 1.659, "end": 1.977 },
+  { "text": "before", "start": 1.977, "end": 2.261 },
+  { "text": "launch", "start": 2.273, "end": 2.568 },
+  { "text": "day", "start": 2.58, "end": 2.886 },
+  { "text": "The", "start": 3.25, "end": 3.307 },
+  { "text": "complete", "start": 3.318, "end": 3.727 },
+  { "text": "waitlist", "start": 3.739, "end": 4.341 },
+  { "text": "and", "start": 4.545, "end": 4.614 },
+  { "text": "referral", "start": 4.614, "end": 5.0 },
+  { "text": "engine", "start": 5.011, "end": 5.341 },
+  { "text": "for", "start": 5.352, "end": 5.455 },
+  { "text": "products", "start": 5.455, "end": 5.92 },
+  { "text": "people", "start": 5.977, "end": 6.341 },
+  { "text": "can't", "start": 6.341, "end": 6.636 },
+  { "text": "wait", "start": 6.636, "end": 6.864 },
+  { "text": "to", "start": 6.864, "end": 6.955 },
+  { "text": "join", "start": 6.966, "end": 7.341 }
+]

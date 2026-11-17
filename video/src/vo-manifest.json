@@ -1,0 +1,1056 @@
+{
+  "voice": "en-US-AndrewMultilingualNeural",
+  "totalDuration": 78.22,
+  "segments": [
+    {
+      "id": "01_intro",
+      "chapter": "WAITLYZE",
+      "text": "Meet Waitlyze \u2014 your launch starts before launch day. The complete waitlist and referral engine for products people can't wait to join.",
+      "file": "vo/01_intro.mp3",
+      "voStart": 0.4,
+      "voEnd": 8.08,
+      "duration": 7.68,
+      "sceneStart": 0.0,
+      "sceneEnd": 8.26,
+      "words": [
+        {
+          "text": "Meet",
+          "start": 0.491,
+          "end": 0.695
+        },
+        {
+          "text": "Waitlyze",
+          "start": 0.707,
+          "end": 1.332
+        },
+        {
+          "text": "your",
+          "start": 1.673,
+          "end": 1.786
+        },
+        {
+          "text": "launch",
+          "start": 1.786,
+          "end": 2.048
+        },
+        {
+          "text": "starts",
+          "start": 2.059,
+          "end": 2.377
+        },
+        {
+          "text": "before",
+          "start": 2.377,
+          "end": 2.661
+        },
+        {
+          "text": "launch",
+          "start": 2.673,
+          "end": 2.968
+        },
+        {
+          "text": "day",
+          "start": 2.98,
+          "end": 3.286
+        },
+        {
+          "text": "The",
+          "start": 3.65,
+          "end": 3.707
+        },
+        {
+          "text": "complete",
+          "start": 3.718,
+          "end": 4.127
+        },
+        {
+          "text": "waitlist",
+          "start": 4.139,
+          "end": 4.741
+        },
+        {
+          "text": "and",
+          "start": 4.945,
+          "end": 5.014
+        },
+        {
+          "text": "referral",
+          "start": 5.014,
+          "end": 5.4
+        },
+        {
+          "text": "engine",
+          "start": 5.411,
+          "end": 5.741
+        },
+        {
+          "text": "for",
+          "start": 5.752,
+          "end": 5.855
+        },
+        {
+          "text": "products",
+          "start": 5.855,
+          "end": 6.32
+        },
+        {
+          "text": "people",
+          "start": 6.377,
+          "end": 6.741
+        },
+        {
+          "text": "can't",
+          "start": 6.741,
+          "end": 7.036
+        },
+        {
+          "text": "wait",
+          "start": 7.036,
+          "end": 7.264
+        },
+        {
+          "text": "to",
+          "start": 7.264,
+          "end": 7.355
+        },
+        {
+          "text": "join",
+          "start": 7.366,
+          "end": 7.741
+        }
+      ]
+    },
+    {
+      "id": "02_dashboard",
+      "chapter": "CAMPAIGNS",
+      "text": "Manage every waitlist from one clean workspace, with live visitors, verified subscribers, and conversion rates at a glance.",
+      "file": "vo/02_dashboard.mp3",
+      "voStart": 8.26,
+      "voEnd": 16.084,
+      "duration": 7.824,
+      "sceneStart": 8.26,
+      "sceneEnd": 16.264,
+      "words": [
+        {
+          "text": "Manage",
+          "start": 8.338,
+          "end": 8.684
+        },
+        {
+          "text": "every",
+          "start": 8.807,
+          "end": 9.086
+        },
+        {
+          "text": "waitlist",
+          "start": 9.086,
+          "end": 9.599
+        },
+        {
+          "text": "from",
+          "start": 9.599,
+          "end": 9.822
+        },
+        {
+          "text": "one",
+          "start": 9.822,
+          "end": 10.191
+        },
+        {
+          "text": "clean",
+          "start": 10.269,
+          "end": 10.57
+        },
+        {
+          "text": "workspace",
+          "start": 10.57,
+          "end": 11.262
+        },
+        {
+          "text": "with",
+          "start": 11.586,
+          "end": 11.72
+        },
+        {
+          "text": "live",
+          "start": 11.72,
+          "end": 12.055
+        },
+        {
+          "text": "visitors",
+          "start": 12.055,
+          "end": 12.635
+        },
+        {
+          "text": "verified",
+          "start": 12.836,
+          "end": 13.349
+        },
+        {
+          "text": "subscribers",
+          "start": 13.349,
+          "end": 14.086
+        },
+        {
+          "text": "and",
+          "start": 14.264,
+          "end": 14.365
+        },
+        {
+          "text": "conversion",
+          "start": 14.376,
+          "end": 14.867
+        },
+        {
+          "text": "rates",
+          "start": 14.867,
+          "end": 15.101
+        },
+        {
+          "text": "at",
+          "start": 15.113,
+          "end": 15.191
+        },
+        {
+          "text": "a",
+          "start": 15.191,
+          "end": 15.213
+        },
+        {
+          "text": "glance",
+          "start": 15.213,
+          "end": 15.749
+        }
+      ]
+    },
+    {
+      "id": "03_builder",
+      "chapter": "VISUAL BUILDER",
+      "text": "Design your hosted launch page in seconds. Reorder blocks, switch templates, customize your brand kit, and preview across desktop and mobile.",
+      "file": "vo/03_builder.mp3",
+      "voStart": 16.264,
+      "voEnd": 24.832,
+      "duration": 8.568,
+      "sceneStart": 16.264,
+      "sceneEnd": 25.012,
+      "words": [
+        {
+          "text": "Design",
+          "start": 16.353,
+          "end": 16.655
+        },
+        {
+          "text": "your",
+          "start": 16.655,
+          "end": 16.755
+        },
+        {
+          "text": "hosted",
+          "start": 16.755,
+          "end": 17.179
+        },
+        {
+          "text": "launch",
+          "start": 17.179,
+          "end": 17.536
+        },
+        {
+          "text": "page",
+          "start": 17.536,
+          "end": 17.983
+        },
+        {
+          "text": "in",
+          "start": 18.105,
+          "end": 18.195
+        },
+        {
+          "text": "seconds",
+          "start": 18.195,
+          "end": 18.775
+        },
+        {
+          "text": "Reorder",
+          "start": 19.121,
+          "end": 19.422
+        },
+        {
+          "text": "blocks",
+          "start": 19.423,
+          "end": 19.992
+        },
+        {
+          "text": "switch",
+          "start": 20.148,
+          "end": 20.449
+        },
+        {
+          "text": "templates",
+          "start": 20.449,
+          "end": 21.018
+        },
+        {
+          "text": "customize",
+          "start": 21.197,
+          "end": 21.666
+        },
+        {
+          "text": "your",
+          "start": 21.666,
+          "end": 21.733
+        },
+        {
+          "text": "brand",
+          "start": 21.733,
+          "end": 22.023
+        },
+        {
+          "text": "kit",
+          "start": 22.023,
+          "end": 22.28
+        },
+        {
+          "text": "and",
+          "start": 22.637,
+          "end": 22.693
+        },
+        {
+          "text": "preview",
+          "start": 22.693,
+          "end": 23.083
+        },
+        {
+          "text": "across",
+          "start": 23.083,
+          "end": 23.418
+        },
+        {
+          "text": "desktop",
+          "start": 23.418,
+          "end": 23.92
+        },
+        {
+          "text": "and",
+          "start": 24.032,
+          "end": 24.11
+        },
+        {
+          "text": "mobile",
+          "start": 24.11,
+          "end": 24.489
+        }
+      ]
+    },
+    {
+      "id": "04_rewards",
+      "chapter": "REFERRAL ENGINE",
+      "text": "Turn every signup into a referral loop. Configure queue jumps, point rules, milestone perks, and an instant post-signup status page.",
+      "file": "vo/04_rewards.mp3",
+      "voStart": 25.012,
+      "voEnd": 33.1,
+      "duration": 8.088,
+      "sceneStart": 25.012,
+      "sceneEnd": 33.28,
+      "words": [
+        {
+          "text": "Turn",
+          "start": 25.101,
+          "end": 25.358
+        },
+        {
+          "text": "every",
+          "start": 25.481,
+          "end": 25.726
+        },
+        {
+          "text": "signup",
+          "start": 25.726,
+          "end": 26.195
+        },
+        {
+          "text": "into",
+          "start": 26.296,
+          "end": 26.508
+        },
+        {
+          "text": "a",
+          "start": 26.508,
+          "end": 26.563
+        },
+        {
+          "text": "referral",
+          "start": 26.563,
+          "end": 26.976
+        },
+        {
+          "text": "loop",
+          "start": 26.987,
+          "end": 27.289
+        },
+        {
+          "text": "Configure",
+          "start": 27.635,
+          "end": 28.014
+        },
+        {
+          "text": "queue",
+          "start": 28.025,
+          "end": 28.193
+        },
+        {
+          "text": "jumps",
+          "start": 28.193,
+          "end": 28.728
+        },
+        {
+          "text": "point",
+          "start": 28.896,
+          "end": 29.153
+        },
+        {
+          "text": "rules",
+          "start": 29.164,
+          "end": 29.599
+        },
+        {
+          "text": "milestone",
+          "start": 29.811,
+          "end": 30.302
+        },
+        {
+          "text": "perks",
+          "start": 30.302,
+          "end": 30.771
+        },
+        {
+          "text": "and",
+          "start": 30.972,
+          "end": 31.061
+        },
+        {
+          "text": "an",
+          "start": 31.061,
+          "end": 31.15
+        },
+        {
+          "text": "instant",
+          "start": 31.162,
+          "end": 31.485
+        },
+        {
+          "text": "post-signup",
+          "start": 31.485,
+          "end": 32.021
+        },
+        {
+          "text": "status",
+          "start": 32.032,
+          "end": 32.322
+        },
+        {
+          "text": "page",
+          "start": 32.322,
+          "end": 32.769
+        }
+      ]
+    },
+    {
+      "id": "05_publish",
+      "chapter": "PUBLISH & EMBED",
+      "text": "Run the built-in launch readiness checklist, publish to your custom domain, or drop a responsive embed widget into any site.",
+      "file": "vo/05_publish.mp3",
+      "voStart": 33.28,
+      "voEnd": 40.36,
+      "duration": 7.08,
+      "sceneStart": 33.28,
+      "sceneEnd": 40.54,
+      "words": [
+        {
+          "text": "Run",
+          "start": 33.369,
+          "end": 33.637
+        },
+        {
+          "text": "the",
+          "start": 33.648,
+          "end": 33.738
+        },
+        {
+          "text": "built-in",
+          "start": 33.749,
+          "end": 34.24
+        },
+        {
+          "text": "launch",
+          "start": 34.24,
+          "end": 34.53
+        },
+        {
+          "text": "readiness",
+          "start": 34.53,
+          "end": 34.842
+        },
+        {
+          "text": "checklist",
+          "start": 34.842,
+          "end": 35.434
+        },
+        {
+          "text": "publish",
+          "start": 35.769,
+          "end": 36.104
+        },
+        {
+          "text": "to",
+          "start": 36.104,
+          "end": 36.182
+        },
+        {
+          "text": "your",
+          "start": 36.182,
+          "end": 36.249
+        },
+        {
+          "text": "custom",
+          "start": 36.26,
+          "end": 36.561
+        },
+        {
+          "text": "domain",
+          "start": 36.572,
+          "end": 37.008
+        },
+        {
+          "text": "or",
+          "start": 37.398,
+          "end": 37.443
+        },
+        {
+          "text": "drop",
+          "start": 37.443,
+          "end": 37.666
+        },
+        {
+          "text": "a",
+          "start": 37.666,
+          "end": 37.7
+        },
+        {
+          "text": "responsive",
+          "start": 37.7,
+          "end": 38.325
+        },
+        {
+          "text": "embed",
+          "start": 38.38,
+          "end": 38.738
+        },
+        {
+          "text": "widget",
+          "start": 38.738,
+          "end": 39.039
+        },
+        {
+          "text": "into",
+          "start": 39.128,
+          "end": 39.329
+        },
+        {
+          "text": "any",
+          "start": 39.43,
+          "end": 39.597
+        },
+        {
+          "text": "site",
+          "start": 39.608,
+          "end": 40.01
+        }
+      ]
+    },
+    {
+      "id": "06_subscribers",
+      "chapter": "SUBSCRIBERS & FRAUD",
+      "text": "Every signup is double opt-in verified and protected by Turnstile and browser-fingerprint fraud review before referral credit is granted.",
+      "file": "vo/06_subscribers.mp3",
+      "voStart": 40.54,
+      "voEnd": 48.268,
+      "duration": 7.728,
+      "sceneStart": 40.54,
+      "sceneEnd": 48.448,
+      "words": [
+        {
+          "text": "Every",
+          "start": 40.618,
+          "end": 40.83
+        },
+        {
+          "text": "signup",
+          "start": 40.841,
+          "end": 41.265
+        },
+        {
+          "text": "is",
+          "start": 41.388,
+          "end": 41.533
+        },
+        {
+          "text": "double",
+          "start": 41.6,
+          "end": 41.879
+        },
+        {
+          "text": "opt-in",
+          "start": 41.89,
+          "end": 42.348
+        },
+        {
+          "text": "verified",
+          "start": 42.348,
+          "end": 42.995
+        },
+        {
+          "text": "and",
+          "start": 43.096,
+          "end": 43.196
+        },
+        {
+          "text": "protected",
+          "start": 43.196,
+          "end": 43.631
+        },
+        {
+          "text": "by",
+          "start": 43.631,
+          "end": 43.743
+        },
+        {
+          "text": "Turnstile",
+          "start": 43.754,
+          "end": 44.491
+        },
+        {
+          "text": "and",
+          "start": 44.725,
+          "end": 44.792
+        },
+        {
+          "text": "browser-fingerprint",
+          "start": 44.803,
+          "end": 45.663
+        },
+        {
+          "text": "fraud",
+          "start": 45.663,
+          "end": 45.975
+        },
+        {
+          "text": "review",
+          "start": 45.986,
+          "end": 46.344
+        },
+        {
+          "text": "before",
+          "start": 46.567,
+          "end": 46.868
+        },
+        {
+          "text": "referral",
+          "start": 46.879,
+          "end": 47.203
+        },
+        {
+          "text": "credit",
+          "start": 47.214,
+          "end": 47.449
+        },
+        {
+          "text": "is",
+          "start": 47.46,
+          "end": 47.538
+        },
+        {
+          "text": "granted",
+          "start": 47.549,
+          "end": 47.951
+        }
+      ]
+    },
+    {
+      "id": "07_analytics",
+      "chapter": "FULL-FUNNEL ANALYTICS",
+      "text": "Track visitors, conversion benchmarks, K-factor virality, acquisition channels, browsers, and global reach on a live world map.",
+      "file": "vo/07_analytics.mp3",
+      "voStart": 48.448,
+      "voEnd": 56.248,
+      "duration": 7.8,
+      "sceneStart": 48.448,
+      "sceneEnd": 56.428,
+      "words": [
+        {
+          "text": "Track",
+          "start": 48.537,
+          "end": 48.794
+        },
+        {
+          "text": "visitors",
+          "start": 48.794,
+          "end": 49.386
+        },
+        {
+          "text": "conversion",
+          "start": 49.43,
+          "end": 49.877
+        },
+        {
+          "text": "benchmarks",
+          "start": 49.877,
+          "end": 50.546
+        },
+        {
+          "text": "K-factor",
+          "start": 50.702,
+          "end": 51.194
+        },
+        {
+          "text": "virality",
+          "start": 51.205,
+          "end": 51.796
+        },
+        {
+          "text": "acquisition",
+          "start": 52.031,
+          "end": 52.577
+        },
+        {
+          "text": "channels",
+          "start": 52.577,
+          "end": 53.057
+        },
+        {
+          "text": "browsers",
+          "start": 53.147,
+          "end": 53.783
+        },
+        {
+          "text": "and",
+          "start": 53.995,
+          "end": 54.084
+        },
+        {
+          "text": "global",
+          "start": 54.084,
+          "end": 54.519
+        },
+        {
+          "text": "reach",
+          "start": 54.519,
+          "end": 54.81
+        },
+        {
+          "text": "on",
+          "start": 54.888,
+          "end": 54.966
+        },
+        {
+          "text": "a",
+          "start": 54.966,
+          "end": 55.01
+        },
+        {
+          "text": "live",
+          "start": 55.01,
+          "end": 55.368
+        },
+        {
+          "text": "world",
+          "start": 55.379,
+          "end": 55.591
+        },
+        {
+          "text": "map",
+          "start": 55.591,
+          "end": 55.903
+        }
+      ]
+    },
+    {
+      "id": "08_emails",
+      "chapter": "EMAIL AUTOMATIONS",
+      "text": "Automate welcome emails, referral reminders, and milestone unlocks, or send targeted broadcasts with real-time delivery logs.",
+      "file": "vo/08_emails.mp3",
+      "voStart": 56.428,
+      "voEnd": 63.82,
+      "duration": 7.392,
+      "sceneStart": 56.428,
+      "sceneEnd": 64.0,
+      "words": [
+        {
+          "text": "Automate",
+          "start": 56.517,
+          "end": 56.964
+        },
+        {
+          "text": "welcome",
+          "start": 56.975,
+          "end": 57.377
+        },
+        {
+          "text": "emails",
+          "start": 57.388,
+          "end": 57.99
+        },
+        {
+          "text": "referral",
+          "start": 58.18,
+          "end": 58.549
+        },
+        {
+          "text": "reminders",
+          "start": 58.549,
+          "end": 59.151
+        },
+        {
+          "text": "and",
+          "start": 59.162,
+          "end": 59.263
+        },
+        {
+          "text": "milestone",
+          "start": 59.263,
+          "end": 59.799
+        },
+        {
+          "text": "unlocks",
+          "start": 59.799,
+          "end": 60.379
+        },
+        {
+          "text": "or",
+          "start": 60.591,
+          "end": 60.725
+        },
+        {
+          "text": "send",
+          "start": 60.736,
+          "end": 60.993
+        },
+        {
+          "text": "targeted",
+          "start": 60.993,
+          "end": 61.394
+        },
+        {
+          "text": "broadcasts",
+          "start": 61.394,
+          "end": 62.042
+        },
+        {
+          "text": "with",
+          "start": 62.042,
+          "end": 62.176
+        },
+        {
+          "text": "real-time",
+          "start": 62.187,
+          "end": 62.656
+        },
+        {
+          "text": "delivery",
+          "start": 62.656,
+          "end": 62.968
+        },
+        {
+          "text": "logs",
+          "start": 62.968,
+          "end": 63.47
+        }
+      ]
+    },
+    {
+      "id": "09_developers",
+      "chapter": "WEBHOOKS & API",
+      "text": "Connect your stack with signed webhooks, automatic retry queues, Slack and Discord alerts, scoped API keys, and workspace audit logs.",
+      "file": "vo/09_developers.mp3",
+      "voStart": 64.0,
+      "voEnd": 72.328,
+      "duration": 8.328,
+      "sceneStart": 64.0,
+      "sceneEnd": 72.508,
+      "words": [
+        {
+          "text": "Connect",
+          "start": 64.067,
+          "end": 64.279
+        },
+        {
+          "text": "your",
+          "start": 64.29,
+          "end": 64.379
+        },
+        {
+          "text": "stack",
+          "start": 64.391,
+          "end": 64.714
+        },
+        {
+          "text": "with",
+          "start": 64.714,
+          "end": 64.815
+        },
+        {
+          "text": "signed",
+          "start": 64.826,
+          "end": 65.116
+        },
+        {
+          "text": "webhooks",
+          "start": 65.116,
+          "end": 65.641
+        },
+        {
+          "text": "automatic",
+          "start": 65.875,
+          "end": 66.355
+        },
+        {
+          "text": "retry",
+          "start": 66.366,
+          "end": 66.801
+        },
+        {
+          "text": "queues",
+          "start": 66.801,
+          "end": 67.326
+        },
+        {
+          "text": "Slack",
+          "start": 67.538,
+          "end": 67.917
+        },
+        {
+          "text": "and",
+          "start": 67.917,
+          "end": 67.973
+        },
+        {
+          "text": "Discord",
+          "start": 67.973,
+          "end": 68.353
+        },
+        {
+          "text": "alerts",
+          "start": 68.353,
+          "end": 68.833
+        },
+        {
+          "text": "scoped",
+          "start": 69.078,
+          "end": 69.424
+        },
+        {
+          "text": "API",
+          "start": 69.558,
+          "end": 70.016
+        },
+        {
+          "text": "keys",
+          "start": 70.016,
+          "end": 70.54
+        },
+        {
+          "text": "and",
+          "start": 70.786,
+          "end": 70.886
+        },
+        {
+          "text": "workspace",
+          "start": 70.897,
+          "end": 71.377
+        },
+        {
+          "text": "audit",
+          "start": 71.377,
+          "end": 71.578
+        },
+        {
+          "text": "logs",
+          "start": 71.578,
+          "end": 71.98
+        }
+      ]
+    },
+    {
+      "id": "10_outro",
+      "chapter": "LAUNCH TODAY",
+      "text": "Build momentum before day one. Start free today at waitlyze.com.",
+      "file": "vo/10_outro.mp3",
+      "voStart": 72.508,
+      "voEnd": 76.972,
+      "duration": 4.464,
+      "sceneStart": 72.508,
+      "sceneEnd": 78.222,
+      "words": [
+        {
+          "text": "Build",
+          "start": 72.608,
+          "end": 72.787
+        },
+        {
+          "text": "momentum",
+          "start": 72.787,
+          "end": 73.267
+        },
+        {
+          "text": "before",
+          "start": 73.334,
+          "end": 73.724
+        },
+        {
+          "text": "day",
+          "start": 73.724,
+          "end": 73.914
+        },
+        {
+          "text": "one",
+          "start": 73.914,
+          "end": 74.249
+        },
+        {
+          "text": "Start",
+          "start": 74.606,
+          "end": 74.818
+        },
+        {
+          "text": "free",
+          "start": 74.818,
+          "end": 75.041
+        },
+        {
+          "text": "today",
+          "start": 75.042,
+          "end": 75.365
+        },
+        {
+          "text": "at",
+          "start": 75.521,
+          "end": 75.678
+        },
+        {
+          "text": "Waitlyze",
+          "start": 75.689,
+          "end": 76.191
+        },
+        {
+          "text": "dot",
+          "start": 76.191,
+          "end": 76.358
+        },
+        {
+          "text": "com",
+          "start": 76.358,
+          "end": 76.649
+        }
+      ]
+    }
+  ]
+}

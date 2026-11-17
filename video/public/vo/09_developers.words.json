@@ -1,0 +1,22 @@
+[
+  { "text": "Connect", "start": 0.067, "end": 0.279 },
+  { "text": "your", "start": 0.29, "end": 0.379 },
+  { "text": "stack", "start": 0.391, "end": 0.714 },
+  { "text": "with", "start": 0.714, "end": 0.815 },
+  { "text": "signed", "start": 0.826, "end": 1.116 },
+  { "text": "webhooks", "start": 1.116, "end": 1.641 },
+  { "text": "automatic", "start": 1.875, "end": 2.355 },
+  { "text": "retry", "start": 2.366, "end": 2.801 },
+  { "text": "queues", "start": 2.801, "end": 3.326 },
+  { "text": "Slack", "start": 3.538, "end": 3.917 },
+  { "text": "and", "start": 3.917, "end": 3.973 },
+  { "text": "Discord", "start": 3.973, "end": 4.353 },
+  { "text": "alerts", "start": 4.353, "end": 4.833 },
+  { "text": "scoped", "start": 5.078, "end": 5.424 },
+  { "text": "API", "start": 5.558, "end": 6.016 },
+  { "text": "keys", "start": 6.016, "end": 6.54 },
+  { "text": "and", "start": 6.786, "end": 6.886 },
+  { "text": "workspace", "start": 6.897, "end": 7.377 },
+  { "text": "audit", "start": 7.377, "end": 7.578 },
+  { "text": "logs", "start": 7.578, "end": 7.98 }
+]
