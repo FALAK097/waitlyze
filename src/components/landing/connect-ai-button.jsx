@@ -28,12 +28,20 @@ Follow https://waitlyze.com/docs/mcp for this client's setup. Use OAuth and let 
 
 Once connected, ask what waitlist I want to manage or analyze. Keep new changes as a draft for my review. Ask before publishing or deleting a waitlist.`;
 
+// Provider-specific listing URLs are assigned after directory approval. The
+// directory fallbacks remain useful while those listings are being reviewed.
+const CHATGPT_PLUGIN_URL =
+  process.env.NEXT_PUBLIC_CHATGPT_PLUGIN_URL || "https://chatgpt.com/plugins";
+const CLAUDE_CONNECTOR_URL =
+  process.env.NEXT_PUBLIC_CLAUDE_CONNECTOR_URL || "https://claude.ai/customize/connectors";
+
 const CLIENT_CONFIGS = [
   {
     id: "claude",
     name: "Claude Code",
     iconSrc: "/assets/icons/claude.svg",
     type: "cli",
+    language: "bash",
     command: "claude mcp add --transport http waitlyze https://waitlyze.com/mcp",
   },
   {
@@ -41,6 +49,7 @@ const CLIENT_CONFIGS = [
     name: "Cursor",
     iconSrc: "/assets/icons/cursor.svg",
     type: "json",
+    language: "json",
     snippet: JSON.stringify(
       {
         mcpServers: {
@@ -61,6 +70,7 @@ const CLIENT_CONFIGS = [
     name: "Codex",
     iconSrc: "/assets/icons/codex.svg",
     type: "cli",
+    language: "bash",
     command: "codex mcp add waitlyze --url https://waitlyze.com/mcp",
   },
   {
@@ -68,6 +78,7 @@ const CLIENT_CONFIGS = [
     name: "VS Code",
     iconSrc: "/assets/icons/vscode.svg",
     type: "json",
+    language: "json",
     snippet: JSON.stringify(
       {
         servers: {
@@ -89,6 +100,7 @@ const CLIENT_CONFIGS = [
     name: "OpenCode",
     iconSrc: "/assets/icons/opencode.svg",
     type: "json",
+    language: "json",
     snippet: JSON.stringify(
       {
         $schema: "https://opencode.ai/config.json",
@@ -107,6 +119,83 @@ const CLIENT_CONFIGS = [
     ),
   },
 ];
+
+function highlightJsonLine(line) {
+  const tokenPattern = /("(?:\\.|[^"\\])*")(\s*:)?|(-?\d+(?:\.\d+)?)|\b(true|false|null)\b/g;
+  const output = [];
+  let cursor = 0;
+  let tokenIndex = 0;
+
+  for (const match of line.matchAll(tokenPattern)) {
+    if (match.index > cursor) output.push(line.slice(cursor, match.index));
+
+    const [token, quoted, colon, number, literal] = match;
+    if (quoted) {
+      output.push(
+        <span key={`json-${tokenIndex++}`} className={colon ? "text-sky-700" : "text-emerald-700"}>
+          {quoted}
+        </span>,
+      );
+      if (colon) {
+        output.push(
+          <span key={`json-${tokenIndex++}`} className="text-neutral-500">
+            {colon}
+          </span>,
+        );
+      }
+    } else {
+      output.push(
+        <span key={`json-${tokenIndex++}`} className="text-amber-700">
+          {number || literal || token}
+        </span>,
+      );
+    }
+    cursor = match.index + token.length;
+  }
+
+  if (cursor < line.length) output.push(line.slice(cursor));
+  return output;
+}
+
+function highlightShellLine(line) {
+  const tokenPattern =
+    /(\s+|https?:\/\/[^\s]+|--[\w-]+|"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|[^\s]+)/g;
+  let commandSeen = false;
+
+  return Array.from(line.matchAll(tokenPattern), ([token], tokenIndex) => {
+    if (/^\s+$/.test(token)) return token;
+
+    let className = "text-neutral-800";
+    if (!commandSeen) {
+      commandSeen = true;
+      className = "font-semibold text-sky-700";
+    } else if (token.startsWith("--")) {
+      className = "text-amber-700";
+    } else if (token.startsWith("http")) {
+      className = "text-emerald-700";
+    } else if (["mcp", "add"].includes(token)) {
+      className = "text-sky-600";
+    }
+
+    return (
+      <span key={`shell-${tokenIndex}`} className={className}>
+        {token}
+      </span>
+    );
+  });
+}
+
+function SyntaxHighlightedCode({ code, language }) {
+  return (
+    <code>
+      {code.split("\n").map((line, lineIndex) => (
+        <span key={`${language}-${lineIndex}`} className="block min-h-[1.5em]">
+          {language === "json" ? highlightJsonLine(line) : highlightShellLine(line)}
+        </span>
+      ))}
+    </code>
+  );
+}
 
 export function ConnectAiButton({ className = "" }) {
   const [open, setOpen] = useState(false);
@@ -150,7 +239,7 @@ export function ConnectAiButton({ className = "" }) {
       <button
         type="button"
         onClick={handleOpen}
-        className={`wl-secondary-button ${className}`}
+        className={`wl-secondary-button cursor-pointer ${className}`}
         aria-label="Connect your AI agent to Waitlyze via Model Context Protocol"
       >
         <span className="flex items-center gap-1.5 text-neutral-900">
@@ -191,13 +280,7 @@ export function ConnectAiButton({ className = "" }) {
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-h-[92vh] w-[calc(100vw-2rem)] min-w-0 overflow-y-auto rounded-2xl border border-neutral-200/90 bg-white p-5 text-neutral-900 shadow-xl sm:w-full sm:max-w-xl sm:p-6">
           <DialogHeader className="text-left">
-            <div className="flex items-center gap-2">
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-neutral-200/80 bg-neutral-50 px-2.5 py-0.5 text-[11px] font-medium text-neutral-600">
-                <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" />
-                <span>Model Context Protocol</span>
-              </span>
-            </div>
-            <DialogTitle className="mt-2 text-lg font-bold tracking-tight text-neutral-900 sm:text-xl">
+            <DialogTitle className="text-lg font-bold tracking-tight text-neutral-900 sm:text-xl">
               Connect your AI agent to Waitlyze
             </DialogTitle>
             <DialogDescription className="mt-1 text-xs leading-relaxed text-neutral-500">
@@ -211,7 +294,7 @@ export function ConnectAiButton({ className = "" }) {
             <button
               type="button"
               onClick={() => setActiveTab("quick")}
-              className={`flex items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-xs font-medium transition-all ${
+              className={`flex cursor-pointer items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-xs font-medium transition-all ${
                 activeTab === "quick"
                   ? "bg-white font-semibold text-neutral-900 shadow-2xs"
                   : "text-neutral-600 hover:text-neutral-900"
@@ -223,7 +306,7 @@ export function ConnectAiButton({ className = "" }) {
             <button
               type="button"
               onClick={() => setActiveTab("developer")}
-              className={`flex items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-xs font-medium transition-all ${
+              className={`flex cursor-pointer items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-xs font-medium transition-all ${
                 activeTab === "developer"
                   ? "bg-white font-semibold text-neutral-900 shadow-2xs"
                   : "text-neutral-600 hover:text-neutral-900"
@@ -239,13 +322,14 @@ export function ConnectAiButton({ className = "" }) {
               {/* Top AI Assistants */}
               <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
                 <a
-                  href="https://waitlyze.com/docs/mcp#set-up-chatgpt"
+                  href={CHATGPT_PLUGIN_URL}
                   target="_blank"
                   rel="noopener noreferrer"
+                  aria-label="Install the Waitlyze plugin in ChatGPT"
                   onClick={() =>
                     trackClientEvent("mcp_chatgpt_connect_clicked", { source: "connect_ai_modal" })
                   }
-                  className="group flex items-center justify-between rounded-xl border border-neutral-200/90 bg-white p-3 transition-all hover:border-neutral-900 hover:shadow-2xs"
+                  className="group flex cursor-pointer items-center justify-between rounded-xl border border-neutral-200/90 bg-white p-3 transition-all hover:border-neutral-900 hover:shadow-2xs"
                 >
                   <div className="flex items-center gap-2.5">
                     <img
@@ -254,11 +338,8 @@ export function ConnectAiButton({ className = "" }) {
                       className="h-5 w-5 shrink-0 object-contain"
                       aria-hidden="true"
                     />
-                    <div>
-                      <div className="text-xs font-semibold text-neutral-900 group-hover:text-black">
-                        ChatGPT
-                      </div>
-                      <div className="text-[11px] text-neutral-500">Plugin / Custom action</div>
+                    <div className="text-xs font-semibold text-neutral-900 group-hover:text-black">
+                      ChatGPT
                     </div>
                   </div>
                   <HugeiconsIcon
@@ -270,13 +351,14 @@ export function ConnectAiButton({ className = "" }) {
                 </a>
 
                 <a
-                  href="https://waitlyze.com/docs/mcp#set-up-claude"
+                  href={CLAUDE_CONNECTOR_URL}
                   target="_blank"
                   rel="noopener noreferrer"
+                  aria-label="Connect Waitlyze to Claude"
                   onClick={() =>
                     trackClientEvent("mcp_claude_connect_clicked", { source: "connect_ai_modal" })
                   }
-                  className="group flex items-center justify-between rounded-xl border border-neutral-200/90 bg-white p-3 transition-all hover:border-neutral-900 hover:shadow-2xs"
+                  className="group flex cursor-pointer items-center justify-between rounded-xl border border-neutral-200/90 bg-white p-3 transition-all hover:border-neutral-900 hover:shadow-2xs"
                 >
                   <div className="flex items-center gap-2.5">
                     <img
@@ -285,11 +367,8 @@ export function ConnectAiButton({ className = "" }) {
                       className="h-5 w-5 shrink-0 object-contain"
                       aria-hidden="true"
                     />
-                    <div>
-                      <div className="text-xs font-semibold text-neutral-900 group-hover:text-black">
-                        Claude
-                      </div>
-                      <div className="text-[11px] text-neutral-500">Custom connector</div>
+                    <div className="text-xs font-semibold text-neutral-900 group-hover:text-black">
+                      Claude
                     </div>
                   </div>
                   <HugeiconsIcon
@@ -320,7 +399,7 @@ export function ConnectAiButton({ className = "" }) {
                     onClick={handleCopyPrompt}
                     aria-label={copiedPrompt ? "Copied" : "Copy connection prompt"}
                     title={copiedPrompt ? "Copied" : "Copy connection prompt"}
-                    className="absolute top-2.5 right-2.5 flex h-7 w-7 items-center justify-center rounded-lg border border-neutral-200 bg-white text-neutral-600 shadow-2xs transition-all hover:bg-neutral-50 hover:text-neutral-900"
+                    className="absolute top-2.5 right-2.5 flex h-7 w-7 cursor-pointer items-center justify-center rounded-lg border border-neutral-200 bg-white text-neutral-600 shadow-2xs transition-all hover:bg-neutral-50 hover:text-neutral-900"
                   >
                     <HugeiconsIcon
                       icon={copiedPrompt ? Tick01Icon : Copy01Icon}
@@ -333,7 +412,7 @@ export function ConnectAiButton({ className = "" }) {
                 <button
                   type="button"
                   onClick={handleCopyPrompt}
-                  className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-neutral-900 px-4 py-2.5 text-xs font-semibold text-white shadow-xs transition-all hover:bg-black active:scale-[0.99]"
+                  className="mt-3 flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-neutral-900 px-4 py-2.5 text-xs font-semibold text-white shadow-xs transition-all hover:bg-black active:scale-[0.99]"
                 >
                   <HugeiconsIcon
                     icon={copiedPrompt ? Tick01Icon : Copy01Icon}
@@ -358,7 +437,7 @@ export function ConnectAiButton({ className = "" }) {
                       key={client.id}
                       type="button"
                       onClick={() => setSelectedClient(client.id)}
-                      className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-all ${
+                      className={`inline-flex cursor-pointer items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-all ${
                         isActive
                           ? "border border-neutral-200/80 bg-white font-semibold text-neutral-950 shadow-2xs"
                           : "border border-transparent text-neutral-600 hover:bg-white/60 hover:text-neutral-900"
@@ -377,16 +456,16 @@ export function ConnectAiButton({ className = "" }) {
               </div>
 
               {/* Light-style Command / Config Box with Icon-Only Green Tick Copy */}
-              <div className="relative w-full min-w-0 overflow-hidden rounded-xl border border-neutral-200 bg-neutral-50/80">
-                <pre className="max-h-56 w-full min-w-0 overflow-x-auto p-3.5 pr-12 font-mono text-xs leading-relaxed text-neutral-800">
-                  <code>{copyRawText}</code>
+              <div className="relative h-56 w-full min-w-0 overflow-hidden rounded-xl border border-neutral-200 bg-neutral-50/80">
+                <pre className="h-full w-full min-w-0 overflow-auto p-3.5 pr-12 font-mono text-xs leading-relaxed text-neutral-800">
+                  <SyntaxHighlightedCode code={copyRawText} language={activeConfig.language} />
                 </pre>
                 <button
                   type="button"
                   onClick={handleCopyConfig}
                   aria-label={copiedConfig ? "Copied" : "Copy configuration"}
                   title={copiedConfig ? "Copied" : "Copy configuration"}
-                  className="absolute top-2.5 right-2.5 flex h-7 w-7 items-center justify-center rounded-lg border border-neutral-200 bg-white text-neutral-600 shadow-2xs transition-all hover:bg-neutral-50 hover:text-neutral-900"
+                  className="absolute top-2.5 right-2.5 flex h-7 w-7 cursor-pointer items-center justify-center rounded-lg border border-neutral-200 bg-white text-neutral-600 shadow-2xs transition-all hover:bg-neutral-50 hover:text-neutral-900"
                 >
                   <HugeiconsIcon
                     icon={copiedConfig ? Tick01Icon : Copy01Icon}

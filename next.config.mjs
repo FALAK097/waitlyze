@@ -7,18 +7,24 @@ import { parse } from "jsonc-parser";
 const workerConfig = parse(readFileSync(new URL("./wrangler.jsonc", import.meta.url), "utf8"));
 const workerVars = workerConfig.vars || {};
 
-const publicAnalyticsEnv = {
+const publicClientEnv = {
   NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN:
     process.env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN || workerVars.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN,
   NEXT_PUBLIC_POSTHOG_HOST:
     process.env.NEXT_PUBLIC_POSTHOG_HOST || workerVars.NEXT_PUBLIC_POSTHOG_HOST,
+  NEXT_PUBLIC_CHATGPT_PLUGIN_URL:
+    process.env.NEXT_PUBLIC_CHATGPT_PLUGIN_URL || workerVars.NEXT_PUBLIC_CHATGPT_PLUGIN_URL || "",
+  NEXT_PUBLIC_CLAUDE_CONNECTOR_URL:
+    process.env.NEXT_PUBLIC_CLAUDE_CONNECTOR_URL ||
+    workerVars.NEXT_PUBLIC_CLAUDE_CONNECTOR_URL ||
+    "",
 };
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Worker vars are runtime-only. Explicitly expose the public analytics values
+  // Worker vars are runtime-only. Explicitly expose the public client values
   // while Next.js builds the browser bundle, using wrangler.jsonc as the source.
-  env: publicAnalyticsEnv,
+  env: publicClientEnv,
   experimental: {
     serverActions: { bodySizeLimit: "5mb" },
     optimizePackageImports: [

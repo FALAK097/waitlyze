@@ -51,6 +51,8 @@
     "CLOUDFLARE_CUSTOM_HOSTNAME_TARGET": "customers.waitlyze.com",
     "NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN": "phc_vfaMAZVH3zqkvQmHiAbNij5CBFaXgWh4yB7HZYRJJk7p",
     "NEXT_PUBLIC_POSTHOG_HOST": "https://us.i.posthog.com",
+    "NEXT_PUBLIC_CHATGPT_PLUGIN_URL": "",
+    "NEXT_PUBLIC_CLAUDE_CONNECTOR_URL": "https://claude.ai/customize/connectors/id/919b8d6d-d534-42e1-addc-6628c2531ff5",
     "POSTHOG_HOST": "https://us.i.posthog.com",
   },
   "send_email": [{ "name": "EMAIL", "allowed_sender_addresses": ["noreply@waitlyze.com"] }],

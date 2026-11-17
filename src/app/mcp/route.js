@@ -10,7 +10,7 @@ const CORS_HEADERS = {
   "Access-Control-Allow-Methods": "POST, GET, OPTIONS",
   "Access-Control-Allow-Headers":
     "Authorization, Content-Type, Accept, x-waitlyze-api-key, mcp-session-id, mcp-method, mcp-name, mcp-protocol-version, MCP-Protocol-Version",
-  "Access-Control-Expose-Headers": "mcp-session-id",
+  "Access-Control-Expose-Headers": "mcp-session-id, WWW-Authenticate",
 };
 
 const mcpHandler = createMcpHandler(
@@ -33,6 +33,34 @@ function applyCors(response) {
     statusText: response.statusText,
     headers,
   });
+}
+
+function createAuthChallenge({ baseUrl, error, id = null, invalidToken = false }) {
+  const challengeParams = [
+    invalidToken ? 'error="invalid_token"' : null,
+    invalidToken && error ? `error_description="${error.replaceAll('"', "'")}"` : null,
+    `resource_metadata="${baseUrl}/.well-known/oauth-protected-resource"`,
+  ].filter(Boolean);
+
+  return applyCors(
+    new Response(
+      JSON.stringify({
+        jsonrpc: "2.0",
+        error: {
+          code: -32001,
+          message: error || "Authentication required to access Waitlyze.",
+        },
+        id,
+      }),
+      {
+        status: 401,
+        headers: {
+          "Content-Type": "application/json",
+          "WWW-Authenticate": `Bearer ${challengeParams.join(", ")}`,
+        },
+      },
+    ),
+  );
 }
 
 async function normalizeRequest(request) {
@@ -97,30 +125,17 @@ export async function POST(request) {
     const authContext = await resolveMcpAuth(req);
 
     const baseUrl = process.env.BETTER_AUTH_URL || "https://waitlyze.com";
-    const isToolCall = parsedBody?.method === "tools/call";
-
-    // Return 401 challenge with WWW-Authenticate if an invalid/expired token was provided
-    // or if an unauthenticated caller attempts to execute protected tools.
-    if (!authContext.authenticated && (hasAuthToken || isToolCall)) {
-      return applyCors(
-        new Response(
-          JSON.stringify({
-            jsonrpc: "2.0",
-            error: {
-              code: -32001,
-              message: authContext.error || "Authentication required to execute MCP operations.",
-            },
-            id: parsedBody?.id ?? null,
-          }),
-          {
-            status: 401,
-            headers: {
-              "Content-Type": "application/json",
-              "WWW-Authenticate": `Bearer error="invalid_token", error_description="${authContext.error || "Unauthorized"}", resource_metadata="${baseUrl}/.well-known/oauth-protected-resource"`,
-            },
-          },
-        ),
-      );
+    // Claude requires a 401 challenge to begin OAuth and ignores authentication
+    // metadata on a successful response. All Waitlyze MCP operations are
+    // account-scoped, so challenge unauthenticated protocol requests before
+    // initialize or tools/list can make the server appear public.
+    if (!authContext.authenticated) {
+      return createAuthChallenge({
+        baseUrl,
+        error: authContext.error,
+        id: parsedBody?.id ?? null,
+        invalidToken: hasAuthToken,
+      });
     }
 
     const response = await mcpHandler.fetch(req, { parsedBody });
@@ -151,6 +166,19 @@ export async function GET(request) {
   const hasMcpHeader = request.headers.has("mcp-method") || request.headers.has("mcp-session-id");
 
   if (accept.includes("text/event-stream") || hasMcpHeader) {
+    const authContext = await resolveMcpAuth(request);
+    if (!authContext.authenticated) {
+      const baseUrl = process.env.BETTER_AUTH_URL || "https://waitlyze.com";
+      const hasAuthToken = Boolean(
+        request.headers.get("authorization") || request.headers.get("x-waitlyze-api-key"),
+      );
+      return createAuthChallenge({
+        baseUrl,
+        error: authContext.error,
+        invalidToken: hasAuthToken,
+      });
+    }
+
     const response = await mcpHandler.fetch(request);
     return applyCors(response);
   }

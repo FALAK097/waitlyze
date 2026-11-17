@@ -6,6 +6,8 @@ import { jwt } from "better-auth/plugins";
 import { getMcpResourceUrl, MCP_SCOPES } from "./mcp/config.mjs";
 import prisma from "./prisma.js";
 
+const OAUTH_SCOPES = Object.freeze(["openid", "profile", "email", "offline_access", ...MCP_SCOPES]);
+
 const socialProviders = {};
 if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
   socialProviders.google = {
@@ -42,7 +44,7 @@ export const auth = betterAuth({
       loginPage: "/connect/login",
       consentPage: "/connect/consent",
       resource: getMcpResourceUrl(),
-      scopes: ["openid", "profile", "offline_access", ...MCP_SCOPES],
+      scopes: OAUTH_SCOPES,
       resources: [
         {
           identifier: getMcpResourceUrl(),
@@ -56,7 +58,7 @@ export const auth = betterAuth({
       allowDynamicClientRegistration: true,
       allowUnauthenticatedClientRegistration: true,
       clientRegistrationDefaultApplicationType: "infer",
-      clientRegistrationDefaultScopes: MCP_SCOPES,
+      clientRegistrationDefaultScopes: OAUTH_SCOPES,
       refreshTokenReuseInterval: 0,
     }),
   ],
