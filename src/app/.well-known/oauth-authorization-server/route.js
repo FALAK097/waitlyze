@@ -16,7 +16,7 @@ export async function GET() {
     token_endpoint: `${authBase}/oauth2/token`,
     jwks_uri: `${authBase}/jwks`,
     registration_endpoint: `${authBase}/oauth2/register`,
-    scopes_supported: ["openid", "profile", "offline_access", ...MCP_SCOPES],
+    scopes_supported: ["openid", "profile", "email", "offline_access", ...MCP_SCOPES],
     response_types_supported: ["code"],
     grant_types_supported: ["authorization_code", "refresh_token"],
     token_endpoint_auth_methods_supported: ["client_secret_basic", "client_secret_post", "none"],
