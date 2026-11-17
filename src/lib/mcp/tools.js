@@ -3,6 +3,7 @@ import { z } from "zod";
 import { getWorkspaceEntitlements, requireCapacity } from "@/lib/billing/plans.mjs";
 import { RESERVED_WAITLIST_SLUGS } from "@/lib/campaigns/create-draft.mjs";
 import { pauseCampaign, publishCampaign } from "@/lib/campaigns/publication.mjs";
+import { saveDraftSnapshot } from "@/lib/campaigns/save-draft-snapshot.mjs";
 import { enqueueBroadcast } from "@/lib/email/broadcast-queue.mjs";
 import { normalizeSignupEmail } from "@/lib/normalize-email.mjs";
 import prisma from "@/lib/prisma.js";
@@ -13,6 +14,7 @@ import {
   encryptSecret,
   validateWebhookUrl,
 } from "@/lib/webhooks/security.mjs";
+import { campaignScope } from "@/lib/workspaces/service.mjs";
 import { createApiKey, listUserApiKeys, revokeApiKey } from "@/services/api-key/index.js";
 
 import { resolveWorkspaceContext } from "./auth.js";
@@ -62,12 +64,9 @@ export function registerWaitlyzeTools(server, authContext) {
     }
   }
 
-  // Helper to check waitlist access
-  // Write permissions require a write scope: 'waitlist:write' for API keys,
-  // 'mcp:write' for OAuth tokens and authenticated sessions.
-  async function getAuthorizedWaitlist(waitlistId, permission = "viewCampaign") {
+  // Scope check helper
+  function requireWriteScope(permission = "editCampaign") {
     ensureAuth();
-
     if (WRITE_PERMISSIONS.has(permission)) {
       const scopes = authContext.scopes || [];
       const hasWriteScope =
@@ -80,34 +79,30 @@ export function registerWaitlyzeTools(server, authContext) {
         );
       }
     }
+  }
+
+  // Helper to check waitlist access enforcing workspace role permissions and campaign scope
+  async function getAuthorizedWaitlist(waitlistId, permission = "viewCampaign") {
+    requireWriteScope(permission);
 
     if (authContext.waitlistId && authContext.waitlistId !== waitlistId) {
       throw new Error("Forbidden: Scoped API key does not have access to this waitlist.");
     }
 
-    const waitlist = await prisma.waitList.findUnique({
-      where: { id: waitlistId },
+    const waitlist = await prisma.waitList.findFirst({
+      where: {
+        id: waitlistId,
+        ...campaignScope(authContext.userId, permission),
+      },
       include: {
         workspace: {
-          include: {
-            members: { where: { userId: authContext.userId } },
-          },
+          select: { id: true, name: true },
         },
       },
     });
 
     if (!waitlist) {
-      throw new Error(`Waitlist '${waitlistId}' not found.`);
-    }
-
-    // If waitlist has a workspace, check workspace membership
-    if (waitlist.workspaceId) {
-      const isMember = waitlist.workspace?.members?.length > 0;
-      if (!isMember && waitlist.userId !== authContext.userId) {
-        throw new Error("Forbidden: You do not have access to this waitlist.");
-      }
-    } else if (waitlist.userId !== authContext.userId) {
-      throw new Error("Forbidden: You do not have access to this waitlist.");
+      throw new Error(`Waitlist '${waitlistId}' not found or you do not have permission.`);
     }
 
     return waitlist;
@@ -471,6 +466,10 @@ export function registerWaitlyzeTools(server, authContext) {
     }) => {
       try {
         ensureAuth();
+        requireWriteScope("editCampaign");
+        if (authContext.waitlistId) {
+          return errorContent("Forbidden: Waitlist-scoped API keys cannot create waitlists.");
+        }
         const wsContext = await resolveWorkspaceContext(authContext, workspaceId);
 
         let slug = publicSlug;
@@ -581,6 +580,41 @@ export function registerWaitlyzeTools(server, authContext) {
         if (updates.fraudMode !== undefined) data.fraudMode = updates.fraudMode;
         if (updates.showReferrals !== undefined) data.showReferrals = updates.showReferrals;
         if (updates.showSocialProof !== undefined) data.showSocialProof = updates.showSocialProof;
+
+        if (
+          waitlist.templateSnapshot &&
+          (updates.buttonText !== undefined || updates.successMessage !== undefined)
+        ) {
+          try {
+            const raw =
+              typeof waitlist.templateSnapshot === "string"
+                ? JSON.parse(waitlist.templateSnapshot)
+                : waitlist.templateSnapshot;
+            const snapshot = { ...raw };
+            if (updates.buttonText !== undefined && snapshot.form) {
+              snapshot.form = { ...snapshot.form, buttonText: updates.buttonText.slice(0, 40) };
+            }
+            if (updates.successMessage !== undefined && snapshot.statusPage) {
+              snapshot.statusPage = {
+                ...snapshot.statusPage,
+                body: updates.successMessage.slice(0, 500),
+              };
+            }
+            await saveDraftSnapshot(
+              prisma,
+              authContext.userId,
+              waitlist.workspaceId,
+              waitlist.id,
+              waitlist.templateRevision,
+              snapshot,
+            );
+          } catch (snapshotErr) {
+            console.warn(
+              "Failed to sync templateSnapshot during waitlist update:",
+              snapshotErr?.message || snapshotErr,
+            );
+          }
+        }
 
         const updated = await prisma.waitList.update({
           where: { id: waitlistId },
@@ -909,7 +943,7 @@ export function registerWaitlyzeTools(server, authContext) {
               rank: count + 1,
               points: 0,
               verifiedAt: autoVerify ? now : null,
-              marketingConsentAt: now,
+              marketingConsentAt: null,
               customFields: customFields || null,
               utmSource: utmSource || null,
               utmMedium: utmMedium || null,
@@ -1523,6 +1557,9 @@ export function registerWaitlyzeTools(server, authContext) {
     },
     async ({ waitlistId, name, scopes }) => {
       try {
+        if (authContext?.authType === "api_key") {
+          return errorContent("Forbidden: API keys cannot create other API keys.");
+        }
         const waitlist = await getAuthorizedWaitlist(waitlistId, "manageConnections");
         const record = await createApiKey({
           name,
@@ -1558,6 +1595,9 @@ export function registerWaitlyzeTools(server, authContext) {
     async ({ keyId }) => {
       try {
         ensureAuth();
+        if (authContext?.authType === "api_key") {
+          return errorContent("Forbidden: API keys cannot revoke API keys.");
+        }
 
         // Look the key up first so we can authorize waitlist-scoped keys and
         // revoke them with the right waitlistId (revokeApiKey only matches

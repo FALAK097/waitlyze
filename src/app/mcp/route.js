@@ -9,7 +9,7 @@ const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "POST, GET, OPTIONS",
   "Access-Control-Allow-Headers":
-    "Authorization, Content-Type, Accept, x-waitlyze-api-key, mcp-session-id, mcp-method, mcp-name",
+    "Authorization, Content-Type, Accept, x-waitlyze-api-key, mcp-session-id, mcp-method, mcp-name, mcp-protocol-version, MCP-Protocol-Version",
   "Access-Control-Expose-Headers": "mcp-session-id",
 };
 
@@ -90,6 +90,39 @@ export async function POST(request) {
     }
 
     const { req, parsedBody } = await normalizeRequest(request);
+
+    const authHeader = request.headers.get("authorization");
+    const apiKeyHeader = request.headers.get("x-waitlyze-api-key");
+    const hasAuthToken = Boolean(authHeader || apiKeyHeader);
+    const authContext = await resolveMcpAuth(req);
+
+    const baseUrl = process.env.BETTER_AUTH_URL || "https://waitlyze.com";
+    const isToolCall = parsedBody?.method === "tools/call";
+
+    // Return 401 challenge with WWW-Authenticate if an invalid/expired token was provided
+    // or if an unauthenticated caller attempts to execute protected tools.
+    if (!authContext.authenticated && (hasAuthToken || isToolCall)) {
+      return applyCors(
+        new Response(
+          JSON.stringify({
+            jsonrpc: "2.0",
+            error: {
+              code: -32001,
+              message: authContext.error || "Authentication required to execute MCP operations.",
+            },
+            id: parsedBody?.id ?? null,
+          }),
+          {
+            status: 401,
+            headers: {
+              "Content-Type": "application/json",
+              "WWW-Authenticate": `Bearer error="invalid_token", error_description="${authContext.error || "Unauthorized"}", resource_metadata="${baseUrl}/.well-known/oauth-protected-resource"`,
+            },
+          },
+        ),
+      );
+    }
+
     const response = await mcpHandler.fetch(req, { parsedBody });
     return applyCors(response);
   } catch (error) {

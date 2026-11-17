@@ -192,7 +192,11 @@ export async function resolveMcpAuth(request) {
             const scopes =
               typeof payload.scope === "string" && payload.scope.trim()
                 ? payload.scope.trim().split(/\s+/)
-                : ["mcp:read", "mcp:write"];
+                : [];
+
+            if (scopes.length === 0) {
+              return { authenticated: false, error: "Token lacks MCP scopes." };
+            }
 
             return {
               authenticated: true,
@@ -218,7 +222,7 @@ export async function resolveMcpAuth(request) {
       },
       include: {
         user: { select: { id: true, name: true, email: true } },
-        client: { select: { clientId: true, clientName: true } },
+        client: { select: { clientId: true, name: true } },
       },
     });
 
@@ -229,7 +233,7 @@ export async function resolveMcpAuth(request) {
         userId: oauthToken.userId,
         user: oauthToken.user,
         clientId: oauthToken.clientId,
-        clientName: oauthToken.client?.clientName,
+        clientName: oauthToken.client?.name,
         scopes: oauthToken.scopes || ["mcp:read", "mcp:write"],
       };
     }

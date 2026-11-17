@@ -5,6 +5,7 @@ import { Suspense, useState } from "react";
 
 import Wordmark from "@/components/landing/wordmark";
 import { Button } from "@/components/ui/button";
+import { authClient } from "@/lib/auth-client";
 
 function ConnectConsentContent() {
   const searchParams = useSearchParams();
@@ -18,21 +19,18 @@ function ConnectConsentContent() {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch("/api/auth/oauth2/consent", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          accept,
-          clientId,
-          scope: scope.split(" "),
-        }),
+      const res = await authClient.oauth2.consent({
+        accept,
+        scope: typeof scope === "string" && scope.trim() ? scope.trim() : undefined,
       });
 
-      const data = await response.json();
-      if (data?.redirectURI) {
-        window.location.href = data.redirectURI;
-      } else if (data?.url) {
-        window.location.href = data.url;
+      if (res?.data?.url) {
+        window.location.href = res.data.url;
+      } else if (res?.data?.redirectURI) {
+        window.location.href = res.data.redirectURI;
+      } else if (res?.error) {
+        setError(res.error.message || "Failed to process consent response");
+        setLoading(false);
       } else {
         window.close();
       }

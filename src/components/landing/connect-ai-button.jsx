@@ -60,18 +60,8 @@ const CLIENT_CONFIGS = [
     id: "codex",
     name: "Codex",
     iconSrc: "/assets/icons/codex.svg",
-    type: "json",
-    snippet: JSON.stringify(
-      {
-        mcpServers: {
-          waitlyze: {
-            url: "https://waitlyze.com/mcp",
-          },
-        },
-      },
-      null,
-      2,
-    ),
+    type: "cli",
+    command: "codex mcp add waitlyze --url https://waitlyze.com/mcp",
   },
   {
     id: "vscode",
@@ -80,7 +70,7 @@ const CLIENT_CONFIGS = [
     type: "json",
     snippet: JSON.stringify(
       {
-        "mcp.servers": {
+        servers: {
           waitlyze: {
             type: "http",
             url: "https://waitlyze.com/mcp",

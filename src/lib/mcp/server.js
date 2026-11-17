@@ -29,13 +29,24 @@ export function createWaitlyzeMcpServer(authContext) {
       serverBuild: "waitlyze-mcp@0.10.0",
       beforeSend: (event) => {
         if (!event) return event;
-        // Redact API keys, tokens, or authorization values
         const sanitizeValue = (val) => {
-          if (typeof val !== "string") return val;
-          return val
-            .replace(/wl2_[a-f0-9]{32}_[A-Za-z0-9_-]{43}/gi, "wl2_[REDACTED]")
-            .replace(/whsec_[A-Za-z0-9_-]+/gi, "whsec_[REDACTED]")
-            .replace(/Bearer\s+[A-Za-z0-9_.-]+/gi, "Bearer [REDACTED]");
+          if (typeof val === "string") {
+            return val
+              .replace(/wl2_[a-f0-9]{32}_[A-Za-z0-9_-]{43}/gi, "wl2_[REDACTED]")
+              .replace(/whsec_[A-Za-z0-9_-]+/gi, "whsec_[REDACTED]")
+              .replace(/Bearer\s+[A-Za-z0-9_.-]+/gi, "Bearer [REDACTED]");
+          }
+          if (Array.isArray(val)) {
+            return val.map(sanitizeValue);
+          }
+          if (val && typeof val === "object") {
+            const sanitized = {};
+            for (const key of Object.keys(val)) {
+              sanitized[key] = sanitizeValue(val[key]);
+            }
+            return sanitized;
+          }
+          return val;
         };
 
         if (event.properties && typeof event.properties === "object") {
