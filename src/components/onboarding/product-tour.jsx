@@ -38,7 +38,7 @@ function Rail({ slides, index, onPick, onSkip, last }) {
   return (
     <nav
       aria-label="Tour chapters"
-      className="max-h-[620px]:hidden flex w-52 shrink-0 flex-col border-r border-product-border-subtle bg-product-bg-inset/65 px-3.5 py-5 max-[920px]:hidden"
+      className="flex w-52 shrink-0 flex-col border-r border-product-border-subtle bg-product-bg-inset/65 px-3.5 py-5 max-[920px]:hidden [@media(max-height:620px)]:hidden"
     >
       <div className="flex items-center gap-2.5 px-2">
         <BrandMark />
@@ -132,6 +132,7 @@ function Rail({ slides, index, onPick, onSkip, last }) {
 function ChapterStrip({ slides, index, onPick }) {
   const at = slides[index];
   const stripRef = useRef(null);
+  const reduceMotion = useReducedMotion();
   const starts = useMemo(() => slides.flatMap((s, i) => (s.si === 0 ? [i] : [])), [slides]);
 
   useEffect(() => {
@@ -139,9 +140,13 @@ function ChapterStrip({ slides, index, onPick }) {
     if (!container) return;
     const activeChip = container.querySelector('[data-active="true"]');
     if (activeChip instanceof HTMLElement) {
-      activeChip.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
+      activeChip.scrollIntoView({
+        behavior: reduceMotion ? "instant" : "smooth",
+        inline: "center",
+        block: "nearest",
+      });
     }
-  }, [at.ci]);
+  }, [at.ci, reduceMotion]);
 
   return (
     <nav aria-label="Tour chapters" className="min-w-0 flex-1" data-no-swipe>
@@ -185,7 +190,7 @@ function SlideCopy({ slide, titleId, firstName }) {
   const count = slide.chapter.slides.length;
 
   return (
-    <div className="max-h-[620px]:grid-cols-1 max-h-[620px]:gap-3 max-h-[620px]:px-5 max-h-[620px]:py-3.5 grid shrink-0 grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)] items-center gap-8 px-7 py-5 max-[920px]:grid-cols-1 max-[920px]:gap-4 max-[920px]:px-5 max-[920px]:py-4">
+    <div className="grid shrink-0 grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)] items-center gap-8 px-7 py-5 max-[920px]:grid-cols-1 max-[920px]:gap-4 max-[920px]:px-5 max-[920px]:py-4 [@media(max-height:620px)]:grid-cols-1 [@media(max-height:620px)]:gap-3 [@media(max-height:620px)]:px-5 [@media(max-height:620px)]:py-3.5">
       <div className="min-w-0">
         <p className="text-[11px] font-semibold tracking-[0.1em] text-[#196642] uppercase">
           {slide.chapter.name}
@@ -340,7 +345,7 @@ export function ProductTour({ entry, onClose, open, userName }) {
         showCloseButton={false}
         aria-labelledby={titleId}
         overlayClassName="bg-product-text-primary/35 supports-backdrop-filter:backdrop-blur-[2px]"
-        className="product-ui max-h-[620px]:h-[calc(100dvh-1rem)] flex h-[min(780px,calc(100dvh-2rem))] w-[min(1220px,calc(100vw-2rem))]! max-w-none! gap-0 overflow-hidden rounded-2xl bg-white p-0 shadow-[0_32px_90px_-28px_rgba(0,22,13,0.32)] ring-1 ring-product-border-subtle duration-200 max-[920px]:h-[calc(100dvh-1rem)] max-[920px]:w-[calc(100vw-1rem)]!"
+        className="product-ui flex h-[min(780px,calc(100dvh-2rem))] w-[min(1220px,calc(100vw-2rem))]! max-w-none! gap-0 overflow-hidden rounded-2xl bg-white p-0 shadow-[0_32px_90px_-28px_rgba(0,22,13,0.32)] ring-1 ring-product-border-subtle duration-200 max-[920px]:h-[calc(100dvh-1rem)] max-[920px]:w-[calc(100vw-1rem)]! [@media(max-height:620px)]:h-[calc(100dvh-1rem)]"
       >
         <DialogTitle className="sr-only">Waitlyze product tour</DialogTitle>
 
@@ -364,14 +369,14 @@ export function ProductTour({ entry, onClose, open, userName }) {
           <button
             type="button"
             onClick={() => finish(lastStep ? "completed" : "skipped")}
-            className="max-h-[620px]:hidden absolute top-5 right-5 z-20 inline-flex h-8 items-center gap-1.5 rounded-full bg-white/95 px-3 text-[12px] font-medium text-product-text-secondary shadow-xs ring-1 ring-product-border-subtle backdrop-blur-sm transition-colors hover:bg-white hover:text-product-text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-product-focus max-[920px]:hidden"
+            className="absolute top-5 right-5 z-20 inline-flex h-8 items-center gap-1.5 rounded-full bg-white/95 px-3 text-[12px] font-medium text-product-text-secondary shadow-xs ring-1 ring-product-border-subtle backdrop-blur-sm transition-colors hover:bg-white hover:text-product-text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-product-focus max-[920px]:hidden [@media(max-height:620px)]:hidden"
           >
             <HugeiconsIcon icon={Cancel01Icon} className="size-3.5" aria-hidden="true" />
             <span>{lastStep ? "Close" : "Skip tour"}</span>
           </button>
 
           {/* Compact / mobile / short-viewport top chapter strip */}
-          <div className="max-h-[620px]:flex hidden h-12 shrink-0 items-center gap-2 border-b border-product-border-subtle bg-product-bg-inset/50 px-3 max-[920px]:flex">
+          <div className="hidden h-12 shrink-0 items-center gap-2 border-b border-product-border-subtle bg-product-bg-inset/50 px-3 max-[920px]:flex [@media(max-height:620px)]:flex">
             <BrandMark className="mr-1 shrink-0" />
             <ChapterStrip slides={TOUR_SLIDES} index={stepIndex} onPick={goTo} />
             <button
@@ -409,9 +414,9 @@ export function ProductTour({ entry, onClose, open, userName }) {
                 animate="center"
                 exit="exit"
                 transition={{ duration: reduceMotion ? 0 : 0.22, ease: TOUR_EASE }}
-                className="max-h-[620px]:overflow-y-auto max-h-[620px]:overscroll-contain absolute inset-0 flex flex-col bg-white max-[920px]:overflow-y-auto max-[920px]:overscroll-contain"
+                className="absolute inset-0 flex flex-col bg-white max-[920px]:overflow-y-auto max-[920px]:overscroll-contain [@media(max-height:620px)]:overflow-y-auto [@media(max-height:620px)]:overscroll-contain"
               >
-                <div className="max-h-[620px]:h-[clamp(165px,42dvh,235px)] max-h-[620px]:flex-none min-h-0 flex-1 p-3 pb-0 max-[920px]:h-[clamp(190px,38dvh,310px)] max-[920px]:flex-none max-[920px]:p-2.5 max-[920px]:pb-0">
+                <div className="min-h-0 flex-1 p-3 pb-0 max-[920px]:h-[clamp(190px,38dvh,310px)] max-[920px]:flex-none max-[920px]:p-2.5 max-[920px]:pb-0 [@media(max-height:620px)]:h-[clamp(165px,42dvh,235px)] [@media(max-height:620px)]:flex-none">
                   <TourStage className="rounded-[12px] ring-1 ring-product-border-subtle">
                     <TourScene id={slide.scene} />
                   </TourStage>
@@ -445,7 +450,7 @@ export function ProductTour({ entry, onClose, open, userName }) {
             <div className="ml-auto flex items-center gap-2">
               {stepIndex > 0 && (
                 <Button
-                  variant="product-secondary"
+                  variant="product-outline"
                   size="lg"
                   className="h-10 rounded-full px-3.5 max-sm:w-10 max-sm:px-0"
                   onClick={() => goTo(stepIndex - 1)}

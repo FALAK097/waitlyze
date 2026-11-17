@@ -8,8 +8,9 @@ import { completeOnboarding } from "@/app/actions/onboarding";
 import { trackClientEvent } from "@/lib/posthog/client";
 import { POSTHOG_EVENTS } from "@/lib/posthog/events.mjs";
 
-const ProductTour = dynamic(() =>
-  import("@/components/onboarding/product-tour").then((module) => module.ProductTour),
+const ProductTour = dynamic(
+  () => import("@/components/onboarding/product-tour").then((module) => module.ProductTour),
+  { ssr: false },
 );
 
 const OnboardingContext = createContext(null);

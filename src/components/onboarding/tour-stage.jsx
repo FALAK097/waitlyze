@@ -1,8 +1,10 @@
 "use client";
 
-import { createContext, useContext, useLayoutEffect, useRef, useState } from "react";
+import { createContext, useContext, useEffect, useLayoutEffect, useRef, useState } from "react";
 
 import { cn } from "@/lib/utils";
+
+const useIsomorphicLayoutEffect = typeof window !== "undefined" ? useLayoutEffect : useEffect;
 
 export const SCENE_W = 860;
 export const TOUR_EASE = [0.22, 1, 0.36, 1];
@@ -91,7 +93,7 @@ export function TourStage({ children, className }) {
   const boxRef = useRef(null);
   const [size, setSize] = useState({ k: 1, h: 420 });
 
-  useLayoutEffect(() => {
+  useIsomorphicLayoutEffect(() => {
     const el = boxRef.current;
     if (!el) return;
     const fit = () => {
