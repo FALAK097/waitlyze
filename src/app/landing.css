@@ -699,12 +699,3 @@
   border-radius: 12px;
   background: #fff;
 }
-.wl-launch-film figcaption {
-  margin-top: 12px;
-  text-align: center;
-  font-size: 0.875rem;
-}
-.wl-launch-film a {
-  text-decoration: underline;
-  text-underline-offset: 3px;
-}

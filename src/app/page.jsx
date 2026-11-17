@@ -168,10 +168,10 @@ function TextLink({ href, children }) {
   );
 }
 
-const ASSET_BASE = process.env.NEXT_PUBLIC_R2_PUBLIC_URL || "https://assets.waitlyze.com";
+// Published marketing media is independent of user-upload storage configuration.
+const ASSET_BASE = "https://assets.waitlyze.com";
 const ASSET_VER = "v=4";
-// Published launch assets use the canonical CDN, independent of user-upload storage.
-const LAUNCH_ASSET_BASE = "https://assets.waitlyze.com/launch";
+const LAUNCH_ASSET_BASE = `${ASSET_BASE}/launch`;
 
 /** Renders a framed product screenshot. */
 function ProductFrame({ src, alt, tone = "mint", hero = false }) {
@@ -323,7 +323,6 @@ export default async function LandingPage() {
               width={1920}
               height={1080}
               aria-label="Waitlyze launch film"
-              aria-describedby="launch-film-caption"
             >
               <source
                 src={`${LAUNCH_ASSET_BASE}/waitlyze-launch-5a11efd6d418.mp4`}
@@ -339,11 +338,6 @@ export default async function LandingPage() {
                 Watch the Waitlyze launch film
               </a>
             </video>
-            <figcaption id="launch-film-caption">
-              <a href={`${LAUNCH_ASSET_BASE}/waitlyze-launch-5a11efd6d418.mp4`}>
-                Watch the launch film (1:18)
-              </a>
-            </figcaption>
           </figure>
         </section>
 
