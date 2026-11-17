@@ -15,7 +15,7 @@ The lockfile pins render dependencies. Composition: `LaunchFilm`, 1920 x 1080, 6
 
 The film uses the canonical `https://assets.waitlyze.com/launch/` CDN, independent of user-upload storage environment overrides.
 
-- Film: `waitlyze-launch-67cd5b85b9b2.mp4` (33,181,298 bytes).
+- Film: `waitlyze-launch-5a11efd6d418.mp4` (34,187,891 bytes).
 - Poster: `waitlyze-launch-41e3af827abd.webp` (245,372 bytes).
 - Filenames contain the first 12 characters of the SHA-256 digest. Upload changed bytes under new names and update the page URLs together.
 - R2 content types: `video/mp4` and `image/webp`. Both use `Cache-Control: public, max-age=31536000, immutable`.

@@ -108,7 +108,12 @@ export const SignupsReferralSurface: React.FC = () => {
 
   const elenaReferrals = Math.round(easeRange(frame, 2020, 2140, 1, 5, arrivalEasing));
   const elenaPoints = Math.round(easeRange(frame, 2020, 2140, 50, 250, arrivalEasing));
-  const elenaRank = Math.round(easeRange(frame, 2040, 2190, 412, 14, arrivalEasing));
+  const elena = SUBSCRIBERS.find((sub) => sub.id === "elena")!;
+  const elenaRank = Math.round(
+    frame < 2190
+      ? easeRange(frame, 2040, 2190, elena.rankBefore, 14, arrivalEasing)
+      : easeRange(frame, 2190, 2230, 14, elena.rankAfter, arrivalEasing),
+  );
 
   const rowHeight = 64;
 
@@ -390,7 +395,7 @@ export const SignupsReferralSurface: React.FC = () => {
                       color: isHighlighted ? "#BAFE2A" : "#00160A",
                     }}
                   >
-                    #{isElena ? elenaRank : initialIdx + 15}
+                    #{isElena ? elenaRank : frame >= 2230 ? sub.rankAfter : sub.rankBefore}
                   </span>
                 </div>
               </div>

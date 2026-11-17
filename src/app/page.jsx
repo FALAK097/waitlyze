@@ -326,7 +326,7 @@ export default async function LandingPage() {
               aria-describedby="launch-film-caption"
             >
               <source
-                src={`${LAUNCH_ASSET_BASE}/waitlyze-launch-67cd5b85b9b2.mp4`}
+                src={`${LAUNCH_ASSET_BASE}/waitlyze-launch-5a11efd6d418.mp4`}
                 type="video/mp4"
               />
               <track
@@ -335,12 +335,12 @@ export default async function LandingPage() {
                 srcLang="en"
                 label="English"
               />
-              <a href={`${LAUNCH_ASSET_BASE}/waitlyze-launch-67cd5b85b9b2.mp4`}>
+              <a href={`${LAUNCH_ASSET_BASE}/waitlyze-launch-5a11efd6d418.mp4`}>
                 Watch the Waitlyze launch film
               </a>
             </video>
             <figcaption id="launch-film-caption">
-              <a href={`${LAUNCH_ASSET_BASE}/waitlyze-launch-67cd5b85b9b2.mp4`}>
+              <a href={`${LAUNCH_ASSET_BASE}/waitlyze-launch-5a11efd6d418.mp4`}>
                 Watch the launch film (1:18)
               </a>
             </figcaption>

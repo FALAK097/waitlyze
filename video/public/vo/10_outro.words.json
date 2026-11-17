@@ -8,7 +8,5 @@
   { "text": "free", "start": 2.31, "end": 2.533 },
   { "text": "today", "start": 2.534, "end": 2.857 },
   { "text": "at", "start": 3.013, "end": 3.17 },
-  { "text": "Waitlyze", "start": 3.181, "end": 3.683 },
-  { "text": "dot", "start": 3.683, "end": 3.85 },
-  { "text": "com", "start": 3.85, "end": 4.141 }
+  { "text": "waitlyze.com.", "start": 3.181, "end": 4.141 }
 ]

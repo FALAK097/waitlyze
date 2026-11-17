@@ -28,11 +28,14 @@ export const DigitRoll: React.FC<DigitRollProps> = ({
   fontFamily = "'Paper Mono', ui-monospace, monospace",
 }) => {
   const safeVal = Math.max(0, value);
+  const scale = 10 ** decimals;
+  const scaled = safeVal * scale;
+  const whole = Math.floor(scaled);
   const formatted =
-    decimals > 0 ? safeVal.toFixed(decimals) : Math.floor(safeVal).toLocaleString("en-US");
+    decimals > 0 ? (whole / scale).toFixed(decimals) : whole.toLocaleString("en-US");
 
-  // Compute fractional progress for smooth rolling of the ones/tenths digit
-  const frac = decimals > 0 ? (safeVal * 10 ** decimals) % 1 : safeVal % 1;
+  // The displayed digit and rolling progress share the same lower decimal base.
+  const frac = scaled - whole;
 
   const chars = formatted.split("");
   const lineHeight = Math.round(fontSize * 1.18);
