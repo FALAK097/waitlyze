@@ -569,7 +569,7 @@ export function registerWaitlyzeTools(server, authContext) {
     },
     async ({ waitlistId, ...updates }) => {
       try {
-        await getAuthorizedWaitlist(waitlistId, "editCampaign");
+        const waitlist = await getAuthorizedWaitlist(waitlistId, "editCampaign");
 
         const data = {};
         if (updates.name !== undefined) data.name = updates.name;
