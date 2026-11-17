@@ -101,6 +101,9 @@ export async function inviteWorkspaceMember(previous, form) {
     const actor = await managerMembership(session.user.id, workspaceId, role).catch(() => null);
     if (!actor) return { error: "You don’t have permission to invite that role." };
     const prepared = await prisma.$transaction(async (tx) => {
+      // Serialize with accepts, removals, and ownership changes so the seat
+      // count read below cannot go stale before the invitation is written.
+      await tx.$queryRaw`SELECT "id" FROM "workspaces" WHERE "id" = ${workspaceId} FOR UPDATE`;
       const actor = await managerMembership(session.user.id, workspaceId, role, tx);
       if (!actor) return { error: "You don’t have permission to invite that role." };
       const [existingMember, workspace] = await Promise.all([
@@ -394,7 +397,7 @@ export async function transferWorkspaceOwnership(memberUserId, workspaceId) {
       resourceType: "member",
       resourceId: memberUserId,
       resourceName: moved.name || moved.email,
-      detail: "Ownership and billing moved to this member",
+      detail: "Ownership transferred to this member",
     });
     revalidatePath("/settings");
     return { success: `${moved.name || moved.email || "Member"} is now the workspace owner.` };

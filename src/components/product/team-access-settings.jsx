@@ -509,7 +509,7 @@ export function TeamAccessSettings({
             <AlertDialogTitle>Transfer ownership?</AlertDialogTitle>
             <AlertDialogDescription>
               {transferTarget
-                ? `Make ${transferTarget.label} the owner of this workspace? They take ownership and billing access immediately, and you become an admin.`
+                ? `Make ${transferTarget.label} the owner of this workspace? They become the owner immediately and you become an admin.`
                 : ""}
             </AlertDialogDescription>
           </AlertDialogHeader>

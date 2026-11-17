@@ -71,6 +71,23 @@ export function effectiveWorkspacePlan(subscription, now = new Date()) {
   return "FREE";
 }
 
+// A row the provider may still bill against. Never overwrite or replace it
+// without reconciling with Dodo first, even when its grace window has lapsed
+// and the workspace is effectively Free.
+export function providerSubscriptionNeedsReview(subscription) {
+  if (!subscription) return false;
+  return (
+    ["ACTIVE", "PAST_DUE", "ON_HOLD"].includes(subscription.status) ||
+    (subscription.status === "CANCELLED" &&
+      subscription.cancelAtPeriodEnd &&
+      !subscription.currentPeriodEnd) ||
+    Boolean(
+      subscription.dodoSubscriptionId &&
+      !["CANCELLED", "EXPIRED", "FAILED"].includes(subscription.status),
+    )
+  );
+}
+
 export function workspaceEntitlements(subscription, now = new Date()) {
   const plan = effectiveWorkspacePlan(subscription, now);
   return { plan, ...PLAN_ENTITLEMENTS[plan] };

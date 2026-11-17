@@ -45,7 +45,7 @@ Work through the section that matches your symptom. Each fix links to the guide 
 - Only owners can invite admins and transfer ownership. The workspace caps at 50 pending invitations.
 - Free includes one workspace with one member; Pro removes both limits. Pending invitations count toward the member limit.
 - Returning to Free keeps existing members but expires pending invitations, and new activity above the Free limits prompts an upgrade.
-- Stuck as the only owner? Make another member the owner instead of adding a second owner.
+- Stuck as the only owner? Make another member the owner instead of adding a second owner. Ownership transfers are blocked while the workspace has Pro or an open checkout, and when the new owner is on Free and already owns a workspace.
 - Invite creation failing usually means missing encryption config on the deployment.
 - Export (`/api/settings/export`) before deleting a workspace or waitlist - deletion has no undo. Deleting a workspace is blocked while Pro is active or still paid through, and the account's first workspace cannot be deleted.
 </Accordion>

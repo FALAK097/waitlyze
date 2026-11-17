@@ -1,6 +1,7 @@
 import {
   effectiveWorkspacePlan,
   getOwnedWorkspaceEntitlements,
+  providerSubscriptionNeedsReview,
   requireCapacity,
 } from "../billing/plans.mjs";
 
@@ -187,7 +188,8 @@ export function createWorkspaceService(db) {
           }),
         ]);
         if (!ownerMembership || ownerMembership.role !== "OWNER") throw new AccessError();
-        if (!targetMembership) throw new AccessError();
+        if (!targetMembership)
+          throw new TypeError("That person is not a member of this workspace.");
         if (targetMembership.role === "OWNER")
           return {
             userId: targetUserId,
@@ -206,19 +208,43 @@ export function createWorkspaceService(db) {
             pastDueEndsAt: true,
             cancelAtPeriodEnd: true,
             lastEventAt: true,
+            dodoCustomerId: true,
+            dodoSubscriptionId: true,
+            checkoutSessionId: true,
+            checkoutUrl: true,
+            checkoutPendingUntil: true,
+            checkoutCreationStartedAt: true,
           },
         });
         const isProWorkspace = effectiveWorkspacePlan(subscription, new Date()) === "PRO";
-        if (!isProWorkspace) {
-          requireCapacity({
-            entitlements: targetEntitlements,
-            feature: "workspaces",
-            used: targetEntitlements.ownedCount,
-            message:
-              "That member already owns a workspace on the Free plan. Free allows one owned workspace.",
+        // The billing portal is keyed to the paying customer, so handing a live
+        // subscription to someone else would expose the payer's saved payment
+        // details and invoices. Billing has to end (or move) before ownership does.
+        if (
+          isProWorkspace ||
+          providerSubscriptionNeedsReview(subscription) ||
+          subscription?.checkoutSessionId ||
+          (subscription?.checkoutPendingUntil &&
+            subscription.checkoutPendingUntil > new Date() &&
+            (subscription.checkoutUrl || subscription.checkoutCreationStartedAt))
+        )
+          throw new TypeError(
+            "This workspace has a Pro subscription or open checkout billed to you. Cancel it and wait for the paid period to end before transferring ownership.",
+          );
+        requireCapacity({
+          entitlements: targetEntitlements,
+          feature: "workspaces",
+          used: targetEntitlements.ownedCount,
+          message:
+            "That member already owns a workspace on the Free plan. Free allows one owned workspace.",
+        });
+        // Detach the lapsed payer so the new owner can never open their portal.
+        if (subscription?.dodoCustomerId)
+          await tx.workspaceSubscription.update({
+            where: { workspaceId },
+            data: { dodoCustomerId: null },
           });
-        }
-        // Billing access follows ownership: the previous owner steps down to admin.
+        // The previous owner steps down to admin so there is always exactly one owner to act.
         await tx.workspaceMember.update({
           where: { workspaceId_userId: { workspaceId, userId: targetUserId } },
           data: { role: "OWNER" },
@@ -247,7 +273,7 @@ export function createWorkspaceService(db) {
         });
         if (!workspace) throw new AccessError();
         if (workspace.personalOwnerId)
-          throw new TypeError("The personal workspace cannot be deleted.");
+          throw new TypeError("Your first workspace cannot be deleted.");
         const subscription = await tx.workspaceSubscription.findUnique({
           where: { workspaceId },
           select: {
@@ -280,10 +306,14 @@ export function createWorkspaceService(db) {
         // A workspace that still holds Pro access cannot be deleted: recreating it
         // would reset the lifetime signup counter and mint fresh Free allowances.
         if (effectiveWorkspacePlan(subscription, new Date()) === "PRO") {
-          const paidThrough = new Intl.DateTimeFormat("en", {
-            dateStyle: "medium",
-            timeZone: "UTC",
-          }).format(subscription.currentPeriodEnd);
+          const paidThroughDate = subscription?.currentPeriodEnd || subscription?.pastDueEndsAt;
+          const paidThrough =
+            paidThroughDate instanceof Date
+              ? new Intl.DateTimeFormat("en", {
+                  dateStyle: "medium",
+                  timeZone: "UTC",
+                }).format(paidThroughDate)
+              : "the end of the paid period";
           throw new TypeError(
             `This workspace still has Pro access through ${paidThrough}. Cancel renewal and wait until the paid period ends before deleting it, or contact support.`,
           );
@@ -346,6 +376,8 @@ export function createWorkspaceService(db) {
         ]);
         if (!actor || !["OWNER", "ADMIN"].includes(actor.role)) throw new AccessError();
         if (!target) throw new AccessError();
+        // Admins manage members, never owners.
+        if (target.role === "OWNER" && actor.role !== "OWNER") throw new AccessError();
         if (target.role === "OWNER") {
           const owners = await tx.workspaceMember.count({ where: { workspaceId, role: "OWNER" } });
           if (owners < 2) throw new TypeError("A workspace needs at least one owner.");
@@ -379,6 +411,7 @@ export function createWorkspaceService(db) {
         if (!actor || !["OWNER", "ADMIN"].includes(actor.role)) throw new AccessError();
         if (!target) throw new AccessError();
         if (role === "ADMIN" && actor.role !== "OWNER") throw new AccessError();
+        if (target.role === "OWNER" && actor.role !== "OWNER") throw new AccessError();
         if (target.role === "OWNER" && role !== "OWNER") {
           const owners = await tx.workspaceMember.count({ where: { workspaceId, role: "OWNER" } });
           if (owners < 2) throw new TypeError("A workspace needs at least one owner.");

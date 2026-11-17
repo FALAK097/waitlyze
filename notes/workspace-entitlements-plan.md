@@ -43,8 +43,15 @@ invites teammates there. No second workspace and no second payment are needed.
 
 ### 3. Ownership is transferable
 
-An owner can promote another member to owner. The previous owner becomes an admin, so billing
-access moves with ownership. The confirmation dialog says so explicitly.
+An owner can promote another member to owner. The previous owner becomes an admin. The target
+must be an existing member (never a pending invitee or the caller) and, on Free, must not already
+own a workspace.
+
+Transfers are blocked while the workspace has a live Pro subscription, a provider subscription that
+still needs reconciliation, or an open checkout. The Dodo portal is keyed to the paying customer, so
+handing such a workspace over would give the new owner the payer's saved payment details and invoices.
+When the subscription has ended, the lapsed customer id is detached at transfer time. Admins can
+never remove or demote an owner.
 
 ### 4. Plans survive dunning
 

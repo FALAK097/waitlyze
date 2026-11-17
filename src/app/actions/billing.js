@@ -11,7 +11,11 @@ import {
   reconcileCheckoutSession,
 } from "@/lib/billing/checkout-reconciliation.mjs";
 import { createDodoClient, dodoProductId, DodoConfigurationError } from "@/lib/billing/dodo.mjs";
-import { BILLING_INTERVALS, effectiveWorkspacePlan } from "@/lib/billing/plans.mjs";
+import {
+  BILLING_INTERVALS,
+  effectiveWorkspacePlan,
+  providerSubscriptionNeedsReview,
+} from "@/lib/billing/plans.mjs";
 import { env } from "@/lib/env.mjs";
 import prisma from "@/lib/prisma";
 import { AUDIT_ACTIONS, recordAuditEvent } from "@/lib/workspaces/audit.mjs";
@@ -88,13 +92,7 @@ async function reserveCheckoutIntent(workspaceId, interval) {
     if (effectiveWorkspacePlan(current, now) === "PRO")
       return { error: "This workspace already has Pro. Manage its renewal in Billing settings." };
 
-    const providerStateNeedsReview =
-      ["ACTIVE", "PAST_DUE", "ON_HOLD"].includes(current?.status) ||
-      (current?.status === "CANCELLED" && current.cancelAtPeriodEnd && !current.currentPeriodEnd);
-    if (
-      providerStateNeedsReview ||
-      (current?.dodoSubscriptionId && !["CANCELLED", "EXPIRED", "FAILED"].includes(current.status))
-    ) {
+    if (providerSubscriptionNeedsReview(current)) {
       if (!current.dodoCustomerId)
         return { error: "This subscription needs attention. Contact support to recover billing." };
       return { portalCustomerId: current.dodoCustomerId };
@@ -474,6 +472,11 @@ export async function transferProSubscription(workspaceId) {
     const sourceSubscription = source.subscription;
     if (hasPendingCheckout(sourceSubscription) || hasPendingCheckout(target))
       return { error: "Finish or reconcile the pending checkout before moving Pro." };
+    if (providerSubscriptionNeedsReview(target))
+      return {
+        error:
+          "This workspace has a subscription that still needs attention in Billing. Resolve it before moving Pro here.",
+      };
     if (!sourceSubscription.dodoSubscriptionId)
       return { error: "This subscription is not connected to Dodo Payments. Contact support." };
 
@@ -527,6 +530,8 @@ export async function transferProSubscription(workspaceId) {
           hasPendingCheckout(currentTarget)
         )
           throw new Error("Billing changed while Pro was being moved.");
+        if (providerSubscriptionNeedsReview(currentTarget))
+          throw new Error("The target subscription needs reconciliation before Pro can move.");
 
         await tx.workspaceSubscription.delete({ where: { workspaceId: source.id } });
         const movedSubscriptionData = {
