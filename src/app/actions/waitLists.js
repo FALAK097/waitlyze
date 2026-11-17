@@ -12,7 +12,13 @@ import { isTemplateId } from "@/lib/templates/gallery.mjs";
 import { AUDIT_ACTIONS, recordAuditEvent } from "@/lib/workspaces/audit.mjs";
 import { currentWorkspace } from "@/lib/workspaces/current";
 
-export async function createWaitlistDraft({ name, publicSlug, creationKey, templateId }) {
+export async function createWaitlistDraft({
+  name,
+  description = "",
+  publicSlug,
+  creationKey,
+  templateId,
+}) {
   const { user, workspace } = await currentWorkspace();
   try {
     const existingDraft = creationKey
@@ -24,7 +30,7 @@ export async function createWaitlistDraft({ name, publicSlug, creationKey, templ
 
     const draft = await createDraft(prisma, user.id, workspace.id, {
       name,
-      description: "",
+      description: description?.trim() || "",
       publicSlug,
       templateId: isTemplateId(templateId) ? templateId : "simple",
       creationKey,

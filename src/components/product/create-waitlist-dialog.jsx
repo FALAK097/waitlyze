@@ -44,6 +44,7 @@ export function CreateWaitlistDialog({
   const router = useRouter();
   const [open, setOpen] = useState(initialOpen);
   const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
   const [slug, setSlug] = useState("");
   const [slugTouched, setSlugTouched] = useState(false);
   const templateId = isTemplateId(initialTemplateId) ? initialTemplateId : "simple";
@@ -91,6 +92,7 @@ export function CreateWaitlistDialog({
     try {
       const result = await createWaitlistDraft({
         name: name.trim(),
+        description: description.trim(),
         publicSlug,
         creationKey,
         templateId,
@@ -116,6 +118,7 @@ export function CreateWaitlistDialog({
     setOpen(next);
     if (!next) {
       setCreationKey(crypto.randomUUID());
+      setDescription("");
       setError("");
       setUpgradeNeeded(false);
     }
@@ -150,6 +153,21 @@ export function CreateWaitlistDialog({
                 }}
                 placeholder="Atlas early access"
                 required
+                disabled={busy}
+              />
+            </div>
+            <div className="grid gap-2 [&_input]:h-11 [&_input]:text-body [&_label]:text-caption [&_label]:font-semibold">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="new-waitlist-description">Description</Label>
+                <span className="text-caption text-product-text-secondary">Optional</span>
+              </div>
+              <Input
+                id="new-waitlist-description"
+                autoComplete="off"
+                maxLength={500}
+                value={description}
+                onChange={(event) => setDescription(event.target.value)}
+                placeholder="A short summary for your dashboard"
                 disabled={busy}
               />
             </div>
