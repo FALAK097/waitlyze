@@ -8,9 +8,11 @@ import {
   extractSessionIdFromUrl,
   reconcileCheckoutSession,
 } from "@/lib/billing/checkout-reconciliation.mjs";
+import { WorkspacePlanError } from "@/lib/billing/plans.mjs";
 import prisma from "@/lib/prisma";
 import { AUDIT_ACTIONS, recordAuditEvent } from "@/lib/workspaces/audit.mjs";
 import { requireAuth, requireCampaign } from "@/lib/workspaces/authorize";
+import { rememberWorkspace } from "@/lib/workspaces/current";
 import { AccessError, createWorkspaceService } from "@/lib/workspaces/service.mjs";
 
 export async function saveProfile(previous, form) {
@@ -80,6 +82,7 @@ export async function selectWorkspace(form) {
   if (!session?.user?.id) redirect("/");
   const id = form.get("workspaceId");
   await createWorkspaceService(prisma).requireAccess(session.user.id, id, "viewCampaign");
+  await rememberWorkspace(session.user.id, id);
   (await cookies()).set("waitlyze-workspace", id, {
     httpOnly: true,
     sameSite: "lax",
@@ -108,6 +111,7 @@ export async function createWorkspace(previous, form) {
       resourceName: workspace.name,
       detail: "Workspace created and selected",
     });
+    await rememberWorkspace(session.user.id, workspace.id);
     (await cookies()).set("waitlyze-workspace", workspace.id, {
       httpOnly: true,
       sameSite: "lax",
@@ -136,7 +140,9 @@ export async function createWorkspace(previous, form) {
     } catch {
       // Best-effort
     }
-  } catch {
+  } catch (error) {
+    if (error instanceof WorkspacePlanError)
+      return { error: error.message, code: error.code, feature: error.feature };
     return { error: "Could not create the workspace. Try again." };
   }
   redirect("/waitlists");

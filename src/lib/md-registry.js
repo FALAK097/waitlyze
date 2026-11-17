@@ -78,7 +78,7 @@ ${templates
 
 ## Frequently Asked Questions
 ### Is Waitlyze free to use?
-Yes. Free includes one waitlist and up to 100 signups per workspace, with no credit card required. Pro is ${WAITLYZE_PRICING.pro.monthly.formatted} per month or ${WAITLYZE_PRICING.pro.annual.formatted} per year.
+Yes. Free includes one workspace with one waitlist and 100 lifetime signups, with no credit card required. Pro is ${WAITLYZE_PRICING.pro.monthly.formatted} per month or ${WAITLYZE_PRICING.pro.annual.formatted} per year, with unlimited workspaces, waitlists, signups, and members.
 
 ### Do I need a website or coding skills?
 No. You can visually design your page in the builder and share its hosted URL. If you already have a website, copy the embed snippet from your dashboard.
@@ -111,7 +111,7 @@ Yes. Publish your waitlist, then copy its embed snippet into your site. Hosted a
 Review visitors, signups, conversion, verification, and referral activity, with breakdowns by source, device, geography, and landing page as data arrives.
 
 ### Can teammates work on a waitlist?
-Yes. Invite teammates to your workspace and assign editing, publishing, and email permissions.
+Yes, with Pro. Invite teammates to your workspace and assign editing, publishing, and email permissions. Free includes one member per workspace.
 
 ### How can I protect the signup form from bots?
 Enable Turnstile verification on the form. Marketing consent is a separate choice for subscribers.
@@ -384,7 +384,7 @@ For questions about these Terms, please contact us at support@waitlyze.com.`
 
 ## Cancel a Subscription
 
-You can cancel renewal at any time from Billing in your workspace settings. Cancellation prevents the next charge; it does not refund the current billing period. Your workspace keeps Pro access until the paid period ends, then returns to the Free plan. Existing waitlists and subscriber data are retained, and Free-plan limits apply to new activity.
+You can cancel renewal at any time from Billing in your workspace settings. Cancellation prevents the next charge; it does not refund the current billing period. Your workspace keeps Pro access until the paid period ends, then returns to the Free plan. Existing waitlists, subscribers, and members are retained, and pending invitations expire. Each Free workspace includes one waitlist, 100 lifetime signups, and one member, even if you keep Pro on another workspace; new activity above those limits prompts an upgrade. Separately, if you have no other active Pro workspace, your account is limited to one owned workspace.
 
 ## Billing Issues
 

@@ -83,7 +83,8 @@ export async function acceptWorkspaceInvitation(db, { token, user, now = new Dat
         entitlements,
         feature: "members",
         used: memberCount,
-        message: "This workspace is at its member limit. Ask its owner to upgrade the plan.",
+        message:
+          "This workspace needs Pro before new members can join. Ask its owner to upgrade, then try again.",
       });
     const claimed = await tx.workspaceInvitation.updateMany({
       where: { id: invite.id, tokenHash, status: { in: ACTIVE_STATUSES }, expiresAt: { gt: now } },

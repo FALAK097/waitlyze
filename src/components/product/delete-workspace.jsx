@@ -30,8 +30,8 @@ export function DeleteWorkspace({ workspaceId, workspaceName, isPersonal }) {
   if (isPersonal) {
     return (
       <p className="mb-4! text-sm leading-relaxed text-product-text-secondary">
-        The personal workspace cannot be deleted. It holds your unassigned waitlists and is
-        recreated automatically.
+        Your first workspace can’t be deleted. It’s created automatically for your account and holds
+        any waitlists that aren’t assigned elsewhere.
       </p>
     );
   }

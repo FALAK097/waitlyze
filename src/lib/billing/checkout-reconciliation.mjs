@@ -1,6 +1,7 @@
 import "server-only";
 import { AUDIT_ACTIONS, recordAuditEvent } from "../workspaces/audit.mjs";
 import { createDodoClient, dodoBillingInterval } from "./dodo.mjs";
+import { DETACHED_CUSTOMER_ID, isDetachedCustomerId } from "./plans.mjs";
 import { subscriptionWebhookStatus } from "./subscription-webhook-status.mjs";
 
 function validDate(value) {
@@ -125,11 +126,16 @@ async function applyPaidSubscription(db, { workspaceId, intentId, payment, now }
       : subscriptionWebhookStatus("subscription.updated", providerSubscription, current.status);
     const plan = (interval || metadata.plan === "PRO") && status !== "EXPIRED" ? "PRO" : "FREE";
 
+    const isDetachedCustomer = sameSubscription && isDetachedCustomerId(current.dodoCustomerId);
+    const resolvedCustomerId = isDetachedCustomer
+      ? DETACHED_CUSTOMER_ID
+      : customerId || (sameSubscription ? current.dodoCustomerId : null);
+
     const updateData = isSnapshotStale
       ? {
           plan,
           interval: current.interval || interval,
-          dodoCustomerId: customerId || (sameSubscription ? current.dodoCustomerId : null),
+          dodoCustomerId: resolvedCustomerId,
           dodoSubscriptionId: subscriptionId,
           dodoProductId: current.dodoProductId || productId || null,
           ...(current.checkoutIntentId === intentId ? checkoutFields() : {}),
@@ -138,7 +144,7 @@ async function applyPaidSubscription(db, { workspaceId, intentId, payment, now }
           plan,
           status,
           interval,
-          dodoCustomerId: customerId || (sameSubscription ? current.dodoCustomerId : null),
+          dodoCustomerId: resolvedCustomerId,
           dodoSubscriptionId: subscriptionId,
           dodoProductId: productId || (sameSubscription ? current.dodoProductId : null),
           currentPeriodStart:

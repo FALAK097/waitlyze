@@ -11,6 +11,7 @@ import {
   removeWorkspaceMember,
   resendWorkspaceInvitation,
   revokeWorkspaceInvite,
+  transferWorkspaceOwnership,
 } from "@/app/actions/workspace-invitations";
 import { UpgradeButton } from "@/components/shared/upgrade-button";
 import {
@@ -75,14 +76,6 @@ function invitationMatches(invitation, needle) {
   );
 }
 
-function AtLimitHint({ memberLimit }) {
-  return (
-    <p className="m-0 text-sm text-product-text-secondary" role="status">
-      This Pro workspace is at its {memberLimit}-member limit.
-    </p>
-  );
-}
-
 function InviteDialog({ workspaceId, canInviteAdmins, canManageBilling }) {
   const [inviteOpen, setInviteOpen] = useState(false);
   const close = () => setInviteOpen(false);
@@ -110,26 +103,16 @@ function InviteDialog({ workspaceId, canInviteAdmins, canManageBilling }) {
 
 /** The toolbar slot between search and the members table. */
 function TeamToolbarSlot({
-  isPersonalWorkspace,
   canManage,
   secureInvitesConfigured,
   memberCount,
   memberLimit,
-  plan,
   canManageBilling,
   workspaceId,
   canInviteAdmins,
 }) {
-  if (isPersonalWorkspace) {
-    return (
-      <p className="m-0 text-sm text-product-text-secondary tabular-nums">
-        Personal workspaces are just for you. Create a shared workspace from the workspace switcher
-        to invite teammates.
-      </p>
-    );
-  }
   if (canManage && secureInvitesConfigured && memberLimit !== null && memberCount >= memberLimit) {
-    return plan === "FREE" ? (
+    return (
       <UpgradeButton
         label="Unlock team invitations"
         feature="Workspace collaboration"
@@ -137,8 +120,6 @@ function TeamToolbarSlot({
         workspaceId={workspaceId}
         size="md"
       />
-    ) : (
-      <AtLimitHint memberLimit={memberLimit} />
     );
   }
   if (canManage && secureInvitesConfigured) {
@@ -172,12 +153,12 @@ export function TeamAccessSettings({
   memberLimit = 1,
   secureInvitesConfigured,
   currentUserId,
-  isPersonalWorkspace = false,
 }) {
   const [memberQuery, setMemberQuery] = useState("");
   const [rowPending, startTransition] = useTransition();
   const [revokeTarget, setRevokeTarget] = useState(null);
   const [removeTarget, setRemoveTarget] = useState(null);
+  const [transferTarget, setTransferTarget] = useState(null);
   const needle = memberQuery.trim().toLowerCase();
   const visibleMembers = members.filter((member) => memberMatches(member, needle));
   const visibleInvitations = invitations.filter((invite) => invitationMatches(invite, needle));
@@ -191,6 +172,7 @@ export function TeamAccessSettings({
           toast.success(result.success);
           setRevokeTarget(null);
           setRemoveTarget(null);
+          setTransferTarget(null);
         }
       } catch {
         toast.error("Could not update this workspace. Check your connection and try again.");
@@ -211,6 +193,12 @@ export function TeamAccessSettings({
     setRevokeTarget(null);
     runInvitationAction(revokeWorkspaceInvite, target.id);
   }
+  function confirmTransfer() {
+    if (!transferTarget) return;
+    const target = transferTarget;
+    setTransferTarget(null);
+    runRowAction(transferWorkspaceOwnership, target.userId, workspaceId);
+  }
   function changeRole(memberUserId, role) {
     runRowAction(changeWorkspaceMemberRole, memberUserId, workspaceId, role);
   }
@@ -218,34 +206,40 @@ export function TeamAccessSettings({
   return (
     <div className="grid grid-cols-1 gap-7">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        {isPersonalWorkspace ? null : (
-          <div className="max-w-70 min-w-0 flex-1" role="search">
-            <Label className="sr-only" htmlFor="team-member-search">
-              Search members
-            </Label>
-            <Input
-              id="team-member-search"
-              type="search"
-              value={memberQuery}
-              onChange={(event) => setMemberQuery(event.target.value)}
-              placeholder="Search"
-              autoComplete="off"
-              maxLength={120}
-            />
-          </div>
-        )}
+        <div className="max-w-70 min-w-0 flex-1" role="search">
+          <Label className="sr-only" htmlFor="team-member-search">
+            Search members
+          </Label>
+          <Input
+            id="team-member-search"
+            type="search"
+            value={memberQuery}
+            onChange={(event) => setMemberQuery(event.target.value)}
+            placeholder="Search"
+            autoComplete="off"
+            maxLength={120}
+          />
+        </div>
         <TeamToolbarSlot
-          isPersonalWorkspace={isPersonalWorkspace}
           canManage={canManage}
           secureInvitesConfigured={secureInvitesConfigured}
           memberCount={members.length}
           memberLimit={memberLimit}
-          plan={plan}
           canManageBilling={canManageBilling}
           workspaceId={workspaceId}
           canInviteAdmins={canInviteAdmins}
         />
       </div>
+
+      {plan === "FREE" && memberLimit !== null && members.length > memberLimit && (
+        <p
+          className="m-0 rounded-xl border border-product-border-subtle bg-product-bg-surface p-4 text-sm"
+          role="status"
+        >
+          This workspace has {members.length} members but the Free plan includes 1. Existing members
+          keep access; upgrade to invite or add people.
+        </p>
+      )}
 
       <section aria-labelledby="team-members-heading">
         <h3 id="team-members-heading" className="sr-only">
@@ -340,6 +334,18 @@ export function TeamAccessSettings({
                     <TableCell>
                       {canManage && !isSelf && (
                         <div className="flex flex-wrap gap-2">
+                          {canInviteAdmins && member.role !== "OWNER" && (
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              disabled={rowPending}
+                              aria-label={`Make ${label} the workspace owner`}
+                              onClick={() => setTransferTarget({ userId: member.userId, label })}
+                            >
+                              Make owner
+                            </Button>
+                          )}
                           <Button
                             type="button"
                             variant="destructive"
@@ -488,6 +494,29 @@ export function TeamAccessSettings({
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction variant="destructive" onClick={confirmRemove} disabled={rowPending}>
               Remove member
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      <AlertDialog
+        open={Boolean(transferTarget)}
+        onOpenChange={(open) => {
+          if (!open) setTransferTarget(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Transfer ownership?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {transferTarget
+                ? `Make ${transferTarget.label} the owner of this workspace? They become the owner immediately and you become an admin.`
+                : ""}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmTransfer} disabled={rowPending}>
+              Make owner
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

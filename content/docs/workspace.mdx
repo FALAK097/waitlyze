@@ -15,10 +15,11 @@ Workspace controls live at `/settings?section=profile|team|integrations`. Your c
 | Manage connections (Resend, API keys, domains, webhooks) | Yes | Yes | No |
 | Delete campaigns | Yes | Yes | No |
 | Manage workspace (invite, remove, change roles) | Yes | Yes, except cannot invite admins | No |
-| Delete workspace | Yes | Yes | No |
+| Transfer ownership | Yes | No | No |
+| Delete workspace | Yes | No | No |
 | View audit log | Yes | Yes | Depends on deployment |
 
-Only owners can invite new **admins**. Admins can invite **members**. Personal workspaces behave like owned workspaces with a single owner.
+Only owners can invite new **admins**. Admins can invite **members**. The first workspace created for an account is a normal workspace: it can have members and invitations, it cannot be deleted, and it counts toward the Free plan's one-workspace limit.
 
 ## Profile
 
@@ -28,10 +29,14 @@ Settings → **Profile** shows your name and sign-in email. Email is managed by 
 
 Settings → **Members** lists people with access plus pending invitations.
 
+- Free includes one member. Pro includes unlimited members.
+- Pending invitations count toward the member limit, and a workspace can hold at most 50 pending invitations.
+- If a workspace returns to Free, existing members keep access and pending invitations expire.
+
 <Steps>
 <Step>
 ### Invite by email and role
-Choose **Invite**, enter the address, and pick Member or Admin (owners only for Admin). The app caps at 50 pending invitations per workspace.
+Choose **Invite**, enter the address, and pick Member or Admin (owners only for Admin). Invites that would exceed the pending limit are rejected.
 </Step>
 <Step>
 ### They accept before expiry
@@ -49,6 +54,10 @@ Invitation state moves through `PENDING` → accepted, or `SEND_FAILED` when mai
 If member invites cannot be created, the deployment lacks `WEBHOOK_SECRET_ENCRYPTION_KEY`. Contact your administrator - this is a deployment setting, not a docs fix.
 </Callout>
 
+### Ownership transfer
+
+An owner can hand the workspace to another member from Settings → **Members** → **Make owner**. The previous owner becomes an admin and the change writes an audit entry. The new owner can manage billing, delete the workspace, and transfer ownership again. A workspace with Pro or an open checkout can't be transferred while it is billed to you. You can either move Pro to another eligible workspace before transferring ownership, or cancel the subscription and wait for the paid period to end; ending the subscription is not required when Pro has been moved. A member on the Free plan who already owns a workspace can't receive another one.
+
 ## Integrations
 
 Settings → **Integrations** holds workspace-level connections:
@@ -65,7 +74,7 @@ Where available, Settings supports `?section=audit` showing the newest 200 event
 ## Account export and workspace delete
 
 - **Account export** (`GET /api/settings/export`, signed in) downloads your profile, memberships, campaigns with templates and recipe versions, keys metadata (never plaintext), integrations status, domains, webhooks, and email templates. Use it before deleting anything.
-- **Delete workspace** (`?section=delete`, owners/admins only) permanently removes the workspace and everything in it. Export first - deletion has no undo. Personal workspaces warn before removal.
+- **Delete workspace** (`?section=delete`, owners only) permanently removes the workspace and everything in it. Export first - deletion has no undo. Deleting is blocked while a Pro subscription is active or still paid through, and the account's first workspace cannot be deleted.
 - **Delete waitlist** lives instead in Waitlist settings → Delete waitlist. Export its CSV first. See [Subscribers](/docs/subscribers).
 
 ## Next

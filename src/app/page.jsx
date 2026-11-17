@@ -48,7 +48,7 @@ const github = "https://github.com/FALAK097/waitlyze";
 const faqs = [
   [
     "Is Waitlyze free?",
-    `Yes. Free includes one waitlist (drafts count) and 100 lifetime signups per workspace. Deleting a waitlist removes its data but does not reset signup usage. Pro is ${WAITLYZE_PRICING.pro.monthly.formatted} per month or ${WAITLYZE_PRICING.pro.annual.formatted} per year, with unlimited waitlists, signups, and workspace members.`,
+    `Yes. Free includes one workspace with one waitlist and 100 lifetime signups. Deleting a waitlist removes its data but does not reset signup usage. Pro is ${WAITLYZE_PRICING.pro.monthly.formatted} per month or ${WAITLYZE_PRICING.pro.annual.formatted} per year, with unlimited workspaces, and unlimited waitlists, signups, and members on each workspace with a Pro subscription.`,
   ],
   [
     "Will prices change by country?",
@@ -80,7 +80,7 @@ const faqs = [
   ],
   [
     "Can my team work together?",
-    "Yes. Invite teammates to your workspace and assign permissions for editing, publishing and email work.",
+    "Yes, with Pro. Invite teammates to your workspace and assign permissions for editing, publishing and email work. Free includes one member per workspace.",
   ],
   [
     "Can I use my own domain?",
@@ -201,7 +201,7 @@ const featureCards = [
   },
   {
     title: "Verified subscriber CRM & fraud review",
-    copy: "Filter signups by verification status, acquisition source, geography and referral points—with one-click CSV import and export.",
+    copy: "Filter signups by verification status, acquisition source, geography and referral points, with one-click CSV import and export.",
     image: `${ASSET_BASE}/showcase-subscribers-4k.png?${ASSET_VER}`,
     alt: "Waitlyze signups manager displaying verified subscribers, country flags, acquisition sources, devices, positions, and referral points",
     tone: "blue",

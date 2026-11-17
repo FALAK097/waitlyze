@@ -5,6 +5,7 @@ export const BILLING_INTERVALS = Object.freeze(["monthly", "annual"]);
 
 const PLAN_ENTITLEMENTS = Object.freeze({
   FREE: Object.freeze({
+    workspaces: 1,
     waitlists: 1,
     subscribers: 100,
     members: 1,
@@ -14,6 +15,7 @@ const PLAN_ENTITLEMENTS = Object.freeze({
     removeBranding: false,
   }),
   PRO: Object.freeze({
+    workspaces: null,
     waitlists: null,
     subscribers: null,
     members: null,
@@ -40,15 +42,26 @@ function periodIsCurrent(subscription, now) {
   return subscription?.currentPeriodEnd instanceof Date && subscription.currentPeriodEnd > now;
 }
 
+const BILLING_GRACE_MS = 7 * 24 * 60 * 60 * 1000;
+
+// Dunning keeps Pro alive through the provider's grace deadline when it sends
+// one; otherwise we allow seven days past the paid period or the last event.
+function gracePeriodEndsAt(subscription) {
+  if (subscription?.pastDueEndsAt instanceof Date) return subscription.pastDueEndsAt;
+  if (subscription?.currentPeriodEnd instanceof Date)
+    return new Date(subscription.currentPeriodEnd.getTime() + BILLING_GRACE_MS);
+  if (subscription?.lastEventAt instanceof Date)
+    return new Date(subscription.lastEventAt.getTime() + BILLING_GRACE_MS);
+  return null;
+}
+
 export function effectiveWorkspacePlan(subscription, now = new Date()) {
   if (!subscription || subscription.plan !== "PRO") return "FREE";
   if (subscription.status === "ACTIVE" && periodIsCurrent(subscription, now)) return "PRO";
-  if (
-    subscription.status === "PAST_DUE" &&
-    subscription.pastDueEndsAt &&
-    subscription.pastDueEndsAt > now
-  )
-    return "PRO";
+  if (["PAST_DUE", "ON_HOLD"].includes(subscription.status)) {
+    const graceEndsAt = gracePeriodEndsAt(subscription);
+    return graceEndsAt && graceEndsAt > now ? "PRO" : "FREE";
+  }
   if (
     subscription.status === "CANCELLED" &&
     subscription.cancelAtPeriodEnd &&
@@ -58,21 +71,50 @@ export function effectiveWorkspacePlan(subscription, now = new Date()) {
   return "FREE";
 }
 
+// A row the provider may still bill against. Never overwrite or replace it
+// without reconciling with Dodo first, even when its grace window has lapsed
+// and the workspace is effectively Free.
+export function providerSubscriptionNeedsReview(subscription) {
+  if (!subscription) return false;
+  return (
+    ["ACTIVE", "PAST_DUE", "ON_HOLD"].includes(subscription.status) ||
+    (subscription.status === "CANCELLED" &&
+      subscription.cancelAtPeriodEnd &&
+      !subscription.currentPeriodEnd) ||
+    Boolean(
+      subscription.dodoSubscriptionId &&
+      !["CANCELLED", "EXPIRED", "FAILED"].includes(subscription.status),
+    )
+  );
+}
+
+// Marker stored in dodoCustomerId when workspace ownership is transferred,
+// explicitly detaching the previous payer so their customer portal is unreachable
+// and subsequent webhooks for that subscription do not restore customer_id.
+export const DETACHED_CUSTOMER_ID = "detached";
+
+export function isDetachedCustomerId(customerId) {
+  return customerId === DETACHED_CUSTOMER_ID;
+}
+
 export function workspaceEntitlements(subscription, now = new Date()) {
   const plan = effectiveWorkspacePlan(subscription, now);
   return { plan, ...PLAN_ENTITLEMENTS[plan] };
 }
 
+const SUBSCRIPTION_PLAN_SELECT = Object.freeze({
+  plan: true,
+  status: true,
+  currentPeriodEnd: true,
+  pastDueEndsAt: true,
+  cancelAtPeriodEnd: true,
+  lastEventAt: true,
+});
+
 const loadWorkspaceSubscription = cache(async (db, workspaceId) => {
   return db.workspaceSubscription.findUnique({
     where: { workspaceId },
-    select: {
-      plan: true,
-      status: true,
-      currentPeriodEnd: true,
-      pastDueEndsAt: true,
-      cancelAtPeriodEnd: true,
-    },
+    select: SUBSCRIPTION_PLAN_SELECT,
   });
 });
 
@@ -80,6 +122,26 @@ export async function getWorkspaceEntitlements(db, workspaceId, now = new Date()
   if (!workspaceId) return workspaceEntitlements(null, now);
   const subscription = await loadWorkspaceSubscription(db, workspaceId);
   return { ...workspaceEntitlements(subscription, now), subscription };
+}
+
+// Workspaces are limited per owner, not per workspace: joining someone else's
+// Pro workspace never consumes your own allowance. The plan that governs
+// creation is the best plan among the workspaces the user owns.
+export async function getOwnedWorkspaceEntitlements(db, userId, now = new Date()) {
+  if (typeof userId !== "string" || !userId)
+    return { plan: "FREE", ownedCount: 0, ...PLAN_ENTITLEMENTS.FREE };
+  const [ownedCount, subscriptions] = await Promise.all([
+    db.workspaceMember.count({ where: { userId, role: "OWNER" } }),
+    db.workspaceSubscription.findMany({
+      where: { workspace: { members: { some: { userId, role: "OWNER" } } } },
+      select: SUBSCRIPTION_PLAN_SELECT,
+    }),
+  ]);
+  const hasProWorkspace = subscriptions.some(
+    (subscription) => effectiveWorkspacePlan(subscription, now) === "PRO",
+  );
+  const plan = hasProWorkspace ? "PRO" : "FREE";
+  return { plan, ownedCount, ...PLAN_ENTITLEMENTS[plan] };
 }
 
 export function requireFeature(entitlements, feature) {

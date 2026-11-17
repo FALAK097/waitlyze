@@ -2,6 +2,7 @@
 
 import { randomUUID } from "node:crypto";
 
+import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 
 import { auth } from "@/lib/auth";
@@ -10,7 +11,12 @@ import {
   reconcileCheckoutSession,
 } from "@/lib/billing/checkout-reconciliation.mjs";
 import { createDodoClient, dodoProductId, DodoConfigurationError } from "@/lib/billing/dodo.mjs";
-import { BILLING_INTERVALS, effectiveWorkspacePlan } from "@/lib/billing/plans.mjs";
+import {
+  BILLING_INTERVALS,
+  effectiveWorkspacePlan,
+  isDetachedCustomerId,
+  providerSubscriptionNeedsReview,
+} from "@/lib/billing/plans.mjs";
 import { env } from "@/lib/env.mjs";
 import prisma from "@/lib/prisma";
 import { AUDIT_ACTIONS, recordAuditEvent } from "@/lib/workspaces/audit.mjs";
@@ -87,14 +93,8 @@ async function reserveCheckoutIntent(workspaceId, interval) {
     if (effectiveWorkspacePlan(current, now) === "PRO")
       return { error: "This workspace already has Pro. Manage its renewal in Billing settings." };
 
-    const providerStateNeedsReview =
-      ["ACTIVE", "PAST_DUE", "ON_HOLD"].includes(current?.status) ||
-      (current?.status === "CANCELLED" && current.cancelAtPeriodEnd && !current.currentPeriodEnd);
-    if (
-      providerStateNeedsReview ||
-      (current?.dodoSubscriptionId && !["CANCELLED", "EXPIRED", "FAILED"].includes(current.status))
-    ) {
-      if (!current.dodoCustomerId)
+    if (providerSubscriptionNeedsReview(current)) {
+      if (!current.dodoCustomerId || isDetachedCustomerId(current.dodoCustomerId))
         return { error: "This subscription needs attention. Contact support to recover billing." };
       return { portalCustomerId: current.dodoCustomerId };
     }
@@ -413,7 +413,7 @@ export async function createBillingPortal(workspaceId) {
       where: { workspaceId: workspace.id },
       select: { dodoCustomerId: true },
     });
-    if (!subscription?.dodoCustomerId)
+    if (!subscription?.dodoCustomerId || isDetachedCustomerId(subscription.dodoCustomerId))
       return { error: "No paid subscription is connected to this workspace." };
     const portalUrl = await createPortalLink(subscription.dodoCustomerId, workspace.id);
     await recordAuditEvent(prisma, {
@@ -431,5 +431,187 @@ export async function createBillingPortal(workspaceId) {
     if (error instanceof DodoConfigurationError) return { error: error.message };
     console.error("Could not create Dodo billing portal", error?.name || "unknown error");
     return { error: "Could not open billing management. Please try again." };
+  }
+}
+
+function hasPendingCheckout(subscription) {
+  return Boolean(
+    subscription?.checkoutIntentId || subscription?.checkoutSessionId || subscription?.checkoutUrl,
+  );
+}
+
+/** Moves the owner's only effective-Pro subscription to the workspace being viewed. */
+export async function transferProSubscription(workspaceId) {
+  try {
+    const session = await checkAuth();
+    const context = await ownerContext(session, workspaceId);
+    if (context.error) return context;
+    const { workspace } = context;
+
+    const target = await prisma.workspaceSubscription.findUnique({
+      where: { workspaceId: workspace.id },
+    });
+    if (effectiveWorkspacePlan(target) === "PRO")
+      return { error: "This workspace already has Pro." };
+
+    // Only workspaces this account owns can donate their subscription; the
+    // target ownership check already ran in ownerContext.
+    const ownedWorkspaces = await prisma.workspaceMember.findMany({
+      where: { userId: session.user.id, role: "OWNER", workspaceId: { not: workspace.id } },
+      select: { workspace: { select: { id: true, name: true, subscription: true } } },
+    });
+    const proWorkspaces = ownedWorkspaces
+      .map(({ workspace: owned }) => owned)
+      .filter((owned) => effectiveWorkspacePlan(owned.subscription) === "PRO");
+    if (proWorkspaces.length === 0) return { error: "You don’t have a Pro subscription to move." };
+    if (proWorkspaces.length > 1)
+      return {
+        error: "You have Pro on more than one workspace. Contact support to move a subscription.",
+      };
+
+    const [source] = proWorkspaces;
+    const sourceSubscription = source.subscription;
+    if (hasPendingCheckout(sourceSubscription) || hasPendingCheckout(target))
+      return { error: "Finish or reconcile the pending checkout before moving Pro." };
+    if (providerSubscriptionNeedsReview(target))
+      return {
+        error:
+          "This workspace has a subscription that still needs attention in Billing. Resolve it before moving Pro here.",
+      };
+    if (!sourceSubscription.dodoSubscriptionId)
+      return { error: "This subscription is not connected to Dodo Payments. Contact support." };
+
+    // Move the provider metadata first so later webhooks address the new workspace.
+    const client = createDodoClient().withOptions({ maxRetries: 0, timeout: 30_000 });
+    try {
+      await client.subscriptions.update(sourceSubscription.dodoSubscriptionId, {
+        metadata: {
+          workspaceId: workspace.id,
+          userId: session.user.id,
+          plan: "PRO",
+          transferredFrom: source.id,
+        },
+      });
+    } catch (providerError) {
+      console.error(
+        "Could not update Dodo subscription metadata for a move",
+        providerError?.name || "unknown error",
+      );
+      return { error: "Could not reach Dodo Payments to move Pro. No billing changes were made." };
+    }
+
+    try {
+      await prisma.$transaction(async (tx) => {
+        // Deterministic lock order keeps opposite transfers from deadlocking.
+        const [firstLockId, secondLockId] = [source.id, workspace.id].sort();
+        await tx.$queryRaw`SELECT "id" FROM "workspaces" WHERE "id" = ${firstLockId} FOR UPDATE`;
+        await tx.$queryRaw`SELECT "id" FROM "workspaces" WHERE "id" = ${secondLockId} FOR UPDATE`;
+        const [sourceOwner, targetOwner, currentSource, currentTarget] = await Promise.all([
+          tx.workspaceMember.findUnique({
+            where: { workspaceId_userId: { workspaceId: source.id, userId: session.user.id } },
+            select: { role: true },
+          }),
+          tx.workspaceMember.findUnique({
+            where: { workspaceId_userId: { workspaceId: workspace.id, userId: session.user.id } },
+            select: { role: true },
+          }),
+          tx.workspaceSubscription.findUnique({ where: { workspaceId: source.id } }),
+          tx.workspaceSubscription.findUnique({ where: { workspaceId: workspace.id } }),
+        ]);
+        if (sourceOwner?.role !== "OWNER" || targetOwner?.role !== "OWNER")
+          throw new Error("You must be an owner of both workspaces to move Pro.");
+        if (
+          currentSource?.dodoSubscriptionId !== sourceSubscription.dodoSubscriptionId ||
+          effectiveWorkspacePlan(currentSource) !== "PRO"
+        )
+          throw new Error("The source subscription changed while Pro was being moved.");
+        if (
+          effectiveWorkspacePlan(currentTarget) === "PRO" ||
+          hasPendingCheckout(currentSource) ||
+          hasPendingCheckout(currentTarget)
+        )
+          throw new Error("Billing changed while Pro was being moved.");
+        if (providerSubscriptionNeedsReview(currentTarget))
+          throw new Error("The target subscription needs reconciliation before Pro can move.");
+
+        await tx.workspaceSubscription.delete({ where: { workspaceId: source.id } });
+        const movedSubscriptionData = {
+          plan: currentSource.plan,
+          status: currentSource.status,
+          interval: currentSource.interval,
+          dodoCustomerId: currentSource.dodoCustomerId,
+          dodoSubscriptionId: currentSource.dodoSubscriptionId,
+          dodoProductId: currentSource.dodoProductId,
+          currentPeriodStart: currentSource.currentPeriodStart,
+          currentPeriodEnd: currentSource.currentPeriodEnd,
+          pastDueEndsAt: currentSource.pastDueEndsAt,
+          cancelAtPeriodEnd: currentSource.cancelAtPeriodEnd,
+          lastEventAt: currentSource.lastEventAt,
+        };
+        await tx.workspaceSubscription.upsert({
+          where: { workspaceId: workspace.id },
+          create: {
+            workspaceId: workspace.id,
+            ...movedSubscriptionData,
+          },
+          update: movedSubscriptionData,
+        });
+      });
+    } catch (transactionError) {
+      try {
+        // Decide under the same workspace locks so a sibling transfer's commit
+        // is visible before choosing whether to revert the metadata. Revert
+        // only when the subscription is still parked on the source workspace:
+        // if a committed transfer moved it elsewhere, that transfer's own
+        // metadata write already points at its new workspace.
+        let stillAtSource = false;
+        await prisma.$transaction(async (tx) => {
+          const [firstLockId, secondLockId] = [source.id, workspace.id].sort();
+          await tx.$queryRaw`SELECT "id" FROM "workspaces" WHERE "id" = ${firstLockId} FOR UPDATE`;
+          await tx.$queryRaw`SELECT "id" FROM "workspaces" WHERE "id" = ${secondLockId} FOR UPDATE`;
+          const parked = await tx.workspaceSubscription.findFirst({
+            where: {
+              workspaceId: source.id,
+              dodoSubscriptionId: sourceSubscription.dodoSubscriptionId,
+            },
+          });
+          stillAtSource = Boolean(parked);
+        });
+        if (stillAtSource) {
+          await client.subscriptions.update(sourceSubscription.dodoSubscriptionId, {
+            metadata: { workspaceId: source.id, userId: session.user.id, plan: "PRO" },
+          });
+        }
+      } catch (revertError) {
+        console.error(
+          "Could not revert Dodo subscription metadata after a failed move",
+          revertError?.name || "unknown error",
+        );
+      }
+      console.error(
+        "Could not move Pro between workspaces",
+        transactionError?.name || "unknown error",
+      );
+      return {
+        error: "Could not move Pro. No billing changes were kept; try again or contact support.",
+      };
+    }
+
+    await recordAuditEvent(prisma, {
+      workspaceId: workspace.id,
+      userId: session.user.id,
+      action: AUDIT_ACTIONS.SUBSCRIPTION_TRANSFERRED,
+      resourceType: "billing",
+      resourceId: sourceSubscription.dodoSubscriptionId,
+      resourceName: source.name,
+      detail: `Moved Pro from ${source.name}`,
+    });
+    revalidatePath("/settings");
+    return { success: `Pro moved to this workspace from ${source.name}.` };
+  } catch (error) {
+    if (error instanceof BillingGateError) return { error: error.message };
+    if (error instanceof DodoConfigurationError) return { error: error.message };
+    console.error("Could not move Pro between workspaces", error?.name || "unknown error");
+    return { error: "Could not move Pro. Please try again." };
   }
 }

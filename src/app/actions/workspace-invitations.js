@@ -20,6 +20,7 @@ import { decryptIntegrationSecret, encryptIntegrationSecret } from "@/lib/integr
 import prisma from "@/lib/prisma";
 import { consumePublicBudget } from "@/lib/security/public-rate-limit.mjs";
 import { AUDIT_ACTIONS, recordAuditEvent } from "@/lib/workspaces/audit.mjs";
+import { rememberWorkspace } from "@/lib/workspaces/current";
 import {
   acceptWorkspaceInvitation,
   hashInvitationToken,
@@ -100,6 +101,9 @@ export async function inviteWorkspaceMember(previous, form) {
     const actor = await managerMembership(session.user.id, workspaceId, role).catch(() => null);
     if (!actor) return { error: "You don’t have permission to invite that role." };
     const prepared = await prisma.$transaction(async (tx) => {
+      // Serialize with accepts, removals, and ownership changes so the seat
+      // count read below cannot go stale before the invitation is written.
+      await tx.$queryRaw`SELECT "id" FROM "workspaces" WHERE "id" = ${workspaceId} FOR UPDATE`;
       const actor = await managerMembership(session.user.id, workspaceId, role, tx);
       if (!actor) return { error: "You don’t have permission to invite that role." };
       const [existingMember, workspace] = await Promise.all([
@@ -109,25 +113,15 @@ export async function inviteWorkspaceMember(previous, form) {
         }),
         tx.workspace.findUnique({
           where: { id: workspaceId },
-          select: { name: true, personalOwnerId: true },
+          select: { name: true },
         }),
       ]);
       if (!workspace) return { error: "Workspace not found." };
-      if (workspace.personalOwnerId)
-        return {
-          error: "Personal workspaces are private. Create a shared workspace to invite teammates.",
-        };
       if (existingMember) return { error: "That person is already a workspace member." };
       const [entitlements, memberCount] = await Promise.all([
         getWorkspaceEntitlements(tx, workspaceId),
         tx.workspaceMember.count({ where: { workspaceId } }),
       ]);
-      requireCapacity({
-        entitlements,
-        feature: "members",
-        used: memberCount,
-        message: "The Free plan is for one workspace owner. Upgrade to invite teammates.",
-      });
       await tx.workspaceInvitation.updateMany({
         where: { workspaceId, status: { in: ["PENDING", "SEND_FAILED"] }, expiresAt: { lte: now } },
         data: { status: "EXPIRED", tokenCiphertext: "", tokenIv: "", tokenTag: "" },
@@ -145,6 +139,13 @@ export async function inviteWorkspaceMember(previous, form) {
         return { error: "An invitation is already active for that address. Use its action below." };
       const pendingCount = await tx.workspaceInvitation.count({
         where: { workspaceId, status: { in: ["PENDING", "SEND_FAILED"] }, expiresAt: { gt: now } },
+      });
+      // Pending invitations hold seats so one free seat cannot queue 50 invites.
+      requireCapacity({
+        entitlements,
+        feature: "members",
+        used: memberCount + pendingCount,
+        message: "The Free plan includes one member. Upgrade to invite teammates.",
       });
       if (pendingCount >= MAX_PENDING_INVITATIONS)
         return { error: "This workspace has reached its 50 pending invitation limit." };
@@ -378,6 +379,35 @@ export async function changeWorkspaceMemberRole(memberUserId, workspaceId, role)
   }
 }
 
+export async function transferWorkspaceOwnership(memberUserId, workspaceId) {
+  const session = await auth.api.getSession({ headers: await headers() });
+  if (!session?.user?.id || typeof memberUserId !== "string" || typeof workspaceId !== "string")
+    return { error: "Sign in again to manage members." };
+  try {
+    const moved = await createWorkspaceService(prisma).transferOwnership(
+      session.user.id,
+      workspaceId,
+      memberUserId,
+    );
+    if (moved.unchanged) return { success: "That member is already an owner." };
+    await recordAuditEvent(prisma, {
+      workspaceId,
+      userId: session.user.id,
+      action: AUDIT_ACTIONS.OWNERSHIP_TRANSFERRED,
+      resourceType: "member",
+      resourceId: memberUserId,
+      resourceName: moved.name || moved.email,
+      detail: "Ownership transferred to this member",
+    });
+    revalidatePath("/settings");
+    return { success: `${moved.name || moved.email || "Member"} is now the workspace owner.` };
+  } catch (error) {
+    if (error instanceof TypeError || error instanceof WorkspacePlanError)
+      return { error: error.message };
+    return { error: "Could not transfer ownership. Try again." };
+  }
+}
+
 export async function acceptWorkspaceInvite(previous, form) {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session?.user?.id) return { error: "Sign in with the invited account to continue." };
@@ -419,6 +449,7 @@ export async function acceptWorkspaceInvite(previous, form) {
     path: "/",
     maxAge: 60 * 60 * 24 * 30,
   });
+  await rememberWorkspace(session.user.id, result.workspaceId);
   revalidatePath("/settings");
   redirect("/waitlists");
 }

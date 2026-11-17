@@ -4,6 +4,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { env } from "@/lib/env.mjs";
 import prisma from "@/lib/prisma";
+import { rememberWorkspace } from "@/lib/workspaces/current";
 
 async function isWorkspaceOwner(userId, workspaceId) {
   const membership = await prisma.workspaceMember.findUnique({
@@ -69,5 +70,10 @@ export async function POST(request) {
     path: "/",
     maxAge: 60 * 60 * 24 * 30,
   });
+  try {
+    await rememberWorkspace(session.user.id, requestedWorkspaceId);
+  } catch (error) {
+    console.warn("Could not remember the selected workspace", error?.name || "unknown error");
+  }
   return NextResponse.redirect(returnUrl, 303);
 }

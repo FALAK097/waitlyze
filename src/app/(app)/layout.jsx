@@ -6,7 +6,7 @@ import { OnboardingProvider } from "@/components/onboarding/onboarding-provider"
 import { AppShell, AppShellControls } from "@/components/product/app-shell";
 import { ProductContentSkeleton } from "@/components/product/content-skeleton";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { getWorkspaceEntitlements } from "@/lib/billing/plans.mjs";
+import { getOwnedWorkspaceEntitlements, getWorkspaceEntitlements } from "@/lib/billing/plans.mjs";
 import { PostHogUserSync } from "@/lib/posthog/user-sync";
 import prisma from "@/lib/prisma";
 import { publicFontClasses } from "@/lib/public-fonts";
@@ -35,8 +35,9 @@ function AccountAvatar({ id, src, name }) {
 
 async function AppShellControlsData() {
   const { user, workspace, workspaces } = await currentWorkspace();
-  const [entitlements, memberCount] = await Promise.all([
+  const [entitlements, ownedEntitlements, memberCount] = await Promise.all([
     getWorkspaceEntitlements(prisma, workspace.id),
+    getOwnedWorkspaceEntitlements(prisma, user.id),
     prisma.workspaceMember.count({ where: { workspaceId: workspace.id } }),
   ]);
   const canManageBilling = workspace.members?.[0]?.role === "OWNER";
@@ -56,6 +57,11 @@ async function AppShellControlsData() {
         avatar={<AccountAvatar id={user.id} src={user.image || user.imageUrl} name={user.name} />}
         plan={entitlements.plan}
         canManageBilling={canManageBilling}
+        canCreateWorkspace={
+          ownedEntitlements.workspaces === null ||
+          ownedEntitlements.ownedCount < ownedEntitlements.workspaces
+        }
+        workspaceId={workspace.id}
       />
     </>
   );
