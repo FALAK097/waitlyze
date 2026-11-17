@@ -65,54 +65,73 @@ export default function Pricing({
     return () => controller.abort();
   }, [regionalPricing]);
 
-  const sectionClass = isModal
-    ? "px-1 py-2"
-    : "wl-section wl-pricing bg-product-bg-page px-4 sm:px-5 md:px-8 lg:px-12";
+  const title = feature ? `Unlock ${feature}` : "Start free. Upgrade when you need more.";
+
+  const intervalToggle = (
+    <div
+      className="inline-flex rounded-full border border-product-border-subtle bg-product-bg-surface p-1"
+      aria-label="Billing interval"
+      role="group"
+    >
+      <Button
+        type="button"
+        variant="ghost"
+        size="sm"
+        aria-pressed={interval === "monthly"}
+        className={interval === "monthly" ? "rounded-full bg-product-bg-inset" : "rounded-full"}
+        onClick={() => setInterval("monthly")}
+      >
+        Monthly
+      </Button>
+      <Button
+        type="button"
+        variant="ghost"
+        size="sm"
+        aria-pressed={interval === "annual"}
+        className={interval === "annual" ? "rounded-full bg-product-bg-inset" : "rounded-full"}
+        onClick={() => setInterval("annual")}
+      >
+        Annual{" "}
+        <span className="ml-1 text-product-success-text">
+          Save {WAITLYZE_PRICING.pro.annualSavingsPercent}%
+        </span>
+      </Button>
+    </div>
+  );
+
+  const sectionClass = isModal ? "px-1 py-2" : "wl-section wl-pricing";
 
   return (
-    <section className={sectionClass} id={isModal ? undefined : "pricing"}>
-      <div className="@container mx-auto w-full max-w-7xl">
-        <header className="mx-auto mb-9 max-w-2xl text-center sm:mb-12">
-          {!isModal && <p className="wl-eyebrow">SIMPLE, WORKSPACE-LEVEL PRICING</p>}
-          <h2 className="font-product-display text-3xl leading-tight tracking-tight sm:text-4xl">
-            {feature ? `Unlock ${feature}` : "Start free. Upgrade when you need more."}
-          </h2>
-          <div
-            className="mx-auto mt-6 inline-flex rounded-full border border-product-border-subtle bg-product-bg-surface p-1"
-            aria-label="Billing interval"
-            role="group"
-          >
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              aria-pressed={interval === "monthly"}
-              className={
-                interval === "monthly" ? "rounded-full bg-product-bg-inset" : "rounded-full"
-              }
-              onClick={() => setInterval("monthly")}
-            >
-              Monthly
-            </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              aria-pressed={interval === "annual"}
-              className={
-                interval === "annual" ? "rounded-full bg-product-bg-inset" : "rounded-full"
-              }
-              onClick={() => setInterval("annual")}
-            >
-              Annual{" "}
-              <span className="ml-1 text-product-success-text">
-                Save {WAITLYZE_PRICING.pro.annualSavingsPercent}%
-              </span>
-            </Button>
+    <section
+      className={sectionClass}
+      id={isModal ? undefined : "pricing"}
+      aria-labelledby={isModal ? undefined : "pricing-title"}
+    >
+      <div
+        className={isModal ? "@container mx-auto w-full max-w-7xl" : "@container mx-auto w-full"}
+      >
+        {isModal ? (
+          <header className="mx-auto mb-9 max-w-2xl text-center sm:mb-12">
+            <h2 className="font-product-display text-3xl leading-tight tracking-tight sm:text-4xl">
+              {title}
+            </h2>
+            <div className="mt-6">{intervalToggle}</div>
+          </header>
+        ) : (
+          <div className="wl-section-heading wl-heading-with-link">
+            <div>
+              <p className="wl-eyebrow">SIMPLE, WORKSPACE-LEVEL PRICING</p>
+              <h2 id="pricing-title">{title}</h2>
+              <p>
+                Free covers your first launch, from page to signups. Pro is there when you need
+                unlimited lists, deeper analytics, and your own domain.
+              </p>
+            </div>
+            {intervalToggle}
           </div>
-        </header>
+        )}
 
-        <div className="mx-auto grid w-full max-w-5xl grid-cols-1 gap-5 md:gap-6 @min-[56rem]:grid-cols-2">
+        <div className="wl-pricing-grid grid w-full max-w-5xl grid-cols-1 gap-5 md:gap-6 @min-[56rem]:grid-cols-2">
           <article className="flex flex-col rounded-2xl border border-product-border-subtle bg-product-bg-surface p-6 sm:p-8">
             <div>
               <p className="flex min-h-6 items-center text-xs font-semibold tracking-[0.14em] text-product-text-secondary uppercase">

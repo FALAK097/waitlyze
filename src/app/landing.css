@@ -215,6 +215,16 @@
   letter-spacing: 0.14em;
   line-height: 1.3 !important;
 }
+.wl-pricing-grid {
+  margin-top: clamp(36px, 5vw, 52px);
+}
+@media (max-width: 900px) {
+  .wl-pricing .wl-heading-with-link {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 20px;
+  }
+}
 .wl-more-features {
   padding-top: 64px;
 }
