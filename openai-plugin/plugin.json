@@ -1,7 +1,7 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "waitlyze",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Build, manage, and understand waitlist campaigns from ChatGPT and Codex.",
   "author": {
     "name": "Falak Gala",

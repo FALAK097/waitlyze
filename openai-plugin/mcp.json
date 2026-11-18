@@ -3,7 +3,22 @@
   "mcpServers": {
     "waitlyze": {
       "type": "streamable-http",
-      "url": "https://waitlyze.com/mcp"
+      "url": "https://waitlyze.com/mcp",
+      "extensions": {
+        "com.openai": {
+          "auth": {
+            "type": "oauth",
+            "client": {
+              "mode": "dcr"
+            },
+            "registrationUrl": "https://waitlyze.com/api/auth/oauth2/register",
+            "authorizationUrl": "https://waitlyze.com/api/auth/oauth2/authorize",
+            "tokenUrl": "https://waitlyze.com/api/auth/oauth2/token",
+            "resource": "https://waitlyze.com/mcp",
+            "baseScopes": ["mcp:read", "mcp:write"]
+          }
+        }
+      }
     }
   }
 }
