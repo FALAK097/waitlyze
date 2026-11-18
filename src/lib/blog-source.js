@@ -59,6 +59,10 @@ export function slugifyTag(tag) {
   return slug;
 }
 
+// Tag archives with fewer posts than this are thin, near-duplicate pages. They stay reachable for
+// readers but are kept out of the sitemap and marked noindex.
+export const MIN_INDEXABLE_TAG_POSTS = 3;
+
 export function getTags() {
   const counts = new Map();
   for (const post of getPosts()) {

@@ -24,9 +24,9 @@ import {
 } from "@/lib/comparison-data";
 
 export const metadata = {
-  title: { absolute: "Waitlist Software Comparison: 7 Tools Side by Side (2026) | Waitlyze" },
+  title: { absolute: "Waitlist Software Comparison: 7 Tools Side by Side (2026)" },
   description:
-    "Compare Waitlyze, GetWaitlist, LaunchList, Prefinery, KickoffLabs, Viral Loops, and Waitlister on free plans, pricing, hosted pages, referrals, email, analytics, and API access.",
+    "Compare Waitlyze, GetWaitlist, LaunchList, Prefinery, KickoffLabs, Viral Loops, and Waitlister on pricing, referrals, email, analytics, and API access.",
   alternates: { canonical: "/compare" },
   openGraph: {
     type: "website",

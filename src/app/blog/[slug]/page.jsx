@@ -35,8 +35,9 @@ export async function generateMetadata({ params }) {
   if (!post) return { title: "Article not found" };
   const { title, description, date, tags } = post.data;
   const image = { url: `/og/blog/${slug}`, width: 1200, height: 630, alt: title };
+  const branded = `${title} | Waitlyze`;
   return {
-    title,
+    title: { absolute: branded.length <= 60 ? branded : title },
     description,
     authors: [{ name: post.data.author }],
     alternates: {

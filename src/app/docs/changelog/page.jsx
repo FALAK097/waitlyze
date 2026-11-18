@@ -10,7 +10,7 @@ import { ChangelogCopyButton } from "@/components/changelog/changelog-copy-butto
 import { formatChangelogDate, parseChangelog } from "@/lib/changelog";
 
 export const metadata = {
-  title: "Changelog",
+  title: { absolute: "Waitlyze Changelog: Release Notes & Product Updates" },
   description: "Waitlyze release notes, from the first waitlist release through the latest update.",
   alternates: { canonical: "/docs/changelog" },
   openGraph: {

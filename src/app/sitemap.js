@@ -1,4 +1,4 @@
-import { getPostModifiedDate, getPosts, getTags } from "@/lib/blog-source";
+import { getPostModifiedDate, getPosts, getTags, MIN_INDEXABLE_TAG_POSTS } from "@/lib/blog-source";
 import { competitors } from "@/lib/comparison-data";
 import { SITE_URL } from "@/lib/site-metadata";
 import { source } from "@/lib/source";
@@ -40,16 +40,18 @@ export default function sitemap() {
       lastModified: getPostModifiedDate(post.data),
       priority: 0.7,
     })),
-    ...getTags().map((tag) => ({
-      url: `${SITE_URL}/blog/tag/${tag.slug}`,
-      lastModified:
-        posts.reduce((latest, post) => {
-          if (!post.data.tags.includes(tag.name)) return latest;
-          const modified = getPostModifiedDate(post.data);
-          return !latest || modified > latest ? modified : latest;
-        }, undefined) ?? SITE_UPDATED,
-      priority: 0.4,
-    })),
+    ...getTags()
+      .filter((tag) => tag.count >= MIN_INDEXABLE_TAG_POSTS)
+      .map((tag) => ({
+        url: `${SITE_URL}/blog/tag/${tag.slug}`,
+        lastModified:
+          posts.reduce((latest, post) => {
+            if (!post.data.tags.includes(tag.name)) return latest;
+            const modified = getPostModifiedDate(post.data);
+            return !latest || modified > latest ? modified : latest;
+          }, undefined) ?? SITE_UPDATED,
+        priority: 0.4,
+      })),
     ...source.getPages().map((page) => ({
       url: `${SITE_URL}${page.url}`,
       lastModified: SITE_UPDATED,

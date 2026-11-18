@@ -5,7 +5,7 @@ import { BlogCta } from "@/components/blog/blog-cta";
 import { PostCard } from "@/components/blog/post-card";
 import PublicShell from "@/components/landing/public-shell";
 import { JsonLd } from "@/components/seo/json-ld";
-import { getPosts, getReadingMinutes, getTags } from "@/lib/blog-source";
+import { getPosts, getReadingMinutes, getTags, MIN_INDEXABLE_TAG_POSTS } from "@/lib/blog-source";
 import { absoluteUrl, breadcrumbNode } from "@/lib/seo-helpers";
 
 export const revalidate = 3600;
@@ -27,6 +27,7 @@ export async function generateMetadata({ params }) {
   return {
     title: { absolute: title },
     description,
+    ...(tag.count < MIN_INDEXABLE_TAG_POSTS && { robots: { index: false, follow: true } }),
     alternates: { canonical: `/blog/tag/${tag.slug}` },
     openGraph: { type: "website", url: `/blog/tag/${tag.slug}`, title, description },
     twitter: { card: "summary_large_image", title, description },

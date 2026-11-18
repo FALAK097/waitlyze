@@ -46,7 +46,7 @@ export async function generateMetadata({ params }) {
   const title = `Waitlyze vs ${competitor.name}: Pricing, Features & Verdict (2026)`;
   const description = `${competitor.name} alternative: compare Waitlyze and ${competitor.name} on free plans, pricing, hosted pages, referrals, email, analytics, custom domains, and API access.`;
   return {
-    title: { absolute: `${title} | Waitlyze` },
+    title: { absolute: title },
     description,
     alternates: { canonical: `/alternatives/${slug}` },
     openGraph: { type: "article", url: `/alternatives/${slug}`, title, description },
