@@ -370,11 +370,11 @@ export default async function LandingPage() {
           <div className="wl-more-grid">
             {moreFeatures.map(({ icon, title, copy }) => (
               <article className="wl-more-item" key={title}>
-                <div className="wl-more-header">
-                  <HugeiconsIcon icon={icon} size={22} strokeWidth={1.6} aria-hidden="true" />
+                <HugeiconsIcon icon={icon} size={22} strokeWidth={1.6} aria-hidden="true" />
+                <div className="wl-more-content">
                   <h3>{title}</h3>
+                  <p>{copy}</p>
                 </div>
-                <p>{copy}</p>
               </article>
             ))}
           </div>
