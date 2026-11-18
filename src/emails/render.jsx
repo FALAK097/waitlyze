@@ -1,6 +1,7 @@
 import { render } from "@react-email/render";
 
 import { BroadcastSummaryEmail } from "./templates/broadcast-summary";
+import { ChangelogReleaseEmail } from "./templates/changelog-release";
 import { FeedbackEmail } from "./templates/feedback";
 import { SignupMilestoneEmail } from "./templates/signup-milestone";
 import { SubscriberVerificationEmail } from "./templates/subscriber-verification";
@@ -81,4 +82,9 @@ export async function renderWaitlistPublished({ waitlistName, pageUrl, dashboard
       dashboardUrl={dashboardUrl}
     />,
   );
+}
+
+/** Renders a changelog new release announcement email. */
+export async function renderChangelogRelease(props) {
+  return render(<ChangelogReleaseEmail {...props} />);
 }
