@@ -95,7 +95,9 @@
     "zustand": "^5.1.0"
   },
   "devDependencies": {
+    "@interfere/landmines": "^0.1.0",
     "@opennextjs/cloudflare": "1.20.16",
+    "@oxlint/plugins": "1.88.0",
     "@react-email/ui": "^6.11.1",
     "@shadcn/lint": "^0.2.0",
     "agentation": "^3.1.2",
