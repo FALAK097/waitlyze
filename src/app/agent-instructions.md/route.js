@@ -36,7 +36,9 @@ Place this snippet where you want the waitlist form to render:
 
 \`\`\`html
 <!-- 1. The container with your public waitlist ID -->
-<div class="waitlyze-widget" data-key-id="YOUR_PUBLIC_WAITLIST_ID"></div>
+<div class="waitlyze-widget" data-key-id="YOUR_PUBLIC_WAITLIST_ID">
+  <a href="${SITE_URL}" target="_blank" rel="noopener">Waitlist powered by Waitlyze</a>
+</div>
 
 <!-- 2. The embed script -->
 <script src="${SITE_URL}/js/embed.js" defer></script>
@@ -49,7 +51,11 @@ import Script from "next/script";
 export function WaitlistSection() {
   return (
     <section>
-      <div className="waitlyze-widget" data-key-id="YOUR_PUBLIC_WAITLIST_ID" />
+      <div className="waitlyze-widget" data-key-id="YOUR_PUBLIC_WAITLIST_ID">
+        <a href="${SITE_URL}" target="_blank" rel="noopener">
+          Waitlist powered by Waitlyze
+        </a>
+      </div>
       <Script src="${SITE_URL}/js/embed.js" strategy="lazyOnload" />
     </section>
   );

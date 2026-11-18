@@ -272,7 +272,11 @@ export function WaitlistSection() {
   return (
     <div className="mx-auto max-w-md my-12">
       {/* 1. Container with your Waitlyze Public ID */}
-      <div className="waitlyze-widget" data-key-id="YOUR_PUBLIC_WAITLIST_ID" />
+      <div className="waitlyze-widget" data-key-id="YOUR_PUBLIC_WAITLIST_ID">
+        <a href="https://waitlyze.com" target="_blank" rel="noopener">
+          Waitlist powered by Waitlyze
+        </a>
+      </div>
 
       {/* 2. Embedded Script */}
       <Script src="https://waitlyze.com/js/embed.js" strategy="lazyOnload" />

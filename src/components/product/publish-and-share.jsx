@@ -176,7 +176,7 @@ export function PublishAndShare({
   const hostedUrl = waitList.publicSlug
     ? `${origin}/w/${encodeURIComponent(waitList.publicSlug)}`
     : "";
-  const embedCode = `<div class="waitlyze-widget" data-key-id="${escapeAttribute(waitList.id)}"></div>\n<script src="${escapeAttribute(origin)}/js/embed.js" defer></script>`;
+  const embedCode = `<div class="waitlyze-widget" data-key-id="${escapeAttribute(waitList.id)}"><a href="${escapeAttribute(origin)}" target="_blank" rel="noopener">Waitlist powered by Waitlyze</a></div>\n<script src="${escapeAttribute(origin)}/js/embed.js" defer></script>`;
   const apiEndpoint = `${origin}/api/waitlist`;
   const domain = waitList.customDomain;
 

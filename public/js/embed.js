@@ -76,8 +76,8 @@
       // Starting height; the frame reports its real height as soon as it loads
       iframeClone.style.height = height || DEFAULT_HEIGHT;
 
-      // Add to container
-      container.appendChild(iframeClone);
+      // Replace any static fallback link inside the container with the live iframe
+      container.replaceChildren(iframeClone);
     });
   }
 

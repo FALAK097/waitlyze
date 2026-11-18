@@ -56,7 +56,7 @@ Waitlyze is a waitlist and pre-launch platform for builders, founders, and creat
 
 ## 2. Agent Quickstart & Integration
 To integrate Waitlyze:
-- Embed widget: <div class="waitlyze-widget" data-key-id="PUBLIC_WAITLIST_ID"></div><script src="${SITE_URL}/js/embed.js" defer></script>
+- Embed widget: <div class="waitlyze-widget" data-key-id="PUBLIC_WAITLIST_ID"><a href="${SITE_URL}" target="_blank" rel="noopener">Waitlist powered by Waitlyze</a></div><script src="${SITE_URL}/js/embed.js" defer></script>
 - Public Signup API: POST ${SITE_URL}/api/waitlist with JSON { waitlistId, email, referralCode }
 - Full Agent Instructions: ${SITE_URL}/agent-instructions.md
 
