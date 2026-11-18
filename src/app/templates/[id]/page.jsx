@@ -48,6 +48,10 @@ export default async function TemplateDetailPage({ params }) {
   if (!template) notFound();
   const meta = getGalleryMeta(id);
   const visibleSections = template.snapshot.sections.filter((section) => section.visible);
+  const currentIndex = TEMPLATE_IDS.indexOf(id);
+  const relatedTemplateIds = [1, 2, 3, 4].map(
+    (offset) => TEMPLATE_IDS[(currentIndex + offset) % TEMPLATE_IDS.length],
+  );
 
   return (
     <PublicShell>
@@ -110,7 +114,11 @@ export default async function TemplateDetailPage({ params }) {
 
         <section className={`${containerClasses} pb-10`} aria-label="Template preview">
           <div className="overflow-hidden rounded-xl border border-product-border-subtle shadow-canvas">
-            <WaitlistPageContent snapshot={template.snapshot} name={template.name} />
+            <WaitlistPageContent
+              snapshot={template.snapshot}
+              name={template.name}
+              heroHeadingAs="h2"
+            />
           </div>
           <p className="mt-3 text-micro text-product-text-secondary">
             Live preview with the template&apos;s real sections, copy placeholders, and brand style.
@@ -137,6 +145,25 @@ export default async function TemplateDetailPage({ params }) {
                 </li>
               ))}
             </ul>
+            <p className="mt-5 text-sm leading-relaxed text-product-text-secondary">
+              Every Waitlyze waitlist template includes verified email confirmation, personal
+              referral links, queue-position status pages, UTM source attribution, and custom domain
+              publishing. Read our{" "}
+              <Link
+                href="/blog/waitlist-landing-page-checklist"
+                className="font-medium text-product-text-primary underline underline-offset-4 hover:text-product-success-text"
+              >
+                waitlist landing page checklist
+              </Link>{" "}
+              and{" "}
+              <Link
+                href="/blog/referral-waitlist-guide"
+                className="font-medium text-product-text-primary underline underline-offset-4 hover:text-product-success-text"
+              >
+                referral waitlist guide
+              </Link>{" "}
+              to customize your copy before launch.
+            </p>
           </div>
           <div>
             <h2 className="font-product-display text-section leading-snug font-semibold tracking-tight">
@@ -155,6 +182,43 @@ export default async function TemplateDetailPage({ params }) {
                 </li>
               ))}
             </ul>
+          </div>
+        </section>
+
+        <section
+          className={`${containerClasses} pb-14`}
+          aria-labelledby="related-templates-heading"
+        >
+          <h2
+            id="related-templates-heading"
+            className="font-product-display text-section leading-snug font-semibold tracking-tight"
+          >
+            Related waitlist templates
+          </h2>
+          <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {relatedTemplateIds.map((relatedId) => {
+              const relatedMeta = getGalleryMeta(relatedId);
+              return (
+                <Link
+                  key={relatedId}
+                  prefetch={false}
+                  href={`/templates/${relatedId}`}
+                  className="group flex flex-col justify-between rounded-xl border border-product-border-subtle bg-product-bg-surface p-4 transition-colors hover:border-product-border-control"
+                >
+                  <div>
+                    <h3 className="font-product-display text-base font-semibold tracking-tight group-hover:text-product-success-text">
+                      {relatedMeta.seoTitle}
+                    </h3>
+                    <p className="mt-1.5 text-xs leading-relaxed text-product-text-secondary">
+                      {relatedMeta.useCase}
+                    </p>
+                  </div>
+                  <span className="mt-3 text-micro font-semibold text-product-text-primary">
+                    Preview template →
+                  </span>
+                </Link>
+              );
+            })}
           </div>
         </section>
 

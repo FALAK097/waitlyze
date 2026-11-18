@@ -73,6 +73,7 @@ export function WaitlistPageContent({
   selectedBlockId = null,
   onBlockSelect,
   renderBlockToolbar,
+  heroHeadingAs: HeroHeading = "h1",
 }) {
   const visible = snapshot.sections.filter(
     (section) => section.visible && (!compact || section.type !== "hero"),
@@ -191,12 +192,12 @@ export function WaitlistPageContent({
                         {section.eyebrow}
                       </p>
                     )}
-                    <h1
+                    <HeroHeading
                       className={cn("m-0 leading-none font-bold break-words", h1Split)}
                       style={{ "--wl-h1": h1Px }}
                     >
                       {section.heading}
-                    </h1>
+                    </HeroHeading>
                     <p className="mt-7 max-w-3xl text-lg text-wl-muted">{section.body}</p>
                   </div>
                 );
@@ -265,12 +266,12 @@ export function WaitlistPageContent({
                         {section.eyebrow}
                       </p>
                     )}
-                    <h1
+                    <HeroHeading
                       className={cn("m-0 leading-none font-bold break-words", h1Centered)}
                       style={{ "--wl-h1": h1Px }}
                     >
                       {section.heading}
-                    </h1>
+                    </HeroHeading>
                     <p
                       className={cn(
                         "mx-auto max-w-3xl text-wl-muted",

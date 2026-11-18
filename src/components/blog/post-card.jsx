@@ -7,11 +7,11 @@ import { formatPostDate } from "@/lib/blog-source";
 import { cn } from "@/lib/utils";
 
 /** Use the same image on the blog card and in the article's social preview. */
-export function PostCover({ slug, featured = false, compact = false }) {
+export function PostCover({ slug, alt = "", featured = false, compact = false }) {
   return (
     <Image
       src={`/og/blog/${slug}`}
-      alt=""
+      alt={alt}
       width={1200}
       height={630}
       unoptimized
@@ -54,7 +54,7 @@ export function PostCard({
         compact && "gap-3 rounded-md p-2",
       )}
     >
-      <PostCover slug={post.slugs[0]} featured={featured} compact={compact} />
+      <PostCover slug={post.slugs[0]} alt={post.data.title} featured={featured} compact={compact} />
       <div className={cn("flex flex-1 flex-col gap-2 px-2 pb-2", featured && "lg:pr-6")}>
         <PostMeta post={post} minutes={minutes} className={compact ? "text-xs" : undefined} />
         <Heading

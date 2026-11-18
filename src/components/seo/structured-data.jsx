@@ -1,6 +1,8 @@
 import { SITE_URL, SITE_DESCRIPTION, SITE_SUPPORT_EMAIL } from "@/lib/site-metadata";
 
 const GITHUB_URL = "https://github.com/FALAK097/waitlyze";
+const X_URL = "https://x.com/FalakGala097";
+const FOUNDER_URL = "https://falakgala.dev";
 
 const siteGraph = {
   "@context": "https://schema.org",
@@ -12,12 +14,18 @@ const siteGraph = {
       url: SITE_URL,
       logo: `${SITE_URL}/web-app-manifest-512x512.png`,
       description: SITE_DESCRIPTION,
+      founder: {
+        "@type": "Person",
+        name: "Falak Gala",
+        url: FOUNDER_URL,
+        sameAs: [FOUNDER_URL, X_URL, "https://github.com/FALAK097"],
+      },
       contactPoint: {
         "@type": "ContactPoint",
         contactType: "customer support",
         email: SITE_SUPPORT_EMAIL,
       },
-      sameAs: [GITHUB_URL],
+      sameAs: [GITHUB_URL, X_URL],
     },
     {
       "@type": "WebSite",

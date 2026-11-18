@@ -185,6 +185,12 @@ export default function PublicShell({ children }) {
               >
                 Refund policy
               </Link>
+              <Link
+                href="/support"
+                className="inline-flex items-center gap-1.5 hover:text-product-success-text focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-neutral-900"
+              >
+                Support
+              </Link>
               <a
                 href="mailto:support@waitlyze.com"
                 className="inline-flex items-center gap-1.5 hover:text-product-success-text focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-neutral-900"

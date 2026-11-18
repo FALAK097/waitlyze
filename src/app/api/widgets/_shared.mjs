@@ -35,11 +35,14 @@ body{margin:0;font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Robot
 .waitlyze-widget .refs{margin-left:auto;flex-shrink:0;font-size:12px;color:#6b7280}
 .waitlyze-widget .counter{font-size:32px;font-weight:800;letter-spacing:-0.02em}
 .waitlyze-widget a.join{display:inline-block;margin-top:12px;font-size:13px;font-weight:600;color:#fff;background:#ff6b4a;border-radius:8px;padding:8px 14px;text-decoration:none}
+.waitlyze-widget a.brand{display:block;margin-top:10px;font-size:11px;color:#6b7280;text-decoration:none}
+.waitlyze-widget a.brand strong{color:#111827;font-weight:600}
 </style>
 </head>
 <body>
 <div class="waitlyze-widget">
 ${body}
+<a class="brand" href="https://waitlyze.com" target="_blank" rel="noopener noreferrer">Powered by <strong>Waitlyze</strong></a>
 </div>
 </body>
 </html>`;
