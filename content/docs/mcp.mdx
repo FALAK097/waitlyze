@@ -3,7 +3,7 @@ title: Model Context Protocol (MCP)
 description: Connect AI coding assistants and agents directly to your Waitlyze waitlists, audience data, and analytics via Streamable HTTP MCP.
 ---
 
-Waitlyze provides a first-class Model Context Protocol (MCP) server. You can manage your waitlist lifecycle, create campaigns, inspect signups, evaluate K-factor viral analytics, dispatch broadcasts, and manage webhooks directly from inside Claude Code, Cursor, Codex, VS Code, Gemini, or OpenCode without opening the web dashboard.
+Waitlyze provides a first-class Model Context Protocol (MCP) server. You can manage your waitlist lifecycle, create campaigns, inspect signups, evaluate K-factor viral analytics, dispatch broadcasts, and inspect connections directly from inside ChatGPT, Claude Code, Cursor, Codex, VS Code, Gemini, or OpenCode without opening the web dashboard.
 
 ---
 
@@ -132,7 +132,7 @@ Configure the server endpoint in your agent tool manifests:
 
 ## Tool reference
 
-The Waitlyze MCP server exposes 26 tools organized by domain:
+The Waitlyze MCP server exposes 24 tools organized by domain:
 
 ### Workspace
 | Tool | Description |
@@ -145,7 +145,7 @@ The Waitlyze MCP server exposes 26 tools organized by domain:
 | :--- | :--- |
 | `waitlyze_list_waitlists` | List waitlists with status filters and counts. |
 | `waitlyze_get_waitlist` | Retrieve waitlist settings, public URL, design config, and conversion stats. |
-| `waitlyze_create_waitlist` | Create a new waitlist campaign in the active workspace. |
+| `waitlyze_create_waitlist` | Create a new draft waitlist campaign in the active workspace. |
 | `waitlyze_update_waitlist` | Update headline, description, website URL, or fraud security mode. |
 | `waitlyze_publish_waitlist` | Publish a waitlist and open it for public signups. |
 | `waitlyze_pause_waitlist` | Temporarily pause new signups on a published waitlist. |
@@ -177,15 +177,16 @@ The Waitlyze MCP server exposes 26 tools organized by domain:
 | Tool | Description |
 | :--- | :--- |
 | `waitlyze_list_webhooks` | List registered webhook subscriptions. |
-| `waitlyze_create_webhook` | Subscribe an HTTPS endpoint to signup and verification events. |
 | `waitlyze_delete_webhook` | Remove a webhook endpoint. |
 
 ### API keys
 | Tool | Description |
 | :--- | :--- |
 | `waitlyze_list_api_keys` | List active API keys for a waitlist. |
-| `waitlyze_create_api_key` | Generate a new scoped secret key. |
 | `waitlyze_revoke_api_key` | Immediately revoke an API key. |
+
+Create API keys and webhook subscriptions in the Waitlyze dashboard. Secret API keys and webhook
+signing secrets are shown only in that direct user flow and are never returned through MCP tools.
 
 ### Capabilities
 | Tool | Description |
@@ -199,9 +200,9 @@ The Waitlyze MCP server exposes 26 tools organized by domain:
 Once connected, you can give your AI natural language instructions:
 
 ```text
-Create a new waitlist called "Developer Toolkit" with the slug "devtools" and publish it.
+Create a draft waitlist called "Developer Toolkit" with the slug "devtools". Do not publish it.
 Calculate the viral K-factor and total signups for the past 30 days.
 List the top 5 referrers on the waitlist along with referral counts.
 Draft a broadcast announcing beta access to the top 50 verified subscribers.
-Add a webhook to notify https://example.com/api/webhooks when someone signs up.
+List the webhooks configured for my Developer Toolkit waitlist.
 ```

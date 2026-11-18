@@ -31,6 +31,8 @@ export const env = createEnv({
     DODO_PRO_COLLECTION_ID: z.string().optional(),
     POSTHOG_PROJECT_TOKEN: z.string().optional(),
     POSTHOG_HOST: z.string().optional(),
+    OPENAI_APPS_CHALLENGE_TOKEN: z.string().optional(),
+    OPENAI_REVIEW_EMAIL_PASSWORD_AUTH: z.enum(["true", "false"]).optional(),
   },
   client: {
     NEXT_PUBLIC_R2_PUBLIC_URL: z.string().url().default("https://assets.waitlyze.com"),
@@ -68,6 +70,8 @@ export const env = createEnv({
     DODO_PRO_COLLECTION_ID: process.env.DODO_PRO_COLLECTION_ID,
     POSTHOG_PROJECT_TOKEN: process.env.POSTHOG_PROJECT_TOKEN,
     POSTHOG_HOST: process.env.POSTHOG_HOST,
+    OPENAI_APPS_CHALLENGE_TOKEN: process.env.OPENAI_APPS_CHALLENGE_TOKEN,
+    OPENAI_REVIEW_EMAIL_PASSWORD_AUTH: process.env.OPENAI_REVIEW_EMAIL_PASSWORD_AUTH,
     NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN: process.env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN,
     NEXT_PUBLIC_POSTHOG_HOST: process.env.NEXT_PUBLIC_POSTHOG_HOST,
   },

@@ -6,6 +6,7 @@ import { Suspense, useState } from "react";
 
 import Wordmark from "@/components/landing/wordmark";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { authClient } from "@/lib/auth-client";
 
 // Whitelist callback URLs: only relative, same-app paths are allowed.
@@ -17,6 +18,9 @@ function ConnectLoginContent() {
   const searchParams = useSearchParams();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [reviewEmail, setReviewEmail] = useState("");
+  const [reviewPassword, setReviewPassword] = useState("");
+  const reviewerAccess = searchParams.get("review") === "1";
 
   // Sanitize the redirect target: only allow same-app relative paths so a
   // crafted callbackURL cannot bounce users to an attacker-controlled site
@@ -34,6 +38,23 @@ function ConnectLoginContent() {
       });
     } catch (err) {
       setError(err?.message || "Failed to initiate sign in");
+      setLoading(false);
+    }
+  };
+
+  const handleReviewerSignIn = async (event) => {
+    event.preventDefault();
+    setLoading(true);
+    setError(null);
+    try {
+      const result = await authClient.signIn.email({
+        email: reviewEmail.trim(),
+        password: reviewPassword,
+      });
+      if (result.error) throw new Error(result.error.message || "Authentication failed");
+      window.location.assign(callbackURL);
+    } catch (err) {
+      setError(err?.message || "Reviewer sign-in failed");
       setLoading(false);
     }
   };
@@ -63,6 +84,39 @@ function ConnectLoginContent() {
             <Image src="/images/google.svg" alt="" width={18} height={18} unoptimized />
             {loading ? "Connecting..." : "Continue with Google"}
           </Button>
+
+          {reviewerAccess && (
+            <>
+              <div className="flex items-center gap-3 text-xs text-product-text-muted">
+                <span className="bg-product-border h-px flex-1" />
+                OpenAI reviewer access
+                <span className="bg-product-border h-px flex-1" />
+              </div>
+              <form className="space-y-3" onSubmit={handleReviewerSignIn}>
+                <Input
+                  type="email"
+                  autoComplete="username"
+                  aria-label="Reviewer email"
+                  placeholder="Reviewer email"
+                  value={reviewEmail}
+                  onChange={(event) => setReviewEmail(event.target.value)}
+                  required
+                />
+                <Input
+                  type="password"
+                  autoComplete="current-password"
+                  aria-label="Reviewer password"
+                  placeholder="Reviewer password"
+                  value={reviewPassword}
+                  onChange={(event) => setReviewPassword(event.target.value)}
+                  required
+                />
+                <Button type="submit" variant="outline" className="w-full" disabled={loading}>
+                  {loading ? "Signing in..." : "Sign in as reviewer"}
+                </Button>
+              </form>
+            </>
+          )}
 
           <p className="text-center text-xs text-product-text-muted">
             Waitlyze uses OAuth 2.0 (RFC 9728) to securely authenticate Model Context Protocol

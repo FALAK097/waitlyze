@@ -4,144 +4,125 @@ import LegalDocument from "@/components/landing/legal-document";
 
 export const metadata = {
   title: "Privacy Policy",
-  description:
-    "Learn how Waitlyze protects and handles your data, including what information we collect, how we use it, and your privacy rights.",
+  description: "How Waitlyze collects, uses, shares, and protects information.",
   alternates: { canonical: "/privacy" },
 };
 
 const sections = [
-  {
-    id: "information-we-collect",
-    label: "Information We Collect",
-  },
-  {
-    id: "use-of-information",
-    label: "Use of Information",
-  },
-  {
-    id: "sharing-of-information",
-    label: "Sharing of Information",
-  },
-  {
-    id: "data-retention",
-    label: "Data Retention",
-  },
-  {
-    id: "security",
-    label: "Security",
-  },
-  {
-    id: "your-rights",
-    label: "Your Rights",
-  },
-  {
-    id: "changes-to-this-privacy-policy",
-    label: "Changes to This Privacy Policy",
-  },
-  {
-    id: "contact-us",
-    label: "Contact Us",
-  },
+  { id: "information-we-collect", label: "Information We Collect" },
+  { id: "how-we-use-information", label: "How We Use Information" },
+  { id: "ai-clients", label: "AI Clients and MCP" },
+  { id: "sharing", label: "Sharing" },
+  { id: "retention", label: "Retention" },
+  { id: "security", label: "Security" },
+  { id: "your-choices", label: "Your Choices" },
+  { id: "changes", label: "Changes" },
+  { id: "contact", label: "Contact" },
 ];
 
-export default function LegalPage() {
+export default function PrivacyPage() {
   return (
     <LegalDocument
       title="Privacy Policy"
-      description="How we collect, use, and handle your information."
+      description="How we collect, use, share, and retain information."
       sections={sections}
+      lastUpdated="November 18, 2026"
     >
       <p>
-        At Waitlyze ("we," "us," "our"), accessible from{" "}
-        <Link prefetch={false} href="https://waitlyze.com">
-          www.waitlyze.com
-        </Link>
-        , we are committed to protecting your privacy. This Privacy Policy outlines our practices
-        regarding data collection, usage, and sharing when you access our platform.
+        This policy applies to Waitlyze websites, waitlist pages, dashboards, APIs, and our Model
+        Context Protocol (MCP) integration. It explains how Waitlyze ("we," "us," or "our") handles
+        information when you use the service.
       </p>
 
       <h2 id="information-we-collect">1. Information We Collect</h2>
-      <p>We collect certain information from you when you use our platform. This includes:</p>
       <ul>
         <li>
-          <span>Personal Information:</span> When you create an account, we collect personal
-          information such as your name, email address, and any other details you choose to provide.
+          <span>Account and workspace data:</span> name, email address, authentication records,
+          workspace membership, plan, and billing status.
         </li>
         <li>
-          <span>Usage Data:</span> We automatically collect information about your interactions with
-          our platform. This data includes your IP address, browser type, pages viewed, and the time
-          and duration of your visits. We use this information to monitor and improve our services.
+          <span>Campaign and audience data:</span> waitlist content, subscriber details, consent and
+          verification status, referral activity, broadcasts, and analytics you ask us to process.
+        </li>
+        <li>
+          <span>Integration data:</span> OAuth grants, requested scopes, connected-client details,
+          tool name, execution status, and timing for MCP requests.
+        </li>
+        <li>
+          <span>Usage, device, and support data:</span> IP address, browser and device information,
+          pages and features used, security events, and messages you send to support.
         </li>
       </ul>
 
-      <h2 id="use-of-information">2. Use of Information</h2>
-      <p>We use your information to:</p>
+      <h2 id="how-we-use-information">2. How We Use Information</h2>
+      <p>
+        We use information to provide and secure Waitlyze, authenticate users and integrations,
+        execute requested campaign actions, send service or campaign messages, provide analytics,
+        troubleshoot problems, prevent abuse, comply with law, and improve the service.
+      </p>
+
+      <h2 id="ai-clients">3. AI Clients and MCP</h2>
+      <p>
+        When you connect ChatGPT or another AI client, that client can request the Waitlyze data and
+        actions covered by the permissions you approve. We return requested data to that client at
+        your direction. The client processes that data under its own terms and privacy policy.
+      </p>
+      <p>
+        Our MCP telemetry is deliberately limited to operational metadata such as the tool name,
+        duration, outcome, and basic client type. Tool inputs, tool outputs, conversation text,
+        model identifiers, access tokens, API keys, and webhook signing secrets are not recorded in
+        MCP analytics. You can revoke a connected client's access from Waitlyze or the client.
+      </p>
+
+      <h2 id="sharing">4. Sharing</h2>
+      <p>We do not sell or rent personal information. We may share information with:</p>
       <ul>
-        <li>Provide and improve our platform's services.</li>
-        <li>Personalize your experience and deliver content relevant to your interests.</li>
+        <li>ChatGPT or another AI client when you connect it and request an action;</li>
         <li>
-          Monitor platform performance and usage to identify trends and enhance functionality.
+          service providers supporting hosting, databases, storage, email, analytics,
+          authentication, customer support, and payments;
         </li>
+        <li>workspace members according to their role and permissions;</li>
+        <li>authorities or other parties when required by law or needed to protect rights; and</li>
+        <li>a successor in connection with a merger, acquisition, or sale of assets.</li>
       </ul>
 
-      <h2 id="sharing-of-information">3. Sharing of Information</h2>
+      <h2 id="retention">5. Retention</h2>
       <p>
-        We do not sell or rent your personal information. However, we may share information in the
-        following cases:
-      </p>
-      <ul>
-        <li>
-          <span>Service Providers:</span> We may share information with trusted third-party service
-          providers who perform services on our behalf.
-        </li>
-        <li>
-          <span>Legal Requirements:</span> We may disclose information if required by law, such as
-          in response to a subpoena, court order, or other legal processes.
-        </li>
-      </ul>
-
-      <h2 id="data-retention">4. Data Retention</h2>
-      <p>
-        We retain your personal data only for as long as necessary to fulfill the purposes outlined
-        in this Privacy Policy unless a longer retention period is required or permitted by law.
+        Account, campaign, and audience data is generally retained while your account is active and
+        for a reasonable period after deletion to complete recovery, security, legal, and backup
+        processes. MCP access tokens expire after one hour and refresh tokens after 30 days unless
+        revoked earlier. We generally retain MCP operational metadata for up to 12 months, security
+        logs for up to 90 days, and support correspondence for up to 24 months. Billing records may
+        be retained longer where law requires it. Deleted data may remain in encrypted backups until
+        those backups age out.
       </p>
 
-      <h2 id="security">5. Security</h2>
+      <h2 id="security">6. Security</h2>
       <p>
-        We take data security seriously and implement reasonable measures to protect your
-        information. However, no online service is completely secure, and we cannot guarantee the
-        security of your data.
+        We use reasonable technical and organizational safeguards, including encrypted transport,
+        scoped OAuth access, access controls, and secret handling protections. No internet service
+        can guarantee absolute security.
       </p>
 
-      <h2 id="your-rights">6. Your Rights</h2>
+      <h2 id="your-choices">7. Your Choices</h2>
       <p>
-        Depending on your location, you may have rights regarding your personal information,
-        including:
-      </p>
-      <ul>
-        <li>Access to your data</li>
-        <li>Correction of inaccurate data</li>
-        <li>Deletion of data</li>
-        <li>Restriction of processing</li>
-        <li>Data portability</li>
-      </ul>
-
-      <h2 id="changes-to-this-privacy-policy">7. Changes to This Privacy Policy</h2>
-      <p>
-        We may update this Privacy Policy from time to time. We will notify users of any material
-        changes and indicate the effective date at the top of this policy. Your continued use of our
-        platform after any changes constitutes your acceptance of the revised policy.
+        Depending on your location, you may have rights to access, correct, delete, restrict, object
+        to, or export personal information. You may also disconnect an AI client, revoke OAuth
+        access, unsubscribe from marketing messages, or delete campaign data through Waitlyze.
+        Contact us to exercise a right that is not available in the product.
       </p>
 
-      <h2 id="contact-us">8. Contact Us</h2>
+      <h2 id="changes">8. Changes</h2>
       <p>
-        If you have questions or concerns about this Privacy Policy or our data practices, please
-        contact us at{" "}
-        <Link
-          prefetch={false}
-          href="mailto:support@waitlyze.com"
-          className="text-purple-600 hover:text-purple-800"
-        >
+        We may update this policy as the service changes. We will update the date above and provide
+        additional notice when required.
+      </p>
+
+      <h2 id="contact">9. Contact</h2>
+      <p>
+        Privacy questions and requests can be sent to{" "}
+        <Link prefetch={false} href="mailto:support@waitlyze.com">
           support@waitlyze.com
         </Link>
         .

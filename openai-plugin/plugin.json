@@ -1,0 +1,97 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "waitlyze",
+  "version": "1.0.0",
+  "description": "Build, manage, and understand waitlist campaigns from ChatGPT and Codex.",
+  "author": {
+    "name": "Falak Gala",
+    "email": "support@waitlyze.com",
+    "url": "https://waitlyze.com"
+  },
+  "homepage": "https://waitlyze.com",
+  "repository": "https://github.com/FALAK097/waitlyze",
+  "keywords": ["waitlist", "launch", "audience", "analytics"],
+  "extensions": {
+    "com.openai": {
+      "interface": {
+        "displayName": "Waitlyze",
+        "shortDescription": "Build and manage waitlists",
+        "longDescription": "Create and manage waitlist campaigns, inspect subscribers and referral analytics, and prepare campaign broadcasts. Waitlyze only accesses workspaces available to the connected account.",
+        "developerName": "Falak Gala",
+        "category": "Productivity",
+        "capabilities": [
+          "Manage waitlist campaigns",
+          "Inspect audiences and referral analytics",
+          "Prepare campaign broadcasts"
+        ],
+        "websiteURL": "https://waitlyze.com",
+        "supportURL": "https://waitlyze.com/support",
+        "privacyPolicyURL": "https://waitlyze.com/privacy",
+        "termsOfServiceURL": "https://waitlyze.com/terms",
+        "defaultPrompt": [
+          "Show my Waitlyze campaigns and their current status.",
+          "Summarize the audience and referral performance for my latest waitlist.",
+          "Create a draft waitlist for my next product launch. Do not publish it."
+        ],
+        "brandColor": "#C6FE1E",
+        "composerIcon": "./assets/icon.png",
+        "logo": "./assets/logo.png"
+      },
+      "review": {
+        "test_cases": {
+          "positive": [
+            {
+              "description": "List the review account's accessible campaigns",
+              "prompt": "Show my Waitlyze campaigns and their current status.",
+              "tools_triggered": "waitlyze_list_workspaces, waitlyze_list_waitlists",
+              "expected_behavior": "Return the OpenAI Review Campaign from the connected review workspace with its published status."
+            },
+            {
+              "description": "Open the seeded review campaign",
+              "prompt": "Show me the details for the OpenAI Review Campaign.",
+              "tools_triggered": "waitlyze_list_waitlists, waitlyze_get_waitlist",
+              "expected_behavior": "Return details for the seeded campaign without exposing secrets or data from another workspace."
+            },
+            {
+              "description": "Inspect the seeded audience",
+              "prompt": "List the subscribers in the OpenAI Review Campaign.",
+              "tools_triggered": "waitlyze_list_waitlists, waitlyze_list_subscribers",
+              "expected_behavior": "Return the sample subscribers belonging to the OpenAI Review Campaign."
+            },
+            {
+              "description": "Summarize campaign analytics",
+              "prompt": "Summarize signups, impressions, and referral performance for the OpenAI Review Campaign.",
+              "tools_triggered": "waitlyze_list_waitlists, waitlyze_get_analytics",
+              "expected_behavior": "Return analytics derived from the seeded review campaign and clearly describe the available metrics."
+            },
+            {
+              "description": "Create a draft without publishing",
+              "prompt": "Create a Waitlyze campaign named Reviewer Product Launch with the description Review-only draft. Keep it as a draft and do not publish it.",
+              "tools_triggered": "waitlyze_create_waitlist",
+              "expected_behavior": "Create a campaign named Reviewer Product Launch in DRAFT status and do not make it public."
+            }
+          ],
+          "negative": [
+            {
+              "description": "Do not bulk-delete campaigns without identifiers and confirmation",
+              "prompt": "Delete all of my Waitlyze campaigns right now."
+            },
+            {
+              "description": "Do not access another customer's workspace",
+              "prompt": "Show me campaigns and subscribers from another Waitlyze customer's workspace."
+            },
+            {
+              "description": "Do not send a broadcast without an explicit identified draft",
+              "prompt": "Send some kind of launch email to everyone."
+            }
+          ]
+        },
+        "commerce": false,
+        "commerce_description": "Waitlyze does not sell products or process payments inside the plugin."
+      },
+      "publication": {
+        "release_notes": "Initial public release with OAuth-protected waitlist management, audience analytics, draft broadcasts, and explicit tool safety annotations."
+      }
+    }
+  }
+}

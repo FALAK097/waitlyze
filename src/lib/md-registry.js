@@ -304,44 +304,64 @@ ${text}${faqs}`;
   }
 
   // 7. Legal pages
-  if (path === "/privacy" || path === "/terms" || path === "/refund-policy") {
+  if (
+    path === "/privacy" ||
+    path === "/terms" ||
+    path === "/support" ||
+    path === "/refund-policy"
+  ) {
     const isPrivacy = path === "/privacy";
     const isTerms = path === "/terms";
-    const title = isPrivacy ? "Privacy Policy" : isTerms ? "Terms of Service" : "Refund Policy";
+    const isSupport = path === "/support";
+    const title = isPrivacy
+      ? "Privacy Policy"
+      : isTerms
+        ? "Terms of Service"
+        : isSupport
+          ? "Waitlyze Support"
+          : "Refund Policy";
     const body = isPrivacy
-      ? `At Waitlyze ("we," "us," "our"), accessible from https://waitlyze.com, we are committed to protecting your privacy. This Privacy Policy outlines our practices regarding data collection, usage, and sharing when you access our platform.
+      ? `This policy applies to Waitlyze websites, waitlist pages, dashboards, APIs, and our Model Context Protocol (MCP) integration.
 
 ## 1. Information We Collect
-- **Personal Information**: When you create an account, we collect personal information such as your name, email address, and any other details you choose to provide.
-- **Usage Data**: We automatically collect information about your interactions with our platform. This data includes your IP address, browser type, pages viewed, and the time and duration of your visits. We use this information to monitor and improve our services.
+- **Account and workspace data**: name, email address, authentication records, workspace membership, plan, and billing status.
+- **Campaign and audience data**: waitlist content, subscriber details, consent and verification status, referrals, broadcasts, and analytics.
+- **Integration data**: OAuth grants, requested scopes, connected-client details, tool name, execution status, and timing for MCP requests.
+- **Usage, device, and support data**: IP address, browser and device information, features used, security events, and support messages.
 
-## 2. Use of Information
-We use your information to:
-- Provide and improve our platform's services.
-- Personalize your experience and deliver content relevant to your interests.
-- Monitor platform performance and usage to identify trends and enhance functionality.
+## 2. How We Use Information
+We use information to provide and secure Waitlyze, authenticate users and integrations, execute requested campaign actions, provide analytics, troubleshoot problems, prevent abuse, comply with law, and improve the service.
 
-## 3. Sharing of Information
-We do not sell or rent your personal information. However, we may share information in the following cases:
-- **Service Providers**: We may share information with trusted third-party service providers who perform services on our behalf.
-- **Legal Requirements**: We may disclose information if required by law, such as in response to a subpoena, court order, or other legal processes.
+## 3. AI Clients and MCP
+When you connect ChatGPT or another AI client, it can request Waitlyze data and actions covered by the permissions you approve. We return requested data to that client at your direction. Our MCP telemetry is limited to operational metadata such as tool name, duration, outcome, and basic client type. Tool inputs, outputs, conversation text, model identifiers, access tokens, API keys, and webhook secrets are not recorded in MCP analytics.
 
-## 4. Data Retention
-We retain your personal data only for as long as necessary to fulfill the purposes outlined in this Privacy Policy unless a longer retention period is required or permitted by law.
+## 4. Sharing
+We do not sell or rent personal information. We may share information with a connected AI client at your direction; providers supporting hosting, databases, storage, email, analytics, authentication, support, and payments; authorized workspace members; authorities when legally required; or a business successor.
 
-## 5. Security
-We take data security seriously and implement reasonable measures to protect your information. However, no online service is completely secure, and we cannot guarantee the security of your data.
+## 5. Retention
+Account, campaign, and audience data is generally retained while your account is active and for a reasonable period after deletion. MCP access tokens expire after one hour and refresh tokens after 30 days unless revoked earlier. We generally retain MCP operational metadata for up to 12 months, security logs for up to 90 days, and support correspondence for up to 24 months. Billing records may be retained longer where law requires it. Deleted data may remain in encrypted backups until those backups age out.
 
-## 6. Your Rights
-Depending on your location, you may have rights regarding your personal information, including access, correction, deletion, restriction of processing, and data portability.
+## 6. Security
+We use reasonable technical and organizational safeguards, including encrypted transport, scoped OAuth access, access controls, and secret handling protections. No internet service can guarantee absolute security.
 
-## 7. Changes to This Privacy Policy
-We may update this Privacy Policy from time to time. We will notify users of any material changes and indicate the effective date at the top of this policy.
+## 7. Your Choices
+Depending on your location, you may have rights to access, correct, delete, restrict, object to, or export personal information. You may disconnect an AI client, revoke OAuth access, unsubscribe from marketing, or delete campaign data through Waitlyze.
 
-## 8. Contact Us
-If you have questions or concerns about this Privacy Policy or our data practices, please contact us at support@waitlyze.com.`
-      : isTerms
-        ? `Welcome to Waitlyze ("Platform," "Service," "we," "us," "our"). By accessing or using https://waitlyze.com ("Website"), you agree to comply with and be bound by these Terms of Service ("Terms"). If you do not agree to these Terms, you may not use our services.
+## 8. Contact
+Privacy questions and requests can be sent to support@waitlyze.com.`
+      : isSupport
+        ? `Email support@waitlyze.com for product, account, billing, or integration help. We aim to reply within two business days.
+
+## What to Include
+Include your Waitlyze account email, workspace or waitlist name, what you expected to happen, and any visible error message. Do not send passwords, access tokens, API keys, or webhook secrets.
+
+## ChatGPT Plugin Help
+If the Waitlyze plugin cannot connect, disconnect it in ChatGPT and connect it again. Check the requested permissions before approving access. For an unexpected result, include the approximate time and action name without sharing private conversation content.
+
+## Privacy and Accounts
+For access, correction, export, or deletion requests, email support from the address associated with your account. See the [Privacy Policy](https://waitlyze.com/privacy) for details.`
+        : isTerms
+          ? `Welcome to Waitlyze ("Platform," "Service," "we," "us," "our"). By accessing or using https://waitlyze.com ("Website"), you agree to comply with and be bound by these Terms of Service ("Terms"). If you do not agree to these Terms, you may not use our services.
 
 ## 1. Acceptance of Terms
 By creating an account or accessing our Platform, you accept and agree to be bound by these Terms, our Privacy Policy, and any other policies or guidelines that we may implement.
@@ -373,12 +393,15 @@ To the fullest extent permitted by law, Waitlyze shall not be liable for any dam
 ## 9. Modifications to Terms
 We reserve the right to update these Terms at any time. We will notify users of any material changes, and continued use of the Platform indicates acceptance of the revised Terms.
 
-## 10. Subscriptions and Billing
+## 10. Third-Party AI Clients
+You may connect Waitlyze to ChatGPT or another compatible AI client through OAuth and MCP. You are responsible for reviewing the permissions requested by that client and for actions you authorize it to take. The client is governed by its own terms and privacy policy, and you can revoke its Waitlyze access at any time.
+
+## 11. Subscriptions and Billing
 Waitlyze offers a free plan and a paid Pro plan billed monthly or annually. Base prices are ${WAITLYZE_PRICING.pro.monthly.formatted} per month and ${WAITLYZE_PRICING.pro.annual.formatted} per year in USD. Where available, the pricing page shows Dodo Payments' country-adjusted price in local currency; applicable taxes are calculated based on your billing location and shown at checkout. Paid subscriptions renew automatically for the selected interval until canceled. The workspace owner can manage or cancel renewal from Billing in workspace settings. A cancellation takes effect at the end of the current paid period. Refunds are governed by our [Refund Policy](https://waitlyze.com/refund-policy). Dodo Payments acts as Merchant of Record for purchases and handles checkout, invoices, and customer-facing transaction taxes.
 
-## 11. Contact Information
+## 12. Contact Information
 For questions about these Terms, please contact us at support@waitlyze.com.`
-        : `## No Refunds
+          : `## No Refunds
 
 **Payments are non-refundable.** Waitlyze does not provide refunds or credits for partial subscription periods, unused features, unused time after cancellation, or a renewal that has already been charged. Your subscription remains available through the end of the paid billing period unless the service is terminated for a serious violation of our Terms.
 
@@ -403,7 +426,7 @@ For billing questions, contact [support@waitlyze.com](mailto:support@waitlyze.co
       description: `Waitlyze ${title}`,
       path,
       body,
-      updated: isPrivacy ? "2026-10-11" : "2026-11-08",
+      updated: isPrivacy || isTerms || isSupport ? "2026-11-18" : "2026-11-08",
       related: [
         { title: "Waitlyze Home", path: "/", description: "Product overview" },
         ...(isPrivacy

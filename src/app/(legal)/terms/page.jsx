@@ -47,6 +47,10 @@ const sections = [
     label: "Modifications to Terms",
   },
   {
+    id: "third-party-ai-clients",
+    label: "Third-Party AI Clients",
+  },
+  {
     id: "subscriptions-and-billing",
     label: "Subscriptions and Billing",
   },
@@ -62,7 +66,7 @@ export default function LegalPage() {
       title="Terms of Service"
       description="The terms that apply when you use Waitlyze."
       sections={sections}
-      lastUpdated="November 8, 2026"
+      lastUpdated="November 18, 2026"
     >
       <p>
         Welcome to Waitlyze ("Platform," "Service," "we," "us," "our"). By accessing or using{" "}
@@ -151,7 +155,15 @@ export default function LegalPage() {
         changes, and continued use of the Platform indicates acceptance of the revised Terms.
       </p>
 
-      <h2 id="subscriptions-and-billing">10. Subscriptions and Billing</h2>
+      <h2 id="third-party-ai-clients">10. Third-Party AI Clients</h2>
+      <p>
+        You may connect Waitlyze to ChatGPT or another compatible AI client through OAuth and MCP.
+        You are responsible for reviewing the permissions requested by that client and for actions
+        you authorize it to take. The third-party client is governed by its own terms and privacy
+        policy. You can revoke its Waitlyze access at any time.
+      </p>
+
+      <h2 id="subscriptions-and-billing">11. Subscriptions and Billing</h2>
       <p>
         Waitlyze offers a free plan and a paid Pro plan billed monthly or annually. Current prices
         are shown on our{" "}
@@ -169,7 +181,7 @@ export default function LegalPage() {
         customer-facing transaction taxes.
       </p>
 
-      <h2 id="contact-information">11. Contact Information</h2>
+      <h2 id="contact-information">12. Contact Information</h2>
       <p>
         For questions about these Terms, please contact us at{" "}
         <Link

@@ -27,8 +27,25 @@ export function createWaitlyzeMcpServer(authContext) {
     const posthogClient = getServerPostHog();
     instrument(server, posthogClient, {
       serverBuild: "waitlyze-mcp@0.10.0",
+      captureModel: false,
+      context: false,
+      enableConversationId: false,
+      enableExceptionAutocapture: false,
       beforeSend: (event) => {
         if (!event) return event;
+        const sensitiveProperties = [
+          "$mcp_client_user_agent",
+          "$mcp_conversation_id",
+          "$mcp_error_message",
+          "$mcp_intent",
+          "$mcp_parameters",
+          "$mcp_response",
+        ];
+
+        for (const property of sensitiveProperties) {
+          delete event.properties?.[property];
+        }
+
         const sanitizeValue = (val) => {
           if (typeof val === "string") {
             return val
@@ -54,9 +71,7 @@ export function createWaitlyzeMcpServer(authContext) {
             event.properties[key] = sanitizeValue(event.properties[key]);
           }
         }
-        if (event.error) {
-          event.error = sanitizeValue(String(event.error));
-        }
+        delete event.error;
         return event;
       },
     });

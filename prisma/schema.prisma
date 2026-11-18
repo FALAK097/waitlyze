@@ -73,7 +73,7 @@ model WaitList {
   name                    String?
   description             String?
   websiteUrl              String?
-  logoUrl                 String?  @default("/images/logo.png")
+  logoUrl                 String?  @default("/apple-icon.png")
   logoKey                 String?
   buttonColor             String?  @default("#FF6B4A")
   buttonBorder            String?  @default("#FF9D7A")

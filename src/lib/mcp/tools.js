@@ -8,14 +8,8 @@ import { enqueueBroadcast } from "@/lib/email/broadcast-queue.mjs";
 import { normalizeSignupEmail } from "@/lib/normalize-email.mjs";
 import prisma from "@/lib/prisma.js";
 import { snapshotTemplate } from "@/lib/templates/catalog.mjs";
-import { isSupportedWebhookEvent, WEBHOOK_EVENT_TYPES } from "@/lib/webhooks/delivery.mjs";
-import {
-  createWebhookSecret,
-  encryptSecret,
-  validateWebhookUrl,
-} from "@/lib/webhooks/security.mjs";
 import { campaignScope } from "@/lib/workspaces/service.mjs";
-import { createApiKey, listUserApiKeys, revokeApiKey } from "@/services/api-key/index.js";
+import { listUserApiKeys, revokeApiKey } from "@/services/api-key/index.js";
 
 import { resolveWorkspaceContext } from "./auth.js";
 
@@ -28,6 +22,31 @@ const WRITE_PERMISSIONS = new Set([
   "sendEmail",
   "manageConnections",
 ]);
+
+// Public MCP review requires all three safety hints to be explicit on every tool.
+const READ_ONLY_ANNOTATIONS = Object.freeze({
+  readOnlyHint: true,
+  destructiveHint: false,
+  openWorldHint: false,
+});
+
+const ADDITIVE_WRITE_ANNOTATIONS = Object.freeze({
+  readOnlyHint: false,
+  destructiveHint: false,
+  openWorldHint: false,
+});
+
+const DESTRUCTIVE_WRITE_ANNOTATIONS = Object.freeze({
+  readOnlyHint: false,
+  destructiveHint: true,
+  openWorldHint: false,
+});
+
+const OPEN_WORLD_DESTRUCTIVE_WRITE_ANNOTATIONS = Object.freeze({
+  readOnlyHint: false,
+  destructiveHint: true,
+  openWorldHint: true,
+});
 
 function jsonContent(data) {
   return {
@@ -117,7 +136,7 @@ export function registerWaitlyzeTools(server, authContext) {
       description:
         "Explain capabilities of the Waitlyze MCP server, current authentication status, active workspace, and how agents can manage waitlists, audience, email broadcasts, and analytics.",
       inputSchema: z.object({}),
-      annotations: { readOnlyHint: true },
+      annotations: READ_ONLY_ANNOTATIONS,
     },
     async () => {
       let workspaceInfo = null;
@@ -188,14 +207,13 @@ export function registerWaitlyzeTools(server, authContext) {
           },
           {
             domain: "Webhooks",
-            tools: ["waitlyze_list_webhooks", "waitlyze_create_webhook", "waitlyze_delete_webhook"],
-            description:
-              "Real-time webhook notifications for subscriber creation and verification.",
+            tools: ["waitlyze_list_webhooks", "waitlyze_delete_webhook"],
+            description: "Inspect and remove webhook notifications configured in Waitlyze.",
           },
           {
             domain: "API Keys",
-            tools: ["waitlyze_list_api_keys", "waitlyze_create_api_key", "waitlyze_revoke_api_key"],
-            description: "Create and revoke scoped API keys (wl2_...).",
+            tools: ["waitlyze_list_api_keys", "waitlyze_revoke_api_key"],
+            description: "Inspect and revoke scoped API keys without exposing secret values.",
           },
         ],
         documentationUrl: "https://waitlyze.com/docs/mcp",
@@ -216,7 +234,7 @@ export function registerWaitlyzeTools(server, authContext) {
           .optional()
           .describe("Optional workspace ID. Defaults to active workspace."),
       }),
-      annotations: { readOnlyHint: true },
+      annotations: READ_ONLY_ANNOTATIONS,
     },
     async ({ workspaceId }) => {
       try {
@@ -262,7 +280,7 @@ export function registerWaitlyzeTools(server, authContext) {
     {
       description: "List all workspaces accessible to the authenticated user.",
       inputSchema: z.object({}),
-      annotations: { readOnlyHint: true },
+      annotations: READ_ONLY_ANNOTATIONS,
     },
     async () => {
       try {
@@ -314,7 +332,7 @@ export function registerWaitlyzeTools(server, authContext) {
         limit: z.number().int().min(1).max(100).default(20),
         offset: z.number().int().min(0).default(0),
       }),
-      annotations: { readOnlyHint: true },
+      annotations: READ_ONLY_ANNOTATIONS,
     },
     async ({ workspaceId, status, search, limit, offset }) => {
       try {
@@ -390,7 +408,7 @@ export function registerWaitlyzeTools(server, authContext) {
       inputSchema: z.object({
         waitlistId: z.string().describe("ID of the waitlist"),
       }),
-      annotations: { readOnlyHint: true },
+      annotations: READ_ONLY_ANNOTATIONS,
     },
     async ({ waitlistId }) => {
       try {
@@ -436,7 +454,8 @@ export function registerWaitlyzeTools(server, authContext) {
   server.registerTool(
     "waitlyze_create_waitlist",
     {
-      description: "Create a new waitlist campaign in the active workspace.",
+      description:
+        "Create a new draft waitlist campaign in the active workspace. This tool never publishes the campaign.",
       inputSchema: z.object({
         name: z.string().min(1).describe("Name of the waitlist / product"),
         description: z.string().optional().describe("Short product tagline or description"),
@@ -448,11 +467,8 @@ export function registerWaitlyzeTools(server, authContext) {
         buttonText: z.string().default("Join the waitlist"),
         successMessage: z.string().default("Success! You're on the waitlist"),
         workspaceId: z.string().optional().describe("Workspace ID. Defaults to active workspace."),
-        publishImmediately: z
-          .boolean()
-          .default(false)
-          .describe("Whether to immediately publish the waitlist"),
       }),
+      annotations: ADDITIVE_WRITE_ANNOTATIONS,
     },
     async ({
       name,
@@ -462,7 +478,6 @@ export function registerWaitlyzeTools(server, authContext) {
       buttonText,
       successMessage,
       workspaceId,
-      publishImmediately,
     }) => {
       try {
         ensureAuth();
@@ -516,29 +531,13 @@ export function registerWaitlyzeTools(server, authContext) {
           },
         });
 
-        let finalStatus = "DRAFT";
-        if (publishImmediately) {
-          try {
-            await publishCampaign(
-              prisma,
-              authContext.userId,
-              wsContext.workspaceId,
-              waitlist.id,
-              waitlist.templateRevision,
-            );
-            finalStatus = "PUBLISHED";
-          } catch (pubErr) {
-            console.warn("Immediate publication failed:", pubErr?.message || pubErr);
-          }
-        }
-
         const baseUrl = process.env.BETTER_AUTH_URL || "https://waitlyze.com";
         return jsonContent({
           message: "Waitlist created successfully",
           waitlist: {
             id: waitlist.id,
             name: waitlist.name,
-            status: finalStatus,
+            status: "DRAFT",
             publicSlug: waitlist.publicSlug,
             publicUrl: `${baseUrl}/waitlist/${waitlist.publicSlug}`,
             workspaceId: waitlist.workspaceId,
@@ -554,7 +553,8 @@ export function registerWaitlyzeTools(server, authContext) {
   server.registerTool(
     "waitlyze_update_waitlist",
     {
-      description: "Update settings, copy, or fraud posture of an existing waitlist.",
+      description:
+        "Overwrite selected settings, copy, or fraud posture on an existing waitlist. Unspecified fields remain unchanged.",
       inputSchema: z.object({
         waitlistId: z.string().describe("ID of the waitlist to update"),
         name: z.string().optional(),
@@ -566,6 +566,7 @@ export function registerWaitlyzeTools(server, authContext) {
         showReferrals: z.boolean().optional(),
         showSocialProof: z.boolean().optional(),
       }),
+      annotations: OPEN_WORLD_DESTRUCTIVE_WRITE_ANNOTATIONS,
     },
     async ({ waitlistId, ...updates }) => {
       try {
@@ -640,10 +641,12 @@ export function registerWaitlyzeTools(server, authContext) {
   server.registerTool(
     "waitlyze_publish_waitlist",
     {
-      description: "Publish a draft or paused waitlist to make it live and open for signups.",
+      description:
+        "Publish a draft or paused waitlist, making its current content public and opening it for signups. Call only after the user explicitly asks to publish.",
       inputSchema: z.object({
         waitlistId: z.string().describe("ID of the waitlist to publish"),
       }),
+      annotations: OPEN_WORLD_DESTRUCTIVE_WRITE_ANNOTATIONS,
     },
     async ({ waitlistId }) => {
       try {
@@ -673,10 +676,12 @@ export function registerWaitlyzeTools(server, authContext) {
   server.registerTool(
     "waitlyze_pause_waitlist",
     {
-      description: "Pause an active waitlist to temporarily stop accepting new signups.",
+      description:
+        "Pause an active waitlist and stop new public signups until it is published again.",
       inputSchema: z.object({
         waitlistId: z.string().describe("ID of the waitlist to pause"),
       }),
+      annotations: OPEN_WORLD_DESTRUCTIVE_WRITE_ANNOTATIONS,
     },
     async ({ waitlistId }) => {
       try {
@@ -697,10 +702,12 @@ export function registerWaitlyzeTools(server, authContext) {
   server.registerTool(
     "waitlyze_delete_waitlist",
     {
-      description: "Delete a waitlist and its associated draft configurations.",
+      description:
+        "Permanently delete a waitlist and its associated campaign data. Call only after the user explicitly identifies the waitlist to delete.",
       inputSchema: z.object({
         waitlistId: z.string().describe("ID of the waitlist to delete"),
       }),
+      annotations: OPEN_WORLD_DESTRUCTIVE_WRITE_ANNOTATIONS,
     },
     async ({ waitlistId }) => {
       try {
@@ -729,7 +736,7 @@ export function registerWaitlyzeTools(server, authContext) {
         limit: z.number().int().min(1).max(100).default(25),
         offset: z.number().int().min(0).default(0),
       }),
-      annotations: { readOnlyHint: true },
+      annotations: READ_ONLY_ANNOTATIONS,
     },
     async ({ waitlistId, status, search, sortBy, sortOrder, limit, offset }) => {
       try {
@@ -801,7 +808,7 @@ export function registerWaitlyzeTools(server, authContext) {
         email: z.string().email().optional().describe("Subscriber email"),
         referralCode: z.string().optional().describe("Subscriber personal referral code"),
       }),
-      annotations: { readOnlyHint: true },
+      annotations: READ_ONLY_ANNOTATIONS,
     },
     async ({ waitlistId, subscriberId, email, referralCode }) => {
       try {
@@ -884,6 +891,7 @@ export function registerWaitlyzeTools(server, authContext) {
         utmMedium: z.string().optional(),
         utmCampaign: z.string().optional(),
       }),
+      annotations: ADDITIVE_WRITE_ANNOTATIONS,
     },
     async ({
       waitlistId,
@@ -992,7 +1000,8 @@ export function registerWaitlyzeTools(server, authContext) {
   server.registerTool(
     "waitlyze_update_subscriber",
     {
-      description: "Update subscriber details, mark verified, or update points.",
+      description:
+        "Overwrite selected subscriber fields, verification status, or referral points. Unspecified fields remain unchanged.",
       inputSchema: z.object({
         waitlistId: z.string().describe("ID of the waitlist"),
         subscriberId: z.string().describe("ID of the subscriber"),
@@ -1000,6 +1009,7 @@ export function registerWaitlyzeTools(server, authContext) {
         points: z.number().int().optional().describe("Set referral points balance"),
         customFields: z.record(z.string(), z.any()).optional().describe("Update custom metadata"),
       }),
+      annotations: DESTRUCTIVE_WRITE_ANNOTATIONS,
     },
     async ({ waitlistId, subscriberId, verified, points, customFields }) => {
       try {
@@ -1045,11 +1055,13 @@ export function registerWaitlyzeTools(server, authContext) {
   server.registerTool(
     "waitlyze_remove_subscriber",
     {
-      description: "Remove a subscriber from the waitlist.",
+      description:
+        "Permanently remove a subscriber from a waitlist. Call only after the user explicitly identifies the subscriber to remove.",
       inputSchema: z.object({
         waitlistId: z.string().describe("ID of the waitlist"),
         subscriberId: z.string().describe("ID of the subscriber to delete"),
       }),
+      annotations: DESTRUCTIVE_WRITE_ANNOTATIONS,
     },
     async ({ waitlistId, subscriberId }) => {
       try {
@@ -1076,7 +1088,7 @@ export function registerWaitlyzeTools(server, authContext) {
         status: z.enum(["ALL", "VERIFIED", "UNVERIFIED"]).default("ALL"),
         format: z.enum(["json", "csv"]).default("json"),
       }),
-      annotations: { readOnlyHint: true },
+      annotations: READ_ONLY_ANNOTATIONS,
     },
     async ({ waitlistId, status, format }) => {
       try {
@@ -1150,7 +1162,7 @@ export function registerWaitlyzeTools(server, authContext) {
           .default(30)
           .describe("Number of past days to analyze"),
       }),
-      annotations: { readOnlyHint: true },
+      annotations: READ_ONLY_ANNOTATIONS,
     },
     async ({ waitlistId, days }) => {
       try {
@@ -1245,7 +1257,7 @@ export function registerWaitlyzeTools(server, authContext) {
       inputSchema: z.object({
         waitlistId: z.string().describe("ID of the waitlist"),
       }),
-      annotations: { readOnlyHint: true },
+      annotations: READ_ONLY_ANNOTATIONS,
     },
     async ({ waitlistId }) => {
       try {
@@ -1284,13 +1296,15 @@ export function registerWaitlyzeTools(server, authContext) {
   server.registerTool(
     "waitlyze_create_broadcast",
     {
-      description: "Create a new draft email broadcast for waitlist subscribers.",
+      description:
+        "Create a draft email broadcast. This tool saves content but never sends email to subscribers.",
       inputSchema: z.object({
         waitlistId: z.string().describe("ID of the waitlist"),
         subject: z.string().min(1).describe("Email subject line"),
         contentHtml: z.string().min(1).describe("HTML or text body of the email"),
         previewText: z.string().optional().describe("Snippet shown in inbox preview"),
       }),
+      annotations: ADDITIVE_WRITE_ANNOTATIONS,
     },
     async ({ waitlistId, subject, contentHtml, previewText }) => {
       try {
@@ -1326,11 +1340,13 @@ export function registerWaitlyzeTools(server, authContext) {
   server.registerTool(
     "waitlyze_send_broadcast",
     {
-      description: "Queue or send an email broadcast to eligible verified subscribers.",
+      description:
+        "Irreversibly queue a completed email broadcast for delivery to eligible verified subscribers. Call only after the user explicitly asks to send that broadcast.",
       inputSchema: z.object({
         waitlistId: z.string().describe("ID of the waitlist"),
         broadcastId: z.string().describe("ID of the broadcast to send"),
       }),
+      annotations: OPEN_WORLD_DESTRUCTIVE_WRITE_ANNOTATIONS,
     },
     async ({ waitlistId, broadcastId }) => {
       try {
@@ -1375,7 +1391,7 @@ export function registerWaitlyzeTools(server, authContext) {
       inputSchema: z.object({
         waitlistId: z.string().describe("ID of the waitlist"),
       }),
-      annotations: { readOnlyHint: true },
+      annotations: READ_ONLY_ANNOTATIONS,
     },
     async ({ waitlistId }) => {
       try {
@@ -1411,86 +1427,15 @@ export function registerWaitlyzeTools(server, authContext) {
   );
 
   server.registerTool(
-    "waitlyze_create_webhook",
-    {
-      description:
-        "Create a new webhook subscription to receive HTTP POST alerts on subscriber events.",
-      inputSchema: z.object({
-        waitlistId: z.string().describe("ID of the waitlist"),
-        url: z.string().url().describe("Target HTTPS endpoint URL"),
-        name: z.string().optional().describe("Label for the webhook subscription"),
-        events: z
-          .array(z.string())
-          .default(["signup.created", "signup.verified"])
-          .describe(
-            "Events to subscribe to: signup.created, signup.verified, referral.completed, milestone.reached",
-          ),
-      }),
-    },
-    async ({ waitlistId, url, name, events }) => {
-      try {
-        const waitlist = await getAuthorizedWaitlist(waitlistId, "manageConnections");
-
-        // Validate webhook URL (prevent SSRF)
-        const validated = validateWebhookUrl(url);
-
-        // Normalize and validate event types
-        const normalizedEvents = (events || []).map((e) => {
-          if (e === "subscriber.created") return "signup.created";
-          if (e === "subscriber.verified") return "signup.verified";
-          return e;
-        });
-
-        const invalidEvents = normalizedEvents.filter((e) => !isSupportedWebhookEvent(e));
-        if (invalidEvents.length > 0) {
-          return errorContent(
-            `Unsupported webhook event(s): ${invalidEvents.join(", ")}. Supported events: ${WEBHOOK_EVENT_TYPES.join(", ")}`,
-          );
-        }
-
-        const secret = createWebhookSecret();
-        const { ciphertext, iv, tag } = encryptSecret(secret);
-
-        const webhook = await prisma.webhookSubscription.create({
-          data: {
-            waitListId: waitlist.id,
-            name: name || `Webhook ${validated.url.hostname}`,
-            url: validated.url.toString(),
-            eventTypes: normalizedEvents,
-            enabled: true,
-            secretCiphertext: ciphertext,
-            secretIv: iv,
-            secretTag: tag,
-          },
-        });
-
-        return jsonContent({
-          message:
-            "Webhook created successfully. Save the signing secret now, as it cannot be displayed again.",
-          webhook: {
-            id: webhook.id,
-            name: webhook.name,
-            url: webhook.url,
-            events: webhook.eventTypes,
-            status: webhook.enabled ? "ACTIVE" : "DISABLED",
-            secret,
-            createdAt: webhook.createdAt,
-          },
-        });
-      } catch (err) {
-        return errorContent(err.message);
-      }
-    },
-  );
-
-  server.registerTool(
     "waitlyze_delete_webhook",
     {
-      description: "Delete a webhook subscription.",
+      description:
+        "Permanently delete a webhook subscription and stop future deliveries to that endpoint.",
       inputSchema: z.object({
         waitlistId: z.string().describe("ID of the waitlist"),
         webhookId: z.string().describe("ID of the webhook to delete"),
       }),
+      annotations: DESTRUCTIVE_WRITE_ANNOTATIONS,
     },
     async ({ waitlistId, webhookId }) => {
       try {
@@ -1518,7 +1463,7 @@ export function registerWaitlyzeTools(server, authContext) {
       inputSchema: z.object({
         waitlistId: z.string().describe("ID of the waitlist"),
       }),
-      annotations: { readOnlyHint: true },
+      annotations: READ_ONLY_ANNOTATIONS,
     },
     async ({ waitlistId }) => {
       try {
@@ -1543,54 +1488,14 @@ export function registerWaitlyzeTools(server, authContext) {
   );
 
   server.registerTool(
-    "waitlyze_create_api_key",
-    {
-      description: "Generate a new secret API key (wl2_...) for server-side waitlist integration.",
-      inputSchema: z.object({
-        waitlistId: z.string().describe("ID of the waitlist"),
-        name: z.string().describe("Human readable name / label for the key"),
-        scopes: z
-          .array(z.string())
-          .default(["waitlist:write"])
-          .describe("Scopes: waitlist:read, waitlist:write"),
-      }),
-    },
-    async ({ waitlistId, name, scopes }) => {
-      try {
-        if (authContext?.authType === "api_key") {
-          return errorContent("Forbidden: API keys cannot create other API keys.");
-        }
-        const waitlist = await getAuthorizedWaitlist(waitlistId, "manageConnections");
-        const record = await createApiKey({
-          name,
-          userId: authContext.userId,
-          waitlistId: waitlist.id,
-          scopes,
-          db: prisma,
-        });
-
-        return jsonContent({
-          message:
-            "API key created successfully. Save this secret key now, as it cannot be displayed again.",
-          apiKey: record.apiKey,
-          keyId: record.keyId,
-          name: record.name,
-          scopes: record.scopes,
-          waitlistId: waitlist.id,
-        });
-      } catch (err) {
-        return errorContent(err.message);
-      }
-    },
-  );
-
-  server.registerTool(
     "waitlyze_revoke_api_key",
     {
-      description: "Revoke an API key.",
+      description:
+        "Permanently revoke an API key so it can no longer authenticate. Call only after the user explicitly identifies the key to revoke.",
       inputSchema: z.object({
         keyId: z.string().describe("Internal ID of the API key to revoke"),
       }),
+      annotations: DESTRUCTIVE_WRITE_ANNOTATIONS,
     },
     async ({ keyId }) => {
       try {

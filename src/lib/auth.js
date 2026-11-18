@@ -7,6 +7,7 @@ import { getMcpResourceUrl, MCP_SCOPES } from "./mcp/config.mjs";
 import prisma from "./prisma.js";
 
 const OAUTH_SCOPES = Object.freeze(["openid", "profile", "email", "offline_access", ...MCP_SCOPES]);
+const reviewEmailPasswordEnabled = process.env.OPENAI_REVIEW_EMAIL_PASSWORD_AUTH === "true";
 
 const socialProviders = {};
 if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
@@ -23,7 +24,10 @@ export const auth = betterAuth({
   }),
   emailAndPassword: {
     enabled:
-      process.env.NODE_ENV !== "production" && process.env.LOCAL_DEV_EMAIL_PASSWORD_AUTH === "true",
+      reviewEmailPasswordEnabled ||
+      (process.env.NODE_ENV !== "production" &&
+        process.env.LOCAL_DEV_EMAIL_PASSWORD_AUTH === "true"),
+    disableSignUp: process.env.NODE_ENV === "production",
   },
   socialProviders,
   baseURL: process.env.BETTER_AUTH_URL,
