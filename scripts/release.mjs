@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import "dotenv/config";
 import { execFileSync, execSync } from "node:child_process";
 import { readFileSync, writeFileSync, unlinkSync } from "node:fs";
 import { join } from "node:path";

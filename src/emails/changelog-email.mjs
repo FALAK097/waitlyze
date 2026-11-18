@@ -25,15 +25,15 @@ const monoFamily =
   "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace";
 
 export function createChangelogEmailElement({
-  version = "v0.11.0",
-  date = "Nov 11, 2026",
-  title = "Flexible API key management and zero-downtime rotation",
+  version = "",
+  date = "",
+  title = "New release available",
   summary = "",
   features = [],
   fixes = [],
   changelogUrl = "https://waitlyze.com/docs/changelog",
 }) {
-  const previewText = `Waitlyze ${version}: ${title}`;
+  const previewText = version ? `Waitlyze ${version}: ${title}` : `Waitlyze: ${title}`;
 
   return React.createElement(
     Html,
@@ -117,7 +117,7 @@ export function createChangelogEmailElement({
                       { style: { color: "#749e14", marginRight: 5 } },
                       "●",
                     ),
-                    `${version} · ${date}`,
+                    `${version}${date ? ` · ${date}` : ""}`,
                   ),
                 ),
               ),

@@ -12,15 +12,15 @@ import {
 } from "../layout";
 
 export function ChangelogReleaseEmail({
-  version = "v0.11.0",
-  date = "Nov 11, 2026",
-  title = "Flexible API key management and zero-downtime rotation",
-  summary = "Manage server credentials in a structured workspace table with modal generation and safe revocation warnings.",
+  version = "",
+  date = "",
+  title = "New release available",
+  summary = "",
   features = [],
   fixes = [],
-  changelogUrl = "https://waitlyze.com/docs/changelog#release-v0-11-0",
+  changelogUrl = "https://waitlyze.com/docs/changelog",
 }) {
-  const preview = `${version}: ${title}`;
+  const preview = version ? `Waitlyze ${version}: ${title}` : `Waitlyze: ${title}`;
 
   return (
     <EmailLayout
@@ -51,7 +51,8 @@ export function ChangelogReleaseEmail({
                     color: INK,
                   }}
                 >
-                  <span style={{ color: "#749e14" }}>●</span> {version} · {date}
+                  <span style={{ color: "#749e14" }}>●</span> {version}
+                  {date ? ` · ${date}` : ""}
                 </Text>
               </td>
             </tr>

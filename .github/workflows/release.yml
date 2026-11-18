@@ -65,9 +65,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
-          RESEND_FROM_EMAIL: ${{ secrets.RESEND_FROM_EMAIL }}
-          RESEND_REPLY_TO: ${{ secrets.RESEND_REPLY_TO }}
+          OUTBOX_DISPATCH_SECRET: ${{ secrets.OUTBOX_DISPATCH_SECRET }}
+          APP_URL: "https://waitlyze.com"
         run: |
           ARGS="--ci"
           if [ "${{ inputs.dry_run }}" = "true" ]; then

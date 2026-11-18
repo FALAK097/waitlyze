@@ -1,3 +1,21 @@
+## v0.12.0 · Nov 18, 2026
+
+### Automated release tagging, GitHub Releases, and user release emails
+
+Ship product releases with automated semver Git tagging, official GitHub Releases, and branded changelog announcement emails delivered to all Waitlyze users through Cloudflare platform email.
+
+#### Features
+
+- **Automated GitHub release tagging.** Automatic semver tag creation and GitHub release generation on every merged changelog update.
+- **Product release email announcements.** Direct notification emails sent to all Waitlyze users upon new version releases, powered by Cloudflare Email Sending.
+- **Historical changelog backfill.** Complete GitHub release notes and tags backfilled across all versions from v0.1.0 to v0.11.0.
+- **Release orchestrator CLI.** Built-in `pnpm release` and `pnpm changelog:broadcast` commands with dry-run verification and single-recipient test sending.
+
+#### Fixes
+
+- **Email platform delivery.** Switched product release notifications to Cloudflare platform email sending to align with transactional infrastructure.
+- **Release notes formatting.** Clean craft-inspired email design with version badges, highlight cards, and direct documentation anchors.
+
 ## v0.11.0 · Nov 11, 2026
 
 ### Flexible API key management and zero-downtime rotation

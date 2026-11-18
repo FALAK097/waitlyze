@@ -1,9 +1,10 @@
 #!/usr/bin/env node
+import "dotenv/config";
+import { randomUUID } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
 import pg from "pg";
-import { Resend } from "resend";
 
 import { renderChangelogEmailHtml } from "../src/emails/changelog-email.mjs";
 import { changelogReleaseText } from "../src/emails/text.mjs";
@@ -23,10 +24,9 @@ async function main() {
   const isDryRun = hasFlag("--dry-run");
   const testRecipient = getArg("--test");
   const requestedVersion = getArg("--version");
-  const batchSize = Math.max(1, parseInt(getArg("--batch-size") || "25", 10));
-  const delayMs = Math.max(0, parseInt(getArg("--delay-ms") || "500", 10));
+  const dbUrl = process.env.DATABASE_URL;
 
-  console.log("=== Waitlyze Changelog Release Broadcast ===");
+  console.log("=== Waitlyze Changelog Release Broadcast (Cloudflare Platform Email) ===");
 
   // 1. Parse CHANGELOG.md
   const changelogRaw = readFileSync(join(process.cwd(), "CHANGELOG.md"), "utf8");
@@ -81,7 +81,6 @@ async function main() {
     console.log(`\nMode: TEST SEND to single recipient: ${testRecipient}`);
     recipients = [{ id: "test", email: testRecipient.trim().toLowerCase(), name: "Tester" }];
   } else {
-    const dbUrl = process.env.DATABASE_URL;
     if (!dbUrl) {
       throw new Error("DATABASE_URL is required to fetch platform users.");
     }
@@ -113,77 +112,98 @@ async function main() {
       `\n[DRY-RUN] Previewing Text output:\n----------------------------------------\n${text}\n----------------------------------------`,
     );
     console.log(
-      `\n[DRY-RUN] Finished preview for ${recipients.length} recipients. No emails were sent.`,
+      `\n[DRY-RUN] Finished preview for ${recipients.length} recipients. No outbox rows were written.`,
     );
     return;
   }
 
-  // 4. Initialize Resend
-  const resendApiKey = process.env.RESEND_API_KEY;
-  if (!resendApiKey) {
-    throw new Error("RESEND_API_KEY environment variable is missing.");
+  if (!dbUrl) {
+    throw new Error("DATABASE_URL is required to enqueue outbox events.");
   }
 
-  const resend = new Resend(resendApiKey);
-  const fromEmail = process.env.RESEND_FROM_EMAIL || "Waitlyze <noreply@waitlyze.com>";
-  const replyTo = process.env.RESEND_REPLY_TO || "support@waitlyze.com";
+  // 4. Enqueue into Outbox (Cloudflare Platform Sender: FOUNDER_NOTICE_REQUESTED)
+  console.log(`\nEnqueueing ${recipients.length} notices into outbox table...`);
+  const pool = new pg.Pool({ connectionString: dbUrl });
 
-  console.log(`Sender: ${fromEmail}`);
-  console.log(`Reply-To: ${replyTo}`);
-  console.log(`Starting delivery to ${recipients.length} recipients...`);
+  let enqueuedCount = 0;
+  try {
+    for (const recipient of recipients) {
+      const email = recipient.email.trim().toLowerCase();
+      const eventKey = `founder-notice:changelog-release:${version}:${email}`;
+      const payload = {
+        kind: "changelog_release",
+        to: email,
+        subject,
+        html,
+        text,
+        idempotencyKey: `changelog-release:${version}:${email}`,
+      };
 
-  let sentCount = 0;
-  let failedCount = 0;
+      const res = await pool.query(
+        `INSERT INTO outbox_events ("id", "eventKey", "type", "payload", "status", "availableAt", "createdAt")
+         VALUES ($1, $2, 'FOUNDER_NOTICE_REQUESTED', $3, 'PENDING', NOW(), NOW())
+         ON CONFLICT ("eventKey") DO NOTHING
+         RETURNING "id"`,
+        [`evt_${randomUUID().replace(/-/g, "").slice(0, 24)}`, eventKey, JSON.stringify(payload)],
+      );
 
-  for (let i = 0; i < recipients.length; i += batchSize) {
-    const batch = recipients.slice(i, i + batchSize);
-    console.log(`\nSending batch ${Math.floor(i / batchSize) + 1} (${batch.length} recipients)...`);
-
-    await Promise.all(
-      batch.map(async (recipient) => {
-        const idempotencyKey = `changelog-release:${version}:${recipient.id || recipient.email}`;
-        try {
-          const { error } = await resend.emails.send(
-            {
-              from: fromEmail,
-              to: recipient.email,
-              replyTo,
-              subject,
-              html,
-              text,
-            },
-            { idempotencyKey },
-          );
-
-          if (error) {
-            console.error(`  [FAILED] ${recipient.email}:`, error.message || error);
-            failedCount++;
-          } else {
-            console.log(`  [OK] ${recipient.email}`);
-            sentCount++;
-          }
-        } catch (err) {
-          console.error(`  [ERROR] ${recipient.email}:`, err.message);
-          failedCount++;
-        }
-      }),
-    );
-
-    if (i + batchSize < recipients.length && delayMs > 0) {
-      await new Promise((res) => setTimeout(res, delayMs));
+      if (res.rowCount > 0) {
+        enqueuedCount++;
+        console.log(`  [ENQUEUED] ${email}`);
+      } else {
+        console.log(`  [SKIPPED - DUPLICATE] ${email}`);
+      }
     }
+  } finally {
+    await pool.end();
+  }
+
+  console.log(
+    `\nSuccessfully enqueued ${enqueuedCount} release notices for Cloudflare Email delivery.`,
+  );
+
+  // 5. Trigger Immediate Dispatch if OUTBOX_DISPATCH_SECRET is set
+  const dispatchSecret = process.env.OUTBOX_DISPATCH_SECRET;
+  const appUrl = (
+    process.env.APP_URL ||
+    process.env.BETTER_AUTH_URL ||
+    "https://waitlyze.com"
+  ).replace(/\/$/, "");
+
+  if (dispatchSecret) {
+    console.log(
+      `Triggering Cloudflare Email outbox dispatcher at ${appUrl}/api/internal/email-outbox...`,
+    );
+    try {
+      const response = await fetch(`${appUrl}/api/internal/email-outbox`, {
+        method: "POST",
+        headers: {
+          authorization: `Bearer ${dispatchSecret}`,
+        },
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        console.log(`[OK] Cloudflare dispatcher response:`, result);
+      } else {
+        console.warn(`[WARN] Dispatcher HTTP ${response.status}: ${await response.text()}`);
+      }
+    } catch (err) {
+      console.warn(`[WARN] Could not reach dispatcher endpoint: ${err.message}`);
+      console.log("Notices remain queued in outbox and will be drained by Cloudflare worker cron.");
+    }
+  } else {
+    console.log(
+      "OUTBOX_DISPATCH_SECRET not provided locally. Notices will be drained by Cloudflare worker cron.",
+    );
   }
 
   console.log("\n========================================");
   console.log(`Broadcast summary for ${version}:`);
-  console.log(`  Total: ${recipients.length}`);
-  console.log(`  Accepted / Sent: ${sentCount}`);
-  console.log(`  Failed: ${failedCount}`);
+  console.log(`  Total users: ${recipients.length}`);
+  console.log(`  Enqueued into outbox: ${enqueuedCount}`);
+  console.log(`  Platform sender: Cloudflare Email Sending (noreply@waitlyze.com)`);
   console.log("========================================");
-
-  if (failedCount > 0 && sentCount === 0) {
-    process.exit(1);
-  }
 }
 
 main().catch((err) => {
