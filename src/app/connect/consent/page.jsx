@@ -1,19 +1,29 @@
 "use client";
 
-import { useSearchParams } from "next/navigation";
-import { Suspense, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useState } from "react";
 
 import Wordmark from "@/components/landing/wordmark";
 import { Button } from "@/components/ui/button";
 import { authClient } from "@/lib/auth-client";
 
 function ConnectConsentContent() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  const clientId = searchParams.get("client_id") || "AI Agent";
-  const scope = searchParams.get("scope") || "mcp:read mcp:write";
+  const clientId = searchParams.get("client_id");
+  const scope = searchParams.get("scope");
+  const oauthRequest = Boolean(clientId && searchParams.has("sig"));
+
+  useEffect(() => {
+    if (!oauthRequest) router.replace("/waitlists");
+  }, [oauthRequest, router]);
+
+  if (!oauthRequest) {
+    return <div className="flex min-h-screen items-center justify-center">Redirecting...</div>;
+  }
 
   const handleDecision = async (accept) => {
     setLoading(true);
@@ -21,7 +31,7 @@ function ConnectConsentContent() {
     try {
       const res = await authClient.oauth2.consent({
         accept,
-        scope: typeof scope === "string" && scope.trim() ? scope.trim() : undefined,
+        scope: scope?.trim() || undefined,
       });
 
       if (res?.data?.url) {

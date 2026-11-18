@@ -45,7 +45,8 @@ Enter reviewer access through the portal's secure Review details form:
 - The dedicated reviewer email and password created above
 - Workspace: `OpenAI Review Workspace`
 - Campaign: `OpenAI Review Campaign`
-- Sign-in instructions: choose **Sign in as reviewer**, then approve the requested OAuth scopes
+- Sign-in instructions: choose **Sign in as reviewer** to open the seeded workspace. When ChatGPT
+  connects the plugin, approve the requested OAuth scopes on the separate consent screen.
 
 The ZIP imports five positive and three negative review cases. Run all eight in a new ChatGPT chat
 using the reviewer account. Record a reviewer-accessible video that demonstrates connection,

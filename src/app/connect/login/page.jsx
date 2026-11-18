@@ -21,12 +21,12 @@ function ConnectLoginContent() {
   const [reviewEmail, setReviewEmail] = useState("");
   const [reviewPassword, setReviewPassword] = useState("");
   const reviewerAccess = searchParams.get("review") === "1";
+  const oauthRequest = searchParams.has("client_id") && searchParams.has("sig");
 
   // Sanitize the redirect target: only allow same-app relative paths so a
   // crafted callbackURL cannot bounce users to an attacker-controlled site
   // after sign in (open redirect).
-  const callbackURL =
-    sanitizeCallbackUrl(searchParams.get("callbackURL") || "") || "/connect/consent";
+  const callbackURL = sanitizeCallbackUrl(searchParams.get("callbackURL") || "") || "/waitlists";
 
   const handleGoogleSignIn = async () => {
     setLoading(true);
@@ -34,7 +34,7 @@ function ConnectLoginContent() {
     try {
       await authClient.signIn.social({
         provider: "google",
-        callbackURL,
+        ...(oauthRequest ? {} : { callbackURL }),
       });
     } catch (err) {
       setError(err?.message || "Failed to initiate sign in");
@@ -52,6 +52,17 @@ function ConnectLoginContent() {
         password: reviewPassword,
       });
       if (result.error) throw new Error(result.error.message || "Authentication failed");
+
+      // The OAuth provider client attaches the signed query to the sign-in
+      // request and returns the next authorization URL. Preserve that flow
+      // instead of replacing it with a generic consent page.
+      if (oauthRequest) {
+        const oauthRedirect = result.data?.url;
+        if (!oauthRedirect) throw new Error("Unable to resume OAuth authorization");
+        window.location.assign(oauthRedirect);
+        return;
+      }
+
       window.location.assign(callbackURL);
     } catch (err) {
       setError(err?.message || "Reviewer sign-in failed");
