@@ -11,7 +11,14 @@
     "promise",
     "node"
   ],
-  "jsPlugins": ["@shadcn/lint"],
+  "jsPlugins": [
+    "@shadcn/lint",
+    { "name": "landmines-testing", "specifier": "@interfere/landmines/testing" },
+    { "name": "landmines-style", "specifier": "@interfere/landmines/style" },
+    { "name": "landmines-structure", "specifier": "@interfere/landmines/structure" },
+    { "name": "landmines-types", "specifier": "@interfere/landmines/types" },
+    { "name": "anti-slop", "specifier": "./tools/oxlint/anti-slop/index.ts" }
+  ],
   "env": {
     "browser": true,
     "node": true,
@@ -79,7 +86,37 @@
     "unicorn/consistent-function-scoping": "off",
     "unicorn/no-array-sort": "off",
     "unicorn/no-array-reverse": "off",
-    "oxc/no-map-spread": "off"
+    "oxc/no-map-spread": "off",
+    "oxc/no-accumulating-spread": "error",
+
+    "anti-slop/no-array-filter-map": "off",
+    "anti-slop/no-reduce-accumulator-copy": "error",
+    "anti-slop/no-chained-type-assertions": "error",
+    "anti-slop/no-conditional-empty-object-spread": "off",
+    "anti-slop/no-known-value-widening": "error",
+    "anti-slop/no-module-mocking": "error",
+    "anti-slop/no-object-parameters": "error",
+    "anti-slop/no-reflect-apply": "error",
+    "anti-slop/no-reflect-get": "off",
+    "anti-slop/no-runtime-typeof": "off",
+    "anti-slop/no-shape-in-symbol-names": "off",
+    "anti-slop/no-unknown-parameters": "error",
+    "anti-slop/no-unknown-returns": "error",
+    "anti-slop/no-unknown-type-aliases": "error",
+    "anti-slop/no-unsafe-dictionary-type": "error",
+    "anti-slop/no-widen-then-assert": "error",
+    "anti-slop/require-readable-spacing": "off",
+    "anti-slop/require-safety-comment-for-type-assertion": "error",
+
+    "landmines-testing/no-fixed-sleep": "error",
+    "landmines-testing/no-flake-masking": "error",
+    "landmines-testing/no-test-doubles": "error",
+    "landmines-testing/no-unsignaled-poll": "error",
+    "landmines-testing/strict-msw": "error",
+    "landmines-structure/colocated-tests": "error",
+    "landmines-structure/package-exports": "error",
+    "landmines-structure/test-file-names": "error",
+    "landmines-types/no-explicit-return-types": "error"
   },
   "overrides": [
     {
@@ -99,6 +136,7 @@
     "coverage/**",
     "playwright-report/**",
     "test-results/**",
-    "video/**"
+    "video/**",
+    "tools/oxlint/anti-slop/**"
   ]
 }
