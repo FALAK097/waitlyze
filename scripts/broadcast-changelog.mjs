@@ -20,11 +20,21 @@ function getArg(flag) {
 
 const hasFlag = (flag) => process.argv.includes(flag);
 
+async function wait(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 async function main() {
   const isDryRun = hasFlag("--dry-run");
   const testRecipient = getArg("--test");
   const requestedVersion = getArg("--version");
   const dbUrl = process.env.DATABASE_URL;
+  const dispatchSecret = process.env.OUTBOX_DISPATCH_SECRET;
+  const appUrl = (
+    process.env.APP_URL ||
+    process.env.BETTER_AUTH_URL ||
+    "https://waitlyze.com"
+  ).replace(/\/$/, "");
 
   console.log("=== Waitlyze Changelog Release Broadcast (Cloudflare Platform Email) ===");
 
@@ -75,16 +85,133 @@ async function main() {
     throw new Error("Failed to render changelog email template.");
   }
 
-  // 3. Resolve Recipients
-  let recipients = [];
-  if (testRecipient) {
-    console.log(`\nMode: TEST SEND to single recipient: ${testRecipient}`);
-    recipients = [{ id: "test", email: testRecipient.trim().toLowerCase(), name: "Tester" }];
-  } else {
-    if (!dbUrl) {
-      throw new Error("DATABASE_URL is required to fetch platform users.");
+  // 3. Dispatch via Internal API Endpoint (preferred in CI and Cloudflare Workers)
+  if (dispatchSecret) {
+    console.log(
+      `\nDispatching broadcast via internal API: ${appUrl}/api/internal/changelog-broadcast`,
+    );
+    let apiSuccess = false;
+    let apiResult = null;
+    let lastError = null;
+
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      try {
+        console.log(`Calling changelog broadcast API (attempt ${attempt}/3)...`);
+        const response = await fetch(`${appUrl}/api/internal/changelog-broadcast`, {
+          method: "POST",
+          headers: {
+            "content-type": "application/json",
+            authorization: `Bearer ${dispatchSecret}`,
+          },
+          body: JSON.stringify({
+            version,
+            subject,
+            html,
+            text,
+            dryRun: isDryRun,
+            testRecipient: testRecipient || undefined,
+          }),
+        });
+
+        if (response.ok) {
+          apiResult = await response.json();
+          apiSuccess = true;
+          break;
+        } else {
+          const statusText = await response.text();
+          lastError = new Error(`HTTP ${response.status}: ${statusText}`);
+          console.warn(
+            `[WARN] Broadcast attempt ${attempt} returned ${response.status}: ${statusText}`,
+          );
+        }
+      } catch (err) {
+        lastError = err;
+        console.warn(`[WARN] Broadcast attempt ${attempt} failed: ${err.message}`);
+      }
+
+      if (attempt < 3) {
+        await wait(2000 * attempt);
+      }
     }
 
+    if (!apiSuccess) {
+      console.warn(
+        `[WARN] Could not broadcast via API endpoint: ${lastError?.message || "Unknown error"}`,
+      );
+      if (!dbUrl) {
+        console.warn(
+          "[WARN] DATABASE_URL not present as fallback. Skipping email broadcast gracefully.",
+        );
+        return;
+      }
+      console.log("Falling back to direct database enqueueing...");
+    } else {
+      console.log("[OK] Broadcast API response:", apiResult);
+
+      if (isDryRun) {
+        console.log("\n[DRY-RUN] Finished preview via broadcast API. No emails sent.");
+        return;
+      }
+
+      // Trigger Cloudflare outbox dispatcher to drain queued events immediately
+      console.log(
+        `\nTriggering Cloudflare Email outbox dispatcher at ${appUrl}/api/internal/email-outbox...`,
+      );
+      try {
+        const drainRes = await fetch(`${appUrl}/api/internal/email-outbox`, {
+          method: "POST",
+          headers: {
+            authorization: `Bearer ${dispatchSecret}`,
+          },
+        });
+
+        if (drainRes.ok) {
+          const drainData = await drainRes.json();
+          console.log("[OK] Outbox dispatcher completed:", drainData);
+        } else {
+          console.warn(`[WARN] Outbox dispatcher returned HTTP ${drainRes.status}`);
+        }
+      } catch (err) {
+        console.warn(`[WARN] Outbox dispatcher ping failed: ${err.message}`);
+        console.log(
+          "Notices remain queued in outbox and will be drained by Cloudflare worker cron.",
+        );
+      }
+
+      console.log("\n========================================");
+      console.log(`Broadcast summary for ${version}:`);
+      console.log(`  Users targeted: ${apiResult.recipientCount ?? apiResult.totalUsers ?? "N/A"}`);
+      console.log(`  Enqueued notices: ${apiResult.enqueuedCount ?? "N/A"}`);
+      console.log(`  Sender: Cloudflare Platform Email (noreply@waitlyze.com)`);
+      console.log("========================================");
+      return;
+    }
+  }
+
+  // 4. Fallback: Direct Database Connection (for local development or environments with DATABASE_URL)
+  if (!dbUrl) {
+    if (isDryRun) {
+      console.log(
+        "\n[DRY-RUN] Previewing Text output:\n----------------------------------------\n" +
+          text +
+          "\n----------------------------------------",
+      );
+      console.log(
+        "\n[DRY-RUN] Finished preview (no DATABASE_URL or OUTBOX_DISPATCH_SECRET configured).",
+      );
+      return;
+    }
+    console.warn("\n[WARN] Neither OUTBOX_DISPATCH_SECRET nor DATABASE_URL is available.");
+    console.warn("[WARN] Skipping changelog release broadcast without failing.");
+    return;
+  }
+
+  console.log("\nConnecting to database via DATABASE_URL...");
+  let recipients = [];
+  if (testRecipient) {
+    console.log(`Mode: TEST SEND to single recipient: ${testRecipient}`);
+    recipients = [{ id: "test", email: testRecipient.trim().toLowerCase(), name: "Tester" }];
+  } else {
     const pool = new pg.Pool({ connectionString: dbUrl });
     try {
       const res = await pool.query(
@@ -94,8 +221,7 @@ async function main() {
     } finally {
       await pool.end();
     }
-
-    console.log(`\nFetched ${recipients.length} platform users from database.`);
+    console.log(`Fetched ${recipients.length} platform users from database.`);
   }
 
   if (recipients.length === 0) {
@@ -117,15 +243,10 @@ async function main() {
     return;
   }
 
-  if (!dbUrl) {
-    throw new Error("DATABASE_URL is required to enqueue outbox events.");
-  }
-
-  // 4. Enqueue into Outbox (Cloudflare Platform Sender: FOUNDER_NOTICE_REQUESTED)
   console.log(`\nEnqueueing ${recipients.length} notices into outbox table...`);
   const pool = new pg.Pool({ connectionString: dbUrl });
-
   let enqueuedCount = 0;
+
   try {
     for (const recipient of recipients) {
       const email = recipient.email.trim().toLowerCase();
@@ -161,42 +282,6 @@ async function main() {
   console.log(
     `\nSuccessfully enqueued ${enqueuedCount} release notices for Cloudflare Email delivery.`,
   );
-
-  // 5. Trigger Immediate Dispatch if OUTBOX_DISPATCH_SECRET is set
-  const dispatchSecret = process.env.OUTBOX_DISPATCH_SECRET;
-  const appUrl = (
-    process.env.APP_URL ||
-    process.env.BETTER_AUTH_URL ||
-    "https://waitlyze.com"
-  ).replace(/\/$/, "");
-
-  if (dispatchSecret) {
-    console.log(
-      `Triggering Cloudflare Email outbox dispatcher at ${appUrl}/api/internal/email-outbox...`,
-    );
-    try {
-      const response = await fetch(`${appUrl}/api/internal/email-outbox`, {
-        method: "POST",
-        headers: {
-          authorization: `Bearer ${dispatchSecret}`,
-        },
-      });
-
-      if (response.ok) {
-        const result = await response.json();
-        console.log(`[OK] Cloudflare dispatcher response:`, result);
-      } else {
-        console.warn(`[WARN] Dispatcher HTTP ${response.status}: ${await response.text()}`);
-      }
-    } catch (err) {
-      console.warn(`[WARN] Could not reach dispatcher endpoint: ${err.message}`);
-      console.log("Notices remain queued in outbox and will be drained by Cloudflare worker cron.");
-    }
-  } else {
-    console.log(
-      "OUTBOX_DISPATCH_SECRET not provided locally. Notices will be drained by Cloudflare worker cron.",
-    );
-  }
 
   console.log("\n========================================");
   console.log(`Broadcast summary for ${version}:`);

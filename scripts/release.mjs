@@ -104,14 +104,6 @@ async function main() {
   console.log(`Tag ${version} exists locally: ${tagExistsLocally}`);
   console.log(`Tag ${version} exists on remote: ${tagExistsRemote}`);
 
-  if (tagExistsRemote && !hasFlag("--force")) {
-    console.log(
-      `Tag ${version} already exists on origin. If you want to broadcast release emails, run:`,
-    );
-    console.log(`  pnpm changelog:broadcast --version ${version}`);
-    return;
-  }
-
   if (isDryRun) {
     console.log(`\n[DRY-RUN] Would create git tag ${version} on HEAD and push to origin.`);
     console.log(`[DRY-RUN] Would create GitHub Release ${version} with notes.`);
@@ -125,42 +117,69 @@ async function main() {
   if (!tagExistsLocally) {
     console.log(`\nCreating local annotated git tag ${version}...`);
     execFileSync("git", ["tag", "-a", version, "-m", title], { stdio: "inherit" });
+  } else {
+    console.log(`Local tag ${version} already exists.`);
   }
 
-  // 4. Push tag to origin
+  // 4. Push tag to origin if needed
   if (!tagExistsRemote) {
     console.log(`Pushing git tag ${version} to origin...`);
     execFileSync("git", ["push", "origin", version], { stdio: "inherit" });
+  } else {
+    console.log(`Tag ${version} already exists on origin.`);
   }
 
-  // 5. Create GitHub Release
-  const tempNotesFile = join(process.cwd(), `.temp-release-notes-${version}.md`);
-  writeFileSync(tempNotesFile, formatReleaseNotes(release), "utf8");
-
+  // 5. Create GitHub Release if not already existing
+  let releaseExists = false;
   try {
-    console.log(`Creating GitHub Release ${version}...`);
-    execFileSync(
-      "gh",
-      ["release", "create", version, "--title", title, "--notes-file", tempNotesFile],
-      { stdio: "inherit" },
-    );
-    console.log(`[SUCCESS] GitHub Release ${version} created.`);
-  } catch (err) {
-    console.warn(`[WARN] GitHub release command exited with: ${err.message}`);
-  } finally {
+    const ghCheck = execSync(`gh release view ${version}`, {
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "ignore"],
+    });
+    if (ghCheck.includes(version)) {
+      releaseExists = true;
+      console.log(`GitHub Release ${version} already exists.`);
+    }
+  } catch {
+    releaseExists = false;
+  }
+
+  if (!releaseExists) {
+    const tempNotesFile = join(process.cwd(), `.temp-release-notes-${version}.md`);
+    writeFileSync(tempNotesFile, formatReleaseNotes(release), "utf8");
+
     try {
-      unlinkSync(tempNotesFile);
-    } catch {}
+      console.log(`Creating GitHub Release ${version}...`);
+      execFileSync(
+        "gh",
+        ["release", "create", version, "--title", title, "--notes-file", tempNotesFile],
+        { stdio: "inherit" },
+      );
+      console.log(`[SUCCESS] GitHub Release ${version} created.`);
+    } catch (err) {
+      console.warn(`[WARN] GitHub release command exited with: ${err.message}`);
+    } finally {
+      try {
+        unlinkSync(tempNotesFile);
+      } catch {}
+    }
   }
 
   // 6. Broadcast release announcement email to users
   if (!skipEmail) {
-    console.log(`\nBroadcasting changelog release announcement email to all users...`);
-    execFileSync(
-      process.execPath,
-      [join(process.cwd(), "scripts/broadcast-changelog.mjs"), "--version", version],
-      { stdio: "inherit" },
-    );
+    console.log(`\nBroadcasting changelog release announcement email to users...`);
+    try {
+      execFileSync(
+        process.execPath,
+        [join(process.cwd(), "scripts/broadcast-changelog.mjs"), "--version", version],
+        { stdio: "inherit" },
+      );
+    } catch (err) {
+      console.warn(`[WARN] Release email broadcast reported an issue: ${err.message}`);
+      console.warn(
+        `[WARN] Release tag and GitHub release succeeded. You can re-run broadcast anytime.`,
+      );
+    }
   } else {
     console.log(`[SKIP] Email broadcast skipped per --skip-email flag.`);
   }
