@@ -1,7 +1,7 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "waitlyze",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Build, manage, and understand waitlist campaigns from ChatGPT and Codex.",
   "author": {
     "name": "Falak Gala",
@@ -18,7 +18,7 @@
         "shortDescription": "Build and manage waitlists",
         "longDescription": "Create and manage waitlist campaigns, inspect subscribers and referral analytics, and prepare campaign broadcasts. Waitlyze only accesses workspaces available to the connected account.",
         "developerName": "Falak Gala",
-        "category": "Productivity",
+        "category": "Business & Operations",
         "capabilities": [
           "Manage waitlist campaigns",
           "Inspect audiences and referral analytics",
@@ -33,7 +33,7 @@
           "Summarize the audience and referral performance for my latest waitlist.",
           "Create a draft waitlist for my next product launch. Do not publish it."
         ],
-        "brandColor": "#C6FE1E",
+        "brandColor": "#8AAF00",
         "composerIcon": "./assets/icon.png",
         "logo": "./assets/logo.png"
       },
