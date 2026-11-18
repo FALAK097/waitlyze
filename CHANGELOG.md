@@ -1,3 +1,21 @@
+## v0.13.0 · Nov 18, 2026
+
+### Automated CI release broadcast, anti-slop Oxlint rules, and ChatGPT plugin readiness
+
+Ship dependable automated releases with runner database decoupling, comprehensive anti-slop code quality rules, and verified OpenAI plugin directory compliance.
+
+#### Features
+
+- **Decoupled release broadcast.** Automatically dispatch product changelog announcement emails via an authenticated platform endpoint and Cloudflare platform email sending without requiring direct database access in CI.
+- **Oxlint anti-slop rules.** Integrated `@interfere/landmines` and custom lint rules covering Effect-TS tagged values, dictionary safety, and consistent statement spacing.
+- **ChatGPT plugin store compliance.** Verified metadata, icon assets, and legal documentation links for OpenAI public plugin review readiness.
+- **Idempotent release orchestrator.** Built-in recovery in `scripts/release.mjs` to safely resume existing tags and handle network retries.
+
+#### Fixes
+
+- **CI runner database dependency.** Eliminated `DATABASE_URL` requirements inside GitHub Actions release runners.
+- **Outbox dispatch routing.** Enhanced outbox dispatch triggers to route directly to production infrastructure with automatic queue drainage.
+
 ## v0.12.0 · Nov 18, 2026
 
 ### Automated release tagging, GitHub Releases, and user release emails

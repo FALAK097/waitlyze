@@ -32,8 +32,9 @@ async function main() {
   const dispatchSecret = process.env.OUTBOX_DISPATCH_SECRET;
   const appUrl = (
     process.env.APP_URL ||
-    process.env.BETTER_AUTH_URL ||
-    "https://waitlyze.com"
+    (process.env.BETTER_AUTH_URL && !process.env.BETTER_AUTH_URL.includes("localhost")
+      ? process.env.BETTER_AUTH_URL
+      : "https://waitlyze.com")
   ).replace(/\/$/, "");
 
   console.log("=== Waitlyze Changelog Release Broadcast (Cloudflare Platform Email) ===");
@@ -282,6 +283,31 @@ async function main() {
   console.log(
     `\nSuccessfully enqueued ${enqueuedCount} release notices for Cloudflare Email delivery.`,
   );
+
+  // Trigger Cloudflare outbox dispatcher if secret is available
+  if (dispatchSecret) {
+    console.log(
+      `\nTriggering Cloudflare Email outbox dispatcher at ${appUrl}/api/internal/email-outbox...`,
+    );
+    try {
+      const drainRes = await fetch(`${appUrl}/api/internal/email-outbox`, {
+        method: "POST",
+        headers: {
+          authorization: `Bearer ${dispatchSecret}`,
+        },
+      });
+
+      if (drainRes.ok) {
+        const drainData = await drainRes.json();
+        console.log("[OK] Outbox dispatcher completed:", drainData);
+      } else {
+        console.warn(`[WARN] Outbox dispatcher returned HTTP ${drainRes.status}`);
+      }
+    } catch (err) {
+      console.warn(`[WARN] Outbox dispatcher ping failed: ${err.message}`);
+      console.log("Notices remain queued in outbox and will be drained by Cloudflare worker cron.");
+    }
+  }
 
   console.log("\n========================================");
   console.log(`Broadcast summary for ${version}:`);
