@@ -142,3 +142,48 @@ export function feedbackText({ name, email, title, label, feedback, page, submit
     ...(hasImage ? ["", "A screenshot is attached to this email."] : []),
   ].join("\n");
 }
+
+export function changelogReleaseText({
+  version,
+  date,
+  title,
+  summary,
+  features = [],
+  fixes = [],
+  changelogUrl,
+}) {
+  const lines = [
+    `Waitlyze ${version} · ${date}`,
+    "",
+    title,
+    "",
+    summary,
+    "",
+    `Read the full changelog entry: ${changelogUrl}`,
+  ];
+
+  if (features?.length > 0) {
+    lines.push("", "WHAT'S NEW:");
+    for (const f of features) {
+      if (f.title) lines.push(`• ${f.title}: ${f.description}`);
+      else lines.push(`• ${f.description}`);
+    }
+  }
+
+  if (fixes?.length > 0) {
+    lines.push("", "IMPROVEMENTS & FIXES:");
+    for (const fix of fixes) {
+      if (fix.title) lines.push(`• ${fix.title}: ${fix.description}`);
+      else lines.push(`• ${fix.description}`);
+    }
+  }
+
+  lines.push(
+    "",
+    "---",
+    "You're receiving this email because you have a registered account on Waitlyze.",
+    "Waitlyze · Build an audience before you launch.",
+  );
+
+  return lines.join("\n");
+}

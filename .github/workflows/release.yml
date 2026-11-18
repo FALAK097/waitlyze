@@ -1,0 +1,82 @@
+name: Release and Changelog Announcement
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - CHANGELOG.md
+      - package.json
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Explicit changelog version to release (e.g. v0.12.0). If empty, latest from CHANGELOG.md is used."
+        required: false
+        type: string
+      dry_run:
+        description: "Preview actions without tagging, pushing, or emailing."
+        required: false
+        type: boolean
+        default: false
+      skip_email:
+        description: "Create git tag and GitHub release without broadcasting email to users."
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-main
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.5.0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Configure Git Author
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Run Release Orchestrator
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          RESEND_FROM_EMAIL: ${{ secrets.RESEND_FROM_EMAIL }}
+          RESEND_REPLY_TO: ${{ secrets.RESEND_REPLY_TO }}
+        run: |
+          ARGS="--ci"
+          if [ "${{ inputs.dry_run }}" = "true" ]; then
+            ARGS="$ARGS --dry-run"
+          fi
+          if [ "${{ inputs.skip_email }}" = "true" ]; then
+            ARGS="$ARGS --skip-email"
+          fi
+          if [ -n "${{ inputs.version }}" ]; then
+            ARGS="$ARGS --version ${{ inputs.version }}"
+          fi
+          node scripts/release.mjs $ARGS

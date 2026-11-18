@@ -30,3 +30,4 @@ minimumReleaseAgeExclude:
   - motion-dom@14.0.0
   - motion-utils@14.0.0
   - motion@14.0.0
+  - "@interfere/landmines@0.1.0"

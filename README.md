@@ -75,11 +75,20 @@ pnpm check         # lint + format check, as run in CI
 
 ## Releasing
 
-Releases are versioned manually. To cut a release:
+To cut a new release:
 
 1. Bump `version` in `package.json`.
 2. Add a new `## vX.Y.Z` entry to the top of `CHANGELOG.md`, following the format of the existing entries.
-3. Open a pull request. The published history is rendered at `/docs/changelog`.
+3. Open a pull request. Once merged to `main`, the [Release workflow](.github/workflows/release.yml) automatically:
+   - Creates the annotated Git tag `vX.Y.Z` and pushes it to GitHub.
+   - Publishes an official GitHub Release with release notes.
+   - Broadcasts the changelog release announcement email to all registered Waitlyze users.
+4. Alternatively, preview or trigger releases locally:
+   ```bash
+   pnpm changelog:broadcast --dry-run     # Preview email and recipient list
+   pnpm changelog:broadcast --test <mail> # Send single test email
+   pnpm release                           # Create tag, GitHub release, and broadcast
+   ```
 
 ## Attribution
 
