@@ -29,6 +29,13 @@
       "bucket_name": "waitlyze-next-cache",
     },
   ],
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "waitlyze-db",
+      "database_id": "ab59dae7-e187-4801-aafc-881f1ae95b86",
+    },
+  ],
   "services": [{ "binding": "WORKER_SELF_REFERENCE", "service": "waitlyze" }],
   "durable_objects": {
     "bindings": [

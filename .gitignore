@@ -57,6 +57,7 @@ pnpm-debug.log
 # local env files
 .env
 .env*.local
+migrations/seed_*.sql
 
 # typescript
 *.tsbuildinfo

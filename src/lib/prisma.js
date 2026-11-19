@@ -1,36 +1,35 @@
-import { neonConfig } from "@neondatabase/serverless";
-import { PrismaNeon } from "@prisma/adapter-neon";
-import ws from "ws";
+import { PrismaD1 } from "@prisma/adapter-d1";
 
 import { PrismaClient } from "@/generated/prisma/client";
 
-if (typeof WebSocket === "undefined") {
-  neonConfig.webSocketConstructor = ws;
-}
-
 const globalForPrisma = globalThis;
 
-function getDatabaseUrl() {
-  const cfContext = globalThis[Symbol.for("__cloudflare-context__")];
-  const url = cfContext?.env?.DATABASE_URL || process.env.DATABASE_URL;
-  if (!url) return "";
-  // Ensure Neon connections route through PgBouncer (-pooler) for serverless multiplexing
-  if (url.includes(".neon.tech") && !url.includes("-pooler")) {
-    return url.replace(/@([^/:]+)/, (match, host) => {
-      return `@${host.includes("-pooler") ? host : host.replace(/^([^.]+)/, "$1-pooler")}`;
-    });
-  }
-  return url;
-}
-
 function createPrismaClient() {
-  const connectionString = getDatabaseUrl();
-  const adapter = new PrismaNeon({
-    connectionString,
-    max: 1, // Edge isolates are short-lived; avoid connection hoarding and socket leaks
-    connectionTimeoutMillis: 10000,
-  });
-  return new PrismaClient({ adapter });
+  const cfContext = globalThis[Symbol.for("__cloudflare-context__")];
+  const d1 = cfContext?.env?.DB;
+
+  if (d1) {
+    const adapter = new PrismaD1(d1);
+    return new PrismaClient({ adapter });
+  }
+
+  // Local development / Node.js test environment fallback
+  if (typeof process !== "undefined" && process.versions?.node) {
+    try {
+      // Dynamic import/require to prevent bundling native addons into Cloudflare Workers
+      const req = typeof require !== "undefined" ? require : null;
+      if (req) {
+        const { PrismaBetterSqlite3 } = req("@prisma/adapter-better-sqlite3");
+        const url = process.env.DATABASE_URL || "file:./prisma/dev.db";
+        const adapter = new PrismaBetterSqlite3({ url });
+        return new PrismaClient({ adapter });
+      }
+    } catch (_e) {
+      // Ignore and throw primary error below
+    }
+  }
+
+  throw new Error("Missing Cloudflare D1 database binding (env.DB).");
 }
 
 export function getPrisma() {
