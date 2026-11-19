@@ -54,18 +54,24 @@ try {
       .map((row) => row.name),
   );
 
-  const hasExistingSchema = Boolean(
-    db.prepare(`SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'users'`).get(),
-  );
+  const untrackedTables = db
+    .prepare(
+      `SELECT "name" FROM sqlite_master
+       WHERE type = 'table' AND "name" NOT LIKE 'sqlite_%' AND "name" != 'd1_migrations'
+       ORDER BY "name"`,
+    )
+    .all()
+    .map((row) => row.name);
+
+  if (applied.size === 0 && untrackedTables.length > 0) {
+    throw new Error(
+      `Untracked SQLite schema at ${dbPath} (${untrackedTables.length} existing table(s) without d1_migrations history). Re-run with --reset to recreate the local database.`,
+    );
+  }
 
   let appliedCount = 0;
   for (const file of migrationFiles) {
     if (applied.has(file)) continue;
-    if (file === "0001_init.sql" && hasExistingSchema && applied.size === 0) {
-      db.prepare('INSERT INTO "d1_migrations" ("name") VALUES (?)').run(file);
-      console.log(`Recorded pre-existing baseline migration ${file}.`);
-      continue;
-    }
     const sql = await readFile(resolve(migrationsDir, file), "utf8");
     const applyMigration = db.transaction(() => {
       db.exec(sql);
@@ -79,6 +85,11 @@ try {
   const integrity = db.pragma("integrity_check");
   if (integrity?.[0]?.integrity_check !== "ok") {
     throw new Error(`SQLite integrity check failed: ${JSON.stringify(integrity)}`);
+  }
+
+  const foreignKeyViolations = db.pragma("foreign_key_check");
+  if (foreignKeyViolations.length > 0) {
+    throw new Error(`SQLite foreign key violations: ${JSON.stringify(foreignKeyViolations)}`);
   }
 
   console.log(
