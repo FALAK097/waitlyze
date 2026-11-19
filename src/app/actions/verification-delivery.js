@@ -5,11 +5,12 @@ import { createHash, randomBytes, randomUUID } from "node:crypto";
 import { isUniqueConstraintError } from "@/lib/db/sqlite-helpers.mjs";
 import { dispatchVerificationNow } from "@/lib/email/dispatch-now.mjs";
 import prisma from "@/lib/prisma";
-import { requireCampaign } from "@/lib/workspaces/authorize";
+import { requireAuth, requireCampaign } from "@/lib/workspaces/authorize";
 
 const cooldownMs = 5 * 60 * 1000;
 
 export async function retryFailedVerification({ waitListId, signupIds }) {
+  await requireAuth();
   if (
     typeof waitListId !== "string" ||
     !Array.isArray(signupIds) ||

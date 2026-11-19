@@ -12,7 +12,7 @@ import {
 import { isUniqueConstraintError } from "@/lib/db/sqlite-helpers.mjs";
 import { emailLookupForms, normalizeSignupEmail } from "@/lib/normalize-email.mjs";
 import prisma from "@/lib/prisma";
-import { requireCampaign } from "@/lib/workspaces/authorize";
+import { requireAuth, requireCampaign } from "@/lib/workspaces/authorize";
 import { AccessError } from "@/lib/workspaces/service.mjs";
 import { validateSignupEmail } from "@/utils/server/email-validation.mjs";
 
@@ -67,6 +67,7 @@ function parseJoinedAt(value) {
 // verified and never trigger emails. Referral links resolve in a second pass.
 export async function importSignups(waitListId, formData) {
   try {
+    await requireAuth();
     const { scope, campaign } = await requireCampaign(waitListId, "manageAudience");
     const file = formData.get("file");
     if (!(file instanceof File) || file.size === 0)
