@@ -12,6 +12,8 @@
     "deploy:worker": "opennextjs-cloudflare build && wrangler deploy",
     "upload:worker": "opennextjs-cloudflare build && opennextjs-cloudflare upload",
     "cf:typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts",
+    "db:bootstrap": "node --env-file-if-exists=.env scripts/bootstrap-sqlite.mjs",
+    "migrate:local": "wrangler d1 migrations apply waitlyze-db --local",
     "migrate:deploy": "wrangler d1 migrations apply waitlyze-db --remote",
     "lint": "oxlint --report-unused-disable-directives",
     "lint:fix": "oxlint --fix",
