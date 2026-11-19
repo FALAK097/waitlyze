@@ -1,6 +1,6 @@
 import { mcp } from "@better-auth/mcp";
+import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
-import { betterAuth } from "better-auth/minimal";
 import { jwt } from "better-auth/plugins";
 
 import { getMcpResourceUrl, MCP_SCOPES } from "./mcp/config.mjs";
