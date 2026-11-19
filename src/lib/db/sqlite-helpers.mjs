@@ -84,11 +84,21 @@ export async function runAtomicSqlBatch(db, statements) {
   if (!Array.isArray(statements) || statements.length === 0) return [];
   const d1 = globalThis[Symbol.for("__cloudflare-context__")]?.env?.DB;
   if (d1 && typeof d1.batch === "function") {
-    return d1.batch(statements.map(({ sql, params = [] }) => d1.prepare(sql).bind(...params)));
+    const results = await d1.batch(
+      statements.map(({ sql, params = [] }) => d1.prepare(sql).bind(...params)),
+    );
+    return results.map((entry) => ({
+      changes: Number(entry?.meta?.changes ?? entry?.changes ?? 0),
+    }));
   }
-  return db.$transaction(
+  const results = await db.$transaction(
     statements.map(({ sql, params = [] }) => db.$executeRawUnsafe(sql, ...params)),
   );
+  return results.map((entry) => ({
+    changes: Number(
+      typeof entry === "number" ? entry : (entry?.changes ?? entry?.meta?.changes ?? 0),
+    ),
+  }));
 }
 
 export function isUniqueConstraintError(err) {

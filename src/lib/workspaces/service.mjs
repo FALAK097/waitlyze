@@ -1,3 +1,5 @@
+import { randomUUID } from "node:crypto";
+
 import {
   DETACHED_CUSTOMER_ID,
   effectiveWorkspacePlan,
@@ -6,6 +8,62 @@ import {
   requireCapacity,
 } from "../billing/plans.mjs";
 import { runAtomicSqlBatch, toSqliteIso } from "../db/sqlite-helpers.mjs";
+
+const BILLING_GRACE_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
+
+function effectiveProSubscriptionSql(alias) {
+  return `(
+    ${alias}."plan" = 'PRO' AND (
+      (${alias}."status" = 'ACTIVE' AND ${alias}."currentPeriodEnd" IS NOT NULL AND julianday(${alias}."currentPeriodEnd") > julianday(?))
+      OR (${alias}."status" IN ('PAST_DUE', 'ON_HOLD') AND (
+        (${alias}."pastDueEndsAt" IS NOT NULL AND julianday(${alias}."pastDueEndsAt") > julianday(?))
+        OR (${alias}."pastDueEndsAt" IS NULL AND ${alias}."currentPeriodEnd" IS NOT NULL AND julianday(${alias}."currentPeriodEnd") > julianday(?))
+        OR (${alias}."pastDueEndsAt" IS NULL AND ${alias}."currentPeriodEnd" IS NULL AND ${alias}."lastEventAt" IS NOT NULL AND julianday(${alias}."lastEventAt") > julianday(?))
+      ))
+      OR (${alias}."status" = 'CANCELLED' AND ${alias}."cancelAtPeriodEnd" = 1 AND ${alias}."currentPeriodEnd" IS NOT NULL AND julianday(${alias}."currentPeriodEnd") > julianday(?))
+    )
+  )`;
+}
+
+function ownedWorkspaceCapacitySql(userId, nowIso, graceCutoffIso) {
+  return {
+    sql: `(
+      (SELECT COUNT(*) FROM "workspace_members" AS om WHERE om."userId" = ? AND om."role" = 'OWNER') = 0
+      OR EXISTS (
+        SELECT 1
+        FROM "workspace_members" AS om
+        INNER JOIN "workspace_subscriptions" AS sub ON sub."workspaceId" = om."workspaceId"
+        WHERE om."userId" = ?
+          AND om."role" = 'OWNER'
+          AND ${effectiveProSubscriptionSql("sub")}
+      )
+    )`,
+    params: [userId, userId, nowIso, nowIso, graceCutoffIso, graceCutoffIso, nowIso],
+  };
+}
+
+function blockingSubscriptionSql(workspaceId, nowIso, graceCutoffIso) {
+  return {
+    sql: `EXISTS (
+      SELECT 1
+      FROM "workspace_subscriptions" AS sub
+      WHERE sub."workspaceId" = ?
+        AND (
+          ${effectiveProSubscriptionSql("sub")}
+          OR sub."status" IN ('ACTIVE', 'PAST_DUE', 'ON_HOLD')
+          OR (sub."status" = 'CANCELLED' AND sub."cancelAtPeriodEnd" = 1 AND sub."currentPeriodEnd" IS NULL)
+          OR (sub."dodoSubscriptionId" IS NOT NULL AND sub."status" NOT IN ('CANCELLED', 'EXPIRED', 'FAILED'))
+          OR sub."checkoutSessionId" IS NOT NULL
+          OR (
+            sub."checkoutPendingUntil" IS NOT NULL
+            AND julianday(sub."checkoutPendingUntil") > julianday(?)
+            AND (sub."checkoutUrl" IS NOT NULL OR sub."checkoutCreationStartedAt" IS NOT NULL)
+          )
+        )
+    )`,
+    params: [workspaceId, nowIso, nowIso, graceCutoffIso, graceCutoffIso, nowIso, nowIso],
+  };
+}
 
 const permissions = Object.freeze({
   viewCampaign: ["OWNER", "ADMIN", "MEMBER"],
@@ -153,6 +211,7 @@ export function createWorkspaceService(db) {
       if (typeof name !== "string" || !name.trim() || name.trim().length > 80) {
         throw new TypeError("Workspace name must contain 1 to 80 characters.");
       }
+      const trimmedName = name.trim();
       const user = await db.user.findUnique({ where: { id: userId }, select: { id: true } });
       if (!user) throw new AccessError();
       const entitlements = await getOwnedWorkspaceEntitlements(db, userId);
@@ -162,108 +221,200 @@ export function createWorkspaceService(db) {
         used: entitlements.ownedCount,
         message: "The Free plan includes one workspace. Upgrade to Pro to create another.",
       });
-      return db.workspace.create({
-        data: { name: name.trim(), members: { create: { userId, role: "OWNER" } } },
-        select: { id: true, name: true },
-      });
+
+      const now = new Date();
+      const nowIso = toSqliteIso(now);
+      const graceCutoffIso = toSqliteIso(new Date(now.getTime() - BILLING_GRACE_WINDOW_MS));
+      const workspaceId = randomUUID();
+      const capacity = ownedWorkspaceCapacitySql(userId, nowIso, graceCutoffIso);
+
+      const [workspaceInsert] = await runAtomicSqlBatch(db, [
+        {
+          sql: `INSERT INTO "workspaces" ("id", "name", "signupUsageCount", "createdAt", "updatedAt")
+                SELECT ?, ?, 0, ?, ?
+                WHERE EXISTS (SELECT 1 FROM "users" WHERE "id" = ?)
+                  AND ${capacity.sql}`,
+          params: [workspaceId, trimmedName, nowIso, nowIso, userId, ...capacity.params],
+        },
+        {
+          sql: `INSERT INTO "workspace_members" ("workspaceId", "userId", "role", "createdAt")
+                SELECT ?, ?, 'OWNER', ?
+                WHERE EXISTS (SELECT 1 FROM "workspaces" WHERE "id" = ?)`,
+          params: [workspaceId, userId, nowIso, workspaceId],
+        },
+      ]);
+
+      if (workspaceInsert.changes !== 1) {
+        const currentUser = await db.user.findUnique({
+          where: { id: userId },
+          select: { id: true },
+        });
+        if (!currentUser) throw new AccessError();
+        const latestEntitlements = await getOwnedWorkspaceEntitlements(db, userId);
+        requireCapacity({
+          entitlements: latestEntitlements,
+          feature: "workspaces",
+          used: latestEntitlements.ownedCount,
+          message: "The Free plan includes one workspace. Upgrade to Pro to create another.",
+        });
+        throw new Error("Could not create workspace.");
+      }
+
+      return { id: workspaceId, name: trimmedName };
     },
     async transferOwnership(userId, workspaceId, targetUserId) {
       actor(userId);
       if (typeof workspaceId !== "string" || !workspaceId) throw new AccessError();
       if (typeof targetUserId !== "string" || !targetUserId) throw new AccessError();
       if (targetUserId === userId) throw new TypeError("You already own this workspace.");
-      const workspace = await db.workspace.findUnique({
-        where: { id: workspaceId },
-        select: { id: true },
-      });
-      if (!workspace) throw new AccessError();
-      const [ownerMembership, targetMembership] = await Promise.all([
-        db.workspaceMember.findUnique({
-          where: { workspaceId_userId: { workspaceId, userId } },
-          select: { role: true },
-        }),
-        db.workspaceMember.findUnique({
-          where: { workspaceId_userId: { workspaceId, userId: targetUserId } },
-          select: { role: true, user: { select: { name: true, email: true } } },
-        }),
-      ]);
-      if (!ownerMembership || ownerMembership.role !== "OWNER") throw new AccessError();
-      if (!targetMembership) throw new TypeError("That person is not a member of this workspace.");
-      if (targetMembership.role === "OWNER")
+
+      async function loadValidatedTransferState() {
+        const workspace = await db.workspace.findUnique({
+          where: { id: workspaceId },
+          select: { id: true },
+        });
+        if (!workspace) throw new AccessError();
+        const [ownerMembership, targetMembership] = await Promise.all([
+          db.workspaceMember.findUnique({
+            where: { workspaceId_userId: { workspaceId, userId } },
+            select: { role: true },
+          }),
+          db.workspaceMember.findUnique({
+            where: { workspaceId_userId: { workspaceId, userId: targetUserId } },
+            select: { role: true, user: { select: { name: true, email: true } } },
+          }),
+        ]);
+        if (!ownerMembership || ownerMembership.role !== "OWNER") throw new AccessError();
+        if (!targetMembership) {
+          throw new TypeError("That person is not a member of this workspace.");
+        }
+        if (targetMembership.role === "OWNER") {
+          return { unchanged: true, targetMembership };
+        }
+        const [targetEntitlements, subscription] = await Promise.all([
+          getOwnedWorkspaceEntitlements(db, targetUserId),
+          db.workspaceSubscription.findUnique({
+            where: { workspaceId },
+            select: {
+              plan: true,
+              status: true,
+              currentPeriodEnd: true,
+              pastDueEndsAt: true,
+              cancelAtPeriodEnd: true,
+              lastEventAt: true,
+              dodoCustomerId: true,
+              dodoSubscriptionId: true,
+              checkoutSessionId: true,
+              checkoutUrl: true,
+              checkoutPendingUntil: true,
+              checkoutCreationStartedAt: true,
+            },
+          }),
+        ]);
+        const checkNow = new Date();
+        const isProWorkspace = effectiveWorkspacePlan(subscription, checkNow) === "PRO";
+        // The billing portal is keyed to the paying customer, so handing a live
+        // subscription to someone else would expose the payer's saved payment
+        // details and invoices. Billing has to end (or move) before ownership does.
+        if (
+          isProWorkspace ||
+          providerSubscriptionNeedsReview(subscription) ||
+          subscription?.checkoutSessionId ||
+          (subscription?.checkoutPendingUntil &&
+            subscription.checkoutPendingUntil > checkNow &&
+            (subscription.checkoutUrl || subscription.checkoutCreationStartedAt))
+        ) {
+          throw new TypeError(
+            "This workspace has a Pro subscription or open checkout billed to you. Cancel it and wait for the paid period to end before transferring ownership.",
+          );
+        }
+        requireCapacity({
+          entitlements: targetEntitlements,
+          feature: "workspaces",
+          used: targetEntitlements.ownedCount,
+          message:
+            "That member already owns a workspace on the Free plan. Free allows one owned workspace.",
+        });
+        return { unchanged: false, targetMembership };
+      }
+
+      const initialState = await loadValidatedTransferState();
+      if (initialState.unchanged) {
         return {
           userId: targetUserId,
-          name: targetMembership.user.name,
-          email: targetMembership.user.email,
+          name: initialState.targetMembership.user.name,
+          email: initialState.targetMembership.user.email,
           unchanged: true,
         };
-      const targetEntitlements = await getOwnedWorkspaceEntitlements(db, targetUserId);
-      const subscription = await db.workspaceSubscription.findUnique({
-        where: { workspaceId },
-        select: {
-          plan: true,
-          status: true,
-          currentPeriodEnd: true,
-          pastDueEndsAt: true,
-          cancelAtPeriodEnd: true,
-          lastEventAt: true,
-          dodoCustomerId: true,
-          dodoSubscriptionId: true,
-          checkoutSessionId: true,
-          checkoutUrl: true,
-          checkoutPendingUntil: true,
-          checkoutCreationStartedAt: true,
-        },
-      });
-      const isProWorkspace = effectiveWorkspacePlan(subscription, new Date()) === "PRO";
-      // The billing portal is keyed to the paying customer, so handing a live
-      // subscription to someone else would expose the payer's saved payment
-      // details and invoices. Billing has to end (or move) before ownership does.
-      if (
-        isProWorkspace ||
-        providerSubscriptionNeedsReview(subscription) ||
-        subscription?.checkoutSessionId ||
-        (subscription?.checkoutPendingUntil &&
-          subscription.checkoutPendingUntil > new Date() &&
-          (subscription.checkoutUrl || subscription.checkoutCreationStartedAt))
-      )
-        throw new TypeError(
-          "This workspace has a Pro subscription or open checkout billed to you. Cancel it and wait for the paid period to end before transferring ownership.",
-        );
-      requireCapacity({
-        entitlements: targetEntitlements,
-        feature: "workspaces",
-        used: targetEntitlements.ownedCount,
-        message:
-          "That member already owns a workspace on the Free plan. Free allows one owned workspace.",
-      });
-      // Detach the lapsed payer so the new owner can never open their portal,
-      // and establish an explicit detached-customer state so future webhook
-      // events for this subscription cannot reattach the former payer's customer ID.
-      const ops = [];
-      if (subscription?.dodoCustomerId || subscription?.dodoSubscriptionId) {
-        ops.push(
-          db.workspaceSubscription.update({
-            where: { workspaceId },
-            data: { dodoCustomerId: DETACHED_CUSTOMER_ID },
-          }),
-        );
       }
-      // The previous owner steps down to admin so there is always exactly one owner to act.
-      ops.push(
-        db.workspaceMember.update({
-          where: { workspaceId_userId: { workspaceId, userId: targetUserId } },
-          data: { role: "OWNER" },
-        }),
-        db.workspaceMember.update({
-          where: { workspaceId_userId: { workspaceId, userId } },
-          data: { role: "ADMIN" },
-        }),
-      );
-      await db.$transaction(ops);
+
+      const now = new Date();
+      const nowIso = toSqliteIso(now);
+      const graceCutoffIso = toSqliteIso(new Date(now.getTime() - BILLING_GRACE_WINDOW_MS));
+      const targetCapacity = ownedWorkspaceCapacitySql(targetUserId, nowIso, graceCutoffIso);
+      const blockedSub = blockingSubscriptionSql(workspaceId, nowIso, graceCutoffIso);
+
+      const transferGuardSql = `
+        EXISTS (SELECT 1 FROM "workspace_members" WHERE "workspaceId" = ? AND "userId" = ? AND "role" = 'OWNER')
+        AND EXISTS (SELECT 1 FROM "workspace_members" WHERE "workspaceId" = ? AND "userId" = ? AND "role" != 'OWNER')
+        AND ${targetCapacity.sql}
+        AND NOT ${blockedSub.sql}
+      `;
+      const transferGuardParams = [
+        workspaceId,
+        userId,
+        workspaceId,
+        targetUserId,
+        ...targetCapacity.params,
+        ...blockedSub.params,
+      ];
+
+      // Detach the lapsed payer, promote the target member to OWNER, and step the
+      // previous owner down to ADMIN in one atomic D1/SQLite batch transaction.
+      const [, promoteResult] = await runAtomicSqlBatch(db, [
+        {
+          sql: `UPDATE "workspace_subscriptions"
+                SET "dodoCustomerId" = ?, "updatedAt" = ?
+                WHERE "workspaceId" = ?
+                  AND ("dodoCustomerId" IS NOT NULL OR "dodoSubscriptionId" IS NOT NULL)
+                  AND ${transferGuardSql}`,
+          params: [DETACHED_CUSTOMER_ID, nowIso, workspaceId, ...transferGuardParams],
+        },
+        {
+          sql: `UPDATE "workspace_members"
+                SET "role" = 'OWNER'
+                WHERE "workspaceId" = ?
+                  AND "userId" = ?
+                  AND "role" != 'OWNER'
+                  AND ${transferGuardSql}`,
+          params: [workspaceId, targetUserId, ...transferGuardParams],
+        },
+        {
+          sql: `UPDATE "workspace_members"
+                SET "role" = 'ADMIN'
+                WHERE "workspaceId" = ?
+                  AND "userId" = ?
+                  AND "role" = 'OWNER'
+                  AND EXISTS (
+                    SELECT 1 FROM "workspace_members"
+                    WHERE "workspaceId" = ? AND "userId" = ? AND "role" = 'OWNER'
+                  )`,
+          params: [workspaceId, userId, workspaceId, targetUserId],
+        },
+      ]);
+
+      if (promoteResult.changes !== 1) {
+        const latestState = await loadValidatedTransferState();
+        if (latestState.unchanged) {
+          throw new AccessError();
+        }
+        throw new Error("Could not transfer workspace ownership.");
+      }
+
       return {
         userId: targetUserId,
-        name: targetMembership.user.name,
-        email: targetMembership.user.email,
+        name: initialState.targetMembership.user.name,
+        email: initialState.targetMembership.user.email,
       };
     },
     async deleteWorkspace(userId, workspaceId) {
