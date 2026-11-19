@@ -68,43 +68,40 @@ export async function acceptWorkspaceInvitation(db, { token, user, now = new Dat
     return { success: false, code: "EXPIRED" };
   }
 
-  return db.$transaction(async (tx) => {
-    await tx.$queryRaw`SELECT "id" FROM "workspaces" WHERE "id" = ${invite.workspaceId} FOR UPDATE`;
-    const [existingMember, memberCount, entitlements] = await Promise.all([
-      tx.workspaceMember.findUnique({
-        where: { workspaceId_userId: { workspaceId: invite.workspaceId, userId: user.id } },
-        select: { userId: true },
-      }),
-      tx.workspaceMember.count({ where: { workspaceId: invite.workspaceId } }),
-      getWorkspaceEntitlements(tx, invite.workspaceId, now),
-    ]);
-    if (!existingMember)
-      requireCapacity({
-        entitlements,
-        feature: "members",
-        used: memberCount,
-        message:
-          "This workspace needs Pro before new members can join. Ask its owner to upgrade, then try again.",
-      });
-    const claimed = await tx.workspaceInvitation.updateMany({
-      where: { id: invite.id, tokenHash, status: { in: ACTIVE_STATUSES }, expiresAt: { gt: now } },
-      data: {
-        status: "ACCEPTED",
-        acceptedByUserId: user.id,
-        acceptedAt: now,
-        tokenCiphertext: "",
-        tokenIv: "",
-        tokenTag: "",
-      },
-    });
-    if (claimed.count !== 1) return { success: false, code: "INVALID" };
-    await tx.workspaceMember.upsert({
+  const [existingMember, memberCount, entitlements] = await Promise.all([
+    db.workspaceMember.findUnique({
       where: { workspaceId_userId: { workspaceId: invite.workspaceId, userId: user.id } },
-      create: { workspaceId: invite.workspaceId, userId: user.id, role: invite.role },
-      update: {},
+      select: { userId: true },
+    }),
+    db.workspaceMember.count({ where: { workspaceId: invite.workspaceId } }),
+    getWorkspaceEntitlements(db, invite.workspaceId, now),
+  ]);
+  if (!existingMember)
+    requireCapacity({
+      entitlements,
+      feature: "members",
+      used: memberCount,
+      message:
+        "This workspace needs Pro before new members can join. Ask its owner to upgrade, then try again.",
     });
-    return { success: true, workspaceId: invite.workspaceId };
+  const claimed = await db.workspaceInvitation.updateMany({
+    where: { id: invite.id, tokenHash, status: { in: ACTIVE_STATUSES }, expiresAt: { gt: now } },
+    data: {
+      status: "ACCEPTED",
+      acceptedByUserId: user.id,
+      acceptedAt: now,
+      tokenCiphertext: "",
+      tokenIv: "",
+      tokenTag: "",
+    },
   });
+  if (claimed.count !== 1) return { success: false, code: "INVALID" };
+  await db.workspaceMember.upsert({
+    where: { workspaceId_userId: { workspaceId: invite.workspaceId, userId: user.id } },
+    create: { workspaceId: invite.workspaceId, userId: user.id, role: invite.role },
+    update: {},
+  });
+  return { success: true, workspaceId: invite.workspaceId };
 }
 
 export async function revokeWorkspaceInvitation(

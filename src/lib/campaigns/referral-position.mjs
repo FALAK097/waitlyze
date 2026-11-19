@@ -1,3 +1,5 @@
+import { Prisma } from "@/generated/prisma/client";
+
 /**
  * Return the current 1-based position for one signup without rewriting campaign
  * ranks. A referral counts only after both the referrer and referred signup have
@@ -11,7 +13,7 @@ export async function getCampaignPosition(db, waitListId, signUpId) {
 
   const [row] = await db.$queryRaw`
     WITH referral_scores AS (
-      SELECT referral."referredById" AS "referrerId", COUNT(*)::bigint AS score
+      SELECT referral."referredById" AS "referrerId", COUNT(*) AS score
       FROM "referrals" AS referral
       INNER JOIN "sign_ups" AS referred
         ON referred."id" = referral."signUpId"
@@ -20,7 +22,7 @@ export async function getCampaignPosition(db, waitListId, signUpId) {
        AND referrer."waitListId" = referred."waitListId"
       INNER JOIN "wait_lists" AS campaign
         ON campaign."id" = referred."waitListId"
-       AND campaign."showReferrals" = true
+       AND campaign."showReferrals" = 1
       WHERE referred."waitListId" = ${waitListId}
         AND referred."verifiedAt" IS NOT NULL
         AND referrer."verifiedAt" IS NOT NULL
@@ -37,13 +39,24 @@ export async function getCampaignPosition(db, waitListId, signUpId) {
         AND signup."waitListId" = ${waitListId}
     )
     SELECT target."id",
-           COUNT(candidate."id") FILTER (WHERE
-             COALESCE(candidate_score.score, 0) > target.score
-             OR (
-               COALESCE(candidate_score.score, 0) = target.score
-               AND (candidate."createdAt", candidate."id") < (target."createdAt", target."id")
-             )
-           )::bigint + 1 AS position
+           SUM(
+             CASE
+               WHEN candidate."id" IS NOT NULL AND (
+                 COALESCE(candidate_score.score, 0) > target.score
+                 OR (
+                   COALESCE(candidate_score.score, 0) = target.score
+                   AND (
+                     REPLACE(candidate."createdAt", ' ', 'T') < REPLACE(target."createdAt", ' ', 'T')
+                     OR (
+                       REPLACE(candidate."createdAt", ' ', 'T') = REPLACE(target."createdAt", ' ', 'T')
+                       AND candidate."id" < target."id"
+                     )
+                   )
+                 )
+               ) THEN 1
+               ELSE 0
+             END
+           ) + 1 AS position
     FROM target
     LEFT JOIN "sign_ups" AS candidate
       ON candidate."waitListId" = target."waitListId"
@@ -67,9 +80,11 @@ export async function getCampaignPositions(db, waitListId, signUpIds = null) {
     ? [...new Set(signUpIds.filter((id) => typeof id === "string" && id))]
     : null;
   if (ids?.length === 0) return new Map();
+  const filterClause =
+    ids === null ? Prisma.empty : Prisma.sql`WHERE ranked."id" IN (${Prisma.join(ids)})`;
   const rows = await db.$queryRaw`
     WITH referral_scores AS (
-      SELECT referral."referredById" AS "referrerId", COUNT(*)::bigint AS score
+      SELECT referral."referredById" AS "referrerId", COUNT(*) AS score
       FROM "referrals" AS referral
       INNER JOIN "sign_ups" AS referred
         ON referred."id" = referral."signUpId"
@@ -78,7 +93,7 @@ export async function getCampaignPositions(db, waitListId, signUpIds = null) {
        AND referrer."waitListId" = referred."waitListId"
       INNER JOIN "wait_lists" AS campaign
         ON campaign."id" = referred."waitListId"
-       AND campaign."showReferrals" = true
+       AND campaign."showReferrals" = 1
       WHERE referred."waitListId" = ${waitListId}
         AND referred."verifiedAt" IS NOT NULL
         AND referrer."verifiedAt" IS NOT NULL
@@ -89,7 +104,7 @@ export async function getCampaignPositions(db, waitListId, signUpIds = null) {
     ), ranked AS (
       SELECT signup."id",
         ROW_NUMBER() OVER (
-          ORDER BY COALESCE(score.score, 0) DESC, signup."createdAt" ASC, signup."id" ASC
+          ORDER BY COALESCE(score.score, 0) DESC, REPLACE(signup."createdAt", ' ', 'T') ASC, signup."id" ASC
         ) AS position
       FROM "sign_ups" AS signup
       LEFT JOIN referral_scores AS score ON score."referrerId" = signup."id"
@@ -97,7 +112,7 @@ export async function getCampaignPositions(db, waitListId, signUpIds = null) {
     )
     SELECT ranked."id", ranked.position
     FROM ranked
-    WHERE ${ids === null}::boolean OR ranked."id" = ANY(${ids ?? []}::text[])
+    ${filterClause}
   `;
   const positions = new Map();
   for (const row of rows) {
@@ -108,16 +123,12 @@ export async function getCampaignPositions(db, waitListId, signUpIds = null) {
 }
 
 // Spots a hypothetical fresh signup (0 referrals, joining now at the end of
-// the list) would need to pass the signup directly above them: the current
-// last row's score plus one, or 0 when the list is empty. Powers silent-mode
-// fraud responses so fakes carry the same `spots_to_advance` a real fresh
-// signup would (no structurally-missing-keys oracle). Scoring matches
-// getCampaignPosition exactly: verified-only, review-gated, same tiebreaks.
+// the list) would need to pass the signup directly above them.
 export async function getSpotsForNewSignup(db, waitListId) {
   if (typeof waitListId !== "string" || !waitListId) return 0;
   const [row] = await db.$queryRaw`
     WITH referral_scores AS (
-      SELECT referral."referredById" AS "referrerId", COUNT(*)::bigint AS score
+      SELECT referral."referredById" AS "referrerId", COUNT(*) AS score
       FROM "referrals" AS referral
       INNER JOIN "sign_ups" AS referred
         ON referred."id" = referral."signUpId"
@@ -126,7 +137,7 @@ export async function getSpotsForNewSignup(db, waitListId) {
        AND referrer."waitListId" = referred."waitListId"
       INNER JOIN "wait_lists" AS campaign
         ON campaign."id" = referred."waitListId"
-       AND campaign."showReferrals" = true
+       AND campaign."showReferrals" = 1
       WHERE referred."waitListId" = ${waitListId}
         AND referred."verifiedAt" IS NOT NULL
         AND referrer."verifiedAt" IS NOT NULL
@@ -135,9 +146,9 @@ export async function getSpotsForNewSignup(db, waitListId) {
         AND referral."referredById" <> referral."signUpId"
       GROUP BY referral."referredById"
     ), ranked AS (
-      SELECT signup."id", COALESCE(score.score, 0)::bigint AS score,
+      SELECT signup."id", COALESCE(score.score, 0) AS score,
         ROW_NUMBER() OVER (
-          ORDER BY COALESCE(score.score, 0) DESC, signup."createdAt" ASC, signup."id" ASC
+          ORDER BY COALESCE(score.score, 0) DESC, REPLACE(signup."createdAt", ' ', 'T') ASC, signup."id" ASC
         ) AS position
       FROM "sign_ups" AS signup
       LEFT JOIN referral_scores AS score ON score."referrerId" = signup."id"

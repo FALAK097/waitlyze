@@ -11,6 +11,7 @@ import {
   isDetachedCustomerId,
 } from "@/lib/billing/plans.mjs";
 import { subscriptionWebhookStatus } from "@/lib/billing/subscription-webhook-status.mjs";
+import { isUniqueConstraintError } from "@/lib/db/sqlite-helpers.mjs";
 import prisma from "@/lib/prisma";
 import { AUDIT_ACTIONS, recordAuditEvent } from "@/lib/workspaces/audit.mjs";
 
@@ -109,36 +110,43 @@ export async function POST(request) {
 
   const type = event?.type;
   const data = event?.data || {};
+  let receiptClaimed = false;
   try {
-    const result = await prisma.$transaction(async (tx) => {
-      const claimed = await tx.dodoWebhookReceipt.createMany({
-        data: [
-          {
-            webhookId,
-            eventType: String(type || "unknown"),
-            workspaceId: eventWorkspaceId(data),
-          },
-        ],
-        skipDuplicates: true,
+    try {
+      await prisma.dodoWebhookReceipt.create({
+        data: {
+          webhookId,
+          eventType: String(type || "unknown"),
+          workspaceId: eventWorkspaceId(data),
+        },
       });
-      if (claimed.count === 0) return { duplicate: true };
+      receiptClaimed = true;
+    } catch (receiptError) {
+      if (isUniqueConstraintError(receiptError)) {
+        return NextResponse.json({ received: true, duplicate: true });
+      }
+      throw receiptError;
+    }
 
-      if (!SUBSCRIPTION_EVENTS.has(type)) return;
+    const result = await (async () => {
+      if (!SUBSCRIPTION_EVENTS.has(type)) return null;
       const subscriptionId = data.subscription_id;
-      if (typeof subscriptionId !== "string" || !subscriptionId) return;
+      if (typeof subscriptionId !== "string" || !subscriptionId) return null;
 
-      const candidateSubscription = await tx.workspaceSubscription.findFirst({
+      const candidateSubscription = await prisma.workspaceSubscription.findFirst({
         where: { dodoSubscriptionId: subscriptionId },
       });
       const workspaceId = eventWorkspaceId(data) || candidateSubscription?.workspaceId;
       if (!workspaceId) throw new TypeError("Subscription webhook is missing workspace metadata.");
-      const lockedWorkspace =
-        await tx.$queryRaw`SELECT "id" FROM "workspaces" WHERE "id" = ${workspaceId} FOR UPDATE`;
-      if (lockedWorkspace.length === 0) return;
+      const workspaceExists = await prisma.workspace.findUnique({
+        where: { id: workspaceId },
+        select: { id: true },
+      });
+      if (!workspaceExists) return null;
 
       const [existing, workspaceSubscription] = await Promise.all([
-        tx.workspaceSubscription.findFirst({ where: { dodoSubscriptionId: subscriptionId } }),
-        tx.workspaceSubscription.findUnique({ where: { workspaceId } }),
+        prisma.workspaceSubscription.findFirst({ where: { dodoSubscriptionId: subscriptionId } }),
+        prisma.workspaceSubscription.findUnique({ where: { workspaceId } }),
       ]);
       if (existing?.workspaceId && existing.workspaceId !== workspaceId)
         throw new TypeError(
@@ -164,12 +172,12 @@ export async function POST(request) {
         !isCurrentSubscription
       ) {
         if (indicatesActivation)
-          // Abort the receipt transaction so Dodo retries; never acknowledge a
+          // Release the receipt claim on catch so Dodo retries; never acknowledge a
           // paid activation that the workspace mapping cannot safely apply.
           throw new TypeError(
             "A paid activation belongs to a superseded checkout; do not acknowledge it before reconciliation.",
           );
-        return;
+        return null;
       }
       if (
         workspaceSubscription?.dodoSubscriptionId &&
@@ -182,7 +190,7 @@ export async function POST(request) {
           throw new TypeError(
             "A paid activation conflicts with the stored subscription; do not acknowledge it before reconciliation.",
           );
-        return;
+        return null;
       }
 
       const suppliedProductId = typeof data.product_id === "string" ? data.product_id : null;
@@ -196,7 +204,7 @@ export async function POST(request) {
       const interval = productInterval || historicalInterval || existing?.interval || null;
 
       const eventAt = validDate(event.timestamp) || new Date();
-      if (existing?.lastEventAt && existing.lastEventAt > eventAt) return;
+      if (existing?.lastEventAt && existing.lastEventAt > eventAt) return null;
 
       const isDetachedCustomer =
         !matchesPendingCheckout &&
@@ -241,7 +249,7 @@ export async function POST(request) {
         });
       }
 
-      await tx.workspaceSubscription.upsert({
+      await prisma.workspaceSubscription.upsert({
         where: { workspaceId },
         create: {
           workspaceId,
@@ -301,7 +309,7 @@ export async function POST(request) {
         eventAt,
       );
       if (effectivePlan === "FREE") {
-        await tx.workspaceInvitation.updateMany({
+        await prisma.workspaceInvitation.updateMany({
           where: { workspaceId, status: { in: ["PENDING", "SEND_FAILED"] } },
           data: { status: "EXPIRED", tokenCiphertext: "", tokenIv: "", tokenTag: "" },
         });
@@ -311,7 +319,7 @@ export async function POST(request) {
       let validUserId = null;
       const webhookUserId = typeof data.metadata?.userId === "string" ? data.metadata.userId : null;
       if (webhookUserId) {
-        const userExists = await tx.user.findUnique({
+        const userExists = await prisma.user.findUnique({
           where: { id: webhookUserId },
           select: { id: true },
         });
@@ -322,7 +330,7 @@ export async function POST(request) {
       const resourceName = `Pro (${intervalLabel})`;
 
       if (type === "subscription.active") {
-        await recordAuditEvent(tx, {
+        await recordAuditEvent(prisma, {
           workspaceId,
           userId: validUserId,
           action: AUDIT_ACTIONS.BILLING_PLAN_UPGRADED,
@@ -332,7 +340,7 @@ export async function POST(request) {
           detail: `Upgraded to Pro with ${intervalLabel} billing`,
         });
       } else if (type === "subscription.renewed") {
-        await recordAuditEvent(tx, {
+        await recordAuditEvent(prisma, {
           workspaceId,
           userId: validUserId,
           action: AUDIT_ACTIONS.BILLING_PLAN_RENEWED,
@@ -342,7 +350,7 @@ export async function POST(request) {
           detail: `Subscription renewed for another ${intervalLabel} period`,
         });
       } else if (type === "subscription.plan_changed") {
-        await recordAuditEvent(tx, {
+        await recordAuditEvent(prisma, {
           workspaceId,
           userId: validUserId,
           action: AUDIT_ACTIONS.BILLING_PLAN_CHANGED,
@@ -352,7 +360,7 @@ export async function POST(request) {
           detail: `Subscription plan changed to ${intervalLabel} billing`,
         });
       } else if (type === "subscription.cancelled") {
-        await recordAuditEvent(tx, {
+        await recordAuditEvent(prisma, {
           workspaceId,
           userId: validUserId,
           action: AUDIT_ACTIONS.BILLING_PLAN_CANCELLED,
@@ -364,7 +372,7 @@ export async function POST(request) {
             : "Subscription cancelled immediately",
         });
       } else if (type === "subscription.expired" || status === "EXPIRED") {
-        await recordAuditEvent(tx, {
+        await recordAuditEvent(prisma, {
           workspaceId,
           userId: validUserId,
           action: AUDIT_ACTIONS.BILLING_PLAN_EXPIRED,
@@ -374,7 +382,7 @@ export async function POST(request) {
           detail: "Subscription expired; workspace reverted to Free plan",
         });
       } else if (type === "subscription.failed" || status === "FAILED") {
-        await recordAuditEvent(tx, {
+        await recordAuditEvent(prisma, {
           workspaceId,
           userId: validUserId,
           action: AUDIT_ACTIONS.BILLING_PAYMENT_FAILED,
@@ -384,7 +392,7 @@ export async function POST(request) {
           detail: "Subscription payment failed",
         });
       } else if (type === "subscription.past_due" || status === "PAST_DUE") {
-        await recordAuditEvent(tx, {
+        await recordAuditEvent(prisma, {
           workspaceId,
           userId: validUserId,
           action: AUDIT_ACTIONS.BILLING_PAYMENT_FAILED,
@@ -394,7 +402,7 @@ export async function POST(request) {
           detail: "Subscription payment is past due",
         });
       } else if (type === "subscription.paused") {
-        await recordAuditEvent(tx, {
+        await recordAuditEvent(prisma, {
           workspaceId,
           userId: validUserId,
           action: AUDIT_ACTIONS.BILLING_PLAN_PAUSED,
@@ -404,7 +412,7 @@ export async function POST(request) {
           detail: "Subscription paused",
         });
       } else if (type === "subscription.unpaused") {
-        await recordAuditEvent(tx, {
+        await recordAuditEvent(prisma, {
           workspaceId,
           userId: validUserId,
           action: AUDIT_ACTIONS.BILLING_PLAN_RESUMED,
@@ -415,7 +423,7 @@ export async function POST(request) {
         });
       } else if (type === "subscription.updated") {
         if (cancelAtPeriodEnd && !existing?.cancelAtPeriodEnd) {
-          await recordAuditEvent(tx, {
+          await recordAuditEvent(prisma, {
             workspaceId,
             userId: validUserId,
             action: AUDIT_ACTIONS.BILLING_PLAN_CANCELLED,
@@ -425,7 +433,7 @@ export async function POST(request) {
             detail: "Subscription scheduled to cancel at end of current period",
           });
         } else if (!cancelAtPeriodEnd && existing?.cancelAtPeriodEnd) {
-          await recordAuditEvent(tx, {
+          await recordAuditEvent(prisma, {
             workspaceId,
             userId: validUserId,
             action: AUDIT_ACTIONS.BILLING_PLAN_RESUMED,
@@ -435,7 +443,7 @@ export async function POST(request) {
             detail: "Subscription cancellation revoked; auto-renewal resumed",
           });
         } else if (existing?.interval && interval && existing.interval !== interval) {
-          await recordAuditEvent(tx, {
+          await recordAuditEvent(prisma, {
             workspaceId,
             userId: validUserId,
             action: AUDIT_ACTIONS.BILLING_PLAN_CHANGED,
@@ -451,8 +459,7 @@ export async function POST(request) {
         workspaceId,
         validUserId,
       };
-    });
-    if (result?.duplicate) return NextResponse.json({ received: true, duplicate: true });
+    })();
     if (!result?.applied) return NextResponse.json({ received: true, skipped: true });
 
     // Track verified subscription lifecycle in PostHog
@@ -515,6 +522,9 @@ export async function POST(request) {
 
     return NextResponse.json({ received: true });
   } catch (error) {
+    if (receiptClaimed) {
+      await prisma.dodoWebhookReceipt.delete({ where: { webhookId } }).catch(() => {});
+    }
     console.error("Dodo webhook processing failed", error?.code || error?.name || "unknown error");
     return NextResponse.json({ error: "Could not process this webhook." }, { status: 500 });
   }

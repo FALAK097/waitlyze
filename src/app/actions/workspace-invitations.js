@@ -100,73 +100,66 @@ export async function inviteWorkspaceMember(previous, form) {
     const encrypted = encryptIntegrationSecret(token);
     const actor = await managerMembership(session.user.id, workspaceId, role).catch(() => null);
     if (!actor) return { error: "You don’t have permission to invite that role." };
-    const prepared = await prisma.$transaction(async (tx) => {
-      // Serialize with accepts, removals, and ownership changes so the seat
-      // count read below cannot go stale before the invitation is written.
-      await tx.$queryRaw`SELECT "id" FROM "workspaces" WHERE "id" = ${workspaceId} FOR UPDATE`;
-      const actor = await managerMembership(session.user.id, workspaceId, role, tx);
-      if (!actor) return { error: "You don’t have permission to invite that role." };
-      const [existingMember, workspace] = await Promise.all([
-        tx.workspaceMember.findFirst({
-          where: { workspaceId, user: { email: { equals: email, mode: "insensitive" } } },
-          select: { userId: true },
-        }),
-        tx.workspace.findUnique({
-          where: { id: workspaceId },
-          select: { name: true },
-        }),
-      ]);
-      if (!workspace) return { error: "Workspace not found." };
-      if (existingMember) return { error: "That person is already a workspace member." };
-      const [entitlements, memberCount] = await Promise.all([
-        getWorkspaceEntitlements(tx, workspaceId),
-        tx.workspaceMember.count({ where: { workspaceId } }),
-      ]);
-      await tx.workspaceInvitation.updateMany({
-        where: { workspaceId, status: { in: ["PENDING", "SEND_FAILED"] }, expiresAt: { lte: now } },
-        data: { status: "EXPIRED", tokenCiphertext: "", tokenIv: "", tokenTag: "" },
-      });
-      const existingInvite = await tx.workspaceInvitation.findFirst({
-        where: {
-          workspaceId,
-          emailNormalized: email,
-          status: { in: ["PENDING", "SEND_FAILED"] },
-          expiresAt: { gt: now },
-        },
-        select: { id: true },
-      });
-      if (existingInvite)
-        return { error: "An invitation is already active for that address. Use its action below." };
-      const pendingCount = await tx.workspaceInvitation.count({
-        where: { workspaceId, status: { in: ["PENDING", "SEND_FAILED"] }, expiresAt: { gt: now } },
-      });
-      // Pending invitations hold seats so one free seat cannot queue 50 invites.
-      requireCapacity({
-        entitlements,
-        feature: "members",
-        used: memberCount + pendingCount,
-        message: "The Free plan includes one member. Upgrade to invite teammates.",
-      });
-      if (pendingCount >= MAX_PENDING_INVITATIONS)
-        return { error: "This workspace has reached its 50 pending invitation limit." };
-      const invitation = await tx.workspaceInvitation.create({
-        data: {
-          id: randomUUID(),
-          workspaceId,
-          emailNormalized: email,
-          role,
-          tokenHash,
-          tokenCiphertext: encrypted.secretCiphertext,
-          tokenIv: encrypted.secretIv,
-          tokenTag: encrypted.secretTag,
-          expiresAt: invitationExpiry(now),
-          createdByUserId: session.user.id,
-        },
-      });
-      return { invitation, workspace };
+    const [workspaceMembers, workspace] = await Promise.all([
+      prisma.workspaceMember.findMany({
+        where: { workspaceId },
+        select: { userId: true, user: { select: { email: true } } },
+      }),
+      prisma.workspace.findUnique({
+        where: { id: workspaceId },
+        select: { name: true },
+      }),
+    ]);
+    if (!workspace) return { error: "Workspace not found." };
+    const existingMember = workspaceMembers.find(
+      (member) => normalizeInvitationEmail(member.user?.email) === email,
+    );
+    if (existingMember) return { error: "That person is already a workspace member." };
+    const [entitlements, memberCount] = await Promise.all([
+      getWorkspaceEntitlements(prisma, workspaceId),
+      prisma.workspaceMember.count({ where: { workspaceId } }),
+    ]);
+    await prisma.workspaceInvitation.updateMany({
+      where: { workspaceId, status: { in: ["PENDING", "SEND_FAILED"] }, expiresAt: { lte: now } },
+      data: { status: "EXPIRED", tokenCiphertext: "", tokenIv: "", tokenTag: "" },
     });
-    if (prepared.error) return { error: prepared.error };
-    const { invitation, workspace } = prepared;
+    const existingInvite = await prisma.workspaceInvitation.findFirst({
+      where: {
+        workspaceId,
+        emailNormalized: email,
+        status: { in: ["PENDING", "SEND_FAILED"] },
+        expiresAt: { gt: now },
+      },
+      select: { id: true },
+    });
+    if (existingInvite)
+      return { error: "An invitation is already active for that address. Use its action below." };
+    const pendingCount = await prisma.workspaceInvitation.count({
+      where: { workspaceId, status: { in: ["PENDING", "SEND_FAILED"] }, expiresAt: { gt: now } },
+    });
+    // Pending invitations hold seats so one free seat cannot queue 50 invites.
+    requireCapacity({
+      entitlements,
+      feature: "members",
+      used: memberCount + pendingCount,
+      message: "The Free plan includes one member. Upgrade to invite teammates.",
+    });
+    if (pendingCount >= MAX_PENDING_INVITATIONS)
+      return { error: "This workspace has reached its 50 pending invitation limit." };
+    const invitation = await prisma.workspaceInvitation.create({
+      data: {
+        id: randomUUID(),
+        workspaceId,
+        emailNormalized: email,
+        role,
+        tokenHash,
+        tokenCiphertext: encrypted.secretCiphertext,
+        tokenIv: encrypted.secretIv,
+        tokenTag: encrypted.secretTag,
+        expiresAt: invitationExpiry(now),
+        createdByUserId: session.user.id,
+      },
+    });
     try {
       await sendInvitation(invitation, token, session.user.name, workspace.name, session.user.id);
       await prisma.workspaceInvitation.updateMany({
@@ -211,33 +204,30 @@ export async function resendWorkspaceInvitation(invitationId) {
     return { error: "Sign in again to resend this invitation." };
   try {
     const now = new Date();
-    const prepared = await prisma.$transaction(async (tx) => {
-      await tx.$queryRaw`SELECT "id" FROM "workspace_invitations" WHERE "id" = ${invitationId} FOR UPDATE`;
-      const invite = await tx.workspaceInvitation.findFirst({
-        where: {
-          id: invitationId,
-          status: { in: ["PENDING", "SEND_FAILED"] },
-          expiresAt: { gt: now },
-        },
-        include: { workspace: { select: { name: true } } },
+    const inviteRow = await prisma.workspaceInvitation.findFirst({
+      where: {
+        id: invitationId,
+        status: { in: ["PENDING", "SEND_FAILED"] },
+        expiresAt: { gt: now },
+      },
+      include: { workspace: { select: { name: true } } },
+    });
+    if (!inviteRow) return { error: "This invitation has expired or is no longer available." };
+    const actor = await managerMembership(session.user.id, inviteRow.workspaceId, inviteRow.role);
+    if (!actor) return { error: "You don’t have permission to resend this invitation." };
+    let invite = inviteRow;
+    let token;
+    if (inviteRow.tokenCiphertext) {
+      token = decryptIntegrationSecret({
+        secretCiphertext: inviteRow.tokenCiphertext,
+        secretIv: inviteRow.tokenIv,
+        secretTag: inviteRow.tokenTag,
       });
-      if (!invite) return { error: "This invitation has expired or is no longer available." };
-      const actor = await managerMembership(session.user.id, invite.workspaceId, invite.role, tx);
-      if (!actor) return { error: "You don’t have permission to resend this invitation." };
-      if (invite.tokenCiphertext) {
-        return {
-          invite,
-          token: decryptIntegrationSecret({
-            secretCiphertext: invite.tokenCiphertext,
-            secretIv: invite.tokenIv,
-            secretTag: invite.tokenTag,
-          }),
-        };
-      }
-      const token = randomBytes(32).toString("base64url");
+    } else {
+      token = randomBytes(32).toString("base64url");
       const encrypted = encryptIntegrationSecret(token);
-      const updated = await tx.workspaceInvitation.update({
-        where: { id: invite.id },
+      invite = await prisma.workspaceInvitation.update({
+        where: { id: inviteRow.id },
         data: {
           tokenHash: hashInvitationToken(token),
           tokenCiphertext: encrypted.secretCiphertext,
@@ -246,10 +236,7 @@ export async function resendWorkspaceInvitation(invitationId) {
         },
         include: { workspace: { select: { name: true } } },
       });
-      return { invite: updated, token };
-    });
-    if (prepared.error) return { error: prepared.error };
-    const { invite, token } = prepared;
+    }
     try {
       await sendInvitation(
         invite,

@@ -67,7 +67,7 @@ export async function getAdvancement(db, waitListId, signUpId) {
     return null;
   const rows = await db.$queryRaw`
     WITH referral_scores AS (
-      SELECT referral."referredById" AS "referrerId", COUNT(*)::bigint AS score
+      SELECT referral."referredById" AS "referrerId", COUNT(*) AS score
       FROM "referrals" AS referral
       INNER JOIN "sign_ups" AS referred
         ON referred."id" = referral."signUpId"
@@ -76,7 +76,7 @@ export async function getAdvancement(db, waitListId, signUpId) {
        AND referrer."waitListId" = referred."waitListId"
       INNER JOIN "wait_lists" AS campaign
         ON campaign."id" = referred."waitListId"
-       AND campaign."showReferrals" = true
+       AND campaign."showReferrals" = 1
       WHERE referred."waitListId" = ${waitListId}
         AND referred."verifiedAt" IS NOT NULL
         AND referrer."verifiedAt" IS NOT NULL
@@ -85,7 +85,7 @@ export async function getAdvancement(db, waitListId, signUpId) {
         AND referral."referredById" <> referral."signUpId"
       GROUP BY referral."referredById"
     ), ranked AS (
-      SELECT signup."id", COALESCE(score.score, 0)::bigint AS score,
+      SELECT signup."id", COALESCE(score.score, 0) AS score,
         ROW_NUMBER() OVER (
           ORDER BY COALESCE(score.score, 0) DESC, signup."createdAt" ASC, signup."id" ASC
         ) AS position

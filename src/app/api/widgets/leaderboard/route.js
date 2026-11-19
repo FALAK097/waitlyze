@@ -58,7 +58,7 @@ export async function GET(request) {
     // Verified-only scoring, same rules as the cockpit position query.
     const rows = await prisma.$queryRaw`
       WITH referral_scores AS (
-        SELECT referral."referredById" AS "referrerId", COUNT(*)::bigint AS score
+        SELECT referral."referredById" AS "referrerId", COUNT(*) AS score
         FROM "referrals" AS referral
         INNER JOIN "sign_ups" AS referred
           ON referred."id" = referral."signUpId"
@@ -73,9 +73,9 @@ export async function GET(request) {
           AND referral."referredById" <> referral."signUpId"
         GROUP BY referral."referredById"
       ), ranked AS (
-        SELECT signup."id", signup."email", COALESCE(score.score, 0)::bigint AS score,
+        SELECT signup."id", signup."email", COALESCE(score.score, 0) AS score,
           ROW_NUMBER() OVER (
-            ORDER BY COALESCE(score.score, 0) DESC, signup."createdAt" ASC, signup."id" ASC
+            ORDER BY COALESCE(score.score, 0) DESC, REPLACE(signup."createdAt", ' ', 'T') ASC, signup."id" ASC
           ) AS position,
           COUNT(*) OVER () AS total
         FROM "sign_ups" AS signup

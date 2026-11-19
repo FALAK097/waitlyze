@@ -1,5 +1,6 @@
 import { createHash, randomBytes } from "node:crypto";
 
+import { parseJsonStringArray, serializeJsonStringArray } from "@/lib/db/sqlite-helpers.mjs";
 import prisma from "@/lib/prisma";
 
 const API_KEY_BYTES = 32;
@@ -31,7 +32,15 @@ export async function createApiKey({
   }
   const { apiKey, keyId, hashedKey } = await generateApiKey();
   const record = await db.apiKey.create({
-    data: { name, keyId, keyHash: hashedKey, userId, waitlistId, scopes, expiresAt },
+    data: {
+      name,
+      keyId,
+      keyHash: hashedKey,
+      userId,
+      waitlistId,
+      scopes: serializeJsonStringArray(scopes, ["waitlist:write"]),
+      expiresAt,
+    },
     select: {
       id: true,
       name: true,
@@ -42,7 +51,11 @@ export async function createApiKey({
       waitlist: { select: { id: true, name: true } },
     },
   });
-  return { ...record, apiKey };
+  return {
+    ...record,
+    scopes: parseJsonStringArray(record.scopes, ["waitlist:write"]),
+    apiKey,
+  };
 }
 
 export async function revokeApiKey(id, userId, waitlistId = null) {
@@ -64,7 +77,7 @@ export async function revokeApiKey(id, userId, waitlistId = null) {
 
 export async function listUserApiKeys(userId, waitlistIds = []) {
   try {
-    return await prisma.apiKey.findMany({
+    const records = await prisma.apiKey.findMany({
       where: {
         revokedAt: null,
         OR: [
@@ -79,6 +92,10 @@ export async function listUserApiKeys(userId, waitlistIds = []) {
       },
       orderBy: { createdAt: "desc" },
     });
+    return records.map((record) => ({
+      ...record,
+      scopes: parseJsonStringArray(record.scopes, ["waitlist:write"]),
+    }));
   } catch (error) {
     console.error("Error listing API keys:", error);
     throw new Error("Failed to list API keys", { cause: error });

@@ -7,6 +7,7 @@ import { NextResponse } from "next/server";
 import { renderChangelogEmailHtml } from "@/emails/changelog-email.mjs";
 import { changelogReleaseText } from "@/emails/text.mjs";
 import { parseChangelog } from "@/lib/changelog";
+import { isUniqueConstraintError } from "@/lib/db/sqlite-helpers.mjs";
 import { env } from "@/lib/env.mjs";
 import prisma from "@/lib/prisma";
 
@@ -153,18 +154,23 @@ export async function POST(request) {
     };
   });
 
-  const created = await prisma.outboxEvent.createMany({
-    data: events,
-    skipDuplicates: true,
-  });
+  let enqueuedCount = 0;
+  for (const event of events) {
+    try {
+      await prisma.outboxEvent.create({ data: event });
+      enqueuedCount++;
+    } catch (error) {
+      if (!isUniqueConstraintError(error)) throw error;
+    }
+  }
 
   return NextResponse.json({
     success: true,
     version,
     subject,
     recipientCount: recipients.length,
-    enqueuedCount: created.count,
-    skippedDuplicates: recipients.length - created.count,
+    enqueuedCount,
+    skippedDuplicates: recipients.length - enqueuedCount,
     platformSender: "noreply@waitlyze.com (Cloudflare Platform Email)",
   });
 }

@@ -2,6 +2,7 @@
 
 import { createHash, randomBytes, randomUUID } from "node:crypto";
 
+import { isUniqueConstraintError } from "@/lib/db/sqlite-helpers.mjs";
 import { dispatchVerificationNow } from "@/lib/email/dispatch-now.mjs";
 import prisma from "@/lib/prisma";
 import { requireCampaign } from "@/lib/workspaces/authorize";
@@ -24,69 +25,76 @@ export async function retryFailedVerification({ waitListId, signupIds }) {
   const results = [];
   let failures = 0;
   for (const signupId of signupIds) {
-    let eventKey;
+    let eventKey = null;
     try {
-      eventKey = await prisma.$transaction(async (tx) => {
-        await tx.$queryRaw`SELECT "id" FROM "sign_ups" WHERE "id" = ${signupId} AND "waitListId" = ${waitListId} FOR UPDATE`;
-        const signup = await tx.signUp.findFirst({
-          where: { id: signupId, waitListId },
-          select: { id: true, email: true, emailNormalized: true, verifiedAt: true },
-        });
-        if (!signup) return null;
-        const [latest] = await tx.outboxEvent.findMany({
-          where: {
-            waitListId,
-            type: "SIGNUP_VERIFICATION_REQUESTED",
-            payload: { path: ["signUpId"], equals: signupId },
-          },
-          orderBy: [{ createdAt: "desc" }, { id: "desc" }],
-          take: 1,
-          select: { status: true, createdAt: true, lastErrorCode: true },
-        });
-        if (
-          !latest ||
-          latest.status !== "FAILED" ||
-          latest.lastErrorCode === "RECIPIENT_SUPPRESSED" ||
-          Date.now() - latest.createdAt.getTime() < cooldownMs
-        )
-          return null;
-        if (campaign.workspaceId) {
-          const suppressed = await tx.emailSuppression.findUnique({
-            where: {
-              workspaceId_emailNormalized: {
-                workspaceId: campaign.workspaceId,
-                emailNormalized: signup.emailNormalized || signup.email.trim().toLowerCase(),
-              },
-            },
-            select: { id: true },
-          });
-          if (suppressed) return null;
-        }
-        const token = randomBytes(32).toString("base64url");
-        const tokenHash = createHash("sha256").update(token).digest("hex");
-        const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
-        await tx.signUpVerification.upsert({
-          where: { signUpId: signup.id },
-          create: { signUpId: signup.id, tokenHash, expiresAt },
-          update: { tokenHash, expiresAt, usedAt: null },
-        });
-        const key = `signup.verify:${randomUUID()}`;
-        await tx.outboxEvent.create({
-          data: {
-            eventKey: key,
-            type: "SIGNUP_VERIFICATION_REQUESTED",
-            waitListId,
-            payload: {
-              signUpId: signup.id,
-              waitListId,
-              email: signup.email,
-              token,
-              manualRetry: true,
-            },
-          },
-        });
-        return key;
+      const signup = await prisma.signUp.findFirst({
+        where: { id: signupId, waitListId },
+        select: { id: true, email: true, emailNormalized: true, verifiedAt: true },
       });
+      if (signup) {
+        const [latest] = await prisma.$queryRaw`
+          SELECT "status", "createdAt", "lastErrorCode"
+          FROM "outbox_events"
+          WHERE "waitListId" = ${waitListId}
+            AND "type" = 'SIGNUP_VERIFICATION_REQUESTED'
+            AND json_extract("payload", '$.signUpId') = ${signupId}
+          ORDER BY REPLACE("createdAt", ' ', 'T') DESC, "id" DESC
+          LIMIT 1`;
+        const latestCreatedAt = latest?.createdAt ? new Date(latest.createdAt) : null;
+        const canRetry =
+          latest &&
+          latest.status === "FAILED" &&
+          latest.lastErrorCode !== "RECIPIENT_SUPPRESSED" &&
+          latestCreatedAt &&
+          Date.now() - latestCreatedAt.getTime() >= cooldownMs;
+
+        if (canRetry) {
+          let blockedBySuppression = false;
+          if (campaign.workspaceId) {
+            const suppressed = await prisma.emailSuppression.findUnique({
+              where: {
+                workspaceId_emailNormalized: {
+                  workspaceId: campaign.workspaceId,
+                  emailNormalized: signup.emailNormalized || signup.email.trim().toLowerCase(),
+                },
+              },
+              select: { id: true },
+            });
+            blockedBySuppression = Boolean(suppressed);
+          }
+
+          if (!blockedBySuppression) {
+            const token = randomBytes(32).toString("base64url");
+            const tokenHash = createHash("sha256").update(token).digest("hex");
+            const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+            await prisma.signUpVerification.upsert({
+              where: { signUpId: signup.id },
+              create: { signUpId: signup.id, tokenHash, expiresAt },
+              update: { tokenHash, expiresAt, usedAt: null },
+            });
+            const key = `signup.verify:${randomUUID()}`;
+            try {
+              await prisma.outboxEvent.create({
+                data: {
+                  eventKey: key,
+                  type: "SIGNUP_VERIFICATION_REQUESTED",
+                  waitListId,
+                  payload: {
+                    signUpId: signup.id,
+                    waitListId,
+                    email: signup.email,
+                    token,
+                    manualRetry: true,
+                  },
+                },
+              });
+              eventKey = key;
+            } catch (err) {
+              if (!isUniqueConstraintError(err)) throw err;
+            }
+          }
+        }
+      }
     } catch (error) {
       console.error("Could not retry verification delivery", error);
       failures++;

@@ -2,6 +2,7 @@ import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 
 import { auth } from "@/lib/auth";
+import { parseJsonStringArray } from "@/lib/db/sqlite-helpers.mjs";
 import prisma from "@/lib/prisma";
 import { selectedWorkspaceId } from "@/lib/workspaces/current";
 import { campaignScope } from "@/lib/workspaces/service.mjs";
@@ -66,34 +67,41 @@ export async function POST(request, context) {
       return NextResponse.json({ error: { message: "Waitlist not found" } }, { status: 404 });
     }
 
-    const updatedApiKey = await prisma.$transaction(async (tx) => {
-      await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtext(${`api-key:${id}`})) IS NULL AS acquired`;
-      const linkable = await tx.apiKey.findFirst({
-        where: { id, userId: user.id, keyId: null, waitlistId: null, revokedAt: null },
-        select: { id: true },
-      });
-      if (!linkable) return null;
-      return tx.apiKey.update({
-        where: { id },
-        data: { waitlistId },
-        select: {
-          id: true,
-          name: true,
-          keyId: true,
-          scopes: true,
-          expiresAt: true,
-          lastUsedAt: true,
-          createdAt: true,
-          waitlist: { select: { id: true, name: true } },
-        },
-      });
+    const linked = await prisma.apiKey.updateMany({
+      where: { id, userId: user.id, keyId: null, waitlistId: null, revokedAt: null },
+      data: { waitlistId },
     });
-    if (!updatedApiKey)
+    if (linked.count === 0) {
       return NextResponse.json(
         { error: { message: "This API key can no longer be linked" } },
         { status: 409 },
       );
-    const apiKeyWithMaskedKey = { ...updatedApiKey, key: "••••••••••••••••" };
+    }
+
+    const updatedApiKey = await prisma.apiKey.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        name: true,
+        keyId: true,
+        scopes: true,
+        expiresAt: true,
+        lastUsedAt: true,
+        createdAt: true,
+        waitlist: { select: { id: true, name: true } },
+      },
+    });
+    if (!updatedApiKey) {
+      return NextResponse.json(
+        { error: { message: "This API key can no longer be linked" } },
+        { status: 409 },
+      );
+    }
+    const apiKeyWithMaskedKey = {
+      ...updatedApiKey,
+      scopes: parseJsonStringArray(updatedApiKey.scopes, ["waitlist:write"]),
+      key: "••••••••••••••••",
+    };
 
     return NextResponse.json({ data: apiKeyWithMaskedKey });
   } catch (error) {

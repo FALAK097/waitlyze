@@ -141,22 +141,20 @@ export async function POST(request) {
     }
     if (typeof body.label === "string" && body.label.trim()) label = body.label.trim().slice(0, 80);
 
-    const result = await prisma.$transaction(async (tx) => {
-      // All awaits below share the one transaction connection and must keep
-      // this order: fraud gate → award. Promise.all would still serialize on
-      // the shared connection and would break the ordering. The balance comes
-      // back from awardPoints itself, so there is no separate read-back.
-      if (await isFarmSuspect(tx, signup.ipAddress, new Date()))
-        return { awarded: false, balance: signup.points ?? 0 };
-      const award = await awardPoints(tx, {
+    let awarded = false;
+    let balance = signup.points ?? 0;
+    if (!(await isFarmSuspect(prisma, signup.ipAddress, new Date()))) {
+      const award = await awardPoints(prisma, {
         waitListId: waitlistId,
         signUpId: signup.id,
         kind: "CUSTOM",
         points,
         eventKey: customEventKey(signup.id, eventKey, idempotencyKey),
       });
-      return { awarded: award.awarded, balance: award.balance ?? signup.points ?? 0 };
-    });
+      awarded = award.awarded;
+      balance = award.balance ?? signup.points ?? 0;
+    }
+    const result = { awarded, balance };
     return NextResponse.json(
       {
         success: true,

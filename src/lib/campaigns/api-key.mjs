@@ -2,6 +2,7 @@ import { createHash, timingSafeEqual } from "node:crypto";
 
 import bcrypt from "bcryptjs";
 
+import { parseJsonStringArray } from "../db/sqlite-helpers.mjs";
 import { campaignScope } from "../workspaces/service.mjs";
 
 const failed = (error = "Invalid API key or unauthorized waitlist access") => ({
@@ -43,12 +44,13 @@ export async function validatePublishedApiKey(apiKey, waitlistId, db, { now = ne
           revokedAt: true,
         },
       });
+      const scopes = key ? parseJsonStringArray(key.scopes, ["waitlist:write"]) : [];
       if (
         !key ||
         key.waitlistId !== waitlistId ||
         key.revokedAt ||
         (key.expiresAt && key.expiresAt <= now) ||
-        !key.scopes.includes("waitlist:write")
+        !scopes.includes("waitlist:write")
       )
         return failed();
       const expected = Buffer.from(key.keyHash, "hex");
@@ -60,7 +62,7 @@ export async function validatePublishedApiKey(apiKey, waitlistId, db, { now = ne
         where: { id: key.id, revokedAt: null },
         data: { lastUsedAt: now },
       });
-      return { success: true, waitlist, userId: key.userId, scopes: key.scopes };
+      return { success: true, waitlist, userId: key.userId, scopes };
     }
 
     // Existing keys retain their original owner-level behavior until rotated.

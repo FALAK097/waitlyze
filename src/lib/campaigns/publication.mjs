@@ -46,45 +46,48 @@ const adminScope = (actorId, waitListId, workspaceId) => ({
   ...campaignScope(actorId, "publishCampaign", workspaceId),
 });
 
+import { isUniqueConstraintError } from "../db/sqlite-helpers.mjs";
+
 export async function publishCampaign(db, actorId, workspaceId, waitListId, expectedRevision) {
-  return db.$transaction(async (tx) => {
-    const where = adminScope(actorId, waitListId, workspaceId);
-    const page = await tx.waitList.findFirst({
-      where,
-      select: {
-        id: true,
-        workspaceId: true,
-        status: true,
-        templateSnapshot: true,
-        templateRevision: true,
-        publishedRevision: true,
-      },
+  const where = adminScope(actorId, waitListId, workspaceId);
+  const page = await db.waitList.findFirst({
+    where,
+    select: {
+      id: true,
+      workspaceId: true,
+      status: true,
+      templateSnapshot: true,
+      templateRevision: true,
+      publishedRevision: true,
+    },
+  });
+  if (!page) throw new AccessError();
+  if (page.templateRevision !== expectedRevision) throw new PublicationConflict();
+  let snapshot = templateSnapshotSchema.parse(page.templateSnapshot);
+  const entitlements = await getWorkspaceEntitlements(db, page.workspaceId);
+  if (!entitlements.removeBranding && snapshot.brand.showPoweredBy === false)
+    snapshot = { ...snapshot, brand: { ...snapshot.brand, showPoweredBy: true } };
+  assertTurnstileConfigured(snapshot);
+  if (requiresDoubleOptIn(snapshot.form)) {
+    await resolveEmailSender(db, { workspaceId: page.workspaceId, waitListId });
+  }
+  if (page.status === "PUBLISHED" && page.publishedRevision) {
+    const current = await db.waitListPublicationRevision.findUnique({
+      where: { waitListId_revision: { waitListId, revision: page.publishedRevision } },
+      select: { templateRevision: true, snapshot: true },
     });
-    if (!page) throw new AccessError();
-    if (page.templateRevision !== expectedRevision) throw new PublicationConflict();
-    let snapshot = templateSnapshotSchema.parse(page.templateSnapshot);
-    const entitlements = await getWorkspaceEntitlements(tx, page.workspaceId);
-    if (!entitlements.removeBranding && snapshot.brand.showPoweredBy === false)
-      snapshot = { ...snapshot, brand: { ...snapshot.brand, showPoweredBy: true } };
-    assertTurnstileConfigured(snapshot);
-    if (requiresDoubleOptIn(snapshot.form)) {
-      await resolveEmailSender(tx, { workspaceId: page.workspaceId, waitListId });
-    }
-    if (page.status === "PUBLISHED" && page.publishedRevision) {
-      const current = await tx.waitListPublicationRevision.findUnique({
-        where: { waitListId_revision: { waitListId, revision: page.publishedRevision } },
-        select: { templateRevision: true, snapshot: true },
-      });
-      if (current?.templateRevision === page.templateRevision)
-        return { revision: page.publishedRevision, unchanged: true };
-    }
-    const latest = await tx.waitListPublicationRevision.findFirst({
-      where: { waitListId },
-      orderBy: { revision: "desc" },
-      select: { revision: true },
-    });
-    const revision = (latest?.revision || 0) + 1;
-    const created = await tx.waitListPublicationRevision.create({
+    if (current?.templateRevision === page.templateRevision)
+      return { revision: page.publishedRevision, unchanged: true };
+  }
+  const latest = await db.waitListPublicationRevision.findFirst({
+    where: { waitListId },
+    orderBy: { revision: "desc" },
+    select: { revision: true },
+  });
+  const revision = (latest?.revision || 0) + 1;
+  let created;
+  try {
+    created = await db.waitListPublicationRevision.create({
       data: {
         waitListId,
         revision,
@@ -92,22 +95,28 @@ export async function publishCampaign(db, actorId, workspaceId, waitListId, expe
         snapshot,
       },
     });
-    const changed = await tx.waitList.updateMany({
-      where: {
-        ...where,
-        templateRevision: expectedRevision,
-        status: page.status,
-        publishedRevision: page.publishedRevision,
-      },
-      data: {
-        status: "PUBLISHED",
-        publishedRevision: revision,
-        publishedTemplateRevision: page.templateRevision,
-      },
-    });
-    if (changed.count !== 1) throw new PublicationConflict();
-    return { revision: created.revision, unchanged: false };
+  } catch (error) {
+    if (isUniqueConstraintError(error)) throw new PublicationConflict();
+    throw error;
+  }
+  const changed = await db.waitList.updateMany({
+    where: {
+      ...where,
+      templateRevision: expectedRevision,
+      status: page.status,
+      publishedRevision: page.publishedRevision,
+    },
+    data: {
+      status: "PUBLISHED",
+      publishedRevision: revision,
+      publishedTemplateRevision: page.templateRevision,
+    },
   });
+  if (changed.count !== 1) {
+    await db.waitListPublicationRevision.delete({ where: { id: created.id } }).catch(() => {});
+    throw new PublicationConflict();
+  }
+  return { revision: created.revision, unchanged: false };
 }
 
 export async function pauseCampaign(db, actorId, workspaceId, waitListId) {
@@ -123,49 +132,54 @@ export async function pauseCampaign(db, actorId, workspaceId, waitListId) {
 }
 
 export async function rollbackCampaign(db, actorId, workspaceId, waitListId) {
-  return db.$transaction(async (tx) => {
-    const where = adminScope(actorId, waitListId, workspaceId);
-    const page = await tx.waitList.findFirst({
-      where,
-      select: {
-        id: true,
-        workspaceId: true,
-        status: true,
-        publishedRevision: true,
-        templateRevision: true,
-        templateSnapshot: true,
-      },
-    });
-    if (!page || !page.publishedRevision) throw new AccessError();
-    const previous = await tx.waitListPublicationRevision.findFirst({
-      where: { waitListId, revision: { lt: page.publishedRevision } },
-      orderBy: { revision: "desc" },
-      select: { revision: true, templateRevision: true, snapshot: true },
-    });
-    if (!previous)
-      throw new PublicationConflict("There is no earlier published version to restore.");
-    let restoredSnapshot = templateSnapshotSchema.parse(previous.snapshot);
-    const entitlements = await getWorkspaceEntitlements(tx, page.workspaceId);
-    if (!entitlements.removeBranding && restoredSnapshot.brand.showPoweredBy === false)
-      restoredSnapshot = {
-        ...restoredSnapshot,
-        brand: { ...restoredSnapshot.brand, showPoweredBy: true },
-      };
-    assertTurnstileConfigured(restoredSnapshot);
-    if (requiresDoubleOptIn(restoredSnapshot.form))
-      await resolveEmailSender(tx, { workspaceId: page.workspaceId, waitListId });
-    const restoreDraft = !sameSnapshot(page.templateSnapshot, restoredSnapshot);
-    const nextTemplateRevision = page.templateRevision + (restoreDraft ? 1 : 0);
-    if (restoreDraft)
-      await tx.waitListRevision.create({
+  const where = adminScope(actorId, waitListId, workspaceId);
+  const page = await db.waitList.findFirst({
+    where,
+    select: {
+      id: true,
+      workspaceId: true,
+      status: true,
+      publishedRevision: true,
+      templateRevision: true,
+      templateSnapshot: true,
+    },
+  });
+  if (!page || !page.publishedRevision) throw new AccessError();
+  const previous = await db.waitListPublicationRevision.findFirst({
+    where: { waitListId, revision: { lt: page.publishedRevision } },
+    orderBy: { revision: "desc" },
+    select: { revision: true, templateRevision: true, snapshot: true },
+  });
+  if (!previous) throw new PublicationConflict("There is no earlier published version to restore.");
+  let restoredSnapshot = templateSnapshotSchema.parse(previous.snapshot);
+  const entitlements = await getWorkspaceEntitlements(db, page.workspaceId);
+  if (!entitlements.removeBranding && restoredSnapshot.brand.showPoweredBy === false)
+    restoredSnapshot = {
+      ...restoredSnapshot,
+      brand: { ...restoredSnapshot.brand, showPoweredBy: true },
+    };
+  assertTurnstileConfigured(restoredSnapshot);
+  if (requiresDoubleOptIn(restoredSnapshot.form))
+    await resolveEmailSender(db, { workspaceId: page.workspaceId, waitListId });
+  const restoreDraft = !sameSnapshot(page.templateSnapshot, restoredSnapshot);
+  const nextTemplateRevision = page.templateRevision + (restoreDraft ? 1 : 0);
+  if (restoreDraft) {
+    try {
+      await db.waitListRevision.create({
         data: { waitListId, revision: page.templateRevision, snapshot: page.templateSnapshot },
       });
-    const latest = await tx.waitListPublicationRevision.findFirst({
-      where: { waitListId },
-      orderBy: { revision: "desc" },
-      select: { revision: true },
-    });
-    const restoredPublication = await tx.waitListPublicationRevision.create({
+    } catch (error) {
+      if (!isUniqueConstraintError(error)) throw error;
+    }
+  }
+  const latest = await db.waitListPublicationRevision.findFirst({
+    where: { waitListId },
+    orderBy: { revision: "desc" },
+    select: { revision: true },
+  });
+  let restoredPublication;
+  try {
+    restoredPublication = await db.waitListPublicationRevision.create({
       data: {
         waitListId,
         revision: (latest?.revision || 0) + 1,
@@ -173,27 +187,35 @@ export async function rollbackCampaign(db, actorId, workspaceId, waitListId) {
         snapshot: restoredSnapshot,
       },
     });
-    const updated = await tx.waitList.updateMany({
-      where: {
-        ...where,
-        status: page.status,
-        publishedRevision: page.publishedRevision,
-        templateRevision: page.templateRevision,
-      },
-      data: {
-        status: page.status === "PAUSED" ? "PAUSED" : "PUBLISHED",
-        publishedRevision: restoredPublication.revision,
-        publishedTemplateRevision: nextTemplateRevision,
-        ...(restoreDraft
-          ? { templateSnapshot: restoredSnapshot, templateRevision: nextTemplateRevision }
-          : {}),
-      },
-    });
-    if (updated.count !== 1) throw new PublicationConflict();
-    return {
-      revision: restoredPublication.revision,
-      templateRevision: nextTemplateRevision,
-      snapshot: restoredSnapshot,
-    };
+  } catch (error) {
+    if (isUniqueConstraintError(error)) throw new PublicationConflict();
+    throw error;
+  }
+  const updated = await db.waitList.updateMany({
+    where: {
+      ...where,
+      status: page.status,
+      publishedRevision: page.publishedRevision,
+      templateRevision: page.templateRevision,
+    },
+    data: {
+      status: page.status === "PAUSED" ? "PAUSED" : "PUBLISHED",
+      publishedRevision: restoredPublication.revision,
+      publishedTemplateRevision: nextTemplateRevision,
+      ...(restoreDraft
+        ? { templateSnapshot: restoredSnapshot, templateRevision: nextTemplateRevision }
+        : {}),
+    },
   });
+  if (updated.count !== 1) {
+    await db.waitListPublicationRevision
+      .delete({ where: { id: restoredPublication.id } })
+      .catch(() => {});
+    throw new PublicationConflict();
+  }
+  return {
+    revision: restoredPublication.revision,
+    templateRevision: nextTemplateRevision,
+    snapshot: restoredSnapshot,
+  };
 }

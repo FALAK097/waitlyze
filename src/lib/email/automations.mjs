@@ -1,4 +1,5 @@
 import { getCampaignPosition } from "../campaigns/referral-position.mjs";
+import { isUniqueConstraintError } from "../db/sqlite-helpers.mjs";
 import { emailBrandFromSnapshot } from "./brand.mjs";
 import { interpolateEmail, subscriberEmailHtml, validateComposerContent } from "./composer.mjs";
 import { applyKnownProviderEvents } from "./suppression.mjs";
@@ -100,62 +101,64 @@ export async function ensureAutomationRecipes(db, waitListId) {
   );
 }
 
-async function createRun(tx, { recipe, version, waitListId, signUpId, triggerKey, config, now }) {
-  // Serialize duplicate trigger delivery so a retried event and a concurrent
-  // verification cannot enqueue the same recipe for the same subscriber twice.
-  await tx.$queryRaw`WITH lock AS MATERIALIZED (SELECT pg_advisory_xact_lock(hashtext(${recipe.id}), hashtext(${triggerKey}))) SELECT 1 FROM lock`;
-  const existing = await tx.automationRun.findUnique({
+async function createRun(db, { recipe, version, waitListId, signUpId, triggerKey, config, now }) {
+  const existing = await db.automationRun.findUnique({
     where: { recipeId_triggerKey: { recipeId: recipe.id, triggerKey } },
     select: { id: true },
   });
   if (existing) return false;
 
-  const run = await tx.automationRun.create({
-    data: {
-      recipeId: recipe.id,
-      recipeVersionId: version.id,
-      waitListId,
-      signUpId,
-      triggerKey,
-      scheduledAt: new Date(now.getTime() + config.delayMinutes * 60_000),
-      steps: {
-        create: {
-          stepKey: EMAIL_STEP,
-          position: 0,
-          availableAt: new Date(now.getTime() + config.delayMinutes * 60_000),
-          outboxEventKey: `automation.step:${recipe.id}:${triggerKey}`,
+  const scheduledAt = new Date(now.getTime() + config.delayMinutes * 60_000);
+  const outboxEventKey = `automation.step:${recipe.id}:${triggerKey}`;
+  let run;
+  try {
+    run = await db.automationRun.create({
+      data: {
+        recipeId: recipe.id,
+        recipeVersionId: version.id,
+        waitListId,
+        signUpId,
+        triggerKey,
+        scheduledAt,
+        steps: {
+          create: {
+            stepKey: EMAIL_STEP,
+            position: 0,
+            availableAt: scheduledAt,
+            outboxEventKey,
+          },
         },
       },
-    },
-    include: { steps: true },
-  });
+      include: { steps: true },
+    });
+  } catch (error) {
+    if (isUniqueConstraintError(error)) return false;
+    throw error;
+  }
   const step = run.steps[0];
-  await tx.outboxEvent.create({
-    data: {
-      eventKey: step.outboxEventKey,
-      type: "MARKETING_AUTOMATION_STEP_REQUESTED",
-      waitListId,
-      availableAt: step.availableAt,
-      payload: { automationStepId: step.id },
-    },
-  });
+  try {
+    await db.outboxEvent.create({
+      data: {
+        eventKey: step.outboxEventKey,
+        type: "MARKETING_AUTOMATION_STEP_REQUESTED",
+        waitListId,
+        availableAt: step.availableAt,
+        payload: { automationStepId: step.id },
+      },
+    });
+  } catch (error) {
+    if (!isUniqueConstraintError(error)) throw error;
+  }
   return true;
 }
 
-async function getEnabledRecipeVersion(tx, recipeId, type) {
-  // A shared row lock makes trigger creation linear with a pause or edit. A
-  // pause that wins first prevents the run; an edit that waits takes effect
-  // for the next trigger, while this run keeps the selected immutable version.
-  const [state] =
-    await tx.$queryRaw`SELECT "status"::text AS status, "currentVersion" FROM "automation_recipes" WHERE "id" = ${recipeId} FOR SHARE`;
-  if (!state || state.status !== "ENABLED") return null;
-  const [recipe, version] = await Promise.all([
-    tx.automationRecipe.findUnique({ where: { id: recipeId } }),
-    tx.automationRecipeVersion.findUnique({
-      where: { recipeId_version: { recipeId, version: state.currentVersion } },
-    }),
-  ]);
-  if (!recipe || recipe.type !== type || !version) return null;
+async function getEnabledRecipeVersion(db, recipeId, type) {
+  const recipe = await db.automationRecipe.findUnique({ where: { id: recipeId } });
+  if (!recipe || recipe.status !== "ENABLED" || recipe.type !== type) return null;
+  const version = await db.automationRecipeVersion.findUnique({
+    where: { recipeId_version: { recipeId, version: recipe.currentVersion } },
+  });
+  if (!version) return null;
   return { recipe, version, config: normalizeAutomationConfig(type, version.config) };
 }
 
@@ -167,115 +170,113 @@ export async function processAutomationTrigger(db, event, now = new Date()) {
   ) {
     throw new TypeError("Automation trigger is invalid.");
   }
-  return db.$transaction(async (tx) => {
-    const signup = await tx.signUp.findFirst({
-      where: { id: payload.signUpId, waitListId: event.waitListId },
-      include: { waitList: { select: { id: true, status: true } } },
-    });
-    if (!signup || signup.waitList.status !== "PUBLISHED" || !signup.verifiedAt) {
-      await tx.outboxEvent.update({
-        where: { id: event.id },
-        data: {
-          status: "DELIVERED",
-          processedAt: now,
-          lockedAt: null,
-          payload: { signUpId: payload.signUpId },
-          lastErrorCode: null,
-        },
-      });
-      return { scheduled: 0 };
-    }
-
-    const recipes = await tx.automationRecipe.findMany({
-      where: { waitListId: event.waitListId, status: "ENABLED" },
-      select: { id: true, type: true },
-    });
-    let scheduled = 0;
-    const enabled = new Map(recipes.map((recipe) => [recipe.type, recipe.id]));
-
-    if (signup.marketingConsentAt && !signup.marketingUnsubscribedAt) {
-      for (const type of ["WELCOME", "WELCOME_FOLLOWUP", "REFERRAL_REMINDER", "LAUNCH_COUNTDOWN"]) {
-        const recipeId = enabled.get(type);
-        const current = recipeId ? await getEnabledRecipeVersion(tx, recipeId, type) : null;
-        if (!current) continue;
-        const { recipe, version, config } = current;
-        if (
-          await createRun(tx, {
-            recipe,
-            version,
-            waitListId: event.waitListId,
-            signUpId: signup.id,
-            triggerKey: `signup-verified:${signup.id}`,
-            config,
-            now,
-          })
-        )
-          scheduled++;
-      }
-    }
-
-    const referral = await tx.referral.findUnique({
-      where: { signUpId: signup.id },
-      select: { referredById: true, reviewStatus: true },
-    });
-    const milestoneRecipeId = enabled.get("REFERRAL_MILESTONE");
-    const milestoneCurrent = milestoneRecipeId
-      ? await getEnabledRecipeVersion(tx, milestoneRecipeId, "REFERRAL_MILESTONE")
-      : null;
-    const milestoneRecipe = milestoneCurrent?.recipe;
-    const milestoneVersion = milestoneCurrent?.version;
-    if (
-      referral?.referredById &&
-      ELIGIBLE_REFERRAL_STATUSES.includes(referral.reviewStatus) &&
-      milestoneVersion
-    ) {
-      const config = milestoneCurrent.config;
-      const referrer = await tx.signUp.findFirst({
-        where: {
-          id: referral.referredById,
-          waitListId: event.waitListId,
-          verifiedAt: { not: null },
-          marketingConsentAt: { not: null },
-          marketingUnsubscribedAt: null,
-        },
-        select: { id: true },
-      });
-      if (referrer) {
-        const count = await tx.referral.count({
-          where: {
-            referredById: referrer.id,
-            reviewStatus: { in: ELIGIBLE_REFERRAL_STATUSES },
-            signUp: { is: { waitListId: event.waitListId, verifiedAt: { not: null } } },
-          },
-        });
-        if (
-          count >= config.milestoneCount &&
-          (await createRun(tx, {
-            recipe: milestoneRecipe,
-            version: milestoneVersion,
-            waitListId: event.waitListId,
-            signUpId: referrer.id,
-            triggerKey: `referral-milestone:${referrer.id}:${config.milestoneCount}`,
-            config,
-            now,
-          }))
-        )
-          scheduled++;
-      }
-    }
-
-    await tx.outboxEvent.update({
+  const signup = await db.signUp.findFirst({
+    where: { id: payload.signUpId, waitListId: event.waitListId },
+    include: { waitList: { select: { id: true, status: true } } },
+  });
+  if (!signup || signup.waitList.status !== "PUBLISHED" || !signup.verifiedAt) {
+    await db.outboxEvent.update({
       where: { id: event.id },
       data: {
         status: "DELIVERED",
         processedAt: now,
         lockedAt: null,
-        payload: { signUpId: signup.id },
+        payload: { signUpId: payload.signUpId },
         lastErrorCode: null,
       },
     });
-    return { scheduled };
+    return { scheduled: 0 };
+  }
+
+  const recipes = await db.automationRecipe.findMany({
+    where: { waitListId: event.waitListId, status: "ENABLED" },
+    select: { id: true, type: true },
   });
+  let scheduled = 0;
+  const enabled = new Map(recipes.map((recipe) => [recipe.type, recipe.id]));
+
+  if (signup.marketingConsentAt && !signup.marketingUnsubscribedAt) {
+    for (const type of ["WELCOME", "WELCOME_FOLLOWUP", "REFERRAL_REMINDER", "LAUNCH_COUNTDOWN"]) {
+      const recipeId = enabled.get(type);
+      const current = recipeId ? await getEnabledRecipeVersion(db, recipeId, type) : null;
+      if (!current) continue;
+      const { recipe, version, config } = current;
+      if (
+        await createRun(db, {
+          recipe,
+          version,
+          waitListId: event.waitListId,
+          signUpId: signup.id,
+          triggerKey: `signup-verified:${signup.id}`,
+          config,
+          now,
+        })
+      )
+        scheduled++;
+    }
+  }
+
+  const referral = await db.referral.findUnique({
+    where: { signUpId: signup.id },
+    select: { referredById: true, reviewStatus: true },
+  });
+  const milestoneRecipeId = enabled.get("REFERRAL_MILESTONE");
+  const milestoneCurrent = milestoneRecipeId
+    ? await getEnabledRecipeVersion(db, milestoneRecipeId, "REFERRAL_MILESTONE")
+    : null;
+  const milestoneRecipe = milestoneCurrent?.recipe;
+  const milestoneVersion = milestoneCurrent?.version;
+  if (
+    referral?.referredById &&
+    ELIGIBLE_REFERRAL_STATUSES.includes(referral.reviewStatus) &&
+    milestoneVersion
+  ) {
+    const config = milestoneCurrent.config;
+    const referrer = await db.signUp.findFirst({
+      where: {
+        id: referral.referredById,
+        waitListId: event.waitListId,
+        verifiedAt: { not: null },
+        marketingConsentAt: { not: null },
+        marketingUnsubscribedAt: null,
+      },
+      select: { id: true },
+    });
+    if (referrer) {
+      const count = await db.referral.count({
+        where: {
+          referredById: referrer.id,
+          reviewStatus: { in: ELIGIBLE_REFERRAL_STATUSES },
+          signUp: { is: { waitListId: event.waitListId, verifiedAt: { not: null } } },
+        },
+      });
+      if (
+        count >= config.milestoneCount &&
+        (await createRun(db, {
+          recipe: milestoneRecipe,
+          version: milestoneVersion,
+          waitListId: event.waitListId,
+          signUpId: referrer.id,
+          triggerKey: `referral-milestone:${referrer.id}:${config.milestoneCount}`,
+          config,
+          now,
+        }))
+      )
+        scheduled++;
+    }
+  }
+
+  await db.outboxEvent.update({
+    where: { id: event.id },
+    data: {
+      status: "DELIVERED",
+      processedAt: now,
+      lockedAt: null,
+      payload: { signUpId: signup.id },
+      lastErrorCode: null,
+    },
+  });
+  return { scheduled };
 }
 
 function escapeHtml(value) {
@@ -353,21 +354,24 @@ export async function dispatchAutomationStep(
     result.skipped++;
     return;
   }
-  const claimed = await db.$transaction(async (tx) => {
-    const [recipe] =
-      await tx.$queryRaw`SELECT "status"::text AS status FROM "automation_recipes" WHERE "id" = ${step.run.recipeId} FOR SHARE`;
-    if (recipe?.status !== "ENABLED") return false;
-    const stepClaim = await tx.automationRunStep.updateMany({
+  const recipeRecord = await db.automationRecipe.findUnique({
+    where: { id: step.run.recipeId },
+    select: { status: true },
+  });
+  let claimed = false;
+  if (recipeRecord?.status === "ENABLED") {
+    const stepClaim = await db.automationRunStep.updateMany({
       where: { id: step.id, status: { in: ["PENDING", "PROCESSING"] } },
       data: { status: "PROCESSING", lastErrorCode: null },
     });
-    if (stepClaim.count !== 1) return false;
-    await tx.automationRun.updateMany({
-      where: { id: step.runId, status: { in: ["PENDING", "PROCESSING"] } },
-      data: { status: "PROCESSING", startedAt: step.run.startedAt || now },
-    });
-    return true;
-  });
+    if (stepClaim.count === 1) {
+      await db.automationRun.updateMany({
+        where: { id: step.runId, status: { in: ["PENDING", "PROCESSING"] } },
+        data: { status: "PROCESSING", startedAt: step.run.startedAt || now },
+      });
+      claimed = true;
+    }
+  }
   if (!claimed) {
     await db.$transaction([
       db.automationRunStep.updateMany({

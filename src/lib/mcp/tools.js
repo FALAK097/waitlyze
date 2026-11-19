@@ -4,6 +4,7 @@ import { getWorkspaceEntitlements, requireCapacity } from "@/lib/billing/plans.m
 import { RESERVED_WAITLIST_SLUGS } from "@/lib/campaigns/create-draft.mjs";
 import { pauseCampaign, publishCampaign } from "@/lib/campaigns/publication.mjs";
 import { saveDraftSnapshot } from "@/lib/campaigns/save-draft-snapshot.mjs";
+import { parseJsonStringArray } from "@/lib/db/sqlite-helpers.mjs";
 import { enqueueBroadcast } from "@/lib/email/broadcast-queue.mjs";
 import { normalizeSignupEmail } from "@/lib/normalize-email.mjs";
 import prisma from "@/lib/prisma.js";
@@ -345,9 +346,9 @@ export function registerWaitlyzeTools(server, authContext) {
           ...(search
             ? {
                 OR: [
-                  { name: { contains: search, mode: "insensitive" } },
-                  { description: { contains: search, mode: "insensitive" } },
-                  { publicSlug: { contains: search, mode: "insensitive" } },
+                  { name: { contains: search } },
+                  { description: { contains: search } },
+                  { publicSlug: { contains: search } },
                 ],
               }
             : {}),
@@ -749,7 +750,7 @@ export function registerWaitlyzeTools(server, authContext) {
             : status === "UNVERIFIED"
               ? { verifiedAt: null }
               : {}),
-          ...(search ? { email: { contains: search, mode: "insensitive" } } : {}),
+          ...(search ? { email: { contains: search } } : {}),
         };
 
         const [total, subscribers] = await Promise.all([
@@ -941,42 +942,38 @@ export function registerWaitlyzeTools(server, authContext) {
         const count = await prisma.signUp.count({ where: { waitListId: waitlist.id } });
         const now = new Date();
 
-        const subscriber = await prisma.$transaction(async (tx) => {
-          const created = await tx.signUp.create({
+        const subscriber = await prisma.signUp.create({
+          data: {
+            waitListId: waitlist.id,
+            uniqueUserId: `mcp_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+            email,
+            emailNormalized: normalizedEmail,
+            rank: count + 1,
+            points: 0,
+            verifiedAt: autoVerify ? now : null,
+            marketingConsentAt: null,
+            customFields: customFields || null,
+            utmSource: utmSource || null,
+            utmMedium: utmMedium || null,
+            utmCampaign: utmCampaign || null,
+          },
+        });
+
+        if (referrerSignUp) {
+          await prisma.referral.create({
             data: {
-              waitListId: waitlist.id,
-              uniqueUserId: `mcp_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
-              email,
-              emailNormalized: normalizedEmail,
-              rank: count + 1,
-              points: 0,
-              verifiedAt: autoVerify ? now : null,
-              marketingConsentAt: null,
-              customFields: customFields || null,
-              utmSource: utmSource || null,
-              utmMedium: utmMedium || null,
-              utmCampaign: utmCampaign || null,
+              signUpId: subscriber.id,
+              referredById: referrerSignUp.id,
+              reviewStatus: "CLEAR",
             },
           });
-
-          if (referrerSignUp) {
-            await tx.referral.create({
-              data: {
-                signUpId: created.id,
-                referredById: referrerSignUp.id,
-                reviewStatus: "CLEAR",
-              },
+          if (autoVerify) {
+            await prisma.signUp.update({
+              where: { id: referrerSignUp.id },
+              data: { points: { increment: 10 } },
             });
-            if (autoVerify) {
-              await tx.signUp.update({
-                where: { id: referrerSignUp.id },
-                data: { points: { increment: 10 } },
-              });
-            }
           }
-
-          return created;
-        });
+        }
 
         const baseUrl = process.env.BETTER_AUTH_URL || "https://waitlyze.com";
         return jsonContent({
@@ -1357,17 +1354,12 @@ export function registerWaitlyzeTools(server, authContext) {
         });
         if (!broadcast) return errorContent("Broadcast not found.");
 
-        const count = await prisma.$transaction(
-          async (tx) => {
-            return enqueueBroadcast(tx, {
-              waitListId: waitlist.id,
-              broadcastId: broadcast.id,
-              segment: broadcast.segment || "ALL",
-              exact: false,
-            });
-          },
-          { timeout: 30000 },
-        );
+        const count = await enqueueBroadcast(prisma, {
+          waitListId: waitlist.id,
+          broadcastId: broadcast.id,
+          segment: broadcast.segment || "ALL",
+          exact: false,
+        });
 
         return jsonContent({
           message: "Broadcast successfully queued for dispatch.",
@@ -1415,7 +1407,7 @@ export function registerWaitlyzeTools(server, authContext) {
             id: w.id,
             name: w.name,
             url: w.url,
-            events: w.eventTypes,
+            events: parseJsonStringArray(w.eventTypes),
             status: w.enabled ? "ACTIVE" : "DISABLED",
             createdAt: w.createdAt,
           })),

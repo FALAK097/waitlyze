@@ -3,6 +3,7 @@ import { createHash, randomBytes } from "node:crypto";
 import { after } from "next/server";
 
 import { getWorkspaceEntitlements, requireCapacity } from "../billing/plans.mjs";
+import { isUniqueConstraintError } from "../db/sqlite-helpers.mjs";
 import { resolveEmailSender } from "../email/sender-resolution.mjs";
 import { createUnsubscribeToken, hashUnsubscribeToken } from "../email/unsubscribe.mjs";
 import { maybeNotifySignupMilestone } from "../emails/founder-notifications.mjs";
@@ -90,10 +91,10 @@ async function silentRewardSummary(db, waitListId, rank) {
   }
 }
 
-async function recordVerifiedSignup(tx, signup, now) {
+async function recordVerifiedSignup(db, signup, now) {
   const chatUnlocks = [];
   const analyticsEvents = [];
-  await enqueueWebhookEvent(tx, {
+  await enqueueWebhookEvent(db, {
     waitListId: signup.waitListId,
     eventType: "signup.verified",
     signupId: signup.id,
@@ -101,22 +102,21 @@ async function recordVerifiedSignup(tx, signup, now) {
   });
   // Award amounts and tiers resolve from the published snapshot so draft edits
   // never change payouts before they ship; unpublished lists accrue defaults.
-  const { rewards, tiers } = await getPublishedRewards(tx, signup.waitListId);
-  if (!(await isFarmSuspect(tx, signup.ipAddress, now))) {
-    await awardPoints(tx, {
+  const { rewards, tiers } = await getPublishedRewards(db, signup.waitListId);
+  if (!(await isFarmSuspect(db, signup.ipAddress, now))) {
+    await awardPoints(db, {
       waitListId: signup.waitListId,
       signUpId: signup.id,
       kind: "SIGNUP_VERIFIED",
       points: rewards.pointsSignup,
       eventKey: signupEventKey(signup.id),
     });
-    await tx.$queryRaw`SELECT "id" FROM "referrals" WHERE "signUpId" = ${signup.id} FOR UPDATE`;
-    const referral = await tx.referral.findUnique({
+    const referral = await db.referral.findUnique({
       where: { signUpId: signup.id },
       select: { id: true, referredById: true, reviewStatus: true },
     });
     if (referral?.referredById && REFERRAL_CREDIT_STATUSES.includes(referral.reviewStatus)) {
-      await awardPoints(tx, {
+      await awardPoints(db, {
         waitListId: signup.waitListId,
         signUpId: referral.referredById,
         kind: "REFERRAL_CREDIT",
@@ -125,18 +125,18 @@ async function recordVerifiedSignup(tx, signup, now) {
       });
       // Custom reward fulfillment hook: the inviter earned verified credit
       // because this signup verified. Receivers deduplicate by event id.
-      await enqueueWebhookEvent(tx, {
+      await enqueueWebhookEvent(db, {
         waitListId: signup.waitListId,
         eventType: "referral.completed",
         signupId: referral.referredById,
         extra: { referredSignupId: signup.id },
         now,
       });
-      // Tier unlocks are transactional with the credit that earned them.
-      const counts = await getEligibleReferralCounts(tx, signup.waitListId, [
+      // Tier unlocks are tracked alongside the credit that earned them.
+      const counts = await getEligibleReferralCounts(db, signup.waitListId, [
         referral.referredById,
       ]);
-      const unlocked = await checkRewardTierUnlocks(tx, {
+      const unlocked = await checkRewardTierUnlocks(db, {
         waitListId: signup.waitListId,
         referrerId: referral.referredById,
         triggeringSignupId: signup.id,
@@ -152,7 +152,7 @@ async function recordVerifiedSignup(tx, signup, now) {
         })),
       );
 
-      const waitlistRecord = await tx.waitList.findUnique({
+      const waitlistRecord = await db.waitList.findUnique({
         where: { id: signup.waitListId },
         select: { workspaceId: true },
       });
@@ -185,14 +185,18 @@ async function recordVerifiedSignup(tx, signup, now) {
       }
     }
   }
-  await tx.outboxEvent.create({
-    data: {
-      eventKey: `automation.trigger:signup-verified:${signup.id}`,
-      type: "MARKETING_AUTOMATION_TRIGGER_REQUESTED",
-      waitListId: signup.waitListId,
-      payload: { signUpId: signup.id },
-    },
-  });
+  try {
+    await db.outboxEvent.create({
+      data: {
+        eventKey: `automation.trigger:signup-verified:${signup.id}`,
+        type: "MARKETING_AUTOMATION_TRIGGER_REQUESTED",
+        waitListId: signup.waitListId,
+        payload: { signUpId: signup.id },
+      },
+    });
+  } catch (error) {
+    if (!isUniqueConstraintError(error)) throw error;
+  }
   return { chatUnlocks, analyticsEvents };
 }
 
@@ -255,87 +259,81 @@ export async function createCampaignSignup(
 
   let signUp;
   try {
-    signUp = await db.$transaction(async (tx) => {
-      const campaignWorkspace = await tx.$queryRaw`
-        SELECT "workspaceId" FROM "wait_lists" WHERE "id" = ${input.waitListId}
-      `;
-      if (campaignWorkspace.length === 0) throw new InvalidCampaignError();
-      const workspaceId = campaignWorkspace[0].workspaceId;
-      if (workspaceId) {
-        // Always lock the workspace before the waitlist. Workspace deletion
-        // uses this same order before it locks and removes the campaign.
-        const lockedWorkspace =
-          await tx.$queryRaw`SELECT "id" FROM "workspaces" WHERE "id" = ${workspaceId} FOR UPDATE`;
-        if (lockedWorkspace.length === 0) throw new InvalidCampaignError();
-      }
-
-      // Hold a share lock until the signup commits so a concurrent pause cannot
-      // slip between the publication check and the subscriber insert.
-      const published = await tx.$queryRaw`
-        SELECT "id", "workspaceId", "showReferrals", "publishedRevision", "fraudMode" FROM "wait_lists"
-        WHERE "id" = ${input.waitListId} AND "status"::text = 'PUBLISHED'
-        FOR SHARE
-      `;
-      if (published.length === 0) throw new InvalidCampaignError();
-      if (published[0].workspaceId !== workspaceId) throw new InvalidCampaignError();
-      if (!published[0].publishedRevision) {
-        throw new TypeError("Published form configuration is invalid.");
-      }
-      const publication = await tx.waitListPublicationRevision.findUnique({
-        where: {
-          waitListId_revision: {
-            waitListId: input.waitListId,
-            revision: published[0].publishedRevision,
-          },
+    const waitlist = await db.waitList.findUnique({
+      where: { id: input.waitListId },
+      select: {
+        id: true,
+        workspaceId: true,
+        status: true,
+        showReferrals: true,
+        publishedRevision: true,
+        fraudMode: true,
+        workspace: { select: { id: true } },
+      },
+    });
+    if (!waitlist || (waitlist.workspaceId && !waitlist.workspace)) {
+      throw new InvalidCampaignError();
+    }
+    const workspaceId = waitlist.workspaceId;
+    if (waitlist.status !== "PUBLISHED") throw new InvalidCampaignError();
+    if (!waitlist.publishedRevision) {
+      throw new TypeError("Published form configuration is invalid.");
+    }
+    const publication = await db.waitListPublicationRevision.findUnique({
+      where: {
+        waitListId_revision: {
+          waitListId: input.waitListId,
+          revision: waitlist.publishedRevision,
         },
-        select: { snapshot: true },
-      });
-      const publishedSnapshot = templateSnapshotSchema.safeParse(publication?.snapshot);
-      if (!publishedSnapshot.success) {
-        throw new TypeError("Published form configuration is invalid.");
-      }
-      // Double opt-in (see requiresDoubleOptIn): confirmation is required only
-      // when the validated snapshot opts in.
-      const formConfig = publishedSnapshot.data.form;
-      // Per-form join rules. TypeError → 400 on every public caller, so the
-      // API-key path enforces the same gates as the browser form.
-      if (formConfig) {
-        const domainError = checkEmailDomainRules(formConfig, input.email);
-        if (domainError) throw new TypeError(domainError);
-        const countryError = checkCountryRules(formConfig, input.country);
-        if (countryError) throw new TypeError(countryError);
-        const phoneError = validatePhoneNumber(input.phone, formConfig);
-        if (phoneError) throw new TypeError(phoneError);
-        const fields = sanitizeCustomFieldAnswers(formConfig, input.customFields);
-        if (fields.error) throw new TypeError(fields.error);
-      }
-      const requiresTurnstile = formConfig.requireTurnstile;
-      if (requiresTurnstile && input.signupProtection !== "turnstile")
-        throw new TurnstileVerificationError();
-      const requiresVerification = requiresDoubleOptIn(formConfig);
+      },
+      select: { snapshot: true },
+    });
+    const publishedSnapshot = templateSnapshotSchema.safeParse(publication?.snapshot);
+    if (!publishedSnapshot.success) {
+      throw new TypeError("Published form configuration is invalid.");
+    }
+    // Double opt-in (see requiresDoubleOptIn): confirmation is required only
+    // when the validated snapshot opts in.
+    const formConfig = publishedSnapshot.data.form;
+    // Per-form join rules. TypeError → 400 on every public caller, so the
+    // API-key path enforces the same gates as the browser form.
+    if (formConfig) {
+      const domainError = checkEmailDomainRules(formConfig, input.email);
+      if (domainError) throw new TypeError(domainError);
+      const countryError = checkCountryRules(formConfig, input.country);
+      if (countryError) throw new TypeError(countryError);
+      const phoneError = validatePhoneNumber(input.phone, formConfig);
+      if (phoneError) throw new TypeError(phoneError);
+      const fields = sanitizeCustomFieldAnswers(formConfig, input.customFields);
+      if (fields.error) throw new TypeError(fields.error);
+    }
+    const requiresTurnstile = formConfig.requireTurnstile;
+    if (requiresTurnstile && input.signupProtection !== "turnstile")
+      throw new TurnstileVerificationError();
+    const requiresVerification = requiresDoubleOptIn(formConfig);
 
-      const existing = await findSignupByEmail(tx, input.waitListId, input.email, {
-        referrals: true,
-        referredBy: true,
-      });
-      if (existing) {
-        if (existing.uniqueUserId === input.uniqueUserId) {
-          // Browser IDs and referral links are public identifiers, not consent credentials.
-          // Idempotent signup retries must preserve prior opt-out/preferences.
-          return {
-            ...existing,
-            signupOutcome: "returning",
-            redirectUrl: resolveSuccessRedirect(formConfig),
-          };
-        }
+    const existing = await findSignupByEmail(db, input.waitListId, input.email, {
+      referrals: true,
+      referredBy: true,
+    });
+    if (existing) {
+      if (existing.uniqueUserId === input.uniqueUserId) {
+        // Browser IDs and referral links are public identifiers, not consent credentials.
+        // Idempotent signup retries must preserve prior opt-out/preferences.
+        signUp = {
+          ...existing,
+          signupOutcome: "returning",
+          redirectUrl: resolveSuccessRedirect(formConfig),
+        };
+      } else {
         throw new DuplicateSignupError();
       }
-
+    } else {
       // Confirmation emails must come from a connected waitlist/workspace
       // sender. Never send subscriber email through Waitlyze's deployment key.
       if (requiresVerification) {
-        await resolveEmailSender(tx, {
-          workspaceId: published[0].workspaceId,
+        await resolveEmailSender(db, {
+          workspaceId,
           waitListId: input.waitListId,
         });
       }
@@ -344,8 +342,8 @@ export async function createCampaignSignup(
       // rejects with 429; device-fingerprint velocity goes silent - a fake
       // success with nothing persisted (no row, no points, no webhooks, no
       // email). Counting failures allow the signup through.
-      const fraud = await evaluateSignupFraud(tx, {
-        fraudMode: published[0].fraudMode,
+      const fraud = await evaluateSignupFraud(db, {
+        fraudMode: waitlist.fraudMode,
         ipAddress: input.ipAddress,
         deviceFingerprint:
           typeof input.deviceFingerprint === "string" && input.deviceFingerprint
@@ -355,176 +353,173 @@ export async function createCampaignSignup(
       });
       if (fraud.action === "limit") throw new FraudLimitError();
       if (fraud.action === "silent") {
-        const [{ count }] = await tx.$queryRaw`
-          SELECT COUNT(*)::bigint AS count FROM "sign_ups"
-          WHERE "waitListId" = ${input.waitListId}
-        `;
+        const count = await db.signUp.count({ where: { waitListId: input.waitListId } });
         const rank = Number(count) + 1;
-        return silentSignupShape({
+        signUp = silentSignupShape({
           waitListId: input.waitListId,
           email: input.email,
           emailNormalized,
           uniqueUserId: input.uniqueUserId,
           rank: Number.isSafeInteger(rank) && rank > 0 ? rank : null,
         });
-      }
-
-      // The persistent workspace counter survives waitlist deletion, so
-      // removing old signups does not reset the Free-plan allowance.
-      const [usage, entitlements] = await Promise.all([
-        workspaceId
-          ? tx.workspace.findUnique({
-              where: { id: workspaceId },
-              select: { signupUsageCount: true },
-            })
-          : tx.signUp.count({ where: { waitListId: input.waitListId } }),
-        getWorkspaceEntitlements(tx, workspaceId, now),
-      ]);
-      const workspaceSignups = workspaceId ? usage?.signupUsageCount || 0 : usage;
-      requireCapacity({
-        entitlements,
-        feature: "subscribers",
-        used: workspaceSignups,
-        message:
-          "This waitlist has reached the signup limit for its plan. Please contact the waitlist owner.",
-      });
-
-      const createdSignup = await tx.signUp.create({
-        data: {
-          uniqueUserId: input.uniqueUserId,
-          email: input.email.trim(),
-          emailNormalized,
-          waitListId: input.waitListId,
-          deviceFingerprint:
-            typeof input.deviceFingerprint === "string" && input.deviceFingerprint
-              ? input.deviceFingerprint.slice(0, 128)
-              : null,
-          impressionId: input.impressionId || null,
-          device: input.device || null,
-          deviceType: input.deviceType || null,
-          city: input.city || null,
-          country: input.country || null,
-          timezone: input.timezone || null,
-          ipAddress: input.ipAddress || null,
-          latitude: input.latitude || null,
-          longitude: input.longitude || null,
-          referrer: input.referrer || null,
-          landingPage: input.landingPage || null,
-          utmSource: input.utmSource || null,
-          utmMedium: input.utmMedium || null,
-          utmCampaign: input.utmCampaign || null,
-          utmTerm: input.utmTerm || null,
-          utmContent: input.utmContent || null,
-          phone: phoneForStorage(formConfig, input.phone),
-          customFields: customFieldsForStorage(formConfig, input.customFields),
-          verifiedAt: requiresVerification ? null : now,
-          ...(input.marketingConsent === true ? { marketingConsentAt: now } : {}),
-        },
-      });
-      if (workspaceId) {
-        await tx.workspace.update({
-          where: { id: workspaceId },
-          data: { signupUsageCount: { increment: 1 } },
+      } else {
+        // The persistent workspace counter survives waitlist deletion, so
+        // removing old signups does not reset the Free-plan allowance.
+        const [usage, entitlements] = await Promise.all([
+          workspaceId
+            ? db.workspace.findUnique({
+                where: { id: workspaceId },
+                select: { signupUsageCount: true },
+              })
+            : db.signUp.count({ where: { waitListId: input.waitListId } }),
+          getWorkspaceEntitlements(db, workspaceId, now),
+        ]);
+        const workspaceSignups = workspaceId ? usage?.signupUsageCount || 0 : usage;
+        requireCapacity({
+          entitlements,
+          feature: "subscribers",
+          used: workspaceSignups,
+          message:
+            "This waitlist has reached the signup limit for its plan. Please contact the waitlist owner.",
         });
-      }
-      await enqueueWebhookEvent(tx, {
-        waitListId: input.waitListId,
-        eventType: "signup.created",
-        signupId: createdSignup.id,
-        now,
-      });
 
-      if (input.marketingConsent === true) {
-        const token = createUnsubscribeToken(createdSignup.id, input.waitListId);
-        await tx.signUp.update({
-          where: { id: createdSignup.id },
-          data: { unsubscribeTokenHash: hashUnsubscribeToken(token) },
-        });
-        await tx.marketingConsentEvent.create({
+        const createdSignup = await db.signUp.create({
           data: {
+            uniqueUserId: input.uniqueUserId,
+            email: input.email.trim(),
+            emailNormalized,
             waitListId: input.waitListId,
-            signUpId: createdSignup.id,
-            action: "OPTED_IN",
-            source: "PUBLIC_SIGNUP",
-            consentText: MARKETING_CONSENT_COPY,
-            createdAt: now,
+            deviceFingerprint:
+              typeof input.deviceFingerprint === "string" && input.deviceFingerprint
+                ? input.deviceFingerprint.slice(0, 128)
+                : null,
+            impressionId: input.impressionId || null,
+            device: input.device || null,
+            deviceType: input.deviceType || null,
+            city: input.city || null,
+            country: input.country || null,
+            timezone: input.timezone || null,
+            ipAddress: input.ipAddress || null,
+            latitude: input.latitude || null,
+            longitude: input.longitude || null,
+            referrer: input.referrer || null,
+            landingPage: input.landingPage || null,
+            utmSource: input.utmSource || null,
+            utmMedium: input.utmMedium || null,
+            utmCampaign: input.utmCampaign || null,
+            utmTerm: input.utmTerm || null,
+            utmContent: input.utmContent || null,
+            phone: phoneForStorage(formConfig, input.phone),
+            customFields: customFieldsForStorage(formConfig, input.customFields),
+            verifiedAt: requiresVerification ? null : now,
+            ...(input.marketingConsent === true ? { marketingConsentAt: now } : {}),
           },
         });
-      }
+        if (workspaceId) {
+          await db.workspace.update({
+            where: { id: workspaceId },
+            data: { signupUsageCount: { increment: 1 } },
+          });
+        }
+        await enqueueWebhookEvent(db, {
+          waitListId: input.waitListId,
+          eventType: "signup.created",
+          signupId: createdSignup.id,
+          now,
+        });
 
-      if (published[0].showReferrals && referralId && referralId !== input.uniqueUserId) {
-        const referredBy =
-          (await tx.signUp.findFirst({
-            where: { referralCode: referralId, waitListId: input.waitListId },
-            select: { id: true, uniqueUserId: true },
-          })) ??
-          (await tx.signUp.findFirst({
-            where: { uniqueUserId: referralId, waitListId: input.waitListId },
-            select: { id: true, uniqueUserId: true },
-          }));
-        if (referredBy) {
-          const sameBrowser = referredBy.uniqueUserId === input.uniqueUserId;
-          await tx.referral.create({
+        if (input.marketingConsent === true) {
+          const token = createUnsubscribeToken(createdSignup.id, input.waitListId);
+          await db.signUp.update({
+            where: { id: createdSignup.id },
+            data: { unsubscribeTokenHash: hashUnsubscribeToken(token) },
+          });
+          await db.marketingConsentEvent.create({
             data: {
+              waitListId: input.waitListId,
               signUpId: createdSignup.id,
-              referredById: referredBy.id,
-              ...(sameBrowser
-                ? { reviewStatus: "NEEDS_REVIEW", reviewReason: "same_browser" }
-                : {}),
+              action: "OPTED_IN",
+              source: "PUBLIC_SIGNUP",
+              consentText: MARKETING_CONSENT_COPY,
+              createdAt: now,
             },
           });
         }
-      }
 
-      let verificationEventKey;
-      let chatUnlocks = [];
-      let analyticsEvents = [];
-      if (requiresVerification) {
-        const token = randomBytes(32).toString("base64url");
-        const verification = await tx.signUpVerification.create({
-          data: {
-            signUpId: createdSignup.id,
-            tokenHash: tokenDigest(token),
-            expiresAt: new Date(now.getTime() + verificationTtlMs),
-          },
-        });
-        verificationEventKey = `signup.verify:${verification.id}`;
-        await tx.outboxEvent.create({
-          data: {
-            eventKey: verificationEventKey,
-            type: "SIGNUP_VERIFICATION_REQUESTED",
-            waitListId: input.waitListId,
-            payload: {
+        if (waitlist.showReferrals && referralId && referralId !== input.uniqueUserId) {
+          const referredBy =
+            (await db.signUp.findFirst({
+              where: { referralCode: referralId, waitListId: input.waitListId },
+              select: { id: true, uniqueUserId: true },
+            })) ??
+            (await db.signUp.findFirst({
+              where: { uniqueUserId: referralId, waitListId: input.waitListId },
+              select: { id: true, uniqueUserId: true },
+            }));
+          if (referredBy) {
+            const sameBrowser = referredBy.uniqueUserId === input.uniqueUserId;
+            await db.referral.create({
+              data: {
+                signUpId: createdSignup.id,
+                referredById: referredBy.id,
+                ...(sameBrowser
+                  ? { reviewStatus: "NEEDS_REVIEW", reviewReason: "same_browser" }
+                  : {}),
+              },
+            });
+          }
+        }
+
+        let verificationEventKey;
+        let chatUnlocks = [];
+        let analyticsEvents = [];
+        if (requiresVerification) {
+          const token = randomBytes(32).toString("base64url");
+          const verification = await db.signUpVerification.create({
+            data: {
               signUpId: createdSignup.id,
-              waitListId: input.waitListId,
-              email: createdSignup.email,
-              token,
+              tokenHash: tokenDigest(token),
+              expiresAt: new Date(now.getTime() + verificationTtlMs),
             },
-          },
-        });
-      } else {
-        const verifiedResult = await recordVerifiedSignup(tx, createdSignup, now);
-        chatUnlocks = verifiedResult.chatUnlocks;
-        analyticsEvents = verifiedResult.analyticsEvents;
-      }
+          });
+          verificationEventKey = `signup.verify:${verification.id}`;
+          await db.outboxEvent.create({
+            data: {
+              eventKey: verificationEventKey,
+              type: "SIGNUP_VERIFICATION_REQUESTED",
+              waitListId: input.waitListId,
+              payload: {
+                signUpId: createdSignup.id,
+                waitListId: input.waitListId,
+                email: createdSignup.email,
+                token,
+              },
+            },
+          });
+        } else {
+          const verifiedResult = await recordVerifiedSignup(db, createdSignup, now);
+          chatUnlocks = verifiedResult.chatUnlocks;
+          analyticsEvents = verifiedResult.analyticsEvents;
+        }
 
-      const created = await tx.signUp.findUnique({
-        where: { id: createdSignup.id },
-        // Minimal: callers only need the referral count, so fetch ids alone
-        // and skip the unused referrer relation.
-        include: { referrals: { select: { id: true } } },
-      });
-      return {
-        ...created,
-        verificationEventKey,
-        chatUnlocks,
-        analyticsEvents,
-        signupOutcome: "created",
-        redirectUrl: resolveSuccessRedirect(formConfig),
-      };
-    });
+        const created = await db.signUp.findUnique({
+          where: { id: createdSignup.id },
+          // Minimal: callers only need the referral count, so fetch ids alone
+          // and skip the unused referrer relation.
+          include: { referrals: { select: { id: true } } },
+        });
+        signUp = {
+          ...created,
+          verificationEventKey,
+          chatUnlocks,
+          analyticsEvents,
+          signupOutcome: "created",
+          redirectUrl: resolveSuccessRedirect(formConfig),
+        };
+      }
+    }
   } catch (error) {
-    if (error?.code !== "P2002") throw error;
+    if (!isUniqueConstraintError(error)) throw error;
     const committed = await findSignupByEmail(db, input.waitListId, input.email, {
       referrals: { select: { id: true } },
     });
@@ -582,39 +577,36 @@ export async function createCampaignSignup(
 
 export async function verifyCampaignSignup(db, token, { now = new Date() } = {}) {
   if (typeof token !== "string" || token.length < 32 || token.length > 128) return false;
-  const verified = await db.$transaction(async (tx) => {
-    const verification = await tx.signUpVerification.findUnique({
-      where: { tokenHash: tokenDigest(token) },
-      select: { id: true, signUpId: true, expiresAt: true, usedAt: true },
-    });
-    if (!verification || verification.usedAt || verification.expiresAt <= now) return false;
-
-    const claimed = await tx.signUpVerification.updateMany({
-      where: { id: verification.id, usedAt: null, expiresAt: { gt: now } },
-      data: { usedAt: now },
-    });
-    if (claimed.count !== 1) return false;
-    await tx.signUp.updateMany({
-      where: { id: verification.signUpId, verifiedAt: null },
-      data: { verifiedAt: now },
-    });
-    const signup = await tx.signUp.findUnique({
-      where: { id: verification.signUpId },
-      select: { id: true, waitListId: true, ipAddress: true },
-    });
-    const { chatUnlocks, analyticsEvents } = await recordVerifiedSignup(tx, signup, now);
-    return {
-      waitListId: signup.waitListId,
-      signUpId: signup.id,
-      unlocks: chatUnlocks,
-      analyticsEvents,
-    };
+  const verification = await db.signUpVerification.findUnique({
+    where: { tokenHash: tokenDigest(token) },
+    select: { id: true, signUpId: true, expiresAt: true, usedAt: true },
   });
-  if (verified) {
-    await queueVerifiedChatNotifications(db, verified);
-    for (const event of verified.analyticsEvents || []) {
-      trackServerEvent(event).catch(() => {});
-    }
+  if (!verification || verification.usedAt || verification.expiresAt <= now) return false;
+
+  const claimed = await db.signUpVerification.updateMany({
+    where: { id: verification.id, usedAt: null, expiresAt: { gt: now } },
+    data: { usedAt: now },
+  });
+  if (claimed.count !== 1) return false;
+
+  await db.signUp.updateMany({
+    where: { id: verification.signUpId, verifiedAt: null },
+    data: { verifiedAt: now },
+  });
+  const signup = await db.signUp.findUnique({
+    where: { id: verification.signUpId },
+    select: { id: true, waitListId: true, ipAddress: true },
+  });
+  if (!signup) return false;
+
+  const { chatUnlocks, analyticsEvents } = await recordVerifiedSignup(db, signup, now);
+  await queueVerifiedChatNotifications(db, {
+    waitListId: signup.waitListId,
+    signUpId: signup.id,
+    unlocks: chatUnlocks,
+  });
+  for (const event of analyticsEvents || []) {
+    trackServerEvent(event).catch(() => {});
   }
-  return Boolean(verified);
+  return true;
 }

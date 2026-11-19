@@ -83,101 +83,100 @@ async function reserveCheckoutIntent(workspaceId, interval) {
   const protectionUntil = new Date(now.getTime() + CHECKOUT_PROTECTION_TTL_MS);
   const checkoutInterval = interval === "annual" ? "ANNUAL" : "MONTHLY";
 
-  return prisma.$transaction(async (tx) => {
-    const lockedWorkspace =
-      await tx.$queryRaw`SELECT "id" FROM "workspaces" WHERE "id" = ${workspaceId} FOR UPDATE`;
-    if (lockedWorkspace.length === 0)
-      return { error: "This workspace no longer exists. Refresh and try again." };
-    const current = await tx.workspaceSubscription.findUnique({ where: { workspaceId } });
+  const workspace = await prisma.workspace.findUnique({
+    where: { id: workspaceId },
+    select: { id: true },
+  });
+  if (!workspace) return { error: "This workspace no longer exists. Refresh and try again." };
+  const current = await prisma.workspaceSubscription.findUnique({ where: { workspaceId } });
 
-    if (effectiveWorkspacePlan(current, now) === "PRO")
-      return { error: "This workspace already has Pro. Manage its renewal in Billing settings." };
+  if (effectiveWorkspacePlan(current, now) === "PRO")
+    return { error: "This workspace already has Pro. Manage its renewal in Billing settings." };
 
-    if (providerSubscriptionNeedsReview(current)) {
-      if (!current.dodoCustomerId || isDetachedCustomerId(current.dodoCustomerId))
-        return { error: "This subscription needs attention. Contact support to recover billing." };
-      return { portalCustomerId: current.dodoCustomerId };
-    }
+  if (providerSubscriptionNeedsReview(current)) {
+    if (!current.dodoCustomerId || isDetachedCustomerId(current.dodoCustomerId))
+      return { error: "This subscription needs attention. Contact support to recover billing." };
+    return { portalCustomerId: current.dodoCustomerId };
+  }
 
-    const activeSessionId =
-      current?.checkoutSessionId || extractSessionIdFromUrl(current?.checkoutUrl);
+  const activeSessionId =
+    current?.checkoutSessionId || extractSessionIdFromUrl(current?.checkoutUrl);
 
-    if (activeSessionId) {
-      const checkoutUrlIsActive = Boolean(
-        current.checkoutUrl && current.checkoutUrlExpiresAt && current.checkoutUrlExpiresAt > now,
-      );
-      if (checkoutUrlIsActive) {
-        if (current.checkoutInterval !== checkoutInterval)
-          return {
-            error:
-              "A checkout is already open for the other billing interval. Finish it or wait for it to expire.",
-          };
-        return { checkoutUrl: current.checkoutUrl };
-      }
-      return {
-        reconcile: {
-          intentId: current.checkoutIntentId,
-          sessionId: activeSessionId,
-        },
-      };
-    }
-
-    if (current?.checkoutIntentId && current.checkoutPendingUntil > now) {
+  if (activeSessionId) {
+    const checkoutUrlIsActive = Boolean(
+      current.checkoutUrl && current.checkoutUrlExpiresAt && current.checkoutUrlExpiresAt > now,
+    );
+    if (checkoutUrlIsActive) {
       if (current.checkoutInterval !== checkoutInterval)
         return {
           error:
             "A checkout is already open for the other billing interval. Finish it or wait for it to expire.",
         };
-      if (current.checkoutUrl) {
-        const checkoutUrlIsActive = Boolean(
-          current.checkoutUrlExpiresAt && current.checkoutUrlExpiresAt > now,
-        );
-        if (checkoutUrlIsActive) return { checkoutUrl: current.checkoutUrl };
-        return {
-          error: "This checkout needs reconciliation before another payment attempt can start.",
-        };
-      }
-      if (current.checkoutCreationStartedAt) {
-        const isLeaseActive =
-          now.getTime() - current.checkoutCreationStartedAt.getTime() < CHECKOUT_CREATION_LEASE_MS;
-        if (isLeaseActive) return { creationPending: true };
-        return {
-          error:
-            "A previous checkout request is still pending confirmation. Please wait or contact support before starting another payment.",
-        };
-      }
-      // If checkoutCreationStartedAt is null, the reservation was abandoned before a Dodo
-      // request was dispatched. Safe to recover/release this abandoned reservation.
+      return { checkoutUrl: current.checkoutUrl };
     }
+    return {
+      reconcile: {
+        intentId: current.checkoutIntentId,
+        sessionId: activeSessionId,
+      },
+    };
+  }
 
-    if (current?.checkoutIntentId && current.checkoutUrl && current.checkoutPendingUntil > now)
+  if (current?.checkoutIntentId && current.checkoutPendingUntil > now) {
+    if (current.checkoutInterval !== checkoutInterval)
+      return {
+        error:
+          "A checkout is already open for the other billing interval. Finish it or wait for it to expire.",
+      };
+    if (current.checkoutUrl) {
+      const checkoutUrlIsActive = Boolean(
+        current.checkoutUrlExpiresAt && current.checkoutUrlExpiresAt > now,
+      );
+      if (checkoutUrlIsActive) return { checkoutUrl: current.checkoutUrl };
       return {
         error: "This checkout needs reconciliation before another payment attempt can start.",
       };
+    }
+    if (current.checkoutCreationStartedAt) {
+      const isLeaseActive =
+        now.getTime() - current.checkoutCreationStartedAt.getTime() < CHECKOUT_CREATION_LEASE_MS;
+      if (isLeaseActive) return { creationPending: true };
+      return {
+        error:
+          "A previous checkout request is still pending confirmation. Please wait or contact support before starting another payment.",
+      };
+    }
+    // If checkoutCreationStartedAt is null, the reservation was abandoned before a Dodo
+    // request was dispatched. Safe to recover/release this abandoned reservation.
+  }
 
-    await tx.workspaceSubscription.upsert({
-      where: { workspaceId },
-      create: {
-        workspaceId,
-        plan: "FREE",
-        status: "FREE",
-        checkoutIntentId: newIntentId,
-        checkoutInterval,
-        checkoutCreationStartedAt: null,
-        checkoutPendingUntil: protectionUntil,
-      },
-      update: {
-        checkoutIntentId: newIntentId,
-        checkoutInterval,
-        checkoutUrl: null,
-        checkoutSessionId: null,
-        checkoutUrlExpiresAt: null,
-        checkoutCreationStartedAt: null,
-        checkoutPendingUntil: protectionUntil,
-      },
-    });
-    return { intentId: newIntentId };
+  if (current?.checkoutIntentId && current.checkoutUrl && current.checkoutPendingUntil > now)
+    return {
+      error: "This checkout needs reconciliation before another payment attempt can start.",
+    };
+
+  await prisma.workspaceSubscription.upsert({
+    where: { workspaceId },
+    create: {
+      workspaceId,
+      plan: "FREE",
+      status: "FREE",
+      checkoutIntentId: newIntentId,
+      checkoutInterval,
+      checkoutCreationStartedAt: null,
+      checkoutPendingUntil: protectionUntil,
+    },
+    update: {
+      checkoutIntentId: newIntentId,
+      checkoutInterval,
+      checkoutUrl: null,
+      checkoutSessionId: null,
+      checkoutUrlExpiresAt: null,
+      checkoutCreationStartedAt: null,
+      checkoutPendingUntil: protectionUntil,
+    },
   });
+  return { intentId: newIntentId };
 }
 
 async function releaseCheckoutIntent(workspaceId, intentId) {
@@ -196,34 +195,27 @@ async function releaseCheckoutIntent(workspaceId, intentId) {
 }
 
 async function claimCheckoutDispatch(workspaceId, intentId, now, userId) {
-  return prisma.$transaction(async (tx) => {
-    const lockedWorkspace =
-      await tx.$queryRaw`SELECT "id" FROM "workspaces" WHERE "id" = ${workspaceId} FOR UPDATE`;
-    if (lockedWorkspace.length === 0) return false;
-    if (userId) {
-      const membership = await tx.workspaceMember.findUnique({
-        where: { workspaceId_userId: { workspaceId, userId } },
-        select: { role: true },
-      });
-      if (membership?.role !== "OWNER") return false;
-    }
-    const current = await tx.workspaceSubscription.findUnique({
-      where: { workspaceId },
-      select: { checkoutIntentId: true, checkoutCreationStartedAt: true },
-    });
-    if (
-      !current ||
-      current.checkoutIntentId !== intentId ||
-      current.checkoutCreationStartedAt !== null
-    ) {
-      return false;
-    }
-    await tx.workspaceSubscription.update({
-      where: { workspaceId },
-      data: { checkoutCreationStartedAt: now },
-    });
-    return true;
+  const workspace = await prisma.workspace.findUnique({
+    where: { id: workspaceId },
+    select: { id: true },
   });
+  if (!workspace) return false;
+  if (userId) {
+    const membership = await prisma.workspaceMember.findUnique({
+      where: { workspaceId_userId: { workspaceId, userId } },
+      select: { role: true },
+    });
+    if (membership?.role !== "OWNER") return false;
+  }
+  const claimed = await prisma.workspaceSubscription.updateMany({
+    where: {
+      workspaceId,
+      checkoutIntentId: intentId,
+      checkoutCreationStartedAt: null,
+    },
+    data: { checkoutCreationStartedAt: now },
+  });
+  return claimed.count === 1;
 }
 
 /** Starts a Dodo-hosted checkout for the selected workspace only. */
@@ -501,83 +493,67 @@ export async function transferProSubscription(workspaceId) {
     }
 
     try {
-      await prisma.$transaction(async (tx) => {
-        // Deterministic lock order keeps opposite transfers from deadlocking.
-        const [firstLockId, secondLockId] = [source.id, workspace.id].sort();
-        await tx.$queryRaw`SELECT "id" FROM "workspaces" WHERE "id" = ${firstLockId} FOR UPDATE`;
-        await tx.$queryRaw`SELECT "id" FROM "workspaces" WHERE "id" = ${secondLockId} FOR UPDATE`;
-        const [sourceOwner, targetOwner, currentSource, currentTarget] = await Promise.all([
-          tx.workspaceMember.findUnique({
-            where: { workspaceId_userId: { workspaceId: source.id, userId: session.user.id } },
-            select: { role: true },
-          }),
-          tx.workspaceMember.findUnique({
-            where: { workspaceId_userId: { workspaceId: workspace.id, userId: session.user.id } },
-            select: { role: true },
-          }),
-          tx.workspaceSubscription.findUnique({ where: { workspaceId: source.id } }),
-          tx.workspaceSubscription.findUnique({ where: { workspaceId: workspace.id } }),
-        ]);
-        if (sourceOwner?.role !== "OWNER" || targetOwner?.role !== "OWNER")
-          throw new Error("You must be an owner of both workspaces to move Pro.");
-        if (
-          currentSource?.dodoSubscriptionId !== sourceSubscription.dodoSubscriptionId ||
-          effectiveWorkspacePlan(currentSource) !== "PRO"
-        )
-          throw new Error("The source subscription changed while Pro was being moved.");
-        if (
-          effectiveWorkspacePlan(currentTarget) === "PRO" ||
-          hasPendingCheckout(currentSource) ||
-          hasPendingCheckout(currentTarget)
-        )
-          throw new Error("Billing changed while Pro was being moved.");
-        if (providerSubscriptionNeedsReview(currentTarget))
-          throw new Error("The target subscription needs reconciliation before Pro can move.");
+      const [sourceOwner, targetOwner, currentSource, currentTarget] = await Promise.all([
+        prisma.workspaceMember.findUnique({
+          where: { workspaceId_userId: { workspaceId: source.id, userId: session.user.id } },
+          select: { role: true },
+        }),
+        prisma.workspaceMember.findUnique({
+          where: { workspaceId_userId: { workspaceId: workspace.id, userId: session.user.id } },
+          select: { role: true },
+        }),
+        prisma.workspaceSubscription.findUnique({ where: { workspaceId: source.id } }),
+        prisma.workspaceSubscription.findUnique({ where: { workspaceId: workspace.id } }),
+      ]);
+      if (sourceOwner?.role !== "OWNER" || targetOwner?.role !== "OWNER")
+        throw new Error("You must be an owner of both workspaces to move Pro.");
+      if (
+        currentSource?.dodoSubscriptionId !== sourceSubscription.dodoSubscriptionId ||
+        effectiveWorkspacePlan(currentSource) !== "PRO"
+      )
+        throw new Error("The source subscription changed while Pro was being moved.");
+      if (
+        effectiveWorkspacePlan(currentTarget) === "PRO" ||
+        hasPendingCheckout(currentSource) ||
+        hasPendingCheckout(currentTarget)
+      )
+        throw new Error("Billing changed while Pro was being moved.");
+      if (providerSubscriptionNeedsReview(currentTarget))
+        throw new Error("The target subscription needs reconciliation before Pro can move.");
 
-        await tx.workspaceSubscription.delete({ where: { workspaceId: source.id } });
-        const movedSubscriptionData = {
-          plan: currentSource.plan,
-          status: currentSource.status,
-          interval: currentSource.interval,
-          dodoCustomerId: currentSource.dodoCustomerId,
-          dodoSubscriptionId: currentSource.dodoSubscriptionId,
-          dodoProductId: currentSource.dodoProductId,
-          currentPeriodStart: currentSource.currentPeriodStart,
-          currentPeriodEnd: currentSource.currentPeriodEnd,
-          pastDueEndsAt: currentSource.pastDueEndsAt,
-          cancelAtPeriodEnd: currentSource.cancelAtPeriodEnd,
-          lastEventAt: currentSource.lastEventAt,
-        };
-        await tx.workspaceSubscription.upsert({
+      const movedSubscriptionData = {
+        plan: currentSource.plan,
+        status: currentSource.status,
+        interval: currentSource.interval,
+        dodoCustomerId: currentSource.dodoCustomerId,
+        dodoSubscriptionId: currentSource.dodoSubscriptionId,
+        dodoProductId: currentSource.dodoProductId,
+        currentPeriodStart: currentSource.currentPeriodStart,
+        currentPeriodEnd: currentSource.currentPeriodEnd,
+        pastDueEndsAt: currentSource.pastDueEndsAt,
+        cancelAtPeriodEnd: currentSource.cancelAtPeriodEnd,
+        lastEventAt: currentSource.lastEventAt,
+      };
+      await prisma.$transaction([
+        prisma.workspaceSubscription.delete({ where: { workspaceId: source.id } }),
+        prisma.workspaceSubscription.upsert({
           where: { workspaceId: workspace.id },
           create: {
             workspaceId: workspace.id,
             ...movedSubscriptionData,
           },
           update: movedSubscriptionData,
-        });
-      });
+        }),
+      ]);
     } catch (transactionError) {
       try {
-        // Decide under the same workspace locks so a sibling transfer's commit
-        // is visible before choosing whether to revert the metadata. Revert
-        // only when the subscription is still parked on the source workspace:
-        // if a committed transfer moved it elsewhere, that transfer's own
-        // metadata write already points at its new workspace.
-        let stillAtSource = false;
-        await prisma.$transaction(async (tx) => {
-          const [firstLockId, secondLockId] = [source.id, workspace.id].sort();
-          await tx.$queryRaw`SELECT "id" FROM "workspaces" WHERE "id" = ${firstLockId} FOR UPDATE`;
-          await tx.$queryRaw`SELECT "id" FROM "workspaces" WHERE "id" = ${secondLockId} FOR UPDATE`;
-          const parked = await tx.workspaceSubscription.findFirst({
-            where: {
-              workspaceId: source.id,
-              dodoSubscriptionId: sourceSubscription.dodoSubscriptionId,
-            },
-          });
-          stillAtSource = Boolean(parked);
+        const parked = await prisma.workspaceSubscription.findFirst({
+          where: {
+            workspaceId: source.id,
+            dodoSubscriptionId: sourceSubscription.dodoSubscriptionId,
+          },
         });
-        if (stillAtSource) {
+        if (parked) {
           await client.subscriptions.update(sourceSubscription.dodoSubscriptionId, {
             metadata: { workspaceId: source.id, userId: session.user.id, plan: "PRO" },
           });

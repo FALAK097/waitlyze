@@ -1,58 +1,66 @@
-const MAX_DAYS = 90;
-const ANALYTICS_GROUPING_SET = Object.freeze({
-  channel: 63,
-  campaign: 479,
-  referrer: 447,
-  source: 383,
-  country: 495,
-  region: 487,
-  city: 491,
-  deviceType: 509,
-  device: 510,
-});
-const ANALYTICS_GROUP_FIELDS = Object.freeze({
-  channel: new Set(["utmMedium", "utmSource", "referrer"]),
-  campaign: new Set(["utmCampaign"]),
-  referrer: new Set(["referrer"]),
-  source: new Set(["utmSource"]),
-  country: new Set(["country"]),
-  region: new Set(["region", "country"]),
-  city: new Set(["city", "country"]),
-  deviceType: new Set(["deviceType"]),
-  device: new Set(["device"]),
-});
-const ANALYTICS_GROUP_BY_ID = new Map(
-  Object.entries(ANALYTICS_GROUPING_SET).map(([name, id]) => [id, name]),
-);
+import { toSqliteIso } from "../db/sqlite-helpers.mjs";
 
-function selectAnalyticsGroups(aggregateRows) {
-  const groupedRows = Object.fromEntries(
-    Object.keys(ANALYTICS_GROUP_FIELDS).map((group) => [group, []]),
-  );
-  for (const row of aggregateRows) {
-    const group = ANALYTICS_GROUP_BY_ID.get(row.groupingSet);
-    const fields = ANALYTICS_GROUP_FIELDS[group];
-    if (!fields) throw new Error("Unexpected analytics grouping set.");
-    for (const field of Object.keys(row)) {
-      if (
-        field !== "groupingSet" &&
-        field !== "count" &&
-        field !== "displayLabel" &&
-        field !== "dimensionTotal" &&
-        !fields.has(field)
-      )
-        delete row[field];
-    }
-    row._count = { _all: number(row.count) };
-    if (row.displayLabel != null) row._label = row.displayLabel;
-    if (row.dimensionTotal != null) row._total = number(row.dimensionTotal);
-    delete row.groupingSet;
-    delete row.count;
-    delete row.displayLabel;
-    delete row.dimensionTotal;
-    groupedRows[group].push(row);
+const MAX_DAYS = 90;
+
+function parseSqliteDate(value) {
+  if (!value) return null;
+  if (value instanceof Date) return Number.isNaN(value.valueOf()) ? null : value;
+  const raw = String(value).trim();
+  if (!raw) return null;
+  const normalized = raw.includes("T") ? raw : `${raw.replace(" ", "T")}Z`;
+  const parsed = new Date(normalized);
+  return Number.isNaN(parsed.valueOf()) ? null : parsed;
+}
+
+function getTimeZoneFormatter(timeZone, withTime = false) {
+  return new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    ...(withTime
+      ? { hour: "2-digit", minute: "2-digit", second: "2-digit", hourCycle: "h23" }
+      : {}),
+  });
+}
+
+function formatLocalDate(date, timeZone) {
+  const parts = getTimeZoneFormatter(timeZone, false).formatToParts(date);
+  const byType = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+  return `${byType.year}-${byType.month}-${byType.day}`;
+}
+
+function localMidnightToUtc(dateStr, timeZone) {
+  const [year, month, day] = dateStr.split("-").map(Number);
+  const formatter = getTimeZoneFormatter(timeZone, true);
+  let utc = Date.UTC(year, month - 1, day, 0, 0, 0);
+  for (let pass = 0; pass < 2; pass += 1) {
+    const parts = formatter.formatToParts(new Date(utc));
+    const map = Object.fromEntries(parts.map((part) => [part.type, Number(part.value)]));
+    const localAsUtc = Date.UTC(
+      map.year,
+      map.month - 1,
+      map.day,
+      map.hour === 24 ? 0 : map.hour,
+      map.minute,
+      map.second,
+    );
+    const targetAsUtc = Date.UTC(year, month - 1, day, 0, 0, 0);
+    utc += targetAsUtc - localAsUtc;
   }
-  return groupedRows;
+  return new Date(utc);
+}
+
+function addDaysToIsoDate(dateStr, deltaDays) {
+  const [year, month, day] = dateStr.split("-").map(Number);
+  return new Date(Date.UTC(year, month - 1, day + deltaDays)).toISOString().slice(0, 10);
+}
+
+function toGroupRows(rows) {
+  return rows.map((row) => ({
+    ...row,
+    _count: { _all: number(row.count) },
+  }));
 }
 
 function validTimeZone(timeZone) {
@@ -186,356 +194,155 @@ export async function getWaitlistAnalytics(
   const zone = validTimeZone(timeZone);
   if (!(now instanceof Date) || Number.isNaN(now.valueOf()))
     throw new TypeError("Choose a valid end time.");
-  const endDateParam =
-    typeof endDate === "string" && /^\d{4}-\d{2}-\d{2}$/.test(endDate) ? endDate : "";
+  const resolvedEndDate =
+    typeof endDate === "string" && /^\d{4}-\d{2}-\d{2}$/.test(endDate)
+      ? endDate
+      : formatLocalDate(now, zone);
 
-  const rows = await db.$queryRaw`
-    WITH period AS (
-      SELECT ${waitListId}::text AS wait_list_id,
-             ${zone}::text AS time_zone,
-             ${now}::timestamptz AS now_at,
-             COALESCE(NULLIF(${endDateParam}, '')::date,
-                   date_trunc('day', ${now}::timestamptz AT TIME ZONE ${zone})::date) AS end_date,
-             ${rangeDays}::int AS day_count
-    ), bounds AS (
-      SELECT wait_list_id, time_zone, day_count,
-             end_date - (day_count - 1) AS start_date,
-             end_date,
-             ((end_date - (day_count - 1))::timestamp AT TIME ZONE time_zone AT TIME ZONE 'UTC') AS start_utc,
-             ((end_date + 1)::timestamp AT TIME ZONE time_zone AT TIME ZONE 'UTC') AS end_utc,
-             ((end_date - (day_count * 2 - 1))::timestamp AT TIME ZONE time_zone AT TIME ZONE 'UTC') AS previous_start_utc
-      FROM period
-    ), calendar AS (
-      SELECT generate_series(start_date, end_date, interval '1 day')::date AS local_date
-      FROM bounds
-    ), signup_base AS (
-      SELECT signup.*
-      FROM "sign_ups" AS signup
-      WHERE signup."waitListId" = ${waitListId}::text
-        AND NOT EXISTS (
-          SELECT 1 FROM "referrals" AS held_referral
-          WHERE held_referral."signUpId" = signup."id"
-            AND held_referral."reviewStatus" IN ('NEEDS_REVIEW', 'EXCLUDED')
-        )
-    ), visitor_daily AS (
-      -- The waitlist/user unique index makes row counts equal distinct visitors.
-      SELECT (impression."createdAt" AT TIME ZONE 'UTC' AT TIME ZONE bounds.time_zone)::date AS local_date,
-             COUNT(*)::int AS visitors
-      FROM "impressions" AS impression
-      CROSS JOIN bounds
-      WHERE impression."waitListId" = bounds.wait_list_id
-        AND impression."uniqueUserId" <> ''
-        AND impression."createdAt" >= bounds.start_utc
-        AND impression."createdAt" < bounds.end_utc
-      GROUP BY 1
-    ), signup_daily AS (
-      SELECT (signup."createdAt" AT TIME ZONE 'UTC' AT TIME ZONE bounds.time_zone)::date AS local_date,
-             COUNT(*)::int AS signups,
-             COUNT(*) FILTER (WHERE signup."verifiedAt" IS NOT NULL)::int AS verified_signups
-      FROM signup_base AS signup
-      CROSS JOIN bounds
-      WHERE signup."createdAt" >= bounds.start_utc
-        AND signup."createdAt" < bounds.end_utc
-      GROUP BY 1
-    ), converted_daily AS (
-      SELECT (signup."createdAt" AT TIME ZONE 'UTC' AT TIME ZONE bounds.time_zone)::date AS local_date,
-             COUNT(DISTINCT impression."uniqueUserId")::int AS converted_visitors
-      FROM signup_base AS signup
-      INNER JOIN "impressions" AS impression
-        ON impression."id" = signup."impressionId"
-       AND impression."waitListId" = signup."waitListId"
-      CROSS JOIN bounds
-      WHERE signup."waitListId" = bounds.wait_list_id
-        AND signup."createdAt" >= bounds.start_utc
-        AND signup."createdAt" < bounds.end_utc
-        AND impression."createdAt" >= bounds.start_utc
-        AND impression."createdAt" < bounds.end_utc
-        AND impression."createdAt" <= signup."createdAt"
-        AND impression."uniqueUserId" <> ''
-      GROUP BY 1
-    ), referral_period AS (
-      SELECT (SELECT COUNT(*)::int
-              FROM "referrals" AS referral
-              INNER JOIN "sign_ups" AS referred ON referred."id" = referral."signUpId"
-              CROSS JOIN bounds
-              WHERE referred."waitListId" = bounds.wait_list_id
-                AND referral."referredById" IS NOT NULL
-                AND referral."reviewStatus" IN ('CLEAR', 'APPROVED')
-                AND referred."createdAt" >= bounds.start_utc
-                AND referred."createdAt" < bounds.end_utc) AS referred,
-             (SELECT COUNT(DISTINCT referral."referredById")::int
-              FROM "referrals" AS referral
-              INNER JOIN "sign_ups" AS referred ON referred."id" = referral."signUpId"
-              CROSS JOIN bounds
-              WHERE referred."waitListId" = bounds.wait_list_id
-                AND referral."referredById" IS NOT NULL
-                AND referral."reviewStatus" IN ('CLEAR', 'APPROVED')
-                AND referred."createdAt" >= bounds.start_utc
-                AND referred."createdAt" < bounds.end_utc) AS referrers,
-             (SELECT COUNT(*)::int
-              FROM "sign_ups" AS held_signup
-              CROSS JOIN bounds
-              WHERE held_signup."waitListId" = bounds.wait_list_id
-                AND held_signup."createdAt" >= bounds.start_utc
-                AND held_signup."createdAt" < bounds.end_utc
-                AND EXISTS (
-                  SELECT 1 FROM "referrals" AS held_referral
-                  WHERE held_referral."signUpId" = held_signup."id"
-                    AND held_referral."reviewStatus" IN ('NEEDS_REVIEW', 'EXCLUDED')
-                )) AS held
-    ), points_period AS (
-      SELECT COALESCE(SUM(ledger.points) FILTER (WHERE ledger.kind = 'SIGNUP_VERIFIED'), 0)::int AS signup_points,
-             COALESCE(SUM(ledger.points) FILTER (WHERE ledger.kind = 'REFERRAL_CREDIT'), 0)::int AS referral_points
-      FROM "point_ledger" AS ledger
-      CROSS JOIN bounds
-      WHERE ledger."waitListId" = bounds.wait_list_id
-        AND ledger."createdAt" >= bounds.start_utc
-        AND ledger."createdAt" < bounds.end_utc
-    ), period_summary AS (
-      SELECT
-        (SELECT COUNT(*)::int
-         FROM "impressions" AS impression CROSS JOIN bounds
-         WHERE impression."waitListId" = bounds.wait_list_id
-           AND impression."uniqueUserId" <> ''
-           AND impression."createdAt" >= bounds.start_utc
-           AND impression."createdAt" < bounds.end_utc) AS visitors,
-        (SELECT COUNT(*)::int FROM signup_base AS signup CROSS JOIN bounds
-         WHERE signup."waitListId" = bounds.wait_list_id
-           AND signup."createdAt" >= bounds.start_utc
-           AND signup."createdAt" < bounds.end_utc) AS signups,
-        (SELECT COUNT(*) FILTER (WHERE signup."verifiedAt" IS NOT NULL)::int
-         FROM signup_base AS signup CROSS JOIN bounds
-         WHERE signup."waitListId" = bounds.wait_list_id
-           AND signup."createdAt" >= bounds.start_utc
-           AND signup."createdAt" < bounds.end_utc) AS verified_signups,
-        (SELECT COUNT(DISTINCT impression."uniqueUserId")::int
-         FROM signup_base AS signup
-          INNER JOIN "impressions" AS impression
-           ON impression."id" = signup."impressionId"
-          AND impression."waitListId" = signup."waitListId"
-         CROSS JOIN bounds
-         WHERE signup."waitListId" = bounds.wait_list_id
-           AND signup."createdAt" >= bounds.start_utc
-           AND signup."createdAt" < bounds.end_utc
-           AND impression."createdAt" >= bounds.start_utc
-           AND impression."createdAt" < bounds.end_utc
-           AND impression."createdAt" <= signup."createdAt"
-           AND impression."uniqueUserId" <> '') AS converted_visitors
-    ), previous_summary AS (
-      SELECT
-        (SELECT COUNT(*)::int
-         FROM "impressions" AS impression CROSS JOIN bounds
-         WHERE impression."waitListId" = bounds.wait_list_id
-           AND impression."uniqueUserId" <> ''
-           AND impression."createdAt" >= bounds.previous_start_utc
-           AND impression."createdAt" < bounds.start_utc) AS visitors,
-        (SELECT COUNT(*)::int FROM signup_base AS signup CROSS JOIN bounds
-         WHERE signup."waitListId" = bounds.wait_list_id
-           AND signup."createdAt" >= bounds.previous_start_utc
-           AND signup."createdAt" < bounds.start_utc) AS signups,
-        (SELECT COUNT(*) FILTER (WHERE signup."verifiedAt" IS NOT NULL)::int
-         FROM signup_base AS signup CROSS JOIN bounds
-         WHERE signup."waitListId" = bounds.wait_list_id
-           AND signup."createdAt" >= bounds.previous_start_utc
-           AND signup."createdAt" < bounds.start_utc) AS verified_signups,
-        (SELECT COUNT(DISTINCT impression."uniqueUserId")::int
-         FROM signup_base AS signup
-          INNER JOIN "impressions" AS impression
-           ON impression."id" = signup."impressionId"
-          AND impression."waitListId" = signup."waitListId"
-         CROSS JOIN bounds
-         WHERE signup."waitListId" = bounds.wait_list_id
-           AND signup."createdAt" >= bounds.previous_start_utc
-           AND signup."createdAt" < bounds.start_utc
-           AND impression."createdAt" >= bounds.previous_start_utc
-           AND impression."createdAt" < bounds.start_utc
-           AND impression."createdAt" <= signup."createdAt"
-           AND impression."uniqueUserId" <> '') AS converted_visitors
-    )
-    SELECT to_char(calendar.local_date, 'YYYY-MM-DD') AS date,
-           COALESCE(visitor_daily.visitors, 0)::int AS visitors,
-           COALESCE(signup_daily.signups, 0)::int AS signups,
-           COALESCE(signup_daily.verified_signups, 0)::int AS verified_signups,
-           COALESCE(converted_daily.converted_visitors, 0)::int AS converted_visitors,
-           period_summary.visitors AS period_visitors,
-           period_summary.signups AS period_signups,
-           period_summary.verified_signups AS period_verified_signups,
-            period_summary.converted_visitors AS period_converted_visitors,
-            previous_summary.visitors AS previous_visitors,
-            previous_summary.signups AS previous_signups,
-            previous_summary.verified_signups AS previous_verified_signups,
-             previous_summary.converted_visitors AS previous_converted_visitors,
-             referral_period.referred AS period_referred,
-             referral_period.referrers AS period_referrers,
-             referral_period.held AS period_held,
-             points_period.signup_points AS points_signup,
-             points_period.referral_points AS points_referral,
-             to_char(bounds.start_date, 'YYYY-MM-DD') AS start_date,
-             to_char(bounds.end_date, 'YYYY-MM-DD') AS end_date,
-             bounds.start_utc AS start_utc,
-             bounds.end_utc AS end_utc
-      FROM calendar
-      CROSS JOIN period_summary
-      CROSS JOIN previous_summary
-      CROSS JOIN referral_period
-      CROSS JOIN points_period
-     CROSS JOIN bounds
-     LEFT JOIN visitor_daily ON visitor_daily.local_date = calendar.local_date
-     LEFT JOIN signup_daily ON signup_daily.local_date = calendar.local_date
-     LEFT JOIN converted_daily ON converted_daily.local_date = calendar.local_date
-     ORDER BY calendar.local_date
-  `;
+  const startDateStr = addDaysToIsoDate(resolvedEndDate, -(rangeDays - 1));
+  const nextAfterEndStr = addDaysToIsoDate(resolvedEndDate, 1);
+  const previousStartDateStr = addDaysToIsoDate(resolvedEndDate, -(rangeDays * 2 - 1));
 
-  const first = rows[0];
-  const visitors = number(first?.period_visitors);
-  const signups = number(first?.period_signups);
-  const verifiedSignups = number(first?.period_verified_signups);
-  const convertedVisitors = number(first?.period_converted_visitors);
-  const conversionRate = ratio(convertedVisitors, visitors);
-  const verificationRate = ratio(verifiedSignups, signups);
-  const previousVisitors = number(first?.previous_visitors);
-  const previousSignups = number(first?.previous_signups);
-  const previousVerifiedSignups = number(first?.previous_verified_signups);
-  const previousConvertedVisitors = number(first?.previous_converted_visitors);
-  const previousConversionRate = ratio(previousConvertedVisitors, previousVisitors);
-  const previousVerificationRate = ratio(previousVerifiedSignups, previousSignups);
+  const startUtc = localMidnightToUtc(startDateStr, zone);
+  const endUtc = localMidnightToUtc(nextAfterEndStr, zone);
+  const previousStartUtc = localMidnightToUtc(previousStartDateStr, zone);
 
-  const startUtc = first?.start_utc instanceof Date ? first.start_utc : new Date(first?.start_utc);
-  const endUtc = first?.end_utc instanceof Date ? first.end_utc : new Date(first?.end_utc);
+  const prevStartIso = toSqliteIso(previousStartUtc);
+  const startIso = toSqliteIso(startUtc);
+  const endIso = toSqliteIso(endUtc);
   const inRange = { gte: startUtc, lt: endUtc };
+
+  const calendarDates = [];
+  for (let i = 0; i < rangeDays; i += 1) {
+    calendarDates.push(addDaysToIsoDate(startDateStr, i));
+  }
+
   const [
-    impressionAggregateRows,
-    signupAggregateRows,
+    impressionWindowRows,
+    signupWindowRows,
+    referralPeriodRows,
+    pointsPeriodRows,
+    impressionSourceRows,
+    impressionGeoRows,
+    impressionTechRows,
+    signupSourceRows,
+    signupGeoRows,
+    signupTechRows,
     broadcasts,
     topReferrerRows,
     shareCount,
     linkVisitCount,
   ] = await Promise.all([
     db.$queryRaw`
-      WITH grouped AS (
-      SELECT GROUPING(
-               "utmMedium", "utmSource", "referrer", "utmCampaign", "country",
-               "region", "city", "deviceType", "device"
-             )::int AS "groupingSet",
-             "utmMedium", "utmSource", "referrer", "utmCampaign", "country",
-             "region", "city", "deviceType", "device", COUNT(*) AS "count"
+      SELECT "id", "uniqueUserId", "createdAt"
       FROM "impressions"
-      WHERE "waitListId" = ${waitListId}::text
-        AND "createdAt" >= ${startUtc}::timestamptz
-        AND "createdAt" < ${endUtc}::timestamptz
-      GROUP BY GROUPING SETS (
-        ("utmMedium", "utmSource", "referrer"),
-        ("utmCampaign"),
-        ("referrer"),
-        ("utmSource"),
-        ("country"),
-        ("region", "country"),
-        ("city", "country"),
-        ("deviceType"),
-        ("device")
-      )
-      ), normalized AS (
-        SELECT "groupingSet",
-               CASE "groupingSet"
-                 WHEN 479 THEN COALESCE(NULLIF("utmCampaign", ''), 'No campaign')
-                 WHEN 383 THEN COALESCE(NULLIF("utmSource", ''), 'No source')
-                 WHEN 495 THEN COALESCE(NULLIF("country", ''), 'Unknown')
-                 WHEN 487 THEN concat_ws(', ', COALESCE(NULLIF("region", ''), 'Unknown region'), NULLIF("country", ''))
-                 WHEN 491 THEN concat_ws(', ', COALESCE(NULLIF("city", ''), 'Unknown city'), NULLIF("country", ''))
-                 WHEN 509 THEN CASE WHEN COALESCE("deviceType", '') = '' THEN 'Unknown' ELSE upper(left("deviceType", 1)) || substr("deviceType", 2) END
-               END AS "displayLabel",
-               SUM("count") AS "count"
-        FROM grouped
-        WHERE "groupingSet" IN (479, 383, 495, 487, 491, 509)
-        GROUP BY "groupingSet", 2
-      ), ranked AS (
-        SELECT normalized.*,
-               SUM("count") OVER (PARTITION BY "groupingSet") AS "dimensionTotal",
-               ROW_NUMBER() OVER (PARTITION BY "groupingSet" ORDER BY "count" DESC, "displayLabel" COLLATE "C" ASC) AS "rowNumber"
-        FROM normalized
-      )
-      SELECT grouped."groupingSet",
-             grouped."utmMedium", grouped."utmSource", grouped."referrer", grouped."utmCampaign",
-             grouped."country", grouped."region", grouped."city", grouped."deviceType", grouped."device",
-             grouped."count", NULL::text AS "displayLabel", NULL::int AS "dimensionTotal"
-      FROM grouped
-      WHERE "groupingSet" NOT IN (479, 383, 495, 487, 491, 509)
-      UNION ALL
-      SELECT ranked."groupingSet",
-             NULL::text, NULL::text, NULL::text, NULL::text,
-             NULL::text, NULL::text, NULL::text, NULL::text, NULL::text,
-             ranked."count", ranked."displayLabel", ranked."dimensionTotal"::int
-      FROM ranked
-      WHERE ranked."rowNumber" <= CASE ranked."groupingSet" WHEN 509 THEN 8 WHEN 495 THEN 250 ELSE 5 END
+      WHERE "waitListId" = ${waitListId}
+        AND "uniqueUserId" <> ''
+        AND julianday("createdAt") >= julianday(${prevStartIso})
+        AND julianday("createdAt") < julianday(${endIso})
     `,
     db.$queryRaw`
-      WITH grouped AS (
-      SELECT CASE GROUPING(
-               "utmMedium", "utmSource", "referrer", "utmCampaign", "country",
-               "city", "deviceType", "device"
-             )::int
-               WHEN 31  THEN 63  -- (utmMedium, utmSource, referrer)
-               WHEN 239 THEN 479 -- (utmCampaign)
-               WHEN 223 THEN 447 -- (referrer)
-               WHEN 191 THEN 383 -- (utmSource)
-               WHEN 247 THEN 495 -- (country)
-               WHEN 243 THEN 491 -- (city, country)
-               WHEN 253 THEN 509 -- (deviceType)
-               WHEN 254 THEN 510 -- (device)
-             END AS "groupingSet",
-             "utmMedium", "utmSource", "referrer", "utmCampaign", "country",
-             NULL::text AS "region", "city", "deviceType", "device", COUNT(*) AS "count"
+      SELECT signup."id", signup."createdAt", signup."verifiedAt", signup."impressionId",
+             CASE WHEN EXISTS (
+               SELECT 1 FROM "referrals" AS held_referral
+               WHERE held_referral."signUpId" = signup."id"
+                 AND held_referral."reviewStatus" IN ('NEEDS_REVIEW', 'EXCLUDED')
+             ) THEN 1 ELSE 0 END AS is_held
       FROM "sign_ups" AS signup
-      WHERE signup."waitListId" = ${waitListId}::text
-        AND signup."createdAt" >= ${startUtc}::timestamptz
-        AND signup."createdAt" < ${endUtc}::timestamptz
+      WHERE signup."waitListId" = ${waitListId}
+        AND julianday(signup."createdAt") >= julianday(${prevStartIso})
+        AND julianday(signup."createdAt") < julianday(${endIso})
+    `,
+    db.$queryRaw`
+      SELECT
+        (SELECT COUNT(*)
+         FROM "referrals" AS referral
+         INNER JOIN "sign_ups" AS referred ON referred."id" = referral."signUpId"
+         WHERE referred."waitListId" = ${waitListId}
+           AND referral."referredById" IS NOT NULL
+           AND referral."reviewStatus" IN ('CLEAR', 'APPROVED')
+           AND julianday(referred."createdAt") >= julianday(${startIso})
+           AND julianday(referred."createdAt") < julianday(${endIso})) AS referred,
+        (SELECT COUNT(DISTINCT referral."referredById")
+         FROM "referrals" AS referral
+         INNER JOIN "sign_ups" AS referred ON referred."id" = referral."signUpId"
+         WHERE referred."waitListId" = ${waitListId}
+           AND referral."referredById" IS NOT NULL
+           AND referral."reviewStatus" IN ('CLEAR', 'APPROVED')
+           AND julianday(referred."createdAt") >= julianday(${startIso})
+           AND julianday(referred."createdAt") < julianday(${endIso})) AS referrers
+    `,
+    db.$queryRaw`
+      SELECT
+        COALESCE(SUM(CASE WHEN ledger."kind" = 'SIGNUP_VERIFIED' THEN ledger."points" ELSE 0 END), 0) AS signup_points,
+        COALESCE(SUM(CASE WHEN ledger."kind" = 'REFERRAL_CREDIT' THEN ledger."points" ELSE 0 END), 0) AS referral_points
+      FROM "point_ledger" AS ledger
+      WHERE ledger."waitListId" = ${waitListId}
+        AND julianday(ledger."createdAt") >= julianday(${startIso})
+        AND julianday(ledger."createdAt") < julianday(${endIso})
+    `,
+    db.$queryRaw`
+      SELECT "utmMedium", "utmSource", "utmCampaign", "referrer", COUNT(*) AS "count"
+      FROM "impressions"
+      WHERE "waitListId" = ${waitListId}
+        AND julianday("createdAt") >= julianday(${startIso})
+        AND julianday("createdAt") < julianday(${endIso})
+      GROUP BY "utmMedium", "utmSource", "utmCampaign", "referrer"
+    `,
+    db.$queryRaw`
+      SELECT "country", "region", "city", COUNT(*) AS "count"
+      FROM "impressions"
+      WHERE "waitListId" = ${waitListId}
+        AND julianday("createdAt") >= julianday(${startIso})
+        AND julianday("createdAt") < julianday(${endIso})
+      GROUP BY "country", "region", "city"
+    `,
+    db.$queryRaw`
+      SELECT "deviceType", "device", COUNT(*) AS "count"
+      FROM "impressions"
+      WHERE "waitListId" = ${waitListId}
+        AND julianday("createdAt") >= julianday(${startIso})
+        AND julianday("createdAt") < julianday(${endIso})
+      GROUP BY "deviceType", "device"
+    `,
+    db.$queryRaw`
+      SELECT "utmMedium", "utmSource", "utmCampaign", "referrer", COUNT(*) AS "count"
+      FROM "sign_ups" AS signup
+      WHERE signup."waitListId" = ${waitListId}
+        AND julianday(signup."createdAt") >= julianday(${startIso})
+        AND julianday(signup."createdAt") < julianday(${endIso})
         AND NOT EXISTS (
           SELECT 1 FROM "referrals" AS held_referral
           WHERE held_referral."signUpId" = signup."id"
             AND held_referral."reviewStatus" IN ('NEEDS_REVIEW', 'EXCLUDED')
         )
-      GROUP BY GROUPING SETS (
-        ("utmMedium", "utmSource", "referrer"),
-        ("utmCampaign"),
-        ("referrer"),
-        ("utmSource"),
-        ("country"),
-        ("city", "country"),
-        ("deviceType"),
-        ("device")
-      )
-      ), normalized AS (
-        SELECT "groupingSet",
-               CASE "groupingSet"
-                 WHEN 479 THEN COALESCE(NULLIF("utmCampaign", ''), 'No campaign')
-                 WHEN 383 THEN COALESCE(NULLIF("utmSource", ''), 'No source')
-                 WHEN 495 THEN COALESCE(NULLIF("country", ''), 'Unknown')
-                 WHEN 491 THEN concat_ws(', ', COALESCE(NULLIF("city", ''), 'Unknown city'), NULLIF("country", ''))
-                 WHEN 509 THEN CASE WHEN COALESCE("deviceType", '') = '' THEN 'Unknown' ELSE upper(left("deviceType", 1)) || substr("deviceType", 2) END
-               END AS "displayLabel",
-               SUM("count") AS "count"
-        FROM grouped
-        WHERE "groupingSet" IN (479, 383, 495, 491, 509)
-        GROUP BY "groupingSet", 2
-      ), ranked AS (
-        SELECT normalized.*,
-               SUM("count") OVER (PARTITION BY "groupingSet") AS "dimensionTotal",
-               ROW_NUMBER() OVER (PARTITION BY "groupingSet" ORDER BY "count" DESC, "displayLabel" COLLATE "C" ASC) AS "rowNumber"
-        FROM normalized
-      )
-      SELECT grouped."groupingSet",
-             grouped."utmMedium", grouped."utmSource", grouped."referrer", grouped."utmCampaign",
-             grouped."country", grouped."region", grouped."city", grouped."deviceType", grouped."device",
-             grouped."count", NULL::text AS "displayLabel", NULL::int AS "dimensionTotal"
-      FROM grouped
-      WHERE "groupingSet" NOT IN (479, 383, 495, 491, 509)
-      UNION ALL
-      SELECT ranked."groupingSet",
-             NULL::text, NULL::text, NULL::text, NULL::text,
-             NULL::text, NULL::text, NULL::text, NULL::text, NULL::text,
-             ranked."count", ranked."displayLabel", ranked."dimensionTotal"::int
-      FROM ranked
-      WHERE ranked."rowNumber" <= CASE ranked."groupingSet" WHEN 509 THEN 8 ELSE 5 END
+      GROUP BY "utmMedium", "utmSource", "utmCampaign", "referrer"
+    `,
+    db.$queryRaw`
+      SELECT "country", "city", COUNT(*) AS "count"
+      FROM "sign_ups" AS signup
+      WHERE signup."waitListId" = ${waitListId}
+        AND julianday(signup."createdAt") >= julianday(${startIso})
+        AND julianday(signup."createdAt") < julianday(${endIso})
+        AND NOT EXISTS (
+          SELECT 1 FROM "referrals" AS held_referral
+          WHERE held_referral."signUpId" = signup."id"
+            AND held_referral."reviewStatus" IN ('NEEDS_REVIEW', 'EXCLUDED')
+        )
+      GROUP BY "country", "city"
+    `,
+    db.$queryRaw`
+      SELECT "deviceType", "device", COUNT(*) AS "count"
+      FROM "sign_ups" AS signup
+      WHERE signup."waitListId" = ${waitListId}
+        AND julianday(signup."createdAt") >= julianday(${startIso})
+        AND julianday(signup."createdAt") < julianday(${endIso})
+        AND NOT EXISTS (
+          SELECT 1 FROM "referrals" AS held_referral
+          WHERE held_referral."signUpId" = signup."id"
+            AND held_referral."reviewStatus" IN ('NEEDS_REVIEW', 'EXCLUDED')
+        )
+      GROUP BY "deviceType", "device"
     `,
     db.marketingBroadcast.findMany({
       where: { waitListId, status: "SENT", sentAt: inRange },
@@ -546,16 +353,16 @@ export async function getWaitlistAnalytics(
     db.$queryRaw`
       SELECT referral."referredById" AS id,
              referrer."email" AS email,
-             COUNT(*)::int AS signups
+             COUNT(*) AS signups
       FROM "referrals" AS referral
       INNER JOIN "sign_ups" AS referred ON referred."id" = referral."signUpId"
       INNER JOIN "sign_ups" AS referrer ON referrer."id" = referral."referredById"
-      WHERE referred."waitListId" = ${waitListId}::text
-        AND referrer."waitListId" = ${waitListId}::text
+      WHERE referred."waitListId" = ${waitListId}
+        AND referrer."waitListId" = ${waitListId}
         AND referral."referredById" IS NOT NULL
         AND referral."reviewStatus" IN ('CLEAR', 'APPROVED')
-        AND referred."createdAt" >= ${startUtc}::timestamptz
-        AND referred."createdAt" < ${endUtc}::timestamptz
+        AND julianday(referred."createdAt") >= julianday(${startIso})
+        AND julianday(referred."createdAt") < julianday(${endIso})
       GROUP BY referral."referredById", referrer."email"
       ORDER BY COUNT(*) DESC, referrer."email" ASC
       LIMIT 5
@@ -570,6 +377,106 @@ export async function getWaitlistAnalytics(
     }),
   ]);
 
+  const startMs = startUtc.getTime();
+  const endMs = endUtc.getTime();
+  const prevStartMs = previousStartUtc.getTime();
+
+  const dailyBuckets = new Map(
+    calendarDates.map((date) => [
+      date,
+      {
+        date,
+        visitors: 0,
+        signups: 0,
+        verified_signups: 0,
+        convertedVisitorIds: new Set(),
+      },
+    ]),
+  );
+
+  const impressionById = new Map();
+  let visitors = 0;
+  let previousVisitors = 0;
+  for (const row of impressionWindowRows) {
+    const created = parseSqliteDate(row.createdAt);
+    if (!created) continue;
+    const ms = created.getTime();
+    impressionById.set(row.id, { uniqueUserId: row.uniqueUserId, ms });
+    if (ms >= startMs && ms < endMs) {
+      visitors += 1;
+      const bucket = dailyBuckets.get(formatLocalDate(created, zone));
+      if (bucket) bucket.visitors += 1;
+    } else if (ms >= prevStartMs && ms < startMs) {
+      previousVisitors += 1;
+    }
+  }
+
+  let signups = 0;
+  let verifiedSignups = 0;
+  let previousSignups = 0;
+  let previousVerifiedSignups = 0;
+  let heldCount = 0;
+  const convertedSet = new Set();
+  const prevConvertedSet = new Set();
+
+  for (const row of signupWindowRows) {
+    const created = parseSqliteDate(row.createdAt);
+    if (!created) continue;
+    const ms = created.getTime();
+    const isHeld = Number(row.is_held) === 1;
+    if (isHeld) {
+      if (ms >= startMs && ms < endMs) heldCount += 1;
+      continue;
+    }
+    const isVerified = row.verifiedAt != null;
+    const imp = row.impressionId ? impressionById.get(row.impressionId) : null;
+    if (ms >= startMs && ms < endMs) {
+      signups += 1;
+      if (isVerified) verifiedSignups += 1;
+      const bucket = dailyBuckets.get(formatLocalDate(created, zone));
+      if (bucket) {
+        bucket.signups += 1;
+        if (isVerified) bucket.verified_signups += 1;
+      }
+      if (imp && imp.ms >= startMs && imp.ms < endMs && imp.ms <= ms) {
+        convertedSet.add(imp.uniqueUserId);
+        if (bucket) bucket.convertedVisitorIds.add(imp.uniqueUserId);
+      }
+    } else if (ms >= prevStartMs && ms < startMs) {
+      previousSignups += 1;
+      if (isVerified) previousVerifiedSignups += 1;
+      if (imp && imp.ms >= prevStartMs && imp.ms < startMs && imp.ms <= ms) {
+        prevConvertedSet.add(imp.uniqueUserId);
+      }
+    }
+  }
+
+  const convertedVisitors = convertedSet.size;
+  const previousConvertedVisitors = prevConvertedSet.size;
+  const conversionRate = ratio(convertedVisitors, visitors);
+  const verificationRate = ratio(verifiedSignups, signups);
+  const previousConversionRate = ratio(previousConvertedVisitors, previousVisitors);
+  const previousVerificationRate = ratio(previousVerifiedSignups, previousSignups);
+
+  const referralPeriod = referralPeriodRows?.[0] ?? {};
+  const pointsPeriod = pointsPeriodRows?.[0] ?? {};
+  const first = {
+    period_referred: referralPeriod.referred,
+    period_referrers: referralPeriod.referrers,
+    period_held: heldCount,
+    points_signup: pointsPeriod.signup_points,
+    points_referral: pointsPeriod.referral_points,
+    start_date: startDateStr,
+    end_date: resolvedEndDate,
+  };
+  const rows = Array.from(dailyBuckets.values(), (bucket) => ({
+    date: bucket.date,
+    visitors: bucket.visitors,
+    signups: bucket.signups,
+    verified_signups: bucket.verified_signups,
+    converted_visitors: bucket.convertedVisitorIds.size,
+  }));
+
   const emailStats = broadcasts.length
     ? await db.broadcastRecipient.groupBy({
         by: ["broadcastId", "status"],
@@ -578,27 +485,24 @@ export async function getWaitlistAnalytics(
       })
     : [];
 
-  const {
-    channel: channelGroups,
-    campaign: campaignGroups,
-    referrer: referrerGroups,
-    source: sourceGroups,
-    country: countryGroups,
-    region: regionGroups,
-    city: cityGroups,
-    deviceType: deviceGroups,
-    device: userAgentGroups,
-  } = selectAnalyticsGroups(impressionAggregateRows);
-  const {
-    channel: signupChannelGroups,
-    campaign: signupCampaignGroups,
-    referrer: signupReferrerGroups,
-    source: signupSourceGroups,
-    country: signupCountryGroups,
-    city: signupCityGroups,
-    deviceType: signupDeviceGroups,
-    device: signupUserAgentGroups,
-  } = selectAnalyticsGroups(signupAggregateRows);
+  const channelGroups = toGroupRows(impressionSourceRows);
+  const campaignGroups = channelGroups;
+  const referrerGroups = channelGroups;
+  const sourceGroups = channelGroups;
+  const countryGroups = toGroupRows(impressionGeoRows);
+  const regionGroups = countryGroups;
+  const cityGroups = countryGroups;
+  const deviceGroups = toGroupRows(impressionTechRows);
+  const userAgentGroups = deviceGroups;
+
+  const signupChannelGroups = toGroupRows(signupSourceRows);
+  const signupCampaignGroups = signupChannelGroups;
+  const signupReferrerGroups = signupChannelGroups;
+  const signupSourceGroups = signupChannelGroups;
+  const signupCountryGroups = toGroupRows(signupGeoRows);
+  const signupCityGroups = signupCountryGroups;
+  const signupDeviceGroups = toGroupRows(signupTechRows);
+  const signupUserAgentGroups = signupDeviceGroups;
 
   const rankCounts = (groups, label) => {
     const merged = new Map();

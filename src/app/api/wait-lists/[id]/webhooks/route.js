@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { parseJsonStringArray, serializeJsonStringArray } from "@/lib/db/sqlite-helpers.mjs";
 import { env } from "@/lib/env.mjs";
 import prisma from "@/lib/prisma";
 import { webhookAccess } from "@/lib/webhooks/access";
@@ -46,7 +47,11 @@ export async function GET(request, { params }) {
   });
   return NextResponse.json(
     {
-      data: rows.map((row) => ({ ...row, url: validateWebhookUrl(row.url).safeUrl })),
+      data: rows.map((row) => ({
+        ...row,
+        eventTypes: parseJsonStringArray(row.eventTypes),
+        url: validateWebhookUrl(row.url).safeUrl,
+      })),
       configured: Boolean(env.WEBHOOK_SECRET_ENCRYPTION_KEY),
     },
     { headers: { "Cache-Control": "private, no-store" } },
@@ -79,42 +84,49 @@ export async function POST(request, { params }) {
     const { url, safeUrl } = validateWebhookUrl(body.url);
     if (body.includeSubscriberData !== undefined && typeof body.includeSubscriberData !== "boolean")
       return NextResponse.json({ error: "Invalid subscriber data setting." }, { status: 400 });
+
+    if ((await prisma.webhookSubscription.count({ where: { waitListId: id } })) >= 5) {
+      return NextResponse.json(
+        { error: "A waitlist can have up to five webhook endpoints." },
+        { status: 409 },
+      );
+    }
+
     const secret = createWebhookSecret();
     const encrypted = encryptSecret(secret);
-    const subscription = await prisma.$transaction(async (tx) => {
-      await tx.$queryRaw`SELECT "id" FROM "wait_lists" WHERE "id" = ${id} FOR UPDATE`;
-      if ((await tx.webhookSubscription.count({ where: { waitListId: id } })) >= 5) {
-        const error = new Error("A waitlist can have up to five webhook endpoints.");
-        error.status = 409;
-        throw error;
-      }
-      return tx.webhookSubscription.create({
-        data: {
-          waitListId: id,
-          name: body.name.trim(),
-          url: url.toString(),
-          eventTypes: body.events,
-          includeSubscriberData: body.includeSubscriberData ?? false,
-          ...Object.fromEntries(
-            Object.entries(encrypted).map(([key, value]) => [
-              `secret${key[0].toUpperCase()}${key.slice(1)}`,
-              value,
-            ]),
-          ),
-        },
-        select: {
-          id: true,
-          name: true,
-          url: true,
-          eventTypes: true,
-          enabled: true,
-          includeSubscriberData: true,
-          createdAt: true,
-        },
-      });
+    const subscription = await prisma.webhookSubscription.create({
+      data: {
+        waitListId: id,
+        name: body.name.trim(),
+        url: url.toString(),
+        eventTypes: serializeJsonStringArray(body.events, ["signup.created"]),
+        includeSubscriberData: body.includeSubscriberData ?? false,
+        ...Object.fromEntries(
+          Object.entries(encrypted).map(([key, value]) => [
+            `secret${key[0].toUpperCase()}${key.slice(1)}`,
+            value,
+          ]),
+        ),
+      },
+      select: {
+        id: true,
+        name: true,
+        url: true,
+        eventTypes: true,
+        enabled: true,
+        includeSubscriberData: true,
+        createdAt: true,
+      },
     });
     return NextResponse.json(
-      { data: { ...subscription, url: safeUrl, secret } },
+      {
+        data: {
+          ...subscription,
+          eventTypes: parseJsonStringArray(subscription.eventTypes),
+          url: safeUrl,
+          secret,
+        },
+      },
       { status: 201, headers: { "Cache-Control": "no-store" } },
     );
   } catch (error) {
