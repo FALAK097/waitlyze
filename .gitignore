@@ -58,6 +58,8 @@ pnpm-debug.log
 .env
 .env*.local
 migrations/seed_*.sql
+*.db
+*.db-journal
 
 # typescript
 *.tsbuildinfo

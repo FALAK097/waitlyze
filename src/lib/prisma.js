@@ -17,15 +17,38 @@ function createPrismaClient() {
   if (typeof process !== "undefined" && process.versions?.node) {
     try {
       // Dynamic import/require to prevent bundling native addons into Cloudflare Workers
-      const req = typeof require !== "undefined" ? require : null;
+      const nodeModule = process.getBuiltinModule?.("node:module");
+      const req =
+        typeof require !== "undefined" ? require : nodeModule?.createRequire?.(import.meta.url);
       if (req) {
         const { PrismaBetterSqlite3 } = req("@prisma/adapter-better-sqlite3");
-        const url = process.env.DATABASE_URL || "file:./prisma/dev.db";
+        let url = process.env.DATABASE_URL || "file:./prisma/dev.db";
+        if (!url.startsWith("file:")) {
+          url = "file:./prisma/dev.db";
+        }
+        const filePath = url.replace(/^file:/, "");
+        if (filePath && filePath !== ":memory:") {
+          const fs =
+            process.getBuiltinModule?.("node:fs") ||
+            (typeof require !== "undefined" ? require("fs") : null);
+          const path =
+            process.getBuiltinModule?.("node:path") ||
+            (typeof require !== "undefined" ? require("path") : null);
+          if (fs && path) {
+            const dir = path.dirname(
+              path.resolve(/*turbopackIgnore: true*/ process.cwd(), filePath),
+            );
+            if (!fs.existsSync(dir)) {
+              fs.mkdirSync(dir, { recursive: true });
+            }
+          }
+        }
         const adapter = new PrismaBetterSqlite3({ url });
         return new PrismaClient({ adapter });
       }
-    } catch (_e) {
-      // Ignore and throw primary error below
+    } catch (err) {
+      console.error("Failed to initialize Prisma SQLite adapter:", err);
+      throw err;
     }
   }
 

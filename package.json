@@ -13,7 +13,7 @@
     "upload:worker": "opennextjs-cloudflare build && opennextjs-cloudflare upload",
     "cf:typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts",
     "migrate:deploy": "prisma migrate deploy",
-    "openai:seed-review": "node --env-file-if-exists=.env scripts/create-openai-review-account.mjs",
+    "openai:seed-review": "node --env-file-if-exists=.env scripts/seed-d1-openai-review.mjs",
     "lint": "oxlint --report-unused-disable-directives",
     "lint:fix": "oxlint --fix",
     "format": "oxfmt",
