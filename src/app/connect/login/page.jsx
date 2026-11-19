@@ -86,47 +86,40 @@ function ConnectLoginContent() {
         {error && <div className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-600">{error}</div>}
 
         <div className="space-y-4">
-          <Button
-            type="button"
-            className="w-full justify-center gap-2 py-2.5 font-medium"
-            onClick={handleGoogleSignIn}
-            disabled={loading}
-          >
-            <Image src="/images/google.svg" alt="" width={18} height={18} unoptimized />
-            {loading ? "Connecting..." : "Continue with Google"}
-          </Button>
-
-          {reviewerAccess && (
-            <>
-              <div className="flex items-center gap-3 text-xs text-product-text-muted">
-                <span className="bg-product-border h-px flex-1" />
-                OpenAI reviewer access
-                <span className="bg-product-border h-px flex-1" />
-              </div>
-              <form className="space-y-3" onSubmit={handleReviewerSignIn}>
-                <Input
-                  type="email"
-                  autoComplete="username"
-                  aria-label="Reviewer email"
-                  placeholder="Reviewer email"
-                  value={reviewEmail}
-                  onChange={(event) => setReviewEmail(event.target.value)}
-                  required
-                />
-                <Input
-                  type="password"
-                  autoComplete="current-password"
-                  aria-label="Reviewer password"
-                  placeholder="Reviewer password"
-                  value={reviewPassword}
-                  onChange={(event) => setReviewPassword(event.target.value)}
-                  required
-                />
-                <Button type="submit" variant="outline" className="w-full" disabled={loading}>
-                  {loading ? "Signing in..." : "Sign in as reviewer"}
-                </Button>
-              </form>
-            </>
+          {!reviewerAccess ? (
+            <Button
+              type="button"
+              className="w-full justify-center gap-2 py-2.5 font-medium"
+              onClick={handleGoogleSignIn}
+              disabled={loading}
+            >
+              <Image src="/images/google.svg" alt="" width={18} height={18} unoptimized />
+              {loading ? "Connecting..." : "Continue with Google"}
+            </Button>
+          ) : (
+            <form className="space-y-3" onSubmit={handleReviewerSignIn}>
+              <Input
+                type="email"
+                autoComplete="username"
+                aria-label="Reviewer email"
+                placeholder="Reviewer email"
+                value={reviewEmail}
+                onChange={(event) => setReviewEmail(event.target.value)}
+                required
+              />
+              <Input
+                type="password"
+                autoComplete="current-password"
+                aria-label="Reviewer password"
+                placeholder="Reviewer password"
+                value={reviewPassword}
+                onChange={(event) => setReviewPassword(event.target.value)}
+                required
+              />
+              <Button type="submit" className="w-full font-medium" disabled={loading}>
+                {loading ? "Signing in..." : "Sign in as reviewer"}
+              </Button>
+            </form>
           )}
 
           <p className="text-center text-xs text-product-text-muted">
