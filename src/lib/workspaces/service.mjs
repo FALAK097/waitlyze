@@ -5,6 +5,7 @@ import {
   providerSubscriptionNeedsReview,
   requireCapacity,
 } from "../billing/plans.mjs";
+import { runAtomicSqlBatch, toSqliteIso } from "../db/sqlite-helpers.mjs";
 
 const permissions = Object.freeze({
   viewCampaign: ["OWNER", "ADMIN", "MEMBER"],
@@ -482,26 +483,36 @@ export function createWorkspaceService(db) {
           });
           // Existing missing/revoked membership is never recreated by login/backfill.
           if (!membership) throw new Error("Personal workspace ownership requires review.");
-          const legacyWaitlists = await db.waitList.findMany({
+          const hasLegacyWaitlist = await db.waitList.findFirst({
             where: { userId, workspaceId: null },
             select: { id: true },
           });
-          if (legacyWaitlists.length) {
-            const legacyWaitlistIds = legacyWaitlists.map((waitList) => waitList.id);
-            const updatedWaitlists = await db.waitList.updateMany({
-              where: { id: { in: legacyWaitlistIds }, userId, workspaceId: null },
-              data: { workspaceId: workspace.id },
-            });
-            if (updatedWaitlists.count > 0) {
-              const legacySignupCount = await db.signUp.count({
-                where: { waitListId: { in: legacyWaitlistIds } },
-              });
-              if (legacySignupCount)
-                await db.workspace.update({
-                  where: { id: workspace.id },
-                  data: { signupUsageCount: { increment: legacySignupCount } },
-                });
-            }
+          if (hasLegacyWaitlist) {
+            const nowIso = toSqliteIso(new Date());
+            await runAtomicSqlBatch(db, [
+              {
+                sql: `UPDATE "workspaces"
+                      SET "signupUsageCount" = "signupUsageCount" + (
+                        SELECT COUNT(*)
+                        FROM "sign_ups" AS s
+                        INNER JOIN "wait_lists" AS w ON w."id" = s."waitListId"
+                        WHERE w."userId" = ? AND w."workspaceId" IS NULL
+                      ),
+                      "updatedAt" = ?
+                      WHERE "id" = ?
+                        AND EXISTS (
+                          SELECT 1 FROM "wait_lists" AS w
+                          WHERE w."userId" = ? AND w."workspaceId" IS NULL
+                        )`,
+                params: [userId, nowIso, workspace.id, userId],
+              },
+              {
+                sql: `UPDATE "wait_lists"
+                      SET "workspaceId" = ?, "updatedAt" = ?
+                      WHERE "userId" = ? AND "workspaceId" IS NULL`,
+                params: [workspace.id, nowIso, userId],
+              },
+            ]);
           }
           return workspace;
         } catch (error) {

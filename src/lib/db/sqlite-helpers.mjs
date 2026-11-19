@@ -49,9 +49,46 @@ export function serializeJsonStringArray(value, fallback = []) {
   return JSON.stringify(fallback);
 }
 
+const VALID_API_KEY_SCOPES = new Set(["waitlist:read", "waitlist:write"]);
+
+export function parseApiKeyScopes(value) {
+  let raw = value;
+  if (typeof raw === "string") {
+    const trimmed = raw.trim();
+    if (!trimmed.startsWith("[")) return null;
+    try {
+      raw = JSON.parse(trimmed);
+    } catch {
+      return null;
+    }
+  }
+  if (!Array.isArray(raw) || raw.length === 0) return null;
+  const scopes = [];
+  for (const entry of raw) {
+    if (typeof entry !== "string" || !VALID_API_KEY_SCOPES.has(entry)) {
+      return null;
+    }
+    if (!scopes.includes(entry)) {
+      scopes.push(entry);
+    }
+  }
+  return scopes;
+}
+
 export function toSqliteIso(value = new Date()) {
   const date = value instanceof Date ? value : new Date(value);
   return date.toISOString().replace("Z", "+00:00");
+}
+
+export async function runAtomicSqlBatch(db, statements) {
+  if (!Array.isArray(statements) || statements.length === 0) return [];
+  const d1 = globalThis[Symbol.for("__cloudflare-context__")]?.env?.DB;
+  if (d1 && typeof d1.batch === "function") {
+    return d1.batch(statements.map(({ sql, params = [] }) => d1.prepare(sql).bind(...params)));
+  }
+  return db.$transaction(
+    statements.map(({ sql, params = [] }) => db.$executeRawUnsafe(sql, ...params)),
+  );
 }
 
 export function isUniqueConstraintError(err) {

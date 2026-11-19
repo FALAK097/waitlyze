@@ -2,7 +2,7 @@ import { createHash, timingSafeEqual } from "node:crypto";
 
 import bcrypt from "bcryptjs";
 
-import { parseJsonStringArray } from "../db/sqlite-helpers.mjs";
+import { parseApiKeyScopes } from "../db/sqlite-helpers.mjs";
 import { campaignScope } from "../workspaces/service.mjs";
 
 const failed = (error = "Invalid API key or unauthorized waitlist access") => ({
@@ -44,9 +44,10 @@ export async function validatePublishedApiKey(apiKey, waitlistId, db, { now = ne
           revokedAt: true,
         },
       });
-      const scopes = key ? parseJsonStringArray(key.scopes, ["waitlist:write"]) : [];
+      const scopes = key ? parseApiKeyScopes(key.scopes) : null;
       if (
         !key ||
+        !scopes ||
         key.waitlistId !== waitlistId ||
         key.revokedAt ||
         (key.expiresAt && key.expiresAt <= now) ||

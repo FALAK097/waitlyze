@@ -3,7 +3,7 @@ import { createHash, timingSafeEqual } from "node:crypto";
 import { createLocalJWKSet, jwtVerify } from "jose";
 
 import { auth } from "@/lib/auth.js";
-import { parseJsonStringArray } from "@/lib/db/sqlite-helpers.mjs";
+import { parseApiKeyScopes, parseJsonStringArray } from "@/lib/db/sqlite-helpers.mjs";
 import prisma from "@/lib/prisma.js";
 
 let cachedJwks = null;
@@ -164,6 +164,11 @@ export async function resolveMcpAuth(request) {
         return { authenticated: false, error: "Invalid API key secret." };
       }
 
+      const parsedKeyScopes = parseApiKeyScopes(key.scopes);
+      if (!parsedKeyScopes) {
+        return { authenticated: false, error: "Invalid API key scopes." };
+      }
+
       // Update last used timestamp
       prisma.apiKey
         .updateMany({
@@ -172,7 +177,6 @@ export async function resolveMcpAuth(request) {
         })
         .catch(() => {});
 
-      const parsedKeyScopes = parseJsonStringArray(key.scopes);
       return {
         authenticated: true,
         authType: "api_key",
@@ -180,7 +184,7 @@ export async function resolveMcpAuth(request) {
         user: key.user,
         waitlistId: key.waitlistId,
         workspaceId: key.waitlist?.workspaceId || null,
-        scopes: parsedKeyScopes.length ? parsedKeyScopes : ["waitlist:read", "waitlist:write"],
+        scopes: parsedKeyScopes,
         keyId: key.keyId,
       };
     }
