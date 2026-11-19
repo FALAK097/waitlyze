@@ -317,6 +317,45 @@ export default async function LandingPage() {
           />
         </section>
 
+        <section className="wl-section wl-problem" aria-labelledby="problem-title">
+          <div className="wl-problem-inner">
+            <div className="wl-problem-heading">
+              <div>
+                <p className="wl-problem-kicker">Beyond the signup form</p>
+                <h2 id="problem-title">Most waitlists end where the useful work starts.</h2>
+              </div>
+              <div className="wl-problem-copy">
+                <p>
+                  Collecting an email is only the first signal. You still need to know where
+                  interest came from, whether it is real, and who is helping your launch spread.
+                </p>
+                <p>
+                  Waitlyze keeps that trail together—from first visit to verified signup, referral,
+                  and launch update—so you can act on what works and keep early supporters close.
+                </p>
+              </div>
+            </div>
+
+            <figure className="wl-problem-proof">
+              <div className="wl-problem-product">
+                <Image
+                  src={`${ASSET_BASE}/showcase-analytics-4k.png?${ASSET_VER}`}
+                  alt="Waitlyze analytics showing visitors, signups, conversion, verification, referrals, and points awarded"
+                  width={2240}
+                  height={1750}
+                  sizes="(max-width: 720px) 700px, (max-width: 1152px) 100vw, 1084px"
+                />
+              </div>
+              <figcaption>
+                <strong>See the whole path to launch.</strong>
+                <span>
+                  Visitors, conversion, verification, and referrals stay connected in one live view.
+                </span>
+              </figcaption>
+            </figure>
+          </div>
+        </section>
+
         <section id="features" className="wl-section wl-features" aria-labelledby="features-title">
           <div className="wl-section-heading">
             <p className="wl-eyebrow">THE ESSENTIALS</p>
