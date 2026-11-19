@@ -9,23 +9,21 @@ import {
 } from "../billing/plans.mjs";
 import { runAtomicSqlBatch, toSqliteIso } from "../db/sqlite-helpers.mjs";
 
-const BILLING_GRACE_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
-
 function effectiveProSubscriptionSql(alias) {
   return `(
     ${alias}."plan" = 'PRO' AND (
-      (${alias}."status" = 'ACTIVE' AND ${alias}."currentPeriodEnd" IS NOT NULL AND julianday(${alias}."currentPeriodEnd") > julianday(?))
+      (${alias}."status" = 'ACTIVE' AND ${alias}."currentPeriodEnd" IS NOT NULL AND julianday(${alias}."currentPeriodEnd") > julianday('now'))
       OR (${alias}."status" IN ('PAST_DUE', 'ON_HOLD') AND (
-        (${alias}."pastDueEndsAt" IS NOT NULL AND julianday(${alias}."pastDueEndsAt") > julianday(?))
-        OR (${alias}."pastDueEndsAt" IS NULL AND ${alias}."currentPeriodEnd" IS NOT NULL AND julianday(${alias}."currentPeriodEnd") > julianday(?))
-        OR (${alias}."pastDueEndsAt" IS NULL AND ${alias}."currentPeriodEnd" IS NULL AND ${alias}."lastEventAt" IS NOT NULL AND julianday(${alias}."lastEventAt") > julianday(?))
+        (${alias}."pastDueEndsAt" IS NOT NULL AND julianday(${alias}."pastDueEndsAt") > julianday('now'))
+        OR (${alias}."pastDueEndsAt" IS NULL AND ${alias}."currentPeriodEnd" IS NOT NULL AND julianday(${alias}."currentPeriodEnd") > julianday('now', '-7 days'))
+        OR (${alias}."pastDueEndsAt" IS NULL AND ${alias}."currentPeriodEnd" IS NULL AND ${alias}."lastEventAt" IS NOT NULL AND julianday(${alias}."lastEventAt") > julianday('now', '-7 days'))
       ))
-      OR (${alias}."status" = 'CANCELLED' AND ${alias}."cancelAtPeriodEnd" = 1 AND ${alias}."currentPeriodEnd" IS NOT NULL AND julianday(${alias}."currentPeriodEnd") > julianday(?))
+      OR (${alias}."status" = 'CANCELLED' AND ${alias}."cancelAtPeriodEnd" = 1 AND ${alias}."currentPeriodEnd" IS NOT NULL AND julianday(${alias}."currentPeriodEnd") > julianday('now'))
     )
   )`;
 }
 
-function ownedWorkspaceCapacitySql(userId, nowIso, graceCutoffIso) {
+function ownedWorkspaceCapacitySql(userId) {
   return {
     sql: `(
       (SELECT COUNT(*) FROM "workspace_members" AS om WHERE om."userId" = ? AND om."role" = 'OWNER') = 0
@@ -38,11 +36,11 @@ function ownedWorkspaceCapacitySql(userId, nowIso, graceCutoffIso) {
           AND ${effectiveProSubscriptionSql("sub")}
       )
     )`,
-    params: [userId, userId, nowIso, nowIso, graceCutoffIso, graceCutoffIso, nowIso],
+    params: [userId, userId],
   };
 }
 
-function blockingSubscriptionSql(workspaceId, nowIso, graceCutoffIso) {
+function blockingSubscriptionSql(workspaceId) {
   return {
     sql: `EXISTS (
       SELECT 1
@@ -56,12 +54,12 @@ function blockingSubscriptionSql(workspaceId, nowIso, graceCutoffIso) {
           OR sub."checkoutSessionId" IS NOT NULL
           OR (
             sub."checkoutPendingUntil" IS NOT NULL
-            AND julianday(sub."checkoutPendingUntil") > julianday(?)
+            AND julianday(sub."checkoutPendingUntil") > julianday('now')
             AND (sub."checkoutUrl" IS NOT NULL OR sub."checkoutCreationStartedAt" IS NOT NULL)
           )
         )
     )`,
-    params: [workspaceId, nowIso, nowIso, graceCutoffIso, graceCutoffIso, nowIso, nowIso],
+    params: [workspaceId],
   };
 }
 
@@ -94,14 +92,6 @@ export class AccessError extends Error {
 
 function actor(userId) {
   if (typeof userId !== "string" || !userId) throw new AccessError(401);
-}
-
-function isPersonalWorkspaceReady(workspace, legacyWaitlist) {
-  return (
-    Boolean(workspace?.members?.[0]?.role) &&
-    workspace.name !== "Personal workspace" &&
-    !legacyWaitlist
-  );
 }
 
 // Personal workspaces are named after their owner so the switcher never shows
@@ -165,18 +155,9 @@ export function createWorkspaceService(db) {
         };
       }
 
-      const legacyWaitlist = await db.waitList.findFirst({
-        where: { userId, workspaceId: null },
-        select: { id: true },
-      });
-      if (isPersonalWorkspaceReady(personal, legacyWaitlist)) {
-        return {
-          personal: { id: personal.id, name: personal.name },
-          workspaces,
-        };
-      }
-
-      // Preserve the transactional initialization and legacy-row repair path.
+      // The Neon-to-D1 cutover assigned every campaign to a workspace. Login
+      // only initializes a new user's personal workspace; it never mutates
+      // campaign ownership or usage counters.
       const initializedPersonal = await this.ensurePersonal(userId, { skipFastPath: true });
       return { personal: initializedPersonal, workspaces: await this.list(userId) };
     },
@@ -224,9 +205,8 @@ export function createWorkspaceService(db) {
 
       const now = new Date();
       const nowIso = toSqliteIso(now);
-      const graceCutoffIso = toSqliteIso(new Date(now.getTime() - BILLING_GRACE_WINDOW_MS));
       const workspaceId = randomUUID();
-      const capacity = ownedWorkspaceCapacitySql(userId, nowIso, graceCutoffIso);
+      const capacity = ownedWorkspaceCapacitySql(userId);
 
       const [workspaceInsert] = await runAtomicSqlBatch(db, [
         {
@@ -350,9 +330,8 @@ export function createWorkspaceService(db) {
 
       const now = new Date();
       const nowIso = toSqliteIso(now);
-      const graceCutoffIso = toSqliteIso(new Date(now.getTime() - BILLING_GRACE_WINDOW_MS));
-      const targetCapacity = ownedWorkspaceCapacitySql(targetUserId, nowIso, graceCutoffIso);
-      const blockedSub = blockingSubscriptionSql(workspaceId, nowIso, graceCutoffIso);
+      const targetCapacity = ownedWorkspaceCapacitySql(targetUserId);
+      const blockedSub = blockingSubscriptionSql(workspaceId);
 
       const transferGuardSql = `
         EXISTS (SELECT 1 FROM "workspace_members" WHERE "workspaceId" = ? AND "userId" = ? AND "role" = 'OWNER')
@@ -369,9 +348,10 @@ export function createWorkspaceService(db) {
         ...blockedSub.params,
       ];
 
-      // Detach the lapsed payer, promote the target member to OWNER, and step the
-      // previous owner down to ADMIN in one atomic D1/SQLite batch transaction.
-      const [, promoteResult] = await runAtomicSqlBatch(db, [
+      // Detach the lapsed payer and swap both roles in one guarded statement.
+      // Updating both memberships together prevents a concurrent transfer from
+      // demoting the caller unless this batch also promotes the target.
+      const [, transferResult] = await runAtomicSqlBatch(db, [
         {
           sql: `UPDATE "workspace_subscriptions"
                 SET "dodoCustomerId" = ?, "updatedAt" = ?
@@ -382,28 +362,19 @@ export function createWorkspaceService(db) {
         },
         {
           sql: `UPDATE "workspace_members"
-                SET "role" = 'OWNER'
+                SET "role" = CASE
+                  WHEN "userId" = ? THEN 'OWNER'
+                  WHEN "userId" = ? THEN 'ADMIN'
+                  ELSE "role"
+                END
                 WHERE "workspaceId" = ?
-                  AND "userId" = ?
-                  AND "role" != 'OWNER'
+                  AND "userId" IN (?, ?)
                   AND ${transferGuardSql}`,
-          params: [workspaceId, targetUserId, ...transferGuardParams],
-        },
-        {
-          sql: `UPDATE "workspace_members"
-                SET "role" = 'ADMIN'
-                WHERE "workspaceId" = ?
-                  AND "userId" = ?
-                  AND "role" = 'OWNER'
-                  AND EXISTS (
-                    SELECT 1 FROM "workspace_members"
-                    WHERE "workspaceId" = ? AND "userId" = ? AND "role" = 'OWNER'
-                  )`,
-          params: [workspaceId, userId, workspaceId, targetUserId],
+          params: [targetUserId, userId, workspaceId, targetUserId, userId, ...transferGuardParams],
         },
       ]);
 
-      if (promoteResult.changes !== 1) {
+      if (transferResult.changes !== 2) {
         const latestState = await loadValidatedTransferState();
         if (latestState.unchanged) {
           throw new AccessError();
@@ -579,24 +550,15 @@ export function createWorkspaceService(db) {
     async ensurePersonal(userId, { skipFastPath = false } = {}) {
       actor(userId);
       if (!skipFastPath) {
-        // Existing null-workspace campaigns are backfilled by the workspace
-        // migration, and every current create path persists a workspace ID.
-        // If legacy rows are still present, fall through and backfill them.
-        const [personal, legacyWaitlist] = await Promise.all([
-          db.workspace.findUnique({
-            where: { personalOwnerId: userId },
-            select: {
-              id: true,
-              name: true,
-              members: { where: { userId }, select: { role: true }, take: 1 },
-            },
-          }),
-          db.waitList.findFirst({
-            where: { userId, workspaceId: null },
-            select: { id: true },
-          }),
-        ]);
-        if (isPersonalWorkspaceReady(personal, legacyWaitlist)) {
+        const personal = await db.workspace.findUnique({
+          where: { personalOwnerId: userId },
+          select: {
+            id: true,
+            name: true,
+            members: { where: { userId }, select: { role: true }, take: 1 },
+          },
+        });
+        if (personal?.members?.[0]?.role && personal.name !== "Personal workspace") {
           const { id, name } = personal;
           return { id, name };
         }
@@ -634,37 +596,6 @@ export function createWorkspaceService(db) {
           });
           // Existing missing/revoked membership is never recreated by login/backfill.
           if (!membership) throw new Error("Personal workspace ownership requires review.");
-          const hasLegacyWaitlist = await db.waitList.findFirst({
-            where: { userId, workspaceId: null },
-            select: { id: true },
-          });
-          if (hasLegacyWaitlist) {
-            const nowIso = toSqliteIso(new Date());
-            await runAtomicSqlBatch(db, [
-              {
-                sql: `UPDATE "workspaces"
-                      SET "signupUsageCount" = "signupUsageCount" + (
-                        SELECT COUNT(*)
-                        FROM "sign_ups" AS s
-                        INNER JOIN "wait_lists" AS w ON w."id" = s."waitListId"
-                        WHERE w."userId" = ? AND w."workspaceId" IS NULL
-                      ),
-                      "updatedAt" = ?
-                      WHERE "id" = ?
-                        AND EXISTS (
-                          SELECT 1 FROM "wait_lists" AS w
-                          WHERE w."userId" = ? AND w."workspaceId" IS NULL
-                        )`,
-                params: [userId, nowIso, workspace.id, userId],
-              },
-              {
-                sql: `UPDATE "wait_lists"
-                      SET "workspaceId" = ?, "updatedAt" = ?
-                      WHERE "userId" = ? AND "workspaceId" IS NULL`,
-                params: [workspace.id, nowIso, userId],
-              },
-            ]);
-          }
           return workspace;
         } catch (error) {
           if (!isWorkspaceInitializationConflict(error) || attempt === 3) throw error;
