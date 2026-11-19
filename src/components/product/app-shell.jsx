@@ -13,7 +13,7 @@ import {
 import { HugeiconsIcon } from "@hugeicons/react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { useActionState, useEffect, useState } from "react";
 import { toast } from "sonner";
 
@@ -191,7 +191,6 @@ function WorkspaceSwitcher({
 
 /** Account dropdown with sign-out and feedback actions. */
 function AccountMenu({ user, avatar }) {
-  const router = useRouter();
   const { openTour } = useOnboarding();
   const [pending, setPending] = useState(false);
   const [feedbackOpen, setFeedbackOpen] = useState(false);
@@ -202,8 +201,7 @@ function AccountMenu({ user, avatar }) {
       const result = await signOut();
       if (result.error) throw new Error("Sign out failed");
       resetClientUser();
-      router.replace("/");
-      router.refresh();
+      window.location.assign("/");
     } catch {
       toast.error("Could not sign out. Try again.");
       setPending(false);

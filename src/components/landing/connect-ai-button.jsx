@@ -248,6 +248,12 @@ export function ConnectAiButton({ className = "" }) {
             aria-hidden="true"
           />
           <img
+            src="/assets/icons/claude.svg"
+            alt=""
+            className="h-3.5 w-3.5 shrink-0 object-contain"
+            aria-hidden="true"
+          />
+          <img
             src="/assets/icons/cursor.svg"
             alt=""
             className="h-3.5 w-3.5 shrink-0 object-contain"
@@ -255,12 +261,6 @@ export function ConnectAiButton({ className = "" }) {
           />
           <img
             src="/assets/icons/codex.svg"
-            alt=""
-            className="h-3.5 w-3.5 shrink-0 object-contain"
-            aria-hidden="true"
-          />
-          <img
-            src="/assets/icons/vscode.svg"
             alt=""
             className="h-3.5 w-3.5 shrink-0 object-contain"
             aria-hidden="true"
