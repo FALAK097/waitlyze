@@ -7,6 +7,7 @@ import { Resend } from "resend";
 import { Prisma } from "@/generated/prisma/client";
 import { getWorkspaceEntitlements } from "@/lib/billing/plans.mjs";
 import { getCampaignPosition } from "@/lib/campaigns/referral-position.mjs";
+import { toSqliteIso } from "@/lib/db/sqlite-helpers.mjs";
 import { escapeHtmlText, renderEmailMarkdown } from "@/lib/email-markdown.mjs";
 import { emailBrandFromSnapshot } from "@/lib/email/brand.mjs";
 import {
@@ -582,14 +583,14 @@ export async function listBroadcasts(
   const deliveryMetrics =
     broadcastIds.length > 0
       ? await prisma.$queryRaw`
-          SELECT r."broadcastId", 'status'::text AS kind,
-                 r."status"::text AS key, COUNT(*)::int AS count
+          SELECT r."broadcastId", 'status' AS kind,
+                 r."status" AS key, COUNT(*) AS count
           FROM "broadcast_recipients" r
           WHERE r."broadcastId" IN (${Prisma.join(broadcastIds)})
           GROUP BY r."broadcastId", r."status"
           UNION ALL
-          SELECT r."broadcastId", 'reason'::text AS kind,
-                 COALESCE(r."lastErrorCode", 'OTHER') AS key, COUNT(*)::int AS count
+          SELECT r."broadcastId", 'reason' AS kind,
+                 COALESCE(r."lastErrorCode", 'OTHER') AS key, COUNT(*) AS count
           FROM "broadcast_recipients" r
           WHERE r."broadcastId" IN (${Prisma.join(broadcastIds)})
             AND r."status" IN ('SKIPPED', 'FAILED')
@@ -603,8 +604,9 @@ export async function listBroadcasts(
   // spam/suppression-list hits, and other skips - reconciled from the same
   // recipient rows the dispatcher wrote, so the report always adds up.
   for (const row of deliveryMetrics) {
-    if (row.kind === "reason") skippedByCode.set(`${row.broadcastId}:${row.key}`, row.count);
-    else metrics.set(`${row.broadcastId}:${row.key}`, row.count);
+    const count = Number(row.count || 0);
+    if (row.kind === "reason") skippedByCode.set(`${row.broadcastId}:${row.key}`, count);
+    else metrics.set(`${row.broadcastId}:${row.key}`, count);
   }
   const sumCodes = (id, codes) =>
     codes.reduce((n, code) => n + (skippedByCode.get(`${id}:${code}`) || 0), 0);
@@ -743,21 +745,13 @@ export async function queueBroadcast({ waitListId, broadcastId, expectedRecipien
   }
   const seg = normalizeSegment(segment);
   try {
-    // The recipient fan-out (bulk insert, variable snapshot, per-recipient
-    // updates) shares one connection inside this interactive transaction, so
-    // for large segments it legitimately takes longer than Prisma's default
-    // 5 s; allow 60 s before rolling back.
-    const count = await prisma.$transaction(
-      async (tx) =>
-        enqueueBroadcast(tx, {
-          waitListId: campaign.id,
-          broadcastId,
-          segment: seg,
-          expectedRecipientCount,
-          exact: true,
-        }),
-      { timeout: 60_000, maxWait: 10_000 },
-    );
+    const count = await enqueueBroadcast(prisma, {
+      waitListId: campaign.id,
+      broadcastId,
+      segment: seg,
+      expectedRecipientCount,
+      exact: true,
+    });
     revalidatePath(broadcastPath(waitListId));
     await recordWaitlistAuditEvent(prisma, {
       userId: user.id,
@@ -812,26 +806,24 @@ export async function scheduleBroadcast({
   if (!Number.isInteger(expectedRecipientCount) || expectedRecipientCount <= 0)
     return { success: false, message: "Refresh the recipient preview before scheduling." };
   try {
-    const count = await prisma.$transaction(async (tx) => {
-      const [broadcast] = await tx.$queryRaw`
-        SELECT "id", "status"::text AS status, "subject", "body"
-        FROM "marketing_broadcasts"
-        WHERE "id" = ${broadcastId} AND "waitListId" = ${campaign.id}
-        FOR UPDATE`;
-      if (!broadcast || broadcast.status !== "DRAFT")
-        throw new Error("Only drafts can be scheduled.");
-      if (!String(broadcast.subject || "").trim() || !String(broadcast.body || "").trim())
-        throw new Error("Add a subject and message before scheduling.");
-      const fresh = await countEligibleRecipients(tx, campaign.id, seg);
-      if (fresh !== expectedRecipientCount)
-        throw new Error("The recipient list changed. Refresh the preview and confirm again.");
-      if (!fresh) throw new Error("There are no eligible subscribers in this segment right now.");
-      await tx.marketingBroadcast.update({
-        where: { id: broadcastId },
-        data: { status: "SCHEDULED", segment: seg, scheduledAt: when },
-      });
-      return fresh;
+    const broadcast = await prisma.marketingBroadcast.findFirst({
+      where: { id: broadcastId, waitListId: campaign.id },
+      select: { id: true, status: true, subject: true, body: true },
     });
+    if (!broadcast || broadcast.status !== "DRAFT")
+      throw new Error("Only drafts can be scheduled.");
+    if (!String(broadcast.subject || "").trim() || !String(broadcast.body || "").trim())
+      throw new Error("Add a subject and message before scheduling.");
+    const fresh = await countEligibleRecipients(prisma, campaign.id, seg);
+    if (fresh !== expectedRecipientCount)
+      throw new Error("The recipient list changed. Refresh the preview and confirm again.");
+    if (!fresh) throw new Error("There are no eligible subscribers in this segment right now.");
+    const updated = await prisma.marketingBroadcast.updateMany({
+      where: { id: broadcastId, waitListId: campaign.id, status: "DRAFT" },
+      data: { status: "SCHEDULED", segment: seg, scheduledAt: when },
+    });
+    if (updated.count !== 1) throw new Error("Only drafts can be scheduled.");
+    const count = fresh;
     revalidatePath(broadcastPath(waitListId));
     await recordWaitlistAuditEvent(prisma, {
       userId: user.id,
@@ -854,33 +846,37 @@ export async function cancelBroadcast({ waitListId, broadcastId }) {
   // Cancellation is permitted after downgrade so queued customer mail can
   // always be stopped, even though creating/sending remains a Pro feature.
   const { campaign } = await requireCampaign(waitListId, "sendEmail");
-  const canceled = await prisma.$transaction(async (tx) => {
-    const [broadcast] = await tx.$queryRaw`
-      SELECT "id", "status"::text AS status FROM "marketing_broadcasts"
-      WHERE "id" = ${broadcastId} AND "waitListId" = ${campaign.id} FOR UPDATE`;
-    if (!broadcast || (broadcast.status !== "SENDING" && broadcast.status !== "SCHEDULED"))
-      return null;
-    if (broadcast.status === "SCHEDULED") {
-      // Nothing fanned out yet - just unschedule back to a canceled draft.
-      await tx.marketingBroadcast.update({
-        where: { id: broadcastId },
-        data: { status: "CANCELED", scheduledAt: null },
-      });
-      return "SCHEDULED";
-    }
-    await tx.$executeRaw`
-      UPDATE "outbox_events" SET "status" = 'FAILED', "processedAt" = NOW(), "lockedAt" = NULL, "lastErrorCode" = 'BROADCAST_CANCELED'
-      WHERE "type" = 'BROADCAST_EMAIL_REQUESTED' AND "payload"->>'broadcastId' = ${broadcastId} AND "status" = 'PENDING'`;
-    await tx.broadcastRecipient.updateMany({
-      where: { broadcastId, status: { in: ["PENDING", "PROCESSING"] } },
-      data: { status: "CANCELED", lastErrorCode: "BROADCAST_CANCELED" },
+  const broadcast = await prisma.marketingBroadcast.findFirst({
+    where: { id: broadcastId, waitListId: campaign.id },
+    select: { id: true, status: true },
+  });
+  let canceled = null;
+  if (broadcast?.status === "SCHEDULED") {
+    const claimed = await prisma.marketingBroadcast.updateMany({
+      where: { id: broadcastId, waitListId: campaign.id, status: "SCHEDULED" },
+      data: { status: "CANCELED", scheduledAt: null },
     });
-    await tx.marketingBroadcast.update({
-      where: { id: broadcastId },
+    if (claimed.count === 1) canceled = "SCHEDULED";
+  } else if (broadcast?.status === "SENDING") {
+    const claimed = await prisma.marketingBroadcast.updateMany({
+      where: { id: broadcastId, waitListId: campaign.id, status: "SENDING" },
       data: { status: "CANCELED" },
     });
-    return "SENDING";
-  });
+    if (claimed.count === 1) {
+      const nowIso = toSqliteIso(new Date());
+      await prisma.$executeRaw`
+        UPDATE "outbox_events"
+        SET "status" = 'FAILED', "processedAt" = ${nowIso}, "lockedAt" = NULL, "lastErrorCode" = 'BROADCAST_CANCELED'
+        WHERE "type" = 'BROADCAST_EMAIL_REQUESTED'
+          AND json_extract("payload", '$.broadcastId') = ${broadcastId}
+          AND "status" = 'PENDING'`;
+      await prisma.broadcastRecipient.updateMany({
+        where: { broadcastId, status: { in: ["PENDING", "PROCESSING"] } },
+        data: { status: "CANCELED", lastErrorCode: "BROADCAST_CANCELED" },
+      });
+      canceled = "SENDING";
+    }
+  }
   // Only SENDING fans out (unschedule does not send anything), so only that
   // path deserves a delivery summary notification.
   if (canceled === "SENDING") await notifyBroadcastSummary(prisma, broadcastId);

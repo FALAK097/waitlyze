@@ -1,6 +1,8 @@
 import { createHmac } from "node:crypto";
 import { isIP } from "node:net";
 
+import { toSqliteIso } from "@/lib/db/sqlite-helpers.mjs";
+
 export class PublicRateLimitError extends Error {
   constructor(status = 429) {
     super(
@@ -26,9 +28,6 @@ const policies = {
   impression: { global: [20000, HOUR], campaign: [5000, HOUR], client: [120, HOUR] },
   share: { global: [10000, HOUR], campaign: [2000, HOUR], client: [60, HOUR] },
   leaderboard: { global: [10000, HOUR], campaign: [2000, HOUR], client: [60, HOUR] },
-  // Unauthenticated embed widgets (leaderboard + counter). Polled by third-
-  // party pages, so the per-client budget is roomier than interactive kinds;
-  // responses are also short-cacheable (s-maxage) to absorb embed traffic.
   widget: { global: [20000, HOUR], campaign: [5000, HOUR], client: [240, HOUR] },
   welcome: { global: [1000, DAY], campaign: [250, DAY], client: [10, HOUR], recipient: [1, DAY] },
   testEmail: {
@@ -45,27 +44,18 @@ const policies = {
     recipient: [3, DAY],
     authenticated: true,
   },
-  // Authenticated Slack/Discord channel tests (POST .../notifications/[channel]).
-  // Same budgets as testEmail, minus the email recipient (chat tests post to a
-  // saved webhook, not an address).
   chatTest: {
     global: [1000, DAY],
     campaign: [100, DAY],
     client: [20, HOUR],
     authenticated: true,
   },
-  // Authenticated API-key status lookups (GET /api/waitlist). Separate from
-  // signup intake so polling a position never consumes the signup budget.
   status: { global: [20000, HOUR], campaign: [5000, HOUR], client: [120, HOUR] },
-  // Self-reported social-follow claims (POST /api/v1/follows). Mirrors the
-  // share budget: cheap, client-bucketed, safe to expose publicly.
   follow: { global: [10000, HOUR], campaign: [2000, HOUR], client: [60, HOUR] },
-  // Founder-authenticated custom point awards (POST /api/waitlist/points).
-  // Separate from signup intake so fulfillment traffic never starves joins.
   points: { global: [20000, HOUR], campaign: [5000, HOUR], client: [120, HOUR] },
 };
 
-/** Atomic PostgreSQL counters shared by all instances; failure never permits a send. */
+/** Atomic SQLite/D1 counters shared by all instances; failure never permits a send. */
 export async function consumePublicBudget(
   db,
   { kind, campaignId, headers, email, actorId },
@@ -78,58 +68,81 @@ export async function consumePublicBudget(
     !campaignId ||
     campaignId.length > 128 ||
     !secret
-  )
+  ) {
     throw new PublicRateLimitError(503);
-  if (policy.authenticated && (typeof actorId !== "string" || !actorId || actorId.length > 128))
+  }
+  if (policy.authenticated && (typeof actorId !== "string" || !actorId || actorId.length > 128)) {
     throw new PublicRateLimitError(503);
-  if (policy.recipient && (typeof email !== "string" || email.length > 320))
+  }
+  if (policy.recipient && (typeof email !== "string" || email.length > 320)) {
     throw new PublicRateLimitError(503);
+  }
+
   const hash = (value) => createHmac("sha256", secret).update(value).digest("hex");
+  // Check/consume narrowest buckets first (recipient -> client -> campaign -> global)
+  // so a single abusive recipient/client cannot exhaust campaign or global budgets.
   const buckets = [
-    [`public:${kind}:global`, ...policy.global],
-    [`public:${kind}:campaign:${hash(campaignId)}`, ...policy.campaign],
+    ...(policy.recipient
+      ? [[`public:${kind}:recipient:${hash(email.trim().toLowerCase())}`, ...policy.recipient]]
+      : []),
     [
       `public:${kind}:client:${hash(policy.authenticated ? `actor:${actorId}` : publicClientIdentity(headers))}`,
       ...policy.client,
     ],
-    ...(policy.recipient
-      ? [[`public:${kind}:recipient:${hash(email.trim().toLowerCase())}`, ...policy.recipient]]
-      : []),
+    [`public:${kind}:campaign:${hash(campaignId)}`, ...policy.campaign],
+    [`public:${kind}:global`, ...policy.global],
   ];
+
+  const nowIso = toSqliteIso(now);
+
   try {
-    await db.$transaction(
-      async (tx) => {
-        // Serialize the short counter transaction before cleanup to avoid lock-order
-        // inversions across expired buckets. The lock is shared across instances.
-        // Cast the void-returning lock to a bool: Prisma cannot deserialize a
-        // `void` column and would fail the whole transaction.
-        await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtext('waitlyze-public-budget')) IS NULL AS acquired`;
-        // Bounded cleanup; global admission limits bound new rows even under rotation.
-        await tx.$executeRaw`
-        DELETE FROM "rate_limit_buckets" WHERE "key" IN (
-          SELECT "key" FROM "rate_limit_buckets" WHERE "expiresAt" <= ${now}
-          ORDER BY "expiresAt" LIMIT 200 FOR UPDATE SKIP LOCKED
-        )`;
-        // Global first serializes admissions and prevents per-identity cardinality abuse.
-        for (const [key, limit, window] of buckets) {
-          const expiresAt = new Date(now.getTime() + window);
-          const rows = await tx.$queryRaw`
-          INSERT INTO "rate_limit_buckets" ("key", "count", "expiresAt", "updatedAt")
-          VALUES (${key}, 1, ${expiresAt}, ${now})
-          ON CONFLICT ("key") DO UPDATE SET
-            "count" = CASE WHEN "rate_limit_buckets"."expiresAt" <= ${now} THEN 1 ELSE "rate_limit_buckets"."count" + 1 END,
-            "expiresAt" = CASE WHEN "rate_limit_buckets"."expiresAt" <= ${now} THEN ${expiresAt} ELSE "rate_limit_buckets"."expiresAt" END,
-            "updatedAt" = ${now}
-          WHERE "rate_limit_buckets"."expiresAt" <= ${now} OR "rate_limit_buckets"."count" < ${limit}
-          RETURNING "count"`;
-          if (rows.length !== 1) throw new PublicRateLimitError();
-        }
-      },
-      { timeout: 5000 },
-    );
+    // Bounded cleanup of expired buckets without Postgres FOR UPDATE SKIP LOCKED.
+    await db.$executeRaw`
+      DELETE FROM "rate_limit_buckets"
+      WHERE "key" IN (
+        SELECT "key" FROM "rate_limit_buckets"
+        WHERE julianday("expiresAt") <= julianday(${nowIso})
+        ORDER BY "expiresAt" ASC
+        LIMIT 200
+      )`;
+
+    // Pre-check existing active buckets before mutating so an already-exhausted
+    // bucket does not advance sibling buckets.
+    const existing = await db.rateLimitBucket.findMany({
+      where: { key: { in: buckets.map(([key]) => key) } },
+      select: { key: true, count: true, expiresAt: true },
+    });
+    const byKey = new Map(existing.map((row) => [row.key, row]));
+    for (const [key, limit] of buckets) {
+      const row = byKey.get(key);
+      if (row && row.expiresAt > now && row.count >= limit) {
+        throw new PublicRateLimitError();
+      }
+    }
+
+    // Atomic per-bucket increment guarded by WHERE condition.
+    for (const [key, limit, window] of buckets) {
+      const expiresIso = toSqliteIso(new Date(now.getTime() + window));
+      const rows = await db.$queryRaw`
+        INSERT INTO "rate_limit_buckets" ("key", "count", "expiresAt", "updatedAt")
+        VALUES (${key}, 1, ${expiresIso}, ${nowIso})
+        ON CONFLICT ("key") DO UPDATE SET
+          "count" = CASE
+            WHEN julianday("rate_limit_buckets"."expiresAt") <= julianday(${nowIso}) THEN 1
+            ELSE "rate_limit_buckets"."count" + 1
+          END,
+          "expiresAt" = CASE
+            WHEN julianday("rate_limit_buckets"."expiresAt") <= julianday(${nowIso}) THEN ${expiresIso}
+            ELSE "rate_limit_buckets"."expiresAt"
+          END,
+          "updatedAt" = ${nowIso}
+        WHERE julianday("rate_limit_buckets"."expiresAt") <= julianday(${nowIso})
+           OR "rate_limit_buckets"."count" < ${limit}
+        RETURNING "count"`;
+      if (rows.length !== 1) throw new PublicRateLimitError();
+    }
   } catch (error) {
     if (error instanceof PublicRateLimitError) throw error;
-    // Do not expose raw database/connection details or silently bypass the guard.
     console.error(
       "Public rate-limit check failed",
       kind,

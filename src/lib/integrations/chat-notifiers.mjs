@@ -1,3 +1,5 @@
+import { isUniqueConstraintError, parseJsonStringArray } from "@/lib/db/sqlite-helpers.mjs";
+
 import { decryptIntegrationSecret } from "./secrets.mjs";
 
 export const CHAT_PROVIDERS = Object.freeze(["SLACK", "DISCORD"]);
@@ -83,17 +85,21 @@ const postByProvider = { SLACK: postSlackMessage, DISCORD: postDiscordMessage };
  */
 export async function notifyChatChannels(db, waitListId, text, trigger = "MILESTONE_COUNTS") {
   if (!waitListId || !text || !CHAT_TRIGGERS.includes(trigger)) return { sent: 0, eligible: 0 };
-  const channels = await db.waitlistNotificationChannel.findMany({
-    where: { waitListId, status: "CONNECTED", triggers: { has: trigger } },
+  const rows = await db.waitlistNotificationChannel.findMany({
+    where: { waitListId, status: "CONNECTED" },
     select: {
       id: true,
       provider: true,
       status: true,
+      triggers: true,
       secretCiphertext: true,
       secretIv: true,
       secretTag: true,
     },
   });
+  const channels = rows.filter((row) =>
+    parseJsonStringArray(row.triggers, [CHAT_TRIGGERS[0]]).includes(trigger),
+  );
   // The schema allows only one channel per provider, so this fans out to at
   // most two independent providers with no cross-channel ordering requirement.
   const deliveries = await Promise.all(
@@ -141,22 +147,28 @@ export async function notifyChatChannels(db, waitListId, text, trigger = "MILEST
 // verified signups, referral points, or rewards.
 export async function queueChatNotification(db, { waitListId, trigger, eventKey, payload }) {
   if (!CHAT_TRIGGERS.includes(trigger)) throw new TypeError("Unknown chat trigger.");
-  const channels = await db.waitlistNotificationChannel.count({
-    where: { waitListId, status: "CONNECTED", triggers: { has: trigger } },
+  const rows = await db.waitlistNotificationChannel.findMany({
+    where: { waitListId, status: "CONNECTED" },
+    select: { triggers: true },
   });
-  if (!channels) return false;
-  const created = await db.outboxEvent.createMany({
-    data: [
-      {
+  const hasEligible = rows.some((row) =>
+    parseJsonStringArray(row.triggers, [CHAT_TRIGGERS[0]]).includes(trigger),
+  );
+  if (!hasEligible) return false;
+  try {
+    await db.outboxEvent.create({
+      data: {
         eventKey: `chat:${eventKey}`,
         type: "CHAT_NOTIFICATION_REQUESTED",
         waitListId,
         payload: { ...payload, trigger },
       },
-    ],
-    skipDuplicates: true,
-  });
-  return created.count > 0;
+    });
+    return true;
+  } catch (error) {
+    if (isUniqueConstraintError(error)) return false;
+    throw error;
+  }
 }
 
 export async function queueVerifiedChatNotifications(db, { waitListId, signUpId, unlocks = [] }) {

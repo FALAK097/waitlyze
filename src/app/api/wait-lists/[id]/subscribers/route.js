@@ -4,7 +4,6 @@ import { URL } from "node:url";
 import { TextEncoder } from "node:util";
 
 import { NextResponse } from "next/server";
-import pg from "pg";
 
 import { Prisma } from "@/generated/prisma/client";
 import {
@@ -22,8 +21,29 @@ import {
   getCampaignPositions,
   getEligibleReferralCounts,
 } from "@/lib/campaigns/referral-position.mjs";
+import { toSqliteIso } from "@/lib/db/sqlite-helpers.mjs";
 import prisma from "@/lib/prisma";
 import { campaignRouteAccess } from "@/lib/workspaces/campaign-route-access.mjs";
+
+function parseSqliteDate(value) {
+  if (!value) return null;
+  if (value instanceof Date) return Number.isNaN(value.valueOf()) ? null : value;
+  const raw = String(value).trim();
+  if (!raw) return null;
+  const normalized = raw.includes("T") ? raw : `${raw.replace(" ", "T")}Z`;
+  const parsed = new Date(normalized);
+  return Number.isNaN(parsed.valueOf()) ? null : parsed;
+}
+
+function parseJsonValue(value) {
+  if (value == null) return null;
+  if (typeof value === "object") return value;
+  try {
+    return JSON.parse(String(value));
+  } catch {
+    return null;
+  }
+}
 
 async function getAccess(request, id) {
   const access = await campaignRouteAccess({
@@ -39,27 +59,37 @@ async function getAccess(request, id) {
 async function verificationDelivery(waitListId, signupIds) {
   if (!signupIds.length) return new Map();
   const events = await prisma.$queryRaw`
-    SELECT DISTINCT ON (event."payload"->>'signUpId')
-      event."payload",
-      event."status"::text AS status,
-      event."lastErrorCode",
-      event."createdAt",
-      event."processedAt"
-    FROM "outbox_events" AS event
-    WHERE event."waitListId" = ${waitListId}
-      AND event."type" = 'SIGNUP_VERIFICATION_REQUESTED'
-      AND event."payload"->>'signUpId' = ANY(${signupIds}::text[])
-    ORDER BY event."payload"->>'signUpId', event."createdAt" DESC, event."id" DESC
+    WITH ranked AS (
+      SELECT
+        json_extract(event."payload", '$.signUpId') AS "signUpId",
+        event."payload",
+        event."status" AS status,
+        event."lastErrorCode",
+        event."createdAt",
+        event."processedAt",
+        ROW_NUMBER() OVER (
+          PARTITION BY json_extract(event."payload", '$.signUpId')
+          ORDER BY REPLACE(event."createdAt", ' ', 'T') DESC, event."id" DESC
+        ) AS rn
+      FROM "outbox_events" AS event
+      WHERE event."waitListId" = ${waitListId}
+        AND event."type" = 'SIGNUP_VERIFICATION_REQUESTED'
+        AND json_extract(event."payload", '$.signUpId') IN (${Prisma.join(signupIds)})
+    )
+    SELECT "signUpId", "payload", status, "lastErrorCode", "createdAt", "processedAt"
+    FROM ranked
+    WHERE rn = 1
   `;
   const latest = new Map();
   for (const event of events) {
-    const signupId = event.payload?.signUpId;
+    const payload = parseJsonValue(event.payload);
+    const signupId = event.signUpId || payload?.signUpId;
     if (typeof signupId === "string" && !latest.has(signupId))
       latest.set(signupId, {
         status: event.status,
         issue: event.lastErrorCode,
-        createdAt: event.createdAt,
-        processedAt: event.processedAt,
+        createdAt: parseSqliteDate(event.createdAt),
+        processedAt: parseSqliteDate(event.processedAt),
       });
   }
   return latest;
@@ -73,41 +103,41 @@ function failedVerificationWhere(waitListId, filters) {
     AND (${filters.status} = 'all'
       OR (${filters.status} = 'verified' AND "signup"."verifiedAt" IS NOT NULL)
       OR (${filters.status} = 'pending' AND "signup"."verifiedAt" IS NULL))
-    AND (${filters.query} = '' OR "signup"."email" ILIKE ${`%${escapeLike(filters.query)}%`} ESCAPE '\\')
-    AND (${filters.country} = '' OR "signup"."country" ILIKE ${`%${escapeLike(filters.country)}%`} ESCAPE '\\')
-    AND (${filters.city} = '' OR "signup"."city" ILIKE ${`%${escapeLike(filters.city)}%`} ESCAPE '\\')
-    AND (${filters.source} = '' OR "signup"."utmSource" ILIKE ${`%${escapeLike(filters.source)}%`} ESCAPE '\\')
-    AND (${filters.landing} = '' OR "signup"."landingPage" ILIKE ${`%${escapeLike(filters.landing)}%`} ESCAPE '\\')
+    AND (${filters.query} = '' OR LOWER("signup"."email") LIKE LOWER(${`%${escapeLike(filters.query)}%`}) ESCAPE '\\')
+    AND (${filters.country} = '' OR LOWER("signup"."country") LIKE LOWER(${`%${escapeLike(filters.country)}%`}) ESCAPE '\\')
+    AND (${filters.city} = '' OR LOWER("signup"."city") LIKE LOWER(${`%${escapeLike(filters.city)}%`}) ESCAPE '\\')
+    AND (${filters.source} = '' OR LOWER("signup"."utmSource") LIKE LOWER(${`%${escapeLike(filters.source)}%`}) ESCAPE '\\')
+    AND (${filters.landing} = '' OR LOWER("signup"."landingPage") LIKE LOWER(${`%${escapeLike(filters.landing)}%`}) ESCAPE '\\')
     AND (${filters.device} = ''
-      OR "signup"."deviceType" ILIKE ${`%${escapeLike(filters.device)}%`} ESCAPE '\\'
-      OR "signup"."device" ILIKE ${`%${escapeLike(filters.device)}%`} ESCAPE '\\')
+      OR LOWER("signup"."deviceType") LIKE LOWER(${`%${escapeLike(filters.device)}%`}) ESCAPE '\\'
+      OR LOWER("signup"."device") LIKE LOWER(${`%${escapeLike(filters.device)}%`}) ESCAPE '\\')
     AND (${filters.utm} = ''
-      OR "signup"."utmMedium" ILIKE ${`%${escapeLike(filters.utm)}%`} ESCAPE '\\'
-      OR "signup"."utmCampaign" ILIKE ${`%${escapeLike(filters.utm)}%`} ESCAPE '\\'
-      OR "signup"."utmTerm" ILIKE ${`%${escapeLike(filters.utm)}%`} ESCAPE '\\'
-      OR "signup"."utmContent" ILIKE ${`%${escapeLike(filters.utm)}%`} ESCAPE '\\'
-      OR "signup"."referrer" ILIKE ${`%${escapeLike(filters.utm)}%`} ESCAPE '\\')
+      OR LOWER("signup"."utmMedium") LIKE LOWER(${`%${escapeLike(filters.utm)}%`}) ESCAPE '\\'
+      OR LOWER("signup"."utmCampaign") LIKE LOWER(${`%${escapeLike(filters.utm)}%`}) ESCAPE '\\'
+      OR LOWER("signup"."utmTerm") LIKE LOWER(${`%${escapeLike(filters.utm)}%`}) ESCAPE '\\'
+      OR LOWER("signup"."utmContent") LIKE LOWER(${`%${escapeLike(filters.utm)}%`}) ESCAPE '\\'
+      OR LOWER("signup"."referrer") LIKE LOWER(${`%${escapeLike(filters.utm)}%`}) ESCAPE '\\')
     AND EXISTS (
       SELECT 1
       FROM "outbox_events" AS "latest"
       WHERE "latest"."waitListId" = "signup"."waitListId"
         AND "latest"."type" = 'SIGNUP_VERIFICATION_REQUESTED'
-        AND "latest"."payload"->>'signUpId' = "signup"."id"
-        AND "latest"."status"::text = 'FAILED'
-        AND "latest"."lastErrorCode" IS DISTINCT FROM 'RECIPIENT_SUPPRESSED'
+        AND json_extract("latest"."payload", '$.signUpId') = "signup"."id"
+        AND "latest"."status" = 'FAILED'
+        AND "latest"."lastErrorCode" IS NOT 'RECIPIENT_SUPPRESSED'
         AND (
-          "latest"."lastErrorCode" IS DISTINCT FROM 'SIGNUP_NOT_SENDABLE'
+          "latest"."lastErrorCode" IS NOT 'SIGNUP_NOT_SENDABLE'
           OR (
             EXISTS (
               SELECT 1
               FROM "wait_lists" AS "eligibleWaitList"
               WHERE "eligibleWaitList"."id" = "signup"."waitListId"
-                AND "eligibleWaitList"."status"::text = 'PUBLISHED'
+                AND "eligibleWaitList"."status" = 'PUBLISHED'
                 AND NOT EXISTS (
                   SELECT 1
                   FROM "email_suppressions" AS "suppression"
                   WHERE "suppression"."workspaceId" = "eligibleWaitList"."workspaceId"
-                    AND "suppression"."emailNormalized" = COALESCE(NULLIF("signup"."emailNormalized", ''), lower(btrim("signup"."email")))
+                    AND "suppression"."emailNormalized" = COALESCE(NULLIF("signup"."emailNormalized", ''), LOWER(TRIM("signup"."email")))
                 )
             )
           )
@@ -117,9 +147,9 @@ function failedVerificationWhere(waitListId, filters) {
           FROM "outbox_events" AS "newer"
           WHERE "newer"."waitListId" = "latest"."waitListId"
             AND "newer"."type" = "latest"."type"
-            AND "newer"."payload"->>'signUpId' = "latest"."payload"->>'signUpId'
-            AND ("newer"."createdAt" > "latest"."createdAt"
-              OR ("newer"."createdAt" = "latest"."createdAt" AND "newer"."id" > "latest"."id"))
+            AND json_extract("newer"."payload", '$.signUpId') = json_extract("latest"."payload", '$.signUpId')
+            AND (REPLACE("newer"."createdAt", ' ', 'T') > REPLACE("latest"."createdAt", ' ', 'T')
+              OR (REPLACE("newer"."createdAt", ' ', 'T') = REPLACE("latest"."createdAt", ' ', 'T') AND "newer"."id" > "latest"."id"))
         )
     )`;
 }
@@ -127,10 +157,12 @@ function failedVerificationWhere(waitListId, filters) {
 function failedVerificationAfter(filters, cursor) {
   if (!cursor) return Prisma.empty;
   if (filters.sort === "joined_asc") {
-    return Prisma.sql`AND ("signup"."createdAt" > ${cursor.createdAt} OR ("signup"."createdAt" = ${cursor.createdAt} AND "signup"."id" > ${cursor.id}))`;
+    const cursorIso = toSqliteIso(cursor.createdAt);
+    return Prisma.sql`AND (julianday("signup"."createdAt") > julianday(${cursorIso}) OR (julianday("signup"."createdAt") = julianday(${cursorIso}) AND "signup"."id" > ${cursor.id}))`;
   }
   if (filters.sort === "joined_desc") {
-    return Prisma.sql`AND ("signup"."createdAt" < ${cursor.createdAt} OR ("signup"."createdAt" = ${cursor.createdAt} AND "signup"."id" < ${cursor.id}))`;
+    const cursorIso = toSqliteIso(cursor.createdAt);
+    return Prisma.sql`AND (julianday("signup"."createdAt") < julianday(${cursorIso}) OR (julianday("signup"."createdAt") = julianday(${cursorIso}) AND "signup"."id" < ${cursor.id}))`;
   }
   if (filters.sort === "email_asc") {
     return Prisma.sql`AND ("signup"."email" > ${cursor.email} OR ("signup"."email" = ${cursor.email} AND "signup"."id" > ${cursor.id}))`;
@@ -223,20 +255,20 @@ function positionAudienceWhere(waitListId, filters) {
     AND (${filters.status} = 'all'
       OR (${filters.status} = 'verified' AND "signup"."verifiedAt" IS NOT NULL)
       OR (${filters.status} = 'pending' AND "signup"."verifiedAt" IS NULL))
-    AND (${filters.query} = '' OR "signup"."email" ILIKE ${`%${escapeLike(filters.query)}%`} ESCAPE '\\')
-    AND (${filters.country} = '' OR "signup"."country" ILIKE ${`%${escapeLike(filters.country)}%`} ESCAPE '\\')
-    AND (${filters.city} = '' OR "signup"."city" ILIKE ${`%${escapeLike(filters.city)}%`} ESCAPE '\\')
-    AND (${filters.source} = '' OR "signup"."utmSource" ILIKE ${`%${escapeLike(filters.source)}%`} ESCAPE '\\')
-    AND (${filters.landing} = '' OR "signup"."landingPage" ILIKE ${`%${escapeLike(filters.landing)}%`} ESCAPE '\\')
+    AND (${filters.query} = '' OR LOWER("signup"."email") LIKE LOWER(${`%${escapeLike(filters.query)}%`}) ESCAPE '\\')
+    AND (${filters.country} = '' OR LOWER("signup"."country") LIKE LOWER(${`%${escapeLike(filters.country)}%`}) ESCAPE '\\')
+    AND (${filters.city} = '' OR LOWER("signup"."city") LIKE LOWER(${`%${escapeLike(filters.city)}%`}) ESCAPE '\\')
+    AND (${filters.source} = '' OR LOWER("signup"."utmSource") LIKE LOWER(${`%${escapeLike(filters.source)}%`}) ESCAPE '\\')
+    AND (${filters.landing} = '' OR LOWER("signup"."landingPage") LIKE LOWER(${`%${escapeLike(filters.landing)}%`}) ESCAPE '\\')
     AND (${filters.device} = ''
-      OR "signup"."deviceType" ILIKE ${`%${escapeLike(filters.device)}%`} ESCAPE '\\'
-      OR "signup"."device" ILIKE ${`%${escapeLike(filters.device)}%`} ESCAPE '\\')
+      OR LOWER("signup"."deviceType") LIKE LOWER(${`%${escapeLike(filters.device)}%`}) ESCAPE '\\'
+      OR LOWER("signup"."device") LIKE LOWER(${`%${escapeLike(filters.device)}%`}) ESCAPE '\\')
     AND (${filters.utm} = ''
-      OR "signup"."utmMedium" ILIKE ${`%${escapeLike(filters.utm)}%`} ESCAPE '\\'
-      OR "signup"."utmCampaign" ILIKE ${`%${escapeLike(filters.utm)}%`} ESCAPE '\\'
-      OR "signup"."utmTerm" ILIKE ${`%${escapeLike(filters.utm)}%`} ESCAPE '\\'
-      OR "signup"."utmContent" ILIKE ${`%${escapeLike(filters.utm)}%`} ESCAPE '\\'
-      OR "signup"."referrer" ILIKE ${`%${escapeLike(filters.utm)}%`} ESCAPE '\\')
+      OR LOWER("signup"."utmMedium") LIKE LOWER(${`%${escapeLike(filters.utm)}%`}) ESCAPE '\\'
+      OR LOWER("signup"."utmCampaign") LIKE LOWER(${`%${escapeLike(filters.utm)}%`}) ESCAPE '\\'
+      OR LOWER("signup"."utmTerm") LIKE LOWER(${`%${escapeLike(filters.utm)}%`}) ESCAPE '\\'
+      OR LOWER("signup"."utmContent") LIKE LOWER(${`%${escapeLike(filters.utm)}%`}) ESCAPE '\\'
+      OR LOWER("signup"."referrer") LIKE LOWER(${`%${escapeLike(filters.utm)}%`}) ESCAPE '\\')
   `;
 }
 
@@ -244,7 +276,7 @@ async function rankedAudiencePage(waitListId, filters, pageIndex) {
   const where = positionAudienceWhere(waitListId, filters);
   return prisma.$queryRaw`
     WITH referral_scores AS (
-      SELECT referral."referredById" AS "referrerId", COUNT(*)::bigint AS score
+      SELECT referral."referredById" AS "referrerId", COUNT(*) AS score
       FROM "referrals" AS referral
       INNER JOIN "sign_ups" AS referred ON referred."id" = referral."signUpId"
       INNER JOIN "sign_ups" AS referrer
@@ -252,7 +284,7 @@ async function rankedAudiencePage(waitListId, filters, pageIndex) {
        AND referrer."waitListId" = referred."waitListId"
       INNER JOIN "wait_lists" AS campaign
         ON campaign."id" = referred."waitListId"
-       AND campaign."showReferrals" = true
+       AND campaign."showReferrals" = 1
       WHERE referred."waitListId" = ${waitListId}
         AND referred."verifiedAt" IS NOT NULL
         AND referrer."verifiedAt" IS NOT NULL
@@ -263,7 +295,7 @@ async function rankedAudiencePage(waitListId, filters, pageIndex) {
     ), ranked AS (
       SELECT signup."id", signup."createdAt",
         ROW_NUMBER() OVER (
-          ORDER BY COALESCE(score.score, 0) DESC, signup."createdAt" ASC, signup."id" ASC
+          ORDER BY COALESCE(score.score, 0) DESC, REPLACE(signup."createdAt", ' ', 'T') ASC, signup."id" ASC
         ) AS position
       FROM "sign_ups" AS signup
       LEFT JOIN referral_scores AS score ON score."referrerId" = signup."id"
@@ -276,7 +308,7 @@ async function rankedAudiencePage(waitListId, filters, pageIndex) {
     ORDER BY
       CASE WHEN ${filters.sort} = 'position_asc' THEN ranked.position END ASC,
       CASE WHEN ${filters.sort} = 'position_desc' THEN ranked.position END DESC,
-      ranked."createdAt" ASC,
+      REPLACE(ranked."createdAt", ' ', 'T') ASC,
       ranked."id" ASC
     LIMIT ${AUDIENCE_PAGE_SIZE + 1}
     OFFSET ${pageIndex * AUDIENCE_PAGE_SIZE}
@@ -287,7 +319,7 @@ async function rankedFailedAudiencePage(waitListId, filters, pageIndex) {
   const where = failedVerificationWhere(waitListId, filters);
   return prisma.$queryRaw`
     WITH referral_scores AS (
-      SELECT referral."referredById" AS "referrerId", COUNT(*)::bigint AS score
+      SELECT referral."referredById" AS "referrerId", COUNT(*) AS score
       FROM "referrals" AS referral
       INNER JOIN "sign_ups" AS referred ON referred."id" = referral."signUpId"
       INNER JOIN "sign_ups" AS referrer
@@ -295,7 +327,7 @@ async function rankedFailedAudiencePage(waitListId, filters, pageIndex) {
        AND referrer."waitListId" = referred."waitListId"
       INNER JOIN "wait_lists" AS campaign
         ON campaign."id" = referred."waitListId"
-       AND campaign."showReferrals" = true
+       AND campaign."showReferrals" = 1
       WHERE referred."waitListId" = ${waitListId}
         AND referred."verifiedAt" IS NOT NULL
         AND referrer."verifiedAt" IS NOT NULL
@@ -306,7 +338,7 @@ async function rankedFailedAudiencePage(waitListId, filters, pageIndex) {
     ), ranked AS (
       SELECT signup."id", signup."createdAt",
         ROW_NUMBER() OVER (
-          ORDER BY COALESCE(score.score, 0) DESC, signup."createdAt" ASC, signup."id" ASC
+          ORDER BY COALESCE(score.score, 0) DESC, REPLACE(signup."createdAt", ' ', 'T') ASC, signup."id" ASC
         ) AS position
       FROM "sign_ups" AS signup
       LEFT JOIN referral_scores AS score ON score."referrerId" = signup."id"
@@ -319,25 +351,22 @@ async function rankedFailedAudiencePage(waitListId, filters, pageIndex) {
     ORDER BY
       CASE WHEN ${filters.sort} = 'position_asc' THEN ranked.position END ASC,
       CASE WHEN ${filters.sort} = 'position_desc' THEN ranked.position END DESC,
-      ranked."createdAt" ASC,
+      REPLACE(ranked."createdAt", ' ', 'T') ASC,
       ranked."id" ASC
     LIMIT ${AUDIENCE_PAGE_SIZE + 1}
     OFFSET ${pageIndex * AUDIENCE_PAGE_SIZE}
   `;
 }
 
-// Position sort has no stable database ORDER BY (rank is a window function), so
-// exporting it via OFFSET over a recomputed ROW_NUMBER lets ranks shift between
-// pages. Instead we open a server-side cursor over this exact ranked set: the
-// snapshot is pinned at DECLARE and batches stream in fixed rank order.
-// `whereBuilder` selects the regular audience vs the failed-delivery subset;
-// ranks stay global either way, matching getCampaignPositions.
-function rankedPositionCursorSql(waitListId, filters, whereBuilder) {
+// Position export needs one snapshot across chunks so ranks never shift between
+// batches. We query all matching { id, position } pairs in fixed rank order, then
+// yield slices of 500 to hydrate full signup fields without loading all columns.
+function rankedPositionQuerySql(waitListId, filters, whereBuilder) {
   const where = whereBuilder(waitListId, filters);
   const direction = filters.sort === "position_desc" ? Prisma.raw("DESC") : Prisma.raw("ASC");
   return Prisma.sql`
     WITH referral_scores AS (
-      SELECT referral."referredById" AS "referrerId", COUNT(*)::bigint AS score
+      SELECT referral."referredById" AS "referrerId", COUNT(*) AS score
       FROM "referrals" AS referral
       INNER JOIN "sign_ups" AS referred ON referred."id" = referral."signUpId"
       INNER JOIN "sign_ups" AS referrer
@@ -345,7 +374,7 @@ function rankedPositionCursorSql(waitListId, filters, whereBuilder) {
        AND referrer."waitListId" = referred."waitListId"
       INNER JOIN "wait_lists" AS campaign
         ON campaign."id" = referred."waitListId"
-       AND campaign."showReferrals" = true
+       AND campaign."showReferrals" = 1
       WHERE referred."waitListId" = ${waitListId}
         AND referred."verifiedAt" IS NOT NULL
         AND referrer."verifiedAt" IS NOT NULL
@@ -356,7 +385,7 @@ function rankedPositionCursorSql(waitListId, filters, whereBuilder) {
     ), ranked AS (
       SELECT signup."id", signup."createdAt",
         ROW_NUMBER() OVER (
-          ORDER BY COALESCE(score.score, 0) DESC, signup."createdAt" ASC, signup."id" ASC
+          ORDER BY COALESCE(score.score, 0) DESC, REPLACE(signup."createdAt", ' ', 'T') ASC, signup."id" ASC
         ) AS position
       FROM "sign_ups" AS signup
       LEFT JOIN referral_scores AS score ON score."referrerId" = signup."id"
@@ -370,47 +399,13 @@ function rankedPositionCursorSql(waitListId, filters, whereBuilder) {
   `;
 }
 
-// Position export needs one pinned database snapshot across FETCH batches.
-// Keep cursor lifecycle local to this server route rather than exposing a
-// reusable low-level database helper elsewhere in the application.
-function toPgParams(sql) {
-  let index = 0;
-  const text = sql.sql.replace(/\?/g, () => `$${++index}`);
-  if (index !== sql.values.length) {
-    throw new Error(
-      `PostgreSQL cursor query has ${index} placeholders but ${sql.values.length} values`,
-    );
-  }
-  return { text, values: sql.values };
-}
-
 async function* streamRankedPositions(sql, { batchSize = 500 } = {}) {
   if (!Number.isInteger(batchSize) || batchSize < 1 || batchSize > 5000) {
     throw new RangeError("batchSize must be an integer between 1 and 5000");
   }
-  const name = `waitlyze_rank_${Math.random().toString(36).slice(2, 10)}`;
-  const client = new pg.Client({ connectionString: process.env.DATABASE_URL });
-  let connected = false;
-  let declared = false;
-  try {
-    await client.connect();
-    connected = true;
-    await client.query("BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY");
-    const { text, values } = toPgParams(sql);
-    await client.query(`DECLARE ${name} NO SCROLL CURSOR FOR ${text}`, values);
-    declared = true;
-    while (true) {
-      const { rows } = await client.query(`FETCH FORWARD ${batchSize} FROM ${name}`);
-      if (rows.length === 0) break;
-      yield rows;
-      if (rows.length < batchSize) break;
-    }
-  } finally {
-    if (connected) {
-      if (declared) await client.query(`CLOSE ${name}`).catch(() => {});
-      await client.query("ROLLBACK").catch(() => {});
-      await client.end().catch(() => {});
-    }
+  const rows = await prisma.$queryRaw(sql);
+  for (let offset = 0; offset < rows.length; offset += batchSize) {
+    yield rows.slice(offset, offset + batchSize);
   }
 }
 
@@ -419,7 +414,7 @@ async function failedVerificationPage(waitListId, filters, cursor, take, offset 
   const after = offset == null ? failedVerificationAfter(filters, cursor) : Prisma.empty;
   const paging =
     offset == null ? Prisma.sql`LIMIT ${take}` : Prisma.sql`LIMIT ${take} OFFSET ${offset}`;
-  return prisma.$queryRaw`
+  const rows = await prisma.$queryRaw`
     SELECT "signup"."id", "signup"."email", "signup"."phone", "signup"."createdAt", "signup"."verifiedAt",
       "signup"."country", "signup"."city", "signup"."timezone",
       "signup"."device", "signup"."deviceType",
@@ -429,28 +424,34 @@ async function failedVerificationPage(waitListId, filters, cursor, take, offset 
     FROM "sign_ups" AS "signup"
     WHERE ${where} ${after}
     ORDER BY
-      CASE WHEN ${filters.sort} = 'joined_asc' THEN "signup"."createdAt" END ASC,
-      CASE WHEN ${filters.sort} = 'joined_desc' THEN "signup"."createdAt" END DESC,
+      CASE WHEN ${filters.sort} = 'joined_asc' THEN julianday("signup"."createdAt") END ASC,
+      CASE WHEN ${filters.sort} = 'joined_desc' THEN julianday("signup"."createdAt") END DESC,
       CASE WHEN ${filters.sort} = 'email_asc' THEN "signup"."email" END ASC,
       CASE WHEN ${filters.sort} = 'email_desc' THEN "signup"."email" END DESC,
       CASE WHEN ${filters.sort} = 'points_desc' THEN "signup"."points" END DESC,
       CASE WHEN ${filters.sort} = 'points_asc' THEN "signup"."points" END ASC,
       CASE WHEN ${filters.sort} = 'status_desc' THEN ("signup"."verifiedAt" IS NOT NULL) END DESC,
       CASE WHEN ${filters.sort} = 'status_asc' THEN ("signup"."verifiedAt" IS NOT NULL) END ASC,
-      CASE WHEN ${filters.sort} IN ('position_asc', 'position_desc') THEN "signup"."createdAt" END ASC,
+      CASE WHEN ${filters.sort} IN ('position_asc', 'position_desc') THEN julianday("signup"."createdAt") END ASC,
       CASE WHEN ${filters.sort} IN ('position_asc', 'position_desc') THEN "signup"."id" END ASC,
       CASE WHEN ${filters.sort} = 'joined_asc' THEN "signup"."id" END ASC,
       CASE WHEN ${filters.sort} = 'joined_desc' THEN "signup"."id" END DESC,
       CASE WHEN ${filters.sort} NOT IN ('joined_asc', 'joined_desc') THEN "signup"."id" END ASC
     ${paging}`;
+  return rows.map((row) => ({
+    ...row,
+    createdAt: parseSqliteDate(row.createdAt),
+    verifiedAt: parseSqliteDate(row.verifiedAt),
+    points: Number(row.points ?? 0),
+  }));
 }
 
 async function failedVerificationCount(waitListId, filters) {
   const where = failedVerificationWhere(waitListId, filters);
   const [result] = await prisma.$queryRaw(
-    Prisma.sql`SELECT COUNT(*)::int AS total FROM "sign_ups" AS "signup" WHERE ${where}`,
+    Prisma.sql`SELECT COUNT(*) AS total FROM "sign_ups" AS "signup" WHERE ${where}`,
   );
-  return result.total;
+  return Number(result?.total ?? 0);
 }
 
 // The cursor row only supplies keyset coordinates; it must not have to still
@@ -462,7 +463,8 @@ async function failedVerificationCursor(waitListId, cursorId) {
     FROM "sign_ups" AS "signup"
     WHERE "signup"."waitListId" = ${waitListId} AND "signup"."id" = ${cursorId}
     LIMIT 1`);
-  return row ?? null;
+  if (!row) return null;
+  return { id: row.id, createdAt: parseSqliteDate(row.createdAt) };
 }
 
 const ROW_SELECT = {
@@ -760,7 +762,7 @@ export async function POST(request, { params }) {
       // reorder them to match the cursor, the same id-then-fields pattern the
       // list endpoint uses, but batched so memory stays flat.
       const streamPositionCursor = async function* (whereBuilder) {
-        const cursorSql = rankedPositionCursorSql(id, filters, whereBuilder);
+        const cursorSql = rankedPositionQuerySql(id, filters, whereBuilder);
         for await (const batch of streamRankedPositions(cursorSql)) {
           const orderedRefs = batch.map((row) => ({ id: row.id, position: Number(row.position) }));
           const rows = await prisma.signUp.findMany({

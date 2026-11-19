@@ -3,6 +3,7 @@ import { createHash, timingSafeEqual } from "node:crypto";
 import { createLocalJWKSet, jwtVerify } from "jose";
 
 import { auth } from "@/lib/auth.js";
+import { parseApiKeyScopes, parseJsonStringArray } from "@/lib/db/sqlite-helpers.mjs";
 import prisma from "@/lib/prisma.js";
 
 let cachedJwks = null;
@@ -163,6 +164,11 @@ export async function resolveMcpAuth(request) {
         return { authenticated: false, error: "Invalid API key secret." };
       }
 
+      const parsedKeyScopes = parseApiKeyScopes(key.scopes);
+      if (!parsedKeyScopes) {
+        return { authenticated: false, error: "Invalid API key scopes." };
+      }
+
       // Update last used timestamp
       prisma.apiKey
         .updateMany({
@@ -178,7 +184,7 @@ export async function resolveMcpAuth(request) {
         user: key.user,
         waitlistId: key.waitlistId,
         workspaceId: key.waitlist?.workspaceId || null,
-        scopes: key.scopes || ["waitlist:read", "waitlist:write"],
+        scopes: parsedKeyScopes,
         keyId: key.keyId,
       };
     }
@@ -251,6 +257,7 @@ export async function resolveMcpAuth(request) {
     });
 
     if (oauthToken && oauthToken.userId) {
+      const parsedOAuthScopes = parseJsonStringArray(oauthToken.scopes);
       return {
         authenticated: true,
         authType: "oauth",
@@ -258,7 +265,7 @@ export async function resolveMcpAuth(request) {
         user: oauthToken.user,
         clientId: oauthToken.clientId,
         clientName: oauthToken.client?.name,
-        scopes: oauthToken.scopes?.length ? oauthToken.scopes : ["mcp:read", "mcp:write"],
+        scopes: parsedOAuthScopes.length ? parsedOAuthScopes : ["mcp:read", "mcp:write"],
       };
     }
 

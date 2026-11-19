@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 
+import { Prisma } from "@/generated/prisma/client";
 import { getWorkspaceEntitlements } from "@/lib/billing/plans.mjs";
+import { isUniqueConstraintError, toSqliteIso } from "@/lib/db/sqlite-helpers.mjs";
 import { dispatchOffboardNow } from "@/lib/email/dispatch-now.mjs";
 import { hasCustomerEmailSender } from "@/lib/email/sender-resolution.mjs";
 import prisma from "@/lib/prisma";
@@ -58,47 +60,46 @@ function pendingOffboardKeys(events, signUpIds) {
 
 async function bulkOffboard({ waitlist, user, ids, resubscribe, canEmail }) {
   const now = new Date();
-  return prisma.$transaction(async (tx) => {
-    const targets = await tx.signUp.findMany({
-      where: { id: { in: ids }, waitListId: waitlist.id },
-      select: { id: true, marketingUnsubscribedAt: true },
+  const targets = await prisma.signUp.findMany({
+    where: { id: { in: ids }, waitListId: waitlist.id },
+    select: { id: true, marketingUnsubscribedAt: true },
+  });
+  const eligible = resubscribe
+    ? targets.filter((row) => row.marketingUnsubscribedAt)
+    : targets.filter((row) => !row.marketingUnsubscribedAt);
+  const eligibleIds = eligible.map((row) => row.id);
+  let eventKeys = [];
+  let templateMissing = false;
+  let duplicateSkipped = 0;
+  let flippedIds = [];
+  if (eligibleIds.length) {
+    // State guard survives concurrent double-submit: the loser matches nothing and flips zero rows.
+    const updated = await prisma.signUp.updateMany({
+      where: {
+        id: { in: eligibleIds },
+        waitListId: waitlist.id,
+        ...(resubscribe
+          ? { marketingUnsubscribedAt: { not: null } }
+          : { marketingUnsubscribedAt: null }),
+      },
+      data: { marketingUnsubscribedAt: resubscribe ? null : now },
     });
-    const eligible = resubscribe
-      ? targets.filter((row) => row.marketingUnsubscribedAt)
-      : targets.filter((row) => !row.marketingUnsubscribedAt);
-    const eligibleIds = eligible.map((row) => row.id);
-    let eventKeys = [];
-    let templateMissing = false;
-    let duplicateSkipped = 0;
-    let flippedIds = [];
-    if (eligibleIds.length) {
-      // State guard survives concurrent double-submit: racing writers
-      // serialize on row locks, the loser matches nothing and flips zero rows.
-      const updated = await tx.signUp.updateMany({
-        where: {
-          id: { in: eligibleIds },
-          waitListId: waitlist.id,
-          ...(resubscribe
-            ? { marketingUnsubscribedAt: { not: null } }
-            : { marketingUnsubscribedAt: null }),
-        },
-        data: { marketingUnsubscribedAt: resubscribe ? null : now },
+    if (updated.count) {
+      // Re-read to learn exactly which rows this statement flipped - the
+      // count alone doesn't say which, and consent rows must describe only
+      // our own flips. Offboard matches on our write timestamp (a racing
+      // offboard carries a different one); resubscribe matches cleared rows.
+      const reread = await prisma.signUp.findMany({
+        where: { id: { in: eligibleIds }, waitListId: waitlist.id },
+        select: { id: true, marketingUnsubscribedAt: true },
       });
-      if (updated.count) {
-        // Re-read to learn exactly which rows this statement flipped - the
-        // count alone doesn't say which, and consent rows must describe only
-        // our own flips. Offboard matches on our write timestamp (a racing
-        // offboard carries a different one); resubscribe matches cleared rows.
-        const reread = await tx.signUp.findMany({
-          where: { id: { in: eligibleIds }, waitListId: waitlist.id },
-          select: { id: true, marketingUnsubscribedAt: true },
-        });
-        flippedIds = resubscribe
-          ? reread.filter((row) => !row.marketingUnsubscribedAt).map((row) => row.id)
-          : reread
-              .filter((row) => row.marketingUnsubscribedAt?.getTime() === now.getTime())
-              .map((row) => row.id);
-        await tx.marketingConsentEvent.createMany({
+      flippedIds = resubscribe
+        ? reread.filter((row) => !row.marketingUnsubscribedAt).map((row) => row.id)
+        : reread
+            .filter((row) => row.marketingUnsubscribedAt?.getTime() === now.getTime())
+            .map((row) => row.id);
+      if (flippedIds.length) {
+        await prisma.marketingConsentEvent.createMany({
           data: flippedIds.map((signUpId) => ({
             waitListId: waitlist.id,
             signUpId,
@@ -111,114 +112,127 @@ async function bulkOffboard({ waitlist, user, ids, resubscribe, canEmail }) {
           })),
         });
       }
-      // resubscribe is the dashboard undo path: callers must pass only ids
-      // flipped by the matching offboard (the UI reuses offboardedIds).
-      // Arbitrary ids would override explicit user opt-outs - someone who
-      // unsubscribed via their own link - so never expose this as a general
-      // "subscribe" action.
-      if (resubscribe) {
-        if (!flippedIds.length) {
-          return {
-            matched: targets.length,
-            processedIds: flippedIds,
-            eventKeys,
-            templateMissing,
-            duplicateSkipped,
-          };
-        }
-        // Undo cancels goodbye emails that never left the outbox. Rows the
-        // dispatcher already claimed keep their terminal state.
-        await tx.$executeRaw`
-          UPDATE "outbox_events" SET "status" = 'FAILED', "processedAt" = ${now},
-            "lockedAt" = NULL, "lastErrorCode" = 'OFFBOARD_UNDONE'
-          WHERE "waitListId" = ${waitlist.id} AND "type" = ${OFFBOARD_EVENT}
-            AND "status" = 'PENDING' AND "payload"->>'signUpId' = ANY(${flippedIds}::text[])`;
-      } else if (canEmail) {
-        const template = await tx.emailTemplate.findUnique({
-          where: { waitListId_type: { waitListId: waitlist.id, type: "OFFBOARDING" } },
-          select: { id: true },
+    }
+    // resubscribe is the dashboard undo path: callers must pass only ids
+    // flipped by the matching offboard (the UI reuses offboardedIds).
+    // Arbitrary ids would override explicit user opt-outs - someone who
+    // unsubscribed via their own link - so never expose this as a general
+    // "subscribe" action.
+    if (resubscribe) {
+      if (!flippedIds.length) {
+        return {
+          matched: targets.length,
+          processedIds: flippedIds,
+          eventKeys,
+          templateMissing,
+          duplicateSkipped,
+        };
+      }
+      // Undo cancels goodbye emails that never left the outbox. Rows the
+      // dispatcher already claimed keep their terminal state.
+      await prisma.$executeRaw`
+        UPDATE "outbox_events" SET "status" = 'FAILED', "processedAt" = ${toSqliteIso(now)},
+          "lockedAt" = NULL, "lastErrorCode" = 'OFFBOARD_UNDONE'
+        WHERE "waitListId" = ${waitlist.id} AND "type" = ${OFFBOARD_EVENT}
+          AND "status" = 'PENDING' AND json_extract("payload", '$.signUpId') IN (${Prisma.join(flippedIds)})`;
+    } else if (canEmail) {
+      const template = await prisma.emailTemplate.findUnique({
+        where: { waitListId_type: { waitListId: waitlist.id, type: "OFFBOARDING" } },
+        select: { id: true },
+      });
+      if (!template) {
+        templateMissing = true;
+      } else {
+        // Deterministic keys make a retried request idempotent: an already
+        // queued (or sending) goodbye is reused, never duplicated. After an
+        // undo the old event is terminally FAILED, so a later re-offboard
+        // skips the email rather than sending a second goodbye.
+        const pending = await prisma.outboxEvent.findMany({
+          where: {
+            waitListId: waitlist.id,
+            type: OFFBOARD_EVENT,
+            status: { in: ["PENDING", "PROCESSING"] },
+          },
+          select: { payload: true, eventKey: true },
         });
-        if (!template) {
-          templateMissing = true;
-        } else {
-          // Deterministic keys make a retried request idempotent: an already
-          // queued (or sending) goodbye is reused, never duplicated. After an
-          // undo the old event is terminally FAILED, so a later re-offboard
-          // skips the email rather than sending a second goodbye.
-          const pending = await tx.outboxEvent.findMany({
-            where: {
-              waitListId: waitlist.id,
-              type: OFFBOARD_EVENT,
-              status: { in: ["PENDING", "PROCESSING"] },
-            },
-            select: { payload: true, eventKey: true },
+        const alreadyQueued = new Set(
+          pending.map((event) => event.payload?.signUpId).filter(Boolean),
+        );
+        const freshIds = flippedIds.filter((id) => !alreadyQueued.has(id));
+        if (freshIds.length) {
+          const candidateKeys = freshIds.map((signUpId) => `offboard:${waitlist.id}:${signUpId}`);
+          const existingEvents = await prisma.outboxEvent.findMany({
+            where: { eventKey: { in: candidateKeys } },
+            select: { eventKey: true },
           });
-          const alreadyQueued = new Set(
-            pending.map((event) => event.payload?.signUpId).filter(Boolean),
+          const existingKeySet = new Set(existingEvents.map((e) => e.eventKey));
+          const toInsert = freshIds.filter(
+            (signUpId) => !existingKeySet.has(`offboard:${waitlist.id}:${signUpId}`),
           );
-          const freshIds = flippedIds.filter((id) => !alreadyQueued.has(id));
-          if (freshIds.length) {
-            // skipDuplicates also swallows terminal rows (a goodbye already
-            // sent or cancelled under this key, e.g. undo → re-offboard): the
-            // count below tells those apart from real inserts.
-            const created = await tx.outboxEvent.createMany({
-              data: freshIds.map((signUpId) => ({
-                eventKey: `offboard:${waitlist.id}:${signUpId}`,
-                type: OFFBOARD_EVENT,
-                waitListId: waitlist.id,
-                payload: { signUpId, waitListId: waitlist.id },
-              })),
-              skipDuplicates: true,
-            });
-            duplicateSkipped = freshIds.length - created.count;
+          duplicateSkipped += freshIds.length - toInsert.length;
+          for (const signUpId of toInsert) {
+            try {
+              await prisma.outboxEvent.create({
+                data: {
+                  eventKey: `offboard:${waitlist.id}:${signUpId}`,
+                  type: OFFBOARD_EVENT,
+                  waitListId: waitlist.id,
+                  payload: { signUpId, waitListId: waitlist.id },
+                },
+              });
+            } catch (error) {
+              if (isUniqueConstraintError(error)) {
+                duplicateSkipped += 1;
+              } else {
+                throw error;
+              }
+            }
           }
-          const queued = await tx.outboxEvent.findMany({
-            where: {
-              waitListId: waitlist.id,
-              type: OFFBOARD_EVENT,
-              status: { in: ["PENDING", "PROCESSING"] },
-            },
-            select: { payload: true, eventKey: true },
-          });
-          eventKeys = pendingOffboardKeys(queued, flippedIds);
         }
+        const queued = await prisma.outboxEvent.findMany({
+          where: {
+            waitListId: waitlist.id,
+            type: OFFBOARD_EVENT,
+            status: { in: ["PENDING", "PROCESSING"] },
+          },
+          select: { payload: true, eventKey: true },
+        });
+        eventKeys = pendingOffboardKeys(queued, flippedIds);
       }
     }
-    return {
-      matched: targets.length,
-      processedIds: flippedIds,
-      eventKeys,
-      templateMissing,
-      duplicateSkipped,
-    };
-  });
+  }
+  return {
+    matched: targets.length,
+    processedIds: flippedIds,
+    eventKeys,
+    templateMissing,
+    duplicateSkipped,
+  };
 }
 
 async function bulkDelete({ waitlist, ids }) {
-  return prisma.$transaction(async (tx) => {
-    const targets = await tx.signUp.findMany({
-      where: { id: { in: ids }, waitListId: waitlist.id },
-      select: { id: true, email: true },
-    });
-    if (!targets.length) return { deleted: 0, referralsSevered: 0, sample: [] };
-    const targetIds = targets.map((row) => row.id);
-    // Referral edges vanish with the rows (both sides cascade), so count them
-    // up front - the response and audit log must say exactly what was severed.
-    const referralsSevered = await tx.referral.count({
-      where: {
-        OR: [{ signUpId: { in: targetIds } }, { referredById: { in: targetIds } }],
-        signUp: { waitListId: waitlist.id },
-      },
-    });
-    const deleted = await tx.signUp.deleteMany({
-      where: { id: { in: targetIds }, waitListId: waitlist.id },
-    });
-    return {
-      deleted: deleted.count,
-      referralsSevered,
-      sample: targets.slice(0, 3).map((row) => row.email),
-    };
+  const targets = await prisma.signUp.findMany({
+    where: { id: { in: ids }, waitListId: waitlist.id },
+    select: { id: true, email: true },
   });
+  if (!targets.length) return { deleted: 0, referralsSevered: 0, sample: [] };
+  const targetIds = targets.map((row) => row.id);
+  // Referral edges vanish with the rows (both sides cascade), so count them
+  // up front - the response and audit log must say exactly what was severed.
+  const referralsSevered = await prisma.referral.count({
+    where: {
+      OR: [{ signUpId: { in: targetIds } }, { referredById: { in: targetIds } }],
+      signUp: { waitListId: waitlist.id },
+    },
+  });
+  const deleted = await prisma.signUp.deleteMany({
+    where: { id: { in: targetIds }, waitListId: waitlist.id },
+  });
+  return {
+    deleted: deleted.count,
+    referralsSevered,
+    sample: targets.slice(0, 3).map((row) => row.email),
+  };
 }
 
 export async function POST(request, { params }) {

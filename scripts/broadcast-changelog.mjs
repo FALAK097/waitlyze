@@ -4,7 +4,7 @@ import { randomUUID } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
-import pg from "pg";
+import Database from "better-sqlite3";
 
 import { renderChangelogEmailHtml } from "../src/emails/changelog-email.mjs";
 import { changelogReleaseText } from "../src/emails/text.mjs";
@@ -206,48 +206,53 @@ async function main() {
     return;
   }
 
-  console.log("\nConnecting to database via DATABASE_URL...");
+  console.log("\nConnecting to SQLite database via DATABASE_URL...");
+  const sqlitePath = dbUrl.startsWith("file:") ? dbUrl.slice("file:".length) : dbUrl;
+  const db = new Database(sqlitePath);
+
   let recipients = [];
-  if (testRecipient) {
-    console.log(`Mode: TEST SEND to single recipient: ${testRecipient}`);
-    recipients = [{ id: "test", email: testRecipient.trim().toLowerCase(), name: "Tester" }];
-  } else {
-    const pool = new pg.Pool({ connectionString: dbUrl });
-    try {
-      const res = await pool.query(
-        `SELECT id, email, name FROM users WHERE email IS NOT NULL AND email != '' ORDER BY "createdAt" ASC`,
-      );
-      recipients = res.rows;
-    } finally {
-      await pool.end();
-    }
-    console.log(`Fetched ${recipients.length} platform users from database.`);
-  }
-
-  if (recipients.length === 0) {
-    console.log("No recipients found. Exiting.");
-    return;
-  }
-
-  if (isDryRun) {
-    console.log("\n[DRY-RUN] Sample recipients (first 5):");
-    recipients
-      .slice(0, 5)
-      .forEach((u, i) => console.log(`  ${i + 1}. ${u.email} (${u.name || "No name"})`));
-    console.log(
-      `\n[DRY-RUN] Previewing Text output:\n----------------------------------------\n${text}\n----------------------------------------`,
-    );
-    console.log(
-      `\n[DRY-RUN] Finished preview for ${recipients.length} recipients. No outbox rows were written.`,
-    );
-    return;
-  }
-
-  console.log(`\nEnqueueing ${recipients.length} notices into outbox table...`);
-  const pool = new pg.Pool({ connectionString: dbUrl });
   let enqueuedCount = 0;
 
   try {
+    if (testRecipient) {
+      console.log(`Mode: TEST SEND to single recipient: ${testRecipient}`);
+      recipients = [{ id: "test", email: testRecipient.trim().toLowerCase(), name: "Tester" }];
+    } else {
+      recipients = db
+        .prepare(
+          `SELECT id, email, name FROM users WHERE email IS NOT NULL AND email != '' ORDER BY "createdAt" ASC`,
+        )
+        .all();
+      console.log(`Fetched ${recipients.length} platform users from database.`);
+    }
+
+    if (recipients.length === 0) {
+      console.log("No recipients found. Exiting.");
+      return;
+    }
+
+    if (isDryRun) {
+      console.log("\n[DRY-RUN] Sample recipients (first 5):");
+      recipients
+        .slice(0, 5)
+        .forEach((u, i) => console.log(`  ${i + 1}. ${u.email} (${u.name || "No name"})`));
+      console.log(
+        `\n[DRY-RUN] Previewing Text output:\n----------------------------------------\n${text}\n----------------------------------------`,
+      );
+      console.log(
+        `\n[DRY-RUN] Finished preview for ${recipients.length} recipients. No outbox rows were written.`,
+      );
+      return;
+    }
+
+    console.log(`\nEnqueueing ${recipients.length} notices into outbox table...`);
+    const nowIso = new Date().toISOString().replace("Z", "+00:00");
+    const insertStmt = db.prepare(
+      `INSERT INTO outbox_events ("id", "eventKey", "type", "payload", "status", "availableAt", "createdAt")
+       VALUES (?, ?, 'FOUNDER_NOTICE_REQUESTED', ?, 'PENDING', ?, ?)
+       ON CONFLICT ("eventKey") DO NOTHING`,
+    );
+
     for (const recipient of recipients) {
       const email = recipient.email.trim().toLowerCase();
       const eventKey = `founder-notice:changelog-release:${version}:${email}`;
@@ -260,15 +265,15 @@ async function main() {
         idempotencyKey: `changelog-release:${version}:${email}`,
       };
 
-      const res = await pool.query(
-        `INSERT INTO outbox_events ("id", "eventKey", "type", "payload", "status", "availableAt", "createdAt")
-         VALUES ($1, $2, 'FOUNDER_NOTICE_REQUESTED', $3, 'PENDING', NOW(), NOW())
-         ON CONFLICT ("eventKey") DO NOTHING
-         RETURNING "id"`,
-        [`evt_${randomUUID().replace(/-/g, "").slice(0, 24)}`, eventKey, JSON.stringify(payload)],
+      const info = insertStmt.run(
+        `evt_${randomUUID().replace(/-/g, "").slice(0, 24)}`,
+        eventKey,
+        JSON.stringify(payload),
+        nowIso,
+        nowIso,
       );
 
-      if (res.rowCount > 0) {
+      if (info.changes > 0) {
         enqueuedCount++;
         console.log(`  [ENQUEUED] ${email}`);
       } else {
@@ -276,7 +281,7 @@ async function main() {
       }
     }
   } finally {
-    await pool.end();
+    db.close();
   }
 
   console.log(

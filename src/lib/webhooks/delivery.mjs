@@ -1,6 +1,8 @@
 import { randomUUID } from "node:crypto";
 import https from "node:https";
 
+import { isUniqueConstraintError, parseJsonStringArray } from "@/lib/db/sqlite-helpers.mjs";
+
 import {
   canonicalJson,
   decryptSecret,
@@ -36,7 +38,7 @@ const RETRYABLE = new Set([408, 425, 429]);
 //   referrer who earns the tier, and triggeringSignupId is the invitee whose
 //   verification crossed it. Milestones use a
 //   deterministic event id (milestone:{waitlistId}:{count}) so concurrent
-//   trips collapse to one delivery via skipDuplicates instead of
+//   trips collapse to one delivery via idempotent insert instead of
 //   double-firing; tier unlocks use reward-tier:{waitlistId}:{signup}:{count}
 //   so the two families never collide.
 export const WEBHOOK_EVENT_TYPES = Object.freeze([
@@ -73,26 +75,39 @@ function deliveryRows(subscriptions, event) {
   }));
 }
 
+async function insertDeliveriesIgnoreDuplicates(db, rows) {
+  if (!rows.length) return 0;
+  let inserted = 0;
+  for (const row of rows) {
+    try {
+      await db.webhookDelivery.create({ data: row });
+      inserted++;
+    } catch (error) {
+      if (!isUniqueConstraintError(error)) throw error;
+    }
+  }
+  return inserted;
+}
+
 export async function enqueueWebhookEvent(tx, event) {
   const normalized = { test: false, now: new Date(), ...event };
-  const subscriptions = await tx.webhookSubscription.findMany({
+  const allSubs = await tx.webhookSubscription.findMany({
     where: {
       waitListId: normalized.waitListId,
       enabled: true,
-      eventTypes: { has: normalized.eventType },
     },
-    select: { id: true },
+    select: { id: true, eventTypes: true },
   });
+  const subscriptions = allSubs.filter((sub) =>
+    parseJsonStringArray(sub.eventTypes).includes(normalized.eventType),
+  );
   if (!subscriptions.length) return 0;
-  await tx.webhookDelivery.createMany({
-    data: deliveryRows(subscriptions, normalized),
-    skipDuplicates: true,
-  });
+  await insertDeliveriesIgnoreDuplicates(tx, deliveryRows(subscriptions, normalized));
   return subscriptions.length;
 }
 
 // Batch related events that share a waitlist and type. This keeps transaction
-// fan-out to one subscription read and one insert while preserving each
+// fan-out to one subscription read and idempotent inserts while preserving each
 // event's own idempotency key and payload.
 export async function enqueueWebhookEventBatch(tx, events) {
   if (!Array.isArray(events) || events.length === 0) return 0;
@@ -103,14 +118,16 @@ export async function enqueueWebhookEventBatch(tx, events) {
   ) {
     throw new TypeError("Batched webhook events must share a waitlist and event type.");
   }
-  const subscriptions = await tx.webhookSubscription.findMany({
-    where: { waitListId, enabled: true, eventTypes: { has: eventType } },
-    select: { id: true },
+  const allSubs = await tx.webhookSubscription.findMany({
+    where: { waitListId, enabled: true },
+    select: { id: true, eventTypes: true },
   });
+  const subscriptions = allSubs.filter((sub) =>
+    parseJsonStringArray(sub.eventTypes).includes(eventType),
+  );
   if (!subscriptions.length) return 0;
   const data = normalized.flatMap((event) => deliveryRows(subscriptions, event));
-  const result = await tx.webhookDelivery.createMany({ data, skipDuplicates: true });
-  return result.count;
+  return insertDeliveriesIgnoreDuplicates(tx, data);
 }
 
 function postPinned(url, addresses, body, headers) {

@@ -19,6 +19,7 @@ overrides:
 allowBuilds:
   "@prisma/engines": true
   "@tailwindcss/oxide": true
+  better-sqlite3: true
   core-js: true
   esbuild: true
   prisma: true

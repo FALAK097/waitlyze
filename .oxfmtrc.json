@@ -23,7 +23,6 @@
     ".source/**",
     "node_modules/**",
     "src/generated/**",
-    "prisma/migrations/**",
     "pnpm-lock.yaml",
     "CHANGELOG.md",
     "content/**",

@@ -101,37 +101,37 @@ async function dispatchBroadcast(db, event, payload, send, now, attempt, result,
     return;
   }
 
-  const recipient = await db.$transaction(async (tx) => {
-    const claimed = await tx.broadcastRecipient.updateMany({
-      where: {
-        id: payload.recipientId,
-        broadcastId: payload.broadcastId,
-        status: { in: ["PENDING", "PROCESSING"] },
-        broadcast: { status: "SENDING" },
-      },
-      data: { status: "PROCESSING", lastErrorCode: null },
-    });
-    if (claimed.count !== 1) return null;
-    return tx.broadcastRecipient.findUnique({
-      where: { id: payload.recipientId },
-      include: {
-        signUp: true,
-        broadcast: {
+  const claimedRecipient = await db.broadcastRecipient.updateMany({
+    where: {
+      id: payload.recipientId,
+      broadcastId: payload.broadcastId,
+      status: { in: ["PENDING", "PROCESSING"] },
+      broadcast: { status: "SENDING" },
+    },
+    data: { status: "PROCESSING", lastErrorCode: null },
+  });
+  const recipient =
+    claimedRecipient.count === 1
+      ? await db.broadcastRecipient.findUnique({
+          where: { id: payload.recipientId },
           include: {
-            waitList: {
-              select: {
-                id: true,
-                name: true,
-                status: true,
-                workspaceId: true,
-                templateSnapshot: true,
+            signUp: true,
+            broadcast: {
+              include: {
+                waitList: {
+                  select: {
+                    id: true,
+                    name: true,
+                    status: true,
+                    workspaceId: true,
+                    templateSnapshot: true,
+                  },
+                },
               },
             },
           },
-        },
-      },
-    });
-  });
+        })
+      : null;
   if (!recipient) {
     await db.outboxEvent.update({
       where: { id: event.id },

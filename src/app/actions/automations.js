@@ -27,24 +27,27 @@ export async function saveAutomationRecipe({ waitListId, recipeId, data }) {
     return { success: false, message: error.message };
   }
 
-  const saved = await prisma.$transaction(async (tx) => {
-    await tx.$queryRaw`SELECT "id" FROM "automation_recipes" WHERE "id" = ${recipe.id} FOR UPDATE`;
-    const current = await tx.automationRecipe.findFirst({
-      where: { id: recipe.id, waitListId, waitList: scope },
-      include: { versions: { orderBy: { version: "desc" }, take: 1 } },
-    });
-    if (!current) return { version: 0, config };
-    const currentVersion = current.versions[0];
-    if (JSON.stringify(currentVersion?.config) === JSON.stringify(config))
-      return { version: current.currentVersion, config };
-    const version = current.currentVersion + 1;
-    await tx.automationRecipeVersion.create({ data: { recipeId: recipe.id, version, config } });
-    await tx.automationRecipe.update({
-      where: { id: recipe.id },
-      data: { currentVersion: version },
-    });
-    return { version, config };
+  const current = await prisma.automationRecipe.findFirst({
+    where: { id: recipe.id, waitListId, waitList: scope },
+    include: { versions: { orderBy: { version: "desc" }, take: 1 } },
   });
+  let saved = { version: 0, config };
+  if (current) {
+    const currentVersion = current.versions[0];
+    if (JSON.stringify(currentVersion?.config) === JSON.stringify(config)) {
+      saved = { version: current.currentVersion, config };
+    } else {
+      const version = current.currentVersion + 1;
+      await prisma.automationRecipeVersion.create({
+        data: { recipeId: recipe.id, version, config },
+      });
+      await prisma.automationRecipe.update({
+        where: { id: recipe.id },
+        data: { currentVersion: version },
+      });
+      saved = { version, config };
+    }
+  }
   refresh(waitListId);
   return { success: true, message: "Recipe saved. New runs will use this version.", ...saved };
 }
@@ -84,53 +87,51 @@ export async function setAutomationStatus({ waitListId, recipeId, status }) {
     }
     await prisma.automationRecipe.update({ where: { id: recipe.id }, data: { status: "ENABLED" } });
   } else {
-    await prisma.$transaction(async (tx) => {
-      await tx.$queryRaw`SELECT "id" FROM "automation_recipes" WHERE "id" = ${recipe.id} FOR UPDATE`;
-      const scheduledSteps = await tx.automationRunStep.findMany({
+    await prisma.automationRecipe.update({ where: { id: recipe.id }, data: { status: "PAUSED" } });
+    const scheduledSteps = await prisma.automationRunStep.findMany({
+      where: {
+        run: { recipeId: recipe.id, status: { in: ["PENDING", "PROCESSING"] } },
+        status: { in: ["PENDING", "PROCESSING"] },
+      },
+      select: { id: true, runId: true, outboxEventKey: true },
+    });
+    const scheduledKeys = scheduledSteps.map((step) => step.outboxEventKey);
+    const pendingEvents = scheduledKeys.length
+      ? await prisma.outboxEvent.findMany({
+          where: { eventKey: { in: scheduledKeys }, status: "PENDING" },
+          select: { eventKey: true },
+        })
+      : [];
+    const cancelKeys = pendingEvents.map((event) => event.eventKey);
+    const cancelKeySet = new Set(cancelKeys);
+    const cancelSteps = scheduledSteps.filter((step) => cancelKeySet.has(step.outboxEventKey));
+    if (cancelKeys.length) {
+      await prisma.outboxEvent.updateMany({
+        where: { eventKey: { in: cancelKeys }, status: "PENDING" },
+        data: {
+          status: "FAILED",
+          processedAt: new Date(),
+          payload: {},
+          lastErrorCode: "AUTOMATION_PAUSED",
+        },
+      });
+    }
+    if (cancelSteps.length) {
+      await prisma.automationRunStep.updateMany({
         where: {
-          run: { recipeId: recipe.id, status: { in: ["PENDING", "PROCESSING"] } },
+          id: { in: cancelSteps.map((step) => step.id) },
           status: { in: ["PENDING", "PROCESSING"] },
         },
-        select: { id: true, runId: true, outboxEventKey: true },
+        data: { status: "CANCELED", finishedAt: new Date(), lastErrorCode: "AUTOMATION_PAUSED" },
       });
-      const scheduledKeys = scheduledSteps.map((step) => step.outboxEventKey);
-      const pendingEvents = scheduledKeys.length
-        ? await tx.outboxEvent.findMany({
-            where: { eventKey: { in: scheduledKeys }, status: "PENDING" },
-            select: { eventKey: true },
-          })
-        : [];
-      const cancelKeys = pendingEvents.map((event) => event.eventKey);
-      const cancelKeySet = new Set(cancelKeys);
-      const cancelSteps = scheduledSteps.filter((step) => cancelKeySet.has(step.outboxEventKey));
-      if (cancelKeys.length)
-        await tx.outboxEvent.updateMany({
-          where: { eventKey: { in: cancelKeys }, status: "PENDING" },
-          data: {
-            status: "FAILED",
-            processedAt: new Date(),
-            payload: {},
-            lastErrorCode: "AUTOMATION_PAUSED",
-          },
-        });
-      if (cancelSteps.length) {
-        await tx.automationRunStep.updateMany({
-          where: {
-            id: { in: cancelSteps.map((step) => step.id) },
-            status: { in: ["PENDING", "PROCESSING"] },
-          },
-          data: { status: "CANCELED", finishedAt: new Date(), lastErrorCode: "AUTOMATION_PAUSED" },
-        });
-        await tx.automationRun.updateMany({
-          where: {
-            id: { in: cancelSteps.map((step) => step.runId) },
-            status: { in: ["PENDING", "PROCESSING"] },
-          },
-          data: { status: "CANCELED", finishedAt: new Date(), skipReason: "AUTOMATION_PAUSED" },
-        });
-      }
-      await tx.automationRecipe.update({ where: { id: recipe.id }, data: { status: "PAUSED" } });
-    });
+      await prisma.automationRun.updateMany({
+        where: {
+          id: { in: cancelSteps.map((step) => step.runId) },
+          status: { in: ["PENDING", "PROCESSING"] },
+        },
+        data: { status: "CANCELED", finishedAt: new Date(), skipReason: "AUTOMATION_PAUSED" },
+      });
+    }
   }
   refresh(waitListId);
   return {

@@ -1,3 +1,5 @@
+import { parseJsonStringArray, serializeJsonStringArray } from "@/lib/db/sqlite-helpers.mjs";
+
 const normalizeEmail = (email) => (typeof email === "string" ? email.trim().toLowerCase() : "");
 
 /**
@@ -32,15 +34,19 @@ export async function applyKnownProviderEvents(db, providerMessageId, workspaceI
   const events = await db.emailProviderEvent.findMany({
     where: {
       providerMessageId,
-      recipientEmails: { has: emailNormalized },
       AND: [
         { OR: [{ workspaceId: null }, { workspaceId }] },
         { OR: [{ type: "email.complained" }, { type: "email.bounced", isPermanent: true }] },
       ],
     },
+    select: { type: true, recipientEmails: true },
     orderBy: { type: "asc" },
   });
-  for (const event of events) await suppress(db, workspaceId, emailNormalized, event.type);
+  for (const event of events) {
+    if (parseJsonStringArray(event.recipientEmails).includes(emailNormalized)) {
+      await suppress(db, workspaceId, emailNormalized, event.type);
+    }
+  }
 }
 
 async function deliveryRecipient(db, messageId) {
@@ -116,7 +122,7 @@ export async function recordVerifiedProviderEvent(db, event, eventId, expectedWo
       workspaceId: target?.workspaceId ?? null,
       type: event.type,
       isPermanent,
-      recipientEmails,
+      recipientEmails: serializeJsonStringArray(recipientEmails),
     },
     update: {},
   });
@@ -178,7 +184,7 @@ export async function recordCloudflareSendingEvent(db, event) {
       workspaceId: target?.workspaceId ?? null,
       type,
       isPermanent,
-      recipientEmails: [recipient],
+      recipientEmails: serializeJsonStringArray([recipient]),
     },
     update: {},
   });

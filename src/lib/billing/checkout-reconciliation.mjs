@@ -23,19 +23,16 @@ function checkoutFields() {
 }
 
 async function clearUnpaidCheckout(db, { workspaceId, intentId, sessionId }) {
-  await db.$transaction(async (tx) => {
-    await tx.$queryRaw`SELECT "id" FROM "workspaces" WHERE "id" = ${workspaceId} FOR UPDATE`;
-    const current = await tx.workspaceSubscription.findUnique({ where: { workspaceId } });
-    if (!current || current.checkoutIntentId !== intentId) return;
-    const currentSessionId =
-      current.checkoutSessionId || extractSessionIdFromUrl(current.checkoutUrl);
-    if (!sessionId || currentSessionId === sessionId) {
-      await tx.workspaceSubscription.update({
-        where: { workspaceId },
-        data: checkoutFields(),
-      });
-    }
-  });
+  const current = await db.workspaceSubscription.findUnique({ where: { workspaceId } });
+  if (!current || current.checkoutIntentId !== intentId) return;
+  const currentSessionId =
+    current.checkoutSessionId || extractSessionIdFromUrl(current.checkoutUrl);
+  if (!sessionId || currentSessionId === sessionId) {
+    await db.workspaceSubscription.updateMany({
+      where: { workspaceId, checkoutIntentId: intentId },
+      data: checkoutFields(),
+    });
+  }
 }
 
 export function extractSessionIdFromUrl(url) {
@@ -85,121 +82,119 @@ async function applyPaidSubscription(db, { workspaceId, intentId, payment, now }
     providerSubscription.customer?.customer_id || payment.customer?.customer_id || null;
   const snapshotAt = validDate(providerSubscription.updated_at) || fetchStartedAt;
 
-  return db.$transaction(async (tx) => {
-    const lockedWorkspace =
-      await tx.$queryRaw`SELECT "id" FROM "workspaces" WHERE "id" = ${workspaceId} FOR UPDATE`;
-    if (!lockedWorkspace.length) throw new TypeError("Checkout workspace no longer exists.");
-
-    const current = await tx.workspaceSubscription.findUnique({ where: { workspaceId } });
-    if (!current) throw new TypeError("Checkout workspace billing record is missing.");
-    const sameSubscription = current.dodoSubscriptionId === subscriptionId;
-    if (!sameSubscription && current.checkoutIntentId !== intentId)
-      throw new TypeError("Checkout intent changed while its payment was being reconciled.");
-    if (
-      current.dodoSubscriptionId &&
-      !sameSubscription &&
-      !["CANCELLED", "EXPIRED", "FAILED"].includes(current.status)
-    )
-      throw new TypeError("Workspace already has a different provider subscription.");
-
-    // Resolve interval through product mapping, metadata, historical records, or stored checkout
-    // to preserve Pro status even if product IDs were rotated.
-    const historicalInterval =
-      productId && productId === current.dodoProductId && current.interval
-        ? current.interval
-        : null;
-    const interval =
-      productInterval ||
-      metadataInterval ||
-      historicalInterval ||
-      (current.checkoutIntentId === intentId ? current.checkoutInterval : null) ||
-      (sameSubscription ? current.interval : null);
-
-    // Freshness check: if a newer webhook event already committed for this subscription,
-    // preserve the newer stored state rather than overwriting with an older provider snapshot.
-    const isSnapshotStale = Boolean(
-      sameSubscription && current.lastEventAt && current.lastEventAt > snapshotAt,
-    );
-
-    const status = isSnapshotStale
-      ? current.status
-      : subscriptionWebhookStatus("subscription.updated", providerSubscription, current.status);
-    const plan = (interval || metadata.plan === "PRO") && status !== "EXPIRED" ? "PRO" : "FREE";
-
-    const isDetachedCustomer = sameSubscription && isDetachedCustomerId(current.dodoCustomerId);
-    const resolvedCustomerId = isDetachedCustomer
-      ? DETACHED_CUSTOMER_ID
-      : customerId || (sameSubscription ? current.dodoCustomerId : null);
-
-    const updateData = isSnapshotStale
-      ? {
-          plan,
-          interval: current.interval || interval,
-          dodoCustomerId: resolvedCustomerId,
-          dodoSubscriptionId: subscriptionId,
-          dodoProductId: current.dodoProductId || productId || null,
-          ...(current.checkoutIntentId === intentId ? checkoutFields() : {}),
-        }
-      : {
-          plan,
-          status,
-          interval,
-          dodoCustomerId: resolvedCustomerId,
-          dodoSubscriptionId: subscriptionId,
-          dodoProductId: productId || (sameSubscription ? current.dodoProductId : null),
-          currentPeriodStart:
-            validDate(providerSubscription.previous_billing_date) ||
-            validDate(providerSubscription.created_at) ||
-            (sameSubscription ? current.currentPeriodStart : null) ||
-            now,
-          currentPeriodEnd:
-            validDate(providerSubscription.next_billing_date) ||
-            validDate(providerSubscription.current_period_end) ||
-            (sameSubscription ? current.currentPeriodEnd : null),
-          pastDueEndsAt:
-            status === "PAST_DUE"
-              ? validDate(providerSubscription.past_due_ends_at) ||
-                (sameSubscription ? current.pastDueEndsAt : null)
-              : null,
-          cancelAtPeriodEnd:
-            typeof providerSubscription.cancel_at_next_billing_date === "boolean"
-              ? providerSubscription.cancel_at_next_billing_date
-              : sameSubscription && current.cancelAtPeriodEnd,
-          lastEventAt: snapshotAt,
-          ...(current.checkoutIntentId === intentId ? checkoutFields() : {}),
-        };
-
-    await tx.workspaceSubscription.update({
-      where: { workspaceId },
-      data: updateData,
-    });
-
-    if (current.plan !== "PRO" && plan === "PRO") {
-      let validUserId = null;
-      if (metadata.userId) {
-        const userExists = await tx.user.findUnique({
-          where: { id: metadata.userId },
-          select: { id: true },
-        });
-        if (userExists) validUserId = userExists.id;
-      }
-      const intervalLabel = interval ? interval.toLowerCase() : "subscription";
-      await recordAuditEvent(tx, {
-        workspaceId,
-        userId: validUserId,
-        action: AUDIT_ACTIONS.BILLING_PLAN_UPGRADED,
-        resourceType: "billing",
-        resourceId: subscriptionId,
-        resourceName: `Pro (${intervalLabel})`,
-        detail: `Upgraded to Pro with ${intervalLabel} billing via checkout`,
-      });
-    }
-
-    return {
-      state: ["EXPIRED", "FAILED", "CANCELLED"].includes(status) ? "terminal" : "active",
-      customerId,
-    };
+  const workspace = await db.workspace.findUnique({
+    where: { id: workspaceId },
+    select: { id: true },
   });
+  if (!workspace) throw new TypeError("Checkout workspace no longer exists.");
+
+  const current = await db.workspaceSubscription.findUnique({ where: { workspaceId } });
+  if (!current) throw new TypeError("Checkout workspace billing record is missing.");
+  const sameSubscription = current.dodoSubscriptionId === subscriptionId;
+  if (!sameSubscription && current.checkoutIntentId !== intentId)
+    throw new TypeError("Checkout intent changed while its payment was being reconciled.");
+  if (
+    current.dodoSubscriptionId &&
+    !sameSubscription &&
+    !["CANCELLED", "EXPIRED", "FAILED"].includes(current.status)
+  )
+    throw new TypeError("Workspace already has a different provider subscription.");
+
+  // Resolve interval through product mapping, metadata, historical records, or stored checkout
+  // to preserve Pro status even if product IDs were rotated.
+  const historicalInterval =
+    productId && productId === current.dodoProductId && current.interval ? current.interval : null;
+  const interval =
+    productInterval ||
+    metadataInterval ||
+    historicalInterval ||
+    (current.checkoutIntentId === intentId ? current.checkoutInterval : null) ||
+    (sameSubscription ? current.interval : null);
+
+  // Freshness check: if a newer webhook event already committed for this subscription,
+  // preserve the newer stored state rather than overwriting with an older provider snapshot.
+  const isSnapshotStale = Boolean(
+    sameSubscription && current.lastEventAt && current.lastEventAt > snapshotAt,
+  );
+
+  const status = isSnapshotStale
+    ? current.status
+    : subscriptionWebhookStatus("subscription.updated", providerSubscription, current.status);
+  const plan = (interval || metadata.plan === "PRO") && status !== "EXPIRED" ? "PRO" : "FREE";
+
+  const isDetachedCustomer = sameSubscription && isDetachedCustomerId(current.dodoCustomerId);
+  const resolvedCustomerId = isDetachedCustomer
+    ? DETACHED_CUSTOMER_ID
+    : customerId || (sameSubscription ? current.dodoCustomerId : null);
+
+  const updateData = isSnapshotStale
+    ? {
+        plan,
+        interval: current.interval || interval,
+        dodoCustomerId: resolvedCustomerId,
+        dodoSubscriptionId: subscriptionId,
+        dodoProductId: current.dodoProductId || productId || null,
+        ...(current.checkoutIntentId === intentId ? checkoutFields() : {}),
+      }
+    : {
+        plan,
+        status,
+        interval,
+        dodoCustomerId: resolvedCustomerId,
+        dodoSubscriptionId: subscriptionId,
+        dodoProductId: productId || (sameSubscription ? current.dodoProductId : null),
+        currentPeriodStart:
+          validDate(providerSubscription.previous_billing_date) ||
+          validDate(providerSubscription.created_at) ||
+          (sameSubscription ? current.currentPeriodStart : null) ||
+          now,
+        currentPeriodEnd:
+          validDate(providerSubscription.next_billing_date) ||
+          validDate(providerSubscription.current_period_end) ||
+          (sameSubscription ? current.currentPeriodEnd : null),
+        pastDueEndsAt:
+          status === "PAST_DUE"
+            ? validDate(providerSubscription.past_due_ends_at) ||
+              (sameSubscription ? current.pastDueEndsAt : null)
+            : null,
+        cancelAtPeriodEnd:
+          typeof providerSubscription.cancel_at_next_billing_date === "boolean"
+            ? providerSubscription.cancel_at_next_billing_date
+            : sameSubscription && current.cancelAtPeriodEnd,
+        lastEventAt: snapshotAt,
+        ...(current.checkoutIntentId === intentId ? checkoutFields() : {}),
+      };
+
+  await db.workspaceSubscription.update({
+    where: { workspaceId },
+    data: updateData,
+  });
+
+  if (current.plan !== "PRO" && plan === "PRO") {
+    let validUserId = null;
+    if (metadata.userId) {
+      const userExists = await db.user.findUnique({
+        where: { id: metadata.userId },
+        select: { id: true },
+      });
+      if (userExists) validUserId = userExists.id;
+    }
+    const intervalLabel = interval ? interval.toLowerCase() : "subscription";
+    await recordAuditEvent(db, {
+      workspaceId,
+      userId: validUserId,
+      action: AUDIT_ACTIONS.BILLING_PLAN_UPGRADED,
+      resourceType: "billing",
+      resourceId: subscriptionId,
+      resourceName: `Pro (${intervalLabel})`,
+      detail: `Upgraded to Pro with ${intervalLabel} billing via checkout`,
+    });
+  }
+
+  return {
+    state: ["EXPIRED", "FAILED", "CANCELLED"].includes(status) ? "terminal" : "active",
+    customerId,
+  };
 }
 
 /** Reconcile a saved Dodo checkout before replacing its intent or deleting its workspace. */

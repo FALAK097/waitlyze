@@ -71,8 +71,9 @@ const nextConfig = {
   serverExternalPackages: [
     "@prisma/client",
     ".prisma/client",
-    "@prisma/adapter-neon",
-    "@neondatabase/serverless",
+    "@prisma/adapter-d1",
+    "@prisma/adapter-better-sqlite3",
+    "better-sqlite3",
     "better-auth",
   ],
   async redirects() {

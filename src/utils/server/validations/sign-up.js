@@ -32,6 +32,25 @@ import { validateSignupEmail } from "@/utils/server/email-validation.mjs";
 // The referral code is only included when the probing browser matches the
 // signup's own browser (uniqueUserId equal) - otherwise the response is
 // position-only, so one browser can't harvest another signup's referral link.
+async function findLegacyUnnormalizedSignup(waitListId, rawEmail, include = undefined) {
+  const trimmed = typeof rawEmail === "string" ? rawEmail.trim() : "";
+  if (!trimmed) return null;
+  const rows = await prisma.$queryRaw`
+    SELECT "id"
+    FROM "sign_ups"
+    WHERE "waitListId" = ${waitListId}
+      AND "emailNormalized" IS NULL
+      AND LOWER(TRIM("email")) = LOWER(${trimmed})
+    LIMIT 1
+  `;
+  const id = rows?.[0]?.id;
+  if (!id) return null;
+  return prisma.signUp.findUnique({
+    where: { id },
+    ...(include ? { include } : {}),
+  });
+}
+
 export const duplicateSignupResponse = async (waitListId, email, browserId = "") => {
   // Canonical lookup: Gmail dots/plus-tags map to one identity (see
   // normalize-email.mjs). No include/select narrowing: findSignupByEmail
@@ -42,14 +61,7 @@ export const duplicateSignupResponse = async (waitListId, email, browserId = "")
       referrals: true,
       referredBy: true,
     })) ??
-    (await prisma.signUp.findFirst({
-      where: {
-        waitListId,
-        emailNormalized: null,
-        email: { equals: typeof email === "string" ? email.trim() : "", mode: "insensitive" },
-      },
-      include: { referrals: true, referredBy: true },
-    }));
+    (await findLegacyUnnormalizedSignup(waitListId, email, { referrals: true, referredBy: true }));
   if (!existing) return null;
   const rank = await getCampaignPosition(prisma, waitListId, existing.id);
   const referrals = Array.isArray(existing.referrals) ? existing.referrals : [];
@@ -181,15 +193,7 @@ export const validateRequest = async (body, context = {}) => {
   // emailNormalized, which the indexed lookup above cannot see - fall back to
   // a raw case-insensitive match so those addresses still resolve instead of
   // erroring or doubling.
-  const legacy =
-    existing ??
-    (await prisma.signUp.findFirst({
-      where: {
-        waitListId: body.waitListId,
-        emailNormalized: null,
-        email: { equals: body.email.trim(), mode: "insensitive" },
-      },
-    }));
+  const legacy = existing ?? (await findLegacyUnnormalizedSignup(body.waitListId, body.email));
   // Same-browser + same-email retries pass through so the transaction can
   // return them idempotently; any other existing signup resolves here to its
   // current position + referral link instead of a 403.

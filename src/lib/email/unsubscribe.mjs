@@ -17,28 +17,26 @@ export function hashUnsubscribeToken(token) {
 
 export async function unsubscribeFromMarketing(db, token, { now = new Date() } = {}) {
   if (typeof token !== "string" || token.length < 32 || token.length > 128) return false;
-  return db.$transaction(async (tx) => {
-    const signup = await tx.signUp.findUnique({
-      where: { unsubscribeTokenHash: hashUnsubscribeToken(token) },
-      select: { id: true, waitListId: true, marketingUnsubscribedAt: true },
-    });
-    if (!signup) return false;
-    if (signup.marketingUnsubscribedAt) return true;
-    const updated = await tx.signUp.updateMany({
-      where: { id: signup.id, marketingUnsubscribedAt: null },
-      data: { marketingUnsubscribedAt: now },
-    });
-    if (updated.count) {
-      await tx.marketingConsentEvent.create({
-        data: {
-          waitListId: signup.waitListId,
-          signUpId: signup.id,
-          action: "OPTED_OUT",
-          source: "PUBLIC_UNSUBSCRIBE",
-          createdAt: now,
-        },
-      });
-    }
-    return true;
+  const signup = await db.signUp.findUnique({
+    where: { unsubscribeTokenHash: hashUnsubscribeToken(token) },
+    select: { id: true, waitListId: true, marketingUnsubscribedAt: true },
   });
+  if (!signup) return false;
+  if (signup.marketingUnsubscribedAt) return true;
+  const updated = await db.signUp.updateMany({
+    where: { id: signup.id, marketingUnsubscribedAt: null },
+    data: { marketingUnsubscribedAt: now },
+  });
+  if (updated.count) {
+    await db.marketingConsentEvent.create({
+      data: {
+        waitListId: signup.waitListId,
+        signUpId: signup.id,
+        action: "OPTED_OUT",
+        source: "PUBLIC_UNSUBSCRIBE",
+        createdAt: now,
+      },
+    });
+  }
+  return true;
 }

@@ -23,7 +23,7 @@ export function normalizeWaitlistSearch(value) {
 }
 
 export function waitlistSearchWhere(query) {
-  return query ? { name: { contains: query, mode: "insensitive" } } : {};
+  return query ? { name: { contains: query } } : {};
 }
 
 export function normalizeWaitlistStatus(value) {

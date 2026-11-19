@@ -13,7 +13,7 @@ Waitlyze is a viral waitlist platform for founders and creators - launch page, r
 
 ## Tech Stack
 
-Next.js (App Router) · PostgreSQL + Prisma · Better Auth · Resend · Cloudflare R2 · Tailwind + shadcn/ui
+Next.js (App Router) · Cloudflare D1 (SQLite) + Prisma · Better Auth · Resend · Cloudflare R2 · Tailwind + shadcn/ui
 
 ## Getting Started
 
@@ -21,7 +21,7 @@ Next.js (App Router) · PostgreSQL + Prisma · Better Auth · Resend · Cloudfla
 
 - [Node.js](https://nodejs.org/) 24 (see `.nvmrc`, enforced via `engines`)
 - [pnpm](https://pnpm.io/)
-- PostgreSQL 17 for migration checks (the Compose setup below provides it)
+- Cloudflare Wrangler CLI (for local and remote D1 migrations)
 
 ### Clone and install
 
@@ -41,17 +41,17 @@ Fill in the values in `.env`.
 
 ### Database
 
-Start the provided Postgres service:
+By default, `.env.example` sets `DATABASE_URL="file:./prisma/dev.db"` for local Next.js/Node development. Initialize (or reset with `-- --reset`) the local SQLite database from `migrations/*.sql`:
 
 ```bash
-docker compose up -d db
+pnpm db:bootstrap
 ```
 
-Set `DATABASE_URL` to your local database. Use a separate database for tests -
-never point local development or migration reset commands at production.
+To apply migrations to the local Wrangler D1 emulator (`pnpm preview:worker`) or remote production D1 (`waitlyze-db`):
 
 ```bash
-pnpm prisma migrate deploy
+pnpm migrate:local   # local Wrangler D1 state
+pnpm migrate:deploy  # remote Cloudflare D1 (production)
 ```
 
 ### Run the app

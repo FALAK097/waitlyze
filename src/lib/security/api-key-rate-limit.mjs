@@ -1,5 +1,7 @@
 import { createHmac } from "node:crypto";
 
+import { toSqliteIso } from "@/lib/db/sqlite-helpers.mjs";
+
 import { PublicRateLimitError } from "./public-rate-limit.mjs";
 
 const DAY = 24 * 60 * 60 * 1000;
@@ -23,15 +25,24 @@ export async function consumeApiKeyBudget(
   const fingerprint = createHmac("sha256", secret).update(`apikey:${apiKey}`).digest("hex");
   const bucketKey = `apikey:signup:${fingerprint}`;
   const reset = new Date(now.getTime() + DAY);
+  const nowIso = toSqliteIso(now);
+  const resetIso = toSqliteIso(reset);
   try {
     const rows = await db.$queryRaw`
       INSERT INTO "rate_limit_buckets" ("key", "count", "expiresAt", "updatedAt")
-      VALUES (${bucketKey}, 1, ${reset}, ${now})
+      VALUES (${bucketKey}, 1, ${resetIso}, ${nowIso})
       ON CONFLICT ("key") DO UPDATE SET
-        "count" = CASE WHEN "rate_limit_buckets"."expiresAt" <= ${now} THEN 1 ELSE "rate_limit_buckets"."count" + 1 END,
-        "expiresAt" = CASE WHEN "rate_limit_buckets"."expiresAt" <= ${now} THEN ${reset} ELSE "rate_limit_buckets"."expiresAt" END,
-        "updatedAt" = ${now}
-      WHERE "rate_limit_buckets"."expiresAt" <= ${now} OR "rate_limit_buckets"."count" < ${limit}
+        "count" = CASE
+          WHEN julianday("rate_limit_buckets"."expiresAt") <= julianday(${nowIso}) THEN 1
+          ELSE "rate_limit_buckets"."count" + 1
+        END,
+        "expiresAt" = CASE
+          WHEN julianday("rate_limit_buckets"."expiresAt") <= julianday(${nowIso}) THEN ${resetIso}
+          ELSE "rate_limit_buckets"."expiresAt"
+        END,
+        "updatedAt" = ${nowIso}
+      WHERE julianday("rate_limit_buckets"."expiresAt") <= julianday(${nowIso})
+         OR "rate_limit_buckets"."count" < ${limit}
       RETURNING "count", "expiresAt"`;
     if (rows.length !== 1) {
       const error = new PublicRateLimitError(429);
@@ -39,10 +50,16 @@ export async function consumeApiKeyBudget(
       throw error;
     }
     const count = Number(rows[0].count);
+    const parsedReset =
+      rows[0].expiresAt instanceof Date
+        ? rows[0].expiresAt
+        : rows[0].expiresAt
+          ? new Date(rows[0].expiresAt)
+          : reset;
     return {
       limit,
       remaining: Math.max(0, limit - count),
-      reset: rows[0].expiresAt instanceof Date ? rows[0].expiresAt : reset,
+      reset: Number.isNaN(parsedReset.getTime()) ? reset : parsedReset,
     };
   } catch (error) {
     if (error instanceof PublicRateLimitError) throw error;

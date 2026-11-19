@@ -70,79 +70,81 @@ function sameRequest(record, input, actorId) {
   );
 }
 
+import { isUniqueConstraintError } from "../db/sqlite-helpers.mjs";
+
 // The browser supplies a starter ID; it cannot supply a snapshot, owner or workspace.
-// A serializable transaction rechecks membership on every retry, including idempotent retries.
 export async function createDraft(db, actorId, workspaceId, rawInput) {
   const input = draftInputSchema.parse(rawInput);
   const snapshot = snapshotTemplate(input.templateId);
-  for (let attempt = 0; attempt < 4; attempt++) {
-    try {
-      return await db.$transaction(
-        async (tx) => {
-          await createWorkspaceService(tx).requireAccess(actorId, workspaceId, "editCampaign");
-          const existing = await tx.waitList.findFirst({
-            where: {
-              creationKey: input.creationKey,
-              ...campaignScope(actorId, "editCampaign", workspaceId),
-            },
-          });
-          if (existing) {
-            if (!sameRequest(existing, input, actorId))
-              throw new DraftCreationError(
-                "This creation request has changed. Start a new waitlist.",
-              );
-            return existing;
-          }
-          const [entitlements, workspaceWaitlists] = await Promise.all([
-            getWorkspaceEntitlements(tx, workspaceId),
-            tx.waitList.count({ where: { workspaceId } }),
-          ]);
-          requireCapacity({
-            entitlements,
-            feature: "waitlists",
-            used: workspaceWaitlists,
-            message: `The ${entitlements.plan === "FREE" ? "Free" : "Pro"} plan includes ${entitlements.waitlists} waitlist${entitlements.waitlists === 1 ? "" : "s"} per workspace. Upgrade or remove a waitlist to create another.`,
-          });
-          if (
-            await tx.waitList.findUnique({
-              where: { publicSlug: input.publicSlug },
-              select: { id: true },
-            })
-          ) {
-            throw new DraftCreationError("This address is taken. Choose another.", "publicSlug");
-          }
-          return tx.waitList.create({
-            data: {
-              name: input.name,
-              description: input.description,
-              publicSlug: input.publicSlug,
-              creationKey: input.creationKey,
-              templateSnapshot: snapshot,
-              showReferrals: input.showReferrals,
-              sendEmailsToSubscribers: input.sendEmailsToSubscribers,
-              userId: actorId,
-              workspaceId,
-              status: "DRAFT",
-              showSocialProof: false,
-              showLogo: false,
-              buttonColor: "#C6FE1E",
-              buttonBorder: "#C6FE1E",
-              buttonTextColor: "#00160D",
-            },
-          });
-        },
-        { isolationLevel: "Serializable" },
-      );
-    } catch (error) {
-      if (!["P2034", "P2002"].includes(error.code)) throw error;
-      if (attempt === 3) {
-        if (error.code === "P2002")
-          throw new DraftCreationError(
-            "This address was just claimed. Choose another.",
-            "publicSlug",
-          );
-        throw new DraftCreationError("Couldn't finish creating your waitlist. Try again.");
-      }
+  await createWorkspaceService(db).requireAccess(actorId, workspaceId, "editCampaign");
+
+  const existing = await db.waitList.findFirst({
+    where: {
+      creationKey: input.creationKey,
+      ...campaignScope(actorId, "editCampaign", workspaceId),
+    },
+  });
+  if (existing) {
+    if (!sameRequest(existing, input, actorId)) {
+      throw new DraftCreationError("This creation request has changed. Start a new waitlist.");
     }
+    return existing;
+  }
+
+  const [entitlements, workspaceWaitlists] = await Promise.all([
+    getWorkspaceEntitlements(db, workspaceId),
+    db.waitList.count({ where: { workspaceId } }),
+  ]);
+  requireCapacity({
+    entitlements,
+    feature: "waitlists",
+    used: workspaceWaitlists,
+    message: `The ${entitlements.plan === "FREE" ? "Free" : "Pro"} plan includes ${entitlements.waitlists} waitlist${entitlements.waitlists === 1 ? "" : "s"} per workspace. Upgrade or remove a waitlist to create another.`,
+  });
+
+  if (
+    await db.waitList.findUnique({
+      where: { publicSlug: input.publicSlug },
+      select: { id: true },
+    })
+  ) {
+    throw new DraftCreationError("This address is taken. Choose another.", "publicSlug");
+  }
+
+  try {
+    return await db.waitList.create({
+      data: {
+        name: input.name,
+        description: input.description,
+        publicSlug: input.publicSlug,
+        creationKey: input.creationKey,
+        templateSnapshot: snapshot,
+        showReferrals: input.showReferrals,
+        sendEmailsToSubscribers: input.sendEmailsToSubscribers,
+        userId: actorId,
+        workspaceId,
+        status: "DRAFT",
+        showSocialProof: false,
+        showLogo: false,
+        buttonColor: "#C6FE1E",
+        buttonBorder: "#C6FE1E",
+        buttonTextColor: "#00160D",
+      },
+    });
+  } catch (error) {
+    if (!isUniqueConstraintError(error)) throw error;
+    const raced = await db.waitList.findFirst({
+      where: {
+        creationKey: input.creationKey,
+        ...campaignScope(actorId, "editCampaign", workspaceId),
+      },
+    });
+    if (raced) {
+      if (!sameRequest(raced, input, actorId)) {
+        throw new DraftCreationError("This creation request has changed. Start a new waitlist.");
+      }
+      return raced;
+    }
+    throw new DraftCreationError("This address was just claimed. Choose another.", "publicSlug");
   }
 }

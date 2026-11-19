@@ -1,3 +1,5 @@
+import { parseJsonStringArray } from "./db/sqlite-helpers.mjs";
+
 const campaignFields = [
   "name",
   "description",
@@ -95,7 +97,7 @@ export function buildAccountExport({ user, memberships, campaigns, apiKeys, inte
       webhooks: campaign.webhookSubscriptions.map(
         ({ name, eventTypes, enabled, createdAt, updatedAt, lastDeliveredAt }) => ({
           name,
-          eventTypes,
+          eventTypes: parseJsonStringArray(eventTypes),
           enabled,
           createdAt,
           updatedAt,
@@ -166,7 +168,7 @@ export function buildAccountExport({ user, memberships, campaigns, apiKeys, inte
     developerKeys: apiKeys.map(
       ({ name, scopes, expiresAt, lastUsedAt, revokedAt, createdAt, updatedAt }) => ({
         name,
-        scopes,
+        scopes: parseJsonStringArray(scopes, ["waitlist:write"]),
         expiresAt,
         lastUsedAt,
         revokedAt,

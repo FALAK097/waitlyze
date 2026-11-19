@@ -37,6 +37,8 @@ export async function replaceInvalidDraftSnapshot(...args) {
   return persistSnapshot(true, ...args);
 }
 
+import { isUniqueConstraintError } from "../db/sqlite-helpers.mjs";
+
 async function persistSnapshot(
   replaceInvalid,
   db,
@@ -49,48 +51,52 @@ async function persistSnapshot(
   if (!Number.isSafeInteger(expectedRevision) || expectedRevision < 1)
     throw new Error("Invalid page version.");
   let snapshot = templateSnapshotSchema.parse(rawSnapshot);
-  return db.$transaction(async (tx) => {
-    const where = scopedPage(actorId, waitListId, workspaceId);
-    const current = await tx.waitList.findFirst({
+
+  const where = scopedPage(actorId, waitListId, workspaceId);
+  const current = await db.waitList.findFirst({
+    where,
+    select: { id: true, templateRevision: true, templateSnapshot: true },
+  });
+  if (!current) throw new AccessError();
+  const entitlements = await getWorkspaceEntitlements(db, workspaceId);
+  if (!entitlements.removeBranding && snapshot.brand.showPoweredBy === false) {
+    snapshot = { ...snapshot, brand: { ...snapshot.brand, showPoweredBy: true } };
+  }
+  const stored = templateSnapshotSchema.safeParse(current.templateSnapshot);
+  if (!replaceInvalid && !stored.success) throw stored.error;
+  if (current.templateRevision !== expectedRevision) throw new DraftRevisionConflict(current);
+  if (replaceInvalid && stored.success)
+    throw new Error("This page is now valid. Reload before editing it.");
+  if (sameSnapshot(current.templateSnapshot, snapshot)) {
+    return {
+      revision: current.templateRevision,
+      snapshot: current.templateSnapshot,
+      unchanged: true,
+    };
+  }
+  const updated = await db.waitList.updateMany({
+    where: { ...where, templateRevision: expectedRevision },
+    data: { templateSnapshot: snapshot, templateRevision: { increment: 1 } },
+  });
+  if (updated.count !== 1) {
+    const latest = await db.waitList.findFirst({
       where,
       select: { id: true, templateRevision: true, templateSnapshot: true },
     });
-    if (!current) throw new AccessError();
-    const entitlements = await getWorkspaceEntitlements(tx, workspaceId);
-    if (!entitlements.removeBranding && snapshot.brand.showPoweredBy === false) {
-      snapshot = { ...snapshot, brand: { ...snapshot.brand, showPoweredBy: true } };
-    }
-    const stored = templateSnapshotSchema.safeParse(current.templateSnapshot);
-    if (!replaceInvalid && !stored.success) throw stored.error;
-    if (current.templateRevision !== expectedRevision) throw new DraftRevisionConflict(current);
-    if (replaceInvalid && stored.success)
-      throw new Error("This page is now valid. Reload before editing it.");
-    if (sameSnapshot(current.templateSnapshot, snapshot)) {
-      return {
-        revision: current.templateRevision,
-        snapshot: current.templateSnapshot,
-        unchanged: true,
-      };
-    }
-    const updated = await tx.waitList.updateMany({
-      where: { ...where, templateRevision: expectedRevision },
-      data: { templateSnapshot: snapshot, templateRevision: { increment: 1 } },
-    });
-    if (updated.count !== 1) {
-      const latest = await tx.waitList.findFirst({
-        where,
-        select: { id: true, templateRevision: true, templateSnapshot: true },
-      });
-      if (!latest) throw new AccessError();
-      throw new DraftRevisionConflict(latest);
-    }
-    if (current.templateSnapshot !== null)
-      await tx.waitListRevision.create({
+    if (!latest) throw new AccessError();
+    throw new DraftRevisionConflict(latest);
+  }
+  if (current.templateSnapshot !== null) {
+    try {
+      await db.waitListRevision.create({
         data: { waitListId, revision: expectedRevision, snapshot: current.templateSnapshot },
       });
-    await tx.waitListRevision.deleteMany({
-      where: { waitListId, revision: { lt: Math.max(1, expectedRevision - 48) } },
-    });
-    return { revision: expectedRevision + 1, snapshot, unchanged: false };
+    } catch (error) {
+      if (!isUniqueConstraintError(error)) throw error;
+    }
+  }
+  await db.waitListRevision.deleteMany({
+    where: { waitListId, revision: { lt: Math.max(1, expectedRevision - 48) } },
   });
+  return { revision: expectedRevision + 1, snapshot, unchanged: false };
 }

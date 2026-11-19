@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { serializeJsonStringArray } from "@/lib/db/sqlite-helpers.mjs";
 import prisma from "@/lib/prisma";
 import { webhookAccess } from "@/lib/webhooks/access";
 import { WEBHOOK_EVENT_TYPES, isSupportedWebhookEvent } from "@/lib/webhooks/delivery.mjs";
@@ -34,7 +35,7 @@ export async function PATCH(request, { params }) {
           { error: "Choose at least one supported event." },
           { status: 400 },
         );
-      data.eventTypes = body.events;
+      data.eventTypes = serializeJsonStringArray(body.events, ["signup.created"]);
     }
     if (body.enabled !== undefined) {
       if (typeof body.enabled !== "boolean")
@@ -46,19 +47,25 @@ export async function PATCH(request, { params }) {
         return NextResponse.json({ error: "Invalid subscriber data setting." }, { status: 400 });
       data.includeSubscriberData = body.includeSubscriberData;
     }
-    await prisma.$transaction(async (tx) => {
-      await tx.webhookSubscription.update({ where: { id: subscriptionId }, data });
-      if (data.enabled === true)
-        await tx.webhookDelivery.updateMany({
-          where: { subscriptionId, status: "PAUSED" },
-          data: { status: "PENDING", availableAt: new Date(), lastErrorCode: null },
-        });
-      if (data.enabled === false)
-        await tx.webhookDelivery.updateMany({
-          where: { subscriptionId, status: "PENDING" },
-          data: { status: "PAUSED" },
-        });
-    });
+    await prisma.$transaction([
+      prisma.webhookSubscription.update({ where: { id: subscriptionId }, data }),
+      ...(data.enabled === true
+        ? [
+            prisma.webhookDelivery.updateMany({
+              where: { subscriptionId, status: "PAUSED" },
+              data: { status: "PENDING", availableAt: new Date(), lastErrorCode: null },
+            }),
+          ]
+        : []),
+      ...(data.enabled === false
+        ? [
+            prisma.webhookDelivery.updateMany({
+              where: { subscriptionId, status: "PENDING" },
+              data: { status: "PAUSED" },
+            }),
+          ]
+        : []),
+    ]);
     return NextResponse.json({ ok: true });
   } catch (error) {
     return NextResponse.json(

@@ -6,6 +6,8 @@
 // Farm guard: signups from an IP over the velocity limit earn nothing, and
 // their referrals grant nothing either.
 
+import { isUniqueConstraintError } from "@/lib/db/sqlite-helpers.mjs";
+
 export const SIGNUP_POINTS = 50;
 export const REFERRAL_POINTS = 30;
 export const FOLLOW_POINTS = 5;
@@ -37,17 +39,17 @@ export function customEventKey(signUpId, event, key) {
   return `custom-credit:${signUpId}:${event}:${key}`;
 }
 
-// Idempotent award: ON CONFLICT DO NOTHING keeps the transaction healthy
-// (a caught unique violation would abort it), and the balance bumps only
-// when the ledger row is actually new.
+// Idempotent award: unique eventKey ensures concurrent or retried awards
+// grant points once and bump SignUp.points only when newly recorded.
 export async function awardPoints(tx, { waitListId, signUpId, kind, points, eventKey }) {
-  const inserted = await tx.pointLedger.createMany({
-    data: [{ waitListId, signUpId, kind, points, eventKey }],
-    skipDuplicates: true,
-  });
-  if (inserted.count !== 1) return { awarded: false };
-  // Returning the balance from the same update removes the separate read-back
-  // inside callers' transactions.
+  try {
+    await tx.pointLedger.create({
+      data: { waitListId, signUpId, kind, points, eventKey },
+    });
+  } catch (error) {
+    if (isUniqueConstraintError(error)) return { awarded: false };
+    throw error;
+  }
   const updated = await tx.signUp.update({
     where: { id: signUpId },
     data: { points: { increment: points } },

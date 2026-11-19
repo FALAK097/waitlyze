@@ -10,6 +10,7 @@ import { WaitlistSettingsNavigation } from "@/components/product/waitlist-settin
 import { WebhookSettings } from "@/components/product/webhook-settings";
 import { Button } from "@/components/ui/button";
 import { getWorkspaceEntitlements } from "@/lib/billing/plans.mjs";
+import { parseJsonStringArray } from "@/lib/db/sqlite-helpers.mjs";
 import { env } from "@/lib/env.mjs";
 import prisma from "@/lib/prisma";
 import { validateWebhookUrl } from "@/lib/webhooks/security.mjs";
@@ -239,7 +240,11 @@ export default async function WaitlistSettings({ params, searchParams }) {
         });
         return JSON.parse(
           JSON.stringify({
-            data: rows.map((row) => ({ ...row, url: validateWebhookUrl(row.url).safeUrl })),
+            data: rows.map((row) => ({
+              ...row,
+              eventTypes: parseJsonStringArray(row.eventTypes),
+              url: validateWebhookUrl(row.url).safeUrl,
+            })),
             configured: Boolean(env.WEBHOOK_SECRET_ENCRYPTION_KEY),
           }),
         );
@@ -249,7 +254,14 @@ export default async function WaitlistSettings({ params, searchParams }) {
           where: { waitListId: waitlist.id },
           select: notificationSelect,
         });
-        return JSON.parse(JSON.stringify(channels));
+        return JSON.parse(
+          JSON.stringify(
+            channels.map((channel) => ({
+              ...channel,
+              triggers: parseJsonStringArray(channel.triggers, ["MILESTONE_COUNTS"]),
+            })),
+          ),
+        );
       }
       if (section === "domain") {
         const domainRow = await prisma.customDomain.findUnique({

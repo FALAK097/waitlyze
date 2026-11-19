@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { auth } from "@/lib/auth";
+import { parseJsonStringArray, serializeJsonStringArray } from "@/lib/db/sqlite-helpers.mjs";
 import { env } from "@/lib/env.mjs";
 import {
   CHAT_TRIGGERS,
@@ -27,6 +28,14 @@ const safeSelect = {
   updatedAt: true,
 };
 
+function formatChannelRecord(record) {
+  if (!record) return null;
+  return {
+    ...record,
+    triggers: parseJsonStringArray(record.triggers, [CHAT_TRIGGERS[0]]),
+  };
+}
+
 function providerOf(channel) {
   const provider = String(channel || "").toUpperCase();
   return isSupportedChatProvider(provider) ? provider : null;
@@ -46,7 +55,10 @@ export async function GET(request, { params }) {
     where: { waitListId_provider: { waitListId: id, provider } },
     select: safeSelect,
   });
-  return NextResponse.json({ data: record }, { headers: { "Cache-Control": "private, no-store" } });
+  return NextResponse.json(
+    { data: formatChannelRecord(record) },
+    { headers: { "Cache-Control": "private, no-store" } },
+  );
 }
 
 export async function PUT(request, { params }) {
@@ -71,18 +83,19 @@ export async function PUT(request, { params }) {
     );
     if (error) return NextResponse.json({ error }, { status: 400 });
     const secret = encryptIntegrationSecret(url);
+    const serializedTriggers = serializeJsonStringArray(body?.triggers, [CHAT_TRIGGERS[0]]);
     const record = await prisma.waitlistNotificationChannel.upsert({
       where: { waitListId_provider: { waitListId: id, provider } },
       create: {
         waitListId: id,
         provider,
-        triggers: body?.triggers ?? [CHAT_TRIGGERS[0]],
+        triggers: serializedTriggers,
         ...secret,
       },
       update: {
         status: "NEEDS_TEST",
         lastErrorCode: null,
-        ...(body?.triggers ? { triggers: body.triggers } : {}),
+        ...(body?.triggers ? { triggers: serializedTriggers } : {}),
         ...secret,
       },
       select: safeSelect,
@@ -95,7 +108,10 @@ export async function PUT(request, { params }) {
       resourceType: "chat_notification",
       resourceName: provider,
     });
-    return NextResponse.json({ data: record }, { headers: { "Cache-Control": "no-store" } });
+    return NextResponse.json(
+      { data: formatChannelRecord(record) },
+      { headers: { "Cache-Control": "no-store" } },
+    );
   } catch (error) {
     if (error instanceof SyntaxError)
       return NextResponse.json({ error: "Enter a valid webhook URL." }, { status: 400 });
@@ -128,7 +144,7 @@ export async function PATCH(request, { params }) {
     );
   const updated = await prisma.waitlistNotificationChannel.updateMany({
     where: { waitListId: id, provider },
-    data: { triggers: body.triggers },
+    data: { triggers: serializeJsonStringArray(body.triggers, [CHAT_TRIGGERS[0]]) },
   });
   if (!updated.count)
     return NextResponse.json({ error: "Connect a channel first." }, { status: 404 });
@@ -136,7 +152,10 @@ export async function PATCH(request, { params }) {
     where: { waitListId_provider: { waitListId: id, provider } },
     select: safeSelect,
   });
-  return NextResponse.json({ data: record }, { headers: { "Cache-Control": "no-store" } });
+  return NextResponse.json(
+    { data: formatChannelRecord(record) },
+    { headers: { "Cache-Control": "no-store" } },
+  );
 }
 
 export async function DELETE(request, { params }) {

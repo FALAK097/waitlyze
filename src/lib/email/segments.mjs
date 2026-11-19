@@ -39,12 +39,17 @@ export function segmentVerifiedPredicate() {
   return `s."verifiedAt" IS NOT NULL`;
 }
 
-export function segmentExtraPredicate(segment) {
+export function segmentExtraPredicate(segment, now = null) {
   switch (segment) {
     case "TOP_REFERRERS":
       return `AND ${VERIFIED_REFERRAL_EXISTS}`;
-    case "INACTIVE":
-      return `AND s."createdAt" < NOW() - INTERVAL '14 days' AND NOT ${VERIFIED_REFERRAL_EXISTS}`;
+    case "INACTIVE": {
+      const cutoffExpr =
+        now instanceof Date && !Number.isNaN(now.valueOf())
+          ? `julianday('${new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000).toISOString().replace("Z", "+00:00")}')`
+          : `julianday('now', '-14 days')`;
+      return `AND julianday(s."createdAt") < ${cutoffExpr} AND NOT ${VERIFIED_REFERRAL_EXISTS}`;
+    }
     default:
       return "";
   }

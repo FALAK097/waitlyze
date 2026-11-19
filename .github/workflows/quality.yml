@@ -34,7 +34,7 @@ jobs:
     timeout-minutes: 25
     env:
       NODE_ENV: production
-      DATABASE_URL: postgresql://waitlyze:waitlyze@127.0.0.1:5432/waitlyze
+      DATABASE_URL: file:./prisma/dev.db
       BETTER_AUTH_SECRET: waitlyze-local-fixture-secret-not-for-deployment-2026
       BETTER_AUTH_URL: http://127.0.0.1:3000
       R2_ACCOUNT_ID: fixture
@@ -60,22 +60,6 @@ jobs:
   migrations:
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    services:
-      postgres:
-        image: postgres:17-alpine
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: migration-test-only
-          POSTGRES_DB: postgres
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd "pg_isready -U postgres"
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 10
-    env:
-      MIGRATION_TEST_ADMIN_URL: postgresql://postgres:migration-test-only@127.0.0.1:5432/postgres
     steps:
       - uses: actions/checkout@v4
         with:

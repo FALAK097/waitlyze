@@ -46,7 +46,7 @@ export function parseAudienceFilters(searchParams) {
 }
 
 export function audienceWhere(waitListId, scope, filters) {
-  const contains = (value) => ({ contains: value, mode: "insensitive" });
+  const contains = (value) => ({ contains: value });
   const and = [];
   if (filters.device)
     and.push({

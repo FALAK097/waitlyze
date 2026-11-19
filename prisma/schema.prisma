@@ -5,7 +5,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
 }
 
 model User {
@@ -178,7 +178,7 @@ model WaitListPublicationRevision {
 model SignUp {
   id                      String                  @id @default(cuid())
   uniqueUserId            String
-  referralCode            String                  @unique @default(dbgenerated("(gen_random_uuid())::text"))
+  referralCode            String                  @unique @default(uuid())
   email                   String
   emailNormalized         String?
   device                  String?
@@ -568,7 +568,7 @@ model ApiKey {
   name       String
   keyHash    String    @unique
   keyId      String?   @unique
-  scopes     String[]  @default(["waitlist:write"])
+  scopes     String    @default("[\"waitlist:write\"]")
   expiresAt  DateTime?
   lastUsedAt DateTime?
   revokedAt  DateTime?
@@ -625,7 +625,7 @@ model WebhookSubscription {
   waitListId               String
   name                     String
   url                      String
-  eventTypes               String[]          @default(["signup.created"])
+  eventTypes               String            @default("[\"signup.created\"]")
   enabled                  Boolean           @default(true)
   includeSubscriberData    Boolean           @default(false)
   secretCiphertext         String
@@ -737,8 +737,8 @@ model OauthClient {
   skipConsent                      Boolean?
   enableEndSession                 Boolean?
   subjectType                      String?
-  scopes                           String[]              @default([])
-  clientCredentialsScopes          String[]              @default([])
+  scopes                           String?
+  clientCredentialsScopes          String?
   userId                           String?
   user                             User?                 @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt                        DateTime?
@@ -746,22 +746,22 @@ model OauthClient {
   name                             String?
   uri                              String?
   icon                             String?
-  contacts                         String[]              @default([])
+  contacts                         String?
   tos                              String?
   policy                           String?
   softwareId                       String?
   softwareVersion                  String?
   softwareStatement                String?
-  redirectUris                     String[]              @default([])
-  postLogoutRedirectUris           String[]              @default([])
+  redirectUris                     String
+  postLogoutRedirectUris           String?
   backchannelLogoutUri             String?
   backchannelLogoutSessionRequired Boolean?
   tokenEndpointAuthMethod          String?
   applicationType                  String?
   jwks                             String?
   jwksUri                          String?
-  grantTypes                       String[]              @default([])
-  responseTypes                    String[]              @default([])
+  grantTypes                       String
+  responseTypes                    String
   requirePKCE                      Boolean?
   dpopBoundAccessTokens            Boolean?              @default(false)
   referenceId                      String?
@@ -783,7 +783,7 @@ model OauthResource {
   refreshTokenTtl               Int?
   signingAlgorithm              String?
   signingKeyId                  String?
-  allowedScopes                 String[]              @default([])
+  allowedScopes                 String?
   customClaims                  Json?
   dpopBoundAccessTokensRequired Boolean?              @default(false)
   disabled                      Boolean?              @default(false)
@@ -821,8 +821,8 @@ model OauthRefreshToken {
   user                    User               @relation(fields: [userId], references: [id], onDelete: Cascade)
   referenceId             String?
   authorizationCodeId     String?
-  resources               String[]           @default([])
-  requestedUserInfoClaims String[]           @default([])
+  resources               String?
+  requestedUserInfoClaims String?
   expiresAt               DateTime?
   createdAt               DateTime?
   revoked                 DateTime?
@@ -831,7 +831,7 @@ model OauthRefreshToken {
   rotationReplayExpiresAt DateTime?
   authTime                DateTime?
   confirmation            Json?
-  scopes                  String[]           @default([])
+  scopes                  String?
   accessTokens            OauthAccessToken[]
 
   @@index([clientId])
@@ -852,15 +852,15 @@ model OauthAccessToken {
   user                    User?              @relation(fields: [userId], references: [id], onDelete: Cascade)
   referenceId             String?
   authorizationCodeId     String?
-  resources               String[]           @default([])
-  requestedUserInfoClaims String[]           @default([])
+  resources               String?
+  requestedUserInfoClaims String?
   refreshId               String?
   refreshToken            OauthRefreshToken? @relation(fields: [refreshId], references: [id], onDelete: Cascade)
   expiresAt               DateTime?
   createdAt               DateTime?
   revoked                 DateTime?
   confirmation            Json?
-  scopes                  String[]           @default([])
+  scopes                  String?
 
   @@index([clientId])
   @@index([sessionId])
@@ -877,9 +877,9 @@ model OauthConsent {
   userId                  String?
   user                    User?       @relation(fields: [userId], references: [id], onDelete: Cascade)
   referenceId             String?
-  resources               String[]    @default([])
-  requestedUserInfoClaims String[]    @default([])
-  scopes                  String[]    @default([])
+  resources               String?
+  requestedUserInfoClaims String?
+  scopes                  String?
   createdAt               DateTime?
   updatedAt               DateTime?
 
@@ -1050,7 +1050,7 @@ model EmailProviderEvent {
   workspaceId       String?
   type              String
   isPermanent       Boolean  @default(false)
-  recipientEmails   String[] @default([])
+  recipientEmails   String   @default("[]")
   createdAt         DateTime @default(now())
 
   @@index([providerMessageId, type])
@@ -1122,7 +1122,7 @@ model WaitlistNotificationChannel {
   waitListId       String
   provider         String
   status           String    @default("NEEDS_TEST")
-  triggers         String[]  @default(["MILESTONE_COUNTS"])
+  triggers         String    @default("[\"MILESTONE_COUNTS\"]")
   secretCiphertext String
   secretIv         String
   secretTag        String
@@ -1168,8 +1168,8 @@ model CustomDomain {
 model RateLimitBucket {
   key       String   @id
   count     Int      @default(0)
-  expiresAt DateTime @db.Timestamptz(3)
-  updatedAt DateTime @default(now()) @db.Timestamptz(3)
+  expiresAt DateTime
+  updatedAt DateTime @default(now())
 
   @@index([expiresAt])
   @@map("rate_limit_buckets")
@@ -1179,7 +1179,7 @@ model CloudflareEmailUsage {
   id             String   @id @default(cuid())
   idempotencyKey String   @unique
   messageId      String?
-  createdAt      DateTime @default(now()) @db.Timestamptz(3)
+  createdAt      DateTime @default(now())
 
   @@index([createdAt])
   @@map("cloudflare_email_usage")

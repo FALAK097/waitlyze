@@ -42,7 +42,7 @@ export async function GET(request) {
 
     const rows = await prisma.$queryRaw`
       WITH referral_scores AS (
-        SELECT referral."referredById" AS "referrerId", COUNT(*)::bigint AS score
+        SELECT referral."referredById" AS "referrerId", COUNT(*) AS score
         FROM "referrals" AS referral
         INNER JOIN "sign_ups" AS referred
           ON referred."id" = referral."signUpId"
@@ -51,7 +51,7 @@ export async function GET(request) {
          AND referrer."waitListId" = referred."waitListId"
         INNER JOIN "wait_lists" AS campaign
           ON campaign."id" = referred."waitListId"
-         AND campaign."showReferrals" = true
+         AND campaign."showReferrals" = 1
         WHERE referred."waitListId" = ${waitListId}
           AND referred."verifiedAt" IS NOT NULL
           AND referrer."verifiedAt" IS NOT NULL
@@ -60,16 +60,16 @@ export async function GET(request) {
           AND referral."referredById" <> referral."signUpId"
         GROUP BY referral."referredById"
       ), ranked AS (
-        SELECT signup."id", signup."email", COALESCE(score.score, 0)::bigint AS score,
+        SELECT signup."id", signup."email", COALESCE(score.score, 0) AS score,
           ROW_NUMBER() OVER (
-            ORDER BY COALESCE(score.score, 0) DESC, signup."createdAt" ASC, signup."id" ASC
+            ORDER BY COALESCE(score.score, 0) DESC, REPLACE(signup."createdAt", ' ', 'T') ASC, signup."id" ASC
           ) AS position,
           COUNT(*) OVER () AS total
         FROM "sign_ups" AS signup
         LEFT JOIN referral_scores AS score ON score."referrerId" = signup."id"
         WHERE signup."waitListId" = ${waitListId}
       )
-      SELECT ranked."id", ranked.score, ranked.position, ranked.total,
+      SELECT ranked."id", ranked."email", ranked.score, ranked.position, ranked.total,
              target."id" AS "targetId", target.position AS "targetPosition",
              target.score AS "targetScore"
       FROM ranked
