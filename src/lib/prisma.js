@@ -10,7 +10,11 @@ function createPrismaClient() {
 
   if (d1) {
     const adapter = new PrismaD1(d1);
-    return new PrismaClient({ adapter });
+    const client = new PrismaClient({ adapter });
+    if (cfContext?.ctx?.waitUntil) {
+      cfContext.ctx.waitUntil(client.$connect().catch(() => {}));
+    }
+    return client;
   }
 
   // Local development / Node.js test environment fallback
