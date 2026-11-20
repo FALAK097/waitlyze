@@ -62,6 +62,8 @@ export async function publishCampaign(db, actorId, workspaceId, waitListId, expe
     },
   });
   if (!page) throw new AccessError();
+  if (page.templateSnapshot == null)
+    throw new PublicationConflict("Save the page once before publishing it.");
   if (page.templateRevision !== expectedRevision) throw new PublicationConflict();
   let snapshot = templateSnapshotSchema.parse(page.templateSnapshot);
   const entitlements = await getWorkspaceEntitlements(db, page.workspaceId);

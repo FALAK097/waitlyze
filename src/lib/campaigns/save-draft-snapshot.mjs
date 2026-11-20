@@ -62,11 +62,18 @@ async function persistSnapshot(
   if (!entitlements.removeBranding && snapshot.brand.showPoweredBy === false) {
     snapshot = { ...snapshot, brand: { ...snapshot.brand, showPoweredBy: true } };
   }
-  const stored = templateSnapshotSchema.safeParse(current.templateSnapshot);
-  if (!replaceInvalid && !stored.success) throw stored.error;
+  // A missing snapshot means the page was never authored, not that it is unreadable.
+  const stored =
+    current.templateSnapshot == null
+      ? null
+      : templateSnapshotSchema.safeParse(current.templateSnapshot);
+  if (replaceInvalid) {
+    if (!stored || stored.success)
+      throw new Error("This page no longer needs replacing. Reload before editing it.");
+  } else if (stored && !stored.success) {
+    throw stored.error;
+  }
   if (current.templateRevision !== expectedRevision) throw new DraftRevisionConflict(current);
-  if (replaceInvalid && stored.success)
-    throw new Error("This page is now valid. Reload before editing it.");
   if (sameSnapshot(current.templateSnapshot, snapshot)) {
     return {
       revision: current.templateRevision,
@@ -86,7 +93,7 @@ async function persistSnapshot(
     if (!latest) throw new AccessError();
     throw new DraftRevisionConflict(latest);
   }
-  if (current.templateSnapshot !== null) {
+  if (stored) {
     try {
       await db.waitListRevision.create({
         data: { waitListId, revision: expectedRevision, snapshot: current.templateSnapshot },

@@ -73,6 +73,8 @@ export default async function PublicWaitlistPage({ params }) {
   const { slug } = await params;
   const page = await publishedPage(slug);
   if (!page) return notFound();
+  // A paused list has no resolved snapshot, and the shared component owns its paused UI.
+  if (page.paused) return <PublishedWaitlistPage page={page} />;
   return (
     <PublishedWaitlistPage
       page={page}

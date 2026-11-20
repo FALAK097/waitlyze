@@ -46,6 +46,9 @@ export default async function WaitListsEditPage(props) {
     ? parsedSnapshot.data
     : snapshotTemplate("simple");
   const parsedPublished = templateSnapshotSchema.safeParse(publication?.snapshot);
+  // Only an existing-but-unreadable snapshot needs the destructive replacement flow. A page
+  // with no snapshot yet is simply a new page and saves through the normal draft path.
+  const snapshotReplacement = draft?.templateSnapshot != null && !parsedSnapshot.success;
   return (
     <ContentLayout title="Builder">
       <SnapshotPageBuilder
@@ -59,7 +62,7 @@ export default async function WaitListsEditPage(props) {
           publishedRevision: waitList.publishedRevision,
           publishedTemplateRevision: waitList.publishedTemplateRevision,
           templateSnapshot,
-          snapshotReplacement: !parsedSnapshot.success,
+          snapshotReplacement,
           publishedSnapshot: parsedPublished.success ? parsedPublished.data : null,
           customDomain: domain,
           canRemoveBranding: entitlements.removeBranding,
