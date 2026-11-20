@@ -82,16 +82,12 @@ function AppShellControlsFallback() {
   );
 }
 
-export default async function AppLayout({ children }) {
+async function AppLayoutData({ children }) {
   const { user } = await currentWorkspace();
-  const onboarding = await prisma.user.findUnique({
-    where: { id: user.id },
-    select: { isOnboarded: true },
-  });
 
   return (
     <div className={`product-ui min-h-dvh bg-product-bg-page ${publicFontClasses}`}>
-      <OnboardingProvider initialOpen={!onboarding?.isOnboarded} userName={user.name}>
+      <OnboardingProvider initialOpen={!user.isOnboarded} userName={user.name}>
         <ReactQueryProvider>
           <AppShell
             headerControls={
@@ -113,5 +109,23 @@ export default async function AppLayout({ children }) {
         </ReactQueryProvider>
       </OnboardingProvider>
     </div>
+  );
+}
+
+function AppLayoutFallback() {
+  return (
+    <div className={`product-ui min-h-dvh bg-product-bg-page ${publicFontClasses}`}>
+      <main className="mx-auto w-full max-w-7xl px-5 py-8 md:px-8">
+        <ProductContentSkeleton label="Loading your workspace" variant="table" rows={5} />
+      </main>
+    </div>
+  );
+}
+
+export default function AppLayout({ children }) {
+  return (
+    <Suspense fallback={<AppLayoutFallback />}>
+      <AppLayoutData>{children}</AppLayoutData>
+    </Suspense>
   );
 }

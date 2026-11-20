@@ -2,6 +2,23 @@
 // edge cache entry. RSC, markdown negotiation, query variants and sessions
 // must continue through the Next.js router.
 const PUBLIC_DOCUMENTS = new Set(["/", "/templates", "/blog"]);
+const PUBLIC_CACHE_TTL_SECONDS = 24 * 60 * 60;
+const PUBLIC_CLIENT_CACHE_CONTROL = "public, max-age=0, s-maxage=300, stale-while-revalidate=86400";
+
+export function publicDocumentCacheKey(request, versionId) {
+  const url = new URL(request.url);
+  url.searchParams.set("__waitlyze_version", versionId || "unknown");
+  return new Request(url.toString());
+}
+
+export function publicDocumentCacheHeaders(headers, { stored = false } = {}) {
+  const result = new Headers(headers);
+  result.set(
+    "cache-control",
+    stored ? `public, max-age=${PUBLIC_CACHE_TTL_SECONDS}` : PUBLIC_CLIENT_CACHE_CONTROL,
+  );
+  return result;
+}
 
 export function isCacheablePublicDocument(request) {
   if (request.method !== "GET") return false;

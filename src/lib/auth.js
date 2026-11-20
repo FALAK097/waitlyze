@@ -1,7 +1,7 @@
 import { mcp } from "@better-auth/mcp";
-import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
-import { jwt } from "better-auth/plugins";
+import { betterAuth } from "better-auth/minimal";
+import { jwt } from "better-auth/plugins/jwt";
 
 import { getMcpResourceUrl, MCP_SCOPES } from "./mcp/config.mjs";
 import prisma from "./prisma.js";
@@ -9,7 +9,70 @@ import prisma from "./prisma.js";
 const OAUTH_SCOPES = Object.freeze(["openid", "profile", "email", "offline_access", ...MCP_SCOPES]);
 const globalForAuth = globalThis;
 
+async function handleNewUser(user) {
+  try {
+    if (!user?.email) return;
+    const [
+      { renderWelcomeEmail },
+      { welcomeText },
+      { dispatchFounderNoticesNow },
+      { enqueueFounderNotice },
+      { env },
+    ] = await Promise.all([
+      import("@/emails/render.jsx"),
+      import("@/emails/text.mjs"),
+      import("./email/dispatch-now.mjs"),
+      import("./emails/founder-notifications.mjs"),
+      import("./env.mjs"),
+    ]);
+    try {
+      const url = new URL("/waitlists", env.BETTER_AUTH_URL).toString();
+      const props = { name: user.name, url };
+      const eventKey = await enqueueFounderNotice(prisma, {
+        kind: "welcome",
+        to: user.email,
+        subject: "Welcome to Waitlyze",
+        html: await renderWelcomeEmail(props),
+        text: welcomeText(props),
+        idempotencyKey: `welcome-${user.id}`,
+      });
+      if (eventKey) await dispatchFounderNoticesNow([eventKey]);
+    } catch (emailError) {
+      console.error(
+        "Welcome email notice failed",
+        emailError?.name || emailError?.message || "unknown error",
+      );
+    }
+
+    try {
+      const [{ trackServerEvent }, { POSTHOG_EVENTS }] = await Promise.all([
+        import("@/lib/posthog/server.mjs"),
+        import("@/lib/posthog/events.mjs"),
+      ]);
+      await trackServerEvent({
+        distinctId: user.id,
+        event: POSTHOG_EVENTS.MARKETING_SIGNUP_COMPLETED,
+        properties: {
+          signup_method: user.emailVerified ? "oauth" : "email",
+        },
+      });
+    } catch (analyticsError) {
+      console.error(
+        "Signup analytics failed",
+        analyticsError?.name || analyticsError?.message || "unknown error",
+      );
+    }
+  } catch (hookError) {
+    console.error(
+      "User registration hook failed",
+      hookError?.name || hookError?.message || "unknown error",
+    );
+  }
+}
+
 function createAuth() {
+  const cfContext = globalThis[Symbol.for("__cloudflare-context__")];
+  const waitUntil = cfContext?.ctx?.waitUntil?.bind(cfContext.ctx);
   const reviewEmailPasswordEnabled = process.env.OPENAI_REVIEW_EMAIL_PASSWORD_AUTH === "true";
 
   const socialProviders = {};
@@ -75,6 +138,12 @@ function createAuth() {
     advanced: {
       useSecureCookies: process.env.NODE_ENV === "production",
       cookiePrefix: "ba",
+      ipAddress: {
+        // Cloudflare overwrites this with one validated client address before
+        // the Worker runs, so Better Auth can rate-limit per visitor safely.
+        ipAddressHeaders: ["cf-connecting-ip"],
+      },
+      ...(waitUntil ? { backgroundTasks: { handler: waitUntil } } : {}),
       defaultCookieAttributes: {
         secure: process.env.NODE_ENV === "production",
         sameSite: "lax",
@@ -87,69 +156,16 @@ function createAuth() {
     databaseHooks: {
       user: {
         create: {
-          // Best-effort product welcome email, queued through the outbox so a
-          // provider blip delays it instead of dropping it. A failure must never
-          // block or roll back account creation.
-          after: async (user) => {
-            try {
-              if (!user?.email) return;
-              const [
-                { renderWelcomeEmail },
-                { welcomeText },
-                { dispatchFounderNoticesNow },
-                { enqueueFounderNotice },
-                { env },
-              ] = await Promise.all([
-                import("@/emails/render.jsx"),
-                import("@/emails/text.mjs"),
-                import("./email/dispatch-now.mjs"),
-                import("./emails/founder-notifications.mjs"),
-                import("./env.mjs"),
-              ]);
-              try {
-                const url = new URL("/waitlists", env.BETTER_AUTH_URL).toString();
-                const props = { name: user.name, url };
-                const eventKey = await enqueueFounderNotice(prisma, {
-                  kind: "welcome",
-                  to: user.email,
-                  subject: "Welcome to Waitlyze",
-                  html: await renderWelcomeEmail(props),
-                  text: welcomeText(props),
-                  idempotencyKey: `welcome-${user.id}`,
-                });
-                if (eventKey) await dispatchFounderNoticesNow([eventKey]);
-              } catch (emailError) {
-                console.error(
-                  "Welcome email notice failed",
-                  emailError?.name || emailError?.message || "unknown error",
-                );
-              }
-
-              // Track server-verified registration completion in PostHog
-              try {
-                const [{ trackServerEvent }, { POSTHOG_EVENTS }] = await Promise.all([
-                  import("@/lib/posthog/server.mjs"),
-                  import("@/lib/posthog/events.mjs"),
-                ]);
-                await trackServerEvent({
-                  distinctId: user.id,
-                  event: POSTHOG_EVENTS.MARKETING_SIGNUP_COMPLETED,
-                  properties: {
-                    signup_method: user.emailVerified ? "oauth" : "email",
-                  },
-                });
-              } catch (analyticsError) {
-                console.error(
-                  "Signup analytics failed",
-                  analyticsError?.name || analyticsError?.message || "unknown error",
-                );
-              }
-            } catch (hookError) {
-              console.error(
-                "User registration hook failed",
-                hookError?.name || hookError?.message || "unknown error",
-              );
+          // The user already exists when this hook runs. Email delivery and
+          // analytics are durable/best-effort follow-ups and must not extend or
+          // fail the OAuth response.
+          after: (user) => {
+            const task = handleNewUser(user);
+            if (waitUntil) {
+              waitUntil(task);
+              return;
             }
+            return task;
           },
         },
       },

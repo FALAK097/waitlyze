@@ -46,6 +46,13 @@ const nextConfig = {
       "node_modules/workerd/**",
     ],
   },
+  // Better Auth's minimal entry point deliberately does not import Kysely, but
+  // OpenNext bundles the complete external package. Keep its optional runtime
+  // modules in the traced server output so that package bundling can resolve
+  // every Better Auth export without putting Kysely on the request hot path.
+  outputFileTracingIncludes: {
+    "/*": ["node_modules/@better-auth/kysely-adapter/**/*", "node_modules/kysely/**/*"],
+  },
   images: {
     // Workers don't provide the Next.js sharp optimizer. Serve source images
     // directly; the Cloudflare CDN can cache them at the edge.

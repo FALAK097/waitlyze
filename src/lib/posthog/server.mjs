@@ -2,31 +2,50 @@ import { PostHog } from "posthog-node";
 
 import { env } from "../env.mjs";
 
-let serverPostHogClient = null;
+const globalForPostHog = globalThis;
 
-/**
- * Returns a singleton instance of the PostHog Node SDK for server-side event tracking.
- * Safe to call in Node.js runtime environments (API routes, server actions, webhooks).
- */
-export function getServerPostHog() {
-  if (serverPostHogClient) return serverPostHogClient;
-
+function createServerPostHog() {
   const token = env.POSTHOG_PROJECT_TOKEN || env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN;
   const host = env.POSTHOG_HOST || env.NEXT_PUBLIC_POSTHOG_HOST || "https://us.i.posthog.com";
 
   if (!token) return null;
 
   try {
-    serverPostHogClient = new PostHog(token, {
+    return new PostHog(token, {
       host,
       flushAt: 1,
       flushInterval: 0,
     });
-    return serverPostHogClient;
   } catch (error) {
     console.error("Failed to initialize server-side PostHog:", error?.message || error);
     return null;
   }
+}
+
+/**
+ * Returns a singleton instance of the PostHog Node SDK for server-side event tracking.
+ * Safe to call in Node.js runtime environments (API routes, server actions, webhooks).
+ */
+export function getServerPostHog() {
+  const cfContext = globalThis[Symbol.for("__cloudflare-context__")];
+  if (cfContext) {
+    if (!("__postHog" in cfContext)) cfContext.__postHog = createServerPostHog();
+    return cfContext.__postHog;
+  }
+
+  if (!("postHog" in globalForPostHog)) globalForPostHog.postHog = createServerPostHog();
+  return globalForPostHog.postHog;
+}
+
+async function flushPostHog(client) {
+  if (typeof client.flush !== "function") return;
+  const flush = client.flush().catch(() => {});
+  const cfContext = globalThis[Symbol.for("__cloudflare-context__")];
+  if (cfContext?.ctx?.waitUntil) {
+    cfContext.ctx.waitUntil(flush);
+    return;
+  }
+  await flush;
 }
 
 /**
@@ -46,9 +65,7 @@ export async function trackServerEvent({ distinctId, event, properties = {}, gro
       },
       groups: Object.keys(groups).length > 0 ? groups : undefined,
     });
-    if (typeof client.flush === "function") {
-      await client.flush().catch(() => {});
-    }
+    await flushPostHog(client);
   } catch (error) {
     console.warn("PostHog server event capture failed:", error?.message || error);
   }
@@ -67,9 +84,7 @@ export async function setServerGroup({ groupType = "company", groupKey, properti
       groupKey: String(groupKey),
       properties,
     });
-    if (typeof client.flush === "function") {
-      await client.flush().catch(() => {});
-    }
+    await flushPostHog(client);
   } catch (error) {
     console.warn("PostHog server groupIdentify failed:", error?.message || error);
   }

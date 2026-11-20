@@ -7,6 +7,10 @@ import doShardedTagCache from "@opennextjs/cloudflare/overrides/tag-cache/do-sha
 export default defineCloudflareConfig({
   incrementalCache: withRegionalCache(r2IncrementalCache, {
     mode: "long-lived",
+    // Next 16 still validates tags on every regional hit. Avoid an additional
+    // background R2 read for the same entry on every request.
+    shouldLazilyUpdateOnCacheHit: false,
+    bypassTagCacheOnCacheHit: false,
   }),
   queue: doQueue,
   tagCache: doShardedTagCache({ baseShardSize: 12 }),
