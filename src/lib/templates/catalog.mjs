@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { legacySnapshotSchema, migrateLegacySnapshot } from "./legacy-snapshot.mjs";
+
 const text = (max) => z.string().max(max);
 const hex = z.string().regex(/^#[0-9a-f]{6}$/i, "Choose a six-digit hex color.");
 // Public pages render these URLs in <img> tags. Allow only TLS, site-relative,
@@ -485,7 +487,29 @@ const defaultStatusPage = {
   layout: "centered",
 };
 const defaultSeo = { title: "", description: "", image: "", indexable: false };
-export const templateSnapshotSchema = v2SnapshotSchema;
+// Read both stored drafts and immutable publication revisions without rewriting
+// v2 data. Releases before the v2 redesign wrote `schemaVersion: 1` documents,
+// and those revisions can never be rewritten, so parse them through the v1
+// schema and migrate before validating against v2.
+//
+// Older builds left a `legacy` copy of the v1 record inside migrated snapshots
+// when they autosaved. It is dropped here rather than accepted by the v2 schema
+// so the key never reaches the app again, and any draft that is saved once
+// comes back cleaned.
+export const templateSnapshotSchema = z.preprocess((value) => {
+  if (value === null || typeof value !== "object" || Array.isArray(value)) return value;
+  const snapshot = { ...value };
+  delete snapshot.legacy;
+  if (snapshot.schemaVersion !== 1) return snapshot;
+  const parsed = legacySnapshotSchema.safeParse(snapshot);
+  if (!parsed.success) return snapshot;
+  return migrateLegacySnapshot(parsed.data, {
+    brand: defaultBrand,
+    form: defaultForm,
+    statusPage: defaultStatusPage,
+    seo: defaultSeo,
+  });
+}, v2SnapshotSchema);
 
 const makeSection = (templateId, type, index, props = {}, variant = "default") => ({
   id: `${templateId}-${type}-${index}`,
