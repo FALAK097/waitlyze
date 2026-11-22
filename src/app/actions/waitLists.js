@@ -45,6 +45,7 @@ export async function createWaitlistDraft({
     let blueprint = blueprintId ? await getActiveToolBlueprint(prisma, blueprintId) : null;
     let blueprintClaimed = false;
     let claimedWaitListId = null;
+    let reservationCreatedByThisRequest = false;
     if (blueprintId && !blueprint) {
       let existingBlueprint = await prisma.toolBlueprint.findUnique({ where: { id: blueprintId } });
       let claimMatchesDraft = Boolean(
@@ -56,7 +57,8 @@ export async function createWaitlistDraft({
         existingDraft &&
         existingBlueprint?.claimedByUserId === user.id &&
         existingBlueprint.claimedWaitlistId &&
-        existingBlueprint.claimedWaitlistId !== existingDraft.id
+        existingBlueprint.claimedWaitlistId !== existingDraft.id &&
+        existingBlueprint.claimedCreationKey === creationKey
       ) {
         const reservedDraft = await prisma.waitList.findUnique({
           where: { id: existingBlueprint.claimedWaitlistId },
@@ -68,6 +70,7 @@ export async function createWaitlistDraft({
               id: blueprintId,
               claimedByUserId: user.id,
               claimedWaitlistId: existingBlueprint.claimedWaitlistId,
+              claimedCreationKey: creationKey,
             },
             data: { claimedWaitlistId: existingDraft.id },
           });
@@ -76,6 +79,21 @@ export async function createWaitlistDraft({
             reassigned.count > 0 ||
             (existingBlueprint?.claimedByUserId === user.id &&
               existingBlueprint.claimedWaitlistId === existingDraft.id);
+        }
+      }
+      if (
+        !existingDraft &&
+        existingBlueprint?.claimedByUserId === user.id &&
+        existingBlueprint.claimedWaitlistId &&
+        existingBlueprint.claimedCreationKey === creationKey
+      ) {
+        const reservedDraft = await prisma.waitList.findUnique({
+          where: { id: existingBlueprint.claimedWaitlistId },
+          select: { id: true },
+        });
+        if (!reservedDraft) {
+          claimedWaitListId = existingBlueprint.claimedWaitlistId;
+          claimMatchesDraft = true;
         }
       }
       if (!claimMatchesDraft) {
@@ -91,13 +109,21 @@ export async function createWaitlistDraft({
     }
 
     if (blueprint) {
-      claimedWaitListId = existingDraft?.id || crypto.randomUUID();
-      const claimResult = await claimToolBlueprint(prisma, {
-        id: blueprint.id,
-        userId: user.id,
-        waitListId: claimedWaitListId,
-      });
-      blueprintClaimed = Boolean(claimResult?.claimed || claimResult?.alreadyClaimedForDraft);
+      claimedWaitListId =
+        existingDraft?.id ||
+        claimedWaitListId ||
+        blueprint.claimedWaitlistId ||
+        crypto.randomUUID();
+      if (!blueprintClaimed) {
+        const claimResult = await claimToolBlueprint(prisma, {
+          id: blueprint.id,
+          userId: user.id,
+          waitListId: claimedWaitListId,
+          creationKey,
+        });
+        blueprintClaimed = Boolean(claimResult?.claimed || claimResult?.alreadyClaimedForDraft);
+        reservationCreatedByThisRequest = Boolean(claimResult?.claimed);
+      }
       if (!blueprintClaimed) {
         return {
           ok: false,
@@ -139,11 +165,21 @@ export async function createWaitlistDraft({
         { blueprint },
       );
     } catch (error) {
-      if (blueprint && claimedWaitListId && !existingDraft) {
+      if (blueprint && claimedWaitListId && reservationCreatedByThisRequest) {
         await prisma.toolBlueprint
           .updateMany({
-            where: { id: blueprint.id, claimedWaitlistId: claimedWaitListId },
-            data: { claimedByUserId: null, claimedWaitlistId: null, claimedAt: null },
+            where: {
+              id: blueprint.id,
+              claimedByUserId: user.id,
+              claimedWaitlistId: claimedWaitListId,
+              claimedCreationKey: creationKey,
+            },
+            data: {
+              claimedByUserId: null,
+              claimedWaitlistId: null,
+              claimedCreationKey: null,
+              claimedAt: null,
+            },
           })
           .catch(() => {});
       }
@@ -152,7 +188,12 @@ export async function createWaitlistDraft({
 
     if (blueprint && claimedWaitListId && draft.id !== claimedWaitListId) {
       const reassigned = await prisma.toolBlueprint.updateMany({
-        where: { id: blueprint.id, claimedWaitlistId: claimedWaitListId },
+        where: {
+          id: blueprint.id,
+          claimedByUserId: user.id,
+          claimedWaitlistId: claimedWaitListId,
+          claimedCreationKey: creationKey,
+        },
         data: { claimedWaitlistId: draft.id },
       });
       if (reassigned.count === 0) {

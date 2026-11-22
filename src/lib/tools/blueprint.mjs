@@ -422,8 +422,10 @@ export async function getActiveToolBlueprint(db, id) {
   }
 }
 
-export async function claimToolBlueprint(db, { id, userId, waitListId }) {
-  if (!id || !userId || !waitListId) return { claimed: false, alreadyClaimedForDraft: false };
+export async function claimToolBlueprint(db, { id, userId, waitListId, creationKey }) {
+  if (!id || !userId || !waitListId || !creationKey) {
+    return { claimed: false, alreadyClaimedForDraft: false };
+  }
   try {
     const now = new Date();
     const updated = await db.toolBlueprint.updateMany({
@@ -435,6 +437,7 @@ export async function claimToolBlueprint(db, { id, userId, waitListId }) {
       data: {
         claimedByUserId: userId,
         claimedWaitlistId: waitListId,
+        claimedCreationKey: creationKey,
         claimedAt: now,
       },
     });
@@ -443,11 +446,14 @@ export async function claimToolBlueprint(db, { id, userId, waitListId }) {
     }
     const existing = await db.toolBlueprint.findUnique({
       where: { id },
-      select: { claimedWaitlistId: true },
+      select: { claimedByUserId: true, claimedWaitlistId: true, claimedCreationKey: true },
     });
     return {
       claimed: false,
-      alreadyClaimedForDraft: existing?.claimedWaitlistId === waitListId,
+      alreadyClaimedForDraft:
+        existing?.claimedByUserId === userId &&
+        existing.claimedWaitlistId === waitListId &&
+        existing.claimedCreationKey === creationKey,
       id,
     };
   } catch (error) {
