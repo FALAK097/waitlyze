@@ -17,7 +17,7 @@ export async function generateMetadata({ params }) {
   const { id } = await params;
   if (!isTemplateId(id)) return { title: "Template not found" };
   const meta = getGalleryMeta(id);
-  const title = `${meta.seoTitle} | Waitlyze Templates`;
+  const title = `${meta.seoTitle} | Waitlyze`;
   return {
     title: { absolute: title },
     description: meta.seoDescription,
@@ -32,8 +32,14 @@ export async function generateMetadata({ params }) {
       url: `/templates/${id}`,
       title,
       description: meta.seoDescription,
+      images: ["/opengraph-image"],
     },
-    twitter: { card: "summary_large_image", title },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description: meta.seoDescription,
+      images: ["/opengraph-image"],
+    },
   };
 }
 
@@ -48,6 +54,7 @@ export default async function TemplateDetailPage({ params }) {
   if (!template) notFound();
   const meta = getGalleryMeta(id);
   const visibleSections = template.snapshot.sections.filter((section) => section.visible);
+  const heroSection = visibleSections.find((section) => section.type === "hero");
   const currentIndex = TEMPLATE_IDS.indexOf(id);
   const relatedTemplateIds = [1, 2, 3, 4].map(
     (offset) => TEMPLATE_IDS[(currentIndex + offset) % TEMPLATE_IDS.length],
@@ -182,6 +189,38 @@ export default async function TemplateDetailPage({ params }) {
                 </li>
               ))}
             </ul>
+            <div className="mt-6 rounded-xl border border-product-border-subtle bg-product-bg-surface p-4 text-sm text-product-text-secondary">
+              <p className="font-semibold text-product-text-primary">
+                Default copy &amp; conversion setup
+              </p>
+              {heroSection && (
+                <p className="mt-2">
+                  Hero headline:{" "}
+                  <strong className="text-product-text-primary">{heroSection.heading}</strong> —{" "}
+                  {heroSection.body}
+                </p>
+              )}
+              <p className="mt-2">
+                Form button:{" "}
+                <strong className="text-product-text-primary">
+                  {template.snapshot.form.buttonText}
+                </strong>{" "}
+                (
+                {template.snapshot.form.doubleOptIn
+                  ? "double opt-in email verification"
+                  : "instant signup"}
+                , fields: {template.snapshot.form.fields.join(", ")}). Post-signup confirmation
+                displays a personal referral share link and live queue position. Compare how
+                Waitlyze handles hosted templates against other platforms on our{" "}
+                <Link
+                  href="/compare"
+                  className="font-medium text-product-text-primary underline underline-offset-4 hover:text-product-success-text"
+                >
+                  waitlist software comparison
+                </Link>
+                .
+              </p>
+            </div>
           </div>
         </section>
 

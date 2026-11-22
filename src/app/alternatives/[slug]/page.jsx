@@ -43,8 +43,8 @@ export async function generateMetadata({ params }) {
   const { slug } = await params;
   const competitor = getCompetitor(slug);
   if (!competitor) return {};
-  const title = `Waitlyze vs ${competitor.name}: Pricing, Features & Verdict (2026)`;
-  const description = `${competitor.name} alternative: compare Waitlyze and ${competitor.name} on free plans, pricing, hosted pages, referrals, email, analytics, custom domains, and API access.`;
+  const title = `${competitor.name} Alternative & Pricing: Waitlyze vs ${competitor.name} (2026)`;
+  const description = `${competitor.name} alternative (${competitor.price}, ${competitor.freePlan.toLowerCase()}): compare Waitlyze and ${competitor.name} on free plans, pricing, hosted pages, referrals, email, analytics, custom domains, and API access.`;
   return {
     title: { absolute: title },
     description,
@@ -54,13 +54,24 @@ export async function generateMetadata({ params }) {
         "text/markdown": [
           {
             url: `/alternatives/${slug}.md`,
-            title: `Waitlyze vs ${competitor.name} in Markdown`,
+            title: `${competitor.name} Alternative & Pricing (Markdown)`,
           },
         ],
       },
     },
-    openGraph: { type: "article", url: `/alternatives/${slug}`, title, description },
-    twitter: { card: "summary_large_image", title, description },
+    openGraph: {
+      type: "article",
+      url: `/alternatives/${slug}`,
+      title,
+      description,
+      images: ["/opengraph-image"],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: ["/opengraph-image"],
+    },
   };
 }
 
@@ -99,9 +110,13 @@ export default async function AlternativeDetailPage({ params }) {
         <section className="compare-wrap compare-detail-hero">
           <div className="compare-detail-hero-copy">
             <Breadcrumbs items={crumbs} />
-            <Eyebrow>{competitor.name} alternative</Eyebrow>
+            <Eyebrow>{competitor.name} alternative & pricing</Eyebrow>
             <h1 className="compare-title">Waitlyze vs {competitor.name}</h1>
-            <p className="compare-lede">{competitor.summary}</p>
+            <p className="compare-lede">
+              {competitor.summary} {competitor.name} starts at {competitor.price} (
+              {competitor.freePlan.toLowerCase()}), while Waitlyze includes a free plan for 1
+              waitlist and 100 signups and flat workspace pricing on Pro.
+            </p>
             <div className="compare-hero-actions">
               <SignupButton>Start free</SignupButton>
               <a className="compare-text-link" href="#side-by-side">

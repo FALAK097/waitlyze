@@ -134,7 +134,7 @@ export function SideBySideDuelTable({ competitor, pricingRows, featureRows }) {
         <div>
           <Eyebrow>Side by side</Eyebrow>
           <h2 id="side-by-side-title">Feature by feature</h2>
-          <p>Where each capability is available and what it costs to unlock.</p>
+          <p>Where each capability is available and which plan includes it.</p>
         </div>
         <FeatureLegend />
       </div>

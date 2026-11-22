@@ -4,6 +4,7 @@ import {
   competitors,
   featureRows,
   getCompetitor,
+  pairwiseMatchups,
   getCompetitorFaqs,
   pricingRows,
   RESEARCHED_ON,
@@ -274,7 +275,10 @@ ${[header, ...priceLines, ...featureLines].join("\n")}
 - **Referral & contest specialists**: Prefinery, KickoffLabs, Viral Loops
 
 ## Focused Guides
-${competitors.map((c) => `- [Waitlyze vs ${c.name}](${canonical(`/alternatives/${c.slug}`)}) — ${c.bestFor}`).join("\n")}`;
+${competitors.map((c) => `- [Waitlyze vs ${c.name}](${canonical(`/alternatives/${c.slug}`)}) — ${c.bestFor}`).join("\n")}
+
+## Common Head-to-Head Comparisons
+${pairwiseMatchups.map((matchup) => `### ${matchup.question}\n${matchup.summary}\n\n${matchup.links.map((link) => `- [${link.label}](${canonical(link.href)})`).join("\n")}`).join("\n\n")}`;
 
     return buildMarkdownDoc({
       title: "Waitlist Software Comparison: 7 Tools Side by Side (2026)",

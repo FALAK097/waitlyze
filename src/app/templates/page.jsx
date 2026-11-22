@@ -10,18 +10,30 @@ import { listTemplates } from "@/lib/templates/catalog.mjs";
 import { getGalleryMeta } from "@/lib/templates/gallery.mjs";
 
 export const metadata = {
-  title: "Waitlist Templates",
+  title: { absolute: "Free Waitlist Landing Page Templates (14 Live Previews) | Waitlyze" },
   description:
-    "Browse 14 free waitlist templates for SaaS betas, AI launches, newsletters, events, pre-orders, and more. Pick a template and launch your waitlist.",
-  alternates: { canonical: "/templates" },
+    "Browse 14 free waitlist landing page templates for SaaS betas, AI launches, mobile apps, newsletters, events, and pre-orders. Customize and publish in minutes.",
+  alternates: {
+    canonical: "/templates",
+    types: {
+      "text/markdown": [{ url: "/templates.md", title: "Waitlist Templates (Markdown)" }],
+    },
+  },
   openGraph: {
     type: "website",
     url: "/templates",
-    title: "Waitlist Templates | Waitlyze",
+    title: "Free Waitlist Landing Page Templates (14 Live Previews) | Waitlyze",
     description:
       "Fourteen free waitlist templates for every kind of launch. Pick one and make it yours.",
+    images: ["/opengraph-image"],
   },
-  twitter: { card: "summary_large_image", title: "Waitlist Templates | Waitlyze" },
+  twitter: {
+    card: "summary_large_image",
+    title: "Free Waitlist Landing Page Templates (14 Live Previews) | Waitlyze",
+    description:
+      "Fourteen free waitlist templates for every kind of launch. Pick one and make it yours.",
+    images: ["/opengraph-image"],
+  },
 };
 
 const containerClasses = "mx-auto w-full max-w-7xl px-4 sm:px-5 md:px-8 lg:px-12";
