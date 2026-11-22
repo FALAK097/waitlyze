@@ -25,7 +25,7 @@ const siteGraph = {
         contactType: "customer support",
         email: SITE_SUPPORT_EMAIL,
       },
-      sameAs: [GITHUB_URL, X_URL],
+      sameAs: [GITHUB_URL],
     },
     {
       "@type": "WebSite",
@@ -35,6 +35,7 @@ const siteGraph = {
       description: SITE_DESCRIPTION,
       inLanguage: "en",
       publisher: { "@id": `${SITE_URL}/#organization` },
+      about: { "@id": `${SITE_URL}/#software` },
     },
     {
       "@type": "SoftwareApplication",

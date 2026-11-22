@@ -26,11 +26,11 @@ export default function Header() {
     return () => window.removeEventListener("keydown", handleEscape);
   }, [open]);
   const links = [
-    ["Features", "/#features"],
+    ["Features", "/features"],
     ["How it works", "/#steps"],
     ["Compare", "/compare"],
-    ["Templates", "/#templates"],
-    ["Pricing", "/#pricing"],
+    ["Templates", "/templates"],
+    ["Pricing", "/pricing"],
     ["Blog", "/blog"],
     ["Docs", "/docs"],
   ];

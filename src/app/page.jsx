@@ -299,10 +299,10 @@ export default async function LandingPage() {
               <span>See how Waitlyze is built</span>
               <HugeiconsIcon icon={ArrowUpRight01Icon} size={13} aria-hidden="true" />
             </a>
-            <h1 id="hero-title">Your launch starts before launch day.</h1>
+            <h1 id="hero-title">Waitlist software for your next launch.</h1>
             <p className="wl-hero-lede">
-              Build a page, grow your waitlist, and see what brings people in. Everything you need
-              to turn early interest into an audience.
+              Waitlyze helps founders build a branded signup page, grow a verified referral
+              waitlist, send launch emails, and see what brings people in.
             </p>
             <div className="wl-hero-actions">
               <SignupButton className="wl-hero-primary">Start for free</SignupButton>
