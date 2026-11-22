@@ -2,7 +2,7 @@ import "server-only";
 import { env } from "@/lib/env.mjs";
 import { publicClientIdentity } from "@/lib/security/public-rate-limit.mjs";
 
-import { templateSnapshotSchema } from "../templates/catalog.mjs";
+import { sanitizeLegacySnapshotForRead, templateSnapshotSchema } from "../templates/catalog.mjs";
 
 const SITEVERIFY_URL = "https://challenges.cloudflare.com/turnstile/v0/siteverify";
 const MAX_TOKEN_LENGTH = 2048;
@@ -32,7 +32,9 @@ export async function campaignRequiresTurnstile(db, waitListId) {
     },
     select: { snapshot: true },
   });
-  const parsed = templateSnapshotSchema.safeParse(publication?.snapshot);
+  const parsed = templateSnapshotSchema.safeParse(
+    sanitizeLegacySnapshotForRead(publication?.snapshot),
+  );
   return !parsed.success || parsed.data.form.requireTurnstile;
 }
 

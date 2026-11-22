@@ -11,7 +11,11 @@ import { hasCustomerEmailSender } from "@/lib/email/sender-resolution.mjs";
 import { env } from "@/lib/env.mjs";
 import prisma from "@/lib/prisma";
 import { SITE_URL } from "@/lib/site-metadata";
-import { snapshotTemplate, templateSnapshotSchema } from "@/lib/templates/catalog.mjs";
+import {
+  sanitizeLegacySnapshotForRead,
+  snapshotTemplate,
+  templateSnapshotSchema,
+} from "@/lib/templates/catalog.mjs";
 import { getClaimedBlueprintForWaitlist } from "@/lib/tools/blueprint.mjs";
 import { getToolBySlug } from "@/lib/tools/registry.mjs";
 import { requireCampaignPage } from "@/lib/workspaces/authorize";
@@ -52,7 +56,9 @@ export default async function WaitListsEditPage(props) {
   const templateSnapshot = parsedSnapshot.success
     ? parsedSnapshot.data
     : snapshotTemplate("simple");
-  const parsedPublished = templateSnapshotSchema.safeParse(publication?.snapshot);
+  const parsedPublished = templateSnapshotSchema.safeParse(
+    sanitizeLegacySnapshotForRead(publication?.snapshot),
+  );
   // Only an existing-but-unreadable snapshot needs the destructive replacement flow. A page
   // with no snapshot yet is simply a new page and saves through the normal draft path.
   const snapshotReplacement = draft?.templateSnapshot != null && !parsedSnapshot.success;

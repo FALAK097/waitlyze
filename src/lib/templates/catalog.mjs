@@ -40,8 +40,15 @@ function isSafeHrefValue(value) {
 export function sanitizeLegacySnapshotForRead(snapshot) {
   if (!snapshot || typeof snapshot !== "object") return snapshot;
   const clone = structuredClone(snapshot);
-  if (clone.brand && typeof clone.brand.logoUrl === "string") {
-    if (!isSafeImageUrlValue(clone.brand.logoUrl.trim())) clone.brand.logoUrl = "";
+  if (clone.brand && typeof clone.brand === "object") {
+    for (const field of ["logo", "favicon"]) {
+      if (
+        typeof clone.brand[field] === "string" &&
+        !isSafeImageUrlValue(clone.brand[field].trim())
+      ) {
+        clone.brand[field] = "";
+      }
+    }
   }
   if (Array.isArray(clone.sections)) {
     for (const section of clone.sections) {
@@ -53,6 +60,18 @@ export function sanitizeLegacySnapshotForRead(snapshot) {
         for (const link of section.links) {
           if (link && typeof link.href === "string" && !isSafeHrefValue(link.href)) {
             link.href = "#";
+          }
+        }
+      }
+      if (Array.isArray(section.items)) {
+        for (const item of section.items) {
+          if (
+            item &&
+            typeof item === "object" &&
+            typeof item.imageUrl === "string" &&
+            !isSafeImageUrlValue(item.imageUrl.trim())
+          ) {
+            item.imageUrl = "";
           }
         }
       }

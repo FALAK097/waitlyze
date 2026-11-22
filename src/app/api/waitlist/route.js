@@ -267,7 +267,7 @@ export async function POST(request) {
     const requiresTurnstile = await campaignRequiresTurnstile(prisma, waitlistId);
     let turnstileVerified = false;
     if (requiresTurnstile) {
-      const customDomain = await prisma.waitlistCustomDomain.findUnique({
+      const customDomain = await prisma.customDomain.findUnique({
         where: { waitListId: waitlistId },
         select: { hostname: true, status: true },
       });

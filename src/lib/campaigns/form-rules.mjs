@@ -7,7 +7,7 @@
 
 import { getEmailDomain } from "@/utils/server/email-validation.mjs";
 
-import { templateSnapshotSchema } from "../templates/catalog.mjs";
+import { sanitizeLegacySnapshotForRead, templateSnapshotSchema } from "../templates/catalog.mjs";
 
 const MAX_CUSTOM_VALUE = 2000;
 
@@ -207,7 +207,9 @@ export async function getPublishedFormConfig(db, waitListId) {
     },
     select: { snapshot: true },
   });
-  const parsed = templateSnapshotSchema.safeParse(publication?.snapshot);
+  const parsed = templateSnapshotSchema.safeParse(
+    sanitizeLegacySnapshotForRead(publication?.snapshot),
+  );
   if (!parsed.success) throw new Error("Published waitlist has an invalid publication snapshot.");
   return parsed.data.form;
 }

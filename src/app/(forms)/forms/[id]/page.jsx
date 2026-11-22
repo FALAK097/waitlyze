@@ -5,7 +5,7 @@ import { WaitlistPageContent } from "@/components/product/waitlist-page-content"
 import { getWorkspaceEntitlements } from "@/lib/billing/plans.mjs";
 import { env } from "@/lib/env.mjs";
 import prisma from "@/lib/prisma";
-import { templateSnapshotSchema } from "@/lib/templates/catalog.mjs";
+import { sanitizeLegacySnapshotForRead, templateSnapshotSchema } from "@/lib/templates/catalog.mjs";
 
 import { ImpressionTracker } from "../../w/[slug]/impression-tracker";
 import { SignupForm } from "../../w/[slug]/signup-form";
@@ -110,7 +110,9 @@ export default async function WaitListsPreviewPage(props) {
       where: { waitListId_revision: { waitListId: id, revision: structured.publishedRevision } },
       select: { snapshot: true },
     });
-    const parsed = templateSnapshotSchema.safeParse(publication?.snapshot);
+    const parsed = templateSnapshotSchema.safeParse(
+      sanitizeLegacySnapshotForRead(publication?.snapshot),
+    );
     if (parsed.success) {
       const entitlements = await getWorkspaceEntitlements(prisma, structured.workspaceId);
       const embedSnapshot = {

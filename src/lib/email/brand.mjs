@@ -1,4 +1,4 @@
-import { templateSnapshotSchema } from "../templates/catalog.mjs";
+import { sanitizeLegacySnapshotForRead, templateSnapshotSchema } from "../templates/catalog.mjs";
 
 const HEX = /^#[0-9a-f]{6}$/i;
 const FONT = /^[\w -]{1,80}$/;
@@ -19,7 +19,7 @@ const safeLogo = (value) =>
  * only.
  */
 export function emailBrandFromSnapshot(snapshot) {
-  const parsed = templateSnapshotSchema.safeParse(snapshot);
+  const parsed = templateSnapshotSchema.safeParse(sanitizeLegacySnapshotForRead(snapshot));
   if (!parsed.success) return null;
   const brand = parsed.data.brand;
   return {
