@@ -88,9 +88,9 @@ export default function PricingPage() {
             Start free. Upgrade when the audience grows.
           </h1>
           <p className="mt-6 max-w-2xl text-lg leading-relaxed text-product-text-secondary">
-            Free covers one real launch with up to 100 cumulative signups. Pro unlocks unlimited
-            workspaces, removes waitlist, signup, and member limits on each workspace with a Pro
-            subscription, and unlocks advanced launch operations.
+            Free includes one workspace, one waitlist, and 100 cumulative signups. Pro removes
+            waitlist, signup, and member limits on each subscribed workspace, with advanced tools
+            for running your launch.
           </p>
         </header>
 

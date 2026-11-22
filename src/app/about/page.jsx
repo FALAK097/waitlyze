@@ -58,9 +58,8 @@ export default function AboutPage() {
             Build an audience before you ask it to show up.
           </h1>
           <p className="mt-6 max-w-2xl text-lg leading-relaxed text-product-text-secondary">
-            Waitlyze is open-source waitlist software for founders and product teams. It brings
-            signup pages, verified referrals, subscriber email, and launch analytics into one
-            focused workspace.
+            Waitlyze is open-source waitlist software for founders who want to publish a launch
+            page, grow through referrals, and understand their audience.
           </p>
         </header>
 
@@ -77,13 +76,12 @@ export default function AboutPage() {
             </h2>
             <div className="mt-5 grid gap-4 leading-relaxed text-product-text-secondary">
               <p>
-                A launch waitlist should do more than collect email addresses. It should show who is
-                interested, what brought them in, and which early supporters help the audience grow.
+                A waitlist should do more than collect email addresses. It should help you
+                understand demand and see which supporters bring in more people.
               </p>
               <p>
-                Waitlyze keeps those jobs connected so founders can move from a launch page to an
-                informed rollout without stitching together a form, spreadsheet, referral script,
-                and email tool.
+                Waitlyze brings the page, referrals, subscriber management, and launch metrics
+                together, so you can plan what to send and when to launch.
               </p>
             </div>
           </section>
@@ -110,8 +108,8 @@ export default function AboutPage() {
                 . The source, release history, and product documentation are public.
               </p>
               <p>
-                That means prospective users can inspect how the product works, follow meaningful
-                changes, and ask direct questions before trusting it with a launch audience.
+                You can inspect how it works, follow product changes, and ask questions before
+                trusting it with your launch audience.
               </p>
             </div>
           </section>
