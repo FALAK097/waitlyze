@@ -36,7 +36,7 @@ const gallery = {
     bestFor: ["B2B beta launches", "Product-led onboarding", "Founding-team pricing"],
     seoTitle: "Free SaaS Beta Waitlist Landing Page Template",
     seoDescription:
-      "Free SaaS beta waitlist landing page template with product screenshots, social proof, referral rewards, and FAQs. Customize and launch your beta for $0.",
+      "Free SaaS beta waitlist landing page template with product screenshots, customer logos, product benefits, and FAQs. Customize and launch your beta for $0.",
   },
   ai: {
     useCase: "A dark, demo-led page for an AI launch.",
@@ -57,7 +57,7 @@ const gallery = {
     bestFor: ["Newsletters", "Creator launches", "Paid-subscriber funnels"],
     seoTitle: "Free Newsletter & Creator Waitlist Landing Page Template",
     seoDescription:
-      "Free editorial newsletter waitlist landing page template with issue previews, reader testimonials, and milestone referral rewards.",
+      "Free editorial newsletter waitlist landing page template with reader testimonials, issue highlights, and email signup. Customize your creator launch for free.",
   },
   community: {
     useCase: "An invite-only page with member proof and referrals.",
@@ -106,7 +106,7 @@ const gallery = {
     bestFor: ["Fitness cohorts", "Challenge programs", "Coaching launches"],
     seoTitle: "Free Fitness Program & Coaching Waitlist Template",
     seoDescription:
-      "Free fitness program and coaching cohort waitlist landing page template with transformation proof, start-date urgency, and referral rewards.",
+      "Free fitness program and coaching cohort waitlist landing page template with transformation testimonials, cohort details, and a start-date signup form.",
   },
   nonprofit: {
     useCase: "A community cause page with transparent impact.",
