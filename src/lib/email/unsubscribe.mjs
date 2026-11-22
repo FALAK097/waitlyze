@@ -15,12 +15,20 @@ export function hashUnsubscribeToken(token) {
   return createHash("sha256").update(token).digest("hex");
 }
 
-export async function unsubscribeFromMarketing(db, token, { now = new Date() } = {}) {
+export async function findUnsubscribeSignup(db, token) {
   if (typeof token !== "string" || token.length < 32 || token.length > 128) return false;
-  const signup = await db.signUp.findUnique({
+  return db.signUp.findUnique({
     where: { unsubscribeTokenHash: hashUnsubscribeToken(token) },
     select: { id: true, waitListId: true, marketingUnsubscribedAt: true },
   });
+}
+
+export async function unsubscribeFromMarketing(
+  db,
+  token,
+  { now = new Date(), signup: knownSignup } = {},
+) {
+  const signup = knownSignup || (await findUnsubscribeSignup(db, token));
   if (!signup) return false;
   if (signup.marketingUnsubscribedAt) return true;
   const updated = await db.signUp.updateMany({
