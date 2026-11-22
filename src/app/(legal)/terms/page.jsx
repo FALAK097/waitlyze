@@ -167,7 +167,7 @@ export default function LegalPage() {
       <p>
         Waitlyze offers a free plan and a paid Pro plan billed monthly or annually. Current prices
         are shown on our{" "}
-        <Link prefetch={false} href="/#pricing">
+        <Link prefetch={false} href="/pricing">
           pricing page
         </Link>
         ; applicable taxes are calculated at checkout based on your billing location. Paid

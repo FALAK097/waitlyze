@@ -18,6 +18,7 @@ const useAuthModalStore = create((set) => ({
 export function AuthModalProvider({ children }) {
   const open = useAuthModalStore((state) => state.open);
   const hasOpened = useAuthModalStore((state) => state.hasOpened);
+  const returnFocus = useAuthModalStore((state) => state.returnFocus);
   const setOpen = useAuthModalStore((state) => state.setOpen);
 
   return (
@@ -26,6 +27,7 @@ export function AuthModalProvider({ children }) {
       {hasOpened && (
         <AuthModal
           open={open}
+          triggerElement={returnFocus}
           onOpenChange={setOpen}
           onCloseAutoFocus={(event) => {
             event.preventDefault();
