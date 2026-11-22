@@ -1,3 +1,4 @@
+import { WAITLYZE_PRICING } from "@/lib/billing/pricing.mjs";
 import { getPosts } from "@/lib/blog-source";
 import { SITE_DESCRIPTION, SITE_URL } from "@/lib/site-metadata";
 import { docsLlms } from "@/lib/source";
@@ -62,17 +63,29 @@ To integrate Waitlyze:
 
 ---
 
-## 3. Launch Templates Catalog
+## 3. Pricing, Limits & Buying Fit
+- Free: ${WAITLYZE_PRICING.free.formatted}; one workspace, one waitlist, one member, and 100 cumulative signups. The allowance does not reset monthly or when a waitlist is deleted.
+- Pro monthly: ${WAITLYZE_PRICING.pro.monthly.formatted} per month in USD.
+- Pro annual: ${WAITLYZE_PRICING.pro.annual.formatted} per year in USD (${WAITLYZE_PRICING.pro.annual.monthlyEquivalentFormatted} per month equivalent).
+- Pro includes unlimited workspaces, waitlists, signups, and members, plus advanced analytics, referral milestones, subscriber broadcasts and automations, branding removal, and one optional custom domain per waitlist.
+- Subscriber email requires a connected, verified Resend sender. Waitlyze tracks referral reward eligibility but does not fulfill rewards. Taxes and any available country-adjusted price appear at checkout.
+- Current canonical pricing: ${SITE_URL}/pricing
+- Side-by-side buyer comparison: ${SITE_URL}/compare
+- Focused alternative guides: ${SITE_URL}/alternatives
+
+---
+
+## 4. Launch Templates Catalog
 ${templatesSection}
 
 ---
 
-## 4. Pre-Launch Guides & Playbooks
+## 5. Pre-Launch Guides & Playbooks
 ${blogSection}
 
 ---
 
-## 5. Developer & Platform Documentation
+## 6. Developer & Platform Documentation
 ${docsFull}
 `;
 
