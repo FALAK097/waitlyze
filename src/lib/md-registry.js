@@ -156,19 +156,19 @@ Waitlyze is built by Falak Gala. Questions or ideas? Email [Falak](mailto:suppor
 
 | Plan | Price | Core limits and features |
 | --- | --- | --- |
-| Free | ${WAITLYZE_PRICING.free.formatted} forever | One workspace, one waitlist, one member, and 100 cumulative signups; hosted page, embed, referrals, confirmation email through a connected verified Resend sender, and CSV export |
+| Free | ${WAITLYZE_PRICING.free.formatted} forever | One workspace, one waitlist, one member, and 100 cumulative signups per Free workspace; hosted page, embed, referrals, confirmation email through a connected verified Resend sender, and CSV export |
 | Pro monthly | ${WAITLYZE_PRICING.pro.monthly.formatted}/month | Unlimited workspaces, waitlists, signups, and members; advanced analytics, referral milestones, broadcasts and automations, custom domains, and branding removal |
 | Pro annual | ${WAITLYZE_PRICING.pro.annual.formatted}/year (${WAITLYZE_PRICING.pro.annual.monthlyEquivalentFormatted}/month equivalent) | The same Pro features, billed annually |
 
 ## Important limits and dependencies
-- The Free plan's 100-signup allowance is cumulative, not monthly. Deleting a waitlist does not reset it.
+- Each Free workspace has a 100-signup cumulative allowance, not a monthly allowance. Deleting a waitlist does not reset that workspace's usage.
 - Subscriber email requires the waitlist owner to connect and verify a Resend sender. Pro unlocks broadcasts and automated sequences through that sender.
 - Pro includes one optional custom domain per waitlist.
 - Waitlyze tracks referrals, milestones, points, and reward eligibility, but the waitlist owner fulfills promised rewards.
 - Paid subscriptions renew for the selected interval until canceled. Cancellation takes effect after the paid period. Payments are non-refundable except where applicable law requires otherwise.
 
 ## Which plan fits?
-Choose Free to validate one launch below 100 total signups. Choose Pro when you need multiple launches, unlimited growth, teammates, source analytics, subscriber email campaigns, custom domains, or unbranded pages. If automatic reward fulfillment is central to the campaign, use a separate fulfillment service.`;
+Choose Free to validate one launch below 100 cumulative signups in its workspace. Choose Pro when you need multiple launches, unlimited growth, teammates, source analytics, subscriber email campaigns, custom domains, or unbranded pages. If automatic reward fulfillment is central to the campaign, use a separate fulfillment service.`;
 
     return buildMarkdownDoc({
       title: "Waitlyze Pricing: Free and Pro Plans",

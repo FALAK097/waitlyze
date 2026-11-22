@@ -64,7 +64,7 @@ To integrate Waitlyze:
 ---
 
 ## 3. Pricing, Limits & Buying Fit
-- Free: ${WAITLYZE_PRICING.free.formatted}; one workspace, one waitlist, one member, and 100 cumulative signups. The allowance does not reset monthly or when a waitlist is deleted.
+- Free: ${WAITLYZE_PRICING.free.formatted}; one waitlist, one member, and 100 cumulative signups per Free workspace. The allowance does not reset monthly or when a waitlist is deleted.
 - Pro monthly: ${WAITLYZE_PRICING.pro.monthly.formatted} per month in USD.
 - Pro annual: ${WAITLYZE_PRICING.pro.annual.formatted} per year in USD (${WAITLYZE_PRICING.pro.annual.monthlyEquivalentFormatted} per month equivalent).
 - Pro includes unlimited workspaces, waitlists, signups, and members, plus advanced analytics, referral milestones, subscriber broadcasts and automations, branding removal, and one optional custom domain per waitlist.

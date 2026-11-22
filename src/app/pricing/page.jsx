@@ -12,7 +12,7 @@ export const revalidate = 3600;
 
 export const metadata = {
   title: { absolute: "Waitlyze Pricing: Free & Pro Plans | Waitlyze" },
-  description: `Start free with one waitlist and 100 signups. Waitlyze Pro is ${WAITLYZE_PRICING.pro.monthly.formatted}/month or ${WAITLYZE_PRICING.pro.annual.formatted}/year for unlimited waitlists, signups, members, analytics, email, and custom domains.`,
+  description: `Start free with one waitlist and 100 signups per workspace. Waitlyze Pro is ${WAITLYZE_PRICING.pro.monthly.formatted}/month or ${WAITLYZE_PRICING.pro.annual.formatted}/year for unlimited waitlists, signups, members, analytics, email, and custom domains.`,
   alternates: {
     canonical: "/pricing",
     types: { "text/markdown": [{ url: "/pricing.md", title: "Waitlyze pricing in Markdown" }] },
@@ -28,11 +28,11 @@ export const metadata = {
 const pricingFaqs = [
   [
     "How much does Waitlyze cost?",
-    `Free costs $0 and includes one workspace, one waitlist, and 100 cumulative signups. Pro costs ${WAITLYZE_PRICING.pro.monthly.formatted} per month or ${WAITLYZE_PRICING.pro.annual.formatted} per year in USD before any applicable tax. Country-adjusted pricing may be available at checkout.`,
+    `Free costs $0 and includes one workspace, one waitlist, and 100 cumulative signups per Free workspace. Pro costs ${WAITLYZE_PRICING.pro.monthly.formatted} per month or ${WAITLYZE_PRICING.pro.annual.formatted} per year in USD before any applicable tax. Country-adjusted pricing may be available at checkout.`,
   ],
   [
     "Does the Free signup limit reset?",
-    "No. The 100-signup allowance is cumulative for the account, not a monthly allowance. Deleting a waitlist does not reset usage.",
+    "No. The 100-signup allowance is cumulative for each Free workspace, not a monthly allowance. Deleting a waitlist does not reset that workspace's usage.",
   ],
   [
     "Do I need a separate email provider?",
@@ -51,7 +51,7 @@ const pricingFaqs = [
 const planFit = [
   {
     title: "Choose Free for a first launch",
-    copy: "Best when you are validating one idea, can stay under 100 total signups, and do not need a custom domain, team access, broadcasts, or advanced analytics.",
+    copy: "Best when you are validating one idea, can stay under 100 cumulative signups in its Free workspace, and do not need a custom domain, team access, broadcasts, or advanced analytics.",
   },
   {
     title: "Choose Pro for active growth",
