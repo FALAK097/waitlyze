@@ -17,7 +17,7 @@ import {
   saveClaimedBlueprintForWaitlist,
 } from "@/lib/tools/blueprint.mjs";
 import { AUDIT_ACTIONS, recordAuditEvent } from "@/lib/workspaces/audit.mjs";
-import { requireCampaign } from "@/lib/workspaces/authorize";
+import { requireAuth, requireCampaign } from "@/lib/workspaces/authorize";
 import { currentWorkspace } from "@/lib/workspaces/current";
 
 export async function createWaitlistDraft({
@@ -29,6 +29,7 @@ export async function createWaitlistDraft({
   blueprintId = null,
   showReferrals,
 }) {
+  await requireAuth();
   const { user, workspace } = await currentWorkspace();
   if (!user?.id || !workspace?.id) {
     return { ok: false, message: "Sign in to continue." };
@@ -188,6 +189,7 @@ export async function checkWaitlistSlug(publicSlug) {
 }
 
 export async function saveLaunchLabPlanToWaitlist({ waitListId, blueprint }) {
+  await requireAuth();
   if (!waitListId || typeof waitListId !== "string" || !blueprint) {
     return { ok: false, message: "Missing campaign or Launch Lab payload." };
   }

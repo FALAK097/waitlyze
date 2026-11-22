@@ -61,7 +61,9 @@ export function generateEmbedSnippet(config = {}, waitlistKeyId = "YOUR_PUBLIC_W
     "Form colors, radius, placeholder, and optional Name/Role fields live on your Waitlyze campaign blueprint—click 'Save this embed style in Waitlyze' to apply them automatically.";
 
   if (framework === "nextjs") {
-    const code = `import Script from "next/script";
+    const code = `"use client";
+
+import Script from "next/script";
 
 export function WaitlistEmbed() {
   return (

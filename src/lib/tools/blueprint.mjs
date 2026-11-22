@@ -476,18 +476,70 @@ export async function saveClaimedBlueprintForWaitlist(db, { userId, waitListId, 
 export async function getClaimedBlueprintForWaitlist(db, waitListId) {
   if (!waitListId) return null;
   try {
-    const record = await db.toolBlueprint.findFirst({
+    const records = await db.toolBlueprint.findMany({
       where: { claimedWaitlistId: waitListId },
       orderBy: { claimedAt: "desc" },
+      take: 20,
     });
-    if (!record) return null;
-    const parsed = toolBlueprintInputSchema.safeParse(record.payload);
-    if (!parsed.success) return null;
+    if (!records || records.length === 0) return null;
+
+    const validRecords = [];
+    for (const record of records) {
+      const parsed = toolBlueprintInputSchema.safeParse(record.payload);
+      if (parsed.success) {
+        validRecords.push({
+          id: record.id,
+          toolSlug: record.toolSlug,
+          claimedAt: record.claimedAt,
+          payload: parsed.data,
+        });
+      }
+    }
+    if (validRecords.length === 0) return null;
+
+    const latest = validRecords[0];
+    const mergedPayload = { ...latest.payload };
+    const seenBullets = new Set();
+    const mergedBullets = [];
+    const toolSlugs = [];
+
+    for (const item of validRecords) {
+      if (!toolSlugs.includes(item.toolSlug)) {
+        toolSlugs.push(item.toolSlug);
+      }
+      for (const bullet of item.payload.summaryBullets || []) {
+        if (!seenBullets.has(bullet) && mergedBullets.length < 10) {
+          seenBullets.add(bullet);
+          mergedBullets.push(bullet);
+        }
+      }
+      if (!mergedPayload.emailDrafts?.length && item.payload.emailDrafts?.length) {
+        mergedPayload.emailDrafts = item.payload.emailDrafts;
+      }
+      if (!mergedPayload.utmPlan?.channels?.length && item.payload.utmPlan?.channels?.length) {
+        mergedPayload.utmPlan = item.payload.utmPlan;
+      }
+      if (!mergedPayload.domainConfig?.domain && item.payload.domainConfig?.domain) {
+        mergedPayload.domainConfig = item.payload.domainConfig;
+      }
+      if (!mergedPayload.launchChecklist?.length && item.payload.launchChecklist?.length) {
+        mergedPayload.launchChecklist = item.payload.launchChecklist;
+      }
+      if (
+        !mergedPayload.auditSummary?.topFixes?.length &&
+        item.payload.auditSummary?.topFixes?.length
+      ) {
+        mergedPayload.auditSummary = item.payload.auditSummary;
+      }
+    }
+    mergedPayload.summaryBullets = mergedBullets;
+
     return {
-      id: record.id,
-      toolSlug: record.toolSlug,
-      claimedAt: record.claimedAt,
-      payload: parsed.data,
+      id: latest.id,
+      toolSlug: latest.toolSlug,
+      toolSlugs,
+      claimedAt: latest.claimedAt,
+      payload: mergedPayload,
     };
   } catch {
     return null;

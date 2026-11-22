@@ -98,12 +98,18 @@ export function LaunchPlannerWidget({
   const liveBandwidthWarning = liveRemainingHours > plan.availableTotalHours;
   const liveFirstIncompleteTask = incompleteTasks[0] || null;
   const liveReadinessScore = useMemo(() => {
-    if (tasksWithManual.length === 0) return 100;
-    const completedCount = tasksWithManual.length - incompleteCount;
-    return Math.round((completedCount / tasksWithManual.length) * 100);
-  }, [tasksWithManual.length, incompleteCount]);
+    const basePending = plan.tasks.filter((t) => !t.completed).length;
+    if (basePending === 0) return plan.readinessScore;
+    const manualCompleted = Math.max(0, basePending - incompleteCount);
+    if (manualCompleted === 0) return plan.readinessScore;
+    const remainingHeadroom = Math.max(0, 100 - plan.readinessScore);
+    return Math.min(
+      100,
+      plan.readinessScore + Math.round((manualCompleted / basePending) * remainingHeadroom),
+    );
+  }, [plan.tasks, plan.readinessScore, incompleteCount]);
   const liveBand =
-    liveReadinessScore >= 80 ? "ready" : liveReadinessScore >= 45 ? "in_progress" : "early";
+    liveReadinessScore >= 75 ? "ready" : liveReadinessScore >= 45 ? "in_progress" : "early_setup";
 
   function handleDownloadIcs() {
     const ics = buildLaunchCalendarIcs({ ...plan, tasks: tasksWithManual });
