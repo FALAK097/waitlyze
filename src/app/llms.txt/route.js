@@ -46,6 +46,7 @@ Waitlyze is open-source waitlist software for founders and product teams. Create
 ## Product & Templates
 
 - [Home](${SITE_URL}): Overview, features, pricing ($0 Free / ${WAITLYZE_PRICING.pro.monthly.formatted} per month Pro), and FAQ
+- [Features](${SITE_URL}/#features): Waitlist page builder, referrals, email, analytics, and developer tools
 - [Pricing](${SITE_URL}/pricing): Free plan limits and Pro pricing (${WAITLYZE_PRICING.pro.monthly.formatted}/month or ${WAITLYZE_PRICING.pro.annual.formatted}/year)
 - [Waitlist Templates Gallery](${SITE_URL}/templates): 14 free waitlist landing page templates for SaaS, AI, mobile, newsletter, event, and pre-order launches
 ${templates}
