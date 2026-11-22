@@ -78,7 +78,7 @@ ${templates
 
 ## Frequently Asked Questions
 ### Is Waitlyze free to use?
-Yes. Free includes one workspace with one waitlist and 100 lifetime signups, with no credit card required. Pro is ${WAITLYZE_PRICING.pro.monthly.formatted} per month or ${WAITLYZE_PRICING.pro.annual.formatted} per year, with unlimited workspaces, waitlists, signups, and members.
+Yes. Free includes one workspace with one waitlist and 100 lifetime signups, with no credit card required. Pro is ${WAITLYZE_PRICING.pro.monthly.formatted} per month or ${WAITLYZE_PRICING.pro.annual.formatted} per year, with unlimited workspaces, and unlimited waitlists, signups, and members on each workspace with a Pro subscription.
 
 ### Do I need a website or coding skills?
 No. You can visually design your page in the builder and share its hosted URL. If you already have a website, copy the embed snippet from your dashboard.
@@ -125,6 +125,21 @@ Waitlyze is built by Falak Gala. Questions or ideas? Email [Falak](mailto:suppor
       body,
       related: [
         {
+          title: "Features",
+          path: "/features",
+          description: "Waitlist software features",
+        },
+        {
+          title: "Pricing",
+          path: "/pricing",
+          description: "Free and Pro plan details",
+        },
+        {
+          title: "About Waitlyze",
+          path: "/about",
+          description: "Why Waitlyze exists and how it is built",
+        },
+        {
           title: "Templates Gallery",
           path: "/templates",
           description: "Browse 14 launch templates",
@@ -136,6 +151,159 @@ Waitlyze is built by Falak Gala. Questions or ideas? Email [Falak](mailto:suppor
           path: "/agent-instructions.md",
           description: "Instructions for AI agents",
         },
+      ],
+    });
+  }
+
+  // 1b. Features /features
+  if (path === "/features") {
+    const body = `Waitlyze gives founders one place to build a branded waitlist, verify referrals, email subscribers, and understand where launch demand comes from.
+
+## Build a branded waitlist
+Start with a hosted page or template, customize the signup experience, then publish on Waitlyze or your own domain.
+- [Visual page builder](${canonical("/docs/page-builder")})
+- [Hosted pages and publishing](${canonical("/docs/publishing")})
+- [Embeddable signup forms](${canonical("/docs/embed")})
+- [Custom domains with HTTPS](${canonical("/docs/domains")})
+- [Launch templates](${canonical("/templates")})
+
+## Grow through verified referrals
+Give confirmed subscribers a personal referral link, track their place in line, and reward qualified growth instead of unverified clicks.
+- [Verified referral credit](${canonical("/docs/referrals")})
+- [Queue positions and public leaderboards](${canonical("/docs/referrals")})
+- [Milestone rewards](${canonical("/docs/referrals")})
+- [Bot and velocity protection](${canonical("/docs/signup-flow")})
+
+## Engage the people who joined
+Keep the audience informed with confirmation email, targeted broadcasts, and automated sequences sent through your verified sender.
+- [Email confirmation](${canonical("/docs/email")})
+- [Audience broadcasts](${canonical("/docs/broadcasts")})
+- [Email automations](${canonical("/docs/automations")})
+- [Resend sender connection](${canonical("/docs/resend")})
+
+## Measure launch demand
+See the path from visit to verified signup, compare acquisition sources, and understand whether referrals are compounding growth.
+- [Visitor and signup conversion](${canonical("/docs/analytics")})
+- [Source, device, geography, and landing-page breakdowns](${canonical("/docs/analytics")})
+- [Referral and K-factor metrics](${canonical("/docs/analytics")})
+- [Subscriber search and CSV export](${canonical("/docs/subscribers")})
+
+## Connect your launch stack
+Use documented APIs and signed events when your waitlist needs to connect with a custom frontend or the tools your team already uses.
+- [Server-side Signup API](${canonical("/docs/api/reference")})
+- [Signed webhooks](${canonical("/docs/webhooks")})
+- [Slack notifications](${canonical("/docs/slack")})
+- [Discord notifications](${canonical("/docs/discord")})
+- [Zapier workflows](${canonical("/docs/zapier")})`;
+
+    return buildMarkdownDoc({
+      title: "Waitlist Software Features | Waitlyze",
+      description:
+        "Explore Waitlyze features for building a waitlist page, verified referrals, launch emails, audience analytics, embeds, API access, and integrations.",
+      path: "/features",
+      body,
+      related: [
+        { title: "Templates Gallery", path: "/templates", description: "Browse launch templates" },
+        { title: "Pricing", path: "/pricing", description: "Compare Free and Pro plans" },
+        { title: "Developer Docs", path: "/docs", description: "Read the documentation" },
+      ],
+    });
+  }
+
+  // 1c. Pricing /pricing
+  if (path === "/pricing") {
+    const body = `Free covers one real launch with up to 100 cumulative signups. Pro unlocks unlimited workspaces, removes waitlist, signup, and member limits on each workspace with a Pro subscription, and unlocks advanced launch operations.
+
+## Free Plan ($0 forever)
+- 1 workspace with 1 waitlist
+- 100 cumulative signups
+- Hosted page and embeddable form
+- Page builder and launch templates
+- Referral links and queue position
+- Confirmation email through your connected Resend sender
+- CSV export and full data ownership
+
+## Pro Plan (${WAITLYZE_PRICING.pro.monthly.formatted}/month or ${WAITLYZE_PRICING.pro.annual.formatted}/year)
+- Unlimited workspaces
+- Unlimited waitlists and signups on each workspace with a Pro subscription
+- Unlimited workspace members on each workspace with a Pro subscription
+- Everything in Free
+- Advanced analytics with trends and sources
+- Referral milestones and reward tiers
+- Email broadcasts and automations via your connected sender
+- Remove Waitlyze branding and connect a custom domain
+
+## Billing Details
+- **Regional pricing**: Where available, checkout shows a country-adjusted price in your local currency.
+- **Taxes at checkout**: Applicable tax is calculated before payment, so you can review the final total.
+- **Your data stays yours**: Export subscribers as CSV before, during, or after a plan change.
+
+## Frequently Asked Questions
+### How much does Waitlyze cost?
+Waitlyze Free costs $0. Pro costs ${WAITLYZE_PRICING.pro.monthly.formatted} USD per month or ${WAITLYZE_PRICING.pro.annual.formatted} USD per year before any applicable tax or regional adjustment.
+
+### What is included in the Free plan?
+Free includes one workspace, one waitlist, 100 cumulative signups, a hosted page, an embeddable form, referral links, queue position, confirmation email through your connected Resend sender, and CSV export.
+
+### What does Pro add?
+Pro adds unlimited workspaces, plus unlimited waitlists, signups, and workspace members on each workspace with a Pro subscription, along with advanced analytics, referral rewards, broadcasts, automations, custom domains, and the option to remove Waitlyze branding.
+
+### Can I cancel Pro?
+Yes. You can cancel renewal from workspace Billing and keep Pro through the end of the paid period.
+
+### Does Waitlyze offer refunds?
+Payments are non-refundable except where applicable law requires otherwise. Read the [Refund Policy](${canonical("/refund-policy")}) before purchasing if you need more detail.`;
+
+    return buildMarkdownDoc({
+      title: "Pricing | Waitlyze",
+      description:
+        "Compare Waitlyze Free and Pro pricing. Start with one waitlist and 100 signups for $0, or upgrade for unlimited waitlists, analytics, email, and custom domains.",
+      path: "/pricing",
+      body,
+      related: [
+        { title: "Features", path: "/features", description: "Explore product features" },
+        { title: "Terms of Service", path: "/terms", description: "Subscription terms" },
+        { title: "Refund Policy", path: "/refund-policy", description: "Billing and refunds" },
+      ],
+    });
+  }
+
+  // 1d. About /about
+  if (path === "/about") {
+    const body = `Waitlyze is open-source waitlist software for founders and product teams. It brings signup pages, verified referrals, subscriber email, and launch analytics into one focused workspace.
+
+## Why it exists
+A launch waitlist should do more than collect email addresses. It should show who is interested, what brought them in, and which early supporters help the audience grow.
+
+Waitlyze keeps those jobs connected so founders can move from a launch page to an informed rollout without stitching together a form, spreadsheet, referral script, and email tool.
+
+## Built in the open
+Waitlyze is built and maintained by [Falak Gala](https://falakgala.dev). The [source](https://github.com/FALAK097/waitlyze), [release history](${canonical("/docs/changelog")}), and [product documentation](${canonical("/docs")}) are public.
+
+That means prospective users can inspect how the product works, follow meaningful changes, and ask direct questions before trusting it with a launch audience.
+
+## Product principles
+- **Verified growth**: Referral credit should reflect confirmed people, not raw clicks or disposable addresses.
+- **Portable audiences**: Subscribers can be exported, and integrations use documented APIs and signed webhooks.
+- **Clear operations**: Pricing, limits, publishing state, and launch metrics should be understandable before they become urgent.
+
+## Learn more or get in touch
+- [Explore features](${canonical("/features")})
+- [Read the docs](${canonical("/docs")})
+- [View the changelog](${canonical("/docs/changelog")})
+- [Browse the source](https://github.com/FALAK097/waitlyze)
+- [Contact Waitlyze](mailto:support@waitlyze.com)`;
+
+    return buildMarkdownDoc({
+      title: "About | Waitlyze",
+      description:
+        "Waitlyze is open-source waitlist software built by Falak Gala for founders who want to build, grow, email, and measure a launch audience.",
+      path: "/about",
+      body,
+      related: [
+        { title: "Waitlyze Home", path: "/", description: "Product overview" },
+        { title: "Features", path: "/features", description: "Product capabilities" },
+        { title: "Changelog", path: "/docs/changelog", description: "Release history" },
       ],
     });
   }
@@ -478,6 +646,9 @@ export function listMarkdownRoutes() {
 
   return [
     { path: "/", title: SITE_TITLE, type: "page" },
+    { path: "/features", title: "Waitlist Software Features", type: "page" },
+    { path: "/pricing", title: "Waitlyze Pricing", type: "page" },
+    { path: "/about", title: "About Waitlyze", type: "page" },
     { path: "/templates", title: "Templates Gallery", type: "page" },
     ...templates.map((t) => ({
       path: `/templates/${t.id}`,

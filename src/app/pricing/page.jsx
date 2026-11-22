@@ -33,7 +33,7 @@ const pricingFaqs = [
   ],
   [
     "What does Pro add?",
-    "Pro adds unlimited workspaces, waitlists, signups, and workspace members, plus advanced analytics, referral rewards, broadcasts, automations, custom domains, and the option to remove Waitlyze branding.",
+    "Pro adds unlimited workspaces, plus unlimited waitlists, signups, and workspace members on each workspace with a Pro subscription, along with advanced analytics, referral rewards, broadcasts, automations, custom domains, and the option to remove Waitlyze branding.",
   ],
   [
     "Can I cancel Pro?",
@@ -88,8 +88,9 @@ export default function PricingPage() {
             Start free. Upgrade when the audience grows.
           </h1>
           <p className="mt-6 max-w-2xl text-lg leading-relaxed text-product-text-secondary">
-            Free covers one real launch with up to 100 cumulative signups. Pro removes workspace,
-            waitlist, signup, and member limits and unlocks advanced launch operations.
+            Free covers one real launch with up to 100 cumulative signups. Pro unlocks unlimited
+            workspaces, removes waitlist, signup, and member limits on each workspace with a Pro
+            subscription, and unlocks advanced launch operations.
           </p>
         </header>
 
