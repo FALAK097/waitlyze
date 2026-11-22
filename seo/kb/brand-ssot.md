@@ -13,8 +13,8 @@ Last verified: 2026-11-22
 
 ## Pricing tiers (verified from `src/lib/billing/pricing.mjs`)
 
-- **Free:** `$0` — 1 workspace, 1 waitlist, 1 member, and 100 cumulative signups per Free workspace (does not reset monthly or when deleting a waitlist). Includes hosted pages, embed forms, verified referrals, and API access.
-- **Pro:** `$15/month` or `$119/year` (`$9.92/month` equivalent) flat per workspace — unlimited workspaces, waitlists, signups, and workspace members, plus broadcasts, automations, advanced analytics, branding removal, and 1 custom domain per waitlist.
+- **Free:** `$0` for 1 workspace, 1 waitlist, 1 member, and 100 cumulative signups per Free workspace (does not reset monthly or when deleting a waitlist). Includes hosted pages, embed forms, verified referrals, and API access.
+- **Pro:** `$15/month` or `$119/year` (`$9.92/month` equivalent) flat per workspace for unlimited workspaces, waitlists, signups, and workspace members, plus broadcasts, automations, advanced analytics, branding removal, and 1 custom domain per waitlist.
 - **Promotional pricing:** BFCM 2026 promo (`BFCM2026`, 40% off Pro Annual) active 2026-11-22 through 2026-12-03.
 
 ## Boundaries (what Waitlyze does NOT do)

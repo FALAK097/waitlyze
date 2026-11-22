@@ -168,7 +168,7 @@ export function CreateWaitlistDialog({
             </DialogTitle>
             <DialogDescription>
               {activeBlueprint
-                ? `Prefilled from ${activeBlueprint.toolTitle}. Confirm your name and page address—your draft stays private until you publish.`
+                ? `Prefilled from ${activeBlueprint.toolTitle}. Confirm your name and page address. Your draft stays private until you publish.`
                 : "Choose a name and page address. You can customize it before publishing."}
             </DialogDescription>
           </div>

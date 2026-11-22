@@ -15,7 +15,7 @@ import { cn } from "@/lib/utils";
 import { copyToClipboard } from "./tool-export-utils";
 
 /**
- * Primary interactive tool container — crisp white surface, hairline border,
+ * Primary interactive tool container: crisp white surface, hairline border,
  * generous breathing room, strictly Waitlyze light-only tokens.
  */
 export function ToolWorkspace({ children, className = "" }) {

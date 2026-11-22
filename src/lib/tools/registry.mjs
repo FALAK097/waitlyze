@@ -46,7 +46,7 @@ export const TOOLS_REGISTRY = Object.freeze([
     seoDescription:
       "Paste any public waitlist URL or HTML draft to get a transparent 6-pillar conversion score, top 3 highest-impact fixes, and rewritten hero copy.",
     directAnswer:
-      "The Waitlist Landing Page Grader inspects a public HTTPS waitlist URL—or pasted page copy—across six weighted conversion and search pillars: value proposition, CTA clarity, form friction, waitlist mechanics, SEO/AEO readiness, and mobile basics. It scores each observable HTML signal transparently and generates rewritten hero copy you can open directly in Waitlyze.",
+      "The Waitlist Landing Page Grader inspects a public HTTPS waitlist URL (or pasted page copy) across six weighted conversion and search pillars: value proposition, CTA clarity, form friction, waitlist mechanics, SEO/AEO readiness, and mobile basics. It scores each observable HTML signal transparently and generates rewritten hero copy you can open directly in Waitlyze.",
     ctaLabel: "Build the corrected version in Waitlyze",
     recommendedTemplateId: "saas",
     relatedBlogSlugs: ["waitlist-landing-page-checklist", "landing-page-seo-for-waitlists"],
@@ -111,7 +111,7 @@ export const TOOLS_REGISTRY = Object.freeze([
       {
         band: "65–84 (Workable, leaky)",
         guidance:
-          "Fix the top three flagged items before buying ads or launching on Product Hunt—small friction or unclear post-signup copy costs signups immediately.",
+          "Fix the top three flagged items before buying ads or launching on Product Hunt. Small friction or unclear post-signup copy costs signups immediately.",
       },
       {
         band: "Below 65 (High friction)",
@@ -132,7 +132,7 @@ export const TOOLS_REGISTRY = Object.freeze([
         "Google Search Central: Creating helpful, reliable, people-first content",
         "W3C WCAG 2.2 form label, autocomplete, and alt-text criteria",
       ],
-      changelog: "v1.0 — Initial 6-pillar deterministic HTML and copy rubric with SSRF protection.",
+      changelog: "v1.0: Initial 6-pillar deterministic HTML and copy rubric with SSRF protection.",
     },
     faqs: [
       {
@@ -153,7 +153,7 @@ export const TOOLS_REGISTRY = Object.freeze([
       {
         question: "Why did my client-side React or Framer page show missing headings?",
         answer:
-          "For security and speed, the grader inspects the initial server-rendered HTML without running JavaScript—the same view fast crawlers and many AI fetchers see first. Ensure key H1 and form copy is server-rendered.",
+          "For security and speed, the grader inspects the initial server-rendered HTML without running JavaScript, which is the same view fast crawlers and many AI fetchers see first. Ensure key H1 and form copy is server-rendered.",
       },
     ],
   },
@@ -167,7 +167,7 @@ export const TOOLS_REGISTRY = Object.freeze([
     version: "1.0",
     targetJob:
       "Match your launch category, visual assets, and referral goal to the best-fit Waitlyze template.",
-    seoTitle: "Waitlist Template Finder — Match Your Launch to the Right Layout",
+    seoTitle: "Waitlist Template Finder: Match Your Launch to the Right Layout",
     seoDescription:
       "Answer four quick questions about your product category, conversion motion, visual assets, and brand aesthetic to get ranked waitlist template recommendations.",
     directAnswer:
@@ -187,7 +187,7 @@ export const TOOLS_REGISTRY = Object.freeze([
         {
           label: "Category Fit (40 pts)",
           detail:
-            "Aligns section order—such as API workflow steps for developer tools or agenda blocks for live cohorts—with your launch type.",
+            "Aligns section order, such as API workflow steps for developer tools or agenda blocks for live cohorts, with your launch type.",
         },
         {
           label: "Asset Readiness (25 pts)",
@@ -226,7 +226,7 @@ export const TOOLS_REGISTRY = Object.freeze([
       {
         band: "70–84% match",
         guidance:
-          "Strong alternative if you prefer its visual tone—simply toggle off any section you do not have proof for yet.",
+          "Strong alternative if you prefer its visual tone. Toggle off any section you do not have proof for yet.",
       },
       {
         band: "When to pick Blank or Simple",
@@ -239,7 +239,7 @@ export const TOOLS_REGISTRY = Object.freeze([
       reviewer: "Falak Gala",
       updatedAt: TOOLS_UPDATED_DATE,
       sources: ["Waitlyze 14-template catalog schema (src/lib/templates/catalog.mjs)"],
-      changelog: "v1.0 — Deterministic 4-axis scoring across all 14 Waitlyze templates.",
+      changelog: "v1.0: Deterministic 4-axis scoring across all 14 Waitlyze templates.",
     },
     faqs: [
       {
@@ -349,7 +349,7 @@ export const TOOLS_REGISTRY = Object.freeze([
         "Waitlyze verified referral attribution model",
       ],
       changelog:
-        "v1.0 — Multi-cycle deterministic K-factor engine with +10% lever sensitivity and PNG/CSV export.",
+        "v1.0: Multi-cycle deterministic K-factor engine with +10% lever sensitivity and PNG/CSV export.",
     },
     faqs: [
       {
@@ -360,7 +360,7 @@ export const TOOLS_REGISTRY = Object.freeze([
       {
         question: "What is a realistic K-factor for a B2B or SaaS waitlist?",
         answer:
-          "Most healthy pre-launch waitlists operate between K = 0.10 and K = 0.35—meaning referrals add 11% to 50% incremental growth on top of direct marketing without requiring exponential virality (K > 1).",
+          "Most healthy pre-launch waitlists operate between K = 0.10 and K = 0.35, meaning referrals add 11% to 50% incremental growth on top of direct marketing without requiring exponential virality (K > 1).",
       },
       {
         question: "Can I share my modeled scenario with a co-founder?",
@@ -387,7 +387,7 @@ export const TOOLS_REGISTRY = Object.freeze([
       "Generate complete waitlist hero, benefits, honest proof, FAQ, and post-signup referral copy.",
     seoTitle: "Waitlist Landing Page Copy & Headline Generator (Free)",
     seoDescription:
-      "Generate three conversion-focused hero directions, benefit blocks, honest pre-launch proof sections, FAQs, and referral prompts—then open them in Waitlyze.",
+      "Generate three conversion-focused hero directions, benefit blocks, honest pre-launch proof sections, FAQs, and referral prompts, then open them in Waitlyze.",
     directAnswer:
       "The Waitlist Landing Page Copy Builder turns your product name, target audience, core problem, and real proof into a full pre-launch page draft. It creates three distinct hero angles, benefit cards, honest proof placeholders without fabricated testimonials, tailored FAQs, and post-signup referral copy ready for Waitlyze.",
     ctaLabel: "Open this page in Waitlyze Builder",
@@ -410,7 +410,7 @@ export const TOOLS_REGISTRY = Object.freeze([
         {
           label: "Zero Fabricated Proof Rule",
           detail:
-            "If you select 'None yet — keep honest,' the builder outputs transparent founder-note or build-in-public copy instead of inventing fake testimonials or user counts.",
+            "If you select 'None yet (keep honest, no fake proof),' the builder outputs transparent founder-note or build-in-public copy instead of inventing fake testimonials or user counts.",
         },
         {
           label: "Post-Signup Referral Copy",
@@ -456,13 +456,13 @@ export const TOOLS_REGISTRY = Object.freeze([
         "Conversion clarity heuristics for single-goal signup pages",
       ],
       changelog:
-        "v1.0 — 3-angle deterministic waitlist page copy builder with live template preview and blueprint handoff.",
+        "v1.0: 3-angle deterministic waitlist page copy builder with live template preview and blueprint handoff.",
     },
     faqs: [
       {
         question: "Will this tool invent fake testimonials or subscriber counts?",
         answer:
-          "Never. If you have no customer quotes or metrics yet, select 'None yet — keep honest' and the builder generates transparent pre-launch expectations instead of fake social proof.",
+          "Never. If you have no customer quotes or metrics yet, select 'None yet (keep honest, no fake proof)' and the builder generates transparent pre-launch expectations instead of fake social proof.",
       },
       {
         question: "Can I edit the copy before opening it in Waitlyze?",
@@ -504,22 +504,22 @@ export const TOOLS_REGISTRY = Object.freeze([
         "Readiness (0–100) = Page & Value Prop (20) + Audience & Waitlist (20) + Email & DNS (18) + Proof & Assets (16) + Distribution & UTMs (14) + Measurement (12)",
       items: [
         {
-          label: "Phase 1 — Validation & Waitlist Setup",
+          label: "Phase 1: Validation & Waitlist Setup",
           detail:
             "Domain, landing page, signup form, email verification, and baseline analytics live first so every outreach click is captured.",
         },
         {
-          label: "Phase 2 — Warm-Up & Referral Seeding",
+          label: "Phase 2: Warm-Up & Referral Seeding",
           detail:
             "Founder network seeding, UTM-tagged channel distribution, welcome sequence, and referral reward validation.",
         },
         {
-          label: "Phase 3 — Launch Week Rehearsal",
+          label: "Phase 3: Launch Week Rehearsal",
           detail:
             "DNS deliverability verification, signup/referral end-to-end test, and launch-day asset staging.",
         },
         {
-          label: "Phase 4 — Launch Day & Rollout",
+          label: "Phase 4: Launch Day & Rollout",
           detail:
             "Staged beta invites, broadcast send to verified opt-ins, and 7-day conversion follow-up.",
         },
@@ -550,7 +550,7 @@ export const TOOLS_REGISTRY = Object.freeze([
       {
         band: "Below 45 (Early setup)",
         guidance:
-          "Start with one live waitlist page today rather than waiting for every asset—collecting verified emails early validates demand while you build.",
+          "Start with one live waitlist page today rather than waiting for every asset. Collecting verified emails early validates demand while you build.",
       },
     ],
     methodology: {
@@ -562,7 +562,7 @@ export const TOOLS_REGISTRY = Object.freeze([
         "Critical-path dependency scheduling for pre-launch SaaS and consumer rollouts",
       ],
       changelog:
-        "v1.0 — 6-pillar readiness engine with 14/30/60/90-day backward scheduling and .ics export.",
+        "v1.0: 6-pillar readiness engine with 14/30/60/90-day backward scheduling and .ics export.",
     },
     faqs: [
       {
@@ -662,7 +662,7 @@ export const TOOLS_REGISTRY = Object.freeze([
         "Pareto referral unlock curves for pre-launch waitlists",
         "Waitlyze anti-abuse verification and velocity controls",
       ],
-      changelog: "v1.0 — 4-tier unit economics, P25/P50/P90 stress testing, and fraud risk rating.",
+      changelog: "v1.0: 4-tier unit economics, P25/P50/P90 stress testing, and fraud risk rating.",
     },
     faqs: [
       {
@@ -705,7 +705,7 @@ export const TOOLS_REGISTRY = Object.freeze([
     howItWorks: {
       heading: "Deterministic queue ranking & tie-breaking math",
       summary:
-        "Waitlyze ranks every verified subscriber by total points descending, then by earliest signup timestamp ascending. There is zero randomness—every jump is predictable and auditable.",
+        "Waitlyze ranks every verified subscriber by total points descending, then by earliest signup timestamp ascending. There is zero randomness: every jump is predictable and auditable.",
       formula:
         "Total Points = Base Signup Points (default 50) + (Verified Referrals × Referral Points [default 30]) + Bonus Action Points",
       items: [
@@ -758,13 +758,13 @@ export const TOOLS_REGISTRY = Object.freeze([
         "Deterministic rank ordering: points DESC, createdAt ASC",
       ],
       changelog:
-        "v1.0 — Mirrors Waitlyze 50/30/5 default point rules with Pareto queue jump simulation.",
+        "v1.0: Mirrors Waitlyze 50/30/5 default point rules with Pareto queue jump simulation.",
     },
     faqs: [
       {
         question: "How does Waitlyze break ties when two people have the same points?",
         answer:
-          "Waitlyze orders subscribers by highest verified points first, and breaks ties by earliest signup timestamp—so early supporters keep priority over later signups at the same point tier.",
+          "Waitlyze orders subscribers by highest verified points first, and breaks ties by earliest signup timestamp, so early supporters keep priority over later signups at the same point tier.",
       },
       {
         question: "Should I show exact queue numbers on a brand-new waitlist?",
@@ -853,7 +853,7 @@ export const TOOLS_REGISTRY = Object.freeze([
         "Form usability and progressive disclosure patterns",
       ],
       changelog:
-        "v1.0 — 6 launch segments, interactive field reordering, friction meter, and Waitlyze customFields handoff.",
+        "v1.0: 6 launch segments, interactive field reordering, friction meter, and Waitlyze customFields handoff.",
     },
     faqs: [
       {
@@ -885,7 +885,7 @@ export const TOOLS_REGISTRY = Object.freeze([
       "Draft all 5 pre-launch lifecycle emails with Waitlyze merge tags and spam-trigger checks.",
     seoTitle: "Waitlist Email Sequence & Template Builder (5 Free Emails)",
     seoDescription:
-      "Generate a complete 5-email pre-launch sequence—verification, welcome + referral link, milestone unlocked, warm-up, and launch day—with merge tags and spam checks.",
+      "Generate a complete 5-email pre-launch sequence (verification, welcome + referral link, milestone unlocked, warm-up, and launch day) with merge tags and spam checks.",
     directAnswer:
       "The Waitlist Email Sequence Builder generates all five essential pre-launch lifecycle emails from your product context and voice: double opt-in verification, welcome with referral link, milestone unlocked, pre-launch warm-up, and launch-day invite. Every email includes subject options, preview text, Waitlyze merge tags, and a live spam-word check.",
     ctaLabel: "Save this email sequence in Waitlyze",
@@ -896,7 +896,7 @@ export const TOOLS_REGISTRY = Object.freeze([
     howItWorks: {
       heading: "The 5-stage pre-launch email lifecycle",
       summary:
-        "Subscribers who hear nothing for six weeks forget they signed up—and mark your launch email as spam. This sequence keeps engagement warm with five focused touchpoints.",
+        "Subscribers who hear nothing for six weeks forget they signed up and mark your launch email as spam. This sequence keeps engagement warm with five focused touchpoints.",
       formula:
         "Lifecycle = 1. Confirm (0m) → 2. Welcome & Share (on verify) → 3. Milestone Jump (on unlock) → 4. Warm-Up (T-7d) → 5. Launch Invite (T-0)",
       items: [
@@ -949,7 +949,7 @@ export const TOOLS_REGISTRY = Object.freeze([
         "Deliverability best practices for pre-launch transactional & marketing sends",
       ],
       changelog:
-        "v1.0 — 5-stage sequence generator with Waitlyze merge tags and deterministic spam-trigger scanner.",
+        "v1.0: 5-stage sequence generator with Waitlyze merge tags and deterministic spam-trigger scanner.",
     },
     faqs: [
       {
@@ -960,7 +960,7 @@ export const TOOLS_REGISTRY = Object.freeze([
       {
         question: "When should I send the pre-launch warm-up email?",
         answer:
-          "Send a short behind-the-scenes update 7 to 14 days before launch day—especially if your waitlist has been running for more than three weeks—to re-engage early signups and invite referrals.",
+          "Send a short behind-the-scenes update 7 to 14 days before launch day, especially if your waitlist has been running for more than three weeks, to re-engage early signups and invite referrals.",
       },
       {
         question: "Why should I separate marketing opt-in from transactional confirmation?",
@@ -1047,7 +1047,7 @@ export const TOOLS_REGISTRY = Object.freeze([
         "Client-side deterministic QR matrix encoding",
       ],
       changelog:
-        "v1.0 — Multi-channel preset matrix, hygiene validator, CSV bulk export, and SVG QR export.",
+        "v1.0: Multi-channel preset matrix, hygiene validator, CSV bulk export, and SVG QR export.",
     },
     faqs: [
       {
@@ -1081,7 +1081,7 @@ export const TOOLS_REGISTRY = Object.freeze([
     seoDescription:
       "Design and test an inline, pill, modal, or drawer waitlist widget across desktop and mobile. Copy ready-to-use snippets for Next.js, React, Framer, Webflow, Shopify, and HTML.",
     directAnswer:
-      "The Waitlist Embed & Widget Configurator lets you design and test an interactive waitlist signup widget—including its post-signup referral status card—across inline, compact pill, modal, and drawer layouts. Switch between desktop and mobile previews, copy clean snippets for Next.js, React, Framer, Webflow, Shopify, or HTML, and wire them to a live Waitlyze campaign.",
+      "The Waitlist Embed & Widget Configurator lets you design and test an interactive waitlist signup widget, including its post-signup referral status card, across inline, compact pill, modal, and drawer layouts. Switch between desktop and mobile previews, copy clean snippets for Next.js, React, Framer, Webflow, Shopify, or HTML, and wire them to a live Waitlyze campaign.",
     ctaLabel: "Connect this widget to a live waitlist",
     recommendedTemplateId: "simple",
     relatedBlogSlugs: ["nextjs-waitlist-seo-guide", "how-to-build-a-waitlist"],
@@ -1131,7 +1131,7 @@ export const TOOLS_REGISTRY = Object.freeze([
       {
         band: "Check contrast before pasting",
         guidance:
-          "Ensure at least 4.5:1 contrast between your button label and button accent color—especially when using bright lime or yellow accents.",
+          "Ensure at least 4.5:1 contrast between your button label and button accent color, especially when using bright lime or yellow accents.",
       },
     ],
     methodology: {
@@ -1143,7 +1143,7 @@ export const TOOLS_REGISTRY = Object.freeze([
         "W3C WCAG 2.2 contrast and touch-target guidelines",
       ],
       changelog:
-        "v1.0 — Live pre-signup + post-signup sandbox across 4 layouts and 6 framework snippets.",
+        "v1.0: Live pre-signup + post-signup sandbox across 4 layouts and 6 framework snippets.",
     },
     faqs: [
       {
@@ -1175,9 +1175,9 @@ export const TOOLS_REGISTRY = Object.freeze([
       "Audit an existing waitlist CSV locally in the browser for disposable domains, plus-alias duplicates, and velocity spikes.",
     seoTitle: "Waitlist Health & Referral Fraud Risk Auditor (Zero-Upload CSV)",
     seoDescription:
-      "Audit your waitlist CSV 100% locally in your browser—zero emails uploaded—for disposable domains, Gmail plus-alias self-referrals, role accounts, and velocity spikes.",
+      "Audit your waitlist CSV 100% locally in your browser with zero emails uploaded. Catch disposable domains, Gmail plus-alias self-referrals, role accounts, and velocity spikes.",
     directAnswer:
-      "The Waitlist Health & Fraud Risk Auditor inspects your subscriber CSV completely inside your browser—zero raw email addresses ever leave your device—or evaluates manual aggregate metrics. It detects disposable domains, Gmail dot/plus-alias self-referral collisions, role accounts, unverified decay, and signup velocity spikes, then exports a cleaned CSV.",
+      "The Waitlist Health & Fraud Risk Auditor inspects your subscriber CSV completely inside your browser so zero raw email addresses ever leave your device, or evaluates manual aggregate metrics. It detects disposable domains, Gmail dot/plus-alias self-referral collisions, role accounts, unverified decay, and signup velocity spikes, then exports a cleaned CSV.",
     ctaLabel: "Migrate cleaned audience into Waitlyze",
     recommendedTemplateId: "saas",
     relatedBlogSlugs: ["common-waitlist-mistakes", "referral-waitlist-guide"],
@@ -1244,7 +1244,7 @@ export const TOOLS_REGISTRY = Object.freeze([
         "Waitlyze IP & velocity fraud posture rules (src/lib/fraud/gates.mjs)",
       ],
       changelog:
-        "v1.0 — Zero-upload browser CSV auditor with cleaned CSV download and aggregate metrics fallback.",
+        "v1.0: Zero-upload browser CSV auditor with cleaned CSV download and aggregate metrics fallback.",
     },
     faqs: [
       {
@@ -1260,7 +1260,7 @@ export const TOOLS_REGISTRY = Object.freeze([
       {
         question: "Why are Gmail plus-aliases flagged as potential fraud?",
         answer:
-          "Legitimate users occasionally use +tags for inbox filtering, but multiple +alias variations signing up on the same waitlist—especially under the same referral code—is the #1 self-referral farming pattern.",
+          "Legitimate users occasionally use +tags for inbox filtering, but multiple +alias variations signing up on the same waitlist, especially under the same referral code, is the #1 self-referral farming pattern.",
       },
     ],
   },
@@ -1291,12 +1291,12 @@ export const TOOLS_REGISTRY = Object.freeze([
         "Deliverability Readiness (0–100) = SPF (30) + DMARC (30) + MX Records (20) + DKIM Selector (20)",
       items: [
         {
-          label: "SPF (Sender Policy Framework — 30 pts)",
+          label: "SPF (Sender Policy Framework, 30 pts)",
           detail:
             "Confirms exactly one v=spf1 TXT record exists, checks mechanism lookup count (RFC 7208 max 10 DNS lookups), and validates ~all or -all qualifier.",
         },
         {
-          label: "DMARC (_dmarc.domain — 30 pts)",
+          label: "DMARC (_dmarc.domain, 30 pts)",
           detail:
             "Checks for v=DMARC1, distinguishes monitoring (p=none) from enforcement (p=quarantine / p=reject), and checks for rua aggregate reporting.",
         },
@@ -1317,7 +1317,7 @@ export const TOOLS_REGISTRY = Object.freeze([
       summary: "Valid MX + single SPF record (4 lookups, ~all), missing _dmarc record.",
       metrics: [
         { label: "SPF", value: "Pass (1 record, 4/10 lookups)" },
-        { label: "DMARC", value: "Fail — missing _dmarc TXT record" },
+        { label: "DMARC", value: "Fail: missing _dmarc TXT record" },
         { label: "MX", value: "Pass (valid mail exchangers)" },
         { label: "Copyable fix", value: "v=DMARC1; p=quarantine; rua=mailto:dmarc@acme.com" },
       ],
@@ -1326,7 +1326,7 @@ export const TOOLS_REGISTRY = Object.freeze([
       {
         band: "Multiple SPF records detected",
         guidance:
-          "Never publish two separate v=spf1 TXT records—RFC 7208 treats duplicate SPF records as a PermError. Merge all include: mechanisms into one TXT record.",
+          "Never publish two separate v=spf1 TXT records: RFC 7208 treats duplicate SPF records as a PermError. Merge all include: mechanisms into one TXT record.",
       },
       {
         band: "SPF lookup count > 10",
@@ -1348,7 +1348,7 @@ export const TOOLS_REGISTRY = Object.freeze([
         "Cloudflare DNS-over-HTTPS JSON API (cloudflare-dns.com)",
       ],
       changelog:
-        "v1.0 — Public DoH inspection for SPF, DMARC, MX, and optional DKIM selectors with copyable remediation.",
+        "v1.0: Public DoH inspection for SPF, DMARC, MX, and optional DKIM selectors with copyable remediation.",
     },
     faqs: [
       {
@@ -1380,7 +1380,7 @@ export const TOOLS_REGISTRY = Object.freeze([
       "Compare conversion, verification, share rate, and K-factor cohorts with explicit methodology.",
     seoTitle: "Waitlist Benchmarks: Conversion, Verification & Viral K-Factor Explorer",
     seoDescription:
-      "Explore structured waitlist benchmark ranges (P25, P50 median, P75) for conversion rate, email verification, share rate, and K-factor—with transparent methodology and cohort minimums.",
+      "Explore structured waitlist benchmark ranges (P25, P50 median, P75) for conversion rate, email verification, share rate, and K-factor, with transparent methodology and cohort minimums.",
     directAnswer:
       "The Waitlist Benchmark Explorer provides transparent quartile ranges (P25, P50 median, P75) for waitlist conversion rate, email verification rate, referral share rate, and effective K-factor across launch categories and channels. It enforces strict cohort minimums (N >= 30) and clearly distinguishes live aggregated cohorts from reference planning models.",
     ctaLabel: "Benchmark your waitlist in Waitlyze",
@@ -1403,7 +1403,7 @@ export const TOOLS_REGISTRY = Object.freeze([
         {
           label: "Correlation vs. Causation",
           detail:
-            "Campaigns with referrals enabled often also invest more in landing-page polish and community seeding—differences across cohorts are directional, not causal guarantees.",
+            "Campaigns with referrals enabled often also invest more in landing-page polish and community seeding. Differences across cohorts are directional, not causal guarantees.",
         },
         {
           label: "Interquartile Reporting (P25 / P50 / P75)",
@@ -1417,7 +1417,7 @@ export const TOOLS_REGISTRY = Object.freeze([
       summary:
         "If a SaaS beta cohort shows Conversion P25 = 12%, P50 = 21%, P75 = 32%, a page converting at 24% sits cleanly above the cohort median.",
       metrics: [
-        { label: "P25 (25th percentile)", value: "Bottom quartile — inspect friction" },
+        { label: "P25 (25th percentile)", value: "Bottom quartile: inspect friction" },
         { label: "P50 (Median)", value: "Typical healthy launch baseline" },
         { label: "P75 (75th percentile)", value: "Top-quartile pre-launch execution" },
         { label: "Minimum live N", value: "30 eligible campaigns per segment" },
@@ -1427,7 +1427,7 @@ export const TOOLS_REGISTRY = Object.freeze([
       {
         band: "Below P25 on Conversion",
         guidance:
-          "Run the Waitlist Landing Page Grader first—usually caused by unclear positioning, excessive form fields, or mismatched ad traffic.",
+          "Run the Waitlist Landing Page Grader first. Low conversion is usually caused by unclear positioning, excessive form fields, or mismatched ad traffic.",
       },
       {
         band: "Below P25 on Verification",
@@ -1449,7 +1449,7 @@ export const TOOLS_REGISTRY = Object.freeze([
         "Waitlyze Impression, SignUp, Verification, and Referral schema definitions",
       ],
       changelog:
-        "v1.0 — Initial Benchmark Explorer with strict cohort-minimum gating and interactive percentile comparator.",
+        "v1.0: Initial Benchmark Explorer with strict cohort-minimum gating and interactive percentile comparator.",
     },
     faqs: [
       {

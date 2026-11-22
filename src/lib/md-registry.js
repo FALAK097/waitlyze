@@ -276,7 +276,7 @@ ${[header, ...priceLines, ...featureLines].join("\n")}
 - **Referral & contest specialists**: Prefinery, KickoffLabs, Viral Loops
 
 ## Focused Guides
-${competitors.map((c) => `- [Waitlyze vs ${c.name}](${canonical(`/alternatives/${c.slug}`)}) — ${c.bestFor}`).join("\n")}
+${competitors.map((c) => `- [Waitlyze vs ${c.name}](${canonical(`/alternatives/${c.slug}`)}): ${c.bestFor}`).join("\n")}
 
 ## Common Head-to-Head Comparisons
 ${pairwiseMatchups.map((matchup) => `### ${matchup.question}\n${matchup.summary}\n\n${matchup.links.map((link) => `- [${link.label}](${canonical(link.href)})`).join("\n")}`).join("\n\n")}`;
@@ -724,7 +724,7 @@ For billing questions, contact [support@waitlyze.com](mailto:support@waitlyze.co
 ## Tools Catalog
 ${tools.map((t) => `- [${t.title}](${canonical(t.path)}): ${t.targetJob}`).join("\n")}`;
     return buildMarkdownDoc({
-      title: "Waitlyze Launch Lab — Free Pre-Launch Waitlist Tools",
+      title: "Waitlyze Launch Lab: Free Pre-Launch Waitlist Tools",
       description:
         "14 free, no-login waitlist calculators, page graders, copy builders, and DNS/health diagnostics with direct blueprint handoff.",
       path: "/tools",
