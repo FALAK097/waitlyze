@@ -60,13 +60,13 @@ export default function PublicShell({ children }) {
                 How it works
               </Link>
               <Link
-                href="/templates"
+                href="/#templates"
                 className="inline-flex items-center gap-1.5 hover:text-product-success-text focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-neutral-900"
               >
                 Templates
               </Link>
               <Link
-                href="/pricing"
+                href="/#pricing"
                 className="inline-flex items-center gap-1.5 hover:text-product-success-text focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-neutral-900"
               >
                 Pricing

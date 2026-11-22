@@ -150,6 +150,74 @@ Waitlyze is built by Falak Gala. Questions or ideas? Email [Falak](mailto:suppor
     });
   }
 
+  // 1b. Features /features
+  if (path === "/features") {
+    const body = `Waitlyze brings the core jobs of a product launch into one workspace: publish a signup page, grow through verified referrals, manage subscribers, send updates, and measure demand.
+
+## Build and publish
+Create a branded waitlist page with the visual editor, start from a template, and publish a hosted page. Embed the signup form or connect a custom domain when you need it.
+
+## Grow through referrals
+Give confirmed subscribers a personal referral link, show their queue position, and award points for eligible referred signups.
+
+## Manage and engage subscribers
+Search and filter subscribers, export the list as CSV, send confirmation email through a verified sender, and use Pro for broadcasts and automations.
+
+## Measure launch demand
+Track visitors, verified signups, conversion, referral activity, and acquisition sources to see what is bringing people in.
+
+## Connect your tools
+Use embedded forms, the server-side Signup API, signed webhooks, and documented integrations to connect Waitlyze to your launch stack.
+
+Read the [pricing details](${canonical("/pricing")}) or [product documentation](${canonical("/docs")}).`;
+
+    return buildMarkdownDoc({
+      title: "Waitlist Software Features | Waitlyze",
+      description:
+        "Explore Waitlyze tools for building a branded waitlist, verified referrals, subscriber email, analytics, and integrations.",
+      path: "/features",
+      body,
+      updated: "2026-11-22",
+      related: [
+        { title: "Pricing", path: "/pricing", description: "Free and Pro plan details" },
+        { title: "Templates", path: "/templates", description: "Ready-to-customize launch pages" },
+        { title: "Documentation", path: "/docs", description: "Setup and API guides" },
+      ],
+    });
+  }
+
+  // 1c. About /about
+  if (path === "/about") {
+    const body = `Waitlyze is open-source waitlist software for founders who want to publish a launch page, grow through referrals, and understand their audience. It is built and maintained by [Falak Gala](https://falakgala.dev).
+
+## Why it exists
+A waitlist should help founders understand demand and see which supporters bring in more people. Waitlyze brings the page, referrals, subscriber management, and launch metrics together.
+
+## Built in the open
+The [source code](https://github.com/FALAK097/waitlyze), [release history](${canonical("/docs/changelog")}), and [product documentation](${canonical("/docs")}) are public.
+
+## Product principles
+- **Verified growth**: Referral credit is based on eligible signups, not clicks alone.
+- **Portable audiences**: Subscribers can be exported, with APIs and signed webhooks for connected tools.
+- **Clear operations**: Pricing, publishing, and launch metrics are available in the product and its documentation.
+
+Explore the [features](${canonical("/features")}) or [pricing](${canonical("/pricing")}), or [contact Waitlyze](mailto:support@waitlyze.com).`;
+
+    return buildMarkdownDoc({
+      title: "About Waitlyze",
+      description:
+        "Learn why Waitlyze was built, who maintains it, and how its open-source waitlist software helps founders prepare for launch.",
+      path: "/about",
+      body,
+      updated: "2026-11-22",
+      related: [
+        { title: "Features", path: "/features", description: "Waitlist and launch tools" },
+        { title: "Pricing", path: "/pricing", description: "Free and Pro plan details" },
+        { title: "Changelog", path: "/docs/changelog", description: "Release history" },
+      ],
+    });
+  }
+
   // 2. Pricing /pricing
   if (path === "/pricing") {
     const body = `Waitlyze has a Free plan and a workspace-level Pro plan. Base prices are shown in USD; country-adjusted pricing may be available and applicable taxes are shown at checkout.
@@ -655,6 +723,8 @@ export function listMarkdownRoutes() {
 
   return [
     { path: "/", title: SITE_TITLE, type: "page" },
+    { path: "/features", title: "Waitlist Software Features", type: "page" },
+    { path: "/about", title: "About Waitlyze", type: "page" },
     { path: "/pricing", title: "Waitlyze Pricing", type: "page" },
     { path: "/compare", title: "Waitlist Software Comparison", type: "page" },
     { path: "/alternatives", title: "Waitlist Software Alternatives", type: "page" },

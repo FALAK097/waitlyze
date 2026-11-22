@@ -30,7 +30,7 @@ export default function Header() {
     ["How it works", "/#steps"],
     ["Compare", "/compare"],
     ["Templates", "/#templates"],
-    ["Pricing", "/pricing"],
+    ["Pricing", "/#pricing"],
     ["Blog", "/blog"],
     ["Docs", "/docs"],
   ];

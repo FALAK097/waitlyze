@@ -21,7 +21,9 @@ export default function sitemap() {
     }, undefined) ?? SITE_UPDATED;
   return [
     { url: SITE_URL, lastModified: SITE_UPDATED, priority: 1 },
+    { url: `${SITE_URL}/features`, lastModified: SITE_UPDATED, priority: 0.9 },
     { url: `${SITE_URL}/pricing`, lastModified: SITE_UPDATED, priority: 0.9 },
+    { url: `${SITE_URL}/about`, lastModified: SITE_UPDATED, priority: 0.7 },
     { url: `${SITE_URL}/templates`, lastModified: SITE_UPDATED, priority: 0.8 },
     { url: `${SITE_URL}/alternatives`, lastModified: "2026-11-09", priority: 0.8 },
     { url: `${SITE_URL}/compare`, lastModified: "2026-11-09", priority: 0.8 },

@@ -160,6 +160,15 @@ export default {
     const hostname = getHost(request);
     const appRoot = String(env.APP_ROOT_DOMAIN || "waitlyze.com").toLowerCase();
 
+    // Collapse every public HTTP URL onto its HTTPS equivalent before cache,
+    // markdown negotiation, or custom-domain routing can serve duplicate HTML.
+    // Keep local development on plain HTTP so `wrangler dev` remains usable.
+    if (url.protocol === "http:" && !isPlatformHost(hostname)) {
+      const target = new URL(url.toString());
+      target.protocol = "https:";
+      return Response.redirect(target.toString(), 301);
+    }
+
     // Permanent www → apex redirect that preserves path and query, so www can
     // never serve duplicate content even if the zone-level rule is removed.
     if (hostname === `www.${appRoot}`) {
