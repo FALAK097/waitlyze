@@ -5,7 +5,7 @@ import PublicShell from "@/components/landing/public-shell";
 import SignupButton from "@/components/landing/signup-button";
 import { WaitlistPageContent } from "@/components/product/waitlist-page-content";
 import { JsonLd } from "@/components/seo/json-ld";
-import { absoluteUrl, breadcrumbNode, faqNode } from "@/lib/seo-helpers";
+import { absoluteUrl, breadcrumbNode } from "@/lib/seo-helpers";
 import { listTemplates } from "@/lib/templates/catalog.mjs";
 import { TEMPLATE_IDS, getGalleryMeta, isTemplateId } from "@/lib/templates/gallery.mjs";
 
@@ -55,8 +55,6 @@ export default async function TemplateDetailPage({ params }) {
   const meta = getGalleryMeta(id);
   const visibleSections = template.snapshot.sections.filter((section) => section.visible);
   const heroSection = visibleSections.find((section) => section.type === "hero");
-  const faqSection = visibleSections.find((section) => section.type === "faq");
-  const templateFaqs = faqSection?.items ?? [];
   const currentIndex = TEMPLATE_IDS.indexOf(id);
   const relatedTemplateIds = [1, 2, 3, 4].map(
     (offset) => TEMPLATE_IDS[(currentIndex + offset) % TEMPLATE_IDS.length],
@@ -78,7 +76,6 @@ export default async function TemplateDetailPage({ params }) {
             { name: "Templates", path: "/templates" },
             { name: meta.seoTitle, path: `/templates/${id}` },
           ]),
-          ...(templateFaqs.length ? [faqNode(templateFaqs)] : []),
         ]}
       />
       <main id="main-content" className="scroll-mt-28">

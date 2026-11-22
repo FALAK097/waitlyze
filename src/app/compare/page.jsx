@@ -13,6 +13,7 @@ import {
   StructuredData,
   ToolLogo,
 } from "@/components/comparison/comparison-shell";
+import { WAITLYZE_PRICING } from "@/lib/billing/pricing.mjs";
 import {
   breadcrumbSchema,
   competitors,
