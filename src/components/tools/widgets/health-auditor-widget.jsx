@@ -315,11 +315,13 @@ export function HealthAuditorWidget({
             </ul>
           </div>
 
-          {mode === "csv" && activeAudit.cleanRows.length > 0 ? (
+          {mode === "csv" ? (
             <div className="flex flex-wrap items-center gap-2">
-              <ToolActionButton onClick={handleDownloadCleanedCsv}>
-                Download Cleaned CSV ({activeAudit.cleanCount} rows)
-              </ToolActionButton>
+              {activeAudit.cleanRows.length > 0 ? (
+                <ToolActionButton onClick={handleDownloadCleanedCsv}>
+                  Download Cleaned CSV ({activeAudit.cleanCount} rows)
+                </ToolActionButton>
+              ) : null}
               <ToolActionButton onClick={handleDownloadTaggedCsv}>
                 Download Full Tagged Audit CSV
               </ToolActionButton>

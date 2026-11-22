@@ -102,6 +102,11 @@ export function generateEmailSequence(rawInputs = {}) {
     ? `— ${senderName}, founder of ${productName}`
     : `The ${productName} team`;
 
+  const milestoneSubject =
+    referralIncentive.length > 119
+      ? `Unlocked: ${referralIncentive.slice(0, 116)}... ({{referral_count}} referrals)`
+      : `Unlocked: ${referralIncentive} ({{referral_count}} referrals)`;
+
   const emails = [
     {
       id: "verification",
@@ -167,10 +172,7 @@ ${signOff}`,
       stageLabel: "Milestone Unlocked / Queue Jump",
       timing: "Triggered when a verified referral unlocks a tier",
       planNote: "Automated milestone trigger requires Waitlyze Pro",
-      subjectOptions: [
-        `You jumped ahead to #{{position}} on ${productName}`,
-        `Unlocked: ${referralIncentive} ({{referral_count}} referrals)`,
-      ],
+      subjectOptions: [`You jumped ahead to #{{position}} on ${productName}`, milestoneSubject],
       previewText: `Your friend verified — you're now #{{position}} in line.`,
       markdownBody: `Nice work — another referral just verified their email.
 
@@ -233,7 +235,9 @@ ${signOff}`,
 
   const enriched = emails.map((email) => ({
     ...email,
-    htmlBody: toSimpleHtml(email.markdownBody),
+    subjectOptions: email.subjectOptions.map((opt) => opt.slice(0, 160)),
+    markdownBody: email.markdownBody.slice(0, 3000),
+    htmlBody: toSimpleHtml(email.markdownBody.slice(0, 3000)),
     spamCheck: checkSpamTriggers(email.subjectOptions[0], email.markdownBody),
   }));
 

@@ -167,7 +167,10 @@ export function EmailSequenceWidget({
                   onClick={() =>
                     setEdits((prev) => ({
                       ...prev,
-                      [activeEmail.id]: { ...prev[activeEmail.id], subject: subj },
+                      [activeEmail.id]: {
+                        ...prev[activeEmail.id],
+                        subject: subj.slice(0, 160),
+                      },
                     }))
                   }
                   className="rounded-full border border-product-border-subtle bg-product-bg-inset/70 px-2.5 py-1 text-micro font-medium text-product-text-primary hover:border-product-text-secondary"
@@ -183,10 +186,10 @@ export function EmailSequenceWidget({
               onChange={(val) =>
                 setEdits((prev) => ({
                   ...prev,
-                  [activeEmail.id]: { ...prev[activeEmail.id], subject: val },
+                  [activeEmail.id]: { ...prev[activeEmail.id], subject: val.slice(0, 160) },
                 }))
               }
-              maxLength={140}
+              maxLength={160}
             />
 
             <div className="grid gap-1.5">
@@ -197,18 +200,27 @@ export function EmailSequenceWidget({
                 >
                   Email body (Markdown with Waitlyze merge tags)
                 </label>
-                <span className="font-product-mono text-micro text-product-text-muted">
-                  {"{{position}}"} · {"{{referral_link}}"} · {"{{referral_count}}"}
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className="font-product-mono text-micro text-product-text-muted">
+                    {"{{position}}"} · {"{{referral_link}}"} · {"{{referral_count}}"}
+                  </span>
+                  <span className="font-product-mono text-micro text-product-text-muted tabular-nums">
+                    {currentBody.length}/3000
+                  </span>
+                </div>
               </div>
               <textarea
                 id="email-seq-body"
                 rows={9}
                 value={currentBody}
+                maxLength={3000}
                 onChange={(event) =>
                   setEdits((prev) => ({
                     ...prev,
-                    [activeEmail.id]: { ...prev[activeEmail.id], body: event.target.value },
+                    [activeEmail.id]: {
+                      ...prev[activeEmail.id],
+                      body: event.target.value.slice(0, 3000),
+                    },
                   }))
                 }
                 className="w-full rounded-lg border border-product-border-control bg-product-bg-surface p-3.5 font-product-mono text-caption leading-relaxed text-product-text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-product-focus"
@@ -273,10 +285,10 @@ export function EmailSequenceWidget({
               showReferrals: true,
               emailDrafts: effectiveEmails.map((email) => ({
                 stage: email.stageLabel,
-                subject: email.subject,
-                previewText: email.previewText,
-                body: email.markdownBody,
-                timing: email.timing,
+                subject: (email.subject || "").trim().slice(0, 160),
+                previewText: (email.previewText || "").trim().slice(0, 200),
+                body: (email.markdownBody || "").trim().slice(0, 3000),
+                timing: (email.timing || "").trim().slice(0, 100),
               })),
               summaryBullets: [
                 `5 pre-launch lifecycle emails drafted for ${inputs.productName}`,
