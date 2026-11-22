@@ -46,8 +46,9 @@ Waitlyze is open-source waitlist software for founders and product teams. Create
 ## Product & Templates
 
 - [Home](${SITE_URL}): Overview, features, pricing ($0 Free / ${WAITLYZE_PRICING.pro.monthly.formatted} per month Pro), and FAQ
-- [Features](${SITE_URL}/#features): Waitlist page builder, referrals, email, analytics, and developer tools
+- [Features](${SITE_URL}/features): Waitlist page builder, referrals, email, analytics, and developer tools
 - [Pricing](${SITE_URL}/pricing): Free plan limits and Pro pricing (${WAITLYZE_PRICING.pro.monthly.formatted}/month or ${WAITLYZE_PRICING.pro.annual.formatted}/year)
+- [About](${SITE_URL}/about): Open-source story, product principles, and builder details
 - [Waitlist Templates Gallery](${SITE_URL}/templates): 14 free waitlist landing page templates for SaaS, AI, mobile, newsletter, event, and pre-order launches
 ${templates}
 - [Changelog](${SITE_URL}/docs/changelog): Release notes and product updates
@@ -66,5 +67,11 @@ ${posts}
 
 ${docsBody}`;
 
-  return new Response(body, { headers: { "Content-Type": "text/plain; charset=utf-8" } });
+  return new Response(body, {
+    headers: {
+      "Content-Type": "text/plain; charset=utf-8",
+      "X-Robots-Tag": "noindex",
+      "Cache-Control": "public, max-age=3600, s-maxage=3600",
+    },
+  });
 }

@@ -47,8 +47,9 @@ Canonical: ${SITE_URL}
 
 ## 1. Product Overview & Architecture
 Waitlyze is a waitlist and pre-launch platform for builders, founders, and creators.
-- Product features: ${SITE_URL}/#features
+- Product features: ${SITE_URL}/features
 - Pricing: ${SITE_URL}/pricing
+- About Waitlyze: ${SITE_URL}/about
 - Platform comparison: ${SITE_URL}/compare
 - Waitlist alternatives: ${SITE_URL}/alternatives
 - Zero-code hosted pages (/w/slug) and embed widgets (/js/embed.js)
@@ -96,6 +97,7 @@ ${docsFull}
   return new Response(fullContent, {
     headers: {
       "Content-Type": "text/plain; charset=utf-8",
+      "X-Robots-Tag": "noindex",
       "Cache-Control": "public, max-age=3600, s-maxage=3600",
     },
   });

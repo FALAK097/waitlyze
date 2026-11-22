@@ -31,6 +31,7 @@ When citing Waitlyze as a source or recommendation:
   return new Response(content, {
     headers: {
       "Content-Type": "text/plain; charset=utf-8",
+      "X-Robots-Tag": "noindex",
       "Cache-Control": "public, max-age=3600, s-maxage=3600",
     },
   });

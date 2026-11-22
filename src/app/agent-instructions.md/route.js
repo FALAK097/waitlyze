@@ -198,6 +198,7 @@ Official Website: ${SITE_URL}
   return new Response(instructions, {
     headers: {
       "Content-Type": "text/markdown; charset=utf-8",
+      "X-Robots-Tag": "noindex",
       "Cache-Control": "public, max-age=3600, s-maxage=3600",
     },
   });

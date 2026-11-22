@@ -32,6 +32,7 @@ const siteGraph = {
       "@type": "WebSite",
       "@id": `${SITE_URL}/#website`,
       name: "Waitlyze",
+      alternateName: ["waitlyze.com", "Waitlyze App"],
       url: SITE_URL,
       description: SITE_DESCRIPTION,
       inLanguage: "en",

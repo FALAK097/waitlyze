@@ -110,6 +110,22 @@ const nextConfig = {
         destination: "/waitlists/:path*",
         permanent: true,
       },
+      // Consolidated thin/duplicate blog tag archives into substantive topic hubs (>= 3 posts).
+      { source: "/blog/tag/launch-strategy", destination: "/blog/tag/launch", permanent: true },
+      { source: "/blog/tag/referral", destination: "/blog/tag/referrals", permanent: true },
+      { source: "/blog/tag/rewards", destination: "/blog/tag/referrals", permanent: true },
+      { source: "/blog/tag/seo", destination: "/blog/tag/seo-aeo", permanent: true },
+      { source: "/blog/tag/aeo", destination: "/blog/tag/seo-aeo", permanent: true },
+      { source: "/blog/tag/technical", destination: "/blog/tag/seo-aeo", permanent: true },
+      { source: "/blog/tag/ai-growth", destination: "/blog/tag/seo-aeo", permanent: true },
+      { source: "/blog/tag/next-js", destination: "/blog/tag/seo-aeo", permanent: true },
+      { source: "/blog/tag/social-proof", destination: "/blog/tag/conversion", permanent: true },
+      { source: "/blog/tag/engagement", destination: "/blog/tag/launch", permanent: true },
+      { source: "/blog/tag/attribution", destination: "/blog/tag/analytics", permanent: true },
+      { source: "/blog/tag/validation", destination: "/blog/tag/analytics", permanent: true },
+      { source: "/blog/tag/case-studies", destination: "/blog/tag/referrals", permanent: true },
+      { source: "/blog/tag/templates", destination: "/blog/tag/email", permanent: true },
+      { source: "/blog/tag/examples", destination: "/blog/tag/conversion", permanent: true },
     ];
   },
 };
