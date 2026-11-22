@@ -46,6 +46,10 @@ Canonical: ${SITE_URL}
 
 ## 1. Product Overview & Architecture
 Waitlyze is a waitlist and pre-launch platform for builders, founders, and creators.
+- Product features: ${SITE_URL}/#features
+- Pricing: ${SITE_URL}/#pricing
+- Platform comparison: ${SITE_URL}/compare
+- Waitlist alternatives: ${SITE_URL}/alternatives
 - Zero-code hosted pages (/w/slug) and embed widgets (/js/embed.js)
 - Verified referral engine with points, leaderboards, and queue ranking
 - Email automations (welcome emails, referral reminders, milestone updates)
