@@ -1,7 +1,7 @@
 // Only anonymous document requests for build-time public pages may share an
 // edge cache entry. RSC, markdown negotiation, query variants and sessions
 // must continue through the Next.js router.
-const PUBLIC_DOCUMENTS = new Set(["/", "/templates", "/blog"]);
+const PUBLIC_DOCUMENTS = new Set(["/", "/templates", "/blog", "/tools"]);
 const PUBLIC_CACHE_TTL_SECONDS = 24 * 60 * 60;
 const PUBLIC_CLIENT_CACHE_CONTROL = "public, max-age=0, s-maxage=300, stale-while-revalidate=86400";
 

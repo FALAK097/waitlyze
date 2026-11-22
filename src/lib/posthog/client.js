@@ -30,6 +30,8 @@ export function initClientPostHog() {
 
   const isPublicPage =
     pathname === "/" ||
+    pathname.startsWith("/tools") ||
+    pathname.startsWith("/research") ||
     pathname.startsWith("/templates") ||
     pathname.startsWith("/blog") ||
     pathname.startsWith("/pricing") ||

@@ -1,6 +1,7 @@
 import { getPosts } from "@/lib/blog-source";
 import { SITE_DESCRIPTION, SITE_URL } from "@/lib/site-metadata";
 import { docsLlms } from "@/lib/source";
+import { listTools } from "@/lib/tools/registry.mjs";
 
 export const revalidate = false;
 
@@ -11,6 +12,9 @@ export async function GET() {
   const posts = getPosts()
     .map((post) => `- [${post.data.title}](${SITE_URL}${post.url}): ${post.data.description}`)
     .join("\n");
+  const tools = listTools()
+    .map((tool) => `- [${tool.title}](${SITE_URL}${tool.path}): ${tool.targetJob}`)
+    .join("\n");
 
   const body = `# Waitlyze
 
@@ -20,12 +24,17 @@ Waitlyze is a waitlist builder for founders and marketing teams. Create a brande
 
 ## AI Agents & Developers
 
-- [MCP Server](${SITE_URL}/mcp): Streamable HTTP Model Context Protocol (MCP) server for Claude Code, Cursor, Codex, VS Code, Gemini, and OpenCode
+- [MCP Server](${SITE_URL}/mcp): Streamable HTTP Model Context Protocol (MCP) server for Claude Code, Cursor, Codex, VS Code, Gemini, and OpenCode (includes read-only Launch Lab planning tools: calculate_viral_growth, simulate_waitlist_queue, recommend_waitlist_template, design_referral_rewards, plan_launch_timeline)
 - [MCP Documentation](${SITE_URL}/docs/mcp): Complete agent connection instructions, tool references, and schemas
 - [AI Agent Instructions](${SITE_URL}/agent-instructions.md): How to connect Cursor, Claude Code, and AI assistants to Waitlyze
 - [Full LLMs Context](${SITE_URL}/llms-full.txt): Complete product knowledge base in one file
 - [Markdown Route Catalog](${SITE_URL}/api/md/_catalog): Machine-readable index of all markdown routes
 - [AI Policy (ai.txt)](${SITE_URL}/ai.txt): Permissions and crawler policy
+
+## Launch Lab (Free Pre-Launch Tools & Research)
+
+- [Waitlyze Launch Lab Hub](${SITE_URL}/tools): 14 free, no-login pre-launch calculators, page graders, copy builders, and DNS/health diagnostics with direct campaign blueprint handoff
+${tools}
 
 ## Product & Templates
 

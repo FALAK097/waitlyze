@@ -8,7 +8,13 @@ import { parseJsonStringArray } from "@/lib/db/sqlite-helpers.mjs";
 import { enqueueBroadcast } from "@/lib/email/broadcast-queue.mjs";
 import { normalizeSignupEmail } from "@/lib/normalize-email.mjs";
 import prisma from "@/lib/prisma.js";
+import { SITE_URL } from "@/lib/site-metadata.js";
 import { snapshotTemplate } from "@/lib/templates/catalog.mjs";
+import { planLaunchReadiness } from "@/lib/tools/engines/launch-planner.mjs";
+import { simulateWaitlistQueue } from "@/lib/tools/engines/queue-simulator.mjs";
+import { designReferralRewards } from "@/lib/tools/engines/reward-designer.mjs";
+import { recommendTemplates } from "@/lib/tools/engines/template-finder.mjs";
+import { calculateViralGrowth } from "@/lib/tools/engines/viral-growth.mjs";
 import { campaignScope } from "@/lib/workspaces/service.mjs";
 import { listUserApiKeys, revokeApiKey } from "@/services/api-key/index.js";
 
@@ -1526,6 +1532,211 @@ export function registerWaitlyzeTools(server, authContext) {
       } catch (err) {
         return errorContent(err.message);
       }
+    },
+  );
+
+  /* ==========================================================================
+     LAUNCH LAB DETERMINISTIC PLANNING TOOLS (READ-ONLY)
+     ========================================================================== */
+  server.registerTool(
+    "calculate_viral_growth",
+    {
+      description:
+        "Deterministically forecast direct and referred waitlist signups, effective K-factor (accounting for email verification), and +10% highest-leverage sensitivity.",
+      inputSchema: z.object({
+        startingList: z.number().min(0).max(50000).optional(),
+        weeklyVisitors: z.number().min(50).max(100000).optional(),
+        conversionRatePct: z.number().min(1).max(75).optional(),
+        verificationRatePct: z.number().min(30).max(100).optional(),
+        shareRatePct: z.number().min(0).max(80).optional(),
+        clicksPerSharer: z.number().min(0.5).max(15).optional(),
+        referredConversionPct: z.number().min(1).max(75).optional(),
+        weeks: z.number().int().min(2).max(24).optional(),
+        rewardCostPerReferral: z.number().min(0).max(50).optional(),
+      }),
+      annotations: READ_ONLY_ANNOTATIONS,
+    },
+    async (args) => {
+      const result = calculateViralGrowth(args);
+      return jsonContent({
+        toolUrl: `${SITE_URL}/tools/viral-coefficient-calculator`,
+        formula: result.formula,
+        assumptions:
+          "Deterministic multi-cycle simulation with gentle 4%/week audience saturation damping; modeled scenarios, not guaranteed benchmarks.",
+        summary: {
+          effectiveK: result.effectiveK,
+          directAdded: result.directAdded,
+          referredTotal: result.referredTotal,
+          totalVerified: result.totalVerified,
+          referralLiftPct: result.referralLiftPct,
+          estimatedRewardBudget: result.estimatedRewardBudget,
+          highestLever: result.highestLever,
+          recommendation: result.recommendation,
+        },
+        cycles: result.cycles,
+        sensitivity: result.sensitivity,
+      });
+    },
+  );
+
+  server.registerTool(
+    "simulate_waitlist_queue",
+    {
+      description:
+        "Simulate Waitlyze's deterministic points-and-timestamp queue ranking to estimate rank jumps after 1, 3, 5, and 10 verified referrals plus Top 1% and Top 10 cutoffs.",
+      inputSchema: z.object({
+        waitlistSize: z.number().int().min(100).max(100000).optional(),
+        pointsSignup: z.number().int().min(0).max(200).optional(),
+        pointsReferral: z.number().int().min(5).max(200).optional(),
+        pointsBonus: z.number().int().min(0).max(100).optional(),
+        sharerSkew: z.enum(["conservative", "balanced", "viral"]).optional(),
+      }),
+      annotations: READ_ONLY_ANNOTATIONS,
+    },
+    async (args) => {
+      const result = simulateWaitlistQueue(args);
+      return jsonContent({
+        toolUrl: `${SITE_URL}/tools/waitlist-queue-simulator`,
+        formula: result.formula,
+        tieBreakerRule: result.tieBreakerNote,
+        recommendedDisplay: result.recommendedDisplay,
+        fairnessSummary: result.fairnessSummary,
+        cutoffs: result.cutoffs,
+        jumpCurve: result.jumpCurve,
+      });
+    },
+  );
+
+  server.registerTool(
+    "recommend_waitlist_template",
+    {
+      description:
+        "Score all 14 Waitlyze templates across product category, visual asset readiness, conversion motion, and brand aesthetic to recommend the top 3 layouts.",
+      inputSchema: z.object({
+        category: z
+          .enum([
+            "saas",
+            "ai",
+            "developer",
+            "mobile",
+            "creator",
+            "community",
+            "event",
+            "commerce",
+            "other",
+          ])
+          .optional(),
+        motion: z
+          .enum(["email_only", "referral_queue", "milestone_rewards", "beta_application"])
+          .optional(),
+        assets: z.enum(["screenshots", "demo_video", "text_only"]).optional(),
+        aesthetic: z
+          .enum(["clean_editorial", "dark_technical", "bold_contrast", "warm_consumer"])
+          .optional(),
+      }),
+      annotations: READ_ONLY_ANNOTATIONS,
+    },
+    async (args) => {
+      const result = recommendTemplates(args);
+      return jsonContent({
+        toolUrl: `${SITE_URL}/tools/waitlist-template-finder`,
+        formula: result.formula,
+        recommendations: result.recommendations.map((rec) => ({
+          templateId: rec.templateId,
+          name: rec.name,
+          score: rec.score,
+          matchLabel: rec.matchLabel,
+          whyItFits: rec.whyItFits,
+          recommendedSections: rec.recommendedSections,
+          formGuidance: rec.formGuidance,
+          startUrl: `${SITE_URL}/waitlists/new?template=${rec.templateId}`,
+        })),
+      });
+    },
+  );
+
+  server.registerTool(
+    "design_referral_rewards",
+    {
+      description:
+        "Model 1–4 referral milestone tiers across P25, P50, and P90 viral scenarios to estimate fulfillment budget exposure, effective CAC per verified referral, and fraud risk.",
+      inputSchema: z.object({
+        productLtv: z.number().min(5).max(10000).optional(),
+        grossMarginPct: z.number().min(10).max(98).optional(),
+        targetWaitlistSize: z.number().int().min(100).max(500000).optional(),
+        shareRatePct: z.number().min(3).max(65).optional(),
+        tiers: z
+          .array(
+            z.object({
+              referrals: z.number().int().min(1).max(500),
+              rewardType: z
+                .enum([
+                  "priority_queue",
+                  "extended_trial",
+                  "discount_pct",
+                  "digital_asset",
+                  "physical_swag",
+                  "lifetime_deal",
+                ])
+                .optional(),
+              label: z.string().min(1).max(110),
+              unitCost: z.number().min(0).max(1000),
+            }),
+          )
+          .max(4)
+          .optional(),
+      }),
+      annotations: READ_ONLY_ANNOTATIONS,
+    },
+    async (args) => {
+      const result = designReferralRewards(args);
+      return jsonContent({
+        toolUrl: `${SITE_URL}/tools/referral-reward-calculator`,
+        formula: result.formula,
+        budgets: result.budgets,
+        effectiveCostPerReferralP50: result.effectiveCostPerReferralP50,
+        costToMarginLtvPct: result.costToMarginLtvPct,
+        recommendedFraudMode: result.recommendedFraudMode,
+        antiFraudRecommendations: result.antiFraudRecommendations,
+        tiers: result.tiers,
+      });
+    },
+  );
+
+  server.registerTool(
+    "plan_launch_timeline",
+    {
+      description:
+        "Compute a 6-pillar Launch Readiness Score (0–100) and a dated critical-path launch timeline across 4 phases based on target launch date, weekly hours, and existing assets.",
+      inputSchema: z.object({
+        category: z
+          .enum(["saas", "ai", "developer", "mobile", "creator", "event", "commerce"])
+          .optional(),
+        launchType: z
+          .enum(["private_beta", "public_launch", "product_hunt", "developer_preview", "preorder"])
+          .optional(),
+        horizonDays: z.number().int().min(7).max(180).optional(),
+        targetLaunchDate: z.string().optional(),
+        teamSize: z.number().int().min(1).max(50).optional(),
+        weeklyHours: z.number().min(2).max(80).optional(),
+        existingAssets: z.array(z.string()).optional(),
+      }),
+      annotations: READ_ONLY_ANNOTATIONS,
+    },
+    async (args) => {
+      const result = planLaunchReadiness(args);
+      return jsonContent({
+        toolUrl: `${SITE_URL}/tools/product-launch-checklist`,
+        readinessScore: result.readinessScore,
+        band: result.band,
+        targetLaunchDate: result.inputs.targetLaunchDate,
+        remainingHours: result.remainingHours,
+        bandwidthWarning: result.bandwidthWarning,
+        recommendedTemplateId: result.recommendedTemplateId,
+        firstIncompleteTask: result.firstIncompleteTask,
+        pillars: result.pillars,
+        tasks: result.tasks,
+      });
     },
   );
 }

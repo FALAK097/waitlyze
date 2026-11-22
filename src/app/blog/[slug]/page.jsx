@@ -8,6 +8,7 @@ import { PostFaq } from "@/components/blog/post-faq";
 import { PostToc } from "@/components/blog/post-toc";
 import PublicShell from "@/components/landing/public-shell";
 import { JsonLd } from "@/components/seo/json-ld";
+import { ContextualToolEmbed } from "@/components/tools/contextual-tool-embed";
 import {
   blogSource,
   formatPostDate,
@@ -163,6 +164,7 @@ export default async function BlogPostPage({ params }) {
               <div className="wl-prose">
                 <MDX components={getMDXComponents({ a: createRelativeLink(blogSource, post) })} />
               </div>
+              <ContextualToolEmbed blogSlug={slug} />
               <PostFaq faqs={faqs} />
             </div>
             <div className="hidden lg:block">

@@ -130,6 +130,18 @@ export default function PublicShell({ children }) {
                 Resources
               </span>
               <Link
+                href="/tools"
+                className="inline-flex items-center gap-1.5 hover:text-product-success-text focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-neutral-900"
+              >
+                Launch Lab (Free tools)
+              </Link>
+              <Link
+                href="/research/waitlist-benchmarks"
+                className="inline-flex items-center gap-1.5 hover:text-product-success-text focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-neutral-900"
+              >
+                Waitlist benchmarks
+              </Link>
+              <Link
                 href="/blog"
                 className="inline-flex items-center gap-1.5 hover:text-product-success-text focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-neutral-900"
               >

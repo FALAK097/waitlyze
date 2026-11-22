@@ -71,11 +71,22 @@ function sameRequest(record, input, actorId) {
 }
 
 import { isUniqueConstraintError } from "../db/sqlite-helpers.mjs";
+import { applyBlueprintToSnapshot } from "../tools/blueprint.mjs";
 
-// The browser supplies a starter ID; it cannot supply a snapshot, owner or workspace.
-export async function createDraft(db, actorId, workspaceId, rawInput) {
+// The browser supplies a starter ID; it cannot supply a raw snapshot, owner or workspace.
+// An optional server-loaded ToolBlueprint may safely patch the starter snapshot.
+export async function createDraft(db, actorId, workspaceId, rawInput, options = {}) {
   const input = draftInputSchema.parse(rawInput);
-  const snapshot = snapshotTemplate(input.templateId);
+  const blueprintPayload = options?.blueprint?.payload || null;
+  const baseSnapshot = snapshotTemplate(input.templateId);
+  const snapshot = blueprintPayload
+    ? applyBlueprintToSnapshot(baseSnapshot, blueprintPayload)
+    : baseSnapshot;
+  const fraudMode = blueprintPayload?.fraudMode === "STRICT" ? "STRICT" : "STANDARD";
+  const showReferrals =
+    typeof blueprintPayload?.showReferrals === "boolean"
+      ? blueprintPayload.showReferrals
+      : input.showReferrals;
   await createWorkspaceService(db).requireAccess(actorId, workspaceId, "editCampaign");
 
   const existing = await db.waitList.findFirst({
@@ -119,16 +130,17 @@ export async function createDraft(db, actorId, workspaceId, rawInput) {
         publicSlug: input.publicSlug,
         creationKey: input.creationKey,
         templateSnapshot: snapshot,
-        showReferrals: input.showReferrals,
+        showReferrals,
         sendEmailsToSubscribers: input.sendEmailsToSubscribers,
+        fraudMode,
         userId: actorId,
         workspaceId,
         status: "DRAFT",
         showSocialProof: false,
         showLogo: false,
-        buttonColor: "#C6FE1E",
-        buttonBorder: "#C6FE1E",
-        buttonTextColor: "#00160D",
+        buttonColor: blueprintPayload?.brandPatch?.buttonColor || "#C6FE1E",
+        buttonBorder: blueprintPayload?.brandPatch?.buttonColor || "#C6FE1E",
+        buttonTextColor: blueprintPayload?.brandPatch?.buttonTextColor || "#00160D",
       },
     });
   } catch (error) {

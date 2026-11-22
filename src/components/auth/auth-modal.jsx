@@ -22,7 +22,18 @@ import { trackClientEvent } from "@/lib/posthog/client";
 import { POSTHOG_EVENTS } from "@/lib/posthog/events.mjs";
 import { publicFontClasses } from "@/lib/public-fonts";
 
-export function AuthModal({ open, onOpenChange, onCloseAutoFocus }) {
+export function AuthModal({
+  open,
+  onOpenChange,
+  onCloseAutoFocus,
+  callbackURL = "/waitlists",
+  heading = null,
+  description = null,
+}) {
+  const safeCallbackURL =
+    typeof callbackURL === "string" && callbackURL.startsWith("/") && !callbackURL.startsWith("//")
+      ? callbackURL
+      : "/waitlists";
   const [loading, setLoading] = useState(false);
   const [localMode, setLocalMode] = useState("signup");
   const [localName, setLocalName] = useState("");
@@ -61,7 +72,7 @@ export function AuthModal({ open, onOpenChange, onCloseAutoFocus }) {
     try {
       const result = await authClient.signIn.social({
         provider: "google",
-        callbackURL: "/waitlists",
+        callbackURL: safeCallbackURL,
       });
       if (result.error) throw new Error("Sign-in failed");
     } catch {
@@ -92,7 +103,7 @@ export function AuthModal({ open, onOpenChange, onCloseAutoFocus }) {
       if (result.error) throw new Error(result.error.message || "Authentication failed.");
       if (attempt !== attemptRef.current) return;
       changeOpen(false);
-      window.location.assign("/waitlists");
+      window.location.assign(safeCallbackURL);
     } catch (error) {
       if (attempt === attemptRef.current)
         toast.error(error?.message || "Local sign-in failed. Check the email and password.");
@@ -116,13 +127,13 @@ export function AuthModal({ open, onOpenChange, onCloseAutoFocus }) {
           <DialogHeader>
             <DialogTitle>
               <span className="block text-left font-product-display text-3xl leading-tight tracking-tight">
-                Your next launch starts here.
+                {heading || "Your next launch starts here."}
               </span>
             </DialogTitle>
             <DialogDescription>
               <span className="mt-3 block text-left text-sm leading-relaxed text-product-text-secondary">
-                Create your account or sign in with Google. Your first waitlist is just a few steps
-                away.
+                {description ||
+                  "Create your account or sign in with Google. Your first waitlist is just a few steps away."}
               </span>
             </DialogDescription>
           </DialogHeader>

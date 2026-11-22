@@ -60,4 +60,15 @@ export const POSTHOG_EVENTS = Object.freeze({
   BILLING_SUBSCRIPTION_CANCELLED: "billing:subscription_cancelled",
   BILLING_PAYMENT_FAILED: "billing:payment_failed",
   BILLING_REFUND_PROCESSED: "billing:refund_processed",
+
+  // H. Launch Lab Free Tools
+  TOOL_VIEWED: "tool:viewed",
+  TOOL_STARTED: "tool:started",
+  TOOL_COMPLETED: "tool:completed",
+  TOOL_RESULT_EXPORTED: "tool:result_exported",
+  TOOL_RESULT_SHARED: "tool:result_shared",
+  TOOL_SIGNUP_CLICKED: "tool:signup_clicked",
+  TOOL_BLUEPRINT_CREATED: "tool:blueprint_created",
+  TOOL_BLUEPRINT_APPLIED: "tool:blueprint_applied",
+  TOOL_RECHECK_COMPLETED: "tool:recheck_completed",
 });

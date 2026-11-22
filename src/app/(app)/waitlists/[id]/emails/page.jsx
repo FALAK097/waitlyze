@@ -1,6 +1,7 @@
 import { ContentLayout } from "@/components/dashboard/content-layout";
 import { EmailTemplatesManager } from "@/components/email/email-templates-manager";
 import { EmailToolsNav } from "@/components/email/email-tools-nav";
+import { InProductToolDrawer } from "@/components/tools/in-product-launch-lab";
 import { getOrCreateTemplatesForCampaign } from "@/lib/emails/templates.mjs";
 import { requireCampaignFeature } from "@/lib/workspaces/authorize";
 
@@ -22,7 +23,10 @@ export default async function EmailsPage(props) {
 
   return (
     <ContentLayout title="Emails">
-      <EmailToolsNav waitListId={waitList.id} current="templates" />
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+        <EmailToolsNav waitListId={waitList.id} current="templates" />
+        <InProductToolDrawer surface="emails" waitlistKeyId={waitList.id} />
+      </div>
       <EmailTemplatesManager
         waitListId={waitList.id}
         waitListName={waitList.name}

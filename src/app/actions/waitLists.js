@@ -1,4 +1,5 @@
 "use server";
+import { cookies } from "next/headers";
 import { ZodError } from "zod";
 
 import { WorkspacePlanError } from "@/lib/billing/plans.mjs";
@@ -9,6 +10,11 @@ import {
 } from "@/lib/campaigns/create-draft.mjs";
 import prisma from "@/lib/prisma";
 import { isTemplateId } from "@/lib/templates/gallery.mjs";
+import {
+  BLUEPRINT_COOKIE_NAME,
+  claimToolBlueprint,
+  getActiveToolBlueprint,
+} from "@/lib/tools/blueprint.mjs";
 import { AUDIT_ACTIONS, recordAuditEvent } from "@/lib/workspaces/audit.mjs";
 import { currentWorkspace } from "@/lib/workspaces/current";
 
@@ -18,6 +24,7 @@ export async function createWaitlistDraft({
   publicSlug,
   creationKey,
   templateId,
+  blueprintId = null,
 }) {
   const { user, workspace } = await currentWorkspace();
   try {
@@ -28,13 +35,26 @@ export async function createWaitlistDraft({
         })
       : null;
 
-    const draft = await createDraft(prisma, user.id, workspace.id, {
-      name,
-      description: description?.trim() || "",
-      publicSlug,
-      templateId: isTemplateId(templateId) ? templateId : "simple",
-      creationKey,
-    });
+    const blueprint = blueprintId ? await getActiveToolBlueprint(prisma, blueprintId) : null;
+    const effectiveTemplateId = isTemplateId(templateId)
+      ? templateId
+      : isTemplateId(blueprint?.payload?.templateId)
+        ? blueprint.payload.templateId
+        : "simple";
+
+    const draft = await createDraft(
+      prisma,
+      user.id,
+      workspace.id,
+      {
+        name,
+        description: description?.trim() || "",
+        publicSlug,
+        templateId: effectiveTemplateId,
+        creationKey,
+      },
+      { blueprint },
+    );
     await recordAuditEvent(prisma, {
       workspaceId: workspace.id,
       userId: user.id,
@@ -42,8 +62,24 @@ export async function createWaitlistDraft({
       resourceType: "waitlist",
       resourceId: draft.id,
       resourceName: draft.name,
-      detail: "Created as a private draft",
+      detail: blueprint
+        ? `Created from Launch Lab (${blueprint.toolSlug})`
+        : "Created as a private draft",
     });
+
+    if (blueprint) {
+      await claimToolBlueprint(prisma, {
+        id: blueprint.id,
+        userId: user.id,
+        waitListId: draft.id,
+      });
+      try {
+        const cookieStore = await cookies();
+        cookieStore.set(BLUEPRINT_COOKIE_NAME, "", { path: "/", maxAge: 0 });
+      } catch {
+        // Best-effort cookie cleanup
+      }
+    }
 
     if (!existingDraft) {
       const [{ trackServerEvent }, { POSTHOG_EVENTS }] = await Promise.all([
@@ -55,13 +91,28 @@ export async function createWaitlistDraft({
         event: POSTHOG_EVENTS.WAITLIST_CREATED,
         properties: {
           waitlist_id: draft.id,
-          template_id: templateId || "simple",
-          creation_method: "dialog",
+          template_id: effectiveTemplateId,
+          creation_method: blueprint ? "tool_blueprint" : "dialog",
+          ...(blueprint ? { tool_slug: blueprint.toolSlug } : {}),
         },
         groups: {
           company: workspace.id,
         },
       });
+      if (blueprint) {
+        await trackServerEvent({
+          distinctId: user.id,
+          event: POSTHOG_EVENTS.TOOL_BLUEPRINT_APPLIED,
+          properties: {
+            tool_slug: blueprint.toolSlug,
+            template_id: effectiveTemplateId,
+            blueprint_id: blueprint.id,
+          },
+          groups: {
+            company: workspace.id,
+          },
+        });
+      }
     }
 
     return { ok: true, id: draft.id };

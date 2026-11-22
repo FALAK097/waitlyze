@@ -3,6 +3,7 @@ import { SITE_DESCRIPTION, SITE_URL } from "@/lib/site-metadata";
 import { docsLlms } from "@/lib/source";
 import { listTemplates } from "@/lib/templates/catalog.mjs";
 import { getGalleryMeta } from "@/lib/templates/gallery.mjs";
+import { listTools } from "@/lib/tools/registry.mjs";
 
 export const revalidate = false;
 
@@ -10,6 +11,18 @@ export async function GET() {
   const docsFull = await docsLlms.full();
   const templates = listTemplates();
   const posts = getPosts();
+  const tools = listTools();
+
+  const toolsSection = tools
+    .map(
+      (tool) => `### Tool: ${tool.title} (${tool.path})
+Priority: ${tool.priority}
+Summary: ${tool.directAnswer}
+Formula / Method: ${tool.howItWorks.formula}
+Privacy: ${tool.privacyNotice}
+`,
+    )
+    .join("\n");
 
   const templatesSection = templates
     .map((t) => {
@@ -62,17 +75,22 @@ To integrate Waitlyze:
 
 ---
 
-## 3. Launch Templates Catalog
+## 3. Waitlyze Launch Lab (14 Free Pre-Launch Tools & Research)
+${toolsSection}
+
+---
+
+## 4. Launch Templates Catalog
 ${templatesSection}
 
 ---
 
-## 4. Pre-Launch Guides & Playbooks
+## 5. Pre-Launch Guides & Playbooks
 ${blogSection}
 
 ---
 
-## 5. Developer & Platform Documentation
+## 6. Developer & Platform Documentation
 ${docsFull}
 `;
 

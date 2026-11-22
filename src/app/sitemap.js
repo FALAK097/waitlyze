@@ -3,10 +3,11 @@ import { competitors } from "@/lib/comparison-data";
 import { SITE_URL } from "@/lib/site-metadata";
 import { source } from "@/lib/source";
 import { TEMPLATE_IDS } from "@/lib/templates/gallery.mjs";
+import { listTools, TOOLS_UPDATED_DATE } from "@/lib/tools/registry.mjs";
 
 // Editorial update dates, not the time a crawler requests this file. Bump
 // SITE_UPDATED when marketing, template or docs pages change in a meaningful way.
-const SITE_UPDATED = "2026-11-18";
+const SITE_UPDATED = "2026-11-22";
 const PRIVACY_UPDATED = "2026-11-18";
 const LEGAL_UPDATED = "2026-11-18";
 
@@ -21,6 +22,12 @@ export default function sitemap() {
     }, undefined) ?? SITE_UPDATED;
   return [
     { url: SITE_URL, lastModified: SITE_UPDATED, priority: 1 },
+    { url: `${SITE_URL}/tools`, lastModified: TOOLS_UPDATED_DATE, priority: 0.9 },
+    ...listTools().map((tool) => ({
+      url: `${SITE_URL}${tool.path}`,
+      lastModified: tool.methodology?.updatedAt || TOOLS_UPDATED_DATE,
+      priority: tool.priority === "P0" ? 0.8 : 0.7,
+    })),
     { url: `${SITE_URL}/templates`, lastModified: SITE_UPDATED, priority: 0.8 },
     { url: `${SITE_URL}/alternatives`, lastModified: "2026-11-09", priority: 0.8 },
     { url: `${SITE_URL}/compare`, lastModified: "2026-11-09", priority: 0.8 },

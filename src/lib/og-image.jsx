@@ -211,3 +211,97 @@ export function renderOgImage({ title, eyebrow, readingTime, date }) {
     OG_SIZE,
   );
 }
+
+/** Branded light 1200x630 social card for Waitlyze Launch Lab tools and research pages. */
+export function renderToolOgImage({ title, eyebrow = "Waitlyze Launch Lab", subtitle }) {
+  const host = new URL(SITE_URL).hostname;
+  const size = title.length > 52 ? 56 : title.length > 36 ? 64 : 74;
+
+  return new ImageResponse(
+    <div
+      style={{
+        width: "100%",
+        height: "100%",
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "space-between",
+        background: "#f9faf6",
+        color: "#071b12",
+        padding: "54px 72px 50px",
+        fontFamily: "system-ui, -apple-system, sans-serif",
+        position: "relative",
+      }}
+    >
+      <div
+        style={{
+          position: "absolute",
+          right: 0,
+          top: 0,
+          width: 22,
+          height: "100%",
+          background: "#c8f93f",
+          display: "flex",
+        }}
+      />
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <BrandLogo textSize={31} height={38} />
+        <div
+          style={{
+            display: "flex",
+            padding: "8px 16px",
+            borderRadius: 999,
+            background: "#e7f8b8",
+            color: "#193422",
+            fontSize: 15,
+            fontWeight: 700,
+            letterSpacing: 1,
+            textTransform: "uppercase",
+          }}
+        >
+          {eyebrow}
+        </div>
+      </div>
+      <div style={{ display: "flex", flexDirection: "column", gap: 20, maxWidth: 1020 }}>
+        <div
+          style={{
+            display: "flex",
+            fontSize: size,
+            lineHeight: 1.08,
+            fontWeight: 800,
+            letterSpacing: -2,
+          }}
+        >
+          {title}
+        </div>
+        {subtitle ? (
+          <div
+            style={{
+              display: "flex",
+              fontSize: 25,
+              lineHeight: 1.4,
+              color: "#42634e",
+              maxWidth: 940,
+            }}
+          >
+            {subtitle}
+          </div>
+        ) : null}
+      </div>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          paddingTop: 20,
+          borderTop: "1px solid #cdd8ca",
+          fontSize: 18,
+          color: "#42634e",
+        }}
+      >
+        <span>Free · No login required · Open directly in Waitlyze</span>
+        <span style={{ fontWeight: 700 }}>{host}/tools</span>
+      </div>
+    </div>,
+    OG_SIZE,
+  );
+}

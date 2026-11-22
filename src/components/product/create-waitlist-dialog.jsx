@@ -38,16 +38,21 @@ export function CreateWaitlistDialog({
   initialOpen = false,
   first = false,
   initialTemplateId = "simple",
+  initialBlueprint = null,
   workspaceId = null,
   canManageBilling = false,
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(initialOpen);
-  const [name, setName] = useState("");
-  const [description, setDescription] = useState("");
-  const [slug, setSlug] = useState("");
-  const [slugTouched, setSlugTouched] = useState(false);
-  const templateId = isTemplateId(initialTemplateId) ? initialTemplateId : "simple";
+  const [name, setName] = useState(initialBlueprint?.campaignName || "");
+  const [description, setDescription] = useState(initialBlueprint?.campaignDescription || "");
+  const [slug, setSlug] = useState(initialBlueprint?.suggestedSlug || "");
+  const [slugTouched, setSlugTouched] = useState(Boolean(initialBlueprint?.suggestedSlug));
+  const templateId = isTemplateId(initialBlueprint?.templateId)
+    ? initialBlueprint.templateId
+    : isTemplateId(initialTemplateId)
+      ? initialTemplateId
+      : "simple";
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [upgradeNeeded, setUpgradeNeeded] = useState(false);
@@ -96,6 +101,7 @@ export function CreateWaitlistDialog({
         publicSlug,
         creationKey,
         templateId,
+        blueprintId: initialBlueprint?.id || null,
       });
       if (result?.ok) {
         setCreationKey(crypto.randomUUID());
@@ -133,11 +139,34 @@ export function CreateWaitlistDialog({
       <DialogContent className="sm:max-w-lg" showCloseButton={!busy}>
         <div className="grid min-w-0 gap-6 p-2">
           <div className="[&_[data-slot=dialog-description]]:max-w-ch55 grid min-w-0 gap-1.5 pr-8 [&_[data-slot=dialog-description]]:leading-relaxed [&_[data-slot=dialog-title]]:text-xl [&_[data-slot=dialog-title]]:tracking-tight">
-            <DialogTitle>Create a waitlist</DialogTitle>
+            <DialogTitle>
+              {initialBlueprint ? "Create waitlist from Launch Lab" : "Create a waitlist"}
+            </DialogTitle>
             <DialogDescription>
-              Choose a name and page address. You can customize it before publishing.
+              {initialBlueprint
+                ? `Prefilled from ${initialBlueprint.toolTitle}. Confirm your name and page address—your draft stays private until you publish.`
+                : "Choose a name and page address. You can customize it before publishing."}
             </DialogDescription>
           </div>
+          {initialBlueprint && (
+            <div className="grid gap-2 rounded-lg border border-product-border-subtle bg-product-bg-inset p-3.5 text-left">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <span className="text-caption font-semibold text-product-text-primary">
+                  Blueprint from {initialBlueprint.toolTitle}
+                </span>
+                <span className="rounded bg-product-bg-surface px-2 py-0.5 font-product-mono text-micro text-product-text-secondary">
+                  Template: {templateId}
+                </span>
+              </div>
+              {initialBlueprint.summaryBullets?.length > 0 && (
+                <ul className="grid list-disc gap-1 pl-4 text-caption text-product-text-secondary">
+                  {initialBlueprint.summaryBullets.slice(0, 4).map((bullet) => (
+                    <li key={bullet}>{bullet}</li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )}
           <form className="grid min-w-0 gap-5" onSubmit={submit}>
             <div className="grid gap-2 [&_input]:h-11 [&_input]:text-body [&_label]:text-caption [&_label]:font-semibold">
               <Label htmlFor="new-waitlist-name">Waitlist name</Label>

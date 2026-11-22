@@ -4,6 +4,7 @@ import { SITE_DESCRIPTION, SITE_TITLE, SITE_URL } from "@/lib/site-metadata";
 import { source } from "@/lib/source";
 import { listTemplates } from "@/lib/templates/catalog.mjs";
 import { getGalleryMeta, isTemplateId } from "@/lib/templates/gallery.mjs";
+import { getToolBySlug, listTools, TOOLS_UPDATED_DATE } from "@/lib/tools/registry.mjs";
 
 function estimateTokens(text) {
   // Approximate 1 token per 4 characters.
@@ -466,6 +467,91 @@ For billing questions, contact [support@waitlyze.com](mailto:support@waitlyze.co
     }
   }
 
+  // 9. Launch Lab Hub (/tools)
+  if (path === "/tools") {
+    const tools = listTools();
+    const body = `Waitlyze Launch Lab is a suite of 14 free, no-login pre-launch tools covering waitlist landing page audits, viral K-factor compounding, copy generation, referral reward unit economics, queue simulation, beta intake forms, email sequences, UTM tracking, embed configuration, CSV list hygiene, DNS deliverability, and waitlist benchmarks.
+
+## Tools Catalog
+${tools.map((t) => `- [${t.title}](${canonical(t.path)}): ${t.targetJob}`).join("\n")}`;
+    return buildMarkdownDoc({
+      title: "Waitlyze Launch Lab — Free Pre-Launch Waitlist Tools",
+      description:
+        "14 free, no-login waitlist calculators, page graders, copy builders, and DNS/health diagnostics with direct blueprint handoff.",
+      path: "/tools",
+      body,
+      updated: TOOLS_UPDATED_DATE,
+      related: [
+        { title: "Waitlist Templates", path: "/templates", description: "14 ready-to-use layouts" },
+        {
+          title: "Waitlist Benchmarks",
+          path: "/research/waitlist-benchmarks",
+          description: "Cohort quartiles and methodology",
+        },
+      ],
+    });
+  }
+
+  // 10. Individual Launch Lab tools (/tools/:slug) & Benchmark Research (/research/waitlist-benchmarks)
+  const toolMatch = path.match(/^\/tools\/([a-z0-9-]+)$/);
+  const matchedTool = toolMatch
+    ? getToolBySlug(toolMatch[1])
+    : path === "/research/waitlist-benchmarks"
+      ? getToolBySlug("waitlist-benchmarks")
+      : null;
+  if (matchedTool) {
+    const faqsMd = matchedTool.faqs.map((f) => `### ${f.question}\n${f.answer}`).join("\n\n");
+    const itemsMd = matchedTool.howItWorks.items
+      .map((item) => `- **${item.label}**: ${item.detail}`)
+      .join("\n");
+    const interpretMd = matchedTool.interpretationGuide
+      .map((entry) => `- **${entry.band}**: ${entry.guidance}`)
+      .join("\n");
+    const body = `${matchedTool.directAnswer}
+
+## ${matchedTool.howItWorks.heading}
+${matchedTool.howItWorks.summary}
+
+**Formula / Model:** \`${matchedTool.howItWorks.formula}\`
+
+${itemsMd}
+
+## Worked Example: ${matchedTool.workedExample.title}
+${matchedTool.workedExample.summary}
+${matchedTool.workedExample.metrics.map((m) => `- **${m.label}**: ${m.value}`).join("\n")}
+
+## How to Interpret Your Result
+${interpretMd}
+
+## Methodology & Privacy
+- **Author**: ${matchedTool.methodology.author} (Reviewed by ${matchedTool.methodology.reviewer})
+- **Last updated**: ${matchedTool.methodology.updatedAt}
+- **Privacy**: ${matchedTool.privacyNotice}
+
+## Frequently Asked Questions
+${faqsMd}`;
+
+    return buildMarkdownDoc({
+      title: matchedTool.title,
+      description: matchedTool.seoDescription,
+      path: matchedTool.path,
+      body,
+      updated: matchedTool.methodology.updatedAt,
+      related: [
+        {
+          title: "Waitlyze Launch Lab",
+          path: "/tools",
+          description: "All 14 free pre-launch tools",
+        },
+        {
+          title: "Recommended Template",
+          path: `/templates/${matchedTool.recommendedTemplateId}`,
+          description: "Preview matching waitlist layout",
+        },
+      ],
+    });
+  }
+
   // Route not found
   return null;
 }
@@ -475,9 +561,16 @@ export function listMarkdownRoutes() {
   const templates = listTemplates();
   const posts = getPosts();
   const docPages = source.getPages();
+  const tools = listTools();
 
   return [
     { path: "/", title: SITE_TITLE, type: "page" },
+    { path: "/tools", title: "Waitlyze Launch Lab", type: "tools-hub" },
+    ...tools.map((t) => ({
+      path: t.path,
+      title: t.title,
+      type: t.path.startsWith("/research/") ? "research" : "tool",
+    })),
     { path: "/templates", title: "Templates Gallery", type: "page" },
     ...templates.map((t) => ({
       path: `/templates/${t.id}`,

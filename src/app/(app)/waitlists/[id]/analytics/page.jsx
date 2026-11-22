@@ -1,5 +1,6 @@
 import { AnalyticsLockedState } from "@/components/product/analytics-locked-state";
 import { WaitlistAnalytics } from "@/components/product/waitlist-analytics";
+import { InProductToolDrawer } from "@/components/tools/in-product-launch-lab";
 import { getWorkspaceEntitlements } from "@/lib/billing/plans.mjs";
 import prisma from "@/lib/prisma";
 import { requireCampaignPage } from "@/lib/workspaces/authorize";
@@ -19,10 +20,15 @@ export default async function AnalyticsPage({ params }) {
       />
     );
   return (
-    <WaitlistAnalytics
-      key={waitlist.id}
-      waitListId={waitlist.id}
-      emailsEnabled={waitlist.sendEmailsToSubscribers}
-    />
+    <>
+      <div className="mb-3 flex justify-end">
+        <InProductToolDrawer surface="analytics" waitlistKeyId={waitlist.id} />
+      </div>
+      <WaitlistAnalytics
+        key={waitlist.id}
+        waitListId={waitlist.id}
+        emailsEnabled={waitlist.sendEmailsToSubscribers}
+      />
+    </>
   );
 }
