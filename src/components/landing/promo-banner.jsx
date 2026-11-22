@@ -117,7 +117,7 @@ export default function PromoBanner({
       );
     }
 
-    const successMessage = `Code ${WAITLYZE_BFCM_PROMO.code} copied — apply it at checkout for 40% off Pro Annual`;
+    const successMessage = `Code ${WAITLYZE_BFCM_PROMO.code} copied. Apply it at checkout for 40% off Pro Annual.`;
 
     if (typeof onRedeem === "function") {
       onRedeem();

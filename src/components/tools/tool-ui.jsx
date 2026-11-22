@@ -28,7 +28,7 @@ import { cn } from "@/lib/utils";
 import { copyToClipboard } from "./tool-export-utils";
 
 /**
- * Unboxed tool workspace container — clean vertical rhythm without outer card chrome.
+ * Unboxed tool workspace container with clean vertical rhythm and no outer card chrome.
  */
 export function ToolWorkspace({ children, className = "" }) {
   return <div className={cn("grid gap-8", className)}>{children}</div>;

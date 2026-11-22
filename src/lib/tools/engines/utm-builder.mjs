@@ -99,7 +99,7 @@ export function buildUtmMatrix({
 
   if (parsedBase.searchParams.has("r")) {
     warnings.push(
-      'Base URL contains "?r=". Waitlyze reserves ?r= for personal subscriber referral codes—remove it from broadcast UTM links.',
+      'Base URL contains "?r=". Waitlyze reserves ?r= for personal subscriber referral codes. Remove it from broadcast UTM links.',
     );
     parsedBase.searchParams.delete("r");
   }
@@ -165,7 +165,7 @@ export function buildUtmMatrix({
 
 // ============================================================================
 // Pure-JS ISO/IEC 18004 QR Code Generator (Byte Mode, ECC Level L, Versions 1-10)
-// Zero external APIs or dependencies — 100% private client-side SVG matrix.
+// Zero external APIs or dependencies: 100% private client-side SVG matrix.
 // ============================================================================
 const GF_EXP = new Uint8Array(512);
 const GF_LOG = new Uint8Array(256);
@@ -336,7 +336,7 @@ function encodeQrMatrix(text) {
     setMod(i, 6, i % 2 === 0, true);
   }
 
-  // Alignment patterns — skip ONLY the three finder-pattern corner regions.
+  // Alignment patterns: skip ONLY the three finder-pattern corner regions.
   // Alignment patterns that intersect timing lines (e.g. (6,22) and (22,6) on v7+) MUST be placed.
   for (const r of spec.align) {
     for (const c of spec.align) {

@@ -54,7 +54,7 @@ export async function copyToClipboard(text) {
 
 /**
  * Generates a crisp Waitlyze-branded light editorial PNG summary card on an
- * offscreen HTML5 Canvas—including formula, key metrics, and date stamp.
+ * offscreen HTML5 Canvas, including formula, key metrics, and date stamp.
  */
 export function downloadSummaryPng({
   filename = "waitlyze-launch-lab.png",

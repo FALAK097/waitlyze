@@ -9,7 +9,7 @@ export const COPY_BUILDER_OPTIONS = Object.freeze({
     { value: "event", label: "Live cohort / Workshop" },
   ],
   proofTypes: [
-    { value: "none_honest", label: "None yet — keep honest (no fake proof)" },
+    { value: "none_honest", label: "None yet (keep honest, no fake proof)" },
     { value: "demo_screenshot", label: "Product demo or screenshot" },
     { value: "founder_credentials", label: "Founder / team background" },
     { value: "beta_quote", label: "Early tester feedback" },
@@ -62,7 +62,7 @@ export function formatCopyMarkdown({
 }) {
   const alternates = (heroDirections || []).filter((h) => h.id !== activeHero?.id);
   return [
-    `# ${productName} — Waitlist Landing Page Copy`,
+    `# ${productName}: Waitlist Landing Page Copy`,
     "",
     `## Selected Hero (${activeHero?.label || "Primary"})`,
     `- **Eyebrow:** ${activeHero?.eyebrow || ""}`,
@@ -141,7 +141,7 @@ export function generateWaitlistCopy(rawInputs = {}) {
   const buttonText = ctaForMotion(launchMotion);
   const eyebrow = eyebrowForMotion(launchMotion, productName);
   const privacyNote =
-    "One email when your invite opens. Confirm your address to lock in your spot—unsubscribe anytime.";
+    "One email when your invite opens. Confirm your address to lock in your spot. Unsubscribe anytime.";
 
   const toneSuffix =
     tone === "technical_direct"
@@ -171,7 +171,7 @@ export function generateWaitlistCopy(rawInputs = {}) {
       eyebrow: clampText(eyebrow, 80),
       heading: clampText(`Stop letting ${painPoint}.`, 140),
       subheadline: clampText(
-        `${productName} gives ${audience} a calmer alternative—${uniqueMechanism}. Join early to help shape v1.`,
+        `${productName} gives ${audience} a calmer alternative by ${uniqueMechanism}. Join early to help shape v1.`,
         700,
       ),
       buttonText: clampText(buttonText, 40),
@@ -195,7 +195,7 @@ export function generateWaitlistCopy(rawInputs = {}) {
     {
       title: clampText(`Built specifically for ${audience}`, 80),
       body: clampText(
-        `Every default in ${productName} is tuned for how ${audience} actually work—so you do not waste a week configuring templates.`,
+        `Every default in ${productName} is tuned for how ${audience} actually work, so you do not waste a week configuring templates.`,
         280,
       ),
     },
@@ -220,7 +220,7 @@ export function generateWaitlistCopy(rawInputs = {}) {
     proofSection = {
       honestPlaceholder: true,
       heading: "Built in the open with our first wave",
-      body: `${productName} is in active pre-launch development. Early waitlist members get direct access to our roadmap, onboarding calls, and founding pricing—no invented testimonials or inflated counters.`,
+      body: `${productName} is in active pre-launch development. Early waitlist members get direct access to our roadmap, onboarding calls, and founding pricing, with no invented testimonials or inflated counters.`,
     };
   } else if (proofType === "demo_screenshot") {
     proofSection = {
@@ -244,7 +244,7 @@ export function generateWaitlistCopy(rawInputs = {}) {
       heading: "Early tester notes",
       body:
         proofDetail ||
-        `[Paste one real, attributed quote from a beta tester who tried ${productName}—include their first name and role.]`,
+        `[Paste one real, attributed quote from a beta tester who tried ${productName}. Include their first name and role.]`,
     };
   } else {
     proofSection = {
@@ -252,7 +252,7 @@ export function generateWaitlistCopy(rawInputs = {}) {
       heading: "Measured early signal",
       body:
         proofDetail ||
-        `[Share one verifiable metric you have measured—for example, setup time or workflow latency—with date and context.]`,
+        `[Share one verifiable metric you have measured, such as setup time or workflow latency, with date and context.]`,
     };
   }
 
@@ -285,11 +285,11 @@ export function generateWaitlistCopy(rawInputs = {}) {
     confirmationBody:
       "Click the confirmation link we just sent so your address is verified. Once verified, share your personal link below to move up the early-access queue.",
     referralPrompt: clampText(
-      `Know someone else among ${audience}? Share your personal link—verified referrals earn priority queue points.`,
+      `Know someone else among ${audience}? Share your personal link. Verified referrals earn priority queue points.`,
       260,
     ),
     sharePostText: clampText(
-      `Just joined the early-access list for ${productName} — ${oneLiner}`,
+      `Just joined the early-access list for ${productName}: ${oneLiner}`,
       260,
     ),
   };

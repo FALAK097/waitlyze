@@ -139,7 +139,7 @@ export function LaunchPlannerWidget({
         t.completed ? "Done" : "Pending",
         t.dependency,
       ]),
-      [`Waitlyze Launch Readiness Plan — Readiness Score ${liveReadinessScore}/100`],
+      [`Waitlyze Launch Readiness Plan (Readiness Score ${liveReadinessScore}/100)`],
     );
     trackToolEvent("TOOL_RESULT_EXPORTED", {
       tool_slug: "product-launch-checklist",

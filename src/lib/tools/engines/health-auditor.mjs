@@ -321,7 +321,7 @@ export function auditParsedRows(rows = []) {
   }
   if (velocityBurstCount > 0) {
     recommendations.push(
-      `Enable Waitlyze STRICT fraud posture — detected ${velocityBurstCount} signups inside tight referral velocity bursts.`,
+      `Enable Waitlyze STRICT fraud posture: detected ${velocityBurstCount} signups inside tight referral velocity bursts.`,
     );
   }
   if (recommendations.length === 0) {
@@ -394,10 +394,10 @@ export function auditManualMetrics({
     velocityBurstCount: 0,
     recommendations: [
       vPct < 75
-        ? "Run a gentle re-confirmation wave before launch day — unverified waitlists risk high bounce rates."
+        ? "Run a gentle re-confirmation wave before launch day; unverified waitlists risk high bounce rates."
         : "Strong verification baseline; preserve double opt-in on new signups.",
       age > 60
-        ? "List age exceeds 60 days — send a short behind-the-scenes warm-up note before launching."
+        ? "List age exceeds 60 days. Send a short behind-the-scenes warm-up note before launching."
         : "List freshness is solid for launch-day conversion.",
       score < 85
         ? "Enable Waitlyze STRICT fraud mode to enforce IP & device velocity limits on referrals."

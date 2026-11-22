@@ -108,7 +108,7 @@ export function IntakeFormDesignerWidget({
         `- **Email** (required, type: email)`,
         ...activeFields.map(
           (f) =>
-            `- **${f.label}** (${f.required ? "required" : "optional"}, type: ${f.type}${f.options?.length ? ` — ${f.options.join(", ")}` : ""})`,
+            `- **${f.label}** (${f.required ? "required" : "optional"}, type: ${f.type}${f.options?.length ? `: ${f.options.join(", ")}` : ""})`,
         ),
       ].join("\n"),
     [activeFields, segmentObj.label],
