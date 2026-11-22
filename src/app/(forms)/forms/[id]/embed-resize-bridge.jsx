@@ -31,12 +31,18 @@ export function EmbedResizeBridge() {
       if (!height) return;
       window.parent.postMessage({ source: MESSAGE_SOURCE, type: "resize", height }, targetOrigin);
     };
+    const closeOnEscape = (event) => {
+      if (event.key !== "Escape" || event.defaultPrevented) return;
+      window.parent.postMessage({ source: MESSAGE_SOURCE, type: "close" }, targetOrigin);
+    };
     post();
     window.addEventListener("load", post);
+    window.addEventListener("keydown", closeOnEscape);
     const observer = new ResizeObserver(post);
     observer.observe(document.body);
     return () => {
       window.removeEventListener("load", post);
+      window.removeEventListener("keydown", closeOnEscape);
       observer.disconnect();
     };
   }, []);
