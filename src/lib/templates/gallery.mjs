@@ -27,100 +27,100 @@ const gallery = {
   simple: {
     useCase: "One focused signup screen for any launch.",
     bestFor: ["Validating an idea fast", "Coming-soon pages", "Minimal first launches"],
-    seoTitle: "Simple Waitlist Template",
+    seoTitle: "Free Simple Waitlist Landing Page Template",
     seoDescription:
-      "A focused one-screen waitlist template. Collect emails with a clear headline and signup form. Free to use with Waitlyze.",
+      "Free simple one-screen waitlist landing page template with headline, single email signup form, and verified referrals. Customize and publish in minutes.",
   },
   saas: {
     useCase: "A screenshot-led beta page with proof and answers.",
     bestFor: ["B2B beta launches", "Product-led onboarding", "Founding-team pricing"],
-    seoTitle: "SaaS Beta Waitlist Template",
+    seoTitle: "Free SaaS Beta Waitlist Landing Page Template",
     seoDescription:
-      "A SaaS beta waitlist template with product screenshots, social proof, stats, and FAQs. Launch your beta with Waitlyze.",
+      "Free SaaS beta waitlist landing page template with product screenshots, social proof, referral rewards, and FAQs. Customize and launch your beta for $0.",
   },
   ai: {
     useCase: "A dark, demo-led page for an AI launch.",
     bestFor: ["AI product previews", "Monthly cohort access", "Research-preview signups"],
-    seoTitle: "AI Product Waitlist Template",
+    seoTitle: "Free AI Product Waitlist Landing Page Template",
     seoDescription:
-      "A dark, demo-led AI waitlist template with workflow proof and cohort access. Collect early access signups with Waitlyze.",
+      "Free dark-mode AI product waitlist landing page template with workflow demo, cohort access rules, and verified referral queue. Publish free with Waitlyze.",
   },
   mobile: {
     useCase: "A playful app launch page with tester love.",
     bestFor: ["iOS and Android launches", "Consumer app betas", "Launch-day download lists"],
-    seoTitle: "Mobile App Waitlist Template",
+    seoTitle: "Free Mobile App Waitlist Landing Page Template",
     seoDescription:
-      "A playful mobile app waitlist template with phone mock, tester quotes, and live signup count. Free with Waitlyze.",
+      "Free mobile app waitlist landing page template for iOS and Android launches with phone mockup, beta tester quotes, and referral queue positions.",
   },
   creator: {
     useCase: "An editorial signup page with reader proof.",
     bestFor: ["Newsletters", "Creator launches", "Paid-subscriber funnels"],
-    seoTitle: "Newsletter Waitlist Template",
+    seoTitle: "Free Newsletter & Creator Waitlist Landing Page Template",
     seoDescription:
-      "An editorial newsletter waitlist template with issue previews and reader testimonials. Grow your audience with Waitlyze.",
+      "Free editorial newsletter waitlist landing page template with issue previews, reader testimonials, and milestone referral rewards.",
   },
   community: {
     useCase: "An invite-only page with member proof and referrals.",
     bestFor: ["Private communities", "Membership launches", "Referral-driven growth"],
-    seoTitle: "Community Waitlist Template",
+    seoTitle: "Free Community & Membership Waitlist Template",
     seoDescription:
-      "An invite-only community waitlist template with member stories and referral rewards. Build your community with Waitlyze.",
+      "Free invite-only community waitlist landing page template with member stories, queue ranking, and referral reward tiers.",
   },
   event: {
     useCase: "A bold agenda page for a live date.",
     bestFor: ["Live workshops", "Course cohorts", "In-person sessions"],
-    seoTitle: "Event Waitlist Template",
+    seoTitle: "Free Event & Cohort Waitlist Landing Page Template",
     seoDescription:
-      "An event waitlist template with schedule, speaker proof, and seat registration. Fill your next session with Waitlyze.",
+      "Free event and course cohort waitlist landing page template with agenda schedule, speaker proof, and seat reservation form.",
   },
   commerce: {
     useCase: "A slow-luxe product story with reservation intent.",
     bestFor: ["Small-batch pre-orders", "Product drops", "Batch-one reservations"],
-    seoTitle: "Pre-order Waitlist Template",
+    seoTitle: "Free Pre-Order & Product Drop Waitlist Template",
     seoDescription:
-      "A pre-order waitlist template with product storytelling and reservation intent. Launch your drop with Waitlyze.",
+      "Free e-commerce pre-order and product drop waitlist landing page template with batch reservation form and early-access referral perks.",
   },
   developer: {
     useCase: "A docs-first page with workflow, proof, and access contract.",
     bestFor: ["Developer tools", "API betas", "Infrastructure launches"],
-    seoTitle: "Developer Tool Waitlist Template",
+    seoTitle: "Free Developer Tool & API Beta Waitlist Template",
     seoDescription:
-      "A docs-first developer tool waitlist template with workflow steps and straight answers. Launch your API beta with Waitlyze.",
+      "Free docs-first developer tool and API beta waitlist landing page template with technical workflow steps, architecture proof, and early-access signup.",
   },
   podcast: {
     useCase: "A trailer-led page that turns listeners into subscribers.",
     bestFor: ["New shows", "Episode-zero launches", "Listener funnels"],
-    seoTitle: "Podcast Waitlist Template",
+    seoTitle: "Free Podcast Launch Waitlist Landing Page Template",
     seoDescription:
-      "A trailer-led podcast waitlist template with episode previews and listener quotes. Launch your show with Waitlyze.",
+      "Free podcast launch waitlist landing page template with trailer preview, episode rundown, listener testimonials, and launch-day alerts.",
   },
   restaurant: {
     useCase: "A seasonal opening page with tastings and seats.",
     bestFor: ["Restaurant openings", "Tasting lists", "Reservation interest"],
-    seoTitle: "Restaurant Opening Waitlist Template",
+    seoTitle: "Free Restaurant Opening & Tasting Waitlist Template",
     seoDescription:
-      "A restaurant opening waitlist template with seasonal storytelling and tasting proof. Fill your first seating with Waitlyze.",
+      "Free restaurant opening waitlist landing page template for soft openings, tasting menus, and first-seating reservations.",
   },
   fitness: {
     useCase: "A high-energy cohort page with proof and a start date.",
     bestFor: ["Fitness cohorts", "Challenge programs", "Coaching launches"],
-    seoTitle: "Fitness Program Waitlist Template",
+    seoTitle: "Free Fitness Program & Coaching Waitlist Template",
     seoDescription:
-      "A high-energy fitness waitlist template with cohort proof and start-date urgency. Fill your next cohort with Waitlyze.",
+      "Free fitness program and coaching cohort waitlist landing page template with transformation proof, start-date urgency, and referral rewards.",
   },
   nonprofit: {
     useCase: "A community cause page with transparent impact.",
     bestFor: ["Community projects", "Fundraising interest", "Volunteer signups"],
-    seoTitle: "Nonprofit Waitlist Template",
+    seoTitle: "Free Nonprofit & Community Cause Waitlist Template",
     seoDescription:
-      "A nonprofit waitlist template with transparent impact and referral rewards. Grow your cause with Waitlyze.",
+      "Free nonprofit and community cause waitlist landing page template with impact metrics, supporter mobilization, and verified referral sharing.",
   },
   blank: {
     useCase: "Only the essentials: a hero and a signup form.",
     bestFor: ["Starting from scratch", "Custom page structures", "Experienced builders"],
-    seoTitle: "Blank Waitlist Template",
+    seoTitle: "Free Blank Waitlist Landing Page Template",
     seoDescription:
-      "A blank waitlist template with just a hero and signup form. Build your page your way with Waitlyze.",
+      "Free minimalist blank waitlist landing page template with a clean hero, email verification form, and full visual builder customization.",
   },
 };
 

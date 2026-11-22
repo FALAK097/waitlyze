@@ -1,6 +1,10 @@
+import { WAITLYZE_PRICING } from "@/lib/billing/pricing.mjs";
 import { getPosts } from "@/lib/blog-source";
+import { competitors } from "@/lib/comparison-data";
 import { SITE_DESCRIPTION, SITE_URL } from "@/lib/site-metadata";
 import { docsLlms } from "@/lib/source";
+import { listTemplates } from "@/lib/templates/catalog.mjs";
+import { getGalleryMeta } from "@/lib/templates/gallery.mjs";
 
 export const revalidate = false;
 
@@ -11,12 +15,24 @@ export async function GET() {
   const posts = getPosts()
     .map((post) => `- [${post.data.title}](${SITE_URL}${post.url}): ${post.data.description}`)
     .join("\n");
+  const templates = listTemplates()
+    .map((template) => {
+      const meta = getGalleryMeta(template.id);
+      return `- [${meta?.seoTitle || template.name}](${SITE_URL}/templates/${template.id}): ${meta?.seoDescription || template.description}`;
+    })
+    .join("\n");
+  const comparisons = competitors
+    .map(
+      (competitor) =>
+        `- [${competitor.name} Alternative & Pricing (Waitlyze vs ${competitor.name})](${SITE_URL}/alternatives/${competitor.slug}): ${competitor.name} starts at ${competitor.price} (${competitor.freePlan.toLowerCase()}). ${competitor.summary}`,
+    )
+    .join("\n");
 
   const body = `# Waitlyze
 
 > ${SITE_DESCRIPTION}
 
-Waitlyze is a waitlist builder for founders and marketing teams. Create a branded waitlist page or embed a signup form, grow the list with verified referrals, send email broadcasts and automations, and read signup, source, and device analytics. A public API, webhooks, and integrations (Resend, Slack, Discord, Zapier) are available.
+Waitlyze is open-source waitlist software for founders and product teams. Create a branded waitlist page or embed a signup form, grow the list with verified referrals, send email broadcasts and automations, and read signup, source, and device analytics. Free for 1 workspace, 1 waitlist, and 100 lifetime signups; Pro is ${WAITLYZE_PRICING.pro.monthly.formatted}/month or ${WAITLYZE_PRICING.pro.annual.formatted}/year flat per workspace. A public API, webhooks, and integrations (Resend, Slack, Discord, Zapier, MCP) are available.
 
 ## AI Agents & Developers
 
@@ -29,9 +45,16 @@ Waitlyze is a waitlist builder for founders and marketing teams. Create a brande
 
 ## Product & Templates
 
-- [Home](${SITE_URL}): Overview, features, and FAQ
-- [Waitlist Templates](${SITE_URL}/templates): 14 templates for SaaS, AI, mobile, newsletter, event, and pre-order launches
-- [Changelog](${SITE_URL}/docs/changelog): Release notes
+- [Home](${SITE_URL}): Overview, features, pricing ($0 Free / ${WAITLYZE_PRICING.pro.monthly.formatted} per month Pro), and FAQ
+- [Waitlist Templates Gallery](${SITE_URL}/templates): 14 free waitlist landing page templates for SaaS, AI, mobile, newsletter, event, and pre-order launches
+${templates}
+- [Changelog](${SITE_URL}/docs/changelog): Release notes and product updates
+
+## Comparisons & Alternatives
+
+- [Waitlist Software Comparison (7 Tools Side by Side)](${SITE_URL}/compare): Compare Waitlyze, GetWaitlist, LaunchList, Prefinery, KickoffLabs, Viral Loops, and Waitlister on free plans, pricing models, referrals, email, analytics, and API access
+- [Best Waitlist Software Alternatives](${SITE_URL}/alternatives): Overview of dedicated waitlist and referral platforms
+${comparisons}
 
 ## Playbooks & Guides
 

@@ -1,5 +1,12 @@
 import { WAITLYZE_PRICING } from "@/lib/billing/pricing.mjs";
 import { getPost, getPostModifiedDate, getPosts, getTags } from "@/lib/blog-source";
+import {
+  competitors,
+  featureRows,
+  getCompetitor,
+  pairwiseMatchups,
+  waitlyze,
+} from "@/lib/comparison-data";
 import { SITE_DESCRIPTION, SITE_TITLE, SITE_URL } from "@/lib/site-metadata";
 import { source } from "@/lib/source";
 import { listTemplates } from "@/lib/templates/catalog.mjs";
@@ -168,6 +175,99 @@ Open any template in Waitlyze, customize the brand colors, fonts, hero headlines
         { title: "Developer Docs", path: "/docs", description: "API reference and guides" },
       ],
     });
+  }
+
+  // Public comparison and alternative pages
+  if (path === "/compare") {
+    const body = `Compare Waitlyze with seven dedicated waitlist platforms on pricing and launch features.
+
+| Platform | Free plan | Lowest paid plan | Pricing model |
+| --- | --- | --- | --- |
+| Waitlyze | ${waitlyze.freePlan} | ${waitlyze.price} | ${waitlyze.model} |
+${competitors.map((competitor) => `| ${competitor.name} | ${competitor.freePlan} | ${competitor.price} | ${competitor.model} |`).join("\n")}
+
+## Common Head-to-Head Comparisons
+${pairwiseMatchups.map((matchup) => `### ${matchup.question}\n${matchup.summary}\n\n${matchup.links.map((link) => `- [${link.label}](${canonical(link.href)})`).join("\n")}`).join("\n\n")}`;
+
+    return buildMarkdownDoc({
+      title: "Waitlist Software Comparison: 7 Tools Side by Side (2026)",
+      description:
+        "Compare seven dedicated waitlist platforms on free plans, pricing, referrals, email, analytics, and API access.",
+      path: "/compare",
+      body,
+      related: [
+        {
+          title: "Waitlist Software Alternatives",
+          path: "/alternatives",
+          description: "Detailed alternatives and pricing guides",
+        },
+      ],
+    });
+  }
+
+  if (path === "/alternatives") {
+    const body = `Compare Waitlyze with dedicated waitlist and referral platforms. Pricing and plan details are based on the research date shown on each guide.
+
+| Platform | Starting price | Free plan |
+| --- | --- | --- |
+${competitors.map((competitor) => `| [${competitor.name}](${canonical(`/alternatives/${competitor.slug}`)}) | ${competitor.price} | ${competitor.freePlan} |`).join("\n")}
+
+## Choose by workflow
+${competitors.map((competitor) => `### ${competitor.name}\n${competitor.summary}\n\n[See ${competitor.name} pricing and feature comparison](${canonical(`/alternatives/${competitor.slug}`)})`).join("\n\n")}`;
+
+    return buildMarkdownDoc({
+      title: "Best Waitlist Software Alternatives & Pricing (2026)",
+      description:
+        "Compare waitlist software alternatives on free plans, pricing models, referrals, email, and API access.",
+      path: "/alternatives",
+      body,
+      related: [
+        {
+          title: "Full Waitlist Software Comparison",
+          path: "/compare",
+          description: "Compare seven tools side by side",
+        },
+      ],
+    });
+  }
+
+  const alternativeMatch = path.match(/^\/alternatives\/([a-z0-9-]+)$/);
+  if (alternativeMatch) {
+    const competitor = getCompetitor(alternativeMatch[1]);
+    if (competitor) {
+      const body = `${competitor.summary}
+
+## Pricing and plans
+- **Free plan**: ${competitor.freePlan}
+- **Lowest paid plan**: ${competitor.price}
+- **Pricing model**: ${competitor.model}
+
+## Feature comparison
+| Capability | Waitlyze | ${competitor.name} |
+| --- | --- | --- |
+${featureRows.map((feature) => `| ${feature.label} | ${waitlyze.features[feature.key].label} | ${competitor.features[feature.key].label} |`).join("\n")}
+
+Waitlyze Pro costs ${WAITLYZE_PRICING.pro.monthly.formatted} per month or ${WAITLYZE_PRICING.pro.annual.formatted} per year per workspace. Its Free plan includes one workspace, one waitlist, and 100 signups.`;
+
+      return buildMarkdownDoc({
+        title: `${competitor.name} Alternative & Pricing: Waitlyze vs ${competitor.name} (2026)`,
+        description: `${competitor.name} alternative and pricing comparison covering free plans, features, and fit for product launches.`,
+        path: `/alternatives/${competitor.slug}`,
+        body,
+        related: [
+          {
+            title: "All Waitlist Alternatives",
+            path: "/alternatives",
+            description: "Browse all platform comparisons",
+          },
+          {
+            title: "Full Waitlist Software Comparison",
+            path: "/compare",
+            description: "Compare seven tools side by side",
+          },
+        ],
+      });
+    }
   }
 
   // 3. Single template /templates/:id
@@ -479,6 +579,13 @@ export function listMarkdownRoutes() {
   return [
     { path: "/", title: SITE_TITLE, type: "page" },
     { path: "/templates", title: "Templates Gallery", type: "page" },
+    { path: "/compare", title: "Waitlist Software Comparison", type: "comparison" },
+    { path: "/alternatives", title: "Waitlist Software Alternatives", type: "alternatives" },
+    ...competitors.map((competitor) => ({
+      path: `/alternatives/${competitor.slug}`,
+      title: `${competitor.name} Alternative & Pricing`,
+      type: "alternative",
+    })),
     ...templates.map((t) => ({
       path: `/templates/${t.id}`,
       title: `${t.name} Template`,

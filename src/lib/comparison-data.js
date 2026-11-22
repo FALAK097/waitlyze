@@ -464,6 +464,50 @@ export function getFirstYearCost(competitor) {
   };
 }
 
+/**
+ * Common two-tool matchups founders search before picking a platform.
+ * Shared by the /compare page and its markdown rendering.
+ */
+export const pairwiseMatchups = [
+  {
+    pair: "GetWaitlist vs LaunchList",
+    question: "How does GetWaitlist compare with LaunchList?",
+    summary: `GetWaitlist ($15/mo, no free plan for new accounts) focuses on an embeddable signup widget with unlimited signups on its entry paid plan, while LaunchList ($9/mo, free up to 100 contacts) offers a hosted page builder, trust scoring, and contact-tiered pricing. Waitlyze gives you both a hosted page builder and a free plan (100 signups) with flat workspace pricing (${WAITLYZE_PRICING.pro.monthly.formatted}/mo or ${WAITLYZE_PRICING.pro.annual.formatted}/yr).`,
+    links: [
+      { label: "GetWaitlist alternative & pricing", href: "/alternatives/getwaitlist" },
+      { label: "LaunchList alternative & pricing", href: "/alternatives/launchlist" },
+    ],
+  },
+  {
+    pair: "Viral Loops vs KickoffLabs",
+    question: "What is the difference between Viral Loops and KickoffLabs?",
+    summary: `Viral Loops ($49/mo, 14-day trial capped at 10 participants) is a multi-program referral suite priced by total participants, whereas KickoffLabs ($49/mo, free up to 50 new monthly leads) specializes in giveaways, sweepstakes, and A/B-tested contest pages priced by monthly lead volume. Waitlyze focuses specifically on product waitlists with verified referrals for ${WAITLYZE_PRICING.free.formatted} up to 100 signups and ${WAITLYZE_PRICING.pro.monthly.formatted}/mo flat on Pro.`,
+    links: [
+      { label: "Viral Loops alternative & pricing", href: "/alternatives/viral-loops" },
+      { label: "KickoffLabs alternative & pricing", href: "/alternatives/kickofflabs" },
+    ],
+  },
+  {
+    pair: "Waitlister vs LaunchList",
+    question: "Should I pick Waitlister or LaunchList for a pre-launch waitlist?",
+    summary: `Waitlister ($19/mo, free for 100 subscribers) uses flat feature tiers and starts referrals on its $19/mo Launch plan, while LaunchList ($9/mo, free for 100 contacts) includes referrals on its free tier but raises prices as contact counts grow. Waitlyze includes verified referrals and API access on its free plan and keeps Pro at a flat ${WAITLYZE_PRICING.pro.monthly.formatted}/mo (${WAITLYZE_PRICING.pro.annual.formatted}/yr).`,
+    links: [
+      { label: "Waitlister alternative & pricing", href: "/alternatives/waitlister" },
+      { label: "LaunchList alternative & pricing", href: "/alternatives/launchlist" },
+    ],
+  },
+  {
+    pair: "GetWaitlist vs Prefinery",
+    question: "How does GetWaitlist compare with Prefinery?",
+    summary:
+      "GetWaitlist ($15/mo) is a lightweight widget with Basic API access included at $15/mo, while Prefinery ($49/mo, 14-day trial) is an enterprise referral campaign platform where API and webhooks start on the $249/mo Essentials plan. Waitlyze includes its server-side Signup API, hosted page builder, and embeddable widget on every plan, including Free.",
+    links: [
+      { label: "GetWaitlist alternative & pricing", href: "/alternatives/getwaitlist" },
+      { label: "Prefinery alternative & pricing", href: "/alternatives/prefinery" },
+    ],
+  },
+];
+
 export function getCompetitorFaqs(competitor) {
   const cost = getFirstYearCost(competitor);
   const referrals = competitor.features.referrals;
