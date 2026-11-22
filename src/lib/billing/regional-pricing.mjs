@@ -2,6 +2,7 @@ import "server-only";
 import { unstable_cache } from "next/cache";
 
 import { createDodoClient } from "@/lib/billing/dodo.mjs";
+import { WAITLYZE_BFCM_PROMO } from "@/lib/billing/pricing.mjs";
 import { env } from "@/lib/env.mjs";
 
 const countryNames = new Intl.DisplayNames(["en"], { type: "region" });
@@ -34,19 +35,19 @@ const cachedPreview = unstable_cache(
   { revalidate: 3600 },
 );
 
-function formatRoundedCurrency(amount, currency) {
+function formatCurrency(amount, currency) {
   if (!Number.isFinite(amount) || amount < 0 || !/^[A-Z]{3}$/.test(currency || "")) return null;
-  const fractionDigits = new Intl.NumberFormat("en", {
+  const maximumFractionDigits = new Intl.NumberFormat("en", {
     style: "currency",
     currency,
   }).resolvedOptions().maximumFractionDigits;
-  const wholeAmount = Math.round(amount / 10 ** fractionDigits);
+  const majorAmount = amount / 10 ** maximumFractionDigits;
   return new Intl.NumberFormat("en", {
     style: "currency",
     currency,
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(wholeAmount);
+    minimumFractionDigits: Number.isInteger(majorAmount) ? 0 : maximumFractionDigits,
+    maximumFractionDigits,
+  }).format(majorAmount);
 }
 
 function countryFlag(country) {
@@ -71,21 +72,37 @@ export async function getRegionalPricing(countryCode) {
     const annual = preview.prices[env.DODO_PRO_ANNUAL_PRODUCT_ID];
     if (!monthly || !annual || monthly.currency !== annual.currency) return null;
     const currency = monthly.currency;
-    const monthlyFormatted = formatRoundedCurrency(monthly.amount, currency);
-    const annualFormatted = formatRoundedCurrency(annual.amount, currency);
-    const annualMonthlyEquivalentFormatted = formatRoundedCurrency(annual.amount / 12, currency);
+    const monthlyFormatted = formatCurrency(monthly.amount, currency);
+    const annualFormatted = formatCurrency(annual.amount, currency);
+    const annualMonthlyEquivalentFormatted = formatCurrency(annual.amount / 12, currency);
     if (!monthlyFormatted || !annualFormatted || !annualMonthlyEquivalentFormatted) return null;
+    const promoAnnualAmount = Math.round(
+      annual.amount * (1 - WAITLYZE_BFCM_PROMO.percentOff / 100),
+    );
+    const promoAnnualFormatted = formatCurrency(promoAnnualAmount, currency);
+    const promoAnnualMonthlyEquivalentFormatted = formatCurrency(promoAnnualAmount / 12, currency);
     const resolvedCountry = preview.country;
     return {
       country: countryNames.of(resolvedCountry) || resolvedCountry,
       flag: countryFlag(resolvedCountry) || flag,
       currency,
-      zeroFormatted: formatRoundedCurrency(0, currency),
+      zeroFormatted: formatCurrency(0, currency),
       monthly: { amount: monthly.amount, formatted: monthlyFormatted },
       annual: {
         amount: annual.amount,
         formatted: annualFormatted,
         monthlyEquivalentFormatted: annualMonthlyEquivalentFormatted,
+        ...(promoAnnualFormatted && promoAnnualMonthlyEquivalentFormatted
+          ? {
+              promo: {
+                code: WAITLYZE_BFCM_PROMO.code,
+                percentOff: WAITLYZE_BFCM_PROMO.percentOff,
+                amount: promoAnnualAmount,
+                formatted: promoAnnualFormatted,
+                monthlyEquivalentFormatted: promoAnnualMonthlyEquivalentFormatted,
+              },
+            }
+          : {}),
       },
     };
   } catch {

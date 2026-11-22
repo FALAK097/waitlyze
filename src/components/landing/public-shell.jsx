@@ -8,6 +8,7 @@ import { publicFontClasses } from "@/lib/public-fonts";
 import CopyrightYear from "./copyright-year";
 import GitHubMark from "./github-mark";
 import Header from "./header";
+import PromoBanner from "./promo-banner";
 import Wordmark from "./wordmark";
 
 export default function PublicShell({ children }) {
@@ -21,6 +22,7 @@ export default function PublicShell({ children }) {
       >
         Skip to content
       </a>
+      <PromoBanner variant="top" />
       <Header />
       {children}
       <footer className="bg-product-bg-page pt-12 pb-6 text-product-text-primary">
