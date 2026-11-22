@@ -220,7 +220,7 @@ export function TemplateFinderWidget({
             value={inputs.category}
             onChange={(val) => updateField("category", val)}
             options={TEMPLATE_FINDER_OPTIONS.categories}
-            hint="40% weight — matches layout structure to your buyer expectations."
+            hint="40% weight. Matches layout structure to your buyer expectations."
           />
           <ToolSegmentedControl
             label="2. Visual asset readiness"

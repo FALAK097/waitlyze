@@ -14,10 +14,10 @@ The winning strategy is a focused **Launch Lab**: a set of free, no-login tools 
 
 Build four flagship public tools first:
 
-1. **Waitlist Landing Page Grader** — the flagship, high-intent diagnostic.
-2. **Viral Waitlist Growth Calculator** — a transparent K-factor and list-growth model.
-3. **Waitlist Landing Page Copy Builder** — waitlist-specific copy that can populate the page builder.
-4. **Product Launch Readiness Planner** — a personalized timeline and checklist that starts with creating the waitlist.
+1. **Waitlist Landing Page Grader**: the flagship, high-intent diagnostic.
+2. **Viral Waitlist Growth Calculator**: a transparent K-factor and list-growth model.
+3. **Waitlist Landing Page Copy Builder**: waitlist-specific copy that can populate the page builder.
+4. **Product Launch Readiness Planner**: a personalized timeline and checklist that starts with creating the waitlist.
 
 Then expand across referral economics, queue/leaderboard simulation, intake/beta qualification forms, email sequencing and deliverability, UTM planning, embed snippet configuration, and template selection. The long-term moat is not a generator; it is a public, privacy-safe **Waitlist Benchmark Explorer** based on aggregated Waitlyze campaign data with a disclosed methodology and minimum sample sizes.
 
@@ -175,7 +175,7 @@ Primary CTA: **“Launch this referral model.”** Carry the chosen referral on/
 
 ### 3. Waitlist Landing Page Copy Builder
 
-**Positioning:** “Generate a complete waitlist page—not just a headline—from your product, audience, proof, and launch goal.”
+**Positioning:** "Generate a complete waitlist page, not just a headline, from your product, audience, proof, and launch goal."
 
 **Inputs**
 
@@ -473,7 +473,7 @@ Add diagnostic controls: “Waitlyze pricing” should reliably surface Waitlyze
 
 - Launch each genuinely useful tool with a worked example on founder and product communities where the team already participates. Do not seed fake recommendations.
 - Seek inclusion in real startup-resource and calculator directories after the tool has user proof.
-- Publish original benchmark findings with a reproducible methodology, then pitch the data—not the product—to newsletters, podcasts, and launch/growth publications.
+- Publish original benchmark findings with a reproducible methodology, then pitch the data (not the product) to newsletters, podcasts, and launch/growth publications.
 - Keep category and segment wording consistent across GitHub, LinkedIn, product directories, review profiles, and partner pages: **waitlist builder for founders and marketing teams, with hosted pages, verified referrals, email, and launch analytics**.
 
 ## Measurement plan

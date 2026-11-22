@@ -174,7 +174,7 @@ export function simulateWaitlistQueue(rawInputs = {}) {
   if (ratio < 0.25) {
     fairnessStatus = "weak_incentive";
     fairnessSummary =
-      "Referral points are low relative to base signup points—consider raising Referral Points to at least 40%–60% of Base Signup Points.";
+      "Referral points are low relative to base signup points. Raise Referral Points to at least 40% to 60% of Base Signup Points.";
   } else if (cutoffs[3].referralsRequired > 35) {
     fairnessStatus = "lockout_risk";
     fairnessSummary =
@@ -192,7 +192,7 @@ export function simulateWaitlistQueue(rawInputs = {}) {
     fairnessStatus,
     fairnessSummary,
     tieBreakerNote:
-      "Waitlyze orders subscribers by Total Verified Points DESC, then Signup Timestamp ASC—so equal point totals always preserve earlier supporters.",
+      "Waitlyze orders subscribers by Total Verified Points DESC, then Signup Timestamp ASC, so equal point totals always preserve earlier supporters.",
     formula: `Total Points = ${pointsSignup} (Base) + (Verified Referrals × ${pointsReferral}) + Bonus Points`,
   };
 }

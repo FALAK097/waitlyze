@@ -200,7 +200,9 @@ export function recommendTemplates({
       whyItFits.push(`Adapts cleanly to ${categoryLabel} messaging with minimal section edits.`);
     }
     if (assets === "text_only" && !profile.hasMedia) {
-      whyItFits.push("Leads with typography and structure—no empty screenshot slots to fill.");
+      whyItFits.push(
+        "Leads with typography and structure, with no empty screenshot slots to fill.",
+      );
     } else if (assets !== "text_only" && profile.hasMedia) {
       whyItFits.push("Includes a dedicated visual showcase area for your product preview.");
     }

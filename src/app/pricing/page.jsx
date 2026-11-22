@@ -81,7 +81,7 @@ export default function PricingPage() {
             <h1 id="pricing-page-title">Simple pricing for the whole pre-launch journey.</h1>
             <p className="wl-hero-lede">
               Start with a real waitlist for free. Upgrade when you need unlimited signups, multiple
-              launches, deeper analytics, subscriber email, or your own domain—without a
+              launches, deeper analytics, subscriber email, or your own domain, with no
               per-subscriber bill.
             </p>
             <div className="wl-hero-actions">
@@ -120,7 +120,7 @@ export default function PricingPage() {
         <section className="wl-section pt-0" aria-labelledby="pricing-details-title">
           <div className="wl-section-heading">
             <p className="wl-eyebrow">BEFORE YOU BUY</p>
-            <h2 id="pricing-details-title">What the price does—and does not—include.</h2>
+            <h2 id="pricing-details-title">What the price includes and excludes.</h2>
           </div>
           <div className="mt-10 grid gap-8 md:grid-cols-2">
             <div>

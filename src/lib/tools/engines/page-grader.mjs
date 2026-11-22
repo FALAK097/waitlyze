@@ -23,7 +23,7 @@ export const SAMPLE_AUDIT_HTML = `<!doctype html>
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>PulseGrid — Automated Incident Timelines for DevOps Teams</title>
+  <title>PulseGrid: Automated Incident Timelines for DevOps Teams</title>
   <link rel="canonical" href="https://pulsegrid.example/waitlist" />
 </head>
 <body>

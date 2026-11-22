@@ -166,7 +166,7 @@ export function EmbedConfiguratorWidget({
         <p
           className={cn("mt-2 text-micro", isDark ? "text-neutral-400" : "text-product-text-muted")}
         >
-          Local sandbox preview — submissions are not stored.
+          Local sandbox preview. Submissions are not stored.
         </p>
       </form>
     );

@@ -63,7 +63,7 @@ export default async function NewWaitlistPage({ searchParams }) {
       </h1>
       <p className="text-sm text-product-text-secondary">
         {initialBlueprint
-          ? `Prefilled from ${initialBlueprint.toolTitle}. Review your draft settings below—nothing is published automatically.`
+          ? `Prefilled from ${initialBlueprint.toolTitle}. Review your draft settings below. Nothing is published automatically.`
           : "Name the launch, then shape the page in Builder."}
       </p>
       {blueprintExpired && (

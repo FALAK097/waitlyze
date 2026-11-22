@@ -196,7 +196,7 @@ export default async function TemplateDetailPage({ params }) {
               {heroSection && (
                 <p className="mt-2">
                   Hero headline:{" "}
-                  <strong className="text-product-text-primary">{heroSection.heading}</strong> —{" "}
+                  <strong className="text-product-text-primary">{heroSection.heading}</strong>:{" "}
                   {heroSection.body}
                 </p>
               )}

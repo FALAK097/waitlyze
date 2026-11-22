@@ -169,7 +169,7 @@ export function WaitlistEmbed() {
     return {
       language: "liquid",
       code,
-      installNote: `Safe for product drop and coming-soon templates—uses public data-key-id with zero private keys in theme files. ${styleSyncNote}`,
+      installNote: `Safe for product drop and coming-soon templates. Uses public data-key-id with zero private keys in theme files. ${styleSyncNote}`,
     };
   }
 

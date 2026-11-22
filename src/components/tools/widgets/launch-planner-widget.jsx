@@ -135,7 +135,7 @@ export function LaunchPlannerWidget({
         t.completed ? "Done" : "Pending",
         t.dependency,
       ]),
-      [`Waitlyze Launch Readiness Plan — Readiness Score ${liveReadinessScore}/100`],
+      [`Waitlyze Launch Readiness Plan (Readiness Score ${liveReadinessScore}/100)`],
     );
     trackToolEvent("TOOL_RESULT_EXPORTED", {
       tool_slug: "product-launch-checklist",
@@ -317,7 +317,7 @@ export function LaunchPlannerWidget({
             sublabel={
               liveFirstIncompleteTask
                 ? `Next critical dependency: ${liveFirstIncompleteTask.title} (due ${liveFirstIncompleteTask.dueDate})`
-                : "All launch checklist items are marked complete — ready to open your Waitlyze draft."
+                : "All launch checklist items are complete. Ready to open your Waitlyze draft."
             }
             resultBand={liveBand}
             onApplyInProduct={onApplyInProduct}
