@@ -6,7 +6,18 @@ export const metadata = {
   title: "Terms of Service",
   description:
     "Learn about our terms of service, including user responsibilities, acceptable use, and legal requirements for using Waitlyze's waitlist platform.",
-  alternates: { canonical: "/terms" },
+  alternates: {
+    canonical: "/terms",
+    types: { "text/markdown": [{ url: "/terms.md", title: "Terms of Service (Markdown)" }] },
+  },
+  openGraph: {
+    type: "website",
+    url: "/terms",
+    title: "Terms of Service | Waitlyze",
+    description:
+      "Learn about our terms of service, including user responsibilities, acceptable use, and legal requirements for using Waitlyze's waitlist platform.",
+    images: ["/opengraph-image"],
+  },
 };
 
 const sections = [

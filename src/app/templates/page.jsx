@@ -10,7 +10,7 @@ import { listTemplates } from "@/lib/templates/catalog.mjs";
 import { getGalleryMeta } from "@/lib/templates/gallery.mjs";
 
 export const metadata = {
-  title: { absolute: "Free Waitlist Landing Page Templates (14 Live Previews) | Waitlyze" },
+  title: { absolute: "Free Waitlist Templates (14 Previews) | Waitlyze" },
   description:
     "Browse 14 free waitlist landing page templates for SaaS betas, AI launches, mobile apps, newsletters, events, and pre-orders. Customize and publish in minutes.",
   alternates: {
@@ -22,14 +22,14 @@ export const metadata = {
   openGraph: {
     type: "website",
     url: "/templates",
-    title: "Free Waitlist Landing Page Templates (14 Live Previews) | Waitlyze",
+    title: "Free Waitlist Templates (14 Previews) | Waitlyze",
     description:
       "Fourteen free waitlist templates for every kind of launch. Pick one and make it yours.",
     images: ["/opengraph-image"],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Free Waitlist Landing Page Templates (14 Live Previews) | Waitlyze",
+    title: "Free Waitlist Templates (14 Previews) | Waitlyze",
     description:
       "Fourteen free waitlist templates for every kind of launch. Pick one and make it yours.",
     images: ["/opengraph-image"],

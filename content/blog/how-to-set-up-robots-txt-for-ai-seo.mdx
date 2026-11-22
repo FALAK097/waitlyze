@@ -39,7 +39,7 @@ Below is the definitive strategy for structuring `robots.txt` in 2026, backed by
 <ProductCallout
   title="Make your launch page easy for search and AI to understand"
   description="Waitlyze gives you a hosted waitlist page, referral sharing, and signup analytics, with a robots.txt policy you control on your own site."
-  href="/#features"
+  href="/features"
   cta="Explore Waitlyze features"
 />
 
@@ -50,7 +50,7 @@ Modern bots fall into four distinct categories. Your `robots.txt` must treat eac
 | Tier | Category | Primary User-Agents | Action | Business Impact |
 | :--- | :--- | :--- | :--- | :--- |
 | **Tier 1** | **Search & AI Answer Bots** | `Googlebot`, `bingbot`, `OAI-SearchBot`, `ChatGPT-User`, `Claude-SearchBot`, `PerplexityBot`, `ExaSearchBot` | **ALLOW** | Drives high-intent live buyer traffic, organic citations, and backlink referrals. |
-| **Tier 2** | **Foundation Model Weights** | `GPTBot`, `ClaudeBot` | **ALLOW** | Embeds your brand entity and terminology into next-generation model weights. |
+| **Tier 2** | **Foundation Model Weights** | `GPTBot`, `ClaudeBot` | **ALLOW** | Embeds your brand entity and terminology into future model weights. |
 | **Tier 3** | **Social Link Previews** | `facebookexternalhit`, `Twitterbot` | **ALLOW** | Generates OpenGraph link cards in Slack, Discord, Twitter/X, LinkedIn, and messaging apps. |
 | **Tier 4** | **Scraper Freeloaders** | `Bytespider`, `CCBot`, `meta-externalagent`, `Reflectionbot`, `ElevenlabsCrawler` | **BLOCK** | Consumes server resources, downloads bulk tokens, and provides 0 traffic or citations back. |
 
@@ -107,7 +107,7 @@ By blocking these scrapers at the `robots.txt` level, you preserve edge bandwidt
 
 In Next.js 14, 15, and 16, you can manage your rules programmatically inside `src/app/robots.js`. Next.js compiles this into a clean, compliant `robots.txt` served from the root.
 
-Here is the exact configuration we run in production for [Waitlyze](https://waitlyze.com):
+Here is the exact configuration we run in production for [Waitlyze](/about):
 
 ```javascript
 // src/app/robots.js

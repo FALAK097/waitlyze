@@ -12,12 +12,24 @@ export const metadata = {
   title: "Waitlist Software Features",
   description:
     "Build a branded waitlist, reward verified referrals, email subscribers, and track launch growth with Waitlyze.",
-  alternates: { canonical: "/features" },
+  alternates: {
+    canonical: "/features",
+    types: {
+      "text/markdown": [{ url: "/features.md", title: "Waitlist Software Features (Markdown)" }],
+    },
+  },
   openGraph: {
     type: "website",
     url: "/features",
     title: "Waitlist Software Features | Waitlyze",
     description: "Build, grow, and measure your launch waitlist in one workspace.",
+    images: ["/opengraph-image"],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Waitlist Software Features | Waitlyze",
+    description: "Build, grow, and measure your launch waitlist in one workspace.",
+    images: ["/opengraph-image"],
   },
 };
 

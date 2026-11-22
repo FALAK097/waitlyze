@@ -7,24 +7,33 @@ import { DocsPage } from "fumadocs-ui/layouts/docs/page";
 import Link from "next/link";
 
 import { ChangelogCopyButton } from "@/components/changelog/changelog-copy-button";
+import { JsonLd } from "@/components/seo/json-ld";
 import { formatChangelogDate, parseChangelog } from "@/lib/changelog";
+import { absoluteUrl, breadcrumbNode } from "@/lib/seo-helpers";
 
 export const metadata = {
   title: { absolute: "Waitlyze Changelog: Release Notes & Product Updates" },
   description: "Waitlyze release notes, from the first waitlist release through the latest update.",
-  alternates: { canonical: "/docs/changelog" },
+  alternates: {
+    canonical: "/docs/changelog",
+    types: {
+      "text/markdown": [{ url: "/docs/changelog.md", title: "Waitlyze Changelog (Markdown)" }],
+    },
+  },
   openGraph: {
     type: "website",
     url: "/docs/changelog",
     title: "Changelog | Waitlyze",
     description:
       "Waitlyze release notes, from the first waitlist release through the latest update.",
+    images: ["/opengraph-image"],
   },
   twitter: {
     card: "summary_large_image",
     title: "Changelog | Waitlyze",
     description:
       "Waitlyze release notes, from the first waitlist release through the latest update.",
+    images: ["/opengraph-image"],
   },
 };
 
@@ -40,6 +49,23 @@ export default async function ChangelogPage() {
 
   return (
     <DocsPage className="waitlyze-changelog-page max-w-none" toc={toc}>
+      <JsonLd
+        data={[
+          {
+            "@type": "WebPage",
+            name: "Waitlyze Changelog",
+            description:
+              "Waitlyze release notes, from the first waitlist release through the latest update.",
+            url: absoluteUrl("/docs/changelog"),
+            isPartOf: { "@id": absoluteUrl("/#website") },
+          },
+          breadcrumbNode([
+            { name: "Home", path: "/" },
+            { name: "Docs", path: "/docs" },
+            { name: "Changelog", path: "/docs/changelog" },
+          ]),
+        ]}
+      />
       <div className="mx-auto w-full max-w-3xl pt-2 pb-20">
         {/* Header */}
         <header className="mb-12">

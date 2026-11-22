@@ -22,6 +22,13 @@ export const metadata = {
     url: "/pricing",
     title: "Waitlyze pricing: Free and Pro plans",
     description: "Clear waitlist software pricing with no per-subscriber charge on Pro.",
+    images: ["/opengraph-image"],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Waitlyze pricing: Free and Pro plans",
+    description: "Clear waitlist software pricing with no per-subscriber charge on Pro.",
+    images: ["/opengraph-image"],
   },
 };
 

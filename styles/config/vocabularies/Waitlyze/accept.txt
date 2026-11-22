@@ -86,6 +86,13 @@ Framer Motion
 (?i)Uneed
 (?i)Youform
 (?i)Klaviyo
+(?i)Waitlister
+(?i)Prefinery
+(?i)GetWaitlist
+(?i)LaunchList
+(?i)KickoffLabs
+(?i)Webflow
+(?i)gamified
 (?i)Autosave
 (?i)Priya
 (?i)GPTBot

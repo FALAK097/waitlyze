@@ -14,12 +14,22 @@ export const metadata = {
   title: "About",
   description:
     "Waitlyze is open-source waitlist software built by Falak Gala for founders who want to build, grow, email, and measure a launch audience.",
-  alternates: { canonical: "/about" },
+  alternates: {
+    canonical: "/about",
+    types: { "text/markdown": [{ url: "/about.md", title: "About Waitlyze (Markdown)" }] },
+  },
   openGraph: {
     type: "website",
     url: "/about",
     title: "About Waitlyze",
     description: "Why Waitlyze exists, who it is for, and how the open-source product is built.",
+    images: ["/opengraph-image"],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "About Waitlyze",
+    description: "Why Waitlyze exists, who it is for, and how the open-source product is built.",
+    images: ["/opengraph-image"],
   },
 };
 

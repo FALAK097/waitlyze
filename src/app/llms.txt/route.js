@@ -40,6 +40,7 @@ Waitlyze is open-source waitlist software for founders and product teams. Create
 - [MCP Documentation](${SITE_URL}/docs/mcp): Complete agent connection instructions, tool references, and schemas
 - [AI Agent Instructions](${SITE_URL}/agent-instructions.md): How to connect Cursor, Claude Code, and AI assistants to Waitlyze
 - [Full LLMs Context](${SITE_URL}/llms-full.txt): Complete product knowledge base in one file
+- [OpenAPI Specification](${SITE_URL}/openapi.json): OpenAPI 3.1.0 schema for public waitlist signup, lookup, and points endpoints
 - [Markdown Route Catalog](${SITE_URL}/api/md/_catalog): Machine-readable index of all markdown routes
 - [AI Policy (ai.txt)](${SITE_URL}/ai.txt): Permissions and crawler policy
 

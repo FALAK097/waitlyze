@@ -5,7 +5,17 @@ import LegalDocument from "@/components/landing/legal-document";
 export const metadata = {
   title: "Privacy Policy",
   description: "How Waitlyze collects, uses, shares, and protects information.",
-  alternates: { canonical: "/privacy" },
+  alternates: {
+    canonical: "/privacy",
+    types: { "text/markdown": [{ url: "/privacy.md", title: "Privacy Policy (Markdown)" }] },
+  },
+  openGraph: {
+    type: "website",
+    url: "/privacy",
+    title: "Privacy Policy | Waitlyze",
+    description: "How Waitlyze collects, uses, shares, and protects information.",
+    images: ["/opengraph-image"],
+  },
 };
 
 const sections = [

@@ -5,7 +5,19 @@ import LegalDocument from "@/components/landing/legal-document";
 export const metadata = {
   title: "Refund Policy",
   description: "Refunds, cancellations, and renewals for Waitlyze subscriptions.",
-  alternates: { canonical: "/refund-policy" },
+  alternates: {
+    canonical: "/refund-policy",
+    types: {
+      "text/markdown": [{ url: "/refund-policy.md", title: "Refund Policy (Markdown)" }],
+    },
+  },
+  openGraph: {
+    type: "website",
+    url: "/refund-policy",
+    title: "Refund Policy | Waitlyze",
+    description: "Refunds, cancellations, and renewals for Waitlyze subscriptions.",
+    images: ["/opengraph-image"],
+  },
 };
 
 const sections = [

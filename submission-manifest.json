@@ -1,0 +1,58 @@
+{
+  "product": {
+    "name": "Waitlyze",
+    "slug": "waitlyze",
+    "domain": "waitlyze.com",
+    "url": "https://waitlyze.com",
+    "pricing_url": "https://waitlyze.com/pricing",
+    "contact_email": "support@waitlyze.com",
+    "contact_page": "https://waitlyze.com/support",
+    "privacy_url": "https://waitlyze.com/privacy",
+    "terms_url": "https://waitlyze.com/terms"
+  },
+  "copy": {
+    "tagline_40c": "Waitlists with verified referrals & MCP",
+    "tagline_60c": "Waitlist builder with verified referrals, email & MCP",
+    "mcp_description_100c": "Open-source waitlist builder with verified referrals, Resend email automations, analytics, and MCP.",
+    "awesome_list_bullet": "- [Waitlyze](https://waitlyze.com) - Open-source waitlist builder with verified referrals, email automations, analytics, and a native MCP server.",
+    "description_160c": "Build a branded waitlist page or embed widget, grow signups with verified referral loops, send emails via Resend, and manage via API or MCP.",
+    "description_500c": "Waitlyze is an open-source pre-launch waitlist platform for founders, developers, and product teams. Pick from 14 launch templates or embed a signup widget into Next.js, Framer, or Webflow. Every signup supports double opt-in verification and a personal referral link with IP-velocity fraud checks, milestone rewards, and live leaderboards.\n\nConnect a custom domain and your own verified Resend sender to run welcome automations and launch broadcasts, or manage waitlists and signups from Cursor, Claude, and ChatGPT via Waitlyze's Streamable HTTP MCP server and REST API.",
+    "key_features": [
+      "Visual waitlist builder with 14 industry templates and custom domains",
+      "Double opt-in verified referrals with IP-velocity and Turnstile fraud checks",
+      "BYO verified Resend sender for welcome, reminder, and milestone emails",
+      "Server-side REST API (/api/waitlist), signed webhooks, and Streamable HTTP MCP server (/mcp)"
+    ]
+  },
+  "taxonomy": {
+    "primary_category": "SaaS / Developer Tools / Waitlist Software",
+    "tags": ["waitlist", "referral-marketing", "saas", "nextjs", "mcp", "pre-launch"],
+    "competitors_replaced": [
+      "GetWaitlist",
+      "LaunchList",
+      "Prefinery",
+      "KickoffLabs",
+      "Viral Loops",
+      "Waitlister"
+    ],
+    "pricing_model": "Freemium",
+    "starting_price_usd": 15,
+    "free_tier_details": "1 workspace, 1 waitlist, 1 member, and 100 cumulative signups free forever ($0/mo); Pro is $15/mo or $119/yr flat per workspace."
+  },
+  "assets": {
+    "favicon_64": "https://waitlyze.com/icon.svg",
+    "logo_square_512": "https://waitlyze.com/web-app-manifest-512x512.png",
+    "og_image_1200x630": "https://waitlyze.com/opengraph-image",
+    "screenshots_16x9": [
+      "https://assets.waitlyze.com/showcase-builder-4k.png",
+      "https://assets.waitlyze.com/showcase-referral-4k.png",
+      "https://assets.waitlyze.com/showcase-analytics-4k.png"
+    ]
+  },
+  "agent_and_mcp": {
+    "mcp_endpoint": "https://waitlyze.com/mcp",
+    "openapi_spec": "https://waitlyze.com/openapi.json",
+    "llms_txt": "https://waitlyze.com/llms.txt",
+    "github_repo": "https://github.com/FALAK097/waitlyze"
+  }
+}

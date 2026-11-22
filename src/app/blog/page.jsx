@@ -17,10 +17,19 @@ export const metadata = {
   description,
   alternates: {
     canonical: "/blog",
-    types: { "application/rss+xml": [{ url: "/rss.xml", title: "Waitlyze Blog" }] },
+    types: {
+      "application/rss+xml": [{ url: "/rss.xml", title: "Waitlyze Blog" }],
+      "text/markdown": [{ url: "/blog.md", title: "Waitlyze Blog (Markdown)" }],
+    },
   },
-  openGraph: { type: "website", url: "/blog", title, description },
-  twitter: { card: "summary_large_image", title, description },
+  openGraph: {
+    type: "website",
+    url: "/blog",
+    title,
+    description,
+    images: ["/opengraph-image"],
+  },
+  twitter: { card: "summary_large_image", title, description, images: ["/opengraph-image"] },
 };
 
 const containerClasses = "mx-auto w-full max-w-[1120px] px-[18px]";

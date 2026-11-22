@@ -20,6 +20,7 @@ export async function GET(request) {
       headers: {
         "Content-Type": "text/markdown; charset=utf-8",
         "X-Robots-Tag": "noindex",
+        Vary: "Accept",
       },
     });
   }
@@ -43,6 +44,7 @@ The requested markdown page \`${path}\` does not exist.
       headers: {
         "Content-Type": "text/markdown; charset=utf-8",
         "X-Robots-Tag": "noindex",
+        Vary: "Accept",
       },
     });
   }
@@ -54,6 +56,7 @@ The requested markdown page \`${path}\` does not exist.
       "X-Robots-Tag": "noindex",
       "X-Markdown-Tokens": String(doc.tokens),
       Link: `<${doc.canonicalUrl}>; rel="canonical"`,
+      Vary: "Accept",
       "Cache-Control": "public, max-age=1800, s-maxage=3600",
     },
   });

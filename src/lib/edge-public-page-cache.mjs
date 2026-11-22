@@ -11,8 +11,25 @@ export function publicDocumentCacheKey(request, versionId) {
   return new Request(url.toString());
 }
 
+export function appendVaryAccept(headers) {
+  const existing = headers.get("vary");
+  if (!existing) {
+    headers.set("vary", "Accept");
+    return;
+  }
+  const tokens = existing
+    .split(",")
+    .map((part) => part.trim())
+    .filter(Boolean);
+  if (!tokens.some((part) => part.toLowerCase() === "accept")) {
+    tokens.push("Accept");
+    headers.set("vary", tokens.join(", "));
+  }
+}
+
 export function publicDocumentCacheHeaders(headers, { stored = false } = {}) {
   const result = new Headers(headers);
+  appendVaryAccept(result);
   result.set(
     "cache-control",
     stored ? `public, max-age=${PUBLIC_CACHE_TTL_SECONDS}` : PUBLIC_CLIENT_CACHE_CONTROL,

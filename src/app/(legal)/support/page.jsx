@@ -5,7 +5,17 @@ import LegalDocument from "@/components/landing/legal-document";
 export const metadata = {
   title: "Support",
   description: "Get help with Waitlyze accounts, campaigns, billing, and integrations.",
-  alternates: { canonical: "/support" },
+  alternates: {
+    canonical: "/support",
+    types: { "text/markdown": [{ url: "/support.md", title: "Waitlyze Support (Markdown)" }] },
+  },
+  openGraph: {
+    type: "website",
+    url: "/support",
+    title: "Support | Waitlyze",
+    description: "Get help with Waitlyze accounts, campaigns, billing, and integrations.",
+    images: ["/opengraph-image"],
+  },
 };
 
 const sections = [

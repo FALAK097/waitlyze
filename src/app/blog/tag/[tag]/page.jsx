@@ -29,8 +29,14 @@ export async function generateMetadata({ params }) {
     description,
     ...(tag.count < MIN_INDEXABLE_TAG_POSTS && { robots: { index: false, follow: true } }),
     alternates: { canonical: `/blog/tag/${tag.slug}` },
-    openGraph: { type: "website", url: `/blog/tag/${tag.slug}`, title, description },
-    twitter: { card: "summary_large_image", title, description },
+    openGraph: {
+      type: "website",
+      url: `/blog/tag/${tag.slug}`,
+      title,
+      description,
+      images: ["/opengraph-image"],
+    },
+    twitter: { card: "summary_large_image", title, description, images: ["/opengraph-image"] },
   };
 }
 

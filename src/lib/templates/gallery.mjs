@@ -55,7 +55,7 @@ const gallery = {
   creator: {
     useCase: "An editorial signup page with reader proof.",
     bestFor: ["Newsletters", "Creator launches", "Paid-subscriber funnels"],
-    seoTitle: "Free Newsletter & Creator Waitlist Landing Page Template",
+    seoTitle: "Free Newsletter & Creator Waitlist Template",
     seoDescription:
       "Free editorial newsletter waitlist landing page template with reader testimonials, issue highlights, and email signup. Customize your creator launch for free.",
   },

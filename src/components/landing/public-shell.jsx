@@ -161,6 +161,20 @@ export default function PublicShell({ children }) {
               >
                 AI Agent instructions
               </Link>
+              <Link
+                href="/llms.txt"
+                prefetch={false}
+                className="inline-flex items-center gap-1.5 hover:text-product-success-text focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-neutral-900"
+              >
+                LLMs context
+              </Link>
+              <Link
+                href="/openapi.json"
+                prefetch={false}
+                className="inline-flex items-center gap-1.5 hover:text-product-success-text focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-neutral-900"
+              >
+                OpenAPI spec
+              </Link>
             </nav>
             <nav
               aria-label="Company"

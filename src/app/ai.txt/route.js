@@ -20,6 +20,7 @@ Description: ${SITE_DESCRIPTION}
 - Agent Instructions: ${SITE_URL}/agent-instructions.md
 - Markdown Site Map: ${SITE_URL}/llms.txt
 - Consolidated Full Context: ${SITE_URL}/llms-full.txt
+- OpenAPI Specification: ${SITE_URL}/openapi.json
 - Machine Route Catalog: ${SITE_URL}/api/md/_catalog
 
 ## Canonical Attribution

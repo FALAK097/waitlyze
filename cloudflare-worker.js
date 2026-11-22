@@ -2,6 +2,7 @@
 // @ts-ignore
 import nextWorker from "./.open-next/worker.js";
 import {
+  appendVaryAccept,
   isCacheablePublicDocument,
   isCacheablePublicResponse,
   publicDocumentCacheHeaders,
@@ -206,7 +207,24 @@ export default {
     const { pathname } = url;
     const isReadMethod = request.method === "GET" || request.method === "HEAD";
 
-    if (MACHINE_PATHS.has(pathname)) return nextWorker.fetch(request, env, ctx);
+    const isPlatform = isPlatformHost(hostname);
+    const shouldSendHsts = url.protocol === "https:" && !isPlatform;
+    const finalizeResponse = (response, { varyAccept = false } = {}) => {
+      if (!shouldSendHsts && !varyAccept) return response;
+      const headers = new Headers(response.headers);
+      if (shouldSendHsts && !headers.has("strict-transport-security")) {
+        headers.set("strict-transport-security", "max-age=31536000; includeSubDomains");
+      }
+      if (varyAccept) appendVaryAccept(headers);
+      return new Response(response.body, {
+        status: response.status,
+        statusText: response.statusText,
+        headers,
+      });
+    };
+
+    if (MACHINE_PATHS.has(pathname))
+      return finalizeResponse(await nextWorker.fetch(request, env, ctx));
 
     if (!isCustomHost) {
       const directMarkdown =
@@ -219,13 +237,14 @@ export default {
         prefersMarkdown(request.headers.get("accept"));
       if (directMarkdown || negotiatedMarkdown) {
         const cleanPath = directMarkdown ? pathname.replace(/\.md$/, "") : pathname;
-        return nextWorker.fetch(
+        const mdResponse = await nextWorker.fetch(
           rewriteRequest(request, "/api/md", `?path=${encodeURIComponent(cleanPath || "/")}`, {
             "x-waitlyze-markdown-path": cleanPath || "/",
           }),
           env,
           ctx,
         );
+        return finalizeResponse(mdResponse, { varyAccept: true });
       }
     }
 
@@ -245,7 +264,9 @@ export default {
       !pathname.startsWith("/api") &&
       !pathname.startsWith("/_next/")
     ) {
-      return nextWorker.fetch(rewriteRequest(request, "/domain", ""), env, ctx);
+      return finalizeResponse(
+        await nextWorker.fetch(rewriteRequest(request, "/domain", ""), env, ctx),
+      );
     }
 
     if (isCacheablePublicDocument(request)) {
@@ -257,11 +278,14 @@ export default {
       if (cached) {
         const headers = publicDocumentCacheHeaders(cached.headers);
         headers.set("x-waitlyze-public-cache", "HIT");
-        return new Response(cached.body, {
-          status: cached.status,
-          statusText: cached.statusText,
-          headers,
-        });
+        return finalizeResponse(
+          new Response(cached.body, {
+            status: cached.status,
+            statusText: cached.statusText,
+            headers,
+          }),
+          { varyAccept: true },
+        );
       }
       const response = await nextWorker.fetch(request, env, ctx);
       if (isCacheablePublicResponse(response)) {
@@ -274,16 +298,26 @@ export default {
         ctx.waitUntil(caches.default.put(cacheKey, toCache));
         const originalHeaders = publicDocumentCacheHeaders(response.headers);
         originalHeaders.set("x-waitlyze-public-cache", "MISS");
-        return new Response(response.body, {
-          status: response.status,
-          statusText: response.statusText,
-          headers: originalHeaders,
-        });
+        return finalizeResponse(
+          new Response(response.body, {
+            status: response.status,
+            statusText: response.statusText,
+            headers: originalHeaders,
+          }),
+          { varyAccept: true },
+        );
       }
-      return response;
+      return finalizeResponse(response, { varyAccept: !isCustomHost && isReadMethod });
     }
 
-    return nextWorker.fetch(request, env, ctx);
+    const upstream = await nextWorker.fetch(request, env, ctx);
+    const shouldVaryAccept =
+      !isCustomHost &&
+      isReadMethod &&
+      !isFileRequest &&
+      !pathname.startsWith("/api") &&
+      !pathname.startsWith("/_next");
+    return finalizeResponse(upstream, { varyAccept: shouldVaryAccept });
   },
 
   // Cloudflare Email Sending lifecycle events (event subscription → queue).
