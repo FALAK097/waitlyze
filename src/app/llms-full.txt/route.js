@@ -1,3 +1,4 @@
+import { WAITLYZE_PRICING } from "@/lib/billing/pricing.mjs";
 import { getPosts } from "@/lib/blog-source";
 import { SITE_DESCRIPTION, SITE_URL } from "@/lib/site-metadata";
 import { docsLlms } from "@/lib/source";
@@ -59,6 +60,10 @@ Canonical: ${SITE_URL}
 
 ## 1. Product Overview & Architecture
 Waitlyze is a waitlist and pre-launch platform for builders, founders, and creators.
+- Product features: ${SITE_URL}/#features
+- Pricing: ${SITE_URL}/pricing
+- Platform comparison: ${SITE_URL}/compare
+- Waitlist alternatives: ${SITE_URL}/alternatives
 - Zero-code hosted pages (/w/slug) and embed widgets (/js/embed.js)
 - Verified referral engine with points, leaderboards, and queue ranking
 - Email automations (welcome emails, referral reminders, milestone updates)
@@ -75,22 +80,34 @@ To integrate Waitlyze:
 
 ---
 
-## 3. Waitlyze Launch Lab (14 Free Pre-Launch Tools & Research)
+## 3. Pricing, Limits & Buying Fit
+- Free: ${WAITLYZE_PRICING.free.formatted}; one waitlist, one member, and 100 cumulative signups per Free workspace. The allowance does not reset monthly or when a waitlist is deleted.
+- Pro monthly: ${WAITLYZE_PRICING.pro.monthly.formatted} per month in USD.
+- Pro annual: ${WAITLYZE_PRICING.pro.annual.formatted} per year in USD (${WAITLYZE_PRICING.pro.annual.monthlyEquivalentFormatted} per month equivalent).
+- Pro includes unlimited workspaces, waitlists, signups, and members, plus advanced analytics, referral milestones, subscriber broadcasts and automations, branding removal, and one optional custom domain per waitlist.
+- Subscriber email requires a connected, verified Resend sender. Waitlyze tracks referral reward eligibility but does not fulfill rewards. Taxes and any available country-adjusted price appear at checkout.
+- Current canonical pricing: ${SITE_URL}/pricing
+- Side-by-side buyer comparison: ${SITE_URL}/compare
+- Focused alternative guides: ${SITE_URL}/alternatives
+
+---
+
+## 4. Waitlyze Launch Lab (14 Free Pre-Launch Tools & Research)
 ${toolsSection}
 
 ---
 
-## 4. Launch Templates Catalog
+## 5. Launch Templates Catalog
 ${templatesSection}
 
 ---
 
-## 5. Pre-Launch Guides & Playbooks
+## 6. Pre-Launch Guides & Playbooks
 ${blogSection}
 
 ---
 
-## 6. Developer & Platform Documentation
+## 7. Developer & Platform Documentation
 ${docsFull}
 `;
 

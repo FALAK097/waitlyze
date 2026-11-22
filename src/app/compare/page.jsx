@@ -18,6 +18,7 @@ import {
   breadcrumbSchema,
   competitors,
   featureRows,
+  pairwiseMatchups,
   pricingRows,
   RESEARCHED_ON,
   waitlyze,
@@ -26,13 +27,25 @@ import {
 export const metadata = {
   title: { absolute: "Waitlist Software Comparison: 7 Tools Side by Side (2026)" },
   description:
-    "Compare Waitlyze, GetWaitlist, LaunchList, Prefinery, KickoffLabs, Viral Loops, and Waitlister on pricing, referrals, email, analytics, and API access.",
-  alternates: { canonical: "/compare" },
+    "Compare Waitlyze, GetWaitlist, LaunchList, Prefinery, KickoffLabs, Viral Loops, and Waitlister on pricing, free plans, referrals, email, analytics, and API access.",
+  alternates: {
+    canonical: "/compare",
+    types: {
+      "text/markdown": [{ url: "/compare.md", title: "Waitlist Software Comparison (Markdown)" }],
+    },
+  },
   openGraph: {
     type: "website",
     url: "/compare",
-    title: "Waitlist software compared side by side",
+    title: "Waitlist Software Comparison: 7 Tools Side by Side (2026)",
     description: "Seven dedicated waitlist platforms compared on pricing and launch features.",
+    images: ["/opengraph-image"],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Waitlist Software Comparison: 7 Tools Side by Side (2026)",
+    description: "Seven dedicated waitlist platforms compared on pricing and launch features.",
+    images: ["/opengraph-image"],
   },
 };
 
@@ -46,7 +59,20 @@ export default function ComparePage() {
   return (
     <ComparisonShell>
       <StructuredData
-        data={{ "@context": "https://schema.org", "@graph": [breadcrumbSchema(crumbs)] }}
+        data={{
+          "@context": "https://schema.org",
+          "@graph": [
+            breadcrumbSchema(crumbs),
+            {
+              "@type": "FAQPage",
+              mainEntity: pairwiseMatchups.map((item) => ({
+                "@type": "Question",
+                name: item.question,
+                acceptedAnswer: { "@type": "Answer", text: item.summary },
+              })),
+            },
+          ],
+        }}
       />
       <main id="main-content" className="compare-page">
         <section className="compare-wrap compare-hero">
@@ -55,8 +81,8 @@ export default function ComparePage() {
             <Eyebrow>Side-by-side comparison</Eyebrow>
             <h1 className="compare-title">Compare waitlist tools side by side.</h1>
             <p className="compare-lede">
-              See how seven dedicated platforms price growth and where their essential launch
-              features unlock. Open a focused guide when the workflow matters as much as the
+              See how seven dedicated platforms price growth and which plans include essential
+              launch features. Open a focused guide when the workflow matters as much as the
               checklist.
             </p>
             <div className="compare-hero-actions">
@@ -167,6 +193,31 @@ export default function ComparePage() {
             Similar names don&apos;t always mean similar depth. Open a focused guide for the
             tradeoffs behind each row.
           </p>
+        </section>
+
+        <section className="compare-wrap compare-section" aria-labelledby="head-to-head">
+          <div className="compare-section-heading">
+            <h2 id="head-to-head">Common head-to-head comparisons</h2>
+            <p>
+              Quick answers to the most frequent two-tool matchups founders compare before picking a
+              waitlist platform.
+            </p>
+          </div>
+          <div className="compare-prose-grid">
+            {pairwiseMatchups.map((matchup) => (
+              <article key={matchup.pair}>
+                <h3>{matchup.pair}</h3>
+                <p>{matchup.summary}</p>
+                <p className="mt-3 flex flex-wrap gap-4">
+                  {matchup.links.map((link) => (
+                    <Link key={link.href} className="compare-text-link" href={link.href}>
+                      {link.label}
+                    </Link>
+                  ))}
+                </p>
+              </article>
+            ))}
+          </div>
         </section>
 
         <HowWeChecked date={RESEARCHED_ON} />

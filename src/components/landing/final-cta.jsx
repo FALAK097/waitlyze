@@ -8,6 +8,7 @@ import "./final-cta.css";
 export default function FinalCta({ className = "", compact = false }) {
   return (
     <section
+      id="final-cta"
       className={`wl-final-cta ${compact ? "wl-final-cta-compact" : ""} ${className}`}
       aria-labelledby="wl-final-cta-title"
     >

@@ -22,15 +22,29 @@ const crumbs = [
 ];
 
 export const metadata = {
-  title: { absolute: "Best Waitlist Software Alternatives (2026) | Waitlyze" },
+  title: { absolute: "Best Waitlist Software Alternatives & Pricing (2026) | Waitlyze" },
   description:
-    "Compare Waitlyze with GetWaitlist, LaunchList, Prefinery, KickoffLabs, Viral Loops, Waitlister, and adjacent launch tools.",
-  alternates: { canonical: "/alternatives" },
+    "Compare Waitlyze with GetWaitlist, LaunchList, Prefinery, KickoffLabs, Viral Loops, and Waitlister on free plans, pricing models, referrals, email, and API access.",
+  alternates: {
+    canonical: "/alternatives",
+    types: {
+      "text/markdown": [
+        { url: "/alternatives.md", title: "Waitlist Software Alternatives (Markdown)" },
+      ],
+    },
+  },
   openGraph: {
     type: "website",
     url: "/alternatives",
-    title: "Waitlist software alternatives, without the sales fog",
+    title: "Best Waitlist Software Alternatives & Pricing (2026)",
     description: "A practical guide to choosing the right waitlist platform for your launch.",
+    images: ["/opengraph-image"],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Best Waitlist Software Alternatives & Pricing (2026)",
+    description: "A practical guide to choosing the right waitlist platform for your launch.",
+    images: ["/opengraph-image"],
   },
 };
 

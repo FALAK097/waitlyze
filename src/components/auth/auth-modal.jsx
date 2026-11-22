@@ -22,8 +22,21 @@ import { trackClientEvent } from "@/lib/posthog/client";
 import { POSTHOG_EVENTS } from "@/lib/posthog/events.mjs";
 import { publicFontClasses } from "@/lib/public-fonts";
 
+function getSignupOriginProperties(trigger) {
+  if (typeof window === "undefined") return {};
+  const container = trigger?.closest?.("section[id], header, footer");
+  const placement = container?.id || container?.tagName?.toLowerCase() || "page";
+  const ctaLabel = trigger?.textContent?.trim();
+  return {
+    page_path: window.location.pathname,
+    cta_placement: placement,
+    ...(ctaLabel ? { cta_label: ctaLabel } : {}),
+  };
+}
+
 export function AuthModal({
   open,
+  triggerElement,
   onOpenChange,
   onCloseAutoFocus,
   callbackURL = "/waitlists",
@@ -49,10 +62,11 @@ export function AuthModal({
     if (open && !wasOpenRef.current) {
       trackClientEvent(POSTHOG_EVENTS.MARKETING_SIGNUP_STARTED, {
         method: "modal_opened",
+        ...getSignupOriginProperties(triggerElement),
       });
     }
     wasOpenRef.current = open;
-  }, [open]);
+  }, [open, triggerElement]);
 
   const changeOpen = (nextOpen) => {
     if (!nextOpen) {
@@ -67,6 +81,7 @@ export function AuthModal({
     const attempt = ++attemptRef.current;
     trackClientEvent(POSTHOG_EVENTS.MARKETING_SIGNUP_STARTED, {
       method: "google",
+      ...getSignupOriginProperties(triggerElement),
     });
     setLoading(true);
     try {

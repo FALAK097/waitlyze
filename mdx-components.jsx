@@ -10,6 +10,8 @@ import { Tab, Tabs } from "fumadocs-ui/components/tabs";
 import { TypeTable } from "fumadocs-ui/components/type-table";
 import defaultMdxComponents from "fumadocs-ui/mdx";
 
+import { ProductCallout } from "@/components/blog/product-callout";
+
 export function getMDXComponents(components) {
   return {
     ...defaultMdxComponents,
@@ -24,6 +26,7 @@ export function getMDXComponents(components) {
     Folder,
     ImageZoom,
     InlineTOC,
+    ProductCallout,
     Step,
     Steps,
     Tab,

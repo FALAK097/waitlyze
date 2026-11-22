@@ -42,6 +42,7 @@ export function AuthModalProvider({ children }) {
   const callbackURL = useAuthModalStore((state) => state.callbackURL);
   const heading = useAuthModalStore((state) => state.heading);
   const description = useAuthModalStore((state) => state.description);
+  const returnFocus = useAuthModalStore((state) => state.returnFocus);
   const setOpen = useAuthModalStore((state) => state.setOpen);
 
   return (
@@ -50,6 +51,7 @@ export function AuthModalProvider({ children }) {
       {hasOpened && (
         <AuthModal
           open={open}
+          triggerElement={returnFocus}
           onOpenChange={setOpen}
           callbackURL={callbackURL}
           heading={heading}

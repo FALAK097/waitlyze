@@ -8,6 +8,7 @@ import { publicFontClasses } from "@/lib/public-fonts";
 import CopyrightYear from "./copyright-year";
 import GitHubMark from "./github-mark";
 import Header from "./header";
+import PromoBanner from "./promo-banner";
 import Wordmark from "./wordmark";
 
 export default function PublicShell({ children }) {
@@ -21,6 +22,7 @@ export default function PublicShell({ children }) {
       >
         Skip to content
       </a>
+      <PromoBanner variant="top" />
       <Header />
       {children}
       <footer className="bg-product-bg-page pt-12 pb-6 text-product-text-primary">
@@ -58,7 +60,7 @@ export default function PublicShell({ children }) {
                 How it works
               </Link>
               <Link
-                href="/templates"
+                href="/#templates"
                 className="inline-flex items-center gap-1.5 hover:text-product-success-text focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-neutral-900"
               >
                 Templates
