@@ -8,11 +8,18 @@ import { DeleteWaitlist } from "@/components/product/delete-waitlist";
 import { ReferralSettings } from "@/components/product/referral-settings";
 import { WaitlistSettingsNavigation } from "@/components/product/waitlist-settings-nav";
 import { WebhookSettings } from "@/components/product/webhook-settings";
+import {
+  InProductToolDrawer,
+  OriginatingBlueprintBanner,
+} from "@/components/tools/in-product-launch-lab";
 import { Button } from "@/components/ui/button";
 import { getWorkspaceEntitlements } from "@/lib/billing/plans.mjs";
 import { parseJsonStringArray } from "@/lib/db/sqlite-helpers.mjs";
 import { env } from "@/lib/env.mjs";
 import prisma from "@/lib/prisma";
+import { SITE_URL } from "@/lib/site-metadata";
+import { getClaimedBlueprintForWaitlist } from "@/lib/tools/blueprint.mjs";
+import { getToolBySlug } from "@/lib/tools/registry.mjs";
 import { validateWebhookUrl } from "@/lib/webhooks/security.mjs";
 import { requireCampaignPage } from "@/lib/workspaces/authorize";
 
@@ -229,8 +236,9 @@ export default async function WaitlistSettings({ params, searchParams }) {
   const section = VALID_SECTIONS.has(query?.section) ? query.section : "referral";
   const { campaign: waitlist, role } = await requireCampaignPage(id, "viewCampaign");
 
-  const [entitlements, initialSectionData] = await Promise.all([
+  const [entitlements, claimedBlueprint, initialSectionData] = await Promise.all([
     getWorkspaceEntitlements(prisma, waitlist.workspaceId),
+    getClaimedBlueprintForWaitlist(prisma, waitlist.id),
     (async () => {
       if (section === "webhooks") {
         const rows = await prisma.webhookSubscription.findMany({
@@ -275,8 +283,25 @@ export default async function WaitlistSettings({ params, searchParams }) {
 
   const canManage = ["OWNER", "ADMIN"].includes(role);
   const domainAvailable = Boolean(env.CLOUDFLARE_API_TOKEN && env.CLOUDFLARE_ZONE_ID);
+  const publicUrl = waitlist.publicSlug
+    ? `${(process.env.BETTER_AUTH_URL || SITE_URL).replace(/\/$/, "")}/w/${waitlist.publicSlug}`
+    : "";
+  const blueprintToolMeta = claimedBlueprint ? getToolBySlug(claimedBlueprint.toolSlug) : null;
   return (
     <div className="mx-auto w-full max-w-280">
+      <div className="mb-4 flex justify-end">
+        <InProductToolDrawer
+          surface="settings"
+          waitlistUrl={publicUrl}
+          waitlistKeyId={waitlist.id}
+        />
+      </div>
+      {claimedBlueprint ? (
+        <OriginatingBlueprintBanner
+          blueprint={claimedBlueprint}
+          toolTitle={blueprintToolMeta?.shortTitle}
+        />
+      ) : null}
       <div className="flex items-start gap-8 max-[760px]:flex-col max-[760px]:gap-8 lg:gap-12 xl:gap-18">
         <aside className="sticky top-6 w-52.5 min-w-0 shrink-0 max-[760px]:static max-[760px]:w-full">
           <WaitlistSettingsNavigation waitlistId={waitlist.id} section={section} />

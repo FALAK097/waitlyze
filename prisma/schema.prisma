@@ -1184,3 +1184,23 @@ model CloudflareEmailUsage {
   @@index([createdAt])
   @@map("cloudflare_email_usage")
 }
+
+// Short-lived versioned blueprints created by Launch Lab free tools and claimed
+// across Google OAuth into a prefilled campaign draft.
+model ToolBlueprint {
+  id                 String    @id @default(cuid())
+  version            Int       @default(1)
+  toolSlug           String
+  payload            Json
+  claimedByUserId    String?
+  claimedWaitlistId  String?
+  claimedCreationKey String?
+  claimedAt          DateTime?
+  expiresAt          DateTime
+  createdAt          DateTime  @default(now())
+
+  @@index([expiresAt])
+  @@index([toolSlug, createdAt])
+  @@index([claimedWaitlistId])
+  @@map("tool_blueprints")
+}

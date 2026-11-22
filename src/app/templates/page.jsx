@@ -5,6 +5,7 @@ import PublicShell from "@/components/landing/public-shell";
 import SignupButton from "@/components/landing/signup-button";
 import TemplatePreview from "@/components/landing/template-preview";
 import { JsonLd } from "@/components/seo/json-ld";
+import { TemplateFinderWidget } from "@/components/tools/widgets/template-finder-widget";
 import { absoluteUrl, breadcrumbNode } from "@/lib/seo-helpers";
 import { listTemplates } from "@/lib/templates/catalog.mjs";
 import { getGalleryMeta } from "@/lib/templates/gallery.mjs";
@@ -143,6 +144,11 @@ export default function TemplatesPage() {
           </div>
         </section>
         <section className={`${containerClasses} pb-18`} aria-label="Template gallery">
+          <TemplateFinderWidget
+            templates={templates}
+            mode="compact"
+            entrySurface="templates_gallery"
+          />
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {templates.map((template) => (
               <TemplateCard key={template.id} template={template} />

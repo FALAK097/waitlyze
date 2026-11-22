@@ -1,4 +1,6 @@
+import { cookies } from "next/headers";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { Suspense } from "react";
 
 import { ProductContentSkeleton } from "@/components/product/content-skeleton";
@@ -22,6 +24,11 @@ import {
 } from "@/components/ui/table";
 import { getWorkspaceEntitlements } from "@/lib/billing/plans.mjs";
 import prisma from "@/lib/prisma";
+import {
+  BLUEPRINT_COOKIE_NAME,
+  getActiveToolBlueprint,
+  verifyBlueprintCookieValue,
+} from "@/lib/tools/blueprint.mjs";
 import {
   normalizeWaitlistSearch,
   normalizeWaitlistStatus,
@@ -323,7 +330,21 @@ async function renderWaitlistsResults({
 }
 
 export default async function WaitlistsPage({ searchParams }) {
-  const [{ user, workspace }, params] = await Promise.all([currentWorkspace(), searchParams]);
+  const [{ user, workspace }, params, cookieStore] = await Promise.all([
+    currentWorkspace(),
+    searchParams,
+    cookies(),
+  ]);
+  const pendingBlueprint =
+    params?.dismissBlueprint === "1"
+      ? null
+      : verifyBlueprintCookieValue(cookieStore.get(BLUEPRINT_COOKIE_NAME)?.value);
+  if (pendingBlueprint?.id) {
+    const activeBlueprint = await getActiveToolBlueprint(prisma, pendingBlueprint.id, user.id);
+    if (activeBlueprint) {
+      redirect(`/waitlists/new?blueprint=${encodeURIComponent(activeBlueprint.id)}`);
+    }
+  }
   const query = normalizeWaitlistSearch(params?.q);
   const status = normalizeWaitlistStatus(params?.status);
   const sort = normalizeWaitlistSort(params?.sort);

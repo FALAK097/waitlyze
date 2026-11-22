@@ -133,7 +133,14 @@ Events payload format:
 ## 4. How to Connect Waitlyze to Cursor, Claude, or Codex
 
 ### Option 1: Model Context Protocol (MCP) Server (Recommended)
-Waitlyze provides a first-class Model Context Protocol (MCP) server at \`${SITE_URL}/mcp\` using Streamable HTTP. It enables agents to directly query waitlists, create signups, evaluate viral analytics, and send broadcasts.
+Waitlyze provides a first-class Model Context Protocol (MCP) server at \`${SITE_URL}/mcp\` using Streamable HTTP. It enables agents to directly query waitlists, create signups, evaluate viral analytics, send broadcasts, and call deterministic read-only Launch Lab planning tools:
+- \`calculate_viral_growth\`: Multi-cycle K-factor compounding & +10% lever sensitivity
+- \`simulate_waitlist_queue\`: Deterministic points + timestamp rank jumps & Top 1%/Top 10 cutoffs
+- \`recommend_waitlist_template\`: Scores all 14 Waitlyze templates by category, assets, motion, and tone
+- \`design_referral_rewards\`: Models P25/P50/P90 reward fulfillment budgets, effective CAC, and fraud risk
+- \`plan_launch_timeline\`: Computes 6-pillar launch readiness score and dated 14/30/60/90-day tasks
+
+Free human-facing Launch Lab tools are also available without login at \`${SITE_URL}/tools\` and \`${SITE_URL}/research/waitlist-benchmarks\`.
 
 **In Claude Code:**
 \`\`\`bash

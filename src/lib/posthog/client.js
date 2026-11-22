@@ -6,6 +6,22 @@ import { env } from "../env.mjs";
 
 let clientInitialized = false;
 
+export function isPublicPostHogPath(pathname) {
+  if (!pathname) return false;
+  return (
+    pathname === "/" ||
+    pathname.startsWith("/tools") ||
+    pathname.startsWith("/research") ||
+    pathname.startsWith("/templates") ||
+    pathname.startsWith("/blog") ||
+    pathname.startsWith("/pricing") ||
+    pathname.startsWith("/compare") ||
+    pathname.startsWith("/alternatives") ||
+    pathname.startsWith("/privacy") ||
+    pathname.startsWith("/terms")
+  );
+}
+
 /**
  * Initializes the PostHog browser SDK with privacy-conscious defaults:
  * - Native stateless cookieless tracking on public marketing pages.
@@ -28,15 +44,7 @@ export function initClientPostHog() {
     return posthog;
   }
 
-  const isPublicPage =
-    pathname === "/" ||
-    pathname.startsWith("/templates") ||
-    pathname.startsWith("/blog") ||
-    pathname.startsWith("/pricing") ||
-    pathname.startsWith("/compare") ||
-    pathname.startsWith("/alternatives") ||
-    pathname.startsWith("/privacy") ||
-    pathname.startsWith("/terms");
+  const isPublicPage = isPublicPostHogPath(pathname);
 
   try {
     posthog.init(token, {
