@@ -13,20 +13,57 @@ function hasControlChar(value, includeSpace = false) {
   return false;
 }
 
-const imageUrl = z
-  .string()
-  .max(500)
-  .trim()
-  .refine(
-    (value) =>
-      value === "" ||
-      (!value.includes("\\") &&
-        !hasControlChar(value, true) &&
-        /^(?:https:\/\/|\/(?!\/)|data:image\/(?:png|jpeg|jpg|webp|gif|avif);base64,)/i.test(value)),
-    {
-      message: "Use an https://, site-relative, or raster data:image URL.",
-    },
+function isSafeImageUrlValue(value) {
+  return (
+    value === "" ||
+    (!value.includes("\\") &&
+      !hasControlChar(value, true) &&
+      /^(?:https:\/\/|\/(?!\/)|data:image\/(?:png|jpeg|jpg|webp|gif|avif);base64,)/i.test(value))
   );
+}
+
+function isSafeHrefValue(value) {
+  const trimmed = value.trim();
+  if (!trimmed) return true;
+  return (
+    !trimmed.includes("\\") &&
+    !hasControlChar(trimmed, false) &&
+    /^(?:#|\/(?!\/)|https?:\/\/|mailto:|tel:)/i.test(trimmed)
+  );
+}
+
+/**
+ * Normalizes obsolete image/href URLs in already-persisted snapshots before
+ * schema parsing on read paths, so legacy published pages stay available
+ * while unsafe values are stripped rather than failing the whole snapshot.
+ */
+export function sanitizeLegacySnapshotForRead(snapshot) {
+  if (!snapshot || typeof snapshot !== "object") return snapshot;
+  const clone = structuredClone(snapshot);
+  if (clone.brand && typeof clone.brand.logoUrl === "string") {
+    if (!isSafeImageUrlValue(clone.brand.logoUrl.trim())) clone.brand.logoUrl = "";
+  }
+  if (Array.isArray(clone.sections)) {
+    for (const section of clone.sections) {
+      if (!section || typeof section !== "object") continue;
+      if (typeof section.imageUrl === "string" && !isSafeImageUrlValue(section.imageUrl.trim())) {
+        section.imageUrl = "";
+      }
+      if (Array.isArray(section.links)) {
+        for (const link of section.links) {
+          if (link && typeof link.href === "string" && !isSafeHrefValue(link.href)) {
+            link.href = "#";
+          }
+        }
+      }
+    }
+  }
+  return clone;
+}
+
+const imageUrl = z.string().max(500).trim().refine(isSafeImageUrlValue, {
+  message: "Use an https://, site-relative, or raster data:image URL.",
+});
 const blockId = z
   .string()
   .min(3)
@@ -37,15 +74,7 @@ const blockId = z
 const href = z
   .string()
   .max(240)
-  .refine((value) => {
-    const trimmed = value.trim();
-    if (!trimmed) return true;
-    return (
-      !trimmed.includes("\\") &&
-      !hasControlChar(trimmed, false) &&
-      /^(?:#|\/(?!\/)|https?:\/\/|mailto:)/i.test(trimmed)
-    );
-  }, "Links must start with #, /, mailto:, or http(s).");
+  .refine(isSafeHrefValue, "Links must start with #, /, mailto:, tel:, or http(s).");
 const base = { id: blockId, visible: z.boolean(), variant: z.string().min(1).max(40) };
 const item = z.strictObject({ title: text(80), body: text(280) });
 

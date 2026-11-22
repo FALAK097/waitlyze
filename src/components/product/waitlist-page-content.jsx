@@ -40,7 +40,7 @@ function safeHref(value) {
   if (typeof value !== "string") return "#";
   const trimmed = value.trim();
   if (!trimmed || trimmed.includes("\\") || hasControlOrSpace(trimmed, false)) return "#";
-  if (/^(?:#|\/(?!\/)|https?:\/\/|mailto:)/i.test(trimmed)) return trimmed;
+  if (/^(?:#|\/(?!\/)|https?:\/\/|mailto:|tel:)/i.test(trimmed)) return trimmed;
   return "#";
 }
 

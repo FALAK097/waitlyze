@@ -22,7 +22,7 @@ function sanitizeCallbackUrl(url) {
   if (url.includes("\\") || hasControlOrSpace(url)) return "";
   try {
     const parsed = new URL(url, "https://waitlyze.local");
-    if (parsed.origin !== "https://waitlyze.local") return "";
+    if (parsed.origin !== "https://waitlyze.local" || parsed.pathname.startsWith("//")) return "";
     return `${parsed.pathname}${parsed.search}${parsed.hash}`;
   } catch {
     return "";
@@ -36,7 +36,9 @@ function isSafeOAuthRedirect(url) {
     if (parsed.protocol === "https:") return true;
     if (
       parsed.protocol === "http:" &&
-      (parsed.hostname === "localhost" || parsed.hostname === "127.0.0.1")
+      (parsed.hostname === "localhost" ||
+        parsed.hostname === "127.0.0.1" ||
+        parsed.hostname === "[::1]")
     ) {
       return true;
     }

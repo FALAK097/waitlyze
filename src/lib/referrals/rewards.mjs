@@ -14,7 +14,7 @@
 // ../referrals/points.mjs) so retries collapse via skipDuplicates and the
 // balance bump happens in the same transaction as the triggering event.
 
-import { templateSnapshotSchema } from "../templates/catalog.mjs";
+import { sanitizeLegacySnapshotForRead, templateSnapshotSchema } from "../templates/catalog.mjs";
 import { enqueueWebhookEventBatch } from "../webhooks/delivery.mjs";
 import {
   displayPosition,
@@ -37,7 +37,7 @@ export {
 // (unpublished list, legacy snapshot-less page, unreadable record) resolves
 // to zero-config defaults so points keep accruing.
 export async function getPublishedRewards(db, waitListId) {
-  const fallback = { rewards: normalizeRewardsConfig(null), tiers: [] };
+  const fallback = { available: false, rewards: normalizeRewardsConfig(null), tiers: [] };
   try {
     if (typeof waitListId !== "string" || !waitListId) return fallback;
     const waitList = await db.waitList.findUnique({
@@ -51,9 +51,15 @@ export async function getPublishedRewards(db, waitListId) {
       },
       select: { snapshot: true },
     });
-    const parsed = templateSnapshotSchema.safeParse(publication?.snapshot);
+    const parsed = templateSnapshotSchema.safeParse(
+      sanitizeLegacySnapshotForRead(publication?.snapshot),
+    );
     if (!parsed.success) return fallback;
-    return { rewards: resolveRewardsConfig(parsed.data), tiers: readRewardTiers(parsed.data) };
+    return {
+      available: true,
+      rewards: resolveRewardsConfig(parsed.data),
+      tiers: readRewardTiers(parsed.data),
+    };
   } catch {
     return fallback;
   }
@@ -160,6 +166,7 @@ export async function checkRewardTierUnlocks(
 // throws: routes must not fail a signup response because progress math did.
 export async function summarizeSignupRewards(db, waitListId, signup) {
   const empty = {
+    available: false,
     points: 0,
     referrals: 0,
     position: null,
@@ -174,7 +181,7 @@ export async function summarizeSignupRewards(db, waitListId, signup) {
   };
   try {
     if (!signup || typeof signup.id !== "string") return empty;
-    const [{ rewards, tiers }, advance] = await Promise.all([
+    const [{ available, rewards, tiers }, advance] = await Promise.all([
       getPublishedRewards(db, waitListId),
       getAdvancement(db, waitListId, signup.id),
     ]);
@@ -182,6 +189,7 @@ export async function summarizeSignupRewards(db, waitListId, signup) {
     const progress = rewardProgress(tiers, referrals);
     const position = advance?.position ?? null;
     return {
+      available,
       points: Number.isSafeInteger(signup.points) && signup.points >= 0 ? signup.points : 0,
       referrals,
       position,

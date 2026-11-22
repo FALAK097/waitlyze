@@ -34,7 +34,7 @@ export async function GET(request) {
     ]);
     if (!waitList || waitList.status !== "PUBLISHED" || !waitList.showReferrals)
       return NextResponse.json({ message: "A valid waitlist is required." }, { status: 400 });
-    if (publishedRewards?.rewards?.hideCounts)
+    if (!publishedRewards?.available || publishedRewards.rewards?.hideCounts)
       return NextResponse.json({ message: "Leaderboard is unavailable." }, { status: 404 });
     const signup = await prisma.signUp.findFirst({
       where: {

@@ -131,6 +131,11 @@ const checkIfRequestIsValid = async (body, context = {}) => {
       id: body.waitListId,
       status: "PUBLISHED",
     },
+    include: {
+      customDomain: {
+        select: { hostname: true, status: true },
+      },
+    },
   });
   if (!isValidWaitList) {
     return Response.json(
@@ -161,8 +166,15 @@ const checkIfRequestIsValid = async (body, context = {}) => {
         );
       }
       let verified = false;
+      const allowedHostnames =
+        isValidWaitList.customDomain?.status === "ACTIVE" && isValidWaitList.customDomain.hostname
+          ? [isValidWaitList.customDomain.hostname]
+          : [];
       try {
-        verified = await verifyTurnstileToken(body.turnstileToken, { ip: context.ip });
+        verified = await verifyTurnstileToken(body.turnstileToken, {
+          ip: context.ip,
+          allowedHostnames,
+        });
       } catch (error) {
         if (error instanceof TurnstileMisconfiguredError) {
           console.error("Turnstile misconfigured for waitlist", body.waitListId);

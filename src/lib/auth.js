@@ -5,6 +5,7 @@ import { jwt } from "better-auth/plugins/jwt";
 
 import { getMcpResourceUrl, MCP_SCOPES } from "./mcp/config.mjs";
 import prisma from "./prisma.js";
+import { checkRateLimit } from "./rate-limit.js";
 
 const OAUTH_SCOPES = Object.freeze(["openid", "profile", "email", "offline_access", ...MCP_SCOPES]);
 const globalForAuth = globalThis;
@@ -107,7 +108,17 @@ function createAuth() {
     ].filter(Boolean),
     rateLimit: {
       enabled: true,
-      storage: "database",
+      customStorage: {
+        async consume(key, rule) {
+          const allowed = await checkRateLimit(
+            prisma,
+            `ba-rl:${key}`,
+            rule.max,
+            rule.window * 1000,
+          );
+          return { allowed, retryAfter: allowed ? null : rule.window };
+        },
+      },
       customRules: {
         "/oauth2/register": { window: 60, max: 10 },
         "/sign-in/email": { window: 60, max: 10 },

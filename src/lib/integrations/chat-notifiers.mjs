@@ -29,7 +29,7 @@ const ALLOWED_HOSTS = Object.freeze({
 
 const ALLOWED_PATHS = Object.freeze({
   SLACK: /^\/services\/[A-Za-z0-9/_-]+$/,
-  DISCORD: /^\/api\/webhooks\/\d+\/[A-Za-z0-9_-]+$/,
+  DISCORD: /^\/api\/(?:v\d+\/)?webhooks\/\d+\/[A-Za-z0-9_-]+$/,
 });
 
 export function isSupportedChatProvider(value) {

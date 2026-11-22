@@ -91,8 +91,13 @@ export const GET = async (req) => {
     getCampaignPosition(prisma, signUp.waitListId, signUp.id),
     summarizeSignupRewards(prisma, signUp.waitListId, signUp),
   ]);
+  const hideCounts = !rewardSummary?.available || Boolean(rewardSummary.hideCounts);
+  const { available: _available, ...publicSummary } = rewardSummary || {};
+  const sanitizedSummary = hideCounts
+    ? { ...publicSummary, position: null, displayPosition: null }
+    : publicSummary;
   return NextResponse.json(
-    { signUp: { ...signUp, rank: rewardSummary?.hideCounts ? null : rank, rewardSummary } },
+    { signUp: { ...signUp, rank: hideCounts ? null : rank, rewardSummary: sanitizedSummary } },
     { headers: { "Cache-Control": "private, no-store" } },
   );
 };

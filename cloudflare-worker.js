@@ -372,7 +372,7 @@ export default {
         new Request(`https://${appRoot}/api/internal/email-events`, {
           method: "POST",
           headers: {
-            authorization: `Bearer ${env.OUTBOX_DISPATCH_SECRET || ""}`,
+            authorization: `Bearer ${env.EMAIL_EVENTS_SECRET || env.OUTBOX_DISPATCH_SECRET || ""}`,
             "content-type": "application/json",
           },
           body: JSON.stringify({ events }),

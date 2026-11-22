@@ -65,7 +65,7 @@ export async function verifyTurnstileToken(
   if (!response.ok) return false;
   const data = await response.json().catch(() => null);
   if (data?.success !== true) return false;
-  if (data.action && expectedAction && data.action !== expectedAction) return false;
+  if (expectedAction && data.action !== expectedAction) return false;
   const allowed = canonicalAllowedHostnames(allowedHostnames);
   if (allowed.size > 0 && typeof data.hostname === "string" && data.hostname) {
     const tokenHost = data.hostname.toLowerCase();

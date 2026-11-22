@@ -496,9 +496,14 @@ export function createWorkspaceService(db) {
         const owners = await db.workspaceMember.count({ where: { workspaceId, role: "OWNER" } });
         if (owners < 2) throw new TypeError("A workspace needs at least one owner.");
       }
-      await db.workspaceMember.delete({
-        where: { workspaceId_userId: { workspaceId, userId: targetUserId } },
+      const removed = await db.workspaceMember.deleteMany({
+        where: {
+          workspaceId,
+          userId: targetUserId,
+          ...(actorMembership.role === "OWNER" ? {} : { role: "MEMBER" }),
+        },
       });
+      if (removed.count === 0) throw new AccessError();
       return { userId: targetUserId, name: target.user.name, email: target.user.email };
     },
     async changeWorkspaceMemberRole(userId, workspaceId, targetUserId, role) {

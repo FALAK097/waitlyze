@@ -108,10 +108,7 @@ export function registerWaitlyzeTools(server, authContext) {
   function requireWriteScope(permission = "editCampaign") {
     ensureAuth();
     if (WRITE_PERMISSIONS.has(permission)) {
-      if (
-        authContext.authType === "api_key" &&
-        (permission === "deleteCampaign" || permission === "sendEmail")
-      ) {
+      if (authContext.authType === "api_key" && permission === "deleteCampaign") {
         throw new Error(
           `Forbidden: '${permission}' requires OAuth or session authentication and cannot be performed with an API key.`,
         );
@@ -1386,6 +1383,12 @@ export function registerWaitlyzeTools(server, authContext) {
     },
     async ({ waitlistId, broadcastId }) => {
       try {
+        ensureAuth();
+        if (authContext.authType === "api_key") {
+          return errorContent(
+            "Forbidden: 'waitlyze_send_broadcast' requires OAuth or session authentication and cannot be performed with an API key.",
+          );
+        }
         const waitlist = await getAuthorizedWaitlist(waitlistId, "sendEmail");
 
         const broadcast = await prisma.marketingBroadcast.findFirst({
