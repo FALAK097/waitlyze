@@ -9,10 +9,10 @@ import {
   ToolCopyButton,
   ToolSegmentedControl,
   ToolSelectField,
-  ToolStatusBadge,
   ToolTextField,
   ToolWorkspace,
 } from "@/components/tools/tool-ui";
+import { Button } from "@/components/ui/button";
 import { trackToolEvent } from "@/lib/tools/analytics";
 import {
   COPY_BUILDER_DEFAULTS,
@@ -36,14 +36,17 @@ export function CopyBuilderWidget({
   const baseHero =
     generated.heroDirections.find((h) => h.id === selectedAngle) || generated.heroDirections[0];
 
-  const activeHero = {
-    ...baseHero,
-    eyebrow: customOverrides.eyebrow ?? baseHero.eyebrow,
-    heading: customOverrides.heading ?? baseHero.heading,
-    subheadline: customOverrides.subheadline ?? baseHero.subheadline,
-    buttonText: customOverrides.buttonText ?? baseHero.buttonText,
-    privacyNote: baseHero.privacyNote,
-  };
+  const activeHero = useMemo(
+    () => ({
+      ...baseHero,
+      eyebrow: customOverrides.eyebrow ?? baseHero.eyebrow,
+      heading: customOverrides.heading ?? baseHero.heading,
+      subheadline: customOverrides.subheadline ?? baseHero.subheadline,
+      buttonText: customOverrides.buttonText ?? baseHero.buttonText,
+      privacyNote: baseHero.privacyNote,
+    }),
+    [baseHero, customOverrides],
+  );
 
   function updateField(key, value) {
     if (!startedRef.current) {
@@ -65,23 +68,34 @@ export function CopyBuilderWidget({
   }
 
   const isDarkPreview = inputs.templateId === "ai" || inputs.templateId === "developer";
+  const activeMarkdown = useMemo(
+    () =>
+      formatCopyMarkdown({
+        productName: inputs.productName,
+        activeHero,
+        heroDirections: generated.heroDirections,
+        benefits: generated.benefits,
+        proofSection: generated.proofSection,
+        faqs: generated.faqs,
+        postSignup: generated.postSignup,
+      }),
+    [inputs.productName, activeHero, generated],
+  );
 
   return (
-    <ToolWorkspace className="grid gap-7">
-      <div className="grid gap-7 lg:grid-cols-[minmax(0,22rem)_minmax(0,1fr)]">
-        {/* Left: Structured Inputs */}
+    <ToolWorkspace>
+      <div className="grid gap-10 lg:grid-cols-[minmax(0,21rem)_minmax(0,1fr)]">
         <div className="grid content-start gap-4">
           <div className="flex items-center justify-between">
-            <p className="font-product-mono text-micro font-semibold text-product-success-text">
-              PRODUCT BRIEF
-            </p>
-            <button
+            <span className="text-caption font-semibold text-product-text-primary">Brief</span>
+            <Button
               type="button"
+              variant="product-inline-link"
+              size="sm"
               onClick={handleResetExample}
-              className="text-micro font-medium text-product-text-secondary underline-offset-4 hover:text-product-text-primary hover:underline"
             >
-              Load example
-            </button>
+              Reset
+            </Button>
           </div>
 
           <ToolTextField
@@ -92,7 +106,7 @@ export function CopyBuilderWidget({
             placeholder="RelayNote"
           />
           <ToolTextField
-            label="One-sentence value proposition"
+            label="One-line value prop"
             value={inputs.oneLiner}
             onChange={(v) => updateField("oneLiner", v)}
             maxLength={160}
@@ -106,7 +120,7 @@ export function CopyBuilderWidget({
             placeholder="10–60 person engineering teams"
           />
           <ToolTextField
-            label="Core painful problem"
+            label="Core problem"
             value={inputs.painPoint}
             onChange={(v) => updateField("painPoint", v)}
             maxLength={140}
@@ -115,7 +129,7 @@ export function CopyBuilderWidget({
           {!compact ? (
             <>
               <ToolTextField
-                label="Unique mechanism / how it works"
+                label="How it works"
                 value={inputs.uniqueMechanism}
                 onChange={(v) => updateField("uniqueMechanism", v)}
                 maxLength={140}
@@ -127,15 +141,14 @@ export function CopyBuilderWidget({
                 options={COPY_BUILDER_OPTIONS.launchMotions}
               />
               <ToolSelectField
-                label="Available proof (strictly honest)"
+                label="Available proof"
                 value={inputs.proofType}
                 onChange={(v) => updateField("proofType", v)}
                 options={COPY_BUILDER_OPTIONS.proofTypes}
-                hint="Selecting 'None yet' keeps proof honest with zero invented testimonials."
               />
               {inputs.proofType !== "none_honest" ? (
                 <ToolTextField
-                  label="Your real proof detail"
+                  label="Proof detail"
                   value={inputs.proofDetail}
                   onChange={(v) => updateField("proofDetail", v)}
                   maxLength={180}
@@ -144,13 +157,13 @@ export function CopyBuilderWidget({
               ) : null}
               <div className="grid grid-cols-2 gap-3">
                 <ToolSelectField
-                  label="Voice & tone"
+                  label="Tone"
                   value={inputs.tone}
                   onChange={(v) => updateField("tone", v)}
                   options={COPY_BUILDER_OPTIONS.tones}
                 />
                 <ToolSelectField
-                  label="Template frame"
+                  label="Preview theme"
                   value={inputs.templateId}
                   onChange={(v) => updateField("templateId", v)}
                   options={COPY_BUILDER_OPTIONS.templates}
@@ -160,11 +173,9 @@ export function CopyBuilderWidget({
           ) : null}
         </div>
 
-        {/* Right: Hero Directions, Live Frame, and Full Sections */}
-        <div className="grid content-start gap-5">
+        <div className="grid content-start gap-6">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <ToolSegmentedControl
-              label="Choose hero direction"
               value={selectedAngle}
               onChange={(val) => {
                 setSelectedAngle(val);
@@ -173,36 +184,25 @@ export function CopyBuilderWidget({
               options={generated.heroDirections.map((h) => ({ value: h.id, label: h.label }))}
             />
             <ToolSegmentedControl
-              label="Preview view"
               value={previewState}
               onChange={setPreviewState}
               options={[
-                { value: "signup", label: "Signup hero" },
-                { value: "post", label: "Post-signup card" },
+                { value: "signup", label: "Hero" },
+                { value: "post", label: "Post-signup" },
               ]}
             />
           </div>
 
-          {/* Live Template Frame Preview */}
           <div
             className={
               isDarkPreview
-                ? "rounded-xl border border-neutral-800 bg-neutral-950 p-6 text-white sm:p-8"
-                : "rounded-xl border border-product-border-subtle bg-product-bg-inset/45 p-6 text-product-text-primary sm:p-8"
+                ? "rounded-lg bg-neutral-950 p-7 text-white sm:p-9"
+                : "rounded-lg bg-product-bg-inset/50 p-7 text-product-text-primary sm:p-9"
             }
           >
             {previewState === "signup" ? (
               <div className="mx-auto max-w-xl text-center">
-                <span
-                  className={
-                    isDarkPreview
-                      ? "inline-block rounded-full border border-neutral-800 bg-neutral-900 px-3 py-1 font-product-mono text-micro text-lime-300"
-                      : "inline-block rounded-full border border-product-border-subtle bg-product-bg-surface px-3 py-1 font-product-mono text-micro font-medium text-product-success-text"
-                  }
-                >
-                  {activeHero.eyebrow}
-                </span>
-                <h3 className="mt-4 font-product-display text-2xl leading-tight font-semibold tracking-tight text-balance sm:text-3xl">
+                <h3 className="font-product-display text-2xl leading-tight font-semibold tracking-tight text-balance sm:text-3xl">
                   {activeHero.heading}
                 </h3>
                 <p
@@ -218,13 +218,13 @@ export function CopyBuilderWidget({
                   <div
                     className={
                       isDarkPreview
-                        ? "flex min-h-11 flex-1 items-center rounded-lg border border-neutral-700 bg-neutral-900 px-3.5 text-caption text-neutral-400"
-                        : "flex min-h-11 flex-1 items-center rounded-lg border border-product-border-control bg-product-bg-surface px-3.5 text-caption text-product-text-muted"
+                        ? "flex h-10 flex-1 items-center rounded-lg border border-neutral-700 bg-neutral-900 px-3 text-caption text-neutral-400"
+                        : "flex h-10 flex-1 items-center rounded-lg border border-product-border-control bg-product-bg-surface px-3 text-caption text-product-text-muted"
                     }
                   >
                     you@company.com
                   </div>
-                  <span className="inline-flex min-h-11 items-center justify-center rounded-lg bg-product-accent-solid px-4 text-caption font-semibold text-product-accent-label">
+                  <span className="inline-flex h-10 items-center justify-center rounded-lg bg-product-accent-solid px-4 text-caption font-semibold text-product-accent-label">
                     {activeHero.buttonText}
                   </span>
                 </div>
@@ -240,8 +240,7 @@ export function CopyBuilderWidget({
               </div>
             ) : (
               <div className="mx-auto max-w-lg text-center">
-                <ToolStatusBadge tone="accent">Verified referral loop preview</ToolStatusBadge>
-                <h3 className="mt-3 font-product-display text-xl font-semibold tracking-tight">
+                <h3 className="font-product-display text-xl font-semibold tracking-tight">
                   {generated.postSignup.confirmationHeading}
                 </h3>
                 <p
@@ -253,52 +252,46 @@ export function CopyBuilderWidget({
                 >
                   {generated.postSignup.confirmationBody}
                 </p>
-                <div
+                <p
                   className={
                     isDarkPreview
-                      ? "mt-4 rounded-lg border border-neutral-800 bg-neutral-900 p-3.5 text-left"
-                      : "mt-4 rounded-lg border border-product-border-subtle bg-product-bg-surface p-3.5 text-left"
+                      ? "mt-4 text-left text-caption text-neutral-200"
+                      : "mt-4 text-left text-caption text-product-text-primary"
                   }
                 >
-                  <p className="font-product-mono text-micro opacity-75">Pre-filled share post</p>
-                  <p className="mt-1 text-caption">{generated.postSignup.sharePostText}</p>
-                </div>
+                  {generated.postSignup.sharePostText}
+                </p>
               </div>
             )}
           </div>
 
-          {/* Inline Headline & CTA Polish */}
-          <div className="grid gap-3 rounded-xl border border-product-border-subtle bg-product-bg-surface p-4 sm:grid-cols-2">
+          <div className="grid gap-4 sm:grid-cols-2">
             <ToolTextField
-              label="Edit headline (inline)"
+              label="Headline"
               value={activeHero.heading}
               onChange={(v) => setCustomOverrides((prev) => ({ ...prev, heading: v }))}
               maxLength={140}
               className="sm:col-span-2"
             />
             <ToolTextField
-              label="Edit subheadline"
+              label="Subheadline"
               value={activeHero.subheadline}
               onChange={(v) => setCustomOverrides((prev) => ({ ...prev, subheadline: v }))}
               maxLength={320}
             />
             <ToolTextField
-              label="Edit CTA button label"
+              label="CTA label"
               value={activeHero.buttonText}
               onChange={(v) => setCustomOverrides((prev) => ({ ...prev, buttonText: v }))}
               maxLength={40}
             />
           </div>
 
-          {/* Benefits, Proof & FAQ Summary */}
           {!compact ? (
-            <div className="grid gap-4">
-              <div className="grid gap-3 sm:grid-cols-3">
+            <div className="grid gap-6 pt-2">
+              <div className="grid gap-6 sm:grid-cols-3">
                 {generated.benefits.map((b) => (
-                  <div
-                    key={b.title}
-                    className="rounded-lg border border-product-border-subtle bg-product-bg-surface p-3.5"
-                  >
+                  <div key={b.title}>
                     <p className="text-caption font-semibold text-product-text-primary">
                       {b.title}
                     </p>
@@ -309,65 +302,43 @@ export function CopyBuilderWidget({
                 ))}
               </div>
 
-              <div className="rounded-lg border border-product-border-subtle bg-product-bg-inset/50 p-4">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <p className="text-caption font-semibold text-product-text-primary">
-                    {generated.proofSection.heading}
-                  </p>
-                  {generated.proofSection.honestPlaceholder ? (
-                    <ToolStatusBadge tone="success">
-                      Honest pre-launch · 0 fake quotes
-                    </ToolStatusBadge>
-                  ) : null}
-                </div>
-                <p className="mt-1.5 text-caption leading-relaxed text-product-text-secondary">
+              <div>
+                <p className="text-caption font-semibold text-product-text-primary">
+                  {generated.proofSection.heading}
+                </p>
+                <p className="mt-1 text-caption leading-relaxed text-product-text-secondary">
                   {generated.proofSection.body}
                 </p>
               </div>
 
               <div className="flex flex-wrap items-center gap-2">
-                {(() => {
-                  const activeMarkdown = formatCopyMarkdown({
-                    productName: inputs.productName,
-                    activeHero,
-                    heroDirections: generated.heroDirections,
-                    benefits: generated.benefits,
-                    proofSection: generated.proofSection,
-                    faqs: generated.faqs,
-                    postSignup: generated.postSignup,
-                  });
-                  return (
-                    <>
-                      <ToolCopyButton
-                        text={activeMarkdown}
-                        label="Copy full page Markdown"
-                        onCopied={() =>
-                          trackToolEvent("TOOL_RESULT_EXPORTED", {
-                            tool_slug: "waitlist-landing-page-generator",
-                            entry_surface: entrySurface,
-                            export_format: "markdown_copy",
-                          })
-                        }
-                      />
-                      <ToolActionButton
-                        onClick={() => {
-                          downloadTextFile(
-                            `${inputs.productName.toLowerCase().replace(/[^a-z0-9]+/g, "-") || "waitlist"}-copy.md`,
-                            activeMarkdown,
-                            "text/markdown;charset=utf-8;",
-                          );
-                          trackToolEvent("TOOL_RESULT_EXPORTED", {
-                            tool_slug: "waitlist-landing-page-generator",
-                            entry_surface: entrySurface,
-                            export_format: "markdown_file",
-                          });
-                        }}
-                      >
-                        Download .md
-                      </ToolActionButton>
-                    </>
-                  );
-                })()}
+                <ToolCopyButton
+                  text={activeMarkdown}
+                  label="Copy Markdown"
+                  onCopied={() =>
+                    trackToolEvent("TOOL_RESULT_EXPORTED", {
+                      tool_slug: "waitlist-landing-page-generator",
+                      entry_surface: entrySurface,
+                      export_format: "markdown_copy",
+                    })
+                  }
+                />
+                <ToolActionButton
+                  onClick={() => {
+                    downloadTextFile(
+                      `${inputs.productName.toLowerCase().replace(/[^a-z0-9]+/g, "-") || "waitlist"}-copy.md`,
+                      activeMarkdown,
+                      "text/markdown;charset=utf-8;",
+                    );
+                    trackToolEvent("TOOL_RESULT_EXPORTED", {
+                      tool_slug: "waitlist-landing-page-generator",
+                      entry_surface: entrySurface,
+                      export_format: "markdown_file",
+                    });
+                  }}
+                >
+                  Download .md
+                </ToolActionButton>
               </div>
             </div>
           ) : null}

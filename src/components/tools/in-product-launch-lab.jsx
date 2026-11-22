@@ -1,6 +1,6 @@
 "use client";
 
-import { SparklesIcon } from "@hugeicons/core-free-icons";
+import { ArrowDown01Icon, SparklesIcon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -19,6 +19,7 @@ import { RewardDesignerWidget } from "@/components/tools/widgets/reward-designer
 import { UtmBuilderWidget } from "@/components/tools/widgets/utm-builder-widget";
 import { ViralGrowthWidget } from "@/components/tools/widgets/viral-growth-widget";
 import { Button } from "@/components/ui/button";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
   Sheet,
   SheetContent,
@@ -32,8 +33,7 @@ const SURFACE_CONFIG = {
   builder: {
     triggerLabel: "Audit & Copy Lab",
     title: "Builder Launch Lab",
-    description:
-      "Recheck your published waitlist page or refine hero, benefits, and FAQ copy without leaving Builder.",
+    description: "Audit your published page or refine waitlist copy without leaving Builder.",
     tools: [
       { value: "grader", label: "Page Grader" },
       { value: "copy", label: "Copy Builder" },
@@ -42,8 +42,7 @@ const SURFACE_CONFIG = {
   analytics: {
     triggerLabel: "Growth & Queue Lab",
     title: "Growth & Referral Lab",
-    description:
-      "Model K-factor sensitivity, stress-test reward budgets, and simulate queue rank jumps.",
+    description: "Model K-factor sensitivity, reward budgets, and queue rank jumps.",
     tools: [
       { value: "viral", label: "Viral Growth" },
       { value: "rewards", label: "Reward Tiers" },
@@ -53,8 +52,7 @@ const SURFACE_CONFIG = {
   emails: {
     triggerLabel: "Email & DNS Lab",
     title: "Email & Deliverability Lab",
-    description:
-      "Draft your 5-stage pre-launch sequence and verify SPF, DMARC, MX, and DKIM DNS records.",
+    description: "Draft your 5-stage sequence and verify SPF, DMARC, MX, and DKIM records.",
     tools: [
       { value: "sequence", label: "Email Sequence" },
       { value: "dns", label: "DNS Checker" },
@@ -63,8 +61,7 @@ const SURFACE_CONFIG = {
   settings: {
     triggerLabel: "Launch Ops Lab",
     title: "Launch Operations Lab",
-    description:
-      "Plan your dated launch timeline, normalize channel UTM links, and test embed snippets.",
+    description: "Plan your launch timeline, normalize UTMs, and configure embed snippets.",
     tools: [
       { value: "planner", label: "Launch Planner" },
       { value: "utm", label: "UTM Builder" },
@@ -98,7 +95,7 @@ export function InProductToolDrawer({
         toast.error(result?.message || "Could not save this Launch Lab plan to your campaign.");
         return;
       }
-      toast.success("Saved to this campaign's Launch Lab Blueprint panel.");
+      toast.success("Saved to this campaign.");
       setOpen(false);
       router.refresh();
     } catch {
@@ -118,7 +115,7 @@ export function InProductToolDrawer({
         side="right"
         className="w-full max-w-3xl! overflow-y-auto bg-product-bg-page p-0 sm:max-w-3xl!"
       >
-        <SheetHeader className="border-b border-product-border-subtle px-6 py-5">
+        <SheetHeader className="px-6 py-5">
           <SheetTitle className="font-product-display text-xl font-semibold text-product-text-primary">
             {config.title}
           </SheetTitle>
@@ -217,7 +214,7 @@ export function InProductToolDrawer({
 
 /**
  * Quiet collapsible banner shown on /waitlists/[id] when a campaign originated
- * from a Launch Lab ToolBlueprint, preserving audit findings or checklist tasks.
+ * from a Launch Lab ToolBlueprint.
  */
 export function OriginatingBlueprintBanner({ blueprint, toolTitle }) {
   if (!blueprint?.payload) return null;
@@ -230,15 +227,17 @@ export function OriginatingBlueprintBanner({ blueprint, toolTitle }) {
   const domainConfig = payload.domainConfig || null;
 
   return (
-    <details className="mb-4 rounded-xl border border-product-border-subtle bg-product-bg-inset/50 px-4 py-3">
-      <summary className="flex cursor-pointer list-none flex-wrap items-center justify-between gap-2 text-caption font-semibold text-product-text-primary">
-        <span className="inline-flex items-center gap-2">
-          <ToolStatusBadge tone="accent">Launch Lab Blueprint</ToolStatusBadge>
-          <span>Saved plan from {toolTitle || blueprint.toolSlug}</span>
-        </span>
-        <span className="text-micro font-medium text-product-text-secondary">Toggle reference</span>
-      </summary>
-      <div className="mt-3 grid gap-4 border-t border-product-border-subtle pt-3 text-caption text-product-text-secondary">
+    <Collapsible className="mb-6 py-3">
+      <CollapsibleTrigger className="flex w-full cursor-pointer items-center justify-between gap-2 text-left text-caption font-medium text-product-text-primary">
+        <span>Saved plan from {toolTitle || blueprint.toolSlug}</span>
+        <HugeiconsIcon
+          icon={ArrowDown01Icon}
+          size={15}
+          aria-hidden="true"
+          className="text-product-text-secondary"
+        />
+      </CollapsibleTrigger>
+      <CollapsibleContent className="mt-3 grid gap-4 pt-2 text-caption text-product-text-secondary">
         {bullets.length > 0 ? (
           <ul className="grid list-disc gap-1 pl-4">
             {bullets.map((b) => (
@@ -248,9 +247,7 @@ export function OriginatingBlueprintBanner({ blueprint, toolTitle }) {
         ) : null}
         {topFixes.length > 0 ? (
           <div>
-            <p className="font-semibold text-product-text-primary">
-              Audit fixes to verify before publish
-            </p>
+            <p className="font-medium text-product-text-primary">Audit fixes to verify</p>
             <ul className="mt-1 grid list-disc gap-1 pl-4">
               {topFixes.map((fix) => (
                 <li key={fix}>{fix}</li>
@@ -260,33 +257,28 @@ export function OriginatingBlueprintBanner({ blueprint, toolTitle }) {
         ) : null}
         {emailDrafts.length > 0 ? (
           <div className="grid gap-2">
-            <p className="font-semibold text-product-text-primary">
+            <p className="font-medium text-product-text-primary">
               Saved email drafts ({emailDrafts.length})
             </p>
-            <div className="grid gap-2 sm:grid-cols-2">
+            <div className="grid gap-2">
               {emailDrafts.map((draft) => (
                 <div
                   key={`${draft.stage}-${draft.subject}`}
-                  className="grid gap-1.5 rounded-lg border border-product-border-subtle bg-product-bg-surface p-3"
+                  className="flex items-start justify-between gap-3 py-2.5"
                 >
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="min-w-0">
-                      <span className="font-product-mono text-micro text-product-text-muted">
-                        {draft.stage}
-                        {draft.timing ? ` · ${draft.timing}` : ""}
-                      </span>
-                      <p className="truncate font-semibold text-product-text-primary">
-                        {draft.subject}
-                      </p>
-                    </div>
-                    <ToolCopyButton
-                      text={`Subject: ${draft.subject}\n\n${draft.body}`}
-                      label="Copy"
-                    />
+                  <div className="min-w-0">
+                    <p className="truncate font-medium text-product-text-primary">
+                      {draft.subject}
+                    </p>
+                    <p className="text-micro text-product-text-muted">
+                      {draft.stage}
+                      {draft.timing ? ` · ${draft.timing}` : ""}
+                    </p>
                   </div>
-                  <p className="line-clamp-3 text-micro whitespace-pre-line text-product-text-secondary">
-                    {draft.body}
-                  </p>
+                  <ToolCopyButton
+                    text={`Subject: ${draft.subject}\n\n${draft.body}`}
+                    label="Copy"
+                  />
                 </div>
               ))}
             </div>
@@ -295,8 +287,8 @@ export function OriginatingBlueprintBanner({ blueprint, toolTitle }) {
         {utmChannels.length > 0 ? (
           <div className="grid gap-2">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <p className="font-semibold text-product-text-primary">
-                Saved UTM campaign: {payload.utmPlan?.campaign || "launch"} ({utmChannels.length}{" "}
+              <p className="font-medium text-product-text-primary">
+                UTM campaign: {payload.utmPlan?.campaign || "launch"} ({utmChannels.length}{" "}
                 channels)
               </p>
               <ToolCopyButton
@@ -306,42 +298,26 @@ export function OriginatingBlueprintBanner({ blueprint, toolTitle }) {
                       `${c.channel}: utm_source=${c.source}&utm_medium=${c.medium}&utm_campaign=${payload.utmPlan?.campaign || "launch"}${c.content ? `&utm_content=${c.content}` : ""}`,
                   )
                   .join("\n")}
-                label="Copy UTM plan"
+                label="Copy UTMs"
               />
             </div>
-            <ul className="grid gap-1 sm:grid-cols-2">
-              {utmChannels.map((c) => (
-                <li
-                  key={`${c.channel}-${c.source}-${c.medium}`}
-                  className="flex items-center justify-between gap-2 rounded-md border border-product-border-subtle bg-product-bg-surface px-2.5 py-1.5 font-product-mono text-micro"
-                >
-                  <span className="font-sans font-medium text-product-text-primary">
-                    {c.channel}
-                  </span>
-                  <span className="truncate text-product-text-muted">
-                    {c.source} / {c.medium}
-                  </span>
-                </li>
-              ))}
-            </ul>
           </div>
         ) : null}
         {domainConfig?.domain ? (
-          <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-product-border-subtle bg-product-bg-surface px-3 py-2">
+          <div className="flex flex-wrap items-center justify-between gap-2">
             <span className="text-caption text-product-text-primary">
-              Audited sending domain:{" "}
-              <strong className="font-product-mono">{domainConfig.domain}</strong>
+              Sending domain: <strong className="font-product-mono">{domainConfig.domain}</strong>
             </span>
             {typeof domainConfig.score === "number" ? (
               <ToolStatusBadge tone={domainConfig.score >= 80 ? "success" : "warning"}>
-                DNS score: {domainConfig.score}/100
+                DNS {domainConfig.score}/100
               </ToolStatusBadge>
             ) : null}
           </div>
         ) : null}
         {checklist.length > 0 ? (
           <div>
-            <p className="font-semibold text-product-text-primary">
+            <p className="font-medium text-product-text-primary">
               Launch checklist ({checklist.filter((c) => !c.completed).length} remaining)
             </p>
             <ul className="mt-1 grid gap-1">
@@ -360,7 +336,7 @@ export function OriginatingBlueprintBanner({ blueprint, toolTitle }) {
             </ul>
           </div>
         ) : null}
-      </div>
-    </details>
+      </CollapsibleContent>
+    </Collapsible>
   );
 }

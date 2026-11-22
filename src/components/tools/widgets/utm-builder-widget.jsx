@@ -1,6 +1,15 @@
 "use client";
 
-import { QrCodeIcon } from "@hugeicons/core-free-icons";
+import {
+  CodeIcon,
+  Linkedin01Icon,
+  Mail01Icon,
+  NewTwitterIcon,
+  QrCodeIcon,
+  RedditIcon,
+  Rocket01Icon,
+  UserMultiple02Icon,
+} from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { useMemo, useRef, useState } from "react";
 
@@ -9,10 +18,19 @@ import { ToolHandoffCta } from "@/components/tools/tool-handoff-cta";
 import {
   ToolActionButton,
   ToolCopyButton,
-  ToolStatusBadge,
   ToolTextField,
   ToolWorkspace,
 } from "@/components/tools/tool-ui";
+import { Button } from "@/components/ui/button";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Toggle } from "@/components/ui/toggle";
 import { trackToolEvent } from "@/lib/tools/analytics";
 import {
   buildUtmMatrix,
@@ -20,6 +38,22 @@ import {
   UTM_CHANNEL_PRESETS,
 } from "@/lib/tools/engines/utm-builder.mjs";
 import { cn } from "@/lib/utils";
+
+const CHANNEL_PRESENTATION = {
+  producthunt: { icon: Rocket01Icon, label: "Product Hunt", iconClass: "text-[#da552f]" },
+  hackernews: { icon: CodeIcon, label: "Show HN", iconClass: "text-[#ff6600]" },
+  x_thread: { icon: NewTwitterIcon, label: "X launch", iconClass: "text-product-text-primary" },
+  x_bio: { icon: NewTwitterIcon, label: "X bio", iconClass: "text-product-text-primary" },
+  linkedin: { icon: Linkedin01Icon, label: "LinkedIn", iconClass: "text-[#0a66c2]" },
+  reddit: { icon: RedditIcon, label: "Reddit", iconClass: "text-[#ff4500]" },
+  newsletter: { icon: Mail01Icon, label: "Newsletter", iconClass: "text-product-text-secondary" },
+  partner: {
+    icon: UserMultiple02Icon,
+    label: "Partner",
+    iconClass: "text-product-text-secondary",
+  },
+  event_qr: { icon: QrCodeIcon, label: "Event QR", iconClass: "text-product-text-secondary" },
+};
 
 export function UtmBuilderWidget({
   initialUrl = "",
@@ -111,10 +145,10 @@ export function UtmBuilderWidget({
   const allLinksText = matrix.rows.map((r) => `${r.channel}: ${r.url}`).join("\n");
 
   return (
-    <ToolWorkspace className="grid gap-6">
-      <div className="grid gap-4 border-b border-product-border-subtle pb-5 md:grid-cols-3">
+    <ToolWorkspace>
+      <div className="grid gap-4 md:grid-cols-3">
         <ToolTextField
-          label="Destination waitlist URL"
+          label="Destination URL"
           type="url"
           inputMode="url"
           value={baseUrl}
@@ -125,7 +159,7 @@ export function UtmBuilderWidget({
           placeholder="https://waitlyze.com/w/your-launch"
         />
         <ToolTextField
-          label="Campaign name (auto-normalized)"
+          label="Campaign"
           value={campaign}
           onChange={(v) => {
             markStarted();
@@ -133,142 +167,126 @@ export function UtmBuilderWidget({
           }}
           maxLength={64}
           placeholder="private-beta"
-          hint={`Normalized: ${matrix.campaign}`}
         />
         <ToolTextField
-          label="Optional variant suffix"
+          label="Variant suffix"
           value={contentSuffix}
           onChange={(v) => {
             markStarted();
             setContentSuffix(v);
           }}
           maxLength={40}
-          placeholder="e.g., week-1"
+          placeholder="week-1"
         />
       </div>
 
-      {/* Channel Presets */}
-      <div className="grid gap-2">
-        <p className="text-caption font-semibold text-product-text-primary">
-          Select launch channels ({selectedIds.length} active)
-        </p>
-        <div className="flex flex-wrap gap-2">
+      <div className="grid gap-2.5">
+        <p className="text-caption font-medium text-product-text-primary">Channels</p>
+        <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3 lg:grid-cols-5">
           {UTM_CHANNEL_PRESETS.map((ch) => {
             const active = selectedIds.includes(ch.id);
+            const presentation = CHANNEL_PRESENTATION[ch.id] ?? {
+              icon: Rocket01Icon,
+              label: ch.label,
+              iconClass: "text-product-text-secondary",
+            };
             return (
-              <button
+              <Toggle
                 key={ch.id}
-                type="button"
-                aria-pressed={active}
-                onClick={() => toggleChannel(ch.id)}
+                size="sm"
+                pressed={active}
+                onPressedChange={() => toggleChannel(ch.id)}
+                aria-label={ch.label}
                 className={cn(
-                  "min-h-9 rounded-full border px-3.5 py-1.5 text-caption font-medium transition-colors duration-150",
+                  "h-auto min-h-10 justify-start gap-2 rounded-lg px-3 py-2 text-caption",
                   active
-                    ? "border-product-text-primary bg-product-text-primary text-product-bg-page"
-                    : "border-product-border-subtle bg-product-bg-surface text-product-text-secondary hover:border-product-text-secondary hover:text-product-text-primary",
+                    ? "bg-product-bg-inset text-product-text-primary aria-pressed:bg-product-bg-inset"
+                    : "text-product-text-secondary hover:bg-product-bg-inset/60",
                 )}
               >
-                {ch.label}
-              </button>
+                <HugeiconsIcon
+                  icon={presentation.icon}
+                  size={16}
+                  aria-hidden="true"
+                  className={presentation.iconClass}
+                />
+                <span>{presentation.label}</span>
+              </Toggle>
             );
           })}
         </div>
       </div>
 
-      {/* Hygiene Warnings */}
       {matrix.warnings.length > 0 ? (
-        <div
-          role="alert"
-          className="grid gap-1 rounded-xl border border-product-warning-text/30 bg-product-warning-bg/60 p-4 text-caption text-product-warning-text"
-        >
+        <div role="alert" className="grid gap-1 text-caption text-product-warning-text">
           {matrix.warnings.map((w) => (
             <p key={w}>{w}</p>
           ))}
         </div>
       ) : null}
 
-      {/* Matrix + Client-Side QR Preview */}
-      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_16rem]">
-        <div className="overflow-x-auto rounded-xl border border-product-border-subtle">
-          <table className="w-full border-collapse text-left text-caption">
-            <thead className="border-b border-product-border-subtle bg-product-bg-inset/60 text-micro font-semibold text-product-text-secondary">
-              <tr>
-                <th className="px-3.5 py-3">Channel</th>
-                <th className="px-3.5 py-3">Normalized URL</th>
-                <th className="px-3.5 py-3 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-product-border-subtle bg-product-bg-surface">
-              {matrix.rows.map((row) => (
-                <tr key={row.id}>
-                  <td className="px-3.5 py-3 align-top whitespace-nowrap">
-                    <p className="font-semibold text-product-text-primary">{row.channel}</p>
-                    <p className="mt-0.5 font-product-mono text-micro text-product-text-muted">
-                      {row.source} / {row.medium}
-                    </p>
-                  </td>
-                  <td className="px-3.5 py-3 align-top">
-                    <p className="max-w-md font-product-mono text-micro break-all text-product-text-secondary">
-                      {row.url}
-                    </p>
-                  </td>
-                  <td className="px-3.5 py-3 text-right align-top">
-                    <div className="inline-flex items-center gap-1.5">
-                      <ToolCopyButton
-                        text={row.url}
-                        label="Copy"
-                        className="min-h-8 px-2.5 text-micro"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setActiveQrRowId(row.id)}
-                        aria-label={`Show QR code for ${row.channel}`}
-                        className={cn(
-                          "inline-flex min-h-8 items-center gap-1 rounded-lg border px-2.5 text-micro font-medium",
-                          activeQrRow?.id === row.id
-                            ? "border-product-text-primary bg-product-bg-inset text-product-text-primary"
-                            : "border-product-border-control bg-product-bg-surface text-product-text-secondary hover:text-product-text-primary",
-                        )}
-                      >
-                        <HugeiconsIcon icon={QrCodeIcon} size={14} aria-hidden="true" />
-                        QR
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+      <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_15rem]">
+        <Table scrollLabel="Generated UTM tracking links">
+          <TableHeader className="[&_tr]:border-b-0">
+            <TableRow className="border-b-0">
+              <TableHead>Channel</TableHead>
+              <TableHead>Tracking URL</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {matrix.rows.map((row) => (
+              <TableRow key={row.id} className="border-b-0">
+                <TableCell className="align-top">
+                  <p className="font-medium text-product-text-primary">{row.channel}</p>
+                  <p className="font-product-mono text-micro text-product-text-muted">
+                    {row.source} / {row.medium}
+                  </p>
+                </TableCell>
+                <TableCell className="align-top whitespace-normal">
+                  <p className="max-w-md font-product-mono text-micro break-all text-product-text-secondary">
+                    {row.url}
+                  </p>
+                </TableCell>
+                <TableCell className="text-right align-top">
+                  <div className="inline-flex items-center gap-1.5">
+                    <ToolCopyButton text={row.url} label="Copy" className="h-8 px-2.5 text-micro" />
+                    <Button
+                      type="button"
+                      variant={activeQrRow?.id === row.id ? "secondary" : "product-outline"}
+                      size="xs"
+                      onClick={() => setActiveQrRowId(row.id)}
+                      aria-label={`Show QR code for ${row.channel}`}
+                      className="h-8 gap-1 px-2.5"
+                    >
+                      <HugeiconsIcon icon={QrCodeIcon} size={14} aria-hidden="true" />
+                      QR
+                    </Button>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
 
-        {/* Pure Client-Side QR Preview */}
         {activeQrRow ? (
-          <div className="flex flex-col items-center justify-between rounded-xl border border-product-border-subtle bg-product-bg-inset/40 p-4 text-center">
-            <div className="w-full">
-              <ToolStatusBadge tone="neutral">Client-side SVG QR</ToolStatusBadge>
-              <p className="mt-2 text-caption font-semibold text-product-text-primary">
-                {activeQrRow.channel}
-              </p>
-            </div>
+          <div className="flex flex-col items-center justify-between gap-3 pt-2 text-center lg:pt-0 lg:pl-6">
+            <p className="text-caption font-medium text-product-text-primary">
+              {activeQrRow.channel}
+            </p>
             {activeQr.error ? (
-              <p
-                role="alert"
-                className="my-3 rounded-lg border border-product-warning-text/30 bg-product-warning-bg/60 p-3 text-micro leading-relaxed text-product-warning-text"
-              >
+              <p role="alert" className="text-micro text-product-warning-text">
                 {activeQr.error}
               </p>
             ) : (
-              <div
-                className="my-3 overflow-hidden rounded-lg border border-product-border-subtle bg-white p-2"
-                dangerouslySetInnerHTML={{ __html: activeQrSvg }}
-              />
+              <div className="bg-white p-1" dangerouslySetInnerHTML={{ __html: activeQrSvg }} />
             )}
             <ToolActionButton
               onClick={handleDownloadQrSvg}
               disabled={!activeQrSvg}
               className="w-full"
             >
-              Download QR (.svg)
+              Download SVG
             </ToolActionButton>
           </div>
         ) : null}
@@ -276,7 +294,7 @@ export function UtmBuilderWidget({
 
       <div className="flex flex-wrap items-center gap-2">
         <ToolCopyButton text={allLinksText} label="Copy all links" />
-        <ToolActionButton onClick={handleExportCsv}>Export bulk CSV</ToolActionButton>
+        <ToolActionButton onClick={handleExportCsv}>CSV</ToolActionButton>
       </div>
 
       <ToolHandoffCta

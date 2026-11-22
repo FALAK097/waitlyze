@@ -8,6 +8,7 @@ import {
   ToolActionButton,
   ToolSegmentedControl,
   ToolSliderField,
+  ToolStatStrip,
   ToolStatTile,
   ToolStatusBadge,
   ToolWorkspace,
@@ -31,7 +32,6 @@ function QueueJumpChart({ jumpCurve, waitlistSize }) {
 
   const points = jumpCurve.map((row, idx) => {
     const x = padL + (idx / Math.max(1, jumpCurve.length - 1)) * innerW;
-    // Higher rank (#1) near top, #N near bottom
     const y = padT + ((row.rank - 1) / Math.max(1, waitlistSize - 1)) * innerH;
     return { ...row, x, y };
   });
@@ -39,12 +39,12 @@ function QueueJumpChart({ jumpCurve, waitlistSize }) {
   const polylinePoints = points.map((p) => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(" ");
 
   return (
-    <div className="rounded-xl border border-product-border-subtle bg-product-bg-surface p-4">
+    <div className="grid gap-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="text-caption font-semibold text-product-text-primary">
-          Simulated queue rank curve (new subscriber starting at #{waitlistSize.toLocaleString()})
+        <p className="text-caption font-medium text-product-text-primary">
+          Rank jump curve (starting at #{waitlistSize.toLocaleString()})
         </p>
-        <span className="font-product-mono text-micro text-product-text-secondary">
+        <span className="font-product-mono text-micro text-product-text-muted">
           Higher = closer to #1
         </span>
       </div>
@@ -52,7 +52,7 @@ function QueueJumpChart({ jumpCurve, waitlistSize }) {
         viewBox={`0 0 ${w} ${h}`}
         role="img"
         aria-label="Queue rank jump curve by verified referrals"
-        className="mt-3 h-auto w-full"
+        className="h-auto w-full"
       >
         {[0, 0.5, 1].map((ratio) => {
           const y = padT + innerH * ratio;
@@ -155,7 +155,7 @@ export function QueueSimulatorWidget({
     downloadSummaryPng({
       filename: "waitlyze-queue-simulator.png",
       title: "Waitlist Queue & Points Simulation",
-      subtitle: `${sim.inputs.waitlistSize.toLocaleString()} subscribers · ${sim.inputs.pointsSignup} base / +${sim.inputs.pointsReferral} per verified referral`,
+      subtitle: `${sim.inputs.waitlistSize.toLocaleString()} subscribers · ${sim.inputs.pointsSignup} base / +${sim.inputs.pointsReferral} per referral`,
       metrics: [
         {
           label: "After 1 Referral",
@@ -175,7 +175,7 @@ export function QueueSimulatorWidget({
         {
           label: "Top 10 Cutoff",
           value: `${sim.cutoffs[3].referralsRequired} refs`,
-          hint: "Leaderboard elite",
+          hint: "Leaderboard",
         },
       ],
       formula: sim.formula,
@@ -188,11 +188,11 @@ export function QueueSimulatorWidget({
   }
 
   return (
-    <ToolWorkspace className="grid gap-6">
-      <div className="grid gap-7 lg:grid-cols-[minmax(0,22rem)_minmax(0,1fr)]">
-        <div className="grid content-start gap-4">
+    <ToolWorkspace>
+      <div className="grid gap-10 lg:grid-cols-[minmax(0,20rem)_minmax(0,1fr)]">
+        <div className="grid content-start gap-5">
           <ToolSliderField
-            label="Projected waitlist size"
+            label="Waitlist size"
             value={inputs.waitlistSize}
             onChange={(v) => update("waitlistSize", v)}
             min={500}
@@ -201,29 +201,27 @@ export function QueueSimulatorWidget({
             inputMode="numeric"
           />
           <ToolSliderField
-            label="Base signup points"
+            label="Signup points"
             value={inputs.pointsSignup}
             onChange={(v) => update("pointsSignup", v)}
             min={0}
             max={200}
             step={5}
             suffix="pts"
-            hint="Waitlyze default: 50 pts on email verification."
           />
           <ToolSliderField
-            label="Points per verified referral"
+            label="Referral points"
             value={inputs.pointsReferral}
             onChange={(v) => update("pointsReferral", v)}
             min={5}
             max={200}
             step={5}
             suffix="pts"
-            hint="Waitlyze default: +30 pts per confirmed referral."
           />
           {!compact ? (
             <>
               <ToolSliderField
-                label="Optional profile / action bonus"
+                label="Bonus points"
                 value={inputs.pointsBonus}
                 onChange={(v) => update("pointsBonus", v)}
                 min={0}
@@ -232,7 +230,7 @@ export function QueueSimulatorWidget({
                 suffix="pts"
               />
               <ToolSegmentedControl
-                label="Sharer distribution skew"
+                label="Sharer skew"
                 value={inputs.sharerSkew}
                 onChange={(v) => update("sharerSkew", v)}
                 options={SHARER_SKEW_OPTIONS.map((o) => ({
@@ -244,12 +242,12 @@ export function QueueSimulatorWidget({
           ) : null}
         </div>
 
-        <div className="grid content-start gap-5">
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <div className="grid content-start gap-7">
+          <ToolStatStrip>
             <ToolStatTile
               label="After 1 referral"
               value={`#${sim.oneRefJump.rank.toLocaleString()}`}
-              hint={`Jumps ${sim.oneRefJump.placesJumped.toLocaleString()} spots`}
+              hint={`+${sim.oneRefJump.placesJumped.toLocaleString()} spots`}
               tone="success"
             />
             <ToolStatTile
@@ -258,49 +256,39 @@ export function QueueSimulatorWidget({
               hint={`Top ${sim.threeRefJump.topPercentile}%`}
             />
             <ToolStatTile
-              label="Top 1% cutoff"
+              label="Top 1%"
               value={
                 sim.cutoffs[1].referralsRequired == null
                   ? "N/A"
                   : `${sim.cutoffs[1].referralsRequired} refs`
               }
-              hint={`Rank <= #${sim.cutoffs[1].targetRank}`}
+              hint={`≤ #${sim.cutoffs[1].targetRank}`}
             />
             <ToolStatTile
-              label="Top 10 cutoff"
+              label="Top 10"
               value={
                 sim.cutoffs[3].referralsRequired == null
                   ? "N/A"
                   : `${sim.cutoffs[3].referralsRequired} refs`
               }
-              hint="Leaderboard"
             />
-          </div>
+          </ToolStatStrip>
 
           <QueueJumpChart jumpCurve={sim.jumpCurve} waitlistSize={sim.inputs.waitlistSize} />
 
-          {/* Fairness & Display Recommendation */}
-          <div className="rounded-xl border border-product-border-subtle bg-product-bg-inset/50 p-4">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <p className="text-caption font-semibold text-product-text-primary">
-                Fairness & display diagnosis
-              </p>
-              <ToolStatusBadge tone={sim.fairnessStatus === "healthy" ? "success" : "warning"}>
-                {sim.recommendedDisplay}
-              </ToolStatusBadge>
-            </div>
-            <p className="mt-2 text-caption leading-relaxed text-product-text-secondary">
+          <div className="grid gap-1.5">
+            <ToolStatusBadge tone={sim.fairnessStatus === "healthy" ? "success" : "warning"}>
+              {sim.recommendedDisplay}
+            </ToolStatusBadge>
+            <p className="text-caption leading-relaxed text-product-text-secondary">
               {sim.fairnessSummary}
-            </p>
-            <p className="mt-2 font-product-mono text-micro text-product-text-muted">
-              {sim.tieBreakerNote}
             </p>
           </div>
 
           {!compact ? (
             <div className="flex flex-wrap items-center gap-2">
-              <ToolActionButton onClick={handleExportCsv}>Export CSV</ToolActionButton>
-              <ToolActionButton onClick={handleExportPng}>Export PNG</ToolActionButton>
+              <ToolActionButton onClick={handleExportCsv}>CSV</ToolActionButton>
+              <ToolActionButton onClick={handleExportPng}>PNG</ToolActionButton>
             </div>
           ) : null}
 

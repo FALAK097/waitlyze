@@ -10,10 +10,29 @@ import {
   ToolActionButton,
   ToolCopyButton,
   ToolSliderField,
+  ToolStatStrip,
   ToolStatTile,
   ToolStatusBadge,
   ToolWorkspace,
 } from "@/components/tools/tool-ui";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { trackToolEvent } from "@/lib/tools/analytics";
 import {
   DEFAULT_REWARD_INPUTS,
@@ -101,7 +120,6 @@ export function RewardDesignerWidget({
       ]),
       [
         `Waitlyze Referral Reward ROI Model (LTV $${model.inputs.productLtv}, Size ${model.inputs.targetWaitlistSize})`,
-        `P25 Budget: $${model.budgets.p25} | P50 Budget: $${model.budgets.p50} | P90 Budget: $${model.budgets.p90}`,
       ],
     );
     trackToolEvent("TOOL_RESULT_EXPORTED", {
@@ -115,16 +133,16 @@ export function RewardDesignerWidget({
     downloadSummaryPng({
       filename: "waitlyze-reward-roi.png",
       title: "Referral Reward Tier & ROI Model",
-      subtitle: `${model.inputs.targetWaitlistSize.toLocaleString()} target list · $${model.inputs.productLtv} LTV · ${model.tiers.length} milestone tiers`,
+      subtitle: `${model.inputs.targetWaitlistSize.toLocaleString()} target list · $${model.inputs.productLtv} LTV · ${model.tiers.length} tiers`,
       metrics: [
-        { label: "Baseline Budget (P50)", value: `$${model.budgets.p50.toLocaleString()}` },
-        { label: "Breakout Stress (P90)", value: `$${model.budgets.p90.toLocaleString()}` },
+        { label: "Baseline (P50)", value: `$${model.budgets.p50.toLocaleString()}` },
+        { label: "Breakout (P90)", value: `$${model.budgets.p90.toLocaleString()}` },
         {
-          label: "Effective CAC / Ref",
+          label: "CAC / Ref",
           value: `$${model.effectiveCostPerReferralP50.toFixed(2)}`,
-          hint: `${model.costToMarginLtvPct}% of gross-margin LTV`,
+          hint: `${model.costToMarginLtvPct}% of margin LTV`,
         },
-        { label: "Fraud Posture", value: model.recommendedFraudMode },
+        { label: "Fraud Mode", value: model.recommendedFraudMode },
       ],
       formula: model.formula,
     });
@@ -136,10 +154,10 @@ export function RewardDesignerWidget({
   }
 
   return (
-    <ToolWorkspace className="grid gap-7">
-      <div className="grid gap-5 border-b border-product-border-subtle pb-6 sm:grid-cols-2 lg:grid-cols-4">
+    <ToolWorkspace>
+      <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
         <ToolSliderField
-          label="Product price / LTV"
+          label="Product LTV"
           value={inputs.productLtv}
           onChange={(v) => {
             markStarted();
@@ -163,7 +181,7 @@ export function RewardDesignerWidget({
           suffix="%"
         />
         <ToolSliderField
-          label="Target waitlist size"
+          label="Target list size"
           value={inputs.targetWaitlistSize}
           onChange={(v) => {
             markStarted();
@@ -175,7 +193,7 @@ export function RewardDesignerWidget({
           inputMode="numeric"
         />
         <ToolSliderField
-          label="Expected share rate"
+          label="Share rate"
           value={inputs.shareRatePct}
           onChange={(v) => {
             markStarted();
@@ -188,27 +206,25 @@ export function RewardDesignerWidget({
         />
       </div>
 
-      {/* Editable Milestone Tiers */}
-      <div className="grid gap-3">
+      <div className="grid gap-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <h2 className="font-product-display text-lg font-semibold text-product-text-primary">
-            Milestone reward tiers (up to 4)
+          <h2 className="font-product-display text-base font-semibold text-product-text-primary">
+            Reward tiers
           </h2>
           {inputs.tiers.length < 4 ? (
-            <button
-              type="button"
-              onClick={addTier}
-              className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-product-border-control bg-product-bg-surface px-3 py-1.5 text-caption font-medium text-product-text-primary hover:bg-product-bg-inset"
-            >
+            <Button type="button" variant="product-outline" size="sm" onClick={addTier}>
               <HugeiconsIcon icon={Add01Icon} size={14} aria-hidden="true" />
               Add tier
-            </button>
+            </Button>
           ) : null}
         </div>
 
-        <div className="grid gap-3">
+        <div className="grid gap-4">
           {inputs.tiers.map((tier, index) => {
             const evaluated = model.tiers.find((t) => t.id === tier.id);
+            const activeTypeLabel =
+              REWARD_TYPE_OPTIONS.find((opt) => opt.value === tier.rewardType)?.label ??
+              tier.rewardType;
             const riskTone =
               evaluated?.fraudRisk.level === "high"
                 ? "danger"
@@ -218,11 +234,11 @@ export function RewardDesignerWidget({
             return (
               <div
                 key={tier.id}
-                className="grid gap-3 rounded-xl border border-product-border-subtle bg-product-bg-inset/35 p-4 lg:grid-cols-[6rem_12rem_minmax(0,1fr)_6.5rem_auto] lg:items-end"
+                className="grid gap-3 py-4 lg:grid-cols-[5.5rem_11.5rem_minmax(0,1fr)_6rem_auto] lg:items-end"
               >
-                <label className="grid gap-1 text-micro font-semibold text-product-text-secondary">
-                  Referrals
-                  <input
+                <div className="grid gap-1">
+                  <Label className="text-micro text-product-text-secondary">Referrals</Label>
+                  <Input
                     type="number"
                     min={1}
                     max={500}
@@ -230,58 +246,66 @@ export function RewardDesignerWidget({
                     onChange={(e) =>
                       updateTier(tier.id, { referrals: Number(e.target.value) || 1 })
                     }
-                    className="min-h-10 rounded-lg border border-product-border-control bg-product-bg-surface px-2.5 font-product-mono text-caption text-product-text-primary tabular-nums"
+                    className="h-9 bg-product-bg-surface font-product-mono tabular-nums"
                   />
-                </label>
-                <label className="grid gap-1 text-micro font-semibold text-product-text-secondary">
-                  Reward type
-                  <select
+                </div>
+                <div className="grid gap-1">
+                  <Label className="text-micro text-product-text-secondary">Type</Label>
+                  <Select
                     value={tier.rewardType}
-                    onChange={(e) => updateTier(tier.id, { rewardType: e.target.value })}
-                    className="min-h-10 rounded-lg border border-product-border-control bg-product-bg-surface px-2.5 text-caption text-product-text-primary"
+                    onValueChange={(val) => val && updateTier(tier.id, { rewardType: val })}
                   >
-                    {REWARD_TYPE_OPTIONS.map((opt) => (
-                      <option key={opt.value} value={opt.value}>
-                        {opt.label}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <label className="grid gap-1 text-micro font-semibold text-product-text-secondary">
-                  Public reward description (Tier {index + 1})
-                  <input
+                    <SelectTrigger className="h-9 w-full bg-product-bg-surface text-caption">
+                      <SelectValue>{activeTypeLabel}</SelectValue>
+                    </SelectTrigger>
+                    <SelectContent align="start">
+                      {REWARD_TYPE_OPTIONS.map((opt) => (
+                        <SelectItem key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="grid gap-1">
+                  <Label className="text-micro text-product-text-secondary">
+                    Tier {index + 1} reward
+                  </Label>
+                  <Input
                     type="text"
                     maxLength={110}
                     value={tier.label}
                     onChange={(e) => updateTier(tier.id, { label: e.target.value })}
-                    className="min-h-10 rounded-lg border border-product-border-control bg-product-bg-surface px-3 text-caption text-product-text-primary"
+                    className="h-9 bg-product-bg-surface"
                   />
-                </label>
-                <label className="grid gap-1 text-micro font-semibold text-product-text-secondary">
-                  Unit cost ($)
-                  <input
+                </div>
+                <div className="grid gap-1">
+                  <Label className="text-micro text-product-text-secondary">Cost ($)</Label>
+                  <Input
                     type="number"
                     min={0}
                     max={1000}
                     step={0.5}
                     value={tier.unitCost}
                     onChange={(e) => updateTier(tier.id, { unitCost: Number(e.target.value) || 0 })}
-                    className="min-h-10 rounded-lg border border-product-border-control bg-product-bg-surface px-2.5 font-product-mono text-caption text-product-text-primary tabular-nums"
+                    className="h-9 bg-product-bg-surface font-product-mono tabular-nums"
                   />
-                </label>
-                <div className="flex items-center justify-between gap-2 lg:justify-end">
+                </div>
+                <div className="flex items-center justify-between gap-3 lg:justify-end">
                   <ToolStatusBadge tone={riskTone}>
                     {evaluated?.fraudRisk.label || "Low risk"}
                   </ToolStatusBadge>
                   {inputs.tiers.length > 1 ? (
-                    <button
+                    <Button
                       type="button"
+                      variant="ghost"
+                      size="icon"
                       aria-label={`Remove tier ${index + 1}`}
                       onClick={() => removeTier(tier.id)}
-                      className="inline-flex size-10 items-center justify-center rounded-lg border border-product-border-subtle bg-product-bg-surface text-product-text-secondary hover:text-product-danger-text"
+                      className="text-product-text-secondary hover:text-product-danger-text"
                     >
                       <HugeiconsIcon icon={Delete02Icon} size={16} aria-hidden="true" />
-                    </button>
+                    </Button>
                   ) : null}
                 </div>
               </div>
@@ -290,73 +314,70 @@ export function RewardDesignerWidget({
         </div>
       </div>
 
-      {/* Budget & CAC Summary */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <ToolStatStrip>
+        <ToolStatTile label="Conservative (P25)" value={`$${model.budgets.p25.toLocaleString()}`} />
         <ToolStatTile
-          label="Conservative (P25)"
-          value={`$${model.budgets.p25.toLocaleString()}`}
-          hint="Low viral intensity"
-        />
-        <ToolStatTile
-          label="Baseline budget (P50)"
+          label="Baseline (P50)"
           value={`$${model.budgets.p50.toLocaleString()}`}
-          hint={`~${model.estimatedReferredP50.toLocaleString()} verified refs`}
+          hint={`~${model.estimatedReferredP50.toLocaleString()} refs`}
           tone="success"
         />
         <ToolStatTile
-          label="Breakout stress (P90)"
+          label="Breakout (P90)"
           value={`$${model.budgets.p90.toLocaleString()}`}
-          hint="Budget cap check"
           tone={model.budgets.p90 > model.budgets.p50 * 1.5 ? "warning" : "neutral"}
         />
         <ToolStatTile
           label="Effective CAC / ref"
           value={`$${model.effectiveCostPerReferralP50.toFixed(2)}`}
-          hint={`${model.costToMarginLtvPct}% of gross-margin LTV`}
+          hint={`${model.costToMarginLtvPct}% of margin LTV`}
           tone={model.costToMarginLtvPct > 20 ? "danger" : "success"}
         />
-      </div>
+      </ToolStatStrip>
 
-      {/* Earner Breakdown Table */}
       {!compact ? (
-        <div className="overflow-x-auto rounded-xl border border-product-border-subtle">
-          <table className="w-full border-collapse text-left text-caption">
-            <thead className="border-b border-product-border-subtle bg-product-bg-inset/60 text-micro font-semibold text-product-text-secondary">
-              <tr>
-                <th className="px-4 py-3">Tier</th>
-                <th className="px-4 py-3">P25 Earners</th>
-                <th className="px-4 py-3">P50 Earners</th>
-                <th className="px-4 py-3">P90 Earners</th>
-                <th className="px-4 py-3">P50 Cost</th>
-                <th className="px-4 py-3">Fraud Note</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-product-border-subtle bg-product-bg-surface tabular-nums">
-              {model.tiers.map((tier) => (
-                <tr key={tier.id}>
-                  <td className="px-4 py-3 font-medium text-product-text-primary">
-                    {tier.referrals} refs · {tier.label}
-                  </td>
-                  <td className="px-4 py-3 text-product-text-secondary">{tier.p25Earners}</td>
-                  <td className="px-4 py-3 font-semibold text-product-text-primary">
-                    {tier.p50Earners}
-                  </td>
-                  <td className="px-4 py-3 text-product-text-secondary">{tier.p90Earners}</td>
-                  <td className="px-4 py-3 font-product-mono">${tier.p50Cost.toLocaleString()}</td>
-                  <td className="px-4 py-3 text-micro text-product-text-secondary">
-                    {tier.fraudRisk.reason}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <Table scrollLabel="Referral tier budget breakdown">
+          <TableHeader className="[&_tr]:border-b-0">
+            <TableRow className="border-b-0">
+              <TableHead>Tier</TableHead>
+              <TableHead className="text-right">P25</TableHead>
+              <TableHead className="text-right">P50</TableHead>
+              <TableHead className="text-right">P90</TableHead>
+              <TableHead className="text-right">P50 cost</TableHead>
+              <TableHead>Fraud note</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody className="tabular-nums">
+            {model.tiers.map((tier) => (
+              <TableRow key={tier.id} className="border-b-0">
+                <TableCell className="font-medium text-product-text-primary">
+                  {tier.referrals} refs · {tier.label}
+                </TableCell>
+                <TableCell className="text-right text-product-text-secondary">
+                  {tier.p25Earners}
+                </TableCell>
+                <TableCell className="text-right font-medium text-product-text-primary">
+                  {tier.p50Earners}
+                </TableCell>
+                <TableCell className="text-right text-product-text-secondary">
+                  {tier.p90Earners}
+                </TableCell>
+                <TableCell className="text-right font-product-mono">
+                  ${tier.p50Cost.toLocaleString()}
+                </TableCell>
+                <TableCell className="text-caption whitespace-normal text-product-text-secondary">
+                  {tier.fraudRisk.reason}
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
       ) : null}
 
       <div className="flex flex-wrap items-center gap-2">
-        <ToolCopyButton text={tierCopyText} label="Copy tier microcopy" />
-        <ToolActionButton onClick={handleExportCsv}>Export CSV</ToolActionButton>
-        <ToolActionButton onClick={handleExportPng}>Export PNG</ToolActionButton>
+        <ToolCopyButton text={tierCopyText} label="Copy tier copy" />
+        <ToolActionButton onClick={handleExportCsv}>CSV</ToolActionButton>
+        <ToolActionButton onClick={handleExportPng}>PNG</ToolActionButton>
       </div>
 
       <ToolHandoffCta

@@ -1,5 +1,7 @@
 "use client";
 
+import { Upload01Icon } from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
 import Papa from "papaparse";
 import { useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -10,10 +12,12 @@ import {
   ToolActionButton,
   ToolSegmentedControl,
   ToolSliderField,
+  ToolStatStrip,
   ToolStatTile,
   ToolStatusBadge,
   ToolWorkspace,
 } from "@/components/tools/tool-ui";
+import { Button } from "@/components/ui/button";
 import { trackToolEvent } from "@/lib/tools/analytics";
 import {
   auditManualMetrics,
@@ -71,7 +75,7 @@ export function HealthAuditorWidget({
         }
         setFileName(file.name);
         setCsvAudit(audited);
-        toast.success(`Audited ${audited.totalRows.toLocaleString()} rows locally in browser`);
+        toast.success(`Audited ${audited.totalRows.toLocaleString()} rows locally`);
         trackToolEvent("TOOL_COMPLETED", {
           tool_slug: "waitlist-health-check",
           tool_version: "1.0",
@@ -119,51 +123,37 @@ export function HealthAuditorWidget({
   }
 
   return (
-    <ToolWorkspace className="grid gap-6">
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-product-success-text/20 bg-product-success-bg/50 px-4 py-3 text-caption text-product-success-text">
-        <span>
-          <strong>Zero-upload privacy guarantee:</strong> CSV parsing, normalization, and cleaning
-          run 100% locally inside your browser. Zero email addresses leave your device.
-        </span>
-      </div>
-
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-product-border-subtle pb-4">
+    <ToolWorkspace>
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <ToolSegmentedControl
-          label="Audit input mode"
           value={mode}
           onChange={setMode}
           options={[
-            { value: "csv", label: "Audit CSV (Local Browser)" },
-            { value: "manual", label: "Manual Aggregate Metrics" },
+            { value: "csv", label: "CSV file (local)" },
+            { value: "manual", label: "Manual metrics" },
           ]}
         />
         {mode === "csv" ? (
-          <button
+          <Button
             type="button"
+            variant="product-inline-link"
+            size="sm"
             onClick={() => {
               setFileName("sample-waitlist-25-rows.csv");
               setCsvAudit(parseSampleCsv());
             }}
-            className="text-caption font-medium text-product-text-secondary underline-offset-4 hover:text-product-text-primary hover:underline"
           >
-            Load sample CSV (25 rows)
-          </button>
+            Load sample CSV
+          </Button>
         ) : null}
       </div>
 
       {mode === "csv" ? (
-        <div className="flex flex-col items-start justify-between gap-4 rounded-xl border border-dashed border-product-border-control bg-product-bg-inset/40 p-5 sm:flex-row sm:items-center">
+        <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
           <div>
-            <p className="text-body font-semibold text-product-text-primary">
-              Select a subscriber CSV file
-            </p>
-            <p className="mt-1 text-caption text-product-text-secondary">
-              Active file:{" "}
-              <span className="font-product-mono text-product-text-primary">{fileName}</span>{" "}
-              (recognizes <code className="font-product-mono">email</code>,{" "}
-              <code className="font-product-mono">created_at</code>,{" "}
-              <code className="font-product-mono">verified</code>,{" "}
-              <code className="font-product-mono">referred_by</code>)
+            <p className="text-body font-medium text-product-text-primary">{fileName}</p>
+            <p className="mt-0.5 text-caption text-product-text-secondary">
+              Runs locally in your browser. Zero emails leave your device.
             </p>
           </div>
           <div>
@@ -175,16 +165,20 @@ export function HealthAuditorWidget({
               className="sr-only"
               id="health-csv-upload"
             />
-            <label
-              htmlFor="health-csv-upload"
-              className="inline-flex min-h-11 cursor-pointer items-center justify-center rounded-lg border border-product-text-primary bg-product-bg-surface px-4 py-2 text-caption font-semibold text-product-text-primary hover:bg-product-bg-inset"
+            <Button
+              type="button"
+              variant="product-outline"
+              size="md"
+              onClick={() => fileInputRef.current?.click()}
+              className="gap-2"
             >
-              Choose local CSV
-            </label>
+              <HugeiconsIcon icon={Upload01Icon} size={16} aria-hidden="true" />
+              <span>Choose CSV</span>
+            </Button>
           </div>
         </div>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           <ToolSliderField
             label="Total subscribers"
             value={manualInputs.totalSubscribers}
@@ -204,7 +198,7 @@ export function HealthAuditorWidget({
             suffix="%"
           />
           <ToolSliderField
-            label="Estimated disposable domains"
+            label="Disposable domains"
             value={manualInputs.disposableEstimatePct}
             onChange={(v) => setManualInputs((p) => ({ ...p, disposableEstimatePct: v }))}
             min={0}
@@ -213,7 +207,7 @@ export function HealthAuditorWidget({
             suffix="%"
           />
           <ToolSliderField
-            label="Estimated alias duplicates"
+            label="Alias duplicates"
             value={manualInputs.duplicateEstimatePct}
             onChange={(v) => setManualInputs((p) => ({ ...p, duplicateEstimatePct: v }))}
             min={0}
@@ -222,7 +216,7 @@ export function HealthAuditorWidget({
             suffix="%"
           />
           <ToolSliderField
-            label="Average list age"
+            label="Average age"
             value={manualInputs.averageAgeDays}
             onChange={(v) => setManualInputs((p) => ({ ...p, averageAgeDays: v }))}
             min={1}
@@ -235,10 +229,10 @@ export function HealthAuditorWidget({
       )}
 
       {activeAudit ? (
-        <div className="grid gap-5">
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <div className="grid gap-7">
+          <ToolStatStrip>
             <ToolStatTile
-              label="Waitlist Health Score"
+              label="Health score"
               value={`${activeAudit.score}/100`}
               hint={`Grade ${activeAudit.grade}`}
               tone={
@@ -250,41 +244,36 @@ export function HealthAuditorWidget({
               }
             />
             <ToolStatTile
-              label="Clean deliverable"
+              label="Clean"
               value={`${activeAudit.cleanPct}%`}
               hint={`${activeAudit.cleanCount.toLocaleString()} of ${activeAudit.totalRows.toLocaleString()}`}
               tone="success"
             />
             <ToolStatTile
-              label="Disposable domains"
+              label="Disposable"
               value={String(activeAudit.disposableCount)}
-              hint="Burner inboxes"
               tone={activeAudit.disposableCount > 0 ? "warning" : "neutral"}
             />
             <ToolStatTile
-              label="Alias & burst flags"
+              label="Alias & burst"
               value={String(activeAudit.duplicateAliasCount + activeAudit.velocityBurstCount)}
-              hint="Self-referral / velocity"
               tone={
                 activeAudit.duplicateAliasCount + activeAudit.velocityBurstCount > 0
                   ? "danger"
                   : "neutral"
               }
             />
-          </div>
+          </ToolStatStrip>
 
-          {/* Clean vs Risky proportion bar */}
-          <div className="rounded-xl border border-product-border-subtle bg-product-bg-surface p-4">
+          <div className="grid gap-2">
             <div className="flex items-center justify-between text-caption">
-              <span className="font-semibold text-product-text-primary">
-                List hygiene breakdown
-              </span>
-              <span className="font-product-mono text-micro text-product-text-secondary tabular-nums">
-                {activeAudit.cleanCount.toLocaleString()} clean ·{" "}
+              <span className="font-medium text-product-text-primary">Hygiene split</span>
+              <span className="font-product-mono text-micro text-product-text-muted tabular-nums">
+                {activeAudit.cleanCount.toLocaleString()} clean /{" "}
                 {activeAudit.flaggedCount.toLocaleString()} flagged
               </span>
             </div>
-            <div className="mt-2.5 flex h-3 overflow-hidden rounded-full bg-product-bg-inset">
+            <div className="flex h-2 overflow-hidden rounded-full bg-product-bg-inset">
               <div
                 className="h-full bg-product-text-primary"
                 style={{ width: `${activeAudit.cleanPct}%` }}
@@ -296,19 +285,13 @@ export function HealthAuditorWidget({
             </div>
           </div>
 
-          {/* Recommendations */}
-          <div className="rounded-xl border border-product-border-subtle bg-product-bg-inset/50 p-4">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <p className="text-caption font-semibold text-product-text-primary">
-                Recommended anti-fraud posture
-              </p>
-              <ToolStatusBadge tone={activeAudit.score < 85 ? "warning" : "success"}>
-                {activeAudit.score < 85
-                  ? "STRICT fraud mode recommended"
-                  : "STANDARD mode sufficient"}
-              </ToolStatusBadge>
-            </div>
-            <ul className="mt-2.5 grid list-disc gap-1.5 pl-4 text-caption text-product-text-secondary">
+          <div className="grid gap-2">
+            <ToolStatusBadge tone={activeAudit.score < 85 ? "warning" : "success"}>
+              {activeAudit.score < 85
+                ? "Strict fraud mode recommended"
+                : "Standard mode sufficient"}
+            </ToolStatusBadge>
+            <ul className="grid list-disc gap-1 pl-4 text-caption text-product-text-secondary">
               {activeAudit.recommendations.map((rec) => (
                 <li key={rec}>{rec}</li>
               ))}
@@ -319,12 +302,10 @@ export function HealthAuditorWidget({
             <div className="flex flex-wrap items-center gap-2">
               {activeAudit.cleanRows.length > 0 ? (
                 <ToolActionButton onClick={handleDownloadCleanedCsv}>
-                  Download Cleaned CSV ({activeAudit.cleanCount} rows)
+                  Cleaned CSV ({activeAudit.cleanCount})
                 </ToolActionButton>
               ) : null}
-              <ToolActionButton onClick={handleDownloadTaggedCsv}>
-                Download Full Tagged Audit CSV
-              </ToolActionButton>
+              <ToolActionButton onClick={handleDownloadTaggedCsv}>Full tagged CSV</ToolActionButton>
             </div>
           ) : null}
 

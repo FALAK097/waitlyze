@@ -1,5 +1,7 @@
 "use client";
 
+import { ArrowRight01Icon } from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 
@@ -17,13 +19,12 @@ import {
   BENCHMARK_CATEGORIES,
   compareMetricToQuartile,
   getBenchmarkCohort,
-  METRIC_DEFINITIONS,
   MIN_COHORT_SAMPLE_SIZE,
   REFERRAL_MODES,
   TRAFFIC_CHANNELS,
 } from "@/lib/tools/benchmarks.mjs";
 
-function QuartileCard({ label, unit, quartile, userValue, maxScale }) {
+function QuartileRow({ label, unit, quartile, userValue, maxScale }) {
   const comparison = compareMetricToQuartile(userValue, quartile);
   const p25Left = Math.min(95, (quartile.p25 / maxScale) * 100);
   const p50Left = Math.min(96, (quartile.p50 / maxScale) * 100);
@@ -31,25 +32,24 @@ function QuartileCard({ label, unit, quartile, userValue, maxScale }) {
   const userLeft = Math.min(98, Math.max(2, (Number(userValue) / maxScale) * 100));
 
   return (
-    <div className="rounded-xl border border-product-border-subtle bg-product-bg-surface p-4">
+    <div>
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="text-caption font-semibold text-product-text-primary">{label}</p>
+        <p className="text-caption font-medium text-product-text-primary">{label}</p>
         <ToolStatusBadge tone={comparison.tone}>{comparison.label}</ToolStatusBadge>
       </div>
 
-      <div className="mt-3 flex items-baseline gap-2">
+      <div className="mt-2 flex items-baseline gap-2">
         <span className="font-product-display text-2xl font-semibold text-product-text-primary tabular-nums">
           {quartile.p50}
           {unit}
         </span>
-        <span className="text-micro text-product-text-secondary">
-          median (IQR {quartile.p25}–{quartile.p75}
+        <span className="text-micro text-product-text-muted">
+          median (P25–P75: {quartile.p25}–{quartile.p75}
           {unit})
         </span>
       </div>
 
-      {/* Visual P25-P75 interquartile bar + user marker */}
-      <div className="relative mt-4 h-3 rounded-full bg-product-bg-inset">
+      <div className="relative mt-3.5 h-2 rounded-full bg-product-bg-inset">
         <div
           className="absolute top-0 bottom-0 rounded-full bg-product-text-secondary/30"
           style={{ left: `${p25Left}%`, width: `${Math.max(4, p75Left - p25Left)}%` }}
@@ -60,22 +60,22 @@ function QuartileCard({ label, unit, quartile, userValue, maxScale }) {
         />
         <div
           title={`Your metric: ${userValue}${unit}`}
-          className="absolute top-1/2 size-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-product-text-primary bg-product-accent-solid"
+          className="absolute top-1/2 size-3 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-product-text-primary bg-product-accent-solid"
           style={{ left: `${userLeft}%` }}
         />
       </div>
 
       <div className="mt-2 flex items-center justify-between font-product-mono text-micro text-product-text-muted tabular-nums">
         <span>
-          P25: {quartile.p25}
+          P25 {quartile.p25}
+          {unit}
+        </span>
+        <span className="text-product-text-primary">
+          You {userValue}
           {unit}
         </span>
         <span>
-          You: {userValue}
-          {unit}
-        </span>
-        <span>
-          P75: {quartile.p75}
+          P75 {quartile.p75}
           {unit}
         </span>
       </div>
@@ -145,7 +145,6 @@ export function BenchmarksExplorerWidget({
       [
         `Waitlyze Waitlist Benchmark Explorer (${cohort.lastUpdated})`,
         `Segment: ${category} | ${referralMode} | ${channel}`,
-        cohort.disclosure,
       ],
     );
     trackToolEvent("TOOL_RESULT_EXPORTED", {
@@ -160,7 +159,7 @@ export function BenchmarksExplorerWidget({
     downloadSummaryPng({
       filename: `waitlyze-benchmarks-${category}.png`,
       title: `Waitlist Benchmarks: ${categoryObj.label}`,
-      subtitle: `${cohort.disclosure.slice(0, 92)}`,
+      subtitle: cohort.disclosure.slice(0, 92),
       metrics: [
         {
           label: "Conversion Median",
@@ -183,7 +182,7 @@ export function BenchmarksExplorerWidget({
           hint: `IQR ${m.effectiveKFactor.p25}–${m.effectiveKFactor.p75}`,
         },
       ],
-      formula: "Interquartile reporting (P25 / P50 / P75) · Minimum live cohort N >= 30",
+      formula: "Interquartile reporting (P25 / P50 / P75)",
     });
     trackToolEvent("TOOL_RESULT_EXPORTED", {
       tool_slug: "waitlist-benchmarks",
@@ -202,29 +201,21 @@ export function BenchmarksExplorerWidget({
   );
 
   return (
-    <ToolWorkspace className="grid gap-6">
-      {/* Transparent Cohort Policy Disclosure */}
-      <div className="flex flex-col gap-2 rounded-xl border border-product-border-subtle bg-product-bg-inset/60 p-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="min-w-0">
-          <div className="flex flex-wrap items-center gap-2">
-            <ToolStatusBadge tone="neutral">Reference Planning Model</ToolStatusBadge>
-            <span className="font-product-mono text-micro text-product-text-secondary">
-              Cohort minimum: N &gt;= {minSampleThreshold} eligible campaigns (current eligible:{" "}
-              {liveCampaignCount})
-            </span>
-          </div>
-          <p className="mt-1.5 text-caption text-product-text-secondary">{cohort.disclosure}</p>
-        </div>
-        <div className="flex shrink-0 items-center gap-2">
-          <ToolActionButton onClick={handleDownloadCsv}>Download CSV</ToolActionButton>
-          <ToolActionButton onClick={handleExportPng}>Export PNG</ToolActionButton>
+    <ToolWorkspace>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <p className="text-caption text-product-text-secondary">
+          Reference planning model (live cohort activates at N &ge; {minSampleThreshold}; current:{" "}
+          {liveCampaignCount}).
+        </p>
+        <div className="flex items-center gap-2">
+          <ToolActionButton onClick={handleDownloadCsv}>CSV</ToolActionButton>
+          <ToolActionButton onClick={handleExportPng}>PNG</ToolActionButton>
         </div>
       </div>
 
-      {/* Filters */}
       <div className="grid gap-4 sm:grid-cols-3">
         <ToolSelectField
-          label="Launch category"
+          label="Category"
           value={category}
           onChange={setCategory}
           options={BENCHMARK_CATEGORIES}
@@ -236,38 +227,37 @@ export function BenchmarksExplorerWidget({
           options={REFERRAL_MODES}
         />
         <ToolSelectField
-          label="Primary traffic channel"
+          label="Traffic channel"
           value={channel}
           onChange={setChannel}
           options={TRAFFIC_CHANNELS}
         />
       </div>
 
-      {/* Quartile Cards */}
-      <div className="grid gap-4 md:grid-cols-2">
-        <QuartileCard
-          label="Landing-page conversion rate"
+      <div className="grid gap-x-10 gap-y-6 md:grid-cols-2">
+        <QuartileRow
+          label="Landing-page conversion"
           unit="%"
           quartile={cohort.metrics.conversionRatePct}
           userValue={userMetrics.conversionRatePct}
           maxScale={55}
         />
-        <QuartileCard
-          label="Email verification rate"
+        <QuartileRow
+          label="Email verification"
           unit="%"
           quartile={cohort.metrics.verificationRatePct}
           userValue={userMetrics.verificationRatePct}
           maxScale={100}
         />
-        <QuartileCard
-          label="Verified subscriber share rate"
+        <QuartileRow
+          label="Subscriber share rate"
           unit="%"
           quartile={cohort.metrics.shareRatePct}
           userValue={userMetrics.shareRatePct}
           maxScale={55}
         />
-        <QuartileCard
-          label="Effective viral coefficient (K-factor)"
+        <QuartileRow
+          label="Effective K-factor"
           unit=""
           quartile={cohort.metrics.effectiveKFactor}
           userValue={userMetrics.effectiveKFactor}
@@ -275,37 +265,33 @@ export function BenchmarksExplorerWidget({
         />
       </div>
 
-      {/* Interactive Self-Comparison */}
-      <div className="grid gap-4 rounded-xl border border-product-border-subtle bg-product-bg-inset/40 p-5">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <div>
-            <h2 className="font-product-display text-lg font-semibold text-product-text-primary">
-              Compare your current campaign metrics
-            </h2>
-            <p className="text-caption text-product-text-secondary">
-              Slide your metrics to move the lime dot across each quartile bar above.
-            </p>
-          </div>
+      <div className="grid gap-5 pt-2">
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <h2 className="font-product-display text-base font-semibold text-product-text-primary">
+            Compare your numbers
+          </h2>
           {convCompare.band === "below_p25" ? (
             <Link
               href="/tools/waitlist-landing-page-grader"
-              className="text-caption font-semibold text-product-success-text hover:underline"
+              className="inline-flex items-center gap-1 text-caption font-medium text-product-text-primary underline-offset-4 hover:underline"
             >
-              Diagnose low conversion with Page Grader →
+              Audit page conversion
+              <HugeiconsIcon icon={ArrowRight01Icon} size={14} aria-hidden="true" />
             </Link>
           ) : verCompare.band === "below_p25" ? (
             <Link
               href="/tools/email-deliverability-checker"
-              className="text-caption font-semibold text-product-success-text hover:underline"
+              className="inline-flex items-center gap-1 text-caption font-medium text-product-text-primary underline-offset-4 hover:underline"
             >
-              Inspect DNS deliverability →
+              Check DNS deliverability
+              <HugeiconsIcon icon={ArrowRight01Icon} size={14} aria-hidden="true" />
             </Link>
           ) : null}
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
           <ToolSliderField
-            label="Your conversion"
+            label="Conversion"
             value={userMetrics.conversionRatePct}
             onChange={(v) => setUserMetrics((p) => ({ ...p, conversionRatePct: v }))}
             min={1}
@@ -314,7 +300,7 @@ export function BenchmarksExplorerWidget({
             suffix="%"
           />
           <ToolSliderField
-            label="Your verification"
+            label="Verification"
             value={userMetrics.verificationRatePct}
             onChange={(v) => setUserMetrics((p) => ({ ...p, verificationRatePct: v }))}
             min={20}
@@ -323,7 +309,7 @@ export function BenchmarksExplorerWidget({
             suffix="%"
           />
           <ToolSliderField
-            label="Your share rate"
+            label="Share rate"
             value={userMetrics.shareRatePct}
             onChange={(v) => setUserMetrics((p) => ({ ...p, shareRatePct: v }))}
             min={0}
@@ -332,7 +318,7 @@ export function BenchmarksExplorerWidget({
             suffix="%"
           />
           <ToolSliderField
-            label="Your K-factor"
+            label="K-factor"
             value={userMetrics.effectiveKFactor}
             onChange={(v) => setUserMetrics((p) => ({ ...p, effectiveKFactor: v }))}
             min={0}
@@ -341,21 +327,6 @@ export function BenchmarksExplorerWidget({
           />
         </div>
       </div>
-
-      {/* Explicit Metric Definitions */}
-      <details className="rounded-xl border border-product-border-subtle bg-product-bg-surface p-4">
-        <summary className="cursor-pointer text-caption font-semibold text-product-text-primary">
-          Metric definitions & exclusion criteria (7 standardized definitions)
-        </summary>
-        <dl className="mt-3 grid gap-2.5 sm:grid-cols-2">
-          {METRIC_DEFINITIONS.map((def) => (
-            <div key={def.name} className="rounded-lg bg-product-bg-inset/50 p-3">
-              <dt className="text-caption font-semibold text-product-text-primary">{def.name}</dt>
-              <dd className="mt-0.5 text-micro text-product-text-secondary">{def.formula}</dd>
-            </div>
-          ))}
-        </dl>
-      </details>
 
       <ToolHandoffCta
         toolSlug="waitlist-benchmarks"
