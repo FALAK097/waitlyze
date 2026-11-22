@@ -89,17 +89,21 @@ export function InProductToolDrawer({
       toast.error("Could not attach this plan because no campaign is selected.");
       return;
     }
-    const result = await saveLaunchLabPlanToWaitlist({
-      waitListId: waitlistKeyId,
-      blueprint,
-    });
-    if (!result?.ok) {
-      toast.error(result?.message || "Could not save this Launch Lab plan to your campaign.");
-      return;
+    try {
+      const result = await saveLaunchLabPlanToWaitlist({
+        waitListId: waitlistKeyId,
+        blueprint,
+      });
+      if (!result?.ok) {
+        toast.error(result?.message || "Could not save this Launch Lab plan to your campaign.");
+        return;
+      }
+      toast.success("Saved to this campaign's Launch Lab Blueprint panel.");
+      setOpen(false);
+      router.refresh();
+    } catch {
+      toast.error("Could not save this Launch Lab plan to your campaign. Try signing in again.");
     }
-    toast.success("Saved to this campaign's Launch Lab Blueprint panel.");
-    setOpen(false);
-    router.refresh();
   }
 
   return (

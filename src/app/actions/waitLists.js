@@ -29,12 +29,12 @@ export async function createWaitlistDraft({
   blueprintId = null,
   showReferrals,
 }) {
-  await requireAuth();
-  const { user, workspace } = await currentWorkspace();
-  if (!user?.id || !workspace?.id) {
-    return { ok: false, message: "Sign in to continue." };
-  }
   try {
+    await requireAuth();
+    const { user, workspace } = await currentWorkspace();
+    if (!user?.id || !workspace?.id) {
+      return { ok: false, message: "Sign in to continue." };
+    }
     const existingDraft = creationKey
       ? await prisma.waitList.findFirst({
           where: { creationKey, workspaceId: workspace.id },
@@ -189,11 +189,11 @@ export async function checkWaitlistSlug(publicSlug) {
 }
 
 export async function saveLaunchLabPlanToWaitlist({ waitListId, blueprint }) {
-  await requireAuth();
-  if (!waitListId || typeof waitListId !== "string" || !blueprint) {
-    return { ok: false, message: "Missing campaign or Launch Lab payload." };
-  }
   try {
+    await requireAuth();
+    if (!waitListId || typeof waitListId !== "string" || !blueprint) {
+      return { ok: false, message: "Missing campaign or Launch Lab payload." };
+    }
     const { user, campaign } = await requireCampaign(waitListId, "editCampaign");
     if (!user?.id || !campaign?.id) {
       return { ok: false, message: "Sign in to save this Launch Lab plan." };

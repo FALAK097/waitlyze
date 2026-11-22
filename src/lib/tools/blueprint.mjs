@@ -525,10 +525,7 @@ export async function getClaimedBlueprintForWaitlist(db, waitListId) {
       if (!mergedPayload.launchChecklist?.length && item.payload.launchChecklist?.length) {
         mergedPayload.launchChecklist = item.payload.launchChecklist;
       }
-      if (
-        !mergedPayload.auditSummary?.topFixes?.length &&
-        item.payload.auditSummary?.topFixes?.length
-      ) {
+      if (!mergedPayload.auditSummary && item.payload.auditSummary) {
         mergedPayload.auditSummary = item.payload.auditSummary;
       }
     }
