@@ -74,7 +74,7 @@ const TASK_BLUEPRINTS = [
     progressRatio: 0.05,
     hours: 2,
     priority: "Critical",
-    dependency: "None — start here first",
+    dependency: "None (start here first)",
   },
   {
     id: "value-prop",
@@ -385,12 +385,12 @@ export function buildLaunchMarkdown(plan) {
   ];
   for (const task of plan.tasks) {
     lines.push(
-      `- [${task.completed ? "x" : " "}] **${task.dueDate}** — ${task.title} _(${task.priority}, ${task.hours}h)_`,
+      `- [${task.completed ? "x" : " "}] **${task.dueDate}**: ${task.title} _(${task.priority}, ${task.hours}h)_`,
     );
   }
   lines.push(
     "",
-    "_Generated with Waitlyze Launch Lab — https://waitlyze.com/tools/product-launch-checklist_",
+    "_Generated with Waitlyze Launch Lab (https://waitlyze.com/tools/product-launch-checklist)_",
   );
   return lines.join("\n");
 }

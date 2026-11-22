@@ -127,7 +127,7 @@ export function evaluateDnsRecords({
         rawRecord: spf,
         summary: `Valid single SPF record (${lookups} top-level DNS lookup mechanisms; nested includes can add lookups, ${hasHardOrSoftAll ? "enforced qualifier" : "neutral qualifier"}).`,
         remediation: hasHardOrSoftAll
-          ? "No changes required—verify your transactional provider is included."
+          ? "No changes required. Verify your transactional provider is included."
           : "Tighten the ending qualifier to ~all or -all.",
         copyableFix: "",
       };

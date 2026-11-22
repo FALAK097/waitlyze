@@ -302,7 +302,7 @@ export default async function LandingPage() {
             <h1 id="hero-title">Waitlist software for everything before launch day.</h1>
             <p className="wl-hero-lede">
               Waitlyze lets you build a branded waitlist page, collect verified signups, grow
-              through referrals, send launch emails, and see which channels convert—without
+              through referrals, send launch emails, and see which channels convert without
               stitching together separate tools.
             </p>
             <div className="wl-hero-actions">

@@ -142,7 +142,7 @@ export function ToolPageShell({ slug, children, extraJsonLd = [] }) {
           </div>
         </header>
 
-        {/* 2. Working Interactive Tool — front and center above the fold */}
+        {/* 2. Working Interactive Tool: front and center above the fold */}
         <section className={`${CONTAINER} pb-10`} aria-label={`${tool.title} workspace`}>
           {children}
         </section>
@@ -152,7 +152,7 @@ export function ToolPageShell({ slug, children, extraJsonLd = [] }) {
           <div className="flex flex-col justify-between gap-4 rounded-xl bg-product-text-primary px-6 py-5 text-product-bg-page sm:flex-row sm:items-center sm:px-7">
             <div className="max-w-2xl">
               <p className="font-product-display text-lg font-semibold tracking-tight text-product-bg-page">
-                Build and run your waitlist in Waitlyze—free up to 100 signups
+                Build and run your waitlist in Waitlyze, free up to 100 signups
               </p>
               <p className="mt-1 text-caption leading-relaxed text-product-bg-page/75">
                 Hosted launch page or embed, verified referral links, consent-aware email, and

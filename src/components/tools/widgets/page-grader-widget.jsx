@@ -191,7 +191,7 @@ export function PageGraderWidget({
               onChange={setUrl}
               placeholder="https://yourproduct.com/waitlist"
               error={error}
-              hint="HTTPS only. Static HTML fetch with SSRF guards—zero raw HTML stored."
+              hint="HTTPS only. Static HTML fetch with SSRF guards; zero raw HTML stored."
             />
             <button
               type="submit"

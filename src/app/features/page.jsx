@@ -152,7 +152,7 @@ export default function FeaturesPage() {
               Your waitlist, from first page to launch day.
             </h1>
             <p className="mt-6 max-w-xl text-lg leading-relaxed text-product-text-secondary">
-              Build your page, bring in the right people, and keep the launch moving—all from one
+              Build your page, bring in the right people, and keep the launch moving from one
               workspace.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">

@@ -98,9 +98,7 @@ export function generateEmailSequence(rawInputs = {}) {
         ? "over the next two months"
         : "in about 30 days";
 
-  const signOff = isPlain
-    ? `— ${senderName}, founder of ${productName}`
-    : `The ${productName} team`;
+  const signOff = isPlain ? `${senderName}, founder of ${productName}` : `The ${productName} team`;
 
   const milestoneSubject =
     referralIncentive.length > 119
@@ -137,11 +135,11 @@ ${signOff}`,
       planNote: "Automated trigger requires Waitlyze Pro (draft saved free)",
       subjectOptions: [
         `You're #{{position}} on the ${productName} waitlist`,
-        `Spot confirmed — how to unlock ${productName} early`,
+        `Spot confirmed: how to unlock ${productName} early`,
       ],
       previewText: `You're currently #{{position}}. Share your link to move up the queue.`,
       markdownBody: isPlain
-        ? `Hey — ${senderName} here. Thanks for confirming your spot for ${productName}.
+        ? `Hey, ${senderName} here. Thanks for confirming your spot for ${productName}.
 
 You are currently **#{{position}}** in line. We're building ${productName} for ${audience} who want ${valueProp}, and we plan to open early waves ${horizonText}.
 
@@ -150,7 +148,7 @@ Want to move up faster? Share your personal link with a peer:
 
 Verified referrals unlock **${referralIncentive}**.
 
-Quick question — hit reply and tell me the #1 bottleneck you're hoping ${productName} fixes first. I read every reply.
+Quick question: hit reply and tell me the #1 bottleneck you're hoping ${productName} fixes first. I read every reply.
 
 ${signOff}`
         : `Welcome to the ${productName} early-access waitlist.
@@ -173,8 +171,8 @@ ${signOff}`,
       timing: "Triggered when a verified referral unlocks a tier",
       planNote: "Automated milestone trigger requires Waitlyze Pro",
       subjectOptions: [`You jumped ahead to #{{position}} on ${productName}`, milestoneSubject],
-      previewText: `Your friend verified — you're now #{{position}} in line.`,
-      markdownBody: `Nice work — another referral just verified their email.
+      previewText: `Your friend verified. You're now #{{position}} in line.`,
+      markdownBody: `Nice work. Another referral just verified their email.
 
 - **New queue position:** #{{position}}
 - **Verified referrals:** {{referral_count}}
@@ -197,7 +195,7 @@ ${signOff}`,
         `Quick ${productName} progress update (+ early wave dates)`,
         `What we finished this week before ${productName} opens`,
       ],
-      previewText: `Wave 1 invites are almost ready — here's a quick look at what's shipping.`,
+      previewText: `Wave 1 invites are almost ready. Here's a quick look at what's shipping.`,
       markdownBody: `Quick update as we get close to opening ${productName} ${horizonText}.
 
 Over the past two weeks we finished polishing ${valueProp} with a handful of early testers. Here is what happens next:
@@ -206,7 +204,7 @@ Over the past two weeks we finished polishing ${valueProp} with a handful of ear
 2. You are currently sitting at **#{{position}}** with **{{referral_count}}** verified referrals.
 3. If you want to jump into Wave 1, your referral link is still active: {{referral_link}}
 
-More soon — thanks for sticking with us from the early days.
+More soon. Thanks for sticking with us from the early days.
 
 ${signOff}`,
     },
@@ -220,8 +218,8 @@ ${signOff}`,
         `Your ${productName} invite is ready`,
         `Doors are open: start using ${productName} today`,
       ],
-      previewText: `Your early-access wave is live — claim your workspace now.`,
-      markdownBody: `It's time — your early-access spot (#{{position}}) for ${productName} is now open.
+      previewText: `Your early-access wave is live. Claim your workspace now.`,
+      markdownBody: `It's time: your early-access spot (#{{position}}) for ${productName} is now open.
 
 Start here: [Claim your ${productName} workspace]
 
