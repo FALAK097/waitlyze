@@ -172,6 +172,9 @@ importers:
       papaparse:
         specifier: ^5.7.0
         version: 5.7.0
+      parse5:
+        specifier: 7.3.0
+        version: 7.3.0
       posthog-js:
         specifier: ^1.449.2
         version: 1.449.2(@types/react@19.3.0)(react@19.3.0)

@@ -42,9 +42,13 @@ export async function createWaitlistDraft({
         })
       : null;
 
-    let blueprint = blueprintId ? await getActiveToolBlueprint(prisma, blueprintId) : null;
-    let blueprintClaimed = false;
-    let claimedWaitListId = null;
+    let blueprint = blueprintId ? await getActiveToolBlueprint(prisma, blueprintId, user.id) : null;
+    let blueprintClaimed = Boolean(
+      blueprint?.claimedByUserId === user.id &&
+      blueprint.claimedCreationKey === creationKey &&
+      blueprint.claimedWaitlistId,
+    );
+    let claimedWaitListId = blueprintClaimed ? blueprint.claimedWaitlistId : null;
     if (blueprintId && !blueprint) {
       let existingBlueprint = await prisma.toolBlueprint.findUnique({ where: { id: blueprintId } });
       let claimMatchesDraft = Boolean(

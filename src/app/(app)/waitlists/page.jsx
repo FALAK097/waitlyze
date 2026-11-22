@@ -340,7 +340,7 @@ export default async function WaitlistsPage({ searchParams }) {
       ? null
       : verifyBlueprintCookieValue(cookieStore.get(BLUEPRINT_COOKIE_NAME)?.value);
   if (pendingBlueprint?.id) {
-    const activeBlueprint = await getActiveToolBlueprint(prisma, pendingBlueprint.id);
+    const activeBlueprint = await getActiveToolBlueprint(prisma, pendingBlueprint.id, user.id);
     if (activeBlueprint) {
       redirect(`/waitlists/new?blueprint=${encodeURIComponent(activeBlueprint.id)}`);
     }

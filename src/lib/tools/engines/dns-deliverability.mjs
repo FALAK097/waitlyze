@@ -37,16 +37,14 @@ function countSpfLookups(spfRecord) {
   const tokens = spfRecord.toLowerCase().split(/\s+/);
   let count = 0;
   for (const token of tokens) {
-    if (
-      token.startsWith("include:") ||
-      token.startsWith("a:") ||
-      token === "a" ||
-      token.startsWith("mx:") ||
-      token === "mx" ||
-      token.startsWith("ptr") ||
-      token.startsWith("exists:") ||
-      token.startsWith("redirect=")
-    ) {
+    const mechanism = token.replace(/^[+\-~?]/, "");
+    if (/^include:/i.test(mechanism) || /^a(?:$|[:/])/i.test(mechanism)) {
+      count += 1;
+    } else if (/^mx(?:$|[:/])/i.test(mechanism)) {
+      count += 1;
+    } else if (/^ptr(?:$|:)/i.test(mechanism)) {
+      count += 1;
+    } else if (/^exists:/i.test(mechanism) || /^redirect=/i.test(mechanism)) {
       count += 1;
     }
   }
@@ -111,7 +109,7 @@ export function evaluateDnsRecords({
         rawRecord: spf,
         summary: hasUnsafeAll
           ? "SPF ends with +all, allowing any server to spoof your domain."
-          : `SPF contains ~${lookups} DNS lookup mechanisms (RFC 7208 hard limit is 10).`,
+          : `SPF contains ~${lookups} top-level DNS lookup mechanisms; nested includes can add lookups toward the RFC 7208 limit of 10.`,
         remediation: hasUnsafeAll
           ? "Change +all to ~all or -all immediately."
           : "Prune unused providers or send launch broadcasts from a dedicated subdomain (e.g., mail." +
@@ -127,7 +125,7 @@ export function evaluateDnsRecords({
         points: hasHardOrSoftAll ? 30 : 24,
         maxPoints: 30,
         rawRecord: spf,
-        summary: `Valid single SPF record (${lookups}/10 DNS lookups, ${hasHardOrSoftAll ? "enforced qualifier" : "neutral qualifier"}).`,
+        summary: `Valid single SPF record (${lookups} top-level DNS lookup mechanisms; nested includes can add lookups, ${hasHardOrSoftAll ? "enforced qualifier" : "neutral qualifier"}).`,
         remediation: hasHardOrSoftAll
           ? "No changes required—verify your transactional provider is included."
           : "Tighten the ending qualifier to ~all or -all.",
@@ -136,9 +134,22 @@ export function evaluateDnsRecords({
     }
   }
 
-  const validDmarc = dmarcRecords.find((r) => /^v=dmarc1\b/i.test(r.trim()));
+  const dmarcCandidates = dmarcRecords.filter((record) => /^v=dmarc1\b/i.test(record.trim()));
+  const validDmarc = dmarcCandidates.length === 1 ? dmarcCandidates[0] : null;
   let dmarcCheck;
-  if (!validDmarc) {
+  if (dmarcCandidates.length > 1) {
+    dmarcCheck = {
+      id: "dmarc",
+      name: "DMARC (_dmarc policy)",
+      status: "fail",
+      points: 0,
+      maxPoints: 30,
+      rawRecord: dmarcCandidates.join("\n"),
+      summary: `Found ${dmarcCandidates.length} DMARC records at _dmarc.${domain}; the conflicting records make the policy invalid.`,
+      remediation: "Keep one DMARC TXT record at _dmarc and merge its policy and reporting tags.",
+      copyableFix: `TXT _dmarc.${domain}  v=DMARC1; p=quarantine; rua=mailto:dmarc@${domain}`,
+    };
+  } else if (!validDmarc) {
     dmarcCheck = {
       id: "dmarc",
       name: "DMARC (_dmarc policy)",
@@ -223,23 +234,24 @@ export function evaluateDnsRecords({
       copyableFix: "",
     };
   } else {
-    const validDkim = dkimRecords.find((record) => {
+    const foundDkimRecord = dkimRecords.find((record) => {
       const value = String(record);
       const publicKey = value.match(/(?:^|;)\s*p\s*=\s*([^;\s][^;]*)/i)?.[1]?.trim();
       const versionTag = value.match(/(?:^|;)\s*v\s*=\s*([^;]*)/i);
       const version = versionTag?.[1]?.trim();
       return (!versionTag || version?.toLowerCase() === "dkim1") && Boolean(publicKey);
     });
-    dkimCheck = validDkim
+    dkimCheck = foundDkimRecord
       ? {
           id: "dkim",
           name: `DKIM (${selector}._domainkey)`,
-          status: "pass",
-          points: 20,
+          status: "warn",
+          points: 10,
           maxPoints: 20,
-          rawRecord: validDkim.slice(0, 180) + (validDkim.length > 180 ? "…" : ""),
-          summary: `Public DKIM signing key found at ${selector}._domainkey.${domain}.`,
-          remediation: "DKIM selector verified.",
+          rawRecord: foundDkimRecord.slice(0, 180) + (foundDkimRecord.length > 180 ? "…" : ""),
+          summary: `A DKIM TXT record was found at ${selector}._domainkey.${domain}, but its key material was not cryptographically verified.`,
+          remediation:
+            "Confirm the key with your email provider and verify a signed test message before relying on DKIM alignment.",
           copyableFix: "",
         }
       : {

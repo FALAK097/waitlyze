@@ -142,7 +142,7 @@ export function auditParsedRows(rows = []) {
     return null;
   }
 
-  const seenCanonical = new Map();
+  const canonicalGroups = new Map();
   const domainCounts = new Map();
   const refTimestamps = new Map();
 
@@ -202,10 +202,10 @@ export function auditParsedRows(rows = []) {
 
   const cleanRows = [];
   const flaggedRows = [];
-
-  for (const item of parsedItems) {
+  const auditedItems = parsedItems.map((item) => {
     const reasons = [];
     const emailLower = item.rawEmail.toLowerCase();
+    let canonical = null;
 
     if (!EMAIL_RE.test(emailLower)) {
       invalidCount += 1;
@@ -216,17 +216,9 @@ export function auditParsedRows(rows = []) {
       const domain = emailLower.slice(atIdx + 1);
       domainCounts.set(domain, (domainCounts.get(domain) || 0) + 1);
 
-      const canonical = normalizeSignupEmail(emailLower);
-      if (seenCanonical.has(canonical)) {
-        duplicateAliasCount += 1;
-        reasons.push(
-          canonical !== emailLower
-            ? "Gmail dot/plus-alias self-referral duplicate"
-            : "Duplicate email address",
-        );
-      } else {
-        seenCanonical.set(canonical, item.index);
-      }
+      canonical = normalizeSignupEmail(emailLower);
+      if (!canonicalGroups.has(canonical)) canonicalGroups.set(canonical, []);
+      canonicalGroups.get(canonical).push({ item, reasons });
 
       if (DISPOSABLE_EMAIL_DOMAINS.has(domain)) {
         disposableCount += 1;
@@ -253,6 +245,25 @@ export function auditParsedRows(rows = []) {
       unverifiedCount += 1;
     }
 
+    return { item, reasons };
+  });
+
+  for (const group of canonicalGroups.values()) {
+    if (group.length < 2) continue;
+    duplicateAliasCount += group.length - 1;
+    const survivor = group.find(({ reasons }) => reasons.length === 0) || group[0];
+    for (const candidate of group) {
+      if (candidate === survivor) continue;
+      const emailLower = candidate.item.rawEmail.toLowerCase();
+      candidate.reasons.push(
+        normalizeSignupEmail(emailLower) !== emailLower
+          ? "Gmail dot/plus-alias self-referral duplicate"
+          : "Duplicate email address",
+      );
+    }
+  }
+
+  for (const { item, reasons } of auditedItems) {
     if (reasons.length === 0) {
       cleanRows.push({
         ...item.row,

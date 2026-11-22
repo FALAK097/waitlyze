@@ -59,7 +59,9 @@ export function CreateWaitlistDialog({
   const [blueprintUnavailable, setBlueprintUnavailable] = useState(false);
   const [upgradeNeeded, setUpgradeNeeded] = useState(false);
   const [slugStatus, setSlugStatus] = useState({ state: "idle", message: "" });
-  const [creationKey, setCreationKey] = useState(() => crypto.randomUUID());
+  const [creationKey, setCreationKey] = useState(
+    () => initialBlueprint?.creationKey || crypto.randomUUID(),
+  );
   const suggestedSlug = useMemo(() => slugify(name), [name]);
   const currentSlug = slugTouched ? slug : suggestedSlug;
   const slugHint =

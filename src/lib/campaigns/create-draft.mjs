@@ -88,7 +88,11 @@ export async function createDraft(db, actorId, workspaceId, rawInput, options = 
     typeof blueprintPayload?.showReferrals === "boolean"
       ? blueprintPayload.showReferrals
       : input.showReferrals;
-  const effectiveInput = { ...input, showReferrals };
+  const sendEmailsToSubscribers =
+    typeof blueprintPayload?.sendEmailsToSubscribers === "boolean"
+      ? blueprintPayload.sendEmailsToSubscribers
+      : input.sendEmailsToSubscribers;
+  const effectiveInput = { ...input, showReferrals, sendEmailsToSubscribers };
   await createWorkspaceService(db).requireAccess(actorId, workspaceId, "editCampaign");
 
   const existing = await db.waitList.findFirst({
@@ -134,7 +138,7 @@ export async function createDraft(db, actorId, workspaceId, rawInput, options = 
         creationKey: input.creationKey,
         templateSnapshot: snapshot,
         showReferrals,
-        sendEmailsToSubscribers: input.sendEmailsToSubscribers,
+        sendEmailsToSubscribers,
         fraudMode,
         userId: actorId,
         workspaceId,

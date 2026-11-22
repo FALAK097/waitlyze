@@ -139,29 +139,32 @@ function fetchPinnedHttpsNode(targetUrl, addresses, headers) {
           clearTimeout(deadline);
           callback(value);
         };
+        const finishWithoutBody = (callback, value) => {
+          complete(callback, value);
+          res.destroy();
+        };
         const status = res.statusCode || 0;
         const location = typeof res.headers.location === "string" ? res.headers.location : "";
         const contentType = String(res.headers["content-type"] || "").toLowerCase();
         const contentLength = Number(res.headers["content-length"] || "0");
 
         if (status >= 300 && status < 400) {
-          res.resume();
-          complete(resolve, { status, location, contentType, text: "", bytes: 0 });
+          finishWithoutBody(resolve, { status, location, contentType, text: "", bytes: 0 });
           return;
         }
         if (status < 200 || status >= 300) {
-          res.resume();
-          complete(reject, new Error(`Target page returned HTTP ${status}.`));
+          finishWithoutBody(reject, new Error(`Target page returned HTTP ${status}.`));
           return;
         }
         if (!contentType.includes("text/html") && !contentType.includes("application/xhtml+xml")) {
-          res.resume();
-          complete(reject, new Error("URL did not return an HTML page (expected text/html)."));
+          finishWithoutBody(
+            reject,
+            new Error("URL did not return an HTML page (expected text/html)."),
+          );
           return;
         }
         if (contentLength > MAX_HTML_BYTES) {
-          res.resume();
-          complete(reject, new Error("Page HTML exceeds the 1.5 MB inspection limit."));
+          finishWithoutBody(reject, new Error("Page HTML exceeds the 1.5 MB inspection limit."));
           return;
         }
 

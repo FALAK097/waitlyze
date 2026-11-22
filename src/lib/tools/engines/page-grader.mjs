@@ -1,3 +1,5 @@
+import { parse } from "parse5";
+
 export const LAUNCH_TYPE_OPTIONS = Object.freeze([
   { value: "saas", label: "B2B SaaS" },
   { value: "ai", label: "AI Product" },
@@ -54,42 +56,40 @@ export const SAMPLE_AUDIT_HTML = `<!doctype html>
 </body>
 </html>`;
 
-function decodeBasicEntities(text) {
-  return String(text || "")
-    .replaceAll("&amp;", "&")
-    .replaceAll("&lt;", "<")
-    .replaceAll("&gt;", ">")
-    .replaceAll("&quot;", '"')
-    .replaceAll("&#39;", "'")
-    .replaceAll("&nbsp;", " ")
-    .replace(/\s+/g, " ")
-    .trim();
-}
+const NON_RENDERED_TAGS = new Set(["script", "style", "noscript", "template"]);
 
-function stripTags(html) {
-  return decodeBasicEntities(
-    String(html || "")
-      .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, " ")
-      .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, " ")
-      .replace(/<noscript\b[^>]*>[\s\S]*?<\/noscript>/gi, " ")
-      .replace(/<[^>]+>/g, " "),
-  );
-}
-
-function matchAllStrings(source, regex) {
-  const results = [];
-  let match = regex.exec(source);
-  while (match) {
-    results.push(match);
-    match = regex.exec(source);
+function findElements(node, tagName) {
+  const matches = [];
+  function visit(current) {
+    if (!current?.tagName) return;
+    if (current.tagName === tagName) matches.push(current);
+    if (NON_RENDERED_TAGS.has(current.tagName)) return;
+    for (const child of current.childNodes || []) visit(child);
   }
-  return results;
+  for (const child of node?.childNodes || []) visit(child);
+  return matches;
 }
 
-function getAttr(tagHtml, attrName) {
-  const re = new RegExp(`\\b${attrName}\\s*=\\s*(?:"([^"]*)"|'([^']*)'|([^\\s>]+))`, "i");
-  const m = tagHtml.match(re);
-  return m ? decodeBasicEntities(m[1] ?? m[2] ?? m[3] ?? "") : "";
+function findFirstElement(node, tagName) {
+  return findElements(node, tagName)[0] || null;
+}
+
+function getAttribute(element, name) {
+  return element?.attrs?.find((attribute) => attribute.name === name)?.value || "";
+}
+
+function getVisibleText(node) {
+  const parts = [];
+  function visit(current) {
+    if (current.nodeName === "#text") {
+      parts.push(current.value);
+      return;
+    }
+    if (current.tagName && NON_RENDERED_TAGS.has(current.tagName)) return;
+    for (const child of current.childNodes || []) visit(child);
+  }
+  visit(node);
+  return parts.join(" ").replace(/\s+/g, " ").trim();
 }
 
 function letterGrade(score) {
@@ -127,72 +127,74 @@ export function gradeWaitlistHtml({
 } = {}) {
   const raw = String(html || "");
   const isPlainCopy = !/<[a-z][\s\S]*>/i.test(raw);
-  const visibleText = isPlainCopy ? raw.replace(/\s+/g, " ").trim() : stripTags(raw);
+  const document = isPlainCopy ? null : parse(raw);
+  const body = document ? findFirstElement(document, "body") || document : null;
+  const head = document ? findFirstElement(document, "head") || document : null;
+  const visibleText = isPlainCopy ? raw.replace(/\s+/g, " ").trim() : getVisibleText(body);
   const lowerText = visibleText.toLowerCase();
   const wordCount = visibleText ? visibleText.split(/\s+/).length : 0;
 
   // Head & SEO tags
-  const titleMatch = raw.match(/<title\b[^>]*>([\s\S]*?)<\/title>/i);
-  const titleText = titleMatch ? decodeBasicEntities(titleMatch[1]) : "";
+  const titleText = document ? getVisibleText(findFirstElement(head, "title") || head) : "";
 
-  const metaTags = matchAllStrings(raw, /<meta\b[^>]*>/gi).map((m) => m[0]);
+  const metaTags = document ? findElements(head, "meta") : [];
   let metaDescription = "";
   let metaRobots = "";
   let hasViewport = false;
   for (const tag of metaTags) {
-    const name = getAttr(tag, "name").toLowerCase();
-    const content = getAttr(tag, "content");
+    const name = getAttribute(tag, "name").toLowerCase();
+    const content = getAttribute(tag, "content");
     if (name === "description" && content) metaDescription = content;
     if (name === "robots" && content) metaRobots = content.toLowerCase();
     if (name === "viewport" && content) hasViewport = true;
   }
 
-  const linkTags = matchAllStrings(raw, /<link\b[^>]*>/gi).map((m) => m[0]);
+  const linkTags = document ? findElements(head, "link") : [];
   const hasCanonical = linkTags.some((tag) =>
-    getAttr(tag, "rel").toLowerCase().includes("canonical"),
+    getAttribute(tag, "rel").toLowerCase().split(/\s+/).includes("canonical"),
   );
-  const hasJsonLd = /<script\b[^>]*type\s*=\s*["']application\/ld\+json["'][^>]*>/i.test(raw);
+  const hasJsonLd =
+    document &&
+    findElements(head, "script").some(
+      (tag) => getAttribute(tag, "type").toLowerCase() === "application/ld+json",
+    );
 
   // Headings
-  const h1Matches = matchAllStrings(raw, /<h1\b[^>]*>([\s\S]*?)<\/h1>/gi).map((m) =>
-    stripTags(m[1]),
-  );
-  const h2Matches = matchAllStrings(raw, /<h2\b[^>]*>([\s\S]*?)<\/h2>/gi).map((m) =>
-    stripTags(m[1]),
-  );
+  const h1Matches = document ? findElements(body, "h1").map(getVisibleText) : [];
+  const h2Matches = document ? findElements(body, "h2").map(getVisibleText) : [];
   const primaryH1 = h1Matches[0] || (isPlainCopy ? raw.split("\n")[0]?.trim() || "" : "");
   const h1Words = primaryH1 ? primaryH1.split(/\s+/).length : 0;
 
   // Forms, inputs, buttons
-  const formCount = matchAllStrings(raw, /<form\b[^>]*>/gi).length;
-  const inputTags = matchAllStrings(raw, /<input\b[^>]*>/gi).map((m) => m[0]);
+  const formCount = document ? findElements(body, "form").length : 0;
+  const inputTags = document ? findElements(body, "input") : [];
   const visibleInputs = inputTags.filter((tag) => {
-    const t = getAttr(tag, "type").toLowerCase();
+    const t = getAttribute(tag, "type").toLowerCase();
     return t !== "hidden" && t !== "submit" && t !== "button" && t !== "checkbox";
   });
   const hasEmailInput =
-    visibleInputs.some((tag) => getAttr(tag, "type").toLowerCase() === "email") ||
+    visibleInputs.some((tag) => getAttribute(tag, "type").toLowerCase() === "email") ||
     /email/i.test(visibleText);
   const hasAutocompleteEmail = visibleInputs.some(
-    (tag) => getAttr(tag, "autocomplete").toLowerCase() === "email",
+    (tag) => getAttribute(tag, "autocomplete").toLowerCase() === "email",
   );
-  const labelCount = matchAllStrings(raw, /<label\b[^>]*>/gi).length;
+  const labelCount = document ? findElements(body, "label").length : 0;
 
-  const buttonMatches = matchAllStrings(raw, /<button\b[^>]*>([\s\S]*?)<\/button>/gi).map((m) =>
-    stripTags(m[1]),
-  );
+  const buttonMatches = document ? findElements(body, "button").map(getVisibleText) : [];
   const submitInputValues = inputTags
-    .filter((tag) => getAttr(tag, "type").toLowerCase() === "submit")
-    .map((tag) => getAttr(tag, "value"));
+    .filter((tag) => getAttribute(tag, "type").toLowerCase() === "submit")
+    .map((tag) => getAttribute(tag, "value"));
   const allCtas = [...buttonMatches, ...submitInputValues].filter(Boolean);
   const primaryCta = allCtas[0] || "";
   const genericCta = /^(submit|sign up|signup|send|go|ok|subscribe)$/i.test(primaryCta.trim());
 
   // Links & images
-  const navMatch = raw.match(/<nav\b[^>]*>([\s\S]*?)<\/nav>/i);
-  const navLinks = navMatch ? matchAllStrings(navMatch[1], /<a\b[^>]*>/gi).length : 0;
-  const imgTags = matchAllStrings(raw, /<img\b[^>]*>/gi).map((m) => m[0]);
-  const imgsWithAlt = imgTags.filter((tag) => /\balt\s*=/i.test(tag)).length;
+  const nav = document ? findFirstElement(body, "nav") : null;
+  const navLinks = nav ? findElements(nav, "a").length : 0;
+  const imgTags = document ? findElements(body, "img") : [];
+  const imgsWithAlt = imgTags.filter((tag) =>
+    tag.attrs?.some((attribute) => attribute.name === "alt"),
+  ).length;
 
   // Waitlist & trust signals
   const hasPrivacyReassurance =
@@ -491,17 +493,17 @@ export function gradeWaitlistHtml({
     .slice(0, 48);
 
   const rewrittenCopy = {
-    eyebrow: `${brandGuess} · Early access`,
+    eyebrow: `${brandGuess} · Waitlist`,
     heading:
-      primaryH1 && h1Words >= 4 && h1Words <= 14
+      primaryH1 && primaryH1.length <= 140 && h1Words >= 4 && h1Words <= 14
         ? primaryH1.slice(0, 140).trim()
-        : `Get early access to ${brandGuess} before public launch.`,
+        : `Join the ${brandGuess} waitlist.`,
     subheadline:
       metaDescription.length >= 40
         ? metaDescription.slice(0, 220)
-        : `Join the verified waitlist for ${brandGuess}. Receive priority wave invites and move up the queue by sharing your personal link.`,
+        : `Join the waitlist for ${brandGuess} to hear when it becomes available.`,
     buttonText: genericCta || !primaryCta ? "Request early access" : primaryCta.slice(0, 36),
-    privacyNote: "One email when your wave opens. Confirm to lock your spot—unsubscribe anytime.",
+    privacyNote: "",
   };
 
   return {

@@ -10,18 +10,46 @@ export const BLUEPRINT_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours for unclaimed b
 
 const hexColor = z.string().regex(/^#[0-9a-f]{6}$/i);
 
-const customFieldInputSchema = z.object({
-  id: z
-    .string()
-    .min(1)
-    .max(40)
-    .regex(/^[a-z0-9-]+$/i),
-  label: z.string().trim().min(1).max(80),
-  type: z.enum(["text", "textarea", "number", "select", "checkbox"]),
-  required: z.boolean().default(false),
-  placeholder: z.string().trim().max(120).default(""),
-  options: z.array(z.string().trim().max(80)).max(20).default([]),
-});
+const customFieldInputSchema = z
+  .object({
+    id: z
+      .string()
+      .min(1)
+      .max(40)
+      .regex(/^[a-z0-9-]+$/i),
+    label: z.string().trim().min(1).max(80),
+    type: z.enum(["text", "textarea", "number", "select", "checkbox"]),
+    required: z.boolean().default(false),
+    placeholder: z.string().trim().max(120).default(""),
+    options: z.array(z.string().trim().max(80)).max(20).default([]),
+  })
+  .superRefine((field, ctx) => {
+    if (field.type === "select" && field.options.length === 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: `“${field.label}” needs at least one option.`,
+        path: ["options"],
+      });
+    }
+  });
+
+const customFieldsInputSchema = z
+  .array(customFieldInputSchema)
+  .max(10)
+  .superRefine((fields, ctx) => {
+    const ids = new Set();
+    fields.forEach((field, index) => {
+      const normalizedId = field.id.toLowerCase();
+      if (ids.has(normalizedId)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Custom fields need unique ids.",
+          path: [index, "id"],
+        });
+      }
+      ids.add(normalizedId);
+    });
+  });
 
 const rewardTierSchema = z.object({
   referrals: z.number().int().min(1).max(100000),
@@ -103,7 +131,7 @@ export const toolBlueprintInputSchema = z.object({
       placeholder: z.string().trim().max(120).optional(),
       buttonText: z.string().trim().max(40).optional(),
       layout: z.enum(["inline", "stacked"]).optional(),
-      customFields: z.array(customFieldInputSchema).max(10).optional(),
+      customFields: customFieldsInputSchema.optional(),
     })
     .optional(),
   referralConfig: z
@@ -397,15 +425,21 @@ export async function createToolBlueprint(db, rawInput) {
   });
 }
 
-export async function getActiveToolBlueprint(db, id) {
+export async function getActiveToolBlueprint(db, id, userId = null) {
   if (typeof id !== "string" || id.length < 8 || id.length > 64) return null;
   try {
     const record = await db.toolBlueprint.findUnique({
       where: { id },
     });
     if (!record) return null;
-    if (record.claimedWaitlistId) return null;
-    if (new Date(record.expiresAt).getTime() < Date.now()) return null;
+    const resumableClaim = Boolean(
+      userId &&
+      record.claimedByUserId === userId &&
+      record.claimedWaitlistId &&
+      record.claimedCreationKey,
+    );
+    if (record.claimedWaitlistId && !resumableClaim) return null;
+    if (!resumableClaim && new Date(record.expiresAt).getTime() < Date.now()) return null;
     const parsed = toolBlueprintInputSchema.safeParse(record.payload);
     if (!parsed.success) return null;
     return {
@@ -415,6 +449,13 @@ export async function getActiveToolBlueprint(db, id) {
       payload: parsed.data,
       expiresAt: record.expiresAt,
       createdAt: record.createdAt,
+      ...(resumableClaim
+        ? {
+            claimedByUserId: record.claimedByUserId,
+            claimedWaitlistId: record.claimedWaitlistId,
+            claimedCreationKey: record.claimedCreationKey,
+          }
+        : {}),
     };
   } catch (error) {
     console.error("Failed to read tool blueprint:", error?.code || error?.name || "unknown");

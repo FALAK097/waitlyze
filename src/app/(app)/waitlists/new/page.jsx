@@ -15,7 +15,7 @@ import { currentWorkspace } from "@/lib/workspaces/current";
 export const metadata = { title: "New waitlist" };
 
 export default async function NewWaitlistPage({ searchParams }) {
-  const [resolved, { workspace }, cookieStore] = await Promise.all([
+  const [resolved, { user, workspace }, cookieStore] = await Promise.all([
     searchParams,
     currentWorkspace(),
     cookies(),
@@ -27,7 +27,7 @@ export default async function NewWaitlistPage({ searchParams }) {
   const cookieBlueprint = verifyBlueprintCookieValue(cookieStore.get(BLUEPRINT_COOKIE_NAME)?.value);
   const requestedBlueprintId = queryBlueprintId || cookieBlueprint?.id || null;
   const blueprintRecord = requestedBlueprintId
-    ? await getActiveToolBlueprint(prisma, requestedBlueprintId)
+    ? await getActiveToolBlueprint(prisma, requestedBlueprintId, user.id)
     : null;
   const blueprintExpired = Boolean(queryBlueprintId && !blueprintRecord);
 
@@ -41,6 +41,7 @@ export default async function NewWaitlistPage({ searchParams }) {
   const initialBlueprint = blueprintRecord
     ? {
         id: blueprintRecord.id,
+        creationKey: blueprintRecord.claimedCreationKey || null,
         toolSlug: blueprintRecord.toolSlug,
         toolTitle: toolMeta?.shortTitle || blueprintRecord.toolSlug,
         templateId: initialTemplateId,

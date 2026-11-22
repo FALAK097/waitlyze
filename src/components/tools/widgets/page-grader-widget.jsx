@@ -403,7 +403,16 @@ export function PageGraderWidget({
                 Proposed corrected Hero & CTA copy
               </h3>
               <ToolCopyButton
-                text={`${result.rewrittenCopy.heading}\n\n${result.rewrittenCopy.subheadline}\n\nCTA: ${result.rewrittenCopy.buttonText}\nNote: ${result.rewrittenCopy.privacyNote}`}
+                text={[
+                  result.rewrittenCopy.heading,
+                  result.rewrittenCopy.subheadline,
+                  `CTA: ${result.rewrittenCopy.buttonText}`,
+                  result.rewrittenCopy.privacyNote
+                    ? `Note: ${result.rewrittenCopy.privacyNote}`
+                    : "",
+                ]
+                  .filter(Boolean)
+                  .join("\n\n")}
                 label="Copy rewrite"
               />
             </div>
@@ -417,9 +426,11 @@ export function PageGraderWidget({
               <span className="rounded-md bg-product-accent-solid px-3 py-1 font-semibold text-product-accent-label">
                 {result.rewrittenCopy.buttonText}
               </span>
-              <span className="text-micro text-product-text-secondary">
-                {result.rewrittenCopy.privacyNote}
-              </span>
+              {result.rewrittenCopy.privacyNote ? (
+                <span className="text-micro text-product-text-secondary">
+                  {result.rewrittenCopy.privacyNote}
+                </span>
+              ) : null}
             </div>
           </div>
 
