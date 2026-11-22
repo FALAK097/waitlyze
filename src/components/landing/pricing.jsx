@@ -8,11 +8,8 @@ import { useEffect, useRef, useState } from "react";
 import PromoBanner, { REDEEM_PROMO_EVENT } from "@/components/landing/promo-banner";
 import SignupButton from "@/components/landing/signup-button";
 import { Button } from "@/components/ui/button";
-import {
-  isBfcmPromoActive,
-  WAITLYZE_BFCM_PROMO,
-  WAITLYZE_PRICING,
-} from "@/lib/billing/pricing.mjs";
+import { WAITLYZE_BFCM_PROMO, WAITLYZE_PRICING } from "@/lib/billing/pricing.mjs";
+import { useBfcmPromoActive } from "@/lib/billing/use-bfcm-promo-active";
 
 // Better Auth's React hooks are browser-only in this app, so the checkout CTA
 // loads as a client-only island while the plan copy stays server-rendered.
@@ -58,7 +55,7 @@ export default function Pricing({
   const [clientRegionalPricing, setClientRegionalPricing] = useState(null);
   const proCardRef = useRef(null);
   const isPro = currentPlan === "PRO";
-  const promoActive = isBfcmPromoActive();
+  const promoActive = useBfcmPromoActive();
   const displayedRegionalPricing = regionalPricing || clientRegionalPricing;
 
   useEffect(() => {
@@ -136,6 +133,7 @@ export default function Pricing({
     <section
       className={sectionClass}
       id={isModal ? undefined : "pricing"}
+      data-pricing-section={isModal ? undefined : "true"}
       aria-labelledby={isModal ? undefined : "pricing-title"}
     >
       <div

@@ -11,7 +11,8 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
-import { isBfcmPromoActive, WAITLYZE_BFCM_PROMO } from "@/lib/billing/pricing.mjs";
+import { WAITLYZE_BFCM_PROMO } from "@/lib/billing/pricing.mjs";
+import { useBfcmPromoActive } from "@/lib/billing/use-bfcm-promo-active";
 import { trackClientEvent } from "@/lib/posthog/client";
 import { POSTHOG_EVENTS } from "@/lib/posthog/events.mjs";
 import { cn } from "@/lib/utils";
@@ -40,7 +41,8 @@ export default function PromoBanner({
 }) {
   const router = useRouter();
   const pathname = usePathname();
-  const [copied, setCopied] = useState(false);
+  const promoActive = useBfcmPromoActive();
+  const [copyStatus, setCopyStatus] = useState("idle");
   const [redeemedInline, setRedeemedInline] = useState(false);
   const [dismissed, setDismissed] = useState(false);
   const copyTimerRef = useRef(null);
@@ -71,23 +73,31 @@ export default function PromoBanner({
     };
   }, []);
 
-  if (!isBfcmPromoActive() || dismissed) return null;
+  if (!promoActive || dismissed) return null;
+
+  function flashCopyStatus(status, timeoutMs) {
+    setCopyStatus(status);
+    if (copyTimerRef.current) window.clearTimeout(copyTimerRef.current);
+    copyTimerRef.current = window.setTimeout(() => setCopyStatus("idle"), timeoutMs);
+  }
+
+  function notifyCopyResult(ok, successMessage) {
+    if (ok) {
+      toast.success(successMessage);
+      return;
+    }
+    toast.error(`Clipboard unavailable. Copy ${WAITLYZE_BFCM_PROMO.code} manually.`);
+  }
 
   async function handleCopyCode() {
     const ok = await copyPromoCodeToClipboard(WAITLYZE_BFCM_PROMO.code);
-    setCopied(true);
-    if (copyTimerRef.current) window.clearTimeout(copyTimerRef.current);
-    copyTimerRef.current = window.setTimeout(() => setCopied(false), 2200);
-    if (ok) {
-      toast.success(`Copied ${WAITLYZE_BFCM_PROMO.code} to clipboard`);
-    }
+    flashCopyStatus(ok ? "copied" : "failed", 2200);
+    notifyCopyResult(ok, `Copied ${WAITLYZE_BFCM_PROMO.code} to clipboard`);
   }
 
   async function handleRedeem() {
     const ok = await copyPromoCodeToClipboard(WAITLYZE_BFCM_PROMO.code);
-    setCopied(true);
-    if (copyTimerRef.current) window.clearTimeout(copyTimerRef.current);
-    copyTimerRef.current = window.setTimeout(() => setCopied(false), 2400);
+    flashCopyStatus(ok ? "copied" : "failed", 2400);
 
     trackClientEvent(POSTHOG_EVENTS.BILLING_UPGRADE_CLICKED, {
       promo_id: WAITLYZE_BFCM_PROMO.id,
@@ -107,36 +117,28 @@ export default function PromoBanner({
       );
     }
 
+    const successMessage = `Code ${WAITLYZE_BFCM_PROMO.code} copied — apply it at checkout for 40% off Pro Annual`;
+
     if (typeof onRedeem === "function") {
       onRedeem();
       setRedeemedInline(true);
       if (redeemTimerRef.current) window.clearTimeout(redeemTimerRef.current);
       redeemTimerRef.current = window.setTimeout(() => setRedeemedInline(false), 2400);
-      if (ok) {
-        toast.success(
-          `Code ${WAITLYZE_BFCM_PROMO.code} copied — apply it at checkout for 40% off Pro Annual`,
-        );
-      }
+      notifyCopyResult(ok, successMessage);
       return;
     }
 
+    // `#pricing` also exists on comparison pages for the competitor's pricing
+    // story, so target the real pricing section explicitly.
     const pricingSection =
-      typeof document !== "undefined" ? document.getElementById("pricing") : null;
+      typeof document !== "undefined" ? document.querySelector("[data-pricing-section]") : null;
     if (pricingSection) {
       pricingSection.scrollIntoView({ behavior: "smooth", block: "start" });
-      if (ok) {
-        toast.success(
-          `Code ${WAITLYZE_BFCM_PROMO.code} copied — apply it at checkout for 40% off Pro Annual`,
-        );
-      }
+      notifyCopyResult(ok, successMessage);
       return;
     }
 
-    if (ok) {
-      toast.success(
-        `Code ${WAITLYZE_BFCM_PROMO.code} copied — apply it at checkout for 40% off Pro Annual`,
-      );
-    }
+    notifyCopyResult(ok, successMessage);
     router.push("/#pricing");
   }
 
@@ -201,16 +203,22 @@ export default function PromoBanner({
           >
             <span>{WAITLYZE_BFCM_PROMO.code}</span>
             <HugeiconsIcon
-              icon={copied ? Tick01Icon : Copy01Icon}
+              icon={copyStatus === "copied" ? Tick01Icon : Copy01Icon}
               size={13}
               className={cn(
                 "shrink-0 transition-colors",
-                copied ? "text-product-success-text" : "text-product-text-secondary",
+                copyStatus === "copied"
+                  ? "text-product-success-text"
+                  : "text-product-text-secondary",
               )}
               aria-hidden="true"
             />
-            <span className="sr-only" aria-live="polite">
-              {copied ? "Discount code copied to clipboard" : ""}
+            <span className="sr-only" role="status" aria-live="polite">
+              {copyStatus === "copied"
+                ? "Discount code copied to clipboard"
+                : copyStatus === "failed"
+                  ? "Clipboard blocked. Select the discount code and copy it manually."
+                  : ""}
             </span>
           </button>
         </div>
