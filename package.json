@@ -43,7 +43,7 @@
     "@dnd-kit/utilities": "^3.2.2",
     "@hugeicons/core-free-icons": "^4.3.5",
     "@hugeicons/react": "^1.1.10",
-    "@modelcontextprotocol/server": "2.0.0",
+    "@modelcontextprotocol/server": "^2.4.0",
     "@posthog/mcp": "1.2.2",
     "@prisma/adapter-better-sqlite3": "7.10.1",
     "@prisma/adapter-d1": "7.10.1",

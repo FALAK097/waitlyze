@@ -219,12 +219,6 @@ export async function POST(request) {
         );
       uniqueUserId = `api-idem-${createHash("sha256").update(`${waitlistId}:${idempotencyKey}`).digest("hex")}`;
     }
-    await consumePublicBudget(prisma, {
-      kind: "signup",
-      campaignId: waitlistId,
-      headers: request.headers,
-      email,
-    });
     const auth = await validateApiKeyAndGetWaitlist(apiKey, waitlistId);
     if (!auth.success) {
       return NextResponse.json(
@@ -235,6 +229,12 @@ export async function POST(request) {
         { status: 401 },
       );
     }
+    await consumePublicBudget(prisma, {
+      kind: "signup",
+      campaignId: waitlistId,
+      headers: request.headers,
+      email,
+    });
     const budget = await consumeApiKeyBudget(prisma, apiKey);
     const budgetHeaders = apiKeyRateLimitHeaders(budget);
 

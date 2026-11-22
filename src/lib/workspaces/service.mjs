@@ -490,8 +490,8 @@ export function createWorkspaceService(db) {
       if (!actorMembership || !["OWNER", "ADMIN"].includes(actorMembership.role))
         throw new AccessError();
       if (!target) throw new AccessError();
-      // Admins manage members, never owners.
-      if (target.role === "OWNER" && actorMembership.role !== "OWNER") throw new AccessError();
+      // Admins manage members only, never other admins or owners.
+      if (target.role !== "MEMBER" && actorMembership.role !== "OWNER") throw new AccessError();
       if (target.role === "OWNER") {
         const owners = await db.workspaceMember.count({ where: { workspaceId, role: "OWNER" } });
         if (owners < 2) throw new TypeError("A workspace needs at least one owner.");
@@ -521,7 +521,7 @@ export function createWorkspaceService(db) {
         throw new AccessError();
       if (!target) throw new AccessError();
       if (role === "ADMIN" && actorMembership.role !== "OWNER") throw new AccessError();
-      if (target.role === "OWNER" && actorMembership.role !== "OWNER") throw new AccessError();
+      if (target.role !== "MEMBER" && actorMembership.role !== "OWNER") throw new AccessError();
       if (target.role === "OWNER" && role !== "OWNER") {
         const owners = await db.workspaceMember.count({ where: { workspaceId, role: "OWNER" } });
         if (owners < 2) throw new TypeError("A workspace needs at least one owner.");

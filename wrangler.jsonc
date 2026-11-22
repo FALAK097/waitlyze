@@ -4,7 +4,7 @@
   "main": "cloudflare-worker.js",
   "account_id": "598a393819cd44e21ef2145dabea9a2f",
   "compatibility_date": "2026-11-08",
-  "compatibility_flags": ["nodejs_compat"],
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
   "limits": { "cpu_ms": 10000 },
   "placement": {
     "mode": "targeted",

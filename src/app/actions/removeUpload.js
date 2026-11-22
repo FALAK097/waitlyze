@@ -16,7 +16,10 @@ export const removeUpload = async (logoKey) => {
       return { success: false, message: "Unauthorized" };
     }
 
-    if (!logoKey || typeof logoKey !== "string" || !logoKey.startsWith(`${session.user.id}-`)) {
+    const prefix = `${session.user.id}-`;
+    const suffix =
+      typeof logoKey === "string" && logoKey.startsWith(prefix) ? logoKey.slice(prefix.length) : "";
+    if (!suffix || !/^[A-Za-z0-9_-]{1,64}\.(?:jpg|jpeg|png|webp|gif|avif)$/i.test(suffix)) {
       return { success: false, message: "Invalid file key" };
     }
 

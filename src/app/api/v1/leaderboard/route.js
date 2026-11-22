@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import prisma from "@/lib/prisma";
+import { getPublishedRewards } from "@/lib/referrals/rewards.mjs";
 import { consumePublicBudget, PublicRateLimitError } from "@/lib/security/public-rate-limit.mjs";
 import { maskEmail } from "@/lib/widgets/mask.mjs";
 
@@ -24,12 +25,17 @@ export async function GET(request) {
       campaignId: waitListId,
       headers: request.headers,
     });
-    const waitList = await prisma.waitList.findUnique({
-      where: { id: waitListId },
-      select: { id: true, status: true, showReferrals: true },
-    });
+    const [waitList, publishedRewards] = await Promise.all([
+      prisma.waitList.findUnique({
+        where: { id: waitListId },
+        select: { id: true, status: true, showReferrals: true },
+      }),
+      getPublishedRewards(prisma, waitListId),
+    ]);
     if (!waitList || waitList.status !== "PUBLISHED" || !waitList.showReferrals)
       return NextResponse.json({ message: "A valid waitlist is required." }, { status: 400 });
+    if (publishedRewards?.rewards?.hideCounts)
+      return NextResponse.json({ message: "Leaderboard is unavailable." }, { status: 404 });
     const signup = await prisma.signUp.findFirst({
       where: {
         waitListId,
@@ -104,7 +110,7 @@ export async function GET(request) {
       },
       {
         headers: {
-          "Cache-Control": "public, s-maxage=15, stale-while-revalidate=60",
+          "Cache-Control": "private, no-store",
         },
       },
     );

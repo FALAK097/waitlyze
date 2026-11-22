@@ -1,3 +1,5 @@
+import { isIP } from "node:net";
+
 import { getCloudflareContext } from "@opennextjs/cloudflare";
 import ct from "countries-and-timezones";
 
@@ -12,16 +14,25 @@ const decodeHeader = (value) => {
   }
 };
 
+function normalizeIp(value) {
+  const trimmed = value?.trim();
+  if (!trimmed) return null;
+  const version = isIP(trimmed);
+  if (!version) return null;
+  return version === 6 ? new URL(`http://[${trimmed}]/`).hostname.slice(1, -1) : trimmed;
+}
+
 export const getIpAddress = (request) => {
-  const cloudflareIp = request.headers.get("cf-connecting-ip");
-  if (cloudflareIp) return cloudflareIp.trim();
-  const forwarded = request.headers.get("x-forwarded-for");
-  if (forwarded) {
-    return forwarded.split(",")[0].trim();
-  }
-  const realIp = request.headers.get("x-real-ip");
-  if (realIp) {
-    return realIp;
+  const cloudflareIp = normalizeIp(request.headers.get("cf-connecting-ip"));
+  if (cloudflareIp) return cloudflareIp;
+  if (process.env.NODE_ENV !== "production") {
+    const forwarded = request.headers.get("x-forwarded-for");
+    if (forwarded) {
+      const first = normalizeIp(forwarded.split(",")[0]);
+      if (first) return first;
+    }
+    const realIp = normalizeIp(request.headers.get("x-real-ip"));
+    if (realIp) return realIp;
   }
   return "::1";
 };

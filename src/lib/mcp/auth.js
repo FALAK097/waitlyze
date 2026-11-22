@@ -4,6 +4,7 @@ import { createLocalJWKSet, jwtVerify } from "jose";
 
 import { auth } from "@/lib/auth.js";
 import { parseApiKeyScopes, parseJsonStringArray } from "@/lib/db/sqlite-helpers.mjs";
+import { getMcpResourceUrl } from "@/lib/mcp/config.mjs";
 import prisma from "@/lib/prisma.js";
 
 let cachedJwks = null;
@@ -75,10 +76,10 @@ export async function resolveMcpAuth(request) {
 
     if (!token) {
       // Check session cookie as fallback.
-      // Only honor cookies when the request originates from a trusted origin,
-      // to prevent cross-site form POSTs from riding session cookies (CSRF).
+      // Only honor cookies when the request originates from the same trusted origin,
+      // to prevent cross-site or cross-subdomain form POSTs from riding session cookies (CSRF).
       const secFetchSite = request.headers.get("sec-fetch-site");
-      if (secFetchSite === "cross-site") {
+      if (secFetchSite && secFetchSite !== "same-origin" && secFetchSite !== "none") {
         return {
           authenticated: false,
           error: "Untrusted origin. Use API key or OAuth authentication for cross-origin requests.",
@@ -110,6 +111,13 @@ export async function resolveMcpAuth(request) {
               "Untrusted origin. Use API key or OAuth authentication for cross-origin requests.",
           };
         }
+      }
+
+      if (request.method === "POST" && !origin && !referer && secFetchSite !== "same-origin") {
+        return {
+          authenticated: false,
+          error: "Untrusted origin. Use API key or OAuth authentication for cross-origin requests.",
+        };
       }
 
       try {
@@ -150,23 +158,19 @@ export async function resolveMcpAuth(request) {
         },
       });
 
-      if (!key || key.revokedAt) {
-        return { authenticated: false, error: "Invalid or revoked API key." };
-      }
-
-      if (key.expiresAt && key.expiresAt <= new Date()) {
-        return { authenticated: false, error: "API key has expired." };
+      if (!key || key.revokedAt || (key.expiresAt && key.expiresAt <= new Date())) {
+        return { authenticated: false, error: "Invalid or expired API key." };
       }
 
       const expected = Buffer.from(key.keyHash, "hex");
       const actual = createHash("sha256").update(secret).digest();
       if (expected.length !== actual.length || !timingSafeEqual(expected, actual)) {
-        return { authenticated: false, error: "Invalid API key secret." };
+        return { authenticated: false, error: "Invalid or expired API key." };
       }
 
       const parsedKeyScopes = parseApiKeyScopes(key.scopes);
       if (!parsedKeyScopes) {
-        return { authenticated: false, error: "Invalid API key scopes." };
+        return { authenticated: false, error: "Invalid or expired API key." };
       }
 
       // Update last used timestamp
@@ -192,17 +196,25 @@ export async function resolveMcpAuth(request) {
     // 2. Check OAuth 2.0 Access Token (signed JWT)
     if (token.split(".").length === 3) {
       try {
+        const baseUrl = process.env.BETTER_AUTH_URL || "http://localhost:3000";
+        const expectedIssuer = new URL("/api/auth", baseUrl).toString().replace(/\/$/, "");
+        const expectedAudience = getMcpResourceUrl();
+        const verifyOptions = {
+          clockTolerance: 60,
+          issuer: [expectedIssuer, `${expectedIssuer}/`, new URL(baseUrl).origin],
+          audience: [expectedAudience, expectedAudience.replace(/\/$/, "")],
+        };
         let jwks = await getLocalJwks();
         let keySet = createLocalJWKSet(jwks);
         let jwtResult;
         try {
-          jwtResult = await jwtVerify(token, keySet, { clockTolerance: 60 });
+          jwtResult = await jwtVerify(token, keySet, verifyOptions);
         } catch {
           // If verification failed (possible key rotation or expired cache), refresh JWKS once
           cachedJwks = null;
           jwks = await getLocalJwks();
           keySet = createLocalJWKSet(jwks);
-          jwtResult = await jwtVerify(token, keySet, { clockTolerance: 60 });
+          jwtResult = await jwtVerify(token, keySet, verifyOptions);
         }
 
         const payload = jwtResult?.payload;
@@ -221,10 +233,6 @@ export async function resolveMcpAuth(request) {
               scopes = payload.scope;
             } else if (Array.isArray(payload.scopes)) {
               scopes = payload.scopes;
-            }
-
-            if (scopes.length === 0) {
-              scopes = ["mcp:read", "mcp:write"];
             }
 
             return {
@@ -265,7 +273,7 @@ export async function resolveMcpAuth(request) {
         user: oauthToken.user,
         clientId: oauthToken.clientId,
         clientName: oauthToken.client?.name,
-        scopes: parsedOAuthScopes.length ? parsedOAuthScopes : ["mcp:read", "mcp:write"],
+        scopes: parsedOAuthScopes,
       };
     }
 
@@ -294,10 +302,21 @@ export async function resolveWorkspaceContext(authContext, inputWorkspaceId = nu
   if (authContext.waitlistId) {
     const waitlist = await prisma.waitList.findUnique({
       where: { id: authContext.waitlistId },
-      select: { id: true, name: true, workspaceId: true },
+      select: { id: true, name: true, workspaceId: true, userId: true },
     });
     if (!waitlist) {
       throw new Error("Associated waitlist not found.");
+    }
+    if (waitlist.workspaceId) {
+      const membership = await prisma.workspaceMember.findFirst({
+        where: { workspaceId: waitlist.workspaceId, userId: authContext.userId },
+        select: { role: true },
+      });
+      if (!membership) {
+        throw new Error("Forbidden: API key creator is no longer a member of this workspace.");
+      }
+    } else if (waitlist.userId !== authContext.userId) {
+      throw new Error("Forbidden: API key is not authorized for this waitlist.");
     }
     if (inputWorkspaceId && waitlist.workspaceId && inputWorkspaceId !== waitlist.workspaceId) {
       throw new Error("Forbidden: API key is not authorized for this workspace.");

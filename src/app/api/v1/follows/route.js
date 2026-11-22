@@ -42,6 +42,7 @@ export async function POST(request) {
     const signup = await prisma.signUp.findFirst({
       where: {
         waitListId: body.waitListId,
+        waitList: { status: "PUBLISHED" },
         OR: [{ referralCode: body.code }, { uniqueUserId: body.code }],
       },
       select: { id: true, waitListId: true, verifiedAt: true, ipAddress: true, points: true },
@@ -160,6 +161,6 @@ async function configuredFollowNetworks(db, waitListId) {
       .filter((entry) => entry && FOLLOW_NETWORKS.includes(entry.network))
       .map((entry) => entry.network);
   } catch {
-    return null;
+    return [];
   }
 }

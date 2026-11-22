@@ -27,6 +27,11 @@ const ALLOWED_HOSTS = Object.freeze({
   DISCORD: new Set(["discord.com", "discordapp.com", "ptb.discord.com"]),
 });
 
+const ALLOWED_PATHS = Object.freeze({
+  SLACK: /^\/services\/[A-Za-z0-9/_-]+$/,
+  DISCORD: /^\/api\/webhooks\/\d+\/[A-Za-z0-9_-]+$/,
+});
+
 export function isSupportedChatProvider(value) {
   return CHAT_PROVIDERS.includes(value);
 }
@@ -40,7 +45,16 @@ export function validateChatWebhookUrl(provider, value) {
   } catch {
     return { error: "Enter a valid https webhook URL." };
   }
-  if (url.protocol !== "https:" || !ALLOWED_HOSTS[provider]?.has(url.hostname))
+  const allowedPath = ALLOWED_PATHS[provider];
+  if (
+    url.protocol !== "https:" ||
+    (url.port && url.port !== "443") ||
+    url.username ||
+    url.password ||
+    url.hash ||
+    !ALLOWED_HOSTS[provider]?.has(url.hostname) ||
+    !allowedPath?.test(url.pathname)
+  )
     return {
       error: `Enter an official ${provider === "SLACK" ? "Slack" : "Discord"} webhook URL.`,
     };
@@ -52,6 +66,7 @@ async function postJson(url, payload, { fetchFn = fetch } = {}) {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
+    redirect: "error",
     signal: AbortSignal.timeout(10_000),
   });
   if (!response.ok) {

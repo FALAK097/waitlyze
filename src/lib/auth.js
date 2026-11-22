@@ -103,8 +103,16 @@ function createAuth() {
     trustedOrigins: [
       process.env.BETTER_AUTH_URL,
       "https://waitlyze.com",
-      "http://localhost:3000",
+      ...(process.env.NODE_ENV !== "production" ? ["http://localhost:3000"] : []),
     ].filter(Boolean),
+    rateLimit: {
+      enabled: true,
+      storage: "database",
+      customRules: {
+        "/oauth2/register": { window: 60, max: 10 },
+        "/sign-in/email": { window: 60, max: 10 },
+      },
+    },
     session: {
       cookieCache: {
         enabled: true,

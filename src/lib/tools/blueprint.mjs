@@ -195,11 +195,12 @@ export const toolBlueprintInputSchema = z.object({
 });
 
 function getSigningKey() {
-  return (
-    process.env.BETTER_AUTH_SECRET ||
-    process.env.WEBHOOK_SECRET_ENCRYPTION_KEY ||
-    "waitlyze-dev-blueprint-signing-key"
-  );
+  const key = process.env.BETTER_AUTH_SECRET || process.env.WEBHOOK_SECRET_ENCRYPTION_KEY;
+  if (key) return key;
+  if (process.env.NODE_ENV === "production") {
+    throw new Error("BETTER_AUTH_SECRET must be configured in production.");
+  }
+  return "waitlyze-dev-blueprint-signing-key";
 }
 
 export function signBlueprintCookieValue(blueprintId, toolSlug) {

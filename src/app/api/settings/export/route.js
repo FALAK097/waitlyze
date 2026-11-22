@@ -53,11 +53,17 @@ export async function GET() {
       );
 
     const workspaceIds = memberships.map(({ workspace }) => workspace.id);
-    const [campaigns, apiKeys, integrations] = await Promise.all([
+    const sendEmailWorkspaceIds = new Set(
+      memberships
+        .filter(({ role }) => role === "OWNER" || role === "ADMIN")
+        .map(({ workspace }) => workspace.id),
+    );
+    const [rawCampaigns, apiKeys, integrations] = await Promise.all([
       prisma.waitList.findMany({
         where: { OR: [{ workspaceId: { in: workspaceIds } }, { workspaceId: null, userId }] },
         select: {
           id: true,
+          workspaceId: true,
           name: true,
           description: true,
           websiteUrl: true,
@@ -193,6 +199,16 @@ export async function GET() {
         orderBy: { createdAt: "asc" },
       }),
     ]);
+
+    const campaigns = rawCampaigns.map(({ workspaceId, ...campaign }) => {
+      if (!workspaceId || sendEmailWorkspaceIds.has(workspaceId)) return campaign;
+      return {
+        ...campaign,
+        emailTemplateRecords: [],
+        automationRecipes: [],
+        broadcasts: [],
+      };
+    });
 
     const payload = buildAccountExport({ user, memberships, campaigns, apiKeys, integrations });
     return new Response(JSON.stringify(payload, null, 2), {

@@ -11,7 +11,7 @@ export const runtime = "nodejs";
 const MAX_EVENTS = 100;
 
 function authorized(request) {
-  const secret = env.OUTBOX_DISPATCH_SECRET;
+  const secret = process.env.EMAIL_EVENTS_SECRET || env.OUTBOX_DISPATCH_SECRET;
   const supplied = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "") || "";
   if (!secret || !/^Bearer\s+/i.test(request.headers.get("authorization") || "")) return false;
   const suppliedBytes = Buffer.from(supplied);

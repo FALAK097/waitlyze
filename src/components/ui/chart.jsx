@@ -40,8 +40,18 @@ const ChartContainer = React.forwardRef(({ id, className, children, config, ...p
 });
 ChartContainer.displayName = "Chart";
 
+const SAFE_CSS_IDENT = /^[a-zA-Z0-9_-]+$/;
+const SAFE_CSS_COLOR = /^[#a-zA-Z0-9(),.\s%/-]+$/;
+
 const ChartStyle = ({ id, config }) => {
-  const colors = Object.entries(config).filter(([, value]) => value.color);
+  if (typeof id !== "string" || !SAFE_CSS_IDENT.test(id)) return null;
+  const colors = Object.entries(config).filter(
+    ([key, value]) =>
+      SAFE_CSS_IDENT.test(key) &&
+      typeof value?.color === "string" &&
+      SAFE_CSS_COLOR.test(value.color) &&
+      !value.color.includes("</style"),
+  );
   if (!colors.length) return null;
   return (
     <style

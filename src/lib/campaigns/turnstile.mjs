@@ -1,5 +1,6 @@
 import "server-only";
 import { env } from "@/lib/env.mjs";
+import { publicClientIdentity } from "@/lib/security/public-rate-limit.mjs";
 
 import { templateSnapshotSchema } from "../templates/catalog.mjs";
 
@@ -35,46 +36,68 @@ export async function campaignRequiresTurnstile(db, waitListId) {
   return !parsed.success || parsed.data.form.requireTurnstile;
 }
 
-function expectedHostname(request) {
-  const origin = request.headers.get("origin");
+function allowedHostnamesForRequest(request, extraHostnames = []) {
+  const allowed = new Set();
   try {
-    const url = new URL(origin || request.url);
-    if (url.protocol !== "http:" && url.protocol !== "https:") return null;
-    return url.hostname.toLowerCase();
+    const reqUrl = new URL(request.url);
+    if (reqUrl.protocol === "http:" || reqUrl.protocol === "https:") {
+      allowed.add(reqUrl.hostname.toLowerCase());
+    }
   } catch {
-    return null;
+    // Ignore invalid request URL
   }
+  if (env.BETTER_AUTH_URL) {
+    try {
+      allowed.add(new URL(env.BETTER_AUTH_URL).hostname.toLowerCase());
+    } catch {
+      // Ignore invalid BETTER_AUTH_URL
+    }
+  }
+  const appRoot = (process.env.APP_ROOT_DOMAIN ?? "").trim().toLowerCase();
+  if (appRoot) allowed.add(appRoot);
+  if (process.env.NODE_ENV !== "production") {
+    allowed.add("localhost");
+    allowed.add("127.0.0.1");
+  }
+  for (const host of extraHostnames) {
+    if (typeof host === "string" && host.trim()) allowed.add(host.trim().toLowerCase());
+  }
+  return allowed;
 }
 
 /** Verifies an untrusted browser token with Cloudflare. Any failure rejects signup. */
-export async function verifyTurnstileToken(request, token) {
+export async function verifyTurnstileToken(request, token, { allowedHostnames = [] } = {}) {
   const secret = env.TURNSTILE_SECRET_KEY?.trim();
-  const hostname = expectedHostname(request);
+  const allowed = allowedHostnamesForRequest(request, allowedHostnames);
   if (
     !isTurnstileConfigured() ||
     !secret ||
     typeof token !== "string" ||
     token.trim().length === 0 ||
     token.length > MAX_TOKEN_LENGTH ||
-    !hostname
+    allowed.size === 0
   )
     return false;
 
   try {
+    const payload = new URLSearchParams({ secret, response: token });
+    const clientIp = publicClientIdentity(request.headers);
+    if (clientIp && clientIp !== "untrusted-client") {
+      payload.set("remoteip", clientIp);
+    }
     const response = await fetch(SITEVERIFY_URL, {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: new URLSearchParams({ secret, response: token }),
+      body: payload,
       signal: AbortSignal.timeout(10_000),
     });
     if (!response.ok) return false;
     const result = await response.json();
-    return (
-      result?.success === true &&
-      result.action === "signup" &&
-      typeof result.hostname === "string" &&
-      result.hostname.toLowerCase() === hostname
-    );
+    const tokenHost = typeof result?.hostname === "string" ? result.hostname.toLowerCase() : "";
+    const hostMatches =
+      Boolean(tokenHost) &&
+      (allowed.has(tokenHost) || [...allowed].some((host) => tokenHost.endsWith(`.${host}`)));
+    return result?.success === true && result.action === "signup" && hostMatches;
   } catch {
     return false;
   }

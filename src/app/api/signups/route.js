@@ -40,6 +40,7 @@ export async function GET(request) {
       orderBy: {
         createdAt: "asc",
       },
+      take: 5000,
     });
 
     return NextResponse.json(

@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 
 import { unsubscribeFromMarketing } from "@/lib/email/unsubscribe.mjs";
 import prisma from "@/lib/prisma";
+import { checkRateLimit } from "@/lib/rate-limit";
+import { publicClientIdentity } from "@/lib/security/public-rate-limit.mjs";
 
 export async function GET(request) {
   const token = request.nextUrl.searchParams.get("token");
@@ -16,6 +18,25 @@ export async function GET(request) {
 }
 
 export async function POST(request) {
+  try {
+    const allowed = await checkRateLimit(
+      prisma,
+      `email-unsubscribe:${publicClientIdentity(request.headers)}`,
+      60,
+      60 * 60 * 1000,
+    );
+    if (!allowed) {
+      return NextResponse.json(
+        { message: "Too many requests. Please try again later." },
+        { status: 429, headers: { "Retry-After": "300" } },
+      );
+    }
+  } catch {
+    return NextResponse.json(
+      { message: "Unsubscribe is temporarily unavailable. Please try again shortly." },
+      { status: 503 },
+    );
+  }
   const contentType = request.headers.get("content-type") || "";
   const form = contentType.includes("application/x-www-form-urlencoded")
     ? await request.formData()
