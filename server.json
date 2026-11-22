@@ -1,0 +1,17 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-07-09/server.schema.json",
+  "name": "io.github.FALAK097/waitlyze",
+  "description": "Build and manage waitlists, referrals, subscribers, and launch analytics.",
+  "version": "0.12.0",
+  "website_url": "https://waitlyze.com/docs/mcp",
+  "repository": {
+    "url": "https://github.com/FALAK097/waitlyze",
+    "source": "github"
+  },
+  "remotes": [
+    {
+      "type": "streamable-http",
+      "url": "https://waitlyze.com/mcp"
+    }
+  ]
+}

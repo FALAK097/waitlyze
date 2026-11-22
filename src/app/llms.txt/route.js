@@ -1,5 +1,6 @@
 import { WAITLYZE_PRICING } from "@/lib/billing/pricing.mjs";
 import { getPosts } from "@/lib/blog-source";
+import { competitors } from "@/lib/comparison-data";
 import { SITE_DESCRIPTION, SITE_URL } from "@/lib/site-metadata";
 import { docsLlms } from "@/lib/source";
 
@@ -11,6 +12,12 @@ export async function GET() {
   const docsBody = docsIndex.replace(/^# .*\n+/, "");
   const posts = getPosts()
     .map((post) => `- [${post.data.title}](${SITE_URL}${post.url}): ${post.data.description}`)
+    .join("\n");
+  const alternativeLinks = competitors
+    .map(
+      (competitor) =>
+        `- [Waitlyze vs ${competitor.name}](${SITE_URL}/alternatives/${competitor.slug})`,
+    )
     .join("\n");
 
   const body = `# Waitlyze
@@ -31,11 +38,16 @@ Waitlyze is a waitlist builder for founders and marketing teams. Create a brande
 ## Product & Templates
 
 - [Home](${SITE_URL}): Overview, features, and FAQ
+- [Features](${SITE_URL}/#features): Waitlist page builder, referrals, email, analytics, and developer tools
 - [Pricing](${SITE_URL}/pricing): Free plan limits and Pro pricing (${WAITLYZE_PRICING.pro.monthly.formatted}/month or ${WAITLYZE_PRICING.pro.annual.formatted}/year)
-- [Waitlist Software Comparison](${SITE_URL}/compare): Seven dedicated platforms compared side by side
+- [Waitlist Software Comparison](${SITE_URL}/compare): Feature and pricing comparison across waitlist platforms
 - [Waitlist Software Alternatives](${SITE_URL}/alternatives): Focused buyer guides and tradeoffs
 - [Waitlist Templates](${SITE_URL}/templates): 14 templates for SaaS, AI, mobile, newsletter, event, and pre-order launches
 - [Changelog](${SITE_URL}/docs/changelog): Release notes
+
+### Alternative comparisons
+
+${alternativeLinks}
 
 ## Playbooks & Guides
 
