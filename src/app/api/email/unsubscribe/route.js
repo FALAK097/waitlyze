@@ -1,9 +1,8 @@
 import { NextResponse } from "next/server";
 
-import { unsubscribeFromMarketing } from "@/lib/email/unsubscribe.mjs";
+import { hashUnsubscribeToken, unsubscribeFromMarketing } from "@/lib/email/unsubscribe.mjs";
 import prisma from "@/lib/prisma";
 import { checkRateLimit } from "@/lib/rate-limit";
-import { publicClientIdentity } from "@/lib/security/public-rate-limit.mjs";
 
 export async function GET(request) {
   const token = request.nextUrl.searchParams.get("token");
@@ -18,11 +17,20 @@ export async function GET(request) {
 }
 
 export async function POST(request) {
+  const contentType = request.headers.get("content-type") || "";
+  const form = contentType.includes("application/x-www-form-urlencoded")
+    ? await request.formData()
+    : null;
+  const rawToken = request.nextUrl.searchParams.get("token") || form?.get("token");
+  const token = typeof rawToken === "string" ? rawToken : "";
+  if (token.length < 32 || token.length > 128)
+    return NextResponse.json({ message: "Unsubscribe link is invalid." }, { status: 400 });
+
   try {
     const allowed = await checkRateLimit(
       prisma,
-      `email-unsubscribe:${publicClientIdentity(request.headers)}`,
-      60,
+      `email-unsubscribe:${hashUnsubscribeToken(token)}`,
+      10,
       60 * 60 * 1000,
     );
     if (!allowed) {
@@ -37,11 +45,6 @@ export async function POST(request) {
       { status: 503 },
     );
   }
-  const contentType = request.headers.get("content-type") || "";
-  const form = contentType.includes("application/x-www-form-urlencoded")
-    ? await request.formData()
-    : null;
-  const token = request.nextUrl.searchParams.get("token") || form?.get("token");
   const unsubscribed = await unsubscribeFromMarketing(prisma, token);
   if (!unsubscribed)
     return NextResponse.json({ message: "Unsubscribe link is invalid." }, { status: 400 });
