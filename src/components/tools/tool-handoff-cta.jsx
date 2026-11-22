@@ -39,7 +39,16 @@ export function ToolHandoffCta({
     if (!blueprint) return;
 
     if (onApplyInProduct) {
-      onApplyInProduct(blueprint);
+      setBusy(true);
+      try {
+        await onApplyInProduct({
+          version: 1,
+          toolSlug,
+          ...blueprint,
+        });
+      } finally {
+        setBusy(false);
+      }
       return;
     }
 

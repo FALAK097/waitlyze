@@ -1,3 +1,5 @@
+import { createHash } from "node:crypto";
+import https from "node:https";
 import { isIP } from "node:net";
 
 import { NextResponse } from "next/server";
@@ -68,13 +70,12 @@ async function resolveAndValidateHost(hostname) {
     if (!isPublicAddress(host)) {
       throw new Error("Target IP address is not publicly routable.");
     }
-    return;
+    return [{ address: host, family: isIP(host) }];
   }
 
   // Primary path: Node DNS via Waitlyze's shared security helper
   try {
-    await resolvePublicTarget(host);
-    return;
+    return await resolvePublicTarget(host);
   } catch (err) {
     if (err?.code === "TARGET_BLOCKED") {
       throw new Error("Target domain resolved to a private or reserved IP range.");
@@ -103,6 +104,76 @@ async function resolveAndValidateHost(hostname) {
   if (resolvedIps.some((ip) => !isPublicAddress(ip))) {
     throw new Error("Target domain resolved to a private or reserved IP range.");
   }
+  return resolvedIps.map((address) => ({ address, family: isIP(address) }));
+}
+
+function fetchPinnedHttpsNode(targetUrl, addresses, headers) {
+  return new Promise((resolve, reject) => {
+    const chosen = addresses[0];
+    const req = https.request(
+      targetUrl,
+      {
+        method: "GET",
+        servername: targetUrl.hostname,
+        agent: new https.Agent({
+          keepAlive: false,
+          lookup: (_host, _options, callback) => callback(null, chosen.address, chosen.family),
+        }),
+        headers,
+        timeout: FETCH_TIMEOUT_MS,
+      },
+      (res) => {
+        const status = res.statusCode || 0;
+        const location = typeof res.headers.location === "string" ? res.headers.location : "";
+        const contentType = String(res.headers["content-type"] || "").toLowerCase();
+        const contentLength = Number(res.headers["content-length"] || "0");
+
+        if (status >= 300 && status < 400) {
+          res.resume();
+          resolve({ status, location, contentType, text: "", bytes: 0 });
+          return;
+        }
+        if (status < 200 || status >= 300) {
+          res.resume();
+          reject(new Error(`Target page returned HTTP ${status}.`));
+          return;
+        }
+        if (!contentType.includes("text/html") && !contentType.includes("application/xhtml+xml")) {
+          res.resume();
+          reject(new Error("URL did not return an HTML page (expected text/html)."));
+          return;
+        }
+        if (contentLength > MAX_HTML_BYTES) {
+          res.resume();
+          reject(new Error("Page HTML exceeds the 1.5 MB inspection limit."));
+          return;
+        }
+
+        const chunks = [];
+        let totalBytes = 0;
+        res.on("data", (chunk) => {
+          totalBytes += chunk.length;
+          if (totalBytes > MAX_HTML_BYTES) {
+            req.destroy(new Error("Page HTML exceeds the 1.5 MB inspection limit."));
+            return;
+          }
+          chunks.push(chunk);
+        });
+        res.on("end", () => {
+          const text = Buffer.concat(chunks, totalBytes).toString("utf8");
+          resolve({ status, location: "", contentType, text, bytes: totalBytes });
+        });
+        res.on("error", reject);
+      },
+    );
+    req.on("timeout", () => {
+      const err = new Error("Timed out waiting for the page to respond (8-second limit).");
+      err.name = "TimeoutError";
+      req.destroy(err);
+    });
+    req.on("error", reject);
+    req.end();
+  });
 }
 
 async function readBoundedText(response, maxBytes) {
@@ -136,19 +207,44 @@ async function readBoundedText(response, maxBytes) {
 
 async function fetchPublicHtmlSafely(initialUrl) {
   let currentUrl = validatePublicHttpsUrl(initialUrl);
+  const requestHeaders = {
+    "User-Agent":
+      "WaitlyzePageGrader/1.0 (+https://waitlyze.com/tools/waitlist-landing-page-grader)",
+    Accept: "text/html,application/xhtml+xml;q=0.9,*/*;q=0.1",
+  };
+  const canUsePinnedNodeTransport =
+    typeof process !== "undefined" &&
+    Boolean(process.versions?.node) &&
+    typeof https?.request === "function";
 
   for (let hop = 0; hop <= MAX_REDIRECTS; hop += 1) {
-    await resolveAndValidateHost(currentUrl.hostname);
+    const addresses = await resolveAndValidateHost(currentUrl.hostname);
+
+    if (canUsePinnedNodeTransport && addresses.length > 0) {
+      const pinned = await fetchPinnedHttpsNode(currentUrl, addresses, requestHeaders);
+      if (pinned.status >= 300 && pinned.status < 400) {
+        if (!pinned.location) {
+          throw new Error("Redirect response did not include a target URL.");
+        }
+        if (hop === MAX_REDIRECTS) {
+          throw new Error("Too many redirects (maximum 3 allowed).");
+        }
+        currentUrl = validatePublicHttpsUrl(new URL(pinned.location, currentUrl).toString());
+        continue;
+      }
+      return {
+        html: pinned.text,
+        bytes: pinned.bytes,
+        statusCode: pinned.status,
+        finalUrl: currentUrl.toString(),
+      };
+    }
 
     const response = await fetch(currentUrl.toString(), {
       method: "GET",
       redirect: "manual",
       signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
-      headers: {
-        "User-Agent":
-          "WaitlyzePageGrader/1.0 (+https://waitlyze.com/tools/waitlist-landing-page-grader)",
-        Accept: "text/html,application/xhtml+xml;q=0.9,*/*;q=0.1",
-      },
+      headers: requestHeaders,
     });
 
     if (response.status >= 300 && response.status < 400) {
@@ -238,7 +334,8 @@ export async function POST(request) {
     }
 
     const validatedUrl = validatePublicHttpsUrl(body?.url);
-    const cacheKey = `${validatedUrl.origin}${validatedUrl.pathname}|${launchType}|${goal}`;
+    const urlHash = createHash("sha256").update(validatedUrl.toString()).digest("hex");
+    const cacheKey = `${urlHash}|${launchType}|${goal}`;
     pruneCache();
     const cached = scoreCache.get(cacheKey);
     if (cached && cached.expiresAt > Date.now()) {

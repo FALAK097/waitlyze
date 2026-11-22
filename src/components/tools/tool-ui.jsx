@@ -138,8 +138,10 @@ export function ToolSliderField({
             value={value}
             aria-describedby={hintId}
             onChange={(event) => {
-              const parsed = Number(event.target.value);
-              if (Number.isFinite(parsed)) {
+              const raw = event.target.value.trim();
+              if (!raw) return;
+              const parsed = Number(raw);
+              if (!Number.isNaN(parsed) && Number.isFinite(parsed)) {
                 onChange(Math.min(max, Math.max(min, parsed)));
               }
             }}
@@ -159,7 +161,14 @@ export function ToolSliderField({
         step={step}
         value={value}
         aria-label={label}
-        onChange={(event) => onChange(Number(event.target.value))}
+        onChange={(event) => {
+          const raw = event.target.value.trim();
+          if (!raw) return;
+          const parsed = Number(raw);
+          if (!Number.isNaN(parsed) && Number.isFinite(parsed)) {
+            onChange(Math.min(max, Math.max(min, parsed)));
+          }
+        }}
         className="h-2 w-full cursor-pointer appearance-none rounded-full bg-product-bg-inset accent-product-text-primary"
       />
       {hint ? (

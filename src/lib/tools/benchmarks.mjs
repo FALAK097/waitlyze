@@ -137,7 +137,7 @@ export function getBenchmarkCohort({
     minSampleThreshold: MIN_COHORT_SAMPLE_SIZE,
     lastUpdated: BENCHMARK_LAST_UPDATED,
     disclosure:
-      "Reference Planning Model — live Waitlyze aggregated statistics activate automatically per segment once N >= 30 eligible non-test campaigns qualify.",
+      "Reference Planning Model — these quartiles are calibrated planning ranges for this release. Waitlyze enforces an N >= 30 eligible published-campaign minimum per segment before publishing live aggregated cohorts.",
     metrics: {
       conversionRatePct: scaleTriplet(base.conversion, mod.conv, 75, 1),
       verificationRatePct: scaleTriplet(base.verification, mod.ver, 98, 1),

@@ -173,16 +173,22 @@ export function auditParsedRows(rows = []) {
   });
 
   // Detect velocity bursts (>= 4 signups sharing the same referral code within 5 minutes)
+  // Uses an O(n) two-pointer sliding window + high-water mark so large CSV files stay instant.
   const velocityFlaggedIndices = new Set();
   for (const entries of refTimestamps.values()) {
     entries.sort((a, b) => a.ts - b.ts);
-    for (let i = 0; i < entries.length; i += 1) {
-      let j = i;
-      while (j < entries.length && entries[j].ts - entries[i].ts <= 5 * 60 * 1000) {
-        j += 1;
+    let right = 0;
+    let markedUpTo = -1;
+    for (let left = 0; left < entries.length; left += 1) {
+      while (right < entries.length && entries[right].ts - entries[left].ts <= 5 * 60 * 1000) {
+        right += 1;
       }
-      if (j - i >= 4) {
-        for (let k = i; k < j; k += 1) velocityFlaggedIndices.add(entries[k].index);
+      if (right - left >= 4) {
+        const start = Math.max(left, markedUpTo + 1);
+        for (let k = start; k < right; k += 1) {
+          velocityFlaggedIndices.add(entries[k].index);
+        }
+        markedUpTo = Math.max(markedUpTo, right - 1);
       }
     }
   }

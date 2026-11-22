@@ -7,7 +7,13 @@ import {
   normalizeDomainInput,
 } from "@/lib/tools/engines/dns-deliverability.mjs";
 
+const DNS_RECORD_TYPES = Object.freeze({
+  MX: 15,
+  TXT: 16,
+});
+
 async function queryDoh(name, type) {
+  const expectedTypeCode = DNS_RECORD_TYPES[type];
   const url = `https://cloudflare-dns.com/dns-query?name=${encodeURIComponent(name)}&type=${encodeURIComponent(type)}`;
   const res = await fetch(url, {
     headers: { Accept: "application/dns-json" },
@@ -16,14 +22,18 @@ async function queryDoh(name, type) {
   if (!res.ok) return [];
   const data = await res.json();
   if (!Array.isArray(data?.Answer)) return [];
-  return data.Answer.map((entry) => {
-    const raw = String(entry?.data || "").trim();
-    if (type === "TXT") {
-      // Unwrap RFC quoted TXT chunks: `"v=spf1 " "include:..."` -> `v=spf1 include:...`
-      return raw.replace(/"\s+"/g, "").replace(/^"|"$/g, "");
-    }
-    return raw;
-  }).filter(Boolean);
+  return data.Answer.filter((entry) =>
+    expectedTypeCode ? Number(entry?.type) === expectedTypeCode : true,
+  )
+    .map((entry) => {
+      const raw = String(entry?.data || "").trim();
+      if (type === "TXT") {
+        // Unwrap RFC quoted TXT chunks: `"v=spf1 " "include:..."` -> `v=spf1 include:...`
+        return raw.replace(/"\s+"/g, "").replace(/^"|"$/g, "");
+      }
+      return raw;
+    })
+    .filter(Boolean);
 }
 
 export async function POST(request) {

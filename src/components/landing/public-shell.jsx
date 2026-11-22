@@ -25,8 +25,8 @@ export default function PublicShell({ children }) {
       {children}
       <footer className="bg-product-bg-page pt-12 pb-6 text-product-text-primary">
         <div className="mx-auto w-full max-w-[1120px] px-5 sm:px-6">
-          <div className="relative grid grid-cols-2 gap-x-5 gap-y-10 md:grid-cols-4 md:gap-10 lg:grid-cols-6">
-            <div className="col-span-2 md:col-span-4 lg:col-span-2">
+          <div className="relative grid grid-cols-2 gap-x-5 gap-y-10 sm:grid-cols-3 md:gap-8 lg:grid-cols-7">
+            <div className="col-span-2 sm:col-span-3 lg:col-span-2">
               <Link
                 href="/"
                 aria-label="Waitlyze home"
@@ -34,7 +34,7 @@ export default function PublicShell({ children }) {
               >
                 <Wordmark />
               </Link>
-              <p className="mt-5 max-w-49 text-caption leading-relaxed text-product-text-secondary">
+              <p className="mt-5 max-w-52 text-caption leading-relaxed text-product-text-secondary">
                 Made for the quiet work that comes before a big launch.
               </p>
             </div>
@@ -75,6 +75,39 @@ export default function PublicShell({ children }) {
               >
                 FAQs
               </Link>
+            </nav>
+            <nav
+              aria-label="Free tools"
+              className="flex flex-col items-start gap-3 text-xs text-product-text-primary"
+            >
+              <span className="mb-2 flex items-center gap-2 text-micro font-semibold tracking-widest text-product-text-secondary uppercase">
+                Free tools
+              </span>
+              {[
+                { label: "Landing page grader", href: "/tools/waitlist-landing-page-grader" },
+                { label: "Viral growth calculator", href: "/tools/viral-coefficient-calculator" },
+                { label: "Template finder", href: "/tools/waitlist-template-finder" },
+                {
+                  label: "Landing page copy builder",
+                  href: "/tools/waitlist-landing-page-generator",
+                },
+                { label: "Referral reward calculator", href: "/tools/referral-reward-calculator" },
+                { label: "Launch readiness checklist", href: "/tools/product-launch-checklist" },
+                {
+                  label: "Email deliverability checker",
+                  href: "/tools/email-deliverability-checker",
+                },
+                { label: "Waitlist benchmarks", href: "/research/waitlist-benchmarks" },
+                { label: "All 14 free tools", href: "/tools" },
+              ].map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className="inline-flex items-center gap-1.5 hover:text-product-success-text focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-neutral-900"
+                >
+                  {item.label}
+                </Link>
+              ))}
             </nav>
             <nav
               aria-label="Alternatives"
@@ -129,18 +162,6 @@ export default function PublicShell({ children }) {
               <span className="mb-2 flex items-center gap-2 text-micro font-semibold tracking-widest text-product-text-secondary uppercase">
                 Resources
               </span>
-              <Link
-                href="/tools"
-                className="inline-flex items-center gap-1.5 hover:text-product-success-text focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-neutral-900"
-              >
-                Launch Lab (Free tools)
-              </Link>
-              <Link
-                href="/research/waitlist-benchmarks"
-                className="inline-flex items-center gap-1.5 hover:text-product-success-text focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-neutral-900"
-              >
-                Waitlist benchmarks
-              </Link>
               <Link
                 href="/blog"
                 className="inline-flex items-center gap-1.5 hover:text-product-success-text focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-neutral-900"

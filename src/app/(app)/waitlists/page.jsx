@@ -335,9 +335,10 @@ export default async function WaitlistsPage({ searchParams }) {
     searchParams,
     cookies(),
   ]);
-  const pendingBlueprint = verifyBlueprintCookieValue(
-    cookieStore.get(BLUEPRINT_COOKIE_NAME)?.value,
-  );
+  const pendingBlueprint =
+    params?.dismissBlueprint === "1"
+      ? null
+      : verifyBlueprintCookieValue(cookieStore.get(BLUEPRINT_COOKIE_NAME)?.value);
   if (pendingBlueprint?.id) {
     const activeBlueprint = await getActiveToolBlueprint(prisma, pendingBlueprint.id);
     if (activeBlueprint) {

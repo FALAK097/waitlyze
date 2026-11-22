@@ -105,12 +105,33 @@ export function simulateWaitlistQueue(rawInputs = {}) {
     };
   });
 
+  function rankForReferrals(referrals) {
+    const earnedPoints =
+      pointsSignup + referrals * pointsReferral + (referrals > 0 ? pointsBonus : 0);
+    return rankForPoints(earnedPoints, referrals);
+  }
+
   function referralsForTargetRank(targetRank) {
-    const targetFraction = targetRank / waitlistSize;
-    const activeShareFraction = 1 - skew.zeroSharePct;
-    if (targetFraction >= activeShareFraction) return 1;
-    const needed = Math.ceil(Math.pow(activeShareFraction / targetFraction, 1 / skew.alpha) - 1);
-    return Math.max(1, Math.min(100, needed));
+    if (rankForReferrals(0) <= targetRank) return 0;
+    if (pointsReferral <= 0) return null;
+    // Exponential bound expansion + binary search using the exact same rankForPoints model
+    let low = 1;
+    let high = 1;
+    const maxSearch = Math.max(10000, waitlistSize * 2);
+    while (high < maxSearch && rankForReferrals(high) > targetRank) {
+      low = high + 1;
+      high = Math.min(maxSearch, high * 2);
+    }
+    if (rankForReferrals(high) > targetRank) return high;
+    while (low < high) {
+      const mid = Math.floor((low + high) / 2);
+      if (rankForReferrals(mid) <= targetRank) {
+        high = mid;
+      } else {
+        low = mid + 1;
+      }
+    }
+    return low;
   }
 
   const cutoffs = [

@@ -87,6 +87,7 @@ export async function createDraft(db, actorId, workspaceId, rawInput, options = 
     typeof blueprintPayload?.showReferrals === "boolean"
       ? blueprintPayload.showReferrals
       : input.showReferrals;
+  const effectiveInput = { ...input, showReferrals };
   await createWorkspaceService(db).requireAccess(actorId, workspaceId, "editCampaign");
 
   const existing = await db.waitList.findFirst({
@@ -96,7 +97,7 @@ export async function createDraft(db, actorId, workspaceId, rawInput, options = 
     },
   });
   if (existing) {
-    if (!sameRequest(existing, input, actorId)) {
+    if (!sameRequest(existing, effectiveInput, actorId)) {
       throw new DraftCreationError("This creation request has changed. Start a new waitlist.");
     }
     return existing;
@@ -152,7 +153,7 @@ export async function createDraft(db, actorId, workspaceId, rawInput, options = 
       },
     });
     if (raced) {
-      if (!sameRequest(raced, input, actorId)) {
+      if (!sameRequest(raced, effectiveInput, actorId)) {
         throw new DraftCreationError("This creation request has changed. Start a new waitlist.");
       }
       return raced;

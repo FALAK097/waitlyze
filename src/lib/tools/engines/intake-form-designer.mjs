@@ -382,6 +382,43 @@ export function evaluateFormFriction(fields = []) {
   return { score, label, tone, impactNote, activeCount: active.length, deferSuggestions };
 }
 
+const GOAL_AFFINITY_TERMS = Object.freeze({
+  identify_icp: ["role", "team", "size", "company", "seat", "audience", "segment", "icp"],
+  high_urgency: ["timeline", "urgency", "when", "launch", "blocker", "pain", "ready", "priority"],
+  tech_stack: [
+    "stack",
+    "runtime",
+    "language",
+    "tool",
+    "integration",
+    "platform",
+    "model",
+    "host",
+    "framework",
+  ],
+  filter_noise: ["blocker", "use", "case", "workflow", "compliance", "volume", "budget", "goal"],
+});
+
+function goalMatchScore(field, goal) {
+  const terms = GOAL_AFFINITY_TERMS[goal] || [];
+  if (terms.length === 0) return 0;
+  const hay = `${field.id} ${field.label} ${field.rationale || ""}`.toLowerCase();
+  let score = 0;
+  for (const term of terms) {
+    if (hay.includes(term)) score += 2;
+  }
+  if (goal === "high_urgency" && field.vipRule?.tag?.toLowerCase().includes("urgency")) {
+    score += 4;
+  }
+  if (goal === "identify_icp" && field.vipRule) {
+    score += 2;
+  }
+  if (goal === "filter_noise" && (field.required || field.type === "select")) {
+    score += 1;
+  }
+  return score;
+}
+
 export function designBetaIntakeForm({
   segment = "b2b_saas",
   goal = "identify_icp",
@@ -391,7 +428,15 @@ export function designBetaIntakeForm({
   const segmentObj = INTAKE_SEGMENTS.find((s) => s.value === segment) || INTAKE_SEGMENTS[0];
   const bank = FIELD_BANK[segmentObj.value] || FIELD_BANK.b2b_saas;
 
-  const fields = bank.map((field, index) => ({
+  const ranked = bank
+    .map((field, index) => ({
+      field,
+      index,
+      score: goalMatchScore(field, goal),
+    }))
+    .sort((a, b) => b.score - a.score || a.index - b.index);
+
+  const fields = ranked.map(({ field }, index) => ({
     ...field,
     enabled: index < budgetObj.maxFields,
   }));

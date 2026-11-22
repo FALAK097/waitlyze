@@ -259,12 +259,20 @@ export function QueueSimulatorWidget({
             />
             <ToolStatTile
               label="Top 1% cutoff"
-              value={`${sim.cutoffs[1].referralsRequired} refs`}
+              value={
+                sim.cutoffs[1].referralsRequired == null
+                  ? "N/A"
+                  : `${sim.cutoffs[1].referralsRequired} refs`
+              }
               hint={`Rank <= #${sim.cutoffs[1].targetRank}`}
             />
             <ToolStatTile
               label="Top 10 cutoff"
-              value={`${sim.cutoffs[3].referralsRequired} refs`}
+              value={
+                sim.cutoffs[3].referralsRequired == null
+                  ? "N/A"
+                  : `${sim.cutoffs[3].referralsRequired} refs`
+              }
               hint="Leaderboard"
             />
           </div>

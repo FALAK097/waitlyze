@@ -12,6 +12,7 @@ export const VIRAL_SCENARIO_PRESETS = Object.freeze([
       clicksPerSharer: 3,
       referredConversionPct: 22,
       weeks: 8,
+      launchEmailOpenRatePct: 36,
       rewardCostPerReferral: 0,
     },
   },
@@ -28,6 +29,7 @@ export const VIRAL_SCENARIO_PRESETS = Object.freeze([
       clicksPerSharer: 4,
       referredConversionPct: 28,
       weeks: 8,
+      launchEmailOpenRatePct: 45,
       rewardCostPerReferral: 0,
     },
   },
@@ -44,6 +46,7 @@ export const VIRAL_SCENARIO_PRESETS = Object.freeze([
       clicksPerSharer: 5,
       referredConversionPct: 32,
       weeks: 10,
+      launchEmailOpenRatePct: 52,
       rewardCostPerReferral: 1.5,
     },
   },
@@ -145,6 +148,12 @@ export function calculateViralGrowth(rawInputs = {}) {
       DEFAULT_VIRAL_INPUTS.referredConversionPct,
     ),
     weeks: Math.round(clamp(rawInputs.weeks, 2, 24, DEFAULT_VIRAL_INPUTS.weeks)),
+    launchEmailOpenRatePct: clamp(
+      rawInputs.launchEmailOpenRatePct,
+      10,
+      85,
+      DEFAULT_VIRAL_INPUTS.launchEmailOpenRatePct,
+    ),
     rewardCostPerReferral: clamp(
       rawInputs.rewardCostPerReferral,
       0,
@@ -154,6 +163,7 @@ export function calculateViralGrowth(rawInputs = {}) {
   };
 
   const base = runCoreSimulation(inputs);
+  const launchDayAudience = Math.round(base.totalVerified * (inputs.launchEmailOpenRatePct / 100));
   const estimatedRewardBudget = Number(
     (base.referredTotal * inputs.rewardCostPerReferral).toFixed(2),
   );
@@ -206,6 +216,7 @@ export function calculateViralGrowth(rawInputs = {}) {
     directAdded: base.directAdded,
     referredTotal: base.referredTotal,
     totalVerified: base.totalVerified,
+    launchDayAudience,
     referralLiftPct: base.referralLiftPct,
     estimatedRewardBudget,
     effectiveCostPerVerifiedReferral,

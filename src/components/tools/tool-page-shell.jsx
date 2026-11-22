@@ -3,12 +3,13 @@ import { HugeiconsIcon } from "@hugeicons/react";
 import Link from "next/link";
 
 import PublicShell from "@/components/landing/public-shell";
+import SignupButton from "@/components/landing/signup-button";
 import { JsonLd } from "@/components/seo/json-ld";
 import { getPost } from "@/lib/blog-source";
 import { absoluteUrl, breadcrumbNode } from "@/lib/seo-helpers";
 import { SITE_URL } from "@/lib/site-metadata";
 import { getGalleryMeta } from "@/lib/templates/gallery.mjs";
-import { getRelatedTools, getToolBySlug, TOOL_CATEGORIES } from "@/lib/tools/registry.mjs";
+import { getRelatedTools, getToolBySlug } from "@/lib/tools/registry.mjs";
 
 import { ToolAnalyticsTracker } from "./tool-analytics-tracker";
 
@@ -64,7 +65,6 @@ export function ToolPageShell({ slug, children, extraJsonLd = [] }) {
   const tool = getToolBySlug(slug);
   if (!tool) return null;
 
-  const category = TOOL_CATEGORIES.find((item) => item.id === tool.category);
   const relatedPosts = tool.relatedBlogSlugs.map((blogSlug) => getPost(blogSlug)).filter(Boolean);
   const templateMeta = getGalleryMeta(tool.recommendedTemplateId);
   const relatedTools = getRelatedTools(slug, 3);
@@ -100,83 +100,124 @@ export function ToolPageShell({ slug, children, extraJsonLd = [] }) {
       <JsonLd data={structuredData} />
       <ToolAnalyticsTracker toolSlug={tool.slug} toolVersion={tool.version} />
       <main id="main-content" className="scroll-mt-24 pb-20">
-        {/* 1. Header & Breadcrumb */}
-        <header className={`${CONTAINER} pt-10 pb-6 md:pt-14`}>
+        {/* 1. Compact Header & Breadcrumb (keeps interactive workspace immediately above the fold) */}
+        <header className={`${CONTAINER} pt-8 pb-5 md:pt-12`}>
           <nav
             aria-label="Breadcrumb"
             className="flex flex-wrap items-center gap-2 text-caption text-product-text-secondary"
           >
             <Link
-              href="/tools"
-              className="font-medium text-product-text-primary underline-offset-4 hover:underline"
+              href="/"
+              className="underline-offset-4 hover:text-product-text-primary hover:underline"
             >
-              Launch Lab
+              Waitlyze
             </Link>
             <span aria-hidden="true" className="text-product-text-muted">
               /
             </span>
-            <span>{category?.label || "Tools"}</span>
+            <Link
+              href="/tools"
+              className="font-medium text-product-text-primary underline-offset-4 hover:underline"
+            >
+              Free tools
+            </Link>
+            <span aria-hidden="true" className="text-product-text-muted">
+              /
+            </span>
+            <span>{tool.shortTitle}</span>
           </nav>
 
-          <h1 className="mt-5 max-w-4xl font-product-display text-3xl leading-tight font-semibold tracking-tight text-balance text-product-text-primary sm:text-4xl lg:text-5xl">
-            {tool.title}
-          </h1>
-
-          {/* 2. Direct 40–60 word plain-language answer */}
-          <div className="mt-5 max-w-3xl rounded-xl border border-product-border-subtle bg-product-bg-inset/70 px-5 py-4">
-            <p className="text-body leading-relaxed text-pretty text-product-text-primary">
-              {tool.directAnswer}
-            </p>
+          <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+            <div className="max-w-3xl">
+              <h1 className="font-product-display text-3xl leading-tight font-semibold tracking-tight text-balance text-product-text-primary sm:text-4xl lg:text-[2.75rem]">
+                {tool.title}
+              </h1>
+              <p className="mt-2.5 text-body leading-relaxed text-pretty text-product-text-secondary sm:text-base">
+                {tool.targetJob}
+              </p>
+            </div>
+            <span className="inline-flex shrink-0 items-center self-start rounded-full border border-product-border-subtle bg-product-bg-inset px-3 py-1 font-product-mono text-micro text-product-text-secondary sm:self-end">
+              Free · No account needed
+            </span>
           </div>
         </header>
 
-        {/* 3. Working Interactive Tool */}
-        <section className={`${CONTAINER} pb-14`} aria-label={`${tool.title} workspace`}>
+        {/* 2. Working Interactive Tool — front and center above the fold */}
+        <section className={`${CONTAINER} pb-10`} aria-label={`${tool.title} workspace`}>
           {children}
         </section>
 
-        {/* 4. How It Works & Formula / Rubric */}
+        {/* 3. Editorial Waitlyze Conversion Strip */}
+        <section className={`${CONTAINER} pb-12`} aria-label="Build with Waitlyze">
+          <div className="flex flex-col justify-between gap-4 rounded-xl bg-product-text-primary px-6 py-5 text-product-bg-page sm:flex-row sm:items-center sm:px-7">
+            <div className="max-w-2xl">
+              <p className="font-product-display text-lg font-semibold tracking-tight text-product-bg-page">
+                Build and run your waitlist in Waitlyze—free up to 100 signups
+              </p>
+              <p className="mt-1 text-caption leading-relaxed text-product-bg-page/75">
+                Hosted launch page or embed, verified referral links, consent-aware email, and
+                audience analytics. No credit card required.
+              </p>
+            </div>
+            <div className="shrink-0">
+              <SignupButton
+                compact
+                className="min-h-10 rounded-full border-product-accent-solid bg-product-accent-solid px-4 py-2 text-caption font-semibold text-product-accent-label hover:bg-product-accent-hover"
+              >
+                Start free
+              </SignupButton>
+            </div>
+          </div>
+        </section>
+
+        {/* 4. 3-Step How It Works + Plain-Language Summary & Formula */}
         <section
           className={`${CONTAINER} border-t border-product-border-subtle py-12`}
           aria-labelledby="how-it-works-heading"
         >
-          <div className="grid gap-8 lg:grid-cols-[minmax(0,22rem)_minmax(0,1fr)] lg:gap-12">
-            <div>
-              <h2
-                id="how-it-works-heading"
-                className="font-product-display text-2xl font-semibold tracking-tight text-product-text-primary"
+          <div className="max-w-3xl">
+            <h2
+              id="how-it-works-heading"
+              className="font-product-display text-2xl font-semibold tracking-tight text-product-text-primary"
+            >
+              {tool.howItWorks.heading}
+            </h2>
+            <p className="mt-2.5 text-body leading-relaxed text-pretty text-product-text-secondary">
+              {tool.directAnswer}
+            </p>
+          </div>
+
+          <ol className="mt-6 grid gap-4 md:grid-cols-3">
+            {tool.howItWorks.items.slice(0, 3).map((item, idx) => (
+              <li
+                key={item.label}
+                className="rounded-xl border border-product-border-subtle bg-product-bg-surface p-5"
               >
-                {tool.howItWorks.heading}
-              </h2>
-              <p className="mt-3 text-body leading-relaxed text-product-text-secondary">
+                <span className="inline-flex size-7 items-center justify-center rounded-md border border-product-text-primary/20 bg-product-accent-solid font-product-mono text-caption font-semibold text-product-accent-label">
+                  {idx + 1}
+                </span>
+                <h3 className="mt-3 text-body font-semibold text-product-text-primary">
+                  {item.label}
+                </h3>
+                <p className="mt-1.5 text-caption leading-relaxed text-product-text-secondary">
+                  {item.detail}
+                </p>
+              </li>
+            ))}
+          </ol>
+
+          <div className="mt-5 rounded-xl border border-product-border-subtle bg-product-bg-inset/60 px-5 py-4">
+            <p className="font-product-mono text-micro font-semibold text-product-text-secondary">
+              Formula & scoring model
+            </p>
+            <p className="mt-1.5 font-product-mono text-caption leading-relaxed text-product-text-primary">
+              {tool.howItWorks.formula}
+            </p>
+            {tool.howItWorks.summary ? (
+              <p className="mt-2 text-caption leading-relaxed text-product-text-secondary">
                 {tool.howItWorks.summary}
               </p>
-            </div>
-            <div className="grid gap-5">
-              <div className="rounded-lg border border-product-border-subtle bg-product-bg-inset/60 px-4 py-3.5">
-                <p className="font-product-mono text-micro font-semibold text-product-text-secondary">
-                  Formula & scoring model
-                </p>
-                <p className="mt-1.5 font-product-mono text-caption leading-relaxed text-product-text-primary">
-                  {tool.howItWorks.formula}
-                </p>
-              </div>
-              <dl className="grid gap-4 sm:grid-cols-2">
-                {tool.howItWorks.items.map((item) => (
-                  <div
-                    key={item.label}
-                    className="rounded-lg border border-product-border-subtle bg-product-bg-surface p-4"
-                  >
-                    <dt className="text-body font-semibold text-product-text-primary">
-                      {item.label}
-                    </dt>
-                    <dd className="mt-1.5 text-caption leading-relaxed text-product-text-secondary">
-                      {item.detail}
-                    </dd>
-                  </div>
-                ))}
-              </dl>
-            </div>
+            ) : null}
           </div>
         </section>
 

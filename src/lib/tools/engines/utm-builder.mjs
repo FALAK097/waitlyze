@@ -104,11 +104,23 @@ export function buildUtmMatrix({
     parsedBase.searchParams.delete("r");
   }
 
-  const normalizedCampaign = normalizeUtmSegment(campaign) || "launch-waitlist";
-  const normalizedSuffix = normalizeUtmSegment(contentSuffix);
+  const campaignPii = detectPiiWarning(campaign);
+  const suffixPii = detectPiiWarning(contentSuffix);
+  if (campaignPii) {
+    warnings.push(
+      `${campaignPii} The campaign tag was automatically reset to "launch-waitlist" so personal data never appears in copied links, CSV exports, or QR codes.`,
+    );
+  }
+  if (suffixPii) {
+    warnings.push(
+      `${suffixPii} The flagged variant suffix was stripped so personal data never appears in copied links, CSV exports, or QR codes.`,
+    );
+  }
 
-  const piiMsg = detectPiiWarning(`${campaign} ${contentSuffix}`);
-  if (piiMsg) warnings.push(piiMsg);
+  const normalizedCampaign = campaignPii
+    ? "launch-waitlist"
+    : normalizeUtmSegment(campaign) || "launch-waitlist";
+  const normalizedSuffix = suffixPii ? "" : normalizeUtmSegment(contentSuffix);
 
   const selectedSet = new Set(
     Array.isArray(selectedChannelIds) && selectedChannelIds.length
@@ -215,8 +227,13 @@ const QR_VERSIONS_L = [
   { total: 346, ec: 18, b1: 2, d1: 68, b2: 2, d2: 69, align: [6, 28, 50] },
 ];
 
+const QR_MAX_BYTES_V10_L = 271;
+
 function encodeQrMatrix(text) {
-  const bytes = Array.from(new TextEncoder().encode(String(text || "").slice(0, 265)));
+  const bytes = Array.from(new TextEncoder().encode(String(text || "")));
+  if (bytes.length > QR_MAX_BYTES_V10_L) {
+    return null;
+  }
   let version = 1;
   while (version <= 10) {
     const spec = QR_VERSIONS_L[version];
@@ -225,7 +242,7 @@ function encodeQrMatrix(text) {
     if (4 + countBits + bytes.length * 8 <= dataCap * 8) break;
     version += 1;
   }
-  if (version > 10) version = 10;
+  if (version > 10) return null;
 
   const spec = QR_VERSIONS_L[version];
   const dataCap = spec.b1 * spec.d1 + spec.b2 * spec.d2;
@@ -319,10 +336,13 @@ function encodeQrMatrix(text) {
     setMod(i, 6, i % 2 === 0, true);
   }
 
-  // Alignment patterns
+  // Alignment patterns — skip ONLY the three finder-pattern corner regions.
+  // Alignment patterns that intersect timing lines (e.g. (6,22) and (22,6) on v7+) MUST be placed.
   for (const r of spec.align) {
     for (const c of spec.align) {
-      if (reserved[r][c]) continue;
+      const overlapsFinder =
+        (r <= 8 && c <= 8) || (r <= 8 && c >= size - 9) || (r >= size - 9 && c <= 8);
+      if (overlapsFinder) continue;
       for (let dr = -2; dr <= 2; dr += 1) {
         for (let dc = -2; dc <= 2; dc += 1) {
           const dark = Math.abs(dr) === 2 || Math.abs(dc) === 2 || (dr === 0 && dc === 0);
@@ -405,8 +425,17 @@ function encodeQrMatrix(text) {
   return grid;
 }
 
-export function generateQrSvg(text, pixelSize = 200) {
+export function generateQrResult(text, pixelSize = 200) {
+  const byteLength = new TextEncoder().encode(String(text || "")).length;
   const matrix = encodeQrMatrix(text);
+  if (!matrix) {
+    return {
+      svg: "",
+      error: `URL is ${byteLength} bytes, which exceeds the ${QR_MAX_BYTES_V10_L}-byte QR limit. Shorten the destination URL or campaign tags to generate a scannable QR without truncating your link.`,
+      byteLength,
+      maxBytes: QR_MAX_BYTES_V10_L,
+    };
+  }
   const quiet = 4;
   const total = matrix.length + quiet * 2;
   const rects = [];
@@ -417,5 +446,10 @@ export function generateQrSvg(text, pixelSize = 200) {
       }
     }
   }
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${total} ${total}" width="${pixelSize}" height="${pixelSize}" shape-rendering="crispEdges"><rect width="100%" height="100%" fill="#ffffff"/><g fill="#00160d">${rects.join("")}</g></svg>`;
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${total} ${total}" width="${pixelSize}" height="${pixelSize}" shape-rendering="crispEdges"><rect width="100%" height="100%" fill="#ffffff"/><g fill="#00160d">${rects.join("")}</g></svg>`;
+  return { svg, error: "", byteLength, maxBytes: QR_MAX_BYTES_V10_L };
+}
+
+export function generateQrSvg(text, pixelSize = 200) {
+  return generateQrResult(text, pixelSize).svg;
 }

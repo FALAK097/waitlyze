@@ -249,25 +249,53 @@ export function applyBlueprintToSnapshot(baseSnapshot, blueprint) {
       return section;
     });
 
-    // Ensure referralRewards section exists if tiers were provided and template lacked one
+    // Ensure features, faq, and referralRewards sections exist if supplied and base template lacked them
+    const insertBeforeFooter = (newSection) => {
+      const footerIdx = draft.sections.findIndex((s) => s.type === "footer");
+      if (footerIdx >= 0) {
+        draft.sections.splice(footerIdx, 0, newSection);
+      } else {
+        draft.sections.push(newSection);
+      }
+    };
+
+    if (
+      blueprint.sectionsPatch?.features?.length &&
+      !draft.sections.some((s) => s.type === "features")
+    ) {
+      insertBeforeFooter({
+        id: "blueprint-features",
+        type: "features",
+        visible: true,
+        variant: "grid",
+        heading: blueprint.sectionsPatch.featuresHeading || "What you get with early access",
+        items: blueprint.sectionsPatch.features.slice(0, 8),
+      });
+    }
+
     if (
       blueprint.referralConfig?.rewardTiers?.length &&
       !draft.sections.some((s) => s.type === "referralRewards")
     ) {
-      const footerIdx = draft.sections.findIndex((s) => s.type === "footer");
-      const rewardsSection = {
+      insertBeforeFooter({
         id: "blueprint-referral-rewards",
         type: "referralRewards",
         visible: true,
         variant: "list",
         heading: "Invite friends, unlock early rewards",
         items: blueprint.referralConfig.rewardTiers.slice(0, 8),
-      };
-      if (footerIdx >= 0) {
-        draft.sections.splice(footerIdx, 0, rewardsSection);
-      } else {
-        draft.sections.push(rewardsSection);
-      }
+      });
+    }
+
+    if (blueprint.sectionsPatch?.faqs?.length && !draft.sections.some((s) => s.type === "faq")) {
+      insertBeforeFooter({
+        id: "blueprint-faq",
+        type: "faq",
+        visible: true,
+        variant: "list",
+        heading: "Frequently asked questions",
+        items: blueprint.sectionsPatch.faqs.slice(0, 10),
+      });
     }
   }
 
@@ -395,21 +423,54 @@ export async function getActiveToolBlueprint(db, id) {
 }
 
 export async function claimToolBlueprint(db, { id, userId, waitListId }) {
-  if (!id || !userId || !waitListId) return null;
+  if (!id || !userId || !waitListId) return { claimed: false, alreadyClaimedForDraft: false };
   try {
-    return await db.toolBlueprint.update({
-      where: { id },
+    const now = new Date();
+    const updated = await db.toolBlueprint.updateMany({
+      where: {
+        id,
+        claimedWaitlistId: null,
+        expiresAt: { gt: now },
+      },
       data: {
         claimedByUserId: userId,
         claimedWaitlistId: waitListId,
-        claimedAt: new Date(),
+        claimedAt: now,
       },
-      select: { id: true, toolSlug: true },
     });
+    if (updated.count > 0) {
+      return { claimed: true, alreadyClaimedForDraft: false, id };
+    }
+    const existing = await db.toolBlueprint.findUnique({
+      where: { id },
+      select: { claimedWaitlistId: true },
+    });
+    return {
+      claimed: false,
+      alreadyClaimedForDraft: existing?.claimedWaitlistId === waitListId,
+      id,
+    };
   } catch (error) {
     console.error("Failed to claim tool blueprint:", error?.code || error?.name || "unknown");
-    return null;
+    return { claimed: false, alreadyClaimedForDraft: false, error: true };
   }
+}
+
+export async function saveClaimedBlueprintForWaitlist(db, { userId, waitListId, rawInput }) {
+  const payload = toolBlueprintInputSchema.parse(rawInput);
+  const now = new Date();
+  return db.toolBlueprint.create({
+    data: {
+      version: payload.version,
+      toolSlug: payload.toolSlug,
+      payload,
+      claimedByUserId: userId,
+      claimedWaitlistId: waitListId,
+      claimedAt: now,
+      expiresAt: new Date(now.getTime() + 365 * 24 * 60 * 60 * 1000),
+    },
+    select: { id: true, toolSlug: true, claimedAt: true },
+  });
 }
 
 export async function getClaimedBlueprintForWaitlist(db, waitListId) {

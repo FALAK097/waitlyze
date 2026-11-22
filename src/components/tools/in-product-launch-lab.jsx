@@ -2,10 +2,12 @@
 
 import { SparklesIcon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
 
-import { ToolSegmentedControl, ToolStatusBadge } from "@/components/tools/tool-ui";
+import { saveLaunchLabPlanToWaitlist } from "@/app/actions/waitLists";
+import { ToolCopyButton, ToolSegmentedControl, ToolStatusBadge } from "@/components/tools/tool-ui";
 import { CopyBuilderWidget } from "@/components/tools/widgets/copy-builder-widget";
 import { DnsDeliverabilityWidget } from "@/components/tools/widgets/dns-deliverability-widget";
 import { EmailSequenceWidget } from "@/components/tools/widgets/email-sequence-widget";
@@ -77,14 +79,27 @@ export function InProductToolDrawer({
   waitlistKeyId = "",
   customDomain = "",
 }) {
+  const router = useRouter();
   const config = SURFACE_CONFIG[surface] || SURFACE_CONFIG.builder;
   const [open, setOpen] = useState(false);
   const [activeTool, setActiveTool] = useState(config.tools[0].value);
 
-  function handleInProductApply() {
-    toast.success(
-      "Copied into your Launch Lab workflow — apply any updates right in this workspace.",
-    );
+  async function handleInProductApply(blueprint) {
+    if (!waitlistKeyId || !blueprint) {
+      toast.error("Could not attach this plan because no campaign is selected.");
+      return;
+    }
+    const result = await saveLaunchLabPlanToWaitlist({
+      waitListId: waitlistKeyId,
+      blueprint,
+    });
+    if (!result?.ok) {
+      toast.error(result?.message || "Could not save this Launch Lab plan to your campaign.");
+      return;
+    }
+    toast.success("Saved to this campaign's Launch Lab Blueprint panel.");
+    setOpen(false);
+    router.refresh();
   }
 
   return (
@@ -206,17 +221,20 @@ export function OriginatingBlueprintBanner({ blueprint, toolTitle }) {
   const checklist = payload.launchChecklist || [];
   const topFixes = payload.auditSummary?.topFixes || [];
   const bullets = payload.summaryBullets || [];
+  const emailDrafts = payload.emailDrafts || [];
+  const utmChannels = payload.utmPlan?.channels || [];
+  const domainConfig = payload.domainConfig || null;
 
   return (
     <details className="mb-4 rounded-xl border border-product-border-subtle bg-product-bg-inset/50 px-4 py-3">
       <summary className="flex cursor-pointer list-none flex-wrap items-center justify-between gap-2 text-caption font-semibold text-product-text-primary">
         <span className="inline-flex items-center gap-2">
           <ToolStatusBadge tone="accent">Launch Lab Blueprint</ToolStatusBadge>
-          <span>Originating plan from {toolTitle || blueprint.toolSlug}</span>
+          <span>Saved plan from {toolTitle || blueprint.toolSlug}</span>
         </span>
         <span className="text-micro font-medium text-product-text-secondary">Toggle reference</span>
       </summary>
-      <div className="mt-3 grid gap-3 border-t border-product-border-subtle pt-3 text-caption text-product-text-secondary">
+      <div className="mt-3 grid gap-4 border-t border-product-border-subtle pt-3 text-caption text-product-text-secondary">
         {bullets.length > 0 ? (
           <ul className="grid list-disc gap-1 pl-4">
             {bullets.map((b) => (
@@ -236,13 +254,94 @@ export function OriginatingBlueprintBanner({ blueprint, toolTitle }) {
             </ul>
           </div>
         ) : null}
+        {emailDrafts.length > 0 ? (
+          <div className="grid gap-2">
+            <p className="font-semibold text-product-text-primary">
+              Saved email drafts ({emailDrafts.length})
+            </p>
+            <div className="grid gap-2 sm:grid-cols-2">
+              {emailDrafts.map((draft) => (
+                <div
+                  key={`${draft.stage}-${draft.subject}`}
+                  className="grid gap-1.5 rounded-lg border border-product-border-subtle bg-product-bg-surface p-3"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <span className="font-product-mono text-micro text-product-text-muted">
+                        {draft.stage}
+                        {draft.timing ? ` · ${draft.timing}` : ""}
+                      </span>
+                      <p className="truncate font-semibold text-product-text-primary">
+                        {draft.subject}
+                      </p>
+                    </div>
+                    <ToolCopyButton
+                      text={`Subject: ${draft.subject}\n\n${draft.body}`}
+                      label="Copy"
+                    />
+                  </div>
+                  <p className="line-clamp-3 text-micro whitespace-pre-line text-product-text-secondary">
+                    {draft.body}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : null}
+        {utmChannels.length > 0 ? (
+          <div className="grid gap-2">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <p className="font-semibold text-product-text-primary">
+                Saved UTM campaign: {payload.utmPlan?.campaign || "launch"} ({utmChannels.length}{" "}
+                channels)
+              </p>
+              <ToolCopyButton
+                text={utmChannels
+                  .map(
+                    (c) =>
+                      `${c.channel}: utm_source=${c.source}&utm_medium=${c.medium}&utm_campaign=${payload.utmPlan?.campaign || "launch"}${c.content ? `&utm_content=${c.content}` : ""}`,
+                  )
+                  .join("\n")}
+                label="Copy UTM plan"
+              />
+            </div>
+            <ul className="grid gap-1 sm:grid-cols-2">
+              {utmChannels.map((c) => (
+                <li
+                  key={`${c.channel}-${c.source}-${c.medium}`}
+                  className="flex items-center justify-between gap-2 rounded-md border border-product-border-subtle bg-product-bg-surface px-2.5 py-1.5 font-product-mono text-micro"
+                >
+                  <span className="font-sans font-medium text-product-text-primary">
+                    {c.channel}
+                  </span>
+                  <span className="truncate text-product-text-muted">
+                    {c.source} / {c.medium}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
+        {domainConfig?.domain ? (
+          <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-product-border-subtle bg-product-bg-surface px-3 py-2">
+            <span className="text-caption text-product-text-primary">
+              Audited sending domain:{" "}
+              <strong className="font-product-mono">{domainConfig.domain}</strong>
+            </span>
+            {typeof domainConfig.score === "number" ? (
+              <ToolStatusBadge tone={domainConfig.score >= 80 ? "success" : "warning"}>
+                DNS score: {domainConfig.score}/100
+              </ToolStatusBadge>
+            ) : null}
+          </div>
+        ) : null}
         {checklist.length > 0 ? (
           <div>
             <p className="font-semibold text-product-text-primary">
               Launch checklist ({checklist.filter((c) => !c.completed).length} remaining)
             </p>
             <ul className="mt-1 grid gap-1">
-              {checklist.slice(0, 6).map((item) => (
+              {checklist.slice(0, 8).map((item) => (
                 <li key={item.id} className="flex items-center justify-between gap-2">
                   <span className={item.completed ? "line-through opacity-60" : ""}>
                     {item.title}

@@ -5,8 +5,9 @@ import Link from "next/link";
 import FinalCta from "@/components/landing/final-cta";
 import PublicShell from "@/components/landing/public-shell";
 import { JsonLd } from "@/components/seo/json-ld";
+import { ToolsHubDirectory } from "@/components/tools/tools-hub-directory";
 import { absoluteUrl, breadcrumbNode } from "@/lib/seo-helpers";
-import { getToolsByCategory, listTools, TOOL_CATEGORIES } from "@/lib/tools/registry.mjs";
+import { listTools, TOOL_CATEGORIES } from "@/lib/tools/registry.mjs";
 
 export const metadata = {
   title: "Waitlyze Launch Lab — Free Pre-Launch Waitlist Tools",
@@ -79,33 +80,20 @@ export default function LaunchLabHubPage() {
               id="tools-hub-title"
               className="mt-4 font-product-display text-4xl leading-[1.06] font-semibold tracking-tight text-balance text-product-text-primary sm:text-5xl lg:text-[3.5rem]"
             >
-              Plan, grade, and model your waitlist before launch day.
+              14 free waitlist tools. No account. No friction.
             </h1>
             <p className="mt-5 max-w-2xl text-base leading-relaxed text-pretty text-product-text-secondary sm:text-lg">
-              Use every calculator, diagnostic, and copy builder with zero login or email gate. When
-              you are ready, carry your finished plan straight into a prefilled Waitlyze draft
-              without rebuilding it.
+              The calculators, page audits, and copy builders behind high-converting launches—free
+              for anyone. Most run right in your browser, and every finished plan carries straight
+              into a prefilled Waitlyze draft when you are ready.
             </p>
-
-            {/* Category Jump Links */}
-            <nav aria-label="Tool categories" className="mt-7 flex flex-wrap items-center gap-2">
-              {TOOL_CATEGORIES.map((category) => (
-                <a
-                  key={category.id}
-                  href={`#${category.id}`}
-                  className="inline-flex min-h-10 items-center rounded-full border border-product-border-subtle bg-product-bg-surface px-4 py-1.5 text-caption font-medium text-product-text-primary transition-colors duration-150 hover:border-product-text-secondary hover:bg-product-bg-inset"
-                >
-                  {category.label}
-                </a>
-              ))}
-            </nav>
           </div>
 
           {/* Flagship Spotlight Strip */}
-          <div className="mt-10 grid gap-4 md:grid-cols-2">
+          <div className="mt-9 grid gap-4 md:grid-cols-2">
             <Link
               href="/tools/waitlist-landing-page-grader"
-              className="group flex flex-col justify-between rounded-xl border border-product-text-primary/15 bg-product-bg-inset/60 p-6 transition-colors duration-150 hover:border-product-text-primary/40"
+              className="group flex flex-col justify-between rounded-xl border border-product-text-primary/15 bg-product-bg-inset/60 p-6 transition-colors duration-150 hover:border-product-text-primary/40 motion-safe:active:scale-[0.99]"
             >
               <div>
                 <span className="inline-flex items-center rounded-full bg-product-accent-solid px-2.5 py-0.5 font-product-mono text-micro font-semibold text-product-accent-label">
@@ -127,7 +115,7 @@ export default function LaunchLabHubPage() {
 
             <Link
               href="/tools/viral-coefficient-calculator"
-              className="group flex flex-col justify-between rounded-xl border border-product-border-subtle bg-product-bg-surface p-6 transition-colors duration-150 hover:border-product-text-secondary"
+              className="group flex flex-col justify-between rounded-xl border border-product-border-subtle bg-product-bg-surface p-6 transition-colors duration-150 hover:border-product-text-secondary motion-safe:active:scale-[0.99]"
             >
               <div>
                 <span className="inline-flex items-center rounded-full border border-product-border-subtle bg-product-bg-inset px-2.5 py-0.5 font-product-mono text-micro font-medium text-product-text-secondary">
@@ -138,7 +126,7 @@ export default function LaunchLabHubPage() {
                 </h2>
                 <p className="mt-2 text-body leading-relaxed text-product-text-secondary">
                   Model weekly direct visitors, email verification drop-off, K-factor compounding,
-                  and +10% highest-leverage sensitivity—with ungated CSV and PNG export.
+                  and launch-day active audience—with ungated CSV and PNG export.
                 </p>
               </div>
               <span className="mt-5 inline-flex items-center gap-1.5 text-body font-semibold text-product-text-primary">
@@ -149,67 +137,19 @@ export default function LaunchLabHubPage() {
           </div>
         </section>
 
-        {/* Categorized Tool Directory */}
-        <div className={`${CONTAINER} divide-y divide-product-border-subtle pb-16`}>
-          {TOOL_CATEGORIES.map((category) => {
-            const tools = getToolsByCategory(category.id);
-            return (
-              <section
-                key={category.id}
-                id={category.id}
-                className="scroll-mt-24 py-12"
-                aria-labelledby={`cat-${category.id}`}
-              >
-                <div className="max-w-2xl">
-                  <h2
-                    id={`cat-${category.id}`}
-                    className="font-product-display text-2xl font-semibold tracking-tight text-product-text-primary sm:text-3xl"
-                  >
-                    {category.label}
-                  </h2>
-                  <p className="mt-2 text-body text-product-text-secondary">
-                    {category.description}
-                  </p>
-                </div>
-
-                <div className="mt-7 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                  {tools.map((tool) => (
-                    <Link
-                      key={tool.slug}
-                      href={tool.path}
-                      className="group flex flex-col justify-between rounded-xl border border-product-border-subtle bg-product-bg-surface p-5 transition-colors duration-150 hover:border-product-text-secondary"
-                    >
-                      <div>
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="font-product-mono text-micro text-product-success-text">
-                            {tool.path.startsWith("/research/") ? "Research" : "Free tool"}
-                          </span>
-                          <span className="font-product-mono text-micro text-product-text-muted">
-                            No login
-                          </span>
-                        </div>
-                        <h3 className="mt-2.5 font-product-display text-lg leading-snug font-semibold tracking-tight text-product-text-primary group-hover:underline">
-                          {tool.title}
-                        </h3>
-                        <p className="mt-2 text-caption leading-relaxed text-product-text-secondary">
-                          {tool.targetJob}
-                        </p>
-                      </div>
-                      <span className="mt-5 inline-flex items-center gap-1 text-caption font-semibold text-product-text-primary">
-                        Open tool
-                        <HugeiconsIcon
-                          icon={ArrowRight01Icon}
-                          size={14}
-                          aria-hidden="true"
-                          className="transition-transform duration-150 group-hover:translate-x-0.5"
-                        />
-                      </span>
-                    </Link>
-                  ))}
-                </div>
-              </section>
-            );
-          })}
+        {/* Interactive Searchable & Categorized Tool Directory */}
+        <div className={`${CONTAINER} pb-16`}>
+          <ToolsHubDirectory
+            categories={TOOL_CATEGORIES}
+            tools={allTools.map((t) => ({
+              slug: t.slug,
+              path: t.path,
+              title: t.title,
+              shortTitle: t.shortTitle,
+              category: t.category,
+              targetJob: t.targetJob,
+            }))}
+          />
         </div>
 
         {/* How Blueprint Handoff Works */}

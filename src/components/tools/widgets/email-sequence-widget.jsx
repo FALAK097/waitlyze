@@ -20,6 +20,7 @@ import {
   EMAIL_VOICE_OPTIONS,
   generateEmailSequence,
   LAUNCH_HORIZON_OPTIONS,
+  toSimpleHtml,
 } from "@/lib/tools/engines/email-sequence.mjs";
 
 export function EmailSequenceWidget({
@@ -33,14 +34,36 @@ export function EmailSequenceWidget({
   const startedRef = useRef(false);
 
   const sequence = useMemo(() => generateEmailSequence(inputs), [inputs]);
-  const activeEmail = sequence.emails.find((e) => e.id === activeStageId) || sequence.emails[0];
-
-  const currentSubject = edits[activeEmail.id]?.subject ?? activeEmail.subjectOptions[0];
-  const currentBody = edits[activeEmail.id]?.body ?? activeEmail.markdownBody;
-  const liveSpamCheck = useMemo(
-    () => checkSpamTriggers(currentSubject, currentBody),
-    [currentSubject, currentBody],
+  const effectiveEmails = useMemo(
+    () =>
+      sequence.emails.map((email) => {
+        const subject = edits[email.id]?.subject ?? email.subjectOptions[0];
+        const markdownBody = edits[email.id]?.body ?? email.markdownBody;
+        return {
+          ...email,
+          subject,
+          markdownBody,
+          htmlBody: toSimpleHtml(markdownBody),
+          spamCheck: checkSpamTriggers(subject, markdownBody),
+        };
+      }),
+    [sequence.emails, edits],
   );
+  const effectiveFullMarkdown = useMemo(
+    () =>
+      effectiveEmails
+        .map(
+          (email) =>
+            `## ${email.stageLabel}\n- **Timing:** ${email.timing}\n- **Subject:** ${email.subject}\n- **Preview text:** ${email.previewText}\n\n${email.markdownBody}`,
+        )
+        .join("\n\n---\n\n"),
+    [effectiveEmails],
+  );
+  const activeEmail = effectiveEmails.find((e) => e.id === activeStageId) || effectiveEmails[0];
+  const currentSubject = activeEmail.subject;
+  const currentBody = activeEmail.markdownBody;
+  const liveSpamCheck = activeEmail.spamCheck;
+  const hasEdits = Object.keys(edits).length > 0;
 
   function updateInput(key, value) {
     if (!startedRef.current) {
@@ -52,7 +75,6 @@ export function EmailSequenceWidget({
       });
     }
     setInputs((prev) => ({ ...prev, [key]: value }));
-    setEdits({});
   }
 
   return (
@@ -176,7 +198,7 @@ export function EmailSequenceWidget({
                   Email body (Markdown with Waitlyze merge tags)
                 </label>
                 <span className="font-product-mono text-micro text-product-text-muted">
-                  {"{{position}}"} · {"{{referral_link}}"} · {"{{referrals_count}}"}
+                  {"{{position}}"} · {"{{referral_link}}"} · {"{{referral_count}}"}
                 </span>
               </div>
               <textarea
@@ -214,7 +236,7 @@ export function EmailSequenceWidget({
                 onClick={() => {
                   downloadTextFile(
                     `${inputs.productName.toLowerCase().replace(/[^a-z0-9]+/g, "-") || "waitlist"}-email-sequence.md`,
-                    sequence.fullMarkdown,
+                    effectiveFullMarkdown,
                     "text/markdown;charset=utf-8;",
                   );
                   trackToolEvent("TOOL_RESULT_EXPORTED", {
@@ -227,10 +249,13 @@ export function EmailSequenceWidget({
                 Export all 5 (.md)
               </ToolActionButton>
               <ToolActionButton
-                onClick={() => downloadJson("waitlyze-email-sequence.json", sequence.emails)}
+                onClick={() => downloadJson("waitlyze-email-sequence.json", effectiveEmails)}
               >
                 Export JSON
               </ToolActionButton>
+              {hasEdits ? (
+                <ToolActionButton onClick={() => setEdits({})}>Reset custom edits</ToolActionButton>
+              ) : null}
             </div>
           </div>
 
@@ -246,16 +271,16 @@ export function EmailSequenceWidget({
               templateId: "creator",
               campaignName: inputs.productName,
               showReferrals: true,
-              emailDrafts: sequence.emails.map((email) => ({
+              emailDrafts: effectiveEmails.map((email) => ({
                 stage: email.stageLabel,
-                subject: edits[email.id]?.subject ?? email.subjectOptions[0],
+                subject: email.subject,
                 previewText: email.previewText,
-                body: edits[email.id]?.body ?? email.markdownBody,
+                body: email.markdownBody,
                 timing: email.timing,
               })),
               summaryBullets: [
                 `5 pre-launch lifecycle emails drafted for ${inputs.productName}`,
-                `Merge tags ({{position}}, {{referral_link}}, {{referrals_count}}) pre-wired`,
+                `Merge tags ({{position}}, {{referral_link}}, {{referral_count}}) pre-wired`,
                 `Confirmation email works with Resend; automated drips unlock on Pro`,
               ],
             })}

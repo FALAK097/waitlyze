@@ -3,7 +3,7 @@
 import { usePathname, useSearchParams } from "next/navigation";
 import { useEffect, Suspense } from "react";
 
-import { initClientPostHog, posthog } from "./client";
+import { initClientPostHog, isPublicPostHogPath, posthog } from "./client";
 import { POSTHOG_EVENTS } from "./events.mjs";
 
 const ALLOWED_QUERY_PARAMS = new Set([
@@ -49,15 +49,7 @@ function PostHogPageViewTracker() {
       return;
     }
 
-    const isPublicPage =
-      pathname === "/" ||
-      pathname.startsWith("/templates") ||
-      pathname.startsWith("/blog") ||
-      pathname.startsWith("/pricing") ||
-      pathname.startsWith("/compare") ||
-      pathname.startsWith("/alternatives") ||
-      pathname.startsWith("/privacy") ||
-      pathname.startsWith("/terms");
+    const isPublicPage = isPublicPostHogPath(pathname);
 
     initClientPostHog();
 

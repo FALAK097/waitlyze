@@ -45,6 +45,51 @@ function cleanText(value, fallback, maxLen) {
   return (trimmed || fallback).slice(0, maxLen);
 }
 
+function clampText(text, max) {
+  const clean = String(text || "").trim();
+  if (clean.length <= max) return clean;
+  return `${clean.slice(0, Math.max(1, max - 1)).trimEnd()}…`;
+}
+
+export function formatCopyMarkdown({
+  productName,
+  activeHero,
+  heroDirections,
+  benefits,
+  proofSection,
+  faqs,
+  postSignup,
+}) {
+  const alternates = (heroDirections || []).filter((h) => h.id !== activeHero?.id);
+  return [
+    `# ${productName} — Waitlist Landing Page Copy`,
+    "",
+    `## Selected Hero (${activeHero?.label || "Primary"})`,
+    `- **Eyebrow:** ${activeHero?.eyebrow || ""}`,
+    `- **Headline:** ${activeHero?.heading || ""}`,
+    `- **Subheadline:** ${activeHero?.subheadline || ""}`,
+    `- **CTA:** ${activeHero?.buttonText || ""}`,
+    `- **Privacy microcopy:** ${activeHero?.privacyNote || ""}`,
+    "",
+    `## Alternate Headlines`,
+    ...alternates.map((h) => `- **${h.label}:** ${h.heading}`),
+    "",
+    `## Benefits`,
+    ...(benefits || []).map((b) => `- **${b.title}:** ${b.body}`),
+    "",
+    `## Proof (${proofSection?.heading || ""})`,
+    proofSection?.body || "",
+    "",
+    `## FAQs`,
+    ...(faqs || []).map((f) => `### ${f.question}\n${f.answer}`),
+    "",
+    `## Post-Signup & Referral Copy`,
+    `- **Confirmation:** ${postSignup?.confirmationHeading || ""}`,
+    `- **Share prompt:** ${postSignup?.referralPrompt || ""}`,
+    `- **Pre-filled social post:** "${postSignup?.sharePostText || ""}"`,
+  ].join("\n");
+}
+
 function ctaForMotion(motion) {
   switch (motion) {
     case "referral_queue":
@@ -111,44 +156,62 @@ export function generateWaitlistCopy(rawInputs = {}) {
     {
       id: "value",
       label: "Value-led",
-      eyebrow,
-      heading: `${oneLiner.replace(/\.$/, "")}.`,
-      subheadline: `${productName} is built for ${audience} who want results by ${uniqueMechanism}. ${toneSuffix}`,
-      buttonText,
+      eyebrow: clampText(eyebrow, 80),
+      heading: clampText(`${oneLiner.replace(/\.$/, "")}.`, 140),
+      subheadline: clampText(
+        `${productName} is built for ${audience} who want results by ${uniqueMechanism}. ${toneSuffix}`,
+        700,
+      ),
+      buttonText: clampText(buttonText, 40),
       privacyNote,
     },
     {
       id: "problem",
       label: "Problem-first",
-      eyebrow,
-      heading: `Stop letting ${painPoint}.`,
-      subheadline: `${productName} gives ${audience} a calmer alternative—${uniqueMechanism}. Join early to help shape v1.`,
-      buttonText,
+      eyebrow: clampText(eyebrow, 80),
+      heading: clampText(`Stop letting ${painPoint}.`, 140),
+      subheadline: clampText(
+        `${productName} gives ${audience} a calmer alternative—${uniqueMechanism}. Join early to help shape v1.`,
+        700,
+      ),
+      buttonText: clampText(buttonText, 40),
       privacyNote,
     },
     {
       id: "mechanism",
       label: "Mechanism-led",
-      eyebrow,
-      heading: `${productName}: built for ${audience} by ${uniqueMechanism}.`,
-      subheadline: `Skip the friction when ${painPoint}. Reserve early access and get invited in our next onboarding wave.`,
-      buttonText,
+      eyebrow: clampText(eyebrow, 80),
+      heading: clampText(`${productName}: built for ${audience} by ${uniqueMechanism}.`, 140),
+      subheadline: clampText(
+        `Skip the friction when ${painPoint}. Reserve early access and get invited in our next onboarding wave.`,
+        700,
+      ),
+      buttonText: clampText(buttonText, 40),
       privacyNote,
     },
   ];
 
   const benefits = [
     {
-      title: `Built specifically for ${audience}`,
-      body: `Every default in ${productName} is tuned for how ${audience} actually work—so you do not waste a week configuring templates.`,
+      title: clampText(`Built specifically for ${audience}`, 80),
+      body: clampText(
+        `Every default in ${productName} is tuned for how ${audience} actually work—so you do not waste a week configuring templates.`,
+        280,
+      ),
     },
     {
       title: "Fix the root bottleneck",
-      body: `Instead of patching around the fact that ${painPoint}, ${productName} removes the manual loop altogether.`,
+      body: clampText(
+        `Instead of patching around the fact that ${painPoint}, ${productName} removes the manual loop altogether.`,
+        280,
+      ),
     },
     {
       title: "Clear workflow from day one",
-      body: `Works by ${uniqueMechanism}, giving your team visibility without adding another meeting or spreadsheet.`,
+      body: clampText(
+        `Works by ${uniqueMechanism}, giving your team visibility without adding another meeting or spreadsheet.`,
+        280,
+      ),
     },
   ];
 
@@ -218,42 +281,29 @@ export function generateWaitlistCopy(rawInputs = {}) {
   ];
 
   const postSignup = {
-    confirmationHeading: `Check your inbox to confirm your ${productName} spot.`,
+    confirmationHeading: clampText(`Check your inbox to confirm your ${productName} spot.`, 120),
     confirmationBody:
       "Click the confirmation link we just sent so your address is verified. Once verified, share your personal link below to move up the early-access queue.",
-    referralPrompt: `Know someone else among ${audience}? Share your personal link—verified referrals earn priority queue points.`,
-    sharePostText: `Just joined the early-access list for ${productName} — ${oneLiner}`,
+    referralPrompt: clampText(
+      `Know someone else among ${audience}? Share your personal link—verified referrals earn priority queue points.`,
+      260,
+    ),
+    sharePostText: clampText(
+      `Just joined the early-access list for ${productName} — ${oneLiner}`,
+      260,
+    ),
   };
 
   const primaryHero = heroDirections[0];
-  const markdownExport = [
-    `# ${productName} — Waitlist Landing Page Copy`,
-    "",
-    `## Hero (Value-Led)`,
-    `- **Eyebrow:** ${primaryHero.eyebrow}`,
-    `- **Headline:** ${primaryHero.heading}`,
-    `- **Subheadline:** ${primaryHero.subheadline}`,
-    `- **CTA:** ${primaryHero.buttonText}`,
-    `- **Privacy microcopy:** ${primaryHero.privacyNote}`,
-    "",
-    `## Alternate Headlines`,
-    `- **Problem-first:** ${heroDirections[1].heading}`,
-    `- **Mechanism-led:** ${heroDirections[2].heading}`,
-    "",
-    `## Benefits`,
-    ...benefits.map((b) => `- **${b.title}:** ${b.body}`),
-    "",
-    `## Proof (${proofSection.heading})`,
-    proofSection.body,
-    "",
-    `## FAQs`,
-    ...faqs.map((f) => `### ${f.question}\n${f.answer}`),
-    "",
-    `## Post-Signup & Referral Copy`,
-    `- **Confirmation:** ${postSignup.confirmationHeading}`,
-    `- **Share prompt:** ${postSignup.referralPrompt}`,
-    `- **Pre-filled social post:** "${postSignup.sharePostText}"`,
-  ].join("\n");
+  const markdownExport = formatCopyMarkdown({
+    productName,
+    activeHero: primaryHero,
+    heroDirections,
+    benefits,
+    proofSection,
+    faqs,
+    postSignup,
+  });
 
   return {
     inputs: {

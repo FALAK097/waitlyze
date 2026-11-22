@@ -44,17 +44,19 @@ export function CreateWaitlistDialog({
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(initialOpen);
+  const [activeBlueprint, setActiveBlueprint] = useState(initialBlueprint);
   const [name, setName] = useState(initialBlueprint?.campaignName || "");
   const [description, setDescription] = useState(initialBlueprint?.campaignDescription || "");
   const [slug, setSlug] = useState(initialBlueprint?.suggestedSlug || "");
   const [slugTouched, setSlugTouched] = useState(Boolean(initialBlueprint?.suggestedSlug));
-  const templateId = isTemplateId(initialBlueprint?.templateId)
-    ? initialBlueprint.templateId
+  const templateId = isTemplateId(activeBlueprint?.templateId)
+    ? activeBlueprint.templateId
     : isTemplateId(initialTemplateId)
       ? initialTemplateId
       : "simple";
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [blueprintUnavailable, setBlueprintUnavailable] = useState(false);
   const [upgradeNeeded, setUpgradeNeeded] = useState(false);
   const [slugStatus, setSlugStatus] = useState({ state: "idle", message: "" });
   const [creationKey, setCreationKey] = useState(() => crypto.randomUUID());
@@ -87,12 +89,29 @@ export function CreateWaitlistDialog({
     };
   }, [currentSlug]);
 
+  async function clearPendingBlueprintCookie() {
+    try {
+      await fetch("/api/tools/blueprint", { method: "DELETE" });
+    } catch {
+      // Best-effort cookie dismissal
+    }
+  }
+
+  async function dismissBlueprint() {
+    setActiveBlueprint(null);
+    setBlueprintUnavailable(false);
+    setError("");
+    setCreationKey(crypto.randomUUID());
+    await clearPendingBlueprintCookie();
+  }
+
   async function submit(event) {
     event.preventDefault();
     const publicSlug = slugify(currentSlug);
     if (busy || !name.trim() || publicSlug.length < 3) return;
     setBusy(true);
     setError("");
+    setBlueprintUnavailable(false);
     setUpgradeNeeded(false);
     try {
       const result = await createWaitlistDraft({
@@ -101,7 +120,8 @@ export function CreateWaitlistDialog({
         publicSlug,
         creationKey,
         templateId,
-        blueprintId: initialBlueprint?.id || null,
+        blueprintId: activeBlueprint?.id || null,
+        showReferrals: activeBlueprint?.showReferrals,
       });
       if (result?.ok) {
         setCreationKey(crypto.randomUUID());
@@ -109,6 +129,7 @@ export function CreateWaitlistDialog({
         return;
       }
       setError(result?.message || "We couldn't create the waitlist. Try again.");
+      setBlueprintUnavailable(result?.code === "BLUEPRINT_UNAVAILABLE");
       setUpgradeNeeded(result?.code === "PLAN_UPGRADE_REQUIRED");
       if (result?.field === "publicSlug")
         setSlugStatus({ state: "taken", message: result.message });
@@ -123,9 +144,13 @@ export function CreateWaitlistDialog({
     if (busy) return;
     setOpen(next);
     if (!next) {
+      if (activeBlueprint) {
+        void clearPendingBlueprintCookie();
+      }
       setCreationKey(crypto.randomUUID());
       setDescription("");
       setError("");
+      setBlueprintUnavailable(false);
       setUpgradeNeeded(false);
     }
   }
@@ -140,27 +165,37 @@ export function CreateWaitlistDialog({
         <div className="grid min-w-0 gap-6 p-2">
           <div className="[&_[data-slot=dialog-description]]:max-w-ch55 grid min-w-0 gap-1.5 pr-8 [&_[data-slot=dialog-description]]:leading-relaxed [&_[data-slot=dialog-title]]:text-xl [&_[data-slot=dialog-title]]:tracking-tight">
             <DialogTitle>
-              {initialBlueprint ? "Create waitlist from Launch Lab" : "Create a waitlist"}
+              {activeBlueprint ? "Create waitlist from Launch Lab" : "Create a waitlist"}
             </DialogTitle>
             <DialogDescription>
-              {initialBlueprint
-                ? `Prefilled from ${initialBlueprint.toolTitle}. Confirm your name and page address—your draft stays private until you publish.`
+              {activeBlueprint
+                ? `Prefilled from ${activeBlueprint.toolTitle}. Confirm your name and page address—your draft stays private until you publish.`
                 : "Choose a name and page address. You can customize it before publishing."}
             </DialogDescription>
           </div>
-          {initialBlueprint && (
+          {activeBlueprint && (
             <div className="grid gap-2 rounded-lg border border-product-border-subtle bg-product-bg-inset p-3.5 text-left">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <span className="text-caption font-semibold text-product-text-primary">
-                  Blueprint from {initialBlueprint.toolTitle}
+                  Blueprint from {activeBlueprint.toolTitle}
                 </span>
-                <span className="rounded bg-product-bg-surface px-2 py-0.5 font-product-mono text-micro text-product-text-secondary">
-                  Template: {templateId}
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className="rounded bg-product-bg-surface px-2 py-0.5 font-product-mono text-micro text-product-text-secondary">
+                    Template: {templateId}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={dismissBlueprint}
+                    disabled={busy}
+                    className="text-micro font-medium text-product-text-secondary underline underline-offset-4 hover:text-product-text-primary"
+                  >
+                    Start blank
+                  </button>
+                </div>
               </div>
-              {initialBlueprint.summaryBullets?.length > 0 && (
+              {activeBlueprint.summaryBullets?.length > 0 && (
                 <ul className="grid list-disc gap-1 pl-4 text-caption text-product-text-secondary">
-                  {initialBlueprint.summaryBullets.slice(0, 4).map((bullet) => (
+                  {activeBlueprint.summaryBullets.slice(0, 4).map((bullet) => (
                     <li key={bullet}>{bullet}</li>
                   ))}
                 </ul>
@@ -261,6 +296,16 @@ export function CreateWaitlistDialog({
             {error && (
               <div className="-mt-1 grid gap-2" id="new-waitlist-error" role="alert">
                 <p className="text-caption leading-relaxed text-product-danger-text">{error}</p>
+                {blueprintUnavailable && (
+                  <Button
+                    type="button"
+                    variant="product-outline"
+                    size="sm"
+                    onClick={dismissBlueprint}
+                  >
+                    Continue with blank draft
+                  </Button>
+                )}
                 {upgradeNeeded && (
                   <UpgradeButton
                     label="Compare Pro plans"

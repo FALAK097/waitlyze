@@ -1009,9 +1009,9 @@ export const TOOLS_REGISTRY = Object.freeze([
             "Warns if your base URL accidentally hardcodes ?r= (which Waitlyze reserves for individual subscriber referral codes).",
         },
         {
-          label: "Zero-PII Validation",
+          label: "Zero-PII Scrubbing",
           detail:
-            "Flags email addresses or personal identifiers pasted into UTM parameters so PII never leaks into server logs or analytics.",
+            "Detects email addresses or 10+ digit identifiers pasted into campaign or variant inputs and automatically strips them before generating URLs, CSV rows, or QR codes.",
         },
       ],
     },

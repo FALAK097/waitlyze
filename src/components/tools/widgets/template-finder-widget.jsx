@@ -3,8 +3,10 @@
 import { ArrowRight01Icon, CheckmarkCircle02Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useMemo, useRef, useState } from "react";
 
+import { useOpenAuthModal } from "@/components/auth/auth-modal-provider";
 import TemplatePreview from "@/components/landing/template-preview";
 import { ToolHandoffCta } from "@/components/tools/tool-handoff-cta";
 import {
@@ -13,6 +15,7 @@ import {
   ToolStatusBadge,
   ToolWorkspace,
 } from "@/components/tools/tool-ui";
+import { authClient } from "@/lib/auth-client";
 import { trackToolEvent } from "@/lib/tools/analytics";
 import {
   recommendTemplates,
@@ -33,9 +36,33 @@ export function TemplateFinderWidget({
   entrySurface = "public_tool",
   onApplyInProduct = null,
 }) {
+  const router = useRouter();
+  const openAuthModal = useOpenAuthModal();
   const [inputs, setInputs] = useState(DEFAULT_INPUTS);
   const [selectedId, setSelectedId] = useState(null);
+  const [openingId, setOpeningId] = useState(null);
   const startedRef = useRef(false);
+
+  async function handleUseTemplate(templateId) {
+    if (openingId) return;
+    setOpeningId(templateId);
+    const nextUrl = `/waitlists/new?template=${encodeURIComponent(templateId)}`;
+    try {
+      const sessionResult = await authClient.getSession().catch(() => null);
+      if (sessionResult?.data?.user) {
+        router.push(nextUrl);
+      } else {
+        openAuthModal({
+          callbackURL: nextUrl,
+          heading: "Start your waitlist with this template.",
+          description:
+            "Sign in with Google to open your preselected Waitlyze template draft. Free for up to 100 signups, no credit card needed.",
+        });
+      }
+    } finally {
+      setOpeningId(null);
+    }
+  }
 
   const templateMap = useMemo(() => {
     const map = new Map();
@@ -146,13 +173,14 @@ export function TemplateFinderWidget({
                   </p>
                 </div>
                 <div className="flex shrink-0 items-center gap-2">
-                  <Link
-                    prefetch={false}
-                    href={`/waitlists/new?template=${rec.templateId}`}
-                    className="inline-flex min-h-9 items-center justify-center rounded-md bg-product-text-primary px-3 py-1.5 text-caption font-semibold text-product-bg-page hover:opacity-90"
+                  <button
+                    type="button"
+                    disabled={openingId === rec.templateId}
+                    onClick={() => handleUseTemplate(rec.templateId)}
+                    className="inline-flex min-h-9 items-center justify-center rounded-md bg-product-text-primary px-3 py-1.5 text-caption font-semibold text-product-bg-page hover:opacity-90 disabled:opacity-60"
                   >
-                    Use template
-                  </Link>
+                    {openingId === rec.templateId ? "Opening…" : "Use template"}
+                  </button>
                   <Link
                     prefetch={false}
                     href={`/templates/${rec.templateId}`}

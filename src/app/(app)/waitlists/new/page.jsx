@@ -47,6 +47,7 @@ export default async function NewWaitlistPage({ searchParams }) {
         campaignName: blueprintRecord.payload.campaignName || "",
         campaignDescription: blueprintRecord.payload.campaignDescription || "",
         suggestedSlug: blueprintRecord.payload.suggestedSlug || "",
+        showReferrals: blueprintRecord.payload.showReferrals,
         summaryBullets: blueprintRecord.payload.summaryBullets || [],
       }
     : null;
@@ -82,7 +83,11 @@ export default async function NewWaitlistPage({ searchParams }) {
           canManageBilling={workspace.members?.[0]?.role === "OWNER"}
         />
       </div>
-      <Link prefetch={false} href="/waitlists" className="mt-5 inline-block">
+      <Link
+        prefetch={false}
+        href={initialBlueprint ? "/waitlists?dismissBlueprint=1" : "/waitlists"}
+        className="mt-5 inline-block"
+      >
         Back to waitlists
       </Link>
     </section>

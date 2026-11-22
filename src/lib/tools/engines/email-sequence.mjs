@@ -62,8 +62,8 @@ export function checkSpamTriggers(subject = "", body = "") {
   };
 }
 
-function toSimpleHtml(markdown) {
-  return markdown
+export function toSimpleHtml(markdown) {
+  return String(markdown || "")
     .split(/\n\n+/)
     .map((para) => `<p>${para.replaceAll("\n", "<br />")}</p>`)
     .join("\n");
@@ -157,7 +157,7 @@ Share your personal link below to earn verified referral points toward ${referra
 
 {{referral_link}}
 
-Current verified referrals: **{{referrals_count}}**
+Current verified referrals: **{{referral_count}}**
 
 ${signOff}`,
     },
@@ -169,13 +169,13 @@ ${signOff}`,
       planNote: "Automated milestone trigger requires Waitlyze Pro",
       subjectOptions: [
         `You jumped ahead to #{{position}} on ${productName}`,
-        `Unlocked: ${referralIncentive} ({{referrals_count}} referrals)`,
+        `Unlocked: ${referralIncentive} ({{referral_count}} referrals)`,
       ],
       previewText: `Your friend verified — you're now #{{position}} in line.`,
       markdownBody: `Nice work — another referral just verified their email.
 
 - **New queue position:** #{{position}}
-- **Verified referrals:** {{referrals_count}}
+- **Verified referrals:** {{referral_count}}
 - **Status:** Progress toward ${referralIncentive}
 
 Want to keep climbing before Wave 1 opens? Share your personal link again:
@@ -201,7 +201,7 @@ ${signOff}`,
 Over the past two weeks we finished polishing ${valueProp} with a handful of early testers. Here is what happens next:
 
 1. Wave 1 invites go out to top-ranked verified subscribers first.
-2. You are currently sitting at **#{{position}}** with **{{referrals_count}}** verified referrals.
+2. You are currently sitting at **#{{position}}** with **{{referral_count}}** verified referrals.
 3. If you want to jump into Wave 1, your referral link is still active: {{referral_link}}
 
 More soon — thanks for sticking with us from the early days.

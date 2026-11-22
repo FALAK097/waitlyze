@@ -17,6 +17,7 @@ import { trackToolEvent } from "@/lib/tools/analytics";
 import {
   COPY_BUILDER_DEFAULTS,
   COPY_BUILDER_OPTIONS,
+  formatCopyMarkdown,
   generateWaitlistCopy,
 } from "@/lib/tools/engines/copy-builder.mjs";
 
@@ -324,33 +325,48 @@ export function CopyBuilderWidget({
               </div>
 
               <div className="flex flex-wrap items-center gap-2">
-                <ToolCopyButton
-                  text={generated.markdownExport}
-                  label="Copy full page Markdown"
-                  onCopied={() =>
-                    trackToolEvent("TOOL_RESULT_EXPORTED", {
-                      tool_slug: "waitlist-landing-page-generator",
-                      entry_surface: entrySurface,
-                      export_format: "markdown_copy",
-                    })
-                  }
-                />
-                <ToolActionButton
-                  onClick={() => {
-                    downloadTextFile(
-                      `${inputs.productName.toLowerCase().replace(/[^a-z0-9]+/g, "-") || "waitlist"}-copy.md`,
-                      generated.markdownExport,
-                      "text/markdown;charset=utf-8;",
-                    );
-                    trackToolEvent("TOOL_RESULT_EXPORTED", {
-                      tool_slug: "waitlist-landing-page-generator",
-                      entry_surface: entrySurface,
-                      export_format: "markdown_file",
-                    });
-                  }}
-                >
-                  Download .md
-                </ToolActionButton>
+                {(() => {
+                  const activeMarkdown = formatCopyMarkdown({
+                    productName: inputs.productName,
+                    activeHero,
+                    heroDirections: generated.heroDirections,
+                    benefits: generated.benefits,
+                    proofSection: generated.proofSection,
+                    faqs: generated.faqs,
+                    postSignup: generated.postSignup,
+                  });
+                  return (
+                    <>
+                      <ToolCopyButton
+                        text={activeMarkdown}
+                        label="Copy full page Markdown"
+                        onCopied={() =>
+                          trackToolEvent("TOOL_RESULT_EXPORTED", {
+                            tool_slug: "waitlist-landing-page-generator",
+                            entry_surface: entrySurface,
+                            export_format: "markdown_copy",
+                          })
+                        }
+                      />
+                      <ToolActionButton
+                        onClick={() => {
+                          downloadTextFile(
+                            `${inputs.productName.toLowerCase().replace(/[^a-z0-9]+/g, "-") || "waitlist"}-copy.md`,
+                            activeMarkdown,
+                            "text/markdown;charset=utf-8;",
+                          );
+                          trackToolEvent("TOOL_RESULT_EXPORTED", {
+                            tool_slug: "waitlist-landing-page-generator",
+                            entry_surface: entrySurface,
+                            export_format: "markdown_file",
+                          });
+                        }}
+                      >
+                        Download .md
+                      </ToolActionButton>
+                    </>
+                  );
+                })()}
               </div>
             </div>
           ) : null}

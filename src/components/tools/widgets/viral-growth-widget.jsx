@@ -176,6 +176,7 @@ export function ViralGrowthWidget({
       clicksPerSharer: Number(params.get("cs") ?? prev.clicksPerSharer),
       referredConversionPct: Number(params.get("rc") ?? prev.referredConversionPct),
       weeks: Number(params.get("wk") ?? prev.weeks),
+      launchEmailOpenRatePct: Number(params.get("or") ?? prev.launchEmailOpenRatePct),
     }));
   }, [compact]);
 
@@ -227,6 +228,7 @@ export function ViralGrowthWidget({
       `Waitlyze Viral Waitlist Growth Model (${new Date().toISOString().slice(0, 10)})`,
       `Formula: ${result.formula}`,
       `Effective K-Factor: ${result.effectiveK}`,
+      `Launch-Day Email Open Rate: ${result.inputs.launchEmailOpenRatePct}% -> Projected Active Launch Audience: ${result.launchDayAudience.toLocaleString()}`,
     ]);
     trackToolEvent("TOOL_RESULT_EXPORTED", {
       tool_slug: "viral-coefficient-calculator",
@@ -251,6 +253,11 @@ export function ViralGrowthWidget({
           label: "Effective K-Factor",
           value: result.effectiveK.toFixed(2),
           hint: `+${result.referralLiftPct}% referral lift`,
+        },
+        {
+          label: "Launch-Day Opened",
+          value: result.launchDayAudience.toLocaleString(),
+          hint: `At ${result.inputs.launchEmailOpenRatePct}% email open rate`,
         },
         {
           label: "#1 Highest Lever (+10%)",
@@ -279,6 +286,7 @@ export function ViralGrowthWidget({
     url.searchParams.set("cs", String(result.inputs.clicksPerSharer));
     url.searchParams.set("rc", String(result.inputs.referredConversionPct));
     url.searchParams.set("wk", String(result.inputs.weeks));
+    url.searchParams.set("or", String(result.inputs.launchEmailOpenRatePct));
     const ok = await copyToClipboard(url.toString());
     if (ok) {
       toast.success("Scenario link copied");
@@ -390,6 +398,16 @@ export function ViralGrowthWidget({
                 inputMode="numeric"
               />
               <ToolSliderField
+                label="Launch email open rate"
+                value={inputs.launchEmailOpenRatePct}
+                onChange={(v) => updateInput("launchEmailOpenRatePct", v)}
+                min={10}
+                max={85}
+                step={1}
+                suffix="%"
+                hint="Share of verified subscribers who open your launch-day announcement."
+              />
+              <ToolSliderField
                 label="Optional reward cost / referral"
                 value={inputs.rewardCostPerReferral}
                 onChange={(v) => updateInput("rewardCostPerReferral", v)}
@@ -418,21 +436,21 @@ export function ViralGrowthWidget({
               tone={result.effectiveK < 0.15 ? "warning" : "neutral"}
             />
             <ToolStatTile
-              label="Referred signups"
-              value={`+${result.referredTotal.toLocaleString()}`}
-              hint={`+${result.referralLiftPct}% lift over direct`}
+              label="Launch-day opened"
+              value={result.launchDayAudience.toLocaleString()}
+              hint={`at ${result.inputs.launchEmailOpenRatePct}% open rate`}
             />
             <ToolStatTile
-              label={result.estimatedRewardBudget > 0 ? "Reward budget" : "Top lever (+10%)"}
+              label={result.estimatedRewardBudget > 0 ? "Reward budget" : "Referred signups"}
               value={
                 result.estimatedRewardBudget > 0
                   ? `$${result.estimatedRewardBudget.toLocaleString()}`
-                  : `+${result.highestLever?.extraSignups.toLocaleString() || 0}`
+                  : `+${result.referredTotal.toLocaleString()}`
               }
               hint={
                 result.estimatedRewardBudget > 0
                   ? `$${result.effectiveCostPerVerifiedReferral}/verified ref`
-                  : result.highestLever?.label || ""
+                  : `+${result.referralLiftPct}% lift over direct`
               }
             />
           </div>

@@ -14,8 +14,10 @@ import {
   BLUEPRINT_COOKIE_NAME,
   claimToolBlueprint,
   getActiveToolBlueprint,
+  saveClaimedBlueprintForWaitlist,
 } from "@/lib/tools/blueprint.mjs";
 import { AUDIT_ACTIONS, recordAuditEvent } from "@/lib/workspaces/audit.mjs";
+import { requireCampaign } from "@/lib/workspaces/authorize";
 import { currentWorkspace } from "@/lib/workspaces/current";
 
 export async function createWaitlistDraft({
@@ -25,8 +27,12 @@ export async function createWaitlistDraft({
   creationKey,
   templateId,
   blueprintId = null,
+  showReferrals,
 }) {
   const { user, workspace } = await currentWorkspace();
+  if (!user?.id || !workspace?.id) {
+    return { ok: false, message: "Sign in to continue." };
+  }
   try {
     const existingDraft = creationKey
       ? await prisma.waitList.findFirst({
@@ -36,11 +42,26 @@ export async function createWaitlistDraft({
       : null;
 
     const blueprint = blueprintId ? await getActiveToolBlueprint(prisma, blueprintId) : null;
+    if (blueprintId && !blueprint && !existingDraft) {
+      return {
+        ok: false,
+        code: "BLUEPRINT_UNAVAILABLE",
+        message:
+          "This Launch Lab blueprint has expired or was already used. Continue with a fresh draft or run the tool again.",
+      };
+    }
+
     const effectiveTemplateId = isTemplateId(templateId)
       ? templateId
       : isTemplateId(blueprint?.payload?.templateId)
         ? blueprint.payload.templateId
         : "simple";
+    const effectiveShowReferrals =
+      typeof showReferrals === "boolean"
+        ? showReferrals
+        : typeof blueprint?.payload?.showReferrals === "boolean"
+          ? blueprint.payload.showReferrals
+          : undefined;
 
     const draft = await createDraft(
       prisma,
@@ -52,36 +73,45 @@ export async function createWaitlistDraft({
         publicSlug,
         templateId: effectiveTemplateId,
         creationKey,
+        ...(typeof effectiveShowReferrals === "boolean"
+          ? { showReferrals: effectiveShowReferrals }
+          : {}),
       },
       { blueprint },
     );
-    await recordAuditEvent(prisma, {
-      workspaceId: workspace.id,
-      userId: user.id,
-      action: AUDIT_ACTIONS.WAITLIST_CREATED,
-      resourceType: "waitlist",
-      resourceId: draft.id,
-      resourceName: draft.name,
-      detail: blueprint
-        ? `Created from Launch Lab (${blueprint.toolSlug})`
-        : "Created as a private draft",
-    });
 
+    let blueprintClaimed = false;
     if (blueprint) {
-      await claimToolBlueprint(prisma, {
+      const claimResult = await claimToolBlueprint(prisma, {
         id: blueprint.id,
         userId: user.id,
         waitListId: draft.id,
       });
-      try {
-        const cookieStore = await cookies();
-        cookieStore.set(BLUEPRINT_COOKIE_NAME, "", { path: "/", maxAge: 0 });
-      } catch {
-        // Best-effort cookie cleanup
+      blueprintClaimed = Boolean(claimResult?.claimed || claimResult?.alreadyClaimedForDraft);
+      if (blueprintClaimed) {
+        try {
+          const cookieStore = await cookies();
+          cookieStore.set(BLUEPRINT_COOKIE_NAME, "", { path: "/", maxAge: 0 });
+        } catch {
+          // Best-effort cookie cleanup
+        }
       }
     }
 
     if (!existingDraft) {
+      await recordAuditEvent(prisma, {
+        workspaceId: workspace.id,
+        userId: user.id,
+        action: AUDIT_ACTIONS.WAITLIST_CREATED,
+        resourceType: "waitlist",
+        resourceId: draft.id,
+        resourceName: draft.name,
+        detail:
+          blueprint && blueprintClaimed
+            ? `Created from Launch Lab (${blueprint.toolSlug})`
+            : "Created as a private draft",
+      });
+
       const [{ trackServerEvent }, { POSTHOG_EVENTS }] = await Promise.all([
         import("@/lib/posthog/server.mjs"),
         import("@/lib/posthog/events.mjs"),
@@ -92,14 +122,14 @@ export async function createWaitlistDraft({
         properties: {
           waitlist_id: draft.id,
           template_id: effectiveTemplateId,
-          creation_method: blueprint ? "tool_blueprint" : "dialog",
-          ...(blueprint ? { tool_slug: blueprint.toolSlug } : {}),
+          creation_method: blueprint && blueprintClaimed ? "tool_blueprint" : "dialog",
+          ...(blueprint && blueprintClaimed ? { tool_slug: blueprint.toolSlug } : {}),
         },
         groups: {
           company: workspace.id,
         },
       });
-      if (blueprint) {
+      if (blueprint && blueprintClaimed) {
         await trackServerEvent({
           distinctId: user.id,
           event: POSTHOG_EVENTS.TOOL_BLUEPRINT_APPLIED,
@@ -115,7 +145,11 @@ export async function createWaitlistDraft({
       }
     }
 
-    return { ok: true, id: draft.id };
+    return {
+      ok: true,
+      id: draft.id,
+      blueprintClaimed: blueprint ? blueprintClaimed : undefined,
+    };
   } catch (error) {
     if (error instanceof WorkspacePlanError)
       return { ok: false, code: error.code, feature: error.feature, message: error.message };
@@ -151,4 +185,33 @@ export async function checkWaitlistSlug(publicSlug) {
   return existing
     ? { available: false, message: "This address is already taken." }
     : { available: true, message: "This address is available." };
+}
+
+export async function saveLaunchLabPlanToWaitlist({ waitListId, blueprint }) {
+  if (!waitListId || typeof waitListId !== "string" || !blueprint) {
+    return { ok: false, message: "Missing campaign or Launch Lab payload." };
+  }
+  try {
+    const { user, campaign } = await requireCampaign(waitListId, "editCampaign");
+    if (!user?.id || !campaign?.id) {
+      return { ok: false, message: "Sign in to save this Launch Lab plan." };
+    }
+    const saved = await saveClaimedBlueprintForWaitlist(prisma, {
+      userId: user.id,
+      waitListId: campaign.id,
+      rawInput: {
+        version: 1,
+        ...blueprint,
+      },
+    });
+    return { ok: true, id: saved.id, toolSlug: saved.toolSlug };
+  } catch (error) {
+    if (error instanceof ZodError) {
+      return {
+        ok: false,
+        message: error.issues[0]?.message || "Invalid Launch Lab blueprint payload.",
+      };
+    }
+    return { ok: false, message: "Could not save this plan to your campaign. Try again." };
+  }
 }

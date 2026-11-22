@@ -16,7 +16,7 @@ import {
 import { trackToolEvent } from "@/lib/tools/analytics";
 import {
   buildUtmMatrix,
-  generateQrSvg,
+  generateQrResult,
   UTM_CHANNEL_PRESETS,
 } from "@/lib/tools/engines/utm-builder.mjs";
 import { cn } from "@/lib/utils";
@@ -52,10 +52,11 @@ export function UtmBuilderWidget({
   );
 
   const activeQrRow = matrix.rows.find((r) => r.id === activeQrRowId) || matrix.rows[0] || null;
-  const activeQrSvg = useMemo(
-    () => (activeQrRow ? generateQrSvg(activeQrRow.url, 184) : ""),
+  const activeQr = useMemo(
+    () => (activeQrRow ? generateQrResult(activeQrRow.url, 184) : { svg: "", error: "" }),
     [activeQrRow],
   );
+  const activeQrSvg = activeQr.svg;
 
   function markStarted() {
     if (!startedRef.current) {
@@ -249,11 +250,24 @@ export function UtmBuilderWidget({
                 {activeQrRow.channel}
               </p>
             </div>
-            <div
-              className="my-3 overflow-hidden rounded-lg border border-product-border-subtle bg-white p-2"
-              dangerouslySetInnerHTML={{ __html: activeQrSvg }}
-            />
-            <ToolActionButton onClick={handleDownloadQrSvg} className="w-full">
+            {activeQr.error ? (
+              <p
+                role="alert"
+                className="my-3 rounded-lg border border-product-warning-text/30 bg-product-warning-bg/60 p-3 text-micro leading-relaxed text-product-warning-text"
+              >
+                {activeQr.error}
+              </p>
+            ) : (
+              <div
+                className="my-3 overflow-hidden rounded-lg border border-product-border-subtle bg-white p-2"
+                dangerouslySetInnerHTML={{ __html: activeQrSvg }}
+              />
+            )}
+            <ToolActionButton
+              onClick={handleDownloadQrSvg}
+              disabled={!activeQrSvg}
+              className="w-full"
+            >
               Download QR (.svg)
             </ToolActionButton>
           </div>

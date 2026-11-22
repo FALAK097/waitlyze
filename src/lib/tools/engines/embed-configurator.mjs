@@ -26,11 +26,39 @@ export const EMBED_DEFAULTS = Object.freeze({
   framework: "nextjs",
 });
 
+function escapeAttr(val) {
+  return String(val || "")
+    .replaceAll("&", "&amp;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;");
+}
+
+function buildDataAttrs(config = {}) {
+  const mode = config.mode || "inline";
+  const attrs = [];
+  if (mode !== "inline") attrs.push(`data-mode="${escapeAttr(mode)}"`);
+  if (mode === "pill") attrs.push('data-height="96px"');
+  if (config.theme && config.theme !== "light") {
+    attrs.push(`data-theme="${escapeAttr(config.theme)}"`);
+  }
+  if (mode === "modal" || mode === "drawer") {
+    if (config.buttonText) attrs.push(`data-button-text="${escapeAttr(config.buttonText)}"`);
+    if (config.accentColor) attrs.push(`data-accent-color="${escapeAttr(config.accentColor)}"`);
+    if (config.buttonTextColor) {
+      attrs.push(`data-button-text-color="${escapeAttr(config.buttonTextColor)}"`);
+    }
+    if (config.radius) attrs.push(`data-radius="${escapeAttr(config.radius)}"`);
+  }
+  return attrs.length ? ` ${attrs.join(" ")}` : "";
+}
+
 export function generateEmbedSnippet(config = {}, waitlistKeyId = "YOUR_PUBLIC_WAITLIST_ID") {
   const framework = config.framework || "nextjs";
-  const mode = config.mode || "inline";
-  const keyId = waitlistKeyId || "YOUR_PUBLIC_WAITLIST_ID";
-  const heightAttr = mode === "pill" ? ' data-height="96"' : "";
+  const keyId = escapeAttr(waitlistKeyId || "YOUR_PUBLIC_WAITLIST_ID");
+  const extraAttrs = buildDataAttrs(config);
+  const styleSyncNote =
+    "Form colors, radius, placeholder, and optional Name/Role fields live on your Waitlyze campaign blueprint—click 'Save this embed style in Waitlyze' to apply them automatically.";
 
   if (framework === "nextjs") {
     const code = `import Script from "next/script";
@@ -40,21 +68,24 @@ export function WaitlistEmbed() {
     <section aria-label="Waitlist signup">
       <div
         className="waitlyze-widget"
-        data-key-id="${keyId}"${heightAttr}
+        data-key-id="${keyId}"${extraAttrs}
       >
         <a href="https://waitlyze.com" target="_blank" rel="noopener">
           Waitlist powered by Waitlyze
         </a>
       </div>
-      <Script src="https://waitlyze.com/js/embed.js" strategy="lazyOnload" />
+      <Script
+        src="https://waitlyze.com/js/embed.js"
+        strategy="lazyOnload"
+        onReady={() => window.WaitlyzeEmbed?.init?.()}
+      />
     </section>
   );
 }`;
     return {
       language: "tsx",
       code,
-      installNote:
-        "Loads after hydration via next/script strategy='lazyOnload' so LCP and First Contentful Paint remain untouched.",
+      installNote: `Loads after hydration via next/script strategy='lazyOnload' and re-scans on client navigation via window.WaitlyzeEmbed.init(). ${styleSyncNote}`,
     };
   }
 
@@ -63,7 +94,11 @@ export function WaitlistEmbed() {
 
 export function WaitlistEmbed() {
   useEffect(() => {
-    if (document.querySelector('script[src="https://waitlyze.com/js/embed.js"]')) return;
+    const existing = document.querySelector('script[src="https://waitlyze.com/js/embed.js"]');
+    if (existing) {
+      window.WaitlyzeEmbed?.init?.();
+      return;
+    }
     const script = document.createElement("script");
     script.src = "https://waitlyze.com/js/embed.js";
     script.defer = true;
@@ -71,7 +106,7 @@ export function WaitlistEmbed() {
   }, []);
 
   return (
-    <div className="waitlyze-widget" data-key-id="${keyId}"${heightAttr}>
+    <div className="waitlyze-widget" data-key-id="${keyId}"${extraAttrs}>
       <a href="https://waitlyze.com" target="_blank" rel="noopener">
         Waitlist powered by Waitlyze
       </a>
@@ -81,14 +116,13 @@ export function WaitlistEmbed() {
     return {
       language: "jsx",
       code,
-      installNote:
-        "Idempotent script mount avoids duplicate iframe initialization in React Strict Mode.",
+      installNote: `Calls window.WaitlyzeEmbed.init() on remounts so SPA route transitions always render the widget. ${styleSyncNote}`,
     };
   }
 
   if (framework === "framer") {
     const code = `<!-- Paste inside Framer → Insert → Utility → Embed (HTML mode) -->
-<div class="waitlyze-widget" data-key-id="${keyId}"${heightAttr}>
+<div class="waitlyze-widget" data-key-id="${keyId}"${extraAttrs}>
   <a href="https://waitlyze.com" target="_blank" rel="noopener">
     Waitlist powered by Waitlyze
   </a>
@@ -97,14 +131,13 @@ export function WaitlistEmbed() {
     return {
       language: "html",
       code,
-      installNote:
-        "Set the Framer Embed container width to Fill and height to Fit Content so the widget auto-resizes cleanly.",
+      installNote: `Set the Framer Embed container width to Fill and height to Fit Content so the widget auto-resizes cleanly. ${styleSyncNote}`,
     };
   }
 
   if (framework === "webflow") {
     const code = `<!-- Add a Webflow Embed element where you want the signup form -->
-<div class="waitlyze-widget" data-key-id="${keyId}"${heightAttr}>
+<div class="waitlyze-widget" data-key-id="${keyId}"${extraAttrs}>
   <a href="https://waitlyze.com" target="_blank" rel="noopener">
     Waitlist powered by Waitlyze
   </a>
@@ -113,14 +146,13 @@ export function WaitlistEmbed() {
     return {
       language: "html",
       code,
-      installNote:
-        "Works inside any Webflow section, modal wrapper, or CMS template. Publish the site to preview live referral forwarding.",
+      installNote: `Works inside any Webflow section, modal wrapper, or CMS template. Publish the site to preview live referral forwarding. ${styleSyncNote}`,
     };
   }
 
   if (framework === "shopify") {
     const code = `<!-- Paste inside a Shopify Online Store → Custom Liquid block -->
-<div class="waitlyze-widget" data-key-id="${keyId}"${heightAttr}>
+<div class="waitlyze-widget" data-key-id="${keyId}"${extraAttrs}>
   <a href="https://waitlyze.com" target="_blank" rel="noopener">
     Waitlist powered by Waitlyze
   </a>
@@ -129,12 +161,11 @@ export function WaitlistEmbed() {
     return {
       language: "liquid",
       code,
-      installNote:
-        "Safe for product drop and coming-soon templates—uses public data-key-id with zero private keys in theme files.",
+      installNote: `Safe for product drop and coming-soon templates—uses public data-key-id with zero private keys in theme files. ${styleSyncNote}`,
     };
   }
 
-  const code = `<div class="waitlyze-widget" data-key-id="${keyId}"${heightAttr}>
+  const code = `<div class="waitlyze-widget" data-key-id="${keyId}"${extraAttrs}>
   <a href="https://waitlyze.com" target="_blank" rel="noopener">
     Waitlist powered by Waitlyze
   </a>
@@ -143,8 +174,7 @@ export function WaitlistEmbed() {
   return {
     language: "html",
     code,
-    installNote:
-      "Drop directly into any static HTML page. Automatically forwards ?r= referral codes and UTM query parameters.",
+    installNote: `Drop directly into any static HTML page. Automatically forwards ?r= referral codes and UTM query parameters. ${styleSyncNote}`,
   };
 }
 

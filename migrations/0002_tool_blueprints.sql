@@ -3,7 +3,7 @@ CREATE TABLE IF NOT EXISTS "tool_blueprints" (
     "id" TEXT NOT NULL PRIMARY KEY,
     "version" INTEGER NOT NULL DEFAULT 1,
     "toolSlug" TEXT NOT NULL,
-    "payload" TEXT NOT NULL,
+    "payload" JSONB NOT NULL,
     "claimedByUserId" TEXT,
     "claimedWaitlistId" TEXT,
     "claimedAt" DATETIME,

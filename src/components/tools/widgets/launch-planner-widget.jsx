@@ -86,7 +86,24 @@ export function LaunchPlannerWidget({
     return [...grouped.entries()];
   }, [tasksWithManual]);
 
-  const incompleteCount = tasksWithManual.filter((t) => !t.completed).length;
+  const incompleteTasks = useMemo(
+    () => tasksWithManual.filter((t) => !t.completed),
+    [tasksWithManual],
+  );
+  const incompleteCount = incompleteTasks.length;
+  const liveRemainingHours = useMemo(
+    () => incompleteTasks.reduce((sum, task) => sum + (Number(task.hours) || 0), 0),
+    [incompleteTasks],
+  );
+  const liveBandwidthWarning = liveRemainingHours > plan.availableTotalHours;
+  const liveFirstIncompleteTask = incompleteTasks[0] || null;
+  const liveReadinessScore = useMemo(() => {
+    if (tasksWithManual.length === 0) return 100;
+    const completedCount = tasksWithManual.length - incompleteCount;
+    return Math.round((completedCount / tasksWithManual.length) * 100);
+  }, [tasksWithManual.length, incompleteCount]);
+  const liveBand =
+    liveReadinessScore >= 80 ? "ready" : liveReadinessScore >= 45 ? "in_progress" : "early";
 
   function handleDownloadIcs() {
     const ics = buildLaunchCalendarIcs({ ...plan, tasks: tasksWithManual });
@@ -112,13 +129,13 @@ export function LaunchPlannerWidget({
         t.completed ? "Done" : "Pending",
         t.dependency,
       ]),
-      [`Waitlyze Launch Readiness Plan — Readiness Score ${plan.readinessScore}/100`],
+      [`Waitlyze Launch Readiness Plan — Readiness Score ${liveReadinessScore}/100`],
     );
     trackToolEvent("TOOL_RESULT_EXPORTED", {
       tool_slug: "product-launch-checklist",
       entry_surface: entrySurface,
       export_format: "csv",
-      result_band: plan.band,
+      result_band: liveBand,
     });
   }
 
@@ -228,18 +245,18 @@ export function LaunchPlannerWidget({
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             <ToolStatTile
               label="Readiness score"
-              value={`${plan.readinessScore}/100`}
+              value={`${liveReadinessScore}/100`}
               hint={
-                plan.band === "ready"
+                liveBand === "ready"
                   ? "Launch ready"
-                  : plan.band === "in_progress"
+                  : liveBand === "in_progress"
                     ? "In progress"
                     : "Early setup"
               }
               tone={
-                plan.band === "ready"
+                liveBand === "ready"
                   ? "success"
-                  : plan.band === "in_progress"
+                  : liveBand === "in_progress"
                     ? "warning"
                     : "neutral"
               }
@@ -252,13 +269,13 @@ export function LaunchPlannerWidget({
             <ToolStatTile
               label="Pending tasks"
               value={String(incompleteCount)}
-              hint={`${plan.remainingHours} hrs est.`}
+              hint={`${liveRemainingHours} hrs est.`}
             />
             <ToolStatTile
               label="Bandwidth check"
-              value={plan.bandwidthWarning ? "Tight" : "Healthy"}
+              value={liveBandwidthWarning ? "Tight" : "Healthy"}
               hint={`${plan.availableTotalHours} hrs available`}
-              tone={plan.bandwidthWarning ? "warning" : "success"}
+              tone={liveBandwidthWarning ? "warning" : "success"}
             />
           </div>
 
@@ -291,8 +308,12 @@ export function LaunchPlannerWidget({
             entrySurface={entrySurface}
             compact={compact}
             label="Create your waitlist now"
-            sublabel={`Next critical dependency: ${plan.firstIncompleteTask?.title} (due ${plan.firstIncompleteTask?.dueDate})`}
-            resultBand={plan.band}
+            sublabel={
+              liveFirstIncompleteTask
+                ? `Next critical dependency: ${liveFirstIncompleteTask.title} (due ${liveFirstIncompleteTask.dueDate})`
+                : "All launch checklist items are marked complete — ready to open your Waitlyze draft."
+            }
+            resultBand={liveBand}
             onApplyInProduct={onApplyInProduct}
             buildBlueprint={() => ({
               templateId: plan.recommendedTemplateId,
@@ -305,9 +326,11 @@ export function LaunchPlannerWidget({
                 completed: t.completed,
               })),
               summaryBullets: [
-                `Launch Readiness Score: ${plan.readinessScore}/100 (target ${plan.inputs.targetLaunchDate})`,
-                `${incompleteCount} dated tasks attached to your campaign overview`,
-                `First critical action: ${plan.firstIncompleteTask?.title}`,
+                `Launch Readiness Score: ${liveReadinessScore}/100 (target ${plan.inputs.targetLaunchDate})`,
+                `${incompleteCount} pending dated tasks (${liveRemainingHours} hrs remaining)`,
+                liveFirstIncompleteTask
+                  ? `First critical action: ${liveFirstIncompleteTask.title}`
+                  : "All pre-launch checklist items completed",
               ],
             })}
           />

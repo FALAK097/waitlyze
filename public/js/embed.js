@@ -56,37 +56,154 @@
     });
   }
 
-  function initializeWidget() {
+  const RADIUS_PX = {
+    sharp: "0px",
+    soft: "6px",
+    round: "12px",
+    pill: "9999px",
+  };
+
+  function buildIframeForContainer(container, queryParams) {
+    const keyId = container.getAttribute("data-key-id");
+    const height = container.getAttribute("data-height");
+    const theme = container.getAttribute("data-theme");
+    const mode = container.getAttribute("data-mode");
     const iframe = createIframe();
+    iframe.setAttribute("data-waitlyze-embed", "");
+
+    const params = new URLSearchParams(queryParams ? queryParams.slice(1) : "");
+    if (theme === "dark" || theme === "light") params.set("theme", theme);
+    if (mode === "pill") params.set("compact", "1");
+    const qs = params.size ? `?${params}` : "";
+
+    iframe.src = `${BASE_URL}/${encodeURIComponent(keyId)}${qs}`;
+    iframe.style.height = height || (mode === "pill" ? "96px" : DEFAULT_HEIGHT);
+    return iframe;
+  }
+
+  function mountOverlayTrigger(container, mode, queryParams) {
+    const buttonText = (container.getAttribute("data-button-text") || "Join waitlist").slice(0, 40);
+    const accentColor = /^#[0-9a-f]{6}$/i.test(container.getAttribute("data-accent-color") || "")
+      ? container.getAttribute("data-accent-color")
+      : "#c6fe1e";
+    const textColor = /^#[0-9a-f]{6}$/i.test(container.getAttribute("data-button-text-color") || "")
+      ? container.getAttribute("data-button-text-color")
+      : "#00160d";
+    const radius = RADIUS_PX[container.getAttribute("data-radius") || "round"] || "12px";
+
+    const trigger = document.createElement("button");
+    trigger.type = "button";
+    trigger.textContent = buttonText;
+    trigger.setAttribute("data-waitlyze-trigger", mode);
+    trigger.style.cssText = `display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:10px 20px;font:600 14px/1.2 system-ui,-apple-system,sans-serif;cursor:pointer;border:1px solid ${textColor};background:${accentColor};color:${textColor};border-radius:${radius};`;
+
+    trigger.addEventListener("click", () => {
+      const existing = document.querySelector("[data-waitlyze-overlay]");
+      if (existing) existing.remove();
+
+      const backdrop = document.createElement("div");
+      backdrop.setAttribute("data-waitlyze-overlay", mode);
+      backdrop.setAttribute("role", "dialog");
+      backdrop.setAttribute("aria-modal", "true");
+      backdrop.setAttribute("aria-label", "Waitlist signup");
+      backdrop.style.cssText =
+        mode === "drawer"
+          ? "position:fixed;inset:0;z-index:2147483647;background:rgba(0,0,0,0.45);display:flex;justify-content:flex-end;"
+          : "position:fixed;inset:0;z-index:2147483647;background:rgba(0,0,0,0.45);display:flex;align-items:center;justify-content:center;padding:16px;";
+
+      const panel = document.createElement("div");
+      panel.style.cssText =
+        mode === "drawer"
+          ? "width:100%;max-width:440px;height:100%;background:#fff;padding:16px;overflow:auto;box-shadow:-12px 0 32px rgba(0,0,0,0.18);display:flex;flex-direction:column;gap:8px;"
+          : `width:100%;max-width:460px;max-height:90vh;background:#fff;padding:16px;overflow:auto;border-radius:${radius === "9999px" ? "16px" : radius};box-shadow:0 20px 50px rgba(0,0,0,0.22);display:flex;flex-direction:column;gap:8px;`;
+
+      const closeBtn = document.createElement("button");
+      closeBtn.type = "button";
+      closeBtn.textContent = "Close";
+      closeBtn.setAttribute("aria-label", "Close waitlist dialog");
+      closeBtn.style.cssText =
+        "align-self:flex-end;border:1px solid #e5e7eb;background:#fff;color:#111827;border-radius:8px;padding:6px 12px;font:500 12px/1 system-ui,-apple-system,sans-serif;cursor:pointer;";
+
+      const closeOverlay = () => {
+        document.removeEventListener("keydown", onKeyDown);
+        backdrop.remove();
+        trigger.focus();
+      };
+      const onKeyDown = (event) => {
+        if (event.key === "Escape") closeOverlay();
+      };
+
+      closeBtn.addEventListener("click", closeOverlay);
+      backdrop.addEventListener("click", (event) => {
+        if (event.target === backdrop) closeOverlay();
+      });
+      document.addEventListener("keydown", onKeyDown);
+
+      const frame = buildIframeForContainer(container, queryParams);
+      panel.append(closeBtn, frame);
+      backdrop.append(panel);
+      document.body.append(backdrop);
+      closeBtn.focus();
+    });
+
+    container.setAttribute("data-waitlyze-initialized", "true");
+    container.replaceChildren(trigger);
+  }
+
+  function initializeWidget() {
     const queryParams = getQueryParameters();
 
     document.querySelectorAll(".waitlyze-widget").forEach((container) => {
       const keyId = container.getAttribute("data-key-id");
-      const height = container.getAttribute("data-height");
+      if (
+        !keyId ||
+        container.getAttribute("data-waitlyze-initialized") === "true" ||
+        container.querySelector("iframe[data-waitlyze-embed]")
+      ) {
+        return;
+      }
 
-      if (!keyId || container.querySelector("iframe[data-waitlyze-embed]")) return;
+      const mode = container.getAttribute("data-mode") || "inline";
+      if (mode === "modal" || mode === "drawer") {
+        mountOverlayTrigger(container, mode, queryParams);
+        return;
+      }
 
-      // Clone the iframe for each instance
-      const iframeClone = iframe.cloneNode(true);
-      iframeClone.setAttribute("data-waitlyze-embed", "");
-
-      // Set source URL with query parameters
-      iframeClone.src = `${BASE_URL}/${encodeURIComponent(keyId)}${queryParams}`;
-
-      // Starting height; the frame reports its real height as soon as it loads
-      iframeClone.style.height = height || DEFAULT_HEIGHT;
-
-      // Replace any static fallback link inside the container with the live iframe
+      const iframeClone = buildIframeForContainer(container, queryParams);
+      container.setAttribute("data-waitlyze-initialized", "true");
       container.replaceChildren(iframeClone);
     });
   }
 
+  window.WaitlyzeEmbed = { init: initializeWidget };
   window.addEventListener("message", handleResize);
+
+  function startObserver() {
+    if (typeof MutationObserver === "undefined" || !document.body) return;
+    const observer = new MutationObserver((mutations) => {
+      for (const mutation of mutations) {
+        for (const node of mutation.addedNodes) {
+          if (
+            node.nodeType === 1 &&
+            (node.matches?.(".waitlyze-widget") || node.querySelector?.(".waitlyze-widget"))
+          ) {
+            initializeWidget();
+            return;
+          }
+        }
+      }
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
+  }
 
   // Initialize when DOM is loaded
   if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", initializeWidget);
+    document.addEventListener("DOMContentLoaded", () => {
+      initializeWidget();
+      startObserver();
+    });
   } else {
     initializeWidget();
+    startObserver();
   }
 })();
