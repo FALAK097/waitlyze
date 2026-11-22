@@ -155,7 +155,7 @@ export function gradeWaitlistHtml({
   );
   const hasJsonLd =
     document &&
-    findElements(head, "script").some(
+    findElements(document, "script").some(
       (tag) => getAttribute(tag, "type").toLowerCase() === "application/ld+json",
     );
 
