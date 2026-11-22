@@ -11,7 +11,9 @@ const MAX_TIMEOUT_MS = 2_147_483_647;
  * expiry boundaries so long-lived open tabs drop the offer on time.
  */
 export function useBfcmPromoActive() {
-  const [active, setActive] = useState(() => isBfcmPromoActive());
+  // Keep server prerender and the browser's hydration render identical. Cached
+  // HTML can outlive the campaign boundary, so only read the clock after mount.
+  const [active, setActive] = useState(false);
 
   useEffect(() => {
     let timer = null;
@@ -25,7 +27,7 @@ export function useBfcmPromoActive() {
       const now = Date.now();
       const startsAt = Date.parse(WAITLYZE_BFCM_PROMO.startsAt);
       const expiresAt = Date.parse(WAITLYZE_BFCM_PROMO.expiresAt);
-      setActive(now >= startsAt && now <= expiresAt);
+      setActive(isBfcmPromoActive(now));
 
       const nextBoundary = now < startsAt ? startsAt : expiresAt;
       const delay = nextBoundary - now;
