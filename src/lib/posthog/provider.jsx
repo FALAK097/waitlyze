@@ -93,7 +93,9 @@ function PostHogPageViewTracker() {
       pathname === "/" ||
       pathname.startsWith("/templates") ||
       pathname.startsWith("/blog") ||
-      pathname.startsWith("/pricing")
+      pathname.startsWith("/pricing") ||
+      pathname.startsWith("/compare") ||
+      pathname.startsWith("/alternatives")
     ) {
       posthog.capture(POSTHOG_EVENTS.MARKETING_PAGE_VIEWED, {
         page_path: pathname,

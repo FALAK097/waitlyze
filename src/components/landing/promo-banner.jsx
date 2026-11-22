@@ -139,7 +139,7 @@ export default function PromoBanner({
     }
 
     notifyCopyResult(ok, successMessage);
-    router.push("/#pricing");
+    router.push("/pricing#pricing");
   }
 
   function handleDismiss() {

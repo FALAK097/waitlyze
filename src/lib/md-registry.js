@@ -1,5 +1,14 @@
 import { WAITLYZE_PRICING } from "@/lib/billing/pricing.mjs";
 import { getPost, getPostModifiedDate, getPosts, getTags } from "@/lib/blog-source";
+import {
+  competitors,
+  featureRows,
+  getCompetitor,
+  getCompetitorFaqs,
+  pricingRows,
+  RESEARCHED_ON,
+  waitlyze,
+} from "@/lib/comparison-data";
 import { SITE_DESCRIPTION, SITE_TITLE, SITE_URL } from "@/lib/site-metadata";
 import { source } from "@/lib/source";
 import { listTemplates } from "@/lib/templates/catalog.mjs";
@@ -124,6 +133,7 @@ Waitlyze is built by Falak Gala. Questions or ideas? Email [Falak](mailto:suppor
       path: "/",
       body,
       related: [
+        { title: "Pricing", path: "/pricing", description: "Free and Pro plan details" },
         {
           title: "Templates Gallery",
           path: "/templates",
@@ -140,7 +150,174 @@ Waitlyze is built by Falak Gala. Questions or ideas? Email [Falak](mailto:suppor
     });
   }
 
-  // 2. Templates index /templates
+  // 2. Pricing /pricing
+  if (path === "/pricing") {
+    const body = `Waitlyze has a Free plan and a workspace-level Pro plan. Base prices are shown in USD; country-adjusted pricing may be available and applicable taxes are shown at checkout.
+
+| Plan | Price | Core limits and features |
+| --- | --- | --- |
+| Free | ${WAITLYZE_PRICING.free.formatted} forever | One workspace, one waitlist, one member, and 100 cumulative signups per Free workspace; hosted page, embed, referrals, confirmation email through a connected verified Resend sender, and CSV export |
+| Pro monthly | ${WAITLYZE_PRICING.pro.monthly.formatted}/month | Unlimited workspaces, waitlists, signups, and members; advanced analytics, referral milestones, broadcasts and automations, custom domains, and branding removal |
+| Pro annual | ${WAITLYZE_PRICING.pro.annual.formatted}/year (${WAITLYZE_PRICING.pro.annual.monthlyEquivalentFormatted}/month equivalent) | The same Pro features, billed annually |
+
+## Important limits and dependencies
+- Each Free workspace has a 100-signup cumulative allowance, not a monthly allowance. Deleting a waitlist does not reset that workspace's usage.
+- Subscriber email requires the waitlist owner to connect and verify a Resend sender. Pro unlocks broadcasts and automated sequences through that sender.
+- Pro includes one optional custom domain per waitlist.
+- Waitlyze tracks referrals, milestones, points, and reward eligibility, but the waitlist owner fulfills promised rewards.
+- Paid subscriptions renew for the selected interval until canceled. Cancellation takes effect after the paid period. Payments are non-refundable except where applicable law requires otherwise.
+
+## Which plan fits?
+Choose Free to validate one launch below 100 cumulative signups in its workspace. Choose Pro when you need multiple launches, unlimited growth, teammates, source analytics, subscriber email campaigns, custom domains, or unbranded pages. If automatic reward fulfillment is central to the campaign, use a separate fulfillment service.`;
+
+    return buildMarkdownDoc({
+      title: "Waitlyze Pricing: Free and Pro Plans",
+      description:
+        "Current Waitlyze waitlist software pricing, plan limits, included features, and setup requirements.",
+      path: "/pricing",
+      body,
+      updated: "2026-11-22",
+      related: [
+        { title: "Waitlyze Home", path: "/", description: "Product overview" },
+        { title: "Compare Tools", path: "/compare", description: "Waitlist software comparison" },
+        { title: "Refund Policy", path: "/refund-policy", description: "Cancellation and refunds" },
+      ],
+    });
+  }
+
+  // 2b. Compare /compare
+  if (path === "/compare") {
+    const tools = [waitlyze, ...competitors];
+    const header = `| Dimension | ${tools.map((t) => t.name).join(" | ")} |\n| --- | ${tools.map(() => "---").join(" | ")} |`;
+    const priceLines = pricingRows.map(
+      ({ key, label }) => `| **${label}** | ${tools.map((t) => t[key]).join(" | ")} |`,
+    );
+    const featureLines = featureRows.map(
+      ({ key, label }) =>
+        `| **${label}** | ${tools.map((t) => `${t.features[key].label} (${t.features[key].level})`).join(" | ")} |`,
+    );
+    const body = `Side-by-side comparison of seven dedicated waitlist platforms (researched ${RESEARCHED_ON}).
+
+${[header, ...priceLines, ...featureLines].join("\n")}
+
+## Quick Summary
+- **Lowest entry price**: LaunchList ($9/mo, priced by contact tier)
+- **Flat paid pricing**: Waitlyze (${WAITLYZE_PRICING.pro.monthly.formatted}/mo or ${WAITLYZE_PRICING.pro.annual.formatted}/yr per workspace), GetWaitlist ($15/mo), Waitlister ($19/mo)
+- **Referral & contest specialists**: Prefinery, KickoffLabs, Viral Loops
+
+## Focused Guides
+${competitors.map((c) => `- [Waitlyze vs ${c.name}](${canonical(`/alternatives/${c.slug}`)}) — ${c.bestFor}`).join("\n")}`;
+
+    return buildMarkdownDoc({
+      title: "Waitlist Software Comparison: 7 Tools Side by Side (2026)",
+      description:
+        "Compare Waitlyze, GetWaitlist, LaunchList, Prefinery, KickoffLabs, Viral Loops, and Waitlister on pricing, referrals, email, analytics, and API access.",
+      path: "/compare",
+      body,
+      updated: "2026-11-09",
+      related: [
+        { title: "Waitlyze Pricing", path: "/pricing", description: "Free and Pro plan details" },
+        {
+          title: "Waitlist Alternatives",
+          path: "/alternatives",
+          description: "Focused buyer guides",
+        },
+      ],
+    });
+  }
+
+  // 2c. Alternatives hub /alternatives
+  if (path === "/alternatives") {
+    const body = `Compare dedicated waitlist platforms by page design, verification, referrals, email, analytics, and how pricing scales (researched ${RESEARCHED_ON}).
+
+## Dedicated Waitlist Platforms
+${competitors
+  .map(
+    (c) =>
+      `### [Waitlyze vs ${c.name}](${canonical(`/alternatives/${c.slug}`)})
+- **Category**: ${c.category}
+- **Starting price**: ${c.price} (${c.model})
+- **Free plan**: ${c.freePlan}
+- **Best for**: ${c.bestFor}
+- **Verdict**: ${c.verdict}`,
+  )
+  .join("\n\n")}`;
+
+    return buildMarkdownDoc({
+      title: "Best Waitlist Software Alternatives (2026) | Waitlyze",
+      description:
+        "Compare Waitlyze with GetWaitlist, LaunchList, Prefinery, KickoffLabs, Viral Loops, and Waitlister.",
+      path: "/alternatives",
+      body,
+      updated: "2026-11-09",
+      related: [
+        {
+          title: "Side-by-Side Comparison",
+          path: "/compare",
+          description: "7 waitlist tools compared",
+        },
+        { title: "Waitlyze Pricing", path: "/pricing", description: "Free and Pro plan details" },
+      ],
+    });
+  }
+
+  // 2d. Alternative detail /alternatives/:slug
+  const alternativeMatch = path.match(/^\/alternatives\/([a-z0-9-]+)$/);
+  if (alternativeMatch) {
+    const competitor = getCompetitor(alternativeMatch[1]);
+    if (competitor) {
+      const faqs = getCompetitorFaqs(competitor);
+      const body = `${competitor.summary}
+
+**Researched**: ${RESEARCHED_ON}
+
+## Verdict
+${competitor.verdict}
+
+## Where ${competitor.name} Wins Today
+${competitor.whereTheyWinToday}
+
+**Who should pick ${competitor.name}**: ${competitor.whoShouldPickThemSummary}
+
+## Side-by-Side Snapshot
+| Dimension | Waitlyze | ${competitor.name} |
+| --- | --- | --- |
+${pricingRows.map(({ key, label }) => `| **${label}** | ${waitlyze[key]} | ${competitor[key]} |`).join("\n")}
+${featureRows.map(({ key, label }) => `| **${label}** | ${waitlyze.features[key].label} | ${competitor.features[key].label} |`).join("\n")}
+
+## Choose Waitlyze When
+${competitor.chooseWaitlyze.map((item) => `- ${item}`).join("\n")}
+
+## Choose ${competitor.name} When
+${competitor.chooseThem.map((item) => `- ${item}`).join("\n")}
+
+## Frequently Asked Questions
+${faqs.map(([q, a]) => `### ${q}\n${a}`).join("\n\n")}`;
+
+      return buildMarkdownDoc({
+        title: `Waitlyze vs ${competitor.name}: Pricing, Features & Verdict (2026)`,
+        description: `${competitor.name} alternative: compare Waitlyze and ${competitor.name} on free plans, pricing, hosted pages, referrals, email, analytics, custom domains, and API access.`,
+        path: `/alternatives/${competitor.slug}`,
+        body,
+        updated: "2026-11-09",
+        related: [
+          {
+            title: "All Waitlist Alternatives",
+            path: "/alternatives",
+            description: "Focused buyer guides",
+          },
+          {
+            title: "Side-by-Side Comparison",
+            path: "/compare",
+            description: "7 waitlist tools compared",
+          },
+          { title: "Waitlyze Pricing", path: "/pricing", description: "Free and Pro plan details" },
+        ],
+      });
+    }
+  }
+
+  // 3. Templates index /templates
   if (path === "/templates") {
     const templates = listTemplates();
     const body = `Browse fourteen free waitlist templates designed for SaaS betas, AI previews, newsletters, mobile apps, events, and developer tools.
@@ -478,6 +655,14 @@ export function listMarkdownRoutes() {
 
   return [
     { path: "/", title: SITE_TITLE, type: "page" },
+    { path: "/pricing", title: "Waitlyze Pricing", type: "page" },
+    { path: "/compare", title: "Waitlist Software Comparison", type: "page" },
+    { path: "/alternatives", title: "Waitlist Software Alternatives", type: "page" },
+    ...competitors.map((c) => ({
+      path: `/alternatives/${c.slug}`,
+      title: `Waitlyze vs ${c.name}`,
+      type: "comparison",
+    })),
     { path: "/templates", title: "Templates Gallery", type: "page" },
     ...templates.map((t) => ({
       path: `/templates/${t.id}`,
