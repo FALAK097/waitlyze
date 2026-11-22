@@ -45,7 +45,6 @@ export async function createWaitlistDraft({
     let blueprint = blueprintId ? await getActiveToolBlueprint(prisma, blueprintId) : null;
     let blueprintClaimed = false;
     let claimedWaitListId = null;
-    let reservationCreatedByThisRequest = false;
     if (blueprintId && !blueprint) {
       let existingBlueprint = await prisma.toolBlueprint.findUnique({ where: { id: blueprintId } });
       let claimMatchesDraft = Boolean(
@@ -122,7 +121,6 @@ export async function createWaitlistDraft({
           creationKey,
         });
         blueprintClaimed = Boolean(claimResult?.claimed || claimResult?.alreadyClaimedForDraft);
-        reservationCreatedByThisRequest = Boolean(claimResult?.claimed);
       }
       if (!blueprintClaimed) {
         return {
@@ -145,46 +143,25 @@ export async function createWaitlistDraft({
           ? blueprint.payload.showReferrals
           : undefined;
 
-    let draft;
-    try {
-      draft = await createDraft(
-        prisma,
-        user.id,
-        workspace.id,
-        {
-          name,
-          description: description?.trim() || "",
-          publicSlug,
-          templateId: effectiveTemplateId,
-          creationKey,
-          ...(claimedWaitListId && !existingDraft ? { id: claimedWaitListId } : {}),
-          ...(typeof effectiveShowReferrals === "boolean"
-            ? { showReferrals: effectiveShowReferrals }
-            : {}),
-        },
-        { blueprint },
-      );
-    } catch (error) {
-      if (blueprint && claimedWaitListId && reservationCreatedByThisRequest) {
-        await prisma.toolBlueprint
-          .updateMany({
-            where: {
-              id: blueprint.id,
-              claimedByUserId: user.id,
-              claimedWaitlistId: claimedWaitListId,
-              claimedCreationKey: creationKey,
-            },
-            data: {
-              claimedByUserId: null,
-              claimedWaitlistId: null,
-              claimedCreationKey: null,
-              claimedAt: null,
-            },
-          })
-          .catch(() => {});
-      }
-      throw error;
-    }
+    // Keep the reservation on errors so a same-key retry can reuse the same
+    // draft ID. Releasing here can race another request already using it.
+    const draft = await createDraft(
+      prisma,
+      user.id,
+      workspace.id,
+      {
+        name,
+        description: description?.trim() || "",
+        publicSlug,
+        templateId: effectiveTemplateId,
+        creationKey,
+        ...(claimedWaitListId && !existingDraft ? { id: claimedWaitListId } : {}),
+        ...(typeof effectiveShowReferrals === "boolean"
+          ? { showReferrals: effectiveShowReferrals }
+          : {}),
+      },
+      { blueprint },
+    );
 
     if (blueprint && claimedWaitListId && draft.id !== claimedWaitListId) {
       const reassigned = await prisma.toolBlueprint.updateMany({

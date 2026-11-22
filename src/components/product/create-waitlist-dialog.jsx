@@ -143,7 +143,7 @@ export function CreateWaitlistDialog({
   function changeOpen(next) {
     if (busy) return;
     setOpen(next);
-    if (!next) {
+    if (!next && !activeBlueprint) {
       setCreationKey(crypto.randomUUID());
       setDescription("");
       setError("");
