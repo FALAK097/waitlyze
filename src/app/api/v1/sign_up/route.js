@@ -58,8 +58,24 @@ const legacySignupResponse = (signUp, { includeReferralCode = false } = {}) => {
 
 export const GET = async (req) => {
   const signUpId = req.nextUrl.searchParams.get("signUpId");
-  if (!signUpId) {
+  if (!signUpId || signUpId.length > 128) {
     return NextResponse.json({ message: "Sign up ID is required" }, { status: 400 });
+  }
+
+  try {
+    await consumePublicBudget(prisma, {
+      kind: "status",
+      campaignId: "lookup",
+      headers: req.headers,
+    });
+  } catch (error) {
+    if (error instanceof PublicRateLimitError) {
+      return NextResponse.json(
+        { message: error.message, error: error.message },
+        { status: error.status, headers: { "Retry-After": error.status === 429 ? "3600" : "60" } },
+      );
+    }
+    throw error;
   }
 
   const signUp = await prisma.signUp.findUnique({
@@ -75,8 +91,13 @@ export const GET = async (req) => {
     getCampaignPosition(prisma, signUp.waitListId, signUp.id),
     summarizeSignupRewards(prisma, signUp.waitListId, signUp),
   ]);
+  const hideCounts = !rewardSummary?.available || Boolean(rewardSummary.hideCounts);
+  const { available: _available, ...publicSummary } = rewardSummary || {};
+  const sanitizedSummary = hideCounts
+    ? { ...publicSummary, position: null, displayPosition: null }
+    : publicSummary;
   return NextResponse.json(
-    { signUp: { ...signUp, rank, rewardSummary } },
+    { signUp: { ...signUp, rank: hideCounts ? null : rank, rewardSummary: sanitizedSummary } },
     { headers: { "Cache-Control": "private, no-store" } },
   );
 };

@@ -4,7 +4,11 @@ import prisma from "@/lib/prisma";
 
 import { VerifyAction } from "./verify-action";
 
-export const metadata = { title: "Confirm your email", robots: { index: false, follow: false } };
+export const metadata = {
+  title: "Confirm your email",
+  referrer: "no-referrer",
+  robots: { index: false, follow: false },
+};
 
 export default async function VerifySignupPage({ params, searchParams }) {
   const [{ token }, query] = await Promise.all([params, searchParams]);

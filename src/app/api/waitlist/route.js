@@ -19,9 +19,14 @@ import { dispatchVerificationNow } from "@/lib/email/dispatch-now.mjs";
 import { CustomerSenderNotConnectedError } from "@/lib/email/sender-resolution.mjs";
 import { fingerprintSignupDevice } from "@/lib/fraud/gates.mjs";
 import prisma from "@/lib/prisma";
+import { checkRateLimit } from "@/lib/rate-limit";
 import { summarizeSignupRewards } from "@/lib/referrals/rewards.mjs";
 import { apiKeyRateLimitHeaders, consumeApiKeyBudget } from "@/lib/security/api-key-rate-limit.mjs";
-import { consumePublicBudget, PublicRateLimitError } from "@/lib/security/public-rate-limit.mjs";
+import {
+  consumePublicBudget,
+  publicClientIdentity,
+  PublicRateLimitError,
+} from "@/lib/security/public-rate-limit.mjs";
 import { createSignUp } from "@/services/sign-up";
 import { validateApiKeyAndGetWaitlist } from "@/utils/api-key-auth";
 import { pickAttribution } from "@/utils/server/attribution.mjs";
@@ -219,12 +224,27 @@ export async function POST(request) {
         );
       uniqueUserId = `api-idem-${createHash("sha256").update(`${waitlistId}:${idempotencyKey}`).digest("hex")}`;
     }
-    await consumePublicBudget(prisma, {
-      kind: "signup",
-      campaignId: waitlistId,
-      headers: request.headers,
-      email,
-    });
+    const clientIp = publicClientIdentity(request.headers);
+    try {
+      const authAllowed = await checkRateLimit(
+        prisma,
+        `waitlist-api-auth:${clientIp}`,
+        120,
+        60 * 60 * 1000,
+      );
+      if (!authAllowed) {
+        return NextResponse.json(
+          { success: false, error: "Too many requests. Please try again later." },
+          { status: 429, headers: { "Retry-After": "300" } },
+        );
+      }
+    } catch {
+      return NextResponse.json(
+        { success: false, error: "Signups are temporarily unavailable. Please try again later." },
+        { status: 503, headers: { "Retry-After": "60" } },
+      );
+    }
+
     const auth = await validateApiKeyAndGetWaitlist(apiKey, waitlistId);
     if (!auth.success) {
       return NextResponse.json(
@@ -235,12 +255,28 @@ export async function POST(request) {
         { status: 401 },
       );
     }
+    await consumePublicBudget(prisma, {
+      kind: "signup",
+      campaignId: waitlistId,
+      headers: request.headers,
+      email,
+    });
     const budget = await consumeApiKeyBudget(prisma, apiKey);
     const budgetHeaders = apiKeyRateLimitHeaders(budget);
 
     const requiresTurnstile = await campaignRequiresTurnstile(prisma, waitlistId);
-    const turnstileVerified =
-      requiresTurnstile && (await verifyTurnstileToken(request, body["cf-turnstile-response"]));
+    let turnstileVerified = false;
+    if (requiresTurnstile) {
+      const customDomain = await prisma.customDomain.findUnique({
+        where: { waitListId: waitlistId },
+        select: { hostname: true, status: true },
+      });
+      const allowedHostnames =
+        customDomain?.status === "ACTIVE" && customDomain.hostname ? [customDomain.hostname] : [];
+      turnstileVerified = await verifyTurnstileToken(request, body["cf-turnstile-response"], {
+        allowedHostnames,
+      });
+    }
     if (requiresTurnstile && !turnstileVerified)
       return NextResponse.json(
         { success: false, error: "Complete the security check and try again." },

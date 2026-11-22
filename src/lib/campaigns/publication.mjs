@@ -1,7 +1,7 @@
 import { getWorkspaceEntitlements } from "../billing/plans.mjs";
 import { resolveEmailSender } from "../email/sender-resolution.mjs";
 import { isTurnstileConfigured } from "../security/turnstile.mjs";
-import { templateSnapshotSchema } from "../templates/catalog.mjs";
+import { sanitizeLegacySnapshotForRead, templateSnapshotSchema } from "../templates/catalog.mjs";
 import { AccessError, campaignScope } from "../workspaces/service.mjs";
 import { requiresDoubleOptIn } from "./form-rules.mjs";
 
@@ -153,7 +153,9 @@ export async function rollbackCampaign(db, actorId, workspaceId, waitListId) {
     select: { revision: true, templateRevision: true, snapshot: true },
   });
   if (!previous) throw new PublicationConflict("There is no earlier published version to restore.");
-  let restoredSnapshot = templateSnapshotSchema.parse(previous.snapshot);
+  let restoredSnapshot = templateSnapshotSchema.parse(
+    sanitizeLegacySnapshotForRead(previous.snapshot),
+  );
   const entitlements = await getWorkspaceEntitlements(db, page.workspaceId);
   if (!entitlements.removeBranding && restoredSnapshot.brand.showPoweredBy === false)
     restoredSnapshot = {

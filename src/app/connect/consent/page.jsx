@@ -7,6 +7,28 @@ import Wordmark from "@/components/landing/wordmark";
 import { Button } from "@/components/ui/button";
 import { authClient } from "@/lib/auth-client";
 
+function isSafeOAuthRedirect(url) {
+  if (typeof url !== "string" || !url.trim()) return false;
+  for (let i = 0; i < url.length; i += 1) {
+    if (url.charCodeAt(i) <= 0x20) return false;
+  }
+  try {
+    const parsed = new URL(url, window.location.origin);
+    if (parsed.protocol === "https:") return true;
+    if (
+      parsed.protocol === "http:" &&
+      (parsed.hostname === "localhost" ||
+        parsed.hostname === "127.0.0.1" ||
+        parsed.hostname === "[::1]")
+    ) {
+      return true;
+    }
+    return false;
+  } catch {
+    return false;
+  }
+}
+
 function ConnectConsentContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -34,10 +56,14 @@ function ConnectConsentContent() {
         scope: scope?.trim() || undefined,
       });
 
-      if (res?.data?.url) {
-        window.location.href = res.data.url;
-      } else if (res?.data?.redirectURI) {
-        window.location.href = res.data.redirectURI;
+      const redirectTarget = res?.data?.url || res?.data?.redirectURI;
+      if (redirectTarget) {
+        if (!isSafeOAuthRedirect(redirectTarget)) {
+          setError("Invalid OAuth redirect target");
+          setLoading(false);
+          return;
+        }
+        window.location.assign(redirectTarget);
       } else if (res?.error) {
         setError(res.error.message || "Failed to process consent response");
         setLoading(false);

@@ -124,7 +124,11 @@ export function subscriberEmailHtml({
     ? `<img src="${escapeHtmlText(brand.logo)}" alt="" width="120" style="display:block;max-width:160px;height:auto;margin-bottom:12px">`
     : "";
   const font = emailFontStack(brand?.bodyFont);
-  const linkStyle = brand?.linkColor ? `<style>a{color:${brand.linkColor}}</style>` : "";
+  const safeLinkColor =
+    typeof brand?.linkColor === "string" && /^#[0-9a-f]{6}$/i.test(brand.linkColor.trim())
+      ? brand.linkColor.trim()
+      : "";
+  const linkStyle = safeLinkColor ? `<style>a{color:${safeLinkColor}}</style>` : "";
   const footer = `<table role="presentation" width="100%" style="border-top:1px solid #e5e9e4;margin-top:36px;padding-top:18px"><tr><td style="font:13px/21px Arial,sans-serif;color:#616b64"><strong style="color:#16271d">${escapeHtmlText(name)}</strong>${unsubscribeUrl ? `<br>You received this because you opted in to updates. <a href="${escapeHtmlText(unsubscribeUrl)}" style="color:#33543c">Unsubscribe</a>.` : ""}</td></tr></table>`;
   const body = content.includes("<body")
     ? content.replace(/<\/body\s*>/i, `${footer}</body>`)

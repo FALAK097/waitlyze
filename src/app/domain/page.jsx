@@ -51,6 +51,15 @@ export async function generateMetadata() {
   const hero = page.snapshot.sections.find((section) => section.type === "hero");
   const title = page.snapshot.seo.title || page.waitList.name || hero?.heading || "Waitlist";
   const description = page.snapshot.seo.description || hero?.body || "";
+  const rawOgImage = page.snapshot.seo.image?.trim() || "";
+  const hasBadChar = [...rawOgImage].some((ch) => ch.charCodeAt(0) <= 0x20);
+  const ogImage =
+    rawOgImage &&
+    !rawOgImage.includes("\\") &&
+    !hasBadChar &&
+    /^(?:https:\/\/|\/(?!\/))/i.test(rawOgImage)
+      ? rawOgImage
+      : "";
   return {
     title,
     description,
@@ -58,7 +67,7 @@ export async function generateMetadata() {
     openGraph: {
       title,
       description,
-      ...(page.snapshot.seo.image ? { images: [{ url: page.snapshot.seo.image }] } : {}),
+      ...(ogImage ? { images: [{ url: ogImage }] } : {}),
     },
   };
 }

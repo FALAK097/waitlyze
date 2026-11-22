@@ -6,6 +6,7 @@ import { NextResponse } from "next/server";
 
 import prisma from "@/lib/prisma";
 import { checkRateLimit } from "@/lib/rate-limit";
+import { publicClientIdentity } from "@/lib/security/public-rate-limit.mjs";
 import { gradeWaitlistHtml } from "@/lib/tools/engines/page-grader.mjs";
 import { isPublicAddress, resolvePublicTarget } from "@/lib/webhooks/security.mjs";
 
@@ -210,35 +211,6 @@ function fetchPinnedHttpsNode(targetUrl, addresses, headers) {
   });
 }
 
-async function readBoundedText(response, maxBytes) {
-  if (!response.body) {
-    const text = await response.text();
-    const bytes = new TextEncoder().encode(text).byteLength;
-    if (bytes > maxBytes) throw new Error("Page HTML exceeds the 1.5 MB inspection limit.");
-    return { text, bytes };
-  }
-  const reader = response.body.getReader();
-  const chunks = [];
-  let totalBytes = 0;
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    totalBytes += value.byteLength;
-    if (totalBytes > maxBytes) {
-      await reader.cancel().catch(() => {});
-      throw new Error("Page HTML exceeds the 1.5 MB inspection limit.");
-    }
-    chunks.push(value);
-  }
-  const merged = new Uint8Array(totalBytes);
-  let offset = 0;
-  for (const chunk of chunks) {
-    merged.set(chunk, offset);
-    offset += chunk.byteLength;
-  }
-  return { text: new TextDecoder("utf-8", { fatal: false }).decode(merged), bytes: totalBytes };
-}
-
 async function fetchPublicHtmlSafely(initialUrl) {
   let currentUrl = validatePublicHttpsUrl(initialUrl);
   const requestHeaders = {
@@ -254,64 +226,25 @@ async function fetchPublicHtmlSafely(initialUrl) {
   for (let hop = 0; hop <= MAX_REDIRECTS; hop += 1) {
     const addresses = await resolveAndValidateHost(currentUrl.hostname);
 
-    if (canUsePinnedNodeTransport && addresses.length > 0) {
-      const pinned = await fetchPinnedHttpsNode(currentUrl, addresses, requestHeaders);
-      if (pinned.status >= 300 && pinned.status < 400) {
-        if (!pinned.location) {
-          throw new Error("Redirect response did not include a target URL.");
-        }
-        if (hop === MAX_REDIRECTS) {
-          throw new Error("Too many redirects (maximum 3 allowed).");
-        }
-        currentUrl = validatePublicHttpsUrl(new URL(pinned.location, currentUrl).toString());
-        continue;
-      }
-      return {
-        html: pinned.text,
-        bytes: pinned.bytes,
-        statusCode: pinned.status,
-        finalUrl: currentUrl.toString(),
-      };
+    if (!canUsePinnedNodeTransport || addresses.length === 0) {
+      throw new Error("Live URL inspection requires pinned IP transport.");
     }
 
-    const response = await fetch(currentUrl.toString(), {
-      method: "GET",
-      redirect: "manual",
-      signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
-      headers: requestHeaders,
-    });
-
-    if (response.status >= 300 && response.status < 400) {
-      const location = response.headers.get("location");
-      if (!location) {
+    const pinned = await fetchPinnedHttpsNode(currentUrl, addresses, requestHeaders);
+    if (pinned.status >= 300 && pinned.status < 400) {
+      if (!pinned.location) {
         throw new Error("Redirect response did not include a target URL.");
       }
       if (hop === MAX_REDIRECTS) {
         throw new Error("Too many redirects (maximum 3 allowed).");
       }
-      currentUrl = validatePublicHttpsUrl(new URL(location, currentUrl).toString());
+      currentUrl = validatePublicHttpsUrl(new URL(pinned.location, currentUrl).toString());
       continue;
     }
-
-    if (!response.ok) {
-      throw new Error(`Target page returned HTTP ${response.status}.`);
-    }
-
-    const contentType = (response.headers.get("content-type") || "").toLowerCase();
-    if (!contentType.includes("text/html") && !contentType.includes("application/xhtml+xml")) {
-      throw new Error("URL did not return an HTML page (expected text/html).");
-    }
-
-    const contentLength = Number(response.headers.get("content-length") || "0");
-    if (contentLength > MAX_HTML_BYTES) {
-      throw new Error("Page HTML exceeds the 1.5 MB inspection limit.");
-    }
-
-    const { text, bytes } = await readBoundedText(response, MAX_HTML_BYTES);
     return {
-      html: text,
-      bytes,
-      statusCode: response.status,
+      html: pinned.text,
+      bytes: pinned.bytes,
+      statusCode: pinned.status,
       finalUrl: currentUrl.toString(),
     };
   }
@@ -321,16 +254,16 @@ async function fetchPublicHtmlSafely(initialUrl) {
 
 export async function POST(request) {
   try {
-    const ip =
-      request.headers.get("cf-connecting-ip") ||
-      request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
-      "local";
+    const ip = publicClientIdentity(request.headers);
 
-    let allowed = true;
+    let allowed;
     try {
       allowed = await checkRateLimit(prisma, `tool-grade:${ip}`, 20, 60 * 60 * 1000);
     } catch {
-      allowed = true;
+      return NextResponse.json(
+        { ok: false, error: "Audits are temporarily unavailable. Try again shortly." },
+        { status: 503, headers: { "Retry-After": "60" } },
+      );
     }
     if (!allowed) {
       return NextResponse.json(

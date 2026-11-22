@@ -1,6 +1,6 @@
 import { getWorkspaceEntitlements } from "@/lib/billing/plans.mjs";
 import prisma from "@/lib/prisma";
-import { templateSnapshotSchema } from "@/lib/templates/catalog.mjs";
+import { sanitizeLegacySnapshotForRead, templateSnapshotSchema } from "@/lib/templates/catalog.mjs";
 
 /** Resolve the stored revision used by public waitlist routes. */
 export async function resolvePublishedWaitlistPage(waitList) {
@@ -20,7 +20,9 @@ export async function resolvePublishedWaitlistPage(waitList) {
       select: { snapshot: true },
     }),
   ]);
-  const parsed = templateSnapshotSchema.safeParse(publication?.snapshot);
+  const parsed = templateSnapshotSchema.safeParse(
+    sanitizeLegacySnapshotForRead(publication?.snapshot),
+  );
   if (!parsed.success) return null;
   return {
     waitList,

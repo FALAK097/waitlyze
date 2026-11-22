@@ -5,6 +5,7 @@ import { POSTHOG_EVENTS } from "@/lib/posthog/events.mjs";
 import { trackServerEvent } from "@/lib/posthog/server.mjs";
 import prisma from "@/lib/prisma";
 import { checkRateLimit } from "@/lib/rate-limit";
+import { publicClientIdentity } from "@/lib/security/public-rate-limit.mjs";
 import {
   BLUEPRINT_COOKIE_NAME,
   BLUEPRINT_TTL_MS,
@@ -14,22 +15,20 @@ import {
 } from "@/lib/tools/blueprint.mjs";
 import { getToolBySlug } from "@/lib/tools/registry.mjs";
 
-function clientIpKey(request) {
-  const ip =
-    request.headers.get("cf-connecting-ip") ||
-    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
-    "local";
-  return `tool-blueprint:${ip}`;
+function clientIpKey(request, action = "create") {
+  return `tool-blueprint:${action}:${publicClientIdentity(request.headers)}`;
 }
 
 export async function POST(request) {
   try {
-    let allowed = true;
+    let allowed;
     try {
-      allowed = await checkRateLimit(prisma, clientIpKey(request), 40, 60 * 60 * 1000);
+      allowed = await checkRateLimit(prisma, clientIpKey(request, "create"), 40, 60 * 60 * 1000);
     } catch {
-      // Fail open on rate-limit storage error so legitimate conversions still work
-      allowed = true;
+      return NextResponse.json(
+        { ok: false, error: "Blueprint saves are temporarily unavailable. Please try again." },
+        { status: 503, headers: { "Retry-After": "60" } },
+      );
     }
 
     if (!allowed) {
@@ -100,6 +99,15 @@ export async function POST(request) {
 
 export async function DELETE(request) {
   try {
+    let allowed;
+    try {
+      allowed = await checkRateLimit(prisma, clientIpKey(request, "delete"), 40, 60 * 60 * 1000);
+    } catch {
+      return NextResponse.json({ ok: false }, { status: 503 });
+    }
+    if (!allowed) {
+      return NextResponse.json({ ok: false }, { status: 429, headers: { "Retry-After": "600" } });
+    }
     const url = new URL(request.url);
     const requestedId = url.searchParams.get("id");
     const cookieVal = request.cookies.get(BLUEPRINT_COOKIE_NAME)?.value;

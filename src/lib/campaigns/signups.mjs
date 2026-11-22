@@ -26,7 +26,7 @@ import {
   rewardProgress,
   summarizeSignupRewards,
 } from "../referrals/rewards.mjs";
-import { templateSnapshotSchema } from "../templates/catalog.mjs";
+import { sanitizeLegacySnapshotForRead, templateSnapshotSchema } from "../templates/catalog.mjs";
 import { enqueueWebhookEvent } from "../webhooks/delivery.mjs";
 import {
   checkCountryRules,
@@ -288,7 +288,9 @@ export async function createCampaignSignup(
       },
       select: { snapshot: true },
     });
-    const publishedSnapshot = templateSnapshotSchema.safeParse(publication?.snapshot);
+    const publishedSnapshot = templateSnapshotSchema.safeParse(
+      sanitizeLegacySnapshotForRead(publication?.snapshot),
+    );
     if (!publishedSnapshot.success) {
       throw new TypeError("Published form configuration is invalid.");
     }

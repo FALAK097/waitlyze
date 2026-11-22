@@ -90,10 +90,29 @@ export function registerWaitlyzeTools(server, authContext) {
     }
   }
 
-  // Scope check helper
+  // Scope check helpers
+  function requireReadScope() {
+    ensureAuth();
+    const scopes = authContext.scopes || [];
+    const hasReadScope =
+      authContext.authType === "api_key"
+        ? scopes.includes("waitlist:read")
+        : scopes.includes("mcp:read");
+    if (!hasReadScope) {
+      throw new Error(
+        `Forbidden: read access requires the '${authContext.authType === "api_key" ? "waitlist:read" : "mcp:read"}' scope.`,
+      );
+    }
+  }
+
   function requireWriteScope(permission = "editCampaign") {
     ensureAuth();
     if (WRITE_PERMISSIONS.has(permission)) {
+      if (authContext.authType === "api_key" && permission === "deleteCampaign") {
+        throw new Error(
+          `Forbidden: '${permission}' requires OAuth or session authentication and cannot be performed with an API key.`,
+        );
+      }
       const scopes = authContext.scopes || [];
       const hasWriteScope =
         authContext.authType === "api_key"
@@ -104,6 +123,8 @@ export function registerWaitlyzeTools(server, authContext) {
           `Forbidden: '${permission}' requires write access. Request the '${authContext.authType === "api_key" ? "waitlist:write" : "mcp:write"}' scope.`,
         );
       }
+    } else {
+      requireReadScope();
     }
   }
 
@@ -245,7 +266,12 @@ export function registerWaitlyzeTools(server, authContext) {
     },
     async ({ workspaceId }) => {
       try {
-        ensureAuth();
+        requireReadScope();
+        if (authContext.authType === "api_key" && authContext.waitlistId) {
+          return errorContent(
+            "Forbidden: Waitlist-scoped API keys cannot read workspace-wide details.",
+          );
+        }
         const wsContext = await resolveWorkspaceContext(authContext, workspaceId);
         const workspace = await prisma.workspace.findUnique({
           where: { id: wsContext.workspaceId },
@@ -291,7 +317,10 @@ export function registerWaitlyzeTools(server, authContext) {
     },
     async () => {
       try {
-        ensureAuth();
+        requireReadScope();
+        if (authContext.authType === "api_key" && authContext.waitlistId) {
+          return errorContent("Forbidden: Waitlist-scoped API keys cannot list workspaces.");
+        }
         const memberships = await prisma.workspaceMember.findMany({
           where: { userId: authContext.userId },
           include: {
@@ -343,11 +372,12 @@ export function registerWaitlyzeTools(server, authContext) {
     },
     async ({ workspaceId, status, search, limit, offset }) => {
       try {
-        ensureAuth();
+        requireReadScope();
         const wsContext = await resolveWorkspaceContext(authContext, workspaceId);
 
         const where = {
           workspaceId: wsContext.workspaceId,
+          ...(authContext.waitlistId ? { id: authContext.waitlistId } : {}),
           ...(status !== "ALL" ? { status } : {}),
           ...(search
             ? {
@@ -1353,6 +1383,12 @@ export function registerWaitlyzeTools(server, authContext) {
     },
     async ({ waitlistId, broadcastId }) => {
       try {
+        ensureAuth();
+        if (authContext.authType === "api_key") {
+          return errorContent(
+            "Forbidden: 'waitlyze_send_broadcast' requires OAuth or session authentication and cannot be performed with an API key.",
+          );
+        }
         const waitlist = await getAuthorizedWaitlist(waitlistId, "sendEmail");
 
         const broadcast = await prisma.marketingBroadcast.findFirst({
@@ -1466,7 +1502,10 @@ export function registerWaitlyzeTools(server, authContext) {
     async ({ waitlistId }) => {
       try {
         await getAuthorizedWaitlist(waitlistId, "manageConnections");
-        const keys = await listUserApiKeys(authContext.userId, [waitlistId]);
+        const allKeys = await listUserApiKeys(authContext.userId, [waitlistId]);
+        const keys = authContext.waitlistId
+          ? allKeys.filter((k) => k.waitlistId === waitlistId)
+          : allKeys;
 
         return jsonContent({
           apiKeys: keys.map((k) => ({
@@ -1497,7 +1536,7 @@ export function registerWaitlyzeTools(server, authContext) {
     },
     async ({ keyId }) => {
       try {
-        ensureAuth();
+        requireWriteScope("manageConnections");
         if (authContext?.authType === "api_key") {
           return errorContent("Forbidden: API keys cannot revoke API keys.");
         }

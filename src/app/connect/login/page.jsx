@@ -9,9 +9,43 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { authClient } from "@/lib/auth-client";
 
-// Whitelist callback URLs: only relative, same-app paths are allowed.
+function hasControlOrSpace(value) {
+  for (let i = 0; i < value.length; i += 1) {
+    if (value.charCodeAt(i) <= 0x20) return true;
+  }
+  return false;
+}
+
+// Whitelist callback URLs: only relative, same-origin paths are allowed.
 function sanitizeCallbackUrl(url) {
-  return url.startsWith("/") && !url.startsWith("//") ? url : "";
+  if (typeof url !== "string" || !url.startsWith("/") || url.startsWith("//")) return "";
+  if (url.includes("\\") || hasControlOrSpace(url)) return "";
+  try {
+    const parsed = new URL(url, "https://waitlyze.local");
+    if (parsed.origin !== "https://waitlyze.local" || parsed.pathname.startsWith("//")) return "";
+    return `${parsed.pathname}${parsed.search}${parsed.hash}`;
+  } catch {
+    return "";
+  }
+}
+
+function isSafeOAuthRedirect(url) {
+  if (typeof url !== "string" || !url.trim() || hasControlOrSpace(url)) return false;
+  try {
+    const parsed = new URL(url, window.location.origin);
+    if (parsed.protocol === "https:") return true;
+    if (
+      parsed.protocol === "http:" &&
+      (parsed.hostname === "localhost" ||
+        parsed.hostname === "127.0.0.1" ||
+        parsed.hostname === "[::1]")
+    ) {
+      return true;
+    }
+    return false;
+  } catch {
+    return false;
+  }
 }
 
 function ConnectLoginContent() {
@@ -58,7 +92,9 @@ function ConnectLoginContent() {
       // instead of replacing it with a generic consent page.
       if (oauthRequest) {
         const oauthRedirect = result.data?.url;
-        if (!oauthRedirect) throw new Error("Unable to resume OAuth authorization");
+        if (!oauthRedirect || !isSafeOAuthRedirect(oauthRedirect)) {
+          throw new Error("Unable to resume OAuth authorization");
+        }
         window.location.assign(oauthRedirect);
         return;
       }

@@ -124,7 +124,13 @@ export async function revokeWorkspaceInvitation(
       workspaceId,
       status: { in: ACTIVE_STATUSES },
       expiresAt: { gt: now },
-      workspace: { members: { some: { userId: actorId, role: { in: ["OWNER", "ADMIN"] } } } },
+      OR: [
+        { workspace: { members: { some: { userId: actorId, role: "OWNER" } } } },
+        {
+          role: "MEMBER",
+          workspace: { members: { some: { userId: actorId, role: "ADMIN" } } },
+        },
+      ],
     },
     data: { status: "REVOKED", revokedAt: now, tokenCiphertext: "", tokenIv: "", tokenTag: "" },
   });

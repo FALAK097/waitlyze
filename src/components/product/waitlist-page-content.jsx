@@ -17,22 +17,31 @@ import { cn } from "@/lib/utils";
 
 const radius = { sharp: "0px", soft: "10px", round: "18px", pill: "999px" };
 
-// Defense in depth for stored image URLs: only render TLS, site-relative, or
-// inline data URLs. Anything else falls back to the text/placeholder treatment.
+function hasControlOrSpace(value, includeSpace = false) {
+  const maxCode = includeSpace ? 0x20 : 0x1f;
+  for (let i = 0; i < value.length; i += 1) {
+    if (value.charCodeAt(i) <= maxCode) return true;
+  }
+  return false;
+}
+
+// Defense in depth for stored image URLs: only render TLS, single-slash site-relative,
+// or raster inline data URLs (never protocol-relative // or data:image/svg+xml).
 function safeImageUrl(value) {
   if (typeof value !== "string") return "";
   const trimmed = value.trim();
-  if (!trimmed) return "";
-  if (/^(https:\/\/|data:image\/|\/)/i.test(trimmed)) return trimmed;
+  if (!trimmed || trimmed.includes("\\") || hasControlOrSpace(trimmed, true)) return "";
+  if (/^(?:https:\/\/|\/(?!\/)|data:image\/(?:png|jpeg|jpg|webp|gif|avif);base64,)/i.test(trimmed))
+    return trimmed;
   return "";
 }
 
 function safeHref(value) {
   if (typeof value !== "string") return "#";
   const trimmed = value.trim();
-  if (!trimmed) return "#";
-  if (/^\s*(javascript|data|vbscript|file|blob):/i.test(trimmed)) return "#";
-  return trimmed;
+  if (!trimmed || trimmed.includes("\\") || hasControlOrSpace(trimmed, false)) return "#";
+  if (/^(?:#|\/(?!\/)|https?:\/\/|mailto:|tel:)/i.test(trimmed)) return trimmed;
+  return "#";
 }
 
 const H1_CENTERED = {

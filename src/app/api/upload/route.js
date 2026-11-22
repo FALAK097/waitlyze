@@ -97,7 +97,10 @@ export async function DELETE(req) {
     }
 
     // 3. Security check: Only allow users to delete their own uploaded files
-    if (!key.startsWith(`${userId}-`)) {
+    // and reject path traversal / unexpected object key formats.
+    const prefix = `${userId}-`;
+    const suffix = key.startsWith(prefix) ? key.slice(prefix.length) : "";
+    if (!suffix || !/^[A-Za-z0-9_-]{1,64}\.(?:jpg|jpeg|png|webp|gif|avif)$/i.test(suffix)) {
       return NextResponse.json({ error: "Unauthorized to delete this file" }, { status: 403 });
     }
 

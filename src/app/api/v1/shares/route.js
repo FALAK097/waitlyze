@@ -18,9 +18,9 @@ export async function POST(request) {
     });
     const waitList = await prisma.waitList.findUnique({
       where: { id: body.waitListId },
-      select: { id: true },
+      select: { id: true, status: true },
     });
-    if (!waitList)
+    if (!waitList || waitList.status !== "PUBLISHED")
       return NextResponse.json({ message: "A valid waitlist is required." }, { status: 400 });
     const signup = await prisma.signUp.findFirst({
       where: {

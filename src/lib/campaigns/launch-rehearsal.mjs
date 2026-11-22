@@ -1,7 +1,10 @@
-import { templateSnapshotSchema } from "../templates/catalog.mjs";
+import { sanitizeLegacySnapshotForRead, templateSnapshotSchema } from "../templates/catalog.mjs";
 
 function checksFor(waitlist, publishedSnapshot) {
-  const snapshot = publishedSnapshot ?? waitlist.templateSnapshot;
+  const snapshot =
+    publishedSnapshot == null
+      ? waitlist.templateSnapshot
+      : sanitizeLegacySnapshotForRead(publishedSnapshot);
   const parsed = templateSnapshotSchema.safeParse(snapshot);
   return [
     {

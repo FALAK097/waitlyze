@@ -99,6 +99,7 @@ function assetHeaders(object) {
     headers.set("cache-control", "public, max-age=300, s-maxage=300");
   headers.set("access-control-allow-origin", "*");
   headers.set("x-content-type-options", "nosniff");
+  headers.set("content-security-policy", "default-src 'none'; sandbox");
   return headers;
 }
 
@@ -209,11 +210,39 @@ export default {
 
     const isPlatform = isPlatformHost(hostname);
     const shouldSendHsts = url.protocol === "https:" && !isPlatform;
+    const isSensitiveFramePath =
+      pathname.startsWith("/connect") ||
+      pathname.startsWith("/dashboard") ||
+      pathname.startsWith("/waitlists") ||
+      pathname.startsWith("/settings") ||
+      pathname.startsWith("/accept-invitation") ||
+      pathname.startsWith("/verify");
+    const isSecretTokenPath =
+      pathname.startsWith("/verify/") || pathname.startsWith("/accept-invitation/");
     const finalizeResponse = (response, { varyAccept = false } = {}) => {
-      if (!shouldSendHsts && !varyAccept) return response;
       const headers = new Headers(response.headers);
       if (shouldSendHsts && !headers.has("strict-transport-security")) {
         headers.set("strict-transport-security", "max-age=31536000; includeSubDomains");
+      }
+      if (!headers.has("x-content-type-options")) {
+        headers.set("x-content-type-options", "nosniff");
+      }
+      if (!headers.has("referrer-policy")) {
+        headers.set(
+          "referrer-policy",
+          isSecretTokenPath ? "no-referrer" : "strict-origin-when-cross-origin",
+        );
+      }
+      if (!headers.has("permissions-policy")) {
+        headers.set("permissions-policy", "camera=(), microphone=(), geolocation=()");
+      }
+      if (isSensitiveFramePath) {
+        if (!headers.has("x-frame-options")) {
+          headers.set("x-frame-options", "DENY");
+        }
+        if (!headers.has("content-security-policy")) {
+          headers.set("content-security-policy", "frame-ancestors 'none'");
+        }
       }
       if (varyAccept) appendVaryAccept(headers);
       return new Response(response.body, {
@@ -343,7 +372,7 @@ export default {
         new Request(`https://${appRoot}/api/internal/email-events`, {
           method: "POST",
           headers: {
-            authorization: `Bearer ${env.OUTBOX_DISPATCH_SECRET || ""}`,
+            authorization: `Bearer ${env.EMAIL_EVENTS_SECRET || env.OUTBOX_DISPATCH_SECRET || ""}`,
             "content-type": "application/json",
           },
           body: JSON.stringify({ events }),

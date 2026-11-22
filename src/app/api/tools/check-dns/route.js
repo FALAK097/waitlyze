@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import prisma from "@/lib/prisma";
 import { checkRateLimit } from "@/lib/rate-limit";
+import { publicClientIdentity } from "@/lib/security/public-rate-limit.mjs";
 import {
   evaluateDnsRecords,
   normalizeDomainInput,
@@ -38,16 +39,16 @@ async function queryDoh(name, type) {
 
 export async function POST(request) {
   try {
-    const ip =
-      request.headers.get("cf-connecting-ip") ||
-      request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
-      "local";
+    const ip = publicClientIdentity(request.headers);
 
-    let allowed = true;
+    let allowed;
     try {
       allowed = await checkRateLimit(prisma, `tool-dns:${ip}`, 30, 60 * 60 * 1000);
     } catch {
-      allowed = true;
+      return NextResponse.json(
+        { ok: false, error: "DNS checks are temporarily unavailable. Please try again shortly." },
+        { status: 503, headers: { "Retry-After": "60" } },
+      );
     }
     if (!allowed) {
       return NextResponse.json(

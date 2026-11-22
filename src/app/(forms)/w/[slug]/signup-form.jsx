@@ -84,6 +84,7 @@ function TurnstileAttempt({ siteKey, onToken, onRetry }) {
       try {
         widgetId = window.turnstile.render(containerRef.current, {
           sitekey: siteKey,
+          action: "signup",
           callback: (token) => {
             setFailed(false);
             onTokenRef.current(token);

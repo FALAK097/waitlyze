@@ -28,9 +28,13 @@ export async function GET(request) {
   const doc = await renderMarkdownRoute(path);
 
   if (!doc) {
+    const safePath = [...path]
+      .filter((ch) => ch !== "`" && ch.charCodeAt(0) >= 0x20)
+      .join("")
+      .slice(0, 120);
     const notFoundContent = `# 404 Not Found
 
-The requested markdown page \`${path}\` does not exist.
+The requested markdown page \`${safePath}\` does not exist.
 
 ## Useful Resources
 - [Waitlyze Home](https://waitlyze.com/)

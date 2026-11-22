@@ -5,9 +5,30 @@ import { NextResponse } from "next/server";
 import { getCampaignPosition } from "@/lib/campaigns/referral-position.mjs";
 import { verifyCampaignSignup } from "@/lib/campaigns/signups.mjs";
 import prisma from "@/lib/prisma";
+import { checkRateLimit } from "@/lib/rate-limit";
 import { summarizeSignupRewards } from "@/lib/referrals/rewards.mjs";
+import { publicClientIdentity } from "@/lib/security/public-rate-limit.mjs";
 
 export const POST = async (req) => {
+  try {
+    const allowed = await checkRateLimit(
+      prisma,
+      `signup-verify:${publicClientIdentity(req.headers)}`,
+      30,
+      60 * 60 * 1000,
+    );
+    if (!allowed) {
+      return NextResponse.json(
+        { message: "Too many verification attempts. Please try again later." },
+        { status: 429, headers: { "Retry-After": "300" } },
+      );
+    }
+  } catch {
+    return NextResponse.json(
+      { message: "Verification is temporarily unavailable. Please try again shortly." },
+      { status: 503 },
+    );
+  }
   let body;
   try {
     body = await req.json();

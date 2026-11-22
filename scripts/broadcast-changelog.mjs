@@ -30,6 +30,7 @@ async function main() {
   const requestedVersion = getArg("--version");
   const dbUrl = process.env.DATABASE_URL;
   const dispatchSecret = process.env.OUTBOX_DISPATCH_SECRET;
+  const broadcastSecret = process.env.CHANGELOG_BROADCAST_SECRET || dispatchSecret;
   const appUrl = (
     process.env.APP_URL ||
     process.env.BETTER_AUTH_URL ||
@@ -86,7 +87,7 @@ async function main() {
   }
 
   // 3. Dispatch via Internal API Endpoint (preferred in CI and Cloudflare Workers)
-  if (dispatchSecret) {
+  if (broadcastSecret) {
     console.log(
       `\nDispatching broadcast via internal API: ${appUrl}/api/internal/changelog-broadcast`,
     );
@@ -101,7 +102,7 @@ async function main() {
           method: "POST",
           headers: {
             "content-type": "application/json",
-            authorization: `Bearer ${dispatchSecret}`,
+            authorization: `Bearer ${broadcastSecret}`,
           },
           body: JSON.stringify({
             version,
@@ -154,28 +155,30 @@ async function main() {
       }
 
       // Trigger Cloudflare outbox dispatcher to drain queued events immediately
-      console.log(
-        `\nTriggering Cloudflare Email outbox dispatcher at ${appUrl}/api/internal/email-outbox...`,
-      );
-      try {
-        const drainRes = await fetch(`${appUrl}/api/internal/email-outbox`, {
-          method: "POST",
-          headers: {
-            authorization: `Bearer ${dispatchSecret}`,
-          },
-        });
-
-        if (drainRes.ok) {
-          const drainData = await drainRes.json();
-          console.log("[OK] Outbox dispatcher completed:", drainData);
-        } else {
-          console.warn(`[WARN] Outbox dispatcher returned HTTP ${drainRes.status}`);
-        }
-      } catch (err) {
-        console.warn(`[WARN] Outbox dispatcher ping failed: ${err.message}`);
+      if (dispatchSecret) {
         console.log(
-          "Notices remain queued in outbox and will be drained by Cloudflare worker cron.",
+          `\nTriggering Cloudflare Email outbox dispatcher at ${appUrl}/api/internal/email-outbox...`,
         );
+        try {
+          const drainRes = await fetch(`${appUrl}/api/internal/email-outbox`, {
+            method: "POST",
+            headers: {
+              authorization: `Bearer ${dispatchSecret}`,
+            },
+          });
+
+          if (drainRes.ok) {
+            const drainData = await drainRes.json();
+            console.log("[OK] Outbox dispatcher completed:", drainData);
+          } else {
+            console.warn(`[WARN] Outbox dispatcher returned HTTP ${drainRes.status}`);
+          }
+        } catch (err) {
+          console.warn(`[WARN] Outbox dispatcher ping failed: ${err.message}`);
+          console.log(
+            "Notices remain queued in outbox and will be drained by Cloudflare worker cron.",
+          );
+        }
       }
 
       console.log("\n========================================");

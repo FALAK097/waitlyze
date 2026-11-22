@@ -214,10 +214,29 @@ export async function POST(request, { params }) {
       { status: 503 },
     );
   }
+  const validated = validateChatWebhookUrl(provider, url);
+  if (validated.error) {
+    const marked = await prisma.waitlistNotificationChannel.updateMany({
+      where: {
+        id: record.id,
+        status: record.status,
+        secretCiphertext: record.secretCiphertext,
+        secretIv: record.secretIv,
+        secretTag: record.secretTag,
+      },
+      data: { status: "NEEDS_ATTENTION", lastErrorCode: "INVALID_WEBHOOK" },
+    });
+    if (!marked.count)
+      return NextResponse.json(
+        { error: "The channel changed while it was being tested. Save and test it again." },
+        { status: 409 },
+      );
+    return NextResponse.json({ error: validated.error }, { status: 400 });
+  }
   const now = new Date();
   try {
     const post = provider === "SLACK" ? postSlackMessage : postDiscordMessage;
-    await post(url, "Waitlyze test: notifications for this waitlist will arrive here.");
+    await post(validated.url, "Waitlyze test: notifications for this waitlist will arrive here.");
     const updated = await prisma.waitlistNotificationChannel.updateMany({
       where: {
         id: record.id,

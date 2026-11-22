@@ -5,28 +5,95 @@ const hex = z.string().regex(/^#[0-9a-f]{6}$/i, "Choose a six-digit hex color.")
 // Public pages render these URLs in <img> tags. Allow only TLS, site-relative,
 // or inline data URLs so a stored value can never downgrade the page to http
 // or smuggle an active-content scheme.
-const imageUrl = z
-  .string()
-  .max(500)
-  .trim()
-  .refine((value) => value === "" || /^(https:\/\/|data:image\/|\/)/i.test(value), {
-    message: "Use an https://, site-relative, or data:image URL.",
-  });
+function hasControlChar(value, includeSpace = false) {
+  const maxCode = includeSpace ? 0x20 : 0x1f;
+  for (let i = 0; i < value.length; i += 1) {
+    if (value.charCodeAt(i) <= maxCode) return true;
+  }
+  return false;
+}
+
+function isSafeImageUrlValue(value) {
+  return (
+    value === "" ||
+    (!value.includes("\\") &&
+      !hasControlChar(value, true) &&
+      /^(?:https:\/\/|\/(?!\/)|data:image\/(?:png|jpeg|jpg|webp|gif|avif);base64,)/i.test(value))
+  );
+}
+
+function isSafeHrefValue(value) {
+  const trimmed = value.trim();
+  if (!trimmed) return true;
+  return (
+    !trimmed.includes("\\") &&
+    !hasControlChar(trimmed, false) &&
+    /^(?:#|\/(?!\/)|https?:\/\/|mailto:|tel:)/i.test(trimmed)
+  );
+}
+
+/**
+ * Normalizes obsolete image/href URLs in already-persisted snapshots before
+ * schema parsing on read paths, so legacy published pages stay available
+ * while unsafe values are stripped rather than failing the whole snapshot.
+ */
+export function sanitizeLegacySnapshotForRead(snapshot) {
+  if (!snapshot || typeof snapshot !== "object") return snapshot;
+  const clone = structuredClone(snapshot);
+  if (clone.brand && typeof clone.brand === "object") {
+    for (const field of ["logo", "favicon"]) {
+      if (
+        typeof clone.brand[field] === "string" &&
+        !isSafeImageUrlValue(clone.brand[field].trim())
+      ) {
+        clone.brand[field] = "";
+      }
+    }
+  }
+  if (Array.isArray(clone.sections)) {
+    for (const section of clone.sections) {
+      if (!section || typeof section !== "object") continue;
+      if (typeof section.imageUrl === "string" && !isSafeImageUrlValue(section.imageUrl.trim())) {
+        section.imageUrl = "";
+      }
+      if (Array.isArray(section.links)) {
+        for (const link of section.links) {
+          if (link && typeof link.href === "string" && !isSafeHrefValue(link.href)) {
+            link.href = "#";
+          }
+        }
+      }
+      if (Array.isArray(section.items)) {
+        for (const item of section.items) {
+          if (
+            item &&
+            typeof item === "object" &&
+            typeof item.imageUrl === "string" &&
+            !isSafeImageUrlValue(item.imageUrl.trim())
+          ) {
+            item.imageUrl = "";
+          }
+        }
+      }
+    }
+  }
+  return clone;
+}
+
+const imageUrl = z.string().max(500).trim().refine(isSafeImageUrlValue, {
+  message: "Use an https://, site-relative, or raster data:image URL.",
+});
 const blockId = z
   .string()
   .min(3)
   .max(80)
   .regex(/^[a-z0-9-]+$/i);
-// Builder links render as public <a href> values. Reject active-content schemes
-// (javascript:, data:, vbscript:) at the trust boundary; rendering also
-// sanitizes stored values that predate this check.
+// Builder links render as public <a href> values. Strictly allowlist safe
+// schemes and reject control characters / backslashes at the trust boundary.
 const href = z
   .string()
   .max(240)
-  .refine(
-    (value) => !/^\s*(javascript|data|vbscript|file|blob):/i.test(value),
-    "Links must start with #, /, or http(s).",
-  );
+  .refine(isSafeHrefValue, "Links must start with #, /, mailto:, tel:, or http(s).");
 const base = { id: blockId, visible: z.boolean(), variant: z.string().min(1).max(40) };
 const item = z.strictObject({ title: text(80), body: text(280) });
 
