@@ -322,7 +322,11 @@ export async function createProCheckout(interval, workspaceId) {
         interval,
         checkoutIntentId: reservedIntentId,
       },
-      feature_flags: { allow_tax_id: true, allow_currency_selection: true },
+      feature_flags: {
+        allow_tax_id: true,
+        allow_currency_selection: true,
+        allow_discount_code: true,
+      },
       return_url: new URL(
         `/api/billing/return?workspaceId=${encodeURIComponent(workspace.id)}`,
         env.BETTER_AUTH_URL,

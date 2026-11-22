@@ -2,6 +2,7 @@ import "server-only";
 import { unstable_cache } from "next/cache";
 
 import { createDodoClient } from "@/lib/billing/dodo.mjs";
+import { WAITLYZE_BFCM_PROMO } from "@/lib/billing/pricing.mjs";
 import { env } from "@/lib/env.mjs";
 
 const countryNames = new Intl.DisplayNames(["en"], { type: "region" });
@@ -75,6 +76,14 @@ export async function getRegionalPricing(countryCode) {
     const annualFormatted = formatRoundedCurrency(annual.amount, currency);
     const annualMonthlyEquivalentFormatted = formatRoundedCurrency(annual.amount / 12, currency);
     if (!monthlyFormatted || !annualFormatted || !annualMonthlyEquivalentFormatted) return null;
+    const promoAnnualAmount = Math.round(
+      annual.amount * (1 - WAITLYZE_BFCM_PROMO.percentOff / 100),
+    );
+    const promoAnnualFormatted = formatRoundedCurrency(promoAnnualAmount, currency);
+    const promoAnnualMonthlyEquivalentFormatted = formatRoundedCurrency(
+      promoAnnualAmount / 12,
+      currency,
+    );
     const resolvedCountry = preview.country;
     return {
       country: countryNames.of(resolvedCountry) || resolvedCountry,
@@ -86,6 +95,17 @@ export async function getRegionalPricing(countryCode) {
         amount: annual.amount,
         formatted: annualFormatted,
         monthlyEquivalentFormatted: annualMonthlyEquivalentFormatted,
+        ...(promoAnnualFormatted && promoAnnualMonthlyEquivalentFormatted
+          ? {
+              promo: {
+                code: WAITLYZE_BFCM_PROMO.code,
+                percentOff: WAITLYZE_BFCM_PROMO.percentOff,
+                amount: promoAnnualAmount,
+                formatted: promoAnnualFormatted,
+                monthlyEquivalentFormatted: promoAnnualMonthlyEquivalentFormatted,
+              },
+            }
+          : {}),
       },
     };
   } catch {
