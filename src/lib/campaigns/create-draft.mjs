@@ -49,6 +49,7 @@ export const draftInputSchema = z.strictObject({
   showReferrals: z.boolean().default(true),
   sendEmailsToSubscribers: z.boolean().default(true),
   creationKey: z.uuid(),
+  id: z.string().min(8).max(64).optional(),
 });
 
 export class DraftCreationError extends Error {
@@ -126,6 +127,7 @@ export async function createDraft(db, actorId, workspaceId, rawInput, options = 
   try {
     return await db.waitList.create({
       data: {
+        ...(input.id ? { id: input.id } : {}),
         name: input.name,
         description: input.description,
         publicSlug: input.publicSlug,

@@ -10,7 +10,7 @@ import { absoluteUrl, breadcrumbNode } from "@/lib/seo-helpers";
 import { listTools, TOOL_CATEGORIES } from "@/lib/tools/registry.mjs";
 
 export const metadata = {
-  title: "Waitlyze Launch Lab — Free Pre-Launch Waitlist Tools",
+  title: "Waitlyze Launch Lab: Free Pre-Launch Waitlist Tools",
   description:
     "Fourteen free, no-login pre-launch tools for founders: grade your waitlist landing page, model viral K-factor growth, write launch copy, design referral tiers, and audit list health.",
   alternates: {
@@ -22,14 +22,14 @@ export const metadata = {
   openGraph: {
     type: "website",
     url: "/tools",
-    title: "Waitlyze Launch Lab — Free Pre-Launch Waitlist Tools",
+    title: "Waitlyze Launch Lab: Free Pre-Launch Waitlist Tools",
     description:
-      "Plan it, calculate it, write it, and audit it for free—then carry the finished result straight into a working Waitlyze waitlist.",
+      "Plan it, calculate it, write it, and audit it for free. Then carry the finished result into a working Waitlyze waitlist.",
     images: [{ url: "/og/tools", width: 1200, height: 630, alt: "Waitlyze Launch Lab" }],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Waitlyze Launch Lab — Free Pre-Launch Tools",
+    title: "Waitlyze Launch Lab: Free Pre-Launch Tools",
     description:
       "14 free no-login waitlist calculators, graders, copy builders, and DNS/health diagnostics.",
     images: ["/og/tools"],
@@ -47,7 +47,7 @@ export default function LaunchLabHubPage() {
         data={[
           {
             "@type": "CollectionPage",
-            name: "Waitlyze Launch Lab — Free Pre-Launch Waitlist Tools",
+            name: "Waitlyze Launch Lab: Free Pre-Launch Waitlist Tools",
             url: absoluteUrl("/tools"),
             description:
               "Fourteen free, no-login waitlist tools that hand off directly into a configured Waitlyze campaign.",
@@ -74,66 +74,71 @@ export default function LaunchLabHubPage() {
           <div className="max-w-3xl">
             <p className="inline-flex items-center gap-2 font-product-mono text-caption font-medium text-product-success-text">
               <span className="inline-block size-2 rounded-full bg-product-accent-solid ring-1 ring-product-text-primary/20" />
-              Waitlyze Launch Lab · 14 free tools
+              Waitlyze Launch Lab
             </p>
             <h1
               id="tools-hub-title"
               className="mt-4 font-product-display text-4xl leading-[1.06] font-semibold tracking-tight text-balance text-product-text-primary sm:text-5xl lg:text-[3.5rem]"
             >
-              14 free waitlist tools. No account. No friction.
+              Free tools for every step of a waitlist launch.
             </h1>
             <p className="mt-5 max-w-2xl text-base leading-relaxed text-pretty text-product-text-secondary sm:text-lg">
-              The calculators, page audits, and copy builders behind high-converting launches—free
-              for anyone. Most run right in your browser, and every finished plan carries straight
-              into a prefilled Waitlyze draft when you are ready.
+              Fourteen calculators, page audits, and copy builders cover the whole pre-launch job.
+              Run any of them without an account, export everything, and carry your results into a
+              prefilled Waitlyze draft when you are ready to publish.
             </p>
           </div>
 
           {/* Flagship Spotlight Strip */}
-          <div className="mt-9 grid gap-4 md:grid-cols-2">
-            <Link
-              href="/tools/waitlist-landing-page-grader"
-              className="group flex flex-col justify-between rounded-xl border border-product-text-primary/15 bg-product-bg-inset/60 p-6 transition-colors duration-150 hover:border-product-text-primary/40 motion-safe:active:scale-[0.99]"
-            >
-              <div>
-                <span className="inline-flex items-center rounded-full bg-product-accent-solid px-2.5 py-0.5 font-product-mono text-micro font-semibold text-product-accent-label">
-                  Flagship diagnostic
+          <div className="mt-10">
+            <h2 className="font-product-mono text-micro font-semibold tracking-[0.14em] text-product-text-muted uppercase">
+              Start here
+            </h2>
+            <div className="mt-3 grid gap-4 md:grid-cols-2">
+              <Link
+                href="/tools/waitlist-landing-page-grader"
+                className="group flex flex-col justify-between rounded-xl border border-product-border-subtle bg-product-bg-surface p-6 transition-colors duration-150 hover:border-product-text-secondary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-product-focus motion-safe:active:scale-[0.99]"
+              >
+                <div>
+                  <p className="font-product-mono text-micro font-semibold text-product-success-text">
+                    Flagship diagnostic
+                  </p>
+                  <h3 className="mt-2.5 font-product-display text-2xl font-semibold tracking-tight text-product-text-primary group-hover:underline">
+                    Waitlist Landing Page Grader
+                  </h3>
+                  <p className="mt-2 text-body leading-relaxed text-product-text-secondary">
+                    Paste any public waitlist URL or HTML draft to score conversion clarity, form
+                    friction, referral mechanics, and SEO/AEO readiness, with rewritten hero copy.
+                  </p>
+                </div>
+                <span className="mt-5 inline-flex items-center gap-1.5 text-body font-semibold text-product-text-primary">
+                  Audit a waitlist page
+                  <HugeiconsIcon icon={ArrowRight01Icon} size={16} aria-hidden="true" />
                 </span>
-                <h2 className="mt-3 font-product-display text-2xl font-semibold tracking-tight text-product-text-primary group-hover:underline">
-                  Waitlist Landing Page Grader
-                </h2>
-                <p className="mt-2 text-body leading-relaxed text-product-text-secondary">
-                  Paste any public waitlist URL or HTML draft to score conversion clarity, form
-                  friction, referral mechanics, and SEO/AEO readiness—with rewritten hero copy.
-                </p>
-              </div>
-              <span className="mt-5 inline-flex items-center gap-1.5 text-body font-semibold text-product-text-primary">
-                Audit a waitlist page
-                <HugeiconsIcon icon={ArrowRight01Icon} size={16} aria-hidden="true" />
-              </span>
-            </Link>
+              </Link>
 
-            <Link
-              href="/tools/viral-coefficient-calculator"
-              className="group flex flex-col justify-between rounded-xl border border-product-border-subtle bg-product-bg-surface p-6 transition-colors duration-150 hover:border-product-text-secondary motion-safe:active:scale-[0.99]"
-            >
-              <div>
-                <span className="inline-flex items-center rounded-full border border-product-border-subtle bg-product-bg-inset px-2.5 py-0.5 font-product-mono text-micro font-medium text-product-text-secondary">
-                  Interactive simulator
+              <Link
+                href="/tools/viral-coefficient-calculator"
+                className="group flex flex-col justify-between rounded-xl border border-product-border-subtle bg-product-bg-surface p-6 transition-colors duration-150 hover:border-product-text-secondary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-product-focus motion-safe:active:scale-[0.99]"
+              >
+                <div>
+                  <p className="font-product-mono text-micro font-semibold text-product-success-text">
+                    Interactive simulator
+                  </p>
+                  <h3 className="mt-2.5 font-product-display text-2xl font-semibold tracking-tight text-product-text-primary group-hover:underline">
+                    Viral Waitlist Growth Calculator
+                  </h3>
+                  <p className="mt-2 text-body leading-relaxed text-product-text-secondary">
+                    Model weekly direct visitors, email verification drop-off, K-factor compounding,
+                    and launch-day active audience, with ungated CSV and PNG export.
+                  </p>
+                </div>
+                <span className="mt-5 inline-flex items-center gap-1.5 text-body font-semibold text-product-text-primary">
+                  Run the K-factor simulator
+                  <HugeiconsIcon icon={ArrowRight01Icon} size={16} aria-hidden="true" />
                 </span>
-                <h2 className="mt-3 font-product-display text-2xl font-semibold tracking-tight text-product-text-primary group-hover:underline">
-                  Viral Waitlist Growth Calculator
-                </h2>
-                <p className="mt-2 text-body leading-relaxed text-product-text-secondary">
-                  Model weekly direct visitors, email verification drop-off, K-factor compounding,
-                  and launch-day active audience—with ungated CSV and PNG export.
-                </p>
-              </div>
-              <span className="mt-5 inline-flex items-center gap-1.5 text-body font-semibold text-product-text-primary">
-                Run the K-factor simulator
-                <HugeiconsIcon icon={ArrowRight01Icon} size={16} aria-hidden="true" />
-              </span>
-            </Link>
+              </Link>
+            </div>
           </div>
         </section>
 
@@ -163,11 +168,11 @@ export default function LaunchLabHubPage() {
                 id="handoff-overview-title"
                 className="font-product-display text-2xl font-semibold tracking-tight text-product-text-primary"
               >
-                Zero-rebuild blueprint handoff
+                Blueprint handoff, no rebuild
               </h2>
               <p className="mt-3 text-body leading-relaxed text-product-text-secondary">
                 Every Launch Lab tool gives full results and exports without an account. If you
-                choose to build in Waitlyze, your output travels straight into your draft campaign.
+                choose to build in Waitlyze, your output becomes your draft campaign.
               </p>
             </div>
             <ol className="grid gap-4 sm:grid-cols-3">
@@ -179,7 +184,8 @@ export default function LaunchLabHubPage() {
                   Run any tool ungated
                 </h3>
                 <p className="mt-1 text-caption leading-relaxed text-product-text-secondary">
-                  See full calculations, audit checks, and copy exports immediately—no email wall.
+                  See full calculations, audit checks, and copy exports right away, with no email
+                  wall.
                 </p>
               </li>
               <li className="rounded-xl border border-product-border-subtle bg-product-bg-inset/50 p-4">
@@ -187,11 +193,10 @@ export default function LaunchLabHubPage() {
                   Step 2
                 </p>
                 <h3 className="mt-1.5 text-body font-semibold text-product-text-primary">
-                  Carry a versioned blueprint
+                  Save a versioned blueprint
                 </h3>
                 <p className="mt-1 text-caption leading-relaxed text-product-text-secondary">
-                  Clicking the CTA saves a short-lived blueprint token preserved cleanly across
-                  Google sign-in.
+                  Clicking the CTA saves a short-lived blueprint token that survives Google sign-in.
                 </p>
               </li>
               <li className="rounded-xl border border-product-border-subtle bg-product-bg-inset/50 p-4">

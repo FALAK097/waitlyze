@@ -43,13 +43,39 @@ export async function createWaitlistDraft({
       : null;
 
     const blueprint = blueprintId ? await getActiveToolBlueprint(prisma, blueprintId) : null;
-    if (blueprintId && !blueprint && !existingDraft) {
-      return {
-        ok: false,
-        code: "BLUEPRINT_UNAVAILABLE",
-        message:
-          "This Launch Lab blueprint has expired or was already used. Continue with a fresh draft or run the tool again.",
-      };
+    let blueprintClaimed = false;
+    let claimedWaitListId = null;
+    if (blueprintId && !blueprint) {
+      const existingBlueprint = await prisma.toolBlueprint.findUnique({
+        where: { id: blueprintId },
+        select: { claimedWaitlistId: true },
+      });
+      if (!existingDraft || existingBlueprint?.claimedWaitlistId !== existingDraft.id) {
+        return {
+          ok: false,
+          code: "BLUEPRINT_UNAVAILABLE",
+          message:
+            "This Launch Lab blueprint has expired or was already used. Continue with a fresh draft or run the tool again.",
+        };
+      }
+      blueprintClaimed = true;
+    }
+
+    if (blueprint) {
+      claimedWaitListId = existingDraft?.id || crypto.randomUUID();
+      const claimResult = await claimToolBlueprint(prisma, {
+        id: blueprint.id,
+        userId: user.id,
+        waitListId: claimedWaitListId,
+      });
+      blueprintClaimed = Boolean(claimResult?.claimed || claimResult?.alreadyClaimedForDraft);
+      if (!blueprintClaimed) {
+        return {
+          ok: false,
+          code: "BLUEPRINT_CLAIM_FAILED",
+          message: "We couldn't reserve this Launch Lab setup. Please try again.",
+        };
+      }
     }
 
     const effectiveTemplateId = isTemplateId(templateId)
@@ -64,38 +90,57 @@ export async function createWaitlistDraft({
           ? blueprint.payload.showReferrals
           : undefined;
 
-    const draft = await createDraft(
-      prisma,
-      user.id,
-      workspace.id,
-      {
-        name,
-        description: description?.trim() || "",
-        publicSlug,
-        templateId: effectiveTemplateId,
-        creationKey,
-        ...(typeof effectiveShowReferrals === "boolean"
-          ? { showReferrals: effectiveShowReferrals }
-          : {}),
-      },
-      { blueprint },
-    );
+    let draft;
+    try {
+      draft = await createDraft(
+        prisma,
+        user.id,
+        workspace.id,
+        {
+          name,
+          description: description?.trim() || "",
+          publicSlug,
+          templateId: effectiveTemplateId,
+          creationKey,
+          ...(claimedWaitListId && !existingDraft ? { id: claimedWaitListId } : {}),
+          ...(typeof effectiveShowReferrals === "boolean"
+            ? { showReferrals: effectiveShowReferrals }
+            : {}),
+        },
+        { blueprint },
+      );
+    } catch (error) {
+      if (blueprint && claimedWaitListId && !existingDraft) {
+        await prisma.toolBlueprint
+          .updateMany({
+            where: { id: blueprint.id, claimedWaitlistId: claimedWaitListId },
+            data: { claimedByUserId: null, claimedWaitlistId: null, claimedAt: null },
+          })
+          .catch(() => {});
+      }
+      throw error;
+    }
 
-    let blueprintClaimed = false;
-    if (blueprint) {
-      const claimResult = await claimToolBlueprint(prisma, {
-        id: blueprint.id,
-        userId: user.id,
-        waitListId: draft.id,
+    if (blueprint && claimedWaitListId && draft.id !== claimedWaitListId) {
+      const reassigned = await prisma.toolBlueprint.updateMany({
+        where: { id: blueprint.id, claimedWaitlistId: claimedWaitListId },
+        data: { claimedWaitlistId: draft.id },
       });
-      blueprintClaimed = Boolean(claimResult?.claimed || claimResult?.alreadyClaimedForDraft);
-      if (blueprintClaimed) {
-        try {
-          const cookieStore = await cookies();
-          cookieStore.set(BLUEPRINT_COOKIE_NAME, "", { path: "/", maxAge: 0 });
-        } catch {
-          // Best-effort cookie cleanup
-        }
+      if (reassigned.count === 0) {
+        return {
+          ok: false,
+          code: "BLUEPRINT_CLAIM_FAILED",
+          message: "We couldn't reserve this Launch Lab setup. Please try again.",
+        };
+      }
+    }
+
+    if (blueprintClaimed) {
+      try {
+        const cookieStore = await cookies();
+        cookieStore.set(BLUEPRINT_COOKIE_NAME, "", { path: "/", maxAge: 0 });
+      } catch {
+        // Best-effort cookie cleanup
       }
     }
 

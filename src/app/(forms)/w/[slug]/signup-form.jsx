@@ -468,6 +468,8 @@ function SignupFormInner({
   statusPage,
   brand,
   turnstileSiteKey = "",
+  embedTheme = "light",
+  compact = false,
 }) {
   const emailId = useId();
   const referralId = useId();
@@ -489,6 +491,21 @@ function SignupFormInner({
     turnstileSiteKey.trim() ||
     (typeof formConfig.turnstileSiteKey === "string" ? formConfig.turnstileSiteKey.trim() : "");
   const turnstileOn = formConfig.requireTurnstile === true && turnstileSiteKeyResolved !== "";
+  const embedStyle =
+    embedTheme === "dark"
+      ? {
+          "--wl-surface": "#101913",
+          "--wl-text": "#f1f5f2",
+          "--wl-input": "#18251d",
+          "--wl-input-border": "#496251",
+          "--wl-input-text": "#f1f5f2",
+          backgroundColor: "#101913",
+          borderRadius: "8px",
+          padding: "8px",
+        }
+      : compact
+        ? { padding: "4px" }
+        : undefined;
 
   async function submit(event) {
     event.preventDefault();
@@ -640,34 +657,44 @@ function SignupFormInner({
 
   if (result) {
     return (
-      <SignupResult
-        result={result}
-        statusPage={statusPage}
-        showReferrals={showReferrals}
-        brand={brand}
-        resultTitleId={resultTitleId}
-        referralId={referralId}
-        copied={copied}
-        onCopyReferralLink={copyReferralLink}
-        onTrackShare={trackShare}
-        waitListId={waitListId}
-      />
+      <div className="rounded-lg p-2" style={embedStyle}>
+        <SignupResult
+          result={result}
+          statusPage={statusPage}
+          showReferrals={showReferrals}
+          brand={brand}
+          resultTitleId={resultTitleId}
+          referralId={referralId}
+          copied={copied}
+          onCopyReferralLink={copyReferralLink}
+          onTrackShare={trackShare}
+          waitListId={waitListId}
+        />
+      </div>
     );
   }
 
   return (
-    <form className="w-full text-wl-text" onSubmit={submit}>
-      <label className="mb-2 block text-caption font-bold" htmlFor={emailId}>
+    <form
+      className={cn("w-full text-wl-text", compact && "flex items-end gap-2")}
+      style={embedStyle}
+      onSubmit={submit}
+    >
+      <label
+        className={cn("mb-2 block text-caption font-bold", compact && "sr-only")}
+        htmlFor={emailId}
+      >
         {formConfig.label}
       </label>
       <div
-        className={cn(
-          "flex gap-2 max-sm:flex-col",
-          formConfig.layout === "stacked" && "flex-col gap-3",
-        )}
+        className={
+          compact
+            ? "flex min-w-0 flex-1 flex-row gap-2"
+            : cn("flex gap-2 max-sm:flex-col", formConfig.layout === "stacked" && "flex-col gap-3")
+        }
       >
         <Input
-          className={control}
+          className={cn(control, compact && "h-11 min-h-11 px-3")}
           id={emailId}
           name="email"
           type="email"

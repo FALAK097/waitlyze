@@ -18,6 +18,10 @@ const MAX_CACHE_ENTRIES = 100;
 // Derived-score-only cache (never stores raw HTML)
 const scoreCache = new Map();
 
+async function isCloudflareRuntime() {
+  return Boolean(globalThis[Symbol.for("__cloudflare-context__")]?.env);
+}
+
 function pruneCache() {
   const now = Date.now();
   for (const [key, entry] of scoreCache.entries()) {
@@ -117,12 +121,24 @@ function fetchPinnedHttpsNode(targetUrl, addresses, headers) {
         servername: targetUrl.hostname,
         agent: new https.Agent({
           keepAlive: false,
-          lookup: (_host, _options, callback) => callback(null, chosen.address, chosen.family),
+          lookup: (_host, options, callback) => {
+            if (options?.all) {
+              callback(null, [{ address: chosen.address, family: chosen.family }]);
+              return;
+            }
+            callback(null, chosen.address, chosen.family);
+          },
         }),
         headers,
         timeout: FETCH_TIMEOUT_MS,
       },
       (res) => {
+        const complete = (callback, value) => {
+          if (settled) return;
+          settled = true;
+          clearTimeout(deadline);
+          callback(value);
+        };
         const status = res.statusCode || 0;
         const location = typeof res.headers.location === "string" ? res.headers.location : "";
         const contentType = String(res.headers["content-type"] || "").toLowerCase();
@@ -130,22 +146,22 @@ function fetchPinnedHttpsNode(targetUrl, addresses, headers) {
 
         if (status >= 300 && status < 400) {
           res.resume();
-          resolve({ status, location, contentType, text: "", bytes: 0 });
+          complete(resolve, { status, location, contentType, text: "", bytes: 0 });
           return;
         }
         if (status < 200 || status >= 300) {
           res.resume();
-          reject(new Error(`Target page returned HTTP ${status}.`));
+          complete(reject, new Error(`Target page returned HTTP ${status}.`));
           return;
         }
         if (!contentType.includes("text/html") && !contentType.includes("application/xhtml+xml")) {
           res.resume();
-          reject(new Error("URL did not return an HTML page (expected text/html)."));
+          complete(reject, new Error("URL did not return an HTML page (expected text/html)."));
           return;
         }
         if (contentLength > MAX_HTML_BYTES) {
           res.resume();
-          reject(new Error("Page HTML exceeds the 1.5 MB inspection limit."));
+          complete(reject, new Error("Page HTML exceeds the 1.5 MB inspection limit."));
           return;
         }
 
@@ -154,24 +170,39 @@ function fetchPinnedHttpsNode(targetUrl, addresses, headers) {
         res.on("data", (chunk) => {
           totalBytes += chunk.length;
           if (totalBytes > MAX_HTML_BYTES) {
-            req.destroy(new Error("Page HTML exceeds the 1.5 MB inspection limit."));
+            complete(reject, new Error("Page HTML exceeds the 1.5 MB inspection limit."));
+            req.destroy();
             return;
           }
           chunks.push(chunk);
         });
         res.on("end", () => {
           const text = Buffer.concat(chunks, totalBytes).toString("utf8");
-          resolve({ status, location: "", contentType, text, bytes: totalBytes });
+          complete(resolve, { status, location: "", contentType, text, bytes: totalBytes });
         });
-        res.on("error", reject);
+        res.on("error", (error) => complete(reject, error));
       },
     );
+    let settled = false;
+    const completeRequest = (callback, value) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(deadline);
+      callback(value);
+    };
+    const deadline = setTimeout(() => {
+      const err = new Error("Timed out waiting for the page to respond (8-second limit).");
+      err.name = "TimeoutError";
+      completeRequest(reject, err);
+      req.destroy(err);
+    }, FETCH_TIMEOUT_MS);
     req.on("timeout", () => {
       const err = new Error("Timed out waiting for the page to respond (8-second limit).");
       err.name = "TimeoutError";
+      completeRequest(reject, err);
       req.destroy(err);
     });
-    req.on("error", reject);
+    req.on("error", (error) => completeRequest(reject, error));
     req.end();
   });
 }
@@ -334,6 +365,16 @@ export async function POST(request) {
     }
 
     const validatedUrl = validatePublicHttpsUrl(body?.url);
+    if (await isCloudflareRuntime()) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error:
+            "Live URL checks are unavailable on this deployment. Paste the page HTML or copy instead.",
+        },
+        { status: 400 },
+      );
+    }
     const urlHash = createHash("sha256").update(validatedUrl.toString()).digest("hex");
     const cacheKey = `${urlHash}|${launchType}|${goal}`;
     pruneCache();

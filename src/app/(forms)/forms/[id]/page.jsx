@@ -76,8 +76,10 @@ export async function generateMetadata(props) {
 }
 
 export default async function WaitListsPreviewPage(props) {
-  const params = await props.params;
+  const [params, searchParams] = await Promise.all([props.params, props.searchParams]);
   const { id } = params;
+  const embedTheme = searchParams?.theme === "dark" ? "dark" : "light";
+  const compact = searchParams?.compact === "1";
   const structured = await prisma.waitList.findUnique({
     where: { id },
     select: {
@@ -140,6 +142,8 @@ export default async function WaitListsPreviewPage(props) {
                 showReferrals={structured.showReferrals}
                 formConfig={snapshot.form}
                 statusPage={snapshot.statusPage}
+                embedTheme={embedTheme}
+                compact={compact}
                 turnstileSiteKey={
                   snapshot.form.requireTurnstile ? env.TURNSTILE_SITE_KEY?.trim() || "" : ""
                 }

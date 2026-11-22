@@ -104,24 +104,25 @@ export async function DELETE(request) {
     const requestedId = url.searchParams.get("id");
     const cookieVal = request.cookies.get(BLUEPRINT_COOKIE_NAME)?.value;
     const verified = verifyBlueprintCookieValue(cookieVal);
-    const targetId = verified?.id || requestedId;
 
-    if (targetId && verified?.id === targetId) {
+    if (requestedId && verified?.id === requestedId) {
       await prisma.toolBlueprint
         .deleteMany({
-          where: { id: targetId, claimedWaitlistId: null },
+          where: { id: requestedId, claimedWaitlistId: null },
         })
         .catch(() => {});
+      const response = NextResponse.json({ ok: true });
+      response.cookies.set(BLUEPRINT_COOKIE_NAME, "", {
+        httpOnly: true,
+        sameSite: "lax",
+        secure: process.env.NODE_ENV === "production",
+        path: "/",
+        maxAge: 0,
+      });
+      return response;
     }
 
-    const response = NextResponse.json({ ok: true });
-    response.cookies.set(BLUEPRINT_COOKIE_NAME, "", {
-      httpOnly: true,
-      sameSite: "lax",
-      secure: process.env.NODE_ENV === "production",
-      path: "/",
-      maxAge: 0,
-    });
+    const response = NextResponse.json({ ok: false }, { status: 409 });
     return response;
   } catch {
     return NextResponse.json({ ok: false }, { status: 500 });

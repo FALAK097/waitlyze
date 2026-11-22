@@ -89,9 +89,9 @@ export function CreateWaitlistDialog({
     };
   }, [currentSlug]);
 
-  async function clearPendingBlueprintCookie() {
+  async function clearPendingBlueprintCookie(id) {
     try {
-      await fetch("/api/tools/blueprint", { method: "DELETE" });
+      await fetch(`/api/tools/blueprint?id=${encodeURIComponent(id)}`, { method: "DELETE" });
     } catch {
       // Best-effort cookie dismissal
     }
@@ -102,7 +102,7 @@ export function CreateWaitlistDialog({
     setBlueprintUnavailable(false);
     setError("");
     setCreationKey(crypto.randomUUID());
-    await clearPendingBlueprintCookie();
+    await clearPendingBlueprintCookie(activeBlueprint.id);
   }
 
   async function submit(event) {
@@ -144,9 +144,6 @@ export function CreateWaitlistDialog({
     if (busy) return;
     setOpen(next);
     if (!next) {
-      if (activeBlueprint) {
-        void clearPendingBlueprintCookie();
-      }
       setCreationKey(crypto.randomUUID());
       setDescription("");
       setError("");

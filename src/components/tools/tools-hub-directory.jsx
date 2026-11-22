@@ -43,17 +43,16 @@ export function ToolsHubDirectory({ categories, tools }) {
       {/* Category Filters + Instant Search */}
       <div className="flex flex-col gap-3 border-b border-product-border-subtle pb-6 lg:flex-row lg:items-center lg:justify-between">
         <div
-          role="tablist"
+          role="group"
           aria-label="Filter Launch Lab tools by category"
           className="flex flex-wrap items-center gap-2"
         >
           <button
             type="button"
-            role="tab"
-            aria-selected={selectedCategory === "all"}
+            aria-pressed={selectedCategory === "all"}
             onClick={() => setSelectedCategory("all")}
             className={cn(
-              "inline-flex min-h-10 items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-caption font-medium transition-colors duration-150 motion-safe:active:scale-[0.98]",
+              "inline-flex min-h-11 items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-caption font-medium transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-product-focus motion-safe:active:scale-[0.98]",
               selectedCategory === "all"
                 ? "border-product-text-primary bg-product-text-primary text-product-bg-page"
                 : "border-product-border-subtle bg-product-bg-surface text-product-text-secondary hover:border-product-text-secondary hover:text-product-text-primary",
@@ -69,11 +68,10 @@ export function ToolsHubDirectory({ categories, tools }) {
               <button
                 key={category.id}
                 type="button"
-                role="tab"
-                aria-selected={active}
+                aria-pressed={active}
                 onClick={() => setSelectedCategory(category.id)}
                 className={cn(
-                  "inline-flex min-h-10 items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-caption font-medium transition-colors duration-150 motion-safe:active:scale-[0.98]",
+                  "inline-flex min-h-11 items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-caption font-medium transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-product-focus motion-safe:active:scale-[0.98]",
                   active
                     ? "border-product-text-primary bg-product-text-primary text-product-bg-page"
                     : "border-product-border-subtle bg-product-bg-surface text-product-text-secondary hover:border-product-text-secondary hover:text-product-text-primary",
@@ -99,12 +97,15 @@ export function ToolsHubDirectory({ categories, tools }) {
             onChange={(event) => setQuery(event.target.value)}
             placeholder="Filter tools (e.g. K-factor, DNS, copy)…"
             aria-label="Filter Launch Lab tools"
-            className="min-h-10 w-full rounded-full border border-product-border-control bg-product-bg-surface py-2 pr-4 pl-9 text-caption text-product-text-primary placeholder:text-product-text-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-product-focus"
+            className="min-h-11 w-full rounded-full border border-product-border-control bg-product-bg-surface py-2 pr-4 pl-9 text-caption text-product-text-primary placeholder:text-product-text-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-product-focus"
           />
         </div>
       </div>
 
       {/* Categorized Tool Sections */}
+      <p className="sr-only" aria-live="polite" aria-atomic="true">
+        {totalMatches} {totalMatches === 1 ? "tool" : "tools"} found
+      </p>
       {totalMatches === 0 ? (
         <div className="rounded-xl border border-product-border-subtle bg-product-bg-inset/50 px-6 py-10 text-center">
           <p className="text-body font-semibold text-product-text-primary">
