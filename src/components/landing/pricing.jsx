@@ -3,11 +3,13 @@
 import { Tick01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import dynamic from "next/dynamic";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import SignupButton from "@/components/landing/signup-button";
 import { Button } from "@/components/ui/button";
 import { WAITLYZE_PRICING } from "@/lib/billing/pricing.mjs";
+import { trackClientEvent } from "@/lib/posthog/client";
+import { POSTHOG_EVENTS } from "@/lib/posthog/events.mjs";
 
 // Better Auth's React hooks are browser-only in this app, so the checkout CTA
 // loads as a client-only island while the plan copy stays server-rendered.
@@ -49,6 +51,8 @@ export default function Pricing({
   workspaceId = null,
   billingNeedsAttention = false,
 }) {
+  const sectionRef = useRef(null);
+  const trackedPricingViewRef = useRef(false);
   const [interval, setInterval] = useState("annual");
   const [clientRegionalPricing, setClientRegionalPricing] = useState(null);
   const isPro = currentPlan === "PRO";
@@ -65,6 +69,25 @@ export default function Pricing({
       .catch(() => {});
     return () => controller.abort();
   }, [regionalPricing]);
+
+  useEffect(() => {
+    if (isModal || !sectionRef.current) return undefined;
+    const section = sectionRef.current;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry?.isIntersecting || trackedPricingViewRef.current) return;
+        trackedPricingViewRef.current = true;
+        trackClientEvent(POSTHOG_EVENTS.MARKETING_PRICING_VIEWED, {
+          page_path: window.location.pathname,
+          default_billing_interval: interval,
+        });
+        observer.disconnect();
+      },
+      { threshold: 0.35 },
+    );
+    observer.observe(section);
+    return () => observer.disconnect();
+  }, [interval, isModal]);
 
   const title = feature ? `Unlock ${feature}` : "Start free. Upgrade when you need more.";
 
@@ -104,6 +127,7 @@ export default function Pricing({
 
   return (
     <section
+      ref={sectionRef}
       className={sectionClass}
       id={isModal ? undefined : "pricing"}
       aria-labelledby={isModal ? undefined : "pricing-title"}

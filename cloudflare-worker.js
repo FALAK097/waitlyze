@@ -165,14 +165,25 @@ export default {
     if (hostname === `www.${appRoot}`) {
       const target = new URL(url.toString());
       target.hostname = appRoot;
-      return Response.redirect(target.toString(), 301);
+      target.protocol = "https:";
+      return Response.redirect(target.toString(), 308);
     }
 
     // Redirect any *.workers.dev subdomain access to the canonical apex domain.
     if (hostname.endsWith(".workers.dev")) {
       const target = new URL(url.toString());
       target.hostname = appRoot;
-      return Response.redirect(target.toString(), 301);
+      target.protocol = "https:";
+      return Response.redirect(target.toString(), 308);
+    }
+
+    // Google has discovered and indexed both HTTP and HTTPS versions of the
+    // same public pages. Canonical tags are only hints, so make the preferred
+    // transport unambiguous before any app, asset, or custom-domain handling.
+    if (url.protocol !== "https:" && !isPlatformHost(hostname)) {
+      const target = new URL(url.toString());
+      target.protocol = "https:";
+      return Response.redirect(target.toString(), 308);
     }
 
     // The wildcard SaaS route also receives the custom R2 hostname. Serve it

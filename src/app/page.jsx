@@ -50,7 +50,7 @@ const github = "https://github.com/FALAK097/waitlyze";
 const faqs = [
   [
     "Is Waitlyze free?",
-    `Yes. Free includes one workspace with one waitlist and 100 lifetime signups. Deleting a waitlist removes its data but does not reset signup usage. Pro is ${WAITLYZE_PRICING.pro.monthly.formatted} per month or ${WAITLYZE_PRICING.pro.annual.formatted} per year, with unlimited workspaces, and unlimited waitlists, signups, and members on each workspace with a Pro subscription.`,
+    `Yes. Each Free workspace includes one waitlist and 100 lifetime signups. Deleting a waitlist removes its data but does not reset that workspace's signup usage. Pro is ${WAITLYZE_PRICING.pro.monthly.formatted} per month or ${WAITLYZE_PRICING.pro.annual.formatted} per year, with unlimited workspaces, and unlimited waitlists, signups, and members on each workspace with a Pro subscription.`,
   ],
   [
     "Will prices change by country?",
@@ -290,7 +290,7 @@ export default async function LandingPage() {
     <PublicShell>
       <SiteStructuredData faqs={faqs} />
       <main id="main-content" className="wl-landing wl-root">
-        <section className="wl-hero" aria-labelledby="hero-title">
+        <section id="hero" className="wl-hero" aria-labelledby="hero-title">
           <div className="wl-hero-copy">
             <a className="wl-source-pill" href={github} target="_blank" rel="noopener noreferrer">
               <span>
@@ -299,10 +299,10 @@ export default async function LandingPage() {
               <span>See how Waitlyze is built</span>
               <HugeiconsIcon icon={ArrowUpRight01Icon} size={13} aria-hidden="true" />
             </a>
-            <h1 id="hero-title">Your launch starts before launch day.</h1>
+            <h1 id="hero-title">Waitlist software for everything before launch day.</h1>
             <p className="wl-hero-lede">
-              Build a page, grow your waitlist, and see what brings people in. Everything you need
-              to turn early interest into an audience.
+              Build a branded page, collect verified signups, grow through referrals, send launch
+              emails, and see which channels convert—without stitching together separate tools.
             </p>
             <div className="wl-hero-actions">
               <SignupButton className="wl-hero-primary">Start for free</SignupButton>

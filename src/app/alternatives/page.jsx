@@ -25,7 +25,14 @@ export const metadata = {
   title: { absolute: "Best Waitlist Software Alternatives (2026) | Waitlyze" },
   description:
     "Compare Waitlyze with GetWaitlist, LaunchList, Prefinery, KickoffLabs, Viral Loops, Waitlister, and adjacent launch tools.",
-  alternates: { canonical: "/alternatives" },
+  alternates: {
+    canonical: "/alternatives",
+    types: {
+      "text/markdown": [
+        { url: "/alternatives.md", title: "Waitlist software alternatives in Markdown" },
+      ],
+    },
+  },
   openGraph: {
     type: "website",
     url: "/alternatives",
