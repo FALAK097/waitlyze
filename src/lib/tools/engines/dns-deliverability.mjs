@@ -175,16 +175,21 @@ export function evaluateDnsRecords({
     };
   }
 
+  const usableMxRecords = mxRecords.filter((record) => {
+    const value = String(record).trim();
+    const destination = value.replace(/^\d+\s+/, "").replace(/\.$/, "");
+    return Boolean(destination) && destination !== "." && !/^0\s+\.$/.test(value);
+  });
   const mxCheck =
-    mxRecords.length > 0
+    usableMxRecords.length > 0
       ? {
           id: "mx",
           name: "MX (Mail Exchange Routing)",
           status: "pass",
           points: 20,
           maxPoints: 20,
-          rawRecord: mxRecords.slice(0, 4).join("\n"),
-          summary: `${mxRecords.length} valid MX record(s) found for replies and bounce handling.`,
+          rawRecord: usableMxRecords.slice(0, 4).join("\n"),
+          summary: `${usableMxRecords.length} usable MX record(s) found for replies and bounce handling.`,
           remediation: "Mail routing is active.",
           copyableFix: "",
         }
@@ -218,7 +223,11 @@ export function evaluateDnsRecords({
       copyableFix: "",
     };
   } else {
-    const validDkim = dkimRecords.find((r) => /v=dkim1|p=/i.test(r));
+    const validDkim = dkimRecords.find((record) => {
+      const value = String(record);
+      const publicKey = value.match(/(?:^|;)\s*p\s*=\s*([^;\s][^;]*)/i)?.[1]?.trim();
+      return /(?:^|;)\s*v\s*=\s*dkim1(?:;|$)/i.test(value) && Boolean(publicKey);
+    });
     dkimCheck = validDkim
       ? {
           id: "dkim",

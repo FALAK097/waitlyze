@@ -308,7 +308,7 @@ export function QueueSimulatorWidget({
             toolSlug="waitlist-queue-simulator"
             entrySurface={entrySurface}
             compact={compact}
-            label="Configure this queue model in Waitlyze"
+            label="Save this queue plan in Waitlyze"
             resultBand={sim.fairnessStatus}
             onApplyInProduct={onApplyInProduct}
             buildBlueprint={() => ({

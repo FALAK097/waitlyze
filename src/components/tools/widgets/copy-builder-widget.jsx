@@ -37,6 +37,7 @@ export function CopyBuilderWidget({
     generated.heroDirections.find((h) => h.id === selectedAngle) || generated.heroDirections[0];
 
   const activeHero = {
+    ...baseHero,
     eyebrow: customOverrides.eyebrow ?? baseHero.eyebrow,
     heading: customOverrides.heading ?? baseHero.heading,
     subheadline: customOverrides.subheadline ?? baseHero.subheadline,

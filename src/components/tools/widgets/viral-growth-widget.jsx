@@ -177,6 +177,9 @@ export function ViralGrowthWidget({
       referredConversionPct: Number(params.get("rc") ?? prev.referredConversionPct),
       weeks: Number(params.get("wk") ?? prev.weeks),
       launchEmailOpenRatePct: Number(params.get("or") ?? prev.launchEmailOpenRatePct),
+      referralTier1: Number(params.get("t1") ?? prev.referralTier1),
+      referralTier2: Number(params.get("t2") ?? prev.referralTier2),
+      referralTier3: Number(params.get("t3") ?? prev.referralTier3),
     }));
   }, [compact]);
 
@@ -229,6 +232,10 @@ export function ViralGrowthWidget({
       `Formula: ${result.formula}`,
       `Effective K-Factor: ${result.effectiveK}`,
       `Launch-Day Email Open Rate: ${result.inputs.launchEmailOpenRatePct}% -> Projected Active Launch Audience: ${result.launchDayAudience.toLocaleString()}`,
+      ...result.referralTiers.map(
+        (tier) =>
+          `Tier ${tier.referrals} referrals: ${tier.estimatedUnlocks.toLocaleString()} projected unlocks`,
+      ),
     ]);
     trackToolEvent("TOOL_RESULT_EXPORTED", {
       tool_slug: "viral-coefficient-calculator",
@@ -264,6 +271,13 @@ export function ViralGrowthWidget({
           value: `+${result.highestLever?.extraSignups.toLocaleString() || 0}`,
           hint: result.highestLever?.label || "",
         },
+        {
+          label: "Referral tier unlocks",
+          value: result.referralTiers
+            .map((tier) => tier.estimatedUnlocks.toLocaleString())
+            .join(" / "),
+          hint: result.referralTiers.map((tier) => `${tier.referrals} referrals`).join(" · "),
+        },
       ],
       formula: result.formula,
     });
@@ -287,6 +301,9 @@ export function ViralGrowthWidget({
     url.searchParams.set("rc", String(result.inputs.referredConversionPct));
     url.searchParams.set("wk", String(result.inputs.weeks));
     url.searchParams.set("or", String(result.inputs.launchEmailOpenRatePct));
+    url.searchParams.set("t1", String(result.inputs.referralTier1));
+    url.searchParams.set("t2", String(result.inputs.referralTier2));
+    url.searchParams.set("t3", String(result.inputs.referralTier3));
     const ok = await copyToClipboard(url.toString());
     if (ok) {
       toast.success("Scenario link copied");
@@ -416,6 +433,22 @@ export function ViralGrowthWidget({
                 step={0.5}
                 prefix="$"
               />
+              <fieldset className="grid gap-3 rounded-lg border border-product-border-subtle p-3">
+                <legend className="px-1 text-caption font-semibold text-product-text-primary">
+                  Referral reward tiers
+                </legend>
+                {[1, 2, 3].map((tier) => (
+                  <ToolSliderField
+                    key={tier}
+                    label={`Tier ${tier} verified referrals`}
+                    value={inputs[`referralTier${tier}`]}
+                    onChange={(value) => updateInput(`referralTier${tier}`, value)}
+                    min={1}
+                    max={100}
+                    step={1}
+                  />
+                ))}
+              </fieldset>
             </>
           ) : null}
         </div>
@@ -456,6 +489,30 @@ export function ViralGrowthWidget({
           </div>
 
           <ViralGrowthChart cycles={result.cycles} />
+          <section
+            className="rounded-lg border border-product-border-subtle p-4"
+            aria-label="Referral reward tier projections"
+          >
+            <h3 className="text-caption font-semibold text-product-text-primary">
+              Expected tier unlocks
+            </h3>
+            <ul className="mt-3 grid gap-2 sm:grid-cols-3">
+              {result.referralTiers.map((tier, index) => (
+                <li
+                  key={`${tier.referrals}-${index}`}
+                  className="flex items-baseline justify-between gap-2 text-caption text-product-text-secondary"
+                >
+                  <span>{tier.referrals} verified referrals</span>
+                  <strong className="font-product-mono text-product-text-primary">
+                    {tier.estimatedUnlocks.toLocaleString()}
+                  </strong>
+                </li>
+              ))}
+            </ul>
+            <p className="mt-2 text-micro text-product-text-secondary">
+              Modeled from verified-list size and share rate; estimates are directional.
+            </p>
+          </section>
 
           {/* Sensitivity Analysis */}
           {!compact ? (
@@ -529,6 +586,10 @@ export function ViralGrowthWidget({
                 pointsSignup: 50,
                 pointsReferral: 30,
                 modeledKFactor: result.effectiveK,
+                rewardTiers: result.referralTiers.map((tier, index) => ({
+                  referrals: tier.referrals,
+                  reward: `Referral milestone ${index + 1}`,
+                })),
               },
               summaryBullets: [
                 `Modeled K-factor: ${result.effectiveK.toFixed(2)} (${result.totalVerified.toLocaleString()} projected verified signups over ${result.inputs.weeks} weeks)`,

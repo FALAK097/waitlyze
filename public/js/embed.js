@@ -53,6 +53,13 @@
       if (activeOverlayFrame?.contentWindow === event.source) activeOverlayCleanup?.();
       return;
     }
+    if (message.type === "focus-boundary" && activeOverlayFrame?.contentWindow === event.source) {
+      activeOverlayFrame.contentWindow.postMessage(
+        { source: MESSAGE_SOURCE, type: message.direction === "backward" ? "focus-last" : "focus-first" },
+        scriptOrigin,
+      );
+      return;
+    }
     if (message.type !== "resize") return;
     const height = Number(message.height);
     if (!Number.isFinite(height) || height <= 0) return;
@@ -105,7 +112,7 @@
     trigger.style.cssText = `display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:10px 20px;font:600 14px/1.2 system-ui,-apple-system,sans-serif;cursor:pointer;border:1px solid ${textColor};background:${accentColor};color:${textColor};border-radius:${radius};`;
 
     trigger.addEventListener("click", () => {
-      activeOverlayCleanup?.({ restoreFocus: false });
+      if (activeOverlayCleanup) activeOverlayCleanup({ restoreFocus: false });
 
       const backdrop = document.createElement("div");
       backdrop.setAttribute("data-waitlyze-overlay", mode);
@@ -133,53 +140,11 @@
       const frame = buildIframeForContainer(container, queryParams);
       const previousInert = new Map();
       let closed = false;
-      const focusFrame = () => {
-        const frameDocument = frame.contentDocument;
-        const fields = frameDocument?.querySelectorAll(
-          'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
-        );
-        (fields?.[0] || frame).focus();
-      };
-      const onFrameKeyDown = (event) => {
-        if (event.key === "Escape") {
-          event.preventDefault();
-          closeOverlay();
-          return;
-        }
-        if (event.key !== "Tab") return;
-        const fields = Array.from(
-          frame.contentDocument?.querySelectorAll(
-            'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
-          ) || [],
-        );
-        const first = fields[0];
-        const last = fields.at(-1);
-        if (
-          fields.length === 0 ||
-          (event.shiftKey && event.target === first) ||
-          (!event.shiftKey && event.target === last)
-        ) {
-          event.preventDefault();
-          closeBtn.focus();
-        }
-      };
-      const onFrameLoad = () => {
-        try {
-          frame.contentDocument?.addEventListener("keydown", onFrameKeyDown);
-        } catch {
-          // The form is same-origin today; leave the parent focus trap usable if that changes.
-        }
-      };
+      const focusFrame = () => frame.focus();
       const closeOverlay = ({ restoreFocus = true } = {}) => {
         if (closed) return;
         closed = true;
         document.removeEventListener("keydown", onKeyDown);
-        frame.removeEventListener("load", onFrameLoad);
-        try {
-          frame.contentDocument?.removeEventListener("keydown", onFrameKeyDown);
-        } catch {
-          // Best-effort cleanup for a frame that navigated away.
-        }
         for (const [element, wasInert] of previousInert) element.inert = wasInert;
         backdrop.remove();
         if (activeOverlayCleanup === cleanup) {
@@ -195,14 +160,11 @@
         }
         if (event.key === "Tab" && document.activeElement === closeBtn) {
           event.preventDefault();
-          if (event.shiftKey) {
-            const fields = frame.contentDocument?.querySelectorAll(
-              'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
-            );
-            (fields?.[fields.length - 1] || frame).focus();
-          } else {
-            focusFrame();
-          }
+          frame.contentWindow.postMessage(
+            { source: MESSAGE_SOURCE, type: event.shiftKey ? "focus-last" : "focus-first" },
+            scriptOrigin,
+          );
+          focusFrame();
         }
       };
       const cleanup = (options) => closeOverlay(options);
@@ -210,7 +172,6 @@
       backdrop.addEventListener("click", (event) => {
         if (event.target === backdrop) closeOverlay();
       });
-      frame.addEventListener("load", onFrameLoad);
       document.addEventListener("keydown", onKeyDown);
       for (const element of document.body.children) {
         if (element === backdrop) continue;

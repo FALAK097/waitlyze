@@ -42,15 +42,43 @@ export async function createWaitlistDraft({
         })
       : null;
 
-    const blueprint = blueprintId ? await getActiveToolBlueprint(prisma, blueprintId) : null;
+    let blueprint = blueprintId ? await getActiveToolBlueprint(prisma, blueprintId) : null;
     let blueprintClaimed = false;
     let claimedWaitListId = null;
     if (blueprintId && !blueprint) {
-      const existingBlueprint = await prisma.toolBlueprint.findUnique({
-        where: { id: blueprintId },
-        select: { claimedWaitlistId: true },
-      });
-      if (!existingDraft || existingBlueprint?.claimedWaitlistId !== existingDraft.id) {
+      let existingBlueprint = await prisma.toolBlueprint.findUnique({ where: { id: blueprintId } });
+      let claimMatchesDraft = Boolean(
+        existingDraft &&
+        existingBlueprint?.claimedByUserId === user.id &&
+        existingBlueprint.claimedWaitlistId === existingDraft.id,
+      );
+      if (
+        existingDraft &&
+        existingBlueprint?.claimedByUserId === user.id &&
+        existingBlueprint.claimedWaitlistId &&
+        existingBlueprint.claimedWaitlistId !== existingDraft.id
+      ) {
+        const reservedDraft = await prisma.waitList.findUnique({
+          where: { id: existingBlueprint.claimedWaitlistId },
+          select: { id: true },
+        });
+        if (!reservedDraft) {
+          const reassigned = await prisma.toolBlueprint.updateMany({
+            where: {
+              id: blueprintId,
+              claimedByUserId: user.id,
+              claimedWaitlistId: existingBlueprint.claimedWaitlistId,
+            },
+            data: { claimedWaitlistId: existingDraft.id },
+          });
+          existingBlueprint = await prisma.toolBlueprint.findUnique({ where: { id: blueprintId } });
+          claimMatchesDraft =
+            reassigned.count > 0 ||
+            (existingBlueprint?.claimedByUserId === user.id &&
+              existingBlueprint.claimedWaitlistId === existingDraft.id);
+        }
+      }
+      if (!claimMatchesDraft) {
         return {
           ok: false,
           code: "BLUEPRINT_UNAVAILABLE",
@@ -58,6 +86,7 @@ export async function createWaitlistDraft({
             "This Launch Lab blueprint has expired or was already used. Continue with a fresh draft or run the tool again.",
         };
       }
+      blueprint = existingBlueprint;
       blueprintClaimed = true;
     }
 

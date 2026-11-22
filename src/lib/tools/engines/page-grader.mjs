@@ -494,7 +494,7 @@ export function gradeWaitlistHtml({
     eyebrow: `${brandGuess} · Early access`,
     heading:
       primaryH1 && h1Words >= 4 && h1Words <= 14
-        ? primaryH1
+        ? primaryH1.slice(0, 140).trim()
         : `Get early access to ${brandGuess} before public launch.`,
     subheadline:
       metaDescription.length >= 40

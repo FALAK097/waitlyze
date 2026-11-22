@@ -35,14 +35,46 @@ export function EmbedResizeBridge() {
       if (event.key !== "Escape" || event.defaultPrevented) return;
       window.parent.postMessage({ source: MESSAGE_SOURCE, type: "close" }, targetOrigin);
     };
+    const focusables = () =>
+      Array.from(
+        document.querySelectorAll(
+          'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+        ),
+      ).filter((element) => element.getClientRects().length > 0);
+    const onParentMessage = (event) => {
+      if (event.source !== window.parent || event.origin !== targetOrigin) return;
+      const message = event.data;
+      if (!message || message.source !== MESSAGE_SOURCE) return;
+      if (message.type === "focus-first") focusables()[0]?.focus();
+      if (message.type === "focus-last") focusables().at(-1)?.focus();
+    };
+    const trapFrameBoundary = (event) => {
+      if (event.key !== "Tab") return;
+      const fields = focusables();
+      const boundary = event.shiftKey ? fields[0] : fields.at(-1);
+      if (!boundary || event.target !== boundary) return;
+      event.preventDefault();
+      window.parent.postMessage(
+        {
+          source: MESSAGE_SOURCE,
+          type: "focus-boundary",
+          direction: event.shiftKey ? "backward" : "forward",
+        },
+        targetOrigin,
+      );
+    };
     post();
     window.addEventListener("load", post);
     window.addEventListener("keydown", closeOnEscape);
+    document.addEventListener("keydown", trapFrameBoundary, true);
+    window.addEventListener("message", onParentMessage);
     const observer = new ResizeObserver(post);
     observer.observe(document.body);
     return () => {
       window.removeEventListener("load", post);
       window.removeEventListener("keydown", closeOnEscape);
+      document.removeEventListener("keydown", trapFrameBoundary, true);
+      window.removeEventListener("message", onParentMessage);
       observer.disconnect();
     };
   }, []);

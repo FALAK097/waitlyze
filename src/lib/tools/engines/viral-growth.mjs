@@ -14,6 +14,9 @@ export const VIRAL_SCENARIO_PRESETS = Object.freeze([
       weeks: 8,
       launchEmailOpenRatePct: 36,
       rewardCostPerReferral: 0,
+      referralTier1: 3,
+      referralTier2: 5,
+      referralTier3: 10,
     },
   },
   {
@@ -31,6 +34,9 @@ export const VIRAL_SCENARIO_PRESETS = Object.freeze([
       weeks: 8,
       launchEmailOpenRatePct: 45,
       rewardCostPerReferral: 0,
+      referralTier1: 3,
+      referralTier2: 5,
+      referralTier3: 10,
     },
   },
   {
@@ -48,6 +54,9 @@ export const VIRAL_SCENARIO_PRESETS = Object.freeze([
       weeks: 10,
       launchEmailOpenRatePct: 52,
       rewardCostPerReferral: 1.5,
+      referralTier1: 3,
+      referralTier2: 5,
+      referralTier3: 10,
     },
   },
 ]);
@@ -114,6 +123,17 @@ function runCoreSimulation(inputs) {
   };
 }
 
+function probabilityOfAtLeast(mean, threshold) {
+  if (mean <= 0) return 0;
+  let probability = Math.exp(-mean);
+  let belowThreshold = probability;
+  for (let count = 1; count < threshold; count += 1) {
+    probability *= mean / count;
+    belowThreshold += probability;
+  }
+  return Math.max(0, Math.min(1, 1 - belowThreshold));
+}
+
 export function calculateViralGrowth(rawInputs = {}) {
   const inputs = {
     startingList: Math.round(
@@ -160,6 +180,9 @@ export function calculateViralGrowth(rawInputs = {}) {
       50,
       DEFAULT_VIRAL_INPUTS.rewardCostPerReferral,
     ),
+    referralTier1: Math.round(clamp(rawInputs.referralTier1, 1, 500, 3)),
+    referralTier2: Math.round(clamp(rawInputs.referralTier2, 2, 500, 5)),
+    referralTier3: Math.round(clamp(rawInputs.referralTier3, 3, 500, 10)),
   };
 
   const base = runCoreSimulation(inputs);
@@ -169,6 +192,16 @@ export function calculateViralGrowth(rawInputs = {}) {
   );
   const effectiveCostPerVerifiedReferral =
     base.referredTotal > 0 ? Number((estimatedRewardBudget / base.referredTotal).toFixed(2)) : 0;
+  const estimatedSharers = base.totalVerified * (inputs.shareRatePct / 100);
+  const referralsPerSharer = estimatedSharers > 0 ? base.referredTotal / estimatedSharers : 0;
+  const referralTiers = [inputs.referralTier1, inputs.referralTier2, inputs.referralTier3]
+    .sort((a, b) => a - b)
+    .map((threshold) => ({
+      referrals: threshold,
+      estimatedUnlocks: Math.round(
+        estimatedSharers * probabilityOfAtLeast(referralsPerSharer, threshold),
+      ),
+    }));
 
   // +10% relative sensitivity analysis across all 5 growth levers
   const levers = [
@@ -217,6 +250,7 @@ export function calculateViralGrowth(rawInputs = {}) {
     referredTotal: base.referredTotal,
     totalVerified: base.totalVerified,
     launchDayAudience,
+    referralTiers,
     referralLiftPct: base.referralLiftPct,
     estimatedRewardBudget,
     effectiveCostPerVerifiedReferral,

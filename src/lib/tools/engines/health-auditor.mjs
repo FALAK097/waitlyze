@@ -255,16 +255,18 @@ export function auditParsedRows(rows = []) {
 
     if (reasons.length === 0) {
       cleanRows.push({
+        ...item.row,
         email: item.rawEmail,
-        created_at: item.rawDate,
+        joined_at: item.rawDate,
         verified: item.rawVerified || "unknown",
         audit_status: "clean",
         audit_reason: "",
       });
     } else {
       flaggedRows.push({
+        ...item.row,
         email: item.rawEmail,
-        created_at: item.rawDate,
+        joined_at: item.rawDate,
         verified: item.rawVerified || "unknown",
         audit_status: "flagged",
         audit_reason: reasons.join("; "),
@@ -334,6 +336,11 @@ export function auditParsedRows(rows = []) {
     unverifiedCount,
     topDomains,
     recommendations,
+    exportColumns: [...new Set(validRows.flatMap((row) => Object.keys(row)))].concat(
+      ["email", "joined_at", "verified"].filter(
+        (key) => !validRows.some((row) => Object.keys(row).includes(key)),
+      ),
+    ),
     cleanRows,
     flaggedRows,
   };

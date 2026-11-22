@@ -58,12 +58,18 @@ export function generateEmbedSnippet(config = {}, waitlistKeyId = "YOUR_PUBLIC_W
   const keyId = escapeAttr(waitlistKeyId || "YOUR_PUBLIC_WAITLIST_ID");
   const extraAttrs = buildDataAttrs(config);
   const styleSyncNote =
-    "Form colors, radius, placeholder, and optional Name/Role fields live on your Waitlyze campaign blueprint—click 'Save this embed style in Waitlyze' to apply them automatically.";
+    "Snippet settings control the embed trigger and layout. Form colors, radius, placeholder, and optional Name/Role fields are saved as a private campaign draft reference; publish the campaign separately to apply form settings.";
 
   if (framework === "nextjs") {
     const code = `"use client";
 
 import Script from "next/script";
+
+declare global {
+  interface Window {
+    WaitlyzeEmbed?: { init?: () => void };
+  }
+}
 
 export function WaitlistEmbed() {
   return (

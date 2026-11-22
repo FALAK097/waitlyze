@@ -89,8 +89,8 @@ export function HealthAuditorWidget({
     if (!csvAudit?.cleanRows?.length) return;
     downloadCsv(
       "waitlyze-cleaned-waitlist.csv",
-      ["email", "created_at", "verified"],
-      csvAudit.cleanRows.map((r) => [r.email, r.created_at, r.verified]),
+      csvAudit.exportColumns,
+      csvAudit.cleanRows.map((row) => csvAudit.exportColumns.map((column) => row[column] ?? "")),
     );
     trackToolEvent("TOOL_RESULT_EXPORTED", {
       tool_slug: "waitlist-health-check",
@@ -104,8 +104,12 @@ export function HealthAuditorWidget({
     const combined = [...csvAudit.cleanRows, ...csvAudit.flaggedRows];
     downloadCsv(
       "waitlyze-tagged-audit.csv",
-      ["email", "created_at", "verified", "audit_status", "audit_reason"],
-      combined.map((r) => [r.email, r.created_at, r.verified, r.audit_status, r.audit_reason]),
+      [...csvAudit.exportColumns, "audit_status", "audit_reason"],
+      combined.map((row) => [
+        ...csvAudit.exportColumns.map((column) => row[column] ?? ""),
+        row.audit_status,
+        row.audit_reason,
+      ]),
     );
     trackToolEvent("TOOL_RESULT_EXPORTED", {
       tool_slug: "waitlist-health-check",
