@@ -109,20 +109,28 @@ export function downloadSummaryPng({
     ctx.fillText(String(subtitle).slice(0, 96), 64, 178);
   }
 
-  // Metric cards (up to 4)
-  const visibleMetrics = metrics.slice(0, 4);
+  // Four metrics keep the established single-row card layout. A fifth metric
+  // uses a centered 3+2 grid so exports never silently drop result details.
+  const visibleMetrics = metrics.slice(0, 5);
   if (visibleMetrics.length > 0) {
-    const gap = 20;
+    const hasSecondRow = visibleMetrics.length > 4;
+    const gap = hasSecondRow ? 16 : 20;
     const totalW = width - 128;
-    const cardW = (totalW - gap * (visibleMetrics.length - 1)) / visibleMetrics.length;
-    const cardY = 224;
-    const cardH = 164;
+    const columns = hasSecondRow ? 3 : visibleMetrics.length;
+    const cardW = (totalW - gap * (columns - 1)) / columns;
+    const cardY = hasSecondRow ? 204 : 224;
+    const cardH = hasSecondRow ? 96 : 164;
 
     visibleMetrics.forEach((metric, index) => {
-      const x = 64 + index * (cardW + gap);
+      const row = hasSecondRow ? Math.floor(index / columns) : 0;
+      const column = hasSecondRow ? index % columns : index;
+      const rowCount = hasSecondRow && row === 1 ? visibleMetrics.length - columns : columns;
+      const rowOffset = row === 1 ? (totalW - (rowCount * cardW + (rowCount - 1) * gap)) / 2 : 0;
+      const x = 64 + rowOffset + column * (cardW + gap);
+      const y = cardY + row * (cardH + 12);
       ctx.fillStyle = "#f4f5f6";
       ctx.beginPath();
-      ctx.roundRect(x, cardY, cardW, cardH, 12);
+      ctx.roundRect(x, y, cardW, cardH, 12);
       ctx.fill();
 
       ctx.strokeStyle = "#e4e6e8";
@@ -131,16 +139,35 @@ export function downloadSummaryPng({
 
       ctx.fillStyle = "#4d5659";
       ctx.font = "600 15px system-ui, -apple-system, sans-serif";
-      ctx.fillText(String(metric.label || "").slice(0, 28), x + 22, cardY + 42);
+      ctx.fillText(
+        String(metric.label || "").slice(0, 28),
+        x + 22,
+        y + (hasSecondRow ? 25 : 42),
+        cardW - 44,
+      );
 
       ctx.fillStyle = "#00160d";
-      ctx.font = "700 34px system-ui, -apple-system, sans-serif";
-      ctx.fillText(String(metric.value || "").slice(0, 16), x + 22, cardY + 102);
+      ctx.font = hasSecondRow
+        ? "700 25px system-ui, -apple-system, sans-serif"
+        : "700 34px system-ui, -apple-system, sans-serif";
+      ctx.fillText(
+        String(metric.value || "").slice(0, hasSecondRow ? 32 : 16),
+        x + 22,
+        y + (hasSecondRow ? 56 : 102),
+        cardW - 44,
+      );
 
       if (metric.hint) {
         ctx.fillStyle = "#5d6b60";
-        ctx.font = "400 14px system-ui, -apple-system, sans-serif";
-        ctx.fillText(String(metric.hint).slice(0, 32), x + 22, cardY + 138);
+        ctx.font = hasSecondRow
+          ? "400 12px system-ui, -apple-system, sans-serif"
+          : "400 14px system-ui, -apple-system, sans-serif";
+        ctx.fillText(
+          String(metric.hint).slice(0, 32),
+          x + 22,
+          y + (hasSecondRow ? 79 : 138),
+          cardW - 44,
+        );
       }
     });
   }

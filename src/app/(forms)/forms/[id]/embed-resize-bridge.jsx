@@ -41,15 +41,17 @@ export function EmbedResizeBridge() {
           'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
         ),
       ).filter((element) => element.getClientRects().length > 0);
+    let overlayActive = false;
     const onParentMessage = (event) => {
       if (event.source !== window.parent || event.origin !== targetOrigin) return;
       const message = event.data;
       if (!message || message.source !== MESSAGE_SOURCE) return;
+      if (message.type === "overlay-init") overlayActive = true;
       if (message.type === "focus-first") focusables()[0]?.focus();
       if (message.type === "focus-last") focusables().at(-1)?.focus();
     };
     const trapFrameBoundary = (event) => {
-      if (event.key !== "Tab") return;
+      if (!overlayActive || event.key !== "Tab") return;
       const fields = focusables();
       const boundary = event.shiftKey ? fields[0] : fields.at(-1);
       if (!boundary || event.target !== boundary) return;
@@ -68,6 +70,9 @@ export function EmbedResizeBridge() {
     window.addEventListener("keydown", closeOnEscape);
     document.addEventListener("keydown", trapFrameBoundary, true);
     window.addEventListener("message", onParentMessage);
+    // The parent only activates the focus trap after this readiness message
+    // comes from its active modal iframe. Inline and pill embeds stay untrapped.
+    window.parent.postMessage({ source: MESSAGE_SOURCE, type: "ready" }, targetOrigin);
     const observer = new ResizeObserver(post);
     observer.observe(document.body);
     return () => {

@@ -226,7 +226,9 @@ export function evaluateDnsRecords({
     const validDkim = dkimRecords.find((record) => {
       const value = String(record);
       const publicKey = value.match(/(?:^|;)\s*p\s*=\s*([^;\s][^;]*)/i)?.[1]?.trim();
-      return /(?:^|;)\s*v\s*=\s*dkim1(?:;|$)/i.test(value) && Boolean(publicKey);
+      const versionTag = value.match(/(?:^|;)\s*v\s*=\s*([^;]*)/i);
+      const version = versionTag?.[1]?.trim();
+      return (!versionTag || version?.toLowerCase() === "dkim1") && Boolean(publicKey);
     });
     dkimCheck = validDkim
       ? {

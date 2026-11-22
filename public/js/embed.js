@@ -10,6 +10,7 @@
   const MAX_HEIGHT = 4000;
   let activeOverlayCleanup = null;
   let activeOverlayFrame = null;
+  let activeOverlayCloseButton = null;
 
   function createIframe() {
     const iframe = document.createElement("iframe");
@@ -49,15 +50,19 @@
     if (event.origin !== scriptOrigin) return;
     const message = event.data;
     if (!message || message.source !== MESSAGE_SOURCE) return;
+    if (message.type === "ready" && activeOverlayFrame?.contentWindow === event.source) {
+      activeOverlayFrame.contentWindow.postMessage(
+        { source: MESSAGE_SOURCE, type: "overlay-init" },
+        scriptOrigin,
+      );
+      return;
+    }
     if (message.type === "close") {
       if (activeOverlayFrame?.contentWindow === event.source) activeOverlayCleanup?.();
       return;
     }
     if (message.type === "focus-boundary" && activeOverlayFrame?.contentWindow === event.source) {
-      activeOverlayFrame.contentWindow.postMessage(
-        { source: MESSAGE_SOURCE, type: message.direction === "backward" ? "focus-last" : "focus-first" },
-        scriptOrigin,
-      );
+      activeOverlayCloseButton?.focus();
       return;
     }
     if (message.type !== "resize") return;
@@ -150,6 +155,7 @@
         if (activeOverlayCleanup === cleanup) {
           activeOverlayCleanup = null;
           activeOverlayFrame = null;
+          activeOverlayCloseButton = null;
         }
         if (restoreFocus) trigger.focus();
       };
@@ -180,6 +186,7 @@
       }
       activeOverlayCleanup = cleanup;
       activeOverlayFrame = frame;
+      activeOverlayCloseButton = closeBtn;
       panel.append(closeBtn, frame);
       backdrop.append(panel);
       document.body.append(backdrop);
