@@ -3,11 +3,15 @@
 import { Tick01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import dynamic from "next/dynamic";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
+import PromoBanner, { REDEEM_PROMO_EVENT } from "@/components/landing/promo-banner";
 import SignupButton from "@/components/landing/signup-button";
 import { Button } from "@/components/ui/button";
-import { WAITLYZE_PRICING } from "@/lib/billing/pricing.mjs";
+import { WAITLYZE_BFCM_PROMO, WAITLYZE_PRICING } from "@/lib/billing/pricing.mjs";
+import { useBfcmPromoActive } from "@/lib/billing/use-bfcm-promo-active";
+import { trackClientEvent } from "@/lib/posthog/client";
+import { POSTHOG_EVENTS } from "@/lib/posthog/events.mjs";
 
 // Better Auth's React hooks are browser-only in this app, so the checkout CTA
 // loads as a client-only island while the plan copy stays server-rendered.
@@ -49,10 +53,23 @@ export default function Pricing({
   workspaceId = null,
   billingNeedsAttention = false,
 }) {
+  const sectionRef = useRef(null);
+  const trackedPricingViewRef = useRef(false);
   const [interval, setInterval] = useState("annual");
   const [clientRegionalPricing, setClientRegionalPricing] = useState(null);
+  const proCardRef = useRef(null);
   const isPro = currentPlan === "PRO";
+  const promoActive = useBfcmPromoActive();
   const displayedRegionalPricing = regionalPricing || clientRegionalPricing;
+
+  useEffect(() => {
+    function handleRedeemPromo(event) {
+      const nextInterval = event?.detail?.interval || "annual";
+      setInterval(nextInterval);
+    }
+    window.addEventListener(REDEEM_PROMO_EVENT, handleRedeemPromo);
+    return () => window.removeEventListener(REDEEM_PROMO_EVENT, handleRedeemPromo);
+  }, []);
 
   useEffect(() => {
     if (regionalPricing) return;
@@ -66,7 +83,38 @@ export default function Pricing({
     return () => controller.abort();
   }, [regionalPricing]);
 
+  useEffect(() => {
+    if (isModal || !sectionRef.current) return undefined;
+    const section = sectionRef.current;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry?.isIntersecting || trackedPricingViewRef.current) return;
+        trackedPricingViewRef.current = true;
+        trackClientEvent(POSTHOG_EVENTS.MARKETING_PRICING_VIEWED, {
+          page_path: window.location.pathname,
+          default_billing_interval: interval,
+        });
+        observer.disconnect();
+      },
+      { threshold: 0.35 },
+    );
+    observer.observe(section);
+    return () => observer.disconnect();
+  }, [interval, isModal]);
+
   const title = feature ? `Unlock ${feature}` : "Start free. Upgrade when you need more.";
+  const annualRegularPrice =
+    displayedRegionalPricing?.annual?.formatted || WAITLYZE_PRICING.pro.annual.formatted;
+  const annualPromoPrice =
+    displayedRegionalPricing?.annual?.promo?.formatted ||
+    WAITLYZE_PRICING.pro.annual.promo.formatted;
+  const annualRegularMonthlyEquivalent =
+    displayedRegionalPricing?.annual?.monthlyEquivalentFormatted ||
+    WAITLYZE_PRICING.pro.annual.monthlyEquivalentFormatted;
+  const annualPromoMonthlyEquivalent =
+    displayedRegionalPricing?.annual?.promo?.monthlyEquivalentFormatted ||
+    WAITLYZE_PRICING.pro.annual.promo.monthlyEquivalentFormatted;
+  const showAnnualPromo = promoActive && interval === "annual";
 
   const intervalToggle = (
     <div
@@ -94,7 +142,9 @@ export default function Pricing({
       >
         Annual{" "}
         <span className="ml-1 text-product-success-text">
-          Save {WAITLYZE_PRICING.pro.annualSavingsPercent}%
+          {promoActive
+            ? `Black Friday · ${WAITLYZE_BFCM_PROMO.percentOff}% off`
+            : `Save ${WAITLYZE_PRICING.pro.annualSavingsPercent}%`}
         </span>
       </Button>
     </div>
@@ -104,8 +154,10 @@ export default function Pricing({
 
   return (
     <section
+      ref={sectionRef}
       className={sectionClass}
       id={isModal ? undefined : "pricing"}
+      data-pricing-section={isModal ? undefined : "true"}
       aria-labelledby={isModal ? undefined : "pricing-title"}
     >
       <div
@@ -129,6 +181,20 @@ export default function Pricing({
               </p>
             </div>
             {intervalToggle}
+          </div>
+        )}
+
+        {promoActive && !isPro && (
+          <div className={isModal ? "mb-6" : "mt-8"}>
+            <PromoBanner
+              variant="inline"
+              isAnnualSelected={interval === "annual"}
+              onRedeem={() => {
+                setInterval("annual");
+                const ctaButton = proCardRef.current?.querySelector("button:not(:disabled)");
+                ctaButton?.focus();
+              }}
+            />
           </div>
         )}
 
@@ -166,11 +232,21 @@ export default function Pricing({
             </div>
           </article>
 
-          <article className="relative flex flex-col rounded-2xl border border-product-text-primary bg-product-bg-surface p-6 shadow-lg sm:p-8">
-            <div className="flex min-h-6 items-center justify-between gap-3">
-              <p className="text-xs font-semibold tracking-[0.14em] text-product-success-text uppercase">
-                PRO
-              </p>
+          <article
+            ref={proCardRef}
+            className="relative flex flex-col rounded-2xl border border-product-text-primary bg-product-bg-surface p-6 shadow-lg sm:p-8"
+          >
+            <div className="flex min-h-6 flex-wrap items-center justify-between gap-2">
+              <div className="flex flex-wrap items-center gap-2">
+                <p className="text-xs font-semibold tracking-[0.14em] text-product-success-text uppercase">
+                  PRO
+                </p>
+                {showAnnualPromo && (
+                  <span className="inline-flex items-center rounded-full bg-product-accent-solid px-2.5 py-0.5 text-[11px] font-semibold tracking-wide text-product-accent-label">
+                    {WAITLYZE_BFCM_PROMO.percentOff}% OFF · {WAITLYZE_BFCM_PROMO.code}
+                  </span>
+                )}
+              </div>
               {displayedRegionalPricing?.country && (
                 <p className="inline-flex items-center gap-1.5 rounded-full bg-product-bg-inset px-2.5 py-1 text-xs font-medium text-product-text-secondary">
                   <span aria-hidden="true">{displayedRegionalPricing.flag}</span>
@@ -182,10 +258,17 @@ export default function Pricing({
               <h3 className="mt-3 font-product-display text-2xl tracking-tight">
                 More room to grow
               </h3>
-              <p className="mt-6 flex items-baseline gap-2">
+              <p className="mt-6 flex flex-wrap items-baseline gap-2">
+                {showAnnualPromo && (
+                  <span className="font-product-display text-2xl font-medium text-product-text-muted line-through">
+                    {annualRegularPrice}
+                  </span>
+                )}
                 <span className="font-product-display text-4xl font-semibold tracking-tight">
-                  {displayedRegionalPricing?.[interval]?.formatted ||
-                    WAITLYZE_PRICING.pro[interval].formatted}
+                  {showAnnualPromo
+                    ? annualPromoPrice
+                    : displayedRegionalPricing?.[interval]?.formatted ||
+                      WAITLYZE_PRICING.pro[interval].formatted}
                 </span>
                 <span className="text-sm text-product-text-secondary">
                   / {interval === "annual" ? "year" : "month"}{" "}
@@ -194,10 +277,34 @@ export default function Pricing({
               </p>
               {interval === "annual" && (
                 <p className="mt-2 text-sm text-product-text-secondary">
-                  Equivalent to{" "}
-                  {displayedRegionalPricing?.annual.monthlyEquivalentFormatted ||
-                    WAITLYZE_PRICING.pro.annual.monthlyEquivalentFormatted}
-                  /month
+                  {showAnnualPromo ? (
+                    <>
+                      Equivalent to{" "}
+                      <strong className="font-semibold text-product-text-primary">
+                        {annualPromoMonthlyEquivalent}/month
+                      </strong>{" "}
+                      <span className="line-through">{annualRegularMonthlyEquivalent}/month</span> ·
+                      1st year with code{" "}
+                      <span className="font-product-mono text-xs font-semibold text-product-text-primary">
+                        {WAITLYZE_BFCM_PROMO.code}
+                      </span>
+                      , then {annualRegularPrice}/year
+                    </>
+                  ) : (
+                    <>Equivalent to {annualRegularMonthlyEquivalent}/month</>
+                  )}
+                </p>
+              )}
+              {promoActive && interval === "monthly" && (
+                <p className="mt-2 text-sm text-product-text-secondary">
+                  <button
+                    type="button"
+                    onClick={() => setInterval("annual")}
+                    className="cursor-pointer text-left font-medium text-product-success-text underline decoration-product-success-text/40 underline-offset-4 hover:decoration-product-success-text"
+                  >
+                    Black Friday: Switch to Annual for {WAITLYZE_BFCM_PROMO.percentOff}% off (
+                    {annualPromoPrice}/year) with code {WAITLYZE_BFCM_PROMO.code}
+                  </button>
                 </p>
               )}
             </div>

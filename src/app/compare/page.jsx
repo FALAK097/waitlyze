@@ -27,7 +27,12 @@ export const metadata = {
   title: { absolute: "Waitlist Software Comparison: 7 Tools Side by Side (2026)" },
   description:
     "Compare Waitlyze, GetWaitlist, LaunchList, Prefinery, KickoffLabs, Viral Loops, and Waitlister on pricing, referrals, email, analytics, and API access.",
-  alternates: { canonical: "/compare" },
+  alternates: {
+    canonical: "/compare",
+    types: {
+      "text/markdown": [{ url: "/compare.md", title: "Waitlist software comparison in Markdown" }],
+    },
+  },
   openGraph: {
     type: "website",
     url: "/compare",

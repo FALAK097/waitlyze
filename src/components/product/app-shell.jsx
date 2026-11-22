@@ -15,9 +15,11 @@ import dynamic from "next/dynamic";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useActionState, useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { toast } from "sonner";
 
 import { createWorkspace, selectWorkspace } from "@/app/actions/settings";
+import PromoBanner from "@/components/landing/promo-banner";
 import { useOnboarding } from "@/components/onboarding/onboarding-provider";
 import { ChangelogIndicator } from "@/components/product/changelog-indicator";
 import { PlansDialog } from "@/components/shared/plans-dialog";
@@ -311,8 +313,42 @@ export function AppShellControls({
   canCreateWorkspace = true,
   workspaceId = null,
 }) {
+  const [promoUpgradeOpen, setPromoUpgradeOpen] = useState(false);
+  const [bannerContainer, setBannerContainer] = useState(null);
+
+  useEffect(() => {
+    setBannerContainer(document.getElementById("wl-app-banner-slot"));
+  }, []);
+
   return (
     <>
+      {plan === "FREE" && canManageBilling && (
+        <>
+          {bannerContainer &&
+            createPortal(
+              <PromoBanner
+                variant="app"
+                onRedeem={() => {
+                  const pricingSection =
+                    typeof document !== "undefined" ? document.getElementById("pricing") : null;
+                  if (pricingSection) {
+                    pricingSection.scrollIntoView({ behavior: "smooth", block: "start" });
+                    return;
+                  }
+                  setPromoUpgradeOpen(true);
+                }}
+              />,
+              bannerContainer,
+            )}
+          <PlansDialog
+            open={promoUpgradeOpen}
+            onOpenChange={setPromoUpgradeOpen}
+            currentPlan="FREE"
+            canManageBilling={canManageBilling}
+            workspaceId={workspaceId || selectedWorkspace}
+          />
+        </>
+      )}
       <div className="order-1 flex max-w-115 min-w-0 items-center gap-2 max-md:max-w-none max-md:flex-1">
         <WorkspaceSwitcher
           workspaces={workspaces}
@@ -352,6 +388,7 @@ export function AppShell({ children, headerControls }) {
       >
         Skip to content
       </a>
+      <div id="wl-app-banner-slot" />
       <header className="border-b border-product-border-subtle bg-white">
         <div className="mx-auto flex min-h-18 max-w-288 items-center gap-4 px-8 py-3 max-[359px]:gap-2 max-[359px]:px-4 max-md:flex-wrap max-md:gap-3 max-md:px-5">
           <Link

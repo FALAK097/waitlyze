@@ -1,3 +1,4 @@
+import { WAITLYZE_PRICING } from "@/lib/billing/pricing.mjs";
 import { SITE_URL, SITE_DESCRIPTION, SITE_SUPPORT_EMAIL } from "@/lib/site-metadata";
 
 const GITHUB_URL = "https://github.com/FALAK097/waitlyze";
@@ -47,6 +48,44 @@ const siteGraph = {
       operatingSystem: "Web",
       description: SITE_DESCRIPTION,
       publisher: { "@id": `${SITE_URL}/#organization` },
+      offers: [
+        {
+          "@type": "Offer",
+          name: "Waitlyze Free",
+          url: `${SITE_URL}/pricing`,
+          price: WAITLYZE_PRICING.free.amount,
+          priceCurrency: WAITLYZE_PRICING.currency,
+          availability: "https://schema.org/InStock",
+        },
+        {
+          "@type": "Offer",
+          name: "Waitlyze Pro monthly",
+          url: `${SITE_URL}/pricing`,
+          price: WAITLYZE_PRICING.pro.monthly.amount,
+          priceCurrency: WAITLYZE_PRICING.currency,
+          availability: "https://schema.org/InStock",
+          priceSpecification: {
+            "@type": "UnitPriceSpecification",
+            price: WAITLYZE_PRICING.pro.monthly.amount,
+            priceCurrency: WAITLYZE_PRICING.currency,
+            billingDuration: "P1M",
+          },
+        },
+        {
+          "@type": "Offer",
+          name: "Waitlyze Pro annual",
+          url: `${SITE_URL}/pricing`,
+          price: WAITLYZE_PRICING.pro.annual.amount,
+          priceCurrency: WAITLYZE_PRICING.currency,
+          availability: "https://schema.org/InStock",
+          priceSpecification: {
+            "@type": "UnitPriceSpecification",
+            price: WAITLYZE_PRICING.pro.annual.amount,
+            priceCurrency: WAITLYZE_PRICING.currency,
+            billingDuration: "P1Y",
+          },
+        },
+      ],
       featureList: [
         "Hosted waitlist pages",
         "Embeddable signup forms",

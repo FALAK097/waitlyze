@@ -48,7 +48,17 @@ export async function generateMetadata({ params }) {
   return {
     title: { absolute: title },
     description,
-    alternates: { canonical: `/alternatives/${slug}` },
+    alternates: {
+      canonical: `/alternatives/${slug}`,
+      types: {
+        "text/markdown": [
+          {
+            url: `/alternatives/${slug}.md`,
+            title: `Waitlyze vs ${competitor.name} in Markdown`,
+          },
+        ],
+      },
+    },
     openGraph: { type: "article", url: `/alternatives/${slug}`, title, description },
     twitter: { card: "summary_large_image", title, description },
   };

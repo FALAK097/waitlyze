@@ -8,6 +8,7 @@ import { publicFontClasses } from "@/lib/public-fonts";
 import CopyrightYear from "./copyright-year";
 import GitHubMark from "./github-mark";
 import Header from "./header";
+import PromoBanner from "./promo-banner";
 import Wordmark from "./wordmark";
 
 export default function PublicShell({ children }) {
@@ -21,6 +22,7 @@ export default function PublicShell({ children }) {
       >
         Skip to content
       </a>
+      <PromoBanner variant="top" />
       <Header />
       {children}
       <footer className="bg-product-bg-page pt-12 pb-6 text-product-text-primary">
@@ -46,7 +48,7 @@ export default function PublicShell({ children }) {
                 Explore
               </span>
               <Link
-                href="/features"
+                href="/#features"
                 className="inline-flex items-center gap-1.5 hover:text-product-success-text focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-neutral-900"
               >
                 Features
@@ -58,13 +60,13 @@ export default function PublicShell({ children }) {
                 How it works
               </Link>
               <Link
-                href="/templates"
+                href="/#templates"
                 className="inline-flex items-center gap-1.5 hover:text-product-success-text focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-neutral-900"
               >
                 Templates
               </Link>
               <Link
-                href="/pricing"
+                href="/#pricing"
                 className="inline-flex items-center gap-1.5 hover:text-product-success-text focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-neutral-900"
               >
                 Pricing
@@ -167,12 +169,6 @@ export default function PublicShell({ children }) {
               <span className="mb-2 flex items-center gap-2 text-micro font-semibold tracking-widest text-product-text-secondary uppercase">
                 Good to know
               </span>
-              <Link
-                href="/about"
-                className="inline-flex items-center gap-1.5 hover:text-product-success-text focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-neutral-900"
-              >
-                About Waitlyze
-              </Link>
               <Link
                 href="/privacy"
                 className="inline-flex items-center gap-1.5 hover:text-product-success-text focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-neutral-900"
