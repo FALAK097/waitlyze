@@ -3,7 +3,7 @@
 import { ArrowRight01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import {
@@ -168,6 +168,7 @@ export function ViralGrowthWidget({
   entrySurface = "public_tool",
   onApplyInProduct = null,
 }) {
+  const sensitivityLabelId = useId();
   const [presetId, setPresetId] = useState("baseline");
   const [inputs, setInputs] = useState(DEFAULT_VIRAL_INPUTS);
   const startedRef = useRef(false);
@@ -533,12 +534,17 @@ export function ViralGrowthWidget({
                   return (
                     <div key={item.key} className="grid gap-1.5">
                       <div className="flex flex-wrap items-center justify-between gap-1 text-caption">
-                        <span className="min-w-0 text-product-text-primary">{item.label}</span>
+                        <span
+                          id={`${sensitivityLabelId}-${item.key}`}
+                          className="min-w-0 text-product-text-primary"
+                        >
+                          {item.label}
+                        </span>
                         <span className="shrink-0 font-product-mono text-micro text-product-text-secondary tabular-nums">
                           +{item.extraSignups.toLocaleString()}
                         </span>
                       </div>
-                      <Progress value={pct} />
+                      <Progress value={pct} aria-labelledby={`${sensitivityLabelId}-${item.key}`} />
                     </div>
                   );
                 })}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useId, useMemo, useRef, useState } from "react";
 
 import { downloadCsv, downloadTextFile } from "@/components/tools/tool-export-utils";
 import { ToolHandoffCta } from "@/components/tools/tool-handoff-cta";
@@ -35,6 +35,7 @@ export function LaunchPlannerWidget({
 }) {
   const [inputs, setInputs] = useState(DEFAULT_LAUNCH_PLANNER_INPUTS);
   const [manualDoneIds, setManualDoneIds] = useState([]);
+  const progressLabelId = useId();
   const startedRef = useRef(false);
 
   const plan = useMemo(() => planLaunchReadiness(inputs), [inputs]);
@@ -272,12 +273,20 @@ export function LaunchPlannerWidget({
               return (
                 <div key={pillar.id} className="grid gap-1.5">
                   <div className="flex items-center justify-between text-caption">
-                    <span className="text-product-text-primary">{pillar.label}</span>
+                    <span
+                      id={`${progressLabelId}-${pillar.id}`}
+                      className="text-product-text-primary"
+                    >
+                      {pillar.label}
+                    </span>
                     <span className="font-product-mono text-micro text-product-text-muted tabular-nums">
                       {pillar.score}/{pillar.max}
                     </span>
                   </div>
-                  <Progress value={Math.max(4, pct)} />
+                  <Progress
+                    value={Math.max(4, pct)}
+                    aria-labelledby={`${progressLabelId}-${pillar.id}`}
+                  />
                 </div>
               );
             })}

@@ -2,7 +2,7 @@
 
 import { Loading02Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { useEffect, useState } from "react";
+import { useEffect, useId, useState } from "react";
 
 import { downloadJson, downloadSummaryPng } from "@/components/tools/tool-export-utils";
 import { ToolHandoffCta } from "@/components/tools/tool-handoff-cta";
@@ -52,6 +52,7 @@ export function PageGraderWidget({
   onApplyInProduct = null,
   onAuditComplete = null,
 }) {
+  const pillarLabelId = useId();
   const [mode, setMode] = useState("url");
   const [url, setUrl] = useState(initialUrl);
   const [pastedHtml, setPastedHtml] = useState("");
@@ -322,12 +323,20 @@ export function PageGraderWidget({
             {result.pillars.map((pillar) => (
               <div key={pillar.id} className="grid content-start gap-3">
                 <div className="flex items-baseline justify-between gap-2">
-                  <p className="text-body font-semibold text-product-text-primary">{pillar.name}</p>
+                  <p
+                    id={`${pillarLabelId}-${pillar.id}`}
+                    className="text-body font-semibold text-product-text-primary"
+                  >
+                    {pillar.name}
+                  </p>
                   <span className="font-product-mono text-caption text-product-text-secondary tabular-nums">
                     {pillar.earned}/{pillar.maxPoints}
                   </span>
                 </div>
-                <Progress value={Math.max(4, pillar.pct)} />
+                <Progress
+                  value={Math.max(4, pillar.pct)}
+                  aria-labelledby={`${pillarLabelId}-${pillar.id}`}
+                />
                 <ul className="grid gap-2">
                   {pillar.checks.map((check) => (
                     <li key={check.id} className="grid gap-0.5 py-2.5 text-caption">

@@ -2,7 +2,7 @@
 
 import { ArrowDown01Icon, ArrowUp01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { useMemo, useRef, useState } from "react";
+import { useId, useMemo, useRef, useState } from "react";
 
 import { downloadJson } from "@/components/tools/tool-export-utils";
 import { ToolHandoffCta } from "@/components/tools/tool-handoff-cta";
@@ -45,6 +45,7 @@ export function IntakeFormDesignerWidget({
         frictionBudget: "balanced",
       }).fields,
   );
+  const previewEmailId = useId();
   const startedRef = useRef(false);
 
   function rebuildFields(nextSegment, nextGoal, nextBudget) {
@@ -258,10 +259,15 @@ export function IntakeFormDesignerWidget({
           </h3>
           <div className="grid gap-3.5">
             <div className="grid gap-1.5">
-              <Label className="text-caption">
+              <Label htmlFor={previewEmailId} className="text-caption">
                 Work email <span className="text-product-danger-text">*</span>
               </Label>
-              <Input readOnly placeholder="you@company.com" className="h-9 bg-product-bg-surface" />
+              <Input
+                id={previewEmailId}
+                readOnly
+                placeholder="you@company.com"
+                className="h-9 bg-product-bg-surface"
+              />
             </div>
 
             {activeFields.map((field) => (

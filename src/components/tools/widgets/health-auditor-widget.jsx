@@ -162,7 +162,7 @@ export function HealthAuditorWidget({
               type="file"
               accept=".csv,text/csv"
               onChange={handleFileChange}
-              className="sr-only"
+              className="hidden"
               id="health-csv-upload"
             />
             <Button
