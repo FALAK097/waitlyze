@@ -205,3 +205,50 @@ export function downloadSummaryPng({
     if (blob) triggerDownload(blob, filename);
   }, "image/png");
 }
+
+/**
+ * Renders a crisp high-resolution QR code image (PNG or JPG) with a white
+ * quiet-zone background so it works cleanly in print, slides, and JPG viewers.
+ */
+export function downloadQrImage({
+  matrix,
+  filename = "waitlyze-qr.png",
+  format = "png",
+  size = 1024,
+}) {
+  if (!Array.isArray(matrix) || matrix.length === 0) return;
+  const quiet = 4;
+  const totalModules = matrix.length + quiet * 2;
+  const modulePx = Math.max(1, Math.floor(size / totalModules));
+  const canvasSize = Math.max(size, modulePx * totalModules);
+  const gridPx = modulePx * matrix.length;
+  const offset = Math.floor((canvasSize - gridPx) / 2);
+
+  const canvas = document.createElement("canvas");
+  canvas.width = canvasSize;
+  canvas.height = canvasSize;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return;
+
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(0, 0, canvasSize, canvasSize);
+
+  ctx.fillStyle = "#00160d";
+  for (let r = 0; r < matrix.length; r += 1) {
+    for (let c = 0; c < matrix.length; c += 1) {
+      if (matrix[r][c] === 1) {
+        ctx.fillRect(offset + c * modulePx, offset + r * modulePx, modulePx, modulePx);
+      }
+    }
+  }
+
+  const mimeType = format === "jpg" || format === "jpeg" ? "image/jpeg" : "image/png";
+  const quality = mimeType === "image/jpeg" ? 0.96 : undefined;
+  canvas.toBlob(
+    (blob) => {
+      if (blob) triggerDownload(blob, filename);
+    },
+    mimeType,
+    quality,
+  );
+}

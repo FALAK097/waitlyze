@@ -63,9 +63,19 @@ export function checkSpamTriggers(subject = "", body = "") {
 }
 
 export function toSimpleHtml(markdown) {
-  return String(markdown || "")
+  const escaped = String(markdown || "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;");
+
+  return escaped
     .split(/\n\n+/)
-    .map((para) => `<p>${para.replaceAll("\n", "<br />")}</p>`)
+    .map((para) => {
+      const formatted = para
+        .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+        .replaceAll("\n", "<br />");
+      return `<p>${formatted}</p>`;
+    })
     .join("\n");
 }
 

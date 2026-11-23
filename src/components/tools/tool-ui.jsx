@@ -347,7 +347,6 @@ export function ToolSegmentedControl({
   const id = useId();
   const labelId = label ? `${id}-label` : undefined;
   const useSelect = options.length > 4;
-  const hasOddOptions = options.length % 2 === 1;
   const accessibleName = ariaLabel || label || "Choose an option";
 
   return (
@@ -393,16 +392,13 @@ export function ToolSegmentedControl({
             id={id}
             aria-label={label ? undefined : accessibleName}
             aria-labelledby={labelId}
-            className="grid! h-auto! w-full max-w-full grid-cols-2 gap-1 bg-product-bg-inset p-1 sm:flex! sm:flex-wrap sm:justify-start"
+            className="inline-flex! h-auto! w-fit max-w-full flex-wrap items-center justify-start gap-1 bg-product-bg-inset p-1"
           >
             {options.map((opt) => (
               <TabsTrigger
                 key={opt.value}
                 value={opt.value}
-                className={cn(
-                  "h-auto! min-h-11 w-full min-w-0 px-2.5 py-1.5 text-center text-caption leading-tight font-medium whitespace-normal data-active:bg-product-bg-surface data-active:text-product-text-primary data-active:shadow-2xs sm:w-auto sm:flex-1 sm:basis-0",
-                  hasOddOptions && "last:col-span-2 sm:last:col-span-1",
-                )}
+                className="h-auto! min-h-10 shrink-0 grow basis-auto px-4 py-2 text-center text-caption leading-none font-medium whitespace-nowrap data-active:bg-product-bg-surface data-active:text-product-text-primary data-active:shadow-2xs"
               >
                 {opt.label}
               </TabsTrigger>

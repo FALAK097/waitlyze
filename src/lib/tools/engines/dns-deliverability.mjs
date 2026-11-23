@@ -1,9 +1,9 @@
 export const COMMON_DKIM_SELECTORS = Object.freeze([
-  { value: "resend", label: "resend (Resend)" },
-  { value: "google", label: "google (Google Workspace)" },
-  { value: "s1", label: "s1 (SendGrid / Mailgun)" },
-  { value: "selector1", label: "selector1 (Microsoft 365)" },
-  { value: "k1", label: "k1 (Mailchimp)" },
+  { value: "resend", label: "resend — Resend" },
+  { value: "google", label: "google — Google Workspace" },
+  { value: "s1", label: "s1 — SendGrid" },
+  { value: "selector1", label: "selector1 — Microsoft 365" },
+  { value: "k1", label: "k1 — Mailchimp" },
 ]);
 
 const DOMAIN_RE = /^(?=.{4,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$/;
@@ -57,6 +57,129 @@ function gradeFromScore(score) {
   if (score >= 65) return "C";
   if (score >= 50) return "D";
   return "F";
+}
+
+const RSA_ENCRYPTION_OID = [0x2a, 0x86, 0x48, 0x86, 0xf7, 0x0d, 0x01, 0x01, 0x01];
+
+function readDerTlv(bytes, offset, end) {
+  if (offset >= end) return null;
+  const tag = bytes[offset];
+  let pos = offset + 1;
+  if (pos >= end) return null;
+  const firstLen = bytes[pos];
+  pos += 1;
+  let len = 0;
+  if ((firstLen & 0x80) === 0) {
+    len = firstLen;
+  } else {
+    const numOctets = firstLen & 0x7f;
+    if (numOctets === 0 || numOctets > 4 || pos + numOctets > end) return null;
+    if (bytes[pos] === 0x00) return null; // Non-canonical leading zero in DER length
+    for (let i = 0; i < numOctets; i += 1) {
+      len = len * 256 + bytes[pos];
+      pos += 1;
+    }
+    if (len < 128) return null; // Non-canonical DER length
+  }
+  const valueEnd = pos + len;
+  if (valueEnd > end) return null;
+  return { tag, valueStart: pos, valueEnd, nextOffset: valueEnd };
+}
+
+function readPositiveDerInteger(bytes, offset, end) {
+  const tlv = readDerTlv(bytes, offset, end);
+  if (!tlv || tlv.tag !== 0x02 || tlv.valueEnd <= tlv.valueStart) return null;
+  if ((bytes[tlv.valueStart] & 0x80) !== 0) return null; // Must be non-negative DER INTEGER
+  if (bytes[tlv.valueStart] === 0x00) {
+    // Canonical positive DER INTEGER: 0x00 prefix is only valid when next octet has MSB set
+    if (tlv.valueEnd - tlv.valueStart <= 1 || (bytes[tlv.valueStart + 1] & 0x80) === 0) {
+      return null;
+    }
+  }
+  const magStart = bytes[tlv.valueStart] === 0x00 ? tlv.valueStart + 1 : tlv.valueStart;
+  return { magStart, magEnd: tlv.valueEnd, nextOffset: tlv.nextOffset };
+}
+
+function isValidRsaSpkiDer(bytes) {
+  const outer = readDerTlv(bytes, 0, bytes.length);
+  if (!outer || outer.tag !== 0x30 || outer.nextOffset !== bytes.length) return false;
+
+  const algId = readDerTlv(bytes, outer.valueStart, outer.valueEnd);
+  if (!algId || algId.tag !== 0x30) return false;
+
+  const oid = readDerTlv(bytes, algId.valueStart, algId.valueEnd);
+  if (!oid || oid.tag !== 0x06) return false;
+  if (oid.valueEnd - oid.valueStart !== RSA_ENCRYPTION_OID.length) return false;
+  for (let i = 0; i < RSA_ENCRYPTION_OID.length; i += 1) {
+    if (bytes[oid.valueStart + i] !== RSA_ENCRYPTION_OID[i]) return false;
+  }
+  if (oid.nextOffset !== algId.valueEnd) {
+    const algParams = readDerTlv(bytes, oid.nextOffset, algId.valueEnd);
+    if (
+      !algParams ||
+      algParams.tag !== 0x05 ||
+      algParams.valueStart !== algParams.valueEnd ||
+      algParams.nextOffset !== algId.valueEnd
+    ) {
+      return false;
+    }
+  }
+
+  const bitString = readDerTlv(bytes, algId.nextOffset, outer.valueEnd);
+  if (
+    !bitString ||
+    bitString.tag !== 0x03 ||
+    bitString.nextOffset !== outer.valueEnd ||
+    bitString.valueEnd - bitString.valueStart < 2 ||
+    bytes[bitString.valueStart] !== 0x00
+  ) {
+    return false;
+  }
+
+  const rsaSeqStart = bitString.valueStart + 1;
+  const rsaSeq = readDerTlv(bytes, rsaSeqStart, bitString.valueEnd);
+  if (!rsaSeq || rsaSeq.tag !== 0x30 || rsaSeq.nextOffset !== bitString.valueEnd) return false;
+
+  const modulus = readPositiveDerInteger(bytes, rsaSeq.valueStart, rsaSeq.valueEnd);
+  if (!modulus) return false;
+  const modLen = modulus.magEnd - modulus.magStart;
+  if (modLen < 128 || (modLen === 128 && (bytes[modulus.magStart] & 0x80) === 0)) {
+    return false; // Require >= 1024-bit RSA modulus
+  }
+  if ((bytes[modulus.magEnd - 1] & 1) === 0) return false; // RSA modulus must be odd
+
+  const exponent = readPositiveDerInteger(bytes, modulus.nextOffset, rsaSeq.valueEnd);
+  if (!exponent || exponent.nextOffset !== rsaSeq.valueEnd) return false;
+  const expLen = exponent.magEnd - exponent.magStart;
+  if ((bytes[exponent.magEnd - 1] & 1) === 0) return false; // RSA public exponent must be odd
+  if (expLen === 1 && bytes[exponent.magStart] === 1) return false; // Require exponent >= 3
+  return true;
+}
+
+function isValidDkimPublicKey(record, publicKey) {
+  const cleanKey = String(publicKey || "").replace(/\s+/g, "");
+  if (!/^[A-Za-z0-9+/]+={0,2}$/.test(cleanKey) || cleanKey.length % 4 !== 0) {
+    return false;
+  }
+  let binary;
+  try {
+    binary = atob(cleanKey);
+  } catch {
+    return false;
+  }
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i += 1) {
+    bytes[i] = binary.charCodeAt(i);
+  }
+  const keyTypeMatch = String(record).match(/(?:^|;)\s*k\s*=\s*([^;\s]+)/i);
+  const keyType = (keyTypeMatch?.[1] || "rsa").toLowerCase();
+  if (keyType === "ed25519") {
+    return bytes.length === 32;
+  }
+  if (keyType !== "rsa") {
+    return false;
+  }
+  return isValidRsaSpkiDer(bytes);
 }
 
 export function evaluateDnsRecords({
@@ -234,38 +357,102 @@ export function evaluateDnsRecords({
       copyableFix: "",
     };
   } else {
-    const foundDkimRecord = dkimRecords.find((record) => {
+    const dkimCandidates = dkimRecords.filter((record) => {
       const value = String(record);
-      const publicKey = value.match(/(?:^|;)\s*p\s*=\s*([^;\s][^;]*)/i)?.[1]?.trim();
       const versionTag = value.match(/(?:^|;)\s*v\s*=\s*([^;]*)/i);
       const version = versionTag?.[1]?.trim();
-      return (!versionTag || version?.toLowerCase() === "dkim1") && Boolean(publicKey);
+      const hasKeyTag = /(?:^|;)\s*p\s*=/i.test(value);
+      return (!versionTag || version?.toLowerCase() === "dkim1") && hasKeyTag;
     });
-    dkimCheck = foundDkimRecord
+    const hasMultipleDkim = dkimCandidates.length > 1;
+    const validDkimRecord = !hasMultipleDkim
+      ? dkimCandidates.find((record) => {
+          const publicKey = String(record)
+            .match(/(?:^|;)\s*p\s*=\s*([^;]*)/i)?.[1]
+            ?.trim();
+          return Boolean(publicKey) && isValidDkimPublicKey(record, publicKey);
+        })
+      : null;
+    const malformedDkimRecord =
+      !hasMultipleDkim &&
+      !validDkimRecord &&
+      dkimCandidates.find((record) => {
+        const publicKey = String(record)
+          .match(/(?:^|;)\s*p\s*=\s*([^;]*)/i)?.[1]
+          ?.trim();
+        return Boolean(publicKey);
+      });
+    const revokedDkimRecord =
+      !hasMultipleDkim && !validDkimRecord && !malformedDkimRecord && dkimCandidates.length > 0
+        ? dkimCandidates[0]
+        : "";
+
+    dkimCheck = hasMultipleDkim
       ? {
-          id: "dkim",
-          name: `DKIM (${selector}._domainkey)`,
-          status: "warn",
-          points: 10,
-          maxPoints: 20,
-          rawRecord: foundDkimRecord.slice(0, 180) + (foundDkimRecord.length > 180 ? "…" : ""),
-          summary: `A DKIM TXT record was found at ${selector}._domainkey.${domain}, but its key material was not cryptographically verified.`,
-          remediation:
-            "Confirm the key with your email provider and verify a signed test message before relying on DKIM alignment.",
-          copyableFix: "",
-        }
-      : {
           id: "dkim",
           name: `DKIM (${selector}._domainkey)`,
           status: "fail",
           points: 0,
           maxPoints: 20,
-          rawRecord: `No TXT record found at ${selector}._domainkey.${domain}`,
-          summary: `Could not find a DKIM key for selector "${selector}".`,
+          rawRecord: dkimCandidates.map((r) => r.slice(0, 120)).join("\n"),
+          summary: `Found ${dkimCandidates.length} DKIM TXT records at ${selector}._domainkey.${domain}. RFC 6376 requires a unique record per selector.`,
           remediation:
-            "Double-check your email provider's exact selector name or publish the DKIM TXT record from your Resend dashboard.",
+            "Keep only one active DKIM TXT record on this selector and delete duplicate or revoked records.",
           copyableFix: "",
-        };
+        }
+      : validDkimRecord
+        ? {
+            id: "dkim",
+            name: `DKIM (${selector}._domainkey)`,
+            status: "pass",
+            points: 20,
+            maxPoints: 20,
+            rawRecord: validDkimRecord.slice(0, 180) + (validDkimRecord.length > 180 ? "…" : ""),
+            summary: `Valid DKIM public key found at ${selector}._domainkey.${domain}.`,
+            remediation:
+              "DKIM key record is published. Send a signed test message to confirm live alignment.",
+            copyableFix: "",
+          }
+        : malformedDkimRecord
+          ? {
+              id: "dkim",
+              name: `DKIM (${selector}._domainkey)`,
+              status: "warn",
+              points: 8,
+              maxPoints: 20,
+              rawRecord:
+                malformedDkimRecord.slice(0, 180) + (malformedDkimRecord.length > 180 ? "…" : ""),
+              summary: `DKIM record found at ${selector}._domainkey.${domain}, but its public key (p=) looks truncated or invalid base64.`,
+              remediation:
+                "Copy the full DKIM public key from your email provider dashboard without truncating or adding placeholder characters.",
+              copyableFix: "",
+            }
+          : revokedDkimRecord
+            ? {
+                id: "dkim",
+                name: `DKIM (${selector}._domainkey)`,
+                status: "fail",
+                points: 0,
+                maxPoints: 20,
+                rawRecord:
+                  revokedDkimRecord.slice(0, 180) + (revokedDkimRecord.length > 180 ? "…" : ""),
+                summary: `DKIM record at ${selector}._domainkey.${domain} has an empty or revoked public key (p=).`,
+                remediation:
+                  "Re-generate or publish the active DKIM key from your email provider dashboard.",
+                copyableFix: "",
+              }
+            : {
+                id: "dkim",
+                name: `DKIM (${selector}._domainkey)`,
+                status: "fail",
+                points: 0,
+                maxPoints: 20,
+                rawRecord: `No TXT record found at ${selector}._domainkey.${domain}`,
+                summary: `Could not find a DKIM key for selector "${selector}".`,
+                remediation:
+                  "Double-check your email provider's exact selector name or publish the DKIM TXT record from your Resend dashboard.",
+                copyableFix: "",
+              };
   }
 
   const checks = [spfCheck, dmarcCheck, mxCheck, dkimCheck];
@@ -295,5 +482,7 @@ export const SAMPLE_DNS_RESULT = evaluateDnsRecords({
   txtRecords: ["v=spf1 include:amazonses.com include:_spf.google.com ~all"],
   dmarcRecords: [],
   mxRecords: ["10 aspmx.l.google.com.", "20 alt1.aspmx.l.google.com."],
-  dkimRecords: ["v=DKIM1; k=rsa; p=MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQC..."],
+  dkimRecords: [
+    "v=DKIM1; k=rsa; p=MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCrevesQivmHkigdzqUFb+x0d+Iu2jf3O86cjURullpu18ynocaxuv22yZ7PFCUtYPuJMRB+vsx/eVz+twqCcADYvgTL6PhSM9HPAjcNnr08rzF5eZAspIn6vB6k36veh0/f+DW0QVdX24TkX8ZQO/jymFAMR++zYbreLOh80QqPQIDAQAB",
+  ],
 });

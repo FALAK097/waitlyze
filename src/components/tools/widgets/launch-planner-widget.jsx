@@ -47,10 +47,30 @@ export function LaunchPlannerWidget({
     }));
   }, [plan.tasks, manualDoneIds]);
 
-  const markdown = useMemo(
-    () => buildLaunchMarkdown({ ...plan, tasks: tasksWithManual }),
-    [plan, tasksWithManual],
+  const incompleteTasks = useMemo(
+    () => tasksWithManual.filter((t) => !t.completed),
+    [tasksWithManual],
   );
+  const incompleteCount = incompleteTasks.length;
+  const liveRemainingHours = useMemo(
+    () => incompleteTasks.reduce((sum, task) => sum + (Number(task.hours) || 0), 0),
+    [incompleteTasks],
+  );
+  const liveBandwidthWarning = liveRemainingHours > plan.availableTotalHours;
+  const liveFirstIncompleteTask = incompleteTasks[0] || null;
+  const liveReadinessScore = useMemo(() => {
+    const basePending = plan.tasks.filter((t) => !t.completed).length;
+    if (basePending === 0) return plan.readinessScore;
+    const manualCompleted = Math.max(0, basePending - incompleteCount);
+    if (manualCompleted === 0) return plan.readinessScore;
+    const remainingHeadroom = Math.max(0, 100 - plan.readinessScore);
+    return Math.min(
+      100,
+      plan.readinessScore + Math.round((manualCompleted / basePending) * remainingHeadroom),
+    );
+  }, [plan.tasks, plan.readinessScore, incompleteCount]);
+  const liveBand =
+    liveReadinessScore >= 75 ? "ready" : liveReadinessScore >= 45 ? "in_progress" : "early_setup";
 
   function markStarted() {
     if (!startedRef.current) {
@@ -91,30 +111,16 @@ export function LaunchPlannerWidget({
     return [...grouped.entries()];
   }, [tasksWithManual]);
 
-  const incompleteTasks = useMemo(
-    () => tasksWithManual.filter((t) => !t.completed),
-    [tasksWithManual],
+  const markdown = useMemo(
+    () =>
+      buildLaunchMarkdown({
+        ...plan,
+        readinessScore: liveReadinessScore,
+        remainingHours: liveRemainingHours,
+        tasks: tasksWithManual,
+      }),
+    [plan, liveReadinessScore, liveRemainingHours, tasksWithManual],
   );
-  const incompleteCount = incompleteTasks.length;
-  const liveRemainingHours = useMemo(
-    () => incompleteTasks.reduce((sum, task) => sum + (Number(task.hours) || 0), 0),
-    [incompleteTasks],
-  );
-  const liveBandwidthWarning = liveRemainingHours > plan.availableTotalHours;
-  const liveFirstIncompleteTask = incompleteTasks[0] || null;
-  const liveReadinessScore = useMemo(() => {
-    const basePending = plan.tasks.filter((t) => !t.completed).length;
-    if (basePending === 0) return plan.readinessScore;
-    const manualCompleted = Math.max(0, basePending - incompleteCount);
-    if (manualCompleted === 0) return plan.readinessScore;
-    const remainingHeadroom = Math.max(0, 100 - plan.readinessScore);
-    return Math.min(
-      100,
-      plan.readinessScore + Math.round((manualCompleted / basePending) * remainingHeadroom),
-    );
-  }, [plan.tasks, plan.readinessScore, incompleteCount]);
-  const liveBand =
-    liveReadinessScore >= 75 ? "ready" : liveReadinessScore >= 45 ? "in_progress" : "early_setup";
 
   function handleDownloadIcs() {
     const ics = buildLaunchCalendarIcs({ ...plan, tasks: tasksWithManual });
@@ -123,7 +129,7 @@ export function LaunchPlannerWidget({
       tool_slug: "product-launch-checklist",
       entry_surface: entrySurface,
       export_format: "ics",
-      result_band: plan.band,
+      result_band: liveBand,
     });
   }
 

@@ -106,9 +106,10 @@ export function designReferralRewards(rawInputs = {}) {
       id: tier.id || `tier-${index + 1}`,
       referrals: Math.max(1, Math.min(500, Math.round(Number(tier.referrals) || (index + 1) * 3))),
       rewardType: tier.rewardType || "priority_queue",
-      label: String(tier.label || `Tier ${index + 1} reward`)
-        .trim()
-        .slice(0, 110),
+      label:
+        String(tier.label ?? "")
+          .trim()
+          .slice(0, 110) || `Tier ${index + 1} reward`,
       unitCost: Math.max(0, Math.min(1000, Number(tier.unitCost) || 0)),
     }))
     .sort((a, b) => a.referrals - b.referrals);

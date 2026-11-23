@@ -11,7 +11,11 @@ import { HugeiconsIcon } from "@hugeicons/react";
 import Image from "next/image";
 import { useMemo, useRef, useState } from "react";
 
-import { downloadCsv, downloadTextFile } from "@/components/tools/tool-export-utils";
+import {
+  downloadCsv,
+  downloadQrImage,
+  downloadTextFile,
+} from "@/components/tools/tool-export-utils";
 import { ToolHandoffCta } from "@/components/tools/tool-handoff-cta";
 import {
   ToolActionButton,
@@ -123,7 +127,8 @@ export function UtmBuilderWidget({
 
   const activeQrRow = matrix.rows.find((r) => r.id === activeQrRowId) || matrix.rows[0] || null;
   const activeQr = useMemo(
-    () => (activeQrRow ? generateQrResult(activeQrRow.url, 184) : { svg: "", error: "" }),
+    () =>
+      activeQrRow ? generateQrResult(activeQrRow.url, 184) : { svg: "", matrix: null, error: "" },
     [activeQrRow],
   );
   const activeQrSvg = activeQr.svg;
@@ -178,6 +183,21 @@ export function UtmBuilderWidget({
     });
   }
 
+  function handleDownloadQrImage(format) {
+    if (!activeQrRow || !activeQr.matrix) return;
+    downloadQrImage({
+      matrix: activeQr.matrix,
+      filename: `waitlyze-qr-${activeQrRow.source}-${matrix.campaign}.${format}`,
+      format,
+      size: 1024,
+    });
+    trackToolEvent("TOOL_RESULT_EXPORTED", {
+      tool_slug: "waitlist-utm-builder",
+      entry_surface: entrySurface,
+      export_format: `qr_${format}`,
+    });
+  }
+
   const allLinksText = matrix.rows.map((r) => `${r.channel}: ${r.url}`).join("\n");
 
   return (
@@ -218,7 +238,7 @@ export function UtmBuilderWidget({
 
       <div className="grid gap-2.5">
         <p className="text-caption font-medium text-product-text-primary">Channels</p>
-        <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3 lg:grid-cols-5">
+        <div className="flex flex-wrap gap-2">
           {UTM_CHANNEL_PRESETS.map((ch) => {
             const active = selectedIds.includes(ch.id);
             const presentation = CHANNEL_PRESENTATION[ch.id] ?? {
@@ -234,14 +254,14 @@ export function UtmBuilderWidget({
                 onPressedChange={() => toggleChannel(ch.id)}
                 aria-label={ch.label}
                 className={cn(
-                  "h-auto min-h-11 min-w-0 justify-start gap-2 rounded-lg px-3 py-2 text-left text-caption whitespace-normal",
+                  "h-10 shrink-0 justify-start gap-2 rounded-lg px-3.5 text-left text-caption whitespace-nowrap",
                   active
                     ? "bg-product-bg-inset text-product-text-primary aria-pressed:bg-product-bg-inset"
                     : "text-product-text-secondary hover:bg-product-bg-inset/60",
                 )}
               >
                 <ChannelIcon presentation={presentation} />
-                <span className="min-w-0 leading-tight">{presentation.label}</span>
+                <span className="leading-none">{presentation.label}</span>
               </Toggle>
             );
           })}
@@ -312,13 +332,29 @@ export function UtmBuilderWidget({
             ) : (
               <div className="bg-white p-1" dangerouslySetInnerHTML={{ __html: activeQrSvg }} />
             )}
-            <ToolActionButton
-              onClick={handleDownloadQrSvg}
-              disabled={!activeQrSvg}
-              className="w-full"
-            >
-              Download SVG
-            </ToolActionButton>
+            <div className="grid w-full grid-cols-3 gap-1.5">
+              <ToolActionButton
+                onClick={handleDownloadQrSvg}
+                disabled={!activeQrSvg}
+                className="w-full px-2"
+              >
+                SVG
+              </ToolActionButton>
+              <ToolActionButton
+                onClick={() => handleDownloadQrImage("png")}
+                disabled={!activeQr.matrix}
+                className="w-full px-2"
+              >
+                PNG
+              </ToolActionButton>
+              <ToolActionButton
+                onClick={() => handleDownloadQrImage("jpg")}
+                disabled={!activeQr.matrix}
+                className="w-full px-2"
+              >
+                JPG
+              </ToolActionButton>
+            </div>
           </div>
         ) : null}
       </div>
@@ -336,7 +372,7 @@ export function UtmBuilderWidget({
         onApplyInProduct={onApplyInProduct}
         buildBlueprint={() => ({
           templateId: "simple",
-          suggestedSlug: matrix.detectedSlug,
+          suggestedSlug: matrix.detectedSlug === "your-launch" ? "" : matrix.detectedSlug,
           showReferrals: true,
           utmPlan: {
             campaign: matrix.campaign,

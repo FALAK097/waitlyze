@@ -169,12 +169,18 @@ export function QueueSimulatorWidget({
         },
         {
           label: "Top 1% Cutoff",
-          value: `${sim.cutoffs[1].referralsRequired} refs`,
+          value:
+            sim.cutoffs[1].referralsRequired == null
+              ? "N/A"
+              : `${sim.cutoffs[1].referralsRequired} refs`,
           hint: `Rank <= #${sim.cutoffs[1].targetRank}`,
         },
         {
           label: "Top 10 Cutoff",
-          value: `${sim.cutoffs[3].referralsRequired} refs`,
+          value:
+            sim.cutoffs[3].referralsRequired == null
+              ? "N/A"
+              : `${sim.cutoffs[3].referralsRequired} refs`,
           hint: "Leaderboard",
         },
       ],

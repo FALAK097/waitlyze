@@ -2,7 +2,7 @@
 
 import { Loading02Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { useState } from "react";
+import { useId, useState } from "react";
 
 import { ToolHandoffCta } from "@/components/tools/tool-handoff-cta";
 import {
@@ -14,11 +14,29 @@ import {
   ToolWorkspace,
 } from "@/components/tools/tool-ui";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { trackToolEvent } from "@/lib/tools/analytics";
 import {
   COMMON_DKIM_SELECTORS,
   SAMPLE_DNS_RESULT,
 } from "@/lib/tools/engines/dns-deliverability.mjs";
+
+const CUSTOM_SELECTOR_VALUE = "__custom__";
+const SKIP_SELECTOR_VALUE = "__none__";
+
+const DKIM_DROPDOWN_OPTIONS = [
+  ...COMMON_DKIM_SELECTORS,
+  { value: CUSTOM_SELECTOR_VALUE, label: "Custom selector (type your own)" },
+  { value: SKIP_SELECTOR_VALUE, label: "Skip DKIM check" },
+];
 
 export function DnsDeliverabilityWidget({
   initialDomain = "",
@@ -26,12 +44,25 @@ export function DnsDeliverabilityWidget({
   entrySurface = "public_tool",
   onApplyInProduct = null,
 }) {
+  const selectorFieldId = useId();
+  const customSelectorId = useId();
   const [domain, setDomain] = useState(initialDomain);
-  const [selector, setSelector] = useState("resend");
+  const [selectorMode, setSelectorMode] = useState("resend");
+  const [customSelector, setCustomSelector] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  const [result, setResult] = useState(() => (initialDomain ? null : SAMPLE_DNS_RESULT));
-  const [isSample, setIsSample] = useState(!initialDomain);
+  const [result, setResult] = useState(null);
+  const [isSample, setIsSample] = useState(false);
+
+  const effectiveSelector =
+    selectorMode === SKIP_SELECTOR_VALUE
+      ? ""
+      : selectorMode === CUSTOM_SELECTOR_VALUE
+        ? customSelector.trim()
+        : selectorMode;
+
+  const activeSelectorLabel =
+    DKIM_DROPDOWN_OPTIONS.find((opt) => opt.value === selectorMode)?.label ?? selectorMode;
 
   async function inspectDomain(event) {
     event?.preventDefault();
@@ -48,7 +79,7 @@ export function DnsDeliverabilityWidget({
       const res = await fetch("/api/tools/check-dns", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ domain, selector }),
+        body: JSON.stringify({ domain, selector: effectiveSelector }),
       });
       const data = await res.json();
       if (!res.ok || !data?.ok) {
@@ -72,7 +103,7 @@ export function DnsDeliverabilityWidget({
   return (
     <ToolWorkspace>
       <form onSubmit={inspectDomain} className="grid gap-4">
-        <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_13rem_auto] md:items-end">
+        <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_minmax(0,16rem)_auto] md:items-start">
           <ToolTextField
             label="Sending domain"
             value={domain}
@@ -80,47 +111,69 @@ export function DnsDeliverabilityWidget({
             placeholder="acme.com"
             error={error}
           />
-          <ToolTextField
-            label="DKIM selector"
-            value={selector}
-            onChange={setSelector}
-            placeholder="resend"
-            maxLength={63}
-          />
-          <Button
-            type="submit"
-            variant="product-accent"
-            size="md"
-            disabled={busy || !domain.trim()}
-            className="h-10 px-5 font-semibold"
-          >
-            {busy ? (
-              <>
-                <HugeiconsIcon icon={Loading02Icon} size={16} className="animate-spin" />
-                <span>Checking…</span>
-              </>
-            ) : (
-              <span>Check DNS</span>
-            )}
-          </Button>
+          <div className="grid gap-1.5">
+            <Label
+              htmlFor={selectorFieldId}
+              className="text-caption font-medium text-product-text-primary"
+            >
+              DKIM selector
+            </Label>
+            <Select value={selectorMode} onValueChange={(next) => next && setSelectorMode(next)}>
+              <SelectTrigger
+                id={selectorFieldId}
+                className="h-10 w-full bg-product-bg-surface px-3 text-body text-product-text-primary"
+              >
+                <SelectValue>{activeSelectorLabel}</SelectValue>
+              </SelectTrigger>
+              <SelectContent align="start">
+                {DKIM_DROPDOWN_OPTIONS.map((opt) => (
+                  <SelectItem key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {selectorMode === CUSTOM_SELECTOR_VALUE ? (
+              <Input
+                id={customSelectorId}
+                type="text"
+                value={customSelector}
+                onChange={(event) => setCustomSelector(event.target.value)}
+                placeholder="Type selector (e.g., mailo, s2, pm)"
+                maxLength={63}
+                aria-label="Custom DKIM selector"
+                className="h-10 bg-product-bg-surface px-3 font-product-mono text-caption"
+              />
+            ) : null}
+          </div>
+          <div className="md:pt-[22px]">
+            <Button
+              type="submit"
+              variant="product-accent"
+              size="md"
+              disabled={
+                busy ||
+                !domain.trim() ||
+                (selectorMode === CUSTOM_SELECTOR_VALUE && !customSelector.trim())
+              }
+              className="h-10 w-full px-5 font-semibold whitespace-nowrap md:w-auto"
+            >
+              {busy ? (
+                <>
+                  <HugeiconsIcon icon={Loading02Icon} size={16} className="animate-spin" />
+                  <span>Checking…</span>
+                </>
+              ) : (
+                <span>Check DNS</span>
+              )}
+            </Button>
+          </div>
         </div>
 
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <div className="flex flex-wrap items-center gap-1.5">
-            <span className="text-micro text-product-text-muted">Selectors:</span>
-            {COMMON_DKIM_SELECTORS.map((item) => (
-              <Button
-                key={item.value}
-                type="button"
-                variant="product-ghost"
-                size="xs"
-                onClick={() => setSelector(item.value)}
-                className="font-product-mono text-micro"
-              >
-                {item.value}
-              </Button>
-            ))}
-          </div>
+          <p className="text-micro text-product-text-muted">
+            Pick your email provider’s DKIM selector, or choose Custom selector to enter your own.
+          </p>
           <Button
             type="button"
             variant="product-inline-link"
@@ -130,6 +183,7 @@ export function DnsDeliverabilityWidget({
               setResult(SAMPLE_DNS_RESULT);
               setIsSample(true);
             }}
+            className="whitespace-nowrap"
           >
             Load sample
           </Button>

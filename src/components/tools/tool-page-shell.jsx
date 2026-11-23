@@ -132,12 +132,12 @@ export function ToolPageShell({ slug, children, extraJsonLd = [] }) {
           {children}
         </section>
 
-        {/* 3. Concise Editorial Reference (How it works, Formula, Example) */}
+        {/* 3. Plain-English Reference (How it works, What goes in, Example) */}
         <section
-          className={`${CONTAINER} grid gap-12 py-14 lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)]`}
+          className={`${CONTAINER} grid gap-12 border-t border-product-border-subtle py-14 lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)]`}
           aria-labelledby="how-it-works-heading"
         >
-          <div className="grid content-start gap-6">
+          <div className="grid content-start gap-7">
             <div>
               <h2
                 id="how-it-works-heading"
@@ -146,36 +146,64 @@ export function ToolPageShell({ slug, children, extraJsonLd = [] }) {
                 {tool.howItWorks.heading}
               </h2>
               <p className="mt-2.5 max-w-2xl text-body leading-relaxed text-product-text-secondary">
-                {tool.directAnswer}
+                {tool.howItWorks.summary}
               </p>
             </div>
 
-            <p className="font-product-mono text-caption leading-relaxed text-product-text-primary">
-              {tool.howItWorks.formula}
-            </p>
+            {tool.howItWorks.items?.length ? (
+              <ol className="grid gap-4 sm:grid-cols-2">
+                {tool.howItWorks.items.map((item, idx) => (
+                  <li key={item.label} className="rounded-lg bg-product-bg-inset/50 p-4">
+                    <p className="text-caption font-semibold text-product-text-primary">
+                      <span className="mr-1.5 font-product-mono text-micro text-product-text-muted">
+                        {idx + 1}.
+                      </span>
+                      {item.label}
+                    </p>
+                    <p className="mt-1 text-caption leading-relaxed text-product-text-secondary">
+                      {item.detail}
+                    </p>
+                  </li>
+                ))}
+              </ol>
+            ) : null}
 
-            <dl className="grid gap-4 sm:grid-cols-2">
-              {tool.interpretationGuide.slice(0, 4).map((entry) => (
-                <div key={entry.band}>
-                  <dt className="text-caption font-semibold text-product-text-primary">
-                    {entry.band}
-                  </dt>
-                  <dd className="mt-1 text-caption leading-relaxed text-product-text-secondary">
-                    {entry.guidance}
-                  </dd>
-                </div>
-              ))}
-            </dl>
+            {tool.interpretationGuide?.length ? (
+              <div className="grid gap-3">
+                <h3 className="font-product-display text-base font-semibold text-product-text-primary">
+                  What your result means
+                </h3>
+                <dl className="grid gap-4 sm:grid-cols-2">
+                  {tool.interpretationGuide.slice(0, 4).map((entry) => (
+                    <div key={entry.band}>
+                      <dt className="text-caption font-semibold text-product-text-primary">
+                        {entry.band}
+                      </dt>
+                      <dd className="mt-1 text-caption leading-relaxed text-product-text-secondary">
+                        {entry.guidance}
+                      </dd>
+                    </div>
+                  ))}
+                </dl>
+              </div>
+            ) : null}
+
+            {tool.howItWorks.formula ? (
+              <p className="rounded-md bg-product-bg-inset/40 px-3.5 py-2.5 text-caption leading-relaxed text-product-text-secondary">
+                <span className="font-semibold text-product-text-primary">In short: </span>
+                {tool.howItWorks.formula}
+              </p>
+            ) : null}
           </div>
 
-          <aside className="grid content-start gap-4 pt-2 lg:pt-0 lg:pl-8">
+          <aside className="grid content-start gap-4 pt-2 lg:border-l lg:border-product-border-subtle lg:pt-0 lg:pl-8">
             <h3 className="font-product-display text-base font-semibold text-product-text-primary">
               {tool.workedExample.title}
             </h3>
             <p className="text-caption leading-relaxed text-product-text-secondary">
               {tool.workedExample.summary}
             </p>
-            <dl className="grid gap-2">
+            <dl className="grid divide-y divide-product-border-subtle">
               {tool.workedExample.metrics.map((metric) => (
                 <div
                   key={metric.label}

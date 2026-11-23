@@ -162,11 +162,18 @@ export function gradeWaitlistHtml({
   // Headings
   const h1Matches = document ? findElements(body, "h1").map(getVisibleText) : [];
   const h2Matches = document ? findElements(body, "h2").map(getVisibleText) : [];
-  const primaryH1 = h1Matches[0] || (isPlainCopy ? raw.split("\n")[0]?.trim() || "" : "");
+  const plainLines = isPlainCopy
+    ? raw
+        .split(/\r?\n/)
+        .map((line) => line.trim())
+        .filter(Boolean)
+    : [];
+  const primaryH1 = h1Matches[0] || (isPlainCopy ? plainLines[0] || "" : "");
   const h1Words = primaryH1 ? primaryH1.split(/\s+/).length : 0;
 
   // Forms, inputs, buttons
-  const formCount = document ? findElements(body, "form").length : 0;
+  const forms = document ? findElements(body, "form") : [];
+  const formCount = forms.length;
   const inputTags = document ? findElements(body, "input") : [];
   const visibleInputs = inputTags.filter((tag) => {
     const t = getAttribute(tag, "type").toLowerCase();
@@ -180,11 +187,39 @@ export function gradeWaitlistHtml({
   );
   const labelCount = document ? findElements(body, "label").length : 0;
 
-  const buttonMatches = document ? findElements(body, "button").map(getVisibleText) : [];
+  const isSubmitCapableButton = (btn) => {
+    const t = getAttribute(btn, "type").trim().toLowerCase();
+    return t === "" || t === "submit";
+  };
+  const formButtonMatches = document
+    ? forms.flatMap((form) =>
+        findElements(form, "button").filter(isSubmitCapableButton).map(getVisibleText),
+      )
+    : [];
+  const buttonMatches = document
+    ? findElements(body, "button").filter(isSubmitCapableButton).map(getVisibleText)
+    : [];
   const submitInputValues = inputTags
     .filter((tag) => getAttribute(tag, "type").toLowerCase() === "submit")
     .map((tag) => getAttribute(tag, "value"));
-  const allCtas = [...buttonMatches, ...submitInputValues].filter(Boolean);
+  let plainCtaMatch = "";
+  if (isPlainCopy) {
+    const candidateLines = plainLines.slice(1);
+    const labeledCta = candidateLines.find((line) => /^(?:cta|button)\s*:/i.test(line));
+    const isActionLine = (line) =>
+      /^(join|request|get|claim|reserve|apply|subscribe|submit|sign up|start)\b/i.test(line);
+    if (labeledCta) {
+      plainCtaMatch = labeledCta.replace(/^(?:cta|button)\s*:\s*/i, "").trim();
+    } else {
+      plainCtaMatch =
+        candidateLines.find((line) => line.split(/\s+/).length <= 6 && isActionLine(line)) ||
+        candidateLines.find(isActionLine) ||
+        "";
+    }
+  }
+  const allCtas = [...formButtonMatches, ...submitInputValues, ...buttonMatches]
+    .filter(Boolean)
+    .concat(plainCtaMatch ? [plainCtaMatch] : []);
   const primaryCta = allCtas[0] || "";
   const genericCta = /^(submit|sign up|signup|send|go|ok|subscribe)$/i.test(primaryCta.trim());
 
@@ -497,11 +532,13 @@ export function gradeWaitlistHtml({
     heading:
       primaryH1 && primaryH1.length <= 140 && h1Words >= 4 && h1Words <= 14
         ? primaryH1.slice(0, 140).trim()
-        : `Join the ${brandGuess} waitlist.`,
+        : `Get early access to ${brandGuess}.`,
     subheadline:
       metaDescription.length >= 40
         ? metaDescription.slice(0, 220)
-        : `Join the waitlist for ${brandGuess} to hear when it becomes available.`,
+        : goal === "referrals" || hasReferralSignal
+          ? `Leave your email for early access to ${brandGuess} and share your link to move up the list.`
+          : `Leave your email to get early access updates and hear when ${brandGuess} opens.`,
     buttonText: genericCta || !primaryCta ? "Request early access" : primaryCta.slice(0, 36),
     privacyNote: "",
   };
