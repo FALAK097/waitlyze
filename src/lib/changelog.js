@@ -1,5 +1,5 @@
-export const LATEST_CHANGELOG_VERSION = "v0.12.0";
-export const LATEST_CHANGELOG_DATE = "Nov 18 2026";
+export const LATEST_CHANGELOG_VERSION = "v0.13.0";
+export const LATEST_CHANGELOG_DATE = "Nov 23 2026";
 
 /**
  * Generates an HTML-safe anchor ID for a changelog version or heading.

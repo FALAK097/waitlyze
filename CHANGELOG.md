@@ -1,3 +1,23 @@
+## v0.13.0 · Nov 23, 2026
+
+### Launch Lab 14-tool suite, Cloudflare D1 database, and full-stack security hardening
+
+Plan, benchmark, and grade your launch before writing code with the new 14-tool Waitlyze Launch Lab and blueprint handoff. Waitlyze now runs on Cloudflare D1 with hardened OAuth, MCP, Turnstile, and workspace security across every route.
+
+#### Features
+
+- **Waitlyze Launch Lab (14 free tools).** Interactive calculators, landing page grader, DNS deliverability checker, queue simulator, reward designer, embed configurator, and cohort benchmarks across the public tools directory.
+- **Blueprint-to-draft handoff.** Carry configurations and generated copy from any Launch Lab tool directly into a prefilled waitlist draft after signing in.
+- **Cloudflare D1 backend migration.** Migrated primary data storage from PostgreSQL to Cloudflare D1 SQLite with edge-scoped Better Auth sessions and Prisma driver adapters.
+- **Pricing, features, and Black Friday promotion.** Added dedicated pricing, features, and about pages alongside the Black Friday 40% annual discount banner.
+- **MCP discovery and OpenAPI routes.** Published MCP server metadata, OpenAPI specs, Markdown content negotiation, and automated IndexNow submissions for faster search and AI indexing.
+
+#### Fixes
+
+- **Full-stack security hardening.** Enforced strict MCP OAuth JWT and scope checks, isolated waitlist-scoped API keys, hardened Turnstile hostname and IP verification, added clickjacking and security headers, and resolved all production dependency advisories.
+- **Free tools UI, accessibility, and responsiveness.** Redesigned the free tools directory and all 14 tool workspaces with compact controls, responsive brand channel icons, and accessible charts.
+- **Auth, templates, and release delivery.** Fixed sign-out errors, separated reviewer login from OAuth consent, preserved legacy template snapshots, avoided expired promo hydration flashes, and decoupled CI changelog broadcasts from direct database access.
+
 ## v0.12.0 · Nov 18, 2026
 
 ### Automated release tagging, GitHub Releases, and user release emails
