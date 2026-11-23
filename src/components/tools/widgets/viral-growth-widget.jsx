@@ -59,76 +59,82 @@ function ViralGrowthChart({ cycles }) {
         </div>
       </div>
 
-      <svg
-        viewBox={`0 0 ${chartW} ${chartH}`}
-        role="img"
-        aria-label="Weekly cumulative verified signups split between direct and referred signups"
-        className="h-auto w-full"
+      <div
+        className="min-w-0 overflow-x-auto overscroll-x-contain"
+        tabIndex={0}
+        aria-label="Scrollable weekly signup projection chart"
       >
-        {[0, 0.25, 0.5, 0.75, 1].map((ratio) => {
-          const y = padT + innerH * (1 - ratio);
-          const tickVal = Math.round(maxVal * ratio);
-          return (
-            <g key={ratio}>
-              <line x1={padL} y1={y} x2={chartW - padR} y2={y} stroke="#e5e7eb" strokeWidth="1" />
-              <text
-                x={padL - 8}
-                y={y + 4}
-                textAnchor="end"
-                fontSize="11"
-                fill="#64748b"
-                fontFamily="ui-monospace, monospace"
-              >
-                {tickVal >= 1000 ? `${(tickVal / 1000).toFixed(1)}k` : tickVal}
-              </text>
-            </g>
-          );
-        })}
+        <svg
+          viewBox={`0 0 ${chartW} ${chartH}`}
+          role="img"
+          aria-label="Weekly cumulative verified signups split between direct and referred signups"
+          className="h-auto min-w-[36rem] sm:w-full sm:min-w-0"
+        >
+          {[0, 0.25, 0.5, 0.75, 1].map((ratio) => {
+            const y = padT + innerH * (1 - ratio);
+            const tickVal = Math.round(maxVal * ratio);
+            return (
+              <g key={ratio}>
+                <line x1={padL} y1={y} x2={chartW - padR} y2={y} stroke="#e5e7eb" strokeWidth="1" />
+                <text
+                  x={padL - 8}
+                  y={y + 4}
+                  textAnchor="end"
+                  fontSize="11"
+                  fill="#64748b"
+                  fontFamily="ui-monospace, monospace"
+                >
+                  {tickVal >= 1000 ? `${(tickVal / 1000).toFixed(1)}k` : tickVal}
+                </text>
+              </g>
+            );
+          })}
 
-        {cycles.map((cycle, index) => {
-          const x = padL + index * barSlot + (barSlot - barW) / 2;
-          const directH = (cycle.cumulativeDirect / maxVal) * innerH;
-          const refH = (cycle.cumulativeReferred / maxVal) * innerH;
-          const directY = padT + innerH - directH;
-          const refY = directY - refH;
+          {cycles.map((cycle, index) => {
+            const x = padL + index * barSlot + (barSlot - barW) / 2;
+            const directH = (cycle.cumulativeDirect / maxVal) * innerH;
+            const refH = (cycle.cumulativeReferred / maxVal) * innerH;
+            const directY = padT + innerH - directH;
+            const refY = directY - refH;
 
-          return (
-            <g key={cycle.week}>
-              <rect
-                x={x}
-                y={directY}
-                width={barW}
-                height={Math.max(1, directH)}
-                rx="2"
-                fill="#00160d"
-              />
-              {refH > 0.5 ? (
+            return (
+              <g key={cycle.week}>
                 <rect
                   x={x}
-                  y={refY}
+                  y={directY}
                   width={barW}
-                  height={Math.max(1, refH)}
+                  height={Math.max(1, directH)}
                   rx="2"
-                  fill="#c6fe1e"
-                  stroke="#00160d"
-                  strokeOpacity="0.25"
-                  strokeWidth="0.75"
+                  fill="#00160d"
                 />
-              ) : null}
-              <text
-                x={x + barW / 2}
-                y={chartH - 10}
-                textAnchor="middle"
-                fontSize="11"
-                fill="#64748b"
-                fontFamily="ui-monospace, monospace"
-              >
-                W{cycle.week}
-              </text>
-            </g>
-          );
-        })}
-      </svg>
+                {refH > 0.5 ? (
+                  <rect
+                    x={x}
+                    y={refY}
+                    width={barW}
+                    height={Math.max(1, refH)}
+                    rx="2"
+                    fill="#c6fe1e"
+                    stroke="#00160d"
+                    strokeOpacity="0.25"
+                    strokeWidth="0.75"
+                  />
+                ) : null}
+                <text
+                  x={x + barW / 2}
+                  y={chartH - 10}
+                  textAnchor="middle"
+                  fontSize="11"
+                  fill="#64748b"
+                  fontFamily="ui-monospace, monospace"
+                >
+                  W{cycle.week}
+                </text>
+              </g>
+            );
+          })}
+        </svg>
+      </div>
 
       <div className="sr-only">
         <table>
@@ -311,8 +317,9 @@ export function ViralGrowthWidget({
 
   return (
     <ToolWorkspace>
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      <div className="grid gap-3 sm:flex sm:flex-wrap sm:items-center sm:justify-between">
         <ToolSegmentedControl
+          ariaLabel="Growth scenario"
           value={presetId}
           onChange={applyPreset}
           options={VIRAL_SCENARIO_PRESETS.map((p) => ({ value: p.id, label: p.label }))}
@@ -422,6 +429,25 @@ export function ViralGrowthWidget({
                 step={0.5}
                 prefix="$"
               />
+              <fieldset className="grid gap-4 pt-2">
+                <legend className="text-caption font-semibold text-product-text-primary">
+                  Referral milestones
+                </legend>
+                <div className="grid gap-4 sm:grid-cols-3 lg:grid-cols-1">
+                  {[1, 2, 3].map((tier) => (
+                    <ToolSliderField
+                      key={tier}
+                      label={`Tier ${tier} referrals`}
+                      value={inputs[`referralTier${tier}`]}
+                      onChange={(value) => updateInput(`referralTier${tier}`, value)}
+                      min={1}
+                      max={100}
+                      step={1}
+                      inputMode="numeric"
+                    />
+                  ))}
+                </div>
+              </fieldset>
             </>
           ) : null}
         </div>
@@ -463,6 +489,32 @@ export function ViralGrowthWidget({
           <ViralGrowthChart cycles={result.cycles} />
 
           {!compact ? (
+            <section className="grid gap-3" aria-labelledby="referral-milestones-heading">
+              <div className="flex flex-wrap items-baseline justify-between gap-2">
+                <h3
+                  id="referral-milestones-heading"
+                  className="text-caption font-semibold text-product-text-primary"
+                >
+                  Expected milestone unlocks
+                </h3>
+                <span className="text-micro text-product-text-muted">Directional estimate</span>
+              </div>
+              <dl className="grid gap-3 sm:grid-cols-3">
+                {result.referralTiers.map((tier, index) => (
+                  <div key={`${tier.referrals}-${index}`} className="min-w-0">
+                    <dt className="text-micro text-product-text-secondary">
+                      Tier {index + 1} · {tier.referrals} referrals
+                    </dt>
+                    <dd className="mt-1 font-product-mono text-caption font-medium text-product-text-primary tabular-nums">
+                      {tier.estimatedUnlocks.toLocaleString()} unlocks
+                    </dd>
+                  </div>
+                ))}
+              </dl>
+            </section>
+          ) : null}
+
+          {!compact ? (
             <div className="grid gap-3 pt-2">
               <div className="flex flex-wrap items-baseline justify-between gap-2">
                 <p className="text-caption font-semibold text-product-text-primary">
@@ -480,9 +532,9 @@ export function ViralGrowthWidget({
                   const pct = Math.max(6, Math.round((item.extraSignups / maxSensitivity) * 100));
                   return (
                     <div key={item.key} className="grid gap-1.5">
-                      <div className="flex items-center justify-between text-caption">
-                        <span className="text-product-text-primary">{item.label}</span>
-                        <span className="font-product-mono text-micro text-product-text-secondary tabular-nums">
+                      <div className="flex flex-wrap items-center justify-between gap-1 text-caption">
+                        <span className="min-w-0 text-product-text-primary">{item.label}</span>
+                        <span className="shrink-0 font-product-mono text-micro text-product-text-secondary tabular-nums">
                           +{item.extraSignups.toLocaleString()}
                         </span>
                       </div>

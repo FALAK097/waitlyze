@@ -231,14 +231,21 @@ export function RewardDesignerWidget({
                 : evaluated?.fraudRisk.level === "medium"
                   ? "warning"
                   : "success";
+            const referralsId = `reward-tier-${tier.id}-referrals`;
+            const typeId = `reward-tier-${tier.id}-type`;
+            const labelId = `reward-tier-${tier.id}-label`;
+            const costId = `reward-tier-${tier.id}-cost`;
             return (
               <div
                 key={tier.id}
                 className="grid gap-3 py-4 lg:grid-cols-[5.5rem_11.5rem_minmax(0,1fr)_6rem_auto] lg:items-end"
               >
                 <div className="grid gap-1">
-                  <Label className="text-micro text-product-text-secondary">Referrals</Label>
+                  <Label htmlFor={referralsId} className="text-micro text-product-text-secondary">
+                    Referrals
+                  </Label>
                   <Input
+                    id={referralsId}
                     type="number"
                     min={1}
                     max={500}
@@ -250,12 +257,17 @@ export function RewardDesignerWidget({
                   />
                 </div>
                 <div className="grid gap-1">
-                  <Label className="text-micro text-product-text-secondary">Type</Label>
+                  <Label htmlFor={typeId} className="text-micro text-product-text-secondary">
+                    Type
+                  </Label>
                   <Select
                     value={tier.rewardType}
                     onValueChange={(val) => val && updateTier(tier.id, { rewardType: val })}
                   >
-                    <SelectTrigger className="h-9 w-full bg-product-bg-surface text-caption">
+                    <SelectTrigger
+                      id={typeId}
+                      className="h-9 w-full bg-product-bg-surface text-caption"
+                    >
                       <SelectValue>{activeTypeLabel}</SelectValue>
                     </SelectTrigger>
                     <SelectContent align="start">
@@ -268,10 +280,11 @@ export function RewardDesignerWidget({
                   </Select>
                 </div>
                 <div className="grid gap-1">
-                  <Label className="text-micro text-product-text-secondary">
+                  <Label htmlFor={labelId} className="text-micro text-product-text-secondary">
                     Tier {index + 1} reward
                   </Label>
                   <Input
+                    id={labelId}
                     type="text"
                     maxLength={110}
                     value={tier.label}
@@ -280,8 +293,11 @@ export function RewardDesignerWidget({
                   />
                 </div>
                 <div className="grid gap-1">
-                  <Label className="text-micro text-product-text-secondary">Cost ($)</Label>
+                  <Label htmlFor={costId} className="text-micro text-product-text-secondary">
+                    Cost ($)
+                  </Label>
                   <Input
+                    id={costId}
                     type="number"
                     min={0}
                     max={1000}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useId, useMemo, useRef, useState } from "react";
 
 import { ToolHandoffCta } from "@/components/tools/tool-handoff-cta";
 import {
@@ -40,6 +40,8 @@ export function EmbedConfiguratorWidget({
   const [overlayOpen, setOverlayOpen] = useState(false);
   const [sampleEmail, setSampleEmail] = useState("");
   const startedRef = useRef(false);
+  const accentColorId = useId();
+  const buttonTextColorId = useId();
 
   const snippet = useMemo(
     () => generateEmbedSnippet(config, waitlistKeyId),
@@ -186,11 +188,14 @@ export function EmbedConfiguratorWidget({
               { value: "dark", label: "Dark" },
             ]}
           />
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid gap-3 sm:grid-cols-2">
             <div className="grid gap-1.5">
-              <Label className="text-caption font-medium">Accent</Label>
+              <Label htmlFor={accentColorId} className="text-caption font-medium">
+                Accent
+              </Label>
               <div className="flex h-10 items-center gap-2 rounded-lg border border-input bg-product-bg-surface px-2.5">
                 <input
+                  id={accentColorId}
                   type="color"
                   value={config.accentColor}
                   onChange={(e) => update("accentColor", e.target.value)}
@@ -202,9 +207,12 @@ export function EmbedConfiguratorWidget({
               </div>
             </div>
             <div className="grid gap-1.5">
-              <Label className="text-caption font-medium">Button text</Label>
+              <Label htmlFor={buttonTextColorId} className="text-caption font-medium">
+                Button text
+              </Label>
               <div className="flex h-10 items-center gap-2 rounded-lg border border-input bg-product-bg-surface px-2.5">
                 <input
+                  id={buttonTextColorId}
                   type="color"
                   value={config.buttonTextColor}
                   onChange={(e) => update("buttonTextColor", e.target.value)}
@@ -243,8 +251,9 @@ export function EmbedConfiguratorWidget({
         </div>
 
         <div className="grid content-start gap-6">
-          <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="grid gap-2 sm:grid-cols-2">
             <ToolSegmentedControl
+              ariaLabel="Preview state"
               value={previewPhase}
               onChange={setPreviewPhase}
               options={[
@@ -253,6 +262,7 @@ export function EmbedConfiguratorWidget({
               ]}
             />
             <ToolSegmentedControl
+              ariaLabel="Preview viewport"
               value={viewport}
               onChange={setViewport}
               options={[
@@ -262,7 +272,7 @@ export function EmbedConfiguratorWidget({
             />
           </div>
 
-          <div className="relative flex min-h-56 items-center justify-center overflow-hidden rounded-lg bg-product-bg-inset/50 p-6">
+          <div className="relative flex min-h-56 min-w-0 items-center justify-center overflow-hidden rounded-lg bg-product-bg-inset/50 p-3 sm:p-6">
             <div
               className={cn(
                 "w-full transition-all",
@@ -311,8 +321,9 @@ export function EmbedConfiguratorWidget({
           </div>
 
           <div className="grid gap-3 pt-2">
-            <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex flex-col items-stretch gap-2 sm:flex-row sm:items-center sm:justify-between">
               <ToolSegmentedControl
+                ariaLabel="Embed framework"
                 value={config.framework}
                 onChange={(val) => update("framework", val)}
                 options={EMBED_FRAMEWORKS}
@@ -327,12 +338,16 @@ export function EmbedConfiguratorWidget({
                     export_format: config.framework,
                   })
                 }
+                className="w-full sm:w-auto"
               />
             </div>
 
             <pre className="overflow-x-auto rounded-lg bg-product-bg-inset/60 p-4 font-product-mono text-micro leading-relaxed text-product-text-primary">
               <code>{snippet.code}</code>
             </pre>
+            <p className="text-caption leading-relaxed text-product-text-secondary">
+              {snippet.installNote}
+            </p>
           </div>
 
           <ToolHandoffCta

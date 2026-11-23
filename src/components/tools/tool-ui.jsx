@@ -31,7 +31,7 @@ import { copyToClipboard } from "./tool-export-utils";
  * Unboxed tool workspace container with clean vertical rhythm and no outer card chrome.
  */
 export function ToolWorkspace({ children, className = "" }) {
-  return <div className={cn("grid gap-8", className)}>{children}</div>;
+  return <div className={cn("grid min-w-0 gap-8", className)}>{children}</div>;
 }
 
 /**
@@ -68,7 +68,12 @@ export function ToolStatTile({ label, value, hint = "", tone = "neutral", classN
  */
 export function ToolStatStrip({ children, className = "" }) {
   return (
-    <div className={cn("grid grid-cols-2 gap-x-6 gap-y-5 py-2 sm:grid-cols-4", className)}>
+    <div
+      className={cn(
+        "grid min-w-0 grid-cols-2 gap-x-4 gap-y-5 py-2 sm:grid-cols-4 sm:gap-x-6",
+        className,
+      )}
+    >
       {children}
     </div>
   );
@@ -135,7 +140,7 @@ export function ToolSliderField({
 
   return (
     <div className="grid gap-2">
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <Label htmlFor={id} className="text-caption font-medium text-product-text-primary">
           {label}
         </Label>
@@ -331,17 +336,45 @@ export function ToolTextareaField({
 /**
  * Segmented control built on Base UI Tabs for crisp, keyboard-accessible mode switching.
  */
-export function ToolSegmentedControl({ label, value, onChange, options, className = "" }) {
+export function ToolSegmentedControl({
+  label,
+  ariaLabel,
+  value,
+  onChange,
+  options,
+  className = "",
+}) {
+  const id = useId();
+  const labelId = label ? `${id}-label` : undefined;
   const useSelect = options.length > 4;
+  const hasOddOptions = options.length % 2 === 1;
+  const accessibleName = ariaLabel || label || "Choose an option";
 
   return (
-    <div className={cn("grid gap-1.5", className)}>
+    <div className={cn("grid min-w-0 gap-1.5", className)}>
       {label ? (
-        <span className="text-caption font-medium text-product-text-primary">{label}</span>
+        useSelect ? (
+          <Label
+            id={labelId}
+            htmlFor={id}
+            className="text-caption font-medium text-product-text-primary"
+          >
+            {label}
+          </Label>
+        ) : (
+          <span id={labelId} className="text-caption font-medium text-product-text-primary">
+            {label}
+          </span>
+        )
       ) : null}
       {useSelect ? (
         <Select value={value} onValueChange={(next) => next && onChange(next)}>
-          <SelectTrigger className="h-10 w-full bg-product-bg-surface px-3 text-body text-product-text-primary sm:max-w-72">
+          <SelectTrigger
+            id={id}
+            aria-label={label ? undefined : accessibleName}
+            aria-labelledby={labelId}
+            className="h-11 w-full bg-product-bg-surface px-3 text-body text-product-text-primary sm:max-w-72"
+          >
             <SelectValue>
               {options.find((option) => option.value === value)?.label ?? value}
             </SelectValue>
@@ -355,13 +388,21 @@ export function ToolSegmentedControl({ label, value, onChange, options, classNam
           </SelectContent>
         </Select>
       ) : (
-        <Tabs value={value} onValueChange={(next) => next && onChange(next)}>
-          <TabsList className="h-auto! w-fit max-w-full flex-nowrap justify-start gap-1 bg-product-bg-inset p-1">
+        <Tabs value={value} onValueChange={(next) => next && onChange(next)} className="min-w-0">
+          <TabsList
+            id={id}
+            aria-label={label ? undefined : accessibleName}
+            aria-labelledby={labelId}
+            className="grid! h-auto! w-full max-w-full grid-cols-2 gap-1 bg-product-bg-inset p-1 sm:flex! sm:flex-wrap sm:justify-start"
+          >
             {options.map((opt) => (
               <TabsTrigger
                 key={opt.value}
                 value={opt.value}
-                className="h-auto! min-h-8 flex-none px-3 py-1 text-caption font-medium data-active:bg-product-bg-surface data-active:text-product-text-primary data-active:shadow-2xs"
+                className={cn(
+                  "h-auto! min-h-11 w-full min-w-0 px-2.5 py-1.5 text-center text-caption leading-tight font-medium whitespace-normal data-active:bg-product-bg-surface data-active:text-product-text-primary data-active:shadow-2xs sm:w-auto sm:flex-1 sm:basis-0",
+                  hasOddOptions && "last:col-span-2 sm:last:col-span-1",
+                )}
               >
                 {opt.label}
               </TabsTrigger>

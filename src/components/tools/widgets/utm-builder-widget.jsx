@@ -2,15 +2,13 @@
 
 import {
   CodeIcon,
-  Linkedin01Icon,
   Mail01Icon,
-  NewTwitterIcon,
   QrCodeIcon,
-  RedditIcon,
   Rocket01Icon,
   UserMultiple02Icon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
+import Image from "next/image";
 import { useMemo, useRef, useState } from "react";
 
 import { downloadCsv, downloadTextFile } from "@/components/tools/tool-export-utils";
@@ -40,12 +38,15 @@ import {
 import { cn } from "@/lib/utils";
 
 const CHANNEL_PRESENTATION = {
-  producthunt: { icon: Rocket01Icon, label: "Product Hunt", iconClass: "text-[#da552f]" },
+  producthunt: {
+    logoSrc: "/assets/icons/product-hunt.svg",
+    label: "Product Hunt",
+  },
   hackernews: { icon: CodeIcon, label: "Show HN", iconClass: "text-[#ff6600]" },
-  x_thread: { icon: NewTwitterIcon, label: "X launch", iconClass: "text-product-text-primary" },
-  x_bio: { icon: NewTwitterIcon, label: "X bio", iconClass: "text-product-text-primary" },
-  linkedin: { icon: Linkedin01Icon, label: "LinkedIn", iconClass: "text-[#0a66c2]" },
-  reddit: { icon: RedditIcon, label: "Reddit", iconClass: "text-[#ff4500]" },
+  x_thread: { logoSrc: "/assets/icons/x.svg", logoOnDark: true, label: "X launch" },
+  x_bio: { logoSrc: "/assets/icons/x.svg", logoOnDark: true, label: "X bio" },
+  linkedin: { logoSrc: "/assets/icons/linkedin.svg", label: "LinkedIn" },
+  reddit: { logoSrc: "/assets/icons/reddit.svg", label: "Reddit" },
   newsletter: { icon: Mail01Icon, label: "Newsletter", iconClass: "text-product-text-secondary" },
   partner: {
     icon: UserMultiple02Icon,
@@ -54,6 +55,41 @@ const CHANNEL_PRESENTATION = {
   },
   event_qr: { icon: QrCodeIcon, label: "Event QR", iconClass: "text-product-text-secondary" },
 };
+
+function ChannelIcon({ presentation }) {
+  if (presentation.logoSrc) {
+    const logo = (
+      <Image
+        src={presentation.logoSrc}
+        alt=""
+        width={16}
+        height={16}
+        aria-hidden="true"
+        className={cn("size-4 shrink-0 object-contain", presentation.logoOnDark && "size-3")}
+      />
+    );
+
+    return presentation.logoOnDark ? (
+      <span
+        aria-hidden="true"
+        className="flex size-4 shrink-0 items-center justify-center rounded-[3px] bg-black"
+      >
+        {logo}
+      </span>
+    ) : (
+      logo
+    );
+  }
+
+  return (
+    <HugeiconsIcon
+      icon={presentation.icon}
+      size={16}
+      aria-hidden="true"
+      className={presentation.iconClass}
+    />
+  );
+}
 
 export function UtmBuilderWidget({
   initialUrl = "",
@@ -198,19 +234,14 @@ export function UtmBuilderWidget({
                 onPressedChange={() => toggleChannel(ch.id)}
                 aria-label={ch.label}
                 className={cn(
-                  "h-auto min-h-10 justify-start gap-2 rounded-lg px-3 py-2 text-caption",
+                  "h-auto min-h-11 min-w-0 justify-start gap-2 rounded-lg px-3 py-2 text-left text-caption whitespace-normal",
                   active
                     ? "bg-product-bg-inset text-product-text-primary aria-pressed:bg-product-bg-inset"
                     : "text-product-text-secondary hover:bg-product-bg-inset/60",
                 )}
               >
-                <HugeiconsIcon
-                  icon={presentation.icon}
-                  size={16}
-                  aria-hidden="true"
-                  className={presentation.iconClass}
-                />
-                <span>{presentation.label}</span>
+                <ChannelIcon presentation={presentation} />
+                <span className="min-w-0 leading-tight">{presentation.label}</span>
               </Toggle>
             );
           })}
