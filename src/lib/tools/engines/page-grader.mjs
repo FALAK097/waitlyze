@@ -194,11 +194,21 @@ export function gradeWaitlistHtml({
   const submitInputValues = inputTags
     .filter((tag) => getAttribute(tag, "type").toLowerCase() === "submit")
     .map((tag) => getAttribute(tag, "value"));
-  const plainCtaMatch = isPlainCopy
-    ? plainLines.find((line) =>
-        /^(join|request|get|claim|reserve|apply|subscribe|submit|sign up|start)\b/i.test(line),
-      ) || ""
-    : "";
+  let plainCtaMatch = "";
+  if (isPlainCopy) {
+    const candidateLines = plainLines.slice(1);
+    const labeledCta = candidateLines.find((line) => /^(?:cta|button)\s*:/i.test(line));
+    if (labeledCta) {
+      plainCtaMatch = labeledCta.replace(/^(?:cta|button)\s*:\s*/i, "").trim();
+    } else {
+      plainCtaMatch =
+        candidateLines.find(
+          (line) =>
+            line.split(/\s+/).length <= 6 &&
+            /^(join|request|get|claim|reserve|apply|subscribe|submit|sign up|start)\b/i.test(line),
+        ) || "";
+    }
+  }
   const allCtas = [...formButtonMatches, ...submitInputValues, ...buttonMatches]
     .filter(Boolean)
     .concat(plainCtaMatch ? [plainCtaMatch] : []);
@@ -518,7 +528,9 @@ export function gradeWaitlistHtml({
     subheadline:
       metaDescription.length >= 40
         ? metaDescription.slice(0, 220)
-        : `Join the ${brandGuess} waitlist to get invited when Wave 1 opens and move up by sharing.`,
+        : goal === "referrals" || hasReferralSignal
+          ? `Leave your email for early access to ${brandGuess} and share your link to move up the list.`
+          : `Leave your email to get early access updates and hear when ${brandGuess} opens.`,
     buttonText: genericCta || !primaryCta ? "Request early access" : primaryCta.slice(0, 36),
     privacyNote: "",
   };

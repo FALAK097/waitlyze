@@ -623,7 +623,7 @@ export const TOOLS_REGISTRY = Object.freeze([
         {
           label: "Slow vs. Viral Stress Test",
           detail:
-            "Shows Conservative (P25), Typical (P50), and Breakout (P90) budgets so you know your worst-case cost if your launch blows up.",
+            "Shows Conservative (P25), Typical (P50), and Breakout (P90, 1.75× baseline) estimates to help you plan for higher-than-usual sharing—not a hard spending cap.",
         },
         {
           label: "Cost vs. Customer Value",
@@ -643,7 +643,7 @@ export const TOOLS_REGISTRY = Object.freeze([
         "Product value $120. Tier 1 (3 refs): priority access ($0). Tier 2 (5 refs): 1 free month ($6 cost). Tier 3 (15 refs): swag ($22).",
       metrics: [
         { label: "Typical budget (P50)", value: "~$1,157 total" },
-        { label: "Viral spike (P90)", value: "~$2,024 max" },
+        { label: "Breakout estimate (P90)", value: "~$2,024 estimate" },
         { label: "Cost per referral", value: "~$0.91 each" },
         { label: "Safety setting", value: "Double opt-in + Strict fraud mode" },
       ],

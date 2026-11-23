@@ -59,6 +59,20 @@ function gradeFromScore(score) {
   return "F";
 }
 
+function isValidDkimPublicKey(record, publicKey) {
+  const cleanKey = String(publicKey || "").replace(/\s+/g, "");
+  if (!/^[A-Za-z0-9+/]+={0,2}$/.test(cleanKey) || cleanKey.length % 4 !== 0) {
+    return false;
+  }
+  const keyTypeMatch = String(record).match(/(?:^|;)\s*k\s*=\s*([^;\s]+)/i);
+  const keyType = (keyTypeMatch?.[1] || "rsa").toLowerCase();
+  if (keyType === "ed25519") {
+    return cleanKey.length === 44;
+  }
+  // RSA DKIM keys (RFC 6376 / 8301): >= 1024-bit SPKI keys are >= 180 base64 chars
+  return cleanKey.length >= 160;
+}
+
 export function evaluateDnsRecords({
   domain,
   selector = "",
@@ -241,54 +255,78 @@ export function evaluateDnsRecords({
       const hasKeyTag = /(?:^|;)\s*p\s*=/i.test(value);
       return (!versionTag || version?.toLowerCase() === "dkim1") && hasKeyTag;
     });
-    const foundDkimRecord = dkimCandidates.find((record) => {
+    const validDkimRecord = dkimCandidates.find((record) => {
       const publicKey = String(record)
-        .match(/(?:^|;)\s*p\s*=\s*([^;\s][^;]*)/i)?.[1]
+        .match(/(?:^|;)\s*p\s*=\s*([^;]*)/i)?.[1]
         ?.trim();
-      return Boolean(publicKey && publicKey.length >= 16);
+      return Boolean(publicKey) && isValidDkimPublicKey(record, publicKey);
     });
+    const malformedDkimRecord =
+      !validDkimRecord &&
+      dkimCandidates.find((record) => {
+        const publicKey = String(record)
+          .match(/(?:^|;)\s*p\s*=\s*([^;]*)/i)?.[1]
+          ?.trim();
+        return Boolean(publicKey);
+      });
     const revokedDkimRecord =
-      !foundDkimRecord && dkimCandidates.length > 0 ? dkimCandidates[0] : "";
+      !validDkimRecord && !malformedDkimRecord && dkimCandidates.length > 0
+        ? dkimCandidates[0]
+        : "";
 
-    dkimCheck = foundDkimRecord
+    dkimCheck = validDkimRecord
       ? {
           id: "dkim",
           name: `DKIM (${selector}._domainkey)`,
           status: "pass",
           points: 20,
           maxPoints: 20,
-          rawRecord: foundDkimRecord.slice(0, 180) + (foundDkimRecord.length > 180 ? "…" : ""),
+          rawRecord: validDkimRecord.slice(0, 180) + (validDkimRecord.length > 180 ? "…" : ""),
           summary: `Valid DKIM public key found at ${selector}._domainkey.${domain}.`,
           remediation:
             "DKIM key record is published. Send a signed test message to confirm live alignment.",
           copyableFix: "",
         }
-      : revokedDkimRecord
+      : malformedDkimRecord
         ? {
             id: "dkim",
             name: `DKIM (${selector}._domainkey)`,
-            status: "fail",
-            points: 0,
+            status: "warn",
+            points: 8,
             maxPoints: 20,
             rawRecord:
-              revokedDkimRecord.slice(0, 180) + (revokedDkimRecord.length > 180 ? "…" : ""),
-            summary: `DKIM record at ${selector}._domainkey.${domain} has an empty or revoked public key (p=).`,
+              malformedDkimRecord.slice(0, 180) + (malformedDkimRecord.length > 180 ? "…" : ""),
+            summary: `DKIM record found at ${selector}._domainkey.${domain}, but its public key (p=) looks truncated or invalid base64.`,
             remediation:
-              "Re-generate or publish the active DKIM key from your email provider dashboard.",
+              "Copy the full DKIM public key from your email provider dashboard without truncating or adding placeholder characters.",
             copyableFix: "",
           }
-        : {
-            id: "dkim",
-            name: `DKIM (${selector}._domainkey)`,
-            status: "fail",
-            points: 0,
-            maxPoints: 20,
-            rawRecord: `No TXT record found at ${selector}._domainkey.${domain}`,
-            summary: `Could not find a DKIM key for selector "${selector}".`,
-            remediation:
-              "Double-check your email provider's exact selector name or publish the DKIM TXT record from your Resend dashboard.",
-            copyableFix: "",
-          };
+        : revokedDkimRecord
+          ? {
+              id: "dkim",
+              name: `DKIM (${selector}._domainkey)`,
+              status: "fail",
+              points: 0,
+              maxPoints: 20,
+              rawRecord:
+                revokedDkimRecord.slice(0, 180) + (revokedDkimRecord.length > 180 ? "…" : ""),
+              summary: `DKIM record at ${selector}._domainkey.${domain} has an empty or revoked public key (p=).`,
+              remediation:
+                "Re-generate or publish the active DKIM key from your email provider dashboard.",
+              copyableFix: "",
+            }
+          : {
+              id: "dkim",
+              name: `DKIM (${selector}._domainkey)`,
+              status: "fail",
+              points: 0,
+              maxPoints: 20,
+              rawRecord: `No TXT record found at ${selector}._domainkey.${domain}`,
+              summary: `Could not find a DKIM key for selector "${selector}".`,
+              remediation:
+                "Double-check your email provider's exact selector name or publish the DKIM TXT record from your Resend dashboard.",
+              copyableFix: "",
+            };
   }
 
   const checks = [spfCheck, dmarcCheck, mxCheck, dkimCheck];
@@ -318,5 +356,7 @@ export const SAMPLE_DNS_RESULT = evaluateDnsRecords({
   txtRecords: ["v=spf1 include:amazonses.com include:_spf.google.com ~all"],
   dmarcRecords: [],
   mxRecords: ["10 aspmx.l.google.com.", "20 alt1.aspmx.l.google.com."],
-  dkimRecords: ["v=DKIM1; k=rsa; p=MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQC..."],
+  dkimRecords: [
+    "v=DKIM1; k=rsa; p=MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQC7VJTUt9Us8cKjMzEfYyjiWA4R4/M2bS1+fWIc5n7s9x2T5n2T8jW+9W2cK8pQ1m3N8o4P6q7R9s0T1u2V3w4X5y6Z7a8B9c0D1e2F3g4H5i6J7k8L9m0N1o2P3q4R5s6T7u8V9wIDAQAB",
+  ],
 });
