@@ -177,20 +177,27 @@ export function ViralGrowthWidget({
     if (compact || typeof window === "undefined") return;
     const params = new URLSearchParams(window.location.search);
     if (!params.has("wv")) return;
+    const numParam = (key, fallback) => {
+      const raw = params.get(key);
+      if (raw === null) return fallback;
+      const parsed = Number(raw);
+      return Number.isFinite(parsed) ? parsed : fallback;
+    };
     setInputs((prev) => ({
       ...prev,
-      startingList: Number(params.get("sl") ?? prev.startingList),
-      weeklyVisitors: Number(params.get("wv") ?? prev.weeklyVisitors),
-      conversionRatePct: Number(params.get("cr") ?? prev.conversionRatePct),
-      verificationRatePct: Number(params.get("vr") ?? prev.verificationRatePct),
-      shareRatePct: Number(params.get("sr") ?? prev.shareRatePct),
-      clicksPerSharer: Number(params.get("cs") ?? prev.clicksPerSharer),
-      referredConversionPct: Number(params.get("rc") ?? prev.referredConversionPct),
-      weeks: Number(params.get("wk") ?? prev.weeks),
-      launchEmailOpenRatePct: Number(params.get("or") ?? prev.launchEmailOpenRatePct),
-      referralTier1: Number(params.get("t1") ?? prev.referralTier1),
-      referralTier2: Number(params.get("t2") ?? prev.referralTier2),
-      referralTier3: Number(params.get("t3") ?? prev.referralTier3),
+      startingList: numParam("sl", prev.startingList),
+      weeklyVisitors: numParam("wv", prev.weeklyVisitors),
+      conversionRatePct: numParam("cr", prev.conversionRatePct),
+      verificationRatePct: numParam("vr", prev.verificationRatePct),
+      shareRatePct: numParam("sr", prev.shareRatePct),
+      clicksPerSharer: numParam("cs", prev.clicksPerSharer),
+      referredConversionPct: numParam("rc", prev.referredConversionPct),
+      weeks: numParam("wk", prev.weeks),
+      launchEmailOpenRatePct: numParam("or", prev.launchEmailOpenRatePct),
+      rewardCostPerReferral: numParam("rw", prev.rewardCostPerReferral),
+      referralTier1: numParam("t1", prev.referralTier1),
+      referralTier2: numParam("t2", prev.referralTier2),
+      referralTier3: numParam("t3", prev.referralTier3),
     }));
   }, [compact]);
 
@@ -300,6 +307,7 @@ export function ViralGrowthWidget({
     url.searchParams.set("rc", String(result.inputs.referredConversionPct));
     url.searchParams.set("wk", String(result.inputs.weeks));
     url.searchParams.set("or", String(result.inputs.launchEmailOpenRatePct));
+    url.searchParams.set("rw", String(result.inputs.rewardCostPerReferral));
     url.searchParams.set("t1", String(result.inputs.referralTier1));
     url.searchParams.set("t2", String(result.inputs.referralTier2));
     url.searchParams.set("t3", String(result.inputs.referralTier3));
@@ -583,10 +591,14 @@ export function ViralGrowthWidget({
                 pointsSignup: 50,
                 pointsReferral: 30,
                 modeledKFactor: result.effectiveK,
-                rewardTiers: result.referralTiers.map((tier, index) => ({
-                  referrals: tier.referrals,
-                  reward: `Referral milestone ${index + 1}`,
-                })),
+                ...(result.effectiveK >= 0.1
+                  ? {
+                      rewardTiers: result.referralTiers.map((tier, index) => ({
+                        referrals: tier.referrals,
+                        reward: `Referral milestone ${index + 1}`,
+                      })),
+                    }
+                  : {}),
               },
               summaryBullets: [
                 `Modeled K-factor: ${result.effectiveK.toFixed(2)} (${result.totalVerified.toLocaleString()} projected verified signups over ${result.inputs.weeks} weeks)`,

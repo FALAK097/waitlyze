@@ -3,6 +3,7 @@
 import { ArrowDown01Icon, ArrowUp01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { useId, useMemo, useRef, useState } from "react";
+import { toast } from "sonner";
 
 import { downloadJson } from "@/components/tools/tool-export-utils";
 import { ToolHandoffCta } from "@/components/tools/tool-handoff-cta";
@@ -318,6 +319,11 @@ export function IntakeFormDesignerWidget({
             <Button
               type="button"
               variant="product-accent"
+              onClick={() =>
+                toast.info(
+                  "Interactive preview — click “Build this intake form in Waitlyze” below to launch.",
+                )
+              }
               className="mt-1 h-10 w-full font-semibold"
             >
               Request beta invite

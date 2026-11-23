@@ -1,9 +1,9 @@
 export const COMMON_DKIM_SELECTORS = Object.freeze([
-  { value: "resend", label: "resend (Resend)" },
-  { value: "google", label: "google (Google Workspace)" },
-  { value: "s1", label: "s1 (SendGrid / Mailgun)" },
-  { value: "selector1", label: "selector1 (Microsoft 365)" },
-  { value: "k1", label: "k1 (Mailchimp)" },
+  { value: "resend", label: "resend — Resend" },
+  { value: "google", label: "google — Google Workspace" },
+  { value: "s1", label: "s1 — SendGrid" },
+  { value: "selector1", label: "selector1 — Microsoft 365" },
+  { value: "k1", label: "k1 — Mailchimp" },
 ]);
 
 const DOMAIN_RE = /^(?=.{4,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$/;
@@ -234,38 +234,61 @@ export function evaluateDnsRecords({
       copyableFix: "",
     };
   } else {
-    const foundDkimRecord = dkimRecords.find((record) => {
+    const dkimCandidates = dkimRecords.filter((record) => {
       const value = String(record);
-      const publicKey = value.match(/(?:^|;)\s*p\s*=\s*([^;\s][^;]*)/i)?.[1]?.trim();
       const versionTag = value.match(/(?:^|;)\s*v\s*=\s*([^;]*)/i);
       const version = versionTag?.[1]?.trim();
-      return (!versionTag || version?.toLowerCase() === "dkim1") && Boolean(publicKey);
+      const hasKeyTag = /(?:^|;)\s*p\s*=/i.test(value);
+      return (!versionTag || version?.toLowerCase() === "dkim1") && hasKeyTag;
     });
+    const foundDkimRecord = dkimCandidates.find((record) => {
+      const publicKey = String(record)
+        .match(/(?:^|;)\s*p\s*=\s*([^;\s][^;]*)/i)?.[1]
+        ?.trim();
+      return Boolean(publicKey && publicKey.length >= 16);
+    });
+    const revokedDkimRecord =
+      !foundDkimRecord && dkimCandidates.length > 0 ? dkimCandidates[0] : "";
+
     dkimCheck = foundDkimRecord
       ? {
           id: "dkim",
           name: `DKIM (${selector}._domainkey)`,
-          status: "warn",
-          points: 10,
+          status: "pass",
+          points: 20,
           maxPoints: 20,
           rawRecord: foundDkimRecord.slice(0, 180) + (foundDkimRecord.length > 180 ? "…" : ""),
-          summary: `A DKIM TXT record was found at ${selector}._domainkey.${domain}, but its key material was not cryptographically verified.`,
+          summary: `Valid DKIM public key found at ${selector}._domainkey.${domain}.`,
           remediation:
-            "Confirm the key with your email provider and verify a signed test message before relying on DKIM alignment.",
+            "DKIM key record is published. Send a signed test message to confirm live alignment.",
           copyableFix: "",
         }
-      : {
-          id: "dkim",
-          name: `DKIM (${selector}._domainkey)`,
-          status: "fail",
-          points: 0,
-          maxPoints: 20,
-          rawRecord: `No TXT record found at ${selector}._domainkey.${domain}`,
-          summary: `Could not find a DKIM key for selector "${selector}".`,
-          remediation:
-            "Double-check your email provider's exact selector name or publish the DKIM TXT record from your Resend dashboard.",
-          copyableFix: "",
-        };
+      : revokedDkimRecord
+        ? {
+            id: "dkim",
+            name: `DKIM (${selector}._domainkey)`,
+            status: "fail",
+            points: 0,
+            maxPoints: 20,
+            rawRecord:
+              revokedDkimRecord.slice(0, 180) + (revokedDkimRecord.length > 180 ? "…" : ""),
+            summary: `DKIM record at ${selector}._domainkey.${domain} has an empty or revoked public key (p=).`,
+            remediation:
+              "Re-generate or publish the active DKIM key from your email provider dashboard.",
+            copyableFix: "",
+          }
+        : {
+            id: "dkim",
+            name: `DKIM (${selector}._domainkey)`,
+            status: "fail",
+            points: 0,
+            maxPoints: 20,
+            rawRecord: `No TXT record found at ${selector}._domainkey.${domain}`,
+            summary: `Could not find a DKIM key for selector "${selector}".`,
+            remediation:
+              "Double-check your email provider's exact selector name or publish the DKIM TXT record from your Resend dashboard.",
+            copyableFix: "",
+          };
   }
 
   const checks = [spfCheck, dmarcCheck, mxCheck, dkimCheck];

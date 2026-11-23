@@ -92,6 +92,9 @@ export function buildUtmMatrix({
 
   try {
     parsedBase = new URL(trimmedUrl.startsWith("http") ? trimmedUrl : `https://${trimmedUrl}`);
+    if (parsedBase.protocol !== "http:" && parsedBase.protocol !== "https:") {
+      throw new Error("Invalid protocol");
+    }
   } catch {
     parsedBase = new URL("https://waitlyze.com/w/your-launch");
     warnings.push("Base URL was invalid; showing Waitlyze example URL until corrected.");
@@ -431,6 +434,7 @@ export function generateQrResult(text, pixelSize = 200) {
   if (!matrix) {
     return {
       svg: "",
+      matrix: null,
       error: `URL is ${byteLength} bytes, which exceeds the ${QR_MAX_BYTES_V10_L}-byte QR limit. Shorten the destination URL or campaign tags to generate a scannable QR without truncating your link.`,
       byteLength,
       maxBytes: QR_MAX_BYTES_V10_L,
@@ -447,7 +451,7 @@ export function generateQrResult(text, pixelSize = 200) {
     }
   }
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${total} ${total}" width="${pixelSize}" height="${pixelSize}" shape-rendering="crispEdges"><rect width="100%" height="100%" fill="#ffffff"/><g fill="#00160d">${rects.join("")}</g></svg>`;
-  return { svg, error: "", byteLength, maxBytes: QR_MAX_BYTES_V10_L };
+  return { svg, matrix, error: "", byteLength, maxBytes: QR_MAX_BYTES_V10_L };
 }
 
 export function generateQrSvg(text, pixelSize = 200) {

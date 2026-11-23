@@ -100,11 +100,14 @@ export function CreateWaitlistDialog({
   }
 
   async function dismissBlueprint() {
+    const idToClear = activeBlueprint?.id;
     setActiveBlueprint(null);
     setBlueprintUnavailable(false);
     setError("");
     setCreationKey(crypto.randomUUID());
-    await clearPendingBlueprintCookie(activeBlueprint.id);
+    if (idToClear) {
+      await clearPendingBlueprintCookie(idToClear);
+    }
   }
 
   async function submit(event) {

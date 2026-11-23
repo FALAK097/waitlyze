@@ -60,16 +60,8 @@ export function PageGraderWidget({
   const [goal, setGoal] = useState("signups");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  const [result, setResult] = useState(() =>
-    initialUrl
-      ? null
-      : gradeWaitlistHtml({
-          html: SAMPLE_AUDIT_HTML,
-          launchType: "saas",
-          goal: "signups",
-        }),
-  );
-  const [isSample, setIsSample] = useState(!initialUrl);
+  const [result, setResult] = useState(null);
+  const [isSample, setIsSample] = useState(false);
 
   async function runAudit(overrideUrl = null) {
     const targetUrl = overrideUrl ?? url;

@@ -53,75 +53,75 @@ export const TOOLS_REGISTRY = Object.freeze([
     privacyNotice:
       "Live URL fetches validate public HTTPS addresses before and after redirects, never run JavaScript, and retain zero raw HTML after scoring.",
     howItWorks: {
-      heading: "How the 6-pillar rubric is scored",
+      heading: "How your page score is calculated",
       summary:
-        "Each page starts at 0 and earns up to 100 weighted points across six deterministic HTML and copy checks. No hidden black-box model is used to invent conversion predictions.",
+        "We score your page out of 100 across six practical checks that directly affect whether visitors understand your offer and leave their email.",
       formula:
-        "Total Score (0–100) = Value Prop (22) + CTA Focus (18) + Form Friction (18) + Waitlist Mechanics (14) + SEO/AEO Readiness (16) + Technical Basics (12)",
+        "100 points total: Headline & Clarity (22) + Button & Focus (18) + Form Simplicity (18) + Waitlist Info (14) + Search Basics (16) + Mobile & Speed (12).",
       items: [
         {
-          label: "Value Proposition & Message Match (22 pts)",
+          label: "Clear Headline & Offer (22 pts)",
           detail:
-            "Checks for a single visible H1 (4–14 words), concrete audience or outcome language, and supporting subheadline copy.",
+            "Checks that you have one clear main headline (4–14 words) and plain copy explaining who the product is for.",
         },
         {
-          label: "CTA & Conversion Focus (18 pts)",
+          label: "Action Button & Low Distraction (18 pts)",
           detail:
-            "Evaluates action-oriented button copy (penalizing vague 'Submit' labels) and flags competing header links that pull visitors away from signing up.",
+            "Rewards specific buttons like 'Request early access' over vague 'Submit' buttons, and checks that top nav links aren't pulling visitors away.",
         },
         {
-          label: "Form Friction & Trust (18 pts)",
+          label: "Short, Trustworthy Form (18 pts)",
           detail:
-            "Counts visible input fields, checks for semantic type='email' and autocomplete='email', and looks for privacy or no-spam reassurance near the form.",
+            "Checks for 1–2 simple fields, proper email autofill support, and a short 'no spam' note near the button.",
         },
         {
-          label: "Waitlist & Referral Mechanics (14 pts)",
+          label: "What Happens Next (14 pts)",
           detail:
-            "Looks for post-signup expectation setting, queue or referral reward explanations, and honest proof cues.",
+            "Looks for clear info on when invites roll out, plus whether visitors can move up the line by referring friends.",
         },
         {
-          label: "SEO & Answer-Engine Readiness (16 pts)",
+          label: "Google & AI Search Basics (16 pts)",
           detail:
-            "Verifies indexability (no accidental noindex), title and meta description bounds, canonical link, heading hierarchy, and JSON-LD structured data.",
+            "Checks that search engines can index the page and find a proper page title, description, and canonical link.",
         },
         {
-          label: "Technical & Mobile Basics (12 pts)",
+          label: "Mobile & Image Basics (12 pts)",
           detail:
-            "Confirms HTTPS transport, responsive viewport meta tag, image alt text coverage, and lightweight HTML payload size.",
+            "Confirms the page uses HTTPS, scales properly on phones, has image descriptions, and loads a lean HTML page.",
         },
       ],
     },
     workedExample: {
-      title: "Sample audit: Pre-launch developer API page",
+      title: "Example audit: Early SaaS waitlist",
       summary:
-        "An example stealth SaaS page with an email-only form, clear H1, missing meta description, generic 'Submit' CTA, and no explanation of what happens after joining.",
+        "A page with a good headline and email form, but a generic 'Submit' button, missing description, and no explanation of what happens after signup.",
       metrics: [
-        { label: "Initial score", value: "64 / 100 (C)" },
-        { label: "Top fix #1", value: "Replace 'Submit' with outcome CTA (+6 pts)" },
-        { label: "Top fix #2", value: "Add post-signup queue/referral note (+8 pts)" },
-        { label: "Top fix #3", value: "Add canonical + meta description (+6 pts)" },
+        { label: "Starting score", value: "64 / 100 (C)" },
+        { label: "Quick win #1", value: "Change 'Submit' to 'Request early access' (+6 pts)" },
+        { label: "Quick win #2", value: "Explain queue or referral perks (+8 pts)" },
+        { label: "Quick win #3", value: "Add a page description & canonical tag (+6 pts)" },
       ],
     },
     interpretationGuide: [
       {
-        band: "85–100 (Strong)",
+        band: "85–100 · Strong",
         guidance:
-          "Fundamentals are solid. Focus next on traffic message-match, email verification rate, and referral share prompts.",
+          "Your page fundamentals are in great shape. Focus next on sending targeted traffic and encouraging referrals after signup.",
       },
       {
-        band: "65–84 (Workable, leaky)",
+        band: "65–84 · Good, with easy fixes",
         guidance:
-          "Fix the top three flagged items before buying ads or launching on Product Hunt. Small friction or unclear post-signup copy costs signups immediately.",
+          "Fix the top three flagged items before launching on Product Hunt or running ads—small copy or form fixes lift signups fast.",
       },
       {
-        band: "Below 65 (High friction)",
+        band: "Below 65 · Needs clarity",
         guidance:
-          "Visitors likely cannot tell who the product is for or why to leave an email today. Apply the rewritten hero and single-field template before driving traffic.",
+          "Visitors may not see who this is for or why they should sign up today. Start with the suggested headline rewrite and a single email field.",
       },
       {
-        band: "Failure modes & limits",
+        band: "Good to know",
         guidance:
-          "Static HTML inspection cannot execute client-rendered SPAs or measure brand reputation. Use the Paste HTML / Copy tab if your page relies on client-side hydration or sits behind a firewall.",
+          "Live URL checks inspect the HTML your server sends first. If your site loads everything via JavaScript, paste your page copy in the second tab instead.",
       },
     ],
     methodology: {
@@ -178,60 +178,60 @@ export const TOOLS_REGISTRY = Object.freeze([
     privacyNotice:
       "All template matching runs deterministically in your browser with no account required.",
     howItWorks: {
-      heading: "How template recommendations are ranked",
+      heading: "How your best templates are picked",
       summary:
-        "Every template in the Waitlyze catalog is scored out of 100 points using weighted compatibility across your four inputs so you never pick a screenshot-heavy layout when launching text-only.",
+        "We score all 14 Waitlyze templates out of 100 based on your four answers so you get a layout that fits your product and the assets you already have.",
       formula:
-        "Match Score = Category Fit (40) + Asset Readiness (25) + Conversion Motion (20) + Brand Aesthetic (15)",
+        "Match score (out of 100): Product Type (40) + Visuals You Have (25) + Signup Goal (20) + Style (15).",
       items: [
         {
-          label: "Category Fit (40 pts)",
+          label: "Product Type (40 pts)",
           detail:
-            "Aligns section order, such as API workflow steps for developer tools or agenda blocks for live cohorts, with your launch type.",
+            "Matches page sections to what you are launching, like workflow steps for developer tools or schedule blocks for events.",
         },
         {
-          label: "Asset Readiness (25 pts)",
+          label: "Visuals You Have (25 pts)",
           detail:
-            "Prevents empty media slots by recommending focused typography-led templates when you do not have product screenshots or video yet.",
+            "Avoids awkward empty image boxes by prioritizing clean, text-led layouts when you don't have screenshots or a demo video yet.",
         },
         {
-          label: "Conversion Motion (20 pts)",
+          label: "Signup Goal (20 pts)",
           detail:
-            "Turns on referral reward blocks, queue counters, or multi-field beta intake sections based on how you plan to grow.",
+            "Pre-configures referral queues, milestone reward blocks, or extra beta intake questions based on how you want to grow.",
         },
         {
-          label: "Brand Aesthetic (15 pts)",
+          label: "Look & Feel (15 pts)",
           detail:
-            "Matches dark technical, clean editorial, high-contrast bold, or warm consumer visual rhythms.",
+            "Matches your preferred vibe—clean editorial, dark technical, high-contrast bold, or warm consumer.",
         },
       ],
     },
     workedExample: {
-      title: "Sample match: Text-only B2B developer tool with referral queue",
+      title: "Example match: Text-only developer tool",
       summary:
-        "A solo founder launching an API beta without a demo video yet, aiming for verified developer referrals.",
+        "A solo founder launching a developer API without screenshots yet, using a referral queue to reward early sharers.",
       metrics: [
-        { label: "Top match (#1)", value: "Developer (94% match)" },
+        { label: "Top pick (#1)", value: "Developer (94% match)" },
         { label: "Runner-up (#2)", value: "Simple (82% match)" },
-        { label: "Recommended toggle", value: "Hide media block, enable referral rewards" },
-        { label: "Form friction", value: "Email + 1 optional stack select" },
+        { label: "Auto-adjustment", value: "Hides empty media block, turns on referrals" },
+        { label: "Suggested form", value: "Email + 1 quick dropdown" },
       ],
     },
     interpretationGuide: [
       {
-        band: "85–100% match",
+        band: "85–99% · Best match",
         guidance:
-          "Use this layout directly and replace the starter copy with your real product outcome before publishing.",
+          "Ready to use right out of the box. Just swap in your product name, headline, and FAQs before publishing.",
       },
       {
-        band: "70–84% match",
+        band: "70–84% · Great backup",
         guidance:
-          "Strong alternative if you prefer its visual tone. Toggle off any section you do not have proof for yet.",
+          "A solid option if you like its visual style more—simply hide any section you don't need yet.",
       },
       {
-        band: "When to pick Blank or Simple",
+        band: "Launching with zero visuals?",
         guidance:
-          "If you are validating an idea in under 15 minutes with zero visual assets, Simple or Blank converts better than a half-filled long-form page.",
+          "Pick Simple or Blank. A clean, focused headline and email box converts much better than a long page with missing images.",
       },
     ],
     methodology: {
@@ -280,64 +280,65 @@ export const TOOLS_REGISTRY = Object.freeze([
     privacyNotice:
       "All viral math runs deterministically in your browser. Scenario parameters are never sent to analytics.",
     howItWorks: {
-      heading: "Exact viral waitlist formula",
+      heading: "How your waitlist growth is forecast",
       summary:
-        "Unlike generic viral calculators that ignore unverified emails, Waitlyze includes email verification rate in both direct acquisition and referral compounding so your forecast reflects real, reachable subscribers.",
-      formula: "K = Share Rate × Clicks per Sharer × Referred Conversion Rate × Verification Rate",
+        "Each week, your page brings in direct signups—and a share of those confirmed subscribers invite friends who bring in even more. We only count confirmed emails so your forecast reflects real people you can actually reach.",
+      formula:
+        "Referral multiplier (K) = Share rate × Clicks per sharer × Friend signup rate × Email confirmation rate.",
       items: [
         {
-          label: "Direct Verified Signups / Cycle",
+          label: "1. Weekly Direct Signups",
           detail:
-            "Weekly Visitors × Direct Landing-Page Conversion Rate × Email Verification Rate.",
+            "Multiplies your weekly visitors by your signup rate and email confirmation rate to get real new subscribers each week.",
         },
         {
-          label: "Effective Viral Coefficient (K)",
+          label: "2. Referral Multiplier (K-Factor)",
           detail:
-            "Average number of new verified signups generated by each existing verified subscriber.",
+            "Shows how many extra confirmed signups each subscriber brings in on average (for example, K = 0.20 means 100 signups bring 20 more).",
         },
         {
-          label: "Multi-Cycle Compounding",
+          label: "3. Week-by-Week Compounding",
           detail:
-            "Each cycle's newly verified subscribers generate K × cohort referrals in the following cycle, capped conservatively when K approaches 1.0.",
+            "New referrals from this week share with their friends next week, with gentle natural slowdown over longer launches so estimates stay realistic.",
         },
         {
-          label: "Highest-Leverage Sensitivity (+10% Test)",
+          label: "4. Biggest Growth Lever",
           detail:
-            "Re-runs the full simulation five times, increasing one input by +10% relative each time to reveal which lever yields the largest signup lift.",
+            "Tests bumping each metric up by 10% one at a time to show which single improvement adds the most signups.",
         },
       ],
     },
     workedExample: {
-      title: "Worked example: 8-week SaaS launch scenario",
+      title: "Example forecast: 8-week SaaS launch",
       summary:
-        "Starting list: 100 verified. 1,200 weekly visitors, 18% page conversion, 78% email verification, 22% share rate, 4 clicks/sharer, 28% referred conversion.",
+        "Starting with 100 subscribers, 1,200 weekly visitors, 18% signup rate, 78% email confirmation, 22% sharing, 4 clicks per sharer, and 28% friend signup rate.",
       metrics: [
-        { label: "Direct verified / week", value: "168 signups" },
-        { label: "Effective K-factor", value: "0.19 (0.22 × 4 × 0.28 × 0.78)" },
-        { label: "8-week total verified", value: "~1,761 subscribers" },
-        { label: "Referral lift", value: "+317 referred signups (+22%)" },
+        { label: "Direct signups / week", value: "168 confirmed" },
+        { label: "Referral multiplier (K)", value: "0.19" },
+        { label: "Total after 8 weeks", value: "~1,761 subscribers" },
+        { label: "Extra from referrals", value: "+317 signups (+22%)" },
       ],
     },
     interpretationGuide: [
       {
-        band: "K < 0.15 (Conversion-first)",
+        band: "K below 0.15 · Focus on the page first",
         guidance:
-          "Referrals are a minor bonus right now. Improve landing-page conversion and email verification before spending budget on referral rewards.",
+          "Referrals are a small bonus right now. Improving your landing page headline or email confirmation rate will grow your list much faster than tweaking rewards.",
       },
       {
-        band: "K = 0.15–0.45 (Healthy pre-launch amplifier)",
+        band: "K between 0.15 and 0.45 · Healthy loop",
         guidance:
-          "Strong, realistic range for verified product waitlists. Every 100 direct signups brings 18–80 extra verified signups for free.",
+          "Great range for a pre-launch waitlist. Every 100 direct signups brings roughly 18 to 80 extra subscribers for free.",
       },
       {
-        band: "K > 0.60 (Verify assumptions carefully)",
+        band: "K above 0.60 · Double-check numbers",
         guidance:
-          "Sustained K above 0.6 is rare outside high-reward consumer launches. Audit whether your assumed share rate or clicks per sharer holds past week 2.",
+          "Very rare outside big consumer giveaways. Make sure your share rate and click estimates still hold true after week 2.",
       },
       {
-        band: "Failure modes & limits",
+        band: "Good to know",
         guidance:
-          "Real waitlists experience audience saturation and declining share rates over long campaigns. Treat presets as modeled scenarios, not guaranteed industry benchmarks.",
+          "Sharing naturally slows down as a campaign runs longer. Treat these presets as planning estimates rather than guaranteed results.",
       },
     ],
     methodology: {
@@ -396,55 +397,60 @@ export const TOOLS_REGISTRY = Object.freeze([
     privacyNotice:
       "Copy is generated deterministically from your structured inputs. Raw product descriptions and generated copy are never sent to analytics.",
     howItWorks: {
-      heading: "How the waitlist copy framework works",
+      heading: "How your waitlist copy is built",
       summary:
-        "Every generated page follows a tested pre-launch structure that replaces vague slogans with concrete audience, pain, mechanism, and post-signup expectations.",
+        "We turn your product summary, audience, and core problem into a complete waitlist page—headline, benefits, honest proof, FAQs, and share copy—without buzzwords or fake testimonials.",
       formula:
-        "High-Clarity Page = Specific Audience + Pain/Outcome Hero + 3 Mechanism Benefits + Honest Proof + 4 Objection FAQs + Referral Loop Prompt",
+        "Complete draft: 3 Headline Angles + 3 Benefit Cards + Honest Proof + 4 FAQs + Post-Signup Share Copy.",
       items: [
         {
-          label: "3 Distinct Hero Directions",
+          label: "Three Headline Angles",
           detail:
-            "Compare Value-Led (direct outcome), Problem-Agitate-Solve (pain relief), and Mechanism-Led (how it works differently) headlines side by side.",
+            "Gives you a Value-led (outcome), Problem-first (pain point), and Mechanism-led (how it works) headline so you can pick what fits best.",
         },
         {
-          label: "Zero Fabricated Proof Rule",
+          label: "No Fake Social Proof",
           detail:
-            "If you select 'None yet (keep honest, no fake proof),' the builder outputs transparent founder-note or build-in-public copy instead of inventing fake testimonials or user counts.",
+            "If you don't have customer quotes or metrics yet, it writes an honest founder note instead of inventing fake user counts.",
         },
         {
-          label: "Post-Signup Referral Copy",
+          label: "Built-in FAQs & Privacy Note",
           detail:
-            "Writes the confirmation headline and pre-filled social share prompt so momentum continues immediately after email submission.",
+            "Answers the questions visitors ask before leaving an email—when access opens, who it's for, and a promise not to spam.",
+        },
+        {
+          label: "Post-Signup Share Prompt",
+          detail:
+            "Writes the confirmation screen message and a ready-to-share social post so signups know how to invite friends right away.",
         },
       ],
     },
     workedExample: {
-      title: "Sample output: Async standup tool for remote engineering teams",
+      title: "Example draft: Remote team standup tool",
       summary:
-        "Audience: 10–50 person engineering teams. Problem: daily status meetings break deep work. Proof: founder credentials only.",
+        "Built for 10–50 person engineering teams tired of daily status meetings, using an honest founder note instead of fake quotes.",
       metrics: [
-        { label: "Value-led H1", value: "Ship faster without daily status meetings." },
-        { label: "CTA label", value: "Request early access" },
-        { label: "Proof treatment", value: "Founder note (0 fabricated quotes)" },
-        { label: "Post-signup prompt", value: "Move up the beta queue with 2 teammates" },
+        { label: "Headline", value: "Async standups from merged PRs." },
+        { label: "Button text", value: "Request early access" },
+        { label: "Proof section", value: "Honest founder note (0 fake quotes)" },
+        { label: "After signup", value: "Prompt to share with 2 teammates" },
       ],
     },
     interpretationGuide: [
       {
-        band: "Choosing your hero angle",
+        band: "Which headline angle to pick",
         guidance:
-          "Use Value-Led when visitors already search for your category. Use Problem-Led on social feeds where you need to stop the scroll. Use Mechanism-Led for technical or skeptical buyers.",
+          "Pick Value-led for Google search traffic, Problem-first for X/LinkedIn posts to stop the scroll, or Mechanism-led for technical buyers.",
       },
       {
-        band: "Tightening before launch",
+        band: "Keep the top screen punchy",
         guidance:
-          "Aim for headlines under 11 words and subheadlines under 24 words so the email input stays visible above the fold on mobile.",
+          "Try to keep your headline under 11 words so both the headline and email box fit on a phone screen without scrolling.",
       },
       {
-        band: "Failure modes & limits",
+        band: "Make it sound like you",
         guidance:
-          "Deterministic templates give you clean structure and zero fluff, but always replace generic nouns with the exact words your target customers use in interviews.",
+          "You can edit any field inline. Swap in the exact words your early users or customers use when describing the problem.",
       },
     ],
     methodology: {
@@ -497,60 +503,60 @@ export const TOOLS_REGISTRY = Object.freeze([
     privacyNotice:
       "Launch dates, asset states, and calendar exports are calculated locally in your browser.",
     howItWorks: {
-      heading: "How readiness and critical-path dates are computed",
+      heading: "How your readiness score and dates are built",
       summary:
-        "Your readiness score weights the six dependencies that most commonly derail pre-launch campaigns, then schedules every incomplete task backward from your target launch date.",
+        "Check off what you already have ready to see your score out of 100. Every remaining task is then scheduled backward from your target launch date in the right order.",
       formula:
-        "Readiness (0–100) = Page & Value Prop (20) + Audience & Waitlist (20) + Email & DNS (18) + Proof & Assets (16) + Distribution & UTMs (14) + Measurement (12)",
+        "Readiness (0–100): Page & Offer (20) + Waitlist Setup (20) + Email & DNS (18) + Visuals (16) + Channels (14) + Tracking (12).",
       items: [
         {
-          label: "Phase 1: Validation & Waitlist Setup",
+          label: "Phase 1 · Get Your Waitlist Live",
           detail:
-            "Domain, landing page, signup form, email verification, and baseline analytics live first so every outreach click is captured.",
+            "Set up your domain, signup form, and confirmation email first so you never lose early visitors.",
         },
         {
-          label: "Phase 2: Warm-Up & Referral Seeding",
+          label: "Phase 2 · Warm Up & Share",
           detail:
-            "Founder network seeding, UTM-tagged channel distribution, welcome sequence, and referral reward validation.",
+            "Add product screenshots, turn on referral rewards, create tracking links, and invite your first 25–50 contacts.",
         },
         {
-          label: "Phase 3: Launch Week Rehearsal",
+          label: "Phase 3 · Launch Week Check",
           detail:
-            "DNS deliverability verification, signup/referral end-to-end test, and launch-day asset staging.",
+            "Finish your launch emails, send a quick behind-the-scenes note, and test a real signup from start to finish.",
         },
         {
-          label: "Phase 4: Launch Day & Rollout",
+          label: "Phase 4 · Launch Day & Follow-Up",
           detail:
-            "Staged beta invites, broadcast send to verified opt-ins, and 7-day conversion follow-up.",
+            "Go live across your channels, send invites in waves, and check which channels brought the best signups.",
         },
       ],
     },
     workedExample: {
-      title: "Worked example: 30-day private beta launch (solo founder, 8 hrs/week)",
+      title: "Example plan: 30-day solo beta launch",
       summary:
-        "Domain and demo screenshots exist; waitlist form, welcome email, UTMs, and DNS records are still pending.",
+        "Domain and screenshots are ready, while the waitlist page, welcome emails, tracking links, and email DNS still need setup.",
       metrics: [
-        { label: "Readiness score", value: "36 / 100" },
-        { label: "First critical task", value: "Publish waitlist & verify double opt-in (Day 1)" },
-        { label: "Recommended horizon", value: "30-day sprint (14 prioritized tasks)" },
-        { label: "Exports", value: ".ics Calendar + CSV + Markdown" },
+        { label: "Starting score", value: "36 / 100" },
+        { label: "First step", value: "Publish waitlist & confirmation (Day 1)" },
+        { label: "Timeline", value: "30 days · 13 dated tasks" },
+        { label: "Exports", value: "Calendar (.ics), CSV, or Markdown" },
       ],
     },
     interpretationGuide: [
       {
-        band: "80–100 (Launch ready)",
+        band: "75–100 · Ready to launch",
         guidance:
-          "Run one full rehearsal signup using a real inbox, verify your DNS records, and schedule your launch-day rollout.",
+          "Do one quick test signup with your own inbox, check your email DNS records, and you're ready for launch day.",
       },
       {
-        band: "45–79 (In progress)",
+        band: "45–74 · On track",
         guidance:
-          "Prioritize Phase 1 and Email/DNS setup before announcing publicly so early traffic does not bounce or land in spam.",
+          "Finish your waitlist form and email DNS setup before posting publicly so signups confirm smoothly and don't land in spam.",
       },
       {
-        band: "Below 45 (Early setup)",
+        band: "Below 45 · Early setup",
         guidance:
-          "Start with one live waitlist page today rather than waiting for every asset. Collecting verified emails early validates demand while you build.",
+          "Don't wait for everything to be perfect—publish a simple waitlist page today so you can start collecting emails right away.",
       },
     ],
     methodology: {
@@ -603,55 +609,60 @@ export const TOOLS_REGISTRY = Object.freeze([
     privacyNotice:
       "Unit economics, LTV inputs, and tier designs are calculated locally in your browser.",
     howItWorks: {
-      heading: "How reward fulfillment and effective CAC are modeled",
+      heading: "How reward budgets and fraud risk are estimated",
       summary:
-        "Referral counts follow a heavy-tailed power-law distribution where most subscribers refer 0–1 friends and a small minority unlocks higher tiers. We model cumulative unlock rates at P25, P50, and P90 intensity.",
+        "On most waitlists, most people refer 0 or 1 friend while a small group unlocks bigger prizes. We estimate how many people will hit each tier in a slow, normal, or viral launch so you never get surprised by the bill.",
       formula:
-        "Effective Cost per Verified Referral = Total Expected Reward Cost ÷ Total Verified Referred Signups",
+        "Cost per referred signup = Total expected reward budget ÷ Total expected referrals.",
       items: [
         {
-          label: "Power-Law Tier Earner Distribution",
+          label: "How Many People Unlock Each Tier",
           detail:
-            "Estimates the fraction of verified subscribers crossing each referral threshold (e.g., 3, 5, 10, 25) using a calibrated Pareto decay adjusted by share rate.",
+            "Higher milestones are unlocked by fewer people. Raising your share rate or lowering a threshold increases how many rewards you'll owe.",
         },
         {
-          label: "P25 / P50 / P90 Budget Stress Test",
+          label: "Slow vs. Viral Stress Test",
           detail:
-            "Shows conservative, baseline, and breakout fulfillment spend so a viral spike never creates an unexpected swag or credit bill.",
+            "Shows Conservative (P25), Typical (P50), and Breakout (P90) budgets so you know your worst-case cost if your launch blows up.",
         },
         {
-          label: "Fraud-Risk Heuristic",
+          label: "Cost vs. Customer Value",
           detail:
-            "Flags physical swag, cash equivalents, or lifetime deals placed at low thresholds (<=5 referrals) where disposable-email farming becomes profitable.",
+            "Compares your cost per referred signup against your product profit (LTV × margin) so rewards stay profitable.",
+        },
+        {
+          label: "Abuse & Gaming Warning",
+          detail:
+            "Flags physical swag or lifetime deals placed at low thresholds (5 referrals or less), which attract fake-email signups.",
         },
       ],
     },
     workedExample: {
-      title: "Worked example: 5,000-subscriber SaaS waitlist ($120 LTV)",
+      title: "Example budget: 5,000-person SaaS waitlist",
       summary:
-        "Tier 1 (3 refs): Priority access ($0). Tier 2 (5 refs): 1 month Pro credit ($8 cost). Tier 3 (15 refs): Founding badge + merch ($28 cost).",
+        "Product value $120. Tier 1 (3 refs): priority access ($0). Tier 2 (5 refs): 1 free month ($6 cost). Tier 3 (15 refs): swag ($22).",
       metrics: [
-        { label: "Baseline (P50) budget", value: "$1,420 total exposure" },
-        { label: "Breakout (P90) budget", value: "$2,890 max stress" },
-        { label: "Effective cost / referral", value: "$1.18 per verified referral" },
-        { label: "Fraud posture", value: "Low–Medium (double opt-in required)" },
+        { label: "Typical budget (P50)", value: "~$1,157 total" },
+        { label: "Viral spike (P90)", value: "~$2,024 max" },
+        { label: "Cost per referral", value: "~$0.91 each" },
+        { label: "Safety setting", value: "Double opt-in + Strict fraud mode" },
       ],
     },
     interpretationGuide: [
       {
-        band: "Effective cost < 15% of LTV",
+        band: "Cost under 15% of profit",
         guidance:
-          "Healthy unit economics with room for churn between waitlist signup and paid conversion.",
+          "Healthy unit economics—you still come out well ahead even if only some waitlist signups convert into paying customers.",
       },
       {
-        band: "High Fraud Risk badge",
+        band: "High fraud risk warning",
         guidance:
-          "Raise the referral threshold, switch to product-native rewards (early access, credits), and enable Waitlyze Strict fraud mode + double opt-in.",
+          "Move expensive or physical prizes to higher referral counts (10–15+) and turn on Strict fraud protection + email confirmation.",
       },
       {
-        band: "Zero-marginal-cost first tier",
+        band: "Keep Tier 1 free to fulfill",
         guidance:
-          "Always anchor Tier 1 (1–3 referrals) with a zero-cost reward such as queue jump or early beta access to avoid rewarding low-intent referrals with cash costs.",
+          "Use early access or a queue jump for your first milestone (1–3 referrals) so you aren't paying cash costs for small favors.",
       },
     ],
     methodology: {
@@ -703,50 +714,50 @@ export const TOOLS_REGISTRY = Object.freeze([
     privacyNotice:
       "Queue distributions and point cutoffs are simulated deterministically in your browser.",
     howItWorks: {
-      heading: "Deterministic queue ranking & tie-breaking math",
+      heading: "How queue position and jumps are calculated",
       summary:
-        "Waitlyze ranks every verified subscriber by total points descending, then by earliest signup timestamp ascending. There is zero randomness: every jump is predictable and auditable.",
+        "Everyone is ranked by total points from highest to lowest. When two people have the exact same points, whoever signed up earlier stays ahead.",
       formula:
-        "Total Points = Base Signup Points (default 50) + (Verified Referrals × Referral Points [default 30]) + Bonus Action Points",
+        "Points = Signup points (default 50) + (Confirmed referrals × Referral points [default 30]) + Bonus points.",
       items: [
         {
-          label: "Timestamp Tie-Breaker",
+          label: "Why 1 Referral Makes a Big Jump",
           detail:
-            "Among subscribers with identical points (such as 0 referrals), earlier signups stay ahead. Earning even 1 verified referral jumps a late joiner ahead of the entire zero-referral cohort.",
+            "Around 75% of waitlist signups never refer anyone. As soon as a new joiner gets 1 confirmed referral, they jump ahead of everyone sitting at 0 referrals.",
         },
         {
-          label: "Power-Law Sharer Simulation",
+          label: "Fair Tie-Breaking",
           detail:
-            "Simulates realistic waitlist cohorts where ~72–85% of subscribers refer 0 people, creating an immediate motivational jump for the first verified referral.",
+            "If two people both have 0 referrals (50 points), the person who joined earlier keeps the better spot.",
         },
         {
-          label: "Fairness & Lock-Out Check",
+          label: "Keeping Points Balanced",
           detail:
-            "Detects when base signup points dwarf referral points (making referrals feel pointless) or when Top 10 cutoffs become unreachable for new joiners.",
+            "Warns you if referral points are too small compared to signup points (making sharing feel pointless) or if reaching the Top 10 takes too many referrals.",
         },
       ],
     },
     workedExample: {
-      title: "Worked example: 2,500-person waitlist with Waitlyze defaults (50 / 30 pts)",
+      title: "Example: 2,500-person list (50 signup + 30 per referral)",
       summary:
-        "A new subscriber joins at #2,500 with 50 points. Each verified referral adds +30 points.",
+        "Someone joins at the back (#2,500) with 50 points. Each friend who confirms their email adds +30 points.",
       metrics: [
-        { label: "After 1 referral (80 pts)", value: "Jumps #2,500 → ~#450 (Top 18%)" },
-        { label: "After 3 referrals (140 pts)", value: "Jumps to ~#135 (Top 6%)" },
-        { label: "After 5 referrals (200 pts)", value: "Jumps to ~#55 (Top 3%)" },
-        { label: "Top 10 cutoff", value: "~12 verified referrals" },
+        { label: "After 1 referral", value: "Jumps #2,500 → ~#238" },
+        { label: "After 3 referrals", value: "Jumps into Top 5%" },
+        { label: "After 5 referrals", value: "Jumps into Top 3%" },
+        { label: "Display tip", value: "Show exact # under 5,000 signups" },
       ],
     },
     interpretationGuide: [
       {
-        band: "Exact rank (#142) vs. Percentile band (Top 5%)",
+        band: "Exact rank (#142) vs. Top %",
         guidance:
-          "Show exact rank when total signups are under ~5,000 and moving briskly. Switch to percentile bands or milestone progress when late joiners would otherwise see discouraging five-digit numbers like #42,810.",
+          "Show exact spots (#142) when your list is under ~5,000 people. On larger lists, switch to 'Top 5%' bands so late joiners don't feel discouraged by #42,810.",
       },
       {
-        band: "Healthy referral ratio",
+        band: "Best points balance",
         guidance:
-          "Keep Referral Points at 40%–100% of Base Signup Points (e.g., 30 vs 50) so one verified referral always vaults a subscriber past non-sharers.",
+          "Make each referral worth about half or more of your base signup points (like 30 vs 50) so one referral creates a noticeable jump.",
       },
     ],
     methodology: {
@@ -798,50 +809,55 @@ export const TOOLS_REGISTRY = Object.freeze([
     relatedBlogSlugs: ["validate-startup-idea-with-waitlist", "waitlist-landing-page-checklist"],
     privacyNotice: "Form schemas and qualification rules are designed locally in your browser.",
     howItWorks: {
-      heading: "Balancing lead signal against form abandonment",
+      heading: "How form friction and question picks work",
       summary:
-        "Every additional field trades signup volume for qualification clarity. The designer scores each field's cognitive load (tap select vs. free text) and suggests which questions belong inline vs. after email capture.",
+        "Every question you add gives you better lead details, but makes a few more visitors drop off. Quick dropdowns keep signups high, while typing-heavy text boxes add friction.",
       formula:
-        "Friction Index = Email (base) + Sum(Select: +1, Multi/Checkbox: +1.2, Short Text: +2, Textarea: +3.5)",
+        "Friction score (0–100): Email starts at 10, dropdowns/checkboxes add a little (8–12), and typing fields add more (16–30).",
       items: [
         {
-          label: "Ultra-Fast (Email + 1 Select)",
+          label: "1 Field · Ultra-Fast",
           detail:
-            "Best for broad consumer or top-of-funnel launches where one role or goal selector gives enough segmentation.",
+            "Email plus one quick dropdown (like role or device). Best when you want maximum signups from social or consumer traffic.",
         },
         {
-          label: "Balanced (Email + 2–3 Fields)",
+          label: "2–3 Fields · Balanced",
           detail:
-            "Sweet spot for B2B SaaS and developer betas: captures role, company size or stack, and primary use case with quick dropdowns.",
+            "Sweet spot for B2B and developer tools: captures role, team size, or stack with fast taps instead of typing.",
         },
         {
-          label: "High-Intent Application (Email + 4–5 Fields)",
+          label: "4–5 Fields · Selective Application",
           detail:
-            "Built for design-partner cohorts or enterprise pilots where fewer, deeply qualified applicants outperform raw volume.",
+            "Best for enterprise pilots or small cohorts where you want fewer, deeply qualified applicants.",
+        },
+        {
+          label: "VIP Fast-Track Points",
+          detail:
+            "Flags answers that identify your ideal buyers so you can automatically award them bonus queue points.",
         },
       ],
     },
     workedExample: {
-      title: "Sample schema: B2B Developer API Beta (Balanced friction)",
+      title: "Example form: B2B developer beta",
       summary:
-        "Email + Role (select) + Primary Stack (select) + Monthly Volume (select, optional) + VIP rule (+50 pts for production volume).",
+        "Email + Role dropdown + Stack dropdown + Monthly volume (optional), keeping friction low while surfacing top leads.",
       metrics: [
-        { label: "Total fields", value: "Email + 3 structured selects" },
-        { label: "Friction rating", value: "Low–Moderate (tappable inputs)" },
-        { label: "VIP fast-track", value: "+50 queue pts for target ICP" },
-        { label: "Export formats", value: "JSON Schema + Markdown + Blueprint" },
+        { label: "Total fields", value: "Email + 3 quick dropdowns" },
+        { label: "Friction score", value: "Low–Balanced (tappable)" },
+        { label: "VIP boost", value: "+50 pts for production workloads" },
+        { label: "Exports", value: "JSON Schema, Markdown, or Waitlyze" },
       ],
     },
     interpretationGuide: [
       {
-        band: "Avoid open textareas above the fold",
+        band: "Skip big text boxes on the first screen",
         guidance:
-          "Replacing one open-ended 'Tell us about your project' textarea with a 4-option dropdown typically preserves far more mobile completions.",
+          "Replacing an open 'Tell us about your project' box with a 4-option dropdown gets noticeably more people to finish signing up on mobile.",
       },
       {
-        band: "Mark nice-to-have fields optional",
+        band: "Make nice-to-have fields optional",
         guidance:
-          "Only mark fields required when you truly cannot decide who to invite without that answer.",
+          "Only mark a question Required if you truly can't decide who to invite without that answer.",
       },
     ],
     methodology: {
@@ -894,50 +910,55 @@ export const TOOLS_REGISTRY = Object.freeze([
     privacyNotice:
       "Email drafts and spam checks run locally in your browser. Draft body text is never sent to analytics.",
     howItWorks: {
-      heading: "The 5-stage pre-launch email lifecycle",
+      heading: "How the 5-email sequence works",
       summary:
-        "Subscribers who hear nothing for six weeks forget they signed up and mark your launch email as spam. This sequence keeps engagement warm with five focused touchpoints.",
+        "If subscribers sign up and hear nothing for weeks, they forget why they joined and mark launch day as spam. These 5 short emails keep them engaged from signup to invite day.",
       formula:
-        "Lifecycle = 1. Confirm (0m) → 2. Welcome & Share (on verify) → 3. Milestone Jump (on unlock) → 4. Warm-Up (T-7d) → 5. Launch Invite (T-0)",
+        "5 stages: 1. Confirm email → 2. Welcome & share link → 3. Milestone unlocked → 4. Pre-launch update → 5. Launch invite.",
       items: [
         {
-          label: "Waitlyze Merge Tags Included",
+          label: "Personal Tags Auto-Filled",
           detail:
-            "Automatically places {{position}}, {{referral_link}}, and {{referrals_count}} where subscribers expect clear status feedback.",
+            "Drops in {{position}}, {{referral_link}}, and {{referral_count}} so every subscriber sees their real queue spot and share link.",
         },
         {
-          label: "Deterministic Spam-Trigger Scan",
+          label: "Live Spam-Word Check",
           detail:
-            "Flags ALL-CAPS words, excessive exclamation marks, and high-risk promotional phrases that hurt inbox placement on fresh domains.",
+            "Flags ALL-CAPS words, too many exclamation marks, and pushy sales phrases that can send new domains to spam.",
         },
         {
-          label: "Transparent Free vs. Pro Disclosure",
+          label: "Two Voices Built In",
           detail:
-            "You can save your drafts and configure confirmation emails right away with a verified Resend sender; automated drip triggers and one-time broadcasts are Waitlyze Pro features.",
+            "Switch between a personal founder note (plain text, great for replies) and a crisp product update style.",
+        },
+        {
+          label: "Free Drafts vs. Pro Sending",
+          detail:
+            "Save and export all 5 drafts free, send confirmation emails via your Resend sender, and unlock automated drips & broadcasts on Pro.",
         },
       ],
     },
     workedExample: {
-      title: "Sample sequence: Founder plain-text voice for a developer beta",
+      title: "Example sequence: Founder beta launch",
       summary:
-        "Short, human plain-text emails averaging 85–130 words with one clear link per email.",
+        "Short, human emails (85–130 words) with one clear next step and zero spam triggers.",
       metrics: [
-        { label: "Emails generated", value: "5 lifecycle templates" },
-        { label: "Merge tags", value: "{{position}}, {{referral_link}}, {{referrals_count}}" },
-        { label: "Spam flags", value: "0 high-risk triggers" },
-        { label: "Exports", value: "Copy Markdown / HTML or full JSON" },
+        { label: "Emails included", value: "5 launch lifecycle stages" },
+        { label: "Personal tags", value: "{{position}}, {{referral_link}}, {{referral_count}}" },
+        { label: "Spam check", value: "0 warnings" },
+        { label: "Exports", value: "Copy Markdown, HTML, or JSON" },
       ],
     },
     interpretationGuide: [
       {
-        band: "Plain-text founder note vs. Designed update",
+        band: "Plain-text beats heavy HTML early on",
         guidance:
-          "Plain-text founder notes consistently avoid Promotions-tab filtering better than image-heavy HTML newsletters during early beta launches.",
+          "Short emails that look like a real note from a founder land in the Primary inbox far more reliably than image-heavy newsletters.",
       },
       {
-        band: "Keep verification emails ruthlessly short",
+        band: "Keep Email #1 ultra short",
         guidance:
-          "Put the confirmation link in the first two lines and hold your referral pitch until Email #2 (after verification) so confirmation clicks stay high.",
+          "Put the confirmation link right at the top of Email #1, and save your referral pitch for Email #2 once they've confirmed.",
       },
     ],
     methodology: {
@@ -992,50 +1013,55 @@ export const TOOLS_REGISTRY = Object.freeze([
     privacyNotice:
       "All URLs and QR codes are generated entirely in your browser with zero third-party QR API calls.",
     howItWorks: {
-      heading: "UTM hygiene rules for clean Waitlyze attribution",
+      heading: "How your tracking links and QR codes are built",
       summary:
-        "Mixed casing ('Twitter' vs 'twitter') and inconsistent medium names split your analytics into noisy duplicate rows. This builder enforces one strict naming schema.",
+        "Inconsistent tags like 'Twitter' vs 'twitter' split your analytics into messy duplicate rows. This tool formats every link cleanly, keeps personal data out, and builds ready-to-print QR codes locally.",
       formula:
-        "https://waitlyze.com/w/<slug>?utm_source=<channel>&utm_medium=<surface>&utm_campaign=<launch>&utm_content=<variant>",
+        "Format: your-url?utm_source=channel&utm_medium=type&utm_campaign=launch&utm_content=variant.",
       items: [
         {
-          label: "Strict Lowercase & Hyphen Normalization",
+          label: "Clean, Consistent Naming",
           detail:
-            "Strips spaces, uppercase drift, and stray punctuation so every source groups cleanly inside Waitlyze Analytics.",
+            "Automatically converts spaces and uppercase letters into clean lowercase-with-hyphens tags so every channel groups properly in analytics.",
         },
         {
-          label: "Referral Parameter Guard",
+          label: "Protects Referral Tracking",
           detail:
-            "Warns if your base URL accidentally hardcodes ?r= (which Waitlyze reserves for individual subscriber referral codes).",
+            "Warns and strips out any accidental ?r= parameter, which Waitlyze reserves for each user's personal referral link.",
         },
         {
-          label: "Zero-PII Scrubbing",
+          label: "Privacy Guard",
           detail:
-            "Detects email addresses or 10+ digit identifiers pasted into campaign or variant inputs and automatically strips them before generating URLs, CSV rows, or QR codes.",
+            "Checks for accidentally pasted emails or phone numbers in your campaign tags and strips them so private info never leaks into URLs.",
+        },
+        {
+          label: "Instant QR Downloads (SVG, PNG, JPG)",
+          detail:
+            "Generates a permanent QR code right in your browser—no link shorteners, no tracking redirects, and no expiration.",
         },
       ],
     },
     workedExample: {
-      title: "Sample matrix: Private beta launch across 4 core channels",
+      title: "Example links: Private beta launch",
       summary:
-        "Campaign: private-beta-q4 across Product Hunt, Show HN, X Launch Thread, and Founder LinkedIn.",
+        "Campaign 'private-beta' across Product Hunt, Show HN, X, and LinkedIn with a slide-deck QR code.",
       metrics: [
-        { label: "Product Hunt", value: "utm_source=producthunt&utm_medium=launch" },
-        { label: "Hacker News", value: "utm_source=hackernews&utm_medium=community" },
-        { label: "X Thread", value: "utm_source=x&utm_medium=social&utm_content=launch-thread" },
-        { label: "Event / Slides", value: "Downloadable client-side SVG QR code" },
+        { label: "Product Hunt", value: "source=producthunt · medium=launch" },
+        { label: "Hacker News", value: "source=hackernews · medium=community" },
+        { label: "X Launch", value: "source=x · medium=social" },
+        { label: "QR download", value: "SVG, PNG, or JPG (1024px)" },
       ],
     },
     interpretationGuide: [
       {
-        band: "First-touch attribution in Waitlyze",
+        band: "How Waitlyze tracks channels",
         guidance:
-          "Waitlyze captures utm_source, utm_medium, utm_campaign, utm_term, and utm_content on the visitor's initial impression and carries them onto the verified SignUp record.",
+          "Waitlyze saves the utm_* tags from a visitor's first click and attaches them to their signup so you know which post drove verified users.",
       },
       {
-        band: "Compare verified signups, not raw clicks",
+        band: "Track verified signups, not just clicks",
         guidance:
-          "Some channels send high curiosity clicks with low verification rates. Use clean UTMs to compare verified signups and downstream referrals per channel.",
+          "Some channels send lots of curious clicks that don't confirm their email. Compare confirmed signups per link to find your best channel.",
       },
     ],
     methodology: {
@@ -1088,50 +1114,55 @@ export const TOOLS_REGISTRY = Object.freeze([
     privacyNotice:
       "The sandbox preview runs locally in your browser; test email submissions in the preview are never transmitted or stored.",
     howItWorks: {
-      heading: "How Waitlyze embeds work across any stack",
+      heading: "How the embed widget works on your site",
       summary:
-        "Waitlyze's /js/embed.js loader mounts a sandboxed, auto-resizing widget inside your container div, forwards ?r= referral codes and UTM tags automatically, and keeps API secrets completely out of browser code.",
+        "Pick your layout, colors, and framework on the left, test the signup and post-signup screens in the preview, and copy one short snippet to drop onto your website.",
       formula:
-        "<div class='waitlyze-widget' data-key-id='PUBLIC_ID'> + <script src='https://waitlyze.com/js/embed.js' defer>",
+        "Safe drop-in: Uses only your public waitlist ID, loads after your page renders, and auto-resizes to fit.",
       items: [
         {
-          label: "Zero Secret Keys in Frontend Code",
+          label: "Four Flexible Layouts",
           detail:
-            "Embeds use your public waitlist key ID. Secret API keys are only ever needed for custom server-side POST /api/waitlist calls.",
+            "Choose an Inline form or Compact pill right inside your hero, or a Popup modal / Slide-over drawer triggered by a button.",
         },
         {
-          label: "Automatic Referral & UTM Forwarding",
+          label: "Forwards Referrals & UTMs Automatically",
           detail:
-            "Reads ?r= and utm_* parameters from the parent page URL and forwards them into the embedded form seamlessly.",
+            "Passes ?r= referral codes and utm_* campaign tags from your website URL straight into the Waitlyze form.",
         },
         {
-          label: "CSP & Performance Friendly",
+          label: "Zero Slowdown & Zero Exposed Keys",
           detail:
-            "Loads deferred/lazyOnload without blocking First Contentful Paint and provides exact script-src and frame-src CSP directives.",
+            "Loads in the background without blocking your headline, and never puts secret API keys into your frontend code.",
+        },
+        {
+          label: "Works With Your Stack",
+          detail:
+            "Generates copy-ready code for Next.js, React, Framer, Webflow, Shopify, and plain HTML.",
         },
       ],
     },
     workedExample: {
-      title: "Sample setup: Next.js App Router hero inline pill widget",
+      title: "Example setup: Next.js hero signup pill",
       summary:
-        "Compact horizontal email input + lime primary CTA using next/script strategy='lazyOnload' and a crawlable fallback link.",
+        "A compact email + button bar placed right in a Next.js hero section using lazy loading.",
       metrics: [
-        { label: "Layout mode", value: "Compact inline pill" },
-        { label: "Script loading", value: "Deferred / lazyOnload (0 render block)" },
-        { label: "CSP directives", value: "script-src & frame-src https://waitlyze.com" },
-        { label: "Frameworks", value: "Next.js, React, Framer, Webflow, Shopify, HTML" },
+        { label: "Layout", value: "Compact inline pill" },
+        { label: "Page speed impact", value: "Non-blocking (lazy loaded)" },
+        { label: "Referral tracking", value: "Automatic (?r= & UTMs)" },
+        { label: "Supported platforms", value: "Next.js, React, Framer, Webflow, Shopify, HTML" },
       ],
     },
     interpretationGuide: [
       {
-        band: "Inline vs. Modal vs. Drawer",
+        band: "Inline / Pill vs. Modal / Drawer",
         guidance:
-          "Use inline or compact pill forms directly inside your hero section for maximum visibility. Reserve modal or slide-over drawers for navigation bar CTAs or documentation pages.",
+          "Put an Inline or Compact pill form right in your hero section so visitors see it immediately. Use a Modal or Drawer button in your navbar or docs.",
       },
       {
-        band: "Check contrast before pasting",
+        band: "Keep button text readable",
         guidance:
-          "Ensure at least 4.5:1 contrast between your button label and button accent color, especially when using bright lime or yellow accents.",
+          "Make sure your button text color has strong contrast against your button background (like dark text on bright lime).",
       },
     ],
     methodology: {
@@ -1184,55 +1215,60 @@ export const TOOLS_REGISTRY = Object.freeze([
     privacyNotice:
       "Zero-upload guarantee: CSV files are parsed strictly in browser memory via JavaScript. No email addresses or file contents are uploaded to Waitlyze servers or analytics.",
     howItWorks: {
-      heading: "How list health and fraud risk are calculated",
+      heading: "How your list health score is calculated",
       summary:
-        "Reuses Waitlyze's exact canonical email normalization (folding Gmail dots and +aliases) alongside disposable-provider lists, role-address checks, and timestamp velocity windows.",
+        "Your list starts at 100 points. We scan every email right inside your browser (nothing is uploaded) and subtract points for risky, fake, or duplicate entries so you know how safe your list is before sending.",
       formula:
-        "Health Score (0–100) = 100 − (Invalid% × 1.6) − (Disposable% × 1.8) − (Normalized Duplicates% × 1.5) − (Role% × 0.6) − Decay & Velocity Penalties",
+        "Starts at 100, then deducts points based on the % of typos, burner domains, duplicate aliases, role addresses, and signup bursts.",
       items: [
         {
-          label: "Canonical Plus/Dot Alias Deduplication",
+          label: "1. Typos & Bad Emails",
           detail:
-            "Maps john.doe+1@gmail.com and johndoe@gmail.com to one canonical identity using the same normalization rule Waitlyze enforces at signup.",
+            "Finds malformed addresses (like missing '@' or '.com') that would immediately bounce when you send launch emails.",
         },
         {
-          label: "Disposable & Burner Domain Detection",
+          label: "2. Temporary / Burner Domains",
           detail:
-            "Flags known temporary inbox providers (mailinator, guerrillamail, yopmail, 10minutemail, tempmail, etc.) that bounce or farm rewards.",
+            "Spots disposable inbox sites like Mailinator, Yopmail, and 10MinuteMail that people use to farm referral rewards.",
         },
         {
-          label: "Role Accounts & Velocity Spikes",
+          label: "3. Gmail Dot & '+alias' Duplicates",
           detail:
-            "Identifies generic addresses (admin@, info@, test@) and flags bursts of rapid signups sharing a referral code inside tight 2-minute windows.",
+            "Catches when one person signs up multiple times using variations like alex+1@gmail.com and a.lex@gmail.com.",
+        },
+        {
+          label: "4. Generic Inboxes & Spam Bursts",
+          detail:
+            "Flags shared addresses (like info@ or admin@) and rapid bursts of 4+ signups using the same referral code within 5 minutes.",
         },
       ],
     },
     workedExample: {
-      title: "Sample CSV audit: 500 imported pre-launch signups",
+      title: "Example audit: 25-row sample waitlist",
       summary:
-        "Mixed export from a legacy form without double opt-in: 412 clean, 38 disposable domains, 24 Gmail plus-alias duplicates, 16 role/invalid rows, 10 burst velocity signups.",
+        "A mixed waitlist export containing real subscribers alongside burner emails, Gmail '+1' duplicates, and a typo.",
       metrics: [
-        { label: "Waitlist Health Score", value: "74 / 100 (Needs cleanup)" },
-        { label: "Safe deliverable rows", value: "412 (82.4%)" },
-        { label: "Flagged risky rows", value: "88 (17.6%)" },
-        { label: "Recommended Waitlyze posture", value: "STRICT fraud mode + Double Opt-In" },
+        { label: "Clean deliverable rows", value: "13–15 clean contacts" },
+        { label: "Disposable domains", value: "4 temporary inboxes caught" },
+        { label: "Alias & burst flags", value: "7 suspicious rows flagged" },
+        { label: "Download", value: "Cleaned CSV or Full tagged CSV" },
       ],
     },
     interpretationGuide: [
       {
-        band: "85–100 (Clean list)",
+        band: "85–100 · Healthy list",
         guidance:
-          "Safe to import and warm up. Maintain double opt-in verification before launching any referral reward tiers.",
+          "Your list is clean and safe to email. Keep email confirmation turned on as new people join.",
       },
       {
-        band: "60–84 (Moderate pollution)",
+        band: "60–84 · Needs a quick cleanup",
         guidance:
-          "Download the cleaned CSV with disposable and duplicate alias rows stripped before sending your launch announcement to protect sender reputation.",
+          "Download the Cleaned CSV above (which removes disposable and duplicate rows) before sending your launch email so your sender reputation stays protected.",
       },
       {
-        band: "Below 60 (High bounce / abuse risk)",
+        band: "Below 60 · High bounce & spam risk",
         guidance:
-          "Do not blast this list from your primary domain. Clean risky rows first, enable Waitlyze Strict fraud controls, and send a small re-confirmation batch.",
+          "Do not email the whole list at once. Export the cleaned rows first, turn on Strict fraud mode, and warm up with a smaller batch.",
       },
     ],
     methodology: {
@@ -1284,59 +1320,58 @@ export const TOOLS_REGISTRY = Object.freeze([
     privacyNotice:
       "Only public DNS records for the domain you enter are queried over HTTPS. Queries are rate-limited and not persisted beyond short-lived rate-limit counters.",
     howItWorks: {
-      heading: "What each DNS authentication check verifies",
+      heading: "What each email DNS check means (in plain English)",
       summary:
-        "Major mailbox providers (Gmail, Yahoo, Microsoft) require valid SPF, DKIM, and DMARC alignment for bulk launch broadcasts and confirmation emails.",
-      formula:
-        "Deliverability Readiness (0–100) = SPF (30) + DMARC (30) + MX Records (20) + DKIM Selector (20)",
+        "Gmail, Outlook, and Yahoo check four public records on your domain before letting your launch emails into the inbox. We score your setup out of 100 and give you copy-paste fixes for anything missing.",
+      formula: "Readiness (0–100): SPF (30) + DMARC (30) + MX Routing (20) + DKIM Signature (20).",
       items: [
         {
-          label: "SPF (Sender Policy Framework, 30 pts)",
+          label: "SPF · Approved Senders List (30 pts)",
           detail:
-            "Confirms exactly one v=spf1 TXT record exists, checks mechanism lookup count (RFC 7208 max 10 DNS lookups), and validates ~all or -all qualifier.",
+            "Lists which email services are allowed to send on behalf of your domain. Having two separate SPF records breaks it—merge them into one.",
         },
         {
-          label: "DMARC (_dmarc.domain, 30 pts)",
+          label: "DMARC · Spoof Protection Rule (30 pts)",
           detail:
-            "Checks for v=DMARC1, distinguishes monitoring (p=none) from enforcement (p=quarantine / p=reject), and checks for rua aggregate reporting.",
+            "Tells Gmail and Yahoo what to do if an email fails SPF or DKIM (quarantine or reject fakes) and where to send reports.",
         },
         {
-          label: "MX Mail Routing (20 pts)",
+          label: "MX · Active Mailbox Routing (20 pts)",
           detail:
-            "Verifies valid MX records exist so reply-to handling and domain legitimacy checks pass cleanly.",
+            "Shows that your domain can receive replies and bounce notices—domains without MX records often look suspicious to spam filters.",
         },
         {
-          label: "DKIM Selector Check (20 pts)",
+          label: "DKIM · Digital Signature Key (20 pts)",
           detail:
-            "When you enter a selector (such as resend, google, or s1), checks <selector>._domainkey.<domain> for a valid v=DKIM1 public key.",
+            "Checks your email provider's selector (like resend, google, or s1) for a public key that proves your emails weren't altered in transit.",
         },
       ],
     },
     workedExample: {
-      title: "Sample inspection: acme.com preparing a Resend launch broadcast",
-      summary: "Valid MX + single SPF record (4 lookups, ~all), missing _dmarc record.",
+      title: "Example check: acme.example",
+      summary: "SPF, MX, and Resend DKIM are set up properly, but the DMARC record is missing.",
       metrics: [
-        { label: "SPF", value: "Pass (1 record, 4/10 lookups)" },
-        { label: "DMARC", value: "Fail: missing _dmarc TXT record" },
-        { label: "MX", value: "Pass (valid mail exchangers)" },
-        { label: "Copyable fix", value: "v=DMARC1; p=quarantine; rua=mailto:dmarc@acme.com" },
+        { label: "SPF", value: "Pass (30 / 30)" },
+        { label: "DMARC", value: "Missing _dmarc record (0 / 30)" },
+        { label: "MX", value: "Pass (20 / 20)" },
+        { label: "DKIM (resend)", value: "Pass (20 / 20)" },
       ],
     },
     interpretationGuide: [
       {
-        band: "Multiple SPF records detected",
+        band: "85–100 · Ready to send",
         guidance:
-          "Never publish two separate v=spf1 TXT records: RFC 7208 treats duplicate SPF records as a PermError. Merge all include: mechanisms into one TXT record.",
+          "Your domain authentication is solid. Connect it in Waitlyze and send a quick test email to your own inbox to verify.",
       },
       {
-        band: "SPF lookup count > 10",
+        band: "60–84 · Fix missing records first",
         guidance:
-          "Remove unused email vendors from your SPF record or use a dedicated sending subdomain (e.g., mail.yourdomain.com) for launch broadcasts.",
+          "Publish the suggested DNS TXT record above—usually DMARC or a single merged SPF record—and re-check in a few minutes.",
       },
       {
-        band: "Start DMARC with p=none, then tighten",
+        band: "Below 60 · High spam-folder risk",
         guidance:
-          "Publish p=none with a rua address first to monitor alignment, then move to p=quarantine or p=reject once your Resend sender is verified.",
+          "Launching without SPF and DMARC sends most emails straight to spam. Add the copyable DNS records above before inviting your waitlist.",
       },
     ],
     methodology: {
@@ -1389,55 +1424,59 @@ export const TOOLS_REGISTRY = Object.freeze([
     privacyNotice:
       "Only de-identified aggregate statistics passing minimum cohort thresholds are ever published. Individual campaign metrics are never exposed.",
     howItWorks: {
-      heading: "Metric definitions & privacy-safe cohort policy",
+      heading: "How to read these waitlist benchmarks",
       summary:
-        "Every benchmark metric follows one explicit mathematical definition, excludes internal test campaigns and velocity-filtered bot traffic, and enforces a minimum cohort size of N >= 30 eligible campaigns.",
+        "Instead of a single average that gets skewed by one huge viral launch, we show the middle typical range (P25 to P75) so you can see honestly where your waitlist stands.",
       formula:
-        "Conversion = Signups ÷ Unique Visitors | Verification = Verified ÷ Signups | K = Share Rate × Clicks/Sharer × Referred Conv × Verification",
+        "Signup rate = Signups ÷ Visitors | Confirmation rate = Confirmed ÷ Signups | Share rate = Sharers ÷ Confirmed.",
       items: [
         {
-          label: "Minimum Sample Threshold (N >= 30)",
+          label: "P25 · Bottom Quarter",
           detail:
-            "Segments with fewer than 30 eligible live campaigns are never reported as live customer statistics; instead, the explorer explicitly displays Reference Planning Cohort Models until threshold maturity is reached.",
+            "If your number is below P25, there is usually an easy fix on your landing page, form length, or email setup.",
         },
         {
-          label: "Correlation vs. Causation",
-          detail:
-            "Campaigns with referrals enabled often also invest more in landing-page polish and community seeding. Differences across cohorts are directional, not causal guarantees.",
+          label: "P50 · Typical Launch (Median)",
+          detail: "Right in the middle of healthy launches in that category and traffic channel.",
         },
         {
-          label: "Interquartile Reporting (P25 / P50 / P75)",
+          label: "P75 · Top Quarter",
           detail:
-            "Medians and quartiles resist distortion from single viral outlier launches far better than simple averages.",
+            "Strong performance—your headline, form, or referral incentive is resonating unusually well.",
+        },
+        {
+          label: "30-Campaign Privacy Rule",
+          detail:
+            "We show planning ranges until at least 30 live, non-test campaigns exist in a segment so numbers are never guessed from tiny samples.",
         },
       ],
     },
     workedExample: {
-      title: "How to read a benchmark quartile bar",
+      title: "Example: Reading a SaaS benchmark",
       summary:
-        "If a SaaS beta cohort shows Conversion P25 = 12%, P50 = 21%, P75 = 32%, a page converting at 24% sits cleanly above the cohort median.",
+        "If SaaS landing-page conversion ranges from 11% (P25) to 19% (Median) to 29% (P75), a page converting at 24% is comfortably above typical.",
       metrics: [
-        { label: "P25 (25th percentile)", value: "Bottom quartile: inspect friction" },
-        { label: "P50 (Median)", value: "Typical healthy launch baseline" },
-        { label: "P75 (75th percentile)", value: "Top-quartile pre-launch execution" },
-        { label: "Minimum live N", value: "30 eligible campaigns per segment" },
+        { label: "P25 (Bottom quarter)", value: "11% — check page clarity" },
+        { label: "P50 (Typical)", value: "19% — healthy baseline" },
+        { label: "P75 (Top quarter)", value: "29% — strong execution" },
+        { label: "Live data rule", value: "Requires 30+ campaigns per group" },
       ],
     },
     interpretationGuide: [
       {
-        band: "Below P25 on Conversion",
+        band: "Below P25 on Signup Rate",
         guidance:
-          "Run the Waitlist Landing Page Grader first. Low conversion is usually caused by unclear positioning, excessive form fields, or mismatched ad traffic.",
+          "Run the Waitlist Landing Page Grader. Usually the headline isn't specific enough, the form asks too much, or the link text didn't match the page.",
       },
       {
-        band: "Below P25 on Verification",
+        band: "Below P25 on Email Confirmation",
         guidance:
-          "Check your sending domain SPF/DKIM/DMARC records and move your confirmation email CTA into the first two lines.",
+          "Run the Email Deliverability Checker to fix missing SPF/DMARC records and move the confirm button to the top of Email #1.",
       },
       {
-        band: "Above P50 on Conversion, Low K-Factor",
+        band: "High Signups, Low Sharing",
         guidance:
-          "Your value proposition resonates; add a clear post-signup share card and a zero-cost Tier 1 reward (1–3 referrals) to activate sharing.",
+          "People want your product, they just need a nudge—add a clear post-signup share card and a small Tier 1 reward for 1–3 referrals.",
       },
     ],
     methodology: {

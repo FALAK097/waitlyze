@@ -36,8 +36,8 @@ export function HealthAuditorWidget({
   onApplyInProduct = null,
 }) {
   const [mode, setMode] = useState("csv");
-  const [fileName, setFileName] = useState("sample-waitlist-25-rows.csv");
-  const [csvAudit, setCsvAudit] = useState(() => parseSampleCsv());
+  const [fileName, setFileName] = useState("");
+  const [csvAudit, setCsvAudit] = useState(null);
   const [manualInputs, setManualInputs] = useState({
     totalSubscribers: 1500,
     verifiedPct: 68,
@@ -151,7 +151,9 @@ export function HealthAuditorWidget({
       {mode === "csv" ? (
         <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
           <div>
-            <p className="text-body font-medium text-product-text-primary">{fileName}</p>
+            <p className="text-body font-medium text-product-text-primary">
+              {fileName || "Upload a waitlist CSV"}
+            </p>
             <p className="mt-0.5 text-caption text-product-text-secondary">
               Runs locally in your browser. Zero emails leave your device.
             </p>
@@ -170,7 +172,7 @@ export function HealthAuditorWidget({
               variant="product-outline"
               size="md"
               onClick={() => fileInputRef.current?.click()}
-              className="gap-2"
+              className="gap-2 whitespace-nowrap"
             >
               <HugeiconsIcon icon={Upload01Icon} size={16} aria-hidden="true" />
               <span>Choose CSV</span>

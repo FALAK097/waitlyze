@@ -352,8 +352,8 @@ export function CopyBuilderWidget({
             onApplyInProduct={onApplyInProduct}
             buildBlueprint={() => ({
               templateId: inputs.templateId,
-              campaignName: inputs.productName,
-              campaignDescription: inputs.oneLiner,
+              campaignName: generated.inputs.productName,
+              campaignDescription: generated.inputs.oneLiner,
               showReferrals:
                 inputs.launchMotion === "referral_queue" || inputs.launchMotion === "early_access",
               heroCopy: {
