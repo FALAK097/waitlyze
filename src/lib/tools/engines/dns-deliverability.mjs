@@ -59,6 +59,80 @@ function gradeFromScore(score) {
   return "F";
 }
 
+const RSA_ENCRYPTION_OID = [0x2a, 0x86, 0x48, 0x86, 0xf7, 0x0d, 0x01, 0x01, 0x01];
+
+function readDerTlv(bytes, offset, end) {
+  if (offset >= end) return null;
+  const tag = bytes[offset];
+  let pos = offset + 1;
+  if (pos >= end) return null;
+  const firstLen = bytes[pos];
+  pos += 1;
+  let len = 0;
+  if ((firstLen & 0x80) === 0) {
+    len = firstLen;
+  } else {
+    const numOctets = firstLen & 0x7f;
+    if (numOctets === 0 || numOctets > 4 || pos + numOctets > end) return null;
+    for (let i = 0; i < numOctets; i += 1) {
+      len = (len << 8) | bytes[pos];
+      pos += 1;
+    }
+    if (len < 128) return null; // Non-canonical DER length
+  }
+  const valueEnd = pos + len;
+  if (valueEnd > end) return null;
+  return { tag, valueStart: pos, valueEnd, nextOffset: valueEnd };
+}
+
+function isValidRsaSpkiDer(bytes) {
+  const outer = readDerTlv(bytes, 0, bytes.length);
+  if (!outer || outer.tag !== 0x30 || outer.nextOffset !== bytes.length) return false;
+
+  const algId = readDerTlv(bytes, outer.valueStart, outer.valueEnd);
+  if (!algId || algId.tag !== 0x30) return false;
+
+  const oid = readDerTlv(bytes, algId.valueStart, algId.valueEnd);
+  if (!oid || oid.tag !== 0x06) return false;
+  if (oid.valueEnd - oid.valueStart !== RSA_ENCRYPTION_OID.length) return false;
+  for (let i = 0; i < RSA_ENCRYPTION_OID.length; i += 1) {
+    if (bytes[oid.valueStart + i] !== RSA_ENCRYPTION_OID[i]) return false;
+  }
+
+  const bitString = readDerTlv(bytes, algId.nextOffset, outer.valueEnd);
+  if (
+    !bitString ||
+    bitString.tag !== 0x03 ||
+    bitString.nextOffset !== outer.valueEnd ||
+    bitString.valueEnd - bitString.valueStart < 2 ||
+    bytes[bitString.valueStart] !== 0x00
+  ) {
+    return false;
+  }
+
+  const rsaSeqStart = bitString.valueStart + 1;
+  const rsaSeq = readDerTlv(bytes, rsaSeqStart, bitString.valueEnd);
+  if (!rsaSeq || rsaSeq.tag !== 0x30 || rsaSeq.nextOffset !== bitString.valueEnd) return false;
+
+  const modulus = readDerTlv(bytes, rsaSeq.valueStart, rsaSeq.valueEnd);
+  if (!modulus || modulus.tag !== 0x02 || modulus.valueEnd <= modulus.valueStart) return false;
+  if (bytes[modulus.valueStart] & 0x80) return false; // Must be non-negative DER INTEGER
+  const modStart = bytes[modulus.valueStart] === 0x00 ? modulus.valueStart + 1 : modulus.valueStart;
+  if (modulus.valueEnd - modStart < 128) return false; // Require >= 1024-bit RSA modulus
+
+  const exponent = readDerTlv(bytes, modulus.nextOffset, rsaSeq.valueEnd);
+  if (
+    !exponent ||
+    exponent.tag !== 0x02 ||
+    exponent.nextOffset !== rsaSeq.valueEnd ||
+    exponent.valueEnd <= exponent.valueStart ||
+    (bytes[exponent.valueStart] & 0x80) !== 0
+  ) {
+    return false;
+  }
+  return true;
+}
+
 function isValidDkimPublicKey(record, publicKey) {
   const cleanKey = String(publicKey || "").replace(/\s+/g, "");
   if (!/^[A-Za-z0-9+/]+={0,2}$/.test(cleanKey) || cleanKey.length % 4 !== 0) {
@@ -70,13 +144,19 @@ function isValidDkimPublicKey(record, publicKey) {
   } catch {
     return false;
   }
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i += 1) {
+    bytes[i] = binary.charCodeAt(i);
+  }
   const keyTypeMatch = String(record).match(/(?:^|;)\s*k\s*=\s*([^;\s]+)/i);
   const keyType = (keyTypeMatch?.[1] || "rsa").toLowerCase();
   if (keyType === "ed25519") {
-    return binary.length === 32;
+    return bytes.length === 32;
   }
-  // RFC 6376 RSA keys are ASN.1 SubjectPublicKeyInfo (starts with DER SEQUENCE 0x30)
-  return binary.length >= 120 && binary.charCodeAt(0) === 0x30;
+  if (keyType !== "rsa") {
+    return false;
+  }
+  return isValidRsaSpkiDer(bytes);
 }
 
 export function evaluateDnsRecords({
@@ -380,6 +460,6 @@ export const SAMPLE_DNS_RESULT = evaluateDnsRecords({
   dmarcRecords: [],
   mxRecords: ["10 aspmx.l.google.com.", "20 alt1.aspmx.l.google.com."],
   dkimRecords: [
-    "v=DKIM1; k=rsa; p=MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQC7VJTUt9Us8cKjMzEfYyjiWA4R4/M2bS1+fWIc5n7s9x2T5n2T8jW+9W2cK8pQ1m3N8o4P6q7R9s0T1u2V3w4X5y6Z7a8B9c0D1e2F3g4H5i6J7k8L9m0N1o2P3q4R5s6T7u8V9wIDAQAB",
+    "v=DKIM1; k=rsa; p=MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCrevesQivmHkigdzqUFb+x0d+Iu2jf3O86cjURullpu18ynocaxuv22yZ7PFCUtYPuJMRB+vsx/eVz+twqCcADYvgTL6PhSM9HPAjcNnr08rzF5eZAspIn6vB6k36veh0/f+DW0QVdX24TkX8ZQO/jymFAMR++zYbreLOh80QqPQIDAQAB",
   ],
 });
