@@ -74,8 +74,9 @@ function readDerTlv(bytes, offset, end) {
   } else {
     const numOctets = firstLen & 0x7f;
     if (numOctets === 0 || numOctets > 4 || pos + numOctets > end) return null;
+    if (bytes[pos] === 0x00) return null; // Non-canonical leading zero in DER length
     for (let i = 0; i < numOctets; i += 1) {
-      len = (len << 8) | bytes[pos];
+      len = len * 256 + bytes[pos];
       pos += 1;
     }
     if (len < 128) return null; // Non-canonical DER length
@@ -83,6 +84,20 @@ function readDerTlv(bytes, offset, end) {
   const valueEnd = pos + len;
   if (valueEnd > end) return null;
   return { tag, valueStart: pos, valueEnd, nextOffset: valueEnd };
+}
+
+function readPositiveDerInteger(bytes, offset, end) {
+  const tlv = readDerTlv(bytes, offset, end);
+  if (!tlv || tlv.tag !== 0x02 || tlv.valueEnd <= tlv.valueStart) return null;
+  if ((bytes[tlv.valueStart] & 0x80) !== 0) return null; // Must be non-negative DER INTEGER
+  if (bytes[tlv.valueStart] === 0x00) {
+    // Canonical positive DER INTEGER: 0x00 prefix is only valid when next octet has MSB set
+    if (tlv.valueEnd - tlv.valueStart <= 1 || (bytes[tlv.valueStart + 1] & 0x80) === 0) {
+      return null;
+    }
+  }
+  const magStart = bytes[tlv.valueStart] === 0x00 ? tlv.valueStart + 1 : tlv.valueStart;
+  return { magStart, magEnd: tlv.valueEnd, nextOffset: tlv.nextOffset };
 }
 
 function isValidRsaSpkiDer(bytes) {
@@ -97,6 +112,17 @@ function isValidRsaSpkiDer(bytes) {
   if (oid.valueEnd - oid.valueStart !== RSA_ENCRYPTION_OID.length) return false;
   for (let i = 0; i < RSA_ENCRYPTION_OID.length; i += 1) {
     if (bytes[oid.valueStart + i] !== RSA_ENCRYPTION_OID[i]) return false;
+  }
+  if (oid.nextOffset !== algId.valueEnd) {
+    const algParams = readDerTlv(bytes, oid.nextOffset, algId.valueEnd);
+    if (
+      !algParams ||
+      algParams.tag !== 0x05 ||
+      algParams.valueStart !== algParams.valueEnd ||
+      algParams.nextOffset !== algId.valueEnd
+    ) {
+      return false;
+    }
   }
 
   const bitString = readDerTlv(bytes, algId.nextOffset, outer.valueEnd);
@@ -114,22 +140,19 @@ function isValidRsaSpkiDer(bytes) {
   const rsaSeq = readDerTlv(bytes, rsaSeqStart, bitString.valueEnd);
   if (!rsaSeq || rsaSeq.tag !== 0x30 || rsaSeq.nextOffset !== bitString.valueEnd) return false;
 
-  const modulus = readDerTlv(bytes, rsaSeq.valueStart, rsaSeq.valueEnd);
-  if (!modulus || modulus.tag !== 0x02 || modulus.valueEnd <= modulus.valueStart) return false;
-  if (bytes[modulus.valueStart] & 0x80) return false; // Must be non-negative DER INTEGER
-  const modStart = bytes[modulus.valueStart] === 0x00 ? modulus.valueStart + 1 : modulus.valueStart;
-  if (modulus.valueEnd - modStart < 128) return false; // Require >= 1024-bit RSA modulus
-
-  const exponent = readDerTlv(bytes, modulus.nextOffset, rsaSeq.valueEnd);
-  if (
-    !exponent ||
-    exponent.tag !== 0x02 ||
-    exponent.nextOffset !== rsaSeq.valueEnd ||
-    exponent.valueEnd <= exponent.valueStart ||
-    (bytes[exponent.valueStart] & 0x80) !== 0
-  ) {
-    return false;
+  const modulus = readPositiveDerInteger(bytes, rsaSeq.valueStart, rsaSeq.valueEnd);
+  if (!modulus) return false;
+  const modLen = modulus.magEnd - modulus.magStart;
+  if (modLen < 128 || (modLen === 128 && (bytes[modulus.magStart] & 0x80) === 0)) {
+    return false; // Require >= 1024-bit RSA modulus
   }
+  if ((bytes[modulus.magEnd - 1] & 1) === 0) return false; // RSA modulus must be odd
+
+  const exponent = readPositiveDerInteger(bytes, modulus.nextOffset, rsaSeq.valueEnd);
+  if (!exponent || exponent.nextOffset !== rsaSeq.valueEnd) return false;
+  const expLen = exponent.magEnd - exponent.magStart;
+  if ((bytes[exponent.magEnd - 1] & 1) === 0) return false; // RSA public exponent must be odd
+  if (expLen === 1 && bytes[exponent.magStart] === 1) return false; // Require exponent >= 3
   return true;
 }
 
