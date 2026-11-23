@@ -2,7 +2,7 @@
 
 import { Loading02Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { useEffect, useState } from "react";
+import { useEffect, useId, useState } from "react";
 
 import { downloadJson, downloadSummaryPng } from "@/components/tools/tool-export-utils";
 import { ToolHandoffCta } from "@/components/tools/tool-handoff-cta";
@@ -11,11 +11,15 @@ import {
   ToolCopyButton,
   ToolSegmentedControl,
   ToolSelectField,
+  ToolStatStrip,
   ToolStatTile,
   ToolStatusBadge,
+  ToolTextareaField,
   ToolTextField,
   ToolWorkspace,
 } from "@/components/tools/tool-ui";
+import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
 import { trackToolEvent } from "@/lib/tools/analytics";
 import {
   GOAL_OPTIONS,
@@ -48,6 +52,7 @@ export function PageGraderWidget({
   onApplyInProduct = null,
   onAuditComplete = null,
 }) {
+  const pillarLabelId = useId();
   const [mode, setMode] = useState("url");
   const [url, setUrl] = useState(initialUrl);
   const [pastedHtml, setPastedHtml] = useState("");
@@ -132,14 +137,13 @@ export function PageGraderWidget({
     downloadSummaryPng({
       filename: "waitlyze-page-audit.png",
       title: `Waitlist Page Audit: ${result.score}/100 (${result.grade})`,
-      subtitle: `${result.auditedHost} · Top fix: ${result.topFixes[0]?.label || " fundamentals strong"}`,
+      subtitle: `${result.auditedHost} · Top fix: ${result.topFixes[0]?.label || "fundamentals strong"}`,
       metrics: result.pillars.slice(0, 4).map((p) => ({
         label: p.name.split("&")[0].trim(),
         value: `${p.earned}/${p.maxPoints}`,
         hint: `${p.pct}% score`,
       })),
-      formula:
-        "6-Pillar HTML & Copy Rubric · Value Prop + CTA + Form + Waitlist + SEO/AEO + Mobile",
+      formula: "6-Pillar HTML & Copy Rubric",
     });
     trackToolEvent("TOOL_RESULT_EXPORTED", {
       tool_slug: "waitlist-landing-page-grader",
@@ -150,53 +154,48 @@ export function PageGraderWidget({
   }
 
   return (
-    <ToolWorkspace className="grid gap-6">
-      {/* Input Form */}
+    <ToolWorkspace>
       <form
         onSubmit={(event) => {
           event.preventDefault();
           runAudit();
         }}
-        className="grid gap-4 border-b border-product-border-subtle pb-6"
+        className="grid gap-4"
       >
         <div className="flex flex-wrap items-center justify-between gap-3">
           <ToolSegmentedControl
-            label="Audit source"
             value={mode}
             onChange={(val) => {
               setMode(val);
               setError("");
             }}
             options={[
-              { value: "url", label: "Audit live HTTPS URL" },
-              { value: "html", label: "Paste HTML / Page copy" },
+              { value: "url", label: "Live URL" },
+              { value: "html", label: "Paste HTML / copy" },
             ]}
           />
-          <button
-            type="button"
-            onClick={handleLoadSample}
-            className="text-caption font-medium text-product-text-secondary underline-offset-4 hover:text-product-text-primary hover:underline"
-          >
-            Load sample audit
-          </button>
+          <Button type="button" variant="product-inline-link" size="sm" onClick={handleLoadSample}>
+            Load sample
+          </Button>
         </div>
 
         {mode === "url" ? (
           <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-end">
             <ToolTextField
-              label="Public waitlist URL"
+              label="Waitlist URL"
               type="url"
               inputMode="url"
               value={url}
               onChange={setUrl}
               placeholder="https://yourproduct.com/waitlist"
               error={error}
-              hint="HTTPS only. Static HTML fetch with SSRF guards; zero raw HTML stored."
             />
-            <button
+            <Button
               type="submit"
+              variant="product-accent"
+              size="md"
               disabled={busy || !url.trim()}
-              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-product-text-primary bg-product-accent-solid px-5 py-2.5 text-body font-semibold text-product-accent-label transition-colors duration-150 hover:bg-product-accent-hover disabled:cursor-not-allowed disabled:opacity-60"
+              className="h-10 px-5 font-semibold"
             >
               {busy ? (
                 <>
@@ -204,53 +203,45 @@ export function PageGraderWidget({
                   <span>Grading…</span>
                 </>
               ) : (
-                <span>Grade waitlist page</span>
+                <span>Grade page</span>
               )}
-            </button>
+            </Button>
           </div>
         ) : (
           <div className="grid gap-3">
-            <label
-              htmlFor="grader-html-input"
-              className="text-caption font-semibold text-product-text-primary"
-            >
-              Paste HTML or plain landing page copy
-            </label>
-            <textarea
-              id="grader-html-input"
-              rows={6}
+            <ToolTextareaField
+              label="HTML or page copy"
+              rows={5}
+              mono
               value={pastedHtml}
-              onChange={(event) => setPastedHtml(event.target.value)}
-              placeholder="Paste your waitlist page HTML or hero headline, subheadline, and CTA text..."
-              className="w-full rounded-lg border border-product-border-control bg-product-bg-surface p-3.5 font-product-mono text-caption text-product-text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-product-focus"
+              onChange={setPastedHtml}
+              placeholder="Paste your waitlist HTML or hero headline, subheadline, and CTA..."
+              error={error}
             />
-            {error ? (
-              <p role="alert" className="text-caption text-product-danger-text">
-                {error}
-              </p>
-            ) : null}
             <div className="flex justify-end">
-              <button
+              <Button
                 type="submit"
+                variant="product-accent"
+                size="md"
                 disabled={busy || pastedHtml.trim().length < 20}
-                className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-product-text-primary bg-product-accent-solid px-5 py-2.5 text-body font-semibold text-product-accent-label hover:bg-product-accent-hover disabled:opacity-60"
+                className="h-10 px-5 font-semibold"
               >
-                {busy ? "Grading…" : "Grade pasted copy"}
-              </button>
+                {busy ? "Grading…" : "Grade copy"}
+              </Button>
             </div>
           </div>
         )}
 
         {!compact ? (
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="grid gap-4 sm:grid-cols-2">
             <ToolSelectField
-              label="Launch type (context)"
+              label="Launch type"
               value={launchType}
               onChange={setLaunchType}
               options={LAUNCH_TYPE_OPTIONS}
             />
             <ToolSelectField
-              label="Primary conversion goal"
+              label="Primary goal"
               value={goal}
               onChange={setGoal}
               options={GOAL_OPTIONS}
@@ -259,39 +250,31 @@ export function PageGraderWidget({
         ) : null}
       </form>
 
-      {/* Results */}
       {result ? (
-        <div className="grid gap-6">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <div className="flex flex-wrap items-center gap-2">
-              <ToolStatusBadge
-                tone={
-                  result.band === "strong"
-                    ? "success"
-                    : result.band === "workable"
-                      ? "warning"
-                      : "danger"
-                }
-              >
-                {isSample ? "Sample audit preview" : `Audited: ${result.auditedHost}`}
-              </ToolStatusBadge>
-              <span className="font-product-mono text-micro text-product-text-secondary">
-                {result.extractedSignals.visibleInputCount} inputs ·{" "}
-                {result.extractedSignals.wordCount} words
-              </span>
-            </div>
+        <div className="grid gap-8">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <ToolStatusBadge
+              tone={
+                result.band === "strong"
+                  ? "success"
+                  : result.band === "workable"
+                    ? "warning"
+                    : "danger"
+              }
+            >
+              {isSample ? "Sample audit" : result.auditedHost}
+            </ToolStatusBadge>
             <div className="flex items-center gap-2">
-              <ToolActionButton onClick={handleExportPng}>Export PNG</ToolActionButton>
+              <ToolActionButton onClick={handleExportPng}>PNG</ToolActionButton>
               <ToolActionButton onClick={() => downloadJson("waitlyze-page-audit.json", result)}>
-                Export JSON
+                JSON
               </ToolActionButton>
             </div>
           </div>
 
-          {/* Scoreboard */}
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <ToolStatStrip>
             <ToolStatTile
-              label="Overall score"
+              label="Score"
               value={`${result.score}/100`}
               hint={`Grade ${result.grade}`}
               tone={
@@ -302,74 +285,61 @@ export function PageGraderWidget({
                     : "danger"
               }
             />
-            <ToolStatTile
-              label="Top fixes found"
-              value={String(result.topFixes.length)}
-              hint="Ordered by point impact"
-            />
+            <ToolStatTile label="Top fixes" value={String(result.topFixes.length)} />
             <ToolStatTile
               label="Form fields"
               value={String(result.extractedSignals.visibleInputCount)}
-              hint="Ideal: 1–2 above fold"
             />
             <ToolStatTile
-              label="Recommended template"
+              label="Suggested layout"
               value={TEMPLATE_LABELS[result.recommendedTemplateId] || result.recommendedTemplateId}
-              hint="Ready for blueprint"
             />
-          </div>
+          </ToolStatStrip>
 
-          {/* Top 3 Highest-Impact Fixes */}
           {result.topFixes.length > 0 ? (
-            <div className="rounded-xl border border-product-warning-text/25 bg-product-warning-bg/45 p-5">
-              <h3 className="font-product-display text-body font-semibold text-product-text-primary">
-                Top {result.topFixes.length} highest-impact fixes
+            <div className="grid gap-3">
+              <h3 className="font-product-display text-base font-semibold text-product-text-primary">
+                Highest-impact fixes
               </h3>
-              <ol className="mt-3 grid gap-3">
+              <ol className="grid gap-3">
                 {result.topFixes.map((fix, idx) => (
-                  <li
-                    key={fix.id}
-                    className="rounded-lg border border-product-border-subtle bg-product-bg-surface p-3.5"
-                  >
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <span className="text-caption font-semibold text-product-text-primary">
+                  <li key={fix.id} className="grid gap-1 py-3.5">
+                    <div className="flex flex-wrap items-baseline justify-between gap-2">
+                      <span className="text-body font-medium text-product-text-primary">
                         {idx + 1}. {fix.label}
                       </span>
-                      <ToolStatusBadge tone="warning">
-                        +{fix.potentialGain} pts potential
-                      </ToolStatusBadge>
+                      <span className="font-product-mono text-caption text-product-warning-text tabular-nums">
+                        +{fix.potentialGain} pts
+                      </span>
                     </div>
-                    <p className="mt-1 text-caption text-product-text-secondary">{fix.fix}</p>
+                    <p className="text-caption text-product-text-secondary">{fix.fix}</p>
                   </li>
                 ))}
               </ol>
             </div>
           ) : null}
 
-          {/* 6-Pillar Breakdown */}
-          <div className="grid gap-3 md:grid-cols-2">
+          <div className="grid gap-x-10 gap-y-8 md:grid-cols-2">
             {result.pillars.map((pillar) => (
-              <div
-                key={pillar.id}
-                className="rounded-xl border border-product-border-subtle bg-product-bg-surface p-4"
-              >
-                <div className="flex items-center justify-between gap-2">
-                  <p className="text-caption font-semibold text-product-text-primary">
+              <div key={pillar.id} className="grid content-start gap-3">
+                <div className="flex items-baseline justify-between gap-2">
+                  <p
+                    id={`${pillarLabelId}-${pillar.id}`}
+                    className="text-body font-semibold text-product-text-primary"
+                  >
                     {pillar.name}
                   </p>
-                  <span className="font-product-mono text-caption font-semibold text-product-text-primary tabular-nums">
+                  <span className="font-product-mono text-caption text-product-text-secondary tabular-nums">
                     {pillar.earned}/{pillar.maxPoints}
                   </span>
                 </div>
-                <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-product-bg-inset">
-                  <div
-                    className="h-full rounded-full bg-product-text-primary"
-                    style={{ width: `${Math.max(4, pillar.pct)}%` }}
-                  />
-                </div>
-                <ul className="mt-3 grid gap-2">
+                <Progress
+                  value={Math.max(4, pillar.pct)}
+                  aria-labelledby={`${pillarLabelId}-${pillar.id}`}
+                />
+                <ul className="grid gap-2">
                   {pillar.checks.map((check) => (
-                    <li key={check.id} className="grid gap-0.5 text-micro">
+                    <li key={check.id} className="grid gap-0.5 py-2.5 text-caption">
                       <div className="flex items-center justify-between gap-2">
                         <span className="font-medium text-product-text-primary">{check.label}</span>
                         <ToolStatusBadge
@@ -388,7 +358,7 @@ export function PageGraderWidget({
                               : "Fix"}
                         </ToolStatusBadge>
                       </div>
-                      <p className="text-product-text-secondary">{check.detail}</p>
+                      <p className="text-micro text-product-text-secondary">{check.detail}</p>
                     </li>
                   ))}
                 </ul>
@@ -396,45 +366,34 @@ export function PageGraderWidget({
             ))}
           </div>
 
-          {/* Proposed Rewritten Copy */}
-          <div className="rounded-xl border border-product-border-subtle bg-product-bg-inset/50 p-5">
+          <div className="grid gap-3 pt-2">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <h3 className="font-product-display text-body font-semibold text-product-text-primary">
-                Proposed corrected Hero & CTA copy
+              <h3 className="font-product-display text-base font-semibold text-product-text-primary">
+                Suggested rewrite
               </h3>
               <ToolCopyButton
                 text={[
                   result.rewrittenCopy.heading,
                   result.rewrittenCopy.subheadline,
                   `CTA: ${result.rewrittenCopy.buttonText}`,
-                  result.rewrittenCopy.privacyNote
-                    ? `Note: ${result.rewrittenCopy.privacyNote}`
-                    : "",
                 ]
                   .filter(Boolean)
                   .join("\n\n")}
                 label="Copy rewrite"
               />
             </div>
-            <p className="mt-3 font-product-display text-xl font-semibold text-product-text-primary">
-              {result.rewrittenCopy.heading}
-            </p>
-            <p className="mt-1.5 text-body text-product-text-secondary">
-              {result.rewrittenCopy.subheadline}
-            </p>
-            <div className="mt-3 flex flex-wrap items-center gap-3 text-caption">
-              <span className="rounded-md bg-product-accent-solid px-3 py-1 font-semibold text-product-accent-label">
-                {result.rewrittenCopy.buttonText}
-              </span>
-              {result.rewrittenCopy.privacyNote ? (
-                <span className="text-micro text-product-text-secondary">
-                  {result.rewrittenCopy.privacyNote}
-                </span>
-              ) : null}
+            <div>
+              <p className="font-product-display text-xl font-semibold text-product-text-primary">
+                {result.rewrittenCopy.heading}
+              </p>
+              <p className="mt-1 text-body text-product-text-secondary">
+                {result.rewrittenCopy.subheadline}
+              </p>
+              <p className="mt-2 font-product-mono text-caption text-product-text-primary">
+                CTA: {result.rewrittenCopy.buttonText}
+              </p>
             </div>
           </div>
-
-          <p className="text-micro text-product-text-secondary">{result.disclaimer}</p>
 
           <ToolHandoffCta
             toolSlug="waitlist-landing-page-grader"

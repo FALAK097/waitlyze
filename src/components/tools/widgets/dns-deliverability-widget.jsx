@@ -7,11 +7,13 @@ import { useState } from "react";
 import { ToolHandoffCta } from "@/components/tools/tool-handoff-cta";
 import {
   ToolCopyButton,
+  ToolStatStrip,
   ToolStatTile,
   ToolStatusBadge,
   ToolTextField,
   ToolWorkspace,
 } from "@/components/tools/tool-ui";
+import { Button } from "@/components/ui/button";
 import { trackToolEvent } from "@/lib/tools/analytics";
 import {
   COMMON_DKIM_SELECTORS,
@@ -68,32 +70,29 @@ export function DnsDeliverabilityWidget({
   }
 
   return (
-    <ToolWorkspace className="grid gap-6">
-      <form
-        onSubmit={inspectDomain}
-        className="grid gap-4 border-b border-product-border-subtle pb-6"
-      >
-        <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_14rem_auto] md:items-end">
+    <ToolWorkspace>
+      <form onSubmit={inspectDomain} className="grid gap-4">
+        <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_13rem_auto] md:items-end">
           <ToolTextField
-            label="Launch sending domain"
+            label="Sending domain"
             value={domain}
             onChange={setDomain}
             placeholder="acme.com"
             error={error}
-            hint="Queries public TXT & MX records via DNS-over-HTTPS."
           />
           <ToolTextField
-            label="DKIM selector (optional)"
+            label="DKIM selector"
             value={selector}
             onChange={setSelector}
             placeholder="resend"
             maxLength={63}
-            hint="e.g., resend, google, s1"
           />
-          <button
+          <Button
             type="submit"
+            variant="product-accent"
+            size="md"
             disabled={busy || !domain.trim()}
-            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-product-text-primary bg-product-accent-solid px-5 py-2.5 text-body font-semibold text-product-accent-label hover:bg-product-accent-hover disabled:opacity-60"
+            className="h-10 px-5 font-semibold"
           >
             {busy ? (
               <>
@@ -101,58 +100,59 @@ export function DnsDeliverabilityWidget({
                 <span>Checking…</span>
               </>
             ) : (
-              <span>Inspect DNS</span>
+              <span>Check DNS</span>
             )}
-          </button>
+          </Button>
         </div>
 
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <div className="flex flex-wrap items-center gap-1.5 text-micro">
-            <span className="text-product-text-secondary">Common selectors:</span>
+          <div className="flex flex-wrap items-center gap-1.5">
+            <span className="text-micro text-product-text-muted">Selectors:</span>
             {COMMON_DKIM_SELECTORS.map((item) => (
-              <button
+              <Button
                 key={item.value}
                 type="button"
+                variant="product-ghost"
+                size="xs"
                 onClick={() => setSelector(item.value)}
-                className="rounded-full border border-product-border-subtle bg-product-bg-inset/70 px-2.5 py-0.5 font-product-mono text-micro text-product-text-primary hover:border-product-text-secondary"
+                className="font-product-mono text-micro"
               >
                 {item.value}
-              </button>
+              </Button>
             ))}
           </div>
-          <button
+          <Button
             type="button"
+            variant="product-inline-link"
+            size="sm"
             onClick={() => {
               setError("");
               setResult(SAMPLE_DNS_RESULT);
               setIsSample(true);
             }}
-            className="text-caption font-medium text-product-text-secondary underline-offset-4 hover:text-product-text-primary hover:underline"
           >
-            Load sample report
-          </button>
+            Load sample
+          </Button>
         </div>
       </form>
 
       {result ? (
-        <div className="grid gap-5">
-          <div className="flex flex-wrap items-center gap-2">
-            <ToolStatusBadge
-              tone={
-                result.band === "ready"
-                  ? "success"
-                  : result.band === "needs_attention"
-                    ? "warning"
-                    : "danger"
-              }
-            >
-              {isSample ? `Sample report · ${result.domain}` : `Inspected · ${result.domain}`}
-            </ToolStatusBadge>
-          </div>
+        <div className="grid gap-7">
+          <ToolStatusBadge
+            tone={
+              result.band === "ready"
+                ? "success"
+                : result.band === "needs_attention"
+                  ? "warning"
+                  : "danger"
+            }
+          >
+            {isSample ? `Sample · ${result.domain}` : result.domain}
+          </ToolStatusBadge>
 
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <ToolStatStrip>
             <ToolStatTile
-              label="Deliverability score"
+              label="Deliverability"
               value={`${result.score}/100`}
               hint={`Grade ${result.grade}`}
               tone={
@@ -168,20 +168,17 @@ export function DnsDeliverabilityWidget({
                 key={chk.id}
                 label={chk.id.toUpperCase()}
                 value={chk.status === "pass" ? "Pass" : chk.status === "warn" ? "Warn" : "Fix"}
-                hint={`${chk.points}/${chk.maxPoints} pts`}
+                hint={`${chk.points}/${chk.maxPoints}`}
                 tone={
                   chk.status === "pass" ? "success" : chk.status === "warn" ? "warning" : "danger"
                 }
               />
             ))}
-          </div>
+          </ToolStatStrip>
 
-          <div className="grid gap-3 md:grid-cols-2">
+          <div className="grid gap-x-10 gap-y-6 md:grid-cols-2">
             {result.checks.map((chk) => (
-              <div
-                key={chk.id}
-                className="flex flex-col justify-between gap-3 rounded-xl border border-product-border-subtle bg-product-bg-surface p-4"
-              >
+              <div key={chk.id} className="flex flex-col justify-between gap-3">
                 <div>
                   <div className="flex items-center justify-between gap-2">
                     <p className="text-body font-semibold text-product-text-primary">{chk.name}</p>
@@ -197,47 +194,29 @@ export function DnsDeliverabilityWidget({
                       {chk.status === "pass" ? "Pass" : chk.status === "warn" ? "Warn" : "Fail"}
                     </ToolStatusBadge>
                   </div>
-                  <p className="mt-1.5 text-caption text-product-text-secondary">{chk.summary}</p>
-                  <pre className="mt-2.5 overflow-x-auto rounded-lg bg-product-bg-inset/70 p-2.5 font-product-mono text-micro text-product-text-primary">
+                  <p className="mt-1 text-caption text-product-text-secondary">{chk.summary}</p>
+                  <pre className="mt-2.5 overflow-x-auto rounded-md bg-product-bg-inset/70 p-2.5 font-product-mono text-micro text-product-text-primary">
                     <code>{chk.rawRecord}</code>
                   </pre>
                   <p className="mt-2 text-micro text-product-text-secondary">{chk.remediation}</p>
                 </div>
                 {chk.copyableFix ? (
-                  <div className="flex items-center justify-between gap-2 border-t border-product-border-subtle pt-3">
-                    <code className="truncate font-product-mono text-micro text-product-text-primary">
+                  <div className="flex items-center justify-between gap-2 pt-2">
+                    <code className="truncate font-product-mono text-micro text-product-text-muted">
                       {chk.copyableFix}
                     </code>
-                    <ToolCopyButton
-                      text={chk.copyableFix}
-                      label="Copy record"
-                      className="min-h-8 px-2.5 text-micro"
-                    />
+                    <ToolCopyButton text={chk.copyableFix} label="Copy" />
                   </div>
                 ) : null}
               </div>
             ))}
           </div>
 
-          {!compact ? (
-            <div className="rounded-xl border border-product-border-subtle bg-product-bg-inset/45 p-4">
-              <p className="text-caption font-semibold text-product-text-primary">
-                Pre-launch sending warm-up checklist
-              </p>
-              <ul className="mt-2 grid list-disc gap-1.5 pl-4 text-caption text-product-text-secondary">
-                {result.warmupChecklist.map((item) => (
-                  <li key={item}>{item}</li>
-                ))}
-              </ul>
-            </div>
-          ) : null}
-
           <ToolHandoffCta
             toolSlug="email-deliverability-checker"
             entrySurface={entrySurface}
             compact={compact}
             label="Connect this sending domain in Waitlyze"
-            sublabel="Carries your inspected domain into Waitlyze setup. Custom sender emails use a connected verified Resend sender."
             resultBand={result.band}
             onApplyInProduct={onApplyInProduct}
             buildBlueprint={() => ({

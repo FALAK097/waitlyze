@@ -1,22 +1,23 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useId, useMemo, useRef, useState } from "react";
 
 import { ToolHandoffCta } from "@/components/tools/tool-handoff-cta";
 import {
   ToolCopyButton,
   ToolSegmentedControl,
-  ToolStatusBadge,
   ToolTextField,
   ToolWorkspace,
 } from "@/components/tools/tool-ui";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 import { trackToolEvent } from "@/lib/tools/analytics";
 import {
   EMBED_DEFAULTS,
   EMBED_FRAMEWORKS,
   EMBED_LAYOUT_MODES,
   generateEmbedSnippet,
-  getCspChecklist,
 } from "@/lib/tools/engines/embed-configurator.mjs";
 import { cn } from "@/lib/utils";
 
@@ -39,12 +40,13 @@ export function EmbedConfiguratorWidget({
   const [overlayOpen, setOverlayOpen] = useState(false);
   const [sampleEmail, setSampleEmail] = useState("");
   const startedRef = useRef(false);
+  const accentColorId = useId();
+  const buttonTextColorId = useId();
 
   const snippet = useMemo(
     () => generateEmbedSnippet(config, waitlistKeyId),
     [config, waitlistKeyId],
   );
-  const cspChecklist = useMemo(() => getCspChecklist(), []);
 
   function update(key, value) {
     if (!startedRef.current) {
@@ -73,17 +75,14 @@ export function EmbedConfiguratorWidget({
               : "border-product-border-subtle bg-white text-product-text-primary",
           )}
         >
-          <p className="font-product-mono text-micro font-semibold text-product-success-text">
-            YOU ARE ON THE LIST
-          </p>
-          <p className="mt-1 font-product-display text-xl font-semibold">Position #142</p>
+          <p className="font-product-display text-xl font-semibold">Position #142</p>
           <p
             className={cn(
               "mt-1 text-caption",
               isDark ? "text-neutral-300" : "text-product-text-secondary",
             )}
           >
-            Confirm your email, then share your link to earn +30 pts per verified referral.
+            Confirm your email, then share your link to move up.
           </p>
           <div
             className={cn(
@@ -97,7 +96,7 @@ export function EmbedConfiguratorWidget({
             <button
               type="button"
               onClick={() => setPreviewPhase("form")}
-              className="shrink-0 font-sans text-micro font-semibold underline"
+              className="shrink-0 font-sans text-micro font-medium underline"
             >
               Reset
             </button>
@@ -163,22 +162,16 @@ export function EmbedConfiguratorWidget({
             {config.buttonText}
           </button>
         </div>
-        <p
-          className={cn("mt-2 text-micro", isDark ? "text-neutral-400" : "text-product-text-muted")}
-        >
-          Local sandbox preview. Submissions are not stored.
-        </p>
       </form>
     );
   }
 
   return (
-    <ToolWorkspace className="grid gap-6">
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,20rem)_minmax(0,1fr)]">
-        {/* Controls */}
-        <div className="grid content-start gap-4">
+    <ToolWorkspace>
+      <div className="grid gap-10 lg:grid-cols-[minmax(0,19rem)_minmax(0,1fr)]">
+        <div className="grid content-start gap-5">
           <ToolSegmentedControl
-            label="Presentation mode"
+            label="Mode"
             value={config.mode}
             onChange={(val) => {
               update("mode", val);
@@ -187,7 +180,7 @@ export function EmbedConfiguratorWidget({
             options={EMBED_LAYOUT_MODES}
           />
           <ToolSegmentedControl
-            label="Widget theme"
+            label="Theme"
             value={config.theme}
             onChange={(val) => update("theme", val)}
             options={[
@@ -195,11 +188,14 @@ export function EmbedConfiguratorWidget({
               { value: "dark", label: "Dark" },
             ]}
           />
-          <div className="grid grid-cols-2 gap-3">
-            <label className="grid gap-1 text-caption font-semibold text-product-text-primary">
-              Accent color
-              <div className="flex min-h-10 items-center gap-2 rounded-lg border border-product-border-control bg-product-bg-surface px-2.5">
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="grid gap-1.5">
+              <Label htmlFor={accentColorId} className="text-caption font-medium">
+                Accent
+              </Label>
+              <div className="flex h-10 items-center gap-2 rounded-lg border border-input bg-product-bg-surface px-2.5">
                 <input
+                  id={accentColorId}
                   type="color"
                   value={config.accentColor}
                   onChange={(e) => update("accentColor", e.target.value)}
@@ -209,11 +205,14 @@ export function EmbedConfiguratorWidget({
                   {config.accentColor}
                 </span>
               </div>
-            </label>
-            <label className="grid gap-1 text-caption font-semibold text-product-text-primary">
-              Button text
-              <div className="flex min-h-10 items-center gap-2 rounded-lg border border-product-border-control bg-product-bg-surface px-2.5">
+            </div>
+            <div className="grid gap-1.5">
+              <Label htmlFor={buttonTextColorId} className="text-caption font-medium">
+                Button text
+              </Label>
+              <div className="flex h-10 items-center gap-2 rounded-lg border border-input bg-product-bg-surface px-2.5">
                 <input
+                  id={buttonTextColorId}
                   type="color"
                   value={config.buttonTextColor}
                   onChange={(e) => update("buttonTextColor", e.target.value)}
@@ -223,10 +222,10 @@ export function EmbedConfiguratorWidget({
                   {config.buttonTextColor}
                 </span>
               </div>
-            </label>
+            </div>
           </div>
           <ToolSegmentedControl
-            label="Corner radius"
+            label="Radius"
             value={config.radius}
             onChange={(val) => update("radius", val)}
             options={[
@@ -237,45 +236,43 @@ export function EmbedConfiguratorWidget({
             ]}
           />
           <ToolTextField
-            label="CTA button label"
+            label="Button label"
             value={config.buttonText}
             onChange={(v) => update("buttonText", v)}
             maxLength={36}
           />
-          <label className="flex min-h-10 cursor-pointer items-center gap-2.5 rounded-lg border border-product-border-subtle px-3 text-caption font-medium text-product-text-primary">
-            <input
-              type="checkbox"
+          <label className="flex cursor-pointer items-center gap-2.5 text-caption text-product-text-primary">
+            <Checkbox
               checked={config.showNameField}
-              onChange={(e) => update("showNameField", e.target.checked)}
-              className="size-4 accent-product-text-primary"
+              onCheckedChange={(checked) => update("showNameField", Boolean(checked))}
             />
-            <span>Include optional Name / Role field</span>
+            <span>Include Name / Role field</span>
           </label>
         </div>
 
-        {/* Interactive Sandbox + Code */}
-        <div className="grid content-start gap-5">
-          <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="grid content-start gap-6">
+          <div className="grid gap-2 sm:grid-cols-2">
             <ToolSegmentedControl
+              ariaLabel="Preview state"
               value={previewPhase}
               onChange={setPreviewPhase}
               options={[
-                { value: "form", label: "Pre-signup form" },
-                { value: "status", label: "Post-signup referral card" },
+                { value: "form", label: "Form" },
+                { value: "status", label: "Post-signup" },
               ]}
             />
             <ToolSegmentedControl
+              ariaLabel="Preview viewport"
               value={viewport}
               onChange={setViewport}
               options={[
                 { value: "desktop", label: "Desktop" },
-                { value: "mobile", label: "Mobile (375px)" },
+                { value: "mobile", label: "Mobile" },
               ]}
             />
           </div>
 
-          {/* Live Sandbox Canvas */}
-          <div className="relative flex min-h-60 items-center justify-center overflow-hidden rounded-xl border border-product-border-subtle bg-product-bg-inset/60 p-5">
+          <div className="relative flex min-h-56 min-w-0 items-center justify-center overflow-hidden rounded-lg bg-product-bg-inset/50 p-3 sm:p-6">
             <div
               className={cn(
                 "w-full transition-all",
@@ -288,13 +285,10 @@ export function EmbedConfiguratorWidget({
                     type="button"
                     onClick={() => setOverlayOpen(true)}
                     style={{ backgroundColor: config.accentColor, color: config.buttonTextColor }}
-                    className={cn("min-h-11 px-5 text-body font-semibold shadow-2xs", rClass)}
+                    className={cn("min-h-10 px-5 text-body font-semibold", rClass)}
                   >
-                    Open {config.mode === "modal" ? "popup modal" : "slide-over drawer"} preview
+                    Preview {config.mode}
                   </button>
-                  <p className="mt-2 text-micro text-product-text-secondary">
-                    Click to test the {config.mode} interaction inside this sandbox.
-                  </p>
                 </div>
               ) : (
                 renderWidgetCard()
@@ -311,23 +305,25 @@ export function EmbedConfiguratorWidget({
                       : "",
                   )}
                 >
-                  <button
+                  <Button
                     type="button"
+                    variant="secondary"
+                    size="xs"
                     onClick={() => setOverlayOpen(false)}
-                    className="mb-2 inline-flex min-h-8 items-center rounded-md bg-white px-2.5 text-micro font-semibold text-product-text-primary shadow-2xs"
+                    className="mb-2"
                   >
-                    Close preview
-                  </button>
+                    Close
+                  </Button>
                   {renderWidgetCard()}
                 </div>
               </div>
             ) : null}
           </div>
 
-          {/* Framework Snippets */}
-          <div className="grid gap-3 rounded-xl border border-product-border-subtle bg-product-bg-surface p-4">
-            <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="grid gap-3 pt-2">
+            <div className="flex flex-col items-stretch gap-2 sm:flex-row sm:items-center sm:justify-between">
               <ToolSegmentedControl
+                ariaLabel="Embed framework"
                 value={config.framework}
                 onChange={(val) => update("framework", val)}
                 options={EMBED_FRAMEWORKS}
@@ -342,27 +338,16 @@ export function EmbedConfiguratorWidget({
                     export_format: config.framework,
                   })
                 }
+                className="w-full sm:w-auto"
               />
             </div>
 
-            <pre className="overflow-x-auto rounded-lg border border-product-border-subtle bg-product-bg-inset/60 p-4 font-product-mono text-micro leading-relaxed text-product-text-primary">
+            <pre className="overflow-x-auto rounded-lg bg-product-bg-inset/60 p-4 font-product-mono text-micro leading-relaxed text-product-text-primary">
               <code>{snippet.code}</code>
             </pre>
-            <p className="text-micro text-product-text-secondary">{snippet.installNote}</p>
-
-            {!compact ? (
-              <div className="grid gap-2 border-t border-product-border-subtle pt-3 sm:grid-cols-3">
-                {cspChecklist.map((item) => (
-                  <div key={item.directive} className="rounded-lg bg-product-bg-inset/50 p-2.5">
-                    <ToolStatusBadge tone="neutral">{item.directive}</ToolStatusBadge>
-                    <p className="mt-1 font-product-mono text-micro text-product-text-primary">
-                      {item.value}
-                    </p>
-                    <p className="mt-0.5 text-micro text-product-text-secondary">{item.note}</p>
-                  </div>
-                ))}
-              </div>
-            ) : null}
+            <p className="text-caption leading-relaxed text-product-text-secondary">
+              {snippet.installNote}
+            </p>
           </div>
 
           <ToolHandoffCta

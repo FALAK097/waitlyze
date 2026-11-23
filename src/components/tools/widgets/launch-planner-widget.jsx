@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useId, useMemo, useRef, useState } from "react";
 
 import { downloadCsv, downloadTextFile } from "@/components/tools/tool-export-utils";
 import { ToolHandoffCta } from "@/components/tools/tool-handoff-cta";
@@ -10,10 +10,14 @@ import {
   ToolSegmentedControl,
   ToolSelectField,
   ToolSliderField,
+  ToolStatStrip,
   ToolStatTile,
-  ToolStatusBadge,
   ToolWorkspace,
 } from "@/components/tools/tool-ui";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Progress } from "@/components/ui/progress";
 import { trackToolEvent } from "@/lib/tools/analytics";
 import {
   buildLaunchCalendarIcs,
@@ -31,6 +35,7 @@ export function LaunchPlannerWidget({
 }) {
   const [inputs, setInputs] = useState(DEFAULT_LAUNCH_PLANNER_INPUTS);
   const [manualDoneIds, setManualDoneIds] = useState([]);
+  const progressLabelId = useId();
   const startedRef = useRef(false);
 
   const plan = useMemo(() => planLaunchReadiness(inputs), [inputs]);
@@ -146,12 +151,11 @@ export function LaunchPlannerWidget({
   }
 
   return (
-    <ToolWorkspace className="grid gap-7">
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,22rem)_minmax(0,1fr)]">
-        {/* Inputs */}
-        <div className="grid content-start gap-4">
+    <ToolWorkspace>
+      <div className="grid gap-10 lg:grid-cols-[minmax(0,20rem)_minmax(0,1fr)]">
+        <div className="grid content-start gap-5">
           <ToolSelectField
-            label="Product category"
+            label="Category"
             value={inputs.category}
             onChange={(val) => {
               markStarted();
@@ -169,7 +173,7 @@ export function LaunchPlannerWidget({
             options={LAUNCH_PLANNER_OPTIONS.launchTypes}
           />
           <ToolSegmentedControl
-            label="Launch horizon"
+            label="Runway"
             value={String(inputs.horizonDays)}
             onChange={(val) => {
               markStarted();
@@ -181,13 +185,10 @@ export function LaunchPlannerWidget({
             }))}
           />
           <div className="grid gap-1.5">
-            <label
-              htmlFor="planner-target-date"
-              className="text-caption font-semibold text-product-text-primary"
-            >
-              Or exact target launch date
-            </label>
-            <input
+            <Label htmlFor="planner-target-date" className="text-caption font-medium">
+              Target date
+            </Label>
+            <Input
               id="planner-target-date"
               type="date"
               value={inputs.targetLaunchDate || plan.inputs.targetLaunchDate}
@@ -195,13 +196,13 @@ export function LaunchPlannerWidget({
                 markStarted();
                 setInputs((prev) => ({ ...prev, targetLaunchDate: event.target.value }));
               }}
-              className="min-h-11 w-full rounded-lg border border-product-border-control bg-product-bg-surface px-3 py-2 text-body text-product-text-primary"
+              className="h-10 bg-product-bg-surface px-3"
             />
           </div>
 
           {!compact ? (
             <ToolSliderField
-              label="Weekly launch hours available"
+              label="Weekly hours"
               value={inputs.weeklyHours}
               onChange={(v) => {
                 markStarted();
@@ -215,29 +216,19 @@ export function LaunchPlannerWidget({
             />
           ) : null}
 
-          <fieldset className="grid gap-2">
-            <legend className="text-caption font-semibold text-product-text-primary">
-              What you already have ready
+          <fieldset className="grid gap-2.5 pt-2">
+            <legend className="text-caption font-medium text-product-text-primary">
+              Already ready
             </legend>
-            <div className="grid gap-1.5">
+            <div className="grid gap-2">
               {LAUNCH_PLANNER_OPTIONS.existingAssets.map((asset) => {
                 const checked = inputs.existingAssets.includes(asset.id);
                 return (
                   <label
                     key={asset.id}
-                    className={cn(
-                      "flex min-h-10 cursor-pointer items-center gap-2.5 rounded-lg border px-3 py-2 text-caption transition-colors duration-150",
-                      checked
-                        ? "border-product-text-primary/35 bg-product-bg-inset/70 font-medium text-product-text-primary"
-                        : "border-product-border-subtle bg-product-bg-surface text-product-text-secondary hover:bg-product-bg-inset/40",
-                    )}
+                    className="flex cursor-pointer items-center gap-2.5 py-0.5 text-caption text-product-text-primary"
                   >
-                    <input
-                      type="checkbox"
-                      checked={checked}
-                      onChange={() => toggleAsset(asset.id)}
-                      className="size-4 accent-product-text-primary"
-                    />
+                    <Checkbox checked={checked} onCheckedChange={() => toggleAsset(asset.id)} />
                     <span>{asset.label}</span>
                   </label>
                 );
@@ -246,19 +237,11 @@ export function LaunchPlannerWidget({
           </fieldset>
         </div>
 
-        {/* Outputs */}
-        <div className="grid content-start gap-5">
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <div className="grid content-start gap-7">
+          <ToolStatStrip>
             <ToolStatTile
-              label="Readiness score"
+              label="Readiness"
               value={`${liveReadinessScore}/100`}
-              hint={
-                liveBand === "ready"
-                  ? "Launch ready"
-                  : liveBand === "in_progress"
-                    ? "In progress"
-                    : "Early setup"
-              }
               tone={
                 liveBand === "ready"
                   ? "success"
@@ -270,45 +253,102 @@ export function LaunchPlannerWidget({
             <ToolStatTile
               label="Target launch"
               value={plan.inputs.targetLaunchDate.slice(5)}
-              hint={`${plan.inputs.horizonDays} days runway`}
+              hint={`${plan.inputs.horizonDays}d runway`}
             />
             <ToolStatTile
-              label="Pending tasks"
+              label="Pending"
               value={String(incompleteCount)}
-              hint={`${liveRemainingHours} hrs est.`}
+              hint={`${liveRemainingHours} hrs`}
             />
             <ToolStatTile
-              label="Bandwidth check"
-              value={liveBandwidthWarning ? "Tight" : "Healthy"}
-              hint={`${plan.availableTotalHours} hrs available`}
+              label="Bandwidth"
+              value={liveBandwidthWarning ? "Tight" : "On track"}
               tone={liveBandwidthWarning ? "warning" : "success"}
             />
-          </div>
+          </ToolStatStrip>
 
-          {/* 6-Pillar Breakdown */}
-          <div className="grid gap-3 rounded-xl border border-product-border-subtle bg-product-bg-inset/40 p-4 sm:grid-cols-2">
+          <div className="grid gap-x-8 gap-y-4 sm:grid-cols-2">
             {plan.pillars.map((pillar) => {
               const pct = Math.round((pillar.score / pillar.max) * 100);
               return (
                 <div key={pillar.id} className="grid gap-1.5">
                   <div className="flex items-center justify-between text-caption">
-                    <span className="font-medium text-product-text-primary">{pillar.label}</span>
-                    <span className="font-product-mono text-micro text-product-text-secondary tabular-nums">
+                    <span
+                      id={`${progressLabelId}-${pillar.id}`}
+                      className="text-product-text-primary"
+                    >
+                      {pillar.label}
+                    </span>
+                    <span className="font-product-mono text-micro text-product-text-muted tabular-nums">
                       {pillar.score}/{pillar.max}
                     </span>
                   </div>
-                  <div className="h-2 overflow-hidden rounded-full bg-product-bg-surface">
-                    <div
-                      className="h-full rounded-full bg-product-text-primary transition-all duration-200"
-                      style={{ width: `${Math.max(4, pct)}%` }}
-                    />
-                  </div>
+                  <Progress
+                    value={Math.max(4, pct)}
+                    aria-labelledby={`${progressLabelId}-${pillar.id}`}
+                  />
                 </div>
               );
             })}
           </div>
 
-          {/* First Incomplete Critical Task CTA */}
+          <div className="grid gap-6">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <h3 className="font-product-display text-base font-semibold text-product-text-primary">
+                Dated checklist
+              </h3>
+              <div className="flex flex-wrap items-center gap-2">
+                <ToolActionButton onClick={handleDownloadIcs}>.ics</ToolActionButton>
+                <ToolActionButton onClick={handleDownloadCsv}>CSV</ToolActionButton>
+                <ToolCopyButton text={markdown} label="Copy Markdown" />
+              </div>
+            </div>
+
+            {phases.map(([phaseName, phaseTasks]) => (
+              <div key={phaseName} className="grid gap-2">
+                <p className="font-product-mono text-micro font-medium text-product-text-secondary">
+                  {phaseName}
+                </p>
+                <ul className="grid gap-2">
+                  {phaseTasks.map((task) => (
+                    <li
+                      key={task.id}
+                      className="flex flex-col gap-1.5 py-2.5 sm:flex-row sm:items-center sm:justify-between"
+                    >
+                      <label className="flex cursor-pointer items-start gap-2.5">
+                        <Checkbox
+                          checked={task.completed}
+                          onCheckedChange={() => toggleTaskManual(task.id)}
+                          className="mt-0.5"
+                        />
+                        <span
+                          className={cn(
+                            "text-caption",
+                            task.completed
+                              ? "text-product-text-muted line-through"
+                              : "text-product-text-primary",
+                          )}
+                        >
+                          {task.title}
+                        </span>
+                      </label>
+                      <div className="flex shrink-0 items-center gap-3 pl-6 font-product-mono text-micro text-product-text-muted tabular-nums sm:pl-0">
+                        <span
+                          className={
+                            task.priority === "Critical" ? "text-product-warning-text" : ""
+                          }
+                        >
+                          {task.priority}
+                        </span>
+                        <span>{task.dueDate}</span>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+
           <ToolHandoffCta
             toolSlug="product-launch-checklist"
             entrySurface={entrySurface}
@@ -316,8 +356,8 @@ export function LaunchPlannerWidget({
             label="Create your waitlist now"
             sublabel={
               liveFirstIncompleteTask
-                ? `Next critical dependency: ${liveFirstIncompleteTask.title} (due ${liveFirstIncompleteTask.dueDate})`
-                : "All launch checklist items are complete. Ready to open your Waitlyze draft."
+                ? `Next step: ${liveFirstIncompleteTask.title} (due ${liveFirstIncompleteTask.dueDate})`
+                : "All checklist items complete."
             }
             resultBand={liveBand}
             onApplyInProduct={onApplyInProduct}
@@ -340,76 +380,6 @@ export function LaunchPlannerWidget({
               ],
             })}
           />
-
-          {/* Phase-by-phase Timeline */}
-          <div className="grid gap-4">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <h3 className="font-product-display text-lg font-semibold text-product-text-primary">
-                Dated critical-path timeline
-              </h3>
-              <div className="flex flex-wrap items-center gap-2">
-                <ToolActionButton onClick={handleDownloadIcs}>Download .ics</ToolActionButton>
-                <ToolActionButton onClick={handleDownloadCsv}>Export CSV</ToolActionButton>
-                <ToolCopyButton text={markdown} label="Copy Markdown" />
-              </div>
-            </div>
-
-            {phases.map(([phaseName, phaseTasks]) => (
-              <div
-                key={phaseName}
-                className="overflow-hidden rounded-xl border border-product-border-subtle bg-product-bg-surface"
-              >
-                <div className="border-b border-product-border-subtle bg-product-bg-inset/50 px-4 py-2.5">
-                  <p className="font-product-mono text-micro font-semibold text-product-text-primary">
-                    {phaseName}
-                  </p>
-                </div>
-                <ul className="divide-y divide-product-border-subtle">
-                  {phaseTasks.map((task) => (
-                    <li
-                      key={task.id}
-                      className="flex flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
-                    >
-                      <label className="flex cursor-pointer items-start gap-2.5">
-                        <input
-                          type="checkbox"
-                          checked={task.completed}
-                          onChange={() => toggleTaskManual(task.id)}
-                          className="mt-1 size-4 shrink-0 accent-product-text-primary"
-                        />
-                        <span
-                          className={cn(
-                            "text-caption font-medium",
-                            task.completed
-                              ? "text-product-text-muted line-through"
-                              : "text-product-text-primary",
-                          )}
-                        >
-                          {task.title}
-                        </span>
-                      </label>
-                      <div className="flex shrink-0 items-center gap-2 pl-6 sm:pl-0">
-                        <ToolStatusBadge
-                          tone={
-                            task.priority === "Critical"
-                              ? "warning"
-                              : task.priority === "High"
-                                ? "neutral"
-                                : "neutral"
-                          }
-                        >
-                          {task.priority}
-                        </ToolStatusBadge>
-                        <span className="font-product-mono text-micro text-product-text-secondary tabular-nums">
-                          {task.dueDate}
-                        </span>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-          </div>
         </div>
       </div>
     </ToolWorkspace>

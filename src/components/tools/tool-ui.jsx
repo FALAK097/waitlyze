@@ -1,49 +1,43 @@
 "use client";
 
 import {
-  CheckmarkCircle02Icon,
   Copy01Icon,
   Download01Icon,
+  RefreshIcon,
   Share01Icon,
+  Tick01Icon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { useId, useState } from "react";
 import { toast } from "sonner";
 
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 
 import { copyToClipboard } from "./tool-export-utils";
 
 /**
- * Primary interactive tool container: crisp white surface, hairline border,
- * generous breathing room, strictly Waitlyze light-only tokens.
+ * Unboxed tool workspace container with clean vertical rhythm and no outer card chrome.
  */
 export function ToolWorkspace({ children, className = "" }) {
-  return (
-    <div
-      className={cn(
-        "rounded-xl border border-product-border-subtle bg-product-bg-surface p-5 sm:p-7",
-        className,
-      )}
-    >
-      {children}
-    </div>
-  );
+  return <div className={cn("grid min-w-0 gap-8", className)}>{children}</div>;
 }
 
 /**
- * Quiet editorial stat tile with tabular-nums for deterministic readouts.
+ * Flat, unboxed typographic metric readout for use inside horizontal stat strips.
  */
 export function ToolStatTile({ label, value, hint = "", tone = "neutral", className = "" }) {
-  const toneBorder =
-    tone === "success"
-      ? "border-product-success-text/25 bg-product-success-bg/50"
-      : tone === "warning"
-        ? "border-product-warning-text/25 bg-product-warning-bg/60"
-        : tone === "danger"
-          ? "border-product-danger-text/25 bg-product-danger-bg/60"
-          : "border-product-border-subtle bg-product-bg-inset/60";
-
   const valueTone =
     tone === "success"
       ? "text-product-success-text"
@@ -54,52 +48,80 @@ export function ToolStatTile({ label, value, hint = "", tone = "neutral", classN
           : "text-product-text-primary";
 
   return (
-    <div className={cn("rounded-lg border p-4", toneBorder, className)}>
-      <p className="text-caption font-medium text-product-text-secondary">{label}</p>
+    <div className={cn("min-w-0 py-1", className)}>
+      <p className="text-caption text-product-text-secondary">{label}</p>
       <p
         className={cn(
-          "mt-1.5 font-product-display text-2xl font-semibold tracking-tight tabular-nums sm:text-3xl",
+          "mt-1 font-product-display text-2xl font-semibold tracking-tight tabular-nums sm:text-[1.75rem]",
           valueTone,
         )}
       >
         {value}
       </p>
-      {hint ? <p className="mt-1 text-micro text-product-text-secondary">{hint}</p> : null}
+      {hint ? <p className="mt-0.5 text-micro text-product-text-muted">{hint}</p> : null}
     </div>
   );
 }
 
 /**
- * Accessible status badge that always pairs explicit label text with semantic tint.
+ * Open metric group for 2–4 primary tool metrics.
  */
-export function ToolStatusBadge({ tone = "neutral", children, className = "" }) {
-  const toneClasses =
-    tone === "success"
-      ? "bg-product-success-bg text-product-success-text border-product-success-text/20"
-      : tone === "warning"
-        ? "bg-product-warning-bg text-product-warning-text border-product-warning-text/20"
-        : tone === "danger"
-          ? "bg-product-danger-bg text-product-danger-text border-product-danger-text/20"
-          : tone === "accent"
-            ? "bg-product-accent-solid/35 text-product-text-primary border-product-text-primary/15"
-            : "bg-product-bg-inset text-product-text-secondary border-product-border-subtle";
-
+export function ToolStatStrip({ children, className = "" }) {
   return (
-    <span
+    <div
       className={cn(
-        "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-micro font-semibold",
-        toneClasses,
+        "grid min-w-0 grid-cols-2 gap-x-4 gap-y-5 py-2 sm:grid-cols-4 sm:gap-x-6",
         className,
       )}
     >
       {children}
+    </div>
+  );
+}
+
+/**
+ * Quiet inline status indicator — semantic dot + label text, no pill chrome.
+ */
+export function ToolStatusBadge({ tone = "neutral", children, className = "" }) {
+  const dotClass =
+    tone === "success"
+      ? "bg-product-success-text"
+      : tone === "warning"
+        ? "bg-product-warning-text"
+        : tone === "danger"
+          ? "bg-product-danger-text"
+          : tone === "accent"
+            ? "bg-product-accent-solid ring-1 ring-product-text-primary/30"
+            : "bg-product-text-muted";
+
+  const textClass =
+    tone === "success"
+      ? "text-product-success-text"
+      : tone === "warning"
+        ? "text-product-warning-text"
+        : tone === "danger"
+          ? "text-product-danger-text"
+          : "text-product-text-secondary";
+
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center gap-1.5 text-caption font-medium",
+        textClass,
+        className,
+      )}
+    >
+      <span
+        className={cn("inline-block size-1.5 shrink-0 rounded-full", dotClass)}
+        aria-hidden="true"
+      />
+      <span>{children}</span>
     </span>
   );
 }
 
 /**
- * Accessible range + numeric input combo with persistent label, helper text,
- * tabular numbers, and mobile numeric inputMode.
+ * Accessible range + numeric input combo using shadcn Label & Input.
  */
 export function ToolSliderField({
   label,
@@ -118,17 +140,17 @@ export function ToolSliderField({
 
   return (
     <div className="grid gap-2">
-      <div className="flex items-center justify-between gap-3">
-        <label htmlFor={id} className="text-caption font-semibold text-product-text-primary">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <Label htmlFor={id} className="text-caption font-medium text-product-text-primary">
           {label}
-        </label>
-        <div className="flex items-center gap-1 rounded-md border border-product-border-control bg-product-bg-surface px-2.5 py-1 focus-within:border-product-text-primary">
+        </Label>
+        <div className="flex items-center gap-1">
           {prefix ? (
-            <span className="text-caption text-product-text-secondary" aria-hidden="true">
+            <span className="text-caption text-product-text-muted" aria-hidden="true">
               {prefix}
             </span>
           ) : null}
-          <input
+          <Input
             id={id}
             type="number"
             inputMode={inputMode}
@@ -145,10 +167,10 @@ export function ToolSliderField({
                 onChange(Math.min(max, Math.max(min, parsed)));
               }
             }}
-            className="w-20 bg-transparent text-right font-product-mono text-caption font-semibold text-product-text-primary tabular-nums focus:outline-none"
+            className="h-8 w-20 bg-product-bg-surface px-2 text-right font-product-mono text-caption font-medium tabular-nums"
           />
           {suffix ? (
-            <span className="text-caption text-product-text-secondary" aria-hidden="true">
+            <span className="text-caption text-product-text-muted" aria-hidden="true">
               {suffix}
             </span>
           ) : null}
@@ -169,10 +191,10 @@ export function ToolSliderField({
             onChange(Math.min(max, Math.max(min, parsed)));
           }
         }}
-        className="h-2 w-full cursor-pointer appearance-none rounded-full bg-product-bg-inset accent-product-text-primary"
+        className="h-1.5 w-full cursor-pointer appearance-none rounded-full bg-product-bg-inset accent-product-text-primary"
       />
       {hint ? (
-        <p id={hintId} className="text-micro text-product-text-secondary">
+        <p id={hintId} className="text-micro text-product-text-muted">
           {hint}
         </p>
       ) : null}
@@ -181,34 +203,39 @@ export function ToolSliderField({
 }
 
 /**
- * Accessible native select control matching Waitlyze's restrained product-input height.
+ * Accessible Base UI Select control matching Waitlyze product styling.
  */
 export function ToolSelectField({ label, value, onChange, options, hint = "", className = "" }) {
   const id = useId();
+  const activeOption = options.find((opt) => opt.value === value);
+
   return (
     <div className={cn("grid gap-1.5", className)}>
-      <label htmlFor={id} className="text-caption font-semibold text-product-text-primary">
+      <Label htmlFor={id} className="text-caption font-medium text-product-text-primary">
         {label}
-      </label>
-      <select
-        id={id}
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-        className="min-h-11 w-full rounded-lg border border-product-border-control bg-product-bg-surface px-3 py-2 text-body text-product-text-primary transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-product-focus"
-      >
-        {options.map((opt) => (
-          <option key={opt.value} value={opt.value}>
-            {opt.label}
-          </option>
-        ))}
-      </select>
-      {hint ? <p className="text-micro text-product-text-secondary">{hint}</p> : null}
+      </Label>
+      <Select value={value} onValueChange={(next) => next && onChange(next)}>
+        <SelectTrigger
+          id={id}
+          className="h-10 w-full bg-product-bg-surface px-3 text-body text-product-text-primary"
+        >
+          <SelectValue>{activeOption?.label ?? value}</SelectValue>
+        </SelectTrigger>
+        <SelectContent align="start">
+          {options.map((opt) => (
+            <SelectItem key={opt.value} value={opt.value}>
+              {opt.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      {hint ? <p className="text-micro text-product-text-muted">{hint}</p> : null}
     </div>
   );
 }
 
 /**
- * Accessible text input with persistent label, optional character counter, and inline error.
+ * Accessible text input using shadcn Label & Input.
  */
 export function ToolTextField({
   label,
@@ -226,16 +253,16 @@ export function ToolTextField({
   return (
     <div className={cn("grid gap-1.5", className)}>
       <div className="flex items-center justify-between gap-2">
-        <label htmlFor={id} className="text-caption font-semibold text-product-text-primary">
+        <Label htmlFor={id} className="text-caption font-medium text-product-text-primary">
           {label}
-        </label>
+        </Label>
         {maxLength ? (
           <span className="font-product-mono text-micro text-product-text-muted tabular-nums">
             {value.length}/{maxLength}
           </span>
         ) : null}
       </div>
-      <input
+      <Input
         id={id}
         type={type}
         inputMode={inputMode}
@@ -244,62 +271,151 @@ export function ToolTextField({
         placeholder={placeholder}
         aria-invalid={Boolean(error)}
         onChange={(event) => onChange(event.target.value)}
-        className={cn(
-          "min-h-11 w-full rounded-lg border bg-product-bg-surface px-3.5 py-2 text-body text-product-text-primary placeholder:text-product-text-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-product-focus",
-          error ? "border-product-danger-text" : "border-product-border-control",
-        )}
+        className="h-10 bg-product-bg-surface px-3 text-body"
       />
       {error ? (
         <p role="alert" className="text-micro text-product-danger-text">
           {error}
         </p>
       ) : hint ? (
-        <p className="text-micro text-product-text-secondary">{hint}</p>
+        <p className="text-micro text-product-text-muted">{hint}</p>
       ) : null}
     </div>
   );
 }
 
 /**
- * Segmented button group for crisp mode/preset switching without visual clutter.
+ * Accessible textarea using shadcn Label & Textarea.
  */
-export function ToolSegmentedControl({ label, value, onChange, options, className = "" }) {
+export function ToolTextareaField({
+  label,
+  value,
+  onChange,
+  placeholder = "",
+  rows = 5,
+  maxLength,
+  mono = false,
+  error = "",
+  className = "",
+}) {
+  const id = useId();
   return (
     <div className={cn("grid gap-1.5", className)}>
-      {label ? (
-        <span className="text-caption font-semibold text-product-text-primary">{label}</span>
-      ) : null}
-      <div
-        role="group"
-        aria-label={label || "Options"}
-        className="inline-flex flex-wrap gap-1.5 rounded-lg border border-product-border-subtle bg-product-bg-inset p-1"
-      >
-        {options.map((opt) => {
-          const active = opt.value === value;
-          return (
-            <button
-              key={opt.value}
-              type="button"
-              aria-pressed={active}
-              onClick={() => onChange(opt.value)}
-              className={cn(
-                "min-h-9 rounded-md px-3 py-1.5 text-caption font-medium transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-product-focus motion-safe:active:scale-[0.98]",
-                active
-                  ? "bg-product-bg-surface text-product-text-primary shadow-2xs ring-1 ring-product-border-subtle"
-                  : "text-product-text-secondary hover:text-product-text-primary",
-              )}
-            >
-              {opt.label}
-            </button>
-          );
-        })}
+      <div className="flex items-center justify-between gap-2">
+        <Label htmlFor={id} className="text-caption font-medium text-product-text-primary">
+          {label}
+        </Label>
+        {maxLength ? (
+          <span className="font-product-mono text-micro text-product-text-muted tabular-nums">
+            {value.length}/{maxLength}
+          </span>
+        ) : null}
       </div>
+      <Textarea
+        id={id}
+        rows={rows}
+        value={value}
+        maxLength={maxLength}
+        placeholder={placeholder}
+        aria-invalid={Boolean(error)}
+        onChange={(event) => onChange(event.target.value)}
+        className={cn(
+          "bg-product-bg-surface p-3",
+          mono ? "font-product-mono text-caption leading-relaxed" : "text-body",
+        )}
+      />
+      {error ? (
+        <p role="alert" className="text-micro text-product-danger-text">
+          {error}
+        </p>
+      ) : null}
     </div>
   );
 }
 
 /**
- * One-click copy button with crisp state confirmation.
+ * Segmented control built on Base UI Tabs for crisp, keyboard-accessible mode switching.
+ */
+export function ToolSegmentedControl({
+  label,
+  ariaLabel,
+  value,
+  onChange,
+  options,
+  className = "",
+}) {
+  const id = useId();
+  const labelId = label ? `${id}-label` : undefined;
+  const useSelect = options.length > 4;
+  const hasOddOptions = options.length % 2 === 1;
+  const accessibleName = ariaLabel || label || "Choose an option";
+
+  return (
+    <div className={cn("grid min-w-0 gap-1.5", className)}>
+      {label ? (
+        useSelect ? (
+          <Label
+            id={labelId}
+            htmlFor={id}
+            className="text-caption font-medium text-product-text-primary"
+          >
+            {label}
+          </Label>
+        ) : (
+          <span id={labelId} className="text-caption font-medium text-product-text-primary">
+            {label}
+          </span>
+        )
+      ) : null}
+      {useSelect ? (
+        <Select value={value} onValueChange={(next) => next && onChange(next)}>
+          <SelectTrigger
+            id={id}
+            aria-label={label ? undefined : accessibleName}
+            aria-labelledby={labelId}
+            className="h-11 w-full bg-product-bg-surface px-3 text-body text-product-text-primary sm:max-w-72"
+          >
+            <SelectValue>
+              {options.find((option) => option.value === value)?.label ?? value}
+            </SelectValue>
+          </SelectTrigger>
+          <SelectContent align="start">
+            {options.map((option) => (
+              <SelectItem key={option.value} value={option.value}>
+                {option.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      ) : (
+        <Tabs value={value} onValueChange={(next) => next && onChange(next)} className="min-w-0">
+          <TabsList
+            id={id}
+            aria-label={label ? undefined : accessibleName}
+            aria-labelledby={labelId}
+            className="grid! h-auto! w-full max-w-full grid-cols-2 gap-1 bg-product-bg-inset p-1 sm:flex! sm:flex-wrap sm:justify-start"
+          >
+            {options.map((opt) => (
+              <TabsTrigger
+                key={opt.value}
+                value={opt.value}
+                className={cn(
+                  "h-auto! min-h-11 w-full min-w-0 px-2.5 py-1.5 text-center text-caption leading-tight font-medium whitespace-normal data-active:bg-product-bg-surface data-active:text-product-text-primary data-active:shadow-2xs sm:w-auto sm:flex-1 sm:basis-0",
+                  hasOddOptions && "last:col-span-2 sm:last:col-span-1",
+                )}
+              >
+                {opt.label}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        </Tabs>
+      )}
+    </div>
+  );
+}
+
+/**
+ * One-click copy button built on shadcn Button + Hugeicons.
  */
 export function ToolCopyButton({
   text,
@@ -323,41 +439,46 @@ export function ToolCopyButton({
   }
 
   return (
-    <button
+    <Button
       type="button"
+      variant="product-outline"
+      size="sm"
       onClick={handleCopy}
-      className={cn(
-        "inline-flex min-h-10 items-center justify-center gap-1.5 rounded-lg border border-product-border-control bg-product-bg-surface px-3.5 py-2 text-caption font-medium text-product-text-primary transition-colors duration-150 hover:bg-product-bg-inset focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-product-focus motion-safe:active:scale-[0.98]",
-        className,
-      )}
+      className={cn("h-9 gap-1.5 px-3 text-caption font-medium", className)}
     >
       <HugeiconsIcon
-        icon={copied ? CheckmarkCircle02Icon : Copy01Icon}
+        icon={copied ? Tick01Icon : Copy01Icon}
         size={15}
         aria-hidden="true"
         className={copied ? "text-product-success-text" : ""}
       />
       <span>{copied ? copiedLabel : label}</span>
-    </button>
+    </Button>
   );
 }
 
 /**
- * Secondary export action button (CSV, PNG, .ics, JSON, Share link).
+ * Secondary export/action button built on shadcn Button + Hugeicons.
  */
-export function ToolActionButton({ icon = "download", children, onClick, className = "" }) {
-  const iconObj = icon === "share" ? Share01Icon : Download01Icon;
+export function ToolActionButton({
+  icon = "download",
+  children,
+  onClick,
+  disabled = false,
+  className = "",
+}) {
+  const iconObj = icon === "share" ? Share01Icon : icon === "reset" ? RefreshIcon : Download01Icon;
   return (
-    <button
+    <Button
       type="button"
+      variant="product-outline"
+      size="sm"
+      disabled={disabled}
       onClick={onClick}
-      className={cn(
-        "inline-flex min-h-10 items-center justify-center gap-1.5 rounded-lg border border-product-border-control bg-product-bg-surface px-3.5 py-2 text-caption font-medium text-product-text-primary transition-colors duration-150 hover:bg-product-bg-inset focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-product-focus motion-safe:active:scale-[0.98]",
-        className,
-      )}
+      className={cn("h-9 gap-1.5 px-3 text-caption font-medium", className)}
     >
       <HugeiconsIcon icon={iconObj} size={15} aria-hidden="true" />
       <span>{children}</span>
-    </button>
+    </Button>
   );
 }

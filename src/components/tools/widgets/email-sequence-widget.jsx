@@ -10,9 +10,11 @@ import {
   ToolSegmentedControl,
   ToolSelectField,
   ToolStatusBadge,
+  ToolTextareaField,
   ToolTextField,
   ToolWorkspace,
 } from "@/components/tools/tool-ui";
+import { Button } from "@/components/ui/button";
 import { trackToolEvent } from "@/lib/tools/analytics";
 import {
   checkSpamTriggers,
@@ -78,9 +80,8 @@ export function EmailSequenceWidget({
   }
 
   return (
-    <ToolWorkspace className="grid gap-6">
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,21rem)_minmax(0,1fr)]">
-        {/* Inputs */}
+    <ToolWorkspace>
+      <div className="grid gap-10 lg:grid-cols-[minmax(0,20rem)_minmax(0,1fr)]">
         <div className="grid content-start gap-4">
           <ToolTextField
             label="Product name"
@@ -89,7 +90,7 @@ export function EmailSequenceWidget({
             maxLength={60}
           />
           <ToolTextField
-            label="One-line value proposition"
+            label="One-line value prop"
             value={inputs.valueProp}
             onChange={(v) => updateInput("valueProp", v)}
             maxLength={160}
@@ -101,7 +102,7 @@ export function EmailSequenceWidget({
             maxLength={80}
           />
           <ToolTextField
-            label="Referral reward summary"
+            label="Referral incentive"
             value={inputs.referralIncentive}
             onChange={(v) => updateInput("referralIncentive", v)}
             maxLength={140}
@@ -116,14 +117,14 @@ export function EmailSequenceWidget({
                   maxLength={50}
                 />
                 <ToolSelectField
-                  label="Launch timing"
+                  label="Timing"
                   value={inputs.launchHorizon}
                   onChange={(v) => updateInput("launchHorizon", v)}
                   options={LAUNCH_HORIZON_OPTIONS}
                 />
               </div>
               <ToolSegmentedControl
-                label="Email voice"
+                label="Voice"
                 value={inputs.voice}
                 onChange={(v) => updateInput("voice", v)}
                 options={EMAIL_VOICE_OPTIONS}
@@ -132,38 +133,35 @@ export function EmailSequenceWidget({
           ) : null}
         </div>
 
-        {/* 5-Stage Email Preview & Editor */}
-        <div className="grid content-start gap-4">
+        <div className="grid content-start gap-5">
           <ToolSegmentedControl
-            label="Pre-launch lifecycle stage"
             value={activeStageId}
             onChange={setActiveStageId}
             options={sequence.emails.map((e) => ({ value: e.id, label: e.stage }))}
           />
 
-          <div className="grid gap-4 rounded-xl border border-product-border-subtle bg-product-bg-surface p-5">
-            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-product-border-subtle pb-3">
+          <div className="grid gap-4 pt-2">
+            <div className="flex flex-wrap items-baseline justify-between gap-2">
               <div>
                 <h3 className="font-product-display text-lg font-semibold text-product-text-primary">
                   {activeEmail.stageLabel}
                 </h3>
-                <p className="text-micro text-product-text-secondary">
-                  Send trigger: {activeEmail.timing}
-                </p>
+                <p className="text-micro text-product-text-muted">{activeEmail.timing}</p>
               </div>
               <ToolStatusBadge tone={liveSpamCheck.clean ? "success" : "warning"}>
                 {liveSpamCheck.clean
-                  ? "0 spam triggers"
+                  ? "No spam flags"
                   : `${liveSpamCheck.count} spam warning${liveSpamCheck.count > 1 ? "s" : ""}`}
               </ToolStatusBadge>
             </div>
 
-            <div className="flex flex-wrap items-center gap-2 text-micro">
-              <span className="text-product-text-secondary">Subject presets:</span>
+            <div className="flex flex-wrap items-center gap-1.5">
               {activeEmail.subjectOptions.map((subj) => (
-                <button
+                <Button
                   key={subj}
                   type="button"
+                  variant="product-outline"
+                  size="xs"
                   onClick={() =>
                     setEdits((prev) => ({
                       ...prev,
@@ -173,15 +171,15 @@ export function EmailSequenceWidget({
                       },
                     }))
                   }
-                  className="rounded-full border border-product-border-subtle bg-product-bg-inset/70 px-2.5 py-1 text-micro font-medium text-product-text-primary hover:border-product-text-secondary"
+                  className="max-w-full truncate font-normal text-product-text-secondary hover:text-product-text-primary"
                 >
                   {subj}
-                </button>
+                </Button>
               ))}
             </div>
 
             <ToolTextField
-              label="Subject line"
+              label="Subject"
               value={currentSubject}
               onChange={(val) =>
                 setEdits((prev) => ({
@@ -192,56 +190,33 @@ export function EmailSequenceWidget({
               maxLength={160}
             />
 
-            <div className="grid gap-1.5">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <label
-                  htmlFor="email-seq-body"
-                  className="text-caption font-semibold text-product-text-primary"
-                >
-                  Email body (Markdown with Waitlyze merge tags)
-                </label>
-                <div className="flex items-center gap-2">
-                  <span className="font-product-mono text-micro text-product-text-muted">
-                    {"{{position}}"} · {"{{referral_link}}"} · {"{{referral_count}}"}
-                  </span>
-                  <span className="font-product-mono text-micro text-product-text-muted tabular-nums">
-                    {currentBody.length}/3000
-                  </span>
-                </div>
-              </div>
-              <textarea
-                id="email-seq-body"
-                rows={9}
-                value={currentBody}
-                maxLength={3000}
-                onChange={(event) =>
-                  setEdits((prev) => ({
-                    ...prev,
-                    [activeEmail.id]: {
-                      ...prev[activeEmail.id],
-                      body: event.target.value.slice(0, 3000),
-                    },
-                  }))
-                }
-                className="w-full rounded-lg border border-product-border-control bg-product-bg-surface p-3.5 font-product-mono text-caption leading-relaxed text-product-text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-product-focus"
-              />
-            </div>
+            <ToolTextareaField
+              label="Body"
+              rows={9}
+              mono
+              value={currentBody}
+              maxLength={3000}
+              onChange={(val) =>
+                setEdits((prev) => ({
+                  ...prev,
+                  [activeEmail.id]: {
+                    ...prev[activeEmail.id],
+                    body: val.slice(0, 3000),
+                  },
+                }))
+              }
+            />
 
             {!liveSpamCheck.clean ? (
-              <div className="rounded-lg border border-product-warning-text/25 bg-product-warning-bg/50 px-3.5 py-2.5 text-micro text-product-warning-text">
+              <p className="text-caption text-product-warning-text">
                 {liveSpamCheck.flags.join(" · ")}
-              </div>
+              </p>
             ) : null}
-
-            <p className="rounded-lg bg-product-bg-inset/60 px-3.5 py-2 text-micro text-product-text-secondary">
-              <strong className="text-product-text-primary">Plan note:</strong>{" "}
-              {activeEmail.planNote}
-            </p>
 
             <div className="flex flex-wrap items-center gap-2">
               <ToolCopyButton
                 text={`Subject: ${currentSubject}\nPreview: ${activeEmail.previewText}\n\n${currentBody}`}
-                label="Copy email (Markdown)"
+                label="Copy Markdown"
               />
               <ToolCopyButton text={activeEmail.htmlBody} label="Copy HTML" />
               <ToolActionButton
@@ -258,15 +233,17 @@ export function EmailSequenceWidget({
                   });
                 }}
               >
-                Export all 5 (.md)
+                All 5 (.md)
               </ToolActionButton>
               <ToolActionButton
                 onClick={() => downloadJson("waitlyze-email-sequence.json", effectiveEmails)}
               >
-                Export JSON
+                JSON
               </ToolActionButton>
               {hasEdits ? (
-                <ToolActionButton onClick={() => setEdits({})}>Reset custom edits</ToolActionButton>
+                <ToolActionButton icon="reset" onClick={() => setEdits({})}>
+                  Reset edits
+                </ToolActionButton>
               ) : null}
             </div>
           </div>
@@ -276,7 +253,6 @@ export function EmailSequenceWidget({
             entrySurface={entrySurface}
             compact={compact}
             label="Save this email sequence in Waitlyze"
-            sublabel="Saves all 5 drafts to your campaign blueprint. Automated sequences & broadcasts require Waitlyze Pro."
             resultBand={liveSpamCheck.clean ? "clean" : "spam_warning"}
             onApplyInProduct={onApplyInProduct}
             buildBlueprint={() => ({

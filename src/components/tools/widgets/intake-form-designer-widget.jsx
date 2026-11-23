@@ -2,7 +2,7 @@
 
 import { ArrowDown01Icon, ArrowUp01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { useMemo, useRef, useState } from "react";
+import { useId, useMemo, useRef, useState } from "react";
 
 import { downloadJson } from "@/components/tools/tool-export-utils";
 import { ToolHandoffCta } from "@/components/tools/tool-handoff-cta";
@@ -11,10 +11,15 @@ import {
   ToolCopyButton,
   ToolSegmentedControl,
   ToolSelectField,
+  ToolStatStrip,
   ToolStatTile,
-  ToolStatusBadge,
   ToolWorkspace,
 } from "@/components/tools/tool-ui";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { trackToolEvent } from "@/lib/tools/analytics";
 import {
   designBetaIntakeForm,
@@ -40,6 +45,7 @@ export function IntakeFormDesignerWidget({
         frictionBudget: "balanced",
       }).fields,
   );
+  const previewEmailId = useId();
   const startedRef = useRef(false);
 
   function rebuildFields(nextSegment, nextGoal, nextBudget) {
@@ -110,10 +116,10 @@ export function IntakeFormDesignerWidget({
   );
 
   return (
-    <ToolWorkspace className="grid gap-6">
-      <div className="grid gap-4 border-b border-product-border-subtle pb-5 lg:grid-cols-3">
+    <ToolWorkspace>
+      <div className="grid gap-4 lg:grid-cols-3">
         <ToolSelectField
-          label="Launch segment"
+          label="Segment"
           value={segment}
           onChange={(val) => {
             setSegment(val);
@@ -122,7 +128,7 @@ export function IntakeFormDesignerWidget({
           options={INTAKE_SEGMENTS}
         />
         <ToolSelectField
-          label="Primary qualification goal"
+          label="Qualification goal"
           value={goal}
           onChange={(val) => {
             setGoal(val);
@@ -149,95 +155,85 @@ export function IntakeFormDesignerWidget({
         />
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)]">
-        {/* Field Builder & VIP Rules */}
-        <div className="grid content-start gap-4">
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+      <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)]">
+        <div className="grid content-start gap-6">
+          <ToolStatStrip className="sm:grid-cols-3">
+            <ToolStatTile label="Active fields" value={`Email + ${friction.activeCount}`} />
             <ToolStatTile
-              label="Active fields"
-              value={`Email + ${friction.activeCount}`}
-              hint="Total intake inputs"
-            />
-            <ToolStatTile
-              label="Friction meter"
+              label="Friction"
               value={`${friction.score}/100`}
               hint={friction.label}
               tone={friction.tone}
             />
             <ToolStatTile
-              label="VIP scoring rules"
+              label="VIP rules"
               value={String(activeFields.filter((f) => f.vipRule).length)}
-              hint="Fast-track triggers"
             />
-          </div>
+          </ToolStatStrip>
 
-          <p className="text-caption text-product-text-secondary">{friction.impactNote}</p>
-
-          <div className="grid gap-2.5">
+          <ul className="grid gap-3">
             {fields.map((field, index) => (
-              <div
+              <li
                 key={field.id}
-                className="flex flex-col gap-3 rounded-xl border border-product-border-subtle bg-product-bg-surface p-4 sm:flex-row sm:items-start sm:justify-between"
+                className="flex flex-col gap-3 py-3.5 sm:flex-row sm:items-start sm:justify-between"
               >
                 <div className="min-w-0 flex-1">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <label className="inline-flex cursor-pointer items-center gap-2 text-body font-semibold text-product-text-primary">
-                      <input
-                        type="checkbox"
+                  <div className="flex flex-wrap items-center gap-2.5">
+                    <label className="inline-flex cursor-pointer items-center gap-2 text-body font-medium text-product-text-primary">
+                      <Checkbox
                         checked={field.enabled}
-                        onChange={() => toggleField(field.id)}
-                        className="size-4 accent-product-text-primary"
+                        onCheckedChange={() => toggleField(field.id)}
                       />
                       <span>{field.label}</span>
                     </label>
-                    <ToolStatusBadge tone="neutral">{field.type}</ToolStatusBadge>
+                    <span className="font-product-mono text-micro text-product-text-muted">
+                      {field.type}
+                    </span>
                     {field.vipRule ? (
-                      <ToolStatusBadge tone="accent">
-                        +{field.vipRule.bonusPoints} pts · {field.vipRule.tag}
-                      </ToolStatusBadge>
+                      <span className="font-product-mono text-micro text-product-success-text">
+                        +{field.vipRule.bonusPoints} pts
+                      </span>
                     ) : null}
                   </div>
                   <p className="mt-1 pl-6 text-caption text-product-text-secondary">
                     {field.rationale}
                   </p>
-                  {field.options?.length ? (
-                    <p className="mt-1 pl-6 font-product-mono text-micro text-product-text-muted">
-                      Options: {field.options.join(" · ")}
-                    </p>
-                  ) : null}
                 </div>
 
-                <div className="flex shrink-0 items-center gap-1.5 pl-6 sm:pl-0">
-                  <button
+                <div className="flex shrink-0 items-center gap-1 pl-6 sm:pl-0">
+                  <Button
                     type="button"
+                    variant="product-outline"
+                    size="xs"
                     disabled={!field.enabled}
                     onClick={() => toggleRequired(field.id)}
-                    className="min-h-8 rounded-md border border-product-border-control px-2.5 text-micro font-medium text-product-text-primary hover:bg-product-bg-inset disabled:opacity-40"
                   >
                     {field.required ? "Required" : "Optional"}
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     type="button"
+                    variant="ghost"
+                    size="icon-xs"
                     aria-label={`Move ${field.label} up`}
                     disabled={index === 0}
                     onClick={() => moveField(index, -1)}
-                    className="inline-flex size-8 items-center justify-center rounded-md border border-product-border-subtle text-product-text-secondary hover:bg-product-bg-inset disabled:opacity-35"
                   >
                     <HugeiconsIcon icon={ArrowUp01Icon} size={14} />
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     type="button"
+                    variant="ghost"
+                    size="icon-xs"
                     aria-label={`Move ${field.label} down`}
                     disabled={index === fields.length - 1}
                     onClick={() => moveField(index, 1)}
-                    className="inline-flex size-8 items-center justify-center rounded-md border border-product-border-subtle text-product-text-secondary hover:bg-product-bg-inset disabled:opacity-35"
                   >
                     <HugeiconsIcon icon={ArrowDown01Icon} size={14} />
-                  </button>
+                  </Button>
                 </div>
-              </div>
+              </li>
             ))}
-          </div>
+          </ul>
 
           <div className="flex flex-wrap items-center gap-2">
             <ToolCopyButton text={markdownExport} label="Copy Markdown" />
@@ -251,45 +247,43 @@ export function IntakeFormDesignerWidget({
                 });
               }}
             >
-              Download JSON schema
+              JSON schema
             </ToolActionButton>
           </div>
         </div>
 
         {/* Live Form Preview */}
-        <div className="rounded-xl border border-product-border-subtle bg-product-bg-inset/50 p-5">
-          <p className="font-product-mono text-micro font-semibold text-product-success-text">
-            LIVE FORM PREVIEW
-          </p>
-          <p className="mt-1 font-product-display text-lg font-semibold text-product-text-primary">
-            Apply for early beta access
-          </p>
-          <div className="mt-4 grid gap-3">
-            <div className="grid gap-1">
-              <span className="text-caption font-medium text-product-text-primary">
+        <div className="grid content-start gap-4 pt-2 lg:pt-0 lg:pl-8">
+          <h3 className="font-product-display text-base font-semibold text-product-text-primary">
+            Preview
+          </h3>
+          <div className="grid gap-3.5">
+            <div className="grid gap-1.5">
+              <Label htmlFor={previewEmailId} className="text-caption">
                 Work email <span className="text-product-danger-text">*</span>
-              </span>
-              <div className="min-h-10 rounded-lg border border-product-border-control bg-product-bg-surface px-3 py-2 text-caption text-product-text-muted">
-                you@company.com
-              </div>
+              </Label>
+              <Input
+                id={previewEmailId}
+                readOnly
+                placeholder="you@company.com"
+                className="h-9 bg-product-bg-surface"
+              />
             </div>
 
             {activeFields.map((field) => (
-              <div key={field.id} className="grid gap-1">
-                <span className="text-caption font-medium text-product-text-primary">
-                  {field.label}{" "}
+              <div key={field.id} className="grid gap-1.5">
+                <Label className="text-caption">
+                  {field.label}
                   {field.required ? (
                     <span className="text-product-danger-text">*</span>
                   ) : (
-                    <span className="text-micro font-normal text-product-text-muted">
-                      (optional)
-                    </span>
+                    <span className="font-normal text-product-text-muted">(optional)</span>
                   )}
-                </span>
+                </Label>
                 {field.type === "select" ? (
                   <select
                     aria-label={field.label}
-                    className="min-h-10 rounded-lg border border-product-border-control bg-product-bg-surface px-3 text-caption text-product-text-primary"
+                    className="h-9 rounded-lg border border-input bg-product-bg-surface px-2.5 text-caption text-product-text-primary"
                   >
                     <option value="">{field.placeholder || "Select an option"}</option>
                     {field.options.map((opt) => (
@@ -300,30 +294,34 @@ export function IntakeFormDesignerWidget({
                   </select>
                 ) : field.type === "checkbox" ? (
                   <label className="inline-flex items-center gap-2 text-caption text-product-text-secondary">
-                    <input type="checkbox" className="size-4 accent-product-text-primary" />
+                    <Checkbox />
                     <span>Yes, count me in</span>
                   </label>
                 ) : field.type === "textarea" ? (
-                  <textarea
+                  <Textarea
                     rows={2}
                     readOnly
                     placeholder={field.placeholder}
-                    className="rounded-lg border border-product-border-control bg-product-bg-surface p-2.5 text-caption text-product-text-muted"
+                    className="bg-product-bg-surface text-caption"
                   />
                 ) : (
-                  <input
+                  <Input
                     type={field.type === "number" ? "number" : "text"}
                     readOnly
                     placeholder={field.placeholder || "Enter value"}
-                    className="min-h-10 rounded-lg border border-product-border-control bg-product-bg-surface px-3 text-caption text-product-text-muted"
+                    className="h-9 bg-product-bg-surface text-caption"
                   />
                 )}
               </div>
             ))}
 
-            <div className="mt-2 flex min-h-11 items-center justify-center rounded-lg border border-product-text-primary bg-product-accent-solid text-caption font-semibold text-product-accent-label">
+            <Button
+              type="button"
+              variant="product-accent"
+              className="mt-1 h-10 w-full font-semibold"
+            >
               Request beta invite
-            </div>
+            </Button>
           </div>
         </div>
       </div>

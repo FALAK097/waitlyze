@@ -1,7 +1,9 @@
 "use client";
 
+import { ArrowRight01Icon } from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import {
@@ -14,10 +16,11 @@ import {
   ToolActionButton,
   ToolSegmentedControl,
   ToolSliderField,
+  ToolStatStrip,
   ToolStatTile,
-  ToolStatusBadge,
   ToolWorkspace,
 } from "@/components/tools/tool-ui";
+import { Progress } from "@/components/ui/progress";
 import { trackToolEvent } from "@/lib/tools/analytics";
 import {
   calculateViralGrowth,
@@ -39,115 +42,123 @@ function ViralGrowthChart({ cycles }) {
   const barW = Math.max(10, Math.min(34, barSlot * 0.62));
 
   return (
-    <div className="rounded-xl border border-product-border-subtle bg-product-bg-surface p-4">
+    <div className="grid gap-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="text-caption font-semibold text-product-text-primary">
-          Cumulative verified signups by week
+        <p className="text-caption font-medium text-product-text-primary">
+          Cumulative verified signups
         </p>
         <div className="flex items-center gap-4 text-micro text-product-text-secondary">
           <span className="inline-flex items-center gap-1.5">
-            <span className="inline-block size-2.5 rounded-xs bg-product-text-primary" />
-            Direct verified
+            <span className="inline-block size-2 rounded-xs bg-product-text-primary" />
+            Direct
           </span>
           <span className="inline-flex items-center gap-1.5">
-            <span className="inline-block size-2.5 rounded-xs bg-product-accent-solid ring-1 ring-product-text-primary/20" />
-            Referred verified
+            <span className="inline-block size-2 rounded-xs bg-product-accent-solid ring-1 ring-product-text-primary/20" />
+            Referred
           </span>
         </div>
       </div>
 
-      <svg
-        viewBox={`0 0 ${chartW} ${chartH}`}
-        role="img"
-        aria-label="Weekly cumulative verified signups split between direct and referred signups"
-        className="mt-3 h-auto w-full"
+      <div
+        className="min-w-0 overflow-x-auto overscroll-x-contain"
+        tabIndex={0}
+        aria-label="Scrollable weekly signup projection chart"
       >
-        {[0, 0.25, 0.5, 0.75, 1].map((ratio) => {
-          const y = padT + innerH * (1 - ratio);
-          const tickVal = Math.round(maxVal * ratio);
-          return (
-            <g key={ratio}>
-              <line x1={padL} y1={y} x2={chartW - padR} y2={y} stroke="#e5e7eb" strokeWidth="1" />
-              <text
-                x={padL - 8}
-                y={y + 4}
-                textAnchor="end"
-                fontSize="11"
-                fill="#64748b"
-                fontFamily="ui-monospace, monospace"
-              >
-                {tickVal >= 1000 ? `${(tickVal / 1000).toFixed(1)}k` : tickVal}
-              </text>
-            </g>
-          );
-        })}
+        <svg
+          viewBox={`0 0 ${chartW} ${chartH}`}
+          role="img"
+          aria-label="Weekly cumulative verified signups split between direct and referred signups"
+          className="h-auto min-w-[36rem] sm:w-full sm:min-w-0"
+        >
+          {[0, 0.25, 0.5, 0.75, 1].map((ratio) => {
+            const y = padT + innerH * (1 - ratio);
+            const tickVal = Math.round(maxVal * ratio);
+            return (
+              <g key={ratio}>
+                <line x1={padL} y1={y} x2={chartW - padR} y2={y} stroke="#e5e7eb" strokeWidth="1" />
+                <text
+                  x={padL - 8}
+                  y={y + 4}
+                  textAnchor="end"
+                  fontSize="11"
+                  fill="#64748b"
+                  fontFamily="ui-monospace, monospace"
+                >
+                  {tickVal >= 1000 ? `${(tickVal / 1000).toFixed(1)}k` : tickVal}
+                </text>
+              </g>
+            );
+          })}
 
-        {cycles.map((cycle, index) => {
-          const x = padL + index * barSlot + (barSlot - barW) / 2;
-          const directH = (cycle.cumulativeDirect / maxVal) * innerH;
-          const refH = (cycle.cumulativeReferred / maxVal) * innerH;
-          const directY = padT + innerH - directH;
-          const refY = directY - refH;
+          {cycles.map((cycle, index) => {
+            const x = padL + index * barSlot + (barSlot - barW) / 2;
+            const directH = (cycle.cumulativeDirect / maxVal) * innerH;
+            const refH = (cycle.cumulativeReferred / maxVal) * innerH;
+            const directY = padT + innerH - directH;
+            const refY = directY - refH;
 
-          return (
-            <g key={cycle.week}>
-              <rect
-                x={x}
-                y={directY}
-                width={barW}
-                height={Math.max(1, directH)}
-                rx="2"
-                fill="#00160d"
-              />
-              {refH > 0.5 ? (
+            return (
+              <g key={cycle.week}>
                 <rect
                   x={x}
-                  y={refY}
+                  y={directY}
                   width={barW}
-                  height={Math.max(1, refH)}
+                  height={Math.max(1, directH)}
                   rx="2"
-                  fill="#c6fe1e"
-                  stroke="#00160d"
-                  strokeOpacity="0.25"
-                  strokeWidth="0.75"
+                  fill="#00160d"
                 />
-              ) : null}
-              <text
-                x={x + barW / 2}
-                y={chartH - 10}
-                textAnchor="middle"
-                fontSize="11"
-                fill="#64748b"
-                fontFamily="ui-monospace, monospace"
-              >
-                W{cycle.week}
-              </text>
-            </g>
-          );
-        })}
-      </svg>
+                {refH > 0.5 ? (
+                  <rect
+                    x={x}
+                    y={refY}
+                    width={barW}
+                    height={Math.max(1, refH)}
+                    rx="2"
+                    fill="#c6fe1e"
+                    stroke="#00160d"
+                    strokeOpacity="0.25"
+                    strokeWidth="0.75"
+                  />
+                ) : null}
+                <text
+                  x={x + barW / 2}
+                  y={chartH - 10}
+                  textAnchor="middle"
+                  fontSize="11"
+                  fill="#64748b"
+                  fontFamily="ui-monospace, monospace"
+                >
+                  W{cycle.week}
+                </text>
+              </g>
+            );
+          })}
+        </svg>
+      </div>
 
-      <table className="sr-only">
-        <caption>Projected weekly waitlist signups</caption>
-        <thead>
-          <tr>
-            <th>Week</th>
-            <th>Cumulative Direct</th>
-            <th>Cumulative Referred</th>
-            <th>Total Verified</th>
-          </tr>
-        </thead>
-        <tbody>
-          {cycles.map((c) => (
-            <tr key={c.week}>
-              <td>Week {c.week}</td>
-              <td>{c.cumulativeDirect}</td>
-              <td>{c.cumulativeReferred}</td>
-              <td>{c.cumulativeTotal}</td>
+      <div className="sr-only">
+        <table>
+          <caption>Projected weekly waitlist signups</caption>
+          <thead>
+            <tr>
+              <th>Week</th>
+              <th>Cumulative Direct</th>
+              <th>Cumulative Referred</th>
+              <th>Total Verified</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {cycles.map((c) => (
+              <tr key={c.week}>
+                <td>Week {c.week}</td>
+                <td>{c.cumulativeDirect}</td>
+                <td>{c.cumulativeReferred}</td>
+                <td>{c.cumulativeTotal}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
@@ -157,11 +168,11 @@ export function ViralGrowthWidget({
   entrySurface = "public_tool",
   onApplyInProduct = null,
 }) {
+  const sensitivityLabelId = useId();
   const [presetId, setPresetId] = useState("baseline");
   const [inputs, setInputs] = useState(DEFAULT_VIRAL_INPUTS);
   const startedRef = useRef(false);
 
-  // Hydrate optional shareable query params on client mount (canonical stays clean)
   useEffect(() => {
     if (compact || typeof window === "undefined") return;
     const params = new URLSearchParams(window.location.search);
@@ -231,11 +242,6 @@ export function ViralGrowthWidget({
       `Waitlyze Viral Waitlist Growth Model (${new Date().toISOString().slice(0, 10)})`,
       `Formula: ${result.formula}`,
       `Effective K-Factor: ${result.effectiveK}`,
-      `Launch-Day Email Open Rate: ${result.inputs.launchEmailOpenRatePct}% -> Projected Active Launch Audience: ${result.launchDayAudience.toLocaleString()}`,
-      ...result.referralTiers.map(
-        (tier) =>
-          `Tier ${tier.referrals} referrals: ${tier.estimatedUnlocks.toLocaleString()} projected unlocks`,
-      ),
     ]);
     trackToolEvent("TOOL_RESULT_EXPORTED", {
       tool_slug: "viral-coefficient-calculator",
@@ -249,7 +255,7 @@ export function ViralGrowthWidget({
     downloadSummaryPng({
       filename: "waitlyze-viral-growth-card.png",
       title: "Viral Waitlist Growth Forecast",
-      subtitle: `${result.inputs.weeks}-week modeled scenario · ${result.inputs.weeklyVisitors.toLocaleString()} weekly visitors`,
+      subtitle: `${result.inputs.weeks}-week scenario · ${result.inputs.weeklyVisitors.toLocaleString()} weekly visitors`,
       metrics: [
         {
           label: "Total Verified Signups",
@@ -264,19 +270,12 @@ export function ViralGrowthWidget({
         {
           label: "Launch-Day Opened",
           value: result.launchDayAudience.toLocaleString(),
-          hint: `At ${result.inputs.launchEmailOpenRatePct}% email open rate`,
+          hint: `At ${result.inputs.launchEmailOpenRatePct}% open rate`,
         },
         {
           label: "#1 Highest Lever (+10%)",
           value: `+${result.highestLever?.extraSignups.toLocaleString() || 0}`,
           hint: result.highestLever?.label || "",
-        },
-        {
-          label: "Referral tier unlocks",
-          value: result.referralTiers
-            .map((tier) => tier.estimatedUnlocks.toLocaleString())
-            .join(" / "),
-          hint: result.referralTiers.map((tier) => `${tier.referrals} referrals`).join(" · "),
         },
       ],
       formula: result.formula,
@@ -318,10 +317,10 @@ export function ViralGrowthWidget({
   const maxSensitivity = Math.max(1, ...result.sensitivity.map((s) => s.extraSignups));
 
   return (
-    <ToolWorkspace className="grid gap-6">
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-product-border-subtle pb-4">
+    <ToolWorkspace>
+      <div className="grid gap-3 sm:flex sm:flex-wrap sm:items-center sm:justify-between">
         <ToolSegmentedControl
-          label="Modeled scenarios (not fabricated benchmarks)"
+          ariaLabel="Growth scenario"
           value={presetId}
           onChange={applyPreset}
           options={VIRAL_SCENARIO_PRESETS.map((p) => ({ value: p.id, label: p.label }))}
@@ -329,18 +328,18 @@ export function ViralGrowthWidget({
         {compact ? (
           <Link
             href="/tools/viral-coefficient-calculator"
-            className="text-caption font-semibold text-product-success-text hover:underline"
+            className="inline-flex items-center gap-1 text-caption font-medium text-product-text-primary underline-offset-4 hover:underline"
           >
-            Open full calculator →
+            Full calculator
+            <HugeiconsIcon icon={ArrowRight01Icon} size={14} aria-hidden="true" />
           </Link>
         ) : null}
       </div>
 
-      <div className="grid gap-7 lg:grid-cols-[minmax(0,22rem)_minmax(0,1fr)]">
-        {/* Inputs */}
-        <div className="grid content-start gap-4">
+      <div className="grid gap-10 lg:grid-cols-[minmax(0,20rem)_minmax(0,1fr)]">
+        <div className="grid content-start gap-5">
           <ToolSliderField
-            label="Weekly unique visitors"
+            label="Weekly visitors"
             value={inputs.weeklyVisitors}
             onChange={(v) => updateInput("weeklyVisitors", v)}
             min={50}
@@ -349,7 +348,7 @@ export function ViralGrowthWidget({
             inputMode="numeric"
           />
           <ToolSliderField
-            label="Direct page conversion"
+            label="Direct conversion"
             value={inputs.conversionRatePct}
             onChange={(v) => updateInput("conversionRatePct", v)}
             min={1}
@@ -358,17 +357,16 @@ export function ViralGrowthWidget({
             suffix="%"
           />
           <ToolSliderField
-            label="Email verification rate"
+            label="Email verification"
             value={inputs.verificationRatePct}
             onChange={(v) => updateInput("verificationRatePct", v)}
             min={30}
             max={100}
             step={1}
             suffix="%"
-            hint="Percentage of signups confirming double opt-in."
           />
           <ToolSliderField
-            label="Share rate among verified"
+            label="Share rate"
             value={inputs.shareRatePct}
             onChange={(v) => updateInput("shareRatePct", v)}
             min={0}
@@ -387,7 +385,7 @@ export function ViralGrowthWidget({
           {!compact ? (
             <>
               <ToolSliderField
-                label="Referred visitor conversion"
+                label="Referred conversion"
                 value={inputs.referredConversionPct}
                 onChange={(v) => updateInput("referredConversionPct", v)}
                 min={1}
@@ -396,7 +394,7 @@ export function ViralGrowthWidget({
                 suffix="%"
               />
               <ToolSliderField
-                label="Starting verified list"
+                label="Starting list"
                 value={inputs.startingList}
                 onChange={(v) => updateInput("startingList", v)}
                 min={0}
@@ -405,7 +403,7 @@ export function ViralGrowthWidget({
                 inputMode="numeric"
               />
               <ToolSliderField
-                label="Campaign horizon"
+                label="Horizon"
                 value={inputs.weeks}
                 onChange={(v) => updateInput("weeks", v)}
                 min={2}
@@ -422,10 +420,9 @@ export function ViralGrowthWidget({
                 max={85}
                 step={1}
                 suffix="%"
-                hint="Share of verified subscribers who open your launch-day announcement."
               />
               <ToolSliderField
-                label="Optional reward cost / referral"
+                label="Reward cost / referral"
                 value={inputs.rewardCostPerReferral}
                 onChange={(v) => updateInput("rewardCostPerReferral", v)}
                 min={0}
@@ -433,48 +430,50 @@ export function ViralGrowthWidget({
                 step={0.5}
                 prefix="$"
               />
-              <fieldset className="grid gap-3 rounded-lg border border-product-border-subtle p-3">
-                <legend className="px-1 text-caption font-semibold text-product-text-primary">
-                  Referral reward tiers
+              <fieldset className="grid gap-4 pt-2">
+                <legend className="text-caption font-semibold text-product-text-primary">
+                  Referral milestones
                 </legend>
-                {[1, 2, 3].map((tier) => (
-                  <ToolSliderField
-                    key={tier}
-                    label={`Tier ${tier} verified referrals`}
-                    value={inputs[`referralTier${tier}`]}
-                    onChange={(value) => updateInput(`referralTier${tier}`, value)}
-                    min={1}
-                    max={100}
-                    step={1}
-                  />
-                ))}
+                <div className="grid gap-4 sm:grid-cols-3 lg:grid-cols-1">
+                  {[1, 2, 3].map((tier) => (
+                    <ToolSliderField
+                      key={tier}
+                      label={`Tier ${tier} referrals`}
+                      value={inputs[`referralTier${tier}`]}
+                      onChange={(value) => updateInput(`referralTier${tier}`, value)}
+                      min={1}
+                      max={100}
+                      step={1}
+                      inputMode="numeric"
+                    />
+                  ))}
+                </div>
               </fieldset>
             </>
           ) : null}
         </div>
 
-        {/* Outputs */}
-        <div className="grid content-start gap-5">
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <div className="grid content-start gap-7">
+          <ToolStatStrip>
             <ToolStatTile
               label="Total verified"
               value={result.totalVerified.toLocaleString()}
-              hint={`in ${result.inputs.weeks} weeks`}
+              hint={`${result.inputs.weeks} weeks`}
               tone="success"
             />
             <ToolStatTile
-              label="Effective K-factor"
+              label="K-factor"
               value={result.effectiveK.toFixed(2)}
-              hint={result.effectiveK < 0.15 ? "Conversion-first" : "Compounding loop"}
+              hint={result.effectiveK < 0.15 ? "Conversion-first" : "Compounding"}
               tone={result.effectiveK < 0.15 ? "warning" : "neutral"}
             />
             <ToolStatTile
-              label="Launch-day opened"
+              label="Launch opens"
               value={result.launchDayAudience.toLocaleString()}
-              hint={`at ${result.inputs.launchEmailOpenRatePct}% open rate`}
+              hint={`${result.inputs.launchEmailOpenRatePct}% open rate`}
             />
             <ToolStatTile
-              label={result.estimatedRewardBudget > 0 ? "Reward budget" : "Referred signups"}
+              label={result.estimatedRewardBudget > 0 ? "Reward budget" : "Referred"}
               value={
                 result.estimatedRewardBudget > 0
                   ? `$${result.estimatedRewardBudget.toLocaleString()}`
@@ -482,86 +481,84 @@ export function ViralGrowthWidget({
               }
               hint={
                 result.estimatedRewardBudget > 0
-                  ? `$${result.effectiveCostPerVerifiedReferral}/verified ref`
-                  : `+${result.referralLiftPct}% lift over direct`
+                  ? `$${result.effectiveCostPerVerifiedReferral}/ref`
+                  : `+${result.referralLiftPct}% lift`
               }
             />
-          </div>
+          </ToolStatStrip>
 
           <ViralGrowthChart cycles={result.cycles} />
-          <section
-            className="rounded-lg border border-product-border-subtle p-4"
-            aria-label="Referral reward tier projections"
-          >
-            <h3 className="text-caption font-semibold text-product-text-primary">
-              Expected tier unlocks
-            </h3>
-            <ul className="mt-3 grid gap-2 sm:grid-cols-3">
-              {result.referralTiers.map((tier, index) => (
-                <li
-                  key={`${tier.referrals}-${index}`}
-                  className="flex items-baseline justify-between gap-2 text-caption text-product-text-secondary"
-                >
-                  <span>{tier.referrals} verified referrals</span>
-                  <strong className="font-product-mono text-product-text-primary">
-                    {tier.estimatedUnlocks.toLocaleString()}
-                  </strong>
-                </li>
-              ))}
-            </ul>
-            <p className="mt-2 text-micro text-product-text-secondary">
-              Modeled from verified-list size and share rate; estimates are directional.
-            </p>
-          </section>
 
-          {/* Sensitivity Analysis */}
           {!compact ? (
-            <div className="rounded-xl border border-product-border-subtle bg-product-bg-inset/40 p-4">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <p className="text-caption font-semibold text-product-text-primary">
-                  Highest-leverage sensitivity (+10% relative gain per input)
-                </p>
-                <ToolStatusBadge tone="accent">
-                  #1 Lever: {result.highestLever?.label}
-                </ToolStatusBadge>
+            <section className="grid gap-3" aria-labelledby="referral-milestones-heading">
+              <div className="flex flex-wrap items-baseline justify-between gap-2">
+                <h3
+                  id="referral-milestones-heading"
+                  className="text-caption font-semibold text-product-text-primary"
+                >
+                  Expected milestone unlocks
+                </h3>
+                <span className="text-micro text-product-text-muted">Directional estimate</span>
               </div>
-              <div className="mt-3 grid gap-2.5">
-                {result.sensitivity.map((item, idx) => {
+              <dl className="grid gap-3 sm:grid-cols-3">
+                {result.referralTiers.map((tier, index) => (
+                  <div key={`${tier.referrals}-${index}`} className="min-w-0">
+                    <dt className="text-micro text-product-text-secondary">
+                      Tier {index + 1} · {tier.referrals} referrals
+                    </dt>
+                    <dd className="mt-1 font-product-mono text-caption font-medium text-product-text-primary tabular-nums">
+                      {tier.estimatedUnlocks.toLocaleString()} unlocks
+                    </dd>
+                  </div>
+                ))}
+              </dl>
+            </section>
+          ) : null}
+
+          {!compact ? (
+            <div className="grid gap-3 pt-2">
+              <div className="flex flex-wrap items-baseline justify-between gap-2">
+                <p className="text-caption font-semibold text-product-text-primary">
+                  +10% lever sensitivity
+                </p>
+                <span className="text-caption text-product-text-secondary">
+                  Top lever:{" "}
+                  <strong className="font-medium text-product-text-primary">
+                    {result.highestLever?.label}
+                  </strong>
+                </span>
+              </div>
+              <div className="grid gap-3">
+                {result.sensitivity.map((item) => {
                   const pct = Math.max(6, Math.round((item.extraSignups / maxSensitivity) * 100));
                   return (
-                    <div key={item.key} className="grid gap-1">
-                      <div className="flex items-center justify-between text-caption">
-                        <span className="font-medium text-product-text-primary">{item.label}</span>
-                        <span className="font-product-mono text-micro font-semibold text-product-text-primary tabular-nums">
-                          +{item.extraSignups.toLocaleString()} verified signups
+                    <div key={item.key} className="grid gap-1.5">
+                      <div className="flex flex-wrap items-center justify-between gap-1 text-caption">
+                        <span
+                          id={`${sensitivityLabelId}-${item.key}`}
+                          className="min-w-0 text-product-text-primary"
+                        >
+                          {item.label}
+                        </span>
+                        <span className="shrink-0 font-product-mono text-micro text-product-text-secondary tabular-nums">
+                          +{item.extraSignups.toLocaleString()}
                         </span>
                       </div>
-                      <div className="h-2 w-full overflow-hidden rounded-full bg-product-bg-surface">
-                        <div
-                          className={
-                            idx === 0
-                              ? "h-full rounded-full bg-product-text-primary"
-                              : "h-full rounded-full bg-product-text-secondary/45"
-                          }
-                          style={{ width: `${pct}%` }}
-                        />
-                      </div>
+                      <Progress value={pct} aria-labelledby={`${sensitivityLabelId}-${item.key}`} />
                     </div>
                   );
                 })}
               </div>
-              <p className="mt-3.5 text-caption leading-relaxed text-product-text-secondary">
-                {result.recommendation}
-              </p>
+              <p className="text-caption text-product-text-secondary">{result.recommendation}</p>
             </div>
           ) : null}
 
           {!compact ? (
             <div className="flex flex-wrap items-center gap-2">
-              <ToolActionButton onClick={handleExportCsv}>Export CSV</ToolActionButton>
-              <ToolActionButton onClick={handleExportPng}>Export PNG card</ToolActionButton>
+              <ToolActionButton onClick={handleExportCsv}>CSV</ToolActionButton>
+              <ToolActionButton onClick={handleExportPng}>PNG</ToolActionButton>
               <ToolActionButton icon="share" onClick={handleCopyShareLink}>
-                Copy scenario link
+                Copy link
               </ToolActionButton>
             </div>
           ) : null}

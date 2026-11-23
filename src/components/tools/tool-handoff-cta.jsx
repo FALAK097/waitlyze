@@ -7,6 +7,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 
 import { useOpenAuthModal } from "@/components/auth/auth-modal-provider";
+import { Button } from "@/components/ui/button";
 import { authClient } from "@/lib/auth-client";
 import { trackToolEvent } from "@/lib/tools/analytics";
 import { cn } from "@/lib/utils";
@@ -22,7 +23,7 @@ export function ToolHandoffCta({
   toolVersion = "1.0",
   entrySurface = "public_tool",
   label,
-  sublabel = "Free to start · No credit card · Draft stays private until you publish",
+  sublabel = "",
   buildBlueprint,
   resultBand = "standard",
   onApplyInProduct = null,
@@ -103,31 +104,33 @@ export function ToolHandoffCta({
     <div
       className={cn(
         compact
-          ? "flex flex-wrap items-center gap-3"
-          : "flex flex-col gap-3 rounded-xl border border-product-border-subtle bg-product-bg-inset/70 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5",
+          ? "flex flex-wrap items-center gap-3 pt-2"
+          : "flex flex-col gap-3 pt-4 sm:flex-row sm:items-center sm:justify-between",
         className,
       )}
     >
-      {!compact && (
+      {!compact ? (
         <div className="min-w-0">
-          <p className="text-body font-semibold text-product-text-primary">
-            Ready to turn this into a live waitlist?
+          <p className="text-body font-medium text-product-text-primary">
+            {sublabel ||
+              "Carry this straight into a private Waitlyze draft — free up to 100 signups."}
           </p>
-          <p className="mt-0.5 text-caption text-product-text-secondary">{sublabel}</p>
         </div>
-      )}
-      <button
+      ) : null}
+      <Button
         type="button"
+        variant="product-accent"
+        size="md"
         disabled={busy}
         aria-busy={busy}
         onClick={handleClick}
-        className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-full border border-product-text-primary bg-product-accent-solid px-5 py-2.5 text-body font-semibold text-product-accent-label transition-colors duration-150 hover:bg-product-accent-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-product-focus disabled:cursor-wait disabled:opacity-70 motion-safe:active:scale-[0.98]"
+        className="h-10 shrink-0 rounded-full px-5 font-semibold"
       >
         {busy ? (
           <>
             <HugeiconsIcon
               icon={Loading02Icon}
-              size={17}
+              size={16}
               className="animate-spin"
               aria-hidden="true"
             />
@@ -136,10 +139,10 @@ export function ToolHandoffCta({
         ) : (
           <>
             <span>{label}</span>
-            <HugeiconsIcon icon={ArrowRight01Icon} size={17} aria-hidden="true" />
+            <HugeiconsIcon icon={ArrowRight01Icon} size={16} aria-hidden="true" />
           </>
         )}
-      </button>
+      </Button>
     </div>
   );
 }
