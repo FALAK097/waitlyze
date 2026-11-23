@@ -219,8 +219,10 @@ export function downloadQrImage({
   if (!Array.isArray(matrix) || matrix.length === 0) return;
   const quiet = 4;
   const totalModules = matrix.length + quiet * 2;
-  const modulePx = Math.max(4, Math.floor(size / totalModules));
-  const canvasSize = modulePx * totalModules;
+  const modulePx = Math.max(1, Math.floor(size / totalModules));
+  const canvasSize = Math.max(size, modulePx * totalModules);
+  const gridPx = modulePx * matrix.length;
+  const offset = Math.floor((canvasSize - gridPx) / 2);
 
   const canvas = document.createElement("canvas");
   canvas.width = canvasSize;
@@ -235,7 +237,7 @@ export function downloadQrImage({
   for (let r = 0; r < matrix.length; r += 1) {
     for (let c = 0; c < matrix.length; c += 1) {
       if (matrix[r][c] === 1) {
-        ctx.fillRect((c + quiet) * modulePx, (r + quiet) * modulePx, modulePx, modulePx);
+        ctx.fillRect(offset + c * modulePx, offset + r * modulePx, modulePx, modulePx);
       }
     }
   }

@@ -74,7 +74,8 @@ export function detectPiiWarning(text) {
   if (/[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}/i.test(str)) {
     return "Detected an email address in a UTM parameter. Remove PII so personal data never leaks into URLs or analytics.";
   }
-  if (/\b\d{10,}\b/.test(str)) {
+  const phoneLikeMatches = str.match(/(?:\+?\d[\d\s().-]{7,}\d)/g) || [];
+  if (/\b\d{10,}\b/.test(str) || phoneLikeMatches.some((m) => m.replace(/\D/g, "").length >= 10)) {
     return "Detected a long numeric sequence resembling a phone or account ID. Keep UTM tags strictly anonymous.";
   }
   return "";

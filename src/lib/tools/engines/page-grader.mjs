@@ -187,10 +187,18 @@ export function gradeWaitlistHtml({
   );
   const labelCount = document ? findElements(body, "label").length : 0;
 
+  const isSubmitCapableButton = (btn) => {
+    const t = getAttribute(btn, "type").trim().toLowerCase();
+    return t === "" || t === "submit";
+  };
   const formButtonMatches = document
-    ? forms.flatMap((form) => findElements(form, "button").map(getVisibleText))
+    ? forms.flatMap((form) =>
+        findElements(form, "button").filter(isSubmitCapableButton).map(getVisibleText),
+      )
     : [];
-  const buttonMatches = document ? findElements(body, "button").map(getVisibleText) : [];
+  const buttonMatches = document
+    ? findElements(body, "button").filter(isSubmitCapableButton).map(getVisibleText)
+    : [];
   const submitInputValues = inputTags
     .filter((tag) => getAttribute(tag, "type").toLowerCase() === "submit")
     .map((tag) => getAttribute(tag, "value"));
