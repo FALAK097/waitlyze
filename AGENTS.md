@@ -16,3 +16,6 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - An authorized push to `main` automatically runs the production build and deployment. Do not run a
   separate manual deployment after pushing to `main` unless the user explicitly asks for one;
   verify the automatic pipeline and deployed service instead.
+- Release notes in `CHANGELOG.md` (both existing and future entries) must only describe user-facing
+  changes (features and fixes). Never include internal technical, infrastructure, tooling, or CI
+  implementation details.
