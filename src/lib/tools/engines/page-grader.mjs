@@ -206,15 +206,15 @@ export function gradeWaitlistHtml({
   if (isPlainCopy) {
     const candidateLines = plainLines.slice(1);
     const labeledCta = candidateLines.find((line) => /^(?:cta|button)\s*:/i.test(line));
+    const isActionLine = (line) =>
+      /^(join|request|get|claim|reserve|apply|subscribe|submit|sign up|start)\b/i.test(line);
     if (labeledCta) {
       plainCtaMatch = labeledCta.replace(/^(?:cta|button)\s*:\s*/i, "").trim();
     } else {
       plainCtaMatch =
-        candidateLines.find(
-          (line) =>
-            line.split(/\s+/).length <= 6 &&
-            /^(join|request|get|claim|reserve|apply|subscribe|submit|sign up|start)\b/i.test(line),
-        ) || "";
+        candidateLines.find((line) => line.split(/\s+/).length <= 6 && isActionLine(line)) ||
+        candidateLines.find(isActionLine) ||
+        "";
     }
   }
   const allCtas = [...formButtonMatches, ...submitInputValues, ...buttonMatches]
