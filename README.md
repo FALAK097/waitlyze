@@ -78,7 +78,7 @@ pnpm check         # lint + format check, as run in CI
 To cut a new release:
 
 1. Bump `version` in `package.json`.
-2. Add a new `## vX.Y.Z` entry to the top of `CHANGELOG.md`, following the format of the existing entries.
+2. Add a new `## vX.Y.Z` entry to the top of `CHANGELOG.md`, following the format of the existing entries. Include only user-facing changes (features and fixes), without internal technical, infrastructure, or CI details.
 3. Open a pull request. Once merged to `main`, the [Release workflow](.github/workflows/release.yml) automatically:
    - Creates the annotated Git tag `vX.Y.Z` and pushes it to GitHub.
    - Publishes an official GitHub Release with release notes.

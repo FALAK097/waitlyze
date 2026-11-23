@@ -1,53 +1,50 @@
 ## v0.13.0 · Nov 23, 2026
 
-### Launch Lab 14-tool suite, Cloudflare D1 database, and full-stack security hardening
+### Launch Lab 14 free tools, faster waitlist creation, and new pricing pages
 
-Plan, benchmark, and grade your launch before writing code with the new 14-tool Waitlyze Launch Lab and blueprint handoff. Waitlyze now runs on Cloudflare D1 with hardened OAuth, MCP, Turnstile, and workspace security across every route.
+Plan, grade, and benchmark your launch with 14 free interactive tools and send your setup straight into a new waitlist draft. This release also adds dedicated pricing, features, and about pages alongside seasonal annual discounts and smoother account reliability.
 
 #### Features
 
-- **Waitlyze Launch Lab (14 free tools).** Interactive calculators, landing page grader, DNS deliverability checker, queue simulator, reward designer, embed configurator, and cohort benchmarks across the public tools directory.
-- **Blueprint-to-draft handoff.** Carry configurations and generated copy from any Launch Lab tool directly into a prefilled waitlist draft after signing in.
-- **Cloudflare D1 backend migration.** Migrated primary data storage from PostgreSQL to Cloudflare D1 SQLite with edge-scoped Better Auth sessions and Prisma driver adapters.
-- **Pricing, features, and Black Friday promotion.** Added dedicated pricing, features, and about pages alongside the Black Friday 40% annual discount banner.
-- **MCP discovery and OpenAPI routes.** Published MCP server metadata, OpenAPI specs, Markdown content negotiation, and automated IndexNow submissions for faster search and AI indexing.
+- **Waitlyze Launch Lab (14 free tools).** Plan launch timelines, estimate viral growth, simulate queue movement, design rewards, grade landing pages, check email domain setup, build tracking links, and explore waitlist benchmarks in one place.
+- **One-click draft handoff.** Send your Launch Lab copy, template choice, and campaign settings straight into a prefilled waitlist draft when you sign in.
+- **Redesigned tools experience.** Browse all 14 tools in grid or list view with cleaner workspaces, mobile-friendly controls, and brand channel icons.
+- **Pricing, features, and Black Friday offer.** Explore plans and product capabilities on dedicated pricing, features, and about pages, including a 40% off annual Black Friday promotion.
 
 #### Fixes
 
-- **Full-stack security hardening.** Enforced strict MCP OAuth JWT and scope checks, isolated waitlist-scoped API keys, hardened Turnstile hostname and IP verification, added clickjacking and security headers, and resolved all production dependency advisories.
-- **Free tools UI, accessibility, and responsiveness.** Redesigned the free tools directory and all 14 tool workspaces with compact controls, responsive brand channel icons, and accessible charts.
-- **Auth, templates, and release delivery.** Fixed sign-out errors, separated reviewer login from OAuth consent, preserved legacy template snapshots, avoided expired promo hydration flashes, and decoupled CI changelog broadcasts from direct database access.
+- **Account sign-out and sign-in flow.** Fixed sign-out errors and streamlined the sign-in flow when connecting AI integrations.
+- **Published pages and templates.** Preserved older saved page layouts when loading templates and handled empty drafts and paused pages cleanly.
+- **Pricing banner and signup form polish.** Prevented expired promotion banners from flashing on load and added Escape-key dismissal for embedded signup overlays.
+- **Stronger account and waitlist protection.** Tightened workspace permissions, spam protection, and link checks across public forms and team settings.
 
 ## v0.12.0 · Nov 18, 2026
 
-### Automated release tagging, GitHub Releases, and user release emails
+### Product release emails and changelog updates
 
-Ship product releases with automated semver Git tagging, official GitHub Releases, and branded changelog announcement emails delivered to all Waitlyze users through Cloudflare platform email.
+Stay up to date with new Waitlyze features and fixes through release announcement emails delivered straight to your inbox and cleaner release notes on the changelog page.
 
 #### Features
 
-- **Automated GitHub release tagging.** Automatic semver tag creation and GitHub release generation on every merged changelog update.
-- **Product release email announcements.** Direct notification emails sent to all Waitlyze users upon new version releases, powered by Cloudflare Email Sending.
-- **Historical changelog backfill.** Complete GitHub release notes and tags backfilled across all versions from v0.1.0 to v0.11.0.
-- **Release orchestrator CLI.** Built-in `pnpm release` and `pnpm changelog:broadcast` commands with dry-run verification and single-recipient test sending.
+- **Product release email announcements.** Receive a summary email whenever a new Waitlyze version launches so you never miss new features or fixes.
+- **Complete release history.** Browse release notes across all past Waitlyze versions from v0.1.0 onward on the changelog page.
 
 #### Fixes
 
-- **Email platform delivery.** Switched product release notifications to Cloudflare platform email sending to align with transactional infrastructure.
-- **Release notes formatting.** Clean craft-inspired email design with version badges, highlight cards, and direct documentation anchors.
+- **Release notes readability.** Improved changelog email formatting with version badges, highlight cards, and direct links to each release.
 
 ## v0.11.0 · Nov 11, 2026
 
-### Flexible API key management and zero-downtime rotation
+### Flexible API key management and smoother rotation
 
-Manage server credentials in a structured workspace table with modal generation and safe revocation warnings. Teams can now rotate active API keys without downtime, audit billing events, and follow direct guides for custom domains.
+Manage your waitlist keys in a structured workspace table with quick modal creation and clear revocation warnings. Teams can now rotate active keys without disruption, review billing activity, and follow direct guides for custom domains.
 
 #### Features
 
-- **Modal-based API key creation.** Generate API keys in a modal dialog with one-click secret copying and visibility toggles.
-- **Table view for API credentials.** Manage active workspace keys, waitlist bindings, creation dates, and expirations in a unified table.
+- **Guided API key creation.** Generate API keys in a clean dialog with one-click copying and visibility toggles.
+- **API key management table.** Manage active workspace keys, linked waitlists, creation dates, and expirations in a unified table.
 - **Billing activity in audit logs.** Track plan subscriptions, upgrades, and billing events directly in workspace audit logs.
-- **Custom domain documentation.** Direct links to DNS configuration and verification documentation from domain settings.
+- **Custom domain guides.** Direct links to domain setup and verification guides from domain settings.
 
 #### Fixes
 
@@ -59,20 +56,20 @@ Manage server credentials in a structured workspace table with modal generation 
 
 ### The full campaign loop: cockpit, rewards, and workspace billing
 
-Launches now run end-to-end with referral cockpits, point tiers, and transparent fraud protections. Teams can monetize with flexible workspace billing plans and display live momentum with embeddable public widgets.
+Launches now run end-to-end with referral cockpits, point tiers, and built-in spam protections. Teams can upgrade with flexible workspace billing plans and display live momentum with embeddable public widgets.
 
 #### Features
 
 - **Referral campaign cockpit.** Manage social share channels, referral points, and masked leaderboards from a single control center.
 - **Point rewards and subscriber progress.** Award verified points for successful referrals with real-time participant position tracking.
-- **Anti-fraud verification.** Guard waitlists against automated bursts using Cloudflare Turnstile verification and IP velocity limits.
+- **Anti-fraud verification.** Guard waitlists against automated bot signups and sudden spam bursts.
 - **Public widgets.** Embed live waitlist counters and participant leaderboards on external marketing sites.
-- **Workspace billing tiers.** Support for Free and Pro workspace plans with localized purchasing power parity (PPP) pricing.
+- **Workspace billing tiers.** Support for Free and Pro workspace plans with regional pricing.
 
 #### Fixes
 
 - **Mobile responsive overflow.** Prevented horizontal overflow on mobile comparison and pricing tables.
-- **Email template formatting.** Sanitized Markdown parsing in email composers to prevent escaped syntax errors.
+- **Email template formatting.** Fixed formatting glitches when writing and previewing emails in the composer.
 - **Domain reservation cleanup.** Fixed reservation state handling when deleting waitlists linked to custom domains.
 
 ## v0.9.0 · Oct 19, 2026
@@ -90,7 +87,7 @@ Understand launch performance with granular audience acquisition signals and tim
 #### Fixes
 
 - **Date comparison filter persistence.** Fixed an issue where active date comparison filters reset upon changing workspace tabs.
-- **Geographic IP resolution.** Improved country and city attribution accuracy for proxied traffic.
+- **Location accuracy.** Improved country and city accuracy for visitor and signup locations.
 - **Leaderboard score recalculation.** Resolved a delay when recalculating leaderboard positions following point grants.
 
 ## v0.8.0 · Oct 12, 2026
@@ -103,11 +100,11 @@ Referral campaigns are now easier to trust and harder to manipulate. Subscribers
 
 - **Transparent point ledgers.** Every point award is logged with timestamped attribution and verifiable referral source tracking.
 - **Subscriber milestone progress.** Display progress bars and next-tier goals directly on participant confirmation screens.
-- **Suspicious signup protection.** Catch duplicate submissions and suspicious velocity spikes before they distort leaderboards.
+- **Suspicious signup protection.** Catch duplicate submissions and suspicious signup spikes before they distort leaderboards.
 
 #### Fixes
 
-- **Rapid duplicate submission gating.** Fixed a race condition where rapid double-clicks could record duplicate signup entries.
+- **Duplicate signup protection.** Prevented rapid double-clicks from recording duplicate signup entries.
 - **Verification failure messaging.** Clearer user feedback when bot verification challenges fail or expire.
 - **Position display accuracy.** Corrected referral position calculations when deleted signups are removed from a waitlist.
 
@@ -115,36 +112,36 @@ Referral campaigns are now easier to trust and harder to manipulate. Subscribers
 
 ### Email broadcasts, automated welcome flows, and custom senders
 
-Keep waitlist subscribers engaged from signup to launch with branded emails. Compose updates using Markdown templates, automate welcome messages, and route through custom domains.
+Keep waitlist subscribers engaged from signup to launch with branded emails. Compose updates using reusable templates, automate welcome messages, and send from your own custom domain.
 
 #### Features
 
-- **Automated welcome sequences.** Automatically dispatch personalized confirmation emails when subscribers join a waitlist.
-- **Reusable Markdown email templates.** Compose and save formatted email templates with real-time variable previews.
+- **Automated welcome sequences.** Automatically send personalized confirmation emails when subscribers join a waitlist.
+- **Reusable email templates.** Compose and save formatted email templates with live variable previews.
 - **Custom email sender integration.** Connect Resend or custom email providers to send messages directly from your brand's domain.
 
 #### Fixes
 
-- **Variable preview rendering.** Fixed custom template variable interpolation in the email composer preview.
-- **Reply-To header configuration.** Ensured sender Reply-To addresses are properly applied to all outbound emails.
-- **Broadcast delivery deduplication.** Prevented inadvertent duplicate email dispatches during manual broadcast triggers.
+- **Variable preview rendering.** Fixed custom template variable previews in the email composer.
+- **Reply-To address handling.** Ensured your configured Reply-To email address is applied to all outgoing emails.
+- **Duplicate broadcast prevention.** Prevented sending duplicate emails when triggering a broadcast manually.
 
 ## v0.6.0 · Sep 28, 2026
 
 ### Integrations, real-time webhooks, and dependable delivery
 
-Connect your waitlists to downstream databases and automation platforms with real-time webhooks. Inspect delivery attempts, monitor payload status, and retry failed events centrally.
+Connect your waitlists to your existing tools and automation platforms with real-time webhooks. Inspect delivery attempts, monitor delivery status, and retry failed events centrally.
 
 #### Features
 
-- **Real-time webhook notifications.** Dispatch event webhooks for new signups, referral updates, and status changes.
-- **Delivery logs and payload inspection.** Inspect HTTP status codes, request headers, and error logs for every delivery attempt.
-- **Centralized integration management.** Configure webhook endpoints and secure signing secrets in workspace settings.
+- **Real-time webhook notifications.** Send real-time notifications to your external tools for new signups, referral updates, and status changes.
+- **Delivery logs and payload inspection.** Inspect delivery status, response details, and error messages for every attempt.
+- **Centralized integration management.** Configure webhook destinations and manage secrets in workspace settings.
 
 #### Fixes
 
-- **Webhook secret regeneration.** Fixed an issue where regenerating signing secrets could fail to invalidate cached tokens.
-- **Timeout handling.** Extended delivery timeout limits for slower webhook consumer endpoints.
+- **Webhook secret refresh.** Fixed an issue where regenerating a webhook secret could leave the previous secret active.
+- **Slow endpoint reliability.** Improved delivery reliability when connected endpoints take longer to respond.
 - **Retry button state.** Corrected retry button responsiveness during in-flight delivery attempts.
 
 ## v0.5.0 · Sep 21, 2026
@@ -161,9 +158,9 @@ Scale subscriber operations with deep search, multi-attribute filtering, and pro
 
 #### Fixes
 
-- **Unicode CSV export.** Fixed CSV export formatting for non-Latin character sets and international email addresses.
-- **Search query debouncing.** Improved list filtering performance when typing rapid queries in large subscriber lists.
-- **Modal focus traps.** Ensured keyboard focus remains trapped within confirmation dialogs when deleting subscribers.
+- **International CSV export.** Fixed CSV export formatting for international characters and email addresses.
+- **Faster subscriber search.** Improved responsiveness when typing quickly in large subscriber lists.
+- **Keyboard navigation in dialogs.** Kept keyboard focus inside confirmation dialogs when deleting subscribers.
 
 ## v0.4.0 · Sep 14, 2026
 
@@ -180,8 +177,8 @@ Measure launch growth directly within your workspace. Visualize visitors turning
 #### Fixes
 
 - **Chart tooltip clipping.** Fixed tooltip clipping along the outer boundaries of small mobile screens.
-- **Timezone offset calculations.** Resolved date boundary discrepancies in daily signup count calculations.
-- **Device classification accuracy.** Corrected platform classification for embedded webviews and mobile browsers.
+- **Daily count timezones.** Fixed date boundary mismatches in daily signup counts across timezones.
+- **Device classification accuracy.** Corrected device detection for in-app browsers and mobile browsers.
 
 ## v0.3.0 · Sep 07, 2026
 
@@ -197,9 +194,9 @@ Turn generic signup forms into branded launch experiences. Use the visual page b
 
 #### Fixes
 
-- **Color picker synchronization.** Fixed hex code input synchronization across template color pickers.
-- **Domain DNS verification polling.** Corrected verification status polling intervals on custom domain settings.
-- **Mobile builder preview.** Resolved layout scaling issues when previewing pages on small viewport sizes.
+- **Color picker sync.** Fixed color input syncing across template color pickers.
+- **Domain verification updates.** Improved automatic status checks when verifying a custom domain.
+- **Mobile builder preview.** Resolved layout scaling issues when previewing pages on small mobile screens.
 
 ## v0.2.0 · Aug 31, 2026
 
@@ -215,8 +212,8 @@ Turn your waitlist into an organic referral engine. Give every subscriber a uniq
 
 #### Fixes
 
-- **Social share URL tagging.** Fixed missing campaign query parameters when sharing directly to X/Twitter.
-- **Position update latency.** Corrected real-time queue position recalculation when signups are removed.
+- **Social share URL tagging.** Fixed missing referral tracking parameters when sharing directly to X/Twitter.
+- **Instant position updates.** Corrected real-time queue position recalculation when signups are removed.
 - **Clipboard feedback.** Added instant visual feedback when copying referral links to the clipboard.
 
 ## v0.1.0 · Aug 24, 2026
@@ -233,6 +230,6 @@ The inaugural release of Waitlyze. Launch a hosted waitlist in minutes, capture 
 
 #### Fixes
 
-- **Slug collision handling.** Added real-time slug availability validation to prevent conflicting waitlist URLs.
+- **Waitlist URL availability.** Added instant URL availability checks so waitlists never share conflicting links.
 - **Email validation messaging.** Improved form validation error messaging for malformed email submissions.
-- **Session persistence.** Fixed session state persistence on mobile Safari and Chrome browsers.
+- **Reliable sign-in persistence.** Fixed session persistence on mobile Safari and Chrome browsers.
