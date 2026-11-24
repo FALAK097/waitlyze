@@ -15,18 +15,18 @@ Use the Waitlyze API from your server or AI agent to create signups, inspect sta
 
 ## Full platform REST API v1
 
-Every dashboard workflow has a matching scoped endpoint under `/api/v1` (documented in [openapi.json](/openapi.json)):
+Every dashboard workflow has a matching scoped endpoint under `/api/v1` documented in the [OpenAPI specification](/openapi.json):
 
-- **Workspaces and team**: `/api/v1/workspaces`, `/members`, `/audit`, `/suppressions`, `/integrations/resend`, `/integrations/cloudflare-email`
-- **API keys**: `/api/v1/api-keys` (workspace-scoped or waitlist-scoped with granular permissions)
-- **Waitlists and page builder**: `/api/v1/waitlists`, `/api/v1/waitlists/{id}`, `/page` (sections, brand, form rules, rewards), `/rehearsal`, `/publish`, `/pause`, `/rollback`
-- **Subscribers and referrals**: `/api/v1/waitlists/{id}/subscribers`, `/subscribers/{subscriberId}`, `/subscribers/{subscriberId}/points`, `/subscribers/batch`, `/subscribers/export` (JSON or CSV), `/referrals/reviews`
-- **Analytics and alerts**: `/api/v1/waitlists/{id}/analytics`, `/domain`, `/email-sender`, `/notifications/{slack|discord}`, `/webhooks`
-- **Emails and automations**: `/broadcasts`, `/broadcasts/preview`, `/broadcasts/{broadcastId}/(send|schedule|cancel|test)`, `/email-templates`, `/automations`, `/email-logs`
+- **Workspaces and team**: `/api/v1/workspaces`, `/members`, `/audit`, `/suppressions`, and email provider integrations (Resend and Cloudflare)
+- **API keys**: `/api/v1/api-keys` with workspace-scoped or waitlist-scoped permissions
+- **Waitlists and page builder**: `/api/v1/waitlists`, `/api/v1/waitlists/{id}`, `/page` (sections, brand, form rules, rewards), `/rehearsal`, `/publish`, `/pause`, and `/rollback`
+- **Subscribers and referrals**: `/api/v1/waitlists/{id}/subscribers`, `/subscribers/{subscriberId}`, `/subscribers/{subscriberId}/points`, `/subscribers/batch`, `/subscribers/export`, and `/referrals/reviews`
+- **Analytics and alerts**: `/api/v1/waitlists/{id}/analytics`, `/domain`, `/email-sender`, `/notifications/{slack|discord}`, and `/webhooks`
+- **Emails and automations**: `/broadcasts`, `/broadcasts/preview`, `/broadcasts/{broadcastId}/send`, `/email-templates`, `/automations`, and `/email-logs`
 
 ## Authentication and scope
 
-Create a key in **Settings → API keys** (or `POST /api/v1/api-keys`) and pass it in `X-Api-Key` or `Authorization: Bearer wl2_…`. OAuth 2.0 bearer tokens work across `/api/v1` and `/mcp`. See [API keys](/docs/api-keys) for scope options, workspace keys, rotation, and rate limits.
+Create a key in **Settings → API keys** or via `POST /api/v1/api-keys` and pass it in an `X-Api-Key` or `Authorization` header with `Bearer wl2_…`. OAuth 2.0 bearer tokens work across `/api/v1` and `/mcp`. See [API keys](/docs/api-keys) for scope options, workspace keys, rotation, and rate limits.
 
 ## Choose a connection pattern
 

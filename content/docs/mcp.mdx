@@ -149,7 +149,7 @@ The Waitlyze MCP server (`0.13.0`) exposes **68 tools**, **10 live resources**, 
 | `waitlyze_list_api_keys` | List active API keys and granted scopes. |
 | `waitlyze_create_api_key` | Create a waitlist-scoped or workspace-scoped `wl2_` API key. |
 | `waitlyze_revoke_api_key` | Immediately revoke an API key. |
-| `waitlyze_manage_workspace_email_integration` | Configure or test workspace Resend or Cloudflare Email Sending. |
+| `waitlyze_manage_workspace_email_integration` | Configure or test workspace Resend or Cloudflare email sending. |
 
 ### Waitlists, page builder, domains, and alerts
 | Tool | Description |
@@ -167,12 +167,12 @@ The Waitlyze MCP server (`0.13.0`) exposes **68 tools**, **10 live resources**, 
 | `waitlyze_pause_waitlist` | Temporarily pause public signups. |
 | `waitlyze_rollback_waitlist` | Roll back to the previous published snapshot revision. |
 | `waitlyze_delete_waitlist` | Permanently delete a waitlist campaign. |
-| `waitlyze_get_analytics` | Retrieve 15-minute and daily funnels, K-factor, UTMs, geo, and devices. |
+| `waitlyze_get_analytics` | Retrieve 15-minute and daily funnels, K-factor, UTMs, locations, and devices. |
 | `waitlyze_manage_custom_domain` | Connect, verify DNS, or remove a custom domain. |
 | `waitlyze_manage_email_sender` | Configure or test a waitlist-level Resend sender override. |
 | `waitlyze_manage_chat_notifications` | Configure or test Slack and Discord notifications. |
 | `waitlyze_list_webhooks` / `waitlyze_create_webhook` / `waitlyze_update_webhook` | Manage webhook subscriptions. |
-| `waitlyze_test_webhook` / `waitlyze_rotate_webhook_secret` / `waitlyze_manage_webhook_deliveries` / `waitlyze_delete_webhook` | Test endpoints, rotate HMAC secrets, inspect or replay deliveries. |
+| `waitlyze_test_webhook` / `waitlyze_rotate_webhook_secret` / `waitlyze_manage_webhook_deliveries` / `waitlyze_delete_webhook` | Test endpoints, rotate HMAC secrets, inspect, and replay deliveries. |
 
 ### Subscribers, fraud review, broadcasts, templates, and automations
 | Tool | Description |
@@ -180,23 +180,41 @@ The Waitlyze MCP server (`0.13.0`) exposes **68 tools**, **10 live resources**, 
 | `waitlyze_list_subscribers` / `waitlyze_get_subscriber` | Search and inspect live queue positions, points, referrals, and custom fields. |
 | `waitlyze_add_subscriber` / `waitlyze_import_subscribers` | Create single signups or bulk-import up to 500 JSON subscribers. |
 | `waitlyze_update_subscriber` / `waitlyze_remove_subscriber` | Update verification, phone, custom fields, consent, or delete a subscriber. |
-| `waitlyze_bulk_audience_action` | Bulk offboard, resubscribe, delete, or retry verification emails. |
+| `waitlyze_bulk_audience_action` | Bulk unsubscribe, resubscribe, delete, or retry verification emails. |
 | `waitlyze_award_points` | Credit custom event points to a verified subscriber. |
 | `waitlyze_export_subscribers` | Paginated JSON subscriber export. |
 | `waitlyze_get_leaderboard` | View top referrers and live waitlist totals. |
 | `waitlyze_list_referral_reviews` / `waitlyze_resolve_referral_review` | Inspect and approve or exclude flagged referrals. |
 | `waitlyze_list_broadcasts` / `waitlyze_preview_broadcast_recipients` / `waitlyze_create_broadcast` | Draft and preview targeted broadcasts. |
 | `waitlyze_send_broadcast` / `waitlyze_schedule_broadcast` / `waitlyze_cancel_broadcast` / `waitlyze_delete_broadcast` | Dispatch, schedule, or cancel broadcasts. |
-| `waitlyze_list_email_templates` / `waitlyze_upsert_email_template` | Customize transactional signup, offboarding, referral, and invite templates. |
+| `waitlyze_list_email_templates` / `waitlyze_upsert_email_template` | Customize transactional signup, departure, referral, and invite templates. |
 | `waitlyze_list_automations` / `waitlyze_save_automation_recipe` / `waitlyze_set_automation_status` | Configure and enable or pause lifecycle automations. |
 | `waitlyze_send_test_email` / `waitlyze_list_email_logs` | Send test emails and inspect delivery outcomes. |
 
-### Launch Lab planning tools
+### Planning tools
 `calculate_viral_growth`, `simulate_waitlist_queue`, `recommend_waitlist_template`, `design_referral_rewards`, and `plan_launch_timeline`.
 
 ### MCP resources and prompts
-- **Resources**: `waitlyze://workspaces`, `waitlyze://waitlists`, `waitlyze://guide/workflow`, `waitlyze://waitlists/{waitlistId}`, `/page`, `/analytics`, `/subscribers`, `/email-templates`, `/automations`, `waitlyze://workspaces/{workspaceId}`.
-- **Prompts**: `launch_waitlist`, `diagnose_waitlist_growth`, `send_waitlist_broadcast`, `import_and_onboard_subscribers`.
+
+```text
+Resources:
+  waitlyze://workspaces
+  waitlyze://workspaces/{workspaceId}
+  waitlyze://waitlists
+  waitlyze://waitlists/{waitlistId}
+  waitlyze://waitlists/{waitlistId}/page
+  waitlyze://waitlists/{waitlistId}/analytics
+  waitlyze://waitlists/{waitlistId}/subscribers
+  waitlyze://waitlists/{waitlistId}/email-templates
+  waitlyze://waitlists/{waitlistId}/automations
+  waitlyze://guide/workflow
+
+Prompts:
+  launch_waitlist
+  diagnose_waitlist_growth
+  send_waitlist_broadcast
+  import_and_onboard_subscribers
+```
 
 ---
 
