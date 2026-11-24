@@ -2,13 +2,36 @@ import { Prisma } from "@/generated/prisma/client";
 
 /**
  * Return the current 1-based position for one signup without rewriting campaign
- * ranks. A referral counts only after both the referrer and referred signup have
- * verified their email, referrals are enabled for the waitlist, and the
- * relationship stays inside that waitlist.
+ * ranks. When referrals are disabled on the campaign, uses an O(log N) indexed
+ * count over (waitListId, createdAt, id).
  */
 export async function getCampaignPosition(db, waitListId, signUpId) {
   if (typeof waitListId !== "string" || !waitListId || typeof signUpId !== "string" || !signUpId) {
     return null;
+  }
+
+  const campaign = await db.waitList.findUnique({
+    where: { id: waitListId },
+    select: { showReferrals: true },
+  });
+  if (!campaign) return null;
+
+  if (!campaign.showReferrals) {
+    const target = await db.signUp.findFirst({
+      where: { id: signUpId, waitListId },
+      select: { id: true, createdAt: true },
+    });
+    if (!target) return null;
+    const ahead = await db.signUp.count({
+      where: {
+        waitListId,
+        OR: [
+          { createdAt: { lt: target.createdAt } },
+          { createdAt: target.createdAt, id: { lt: target.id } },
+        ],
+      },
+    });
+    return ahead + 1;
   }
 
   const [row] = await db.$queryRaw`
@@ -20,9 +43,6 @@ export async function getCampaignPosition(db, waitListId, signUpId) {
       INNER JOIN "sign_ups" AS referrer
         ON referrer."id" = referral."referredById"
        AND referrer."waitListId" = referred."waitListId"
-      INNER JOIN "wait_lists" AS campaign
-        ON campaign."id" = referred."waitListId"
-       AND campaign."showReferrals" = 1
       WHERE referred."waitListId" = ${waitListId}
         AND referred."verifiedAt" IS NOT NULL
         AND referrer."verifiedAt" IS NOT NULL
@@ -126,6 +146,14 @@ export async function getCampaignPositions(db, waitListId, signUpIds = null) {
 // the list) would need to pass the signup directly above them.
 export async function getSpotsForNewSignup(db, waitListId) {
   if (typeof waitListId !== "string" || !waitListId) return 0;
+  const campaign = await db.waitList.findUnique({
+    where: { id: waitListId },
+    select: { showReferrals: true },
+  });
+  if (!campaign?.showReferrals) {
+    const total = await db.signUp.count({ where: { waitListId } });
+    return total > 0 ? 1 : 0;
+  }
   const [row] = await db.$queryRaw`
     WITH referral_scores AS (
       SELECT referral."referredById" AS "referrerId", COUNT(*) AS score
@@ -135,9 +163,6 @@ export async function getSpotsForNewSignup(db, waitListId) {
       INNER JOIN "sign_ups" AS referrer
         ON referrer."id" = referral."referredById"
        AND referrer."waitListId" = referred."waitListId"
-      INNER JOIN "wait_lists" AS campaign
-        ON campaign."id" = referred."waitListId"
-       AND campaign."showReferrals" = 1
       WHERE referred."waitListId" = ${waitListId}
         AND referred."verifiedAt" IS NOT NULL
         AND referrer."verifiedAt" IS NOT NULL

@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 
 import { WorkspacePlanError } from "@/lib/billing/plans.mjs";
 import { getPublishedFormConfig, pickCustomFields } from "@/lib/campaigns/form-rules.mjs";
-import { getCampaignPosition } from "@/lib/campaigns/referral-position.mjs";
 import {
   DuplicateSignupError,
   FraudLimitError,
@@ -47,6 +46,9 @@ const legacySignupResponse = (signUp, { includeReferralCode = false } = {}) => {
     response.hideCounts = summary.hideCounts === true;
     response.showPoints = summary.showPoints !== false;
     response.showProgress = summary.showProgress !== false;
+    if (signUp.totalSignups !== undefined) {
+      response.totalSignups = response.hideCounts ? null : signUp.totalSignups;
+    }
   }
   // Server-vetted post-signup redirect. Only present when the founder
   // configured one that passes the allowlist - the browser navigates here and
@@ -87,17 +89,25 @@ export const GET = async (req) => {
     return NextResponse.json({ message: "Sign up not found" }, { status: 404 });
   }
 
-  const [rank, rewardSummary] = await Promise.all([
-    getCampaignPosition(prisma, signUp.waitListId, signUp.id),
+  const [rewardSummary, totalSignups] = await Promise.all([
     summarizeSignupRewards(prisma, signUp.waitListId, signUp),
+    prisma.signUp.count({ where: { waitListId: signUp.waitListId } }),
   ]);
   const hideCounts = !rewardSummary?.available || Boolean(rewardSummary.hideCounts);
+  const rank = hideCounts ? null : (rewardSummary.position ?? null);
   const { available: _available, ...publicSummary } = rewardSummary || {};
   const sanitizedSummary = hideCounts
-    ? { ...publicSummary, position: null, displayPosition: null }
-    : publicSummary;
+    ? { ...publicSummary, position: null, displayPosition: null, totalSignups: null }
+    : { ...publicSummary, totalSignups };
   return NextResponse.json(
-    { signUp: { ...signUp, rank: hideCounts ? null : rank, rewardSummary: sanitizedSummary } },
+    {
+      signUp: {
+        ...signUp,
+        rank,
+        totalSignups: hideCounts ? null : totalSignups,
+        rewardSummary: sanitizedSummary,
+      },
+    },
     { headers: { "Cache-Control": "private, no-store" } },
   );
 };
@@ -199,9 +209,12 @@ export const POST = async (req) => {
 
     const signUp = await createSignUp(data, body?.referralId);
     if (signUp.verificationEventKey) await dispatchVerificationNow(signUp.verificationEventKey);
+    const totalSignups = await prisma.signUp
+      .count({ where: { waitListId: body.waitListId } })
+      .catch(() => null);
     return NextResponse.json({
       message: "Signed up successfully",
-      signUp: legacySignupResponse(signUp, { includeReferralCode: true }),
+      signUp: legacySignupResponse({ ...signUp, totalSignups }, { includeReferralCode: true }),
     });
   } catch (error) {
     if (error instanceof WorkspacePlanError)

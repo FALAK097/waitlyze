@@ -130,68 +130,73 @@ Configure the server endpoint in your agent tool manifests:
 
 ---
 
-## Tool reference
+## Tool, resource, and prompt reference
 
-The Waitlyze MCP server exposes 24 tools organized by domain:
+The Waitlyze MCP server (`0.13.0`) exposes **68 tools**, **10 live resources**, and **4 workflow prompts** so AI agents can operate every waitlist and workspace feature end-to-end without opening the dashboard:
 
-### Workspace
+### Workspaces, team, and API keys
 | Tool | Description |
 | :--- | :--- |
-| `waitlyze_get_workspace` | Get workspace details, active plan, subscriber totals, and limits. |
-| `waitlyze_list_workspaces` | List all workspaces accessible by the current account. |
-
-### Waitlists
-| Tool | Description |
-| :--- | :--- |
-| `waitlyze_list_waitlists` | List waitlists with status filters and counts. |
-| `waitlyze_get_waitlist` | Retrieve waitlist settings, public URL, design config, and conversion stats. |
-| `waitlyze_create_waitlist` | Create a new draft waitlist campaign in the active workspace. |
-| `waitlyze_update_waitlist` | Update headline, description, website URL, or fraud security mode. |
-| `waitlyze_publish_waitlist` | Publish a waitlist and open it for public signups. |
-| `waitlyze_pause_waitlist` | Temporarily pause new signups on a published waitlist. |
-| `waitlyze_delete_waitlist` | Archive or delete a waitlist campaign. |
-
-### Audience and subscribers
-| Tool | Description |
-| :--- | :--- |
-| `waitlyze_list_subscribers` | Search, filter, and paginate through subscribers with sorting by position or points. |
-| `waitlyze_get_subscriber` | Get subscriber profile, referral count, position, and attribution. |
-| `waitlyze_add_subscriber` | Add a subscriber directly, with support for referral tracking and auto-verification. |
-| `waitlyze_update_subscriber` | Update points balance, custom field responses, or verification status. |
-| `waitlyze_remove_subscriber` | Delete a subscriber from a waitlist. |
-| `waitlyze_export_subscribers` | Export subscribers in JSON or CSV format. |
-
-### Analytics and viral growth
-| Tool | Description |
-| :--- | :--- |
-| `waitlyze_get_analytics` | Comprehensive funnels, page views, signups, viral K-factor, and referral leaderboard. |
-
-### Broadcasts
-| Tool | Description |
-| :--- | :--- |
-| `waitlyze_list_broadcasts` | List drafts and sent broadcasts with recipient statistics. |
-| `waitlyze_create_broadcast` | Create a new draft email broadcast for waitlist subscribers. |
-| `waitlyze_send_broadcast` | Queue a broadcast for dispatch to verified opted-in subscribers. |
-
-### Webhooks
-| Tool | Description |
-| :--- | :--- |
-| `waitlyze_list_webhooks` | List registered webhook subscriptions. |
-| `waitlyze_delete_webhook` | Remove a webhook endpoint. |
-
-### API keys
-| Tool | Description |
-| :--- | :--- |
-| `waitlyze_list_api_keys` | List active API keys for a waitlist. |
+| `waitlyze_explain_capabilities` | Inspect auth scope, workspaces, REST v1 endpoints, and MCP resources. |
+| `waitlyze_list_workspaces` | List accessible workspaces with role, plan tier, and live total signups. |
+| `waitlyze_get_workspace` | Get workspace entitlements, usage counters, and email integrations. |
+| `waitlyze_create_workspace` | Create a new team workspace. |
+| `waitlyze_update_workspace` | Rename a workspace. |
+| `waitlyze_list_workspace_members` | List workspace members and active invitations. |
+| `waitlyze_manage_workspace_member` | Invite teammates, change roles, remove members, or revoke invites. |
+| `waitlyze_list_audit_events` | Inspect recent workspace security and activity events. |
+| `waitlyze_manage_suppressions` | List, add, or remove bounced and complained emails. |
+| `waitlyze_list_api_keys` | List active API keys and granted scopes. |
+| `waitlyze_create_api_key` | Create a waitlist-scoped or workspace-scoped `wl2_` API key. |
 | `waitlyze_revoke_api_key` | Immediately revoke an API key. |
+| `waitlyze_manage_workspace_email_integration` | Configure or test workspace Resend or Cloudflare Email Sending. |
 
-Create API keys and webhook subscriptions in the Waitlyze dashboard. Secret API keys and webhook
-signing secrets are shown only in that direct user flow and are never returned through MCP tools.
-
-### Capabilities
+### Waitlists, page builder, domains, and alerts
 | Tool | Description |
 | :--- | :--- |
-| `waitlyze_explain_capabilities` | Inspect connected auth state, active workspace, and available platform features. |
+| `waitlyze_list_waitlists` | List waitlists with live `totalSignups` and publication state. |
+| `waitlyze_get_waitlist` | Retrieve live totals, public URL, form rules, rewards, and custom domain. |
+| `waitlyze_create_waitlist` | Create a new draft waitlist campaign. |
+| `waitlyze_update_waitlist` | Update settings such as name, slug, fraud posture, and referrals. |
+| `waitlyze_get_waitlist_page` | Read the full hosted page builder snapshot and revisions. |
+| `waitlyze_update_waitlist_page` | Save page builder snapshot updates with optimistic revision locking. |
+| `waitlyze_configure_form_rules` | Configure double opt-in, disposable blocking, phone, custom fields, and counts. |
+| `waitlyze_configure_rewards` | Configure signup/referral point rules, custom events, and milestone tiers. |
+| `waitlyze_run_launch_rehearsal` | Run pre-flight readiness checks before publishing live. |
+| `waitlyze_publish_waitlist` | Publish the draft snapshot live. |
+| `waitlyze_pause_waitlist` | Temporarily pause public signups. |
+| `waitlyze_rollback_waitlist` | Roll back to the previous published snapshot revision. |
+| `waitlyze_delete_waitlist` | Permanently delete a waitlist campaign. |
+| `waitlyze_get_analytics` | Retrieve 15-minute and daily funnels, K-factor, UTMs, geo, and devices. |
+| `waitlyze_manage_custom_domain` | Connect, verify DNS, or remove a custom domain. |
+| `waitlyze_manage_email_sender` | Configure or test a waitlist-level Resend sender override. |
+| `waitlyze_manage_chat_notifications` | Configure or test Slack and Discord notifications. |
+| `waitlyze_list_webhooks` / `waitlyze_create_webhook` / `waitlyze_update_webhook` | Manage webhook subscriptions. |
+| `waitlyze_test_webhook` / `waitlyze_rotate_webhook_secret` / `waitlyze_manage_webhook_deliveries` / `waitlyze_delete_webhook` | Test endpoints, rotate HMAC secrets, inspect or replay deliveries. |
+
+### Subscribers, fraud review, broadcasts, templates, and automations
+| Tool | Description |
+| :--- | :--- |
+| `waitlyze_list_subscribers` / `waitlyze_get_subscriber` | Search and inspect live queue positions, points, referrals, and custom fields. |
+| `waitlyze_add_subscriber` / `waitlyze_import_subscribers` | Create single signups or bulk-import up to 500 JSON subscribers. |
+| `waitlyze_update_subscriber` / `waitlyze_remove_subscriber` | Update verification, phone, custom fields, consent, or delete a subscriber. |
+| `waitlyze_bulk_audience_action` | Bulk offboard, resubscribe, delete, or retry verification emails. |
+| `waitlyze_award_points` | Credit custom event points to a verified subscriber. |
+| `waitlyze_export_subscribers` | Paginated JSON subscriber export. |
+| `waitlyze_get_leaderboard` | View top referrers and live waitlist totals. |
+| `waitlyze_list_referral_reviews` / `waitlyze_resolve_referral_review` | Inspect and approve or exclude flagged referrals. |
+| `waitlyze_list_broadcasts` / `waitlyze_preview_broadcast_recipients` / `waitlyze_create_broadcast` | Draft and preview targeted broadcasts. |
+| `waitlyze_send_broadcast` / `waitlyze_schedule_broadcast` / `waitlyze_cancel_broadcast` / `waitlyze_delete_broadcast` | Dispatch, schedule, or cancel broadcasts. |
+| `waitlyze_list_email_templates` / `waitlyze_upsert_email_template` | Customize transactional signup, offboarding, referral, and invite templates. |
+| `waitlyze_list_automations` / `waitlyze_save_automation_recipe` / `waitlyze_set_automation_status` | Configure and enable or pause lifecycle automations. |
+| `waitlyze_send_test_email` / `waitlyze_list_email_logs` | Send test emails and inspect delivery outcomes. |
+
+### Launch Lab planning tools
+`calculate_viral_growth`, `simulate_waitlist_queue`, `recommend_waitlist_template`, `design_referral_rewards`, and `plan_launch_timeline`.
+
+### MCP resources and prompts
+- **Resources**: `waitlyze://workspaces`, `waitlyze://waitlists`, `waitlyze://guide/workflow`, `waitlyze://waitlists/{waitlistId}`, `/page`, `/analytics`, `/subscribers`, `/email-templates`, `/automations`, `waitlyze://workspaces/{workspaceId}`.
+- **Prompts**: `launch_waitlist`, `diagnose_waitlist_growth`, `send_waitlist_broadcast`, `import_and_onboard_subscribers`.
 
 ---
 

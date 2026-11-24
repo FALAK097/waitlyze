@@ -1,6 +1,10 @@
 import { createHash, randomBytes } from "node:crypto";
 
-import { parseJsonStringArray, serializeJsonStringArray } from "@/lib/db/sqlite-helpers.mjs";
+import {
+  parseJsonStringArray,
+  serializeJsonStringArray,
+  VALID_API_KEY_SCOPES,
+} from "@/lib/db/sqlite-helpers.mjs";
 import prisma from "@/lib/prisma";
 
 const API_KEY_BYTES = 32;
@@ -18,7 +22,8 @@ export async function generateApiKey() {
 export async function createApiKey({
   name,
   userId,
-  waitlistId,
+  waitlistId = null,
+  workspaceId = null,
   expiresAt,
   scopes = ["waitlist:write"],
   db = prisma,
@@ -26,10 +31,14 @@ export async function createApiKey({
   if (
     !Array.isArray(scopes) ||
     scopes.length === 0 ||
-    scopes.some((scope) => !["waitlist:read", "waitlist:write"].includes(scope))
+    scopes.some((scope) => !VALID_API_KEY_SCOPES.has(scope))
   ) {
     throw new TypeError("Choose at least one supported API key scope.");
   }
+  if (!waitlistId && !workspaceId) {
+    throw new TypeError("An API key must be scoped to a waitlist or workspace.");
+  }
+  const uniqueScopes = [...new Set(scopes)];
   const { apiKey, keyId, hashedKey } = await generateApiKey();
   const record = await db.apiKey.create({
     data: {
@@ -37,8 +46,9 @@ export async function createApiKey({
       keyId,
       keyHash: hashedKey,
       userId,
-      waitlistId,
-      scopes: serializeJsonStringArray(scopes, ["waitlist:write"]),
+      waitlistId: waitlistId || null,
+      workspaceId: workspaceId || null,
+      scopes: serializeJsonStringArray(uniqueScopes, ["waitlist:write"]),
       expiresAt,
     },
     select: {
@@ -48,7 +58,10 @@ export async function createApiKey({
       scopes: true,
       expiresAt: true,
       createdAt: true,
+      waitlistId: true,
+      workspaceId: true,
       waitlist: { select: { id: true, name: true } },
+      workspace: { select: { id: true, name: true } },
     },
   });
   return {
@@ -58,13 +71,17 @@ export async function createApiKey({
   };
 }
 
-export async function revokeApiKey(id, userId, waitlistId = null) {
+export async function revokeApiKey(id, userId, waitlistId = null, workspaceId = null) {
   try {
     const result = await prisma.apiKey.updateMany({
       where: {
         id,
         revokedAt: null,
-        ...(waitlistId ? { waitlistId } : { userId, waitlistId: null }),
+        ...(waitlistId
+          ? { waitlistId }
+          : workspaceId
+            ? { workspaceId, waitlistId: null }
+            : { userId, waitlistId: null }),
       },
       data: { revokedAt: new Date() },
     });
@@ -75,18 +92,22 @@ export async function revokeApiKey(id, userId, waitlistId = null) {
   }
 }
 
-export async function listUserApiKeys(userId, waitlistIds = []) {
+export async function listUserApiKeys(userId, waitlistIds = [], workspaceIds = []) {
   try {
     const records = await prisma.apiKey.findMany({
       where: {
         revokedAt: null,
         OR: [
-          { userId, keyId: null },
+          { userId, waitlistId: null, workspaceId: null },
           ...(waitlistIds.length ? [{ waitlistId: { in: waitlistIds } }] : []),
+          ...(workspaceIds.length ? [{ workspaceId: { in: workspaceIds }, waitlistId: null }] : []),
         ],
       },
       include: {
         waitlist: {
+          select: { id: true, name: true },
+        },
+        workspace: {
           select: { id: true, name: true },
         },
       },

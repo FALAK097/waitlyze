@@ -49,7 +49,30 @@ export function serializeJsonStringArray(value, fallback = []) {
   return JSON.stringify(fallback);
 }
 
-const VALID_API_KEY_SCOPES = new Set(["waitlist:read", "waitlist:write"]);
+export const VALID_API_KEY_SCOPES = new Set([
+  "waitlist:read",
+  "waitlist:write",
+  "waitlist:manage",
+  "mcp:read",
+  "mcp:write",
+  "campaigns:read",
+  "campaigns:write",
+  "subscribers:read",
+  "subscribers:write",
+  "audience:read",
+  "audience:write",
+  "analytics:read",
+  "emails:read",
+  "emails:write",
+  "email:read",
+  "email:write",
+  "webhooks:read",
+  "webhooks:write",
+  "integrations:write",
+  "workspace:read",
+  "workspace:write",
+  "workspace:manage",
+]);
 
 export function parseApiKeyScopes(value) {
   let raw = value;

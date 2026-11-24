@@ -1,111 +1,110 @@
-import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 
-import { auth } from "@/lib/auth";
+import { authenticateV1, v1CorsResponse, v1Error } from "@/lib/api/v1-auth.mjs";
 import prisma from "@/lib/prisma";
-import { AUDIT_ACTIONS, recordWaitlistAuditEvent } from "@/lib/workspaces/audit.mjs";
-import { selectedWorkspaceId } from "@/lib/workspaces/current";
-import { campaignScope } from "@/lib/workspaces/service.mjs";
+import {
+  AUDIT_ACTIONS,
+  recordAuditEvent,
+  recordWaitlistAuditEvent,
+} from "@/lib/workspaces/audit.mjs";
+import { campaignScope, createWorkspaceService } from "@/lib/workspaces/service.mjs";
 import { revokeApiKey } from "@/services/api-key";
 
-export async function DELETE(_req, { params }) {
+export function OPTIONS() {
+  return v1CorsResponse();
+}
+
+export async function DELETE(req, { params }) {
   const { id } = await params;
 
   try {
-    const session = await auth.api.getSession({
-      headers: await headers(),
-    });
+    const authResult = await authenticateV1(req, "workspace:write");
+    if (authResult.response) return authResult.response;
+    const { authContext } = authResult;
 
-    if (!session) {
-      return NextResponse.json(
-        { error: { code: "unauthorized", message: "Authentication required" } },
-        { status: 401 },
-      );
+    if (authContext.authType === "api_key" && authContext.waitlistId) {
+      return v1Error(403, "forbidden", "Waitlist-scoped API keys cannot revoke API keys.");
+    }
+    if (!id) {
+      return v1Error(400, "invalid_input", "API key ID is required");
     }
 
-    const user = await prisma.user.findUnique({
-      where: {
-        id: session.user.id,
-      },
+    const key = await prisma.apiKey.findFirst({
+      where: { OR: [{ id }, { keyId: id }] },
       select: {
         id: true,
+        userId: true,
+        waitlistId: true,
+        workspaceId: true,
+        name: true,
+        revokedAt: true,
+        waitlist: { select: { name: true, workspaceId: true } },
       },
     });
-
-    if (!user) {
-      return NextResponse.json(
-        { error: { code: "user_not_found", message: "User not found" } },
-        { status: 404 },
-      );
+    if (!key || key.revokedAt) {
+      return v1Error(404, "not_found", "API key not found or access denied");
     }
 
-    if (!id) {
-      return NextResponse.json(
-        { error: { code: "invalid_input", message: "API key ID is required" } },
-        { status: 400 },
-      );
-    }
-
-    const [key, workspaceId] = await Promise.all([
-      prisma.apiKey.findUnique({
-        where: { id },
-        select: {
-          userId: true,
-          waitlistId: true,
-          name: true,
-          waitlist: { select: { name: true } },
-        },
-      }),
-      selectedWorkspaceId(user.id),
-    ]);
-    if (!key) {
-      return NextResponse.json(
-        { error: { code: "not_found", message: "API key not found or access denied" } },
-        { status: 404 },
-      );
-    }
-    let waitlistId = null;
     if (key.waitlistId) {
       const accessibleWaitlist = await prisma.waitList.findFirst({
         where: {
           id: key.waitlistId,
-          ...campaignScope(user.id, "manageConnections", workspaceId || undefined),
+          ...campaignScope(
+            authContext.userId,
+            "manageConnections",
+            authContext.workspaceId || undefined,
+          ),
         },
         select: { id: true },
       });
       if (!accessibleWaitlist) {
-        return NextResponse.json(
-          { error: { code: "not_found", message: "API key not found or access denied" } },
-          { status: 404 },
-        );
+        return v1Error(404, "not_found", "API key not found or access denied");
       }
-      waitlistId = accessibleWaitlist.id;
-    } else if (key.userId !== user.id) {
-      return NextResponse.json(
-        { error: { code: "not_found", message: "API key not found or access denied" } },
-        { status: 404 },
-      );
-    }
-    const success = await revokeApiKey(id, user.id, waitlistId);
-    if (!success) {
-      return NextResponse.json(
-        { error: { code: "not_found", message: "API key not found or access denied" } },
-        { status: 404 },
-      );
-    }
-    if (waitlistId)
+      const success = await revokeApiKey(key.id, authContext.userId, accessibleWaitlist.id);
+      if (!success) return v1Error(404, "not_found", "API key not found or access denied");
+
       await recordWaitlistAuditEvent(prisma, {
-        userId: user.id,
-        waitListId: waitlistId,
+        userId: authContext.userId,
+        waitListId: accessibleWaitlist.id,
         action: AUDIT_ACTIONS.API_KEY_REVOKED,
         resourceType: "api_key",
-        resourceId: id,
+        resourceId: key.id,
         resourceName: key.name || "API key",
         detail: key.waitlist
           ? `For waitlist ${key.waitlist.name || key.waitlistId}`
           : "Access revoked immediately",
       });
+      return new Response(null, { status: 204 });
+    }
 
+    if (key.workspaceId) {
+      if (authContext.workspaceId && authContext.workspaceId !== key.workspaceId) {
+        return v1Error(404, "not_found", "API key not found or access denied");
+      }
+      await createWorkspaceService(prisma).requireAccess(
+        authContext.userId,
+        key.workspaceId,
+        "manageConnections",
+      );
+      const success = await revokeApiKey(key.id, authContext.userId, null, key.workspaceId);
+      if (!success) return v1Error(404, "not_found", "API key not found or access denied");
+      await recordAuditEvent(prisma, {
+        workspaceId: key.workspaceId,
+        userId: authContext.userId,
+        action: AUDIT_ACTIONS.API_KEY_REVOKED,
+        resourceType: "api_key",
+        resourceId: key.id,
+        resourceName: key.name || "API key",
+        detail: "Workspace API key revoked",
+      });
+      return new Response(null, { status: 204 });
+    }
+
+    if (key.userId !== authContext.userId) {
+      return v1Error(404, "not_found", "API key not found or access denied");
+    }
+    const success = await revokeApiKey(key.id, authContext.userId);
+    if (!success) return v1Error(404, "not_found", "API key not found or access denied");
     return new Response(null, { status: 204 });
   } catch (err) {
     console.error(err);

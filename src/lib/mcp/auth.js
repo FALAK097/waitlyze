@@ -1,15 +1,17 @@
-import { createHash, timingSafeEqual } from "node:crypto";
+import { createHash } from "node:crypto";
 
 import { createLocalJWKSet, jwtVerify } from "jose";
 
 import { auth } from "@/lib/auth.js";
-import { parseApiKeyScopes, parseJsonStringArray } from "@/lib/db/sqlite-helpers.mjs";
+import { validateApiKeyToken } from "@/lib/campaigns/api-key.mjs";
+import { parseJsonStringArray } from "@/lib/db/sqlite-helpers.mjs";
 import { getMcpResourceUrl } from "@/lib/mcp/config.mjs";
 import prisma from "@/lib/prisma.js";
 
 let cachedJwks = null;
 let cachedJwksTime = 0;
 const JWKS_CACHE_TTL = 5 * 60 * 1000;
+const requestAuthCache = new WeakMap();
 
 async function getLocalJwks() {
   const now = Date.now();
@@ -38,14 +40,6 @@ async function getLocalJwks() {
   return cachedJwks;
 }
 
-/**
- * Resolves authentication for MCP requests.
- * Supports:
- * 1. Waitlyze API keys (wl2_... or wl_...) in Authorization header or x-waitlyze-api-key header
- * 2. OAuth 2.0 Bearer tokens in Authorization header (JWT or opaque)
- * 3. Session cookies (for browser-based agent testing)
- */
-
 function isTrustedOrigin(origin, requestUrl) {
   try {
     const configured = [process.env.BETTER_AUTH_URL, process.env.NEXT_PUBLIC_APP_URL].filter(
@@ -62,22 +56,20 @@ function isTrustedOrigin(origin, requestUrl) {
   }
 }
 
-export async function resolveMcpAuth(request) {
+async function resolveMcpAuthUncached(request) {
   try {
     const authHeader = request.headers.get("authorization") || "";
-    const apiKeyHeader = request.headers.get("x-waitlyze-api-key") || "";
+    const apiKeyHeader =
+      request.headers.get("x-waitlyze-api-key") || request.headers.get("x-api-key") || "";
 
     let token = "";
-    if (authHeader.startsWith("Bearer ")) {
-      token = authHeader.slice(7).trim();
+    if (/^bearer\s+/i.test(authHeader)) {
+      token = authHeader.replace(/^bearer\s+/i, "").trim();
     } else if (apiKeyHeader) {
       token = apiKeyHeader.trim();
     }
 
     if (!token) {
-      // Check session cookie as fallback.
-      // Only honor cookies when the request originates from the same trusted origin,
-      // to prevent cross-site or cross-subdomain form POSTs from riding session cookies (CSRF).
       const secFetchSite = request.headers.get("sec-fetch-site");
       if (secFetchSite && secFetchSite !== "same-origin" && secFetchSite !== "none") {
         return {
@@ -138,58 +130,26 @@ export async function resolveMcpAuth(request) {
       return {
         authenticated: false,
         error:
-          "Authentication required. Provide an API key via 'Authorization: Bearer wl2_...' or 'x-waitlyze-api-key', or connect via OAuth 2.0 (RFC 9728).",
+          "Authentication required. Provide an API key via 'Authorization: Bearer wl2_...' or 'X-Api-Key', or connect via OAuth 2.0 (RFC 9728).",
       };
     }
 
     // 1. Check API Key format (wl2_<keyId>_<secret>)
-    const v2Match = /^wl2_([a-f0-9]{32})_([A-Za-z0-9_-]{43})$/.exec(token);
-    if (v2Match) {
-      const [, keyId, secret] = v2Match;
-      const key = await prisma.apiKey.findUnique({
-        where: { keyId },
-        include: {
-          user: {
-            select: { id: true, name: true, email: true },
-          },
-          waitlist: {
-            select: { id: true, name: true, workspaceId: true, status: true },
-          },
-        },
-      });
-
-      if (!key || key.revokedAt || (key.expiresAt && key.expiresAt <= new Date())) {
-        return { authenticated: false, error: "Invalid or expired API key." };
+    if (token.startsWith("wl2_")) {
+      const keyAuth = await validateApiKeyToken(token, prisma);
+      if (!keyAuth.success) {
+        return { authenticated: false, error: keyAuth.error || "Invalid or expired API key." };
       }
-
-      const expected = Buffer.from(key.keyHash, "hex");
-      const actual = createHash("sha256").update(secret).digest();
-      if (expected.length !== actual.length || !timingSafeEqual(expected, actual)) {
-        return { authenticated: false, error: "Invalid or expired API key." };
-      }
-
-      const parsedKeyScopes = parseApiKeyScopes(key.scopes);
-      if (!parsedKeyScopes) {
-        return { authenticated: false, error: "Invalid or expired API key." };
-      }
-
-      // Update last used timestamp
-      prisma.apiKey
-        .updateMany({
-          where: { id: key.id, revokedAt: null },
-          data: { lastUsedAt: new Date() },
-        })
-        .catch(() => {});
-
       return {
         authenticated: true,
         authType: "api_key",
-        userId: key.userId,
-        user: key.user,
-        waitlistId: key.waitlistId,
-        workspaceId: key.waitlist?.workspaceId || null,
-        scopes: parsedKeyScopes,
-        keyId: key.keyId,
+        userId: keyAuth.userId,
+        user: keyAuth.user,
+        waitlistId: keyAuth.waitlistId,
+        workspaceId: keyAuth.workspaceId,
+        scopes: keyAuth.scopes,
+        keyId: keyAuth.keyId,
+        rawToken: token,
       };
     }
 
@@ -210,7 +170,6 @@ export async function resolveMcpAuth(request) {
         try {
           jwtResult = await jwtVerify(token, keySet, verifyOptions);
         } catch {
-          // If verification failed (possible key rotation or expired cache), refresh JWKS once
           cachedJwks = null;
           jwks = await getLocalJwks();
           keySet = createLocalJWKSet(jwks);
@@ -218,7 +177,6 @@ export async function resolveMcpAuth(request) {
         }
 
         const payload = jwtResult?.payload;
-
         if (payload?.sub) {
           const user = await prisma.user.findUnique({
             where: { id: payload.sub },
@@ -250,7 +208,7 @@ export async function resolveMcpAuth(request) {
       }
     }
 
-    // Fallback: Check OAuth 2.0 opaque access token in database
+    // 3. Fallback: Check OAuth 2.0 opaque access token in database
     const tokenHash = createHash("sha256").update(token).digest("hex");
     const oauthToken = await prisma.oauthAccessToken.findFirst({
       where: {
@@ -290,6 +248,17 @@ export async function resolveMcpAuth(request) {
   }
 }
 
+export async function resolveMcpAuth(request) {
+  if (request && typeof request === "object") {
+    const cached = requestAuthCache.get(request);
+    if (cached) return cached;
+    const promise = resolveMcpAuthUncached(request);
+    requestAuthCache.set(request, promise);
+    return promise;
+  }
+  return resolveMcpAuthUncached(request);
+}
+
 /**
  * Resolves and validates tenant workspace isolation.
  */
@@ -325,6 +294,31 @@ export async function resolveWorkspaceContext(authContext, inputWorkspaceId = nu
       workspaceId: waitlist.workspaceId,
       waitlistId: waitlist.id,
       userId: authContext.userId,
+    };
+  }
+
+  // If auth is scoped to a specific workspace API key
+  if (authContext.workspaceId) {
+    if (inputWorkspaceId && inputWorkspaceId !== authContext.workspaceId) {
+      throw new Error("Forbidden: API key is not authorized for this workspace.");
+    }
+    const membership = await prisma.workspaceMember.findFirst({
+      where: {
+        workspaceId: authContext.workspaceId,
+        userId: authContext.userId,
+      },
+      include: {
+        workspace: { select: { id: true, name: true } },
+      },
+    });
+    if (!membership) {
+      throw new Error("Forbidden: API key creator is no longer a member of this workspace.");
+    }
+    return {
+      workspaceId: authContext.workspaceId,
+      workspaceName: membership.workspace?.name,
+      userId: authContext.userId,
+      role: membership.role,
     };
   }
 

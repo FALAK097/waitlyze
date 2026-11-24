@@ -30,7 +30,13 @@ function pageUrl(waitlist) {
 // Build the full variable map for one subscriber. Anything the caller does
 // not know (position, referralCount) falls back to a sensible default:
 // position "" (hidden), referral_count "0", points "0", rewards "".
-export function resolveSubscriberVars({ waitlist = {}, signup = {}, position, referralCount }) {
+export function resolveSubscriberVars({
+  waitlist = {},
+  signup = {},
+  position,
+  referralCount,
+  totalSignups,
+}) {
   const url = pageUrl(waitlist);
   const referralLink =
     url && waitlist.showReferrals !== false && signup.referralCode
@@ -49,7 +55,7 @@ export function resolveSubscriberVars({ waitlist = {}, signup = {}, position, re
     expiry_time: "",
     reason: "",
     feedback_link: "",
-    total_signups: "",
+    total_signups: totalSignups == null ? "" : String(totalSignups),
   };
 }
 
