@@ -15,7 +15,7 @@ Use the Waitlyze API from your server or AI agent to create signups, inspect sta
 
 ## Full platform API v1
 
-Every dashboard workflow has a matching scoped endpoint under `/api/v1` documented in the OpenAPI schema at `/openapi.json`:
+Every dashboard workflow has a matching scoped endpoint under Platform API v1:
 
 - **Workspaces and team**: `/api/v1/workspaces`, `/members`, `/audit`, `/suppressions`, and Resend or Cloudflare email integrations
 - **API keys**: `/api/v1/api-keys` with workspace-scoped or waitlist-scoped permissions
@@ -32,7 +32,7 @@ Create a key in **Settings → API keys** or via `POST /api/v1/api-keys` and pas
 
 - Use the [hosted page or embed](/docs/embed) when you want Waitlyze to own the browser form without a backend integration.
 - Use [Create signup](/docs/api/create-signup) when your server needs to control the signup flow or return position and referral data to a custom frontend.
-- Use Platform API v1 at `/api/v1` or the [MCP server](/docs/mcp) to automate waitlists, analytics, broadcasts, subscribers, and domains from CI or AI agents.
+- Use Platform API v1 or the [MCP server](/docs/mcp) to automate waitlists, analytics, broadcasts, subscribers, and domains from CI or AI agents.
 - Use [webhooks](/docs/webhooks) when your stack reacts asynchronously to live signups, verification, referrals, or reward unlocks.
 
 <Callout title="Machine-readable specification">
