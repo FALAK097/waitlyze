@@ -34,7 +34,13 @@ export default async function WaitlistBenchmarksPage() {
       description:
         "Privacy-safe aggregate waitlist conversion, verification, share rate, and K-factor quartile distributions with minimum cohort N >= 30.",
       url: absoluteUrl("/research/waitlist-benchmarks"),
-      creator: { "@id": `${SITE_URL}/#organization` },
+      license: "https://creativecommons.org/licenses/by/4.0/",
+      creator: {
+        "@type": "Organization",
+        "@id": `${SITE_URL}/#organization`,
+        name: "Waitlyze",
+        url: SITE_URL,
+      },
       dateModified: BENCHMARK_LAST_UPDATED,
       isAccessibleForFree: true,
     },
