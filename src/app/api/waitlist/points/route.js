@@ -89,14 +89,14 @@ export async function POST(request) {
         );
       idempotencyKey = body.idempotencyKey;
     }
+    const auth = await validateApiKeyAndGetWaitlist(apiKey, waitlistId, "waitlist:write");
+    if (!auth.success)
+      return NextResponse.json({ success: false, error: auth.error }, { status: 401 });
     await consumePublicBudget(prisma, {
       kind: "points",
       campaignId: waitlistId,
       headers: request.headers,
     });
-    const auth = await validateApiKeyAndGetWaitlist(apiKey, waitlistId);
-    if (!auth.success)
-      return NextResponse.json({ success: false, error: auth.error }, { status: 401 });
     const budget = await consumeApiKeyBudget(prisma, apiKey);
     const budgetHeaders = apiKeyRateLimitHeaders(budget);
 

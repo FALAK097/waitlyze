@@ -49,7 +49,7 @@ export async function resolveWebhookSubscriber(db, payload) {
     },
   });
   if (!signup) return null;
-  const [position, referralCount] = await Promise.all([
+  const [position, referralCount, totalSignups] = await Promise.all([
     getCampaignPosition(db, payload.waitlistId, signup.id),
     db.referral.count({
       where: {
@@ -58,6 +58,7 @@ export async function resolveWebhookSubscriber(db, payload) {
         signUp: { is: { waitListId: payload.waitlistId, verifiedAt: { not: null } } },
       },
     }),
+    db.signUp.count({ where: { waitListId: payload.waitlistId } }),
   ]);
   const base = String(process.env.BETTER_AUTH_URL || "").replace(/\/$/, "");
   const referralLink =
@@ -65,6 +66,7 @@ export async function resolveWebhookSubscriber(db, payload) {
       ? `${base}/w/${encodeURIComponent(signup.waitList.publicSlug)}?r=${encodeURIComponent(signup.referralCode)}`
       : null;
   return {
+    id: signup.id,
     email: signup.email,
     phone: signup.phone,
     customFields: signup.customFields,
@@ -75,6 +77,7 @@ export async function resolveWebhookSubscriber(db, payload) {
     position,
     points: signup.points,
     referralCount,
+    totalSignups,
     country: signup.country,
     utmSource: signup.utmSource,
     utmMedium: signup.utmMedium,

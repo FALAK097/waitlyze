@@ -24,12 +24,24 @@ export function publicClientIdentity(headers) {
 const HOUR = 60 * 60 * 1000;
 const DAY = 24 * HOUR;
 const policies = {
-  signup: { global: [5000, DAY], campaign: [1000, DAY], client: [20, HOUR], recipient: [3, DAY] },
-  impression: { global: [20000, HOUR], campaign: [5000, HOUR], client: [120, HOUR] },
-  share: { global: [10000, HOUR], campaign: [2000, HOUR], client: [60, HOUR] },
-  leaderboard: { global: [10000, HOUR], campaign: [2000, HOUR], client: [60, HOUR] },
-  widget: { global: [20000, HOUR], campaign: [5000, HOUR], client: [240, HOUR] },
-  welcome: { global: [1000, DAY], campaign: [250, DAY], client: [10, HOUR], recipient: [1, DAY] },
+  signup: {
+    global: [250000, DAY],
+    campaign: [100000, DAY],
+    client: [60, HOUR],
+    recipient: [5, DAY],
+  },
+  apiSignup: {
+    global: [250000, DAY],
+    campaign: [100000, DAY],
+    client: [10000, HOUR],
+    recipient: [5, DAY],
+    authenticated: true,
+  },
+  impression: { global: [500000, HOUR], campaign: [100000, HOUR], client: [240, HOUR] },
+  share: { global: [100000, HOUR], campaign: [20000, HOUR], client: [120, HOUR] },
+  leaderboard: { global: [100000, HOUR], campaign: [20000, HOUR], client: [120, HOUR] },
+  widget: { global: [500000, HOUR], campaign: [100000, HOUR], client: [600, HOUR] },
+  welcome: { global: [5000, DAY], campaign: [1000, DAY], client: [20, HOUR], recipient: [2, DAY] },
   testEmail: {
     global: [1000, DAY],
     campaign: [100, DAY],
@@ -50,9 +62,15 @@ const policies = {
     client: [20, HOUR],
     authenticated: true,
   },
-  status: { global: [20000, HOUR], campaign: [5000, HOUR], client: [120, HOUR] },
-  follow: { global: [10000, HOUR], campaign: [2000, HOUR], client: [60, HOUR] },
-  points: { global: [20000, HOUR], campaign: [5000, HOUR], client: [120, HOUR] },
+  status: { global: [500000, HOUR], campaign: [100000, HOUR], client: [240, HOUR] },
+  apiStatus: {
+    global: [500000, DAY],
+    campaign: [100000, DAY],
+    client: [10000, HOUR],
+    authenticated: true,
+  },
+  follow: { global: [100000, HOUR], campaign: [20000, HOUR], client: [120, HOUR] },
+  points: { global: [250000, HOUR], campaign: [50000, HOUR], client: [600, HOUR] },
 };
 
 /** Atomic SQLite/D1 counters shared by all instances; failure never permits a send. */
@@ -96,15 +114,17 @@ export async function consumePublicBudget(
   const nowIso = toSqliteIso(now);
 
   try {
-    // Bounded cleanup of expired buckets without Postgres FOR UPDATE SKIP LOCKED.
-    await db.$executeRaw`
-      DELETE FROM "rate_limit_buckets"
-      WHERE "key" IN (
-        SELECT "key" FROM "rate_limit_buckets"
-        WHERE julianday("expiresAt") <= julianday(${nowIso})
-        ORDER BY "expiresAt" ASC
-        LIMIT 200
-      )`;
+    // Bounded cleanup of expired buckets on ~5% of requests to avoid a DELETE write on every call.
+    if (Math.random() < 0.05) {
+      await db.$executeRaw`
+        DELETE FROM "rate_limit_buckets"
+        WHERE "key" IN (
+          SELECT "key" FROM "rate_limit_buckets"
+          WHERE julianday("expiresAt") <= julianday(${nowIso})
+          ORDER BY "expiresAt" ASC
+          LIMIT 200
+        )`;
+    }
 
     // Pre-check existing active buckets before mutating so an already-exhausted
     // bucket does not advance sibling buckets.

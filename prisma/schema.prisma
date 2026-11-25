@@ -224,6 +224,8 @@ model SignUp {
   @@unique([waitListId, emailNormalized])
   @@index([waitListId, uniqueUserId])
   @@index([waitListId, createdAt, id])
+  @@index([waitListId, verifiedAt])
+  @@index([waitListId, points, id])
   @@index([ipAddress, createdAt])
   @@index([deviceFingerprint, createdAt])
   @@map("sign_ups")
@@ -266,6 +268,7 @@ model OutboxEvent {
 
   @@index([status, availableAt])
   @@index([status, lockedAt])
+  @@index([waitListId, type, status, createdAt])
   @@map("outbox_events")
 }
 
@@ -521,6 +524,7 @@ model Referral {
   referredBy   SignUp?              @relation("referredByReferral", fields: [referredById], references: [id], onDelete: Cascade)
 
   @@index([referredById, reviewStatus])
+  @@index([reviewStatus, createdAt])
   @@map("referrals")
 }
 
@@ -564,23 +568,27 @@ model LaunchRehearsal {
 }
 
 model ApiKey {
-  id         String    @id @default(cuid())
-  name       String
-  keyHash    String    @unique
-  keyId      String?   @unique
-  scopes     String    @default("[\"waitlist:write\"]")
-  expiresAt  DateTime?
-  lastUsedAt DateTime?
-  revokedAt  DateTime?
-  userId     String
-  waitlistId String?
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @updatedAt
+  id          String    @id @default(cuid())
+  name        String
+  keyHash     String    @unique
+  keyId       String?   @unique
+  scopes      String    @default("[\"waitlist:write\"]")
+  expiresAt   DateTime?
+  lastUsedAt  DateTime?
+  revokedAt   DateTime?
+  userId      String
+  waitlistId  String?
+  workspaceId String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
-  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  waitlist WaitList? @relation(fields: [waitlistId], references: [id], onDelete: SetNull)
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  waitlist  WaitList?  @relation(fields: [waitlistId], references: [id], onDelete: SetNull)
+  workspace Workspace? @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
 
   @@index([waitlistId, revokedAt])
+  @@index([workspaceId, revokedAt])
+  @@index([userId, revokedAt])
   @@map("api_keys")
 }
 
@@ -907,6 +915,7 @@ model Workspace {
   members           WorkspaceMember[]
   invitations       WorkspaceInvitation[]
   waitLists         WaitList[]
+  apiKeys           ApiKey[]
   emailSuppressions EmailSuppression[]
   integrations      WorkspaceIntegration[]
   customDomains     CustomDomain[]

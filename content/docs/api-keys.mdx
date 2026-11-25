@@ -49,21 +49,14 @@ More than one key can be active for a waitlist. Revoke an old key once every int
 
 ## Scope and access
 
-API keys work on **all plans, including free** - there is no plan gate on creating, listing, or using keys. Every key carries the same scopes and the same per-key rate limit below regardless of plan.
+API keys work on all plans, including Free. Every key uses the `wl2_` prefix and carries explicit scopes plus either a single-waitlist binding or a workspace-wide binding:
 
-The UI creates `waitlist:write` keys scoped to the selected waitlist. They can create signups, look up signup status, and award configured custom points. They cannot list subscribers, change pages, manage workspaces, or call dashboard-only `/api/v1` routes.
+- **Signup keys** (`waitlist:read`, `waitlist:write`): Create signups on `POST /api/waitlist`, inspect live status and `total_signups` on `GET /api/waitlist`, and credit custom points on `POST /api/waitlist/points`.
+- **Full platform keys** (`waitlist:manage`, `subscribers:read`, `subscribers:write`, `analytics:read`, `emails:read`, `emails:write`, `webhooks:read`, `webhooks:write`, `integrations:write`, `workspace:read`, `workspace:manage`, `mcp:read`, `mcp:write`): Automate REST API v1 (`/api/v1/*`) and MCP (`/mcp`) end-to-end without opening the dashboard.
 
-| Allowed | Denied |
-| --- | --- |
-| `POST /api/waitlist` for the linked `waitlistId` | Listing subscribers or exports |
-| `GET /api/waitlist` status lookup (position, referral link) | Managing keys, pages, workspace, email, domains, webhooks |
-| `POST /api/waitlist/points` for a verified signup on the linked waitlist | Accessing any other waitlist |
-| Passing `referralCode` / `referral_code` for the same waitlist |  |
-| `Idempotency-Key` replays of your own signups | Reusing one key across different emails (`409`) |
+Waitlist-scoped keys work on the linked waitlist only and cannot access other waitlists or workspace-wide administration. Workspace-scoped keys work across all waitlists in that workspace according to their granted scopes. Expired, revoked, or under-scoped keys return `401` or `403`.
 
-Expired or revoked keys return `401`. A mismatched `waitlistId` (key for A, body says B) also returns `401`.
-
-Each key gets 5,000 requests per day across signups, status lookups, and point awards (all three endpoints share the same budget), reported via `X-RateLimit-Limit` / `X-RateLimit-Remaining` / `X-RateLimit-Reset`. Prefer header auth (`x-api-key` or `Authorization: Bearer`) for `GET` lookups so the secret never lands in URLs or logs.
+All `/api/waitlist` and `/api/v1` routes report remaining request budget via `X-RateLimit-Limit`, `X-RateLimit-Remaining`, and `X-RateLimit-Reset`. Send the key in `X-Api-Key` or `Authorization: Bearer` headers so secrets stay out of URLs and access logs.
 
 ## Next
 

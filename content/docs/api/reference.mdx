@@ -3,32 +3,40 @@ title: API Reference
 description: Find the supported public endpoints for waitlist signups, status lookups, and custom reward points.
 ---
 
-Use the Waitlyze API from your server when you need to create a signup, look up its status, or credit a configured off-site action. This reference covers the supported public API-not the session-protected endpoints used by the dashboard.
+Use the Waitlyze API from your server or AI agent to create signups, inspect status, and operate every waitlist workflow without opening the dashboard.
 
-## Supported endpoints
+## Supported public signup endpoints
 
 | Method | Endpoint | Purpose | Guide |
 | --- | --- | --- | --- |
-| <span className="docs-http-method docs-http-method--post">POST</span> | `/api/waitlist` | Create a signup and return its position and referral details. | [Create signup](/docs/api/create-signup) |
-| <span className="docs-http-method docs-http-method--get">GET</span> | `/api/waitlist?waitlistId=…&email=…` | Look up a signup's current status. | [Look up signup](/docs/api/lookup-signup) |
-| <span className="docs-http-method docs-http-method--post">POST</span> | `/api/waitlist/points` | Award points for a configured off-site action. | [Award custom points](/docs/api/award-points) |
+| <span className="docs-http-method docs-http-method--post">POST</span> | `/api/waitlist` | Create or replay a signup and return live position, points, and `total_signups`. | [Create signup](/docs/api/create-signup) |
+| <span className="docs-http-method docs-http-method--get">GET</span> | `/api/waitlist?email=…` | Look up a subscriber's live position, points, and `total_signups`. | [Look up signup](/docs/api/lookup-signup) |
+| <span className="docs-http-method docs-http-method--post">POST</span> | `/api/waitlist/points` | Credit a configured off-site action or custom event. | [Award custom points](/docs/api/award-points) |
 
-All endpoints use the domain where your Waitlyze workspace is hosted. Keep requests server-side: API keys are secrets and must never be shipped in a browser bundle or public mobile app.
+## Full platform API v1
+
+Every dashboard workflow has a matching scoped endpoint under Platform API v1:
+
+- **Workspaces and team**: `/api/v1/workspaces`, `/members`, `/audit`, `/suppressions`, and Resend or Cloudflare email integrations
+- **API keys**: `/api/v1/api-keys` with workspace-scoped or waitlist-scoped permissions
+- **Waitlists and page builder**: `/api/v1/waitlists`, `/api/v1/waitlists/{id}`, `/page` for sections and rules, `/rehearsal`, `/publish`, `/pause`, and `/rollback`
+- **Subscribers and referrals**: `/api/v1/waitlists/{id}/subscribers`, `/subscribers/{subscriberId}`, `/subscribers/{subscriberId}/points`, `/subscribers/batch`, `/subscribers/export`, and `/referrals/reviews`
+- **Analytics and alerts**: `/api/v1/waitlists/{id}/analytics`, `/domain`, `/email-sender`, `/notifications/{slack|discord}`, and `/webhooks`
+- **Emails and automations**: `/broadcasts`, `/broadcasts/preview`, `/broadcasts/{broadcastId}/send`, `/email-templates`, `/automations`, and `/email-logs`
 
 ## Authentication and scope
 
-Create a key in **Settings → API keys** and link it to one waitlist. Send it in an `X-Api-Key` or `Authorization: Bearer` header. The signup endpoint also accepts the legacy `apiKey` JSON field; use a header whenever possible. The points endpoint accepts header authentication only.
-
-These keys are deliberately narrow: they can create signups, check signup status, and award custom points for their linked waitlist. They cannot manage a workspace, list subscribers, or call dashboard APIs. See [API keys](/docs/api-keys) for expiry, rotation, and rate limits.
+Create a key in **Settings → API keys** or via `POST /api/v1/api-keys` and pass it in an `X-Api-Key` or `Authorization` header with `Bearer wl2_…`. OAuth 2.0 bearer tokens work across `/api/v1` and `/mcp`. See [API keys](/docs/api-keys) for scope options, workspace keys, rotation, and rate limits.
 
 ## Choose a connection pattern
 
 - Use the [hosted page or embed](/docs/embed) when you want Waitlyze to own the browser form without a backend integration.
 - Use [Create signup](/docs/api/create-signup) when your server needs to control the signup flow or return position and referral data to a custom frontend.
-- Use [webhooks](/docs/webhooks) when your system needs to react to signups, verification, referrals, or milestones. Most custom connections use the API for commands and webhooks for asynchronous updates.
+- Use Platform API v1 or the [MCP server](/docs/mcp) to automate waitlists, analytics, broadcasts, subscribers, and domains from CI or AI agents.
+- Use [webhooks](/docs/webhooks) when your stack reacts asynchronously to live signups, verification, referrals, or reward unlocks.
 
-<Callout title="Dashboard routes are not public API endpoints">
-Routes under `/api/v1` and the settings endpoints used by the app require a signed-in session. A waitlist API key cannot use them. Only rely on the public endpoints listed on this page.
+<Callout title="Machine-readable specification">
+Fetch the live OpenAPI 3.1 schema at `/openapi.json` or agent setup instructions at `/agent-instructions.md`.
 </Callout>
 
 ## Next

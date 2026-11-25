@@ -4,12 +4,13 @@ import { resolveMcpAuth } from "@/lib/mcp/auth.js";
 import { createWaitlyzeMcpServer } from "@/lib/mcp/server.js";
 import prisma from "@/lib/prisma.js";
 import { checkRateLimit } from "@/lib/rate-limit.js";
+import { publicClientIdentity } from "@/lib/security/public-rate-limit.mjs";
 
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "POST, GET, OPTIONS",
   "Access-Control-Allow-Headers":
-    "Authorization, Content-Type, Accept, x-waitlyze-api-key, mcp-session-id, mcp-method, mcp-name, mcp-protocol-version, MCP-Protocol-Version",
+    "Authorization, Content-Type, Accept, X-Api-Key, x-waitlyze-api-key, mcp-session-id, mcp-method, mcp-name, mcp-protocol-version, MCP-Protocol-Version",
   "Access-Control-Expose-Headers": "mcp-session-id, WWW-Authenticate, Link",
 };
 
@@ -96,9 +97,35 @@ async function normalizeRequest(request) {
 
 export async function POST(request) {
   try {
-    const clientIp = request.headers.get("cf-connecting-ip") || "unknown-client";
+    const { req, parsedBody } = await normalizeRequest(request);
+
+    const authHeader = request.headers.get("authorization");
+    const apiKeyHeader =
+      request.headers.get("x-waitlyze-api-key") || request.headers.get("x-api-key");
+    const hasAuthToken = Boolean(authHeader || apiKeyHeader);
+    // Single auth resolution: createMcpHandler receives the same Request (`req`)
+    // and hits the WeakMap cache inside resolveMcpAuth.
+    const authContext = await resolveMcpAuth(req);
+
+    const baseUrl = process.env.BETTER_AUTH_URL || "https://waitlyze.com";
+    const isToolCall = parsedBody?.method === "tools/call";
+
+    if (!authContext.authenticated && (hasAuthToken || isToolCall)) {
+      return createAuthChallenge({
+        baseUrl,
+        error: authContext.error,
+        id: parsedBody?.id ?? null,
+        invalidToken: hasAuthToken,
+      });
+    }
+
+    const clientIp = publicClientIdentity(request.headers);
+    const rateKey = authContext.authenticated
+      ? `mcp:actor:${authContext.keyId || authContext.userId}`
+      : `mcp:ip:${clientIp}`;
+    const rateLimit = authContext.authenticated ? 300 : 60;
     try {
-      const allowed = await checkRateLimit(prisma, `mcp:${clientIp}`, 120, 60 * 1000);
+      const allowed = await checkRateLimit(prisma, rateKey, rateLimit, 60 * 1000);
       if (!allowed) {
         return applyCors(
           new Response(
@@ -108,7 +135,7 @@ export async function POST(request) {
                 code: -32000,
                 message: "Rate limit exceeded. Too many MCP requests.",
               },
-              id: null,
+              id: parsedBody?.id ?? null,
             }),
             {
               status: 429,
@@ -122,28 +149,6 @@ export async function POST(request) {
       }
     } catch (rateLimitErr) {
       console.warn("MCP rate limit check skipped:", rateLimitErr?.message || rateLimitErr);
-    }
-
-    const { req, parsedBody } = await normalizeRequest(request);
-
-    const authHeader = request.headers.get("authorization");
-    const apiKeyHeader = request.headers.get("x-waitlyze-api-key");
-    const hasAuthToken = Boolean(authHeader || apiKeyHeader);
-    const authContext = await resolveMcpAuth(req);
-
-    const baseUrl = process.env.BETTER_AUTH_URL || "https://waitlyze.com";
-    const isToolCall = parsedBody?.method === "tools/call";
-
-    // Unauthenticated callers can discover capabilities (initialize, tools/list)
-    // so MCP clients like ChatGPT can inspect tools before user sign-in.
-    // Execution (tools/call) or requests with invalid tokens are challenged with 401.
-    if (!authContext.authenticated && (hasAuthToken || isToolCall)) {
-      return createAuthChallenge({
-        baseUrl,
-        error: authContext.error,
-        id: parsedBody?.id ?? null,
-        invalidToken: hasAuthToken,
-      });
     }
 
     const response = await mcpHandler.fetch(req, { parsedBody });
@@ -175,7 +180,8 @@ export async function GET(request) {
 
   if (accept.includes("text/event-stream") || hasMcpHeader) {
     const authHeader = request.headers.get("authorization");
-    const apiKeyHeader = request.headers.get("x-waitlyze-api-key");
+    const apiKeyHeader =
+      request.headers.get("x-waitlyze-api-key") || request.headers.get("x-api-key");
     const hasAuthToken = Boolean(authHeader || apiKeyHeader);
     const authContext = await resolveMcpAuth(request);
 
@@ -198,7 +204,7 @@ export async function GET(request) {
       JSON.stringify(
         {
           name: "waitlyze-mcp",
-          version: "0.10.0",
+          version: "0.13.0",
           description: "First-class Model Context Protocol (MCP) server for Waitlyze",
           endpoint: `${baseUrl}/mcp`,
           protocol: "Streamable HTTP (2026-01-26)",
@@ -212,7 +218,11 @@ export async function GET(request) {
             },
             apiKey: {
               type: "Bearer Token or Header",
-              formats: ["Authorization: Bearer wl2_...", "x-waitlyze-api-key: wl2_..."],
+              formats: [
+                "Authorization: Bearer wl2_...",
+                "X-Api-Key: wl2_...",
+                "x-waitlyze-api-key: wl2_...",
+              ],
             },
           },
         },

@@ -81,13 +81,14 @@ export async function enqueueBroadcast(
   if (claimed.count !== 1) throw new Error("This broadcast is no longer sendable.");
 
   const signUpIds = eligible.map((row) => row.id);
-  const [waitlist, positions, referralCounts] = await Promise.all([
+  const [waitlist, positions, referralCounts, totalSignups] = await Promise.all([
     db.waitList.findUnique({
       where: { id: waitListId },
       select: { name: true, publicSlug: true, showReferrals: true },
     }),
     getCampaignPositions(db, waitListId),
     getEligibleReferralCounts(db, waitListId, signUpIds),
+    db.signUp.count({ where: { waitListId } }),
   ]);
 
   const recipientRows = eligible.map((signup) => {
@@ -109,6 +110,7 @@ export async function enqueueBroadcast(
         signup,
         position: positions.get(signup.id),
         referralCount: referralCounts.get(signup.id) ?? 0,
+        totalSignups,
       }),
       createdAt: now,
     };

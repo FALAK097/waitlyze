@@ -71,6 +71,33 @@ export async function getPublishedRewards(db, waitListId) {
 export async function getAdvancement(db, waitListId, signUpId) {
   if (typeof waitListId !== "string" || !waitListId || typeof signUpId !== "string" || !signUpId)
     return null;
+  const campaign = await db.waitList.findUnique({
+    where: { id: waitListId },
+    select: { showReferrals: true },
+  });
+  if (!campaign) return null;
+  if (!campaign.showReferrals) {
+    const target = await db.signUp.findFirst({
+      where: { id: signUpId, waitListId },
+      select: { id: true, createdAt: true },
+    });
+    if (!target) return null;
+    const ahead = await db.signUp.count({
+      where: {
+        waitListId,
+        OR: [
+          { createdAt: { lt: target.createdAt } },
+          { createdAt: target.createdAt, id: { lt: target.id } },
+        ],
+      },
+    });
+    const position = ahead + 1;
+    return {
+      position,
+      referrals: 0,
+      spotsToAdvance: position > 1 ? 1 : 0,
+    };
+  }
   const rows = await db.$queryRaw`
     WITH referral_scores AS (
       SELECT referral."referredById" AS "referrerId", COUNT(*) AS score
@@ -80,9 +107,6 @@ export async function getAdvancement(db, waitListId, signUpId) {
       INNER JOIN "sign_ups" AS referrer
         ON referrer."id" = referral."referredById"
        AND referrer."waitListId" = referred."waitListId"
-      INNER JOIN "wait_lists" AS campaign
-        ON campaign."id" = referred."waitListId"
-       AND campaign."showReferrals" = 1
       WHERE referred."waitListId" = ${waitListId}
         AND referred."verifiedAt" IS NOT NULL
         AND referrer."verifiedAt" IS NOT NULL
@@ -93,7 +117,7 @@ export async function getAdvancement(db, waitListId, signUpId) {
     ), ranked AS (
       SELECT signup."id", COALESCE(score.score, 0) AS score,
         ROW_NUMBER() OVER (
-          ORDER BY COALESCE(score.score, 0) DESC, signup."createdAt" ASC, signup."id" ASC
+          ORDER BY COALESCE(score.score, 0) DESC, REPLACE(signup."createdAt", ' ', 'T') ASC, signup."id" ASC
         ) AS position
       FROM "sign_ups" AS signup
       LEFT JOIN referral_scores AS score ON score."referrerId" = signup."id"

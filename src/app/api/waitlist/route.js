@@ -3,7 +3,7 @@ import { createHash } from "node:crypto";
 import { NextResponse } from "next/server";
 
 import { WorkspacePlanError } from "@/lib/billing/plans.mjs";
-import { getCampaignPosition } from "@/lib/campaigns/referral-position.mjs";
+import { pickCustomFields } from "@/lib/campaigns/form-rules.mjs";
 import { findSignupByEmail } from "@/lib/campaigns/signup-lookup.mjs";
 import {
   DuplicateSignupError,
@@ -38,9 +38,6 @@ const IDEMPOTENCY_KEY_RE = /^[A-Za-z0-9_-]{1,128}$/;
 
 const appBaseUrl = () => String(process.env.BETTER_AUTH_URL || "").replace(/\/$/, "");
 
-// API keys authenticate server-to-server calls. Accept the legacy body field,
-// plus x-api-key / Authorization: Bearer headers (required for GET, where a
-// secret must never travel in the query string).
 function resolveApiKey(request, body) {
   if (typeof body?.apiKey === "string" && body.apiKey) return body.apiKey;
   const headerKey = request.headers.get("x-api-key");
@@ -50,10 +47,16 @@ function resolveApiKey(request, body) {
   return null;
 }
 
-async function waitlistSharing(waitlistId) {
+async function waitlistDetails(waitlistId) {
   return prisma.waitList.findUnique({
     where: { id: waitlistId },
-    select: { id: true, publicSlug: true, showReferrals: true },
+    select: {
+      id: true,
+      name: true,
+      publicSlug: true,
+      showReferrals: true,
+      _count: { select: { signUps: true } },
+    },
   });
 }
 
@@ -63,36 +66,48 @@ function referralLink(sharing, referralCode) {
   return `${base}/w/${encodeURIComponent(sharing.publicSlug)}?r=${encodeURIComponent(referralCode)}`;
 }
 
-// Canonical per-signup payload: position answers "where am I?", referral_code
-// + referral_link power custom-frontend sharing UI. rank is the legacy alias.
-// Rewards progress rides along: points balance, referral_count (verified
-// only), display_position (founder inflation applied), next_reward
-// ("X more to unlock"), and spots_to_advance (verified referrals needed to
-// take the spot above, 0 at the top).
+function publicPageUrl(sharing) {
+  const base = appBaseUrl();
+  if (!base || !sharing?.publicSlug) return "";
+  return `${base}/w/${encodeURIComponent(sharing.publicSlug)}`;
+}
+
 async function signupData(waitlistId, signUp, { idempotentReplay = false } = {}) {
-  const sharing = await waitlistSharing(waitlistId);
-  // The signup service already attached a summary on the POST path; the
-  // status-lookup path resolves it here. A null summary recomputes so the
-  // progress fields are never silently dropped.
   const attached =
     signUp.rewardSummary && typeof signUp.rewardSummary === "object" ? signUp.rewardSummary : null;
-  const [position, summary] = await Promise.all([
-    getCampaignPosition(prisma, waitlistId, signUp.id),
+  const [sharing, summary] = await Promise.all([
+    waitlistDetails(waitlistId),
     attached ?? summarizeSignupRewards(prisma, waitlistId, signUp),
   ]);
+  const hideCounts = summary.hideCounts === true;
+  const position = hideCounts ? null : (summary.position ?? signUp.rank ?? null);
+  const displayPos = hideCounts ? null : (summary.displayPosition ?? position);
+  const totalSignups = hideCounts ? null : (sharing?._count?.signUps ?? 0);
   return {
+    id: signUp.id,
+    email: signUp.email,
+    waitlist_id: waitlistId,
+    waitlist_name: sharing?.name || null,
+    waitlist_slug: sharing?.publicSlug || null,
+    public_url: publicPageUrl(sharing),
+    total_signups: totalSignups,
     rank: position,
     position,
-    display_position: summary.displayPosition ?? position,
-    points: summary.points,
-    referral_count: summary.referrals,
+    display_position: displayPos,
+    points: hideCounts ? 0 : summary.points,
+    referral_count: hideCounts ? null : summary.referrals,
     next_reward: summary.nextReward,
     unlocked_rewards: summary.unlockedRewards,
-    spots_to_advance: summary.spotsToAdvance,
-    counts_hidden: summary.hideCounts,
+    spots_to_advance: hideCounts ? null : summary.spotsToAdvance,
+    counts_hidden: hideCounts,
     referral_code: signUp.referralCode || null,
     referral_link: referralLink(sharing, signUp.referralCode),
     verified: Boolean(signUp.verifiedAt),
+    verified_at: signUp.verifiedAt ? new Date(signUp.verifiedAt).toISOString() : null,
+    marketing_consent: Boolean(signUp.marketingConsentAt && !signUp.marketingUnsubscribedAt),
+    phone: signUp.phone ?? null,
+    custom_fields: signUp.customFields ?? [],
+    created_at: signUp.createdAt ? new Date(signUp.createdAt).toISOString() : null,
     ...(idempotentReplay ? { idempotentReplay: true } : {}),
   };
 }
@@ -105,9 +120,7 @@ function rateLimitResponse(error, extraHeaders) {
   );
 }
 
-// GET /api/waitlist?waitlistId=...&email=... - status lookup for custom
-// frontends ("where am I?") without consuming signup intake budget. The API
-// key travels in x-api-key / Authorization headers only.
+// GET /api/waitlist?waitlistId=...&email=... - status lookup for custom frontends.
 export async function GET(request) {
   const params = request.nextUrl.searchParams;
   const waitlistId = params.get("waitlistId");
@@ -121,14 +134,15 @@ export async function GET(request) {
   if (waitlistId.length > 128 || email.length > 320 || !EMAIL_RE.test(email))
     return NextResponse.json({ success: false, error: "Invalid lookup request" }, { status: 400 });
   try {
-    await consumePublicBudget(prisma, {
-      kind: "status",
-      campaignId: waitlistId,
-      headers: request.headers,
-    });
-    const auth = await validateApiKeyAndGetWaitlist(apiKey, waitlistId);
+    const auth = await validateApiKeyAndGetWaitlist(apiKey, waitlistId, "waitlist:read");
     if (!auth.success)
       return NextResponse.json({ success: false, error: auth.error }, { status: 401 });
+    await consumePublicBudget(prisma, {
+      kind: "apiStatus",
+      campaignId: waitlistId,
+      actorId: auth.apiKey?.id || waitlistId,
+      headers: request.headers,
+    });
     const budget = await consumeApiKeyBudget(prisma, apiKey);
     const signUp = await findSignupByEmail(prisma, waitlistId, email);
     if (!signUp)
@@ -176,15 +190,15 @@ export async function POST(request) {
         { status: 400 },
       );
     const apiKey = resolveApiKey(request, body);
-    // Todo Phase 4 contract: POST /signup {email, referral_code}. Accept both
-    // snake_case and the legacy camelCase referral field.
     const { waitlistId, email } = body;
     const referralCode =
       typeof body.referralCode === "string" && body.referralCode
         ? body.referralCode
         : typeof body.referral_code === "string" && body.referral_code
           ? body.referral_code
-          : undefined;
+          : typeof body.ref === "string" && body.ref
+            ? body.ref
+            : undefined;
 
     if (!apiKey || !waitlistId || typeof email !== "string" || !email.trim()) {
       return NextResponse.json(
@@ -211,9 +225,22 @@ export async function POST(request) {
         { success: false, error: "Invalid signup request" },
         { status: 400 },
       );
-    // Optional client-generated idempotency key. Replays reuse a deterministic
-    // identity, so the service layer returns the original signup instead of a
-    // duplicate - safe to retry on timeouts and 5xx.
+
+    const marketingConsentRaw =
+      body.marketingConsent !== undefined ? body.marketingConsent : body.marketing_consent;
+    if (marketingConsentRaw !== undefined && typeof marketingConsentRaw !== "boolean") {
+      return NextResponse.json(
+        { success: false, error: "Marketing consent must be a boolean" },
+        { status: 400 },
+      );
+    }
+    if (body.phone !== undefined && (typeof body.phone !== "string" || body.phone.length > 32)) {
+      return NextResponse.json(
+        { success: false, error: "Phone number is too long." },
+        { status: 400 },
+      );
+    }
+
     const idempotencyKey = request.headers.get("idempotency-key");
     let uniqueUserId = crypto.randomUUID();
     if (idempotencyKey !== null) {
@@ -225,28 +252,27 @@ export async function POST(request) {
       uniqueUserId = `api-idem-${createHash("sha256").update(`${waitlistId}:${idempotencyKey}`).digest("hex")}`;
     }
     const clientIp = publicClientIdentity(request.headers);
-    try {
-      const authAllowed = await checkRateLimit(
-        prisma,
-        `waitlist-api-auth:${clientIp}`,
-        120,
-        60 * 60 * 1000,
-      );
-      if (!authAllowed) {
-        return NextResponse.json(
-          { success: false, error: "Too many requests. Please try again later." },
-          { status: 429, headers: { "Retry-After": "300" } },
-        );
-      }
-    } catch {
-      return NextResponse.json(
-        { success: false, error: "Signups are temporarily unavailable. Please try again later." },
-        { status: 503, headers: { "Retry-After": "60" } },
-      );
-    }
-
-    const auth = await validateApiKeyAndGetWaitlist(apiKey, waitlistId);
+    const auth = await validateApiKeyAndGetWaitlist(apiKey, waitlistId, "waitlist:write");
     if (!auth.success) {
+      try {
+        const authAllowed = await checkRateLimit(
+          prisma,
+          `waitlist-api-auth-fail:${clientIp}`,
+          60,
+          15 * 60 * 1000,
+        );
+        if (!authAllowed) {
+          return NextResponse.json(
+            {
+              success: false,
+              error: "Too many failed authentication attempts. Please try again later.",
+            },
+            { status: 429, headers: { "Retry-After": "300" } },
+          );
+        }
+      } catch {
+        // Ignore rate limit check error on invalid auth branch
+      }
       return NextResponse.json(
         {
           success: false,
@@ -256,8 +282,9 @@ export async function POST(request) {
       );
     }
     await consumePublicBudget(prisma, {
-      kind: "signup",
+      kind: "apiSignup",
       campaignId: waitlistId,
+      actorId: auth.apiKey?.id || waitlistId,
       headers: request.headers,
       email,
     });
@@ -286,18 +313,13 @@ export async function POST(request) {
     const { device, deviceType } = await getDeviceInfo();
     const ip = getIpAddress(request);
     const geo = getGeoInfo(request);
-    if (body.marketingConsent !== undefined && typeof body.marketingConsent !== "boolean") {
-      return NextResponse.json(
-        { success: false, error: "Marketing consent must be a boolean" },
-        { status: 400 },
-      );
-    }
+    const rawCustomFields = body.customFields ?? body.custom_fields;
 
     let signupDataInput = {
       uniqueUserId,
       email: email.trim(),
       signupProtection: turnstileVerified ? "turnstile" : "none",
-      marketingConsent: body.marketingConsent === true,
+      marketingConsent: marketingConsentRaw === true,
       device,
       deviceType,
       deviceFingerprint: fingerprintSignupDevice({
@@ -307,6 +329,8 @@ export async function POST(request) {
       }),
       waitListId: waitlistId,
       ipAddress: ip,
+      phone: typeof body.phone === "string" ? body.phone.slice(0, 32) : undefined,
+      customFields: pickCustomFields({ customFields: rawCustomFields }),
       ...pickAttribution(body),
     };
 
@@ -323,14 +347,8 @@ export async function POST(request) {
     }
 
     const signUp = await createSignUp(signupDataInput, referralCode);
-    // Silent-mode fraud verdict: same success shape, nothing persisted -
-    // no verification email, no impression, no points, no webhooks. The
-    // service attached a zero-value rewardSummary (real visibility flags,
-    // zero progress), so every key a real response carries is present -
-    // including counts_hidden for stealth launches, which the UI hides per
-    // the flag exactly like a real response.
     if (signUp.silent) {
-      const sharing = await waitlistSharing(waitlistId);
+      const sharing = await waitlistDetails(waitlistId);
       const summary =
         signUp.rewardSummary && typeof signUp.rewardSummary === "object"
           ? signUp.rewardSummary
@@ -345,37 +363,44 @@ export async function POST(request) {
         hideCounts: false,
       };
       const s = summary ?? fallback;
+      const hideCounts = s.hideCounts === true;
       return NextResponse.json(
         {
           success: true,
           message: "Successfully joined the waitlist!",
           data: {
-            rank: signUp.rank,
-            position: signUp.rank,
-            display_position: s.displayPosition ?? signUp.rank,
-            points: s.points,
-            referral_count: s.referrals,
+            id: signUp.id,
+            email: signUp.email,
+            waitlist_id: waitlistId,
+            waitlist_name: sharing?.name || null,
+            waitlist_slug: sharing?.publicSlug || null,
+            public_url: publicPageUrl(sharing),
+            total_signups: hideCounts ? null : (sharing?._count?.signUps ?? 0),
+            rank: hideCounts ? null : signUp.rank,
+            position: hideCounts ? null : signUp.rank,
+            display_position: hideCounts ? null : (s.displayPosition ?? signUp.rank),
+            points: hideCounts ? 0 : s.points,
+            referral_count: hideCounts ? null : s.referrals,
             next_reward: s.nextReward,
             unlocked_rewards: s.unlockedRewards,
-            spots_to_advance: s.spotsToAdvance,
-            counts_hidden: s.hideCounts,
+            spots_to_advance: hideCounts ? null : s.spotsToAdvance,
+            counts_hidden: hideCounts,
             referral_code: signUp.referralCode || null,
             referral_link: referralLink(sharing, signUp.referralCode),
             verified: false,
+            verified_at: null,
+            marketing_consent: false,
+            phone: null,
+            custom_fields: [],
+            created_at: new Date().toISOString(),
           },
         },
-        { headers: budgetHeaders },
+        { status: 201, headers: { "Cache-Control": "private, no-store", ...budgetHeaders } },
       );
     }
     if (signUp.verificationEventKey) await dispatchVerificationNow(signUp.verificationEventKey);
 
-    // Replays (same Idempotency-Key) return the original signup: no new page
-    // view happened, so skip the impression. The P2002 guard covers the
-    // hairline concurrent same-key double-submit where both pass createSignUp.
     if (signUp.signupOutcome !== "returning") {
-      // Link the signup to its page view, mirroring the browser funnel where
-      // the tracker row predates the join. Best-effort: intake must never
-      // fail because the linkage write did.
       const linkImpression = async (impressionId) => {
         if (signUp.impressionId || !impressionId) return;
         await prisma.signUp
@@ -402,9 +427,6 @@ export async function POST(request) {
         await linkImpression(impression.id);
       } catch (error) {
         if (error?.code !== "P2002") throw error;
-        // A tracker row already exists for this browser (a real page view
-        // predates the API join): link to it instead of leaving
-        // impressionId null.
         const existing = await prisma.impression
           .findFirst({
             where: { waitListId: waitlistId, uniqueUserId: signUp.uniqueUserId },
@@ -416,15 +438,19 @@ export async function POST(request) {
       }
     }
 
+    const isReplay = signUp.signupOutcome === "returning";
     return NextResponse.json(
       {
         success: true,
         message: "Successfully joined the waitlist!",
         data: await signupData(waitlistId, signUp, {
-          idempotentReplay: signUp.signupOutcome === "returning",
+          idempotentReplay: isReplay,
         }),
       },
-      { headers: budgetHeaders },
+      {
+        status: isReplay ? 200 : 201,
+        headers: { "Cache-Control": "private, no-store", ...budgetHeaders },
+      },
     );
   } catch (error) {
     if (error instanceof WorkspacePlanError)
@@ -445,7 +471,6 @@ export async function POST(request) {
         },
         { status: 503 },
       );
-    // Fraud IP-velocity gate: explicit 429 (fail-closed on clear abuse).
     if (error instanceof FraudLimitError)
       return NextResponse.json(
         { success: false, message: error.message, error: error.message },
@@ -461,29 +486,12 @@ export async function POST(request) {
       );
     if (error instanceof DuplicateSignupError) {
       const lookupId = body?.waitlistId;
-      const lookupEmail = typeof body?.email === "string" ? body.email.trim().toLowerCase() : null;
       const existing =
-        lookupId && lookupEmail
-          ? await prisma.signUp.findUnique({
-              where: {
-                waitListId_emailNormalized: {
-                  waitListId: lookupId,
-                  emailNormalized: lookupEmail,
-                },
-              },
-              select: {
-                id: true,
-                createdAt: true,
-                referralCode: true,
-                verifiedAt: true,
-                points: true,
-              },
-            })
+        lookupId && typeof body?.email === "string"
+          ? await findSignupByEmail(prisma, lookupId, body.email)
           : null;
       const idempotencyKey = request.headers.get("idempotency-key");
       if (idempotencyKey && IDEMPOTENCY_KEY_RE.test(idempotencyKey) && lookupId) {
-        // Same key, different email: the caller must mint a fresh key. This
-        // distinguishes key reuse from a genuinely duplicate email.
         const keyIdentity = `api-idem-${createHash("sha256").update(`${lookupId}:${idempotencyKey}`).digest("hex")}`;
         const keyOwner = await prisma.signUp.findFirst({
           where: { waitListId: lookupId, uniqueUserId: keyIdentity },

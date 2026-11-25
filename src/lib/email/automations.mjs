@@ -476,10 +476,12 @@ export async function dispatchAutomationStep(
   const unsubscribeUrl = `${baseUrl}/api/email/unsubscribe?token=${encodeURIComponent(unsubscribeToken)}`;
   // Position and referral-link vars are resolved per subscriber at send time
   // (server-side) so every automation carries personal data with fallbacks.
-  const position =
+  const [position, totalSignups] = await Promise.all([
     type === "REFERRAL_MILESTONE" || type === "WELCOME_FOLLOWUP" || type === "LAUNCH_COUNTDOWN"
-      ? await getCampaignPosition(db, waitList.id, signUp.id)
-      : null;
+      ? getCampaignPosition(db, waitList.id, signUp.id)
+      : Promise.resolve(null),
+    db.signUp.count({ where: { waitListId: waitList.id } }),
+  ]);
   if (type !== "REFERRAL_REMINDER" && type !== "REFERRAL_MILESTONE") {
     referralCount = await db.referral.count({
       where: {
@@ -494,6 +496,7 @@ export async function dispatchAutomationStep(
     signup: signUp,
     position,
     referralCount,
+    totalSignups,
   });
 
   try {

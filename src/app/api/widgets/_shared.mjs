@@ -5,7 +5,7 @@ import { escapeHtml } from "@/lib/widgets/mask.mjs";
 // Short CDN-friendly cache: widgets are polled by third-party pages, so edge
 // hits absorb embed traffic while staying within a minute of fresh.
 export const WIDGET_CACHE_HEADERS = {
-  "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300",
+  "Cache-Control": "public, max-age=0, s-maxage=5, stale-while-revalidate=15",
 };
 
 export function widgetRateLimitResponse(error) {

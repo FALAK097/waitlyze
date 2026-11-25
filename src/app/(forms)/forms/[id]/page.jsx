@@ -11,7 +11,7 @@ import { ImpressionTracker } from "../../w/[slug]/impression-tracker";
 import { SignupForm } from "../../w/[slug]/signup-form";
 import { EmbedResizeBridge } from "./embed-resize-bridge";
 
-export const revalidate = 60;
+export const dynamic = "force-dynamic";
 
 const getWaitListMetadata = cache(async (id) => {
   return await prisma.waitList.findUnique({

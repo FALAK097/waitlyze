@@ -290,23 +290,32 @@ export async function deliverWebhook(
   }
 }
 
-export async function dispatchPendingWebhooks(prisma, { limit = 50, now = new Date() } = {}) {
-  const rows = await prisma.webhookDelivery.findMany({
-    where: {
-      availableAt: { lte: now },
-      OR: [
-        { status: "PENDING" },
-        { status: "PROCESSING", lockedAt: { lt: new Date(now.getTime() - 60_000) } },
-      ],
-    },
-    select: { id: true },
-    orderBy: { availableAt: "asc" },
-    take: limit,
-  });
-  const results = await Promise.all(rows.map(({ id }) => deliverWebhook(prisma, id, { now })));
-  return {
-    considered: rows.length,
-    delivered: results.filter((x) => x.status === "DELIVERED").length,
-    failed: results.filter((x) => x.status === "FAILED").length,
-  };
+export async function dispatchPendingWebhooks(
+  prisma,
+  { limit = 50, maxBatches = 4, now = new Date() } = {},
+) {
+  let considered = 0;
+  let delivered = 0;
+  let failed = 0;
+  for (let batch = 0; batch < maxBatches; batch += 1) {
+    const rows = await prisma.webhookDelivery.findMany({
+      where: {
+        availableAt: { lte: now },
+        OR: [
+          { status: "PENDING" },
+          { status: "PROCESSING", lockedAt: { lt: new Date(now.getTime() - 60_000) } },
+        ],
+      },
+      select: { id: true },
+      orderBy: { availableAt: "asc" },
+      take: limit,
+    });
+    if (!rows.length) break;
+    const results = await Promise.all(rows.map(({ id }) => deliverWebhook(prisma, id, { now })));
+    considered += rows.length;
+    delivered += results.filter((x) => x.status === "DELIVERED").length;
+    failed += results.filter((x) => x.status === "FAILED").length;
+    if (rows.length < limit) break;
+  }
+  return { considered, delivered, failed };
 }

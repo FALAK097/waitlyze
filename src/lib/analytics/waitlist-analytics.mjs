@@ -218,8 +218,9 @@ export async function getWaitlistAnalytics(
   }
 
   const [
-    impressionWindowRows,
-    signupWindowRows,
+    impressionHourRows,
+    signupHourRows,
+    convertedWindowRows,
     referralPeriodRows,
     pointsPeriodRows,
     impressionSourceRows,
@@ -234,24 +235,67 @@ export async function getWaitlistAnalytics(
     linkVisitCount,
   ] = await Promise.all([
     db.$queryRaw`
-      SELECT "id", "uniqueUserId", "createdAt"
+      SELECT strftime('%Y-%m-%dT%H:', REPLACE("createdAt", ' ', 'T')) ||
+               printf('%02d:00Z', (CAST(strftime('%M', REPLACE("createdAt", ' ', 'T')) AS INTEGER) / 15) * 15) AS hour_utc,
+             COUNT(*) AS count
       FROM "impressions"
       WHERE "waitListId" = ${waitListId}
         AND "uniqueUserId" <> ''
         AND julianday("createdAt") >= julianday(${prevStartIso})
         AND julianday("createdAt") < julianday(${endIso})
+      GROUP BY hour_utc
     `,
     db.$queryRaw`
-      SELECT signup."id", signup."createdAt", signup."verifiedAt", signup."impressionId",
+      SELECT strftime('%Y-%m-%dT%H:', REPLACE(signup."createdAt", ' ', 'T')) ||
+               printf('%02d:00Z', (CAST(strftime('%M', REPLACE(signup."createdAt", ' ', 'T')) AS INTEGER) / 15) * 15) AS hour_utc,
              CASE WHEN EXISTS (
                SELECT 1 FROM "referrals" AS held_referral
                WHERE held_referral."signUpId" = signup."id"
                  AND held_referral."reviewStatus" IN ('NEEDS_REVIEW', 'EXCLUDED')
-             ) THEN 1 ELSE 0 END AS is_held
+             ) THEN 1 ELSE 0 END AS is_held,
+             COUNT(*) AS signups,
+             SUM(CASE WHEN signup."verifiedAt" IS NOT NULL THEN 1 ELSE 0 END) AS verified_signups,
+             COUNT(DISTINCT CASE
+               WHEN imp."id" IS NOT NULL
+                AND julianday(imp."createdAt") >= julianday(CASE WHEN julianday(signup."createdAt") >= julianday(${startIso}) THEN ${startIso} ELSE ${prevStartIso} END)
+                AND julianday(imp."createdAt") <= julianday(signup."createdAt")
+               THEN imp."uniqueUserId"
+             END) AS converted_visitors
       FROM "sign_ups" AS signup
+      LEFT JOIN "impressions" AS imp ON imp."id" = signup."impressionId"
       WHERE signup."waitListId" = ${waitListId}
         AND julianday(signup."createdAt") >= julianday(${prevStartIso})
         AND julianday(signup."createdAt") < julianday(${endIso})
+      GROUP BY hour_utc, is_held
+    `,
+    db.$queryRaw`
+      SELECT
+        COUNT(DISTINCT CASE
+          WHEN julianday(signup."createdAt") >= julianday(${startIso})
+           AND julianday(signup."createdAt") < julianday(${endIso})
+           AND imp."id" IS NOT NULL
+           AND julianday(imp."createdAt") >= julianday(${startIso})
+           AND julianday(imp."createdAt") <= julianday(signup."createdAt")
+          THEN imp."uniqueUserId"
+        END) AS current_converted,
+        COUNT(DISTINCT CASE
+          WHEN julianday(signup."createdAt") >= julianday(${prevStartIso})
+           AND julianday(signup."createdAt") < julianday(${startIso})
+           AND imp."id" IS NOT NULL
+           AND julianday(imp."createdAt") >= julianday(${prevStartIso})
+           AND julianday(imp."createdAt") <= julianday(signup."createdAt")
+          THEN imp."uniqueUserId"
+        END) AS previous_converted
+      FROM "sign_ups" AS signup
+      LEFT JOIN "impressions" AS imp ON imp."id" = signup."impressionId"
+      WHERE signup."waitListId" = ${waitListId}
+        AND julianday(signup."createdAt") >= julianday(${prevStartIso})
+        AND julianday(signup."createdAt") < julianday(${endIso})
+        AND NOT EXISTS (
+          SELECT 1 FROM "referrals" AS held_referral
+          WHERE held_referral."signUpId" = signup."id"
+            AND held_referral."reviewStatus" IN ('NEEDS_REVIEW', 'EXCLUDED')
+        )
     `,
     db.$queryRaw`
       SELECT
@@ -389,25 +433,24 @@ export async function getWaitlistAnalytics(
         visitors: 0,
         signups: 0,
         verified_signups: 0,
-        convertedVisitorIds: new Set(),
+        converted_visitors: 0,
       },
     ]),
   );
 
-  const impressionById = new Map();
   let visitors = 0;
   let previousVisitors = 0;
-  for (const row of impressionWindowRows) {
-    const created = parseSqliteDate(row.createdAt);
+  for (const row of impressionHourRows) {
+    const created = parseSqliteDate(row.hour_utc);
     if (!created) continue;
     const ms = created.getTime();
-    impressionById.set(row.id, { uniqueUserId: row.uniqueUserId, ms });
+    const count = number(row.count);
     if (ms >= startMs && ms < endMs) {
-      visitors += 1;
+      visitors += count;
       const bucket = dailyBuckets.get(formatLocalDate(created, zone));
-      if (bucket) bucket.visitors += 1;
+      if (bucket) bucket.visitors += count;
     } else if (ms >= prevStartMs && ms < startMs) {
-      previousVisitors += 1;
+      previousVisitors += count;
     }
   }
 
@@ -416,43 +459,36 @@ export async function getWaitlistAnalytics(
   let previousSignups = 0;
   let previousVerifiedSignups = 0;
   let heldCount = 0;
-  const convertedSet = new Set();
-  const prevConvertedSet = new Set();
 
-  for (const row of signupWindowRows) {
-    const created = parseSqliteDate(row.createdAt);
+  for (const row of signupHourRows) {
+    const created = parseSqliteDate(row.hour_utc);
     if (!created) continue;
     const ms = created.getTime();
+    const rowSignups = number(row.signups);
+    const rowVerified = number(row.verified_signups);
+    const rowConverted = number(row.converted_visitors);
     const isHeld = Number(row.is_held) === 1;
     if (isHeld) {
-      if (ms >= startMs && ms < endMs) heldCount += 1;
+      if (ms >= startMs && ms < endMs) heldCount += rowSignups;
       continue;
     }
-    const isVerified = row.verifiedAt != null;
-    const imp = row.impressionId ? impressionById.get(row.impressionId) : null;
     if (ms >= startMs && ms < endMs) {
-      signups += 1;
-      if (isVerified) verifiedSignups += 1;
+      signups += rowSignups;
+      verifiedSignups += rowVerified;
       const bucket = dailyBuckets.get(formatLocalDate(created, zone));
       if (bucket) {
-        bucket.signups += 1;
-        if (isVerified) bucket.verified_signups += 1;
-      }
-      if (imp && imp.ms >= startMs && imp.ms < endMs && imp.ms <= ms) {
-        convertedSet.add(imp.uniqueUserId);
-        if (bucket) bucket.convertedVisitorIds.add(imp.uniqueUserId);
+        bucket.signups += rowSignups;
+        bucket.verified_signups += rowVerified;
+        bucket.converted_visitors += rowConverted;
       }
     } else if (ms >= prevStartMs && ms < startMs) {
-      previousSignups += 1;
-      if (isVerified) previousVerifiedSignups += 1;
-      if (imp && imp.ms >= prevStartMs && imp.ms < startMs && imp.ms <= ms) {
-        prevConvertedSet.add(imp.uniqueUserId);
-      }
+      previousSignups += rowSignups;
+      previousVerifiedSignups += rowVerified;
     }
   }
 
-  const convertedVisitors = convertedSet.size;
-  const previousConvertedVisitors = prevConvertedSet.size;
+  const convertedVisitors = number(convertedWindowRows?.[0]?.current_converted);
+  const previousConvertedVisitors = number(convertedWindowRows?.[0]?.previous_converted);
   const conversionRate = ratio(convertedVisitors, visitors);
   const verificationRate = ratio(verifiedSignups, signups);
   const previousConversionRate = ratio(previousConvertedVisitors, previousVisitors);
@@ -474,7 +510,7 @@ export async function getWaitlistAnalytics(
     visitors: bucket.visitors,
     signups: bucket.signups,
     verified_signups: bucket.verified_signups,
-    converted_visitors: bucket.convertedVisitorIds.size,
+    converted_visitors: bucket.converted_visitors,
   }));
 
   const emailStats = broadcasts.length
