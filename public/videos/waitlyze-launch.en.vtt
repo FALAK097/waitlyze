@@ -1,32 +1,49 @@
 WEBVTT
 
-00:00:00.400 --> 00:00:08.080
-Meet Waitlyze: your launch starts before launch day. The complete waitlist and referral engine for products people can't wait to join.
+1
+00:00:00.600 --> 00:00:03.744
+Why did nobody show up on launch day? Let's rewind.
 
-00:00:08.260 --> 00:00:16.084
-Manage every waitlist from one clean workspace, with live visitors, verified subscribers, and conversion rates at a glance.
+2
+00:00:04.894 --> 00:00:13.846
+Four weeks ago, you shipped a waitlist in an afternoon. A form widget, a spreadsheet, a Zapier hook, and a generic thanks screen.
 
-00:00:16.264 --> 00:00:24.832
-Design your hosted launch page in seconds. Reorder blocks, switch templates, customize your brand kit, and preview across desktop and mobile.
+3
+00:00:14.846 --> 00:00:28.598
+Bots found your form before customers did. One person gamed your referral spots with burner emails. Four hundred twelve signups. One hundred eighty-seven fake. Zero referrals. And no idea which post actually worked.
 
-00:00:25.012 --> 00:00:33.100
-Turn every signup into a referral loop. Configure queue jumps, point rules, milestone perks, and an instant post-signup status page.
+4
+00:00:30.198 --> 00:00:32.070
+Meet Waitlyze.
 
-00:00:33.280 --> 00:00:40.360
-Run the built-in launch readiness checklist, publish to your custom domain, or drop a responsive embed widget into any site.
+5
+00:00:33.770 --> 00:00:44.786
+When someone joins your waitlist, Waitlyze verifies their email, locks in their live queue spot, and hands them a personal referral link — so every real signup brings the next three.
 
-00:00:40.540 --> 00:00:48.268
-Every signup is double opt-in verified and protected by Turnstile and browser-fingerprint fraud review before referral credit is granted.
+6
+00:00:45.986 --> 00:00:55.778
+Bots stop at Cloudflare Turnstile. Duplicate browser fingerprints get held for review before any referral credit is granted. Only real people move up.
 
-00:00:48.448 --> 00:00:56.248
-Track visitors, conversion benchmarks, K-factor virality, acquisition channels, browsers, and global reach on a live world map.
+7
+00:00:56.978 --> 00:01:07.298
+No glue code, no stitched-together stack. Pick a template, match your brand, and publish to your custom domain — or drop one embed snippet into your site in minutes.
 
-00:00:56.428 --> 00:01:03.820
-Automate welcome emails, referral reminders, and milestone unlocks, or send targeted broadcasts with real-time delivery logs.
+8
+00:01:08.448 --> 00:01:15.024
+See which channels drive verified signups, with real conversion benchmarks and viral K-factor.
 
-00:01:04.000 --> 00:01:12.328
-Connect your stack with signed webhooks, automatic retry queues, Slack and Discord alerts, scoped API keys, and workspace audit logs.
+9
+00:01:16.124 --> 00:01:22.124
+Automate welcome and milestone emails, or invite your top supporters in launch-day waves.
 
-00:01:12.508 --> 00:01:16.972
-Build momentum before day one. Start free today at waitlyze.com.
+10
+00:01:23.224 --> 00:01:29.152
+Connect your stack with signed webhooks, Slack and Discord alerts, and a server-side Signup API.
 
+11
+00:01:30.352 --> 00:01:36.328
+Verified people. Compounding referrals. A launch list that actually shows up on day one.
+
+12
+00:01:37.878 --> 00:01:41.070
+Waitlyze. Your launch starts before launch day.

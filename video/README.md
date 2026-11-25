@@ -9,14 +9,14 @@ pnpm --dir video studio
 pnpm --dir video render
 ```
 
-The nested workspace pins render dependencies separately and permits the esbuild lifecycle script required by the renderer. Rendered output stays local under ignored `video/out/`; R2 hosts the published artifacts. Composition: `LaunchFilm`, 1920 x 1080, 60 fps, 78.22 seconds. The published MP4 uses H.264/AAC and fast-start metadata before media data. Retain `-movflags +faststart` if re-encoding.
+The nested workspace pins render dependencies separately and permits the esbuild lifecycle script required by the renderer. Rendered output stays local under ignored `video/out/`; R2 hosts the published artifacts. Composition: `LaunchFilm`, 1920 x 1080, 60 fps, 103.47 seconds. The published MP4 uses H.264/AAC and fast-start metadata before media data. Retain `-movflags +faststart` if re-encoding.
 
 ## Landing delivery
 
 The film uses the canonical `https://assets.waitlyze.com/launch/` CDN, independent of user-upload storage environment overrides.
 
-- Film: `waitlyze-launch-5a11efd6d418.mp4` (34,187,891 bytes).
-- Poster: `waitlyze-launch-41e3af827abd.webp` (245,372 bytes).
+- Film: `waitlyze-launch-afd68936adfe.mp4` (38,439,336 bytes).
+- Poster: `waitlyze-launch-cbda091bb109.webp` (45,438 bytes).
 - Filenames contain the first 12 characters of the SHA-256 digest. Upload changed bytes under new names and update the page URLs together.
 - R2 content types: `video/mp4` and `image/webp`. Both use `Cache-Control: public, max-age=31536000, immutable`.
 - Cloudflare cache rule set `e449f0068ead4fc9ae3b90891face975` covers only `assets.waitlyze.com` paths starting `/launch/waitlyze-launch-`, with a one-year edge TTL and zero TTL for 400–599 responses. Repeated full GETs returned cache HIT during delivery verification.
@@ -27,7 +27,7 @@ Earlier unversioned new-film uploads remain in R2 for compatibility. The old `sh
 
 ## Editing the film
 
-`src/index.ts` registers `src/Root.tsx`, which combines `WaitlyzeLaunch` with `public/soundtrack.mp3`. `src/WaitlyzeLaunch.tsx` owns the animated brand opening, `SCENE_CLIPS` (product captures, cursor paths and camera motion), the halftone map outro, and word-synchronized captions. Shared motion helpers live in `src/motion/easing.ts`.
+`src/index.ts` registers `src/Root.tsx`, which combines `WaitlyzeLaunch` with `public/soundtrack.mp3`. `src/WaitlyzeLaunch.tsx` orchestrates the 12-scene problem → solution → payoff narrative (`src/scenes/Act1Pain.tsx`, `src/scenes/Act2Solution.tsx`, `src/scenes/Act3MontageAndPayoff.tsx`), shared UI primitives (`src/components/Primitives.tsx`), Waitlyze brand tokens (`src/theme.ts`), and word-synchronized live captions. Shared motion helpers live in `src/motion/easing.ts`.
 
 `src/vo-manifest.json` is the single source for narration text, word timings and scene boundaries. It replaces separate narration/storyboard tables and per-segment word JSON files. Keep multiword spoken URLs aligned to a single display token spanning the entire spoken interval. `public/vo/*.mp3` and the instrumental `public/music.mp3` remain editable audio sources; the composition uses their finished mix, `public/soundtrack.mp3`.
 

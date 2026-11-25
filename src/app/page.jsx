@@ -312,8 +312,8 @@ export default async function LandingPage() {
             <p className="wl-assurance">Free to get started. No credit card required.</p>
           </div>
           <HeroVideo
-            poster={`${LAUNCH_ASSET_BASE}/waitlyze-launch-41e3af827abd.webp`}
-            src={`${LAUNCH_ASSET_BASE}/waitlyze-launch-5a11efd6d418.mp4`}
+            poster={`${LAUNCH_ASSET_BASE}/waitlyze-launch-cbda091bb109.webp`}
+            src={`${LAUNCH_ASSET_BASE}/waitlyze-launch-afd68936adfe.mp4`}
             captionsSrc="/videos/waitlyze-launch.en.vtt"
           />
         </section>
