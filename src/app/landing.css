@@ -723,6 +723,9 @@
   margin: 0;
   width: 100%;
 }
+.wl-hero > .wl-launch-film {
+  margin-top: clamp(48px, 6vw, 72px);
+}
 .wl-launch-film video {
   display: block;
   width: 100%;
