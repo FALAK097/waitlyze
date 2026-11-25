@@ -15,7 +15,7 @@ The nested workspace pins render dependencies separately and permits the esbuild
 
 The film uses the canonical `https://assets.waitlyze.com/launch/` CDN, independent of user-upload storage environment overrides.
 
-- Film: `waitlyze-launch-afd68936adfe.mp4` (38,439,336 bytes).
+- Film: `waitlyze-launch-20c3621c1a04.mp4` (37,650,345 bytes).
 - Poster: `waitlyze-launch-cbda091bb109.webp` (45,438 bytes).
 - Filenames contain the first 12 characters of the SHA-256 digest. Upload changed bytes under new names and update the page URLs together.
 - R2 content types: `video/mp4` and `image/webp`. Both use `Cache-Control: public, max-age=31536000, immutable`.

@@ -313,7 +313,7 @@ export default async function LandingPage() {
           </div>
           <HeroVideo
             poster={`${LAUNCH_ASSET_BASE}/waitlyze-launch-cbda091bb109.webp`}
-            src={`${LAUNCH_ASSET_BASE}/waitlyze-launch-afd68936adfe.mp4`}
+            src={`${LAUNCH_ASSET_BASE}/waitlyze-launch-20c3621c1a04.mp4`}
             captionsSrc="/videos/waitlyze-launch.en.vtt"
           />
         </section>
