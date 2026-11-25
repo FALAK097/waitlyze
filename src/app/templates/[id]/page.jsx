@@ -5,6 +5,7 @@ import PublicShell from "@/components/landing/public-shell";
 import SignupButton from "@/components/landing/signup-button";
 import { WaitlistPageContent } from "@/components/product/waitlist-page-content";
 import { JsonLd } from "@/components/seo/json-ld";
+import { UseTemplateButton } from "@/components/templates/use-template-button";
 import { absoluteUrl, breadcrumbNode } from "@/lib/seo-helpers";
 import { listTemplates } from "@/lib/templates/catalog.mjs";
 import { TEMPLATE_IDS, getGalleryMeta, isTemplateId } from "@/lib/templates/gallery.mjs";
@@ -106,13 +107,13 @@ export default async function TemplateDetailPage({ params }) {
             {template.description} {meta.useCase}
           </p>
           <div className="mt-6 flex flex-wrap items-center gap-3">
-            <Link
-              prefetch={false}
-              href={`/waitlists/new?template=${template.id}`}
-              className="inline-flex min-h-13 items-center justify-center gap-2 rounded-md bg-product-text-primary px-6 py-3 text-body font-semibold text-product-bg-page focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-neutral-900"
+            <UseTemplateButton
+              templateId={template.id}
+              templateName={template.name}
+              className="inline-flex min-h-13 cursor-pointer items-center justify-center gap-2 rounded-md bg-product-text-primary px-6 py-3 text-body font-semibold text-product-bg-page focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-neutral-900"
             >
               Use the {template.name} template
-            </Link>
+            </UseTemplateButton>
             <span className="text-micro text-product-text-secondary">
               Free to use. No credit card needed.
             </span>
@@ -276,13 +277,13 @@ export default async function TemplateDetailPage({ params }) {
           </div>
           <div>
             <SignupButton>Start from this template</SignupButton>
-            <Link
-              prefetch={false}
-              href={`/waitlists/new?template=${template.id}`}
-              className="mt-3 block text-micro text-product-text-secondary underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-neutral-900"
+            <UseTemplateButton
+              templateId={template.id}
+              templateName={template.name}
+              className="mt-3 block cursor-pointer text-left text-micro text-product-text-secondary underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-neutral-900"
             >
               Or open creation with this template preselected →
-            </Link>
+            </UseTemplateButton>
           </div>
         </section>
       </main>

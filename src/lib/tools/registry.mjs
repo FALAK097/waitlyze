@@ -167,7 +167,7 @@ export const TOOLS_REGISTRY = Object.freeze([
     version: "1.0",
     targetJob:
       "Match your launch category, visual assets, and referral goal to the best-fit Waitlyze template.",
-    seoTitle: "Waitlist Template Finder: Match Your Launch to the Right Layout",
+    seoTitle: "Free Waitlist Template Finder for Your Launch",
     seoDescription:
       "Answer four quick questions about your product category, conversion motion, visual assets, and brand aesthetic to get ranked waitlist template recommendations.",
     directAnswer:
@@ -269,7 +269,7 @@ export const TOOLS_REGISTRY = Object.freeze([
     version: "1.0",
     targetJob:
       "Forecast direct and referred waitlist growth, K-factor, and highest-leverage conversion inputs.",
-    seoTitle: "Viral Waitlist Growth & K-Factor Calculator (Free Simulator)",
+    seoTitle: "Viral Waitlist & K-Factor Calculator (Free)",
     seoDescription:
       "Model how traffic, conversion rate, email verification, and referral sharing compound your pre-launch waitlist. Includes sensitivity analysis and CSV/PNG export.",
     directAnswer:
@@ -492,7 +492,7 @@ export const TOOLS_REGISTRY = Object.freeze([
     version: "1.0",
     targetJob:
       "Score launch readiness across 6 pillars and generate a dated critical-path timeline.",
-    seoTitle: "Product Launch Readiness Planner & Dated Checklist (Free)",
+    seoTitle: "Product Launch Readiness Checklist & Planner",
     seoDescription:
       "Enter your target launch date, team bandwidth, and existing assets to get a 6-pillar readiness score and a dated 14, 30, 60, or 90-day plan with .ics and CSV export.",
     directAnswer:
@@ -598,7 +598,7 @@ export const TOOLS_REGISTRY = Object.freeze([
     version: "1.0",
     targetJob:
       "Design sustainable referral milestone tiers, model fulfillment budgets, and flag fraud risk.",
-    seoTitle: "Referral Reward Tier & ROI Calculator for Waitlists (Free)",
+    seoTitle: "Waitlist Referral Reward & ROI Calculator",
     seoDescription:
       "Model 3–4 waitlist referral reward tiers across P25, P50, and P90 viral scenarios. Calculate effective CAC per referred subscriber and spot fraud-prone rewards.",
     directAnswer:
@@ -899,7 +899,7 @@ export const TOOLS_REGISTRY = Object.freeze([
     version: "1.0",
     targetJob:
       "Draft all 5 pre-launch lifecycle emails with Waitlyze merge tags and spam-trigger checks.",
-    seoTitle: "Waitlist Email Sequence & Template Builder (5 Free Emails)",
+    seoTitle: "Waitlist Email Sequence Builder (5 Templates)",
     seoDescription:
       "Generate a complete 5-email pre-launch sequence (verification, welcome + referral link, milestone unlocked, warm-up, and launch day) with merge tags and spam checks.",
     directAnswer:
@@ -999,7 +999,7 @@ export const TOOLS_REGISTRY = Object.freeze([
     priority: "P1",
     version: "1.0",
     targetJob: "Generate normalized UTM tracking links and QR codes across every launch channel.",
-    seoTitle: "Launch Channel & Waitlist UTM Link Builder + QR Export (Free)",
+    seoTitle: "Waitlist UTM Link Builder & QR Generator",
     seoDescription:
       "Build clean, lowercase, hyphen-normalized UTM links and downloadable QR codes for Product Hunt, Hacker News, X, LinkedIn, Reddit, and newsletters.",
     directAnswer:
@@ -1103,7 +1103,7 @@ export const TOOLS_REGISTRY = Object.freeze([
     version: "1.0",
     targetJob:
       "Preview inline, modal, or drawer signup widgets and copy framework-specific Waitlyze embed snippets.",
-    seoTitle: "Waitlist Embed & Widget Configurator (Next.js, Framer, HTML)",
+    seoTitle: "Waitlist Embed & Widget Configurator (Free)",
     seoDescription:
       "Design and test an inline, pill, modal, or drawer waitlist widget across desktop and mobile. Copy ready-to-use snippets for Next.js, React, Framer, Webflow, Shopify, and HTML.",
     directAnswer:
@@ -1204,7 +1204,7 @@ export const TOOLS_REGISTRY = Object.freeze([
     version: "1.0",
     targetJob:
       "Audit an existing waitlist CSV locally in the browser for disposable domains, plus-alias duplicates, and velocity spikes.",
-    seoTitle: "Waitlist Health & Referral Fraud Risk Auditor (Zero-Upload CSV)",
+    seoTitle: "Waitlist List Health & Fraud Auditor (CSV)",
     seoDescription:
       "Audit your waitlist CSV 100% locally in your browser with zero emails uploaded. Catch disposable domains, Gmail plus-alias self-referrals, role accounts, and velocity spikes.",
     directAnswer:
@@ -1309,7 +1309,7 @@ export const TOOLS_REGISTRY = Object.freeze([
     priority: "P2",
     version: "1.0",
     targetJob: "Verify SPF, DMARC, MX, and optional DKIM DNS records before sending launch emails.",
-    seoTitle: "Email Deliverability & DNS Checker (SPF, DKIM, DMARC, MX)",
+    seoTitle: "Email Deliverability & DNS Checker (SPF/DKIM)",
     seoDescription:
       "Check your launch domain's public SPF, DMARC, MX, and optional DKIM DNS records via DNS-over-HTTPS. Spot multi-SPF conflicts, >10 lookup limits, and get copyable fixes.",
     directAnswer:
@@ -1413,7 +1413,7 @@ export const TOOLS_REGISTRY = Object.freeze([
     version: "1.0",
     targetJob:
       "Compare conversion, verification, share rate, and K-factor cohorts with explicit methodology.",
-    seoTitle: "Waitlist Benchmarks: Conversion, Verification & Viral K-Factor Explorer",
+    seoTitle: "Waitlist Benchmarks: Conversion & K-Factor Data",
     seoDescription:
       "Explore structured waitlist benchmark ranges (P25, P50 median, P75) for conversion rate, email verification, share rate, and K-factor, with transparent methodology and cohort minimums.",
     directAnswer:

@@ -6,7 +6,7 @@ import { absoluteUrl, breadcrumbNode } from "@/lib/seo-helpers";
 import { listTools, TOOL_CATEGORIES } from "@/lib/tools/registry.mjs";
 
 export const metadata = {
-  title: "14 Free Pre-Launch Waitlist Tools | Waitlyze",
+  title: { absolute: "14 Free Pre-Launch Waitlist Tools | Waitlyze" },
   description:
     "Fourteen free, no-account pre-launch tools for founders: grade your waitlist landing page, model viral K-factor growth, write launch copy, design referral tiers, and audit list health.",
   alternates: {

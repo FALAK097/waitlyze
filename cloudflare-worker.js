@@ -219,8 +219,17 @@ export default {
       pathname.startsWith("/verify");
     const isSecretTokenPath =
       pathname.startsWith("/verify/") || pathname.startsWith("/accept-invitation/");
+    const isNonIndexableAsset =
+      pathname.startsWith("/og/") ||
+      pathname === "/opengraph-image" ||
+      pathname === "/apple-icon.png" ||
+      pathname === "/icon.svg" ||
+      MACHINE_PATHS.has(pathname);
     const finalizeResponse = (response, { varyAccept = false } = {}) => {
       const headers = new Headers(response.headers);
+      if (isNonIndexableAsset && !headers.has("x-robots-tag")) {
+        headers.set("x-robots-tag", "noindex");
+      }
       if (shouldSendHsts && !headers.has("strict-transport-security")) {
         headers.set("strict-transport-security", "max-age=31536000; includeSubDomains");
       }
@@ -257,12 +266,16 @@ export default {
 
     if (!isCustomHost) {
       const directMarkdown =
-        isReadMethod && pathname.endsWith(".md") && !pathname.startsWith("/api");
+        isReadMethod &&
+        pathname.endsWith(".md") &&
+        !pathname.startsWith("/api") &&
+        !pathname.startsWith("/llms.mdx/");
       const negotiatedMarkdown =
         isReadMethod &&
         !pathname.startsWith("/api") &&
         !pathname.startsWith("/_next") &&
         !pathname.startsWith("/domain") &&
+        !pathname.startsWith("/llms.mdx/") &&
         prefersMarkdown(request.headers.get("accept"));
       if (directMarkdown || negotiatedMarkdown) {
         const cleanPath = directMarkdown ? pathname.replace(/\.md$/, "") : pathname;

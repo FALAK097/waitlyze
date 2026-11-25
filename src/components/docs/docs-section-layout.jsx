@@ -1,9 +1,10 @@
 "use client";
 
 import { DocsLayout } from "fumadocs-ui/layouts/docs";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useMemo } from "react";
 
+import { useOpenAuthModal } from "@/components/auth/auth-modal-provider";
 import { DocsTopNav } from "@/components/docs/docs-top-nav";
 import { getDocsSection, getDocsSectionTree } from "@/lib/docs-sections";
 import { gitConfig } from "@/lib/docs-shared";
@@ -19,6 +20,23 @@ function DocsMark() {
 }
 
 function SidebarFooter() {
+  const router = useRouter();
+  const openAuthModal = useOpenAuthModal();
+
+  async function handleOpenWaitlists() {
+    try {
+      const { authClient } = await import("@/lib/auth-client");
+      const { data } = await authClient.getSession();
+      if (data?.session) {
+        router.push("/waitlists");
+        return;
+      }
+    } catch {
+      // Fall back to opening the auth modal with the waitlists callback.
+    }
+    openAuthModal({ callbackURL: "/waitlists" });
+  }
+
   return (
     <div className="flex items-center gap-1 rounded-xl border border-fd-border bg-fd-secondary p-1">
       <a
@@ -35,11 +53,10 @@ function SidebarFooter() {
       <span className="text-sm text-fd-border select-none" aria-hidden="true">
         |
       </span>
-      <a
-        href="/waitlists"
-        target="_blank"
-        rel="noreferrer"
-        className="flex min-h-8 flex-1 items-center gap-1.5 rounded-lg px-2 text-caption font-medium text-fd-foreground hover:bg-fd-accent hover:text-fd-accent-foreground"
+      <button
+        type="button"
+        onClick={handleOpenWaitlists}
+        className="flex min-h-8 flex-1 cursor-pointer items-center gap-1.5 rounded-lg px-2 text-caption font-medium text-fd-foreground hover:bg-fd-accent hover:text-fd-accent-foreground"
       >
         <span>Waitlists</span>
         <svg
@@ -55,7 +72,7 @@ function SidebarFooter() {
           <path d="M7 17 17 7" />
           <path d="M8 7h9v9" />
         </svg>
-      </a>
+      </button>
     </div>
   );
 }

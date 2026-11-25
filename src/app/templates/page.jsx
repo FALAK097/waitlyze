@@ -5,6 +5,7 @@ import PublicShell from "@/components/landing/public-shell";
 import SignupButton from "@/components/landing/signup-button";
 import TemplatePreview from "@/components/landing/template-preview";
 import { JsonLd } from "@/components/seo/json-ld";
+import { UseTemplateButton } from "@/components/templates/use-template-button";
 import { TemplateFinderWidget } from "@/components/tools/widgets/template-finder-widget";
 import { absoluteUrl, breadcrumbNode } from "@/lib/seo-helpers";
 import { listTemplates } from "@/lib/templates/catalog.mjs";
@@ -73,13 +74,13 @@ function TemplateCard({ template }) {
         )}
         <p className="text-micro text-product-text-secondary">{blockCount} sections</p>
         <div className="mt-auto flex flex-wrap gap-2 pt-3">
-          <Link
-            prefetch={false}
-            href={`/waitlists/new?template=${template.id}`}
-            className="inline-flex min-h-10 items-center justify-center rounded-md bg-product-text-primary px-4 py-2 text-caption font-semibold text-product-bg-page focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-neutral-900"
+          <UseTemplateButton
+            templateId={template.id}
+            templateName={template.name}
+            className="inline-flex min-h-10 cursor-pointer items-center justify-center rounded-md bg-product-text-primary px-4 py-2 text-caption font-semibold text-product-bg-page focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-neutral-900"
           >
             Use this template
-          </Link>
+          </UseTemplateButton>
           <Link
             prefetch={false}
             href={`/templates/${template.id}`}

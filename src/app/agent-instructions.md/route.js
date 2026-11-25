@@ -46,6 +46,7 @@ export function GET() {
   return new NextResponse(BODY, {
     headers: {
       "Content-Type": "text/markdown; charset=utf-8",
+      "X-Robots-Tag": "noindex",
       "Cache-Control": "public, max-age=300",
     },
   });

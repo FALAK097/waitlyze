@@ -66,7 +66,7 @@ export default function AskAi() {
           {assistants.map(({ name, logo, url, kind }) => {
             const content = (
               <>
-                <Image src={logo} alt="" width={34} height={34} />
+                <Image src={logo} alt={`${name} icon`} width={34} height={34} aria-hidden="true" />
                 <span>{name}</span>
                 <HugeiconsIcon icon={ArrowUpRight01Icon} size={20} aria-hidden="true" />
               </>

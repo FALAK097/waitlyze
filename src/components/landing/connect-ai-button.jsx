@@ -240,28 +240,28 @@ export function ConnectAiButton({ className = "" }) {
         className={`wl-secondary-button cursor-pointer ${className}`}
         aria-label="Connect your AI agent to Waitlyze via Model Context Protocol"
       >
-        <span className="flex items-center gap-1.5 text-neutral-900">
+        <span aria-hidden="true" className="flex items-center gap-1.5 text-neutral-900">
           <img
             src="/assets/icons/chatgpt.svg"
-            alt=""
+            alt="ChatGPT icon"
             className="h-4 w-4 shrink-0 object-contain"
             aria-hidden="true"
           />
           <img
             src="/assets/icons/claude.svg"
-            alt=""
+            alt="Claude icon"
             className="h-3.5 w-3.5 shrink-0 object-contain"
             aria-hidden="true"
           />
           <img
             src="/assets/icons/cursor.svg"
-            alt=""
+            alt="Cursor icon"
             className="h-3.5 w-3.5 shrink-0 object-contain"
             aria-hidden="true"
           />
           <img
             src="/assets/icons/codex.svg"
-            alt=""
+            alt="Codex icon"
             className="h-3.5 w-3.5 shrink-0 object-contain"
             aria-hidden="true"
           />

@@ -692,10 +692,28 @@ For billing questions, contact [support@waitlyze.com](mailto:support@waitlyze.co
     });
   }
 
-  // 8. Blog tag /blog/tag/:slug
+  // 8. Blog tag /blog/tag/:slug (including retired tag aliases from next.config.mjs)
   const tagMatch = path.match(/^\/blog\/tag\/([a-z0-9-]+)$/);
   if (tagMatch) {
-    const tag = getTags().find((t) => t.slug === tagMatch[1]);
+    const retiredTagAliases = {
+      "launch-strategy": "launch",
+      referral: "referrals",
+      rewards: "referrals",
+      seo: "seo-aeo",
+      aeo: "seo-aeo",
+      technical: "seo-aeo",
+      "ai-growth": "seo-aeo",
+      "next-js": "seo-aeo",
+      "social-proof": "conversion",
+      engagement: "launch",
+      attribution: "analytics",
+      validation: "analytics",
+      "case-studies": "referrals",
+      templates: "email",
+      examples: "conversion",
+    };
+    const resolvedSlug = retiredTagAliases[tagMatch[1]] ?? tagMatch[1];
+    const tag = getTags().find((t) => t.slug === resolvedSlug);
     if (tag) {
       const posts = getPosts().filter((post) => post.data.tags.includes(tag.name));
       const list = posts
