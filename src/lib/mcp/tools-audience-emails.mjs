@@ -179,6 +179,7 @@ export function registerAudienceAndEmailMcpTools(server, authContext) {
         utmMedium: z.string().optional(),
         utmCampaign: z.string().optional(),
       },
+      annotations: { readOnlyHint: false, destructiveHint: false },
     },
     ({ waitlistId, ...args }) =>
       runTool(async () => {
@@ -245,6 +246,7 @@ export function registerAudienceAndEmailMcpTools(server, authContext) {
           .min(1)
           .max(500),
       },
+      annotations: { readOnlyHint: false, destructiveHint: false },
     },
     ({ waitlistId, rows }) =>
       runTool(async () => {
@@ -282,6 +284,7 @@ export function registerAudienceAndEmailMcpTools(server, authContext) {
         customFields: z.record(z.string(), z.unknown()).optional(),
         marketingConsent: z.boolean().optional(),
       },
+      annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true },
     },
     ({ waitlistId, subscriberId, ...updates }) =>
       runTool(async () => {
@@ -305,7 +308,7 @@ export function registerAudienceAndEmailMcpTools(server, authContext) {
         waitlistId: z.string().min(1),
         subscriberId: z.string().min(1),
       },
-      annotations: { destructiveHint: true },
+      annotations: { readOnlyHint: false, destructiveHint: true },
     },
     ({ waitlistId, subscriberId }) =>
       runTool(async () => {
@@ -333,6 +336,7 @@ export function registerAudienceAndEmailMcpTools(server, authContext) {
         action: z.enum(["offboard", "resubscribe", "delete", "retry_verification"]),
         subscriberIds: z.array(z.string()).min(1).max(200),
       },
+      annotations: { readOnlyHint: false, destructiveHint: true },
     },
     ({ waitlistId, action, subscriberIds }) =>
       runTool(async () => {
@@ -372,6 +376,7 @@ export function registerAudienceAndEmailMcpTools(server, authContext) {
         points: z.number().int().optional(),
         idempotencyKey: z.string().optional().default("once"),
       },
+      annotations: { readOnlyHint: false, destructiveHint: false },
     },
     ({ waitlistId, subscriberId, email, event, points, idempotencyKey }) =>
       runTool(async () => {
@@ -548,6 +553,7 @@ export function registerAudienceAndEmailMcpTools(server, authContext) {
         status: z.enum(["APPROVED", "EXCLUDED"]),
         resolution: z.string().min(8).max(240),
       },
+      annotations: { readOnlyHint: false, destructiveHint: true },
     },
     ({ waitlistId, referralId, status, resolution }) =>
       runTool(async () => {
@@ -652,6 +658,7 @@ export function registerAudienceAndEmailMcpTools(server, authContext) {
         body: z.string().min(1),
         segment: z.string().optional().default("ALL"),
       },
+      annotations: { readOnlyHint: false, destructiveHint: false },
     },
     ({ waitlistId, broadcastId, ...data }) =>
       runTool(async () => {
@@ -676,7 +683,7 @@ export function registerAudienceAndEmailMcpTools(server, authContext) {
         waitlistId: z.string().min(1),
         broadcastId: z.string().min(1),
       },
-      annotations: { destructiveHint: true },
+      annotations: { readOnlyHint: false, destructiveHint: true },
     },
     ({ waitlistId, broadcastId }) =>
       runTool(async () => {
@@ -704,6 +711,7 @@ export function registerAudienceAndEmailMcpTools(server, authContext) {
         expectedRecipientCount: z.number().int().optional(),
         exact: z.boolean().optional().default(false),
       },
+      annotations: { readOnlyHint: false, destructiveHint: true },
     },
     ({ waitlistId, broadcastId, segment, expectedRecipientCount, exact }) =>
       runTool(async () => {
@@ -737,6 +745,7 @@ export function registerAudienceAndEmailMcpTools(server, authContext) {
         scheduledAt: z.string().min(1),
         segment: z.string().optional().default("ALL"),
       },
+      annotations: { readOnlyHint: false, destructiveHint: false },
     },
     ({ waitlistId, broadcastId, scheduledAt, segment }) =>
       runTool(async () => {
@@ -766,6 +775,7 @@ export function registerAudienceAndEmailMcpTools(server, authContext) {
         waitlistId: z.string().min(1),
         broadcastId: z.string().min(1),
       },
+      annotations: { readOnlyHint: false, destructiveHint: true },
     },
     ({ waitlistId, broadcastId }) =>
       runTool(async () => {
@@ -816,6 +826,7 @@ export function registerAudienceAndEmailMcpTools(server, authContext) {
         previewText: z.string().max(180).optional(),
         body: z.string().min(1),
       },
+      annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true },
     },
     ({ waitlistId, templateType, subject, previewText, body }) =>
       runTool(async () => {
@@ -866,6 +877,7 @@ export function registerAudienceAndEmailMcpTools(server, authContext) {
         recipeId: z.string().min(1),
         config: z.record(z.string(), z.unknown()),
       },
+      annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true },
     },
     ({ waitlistId, recipeId, config }) =>
       runTool(async () => {
@@ -891,6 +903,7 @@ export function registerAudienceAndEmailMcpTools(server, authContext) {
         recipeId: z.string().min(1),
         status: z.enum(["ENABLED", "PAUSED"]),
       },
+      annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true },
     },
     ({ waitlistId, recipeId, status }) =>
       runTool(async () => {
@@ -922,6 +935,7 @@ export function registerAudienceAndEmailMcpTools(server, authContext) {
           .enum(["signup", "offboarding", "referral-congrats", "launch-invite"])
           .optional(),
       },
+      annotations: { readOnlyHint: false, destructiveHint: false },
     },
     ({ waitlistId, kind, to, targetId, templateType }) =>
       runTool(async () => {

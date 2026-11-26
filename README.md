@@ -1,5 +1,7 @@
 # Waitlyze
 
+[![Waitlyze MCP connector – tool definition quality and endpoint health on Glama](https://glama.ai/mcp/connectors/com.waitlyze/waitlyze/badges/score.svg)](https://glama.ai/mcp/connectors/com.waitlyze/waitlyze)
+
 Waitlyze is a viral waitlist platform for founders and creators - launch page, referral loop, email automation, and analytics from a single list. Create a beautiful page in minutes, turn signups into referrers, and launch to a primed audience.
 
 ## Features

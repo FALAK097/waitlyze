@@ -110,8 +110,11 @@ export async function POST(request) {
 
     const baseUrl = getMcpBaseUrl();
     const isToolCall = parsedBody?.method === "tools/call";
+    const isProtectedResourceRead =
+      parsedBody?.method === "resources/read" &&
+      parsedBody?.params?.uri !== "waitlyze://guide/workflow";
 
-    if (!authContext.authenticated && (hasAuthToken || isToolCall)) {
+    if (!authContext.authenticated && (hasAuthToken || isToolCall || isProtectedResourceRead)) {
       return createAuthChallenge({
         baseUrl,
         error: authContext.error,

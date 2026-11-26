@@ -211,6 +211,7 @@ export function registerWorkspaceMcpTools(server, authContext) {
       inputSchema: {
         name: z.string().min(1).max(80).describe("Workspace name"),
       },
+      annotations: { readOnlyHint: false, destructiveHint: false },
     },
     ({ name }) =>
       runTool(async () => {
@@ -243,7 +244,7 @@ export function registerWorkspaceMcpTools(server, authContext) {
         workspaceId: z.string().optional(),
         name: z.string().min(1).max(80),
       },
-      annotations: { idempotentHint: true },
+      annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true },
     },
     ({ workspaceId, name }) =>
       runTool(async () => {
@@ -328,6 +329,7 @@ export function registerWorkspaceMcpTools(server, authContext) {
         userId: z.string().optional().describe("Required for change_role / remove_member"),
         invitationId: z.string().optional().describe("Required for revoke_invitation"),
       },
+      annotations: { readOnlyHint: false, destructiveHint: true },
     },
     ({ workspaceId, action, email, role, userId, invitationId }) =>
       runTool(async () => {
@@ -522,6 +524,7 @@ export function registerWorkspaceMcpTools(server, authContext) {
         email: z.string().optional(),
         reason: z.enum(["BOUNCED", "COMPLAINED", "MANUAL"]).optional().default("MANUAL"),
       },
+      annotations: { readOnlyHint: false, destructiveHint: true },
     },
     ({ workspaceId, action, email, reason }) =>
       runTool(async () => {
@@ -629,6 +632,7 @@ export function registerWorkspaceMcpTools(server, authContext) {
         scopes: z.array(z.string()).optional(),
         expiresInDays: z.number().int().min(1).max(365).optional(),
       },
+      annotations: { readOnlyHint: false, destructiveHint: false },
     },
     ({ name, waitlistId, workspaceId, scopes, expiresInDays }) =>
       runTool(async () => {
@@ -682,6 +686,7 @@ export function registerWorkspaceMcpTools(server, authContext) {
       title: "Revoke API Key",
       description: "Revokes an API key immediately by key ID.",
       inputSchema: { apiKeyId: z.string().min(1) },
+      annotations: { readOnlyHint: false, destructiveHint: true },
     },
     ({ apiKeyId }) =>
       runTool(async () => {
@@ -742,6 +747,7 @@ export function registerWorkspaceMcpTools(server, authContext) {
         apiToken: z.string().optional().describe("Cloudflare API token"),
         testRecipientEmail: z.string().optional(),
       },
+      annotations: { readOnlyHint: false, destructiveHint: true },
     },
     ({
       workspaceId,

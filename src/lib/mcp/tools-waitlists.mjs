@@ -208,6 +208,7 @@ export function registerWaitlistMcpTools(server, authContext) {
         showReferrals: z.boolean().optional().default(true),
         sendEmailsToSubscribers: z.boolean().optional().default(true),
       },
+      annotations: { readOnlyHint: false, destructiveHint: false },
     },
     (args) =>
       runTool(async () => {
@@ -247,7 +248,7 @@ export function registerWaitlistMcpTools(server, authContext) {
         showReferrals: z.boolean().optional(),
         sendEmailsToSubscribers: z.boolean().optional(),
       },
-      annotations: { idempotentHint: true },
+      annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true },
     },
     ({ waitlistId, ...updates }) =>
       runTool(async () => {
@@ -332,6 +333,7 @@ export function registerWaitlistMcpTools(server, authContext) {
           .describe("Full or partial snapshot fields to merge/save"),
         expectedRevision: z.number().int().optional(),
       },
+      annotations: { readOnlyHint: false, destructiveHint: false },
     },
     ({ waitlistId, snapshot, expectedRevision }) =>
       runTool(async () => {
@@ -391,7 +393,7 @@ export function registerWaitlistMcpTools(server, authContext) {
         waitlistId: z.string().min(1),
         form: z.record(z.string(), z.unknown()).describe("Form rule fields to update"),
       },
-      annotations: { idempotentHint: true },
+      annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true },
     },
     ({ waitlistId, form }) =>
       runTool(async () => {
@@ -428,7 +430,7 @@ export function registerWaitlistMcpTools(server, authContext) {
         rewards: z.record(z.string(), z.unknown()).optional(),
         tiers: z.array(z.record(z.string(), z.unknown())).optional(),
       },
-      annotations: { idempotentHint: true },
+      annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true },
     },
     ({ waitlistId, rewards, tiers }) =>
       runTool(async () => {
@@ -486,6 +488,7 @@ export function registerWaitlistMcpTools(server, authContext) {
         waitlistId: z.string().min(1),
         expectedRevision: z.number().int().optional(),
       },
+      annotations: { readOnlyHint: false, destructiveHint: false },
     },
     ({ waitlistId, expectedRevision }) =>
       runTool(async () => {
@@ -525,6 +528,7 @@ export function registerWaitlistMcpTools(server, authContext) {
       description:
         "Pauses a live waitlist (public page shows paused notice and blocks new signups).",
       inputSchema: { waitlistId: z.string().min(1) },
+      annotations: { readOnlyHint: false, destructiveHint: false },
     },
     ({ waitlistId }) =>
       runTool(async () => {
@@ -545,6 +549,7 @@ export function registerWaitlistMcpTools(server, authContext) {
       title: "Rollback Published Waitlist",
       description: "Rolls back the live waitlist page to the previous published snapshot revision.",
       inputSchema: { waitlistId: z.string().min(1) },
+      annotations: { readOnlyHint: false, destructiveHint: true },
     },
     ({ waitlistId }) =>
       runTool(async () => {
@@ -566,7 +571,7 @@ export function registerWaitlistMcpTools(server, authContext) {
       description:
         "Permanently deletes a waitlist and all associated subscribers, broadcasts, and webhooks.",
       inputSchema: { waitlistId: z.string().min(1) },
-      annotations: { destructiveHint: true },
+      annotations: { readOnlyHint: false, destructiveHint: true },
     },
     ({ waitlistId }) =>
       runTool(async () => {
@@ -640,6 +645,7 @@ export function registerWaitlistMcpTools(server, authContext) {
         action: z.enum(["get", "connect", "verify", "remove"]).default("get"),
         hostname: z.string().optional().describe("Required for action='connect'"),
       },
+      annotations: { readOnlyHint: false, destructiveHint: true },
     },
     ({ waitlistId, action, hostname }) =>
       runTool(async () => {
@@ -677,6 +683,7 @@ export function registerWaitlistMcpTools(server, authContext) {
         apiKey: z.string().optional(),
         testRecipientEmail: z.string().optional(),
       },
+      annotations: { readOnlyHint: false, destructiveHint: true },
     },
     ({ waitlistId, action, fromEmail, apiKey, testRecipientEmail }) =>
       runTool(async () => {
@@ -721,6 +728,7 @@ export function registerWaitlistMcpTools(server, authContext) {
           .array(z.enum(["MILESTONE_COUNTS", "VERIFIED_SIGNUP", "REWARD_TIER_UNLOCKED"]))
           .optional(),
       },
+      annotations: { readOnlyHint: false, destructiveHint: true },
     },
     ({ waitlistId, channel, action, webhookUrl, triggers }) =>
       runTool(async () => {
@@ -821,6 +829,7 @@ export function registerWaitlistMcpTools(server, authContext) {
         events: z.array(z.string()).min(1),
         includeSubscriberData: z.boolean().optional().default(false),
       },
+      annotations: { readOnlyHint: false, destructiveHint: false },
     },
     ({ waitlistId, name, url, events, includeSubscriberData }) =>
       runTool(async () => {
@@ -856,6 +865,7 @@ export function registerWaitlistMcpTools(server, authContext) {
         enabled: z.boolean().optional(),
         includeSubscriberData: z.boolean().optional(),
       },
+      annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true },
     },
     ({ waitlistId, subscriptionId, ...updates }) =>
       runTool(async () => {
@@ -883,6 +893,7 @@ export function registerWaitlistMcpTools(server, authContext) {
         waitlistId: z.string().min(1),
         subscriptionId: z.string().min(1),
       },
+      annotations: { readOnlyHint: false, destructiveHint: false },
     },
     ({ waitlistId, subscriptionId }) =>
       runTool(async () => {
@@ -907,6 +918,7 @@ export function registerWaitlistMcpTools(server, authContext) {
         waitlistId: z.string().min(1),
         subscriptionId: z.string().min(1),
       },
+      annotations: { readOnlyHint: false, destructiveHint: true },
     },
     ({ waitlistId, subscriptionId }) =>
       runTool(async () => {
@@ -933,6 +945,7 @@ export function registerWaitlistMcpTools(server, authContext) {
         deliveryId: z.string().optional().describe("Required for action='replay'"),
         limit: z.number().int().min(1).max(100).optional().default(50),
       },
+      annotations: { readOnlyHint: false, destructiveHint: false },
     },
     ({ waitlistId, subscriptionId, action, deliveryId, limit }) =>
       runTool(async () => {
@@ -980,7 +993,7 @@ export function registerWaitlistMcpTools(server, authContext) {
         waitlistId: z.string().min(1),
         subscriptionId: z.string().min(1),
       },
-      annotations: { destructiveHint: true },
+      annotations: { readOnlyHint: false, destructiveHint: true },
     },
     ({ waitlistId, subscriptionId }) =>
       runTool(async () => {

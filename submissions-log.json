@@ -225,9 +225,9 @@
     "submissionUrl": "https://glama.ai/mcp/servers",
     "wave": "Mindcase evergreen directories & MCP registries",
     "status": "live",
-    "liveOrPrUrl": null,
+    "liveOrPrUrl": "https://glama.ai/mcp/connectors/com.waitlyze/waitlyze",
     "submittedAt": "2026-11-26T10:12:00Z",
-    "notes": "Approved and live on Glama as a hosted MCP connector (https://waitlyze.com/mcp). Added public GET /mcp/.well-known/glama.json claim endpoint in repo; click Check endpoint file in Glama once deployed to production."
+    "notes": "Approved, live, and ownership-verified on Glama (https://glama.ai/mcp/connectors/com.waitlyze/waitlyze). Added Glama score badge to README.md, fixed unauthenticated resources/list -32603 error for health check & tool discovery, and added readOnlyHint/destructiveHint annotations across all 68 MCP tools."
   },
   {
     "name": "cursor.directory",

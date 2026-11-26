@@ -182,6 +182,13 @@ export function registerWaitlyzeResources(server, authContext) {
     "waitlist_detail",
     new ResourceTemplate("waitlyze://waitlists/{waitlistId}", {
       list: async () => {
+        if (
+          !authContext?.authenticated ||
+          !authContext.userId ||
+          !apiKeyHasScope(authContext.scopes, "waitlist:read")
+        ) {
+          return { resources: [] };
+        }
         const scope = resourceScope(authContext);
         const rows = await prisma.waitList.findMany({
           where: scope,
