@@ -178,5 +178,335 @@
     "liveOrPrUrl": null,
     "submittedAt": "2026-11-22T14:37:05Z",
     "notes": "Free listing form submitted; redirected to submitter dashboard showing Waitlyze status as waiting approval. Entered deal_price=71 (integer step) with exact $71.40 noted in headline and terms."
+  },
+  {
+    "name": "mcpservers.org",
+    "url": "https://mcpservers.org",
+    "submissionUrl": "https://mcpservers.org/submit",
+    "wave": "Mindcase evergreen directories & MCP registries",
+    "status": "submitted_pending_review",
+    "liveOrPrUrl": null,
+    "submittedAt": "2026-11-26T09:34:32Z",
+    "notes": "Free $0 plan submitted with category=marketing, registryName=io.github.FALAK097/waitlyze, GitHub repo, remoteUrl=https://waitlyze.com/mcp (OAuth). Confirmation: Your MCP server \"Waitlyze\" has been submitted successfully. Review within 2 weeks."
+  },
+  {
+    "name": "AgenticSkills",
+    "url": "https://agenticskills.io",
+    "submissionUrl": "https://agenticskills.io/submit?type=mcp",
+    "wave": "Mindcase evergreen directories & MCP registries",
+    "status": "submitted_pending_review",
+    "liveOrPrUrl": null,
+    "submittedAt": "2026-11-26T09:37:07Z",
+    "notes": "Free MCP server form submitted with category=developer-tools, GitHub repo, remote MCP URL (https://waitlyze.com/mcp), and client compatibility (Claude, ChatGPT, Cursor, Any MCP Client). Confirmation: MCP Server Submitted! In weekly review queue."
+  },
+  {
+    "name": "Index by Dodo Payments",
+    "url": "https://index.dodopayments.com",
+    "submissionUrl": "https://index.dodopayments.com/submit",
+    "wave": "Mindcase evergreen directories & MCP registries",
+    "status": "needs_login",
+    "liveOrPrUrl": null,
+    "submittedAt": null,
+    "notes": "Free open-source fields completed in session; clicking Submit opened Sign-in modal requiring email magic link or Google OAuth."
+  },
+  {
+    "name": "Science of Apps Launchpad",
+    "url": "https://launchpad.scienceofapps.com",
+    "submissionUrl": "https://launchpad.scienceofapps.com/founder/new",
+    "wave": "Mindcase evergreen directories & MCP registries",
+    "status": "needs_login",
+    "liveOrPrUrl": null,
+    "submittedAt": null,
+    "notes": "Redirected to https://launchpad.scienceofapps.com/signup?next=/founder/new requiring free founder account creation."
+  },
+  {
+    "name": "Glama",
+    "url": "https://glama.ai",
+    "submissionUrl": "https://glama.ai/mcp/servers",
+    "wave": "Mindcase evergreen directories & MCP registries",
+    "status": "live",
+    "liveOrPrUrl": null,
+    "submittedAt": "2026-11-26T10:12:00Z",
+    "notes": "Approved and live on Glama as a hosted MCP connector (https://waitlyze.com/mcp). Added public GET /mcp/.well-known/glama.json claim endpoint in repo; click Check endpoint file in Glama once deployed to production."
+  },
+  {
+    "name": "cursor.directory",
+    "url": "https://cursor.directory",
+    "submissionUrl": "https://cursor.directory/plugins/new",
+    "wave": "Mindcase evergreen directories & MCP registries",
+    "status": "needs_login",
+    "liveOrPrUrl": null,
+    "submittedAt": null,
+    "notes": "Redirected to https://cursor.directory/login?next=/plugins/new (GitHub or Google sign-in required); also links to https://github.com/cursor/community-plugins."
+  },
+  {
+    "name": "Dang.ai",
+    "url": "https://dang.ai",
+    "submissionUrl": "https://dang.ai/login?next=%2Fpricing%3Fplan%3Dfree%23plan-free",
+    "wave": "Mindcase evergreen directories & MCP registries",
+    "status": "needs_login",
+    "liveOrPrUrl": null,
+    "submittedAt": null,
+    "notes": "Free $0 path exists on /pricing (requires passwordless email sign-in, a crawlable backlink to dang.ai, 1 category, and up to 4-week review); paid tiers are $49 Basic and $49+$19/mo Pro."
+  },
+  {
+    "name": "AI Agent Store",
+    "url": "https://aiagentstore.ai",
+    "submissionUrl": "https://aiagentstore.ai/new-agent",
+    "wave": "Mindcase evergreen directories & MCP registries",
+    "status": "needs_login",
+    "liveOrPrUrl": null,
+    "submittedAt": null,
+    "notes": "Redirected to https://aiagentstore.ai/login?to=%2Fnew-agent requiring sign-in."
+  },
+  {
+    "name": "SpotSaaS",
+    "url": "https://www.spotsaas.com",
+    "submissionUrl": "https://partners.spotsaas.com/listing/new",
+    "wave": "Mindcase evergreen directories & MCP registries",
+    "status": "needs_login",
+    "liveOrPrUrl": null,
+    "submittedAt": null,
+    "notes": "Apply to get listed redirected to https://partners.spotsaas.com/login?next=%2Flisting%2Fnew (Vendor Portal sign-in required)."
+  },
+  {
+    "name": "StartupBase",
+    "url": "https://startupbase.io",
+    "submissionUrl": "https://startupbase.io/submit",
+    "wave": "Mindcase evergreen directories & MCP registries",
+    "status": "needs_login",
+    "liveOrPrUrl": null,
+    "submittedAt": null,
+    "notes": "Free $0 tier available (requires StartupBase badge on site and ~4-5 week queue; Premium is $39); /submit redirected to https://startupbase.io/login?origin=%2Fsubmit."
+  },
+  {
+    "name": "CodeHype",
+    "url": "https://www.codehype.ai",
+    "submissionUrl": "https://www.codehype.ai/submit",
+    "wave": "Mindcase evergreen directories & MCP registries",
+    "status": "needs_login",
+    "liveOrPrUrl": null,
+    "submittedAt": null,
+    "notes": "Free launch available, but /submit states a free account (Sign in) is required to upload required logo media and launch; also runs weekly launch leaderboards."
+  },
+  {
+    "name": "Launch Vault",
+    "url": "https://www.launchvault.dev",
+    "submissionUrl": "https://www.launchvault.dev/projects/submit",
+    "wave": "Mindcase evergreen directories & MCP registries",
+    "status": "needs_login",
+    "liveOrPrUrl": null,
+    "submittedAt": null,
+    "notes": "Free submissions offered, but /projects/submit redirected to https://www.launchvault.dev/sign-in?redirect=/projects/submit; also uses weekly launch periods."
+  },
+  {
+    "name": "StartupBlink",
+    "url": "https://www.startupblink.com",
+    "submissionUrl": "https://www.startupblink.com/startups/add",
+    "wave": "Mindcase evergreen directories & MCP registries",
+    "status": "needs_user_input",
+    "liveOrPrUrl": null,
+    "submittedAt": null,
+    "notes": "No login or CAPTCHA on /startups/add, but requires City* selection on the Global Startup Ecosystem Map (not defined in repo metadata) plus optional email-domain verification."
+  },
+  {
+    "name": "APIs.io",
+    "url": "https://apis.io",
+    "submissionUrl": "https://apis.io/add",
+    "wave": "Mindcase evergreen directories & MCP registries",
+    "status": "blocked_captcha",
+    "liveOrPrUrl": null,
+    "submittedAt": null,
+    "notes": "Free API/MCP form gated by Cloudflare Turnstile (cf-turnstile-response); page also lists manual email fallback info@apis.io."
+  },
+  {
+    "name": "Future Tools",
+    "url": "https://futuretools.io",
+    "submissionUrl": "https://futuretools.io/submit-a-tool",
+    "wave": "Mindcase evergreen directories & MCP registries",
+    "status": "blocked_captcha",
+    "liveOrPrUrl": null,
+    "submittedAt": null,
+    "notes": "Free submission form gated by Cloudflare Turnstile (cf-turnstile-response)."
+  },
+  {
+    "name": "CrozDesk",
+    "url": "https://crozdesk.com",
+    "submissionUrl": "https://crozdesk.com/software/submit",
+    "wave": "Mindcase evergreen directories & MCP registries",
+    "status": "blocked_captcha",
+    "liveOrPrUrl": null,
+    "submittedAt": null,
+    "notes": "Gated on initial page load by Cloudflare verification challenge (Just a moment...)."
+  },
+  {
+    "name": "Tracxn",
+    "url": "https://tracxn.com",
+    "submissionUrl": "https://tracxn.com/listyourstartup",
+    "wave": "Mindcase evergreen directories & MCP registries",
+    "status": "blocked_captcha",
+    "liveOrPrUrl": null,
+    "submittedAt": null,
+    "notes": "Free startup submission form gated by Google reCAPTCHA (g-recaptcha-response)."
+  },
+  {
+    "name": "PulseMCP",
+    "url": "https://www.pulsemcp.com",
+    "submissionUrl": "https://www.pulsemcp.com/submit",
+    "wave": "Mindcase evergreen directories & MCP registries",
+    "status": "skipped_paused",
+    "liveOrPrUrl": null,
+    "submittedAt": null,
+    "notes": "Web submissions temporarily paused (notice updated Sept 3, 2026); recommends publishing server.json (io.github.FALAK097/waitlyze) to the Official MCP Registry for automatic pickup."
+  },
+  {
+    "name": "Smithery",
+    "url": "https://www.smithery.ai",
+    "submissionUrl": "https://www.smithery.ai/future",
+    "wave": "Mindcase evergreen directories & MCP registries",
+    "status": "skipped_curated",
+    "liveOrPrUrl": null,
+    "submittedAt": null,
+    "notes": "Self-serve accounts, CLI, SDKs, and MCP Proxy shut down Oct 31, 2026; now a curated non-proxied MCP directory under Arcade (contact ani@smithery.ai)."
+  },
+  {
+    "name": "Startup Resources",
+    "url": "https://startupresources.io",
+    "submissionUrl": "https://startupresources.io/add-resource/",
+    "wave": "Mindcase evergreen directories & MCP registries",
+    "status": "skipped_closed",
+    "liveOrPrUrl": null,
+    "submittedAt": null,
+    "notes": "Embedded Typeform (https://startupresources.typeform.com/to/X4PgTU) displays: This typeform is now closed."
+  },
+  {
+    "name": "MCP Market",
+    "url": "https://mcpmarket.com",
+    "submissionUrl": "https://mcpmarket.com/submit",
+    "wave": "Mindcase evergreen directories & MCP registries",
+    "status": "skipped_paid",
+    "liveOrPrUrl": null,
+    "submittedAt": null,
+    "notes": "Paid-only $29 one-time checkout (Get listed now); no free submission option."
+  },
+  {
+    "name": "All My Faves",
+    "url": "https://allmyfaves.com",
+    "submissionUrl": "https://allmyfaves.com/advertise",
+    "wave": "Mindcase evergreen directories & MCP registries",
+    "status": "skipped_paid",
+    "liveOrPrUrl": null,
+    "submittedAt": null,
+    "notes": "Paid-only category slot placements starting at $79 / 30 days; /contact confirms all site submissions go through /advertise."
+  },
+  {
+    "name": "OpenTools",
+    "url": "https://opentools.ai",
+    "submissionUrl": "https://opentools.ai/friends/launch-tool",
+    "wave": "Mindcase evergreen directories & MCP registries",
+    "status": "skipped_paid",
+    "liveOrPrUrl": null,
+    "submittedAt": null,
+    "notes": "Both Tool listing (/friends/launch-tool) and MCP listing (/friends/launch-mcp) require a paid listing subscription prior to entering details."
+  },
+  {
+    "name": "Aixploria",
+    "url": "https://www.aixploria.com",
+    "submissionUrl": "https://www.aixploria.com/en/add-ai/",
+    "wave": "Mindcase evergreen directories & MCP registries",
+    "status": "skipped_paid",
+    "liveOrPrUrl": null,
+    "submittedAt": null,
+    "notes": "Mindcase directory listing notes paid-only submission ($79/$99); skipped under free-only constraint."
+  },
+  {
+    "name": "AIPURE",
+    "url": "https://aipure.ai",
+    "submissionUrl": "https://aipure.ai",
+    "wave": "Mindcase evergreen directories & MCP registries",
+    "status": "skipped_paid",
+    "liveOrPrUrl": null,
+    "submittedAt": null,
+    "notes": "Mindcase directory listing notes paid-only submission ($69.89/$69.90); skipped under free-only constraint."
+  },
+  {
+    "name": "Stork.ai",
+    "url": "https://www.stork.ai",
+    "submissionUrl": "https://www.stork.ai",
+    "wave": "Mindcase evergreen directories & MCP registries",
+    "status": "skipped_paid",
+    "liveOrPrUrl": null,
+    "submittedAt": null,
+    "notes": "Mindcase directory listing notes paid-only submission ($49); skipped under free-only constraint."
+  },
+  {
+    "name": "mcp.so",
+    "url": "https://mcp.so",
+    "submissionUrl": "https://mcp.so",
+    "wave": "Mindcase evergreen directories & MCP registries",
+    "status": "skipped_paid",
+    "liveOrPrUrl": null,
+    "submittedAt": null,
+    "notes": "Mindcase directory listing notes paid-only submission ($39); skipped under free-only constraint."
+  },
+  {
+    "name": "PoweredbyAI",
+    "url": "https://poweredbyai.app",
+    "submissionUrl": "https://poweredbyai.app",
+    "wave": "Mindcase evergreen directories & MCP registries",
+    "status": "skipped_paid",
+    "liveOrPrUrl": null,
+    "submittedAt": null,
+    "notes": "Mindcase directory listing notes paid-only submission ($11.99); skipped under free-only constraint."
+  },
+  {
+    "name": "Norway Dealroom",
+    "url": "https://norway.dealroom.co",
+    "submissionUrl": "https://norway.dealroom.co",
+    "wave": "Mindcase evergreen directories & MCP registries",
+    "status": "skipped_ineligible",
+    "liveOrPrUrl": null,
+    "submittedAt": null,
+    "notes": "Geographic eligibility mismatch (Norway startups only)."
+  },
+  {
+    "name": "EU-Startups",
+    "url": "https://www.eu-startups.com",
+    "submissionUrl": "https://www.eu-startups.com",
+    "wave": "Mindcase evergreen directories & MCP registries",
+    "status": "skipped_ineligible",
+    "liveOrPrUrl": null,
+    "submittedAt": null,
+    "notes": "Geographic eligibility mismatch (European startups only)."
+  },
+  {
+    "name": "GeekWire Startup Directory",
+    "url": "https://www.geekwire.com",
+    "submissionUrl": "https://www.geekwire.com",
+    "wave": "Mindcase evergreen directories & MCP registries",
+    "status": "skipped_ineligible",
+    "liveOrPrUrl": null,
+    "submittedAt": null,
+    "notes": "Geographic eligibility mismatch (Pacific Northwest startups only)."
+  },
+  {
+    "name": "Slush",
+    "url": "https://www.slush.org",
+    "submissionUrl": "https://www.slush.org",
+    "wave": "Mindcase evergreen directories & MCP registries",
+    "status": "skipped_ineligible",
+    "liveOrPrUrl": null,
+    "submittedAt": null,
+    "notes": "Event/conference ecosystem directory rather than an open free SaaS listing."
+  },
+  {
+    "name": "OECD.AI",
+    "url": "https://oecd.ai",
+    "submissionUrl": "https://oecd.ai",
+    "wave": "Mindcase evergreen directories & MCP registries",
+    "status": "skipped_ineligible",
+    "liveOrPrUrl": null,
+    "submittedAt": null,
+    "notes": "Policy/institutional AI observatory directory; Waitlyze is pre-launch waitlist infrastructure rather than an institutional AI policy tool."
   }
 ]
