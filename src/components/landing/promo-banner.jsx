@@ -21,6 +21,22 @@ const TOP_DISMISS_STORAGE_KEY = `wl_promo_dismissed_${WAITLYZE_BFCM_PROMO.id}`;
 const APP_DISMISS_STORAGE_KEY = `wl_app_promo_dismissed_${WAITLYZE_BFCM_PROMO.id}`;
 export const REDEEM_PROMO_EVENT = "waitlyze:redeem-promo";
 
+function getPromoTimeRemaining(now = Date.now()) {
+  const totalMs = Math.max(0, Date.parse(WAITLYZE_BFCM_PROMO.expiresAt) - now);
+  const totalSeconds = Math.floor(totalMs / 1000);
+
+  return {
+    days: Math.floor(totalSeconds / 86_400),
+    hours: Math.floor((totalSeconds % 86_400) / 3_600),
+    minutes: Math.floor((totalSeconds % 3_600) / 60),
+    seconds: totalSeconds % 60,
+  };
+}
+
+function formatCountdownPart(value) {
+  return String(value).padStart(2, "0");
+}
+
 async function copyPromoCodeToClipboard(code) {
   try {
     if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
@@ -45,6 +61,7 @@ export default function PromoBanner({
   const [copyStatus, setCopyStatus] = useState("idle");
   const [redeemedInline, setRedeemedInline] = useState(false);
   const [dismissed, setDismissed] = useState(false);
+  const [timeRemaining, setTimeRemaining] = useState(null);
   const copyTimerRef = useRef(null);
   const redeemTimerRef = useRef(null);
 
@@ -72,6 +89,19 @@ export default function PromoBanner({
       if (redeemTimerRef.current) window.clearTimeout(redeemTimerRef.current);
     };
   }, []);
+
+  useEffect(() => {
+    if (!promoActive) return;
+
+    function syncCountdown() {
+      setTimeRemaining(getPromoTimeRemaining());
+    }
+
+    syncCountdown();
+    const timer = window.setInterval(syncCountdown, 1000);
+
+    return () => window.clearInterval(timer);
+  }, [promoActive]);
 
   if (!promoActive || dismissed) return null;
 
@@ -221,6 +251,26 @@ export default function PromoBanner({
                   : ""}
             </span>
           </button>
+
+          {timeRemaining && (
+            <span
+              role="timer"
+              aria-live="off"
+              aria-label={`Sale ends in ${timeRemaining.days} days, ${timeRemaining.hours} hours, ${timeRemaining.minutes} minutes, and ${timeRemaining.seconds} seconds`}
+              className="inline-flex min-h-7 items-center gap-1.5 rounded-md bg-product-bg-inset px-2.5 py-0.5 text-xs whitespace-nowrap text-product-text-secondary"
+            >
+              <span className="font-medium">Ends in</span>
+              <span
+                aria-hidden="true"
+                className="font-product-mono font-semibold tracking-wide text-product-text-primary tabular-nums"
+              >
+                {formatCountdownPart(timeRemaining.days)}d&nbsp;
+                {formatCountdownPart(timeRemaining.hours)}h&nbsp;
+                {formatCountdownPart(timeRemaining.minutes)}m&nbsp;
+                {formatCountdownPart(timeRemaining.seconds)}s
+              </span>
+            </span>
+          )}
         </div>
 
         <div className="flex shrink-0 items-center gap-2">
