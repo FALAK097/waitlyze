@@ -166,6 +166,13 @@ export async function POST(request, { params }) {
       message: "Upgrade your plan to invite more workspace members.",
     });
 
+    await consumePublicBudget(prisma, {
+      kind: "invitation",
+      campaignId: wsCheck.workspaceId,
+      actorId: authContext.userId,
+      email,
+    });
+
     const token = randomBytes(32).toString("base64url");
     const tokenHash = hashInvitationToken(token);
     const encrypted = encryptIntegrationSecret(token);
@@ -182,13 +189,6 @@ export async function POST(request, { params }) {
         expiresAt: invitationExpiry(now),
         createdByUserId: authContext.userId,
       },
-    });
-
-    await consumePublicBudget(prisma, {
-      kind: "invitation",
-      campaignId: wsCheck.workspaceId,
-      actorId: authContext.userId,
-      email,
     });
 
     const base = new URL(env.BETTER_AUTH_URL);

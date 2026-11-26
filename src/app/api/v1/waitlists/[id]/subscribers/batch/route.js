@@ -30,6 +30,7 @@ export async function POST(request, { params }) {
     id: true,
     workspaceId: true,
     name: true,
+    status: true,
   });
   if (check.error) return check.error;
 

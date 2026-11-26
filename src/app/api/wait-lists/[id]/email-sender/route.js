@@ -88,6 +88,8 @@ export async function PUT(request, { params }) {
     return NextResponse.json({ error: "Secret encryption is not configured." }, { status: 503 });
   try {
     const body = await request.json();
+    if (!body || typeof body !== "object")
+      return NextResponse.json({ error: "Enter valid sender details." }, { status: 400 });
     const fromEmail = typeof body.fromEmail === "string" ? body.fromEmail.trim() : "";
     const apiKey = typeof body.apiKey === "string" ? body.apiKey.trim() : "";
     const existing = await prisma.waitlistEmailSender.findUnique({

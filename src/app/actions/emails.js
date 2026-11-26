@@ -5,7 +5,7 @@ import { headers } from "next/headers";
 import { Resend } from "resend";
 
 import { Prisma } from "@/generated/prisma/client";
-import { getWorkspaceEntitlements } from "@/lib/billing/plans.mjs";
+import { getWorkspaceEntitlements, WorkspacePlanError } from "@/lib/billing/plans.mjs";
 import { getCampaignPosition } from "@/lib/campaigns/referral-position.mjs";
 import { toSqliteIso } from "@/lib/db/sqlite-helpers.mjs";
 import { escapeHtmlText, renderEmailMarkdown } from "@/lib/email-markdown.mjs";
@@ -31,6 +31,7 @@ import prisma from "@/lib/prisma";
 import { consumePublicBudget, PublicRateLimitError } from "@/lib/security/public-rate-limit.mjs";
 import { AUDIT_ACTIONS, recordWaitlistAuditEvent } from "@/lib/workspaces/audit.mjs";
 import { requireAuth, requireCampaign, requireCampaignFeature } from "@/lib/workspaces/authorize";
+import { AccessError } from "@/lib/workspaces/service.mjs";
 
 function renderLegacyTemplateEmail({ template, waitList, variables }) {
   const replaceVars = (text) =>
@@ -658,8 +659,16 @@ export async function getBroadcastContent(waitListId, broadcastId) {
 }
 
 export async function createBroadcastDraft(waitListId) {
-  await requireAuth();
-  const { campaign } = await requireCampaignFeature(waitListId, "sendEmail", "emailMarketing");
+  let campaign;
+  try {
+    await requireAuth();
+    ({ campaign } = await requireCampaignFeature(waitListId, "sendEmail", "emailMarketing"));
+  } catch (error) {
+    if (error instanceof AccessError || error instanceof WorkspacePlanError) {
+      return { error: error.message };
+    }
+    throw error;
+  }
   const draft = await prisma.marketingBroadcast.create({
     data: {
       waitListId: campaign.id,
@@ -694,7 +703,14 @@ export async function saveBroadcastDraft({ waitListId, broadcastId, data }) {
       message:
         value?.error || "Keep the subject, preview, and message within their character limits.",
     };
-  await requireCampaignFeature(waitListId, "sendEmail", "emailMarketing");
+  try {
+    await requireCampaignFeature(waitListId, "sendEmail", "emailMarketing");
+  } catch (error) {
+    if (error instanceof AccessError || error instanceof WorkspacePlanError) {
+      return { success: false, message: error.message };
+    }
+    throw error;
+  }
   const updated = await prisma.marketingBroadcast.updateMany({
     where: { id: broadcastId, waitListId, status: "DRAFT" },
     data: value,

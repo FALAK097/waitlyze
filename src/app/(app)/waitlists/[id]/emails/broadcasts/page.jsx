@@ -1,5 +1,3 @@
-import { notFound } from "next/navigation";
-
 import {
   getBroadcastRecipients,
   listBroadcasts,
@@ -7,11 +5,13 @@ import {
 } from "@/app/actions/emails";
 import { ContentLayout } from "@/components/dashboard/content-layout";
 import { BroadcastManager } from "@/components/email/broadcast-manager";
+import { EmailLockedState } from "@/components/product/email-locked-state";
+import { getWorkspaceEntitlements } from "@/lib/billing/plans.mjs";
 import { hasCustomerEmailSender } from "@/lib/email/sender-resolution.mjs";
 import { getOrCreateTemplatesForCampaign } from "@/lib/emails/templates.mjs";
 import { env } from "@/lib/env.mjs";
 import prisma from "@/lib/prisma";
-import { requireCampaignFeature } from "@/lib/workspaces/authorize";
+import { requireCampaignPage } from "@/lib/workspaces/authorize";
 
 export const metadata = {
   title: "Broadcasts",
@@ -20,8 +20,18 @@ export const metadata = {
 
 export default async function BroadcastsPage({ params, searchParams }) {
   const [{ id }, { broadcast: requestedBroadcastId }] = await Promise.all([params, searchParams]);
-  const { campaign, scope } = await requireCampaignFeature(id, "sendEmail", "emailMarketing");
-  if (!campaign) return notFound();
+  const { campaign, workspace, role, scope } = await requireCampaignPage(id, "sendEmail");
+  const entitlements = await getWorkspaceEntitlements(prisma, workspace.id);
+  if (!entitlements.emailMarketing) {
+    return (
+      <EmailLockedState
+        title="Broadcasts"
+        waitlistName={campaign.name}
+        workspaceId={workspace.id}
+        canManageBilling={role === "OWNER"}
+      />
+    );
+  }
   const [
     { broadcasts, selectedBroadcast, hasMore, nextCursor },
     initialSegments,

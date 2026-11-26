@@ -115,7 +115,14 @@ export const GET = async (req) => {
 export const POST = async (req) => {
   let body;
   try {
-    body = await req.json();
+    try {
+      body = await req.json();
+    } catch {
+      return NextResponse.json({ message: "Invalid JSON body." }, { status: 400 });
+    }
+    if (!body || typeof body !== "object") {
+      return NextResponse.json({ message: "Invalid JSON body." }, { status: 400 });
+    }
     if (
       typeof body?.waitListId !== "string" ||
       !body.waitListId ||

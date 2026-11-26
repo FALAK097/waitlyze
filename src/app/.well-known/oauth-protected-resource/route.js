@@ -1,4 +1,4 @@
-import { getMcpResourceUrl, MCP_SCOPES } from "@/lib/mcp/config.mjs";
+import { getMcpBaseUrl, getMcpResourceUrl, MCP_SCOPES } from "@/lib/mcp/config.mjs";
 
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
@@ -7,7 +7,7 @@ const CORS_HEADERS = {
 };
 
 export async function GET() {
-  const baseUrl = process.env.BETTER_AUTH_URL || "https://waitlyze.com";
+  const baseUrl = getMcpBaseUrl();
   const resource = getMcpResourceUrl();
 
   const metadata = {

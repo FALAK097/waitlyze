@@ -21,7 +21,7 @@ import { env } from "@/lib/env.mjs";
 import prisma from "@/lib/prisma";
 import { AUDIT_ACTIONS, recordAuditEvent } from "@/lib/workspaces/audit.mjs";
 import { currentWorkspace } from "@/lib/workspaces/current";
-import { createWorkspaceService } from "@/lib/workspaces/service.mjs";
+import { AccessError, createWorkspaceService } from "@/lib/workspaces/service.mjs";
 
 /**
  * Central auth gate for billing actions (they are public POST endpoints).
@@ -37,15 +37,13 @@ async function checkAuth() {
 
 /** Ensures the caller signs in and can view the workspace; ownership is re-checked per call. */
 async function ownerContext(session, workspaceId) {
-  const { workspace } = workspaceId
-    ? {
-        workspace: await createWorkspaceService(prisma).requireAccess(
-          session.user.id,
-          workspaceId,
-          "manageOwnership",
-        ),
-      }
-    : await currentWorkspace();
+  const workspace = workspaceId
+    ? await prisma.workspace.findFirst({
+        where: { id: workspaceId, members: { some: { userId: session.user.id } } },
+        select: { id: true, name: true },
+      })
+    : (await currentWorkspace()).workspace;
+  if (!workspace) throw new AccessError();
   const membership = await prisma.workspaceMember.findUnique({
     where: { workspaceId_userId: { workspaceId: workspace.id, userId: session.user.id } },
     select: { role: true },
@@ -391,6 +389,8 @@ export async function createProCheckout(interval, workspaceId) {
     // For ambiguous errors, preserve the creator lease. Another request must
     // not issue a second POST while Dodo may have created a session; no URL is
     // returned until its session ID and URL are stored.
+    if (error instanceof AccessError)
+      return { error: "Only the workspace owner can manage billing." };
     if (error instanceof BillingGateError) return { error: error.message };
     if (error instanceof DodoConfigurationError) return { error: error.message };
     console.error("Could not create Dodo checkout", error?.name || "unknown error");
@@ -423,6 +423,8 @@ export async function createBillingPortal(workspaceId) {
     });
     return { portalUrl };
   } catch (error) {
+    if (error instanceof AccessError)
+      return { error: "Only the workspace owner can manage billing." };
     if (error instanceof BillingGateError) return { error: error.message };
     if (error instanceof DodoConfigurationError) return { error: error.message };
     console.error("Could not create Dodo billing portal", error?.name || "unknown error");
@@ -589,6 +591,8 @@ export async function transferProSubscription(workspaceId) {
     revalidatePath("/settings");
     return { success: `Pro moved to this workspace from ${source.name}.` };
   } catch (error) {
+    if (error instanceof AccessError)
+      return { error: "Only the workspace owner can manage billing." };
     if (error instanceof BillingGateError) return { error: error.message };
     if (error instanceof DodoConfigurationError) return { error: error.message };
     console.error("Could not move Pro between workspaces", error?.name || "unknown error");

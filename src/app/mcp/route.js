@@ -1,6 +1,7 @@
 import { createMcpHandler } from "@modelcontextprotocol/server";
 
 import { resolveMcpAuth } from "@/lib/mcp/auth.js";
+import { getMcpBaseUrl } from "@/lib/mcp/config.mjs";
 import { createWaitlyzeMcpServer } from "@/lib/mcp/server.js";
 import prisma from "@/lib/prisma.js";
 import { checkRateLimit } from "@/lib/rate-limit.js";
@@ -25,7 +26,7 @@ const mcpHandler = createMcpHandler(
 );
 
 function applyCors(response) {
-  const baseUrl = process.env.BETTER_AUTH_URL || "https://waitlyze.com";
+  const baseUrl = getMcpBaseUrl();
   const headers = new Headers(response.headers);
   for (const [key, value] of Object.entries(CORS_HEADERS)) {
     headers.set(key, value);
@@ -75,7 +76,7 @@ async function normalizeRequest(request) {
   const url = request.url;
   const newHeaders = new Headers(request.headers);
   const accept = newHeaders.get("accept") || "";
-  if (!accept.includes("text/event-stream")) {
+  if (!accept.includes("application/json") || !accept.includes("text/event-stream")) {
     newHeaders.set("accept", "application/json, text/event-stream");
   }
   const bodyText = await request.text();
@@ -107,7 +108,7 @@ export async function POST(request) {
     // and hits the WeakMap cache inside resolveMcpAuth.
     const authContext = await resolveMcpAuth(req);
 
-    const baseUrl = process.env.BETTER_AUTH_URL || "https://waitlyze.com";
+    const baseUrl = getMcpBaseUrl();
     const isToolCall = parsedBody?.method === "tools/call";
 
     if (!authContext.authenticated && (hasAuthToken || isToolCall)) {
@@ -151,7 +152,7 @@ export async function POST(request) {
       console.warn("MCP rate limit check skipped:", rateLimitErr?.message || rateLimitErr);
     }
 
-    const response = await mcpHandler.fetch(req, { parsedBody });
+    const response = await mcpHandler.fetch(req, parsedBody !== null ? { parsedBody } : undefined);
     return applyCors(response);
   } catch (error) {
     console.error("MCP handler error:", error);
@@ -186,7 +187,7 @@ export async function GET(request) {
     const authContext = await resolveMcpAuth(request);
 
     if (!authContext.authenticated && hasAuthToken) {
-      const baseUrl = process.env.BETTER_AUTH_URL || "https://waitlyze.com";
+      const baseUrl = getMcpBaseUrl();
       return createAuthChallenge({
         baseUrl,
         error: authContext.error,
@@ -198,7 +199,7 @@ export async function GET(request) {
     return applyCors(response);
   }
 
-  const baseUrl = process.env.BETTER_AUTH_URL || "https://waitlyze.com";
+  const baseUrl = getMcpBaseUrl();
   return applyCors(
     new Response(
       JSON.stringify(

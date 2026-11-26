@@ -1,3 +1,5 @@
+import { DeleteObjectCommand } from "@aws-sdk/client-s3";
+
 import { formatSafeDomain } from "@/lib/api/infra-ops.mjs";
 import {
   publicBaseUrl,
@@ -12,7 +14,11 @@ import {
   v1Json,
 } from "@/lib/api/v1-auth.mjs";
 import { mapOpError } from "@/lib/api/v1-errors.mjs";
+import { deleteCloudflareHostname } from "@/lib/domains/provider.mjs";
+import { env } from "@/lib/env.mjs";
 import prisma from "@/lib/prisma.js";
+import { r2 } from "@/lib/r2";
+import { purgePublicAsset } from "@/lib/uploads/public-cache";
 import { AUDIT_ACTIONS, recordAuditEvent } from "@/lib/workspaces/audit.mjs";
 
 export function OPTIONS() {
@@ -42,6 +48,8 @@ export async function GET(request, { params }) {
     updatedAt: true,
     customDomain: {
       select: {
+        id: true,
+        providerId: true,
         hostname: true,
         status: true,
         verification: true,
@@ -139,11 +147,36 @@ export async function DELETE(request, { params }) {
     id: true,
     workspaceId: true,
     name: true,
+    logoKey: true,
   });
   if (check.error) return check.error;
 
   try {
+    const domain = await prisma.customDomain.findUnique({
+      where: { waitListId: check.waitlist.id },
+      select: { hostname: true, providerId: true },
+    });
+    if (domain) {
+      try {
+        await deleteCloudflareHostname({
+          providerId: domain.providerId,
+          hostname: domain.hostname,
+        });
+      } catch {
+        console.error("Cloudflare hostname cleanup before waitlist deletion failed.");
+      }
+    }
     await prisma.waitList.delete({ where: { id: check.waitlist.id } });
+    if (check.waitlist.logoKey) {
+      try {
+        await r2.send(
+          new DeleteObjectCommand({ Bucket: env.R2_BUCKET_NAME, Key: check.waitlist.logoKey }),
+        );
+        await purgePublicAsset(check.waitlist.logoKey);
+      } catch {
+        console.error("Deleted waitlist has a stored logo pending cleanup.");
+      }
+    }
     await recordAuditEvent(prisma, {
       workspaceId: check.waitlist.workspaceId,
       userId: authContext.userId,

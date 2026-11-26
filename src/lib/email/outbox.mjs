@@ -954,7 +954,7 @@ export async function dispatchPendingOutboxEvents(
       const isVerificationEvent = event.type === "SIGNUP_VERIFICATION_REQUESTED";
       const maxAttempts = isVerificationEvent ? VERIFICATION_MAX_ATTEMPTS : MAX_ATTEMPTS;
       const senderDisconnected = error instanceof CustomerSenderNotConnectedError;
-      const canRetry = senderDisconnected || (transient(error) && attempt < maxAttempts);
+      const canRetry = attempt < maxAttempts && (senderDisconnected || transient(error));
       const delay = senderDisconnected
         ? 15 * 60 * 1000
         : isVerificationEvent

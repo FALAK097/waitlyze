@@ -56,6 +56,8 @@ export async function PUT(request) {
     return NextResponse.json({ error: "Secret encryption is not configured." }, { status: 503 });
   try {
     const body = await request.json();
+    if (!body || typeof body !== "object")
+      return NextResponse.json({ error: "Enter valid connection details." }, { status: 400 });
     const accountId = typeof body.accountId === "string" ? body.accountId.trim() : "";
     const apiToken = typeof body.apiToken === "string" ? body.apiToken.trim() : "";
     const fromEmail = typeof body.fromEmail === "string" ? body.fromEmail.trim() : "";

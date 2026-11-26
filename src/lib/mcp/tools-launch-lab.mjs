@@ -28,9 +28,15 @@ export function registerLaunchLabMcpTools(server) {
       },
       annotations: { readOnlyHint: true, idempotentHint: true },
     },
-    (args) =>
+    ({ invitesPerSharer, inviteConversionPct, ...rest }) =>
       jsonResult({
-        ...calculateViralGrowth(args),
+        ...calculateViralGrowth({
+          ...rest,
+          ...(invitesPerSharer !== undefined ? { clicksPerSharer: invitesPerSharer } : {}),
+          ...(inviteConversionPct !== undefined
+            ? { referredConversionPct: inviteConversionPct }
+            : {}),
+        }),
         toolUrl: `${SITE_URL}/tools/viral-coefficient-calculator`,
       }),
   );

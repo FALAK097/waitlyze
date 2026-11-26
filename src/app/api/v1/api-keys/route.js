@@ -1,5 +1,3 @@
-import { NextResponse } from "next/server";
-
 import {
   authenticateV1,
   resolveV1Workspace,
@@ -7,11 +5,12 @@ import {
   v1Error,
   v1Json,
 } from "@/lib/api/v1-auth.mjs";
+import { mapOpError } from "@/lib/api/v1-errors.mjs";
 import { VALID_API_KEY_SCOPES } from "@/lib/db/sqlite-helpers.mjs";
 import prisma from "@/lib/prisma";
 import { AUDIT_ACTIONS, recordAuditEvent } from "@/lib/workspaces/audit.mjs";
 import { selectedWorkspaceId } from "@/lib/workspaces/current";
-import { campaignScope, createWorkspaceService } from "@/lib/workspaces/service.mjs";
+import { AccessError, campaignScope, createWorkspaceService } from "@/lib/workspaces/service.mjs";
 import { createApiKey, listUserApiKeys } from "@/services/api-key";
 
 export function OPTIONS() {
@@ -19,10 +18,12 @@ export function OPTIONS() {
 }
 
 export async function GET(request) {
+  let budget = null;
   try {
     const authResult = await authenticateV1(request, "workspace:read");
     if (authResult.response) return authResult.response;
-    const { authContext, budget: _budget } = authResult;
+    const { authContext } = authResult;
+    budget = authResult.budget;
 
     const requestedWs = request.nextUrl.searchParams.get("workspaceId");
     const workspaceId =
@@ -46,10 +47,26 @@ export async function GET(request) {
       select: { id: true },
     });
 
+    let workspaceIds = [];
+    if (!authContext.waitlistId) {
+      if (workspaceId) {
+        workspaceIds = [workspaceId];
+      } else {
+        const memberships = await prisma.workspaceMember.findMany({
+          where: {
+            userId: authContext.userId,
+            role: { in: ["OWNER", "ADMIN"] },
+          },
+          select: { workspaceId: true },
+        });
+        workspaceIds = memberships.map((m) => m.workspaceId);
+      }
+    }
+
     const apiKeys = await listUserApiKeys(
       authContext.userId,
       waitlists.map(({ id }) => id),
-      workspaceId && !authContext.waitlistId ? [workspaceId] : [],
+      workspaceIds,
     );
 
     const apiKeysWithMaskedKeys = apiKeys.map(
@@ -83,16 +100,21 @@ export async function GET(request) {
 
     return v1Json(apiKeysWithMaskedKeys, { budget });
   } catch (error) {
+    if (error instanceof AccessError) {
+      return mapOpError(error, budget);
+    }
     console.error("Error fetching API keys:", error);
-    return v1Error(500, "server_error", "Internal server error");
+    return v1Error(500, "server_error", "Internal server error", undefined, budget);
   }
 }
 
 export async function POST(request) {
+  let budget = null;
   try {
     const authResult = await authenticateV1(request, "workspace:write");
     if (authResult.response) return authResult.response;
-    const { authContext, budget: _budget } = authResult;
+    const { authContext } = authResult;
+    budget = authResult.budget;
 
     if (authContext.authType === "api_key" && authContext.waitlistId) {
       return v1Error(403, "forbidden", "Waitlist-scoped API keys cannot create new API keys.");
@@ -179,18 +201,18 @@ export async function POST(request) {
         : "Workspace-scoped API key",
     });
 
-    return NextResponse.json(
+    return v1Json(
       {
-        success: true,
-        data: {
-          ...newApiKey,
-          key: `wl2_${newApiKey.keyId.slice(0, 6)}••••••••`,
-        },
+        ...newApiKey,
+        key: `wl2_${newApiKey.keyId.slice(0, 6)}••••••••`,
       },
-      { status: 201, headers: { "Cache-Control": "private, no-store" } },
+      { status: 201, budget },
     );
   } catch (error) {
+    if (error instanceof AccessError) {
+      return mapOpError(error, budget);
+    }
     console.error("Error creating API key:", error);
-    return v1Error(500, "server_error", "Internal server error", { budget: undefined });
+    return v1Error(500, "server_error", "Internal server error", undefined, budget);
   }
 }

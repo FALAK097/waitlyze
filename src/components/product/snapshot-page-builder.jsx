@@ -728,7 +728,11 @@ export function SnapshotPageBuilder({
   const goToFix = (fix) => {
     if (!fix) return;
     if (fix.surface === "email-sender") {
-      router.push(`/waitlists/${waitList.id}/settings?section=sender`);
+      router.push(
+        waitList.workspaceId
+          ? `/settings?section=integrations&workspaceId=${encodeURIComponent(waitList.workspaceId)}`
+          : "/settings?section=integrations",
+      );
       return;
     }
     if (fix.surface === "referrals") {

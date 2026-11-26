@@ -304,7 +304,7 @@ export function registerWaitlistMcpTools(server, authContext) {
             publicationRevisions: {
               orderBy: { revision: "desc" },
               take: 1,
-              select: { revision: true, snapshot: true, publishedAt: true },
+              select: { revision: true, snapshot: true, createdAt: true },
             },
           },
         );
@@ -349,10 +349,33 @@ export function registerWaitlistMcpTools(server, authContext) {
             templateSnapshot: true,
           },
         );
+        const current = parseTemplateSnapshotOrDefault(waitlist);
+        const mergedSnapshot = {
+          ...current,
+          ...snapshot,
+          ...(snapshot?.brand && typeof snapshot.brand === "object"
+            ? { brand: { ...current.brand, ...snapshot.brand } }
+            : {}),
+          ...(snapshot?.theme && typeof snapshot.theme === "object"
+            ? { theme: { ...current.theme, ...snapshot.theme } }
+            : {}),
+          ...(snapshot?.form && typeof snapshot.form === "object"
+            ? { form: { ...current.form, ...snapshot.form } }
+            : {}),
+          ...(snapshot?.rewards && typeof snapshot.rewards === "object"
+            ? { rewards: { ...current.rewards, ...snapshot.rewards } }
+            : {}),
+          ...(snapshot?.statusPage && typeof snapshot.statusPage === "object"
+            ? { statusPage: { ...current.statusPage, ...snapshot.statusPage } }
+            : {}),
+          ...(snapshot?.seo && typeof snapshot.seo === "object"
+            ? { seo: { ...current.seo, ...snapshot.seo } }
+            : {}),
+        };
         return updateWaitlistSnapshotOp({
           userId: authContext.userId,
           waitlist,
-          snapshot,
+          snapshot: mergedSnapshot,
           expectedRevision,
         });
       }),
@@ -694,7 +717,9 @@ export function registerWaitlistMcpTools(server, authContext) {
         channel: z.enum(["slack", "discord"]),
         action: z.enum(["get", "configure", "test", "disconnect"]).default("get"),
         webhookUrl: z.string().optional(),
-        triggers: z.array(z.enum(["signup", "milestone", "broadcast", "publish"])).optional(),
+        triggers: z
+          .array(z.enum(["MILESTONE_COUNTS", "VERIFIED_SIGNUP", "REWARD_TIER_UNLOCKED"]))
+          .optional(),
       },
     },
     ({ waitlistId, channel, action, webhookUrl, triggers }) =>

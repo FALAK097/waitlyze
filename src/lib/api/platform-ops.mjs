@@ -4,7 +4,7 @@ import { Resend } from "resend";
 
 import { Prisma } from "@/generated/prisma/client";
 import { getWorkspaceEntitlements, requireCapacity, requireFeature } from "@/lib/billing/plans.mjs";
-import { createDraft } from "@/lib/campaigns/create-draft.mjs";
+import { createDraft, RESERVED_WAITLIST_SLUGS } from "@/lib/campaigns/create-draft.mjs";
 import {
   normalizePhoneNumber,
   sanitizeCustomFieldAnswers,
@@ -37,6 +37,10 @@ import {
 } from "@/lib/email/composer.mjs";
 import { dispatchVerificationNow } from "@/lib/email/dispatch-now.mjs";
 import { normalizeSegment } from "@/lib/email/segments.mjs";
+import {
+  CustomerSenderNotConnectedError,
+  resolveTransactionalEmailSender,
+} from "@/lib/email/sender-resolution.mjs";
 import { createUnsubscribeToken, hashUnsubscribeToken } from "@/lib/email/unsubscribe.mjs";
 import { interpolateVars, interpolateVarsHtml, seedPreviewVars } from "@/lib/email/variables.mjs";
 import { emailStatusLabel } from "@/lib/emails/status-label.mjs";
@@ -150,6 +154,29 @@ export async function updateWaitlistFieldsOp({ userId, waitlist, updates }) {
   if (updates.name !== undefined) data.name = updates.name;
   if (updates.description !== undefined) data.description = updates.description;
   if (updates.websiteUrl !== undefined) data.websiteUrl = updates.websiteUrl;
+  if (updates.publicSlug !== undefined) {
+    const slug = typeof updates.publicSlug === "string" ? updates.publicSlug.trim() : "";
+    if (
+      slug.length < 3 ||
+      slug.length > 48 ||
+      !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug) ||
+      RESERVED_WAITLIST_SLUGS.has(slug)
+    ) {
+      throw new TypeError(
+        "Slug must be 3 to 48 lowercase letters, numbers, or single hyphens and not reserved.",
+      );
+    }
+    if (slug !== waitlist.publicSlug) {
+      const taken = await prisma.waitList.findUnique({
+        where: { publicSlug: slug },
+        select: { id: true },
+      });
+      if (taken && taken.id !== waitlist.id) {
+        throw Object.assign(new Error("This address is taken. Choose another."), { status: 409 });
+      }
+      data.publicSlug = slug;
+    }
+  }
   if (updates.buttonText !== undefined) data.buttonText = updates.buttonText;
   if (updates.successMessage !== undefined) data.successMessage = updates.successMessage;
   if (updates.fraudMode !== undefined) data.fraudMode = updates.fraudMode;
@@ -158,15 +185,22 @@ export async function updateWaitlistFieldsOp({ userId, waitlist, updates }) {
     data.sendEmailsToSubscribers = updates.sendEmailsToSubscribers;
   if (updates.showSocialProof !== undefined) data.showSocialProof = updates.showSocialProof;
 
-  if (updates.buttonText !== undefined || updates.successMessage !== undefined) {
-    const snapshot = parseTemplateSnapshotOrDefault(waitlist);
+  if (
+    updates.templateId !== undefined ||
+    updates.buttonText !== undefined ||
+    updates.successMessage !== undefined
+  ) {
+    const baseSnapshot =
+      updates.templateId !== undefined
+        ? snapshotTemplate(updates.templateId)
+        : parseTemplateSnapshotOrDefault(waitlist);
     const nextSnapshot = {
-      ...snapshot,
+      ...baseSnapshot,
       ...(updates.buttonText !== undefined
-        ? { form: { ...snapshot.form, buttonText: updates.buttonText.slice(0, 40) } }
+        ? { form: { ...baseSnapshot.form, buttonText: updates.buttonText.slice(0, 40) } }
         : {}),
       ...(updates.successMessage !== undefined
-        ? { statusPage: { ...snapshot.statusPage, body: updates.successMessage.slice(0, 500) } }
+        ? { statusPage: { ...baseSnapshot.statusPage, body: updates.successMessage.slice(0, 500) } }
         : {}),
     };
     await saveDraftSnapshot(
@@ -330,7 +364,12 @@ export async function addSubscriberDirectOp({
   });
 
   if (!autoVerify) {
-    await senderForWaitlist(waitlist.id);
+    const verificationSender = await resolveTransactionalEmailSender(prisma, {
+      workspaceId: waitlist.workspaceId,
+      waitListId: waitlist.id,
+      platformSender: false,
+    });
+    if (!verificationSender) throw new CustomerSenderNotConnectedError();
   }
 
   let referrerSignUp = null;
@@ -1187,10 +1226,12 @@ export async function updateWaitlistSubscriberOp({ waitlist, subscriberId, updat
       verifiedAt: true,
       marketingConsentAt: true,
       marketingUnsubscribedAt: true,
+      unsubscribeTokenHash: true,
     },
   });
   if (!existing) throw new Error("Subscriber not found.");
 
+  const form = parseTemplateSnapshotOrDefault(waitlist).form;
   const data = {};
   if (typeof updates?.verified === "boolean") {
     data.verifiedAt = updates.verified ? existing.verifiedAt || new Date() : null;
@@ -1199,27 +1240,46 @@ export async function updateWaitlistSubscriberOp({ waitlist, subscriberId, updat
     const cleaned = updates.phone.trim();
     if (!cleaned) {
       data.phone = null;
-    } else if (!validatePhoneNumber(cleaned)) {
-      throw new TypeError("Invalid phone number.");
     } else {
+      const phoneError = validatePhoneNumber(cleaned, { ...form, collectPhone: true });
+      if (phoneError) {
+        throw new TypeError(phoneError);
+      }
       data.phone = normalizePhoneNumber(cleaned) || cleaned;
     }
   } else if (updates?.phone === null) {
     data.phone = null;
   }
-  if (updates?.customFields && typeof updates.customFields === "object") {
-    data.customFields = sanitizeCustomFieldAnswers(updates.customFields);
+  if (updates?.customFields !== undefined) {
+    if (updates.customFields === null) {
+      data.customFields = null;
+    } else if (typeof updates.customFields === "object") {
+      const rawAnswers = Array.isArray(updates.customFields)
+        ? updates.customFields
+        : Object.entries(updates.customFields).map(([id, value]) => ({ id, value }));
+      const sanitized = sanitizeCustomFieldAnswers(form, rawAnswers);
+      if (sanitized.error) {
+        throw new TypeError(sanitized.error);
+      }
+      data.customFields = sanitized.answers;
+    } else {
+      throw new TypeError("customFields must be an array or object.");
+    }
   }
+  let consentAction = null;
   if (typeof updates?.marketingConsent === "boolean") {
     const now = new Date();
     if (updates.marketingConsent) {
       data.marketingConsentAt = existing.marketingConsentAt || now;
       data.marketingUnsubscribedAt = null;
-      data.marketingConsentSource = "PUBLIC_SIGNUP";
-      data.marketingConsentText = MARKETING_CONSENT_COPY;
+      if (!existing.unsubscribeTokenHash) {
+        const token = createUnsubscribeToken(existing.id, waitlist.id);
+        data.unsubscribeTokenHash = hashUnsubscribeToken(token);
+      }
+      consentAction = "OPTED_IN";
     } else {
       data.marketingUnsubscribedAt = now;
-      data.marketingConsentSource = "DASHBOARD_BULK";
+      consentAction = "OPTED_OUT";
     }
   }
 
@@ -1227,6 +1287,17 @@ export async function updateWaitlistSubscriberOp({ waitlist, subscriberId, updat
     where: { id: existing.id },
     data,
   });
+  if (consentAction) {
+    await prisma.marketingConsentEvent.create({
+      data: {
+        waitListId: waitlist.id,
+        signUpId: existing.id,
+        action: consentAction,
+        source: consentAction === "OPTED_IN" ? "PUBLIC_SIGNUP" : "DASHBOARD_BULK",
+        ...(consentAction === "OPTED_IN" ? { consentText: MARKETING_CONSENT_COPY } : {}),
+      },
+    });
+  }
   const summary = await summarizeSignupRewards(prisma, waitlist.id, updated);
   return {
     id: updated.id,
@@ -1235,7 +1306,7 @@ export async function updateWaitlistSubscriberOp({ waitlist, subscriberId, updat
     referralCode: updated.referralCode,
     position: summary.position ?? null,
     points: updated.points,
-    referralCount: summary.referralCount ?? 0,
+    referralCount: summary.referrals ?? 0,
     isVerified: Boolean(updated.verifiedAt),
     verifiedAt: updated.verifiedAt,
     marketingConsent: Boolean(updated.marketingConsentAt && !updated.marketingUnsubscribedAt),
@@ -1322,6 +1393,9 @@ export async function sendTestEmailDirectOp({
     });
     text = `${contentText}\n\n${waitlistRow.name}`;
   } else if (kind === "broadcast") {
+    if (typeof targetId !== "string" || !targetId) {
+      throw new TypeError("targetId (broadcastId) is required for broadcast test emails.");
+    }
     const broadcast = await prisma.marketingBroadcast.findFirst({
       where: { id: targetId, waitListId: waitlist.id },
     });
@@ -1344,6 +1418,9 @@ export async function sendTestEmailDirectOp({
     });
     text = `${contentText}\n\n${waitlistRow.name}`;
   } else if (kind === "automation") {
+    if (typeof targetId !== "string" || !targetId) {
+      throw new TypeError("targetId (recipeId) is required for automation test emails.");
+    }
     const recipe = await prisma.automationRecipe.findFirst({
       where: { id: targetId, waitListId: waitlist.id },
       include: { versions: { orderBy: { version: "desc" }, take: 1 } },

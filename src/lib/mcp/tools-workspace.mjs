@@ -14,7 +14,12 @@ import { VALID_API_KEY_SCOPES } from "@/lib/db/sqlite-helpers.mjs";
 import { sendPlatformEmail } from "@/lib/emails/platform.mjs";
 import { env } from "@/lib/env.mjs";
 import { encryptIntegrationSecret } from "@/lib/integrations/secrets.mjs";
-import { assertScope, requireWorkspaceAccess, runTool } from "@/lib/mcp/tool-helpers.mjs";
+import {
+  assertScope,
+  requireWaitlistAccess,
+  requireWorkspaceAccess,
+  runTool,
+} from "@/lib/mcp/tool-helpers.mjs";
 import { normalizeSignupEmail } from "@/lib/normalize-email.mjs";
 import prisma from "@/lib/prisma.js";
 import { consumePublicBudget } from "@/lib/security/public-rate-limit.mjs";
@@ -534,29 +539,32 @@ export function registerWorkspaceMcpTools(server, authContext) {
           });
           return { suppressions: items };
         }
-        const normalized = normalizeSignupEmail(email);
-        if (!normalized) throw new TypeError("Valid email address is required.");
+        const emailInput = typeof email === "string" ? email.trim() : "";
+        const normalized = normalizeSignupEmail(emailInput);
+        if (!normalized || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalized)) {
+          throw new TypeError("Valid email address is required.");
+        }
         if (action === "add") {
           const entry = await prisma.emailSuppression.upsert({
             where: {
               workspaceId_emailNormalized: {
                 workspaceId: ws.workspaceId,
-                emailNormalized: normalized.lookupKey,
+                emailNormalized: normalized,
               },
             },
             update: { reason },
             create: {
               workspaceId: ws.workspaceId,
-              emailNormalized: normalized.lookupKey,
+              emailNormalized: normalized,
               reason,
             },
           });
           return { added: true, entry };
         }
         const res = await prisma.emailSuppression.deleteMany({
-          where: { workspaceId: ws.workspaceId, emailNormalized: normalized.lookupKey },
+          where: { workspaceId: ws.workspaceId, emailNormalized: normalized },
         });
-        return { removed: res.count > 0, email: normalized.lookupKey };
+        return { removed: res.count > 0, email: normalized };
       }),
   );
 
@@ -630,16 +638,13 @@ export function registerWorkspaceMcpTools(server, authContext) {
         }
         let targetWorkspaceId = workspaceId || null;
         if (waitlistId) {
-          const wl = await prisma.waitList.findFirst({
-            where: {
-              id: waitlistId,
-              workspace: {
-                members: { some: { userId: authContext.userId, role: { in: ["OWNER", "ADMIN"] } } },
-              },
-            },
-            select: { id: true, workspaceId: true },
-          });
-          if (!wl) throw new Error(`Waitlist '${waitlistId}' not found or not accessible.`);
+          const { waitlist: wl } = await requireWaitlistAccess(
+            authContext,
+            waitlistId,
+            "waitlist:manage",
+            "manageConnections",
+            { id: true, workspaceId: true },
+          );
           targetWorkspaceId = wl.workspaceId;
         } else {
           const ws = await requireWorkspaceAccess(
@@ -686,16 +691,26 @@ export function registerWorkspaceMcpTools(server, authContext) {
         }
         const key = await prisma.apiKey.findFirst({
           where: { OR: [{ id: apiKeyId }, { keyId: apiKeyId }], revokedAt: null },
-          select: { id: true, waitlistId: true, workspaceId: true },
+          select: { id: true, userId: true, waitlistId: true, workspaceId: true },
         });
         if (!key) throw new Error(`API key '${apiKeyId}' not found or already revoked.`);
-        if (key.workspaceId) {
+        if (key.waitlistId) {
+          await requireWaitlistAccess(
+            authContext,
+            key.waitlistId,
+            "waitlist:manage",
+            "manageConnections",
+            { id: true, workspaceId: true },
+          );
+        } else if (key.workspaceId) {
           await requireWorkspaceAccess(
             authContext,
             key.workspaceId,
             "workspace:manage",
             "manageConnections",
           );
+        } else if (key.userId !== authContext.userId) {
+          throw new Error(`API key '${apiKeyId}' not found or already revoked.`);
         }
         const ok = await revokeApiKey(key.id, authContext.userId, key.waitlistId, key.workspaceId);
         if (!ok) throw new Error(`API key '${apiKeyId}' not found or already revoked.`);
@@ -770,9 +785,16 @@ export function registerWorkspaceMcpTools(server, authContext) {
           });
         }
         if (action === "test_resend") {
+          const recipient =
+            typeof testRecipientEmail === "string" && testRecipientEmail.trim()
+              ? testRecipientEmail.trim()
+              : authContext.user?.email || "";
+          if (!recipient || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(recipient)) {
+            throw new TypeError("Enter a valid testRecipientEmail address.");
+          }
           return testWorkspaceResendOp({
             workspaceId: ws.workspaceId,
-            recipientEmail: testRecipientEmail,
+            recipientEmail: recipient,
           });
         }
         if (action === "list_resend_domains") {

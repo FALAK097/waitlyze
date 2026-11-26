@@ -28,10 +28,10 @@ export function createWaitlyzeMcpServer(authContext) {
 
   const ph = getServerPostHog();
   if (ph) {
-    instrument(server, {
-      posthog: ph,
-      distinctId: () => authContext?.userId || "anonymous",
-      groups: () => (authContext?.workspaceId ? { workspace: authContext.workspaceId } : {}),
+    instrument(server, ph, {
+      identify: () => (authContext?.userId ? { distinctId: authContext.userId } : null),
+      eventProperties: () =>
+        authContext?.workspaceId ? { $groups: { workspace: authContext.workspaceId } } : null,
       beforeSend: (event) => {
         if (event?.properties && "$mcp_args" in event.properties) {
           const { apiKey, webhookUrl, webhookSecret, apiToken, rows, ...safeArgs } =

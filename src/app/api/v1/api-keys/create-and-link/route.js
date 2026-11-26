@@ -6,7 +6,7 @@ import { VALID_API_KEY_SCOPES } from "@/lib/db/sqlite-helpers.mjs";
 import prisma from "@/lib/prisma";
 import { AUDIT_ACTIONS, recordAuditEvent } from "@/lib/workspaces/audit.mjs";
 import { selectedWorkspaceId } from "@/lib/workspaces/current";
-import { campaignScope, createWorkspaceService } from "@/lib/workspaces/service.mjs";
+import { campaignScope, AccessError, createWorkspaceService } from "@/lib/workspaces/service.mjs";
 import { createApiKey } from "@/services/api-key";
 
 export async function POST(request) {
@@ -26,8 +26,22 @@ export async function POST(request) {
       return NextResponse.json({ error: { message: "User not found" } }, { status: 404 });
     }
 
-    const body = await request.json();
-    const { name, waitlistId = null, expiresInDays = 90, scopes } = body;
+    let body;
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json({ error: { message: "Invalid JSON body" } }, { status: 400 });
+    }
+    if (!body || typeof body !== "object") {
+      return NextResponse.json({ error: { message: "Invalid JSON body" } }, { status: 400 });
+    }
+    const {
+      name,
+      waitlistId = null,
+      workspaceId: inputWorkspaceId = null,
+      expiresInDays = 90,
+      scopes,
+    } = body;
 
     if (typeof name !== "string" || name.trim().length < 3 || name.trim().length > 64) {
       return NextResponse.json(
@@ -58,7 +72,7 @@ export async function POST(request) {
       );
     }
 
-    const workspaceId = await selectedWorkspaceId(user.id);
+    const workspaceId = inputWorkspaceId || (await selectedWorkspaceId(user.id));
 
     let waitlist = null;
     let targetWorkspaceId = workspaceId;
@@ -112,13 +126,19 @@ export async function POST(request) {
     const responseData = {
       apiKey: {
         ...newApiKey,
-        key: "••••••••••••••••",
+        key: newApiKey.keyId ? `wl2_${newApiKey.keyId.slice(0, 6)}••••••••` : "••••••••••••••••",
         apiKey: newApiKey.apiKey,
       },
     };
 
     return NextResponse.json({ data: responseData });
   } catch (error) {
+    if (error instanceof AccessError) {
+      return NextResponse.json(
+        { error: { message: error.message } },
+        { status: error.status === 404 ? 404 : 403 },
+      );
+    }
     console.error("Error creating and linking API key:", error);
     return NextResponse.json({ error: { message: "Internal server error" } }, { status: 500 });
   }

@@ -22,7 +22,14 @@ import {
   SheetDescription,
 } from "@/components/ui/sheet";
 
-export function ResendIntegration({ initialConnection, accountEmail, canManage, appOrigin, logo }) {
+export function ResendIntegration({
+  workspaceId,
+  initialConnection,
+  accountEmail,
+  canManage,
+  appOrigin,
+  logo,
+}) {
   const [connection, setConnection] = useState(initialConnection);
   const [open, setOpen] = useState(false);
   const [apiKey, setApiKey] = useState("");
@@ -31,9 +38,13 @@ export function ResendIntegration({ initialConnection, accountEmail, canManage, 
   const [fromEmail, setFromEmail] = useState(initialConnection?.fromEmail || "");
   const [busy, setBusy] = useState("");
   const [confirmDisconnect, setConfirmDisconnect] = useState(false);
+  const effectiveWorkspaceId = connection?.workspaceId || workspaceId || null;
+  const workspaceQuery = effectiveWorkspaceId
+    ? `?workspaceId=${encodeURIComponent(effectiveWorkspaceId)}`
+    : "";
   const webhookUrl =
-    connection?.workspaceId && appOrigin
-      ? `${String(appOrigin).replace(/\/$/, "")}/api/webhooks/resend/${encodeURIComponent(connection.workspaceId)}`
+    effectiveWorkspaceId && appOrigin
+      ? `${String(appOrigin).replace(/\/$/, "")}/api/webhooks/resend/${encodeURIComponent(effectiveWorkspaceId)}`
       : null;
 
   async function request(path, method, body) {
@@ -69,7 +80,7 @@ export function ResendIntegration({ initialConnection, accountEmail, canManage, 
   function save(event) {
     event.preventDefault();
     perform("save", async () => {
-      const data = await request("/api/settings/integrations/resend", "PUT", {
+      const data = await request(`/api/settings/integrations/resend${workspaceQuery}`, "PUT", {
         apiKey,
         fromEmail,
         webhookSecret,
@@ -87,14 +98,14 @@ export function ResendIntegration({ initialConnection, accountEmail, canManage, 
   }
   function test() {
     perform("test", async () => {
-      const data = await request("/api/settings/integrations/resend/test", "POST");
+      const data = await request(`/api/settings/integrations/resend/test${workspaceQuery}`, "POST");
       setConnection((current) => ({ ...current, ...data.data }));
       toast.success(`Test email sent to ${data.data.sentTo}.`);
     });
   }
   function disconnect() {
     perform("disconnect", async () => {
-      await request("/api/settings/integrations/resend", "DELETE");
+      await request(`/api/settings/integrations/resend${workspaceQuery}`, "DELETE");
       setConnection(null);
       setApiKey("");
       setWebhookSecret("");

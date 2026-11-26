@@ -7,7 +7,13 @@ export async function POST(request, { params }) {
   const { id, subscriptionId } = await params;
   const access = await webhookAccess(request, id);
   if (access.response) return access.response;
-  const { deliveryId } = await request.json();
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid delivery." }, { status: 400 });
+  }
+  const deliveryId = body?.deliveryId;
   if (typeof deliveryId !== "string")
     return NextResponse.json({ error: "Invalid delivery." }, { status: 400 });
   const delivery = await prisma.webhookDelivery.findFirst({

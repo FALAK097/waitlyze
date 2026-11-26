@@ -4,7 +4,10 @@ import { after } from "next/server";
 
 import { getWorkspaceEntitlements, requireCapacity } from "../billing/plans.mjs";
 import { isUniqueConstraintError } from "../db/sqlite-helpers.mjs";
-import { resolveEmailSender } from "../email/sender-resolution.mjs";
+import {
+  CustomerSenderNotConnectedError,
+  resolveTransactionalEmailSender,
+} from "../email/sender-resolution.mjs";
 import { createUnsubscribeToken, hashUnsubscribeToken } from "../email/unsubscribe.mjs";
 import { maybeNotifySignupMilestone } from "../emails/founder-notifications.mjs";
 import { FraudLimitError, evaluateSignupFraud, silentSignupShape } from "../fraud/gates.mjs";
@@ -334,10 +337,12 @@ export async function createCampaignSignup(
       // Confirmation emails must come from a connected waitlist/workspace
       // sender. Never send subscriber email through Waitlyze's deployment key.
       if (requiresVerification) {
-        await resolveEmailSender(db, {
+        const verificationSender = await resolveTransactionalEmailSender(db, {
           workspaceId,
           waitListId: input.waitListId,
+          platformSender: false,
         });
+        if (!verificationSender) throw new CustomerSenderNotConnectedError();
       }
 
       // Fraud basics (additive, fail-open): IP velocity over the hard cap

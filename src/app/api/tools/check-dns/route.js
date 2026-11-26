@@ -57,7 +57,12 @@ export async function POST(request) {
       );
     }
 
-    const body = await request.json();
+    let body;
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json({ ok: false, error: "Invalid JSON request body." }, { status: 400 });
+    }
     const domain = normalizeDomainInput(body?.domain);
     if (!domain) {
       return NextResponse.json(

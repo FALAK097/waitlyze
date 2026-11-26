@@ -90,8 +90,13 @@ export async function DELETE(req) {
     const userId = session.user.id;
 
     // 2. Parse request body
-    const body = await req.json();
-    const { key } = body;
+    let body;
+    try {
+      body = await req.json();
+    } catch {
+      return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+    }
+    const key = body?.key;
     if (!key || typeof key !== "string") {
       return NextResponse.json({ error: "Invalid file key" }, { status: 400 });
     }

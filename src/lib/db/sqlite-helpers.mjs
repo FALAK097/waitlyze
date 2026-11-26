@@ -22,8 +22,9 @@ export function parseJsonStringArray(value, fallback = []) {
     }
   } catch {
     // Better Auth OAuth tokens or legacy values may use space/comma separation
-    if (trimmed.includes(" ")) {
-      return trimmed.split(/\s+/).filter(Boolean);
+    const parts = trimmed.split(/[\s,]+/).filter(Boolean);
+    if (parts.length > 0) {
+      return parts;
     }
   }
   return [...fallback];

@@ -38,7 +38,15 @@ export async function POST(request) {
       );
     }
 
-    const body = await request.json();
+    let body;
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json(
+        { ok: false, error: "Invalid JSON blueprint payload." },
+        { status: 400 },
+      );
+    }
     if (!body?.toolSlug || !getToolBySlug(body.toolSlug)) {
       return NextResponse.json({ ok: false, error: "Unknown Launch Lab tool." }, { status: 400 });
     }

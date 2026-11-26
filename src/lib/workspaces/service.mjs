@@ -8,6 +8,7 @@ import {
   requireCapacity,
 } from "../billing/plans.mjs";
 import { runAtomicSqlBatch, toSqliteIso } from "../db/sqlite-helpers.mjs";
+import { deleteCloudflareHostname } from "../domains/provider.mjs";
 
 function effectiveProSubscriptionSql(alias) {
   return `(
@@ -443,8 +444,23 @@ export function createWorkspaceService(db) {
       }
       const waitlists = await db.waitList.findMany({
         where: { workspaceId },
-        select: { id: true },
+        select: {
+          id: true,
+          customDomain: { select: { hostname: true, providerId: true } },
+        },
       });
+      for (const waitlist of waitlists) {
+        if (waitlist.customDomain) {
+          try {
+            await deleteCloudflareHostname({
+              providerId: waitlist.customDomain.providerId,
+              hostname: waitlist.customDomain.hostname,
+            });
+          } catch {
+            console.error("Cloudflare hostname cleanup before workspace deletion failed.");
+          }
+        }
+      }
       const waitlistIds = waitlists.map((waitlist) => waitlist.id);
       if (waitlistIds.length) {
         await db.apiKey.deleteMany({ where: { waitlistId: { in: waitlistIds } } });

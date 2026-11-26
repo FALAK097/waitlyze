@@ -44,7 +44,7 @@ async function SelectedSettings({
           </p>
         </header>
         {canManage ? (
-          <ApiKeysClient />
+          <ApiKeysClient key={workspace.id} workspaceId={workspace.id} />
         ) : (
           <p className="text-product-text-secondary">
             Only workspace owners and admins can manage API keys.
@@ -295,6 +295,8 @@ async function SelectedSettings({
   return (
     <section className="max-w-190 min-w-0 flex-1" aria-labelledby="settings-panel-heading">
       <IntegrationsPanel
+        key={workspace.id}
+        workspaceId={workspace.id}
         initialConnection={
           connection && {
             id: connection.id,

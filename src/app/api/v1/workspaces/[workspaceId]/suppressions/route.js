@@ -60,8 +60,9 @@ export async function POST(request, { params }) {
     return v1Error(400, "INVALID_JSON", "Request body must be valid JSON.", undefined, budget);
   }
 
-  const normalized = normalizeSignupEmail(body?.email);
-  if (!normalized) {
+  const emailInput = typeof body?.email === "string" ? body.email.trim() : "";
+  const normalized = normalizeSignupEmail(emailInput);
+  if (!normalized || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalized)) {
     return v1Error(400, "INVALID_EMAIL", "Enter a valid email address.", undefined, budget);
   }
   const reason = ["BOUNCED", "COMPLAINED", "MANUAL"].includes(body?.reason)
@@ -72,15 +73,14 @@ export async function POST(request, { params }) {
     where: {
       workspaceId_emailNormalized: {
         workspaceId: wsCheck.workspaceId,
-        emailNormalized: normalized.lookupKey,
+        emailNormalized: normalized,
       },
     },
-    update: { reason, detail: body?.detail ? String(body.detail).slice(0, 200) : null },
+    update: { reason },
     create: {
       workspaceId: wsCheck.workspaceId,
-      emailNormalized: normalized.lookupKey,
+      emailNormalized: normalized,
       reason,
-      detail: body?.detail ? String(body.detail).slice(0, 200) : null,
     },
   });
 
@@ -103,19 +103,20 @@ export async function DELETE(request, { params }) {
     emailParam = body?.email;
   }
 
-  const normalized = normalizeSignupEmail(emailParam);
-  if (!normalized) {
+  const emailInput = typeof emailParam === "string" ? emailParam.trim() : "";
+  const normalized = normalizeSignupEmail(emailInput);
+  if (!normalized || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalized)) {
     return v1Error(
       400,
       "INVALID_EMAIL",
-      "Provide email query param or JSON body.",
+      "Provide a valid email query param or JSON body.",
       undefined,
       budget,
     );
   }
 
   const res = await prisma.emailSuppression.deleteMany({
-    where: { workspaceId: wsCheck.workspaceId, emailNormalized: normalized.lookupKey },
+    where: { workspaceId: wsCheck.workspaceId, emailNormalized: normalized },
   });
-  return v1Json({ deleted: res.count > 0, email: normalized.lookupKey }, { budget });
+  return v1Json({ deleted: res.count > 0, email: normalized }, { budget });
 }

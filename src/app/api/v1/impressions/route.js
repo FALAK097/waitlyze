@@ -11,7 +11,15 @@ import { validateRequest } from "@/utils/server/validations/impression";
 
 export async function POST(request) {
   try {
-    const body = await request.json();
+    let body;
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json({ message: "Invalid JSON body." }, { status: 400 });
+    }
+    if (!body || typeof body !== "object") {
+      return NextResponse.json({ message: "Invalid JSON body." }, { status: 400 });
+    }
     if (typeof body?.waitListId !== "string" || !body.waitListId || body.waitListId.length > 128)
       return NextResponse.json({ message: "A valid waitlist is required." }, { status: 400 });
     // Bot page views are acknowledged but never stored, so conversion stats

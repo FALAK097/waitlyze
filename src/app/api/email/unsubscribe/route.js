@@ -44,9 +44,14 @@ export async function GET(request) {
 
 export async function POST(request) {
   const contentType = request.headers.get("content-type") || "";
-  const form = contentType.includes("application/x-www-form-urlencoded")
-    ? await request.formData()
-    : null;
+  let form = null;
+  if (contentType.includes("application/x-www-form-urlencoded")) {
+    try {
+      form = await request.formData();
+    } catch {
+      return NextResponse.json({ message: "Unsubscribe link is invalid." }, { status: 400 });
+    }
+  }
   const rawToken = request.nextUrl.searchParams.get("token") || form?.get("token");
   const token = typeof rawToken === "string" ? rawToken : "";
   if (token.length < 32 || token.length > 128) {

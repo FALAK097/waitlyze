@@ -3,7 +3,7 @@ import { StatusPage } from "@/components/product/status-page";
 
 import "./globals.css";
 
-export default function GlobalError({ retry }) {
+export default function GlobalError({ reset }) {
   return (
     <html lang="en">
       <body>
@@ -12,7 +12,7 @@ export default function GlobalError({ retry }) {
           code="500"
           title="Unable to load Waitlyze"
           description="Try loading the app again, or return home to continue."
-          retry={retry}
+          retry={reset}
         />
       </body>
     </html>

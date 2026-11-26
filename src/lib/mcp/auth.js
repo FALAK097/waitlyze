@@ -5,7 +5,7 @@ import { createLocalJWKSet, jwtVerify } from "jose";
 import { auth } from "@/lib/auth.js";
 import { validateApiKeyToken } from "@/lib/campaigns/api-key.mjs";
 import { parseJsonStringArray } from "@/lib/db/sqlite-helpers.mjs";
-import { getMcpResourceUrl } from "@/lib/mcp/config.mjs";
+import { getMcpBaseUrl, getMcpResourceUrl } from "@/lib/mcp/config.mjs";
 import prisma from "@/lib/prisma.js";
 
 let cachedJwks = null;
@@ -156,7 +156,7 @@ async function resolveMcpAuthUncached(request) {
     // 2. Check OAuth 2.0 Access Token (signed JWT)
     if (token.split(".").length === 3) {
       try {
-        const baseUrl = process.env.BETTER_AUTH_URL || "http://localhost:3000";
+        const baseUrl = getMcpBaseUrl();
         const expectedIssuer = new URL("/api/auth", baseUrl).toString().replace(/\/$/, "");
         const expectedAudience = getMcpResourceUrl();
         const verifyOptions = {

@@ -1,13 +1,12 @@
-import { NextResponse } from "next/server";
-
 import { authenticateV1, v1CorsResponse, v1Error } from "@/lib/api/v1-auth.mjs";
+import { mapOpError } from "@/lib/api/v1-errors.mjs";
 import prisma from "@/lib/prisma";
 import {
   AUDIT_ACTIONS,
   recordAuditEvent,
   recordWaitlistAuditEvent,
 } from "@/lib/workspaces/audit.mjs";
-import { campaignScope, createWorkspaceService } from "@/lib/workspaces/service.mjs";
+import { AccessError, campaignScope, createWorkspaceService } from "@/lib/workspaces/service.mjs";
 import { revokeApiKey } from "@/services/api-key";
 
 export function OPTIONS() {
@@ -16,11 +15,13 @@ export function OPTIONS() {
 
 export async function DELETE(req, { params }) {
   const { id } = await params;
+  let budget = null;
 
   try {
     const authResult = await authenticateV1(req, "workspace:write");
     if (authResult.response) return authResult.response;
     const { authContext } = authResult;
+    budget = authResult.budget;
 
     if (authContext.authType === "api_key" && authContext.waitlistId) {
       return v1Error(403, "forbidden", "Waitlist-scoped API keys cannot revoke API keys.");
@@ -107,10 +108,10 @@ export async function DELETE(req, { params }) {
     if (!success) return v1Error(404, "not_found", "API key not found or access denied");
     return new Response(null, { status: 204 });
   } catch (err) {
+    if (err instanceof AccessError) {
+      return mapOpError(err, budget);
+    }
     console.error(err);
-    return NextResponse.json(
-      { error: { code: "server_error", message: "Failed to revoke API key" } },
-      { status: 500 },
-    );
+    return v1Error(500, "server_error", "Failed to revoke API key", undefined, budget);
   }
 }

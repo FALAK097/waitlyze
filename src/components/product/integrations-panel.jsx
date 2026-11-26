@@ -9,7 +9,13 @@ import { Button } from "@/components/ui/button";
 
 import { ResendIntegration } from "./resend-integration";
 
-export function IntegrationsPanel({ initialConnection, accountEmail, canManage, appOrigin }) {
+export function IntegrationsPanel({
+  workspaceId,
+  initialConnection,
+  accountEmail,
+  canManage,
+  appOrigin,
+}) {
   return (
     <div>
       <div className="mb-2 flex flex-wrap items-start justify-between gap-x-6 gap-y-4">
@@ -36,6 +42,7 @@ export function IntegrationsPanel({ initialConnection, accountEmail, canManage, 
         </div>
       </div>
       <ResendIntegration
+        workspaceId={workspaceId}
         initialConnection={initialConnection}
         accountEmail={accountEmail}
         canManage={canManage}

@@ -6,7 +6,15 @@ import { consumePublicBudget, PublicRateLimitError } from "@/lib/security/public
 /** Validates the waitlist and referral code, consumes the share rate budget, and records a share event. */
 export async function POST(request) {
   try {
-    const body = await request.json();
+    let body;
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json({ message: "Invalid JSON body." }, { status: 400 });
+    }
+    if (!body || typeof body !== "object") {
+      return NextResponse.json({ message: "Invalid JSON body." }, { status: 400 });
+    }
     if (typeof body?.waitListId !== "string" || !body.waitListId || body.waitListId.length > 128)
       return NextResponse.json({ message: "A valid waitlist is required." }, { status: 400 });
     if (typeof body?.code !== "string" || !body.code || body.code.length > 256)

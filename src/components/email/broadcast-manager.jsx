@@ -575,6 +575,10 @@ export function BroadcastManager({
     setBusyAction("create");
     try {
       const draft = await createBroadcastDraft(waitListId);
+      if (draft?.error) {
+        notify(draft.error, true);
+        return;
+      }
       setBroadcasts((items) => [draft, ...items]);
       setSelectedId(draft.id);
       setEditorMode("visual");

@@ -2,19 +2,29 @@
 
 import { revalidatePath } from "next/cache";
 
+import { WorkspacePlanError } from "@/lib/billing/plans.mjs";
 import { normalizeAutomationConfig } from "@/lib/email/automations.mjs";
 import { senderForWaitlist } from "@/lib/emails/test-delivery.mjs";
 import { env } from "@/lib/env.mjs";
 import prisma from "@/lib/prisma";
 import { requireAuth, requireCampaign, requireCampaignFeature } from "@/lib/workspaces/authorize";
+import { AccessError } from "@/lib/workspaces/service.mjs";
 
 function refresh(waitListId) {
   revalidatePath(`/waitlists/${waitListId}/emails/automations`);
 }
 
 export async function saveAutomationRecipe({ waitListId, recipeId, data }) {
-  await requireAuth();
-  const { scope } = await requireCampaignFeature(waitListId, "sendEmail", "emailMarketing");
+  let scope;
+  try {
+    await requireAuth();
+    ({ scope } = await requireCampaignFeature(waitListId, "sendEmail", "emailMarketing"));
+  } catch (error) {
+    if (error instanceof AccessError || error instanceof WorkspacePlanError) {
+      return { success: false, message: error.message };
+    }
+    throw error;
+  }
   const recipe = await prisma.automationRecipe.findFirst({
     where: { id: recipeId, waitListId, waitList: scope },
     select: { id: true, type: true },
@@ -53,12 +63,20 @@ export async function saveAutomationRecipe({ waitListId, recipeId, data }) {
 }
 
 export async function setAutomationStatus({ waitListId, recipeId, status }) {
-  await requireAuth();
-  const access =
-    status === "ENABLED"
-      ? await requireCampaignFeature(waitListId, "sendEmail", "emailMarketing")
-      : await requireCampaign(waitListId, "sendEmail");
-  const { scope } = access;
+  let scope;
+  try {
+    await requireAuth();
+    const access =
+      status === "ENABLED"
+        ? await requireCampaignFeature(waitListId, "sendEmail", "emailMarketing")
+        : await requireCampaign(waitListId, "sendEmail");
+    scope = access.scope;
+  } catch (error) {
+    if (error instanceof AccessError || error instanceof WorkspacePlanError) {
+      return { success: false, message: error.message };
+    }
+    throw error;
+  }
   if (!["ENABLED", "PAUSED"].includes(status))
     return { success: false, message: "Choose enable or pause." };
   const recipe = await prisma.automationRecipe.findFirst({

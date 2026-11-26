@@ -26,13 +26,21 @@ export async function POST(request, context) {
 
     const params = await context.params;
     const { id } = params;
-    const { waitlistId } = await request.json();
+    let body;
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json({ error: { message: "Invalid JSON body" } }, { status: 400 });
+    }
+    const waitlistId = body?.waitlistId;
+    const requestedWorkspaceId =
+      typeof body?.workspaceId === "string" && body.workspaceId ? body.workspaceId : null;
 
-    if (!waitlistId) {
+    if (typeof waitlistId !== "string" || !waitlistId) {
       return NextResponse.json({ error: { message: "Waitlist ID is required" } }, { status: 400 });
     }
 
-    const [apiKey, workspaceId] = await Promise.all([
+    const [apiKey, cookieWorkspaceId] = await Promise.all([
       prisma.apiKey.findFirst({
         where: {
           id: id,
@@ -40,8 +48,9 @@ export async function POST(request, context) {
           revokedAt: null,
         },
       }),
-      selectedWorkspaceId(user.id),
+      requestedWorkspaceId ? Promise.resolve(null) : selectedWorkspaceId(user.id),
     ]);
+    const workspaceId = requestedWorkspaceId || cookieWorkspaceId;
 
     if (!apiKey) {
       return NextResponse.json({ error: { message: "API key not found" } }, { status: 404 });
@@ -67,9 +76,16 @@ export async function POST(request, context) {
       return NextResponse.json({ error: { message: "Waitlist not found" } }, { status: 404 });
     }
 
+    if (apiKey.workspaceId && waitlist.workspaceId && apiKey.workspaceId !== waitlist.workspaceId) {
+      return NextResponse.json(
+        { error: { message: "API key belongs to a different workspace" } },
+        { status: 403 },
+      );
+    }
+
     const linked = await prisma.apiKey.updateMany({
-      where: { id, userId: user.id, keyId: null, waitlistId: null, revokedAt: null },
-      data: { waitlistId },
+      where: { id, userId: user.id, waitlistId: null, revokedAt: null },
+      data: { waitlistId, ...(waitlist.workspaceId ? { workspaceId: waitlist.workspaceId } : {}) },
     });
     if (linked.count === 0) {
       return NextResponse.json(

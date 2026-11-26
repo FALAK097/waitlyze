@@ -116,17 +116,25 @@ export function registerAudienceAndEmailMcpTools(server, authContext) {
               where: { id: subscriberId, waitListId: waitlist.id },
               include: {
                 referredBy: {
-                  select: { referredById: true, referralCode: true, reviewStatus: true },
+                  select: {
+                    referredById: true,
+                    reviewStatus: true,
+                    referredBy: { select: { referralCode: true } },
+                  },
                 },
-                pointEvents: { orderBy: { createdAt: "desc" }, take: 25 },
               },
             })
           : await findSignupByEmail(prisma, waitlist.id, email);
         if (!subscriber) throw new Error("Subscriber not found.");
 
-        const [summary, totalSignups] = await Promise.all([
+        const [summary, totalSignups, recentPointEvents] = await Promise.all([
           summarizeSignupRewards(prisma, waitlist.id, subscriber),
           prisma.signUp.count({ where: { waitListId: waitlist.id } }),
+          prisma.pointLedger.findMany({
+            where: { waitListId: waitlist.id, signUpId: subscriber.id },
+            orderBy: { createdAt: "desc" },
+            take: 25,
+          }),
         ]);
         const host =
           waitlist.customDomain?.status === "ACTIVE" ? waitlist.customDomain.hostname : null;
@@ -139,7 +147,7 @@ export function registerAudienceAndEmailMcpTools(server, authContext) {
           position: summary.position ?? null,
           totalSignups,
           points: subscriber.points ?? 0,
-          referralCount: summary.referralCount ?? 0,
+          referralCount: summary.referrals ?? 0,
           isVerified: Boolean(subscriber.verifiedAt),
           verifiedAt: subscriber.verifiedAt,
           marketingConsent: Boolean(
@@ -147,6 +155,7 @@ export function registerAudienceAndEmailMcpTools(server, authContext) {
           ),
           customFields: subscriber.customFields,
           rewardSummary: summary,
+          recentPointEvents,
           createdAt: subscriber.createdAt,
         };
       }),
@@ -226,11 +235,11 @@ export function registerAudienceAndEmailMcpTools(server, authContext) {
           .array(
             z.object({
               email: z.string(),
-              phone: z.string().optional(),
               verified: z.boolean().optional(),
-              verifiedAt: z.string().optional(),
-              marketingConsent: z.boolean().optional(),
-              customFields: z.record(z.string(), z.unknown()).optional(),
+              country: z.string().optional(),
+              points: z.number().int().min(0).max(1_000_000).optional(),
+              referredBy: z.string().optional(),
+              utmSource: z.string().optional(),
             }),
           )
           .min(1)
@@ -281,7 +290,7 @@ export function registerAudienceAndEmailMcpTools(server, authContext) {
           waitlistId,
           "subscribers:write",
           "manageAudience",
-          { id: true, workspaceId: true, showReferrals: true },
+          { id: true, workspaceId: true, showReferrals: true, templateSnapshot: true },
         );
         return updateWaitlistSubscriberOp({ waitlist, subscriberId, updates });
       }),
@@ -332,7 +341,7 @@ export function registerAudienceAndEmailMcpTools(server, authContext) {
           waitlistId,
           "subscribers:write",
           "manageAudience",
-          { id: true, workspaceId: true, name: true },
+          { id: true, workspaceId: true, name: true, status: true },
         );
         if (action === "retry_verification") {
           return retryVerificationOp({ waitlist, signupIds: subscriberIds });
@@ -537,7 +546,7 @@ export function registerAudienceAndEmailMcpTools(server, authContext) {
         waitlistId: z.string().min(1),
         referralId: z.string().min(1),
         status: z.enum(["APPROVED", "EXCLUDED"]),
-        resolution: z.string().max(240).optional(),
+        resolution: z.string().min(8).max(240),
       },
     },
     ({ waitlistId, referralId, status, resolution }) =>
@@ -640,7 +649,7 @@ export function registerAudienceAndEmailMcpTools(server, authContext) {
         name: z.string().optional(),
         subject: z.string().min(1).max(160),
         previewText: z.string().max(180).optional(),
-        body: z.string().optional(),
+        body: z.string().min(1),
         segment: z.string().optional().default("ALL"),
       },
     },

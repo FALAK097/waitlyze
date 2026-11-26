@@ -31,6 +31,9 @@ function resourceScope(authContext) {
 
 async function resolveAccessibleWaitlist(authContext, waitlistId, select) {
   const scope = resourceScope(authContext);
+  if (authContext.waitlistId && authContext.waitlistId !== waitlistId) {
+    throw new Error(`Waitlist '${waitlistId}' not found or not accessible.`);
+  }
   const waitlist = await prisma.waitList.findFirst({
     where: { id: waitlistId, ...scope },
     select,
@@ -266,7 +269,7 @@ export function registerWaitlyzeResources(server, authContext) {
         publicationRevisions: {
           orderBy: { revision: "desc" },
           take: 1,
-          select: { revision: true, snapshot: true, publishedAt: true },
+          select: { revision: true, snapshot: true, createdAt: true },
         },
       });
       const snapshot = parseTemplateSnapshotOrDefault(waitlist);
@@ -369,6 +372,9 @@ export function registerWaitlyzeResources(server, authContext) {
     },
     async (uri, { workspaceId }) => {
       resourceScope(authContext);
+      if (authContext.waitlistId) {
+        throw new Error("Forbidden: waitlist-scoped API keys cannot read workspace resources.");
+      }
       const ws = await resolveWorkspaceContext(authContext, String(workspaceId));
       const [entitlements, integrations, waitlistCount, totalSignups] = await Promise.all([
         getWorkspaceEntitlements(prisma, ws.workspaceId),

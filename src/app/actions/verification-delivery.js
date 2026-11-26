@@ -6,11 +6,11 @@ import { isUniqueConstraintError } from "@/lib/db/sqlite-helpers.mjs";
 import { dispatchVerificationNow } from "@/lib/email/dispatch-now.mjs";
 import prisma from "@/lib/prisma";
 import { requireAuth, requireCampaign } from "@/lib/workspaces/authorize";
+import { AccessError } from "@/lib/workspaces/service.mjs";
 
 const cooldownMs = 5 * 60 * 1000;
 
 export async function retryFailedVerification({ waitListId, signupIds }) {
-  await requireAuth();
   if (
     typeof waitListId !== "string" ||
     !Array.isArray(signupIds) ||
@@ -20,7 +20,16 @@ export async function retryFailedVerification({ waitListId, signupIds }) {
     new Set(signupIds).size !== signupIds.length
   )
     return { ok: false, message: "Select up to 25 signups on this page." };
-  const { campaign } = await requireCampaign(waitListId, "sendEmail");
+  let campaign;
+  try {
+    await requireAuth();
+    ({ campaign } = await requireCampaign(waitListId, "sendEmail"));
+  } catch (error) {
+    if (error instanceof AccessError) {
+      return { ok: false, message: error.message };
+    }
+    throw error;
+  }
   if (campaign.status !== "PUBLISHED")
     return { ok: false, message: "Publish the waitlist before resending confirmation emails." };
   const results = [];

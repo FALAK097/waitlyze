@@ -10,7 +10,7 @@ import {
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -49,7 +49,17 @@ import {
 } from "@/components/ui/table";
 import { formatProductDate } from "@/lib/product-date.mjs";
 
-export function ApiKeysClient() {
+function formatKeyAccess(scopes = []) {
+  if (!Array.isArray(scopes) || scopes.length === 0) return "Signups, status, points";
+  if (scopes.includes("mcp:write")) return "Full workspace access";
+  if (scopes.includes("mcp:read")) return "Read-only workspace access";
+  if (scopes.every((scope) => scope === "waitlist:read" || scope === "waitlist:write")) {
+    return scopes.includes("waitlist:write") ? "Signups, status, points" : "Lookup status";
+  }
+  return scopes.join(", ");
+}
+
+export function ApiKeysClient({ workspaceId = null }) {
   const [keys, setKeys] = useState([]);
   const [waitlists, setWaitlists] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -67,39 +77,43 @@ export function ApiKeysClient() {
   // Revoke Modal state
   const [toRevoke, setToRevoke] = useState(null);
 
-  async function load(signal) {
-    setLoading(true);
-    setError("");
-    try {
-      const responses = await Promise.all([
-        fetch("/api/v1/api-keys", { signal }),
-        fetch("/api/v1/waitlists", { signal }),
-      ]);
-      const [keyData, waitlistData] = await Promise.all(
-        responses.map((response) => response.json()),
-      );
-      if (
-        !responses[0].ok ||
-        !responses[1].ok ||
-        !Array.isArray(keyData.data) ||
-        !Array.isArray(waitlistData.data)
-      ) {
-        throw new Error("Could not load API keys. Try again.");
+  const load = useCallback(
+    async (signal) => {
+      setLoading(true);
+      setError("");
+      try {
+        const query = workspaceId ? `?workspaceId=${encodeURIComponent(workspaceId)}` : "";
+        const responses = await Promise.all([
+          fetch(`/api/v1/api-keys${query}`, { signal }),
+          fetch(`/api/v1/waitlists${query}`, { signal }),
+        ]);
+        const [keyData, waitlistData] = await Promise.all(
+          responses.map((response) => response.json()),
+        );
+        if (
+          !responses[0].ok ||
+          !responses[1].ok ||
+          !Array.isArray(keyData.data) ||
+          !Array.isArray(waitlistData.data)
+        ) {
+          throw new Error("Could not load API keys. Try again.");
+        }
+        setKeys(keyData.data);
+        setWaitlists(waitlistData.data);
+      } catch (failure) {
+        if (failure.name !== "AbortError") setError(failure.message);
+      } finally {
+        if (!signal?.aborted) setLoading(false);
       }
-      setKeys(keyData.data);
-      setWaitlists(waitlistData.data);
-    } catch (failure) {
-      if (failure.name !== "AbortError") setError(failure.message);
-    } finally {
-      if (!signal?.aborted) setLoading(false);
-    }
-  }
+    },
+    [workspaceId],
+  );
 
   useEffect(() => {
     const controller = new AbortController();
     load(controller.signal);
     return () => controller.abort();
-  }, []);
+  }, [load]);
 
   function handleOpenCreate() {
     setName("");
@@ -136,6 +150,7 @@ export function ApiKeysClient() {
         body: JSON.stringify({
           name: name.trim(),
           waitlistId,
+          ...(workspaceId ? { workspaceId } : {}),
           expiresInDays: expiresInDays === "never" ? null : Number(expiresInDays),
         }),
       });
@@ -229,8 +244,8 @@ export function ApiKeysClient() {
         </div>
       )}
 
-      {/* Empty state: No waitlists */}
-      {!loading && !error && !waitlists.length && (
+      {/* Empty state: No waitlists and no keys */}
+      {!loading && !error && !waitlists.length && keys.length === 0 && (
         <div className="flex flex-col items-center justify-center rounded-xl border border-product-border-subtle bg-product-bg-surface px-6 py-12 text-center sm:py-16">
           <h3 className="text-base font-semibold text-product-text-primary">No waitlists found</h3>
           <p className="mt-1.5 max-w-md text-center text-sm text-product-text-secondary">
@@ -312,10 +327,11 @@ export function ApiKeysClient() {
                     <span className="font-medium text-product-text-primary">{key.name}</span>
                   </TableCell>
                   <TableCell className="text-product-text-secondary">
-                    {key.waitlist?.name || "Unlinked"}
+                    {key.waitlist?.name ||
+                      (key.workspaceId ? "All waitlists (workspace)" : "Unlinked")}
                   </TableCell>
                   <TableCell className="text-product-text-secondary">
-                    Signups, status, points
+                    {formatKeyAccess(key.scopes)}
                   </TableCell>
                   <TableCell className="text-product-text-secondary">
                     {key.expiresAt

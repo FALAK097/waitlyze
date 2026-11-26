@@ -107,6 +107,9 @@ function WorkspaceSwitcher({
   const [pending, setPending] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
   const [upgradeOpen, setUpgradeOpen] = useState(false);
+  useEffect(() => {
+    setCreateOpen(false);
+  }, [selected]);
   const current = workspaces.find((workspace) => workspace.id === selected);
   async function switchTo(id) {
     if (id === selected || pending) return;

@@ -6,21 +6,22 @@ import {
   v1Error,
   v1Json,
 } from "@/lib/api/v1-auth.mjs";
-import { WorkspacePlanError } from "@/lib/billing/plans.mjs";
-import { DraftCreationError } from "@/lib/campaigns/create-draft.mjs";
+import { mapOpError } from "@/lib/api/v1-errors.mjs";
 import prisma from "@/lib/prisma";
 import { selectedWorkspaceId } from "@/lib/workspaces/current";
-import { campaignScope } from "@/lib/workspaces/service.mjs";
+import { AccessError, campaignScope } from "@/lib/workspaces/service.mjs";
 
 export function OPTIONS() {
   return v1CorsResponse();
 }
 
 export async function GET(request) {
+  let budget = null;
   try {
     const authResult = await authenticateV1(request, "campaigns:read");
     if (authResult.response) return authResult.response;
-    const { authContext, budget } = authResult;
+    const { authContext } = authResult;
+    budget = authResult.budget;
 
     const params = request.nextUrl.searchParams;
     const status = params.get("status") || "ALL";
@@ -103,16 +104,21 @@ export async function GET(request) {
 
     return v1Json(data, { budget, pagination: { total, limit, offset } });
   } catch (error) {
+    if (error instanceof AccessError) {
+      return mapOpError(error, budget);
+    }
     console.error("Error fetching waitlists:", error);
-    return v1Error(500, "server_error", "Internal server error");
+    return v1Error(500, "server_error", "Internal server error", undefined, budget);
   }
 }
 
 export async function POST(request) {
+  let budget = null;
   try {
     const authResult = await authenticateV1(request, "campaigns:write");
     if (authResult.response) return authResult.response;
-    const { authContext, budget } = authResult;
+    const { authContext } = authResult;
+    budget = authResult.budget;
 
     const body = await request.json().catch(() => null);
     if (!body || typeof body !== "object") {
@@ -155,15 +161,15 @@ export async function POST(request) {
       { status: 201, budget },
     );
   } catch (error) {
-    if (error instanceof WorkspacePlanError) {
-      return v1Error(error.status, error.code || "plan_upgrade_required", error.message, {
-        feature: error.feature,
-      });
+    if (error?.name === "ZodError") {
+      return v1Error(
+        400,
+        "validation_error",
+        error.message || "Invalid waitlist input.",
+        undefined,
+        budget,
+      );
     }
-    if (error instanceof DraftCreationError || error?.name === "ZodError") {
-      return v1Error(400, "validation_error", error.message || "Invalid waitlist input.");
-    }
-    console.error("Error creating waitlist:", error);
-    return v1Error(500, "server_error", "Internal server error");
+    return mapOpError(error, budget);
   }
 }

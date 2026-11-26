@@ -27,15 +27,25 @@ export async function GET(request, { params }) {
   });
   if (check.error) return check.error;
 
-  const [subscriber, totalSignups] = await Promise.all([
+  const [subscriber, totalSignups, recentPointEvents] = await Promise.all([
     prisma.signUp.findFirst({
       where: { id: subscriberId, waitListId: check.waitlist.id },
       include: {
-        referredBy: { select: { referredById: true, referralCode: true, reviewStatus: true } },
-        pointEvents: { orderBy: { createdAt: "desc" }, take: 25 },
+        referredBy: {
+          select: {
+            referredById: true,
+            reviewStatus: true,
+            referredBy: { select: { referralCode: true } },
+          },
+        },
       },
     }),
     prisma.signUp.count({ where: { waitListId: check.waitlist.id } }),
+    prisma.pointLedger.findMany({
+      where: { waitListId: check.waitlist.id, signUpId: subscriberId },
+      orderBy: { createdAt: "desc" },
+      take: 25,
+    }),
   ]);
 
   if (!subscriber) {
@@ -54,7 +64,7 @@ export async function GET(request, { params }) {
       position: summary.position ?? null,
       totalSignups,
       points: subscriber.points,
-      referralCount: summary.referralCount ?? 0,
+      referralCount: summary.referrals ?? 0,
       isVerified: Boolean(subscriber.verifiedAt),
       verifiedAt: subscriber.verifiedAt,
       marketingConsent: Boolean(
@@ -71,7 +81,7 @@ export async function GET(request, { params }) {
       utmCampaign: subscriber.utmCampaign,
       referredBy: subscriber.referredBy,
       rewardSummary: summary,
-      recentPointEvents: subscriber.pointEvents,
+      recentPointEvents,
       createdAt: subscriber.createdAt,
     },
     { budget },
@@ -95,6 +105,7 @@ export async function PATCH(request, { params }) {
     id: true,
     workspaceId: true,
     showReferrals: true,
+    templateSnapshot: true,
   });
   if (check.error) return check.error;
 

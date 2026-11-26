@@ -1,6 +1,6 @@
 "use client";
 import { StatusPage } from "@/components/product/status-page";
-export default function ProductError({ retry }) {
+export default function ProductError({ reset }) {
   return (
     <StatusPage
       code="500"
@@ -8,7 +8,7 @@ export default function ProductError({ retry }) {
       description="Try loading the page again, or return to your waitlists."
       href="/waitlists"
       linkLabel="Back to waitlists"
-      retry={retry}
+      retry={reset}
     />
   );
 }
