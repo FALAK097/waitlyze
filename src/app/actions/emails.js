@@ -172,11 +172,11 @@ function renderLegacyTemplateEmail({ template, waitList, variables }) {
 }
 
 export async function upsertEmailTemplate({ waitListId, templateType, data }) {
-  await requireAuth();
   const enumType = emailTemplateType(templateType);
   if (!enumType) return { success: false, message: "Invalid template type" };
 
   try {
+    await requireAuth();
     const content = validateComposerContent(data);
     if (
       typeof data.subject !== "string" ||
@@ -223,6 +223,9 @@ export async function upsertEmailTemplate({ waitListId, templateType, data }) {
       template: normalizeEmailTemplate(updated),
     };
   } catch (e) {
+    if (e instanceof AccessError || e instanceof WorkspacePlanError) {
+      return { success: false, message: e.message };
+    }
     console.error(e);
     return {
       success: false,
@@ -469,6 +472,9 @@ export async function sendSignupEmail({ waitListId, to }) {
 
     return generic;
   } catch (e) {
+    if (e instanceof AccessError || e instanceof WorkspacePlanError) {
+      return { success: false, message: e.message };
+    }
     console.error(e);
     return generic;
   }
@@ -742,11 +748,16 @@ export async function listBroadcastSegments() {
 }
 
 export async function queueBroadcast({ waitListId, broadcastId, expectedRecipientCount, segment }) {
-  const { campaign, user } = await requireCampaignFeature(
-    waitListId,
-    "sendEmail",
-    "emailMarketing",
-  );
+  let campaign;
+  let user;
+  try {
+    ({ campaign, user } = await requireCampaignFeature(waitListId, "sendEmail", "emailMarketing"));
+  } catch (error) {
+    if (error instanceof AccessError || error instanceof WorkspacePlanError) {
+      return { success: false, message: error.message };
+    }
+    throw error;
+  }
   if (!Number.isInteger(expectedRecipientCount) || expectedRecipientCount < 0)
     return { success: false, message: "Refresh the recipient preview before sending." };
   if (!env.OUTBOX_DISPATCH_SECRET)
@@ -795,11 +806,16 @@ export async function scheduleBroadcast({
 }) {
   // Authenticate before checking delivery configuration so this early return
   // cannot reveal server setup to an unauthenticated caller.
-  const { campaign, user } = await requireCampaignFeature(
-    waitListId,
-    "sendEmail",
-    "emailMarketing",
-  );
+  let campaign;
+  let user;
+  try {
+    ({ campaign, user } = await requireCampaignFeature(waitListId, "sendEmail", "emailMarketing"));
+  } catch (error) {
+    if (error instanceof AccessError || error instanceof WorkspacePlanError) {
+      return { success: false, message: error.message };
+    }
+    throw error;
+  }
   if (!env.OUTBOX_DISPATCH_SECRET)
     return { success: false, message: "Email delivery is not configured yet." };
   try {
@@ -861,7 +877,15 @@ export async function scheduleBroadcast({
 export async function cancelBroadcast({ waitListId, broadcastId }) {
   // Cancellation is permitted after downgrade so queued customer mail can
   // always be stopped, even though creating/sending remains a Pro feature.
-  const { campaign } = await requireCampaign(waitListId, "sendEmail");
+  let campaign;
+  try {
+    ({ campaign } = await requireCampaign(waitListId, "sendEmail"));
+  } catch (error) {
+    if (error instanceof AccessError) {
+      return { success: false, message: error.message };
+    }
+    throw error;
+  }
   const broadcast = await prisma.marketingBroadcast.findFirst({
     where: { id: broadcastId, waitListId: campaign.id },
     select: { id: true, status: true },

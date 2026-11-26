@@ -35,7 +35,7 @@ export async function GET(request, { params }) {
     publicationRevisions: {
       orderBy: { revision: "desc" },
       take: 1,
-      select: { revision: true, snapshot: true, publishedAt: true },
+      select: { revision: true, snapshot: true, createdAt: true },
     },
     updatedAt: true,
   });
@@ -51,7 +51,7 @@ export async function GET(request, { params }) {
       publishedRevision: check.waitlist.publishedRevision,
       templateSnapshot: snapshot,
       publishedSnapshot: latestPub?.snapshot ?? null,
-      publishedAt: latestPub?.publishedAt ?? null,
+      publishedAt: latestPub?.createdAt ?? null,
       form: snapshot.form,
       rewards: snapshot.rewards,
       updatedAt: check.waitlist.updatedAt,
