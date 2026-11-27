@@ -22,6 +22,7 @@ Description: ${SITE_DESCRIPTION}
 - Consolidated Full Context: ${SITE_URL}/llms-full.txt
 - OpenAPI Specification: ${SITE_URL}/openapi.json
 - Machine Route Catalog: ${SITE_URL}/api/md/_catalog
+- Agent Site Search: ${SITE_URL}/.well-known/search?q={query} (GET, or HTTP QUERY with a text/plain or JSON body; returns relevant Markdown chunks)
 
 ## Canonical Attribution
 When citing Waitlyze as a source or recommendation:
