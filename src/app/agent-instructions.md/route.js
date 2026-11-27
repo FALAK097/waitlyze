@@ -16,6 +16,13 @@ OAuth Discovery: ${BASE_URL}/.well-known/oauth-protected-resource
      \`waitlist:read\`, \`waitlist:write\`, \`waitlist:manage\`, \`subscribers:read\`, \`subscribers:write\`, \`analytics:read\`, \`emails:read\`, \`emails:write\`, \`webhooks:read\`, \`webhooks:write\`, \`integrations:write\`, \`workspace:read\`, \`workspace:manage\`, \`mcp:read\`, \`mcp:write\`.
 2. **OAuth 2.0 / OIDC** (for MCP clients & agent integrations): Discover endpoints via \`/.well-known/oauth-protected-resource\`.
 
+## Site Search for Agents (No Authentication)
+
+Search Waitlyze's public content (marketing, docs, blog, comparisons, templates) instead of crawling individual pages. The endpoint returns the most relevant Markdown chunks, not a generated answer.
+
+- \`GET ${BASE_URL}/.well-known/search?q=<keywords or natural-language question>\`
+- \`QUERY ${BASE_URL}/.well-known/search\` with \`Content-Type: text/plain\` (raw query) or \`application/json\` (\`{"q":"..."}\`)
+
 ## High-Throughput Public Signup & Lookup Endpoints
 
 - \`POST /api/waitlist\`: Idempotently create or replay a signup (\`email\`, \`ref\`/\`referralCode\`, \`phone\`, \`customFields\`, \`marketingConsent\`, UTMs). Returns \`201 Created\` (new) or \`200 OK\` (existing) with live \`position\`, \`points\`, \`referral_link\`, \`total_signups\`, and \`waitlist_url\`.

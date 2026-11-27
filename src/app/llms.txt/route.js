@@ -51,6 +51,7 @@ Waitlyze is open-source waitlist software with a full-parity Public REST API v1,
 - [Full LLMs Context](${SITE_URL}/llms-full.txt): Complete product knowledge base in one file
 - [Markdown Route Catalog](${SITE_URL}/api/md/_catalog): Machine-readable index of all markdown routes
 - [AI Policy (ai.txt)](${SITE_URL}/ai.txt): Permissions and crawler policy
+- [Site Search for Agents](${SITE_URL}/.well-known/search?q={query}): Retrieval endpoint for AI agents. \`GET\` with \`?q=\` or HTTP \`QUERY\` with a text/plain or JSON body; returns the most relevant Markdown chunks (docs, blog, comparisons, templates) instead of whole pages
 
 ## Key Endpoints
 
@@ -58,6 +59,7 @@ Waitlyze is open-source waitlist software with a full-parity Public REST API v1,
 - Custom Event Points: \`POST ${SITE_URL}/api/waitlist/points\`
 - Full Platform REST API v1: \`${SITE_URL}/api/v1/*\`
 - MCP Streamable HTTP Endpoint: \`${SITE_URL}/mcp\`
+- Agent Site Search: \`GET ${SITE_URL}/.well-known/search?q=...\` or \`QUERY ${SITE_URL}/.well-known/search\` (plain text or \`{"q":"..."}\` body)
 
 ## Launch Lab (Free Pre-Launch Tools & Research)
 
