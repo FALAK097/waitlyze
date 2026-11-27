@@ -1,6 +1,6 @@
 # Waitlyze
 
-[![Waitlyze MCP connector – tool definition quality and endpoint health on Glama](https://glama.ai/mcp/connectors/com.waitlyze/waitlyze/badges/score.svg)](https://glama.ai/mcp/connectors/com.waitlyze/waitlyze)
+[![Waitlyze MCP connector – tool definition quality and endpoint health on Glama](https://glama.ai/mcp/connectors/com.waitlyze/waitlyze/badges/score.svg)](https://glama.ai/mcp/connectors/com.waitlyze/waitlyze) [![Waitlyze on DodoLaunch](https://dodolaunch.com/badge/waitlyze?theme=light)](https://dodolaunch.com/p/waitlyze?ref=badge) [![Waitlyze on Science of Apps](https://launchpad.scienceofapps.com/badge/waitlyze?type=auto&theme=light)](https://launchpad.scienceofapps.com/p/waitlyze?ref=badge) [![Listed on mcpservers.org](https://mcpservers.org/badge.svg)](https://mcpservers.org/servers/falak097/waitlyze)
 
 Waitlyze is a viral waitlist platform for founders and creators - launch page, referral loop, email automation, and analytics from a single list. Create a beautiful page in minutes, turn signups into referrers, and launch to a primed audience.
 
