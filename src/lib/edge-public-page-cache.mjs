@@ -1,9 +1,28 @@
 // Only anonymous document requests for build-time public pages may share an
 // edge cache entry. RSC, markdown negotiation, query variants and sessions
 // must continue through the Next.js router.
-const PUBLIC_DOCUMENTS = new Set(["/", "/pricing", "/templates", "/blog", "/tools"]);
+const PUBLIC_DOCUMENTS = new Set([
+  "/",
+  "/features",
+  "/about",
+  "/pricing",
+  "/compare",
+  "/alternatives",
+  "/templates",
+  "/blog",
+  "/tools",
+  "/research/waitlist-benchmarks",
+]);
+const PUBLIC_PREFIXES = ["/alternatives/", "/templates/", "/blog/", "/tools/"];
 const PUBLIC_CACHE_TTL_SECONDS = 24 * 60 * 60;
-const PUBLIC_CLIENT_CACHE_CONTROL = "public, max-age=0, s-maxage=300, stale-while-revalidate=86400";
+const PUBLIC_CLIENT_CACHE_CONTROL =
+  "public, max-age=0, s-maxage=3600, stale-while-revalidate=86400";
+
+function isPublicCacheablePath(pathname) {
+  if (!pathname || pathname.endsWith(".md")) return false;
+  if (PUBLIC_DOCUMENTS.has(pathname)) return true;
+  return PUBLIC_PREFIXES.some((prefix) => pathname.startsWith(prefix));
+}
 
 export function publicDocumentCacheKey(request, versionId) {
   const url = new URL(request.url);
@@ -40,7 +59,7 @@ export function publicDocumentCacheHeaders(headers, { stored = false } = {}) {
 export function isCacheablePublicDocument(request) {
   if (request.method !== "GET") return false;
   const url = new URL(request.url);
-  if (!PUBLIC_DOCUMENTS.has(url.pathname) || url.search) return false;
+  if (!isPublicCacheablePath(url.pathname) || url.search) return false;
   if (request.headers.has("cookie") || request.headers.has("authorization")) return false;
   if (
     [

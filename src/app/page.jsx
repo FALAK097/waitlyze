@@ -13,6 +13,7 @@ import {
 import { HugeiconsIcon } from "@hugeicons/react";
 import Image from "next/image";
 import Link from "next/link";
+import { preconnect, preload } from "react-dom";
 
 import { PostCard } from "@/components/blog/post-card";
 import AskAi from "@/components/landing/ask-ai";
@@ -278,6 +279,10 @@ const steps = [
  * Renders the public Waitlyze marketing landing page.
  */
 export default async function LandingPage() {
+  const heroPosterUrl = `${LAUNCH_ASSET_BASE}/waitlyze-launch-cbda091bb109.webp`;
+  preconnect(ASSET_BASE, { crossOrigin: "anonymous" });
+  preload(heroPosterUrl, { as: "image", fetchPriority: "high" });
+
   const featuredTemplates = listTemplates().filter((template) =>
     ["saas", "creator", "event"].includes(template.id),
   );

@@ -2,7 +2,6 @@ import Link from "next/link";
 
 import Pricing from "@/components/landing/pricing";
 import PublicShell from "@/components/landing/public-shell";
-import SignupButton from "@/components/landing/signup-button";
 import { SiteStructuredData } from "@/components/seo/structured-data";
 import { WAITLYZE_PRICING } from "@/lib/billing/pricing.mjs";
 
@@ -75,22 +74,20 @@ export default function PricingPage() {
     <PublicShell>
       <SiteStructuredData faqs={pricingFaqs} />
       <main id="main-content" className="wl-landing wl-root">
-        <section className="wl-hero" aria-labelledby="pricing-page-title">
+        <section className="px-[18px] pt-10 pb-2 md:pt-14" aria-labelledby="pricing-page-title">
           <div className="wl-hero-copy">
             <p className="wl-eyebrow">WAITLIST SOFTWARE PRICING</p>
-            <h1 id="pricing-page-title">Simple pricing for the whole pre-launch journey.</h1>
-            <p className="wl-hero-lede">
-              Start with a real waitlist for free. Upgrade when you need unlimited signups, multiple
-              launches, deeper analytics, subscriber email, or your own domain, with no
+            <h1
+              id="pricing-page-title"
+              className="max-w-3xl font-product-display text-4xl leading-[1.06] tracking-tight text-balance sm:text-5xl"
+            >
+              Simple pricing for the whole pre-launch journey.
+            </h1>
+            <p className="mt-4 max-w-2xl text-base leading-relaxed text-product-text-secondary sm:text-lg">
+              Start free with 100 signups. Upgrade when you need unlimited signups, multiple
+              launches, deeper analytics, subscriber email, or your own domain—with no
               per-subscriber bill.
             </p>
-            <div className="wl-hero-actions">
-              <SignupButton className="wl-hero-primary">Start for free</SignupButton>
-              <Link className="wl-secondary-button" href="/compare">
-                Compare waitlist tools
-              </Link>
-            </div>
-            <p className="wl-assurance">No credit card required for Free.</p>
           </div>
         </section>
 

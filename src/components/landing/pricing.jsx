@@ -57,10 +57,12 @@ export default function Pricing({
   const trackedPricingViewRef = useRef(false);
   const [interval, setInterval] = useState("annual");
   const [clientRegionalPricing, setClientRegionalPricing] = useState(null);
+  const [showLocalCurrency, setShowLocalCurrency] = useState(true);
   const proCardRef = useRef(null);
   const isPro = currentPlan === "PRO";
   const promoActive = useBfcmPromoActive();
-  const displayedRegionalPricing = regionalPricing || clientRegionalPricing;
+  const availableRegionalPricing = regionalPricing || clientRegionalPricing;
+  const displayedRegionalPricing = showLocalCurrency ? availableRegionalPricing : null;
 
   useEffect(() => {
     function handleRedeemPromo(event) {
@@ -247,11 +249,27 @@ export default function Pricing({
                   </span>
                 )}
               </div>
-              {displayedRegionalPricing?.country && (
-                <p className="inline-flex items-center gap-1.5 rounded-full bg-product-bg-inset px-2.5 py-1 text-xs font-medium text-product-text-secondary">
-                  <span aria-hidden="true">{displayedRegionalPricing.flag}</span>
-                  {displayedRegionalPricing.country} · {displayedRegionalPricing.currency}
-                </p>
+              {availableRegionalPricing?.country && (
+                <button
+                  type="button"
+                  onClick={() => setShowLocalCurrency((prev) => !prev)}
+                  aria-pressed={!showLocalCurrency}
+                  title={
+                    showLocalCurrency
+                      ? `Switch displayed prices to USD`
+                      : `Switch displayed prices to ${availableRegionalPricing.currency}`
+                  }
+                  className="inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-product-border-subtle bg-product-bg-inset px-2.5 py-1 text-xs font-medium text-product-text-secondary transition-colors hover:border-product-text-secondary hover:text-product-text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-900"
+                >
+                  <span aria-hidden="true">
+                    {showLocalCurrency ? availableRegionalPricing.flag : "🌐"}
+                  </span>
+                  <span>
+                    {showLocalCurrency
+                      ? `${availableRegionalPricing.country} · ${availableRegionalPricing.currency}`
+                      : `USD · Show ${availableRegionalPricing.currency}`}
+                  </span>
+                </button>
               )}
             </div>
             <div>

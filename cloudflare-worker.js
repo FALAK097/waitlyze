@@ -8,6 +8,7 @@ import {
   publicDocumentCacheHeaders,
   publicDocumentCacheKey,
 } from "./src/lib/edge-public-page-cache.mjs";
+import { isPostHogRelayPath, proxyPostHogRequest } from "./src/lib/posthog/proxy.mjs";
 
 // The OpenNext cache implementations use these durable object exports.
 // @ts-ignore
@@ -253,6 +254,13 @@ export default {
           headers.set("content-security-policy", "frame-ancestors 'none'");
         }
       }
+      if (
+        isReadMethod &&
+        pathname.startsWith("/_next/static/") &&
+        !headers.has("access-control-allow-origin")
+      ) {
+        headers.set("access-control-allow-origin", "*");
+      }
       if (varyAccept) appendVaryAccept(headers);
       return new Response(response.body, {
         status: response.status,
@@ -260,6 +268,10 @@ export default {
         headers,
       });
     };
+
+    if (!isCustomHost && isPostHogRelayPath(pathname)) {
+      return proxyPostHogRequest(request, { env, ctx });
+    }
 
     if (MACHINE_PATHS.has(pathname))
       return finalizeResponse(await nextWorker.fetch(request, env, ctx));

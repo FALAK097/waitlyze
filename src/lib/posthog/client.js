@@ -3,13 +3,21 @@
 import posthog from "posthog-js";
 
 import { env } from "../env.mjs";
+import { POSTHOG_RELAY_PREFIX } from "./proxy.mjs";
 
 let clientInitialized = false;
+
+export function isExcludedPostHogPath(pathname) {
+  if (!pathname) return false;
+  return pathname.startsWith("/w/") || pathname.startsWith("/domain");
+}
 
 export function isPublicPostHogPath(pathname) {
   if (!pathname) return false;
   return (
     pathname === "/" ||
+    pathname.startsWith("/features") ||
+    pathname.startsWith("/about") ||
     pathname.startsWith("/tools") ||
     pathname.startsWith("/research") ||
     pathname.startsWith("/templates") ||
@@ -18,38 +26,54 @@ export function isPublicPostHogPath(pathname) {
     pathname.startsWith("/compare") ||
     pathname.startsWith("/alternatives") ||
     pathname.startsWith("/privacy") ||
-    pathname.startsWith("/terms")
+    pathname.startsWith("/terms") ||
+    pathname.startsWith("/support") ||
+    pathname.startsWith("/refund-policy")
   );
 }
 
+function resolveUiHost(configuredHost) {
+  const normalized = String(configuredHost || "")
+    .trim()
+    .toLowerCase();
+  if (normalized.includes("eu.i.posthog.com") || normalized.includes("eu.posthog.com")) {
+    return "https://eu.posthog.com";
+  }
+  return "https://us.posthog.com";
+}
+
 /**
- * Initializes the PostHog browser SDK with privacy-conscious defaults:
- * - Native stateless cookieless tracking on public marketing pages.
- * - Falls back to cookieless tracking if persistence is rejected in the authenticated app.
- * - Masks text inputs, passwords, and sensitive fields during session replay.
- * - Disables autocapture by default to avoid accidental PII ingestion.
- * - Does NOT track public waitlist forms (/w/[slug]).
+ * Initializes the PostHog browser SDK through the first-party `/api/t` relay:
+ * - Preserves anonymous session & distinct IDs across OAuth redirects so pre-signup
+ *   attribution, UTMs, and session replays link cleanly to authenticated users.
+ * - Keeps `person_profiles: "identified_only"` so anonymous browsing does not create
+ *   identified person profiles until sign-in.
+ * - Masks all inputs, passwords, emails, and marked sensitive elements in Session Replay.
+ * - Automatically tags localhost/loopback traffic with `$internal_or_test_user` for
+ *   PostHog's internal/test account filter cohort.
+ * - Strictly excludes customer-hosted waitlist pages (`/w/*` and `/domain`).
  */
 export function initClientPostHog() {
   if (typeof window === "undefined" || clientInitialized) return posthog;
 
   const token = env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN;
-  const host = env.NEXT_PUBLIC_POSTHOG_HOST || "https://us.i.posthog.com";
+  const configuredHost = env.NEXT_PUBLIC_POSTHOG_HOST || "https://us.i.posthog.com";
 
   if (!token) return posthog;
 
   const pathname = window.location.pathname;
-  // Never run or track on hosted customer waitlist pages (/w/*)
-  if (pathname.startsWith("/w/") || pathname.startsWith("/domain")) {
+  // Never run or track on hosted customer waitlist pages (/w/* or custom domains)
+  if (isExcludedPostHogPath(pathname)) {
     return posthog;
   }
 
-  const isPublicPage = isPublicPostHogPath(pathname);
-
   try {
+    clientInitialized = true;
     posthog.init(token, {
-      api_host: host,
+      api_host: POSTHOG_RELAY_PREFIX,
+      ui_host: resolveUiHost(configuredHost),
       person_profiles: "identified_only",
+      persistence: "localStorage+cookie",
       capture_pageview: false, // Handled explicitly on navigation
       capture_pageleave: true,
       capture_exceptions: {
@@ -58,13 +82,12 @@ export function initClientPostHog() {
         capture_console_errors: false,
       },
       autocapture: false, // Strict explicit business event tracking
-      // Public marketing analytics stay stateless and do not write a PostHog cookie.
-      persistence: isPublicPage ? "memory" : "localStorage+cookie",
-      cookieless_mode: isPublicPage ? "always" : "on_reject",
-      disable_session_recording: isPublicPage,
+      disable_session_recording: false,
+      internal_or_test_user_hostname: /^(localhost|127\.0\.0\.1|\[::1\])$/i,
       session_recording: {
         maskAllInputs: true,
         maskTextSelector: "[data-ph-mask], [data-mask], .sensitive-data",
+        blockSelector: "[data-ph-no-capture], .ph-no-capture",
         maskInputOptions: {
           password: true,
           email: true,
@@ -97,11 +120,9 @@ export function initClientPostHog() {
         }
         return event;
       },
-      loaded: () => {
-        clientInitialized = true;
-      },
     });
   } catch (error) {
+    clientInitialized = false;
     console.warn("PostHog browser init failed:", error?.message || error);
   }
 
@@ -111,11 +132,11 @@ export function initClientPostHog() {
 /**
  * Safe client-side event tracking helper.
  */
-export function trackClientEvent(eventName, properties = {}) {
+export function trackClientEvent(eventName, properties = {}, options = undefined) {
   if (typeof window === "undefined") return;
   try {
     if (!clientInitialized) initClientPostHog();
-    posthog.capture(eventName, properties);
+    posthog.capture(eventName, properties, options);
   } catch {
     // Fail open: analytics failures must never break UI
   }

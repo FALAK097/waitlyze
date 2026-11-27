@@ -588,10 +588,16 @@ export function createWorkspaceService(db) {
       // Retry unique conflicts when concurrent login requests race initialization.
       for (let attempt = 0; attempt < 4; attempt++) {
         try {
-          const user = await db.user.findUnique({
-            where: { id: userId },
-            select: { id: true, name: true, email: true },
-          });
+          const [user, existingPersonal] = await Promise.all([
+            db.user.findUnique({
+              where: { id: userId },
+              select: { id: true, name: true, email: true },
+            }),
+            db.workspace.findUnique({
+              where: { personalOwnerId: userId },
+              select: { id: true },
+            }),
+          ]);
           if (!user) throw new AccessError();
           const personalName = personalWorkspaceName(user.name, user.email);
           const workspace = await db.workspace.upsert({
@@ -617,6 +623,24 @@ export function createWorkspaceService(db) {
           });
           // Existing missing/revoked membership is never recreated by login/backfill.
           if (!membership) throw new Error("Personal workspace ownership requires review.");
+          if (!existingPersonal) {
+            Promise.all([import("@/lib/posthog/server.mjs"), import("@/lib/posthog/events.mjs")])
+              .then(async ([{ trackServerEvent, setServerGroup }, { POSTHOG_EVENTS }]) => {
+                await Promise.all([
+                  trackServerEvent({
+                    distinctId: userId,
+                    event: POSTHOG_EVENTS.WORKSPACE_CREATED,
+                    properties: { workspace_id: workspace.id, is_personal: true },
+                    groups: { company: workspace.id },
+                  }),
+                  setServerGroup({
+                    groupKey: workspace.id,
+                    properties: { name: workspace.name, plan: "FREE", member_count: 1 },
+                  }),
+                ]);
+              })
+              .catch(() => {});
+          }
           return workspace;
         } catch (error) {
           if (!isWorkspaceInitializationConflict(error) || attempt === 3) throw error;

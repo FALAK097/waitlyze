@@ -54,19 +54,26 @@ export function AuthModal({
   const [localPassword, setLocalPassword] = useState("");
   const attemptRef = useRef(0);
   const wasOpenRef = useRef(false);
+  const startedOAuthRef = useRef(false);
   const localPasswordAuthEnabled =
     process.env.NODE_ENV !== "production" &&
     process.env.NEXT_PUBLIC_LOCAL_DEV_EMAIL_PASSWORD_AUTH === "true";
 
   useEffect(() => {
     if (open && !wasOpenRef.current) {
-      trackClientEvent(POSTHOG_EVENTS.MARKETING_SIGNUP_STARTED, {
-        method: "modal_opened",
+      startedOAuthRef.current = false;
+      trackClientEvent(POSTHOG_EVENTS.MARKETING_SIGNUP_MODAL_OPENED, {
+        callback_url: safeCallbackURL,
+        ...getSignupOriginProperties(triggerElement),
+      });
+    } else if (!open && wasOpenRef.current && !startedOAuthRef.current) {
+      trackClientEvent(POSTHOG_EVENTS.MARKETING_SIGNUP_MODAL_DISMISSED, {
+        callback_url: safeCallbackURL,
         ...getSignupOriginProperties(triggerElement),
       });
     }
     wasOpenRef.current = open;
-  }, [open, triggerElement]);
+  }, [open, safeCallbackURL, triggerElement]);
 
   const changeOpen = (nextOpen) => {
     if (!nextOpen) {
@@ -79,10 +86,16 @@ export function AuthModal({
   const handleGoogleSignIn = async () => {
     if (loading) return;
     const attempt = ++attemptRef.current;
-    trackClientEvent(POSTHOG_EVENTS.MARKETING_SIGNUP_STARTED, {
-      method: "google",
-      ...getSignupOriginProperties(triggerElement),
-    });
+    startedOAuthRef.current = true;
+    trackClientEvent(
+      POSTHOG_EVENTS.MARKETING_SIGNUP_STARTED,
+      {
+        method: "google",
+        callback_url: safeCallbackURL,
+        ...getSignupOriginProperties(triggerElement),
+      },
+      { send_instantly: true, transport: "sendBeacon" },
+    );
     setLoading(true);
     try {
       const result = await authClient.signIn.social({
@@ -91,6 +104,7 @@ export function AuthModal({
       });
       if (result.error) throw new Error("Sign-in failed");
     } catch {
+      startedOAuthRef.current = false;
       if (attempt === attemptRef.current)
         toast.error("We couldn’t connect to Google. Please try again.");
     } finally {

@@ -5,6 +5,8 @@
 export const POSTHOG_EVENTS = Object.freeze({
   // A. Acquisition & Marketing
   MARKETING_PAGE_VIEWED: "marketing:page_viewed",
+  MARKETING_SIGNUP_MODAL_OPENED: "marketing:signup_modal_opened",
+  MARKETING_SIGNUP_MODAL_DISMISSED: "marketing:signup_modal_dismissed",
   MARKETING_SIGNUP_STARTED: "marketing:signup_started",
   MARKETING_SIGNUP_COMPLETED: "marketing:signup_completed",
   MARKETING_LOGIN_COMPLETED: "marketing:login_completed",

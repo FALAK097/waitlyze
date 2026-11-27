@@ -81,8 +81,16 @@ export default function PricingCheckoutButton({
     if (!session && !sessionPending) {
       trackClientEvent(POSTHOG_EVENTS.MARKETING_CHECKOUT_STARTED_FROM_PRICING, {
         billing_interval: interval,
+        page_path: typeof window !== "undefined" ? window.location.pathname : undefined,
       });
-      openAuthModal();
+      openAuthModal({
+        callbackURL: "/settings?section=billing",
+        heading: "Continue to Waitlyze Pro.",
+        description:
+          interval === "annual"
+            ? "Sign in with Google to create your workspace and continue to Pro Annual checkout."
+            : "Sign in with Google to create your workspace and continue to Pro Monthly checkout.",
+      });
       return;
     }
     if (!session || sessionPending || pending || isPro || !canManageBilling) return;
