@@ -48,6 +48,8 @@ Waitlyze is open-source waitlist software with a full-parity Public REST API v1,
 - [API Keys & Scopes](${SITE_URL}/docs/api-keys): Workspace-scoped and waitlist-scoped \`wl2_\` API keys
 - [OpenAPI 3.1 Specification](${SITE_URL}/openapi.json): OpenAPI 3.1.0 schema for public and v1 endpoints
 - [Agent Integration Instructions](${SITE_URL}/agent-instructions.md): How to connect Cursor, Claude Code, Codex, ChatGPT, and AI assistants to Waitlyze
+- [CLI](https://www.npmjs.com/package/waitlyze): Official \`waitlyze\` CLI on npm — signup, status, points, and REST API v1 passthrough from scripts and agents (\`npx waitlyze@latest --help\`)
+- [ARD Manifest](${SITE_URL}/.well-known/ard.json): Agentic Resource Discovery entries for the MCP server and the Waitlyze agent skill
 - [Full LLMs Context](${SITE_URL}/llms-full.txt): Complete product knowledge base in one file
 - [Markdown Route Catalog](${SITE_URL}/api/md/_catalog): Machine-readable index of all markdown routes
 - [AI Policy (ai.txt)](${SITE_URL}/ai.txt): Permissions and crawler policy

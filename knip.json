@@ -18,6 +18,10 @@
     },
     "workers/outbox-dispatch": {
       "project": ["src/**/*.js"]
+    },
+    "cli": {
+      "entry": ["waitlyze.mjs"],
+      "project": ["waitlyze.mjs"]
     }
   },
   "ignoreDependencies": ["tw-animate-css", "wrangler"],
