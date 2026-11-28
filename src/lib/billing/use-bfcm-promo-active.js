@@ -11,9 +11,12 @@ const MAX_TIMEOUT_MS = 2_147_483_647;
  * expiry boundaries so long-lived open tabs drop the offer on time.
  */
 export function useBfcmPromoActive() {
-  // Keep server prerender and the browser's hydration render identical. Cached
-  // HTML can outlive the campaign boundary, so only read the clock after mount.
-  const [active, setActive] = useState(false);
+  // Seed from the clock at render time so the server-rendered HTML already
+  // contains the banner when the campaign is running. Without this, the banner
+  // only appears after hydration and pushes the whole page down (layout shift).
+  // The initial render is consistent between server and hydration unless the
+  // boundary is crossed mid-session, which the effect below corrects.
+  const [active, setActive] = useState(() => isBfcmPromoActive(Date.now()));
 
   useEffect(() => {
     let timer = null;

@@ -73,46 +73,59 @@ function PostHogPageViewTracker() {
       return;
     }
 
-    initClientPostHog();
+    // Defer SDK init and pageview capture until the main thread is idle so the
+    // PostHog bundle never competes with first paint or hydration on slow
+    // devices. `timeout` guarantees the capture still runs on busy pages.
+    const scheduleIdle =
+      window.requestIdleCallback ?? ((callback) => window.setTimeout(callback, 300));
+    const cancelIdle = window.cancelIdleCallback ?? ((handle) => window.clearTimeout(handle));
+    const handle = scheduleIdle(
+      () => {
+        initClientPostHog();
 
-    if (typeof posthog.set_config === "function") {
-      posthog.set_config({
-        opt_out_capturing_by_default: false,
-        persistence: "localStorage+cookie",
-        disable_session_recording: false,
-      });
-    }
-    if (
-      typeof posthog.sessionRecordingStarted === "function" &&
-      !posthog.sessionRecordingStarted() &&
-      typeof posthog.startSessionRecording === "function"
-    ) {
-      posthog.startSessionRecording();
-    }
+        if (typeof posthog.set_config === "function") {
+          posthog.set_config({
+            opt_out_capturing_by_default: false,
+            persistence: "localStorage+cookie",
+            disable_session_recording: false,
+          });
+        }
+        if (
+          typeof posthog.sessionRecordingStarted === "function" &&
+          !posthog.sessionRecordingStarted() &&
+          typeof posthog.startSessionRecording === "function"
+        ) {
+          posthog.startSessionRecording();
+        }
 
-    const sanitizedUrl = buildSanitizedUrl(window.location.origin, pathname, searchParams);
-    const utmSource = searchParams?.get("utm_source") || undefined;
-    const utmMedium = searchParams?.get("utm_medium") || undefined;
-    const utmCampaign = searchParams?.get("utm_campaign") || undefined;
+        const sanitizedUrl = buildSanitizedUrl(window.location.origin, pathname, searchParams);
+        const utmSource = searchParams?.get("utm_source") || undefined;
+        const utmMedium = searchParams?.get("utm_medium") || undefined;
+        const utmCampaign = searchParams?.get("utm_campaign") || undefined;
 
-    posthog.capture("$pageview", {
-      $current_url: sanitizedUrl,
-      page_path: pathname,
-      utm_source: utmSource,
-      utm_medium: utmMedium,
-      utm_campaign: utmCampaign,
-    });
+        posthog.capture("$pageview", {
+          $current_url: sanitizedUrl,
+          page_path: pathname,
+          utm_source: utmSource,
+          utm_medium: utmMedium,
+          utm_campaign: utmCampaign,
+        });
 
-    if (isMarketingAcquisitionPath(pathname)) {
-      posthog.capture(POSTHOG_EVENTS.MARKETING_PAGE_VIEWED, {
-        page_path: pathname,
-        page_type: pathname === "/" ? "landing" : pathname.slice(1).split("/")[0],
-        utm_source: utmSource,
-        utm_medium: utmMedium,
-        utm_campaign: utmCampaign,
-        referrer_domain: safeReferrerDomain(),
-      });
-    }
+        if (isMarketingAcquisitionPath(pathname)) {
+          posthog.capture(POSTHOG_EVENTS.MARKETING_PAGE_VIEWED, {
+            page_path: pathname,
+            page_type: pathname === "/" ? "landing" : pathname.slice(1).split("/")[0],
+            utm_source: utmSource,
+            utm_medium: utmMedium,
+            utm_campaign: utmCampaign,
+            referrer_domain: safeReferrerDomain(),
+          });
+        }
+      },
+      { timeout: 2000 },
+    );
+
+    return () => cancelIdle(handle);
   }, [pathname, searchParams]);
 
   return null;

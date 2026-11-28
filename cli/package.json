@@ -1,0 +1,34 @@
+{
+  "name": "waitlyze",
+  "version": "0.13.0",
+  "description": "Command-line interface for Waitlyze: create signups, look up subscriber status, award referral points, and call the Waitlyze REST API v1 from scripts and AI agents.",
+  "keywords": [
+    "api",
+    "cli",
+    "pre-launch",
+    "referral",
+    "waitlist",
+    "waitlyze"
+  ],
+  "homepage": "https://waitlyze.com",
+  "bugs": {
+    "url": "https://github.com/FALAK097/waitlyze/issues"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/FALAK097/waitlyze.git",
+    "directory": "cli"
+  },
+  "bin": {
+    "waitlyze": "./waitlyze.mjs"
+  },
+  "files": [
+    "waitlyze.mjs",
+    "README.md"
+  ],
+  "type": "module",
+  "engines": {
+    "node": ">=18"
+  }
+}

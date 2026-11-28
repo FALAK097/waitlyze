@@ -25,7 +25,7 @@ function buildSpec() {
     },
   };
 
-  return {
+  const spec = {
     openapi: "3.1.0",
     info: {
       title: "Waitlyze Public REST API",
@@ -655,6 +655,40 @@ function buildSpec() {
       },
     },
   };
+
+  // Every operation carries a stable, unique operationId — LLM function-calling
+  // and client generators key on these. Public signup endpoints get semantic
+  // ids; the v1 surface derives deterministic camelCase ids from method + path
+  // so future operations are covered without manual bookkeeping.
+  const OPERATION_ID_OVERRIDES = {
+    "get /api/waitlist": "lookupSignup",
+    "post /api/waitlist": "createSignup",
+    "post /api/waitlist/points": "awardEventPoints",
+  };
+
+  for (const [path, methods] of Object.entries(spec.paths)) {
+    for (const [method, operation] of Object.entries(methods)) {
+      if (!operation || typeof operation !== "object" || operation.operationId) continue;
+      const override = OPERATION_ID_OVERRIDES[`${method} ${path}`];
+      if (override) {
+        operation.operationId = override;
+        continue;
+      }
+      const camel = path
+        .split("/")
+        .filter(Boolean)
+        .map((segment) =>
+          segment.replace(/[{}]/g, "").replace(/-([a-z])/g, (_, c) => c.toUpperCase()),
+        )
+        .map((segment, index) =>
+          index === 0 ? segment : segment.charAt(0).toUpperCase() + segment.slice(1),
+        )
+        .join("");
+      operation.operationId = `${method}${camel.charAt(0).toUpperCase()}${camel.slice(1)}`;
+    }
+  }
+
+  return spec;
 }
 
 export function GET() {

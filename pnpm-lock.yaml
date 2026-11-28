@@ -280,6 +280,8 @@ importers:
         specifier: 4.158.0
         version: 4.158.0(@types/node@26.6.3)
 
+  cli: {}
+
   workers/outbox-dispatch:
     dependencies:
       wrangler:

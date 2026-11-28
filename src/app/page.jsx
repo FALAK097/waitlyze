@@ -34,7 +34,7 @@ import { listTemplates } from "@/lib/templates/catalog.mjs";
 
 import "./landing.css";
 
-export const revalidate = 3600;
+export const revalidate = 21600;
 
 export const metadata = {
   title: { absolute: SITE_TITLE },
@@ -280,7 +280,11 @@ const steps = [
  */
 export default async function LandingPage() {
   const heroPosterUrl = `${LAUNCH_ASSET_BASE}/waitlyze-launch-cbda091bb109.webp`;
-  preconnect(ASSET_BASE, { crossOrigin: "anonymous" });
+  // The poster and showcase assets are fetched as regular no-cors images, so the
+  // preconnect must not request CORS credentials mode — a crossorigin preconnect
+  // opens a connection that image fetches cannot reuse, costing an extra
+  // DNS+TLS round trip on the LCP poster.
+  preconnect(ASSET_BASE);
   preload(heroPosterUrl, { as: "image", fetchPriority: "high" });
 
   const featuredTemplates = listTemplates().filter((template) =>

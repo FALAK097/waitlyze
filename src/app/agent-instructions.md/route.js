@@ -23,6 +23,16 @@ Search Waitlyze's public content (marketing, docs, blog, comparisons, templates)
 - \`GET ${BASE_URL}/.well-known/search?q=<keywords or natural-language question>\`
 - \`QUERY ${BASE_URL}/.well-known/search\` with \`Content-Type: text/plain\` (raw query) or \`application/json\` (\`{"q":"..."}\`)
 
+## Agent Onboarding (No Sales Contact)
+
+Everything an agent needs to start using Waitlyze is self-serve and live:
+
+- **Free tier**: one workspace, one waitlist, and 100 lifetime signups, no credit card. Create an account at ${BASE_URL} ("Start for free").
+- **Self-serve API keys**: after sign-in, generate a scoped \`wl2_\` key at ${BASE_URL}/api-keys. Scopes are listed above and in the OpenAPI spec.
+- **Zero-auth access**: published waitlist pages and the hosted signup form accept signups without any key; the \`GET /api/waitlist\` lookup and REST API v1 read a scoped key from the header.
+- **Sandbox / test environment**: create a second free workspace as a scratch environment, or self-host Waitlyze with Docker (\`compose.yaml\` in the open-source repo) and point clients at your instance. The CLI supports \`--base-url\` / \`WAITLYZE_BASE_URL\`.
+- **CLI**: \`npx waitlyze@latest --help\` (npm package \`waitlyze\`) wraps the signup, lookup, and points endpoints plus a generic REST v1 passthrough.
+
 ## High-Throughput Public Signup & Lookup Endpoints
 
 - \`POST /api/waitlist\`: Idempotently create or replay a signup (\`email\`, \`ref\`/\`referralCode\`, \`phone\`, \`customFields\`, \`marketingConsent\`, UTMs). Returns \`201 Created\` (new) or \`200 OK\` (existing) with live \`position\`, \`points\`, \`referral_link\`, \`total_signups\`, and \`waitlist_url\`.
